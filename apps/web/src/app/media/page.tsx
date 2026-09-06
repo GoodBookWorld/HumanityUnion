@@ -10,7 +10,11 @@ import {
   composeMediaPageLocalization,
   MEDIA_PLP_NEWS_BATCH_LIMIT,
 } from "../../features/language/media-plp/compose-media-page-localization";
-import { finalizeMediaPlpLiveTruthProbeAttrFromApplied } from "../../features/language/media-plp/media-plp-live-truth-probe";
+import {
+  finalizeMediaPlpLiveTruthProbeAttrFromApplied,
+  MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS,
+  resolveMediaPlpLiveTruthProbeStatus,
+} from "../../features/language/media-plp/media-plp-live-truth-probe";
 import { markMediaLocaleSwitchPerfPhase } from "../../features/language/media-plp/media-plp-locale-switch-perf";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
 import { fetchPublicNewsArticles } from "../../features/public-news/api";
@@ -36,6 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * Reset 03E.3 — also fact-check + propaganda (+ optional news) PLP maps.
  * Reset 03E.6 — composeMediaPageLocalization is the real route branch authority;
  * runtime branch (PLP|LEGACY) is emitted for live forensics.
+ * Reset 03E.7A — always emit live-truth probe status from this server route.
  */
 export default async function CivicMediaPage() {
   markMediaLocaleSwitchPerfPhase("T3_WEB_RENDER_BEGIN");
@@ -67,18 +72,20 @@ export default async function CivicMediaPage() {
       })()
     : null;
 
+  // Reset 03E.7A — status always resolved on the server route (never client env).
+  const mediaPlpLiveTruthProbeStatus = resolveMediaPlpLiveTruthProbeStatus();
+
   // Reset 03E.7 — finalize live-truth fingerprints on the server (not in client hydrate).
   let mediaPlpLiveTruthProbeAttr: string | undefined;
   if (
+    mediaPlpLiveTruthProbeStatus === MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED &&
     initialMedia &&
-    composition?.runtimeBranch === "PLP" &&
-    composition.plpTrustedById &&
-    composition.plpPrinciplesById
+    composition?.runtimeBranch === "PLP"
   ) {
     const applied = applyMediaPlpPresentationsToEditorial({
       media: initialMedia,
-      trustedById: composition.plpTrustedById,
-      principlesById: composition.plpPrinciplesById,
+      trustedById: composition.plpTrustedById ?? {},
+      principlesById: composition.plpPrinciplesById ?? {},
       editorialPresentation: composition.plpEditorialPresentation,
     });
     mediaPlpLiveTruthProbeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
@@ -104,6 +111,7 @@ export default async function CivicMediaPage() {
       }
       mediaLocalizationRequestedLocale={documentLocale.locale}
       mediaLocalizationBatchLocale={composition?.batchLocale ?? undefined}
+      mediaPlpLiveTruthProbeStatus={mediaPlpLiveTruthProbeStatus}
       mediaPlpLiveTruthProbeAttr={mediaPlpLiveTruthProbeAttr}
     />
   );

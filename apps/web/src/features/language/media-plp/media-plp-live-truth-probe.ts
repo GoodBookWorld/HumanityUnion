@@ -1,10 +1,23 @@
 /**
- * Reset 03E.7 — bounded Media PLP live truth probe (test/dev/staging only).
+ * Reset 03E.7 / 03E.7A — bounded Media PLP live truth probe (test/dev/staging only).
  * Fingerprints only — never participant-facing bodies or secrets.
  * Browser-safe FNV fingerprints (no node:crypto — PageContent is a client module).
+ *
+ * Reset 03E.7A — always emit activation status on /media <main> so staging can
+ * distinguish DISABLED / ENV_UNAVAILABLE / NOT_WIRED from a missing deploy.
  */
 
 export const MEDIA_PLP_LIVE_TRUTH_PROBE_VERSION = "PLT.1" as const;
+
+export const MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS = {
+  ENABLED: "ENABLED",
+  DISABLED: "DISABLED",
+  ENV_UNAVAILABLE: "ENV_UNAVAILABLE",
+  NOT_WIRED: "NOT_WIRED",
+} as const;
+
+export type MediaPlpLiveTruthProbeStatus =
+  (typeof MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS)[keyof typeof MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS];
 
 export const EDITORIAL_PROBE_PATHS = [
   "overviewSummary",
@@ -45,11 +58,64 @@ export type MediaPlpLiveTruthProbeReport = {
   readonly paths: readonly MediaPlpLiveTruthPathRecord[];
 };
 
-function readEnv(name: string): string | undefined {
-  if (typeof process === "undefined" || !process.env) {
+function processEnvAvailable(): boolean {
+  return typeof process !== "undefined" && Boolean(process.env);
+}
+
+/**
+ * Read HU_MEDIA_PLP_LIVE_TRUTH_PROBE with a static key first so Next/server
+ * bundles retain a real runtime binding (dynamic-only `process.env[name]` can
+ * miss vars that were unset at build and never statically referenced).
+ */
+export function readMediaPlpLiveTruthProbeEnv(): string | undefined {
+  if (!processEnvAvailable()) {
     return undefined;
   }
-  return process.env[name];
+  // Static identifier — required for reliable server runtime visibility.
+  const staticValue = process.env.HU_MEDIA_PLP_LIVE_TRUTH_PROBE;
+  if (typeof staticValue === "string") {
+    return staticValue;
+  }
+  // Dynamic fallback for tests that assign via bracket keys only.
+  return process.env["HU_MEDIA_PLP_LIVE_TRUTH_PROBE"];
+}
+
+let liveTruthProbeEnabledOverride: boolean | null = null;
+
+export function setMediaPlpLiveTruthProbeEnabledForTests(
+  enabled: boolean | null,
+): void {
+  liveTruthProbeEnabledOverride = enabled;
+}
+
+/**
+ * Server-resolved activation status (never NOT_WIRED — that is client fallback
+ * when page.tsx did not pass the prop).
+ */
+export function resolveMediaPlpLiveTruthProbeStatus(): Exclude<
+  MediaPlpLiveTruthProbeStatus,
+  "NOT_WIRED"
+> {
+  if (liveTruthProbeEnabledOverride !== null) {
+    return liveTruthProbeEnabledOverride
+      ? MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED
+      : MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.DISABLED;
+  }
+  if (!processEnvAvailable()) {
+    return MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENV_UNAVAILABLE;
+  }
+  const explicit = readMediaPlpLiveTruthProbeEnv();
+  if (explicit === "true") {
+    return MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED;
+  }
+  if (explicit === "false") {
+    return MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.DISABLED;
+  }
+  // Unset: on in non-production (local/test); off in production/staging NODE_ENV.
+  if (process.env.NODE_ENV !== "production") {
+    return MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED;
+  }
+  return MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.DISABLED;
 }
 
 /**
@@ -57,14 +123,10 @@ function readEnv(name: string): string | undefined {
  * Local test/dev: on unless explicitly false.
  */
 export function isMediaPlpLiveTruthProbeEnabled(): boolean {
-  const explicit = readEnv("HU_MEDIA_PLP_LIVE_TRUTH_PROBE");
-  if (explicit === "true") {
-    return true;
-  }
-  if (explicit === "false") {
-    return false;
-  }
-  return readEnv("NODE_ENV") !== "production";
+  return (
+    resolveMediaPlpLiveTruthProbeStatus() ===
+    MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED
+  );
 }
 
 export function fingerprintProbeValue(value: string | null | undefined): string {
@@ -222,6 +284,7 @@ let activeProbe: ActiveProbeBag | null = null;
 
 export function resetMediaPlpLiveTruthProbeForTests(): void {
   activeProbe = null;
+  liveTruthProbeEnabledOverride = null;
 }
 
 export function beginMediaPlpLiveTruthProbe(seed?: {
@@ -415,6 +478,10 @@ export function finalizeMediaPlpLiveTruthProbeAttrFromApplied(input: {
 }): string | undefined {
   if (!isMediaPlpLiveTruthProbeEnabled()) {
     return undefined;
+  }
+  // Ensure a bag exists even if compose skipped begin (defensive).
+  if (!activeProbe) {
+    beginMediaPlpLiveTruthProbe();
   }
   recordMediaPlpLiveTruthSsr(input);
   const report = finalizeMediaPlpLiveTruthProbe();

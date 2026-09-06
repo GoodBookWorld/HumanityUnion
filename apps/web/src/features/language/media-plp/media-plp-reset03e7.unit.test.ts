@@ -21,7 +21,9 @@ import {
   evaluateEditorialPathLineage,
   finalizeMediaPlpLiveTruthProbeAttrFromApplied,
   fingerprintProbeValue,
+  MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS,
   resetMediaPlpLiveTruthProbeForTests,
+  setMediaPlpLiveTruthProbeEnabledForTests,
 } from "./media-plp-live-truth-probe.js";
 import type { MediaPlpResolvedPresentation } from "./presentation.js";
 import { loadUiMessagesForLocale } from "../../i18n/load-ui-messages.js";
@@ -30,6 +32,7 @@ import { loadUiMessagesForLocale } from "../../i18n/load-ui-messages.js";
 
 afterEach(() => {
   setMediaPlpWebEnabledForTests(null);
+  setMediaPlpLiveTruthProbeEnabledForTests(null);
   resetMediaPlpLiveTruthProbeForTests();
 });
 
@@ -197,6 +200,7 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
             mediaLocalizationRuntimeBranch: composition.runtimeBranch,
             mediaLocalizationRequestedLocale: "uk",
             mediaLocalizationBatchLocale: "uk",
+            mediaPlpLiveTruthProbeStatus: MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED,
             mediaPlpLiveTruthProbeAttr: probeAttr,
           },
         ),
@@ -205,6 +209,10 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
 
     assert.match(html, new RegExp(CANONICAL_SUMMARY));
     assert.doesNotMatch(html, new RegExp(LOCALIZED_SUMMARY));
+    assert.match(
+      html,
+      /data-hu-media-plp-live-truth-probe-status="ENABLED"/,
+    );
     const attr = html.match(/data-hu-media-plp-live-truth="([^"]+)"/)?.[1];
     assert.ok(attr);
     const parsed = decodeMediaPlpLiveTruthProbeAttr(attr);
@@ -282,6 +290,7 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
             mediaLocalizationRuntimeBranch: composition.runtimeBranch,
             mediaLocalizationRequestedLocale: "uk",
             mediaLocalizationBatchLocale: "uk",
+            mediaPlpLiveTruthProbeStatus: MEDIA_PLP_LIVE_TRUTH_PROBE_STATUS.ENABLED,
             mediaPlpLiveTruthProbeAttr: probeAttr,
           },
         ),
@@ -291,6 +300,10 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
     assert.match(html, new RegExp(LOCALIZED_SUMMARY));
     assert.match(html, new RegExp(LOCALIZED_Q));
     assert.doesNotMatch(html, new RegExp(CANONICAL_SUMMARY));
+    assert.match(
+      html,
+      /data-hu-media-plp-live-truth-probe-status="ENABLED"/,
+    );
     assert.match(html, /data-hu-media-plp-live-truth=/);
 
     const attr = html.match(/data-hu-media-plp-live-truth="([^"]+)"/)?.[1];

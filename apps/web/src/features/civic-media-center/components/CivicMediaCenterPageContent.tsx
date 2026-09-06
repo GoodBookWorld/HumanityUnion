@@ -475,6 +475,7 @@ function CivicMediaCenterLoaded({
   mediaLocalizationRuntimeBranch,
   mediaLocalizationRequestedLocale,
   mediaLocalizationBatchLocale,
+  mediaPlpLiveTruthProbeStatus,
   mediaPlpLiveTruthProbeAttr,
 }: {
   media: CivicMediaCenterPublic;
@@ -489,6 +490,8 @@ function CivicMediaCenterLoaded({
   mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
   mediaLocalizationRequestedLocale?: string;
   mediaLocalizationBatchLocale?: string;
+  /** Reset 03E.7A — always rendered; NOT_WIRED if route omitted the prop. */
+  mediaPlpLiveTruthProbeStatus?: "ENABLED" | "DISABLED" | "ENV_UNAVAILABLE" | "NOT_WIRED";
   /** Reset 03E.7 — server-finalized probe attr (fingerprints only). */
   mediaPlpLiveTruthProbeAttr?: string;
 }) {
@@ -554,7 +557,10 @@ function CivicMediaCenterLoaded({
     ? "PUBLISHED_LOCALIZED"
     : plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
 
-  let liveTruthProbeAttr: string | undefined = mediaPlpLiveTruthProbeAttr;
+  const liveTruthProbeStatus =
+    mediaPlpLiveTruthProbeStatus ?? "NOT_WIRED";
+  const liveTruthProbeAttr =
+    liveTruthProbeStatus === "ENABLED" ? mediaPlpLiveTruthProbeAttr : undefined;
 
   return (
     <main
@@ -568,6 +574,7 @@ function CivicMediaCenterLoaded({
         mediaLocalizationRequestedLocale
       }
       data-hu-media-localization-batch-locale={mediaLocalizationBatchLocale}
+      data-hu-media-plp-live-truth-probe-status={liveTruthProbeStatus}
       data-hu-media-plp-live-truth={liveTruthProbeAttr}
     >
       <div className="civic-media-page__container">
@@ -842,6 +849,7 @@ export function CivicMediaCenterPageContent({
   mediaLocalizationRuntimeBranch,
   mediaLocalizationRequestedLocale,
   mediaLocalizationBatchLocale,
+  mediaPlpLiveTruthProbeStatus,
   mediaPlpLiveTruthProbeAttr,
 }: {
   /**
@@ -873,6 +881,8 @@ export function CivicMediaCenterPageContent({
   mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
   mediaLocalizationRequestedLocale?: string;
   mediaLocalizationBatchLocale?: string;
+  /** Reset 03E.7A — server-resolved probe activation status. */
+  mediaPlpLiveTruthProbeStatus?: "ENABLED" | "DISABLED" | "ENV_UNAVAILABLE" | "NOT_WIRED";
   /** Reset 03E.7 — server-finalized live truth probe attr (fingerprints only). */
   mediaPlpLiveTruthProbeAttr?: string;
 } = {}) {
@@ -943,6 +953,7 @@ export function CivicMediaCenterPageContent({
       mediaLocalizationRuntimeBranch={mediaLocalizationRuntimeBranch}
       mediaLocalizationRequestedLocale={mediaLocalizationRequestedLocale}
       mediaLocalizationBatchLocale={mediaLocalizationBatchLocale}
+      mediaPlpLiveTruthProbeStatus={mediaPlpLiveTruthProbeStatus}
       mediaPlpLiveTruthProbeAttr={mediaPlpLiveTruthProbeAttr}
     />
   );
