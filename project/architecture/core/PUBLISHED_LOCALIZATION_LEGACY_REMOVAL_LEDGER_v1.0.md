@@ -276,6 +276,18 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Probe | `PLP_PERSISTENCE_MODE` / `PLP_LOOKUP_RESULT` on live-truth metadata |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.9 note — Media/Country carousel PLP coverage (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | Editorial `PUBLISHED_LOCALIZED` while carousel cards (news/principle/trusted/verification/analysis/country media) remained English |
+| Root classes | Primarily `NO_PUBLISHED_SNAPSHOT` for carousel entities; `public_news` live-source was empty → version-gate miss even when Mongo PLP exists; election/initiative = `DOMAIN_NOT_YET_MIGRATED` |
+| Repair | `loadMediaPlpLiveCanonicalSource` public_news Mongo parity; `diagnose:media-plp-carousel` bounded readiness operator + materialize plan (≤20, dry-run) |
+| Diagnostic | `pnpm --filter @hu/api diagnose:media-plp-carousel -- --mongo --locale uk` (optional `--country-code`) |
+| Materialize | Existing one-by-one `materialize:media-plp` only; plan printed by carousel diagnostic — **not executed in this pack** |
+| Coverage acceptance | **pending until staging materialize + live verify** |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

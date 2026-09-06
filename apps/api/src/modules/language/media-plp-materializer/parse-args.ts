@@ -56,7 +56,7 @@ export function parseMediaPlpMaterializerArgs(
     return {
       ok: false,
       errorMessage:
-        "materialize:media-plp requires --entity-type <public_news|civic_media_principle|civic_media_trusted>",
+        `materialize:media-plp requires --entity-type <${MEDIA_PLP_ENTITY_TYPES.join("|")}>`,
     };
   }
   if (!isMediaPlpEntityType(entityTypeRaw)) {

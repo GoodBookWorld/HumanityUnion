@@ -706,3 +706,18 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Observability | Fingerprint lineage: CANONICAL → RESOLVED → PROJECTED → SSR |
 | False positive | Fixture-injected `PUBLISHED_LOCALIZED` skipped skewed POST gate (`TEST_ARCHITECTURE_FALSE_POSITIVE`) |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.9 — Media/Country carousel coverage
+
+**Invariant:** Every card rendered by Media/Country carousels that is Media-PLP-owned must have identical identity through:
+
+`CANONICAL SOURCE → BUILD CANDIDATE → PUBLISHED SNAPSHOT → HTTP RESOLVE / CARD PROP`
+
+| Concern | Rule |
+|---------|------|
+| Inventory | Route composition catalogs + bounded news (≤12) + optional country trusted (≤12); no corpus scan |
+| Live-source parity | `public_news` uses the same thin Mongo projection as the materializer (fixes empty live-source version miss) |
+| Diagnostic | `diagnose:media-plp-carousel` — one compact row/entity; totals READY/REBUILD/MISSING/STALE/INTEGRITY/DOMAIN |
+| Materialize plan | Explicit entity list from diagnostic; hard max ≤20; one-by-one existing `materialize:media-plp`; dry-run default |
+| Election/initiative | `DOMAIN_NOT_YET_MIGRATED` — Initiative CT via `useInitiativeCardTitlePresentation`; future Pack 05 / Initiative PLP migration |
+| ACTIVE count | **30** — unchanged |
