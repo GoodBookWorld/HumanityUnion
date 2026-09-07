@@ -360,6 +360,7 @@ export function PublicInitiativeExperiencePage({
                 t,
                 locale,
                 currentStageId: presentationCurrentStageId,
+                lifecycleProfile: experience.lifecycleProfile,
               },
             )}
             presentation={initiativePresentation}

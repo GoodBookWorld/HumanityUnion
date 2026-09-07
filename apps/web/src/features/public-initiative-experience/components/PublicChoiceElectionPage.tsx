@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionSelectOneAggregates,
@@ -16,7 +16,6 @@ import {
   resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
-import { formatPublicGeography } from "@hu/geography";
 
 import {
   CivicShareButton,
@@ -34,6 +33,7 @@ import {
   resolveInitiativeDecisionVoteChoiceDisplayLabel,
   resolvePublicChoiceElectionVotingStatusDisplayLabel,
 } from "../initiative-experience-i18n";
+import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
 
 import "../public-initiative-experience.css";
@@ -168,6 +168,7 @@ function SupportOpposeResults({
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
   const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
@@ -310,12 +311,14 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     formatDateTime(decision?.closesAt) ??
     formatDateTime(initiative?.metadata.completionDate);
 
-  const geography = formatPublicGeography({
+  const geography = formatInitiativePublicGeography({
+    locale,
     countryCode: initiative?.metadata.countrySlug,
     regionCode: initiative?.metadata.regionSlug,
     communitySlug: initiative?.metadata.communitySlug,
     regionLabel: initiative?.metadata.region,
     communityAssociation: initiative?.metadata.communityAssociation,
+    lifecycleProfile: "PUBLIC_CHOICE",
   });
 
   const sharePayload = {

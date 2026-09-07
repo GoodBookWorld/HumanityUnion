@@ -142,11 +142,11 @@ describe("Country Civic Discovery Pack 09F2 — rails and context", () => {
     const card = readWeb(
       "features/country-experience/components/CountryElectionRailCard.tsx",
     );
-    assert.match(card, /electionVotingStatusLabel/);
+    assert.match(card, /electionVotingStatus/);
+    assert.match(card, /resolvePublicChoiceElectionVotingStatusDisplayLabel/);
+    assert.doesNotMatch(card, /electionVotingStatusLabel/);
     assert.match(card, /candidateCount/);
     assert.match(card, /administrativelyBlocked/);
-    assert.match(card, /View Election/);
-    assert.match(card, /Unavailable — administratively blocked/);
   });
 });
 

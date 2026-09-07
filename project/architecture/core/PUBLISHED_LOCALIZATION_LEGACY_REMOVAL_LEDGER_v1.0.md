@@ -381,6 +381,17 @@ Status vocabulary for this pack: `ACTIVE` | `REPLACED_PENDING_ACCEPTANCE` | `REM
 
 **Do not leave dual-authority silently:** country Initiative/election rails use PLP ownership markers + GEOGRAPHY/UI dict — not Media `DOMAIN_NOT_YET_MIGRATED` and not CT generate-on-read for title/meta.
 
+### Reset 05A note — Initiative live consumer authority closure (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live fail | Rail geo `World`; detail geo mixed election name; Overview stage English `Collective Decision`; sidebar election name unowned |
+| Fix | Country projection emits geo codes; PUBLIC_CHOICE omits `communityAssociation` from GEOGRAPHY; Overview/banner UI_DICTIONARY stages; sidebar `electionName` PLP ownership |
+| Flag | `HU_INITIATIVE_PLP_ENABLED` unchanged (default OFF) |
+| Materialize | **Not required** for this pack — geography/vocabulary fix is projection+consumer |
+| Schema | **No** PLP.2 bump |
+| ACTIVE count | **30** |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

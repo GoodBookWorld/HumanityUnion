@@ -21,9 +21,14 @@ export const INITIATIVE_CARD_FIELD_OWNERSHIP = {
   publishedAt: "PROTECTED_CANONICAL",
   publicStatus: "UI_DICTIONARY",
   currentStageLabel: "UI_DICTIONARY",
+  electionName: "MACHINE_CONTENT",
 } as const satisfies Record<string, PlpFieldOwnershipClass>;
 
-export const INITIATIVE_CARD_MACHINE_CONTENT_PATHS = ["title", "summary"] as const;
+export const INITIATIVE_CARD_MACHINE_CONTENT_PATHS = [
+  "title",
+  "summary",
+  "electionName",
+] as const;
 
 export type InitiativeCardMachineContentPath =
   (typeof INITIATIVE_CARD_MACHINE_CONTENT_PATHS)[number];

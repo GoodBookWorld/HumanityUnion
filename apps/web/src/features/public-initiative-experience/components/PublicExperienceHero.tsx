@@ -19,6 +19,7 @@ import {
   resolveInitiativeStatusDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import type { InitiativePublicPresentation } from "../initiative-public-presentation";
 
 export interface PublicExperienceHeroMetaItem {
@@ -197,11 +198,21 @@ export function buildInitiativeHeroProps(
     readonly t: (key: string, values?: Record<string, string | number | Date>) => string;
     readonly locale: string;
     readonly currentStageId?: string;
+    readonly lifecycleProfile?: string | null;
   },
 ): PublicExperienceHeroProps {
-  const { t, locale, currentStageId } = options;
+  const { t, locale, currentStageId, lifecycleProfile } = options;
   const stageId =
     currentStageId || inferStageIdFromEnglishLabel(hero.currentStageLabel) || hero.currentStageLabel;
+
+  const geographyLabel =
+    formatInitiativePublicGeography({
+      locale,
+      countryCode: hero.geography.countryCode,
+      regionCode: hero.geography.regionCode,
+      communitySlug: hero.geography.communitySlug,
+      lifecycleProfile,
+    }) || hero.geography.label;
 
   return {
     title: hero.title,
@@ -225,7 +236,7 @@ export function buildInitiativeHeroProps(
         value: formatInitiativeExperienceDate(locale, hero.firstPublishedAt),
         column: "a",
       },
-      { label: t("hero.geography"), value: hero.geography.label, column: "b" },
+      { label: t("hero.geography"), value: geographyLabel, column: "b" },
       {
         label: t("hero.currentStage"),
         value: resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel),

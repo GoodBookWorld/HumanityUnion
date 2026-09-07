@@ -12,6 +12,7 @@ import {
   MediaSemanticNode,
   type MediaSemanticResult,
 } from "../../language/media-plp/media-semantic-contract";
+import { resolvePublicChoiceElectionVotingStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { resolveCountryInitiativeRailMeta } from "../resolve-country-initiative-rail-meta";
 
 interface CountryElectionRailCardProps {
@@ -56,13 +57,16 @@ export function CountryElectionRailCard({
     initiative.publicInitiativeHref ||
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
   const blocked = initiative.administrativelyBlocked === true;
-  const statusLabel =
-    initiative.electionVotingStatusLabel ||
-    resolveInitiativeCardBadgeLabel({
-      publicStatus: initiative.publicStatus,
-      currentStageLabel: initiative.currentStageLabel,
-      messagesOrT: tExperience,
-    });
+  const statusLabel = initiative.electionVotingStatus
+    ? resolvePublicChoiceElectionVotingStatusDisplayLabel(
+        initiative.electionVotingStatus,
+        tExperience,
+      )
+    : resolveInitiativeCardBadgeLabel({
+        publicStatus: initiative.publicStatus,
+        currentStageLabel: initiative.currentStageLabel,
+        messagesOrT: tExperience,
+      });
   const meta = resolveCountryInitiativeRailMeta({
     initiative,
     locale,

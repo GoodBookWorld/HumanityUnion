@@ -85,13 +85,16 @@ function resolveGeography(initiative: Initiative) {
     metadata.activityArea === "Other" && metadata.activityAreaOther
       ? metadata.activityAreaOther
       : metadata.activityArea;
+  const isPublicChoice =
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
   const resolved = resolvePublicGeography({
     countryCode: metadata.countrySlug ?? community?.countrySlug,
     regionCode: metadata.regionSlug ?? community?.regionSlug,
     communitySlug: metadata.communitySlug,
     regionLabel: metadata.region,
-    communityAssociation: metadata.communityAssociation,
+    // PUBLIC_CHOICE: communityAssociation is election name, not GEOGRAPHY city.
+    ...(isPublicChoice ? {} : { communityAssociation: metadata.communityAssociation }),
   });
 
   return {
@@ -100,6 +103,9 @@ function resolveGeography(initiative: Initiative) {
     city: resolved.city,
     activityArea,
     label: resolved.label,
+    countryCode: resolved.countryCode,
+    regionCode: resolved.regionCode,
+    communitySlug: metadata.communitySlug,
   };
 }
 

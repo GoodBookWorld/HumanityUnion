@@ -12,6 +12,7 @@ import type {
   PublicInitiativeCollectiveDecisionProjection,
   PublicInitiativeProjection,
 } from "@hu/types";
+import { INITIATIVE_PLP_ENTITY_TYPE } from "@hu/types";
 import {
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceBallotMode,
@@ -21,6 +22,9 @@ import {
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { loadPublicChoiceElectionResultSurface } from "../../public-choice-candidate/public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
+import {
+  MediaSemanticNode,
+} from "../../language/media-plp/media-semantic-contract";
 
 interface PublicChoiceElectionSidebarWidgetProps {
   initiativeId: string;
@@ -145,7 +149,18 @@ export function PublicChoiceElectionSidebarWidget({
           ? t("sidebar.election.candidates")
           : t("sidebar.election.election")}
       </h2>
-      <p className="pie-election__name">{electionName}</p>
+      <MediaSemanticNode
+        as="p"
+        className="pie-election__name"
+        owner="PLP_ENTITY"
+        result="CANONICAL_FALLBACK"
+        entityType={INITIATIVE_PLP_ENTITY_TYPE.INITIATIVE}
+        entityId={initiativeId}
+        semanticPath="electionName"
+        fallbackReason="NO_PUBLISHED_SNAPSHOT"
+      >
+        {electionName}
+      </MediaSemanticNode>
       <p className="pie-election__link">
         <Link className="hu-button hu-button--primary pie-election__cta" href={electionHref}>
           {t("sidebar.election.viewElection")}

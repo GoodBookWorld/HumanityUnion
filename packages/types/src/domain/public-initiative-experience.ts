@@ -198,6 +198,10 @@ export interface PublicInitiativeExperienceGeography {
   activityArea: string;
   /** Canonical formatted label: City · Region · Country, etc. */
   label: string;
+  /** RESET 05A — codes for locale-aware GEOGRAPHY reformat on the client. */
+  countryCode?: string;
+  regionCode?: string;
+  communitySlug?: string;
 }
 
 export interface PublicInitiativeExperienceHero {

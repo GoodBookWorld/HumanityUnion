@@ -16,15 +16,16 @@ import {
   isInitiativeLifecycleAuthorWorkspaceStage,
   isPublicChoiceCandidateElectionBallot,
   resolveParticipantFacingCurrentStageId,
+  INITIATIVE_PLP_ENTITY_TYPE,
 } from "@hu/types";
 
-import { formatPublicGeography } from "@hu/geography";
 import {
   formatInitiativeExperienceDate,
   formatInitiativeExperienceLanguageName,
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
 import { InitiativeCollaborativeAnalysisAuthorWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisAuthorWorkspace";
@@ -96,8 +97,14 @@ function OverviewSection({ label, value }: { label: string; value: string | null
   );
 }
 
-function OverviewMetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
-  if (!value) {
+function OverviewMetadataItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode | string | null | undefined;
+}) {
+  if (value === null || value === undefined || value === "") {
     return null;
   }
 
@@ -175,13 +182,27 @@ function PublicInitiativeOverview({
   const communityAssociationLabel = presentation.isPublicChoice
     ? t("overview.electionName")
     : t("overview.communityAssociation");
+  const localizedStageLabel = resolveLifecycleStageDisplayLabel(
+    currentStageId,
+    t,
+    currentStageLabel,
+  );
+  const geographicScope = formatInitiativePublicGeography({
+    locale,
+    countryCode: metadata.countrySlug,
+    regionCode: metadata.regionSlug,
+    communitySlug: metadata.communitySlug,
+    regionLabel: metadata.region,
+    communityAssociation: metadata.communityAssociation,
+    lifecycleProfile,
+  });
 
   return (
     <div className="pie-overview">
       <CurrentLifecycleStageBanner
         initiativeId={initiative.initiativeId}
         stageId={currentStageId}
-        stageLabel={currentStageLabel}
+        stageLabel={localizedStageLabel}
       />
       {showCandidateIntake ? (
         <PublicChoiceOverviewCandidateIntake
@@ -223,13 +244,7 @@ function PublicInitiativeOverview({
             <div className="pie-overview__column">
               <OverviewMetadataItem
                 label={t("overview.geographicScope")}
-                value={formatPublicGeography({
-                  countryCode: metadata.countrySlug,
-                  regionCode: metadata.regionSlug,
-                  communitySlug: metadata.communitySlug,
-                  regionLabel: metadata.region,
-                  communityAssociation: metadata.communityAssociation,
-                })}
+                value={geographicScope}
               />
               <OverviewMetadataItem
                 label={communityAssociationLabel}
@@ -247,7 +262,7 @@ function PublicInitiativeOverview({
                     : undefined
                 }
               />
-              <OverviewMetadataItem label={t("overview.status")} value={currentStageLabel} />
+              <OverviewMetadataItem label={t("overview.status")} value={localizedStageLabel} />
               <OverviewMetadataItem
                 label={t("overview.tags")}
                 value={formatList(metadata.tags) ?? undefined}

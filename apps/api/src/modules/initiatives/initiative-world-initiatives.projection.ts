@@ -1,5 +1,12 @@
-import type { Initiative, ParticipationScope, WorldInitiativeCardProjection } from "@hu/types";
-import { resolveInitiativeCoverMedia } from "@hu/types";
+import type {
+  Initiative,
+  ParticipationScope,
+  WorldInitiativeCardProjection,
+} from "@hu/types";
+import {
+  resolveInitiativeCoverMedia,
+  resolveInitiativeLifecycleProfile,
+} from "@hu/types";
 
 import { formatPublicGeography } from "../../shared/format-public-geography.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
@@ -30,13 +37,16 @@ function formatPublicStatus(status: Initiative["status"]): string {
 
 function resolveGeographyLabel(initiative: Initiative): string {
   const metadata = initiative.metadata;
+  const isPublicChoice =
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
   return formatPublicGeography({
     countryCode: metadata.countrySlug,
     regionCode: metadata.regionSlug,
     communitySlug: metadata.communitySlug,
     regionLabel: metadata.region,
-    communityAssociation: metadata.communityAssociation,
+    // PUBLIC_CHOICE: communityAssociation is election name, not city.
+    ...(isPublicChoice ? {} : { communityAssociation: metadata.communityAssociation }),
   });
 }
 

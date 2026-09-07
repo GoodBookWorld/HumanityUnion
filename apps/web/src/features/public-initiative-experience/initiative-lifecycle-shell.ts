@@ -53,13 +53,9 @@ export function selectLifecycleNavStagesForDisplay(
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   return stages
     .filter((stage) => stage.state !== "not_applicable")
-    .filter((stage) => !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"))
-    .map((stage) => {
-      if (profile === "PUBLIC_CHOICE" && stage.stageId === "collective_decision") {
-        return { ...stage, label: "Collective Decision" };
-      }
-      return stage;
-    });
+    .filter((stage) => !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"));
+    // RESET 05A — do not hardcode English "Collective Decision"; consumers
+    // resolve labels via UI_DICTIONARY (resolveLifecycleStageDisplayLabel).
 }
 
 export function resolveLifecycleStageFromHash(hash: string): string | null {

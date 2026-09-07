@@ -8,6 +8,7 @@ import type { InitiativeLifecycleStageMetadata } from "@hu/types";
 import { getInitiativeLifecycleStageProjection } from "../../initiative-lifecycle-stage-workspace";
 import {
   formatInitiativeExperienceDate,
+  resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../initiative-experience-i18n";
 
@@ -62,13 +63,23 @@ export function CurrentLifecycleStageBanner({
       ? resolvePresentationStatusDisplayLabel(metadata.presentationStatus, t)
       : null;
 
+  const localizedStageLabel = resolveLifecycleStageDisplayLabel(
+    stageId,
+    t,
+    stageLabel,
+  );
+
   return (
     <section
       className="pie-current-stage"
       aria-label={t("overview.currentLifecycleStageAria")}
+      data-hu-semantic-owner="UI_DICTIONARY"
+      data-hu-semantic-path="lifecycleStage"
+      data-hu-semantic-result="LOCALIZED_DICTIONARY"
+      data-hu-stage-id={stageId}
     >
       <h3 className="pie-current-stage__label">{t("overview.currentLifecycleStage")}</h3>
-      <p className="pie-current-stage__value">{stageLabel}</p>
+      <p className="pie-current-stage__value">{localizedStageLabel}</p>
       {publicationLine ? <p className="pie-current-stage__meta">{publicationLine}</p> : null}
     </section>
   );

@@ -1,10 +1,12 @@
 /**
- * RESET 05 — generalized PLP semantic-gap evaluation entry.
+ * RESET 05 / 05A — generalized PLP semantic-gap evaluation entry.
  * Domain-aware detectors share universal ownership/result semantics.
  */
 
 export {
   evaluateCountryInitiativeRailSemanticGaps,
+  evaluateLifecycleStageLabelSemanticGaps,
+  evaluateElectionSidebarSemanticGaps,
   assertNoCountryInitiativeRailSemanticGaps,
   type PlpSemanticGapFinding,
   type PlpSemanticGapKind,
@@ -15,17 +17,19 @@ import { evaluateInitiativeLifecycleSemanticClosure } from "@hu/types";
 
 import {
   evaluateCountryInitiativeRailSemanticGaps,
+  evaluateLifecycleStageLabelSemanticGaps,
+  evaluateElectionSidebarSemanticGaps,
   type PlpSemanticGapFinding,
   type PlpSemanticGapReport,
 } from "./country-initiative-rail-gap";
 
 /**
- * Combine country-rail HTML gaps with lifecycle inventory closure.
- * Intentionally broken rail meta fixtures fail acceptance.
+ * Combine country-rail HTML gaps, lifecycle inventory closure, and 05A residual classes.
  */
 export function evaluateReset05SemanticGaps(input: {
   readonly html?: string;
   readonly locale: string;
+  readonly hasSpecificGeographyCodes?: boolean;
 }): PlpSemanticGapReport {
   const findings: PlpSemanticGapFinding[] = [];
 
@@ -33,8 +37,21 @@ export function evaluateReset05SemanticGaps(input: {
     const rail = evaluateCountryInitiativeRailSemanticGaps({
       html: input.html,
       locale: input.locale,
+      hasSpecificGeographyCodes: input.hasSpecificGeographyCodes,
     });
     findings.push(...rail.findings);
+
+    const lifecycle = evaluateLifecycleStageLabelSemanticGaps({
+      html: input.html,
+      locale: input.locale,
+    });
+    findings.push(...lifecycle.findings);
+
+    const sidebar = evaluateElectionSidebarSemanticGaps({
+      html: input.html,
+      locale: input.locale,
+    });
+    findings.push(...sidebar.findings);
   }
 
   const closure = evaluateInitiativeLifecycleSemanticClosure();
@@ -54,7 +71,7 @@ export function evaluateReset05SemanticGaps(input: {
   }
 
   return {
-    pack: "RESET_05",
+    pack: "RESET_05A",
     locale: input.locale,
     findings,
     ok: findings.length === 0,
