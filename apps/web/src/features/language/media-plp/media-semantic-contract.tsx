@@ -2,12 +2,14 @@
  * Reset 03E.1 / 03E.3 — render-boundary semantic ownership + structural refs.
  * Attribution comes from the rendering path (this component), not a parallel inventory list.
  * Production: lightweight data-* attributes only (no translated bodies). Coverage is test/dev.
+ * Reset 03E.11.1 — polymorphic `as` + native element props (e.g. time.dateTime, a.href).
  */
 
 import {
   createElement,
+  type ComponentPropsWithoutRef,
   type ElementType,
-  type HTMLAttributes,
+  type ReactElement,
   type ReactNode,
 } from "react";
 
@@ -64,7 +66,8 @@ export function plpModeToSemanticResult(
   return "UNOWNED";
 }
 
-type MediaSemanticNodeProps = {
+/** Custom semantic props — never overridden by native HTML attributes. */
+type MediaSemanticNodeOwnProps = {
   readonly owner: MediaSemanticOwner;
   readonly result: MediaSemanticResult;
   readonly entityType?: string;
@@ -73,29 +76,41 @@ type MediaSemanticNodeProps = {
   readonly messageKey?: string;
   /** Reset 03E.11 — why PLP_ENTITY fell back (availability, not localization success). */
   readonly fallbackReason?: string;
-  readonly as?: ElementType;
   readonly children?: ReactNode;
   readonly className?: string;
-} & Omit<HTMLAttributes<HTMLElement>, "children" | "className" | "result">;
+};
+
+/**
+ * Polymorphic props: custom semantic contract + native props for `as`.
+ * Collisions with own props / `as` are omitted from the native side.
+ */
+export type MediaSemanticNodeProps<T extends ElementType = "span"> =
+  MediaSemanticNodeOwnProps & {
+    readonly as?: T;
+  } & Omit<ComponentPropsWithoutRef<T>, keyof MediaSemanticNodeOwnProps | "as">;
 
 /**
  * Every participant-facing Media semantic text node should render through this boundary.
  */
-export function MediaSemanticNode({
-  owner,
-  result,
-  entityType,
-  entityId,
-  semanticPath,
-  messageKey,
-  fallbackReason,
-  as = "span",
-  children,
-  className,
-  ...rest
-}: MediaSemanticNodeProps) {
-  return createElement(
+export function MediaSemanticNode<T extends ElementType = "span">(
+  props: MediaSemanticNodeProps<T>,
+): ReactElement {
+  const {
+    owner,
+    result,
+    entityType,
+    entityId,
+    semanticPath,
+    messageKey,
+    fallbackReason,
     as,
+    children,
+    className,
+    ...rest
+  } = props;
+
+  return createElement(
+    as ?? "span",
     {
       ...rest,
       className,
