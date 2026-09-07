@@ -500,3 +500,139 @@ export async function countPlpAutoBuildWorkByStatus(): Promise<{
   }
   return empty;
 }
+
+/** RESET 05C.2 — bounded READ-ONLY list of terminal failed work. */
+export const PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT = 20;
+export const PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT = 20;
+
+export type PlpAutoBuildFailureClass =
+  | "FAILED"
+  | "PROCESSOR_DORMANT"
+  | "PROVIDER_TIMEOUT"
+  | "PROVIDER_FAILURE"
+  | "PROVIDER_PARTIAL"
+  | "PROVIDER_INTEGRITY"
+  | "PROVIDER_PAYLOAD"
+  | "PROVIDER_CAP"
+  | "REJECTED_PARTIAL"
+  | "PUBLISH_FAILED"
+  | "ADAPTER_OR_SOURCE"
+  | "UNKNOWN";
+
+/**
+ * Map sanitized lastError into a stable failure class for grouping.
+ * Does not invent reasons — only classifies stored safe codes/messages.
+ */
+export function normalizePlpAutoBuildFailureClass(
+  lastError: string | null | undefined,
+): PlpAutoBuildFailureClass {
+  const raw = (lastError ?? "").trim();
+  if (!raw) {
+    return "UNKNOWN";
+  }
+  const upper = raw.toUpperCase();
+  if (upper === "FAILED") {
+    return "FAILED";
+  }
+  if (upper.includes("PROCESSOR_DORMANT")) {
+    return "PROCESSOR_DORMANT";
+  }
+  if (upper.includes("TIMEOUT") || upper.includes("TIMED OUT")) {
+    return "PROVIDER_TIMEOUT";
+  }
+  if (
+    upper.includes("PARTIAL") ||
+    upper.includes("REJECTED_PARTIAL") ||
+    upper.includes("WRONG_TARGET")
+  ) {
+    if (upper.includes("REJECTED_PARTIAL")) {
+      return "REJECTED_PARTIAL";
+    }
+    return "PROVIDER_PARTIAL";
+  }
+  if (
+    upper.includes("INTEGRITY") ||
+    upper.includes("LOCALIZATION_CONTENT_INTEGRITY")
+  ) {
+    return "PROVIDER_INTEGRITY";
+  }
+  if (upper.includes("PAYLOAD") || upper.includes("PAYLOAD_LIMIT")) {
+    return "PROVIDER_PAYLOAD";
+  }
+  if (upper.includes("PROVIDER_CALL_CAP") || upper.includes("CALL_CAP")) {
+    return "PROVIDER_CAP";
+  }
+  if (
+    upper.includes("PROVIDER") ||
+    upper.includes("GEMINI") ||
+    upper.includes("PARSE_FAILURE")
+  ) {
+    return "PROVIDER_FAILURE";
+  }
+  if (upper.includes("PUBLISH")) {
+    return "PUBLISH_FAILED";
+  }
+  if (
+    upper.includes("ADAPTER") ||
+    upper.includes("SOURCE_NOT") ||
+    upper.includes("NOT_FOUND")
+  ) {
+    return "ADAPTER_OR_SOURCE";
+  }
+  return "UNKNOWN";
+}
+
+/**
+ * READ-ONLY: list terminal failed rows, newest failure first, hard-bounded.
+ */
+export async function listFailedPlpAutoBuildWork(input: {
+  readonly limit: number;
+}): Promise<readonly PlpAutoBuildWorkRecord[]> {
+  const limit = Math.min(
+    Math.max(Math.trunc(input.limit) || 1, 1),
+    PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT,
+  );
+
+  if (usePlpAutoBuildWorkMemory()) {
+    return [...memoryByWorkKey.values()]
+      .filter((row) => row.status === "failed")
+      .sort((a, b) => {
+        const aAt = a.lastFailureAt ?? a.updatedAt;
+        const bAt = b.lastFailureAt ?? b.updatedAt;
+        return bAt.localeCompare(aAt);
+      })
+      .slice(0, limit);
+  }
+
+  const docs = await collection()
+    .find(
+      { status: "failed" },
+      {
+        projection: {
+          workKey: 1,
+          entityType: 1,
+          entityId: 1,
+          locale: 1,
+          canonicalVersion: 1,
+          contentRevision: 1,
+          trigger: 1,
+          status: 1,
+          attempts: 1,
+          maxAttempts: 1,
+          lastError: 1,
+          enqueuedAt: 1,
+          claimedAt: 1,
+          completedAt: 1,
+          updatedAt: 1,
+          lastFailureAt: 1,
+        },
+        sort: { lastFailureAt: -1, updatedAt: -1 },
+        limit,
+      },
+    )
+    .limit(limit)
+    .toArray();
+
+  return docs.map((doc) => mapDoc(doc as PlpAutoBuildWorkDocument));
+}
+

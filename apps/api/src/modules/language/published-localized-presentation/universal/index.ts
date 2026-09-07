@@ -55,17 +55,33 @@ export {
   upsertPendingPlpAutoBuildWork,
   claimNextPlpAutoBuildWork,
   countPlpAutoBuildWorkByStatus,
+  listFailedPlpAutoBuildWork,
   listPlpAutoBuildWorkForTests,
   resetPlpAutoBuildWorkStoreForTests,
   setPlpAutoBuildWorkForceMemoryForTests,
   resolvePlpAutoBuildMaxAttempts,
   usePlpAutoBuildWorkMemory,
+  sanitizePlpAutoBuildFailureReason,
+  normalizePlpAutoBuildFailureClass,
+  markPlpAutoBuildWorkFailed,
+  markPlpAutoBuildWorkCompleted,
+  PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT,
+  PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT,
 } from "./plp-auto-build-work.repository.js";
 export type {
   PlpAutoBuildWorkRecord,
   PlpAutoBuildWorkStatus,
   UpsertPlpAutoBuildWorkResult,
+  PlpAutoBuildFailureClass,
 } from "./plp-auto-build-work.repository.js";
+export {
+  inspectPlpAutoBuildFailedWork,
+  PLP_AUTO_BUILD_FAILURE_DIAGNOSTIC_PACK,
+} from "./plp-auto-build-work-failure-diagnostic.js";
+export type {
+  PlpAutoBuildFailedWorkReport,
+  PlpAutoBuildFailedWorkRow,
+} from "./plp-auto-build-work-failure-diagnostic.js";
 export { resolvePlpAutoBuildLocales, notifyPlpPublicSourceMutation } from "./public-source-mutation-bridge.js";
 export {
   runUniversalPlpBuild,
