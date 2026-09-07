@@ -1,15 +1,29 @@
 /**
- * Reset 03E.13 — read-only public_news consumer parity diagnostic.
+ * Reset 03E.13 / 03E.13.1 — read-only public_news consumer parity diagnostic.
  * Compares /media consumer listing ↔ Mongo PLP current ↔ HTTP resolve mode.
  * PROVIDER_CALLS=0, PLP_WRITES=0, MONGO_WRITES=0.
+ *
+ * Reset 03E.13.1 — --mongo bootstrap parity with diagnose:media-plp-carousel /
+ * materialize:media-plp-carousel: bind durable PLP → connectMongoClient →
+ * reads → disconnect (never silent MEMORY; never read before connect).
  */
 
 import {
   MEDIA_PLP_ENTITY_TYPE,
   PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
   mediaPlpPublicNewsEntityId,
+  type NewsArticleRecord,
 } from "@hu/types";
 
+import {
+  connectMongoClient,
+  disconnectMongoClient,
+} from "../../../infrastructure/mongodb/mongo-connection.js";
+import {
+  isMongoConfigured,
+} from "../../../infrastructure/mongodb/mongo-config.js";
+import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
+import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 import { findCurrentPublishedPresentation } from "../published-localized-presentation/persistence/repository.js";
 import {
   fingerprintMediaPlpCanonicalVersion,
@@ -17,14 +31,16 @@ import {
   asMediaPlpPresentationNode,
 } from "../published-localized-presentation/media/canonical-trees.js";
 import { resolveMediaPlpConsumerBatch } from "../published-localized-presentation/media/resolve-consumer.js";
-import { requireMediaPlpMaterializerMongoPersistence } from "../media-plp-materializer/persistence-selection.js";
+import {
+  getMediaPlpPersistenceObservability,
+  requireMediaPlpMaterializerMongoPersistence,
+  type MediaPlpPersistenceObservability,
+} from "../media-plp-materializer/persistence-selection.js";
 import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
 import {
   listNewestActivePublicNewsIdsIgnoringConsumerBalance,
   selectMediaPlpConsumerNewsArticles,
 } from "./media-plp-news-selection.js";
-import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
-import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 
 export const MEDIA_PLP_NEWS_PARITY_PACK = "RESET_03E.13" as const;
 
@@ -58,6 +74,7 @@ export type MediaPlpNewsParityRow = {
 export type MediaPlpNewsParityReport = {
   readonly pack: typeof MEDIA_PLP_NEWS_PARITY_PACK;
   readonly locale: string;
+  readonly PLP_PERSISTENCE_MODE: "MONGO" | "MEMORY" | "UNSET";
   readonly CONSUMER_NEWS_COUNT: number;
   readonly LEGACY_NEWEST_COUNT: number;
   readonly OVERLAP_WITH_LEGACY_NEWEST: number;
@@ -67,6 +84,19 @@ export type MediaPlpNewsParityReport = {
   readonly PLP_WRITES: 0;
   readonly MONGO_WRITES: 0;
   readonly rows: readonly MediaPlpNewsParityRow[];
+};
+
+export type MediaPlpNewsParityDiagnosticDeps = {
+  readonly isMongoConfigured?: () => boolean;
+  readonly requirePersistence?: () => MediaPlpPersistenceObservability;
+  readonly connect?: () => Promise<void>;
+  readonly disconnect?: () => Promise<void>;
+  /** After bootstrap only — unit tests replace Mongo-backed reads. */
+  readonly executeReads?: (input: {
+    readonly locale: string;
+    readonly limit: number;
+    readonly persistence: MediaPlpPersistenceObservability;
+  }) => Promise<MediaPlpNewsParityReport>;
 };
 
 function classifyParity(input: {
@@ -113,17 +143,23 @@ function classifyParity(input: {
   return "CANONICAL_FALLBACK";
 }
 
-export async function runMediaPlpNewsParityDiagnostic(input: {
+/**
+ * Mongo-backed parity reads. Caller MUST have connected the client and bound
+ * durable PLP persistence already (03E.13.1).
+ */
+export async function executeMediaPlpNewsParityReads(input: {
   readonly locale: string;
-  readonly limit?: number;
+  readonly limit: number;
+  readonly persistence: MediaPlpPersistenceObservability;
+  readonly selectConsumerArticles?: (args: {
+    readonly limit: number;
+  }) => Promise<readonly NewsArticleRecord[]>;
 }): Promise<MediaPlpNewsParityReport> {
-  requireMediaPlpMaterializerMongoPersistence(
-    "diagnose:media-plp-news-parity --mongo",
-  );
-
-  const limit = input.limit ?? MEDIA_PLP_CAROUSEL_NEWS_LIMIT;
   const locale = input.locale.trim().toLowerCase();
-  const consumerArticles = await selectMediaPlpConsumerNewsArticles({ limit });
+  const limit = input.limit;
+  const select =
+    input.selectConsumerArticles ?? selectMediaPlpConsumerNewsArticles;
+  const consumerArticles = await select({ limit });
 
   const collection = getMongoCollection<Record<string, unknown>>(
     MONGO_COLLECTIONS.publicNewsArticles,
@@ -239,6 +275,7 @@ export async function runMediaPlpNewsParityDiagnostic(input: {
   return {
     pack: MEDIA_PLP_NEWS_PARITY_PACK,
     locale,
+    PLP_PERSISTENCE_MODE: input.persistence.PLP_PERSISTENCE_MODE,
     CONSUMER_NEWS_COUNT: rows.length,
     LEGACY_NEWEST_COUNT: legacyNewest.length,
     OVERLAP_WITH_LEGACY_NEWEST: overlap,
@@ -256,6 +293,97 @@ export async function runMediaPlpNewsParityDiagnostic(input: {
   };
 }
 
+/**
+ * Operator entry: bind Mongo PLP → connect → read-only parity → disconnect.
+ * Same contract as diagnose:media-plp-carousel / materialize:media-plp-carousel (03E.10.1).
+ */
+export async function runMediaPlpNewsParityDiagnostic(
+  input: {
+    readonly locale: string;
+    readonly limit?: number;
+  },
+  deps: MediaPlpNewsParityDiagnosticDeps = {},
+): Promise<{
+  readonly exitCode: number;
+  readonly report: MediaPlpNewsParityReport | null;
+  readonly errorMessage: string | null;
+}> {
+  const mongoReady = (deps.isMongoConfigured ?? isMongoConfigured)();
+  if (!mongoReady) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage: "MONGODB_URI is not configured.",
+    };
+  }
+
+  let persistence: MediaPlpPersistenceObservability;
+  try {
+    persistence = deps.requirePersistence
+      ? deps.requirePersistence()
+      : requireMediaPlpMaterializerMongoPersistence(
+          "diagnose:media-plp-news-parity --mongo",
+        );
+  } catch (error) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "Mongo PLP persistence required",
+    };
+  }
+  if (persistence.PLP_PERSISTENCE_MODE !== "MONGO") {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        "PLP persistence mode is not MONGO (diagnose:media-plp-news-parity --mongo). Refusing silent memory fallback.",
+    };
+  }
+
+  const limit = input.limit ?? MEDIA_PLP_CAROUSEL_NEWS_LIMIT;
+  const locale = input.locale.trim().toLowerCase();
+  let connected = false;
+  try {
+    await (deps.connect ?? connectMongoClient)();
+    connected = true;
+
+    const report = await (deps.executeReads ?? executeMediaPlpNewsParityReads)({
+      locale,
+      limit,
+      persistence,
+    });
+
+    if (report.PLP_PERSISTENCE_MODE !== "MONGO") {
+      return {
+        exitCode: 1,
+        report: null,
+        errorMessage:
+          "Parity report persistence mode is not MONGO; refusing memory fallback.",
+      };
+    }
+
+    return { exitCode: 0, report, errorMessage: null };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        error instanceof Error ? error.message : "news parity diagnostic failed",
+    };
+  } finally {
+    if (connected) {
+      try {
+        await (deps.disconnect ?? disconnectMongoClient)();
+      } catch {
+        // ignore disconnect errors
+      }
+    }
+  }
+}
+
 export function printMediaPlpNewsParityReport(
   report: MediaPlpNewsParityReport,
 ): void {
@@ -264,6 +392,7 @@ export function printMediaPlpNewsParityReport(
       {
         pack: report.pack,
         locale: report.locale,
+        PLP_PERSISTENCE_MODE: report.PLP_PERSISTENCE_MODE,
         CONSUMER_NEWS_COUNT: report.CONSUMER_NEWS_COUNT,
         LEGACY_NEWEST_COUNT: report.LEGACY_NEWEST_COUNT,
         OVERLAP_WITH_LEGACY_NEWEST: report.OVERLAP_WITH_LEGACY_NEWEST,
@@ -310,3 +439,6 @@ export function parseMediaPlpNewsParityArgs(argv: readonly string[]): {
   }
   return { locale, mongo };
 }
+
+/** Observability helper for tests — does not connect. */
+export { getMediaPlpPersistenceObservability };

@@ -1,5 +1,5 @@
 /**
- * Reset 03E.13 — diagnose:media-plp-news-parity (READ-ONLY).
+ * Reset 03E.13 / 03E.13.1 — diagnose:media-plp-news-parity (READ-ONLY).
  *
  * Usage:
  *   pnpm --filter @hu/api diagnose:media-plp-news-parity -- --mongo --locale uk
@@ -32,9 +32,20 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const report = await runMediaPlpNewsParityDiagnostic({ locale: args.locale });
-  printMediaPlpNewsParityReport(report);
-  process.exit(0);
+  const result = await runMediaPlpNewsParityDiagnostic({ locale: args.locale });
+  if (result.report) {
+    printMediaPlpNewsParityReport(result.report);
+  }
+  if (result.errorMessage) {
+    console.error(
+      JSON.stringify({
+        pack: "RESET_03E.13",
+        ok: false,
+        errorMessage: result.errorMessage,
+      }),
+    );
+  }
+  process.exit(result.exitCode);
 }
 
 main().catch((error) => {

@@ -332,6 +332,15 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Live after deploy | Diagnostic consumer set may show `NO_SNAPSHOT` / `ELIGIBLE` until those IDs are rematerialized; do **not** rematerialize in this pack |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.13.1 note — news parity diagnostic Mongo bootstrap (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live abort | `diagnose:media-plp-news-parity --mongo` → `MongoDB client is not connected` before any rows |
+| Miss class | Bound PLP persistence but never `connectMongoClient()` before News/PLP reads |
+| Repair | Same thin order as carousel diagnose/materialize (03E.10.1): require MONGO PLP → connect → reads → disconnect `finally` |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary
