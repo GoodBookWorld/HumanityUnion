@@ -154,7 +154,7 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       assert.equal(lost.reason, "BRAND_TOKEN_PRESERVATION_FAILED");
       assert.ok(
         lost.pathDiagnostics.BRAND_TOKEN_PATH_STATES.some(
-          (r) => r.TOKEN_STATE === "MISSING",
+          (r) => r.TOKEN_STATE !== "PRESERVED",
         ),
       );
     }
@@ -212,10 +212,13 @@ describe("RESET 05D.4 — provider boundary closure", () => {
   it("8–10: retryable PARTIAL requeues; integrity remains terminal; success publishes", async () => {
     const partialFailure = mapProviderBoundaryReasonToFailure({
       reason: "PARTIAL",
-      message: "MISSING_MACHINE_PATHS=summary",
+      message:
+        "PARTIAL:MISSING_PATH;PROVIDER_PARTIAL_SUBREASON=MISSING_PATH;MISSING_MACHINE_PATHS=summary;EXPECTED_MACHINE_PATHS=summary|title;PATH_STATES=title:1:1:1:1:1|summary:0:0:0:0:0",
     });
     assert.equal(partialFailure.failureCode, "PROVIDER_PARTIAL");
     assert.equal(partialFailure.retryable, true);
+    assert.match(partialFailure.safeReason, /PROVIDER_PARTIAL_SUBREASON=MISSING_PATH/);
+    assert.match(partialFailure.safeReason, /MISSING_MACHINE_PATHS=summary/);
 
     const integrity = mapProviderBoundaryReasonToFailure({
       reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",

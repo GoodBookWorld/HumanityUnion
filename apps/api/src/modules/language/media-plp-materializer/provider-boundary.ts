@@ -1,14 +1,13 @@
 /**
- * Reset 03B.2 / RESET 05D.4 — thin provider execution boundary (execute only).
+ * Reset 03B.2 / RESET 05D.5 — thin provider execution boundary (execute only).
  * Never silently falls back to the heavy Gemini provider module / registry barrel.
  *
- * RESET 05D.4 — ASCII Brand transport sentinel; PARTIAL path diagnostics;
- * structured failure metadata for retry taxonomy.
+ * RESET 05D.5 — stage-by-stage Brand/News forensics persisted as safe metadata.
+ * Do not infer first-loss from final failure alone.
  */
 
-import type { BrandTokenPathTransportReport, LanguageCode } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 import {
-  classifyBrandTokenPathTransport,
   protectBrandTokensForMachineTranslation,
   restoreBrandTokensAfterMachineTranslation,
   templateHasBrandSiteNameToken,
@@ -25,6 +24,20 @@ import {
   createThinMediaPlpProviderFromConfig,
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
 } from "./thin-gemini-transport.js";
+import {
+  classifyBrandPathForensics,
+  classifyNewsPathForensics,
+  classifyProviderResponseShape,
+  deriveProviderPartialSubreason,
+  emptyForensics,
+  formatProviderForensicsSafe,
+  readParsedStringAtPath,
+  type BrandPathForensicReport,
+  type NewsPathForensicState,
+  type ProviderBoundaryForensics,
+  type ProviderPartialSubreason,
+  type ProviderResponseShape,
+} from "./provider-boundary-forensics.js";
 
 export const MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY = "THIN" as const;
 
@@ -33,7 +46,10 @@ export type ProviderMachinePathDiagnostics = {
   readonly RETURNED_MACHINE_PATHS: readonly string[];
   readonly MISSING_MACHINE_PATHS: readonly string[];
   readonly UNEXPECTED_MACHINE_PATHS: readonly string[];
-  readonly BRAND_TOKEN_PATH_STATES: readonly BrandTokenPathTransportReport[];
+  readonly BRAND_TOKEN_PATH_STATES: readonly BrandPathForensicReport[];
+  readonly NEWS_PATH_STATES: readonly NewsPathForensicState[];
+  readonly PROVIDER_PARTIAL_SUBREASON: ProviderPartialSubreason | null;
+  readonly PROVIDER_RESPONSE_SHAPE: ProviderResponseShape;
 };
 
 export type ProviderBoundaryFailureReason =
@@ -56,6 +72,7 @@ export type ProviderBoundaryResult =
       readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
       readonly PROVIDER_TRANSPORT: string;
       readonly pathDiagnostics: ProviderMachinePathDiagnostics;
+      readonly forensics: ProviderBoundaryForensics;
     }
   | {
       readonly ok: false;
@@ -65,6 +82,7 @@ export type ProviderBoundaryResult =
       readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
       readonly PROVIDER_TRANSPORT: string;
       readonly pathDiagnostics?: ProviderMachinePathDiagnostics;
+      readonly forensics?: ProviderBoundaryForensics;
     };
 
 export type ThinProviderImportResult = {
@@ -72,6 +90,18 @@ export type ThinProviderImportResult = {
   readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
   readonly PROVIDER_TRANSPORT: string;
 };
+
+export {
+  formatProviderForensicsSafe,
+  isProviderPartialSubtypeRetryable,
+  classifyBrandPathForensics,
+  classifyNewsPathForensics,
+  deriveProviderPartialSubreason,
+  type ProviderBoundaryForensics,
+  type BrandPathForensicReport,
+  type NewsPathForensicState,
+  type ProviderPartialSubreason,
+} from "./provider-boundary-forensics.js";
 
 /**
  * Import the thin Media PLP provider execution boundary only.
@@ -89,40 +119,107 @@ export async function importMediaPlpMaterializerProvider(): Promise<ThinProvider
   };
 }
 
+function toPathDiagnostics(
+  forensics: ProviderBoundaryForensics,
+): ProviderMachinePathDiagnostics {
+  return {
+    EXPECTED_MACHINE_PATHS: forensics.EXPECTED_MACHINE_PATHS,
+    RETURNED_MACHINE_PATHS: forensics.RETURNED_MACHINE_PATHS,
+    MISSING_MACHINE_PATHS: forensics.MISSING_MACHINE_PATHS,
+    UNEXPECTED_MACHINE_PATHS: forensics.UNEXPECTED_MACHINE_PATHS,
+    BRAND_TOKEN_PATH_STATES: forensics.BRAND_TOKEN_PATH_STATES,
+    NEWS_PATH_STATES: forensics.NEWS_PATH_STATES,
+    PROVIDER_PARTIAL_SUBREASON: forensics.PROVIDER_PARTIAL_SUBREASON,
+    PROVIDER_RESPONSE_SHAPE: forensics.PROVIDER_RESPONSE_SHAPE,
+  };
+}
+
 export function buildProviderMachinePathDiagnostics(input: {
   readonly autoValues: Readonly<Record<string, string>>;
   readonly translated: Readonly<Record<string, string>>;
+  /** Keys present in provider result (may include empty-string values). */
+  readonly presentKeys?: readonly string[];
   readonly allReturnedKeys?: readonly string[];
+  readonly locale?: LanguageCode;
+  readonly shape?: ProviderResponseShape;
+  readonly brandStates?: readonly BrandPathForensicReport[];
 }): ProviderMachinePathDiagnostics {
   const expected = Object.keys(input.autoValues).sort();
-  const returned = Object.keys(input.translated)
-    .filter((k) => typeof input.translated[k] === "string" && input.translated[k]!.trim())
+  const presentSet = new Set(
+    input.presentKeys ??
+      Object.keys(input.translated).filter(
+        (k) => typeof input.translated[k] === "string",
+      ),
+  );
+  const returned = expected
+    .filter(
+      (k) =>
+        presentSet.has(k) &&
+        typeof input.translated[k] === "string" &&
+        input.translated[k]!.trim().length > 0,
+    )
     .sort();
   const expectedSet = new Set(expected);
   const returnedSet = new Set(returned);
-  const missing = expected.filter((p) => !returnedSet.has(p));
-  const unexpected = (input.allReturnedKeys ?? returned).filter(
-    (p) => !expectedSet.has(p),
-  );
-  const brandStates: BrandTokenPathTransportReport[] = [];
-  for (const path of expected) {
-    const source = input.autoValues[path] ?? "";
-    const translated = input.translated[path] ?? "";
-    const report = classifyBrandTokenPathTransport({
+  const missing = expected.filter((p) => !presentSet.has(p));
+  const unexpected = (input.allReturnedKeys ?? [...presentSet])
+    .filter((p) => !expectedSet.has(p))
+    .sort();
+
+  const locale = input.locale ?? "uk";
+  const newsStates = expected.map((path) =>
+    classifyNewsPathForensics({
       path,
-      canonicalSource: source,
-      restoredTranslated: translated,
-    });
-    if (report) {
-      brandStates.push(report);
-    }
-  }
+      canonicalSource: input.autoValues[path] ?? "",
+      returnedValue: presentSet.has(path)
+        ? (input.translated[path] ?? "")
+        : undefined,
+      locale,
+      mappedToExpectedPath: presentSet.has(path),
+    }),
+  );
+
+  const brandStates =
+    input.brandStates ??
+    expected
+      .map((path) => {
+        const source = input.autoValues[path] ?? "";
+        if (!templateHasBrandSiteNameToken(source)) {
+          return null;
+        }
+        const protectedText = protectBrandTokensForMachineTranslation(source);
+        const restored = input.translated[path] ?? "";
+        return classifyBrandPathForensics({
+          path,
+          canonicalSource: source,
+          protectedBeforeSerialize: protectedText,
+          rawAfterParse: restored ? protectBrandTokensForMachineTranslation(restored) : null,
+          afterFlatten: restored ? protectBrandTokensForMachineTranslation(restored) : null,
+          afterRestore: restored || null,
+          pathPresentInProviderObject: path in input.translated,
+        });
+      })
+      .filter((r): r is BrandPathForensicReport => r != null);
+
+  const subreason = deriveProviderPartialSubreason({
+    pathStates: newsStates,
+    missingPaths: missing,
+    unexpectedPaths: unexpected,
+  });
+
   return {
     EXPECTED_MACHINE_PATHS: expected,
     RETURNED_MACHINE_PATHS: returned,
     MISSING_MACHINE_PATHS: missing,
     UNEXPECTED_MACHINE_PATHS: [...new Set(unexpected)].sort(),
     BRAND_TOKEN_PATH_STATES: brandStates,
+    NEWS_PATH_STATES: newsStates,
+    PROVIDER_PARTIAL_SUBREASON:
+      missing.length > 0 ||
+      newsStates.some((s) => !s.NON_EMPTY || !s.TARGET_LANGUAGE_ACCEPTED)
+        ? subreason
+        : null,
+    PROVIDER_RESPONSE_SHAPE: input.shape ?? "OBJECT",
   };
 }
 
@@ -130,6 +227,9 @@ export function validateMediaPlpProviderLocalizationValues(input: {
   readonly locale: LanguageCode;
   readonly autoValues: Readonly<Record<string, string>>;
   readonly translated: Readonly<Record<string, string>>;
+  readonly presentKeys?: readonly string[];
+  readonly brandStates?: readonly BrandPathForensicReport[];
+  readonly shape?: ProviderResponseShape;
 }):
   | { readonly ok: true; readonly pathDiagnostics: ProviderMachinePathDiagnostics }
   | {
@@ -145,14 +245,42 @@ export function validateMediaPlpProviderLocalizationValues(input: {
   const pathDiagnostics = buildProviderMachinePathDiagnostics({
     autoValues: input.autoValues,
     translated: input.translated,
+    presentKeys: input.presentKeys,
+    locale: input.locale,
+    brandStates: input.brandStates,
+    shape: input.shape,
   });
 
   if (pathDiagnostics.MISSING_MACHINE_PATHS.length > 0) {
     return {
       ok: false,
       reason: "PARTIAL",
-      message: `Provider localization missing AUTO paths: ${pathDiagnostics.MISSING_MACHINE_PATHS.join(", ")}`,
-      pathDiagnostics,
+      message: `PARTIAL:MISSING_PATH;${formatProviderForensicsSafe({
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "MISSING_PATH",
+      } satisfies ProviderBoundaryForensics)}`,
+      pathDiagnostics: {
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "MISSING_PATH",
+      },
+    };
+  }
+
+  const emptyPaths = pathDiagnostics.NEWS_PATH_STATES.filter(
+    (s) => s.PATH_PRESENT && !s.NON_EMPTY,
+  );
+  if (emptyPaths.length > 0) {
+    return {
+      ok: false,
+      reason: "PARTIAL",
+      message: `PARTIAL:EMPTY_VALUE;${formatProviderForensicsSafe({
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "EMPTY_VALUE",
+      } satisfies ProviderBoundaryForensics)}`,
+      pathDiagnostics: {
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "EMPTY_VALUE",
+      },
     };
   }
 
@@ -160,17 +288,18 @@ export function validateMediaPlpProviderLocalizationValues(input: {
     (row) => row.TOKEN_STATE !== "PRESERVED",
   );
   if (brandLoss.length > 0) {
+    const forensics: ProviderBoundaryForensics = {
+      ...pathDiagnostics,
+      PROVIDER_PARTIAL_SUBREASON: null,
+    };
     return {
       ok: false,
       reason: "BRAND_TOKEN_PRESERVATION_FAILED",
-      message: `Provider removed/altered Brand {siteName} tokens on paths: ${brandLoss
-        .map((r) => `${r.SEMANTIC_PATH}:${r.TOKEN_STATE}`)
-        .join(", ")}; refusing PARTIAL publish.`,
+      message: `BRAND_TOKEN_PRESERVATION_FAILED;${formatProviderForensicsSafe(forensics)}`,
       pathDiagnostics,
     };
   }
 
-  // Defensive: also catch missing tokens via template helper (count edge cases).
   for (const key of Object.keys(input.autoValues)) {
     const source = input.autoValues[key]!;
     const translated = input.translated[key]!;
@@ -178,10 +307,14 @@ export function validateMediaPlpProviderLocalizationValues(input: {
       templateHasBrandSiteNameToken(source) &&
       !templateHasBrandSiteNameToken(translated)
     ) {
+      const forensics: ProviderBoundaryForensics = {
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: null,
+      };
       return {
         ok: false,
         reason: "BRAND_TOKEN_PRESERVATION_FAILED",
-        message: `Provider removed/altered Brand {siteName} tokens on paths: ${key}; refusing PARTIAL publish.`,
+        message: `BRAND_TOKEN_PRESERVATION_FAILED;${formatProviderForensicsSafe(forensics)}`,
         pathDiagnostics,
       };
     }
@@ -207,19 +340,33 @@ export function validateMediaPlpProviderLocalizationValues(input: {
       (k) => k !== "id" && !k.endsWith(".id"),
     );
     if (anyProsePath && identical.length === proseKeys.length) {
+      const forensics: ProviderBoundaryForensics = {
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "WRONG_TARGET_LANGUAGE",
+      };
       return {
         ok: false,
         reason: "WRONG_TARGET_LANGUAGE",
-        message: `Provider returned source-identical values for every translatable path (locale=${input.locale}); refusing publish.`,
-        pathDiagnostics,
+        message: `PARTIAL:WRONG_TARGET_LANGUAGE;${formatProviderForensicsSafe(forensics)}`,
+        pathDiagnostics: {
+          ...pathDiagnostics,
+          PROVIDER_PARTIAL_SUBREASON: "WRONG_TARGET_LANGUAGE",
+        },
       };
     }
     if (identical.length > 0) {
+      const forensics: ProviderBoundaryForensics = {
+        ...pathDiagnostics,
+        PROVIDER_PARTIAL_SUBREASON: "CONTENT_INTEGRITY_FAILURE",
+      };
       return {
         ok: false,
         reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
-        message: `Provider left ${identical.length} translatable path(s) canonical-identical (e.g. ${identical.slice(0, 3).join(", ")}); refusing publish.`,
-        pathDiagnostics,
+        message: `CONTENT_INTEGRITY_FAILURE;${formatProviderForensicsSafe(forensics)}`,
+        pathDiagnostics: {
+          ...pathDiagnostics,
+          PROVIDER_PARTIAL_SUBREASON: "CONTENT_INTEGRITY_FAILURE",
+        },
       };
     }
   }
@@ -233,7 +380,8 @@ export function flattenStructuredLocalizationValues(
   out: Record<string, string>,
 ): void {
   if (typeof node === "string") {
-    if (prefix && node.trim()) {
+    // Preserve empty strings so EMPTY_VALUE forensics can distinguish from MISSING_PATH.
+    if (prefix) {
       out[prefix] = node;
     }
     return;
@@ -256,35 +404,43 @@ export function flattenStructuredLocalizationValues(
   }
 }
 
+/** @deprecated Prefer formatProviderForensicsSafe — kept for callers. */
 export function formatProviderPathDiagnosticsSafe(
   diagnostics: ProviderMachinePathDiagnostics | undefined,
 ): string {
   if (!diagnostics) {
     return "";
   }
-  const parts: string[] = [];
-  if (diagnostics.MISSING_MACHINE_PATHS.length > 0) {
-    parts.push(
-      `MISSING_MACHINE_PATHS=${diagnostics.MISSING_MACHINE_PATHS.slice(0, 24).join("|")}`,
-    );
-  }
-  if (diagnostics.EXPECTED_MACHINE_PATHS.length > 0) {
-    parts.push(
-      `EXPECTED_MACHINE_PATHS=${diagnostics.EXPECTED_MACHINE_PATHS.slice(0, 24).join("|")}`,
-    );
-  }
-  const brandFail = diagnostics.BRAND_TOKEN_PATH_STATES.filter(
-    (r) => r.TOKEN_STATE !== "PRESERVED",
-  );
-  if (brandFail.length > 0) {
-    parts.push(
-      `BRAND_TOKEN_PATHS=${brandFail
-        .slice(0, 16)
-        .map((r) => `${r.SEMANTIC_PATH}:${r.TOKEN_STATE}`)
-        .join("|")}`,
-    );
-  }
-  return parts.length > 0 ? `;${parts.join(";")}` : "";
+  return formatProviderForensicsSafe({
+    PROVIDER_RESPONSE_SHAPE: diagnostics.PROVIDER_RESPONSE_SHAPE,
+    BRAND_TOKEN_PATH_STATES: diagnostics.BRAND_TOKEN_PATH_STATES,
+    NEWS_PATH_STATES: diagnostics.NEWS_PATH_STATES,
+    PROVIDER_PARTIAL_SUBREASON: diagnostics.PROVIDER_PARTIAL_SUBREASON,
+    EXPECTED_MACHINE_PATHS: diagnostics.EXPECTED_MACHINE_PATHS,
+    RETURNED_MACHINE_PATHS: diagnostics.RETURNED_MACHINE_PATHS,
+    MISSING_MACHINE_PATHS: diagnostics.MISSING_MACHINE_PATHS,
+    UNEXPECTED_MACHINE_PATHS: diagnostics.UNEXPECTED_MACHINE_PATHS,
+  });
+}
+
+function failResult(input: {
+  readonly reason: ProviderBoundaryFailureReason;
+  readonly bytes: number;
+  readonly transport: string;
+  readonly forensics: ProviderBoundaryForensics;
+  readonly messagePrefix?: string;
+}): ProviderBoundaryResult {
+  const encoded = formatProviderForensicsSafe(input.forensics);
+  return {
+    ok: false,
+    reason: input.reason,
+    PROVIDER_INPUT_BYTES: input.bytes,
+    message: `${input.messagePrefix ?? input.reason};${encoded}`,
+    PROVIDER_EXECUTION_BOUNDARY: MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY,
+    PROVIDER_TRANSPORT: input.transport,
+    pathDiagnostics: toPathDiagnostics(input.forensics),
+    forensics: input.forensics,
+  };
 }
 
 export async function callMediaPlpMaterializerProviderOnce(input: {
@@ -298,16 +454,16 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 }): Promise<ProviderBoundaryResult> {
   const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
   const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
+  const expectedPaths = Object.keys(input.autoValues).sort();
   const counters = getMediaPlpMaterializerCounters();
   if (counters.PROVIDER_CALL_COUNT >= 1) {
-    return {
-      ok: false,
+    return failResult({
       reason: "PROVIDER_CALL_CAP",
-      PROVIDER_INPUT_BYTES: 0,
-      message: "Hard fail: PROVIDER_CALL_COUNT would exceed 1.",
-      PROVIDER_EXECUTION_BOUNDARY: boundary,
-      PROVIDER_TRANSPORT: transport,
-    };
+      bytes: 0,
+      transport,
+      forensics: emptyForensics({ expectedPaths }),
+      messagePrefix: "PROVIDER_CALL_CAP",
+    });
   }
 
   const protectedAutoValues: Record<string, string> = {};
@@ -319,26 +475,24 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   const bytes = Buffer.byteLength(payload, "utf8");
   const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
   if (bytes > maxBytes) {
-    return {
-      ok: false,
+    return failResult({
       reason: "PAYLOAD_LIMIT",
-      PROVIDER_INPUT_BYTES: bytes,
-      message: `Provider input ${bytes} bytes exceeds limit ${maxBytes}.`,
-      PROVIDER_EXECUTION_BOUNDARY: boundary,
-      PROVIDER_TRANSPORT: transport,
-    };
+      bytes,
+      transport,
+      forensics: emptyForensics({ expectedPaths }),
+      messagePrefix: "PAYLOAD_LIMIT",
+    });
   }
 
   markMaterializerProviderCall();
   if (getMediaPlpMaterializerCounters().PROVIDER_CALL_COUNT > 1) {
-    return {
-      ok: false,
+    return failResult({
       reason: "PROVIDER_CALL_CAP",
-      PROVIDER_INPUT_BYTES: bytes,
-      message: "Hard fail: PROVIDER_CALL_COUNT exceeded 1.",
-      PROVIDER_EXECUTION_BOUNDARY: boundary,
-      PROVIDER_TRANSPORT: transport,
-    };
+      bytes,
+      transport,
+      forensics: emptyForensics({ expectedPaths }),
+      messagePrefix: "PROVIDER_CALL_CAP",
+    });
   }
 
   try {
@@ -355,72 +509,182 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     try {
       parsed = JSON.parse(result.translatedText);
     } catch {
-      return {
-        ok: false,
-        reason: "PARSE_FAILURE",
-        PROVIDER_INPUT_BYTES: bytes,
-        message: "Provider returned non-JSON structured payload.",
-        PROVIDER_EXECUTION_BOUNDARY: boundary,
-        PROVIDER_TRANSPORT: transport,
-        pathDiagnostics: buildProviderMachinePathDiagnostics({
-          autoValues: input.autoValues,
-          translated: {},
-        }),
+      const forensics: ProviderBoundaryForensics = {
+        ...emptyForensics({ expectedPaths, shape: "INVALID" }),
+        PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
       };
-    }
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {
-        ok: false,
+      return failResult({
         reason: "PARSE_FAILURE",
-        PROVIDER_INPUT_BYTES: bytes,
-        message: "Provider returned unexpected structured shape.",
-        PROVIDER_EXECUTION_BOUNDARY: boundary,
-        PROVIDER_TRANSPORT: transport,
-        pathDiagnostics: buildProviderMachinePathDiagnostics({
-          autoValues: input.autoValues,
-          translated: {},
-        }),
-      };
+        bytes,
+        transport,
+        forensics,
+        messagePrefix: "PARSE_FAILURE",
+      });
     }
-    const values: Record<string, string> = {};
-    flattenStructuredLocalizationValues(parsed, "", values);
-    for (const [key, value] of Object.entries(values)) {
-      values[key] = restoreBrandTokensAfterMachineTranslation(value);
+
+    const shape = classifyProviderResponseShape(parsed);
+    if (shape !== "OBJECT") {
+      const forensics: ProviderBoundaryForensics = {
+        ...emptyForensics({ expectedPaths, shape }),
+        PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
+      };
+      return failResult({
+        reason: "PARSE_FAILURE",
+        bytes,
+        transport,
+        forensics,
+        messagePrefix: "PARSE_FAILURE",
+      });
+    }
+
+    const flattenedBeforeRestore: Record<string, string> = {};
+    flattenStructuredLocalizationValues(parsed, "", flattenedBeforeRestore);
+
+    const restored: Record<string, string> = {};
+    for (const [key, value] of Object.entries(flattenedBeforeRestore)) {
+      restored[key] = restoreBrandTokensAfterMachineTranslation(value);
     }
 
     const aligned: Record<string, string> = {};
-    for (const key of Object.keys(input.autoValues)) {
-      const direct = values[key];
-      if (typeof direct === "string" && direct.trim()) {
-        aligned[key] = direct;
+    for (const key of expectedPaths) {
+      if (Object.prototype.hasOwnProperty.call(restored, key)) {
+        aligned[key] = restored[key]!;
       }
     }
+
+    const brandStates: BrandPathForensicReport[] = [];
+    for (const path of expectedPaths) {
+      const source = input.autoValues[path] ?? "";
+      if (!templateHasBrandSiteNameToken(source)) {
+        continue;
+      }
+      const protectedText = protectedAutoValues[path] ?? "";
+      const rawAtPath = readParsedStringAtPath(parsed, path);
+      const flatVal = Object.prototype.hasOwnProperty.call(
+        flattenedBeforeRestore,
+        path,
+      )
+        ? flattenedBeforeRestore[path]!
+        : null;
+      // Nested provider objects may omit flat keys; flatten recovers the path.
+      const parseStageValue = rawAtPath ?? flatVal;
+      const restoredVal = Object.prototype.hasOwnProperty.call(restored, path)
+        ? restored[path]!
+        : null;
+      const pathPresent = parseStageValue != null;
+      const report = classifyBrandPathForensics({
+        path,
+        canonicalSource: source,
+        protectedBeforeSerialize: protectedText,
+        rawAfterParse: parseStageValue,
+        afterFlatten: flatVal,
+        afterRestore: restoredVal,
+        pathPresentInProviderObject: pathPresent,
+      });
+      if (report) {
+        brandStates.push(report);
+      }
+    }
+
+    const presentKeys = Object.keys(aligned);
+    const newsStates = expectedPaths.map((path) =>
+      classifyNewsPathForensics({
+        path,
+        canonicalSource: input.autoValues[path] ?? "",
+        returnedValue: Object.prototype.hasOwnProperty.call(aligned, path)
+          ? aligned[path]
+          : undefined,
+        locale: input.locale,
+        mappedToExpectedPath: Object.prototype.hasOwnProperty.call(
+          flattenedBeforeRestore,
+          path,
+        ),
+      }),
+    );
+
+    const missing = expectedPaths.filter((p) => !presentKeys.includes(p));
+    const returnedNonEmpty = presentKeys.filter((k) => aligned[k]!.trim());
+    const unexpected = Object.keys(flattenedBeforeRestore).filter(
+      (p) => !expectedPaths.includes(p),
+    );
+
+    const forensicsBase: ProviderBoundaryForensics = {
+      PROVIDER_RESPONSE_SHAPE: shape,
+      BRAND_TOKEN_PATH_STATES: brandStates,
+      NEWS_PATH_STATES: newsStates,
+      PROVIDER_PARTIAL_SUBREASON: null,
+      EXPECTED_MACHINE_PATHS: expectedPaths,
+      RETURNED_MACHINE_PATHS: returnedNonEmpty.sort(),
+      MISSING_MACHINE_PATHS: missing,
+      UNEXPECTED_MACHINE_PATHS: [...new Set(unexpected)].sort(),
+    };
 
     const validated = validateMediaPlpProviderLocalizationValues({
       locale: input.locale,
       autoValues: input.autoValues,
       translated: aligned,
+      presentKeys,
+      brandStates,
+      shape,
     });
+
     if (!validated.ok) {
+      const sub =
+        validated.pathDiagnostics.PROVIDER_PARTIAL_SUBREASON ??
+        (validated.reason === "PARTIAL"
+          ? deriveProviderPartialSubreason({
+              pathStates: newsStates,
+              missingPaths: missing,
+              unexpectedPaths: unexpected,
+            })
+          : validated.reason === "WRONG_TARGET_LANGUAGE"
+            ? "WRONG_TARGET_LANGUAGE"
+            : validated.reason === "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
+              ? "CONTENT_INTEGRITY_FAILURE"
+              : null);
+      const forensics: ProviderBoundaryForensics = {
+        ...forensicsBase,
+        BRAND_TOKEN_PATH_STATES:
+          validated.pathDiagnostics.BRAND_TOKEN_PATH_STATES.length > 0
+            ? validated.pathDiagnostics.BRAND_TOKEN_PATH_STATES
+            : brandStates,
+        NEWS_PATH_STATES: validated.pathDiagnostics.NEWS_PATH_STATES,
+        PROVIDER_PARTIAL_SUBREASON: sub,
+        MISSING_MACHINE_PATHS: validated.pathDiagnostics.MISSING_MACHINE_PATHS,
+        RETURNED_MACHINE_PATHS: validated.pathDiagnostics.RETURNED_MACHINE_PATHS,
+      };
       return {
         ok: false,
         reason: validated.reason,
         PROVIDER_INPUT_BYTES: bytes,
-        message: `${validated.message}${formatProviderPathDiagnosticsSafe(validated.pathDiagnostics)}`,
+        message: formatProviderForensicsSafe(forensics)
+          ? `${validated.reason};${formatProviderForensicsSafe(forensics)}`
+          : validated.message,
         PROVIDER_EXECUTION_BOUNDARY: boundary,
         PROVIDER_TRANSPORT: transport,
-        pathDiagnostics: validated.pathDiagnostics,
+        pathDiagnostics: toPathDiagnostics(forensics),
+        forensics,
       };
     }
 
     return {
       ok: true,
-      values: aligned,
+      values: Object.fromEntries(
+        Object.entries(aligned).filter(([, v]) => v.trim().length > 0),
+      ),
       PROVIDER_INPUT_BYTES: bytes,
       providerId: result.providerId,
       PROVIDER_EXECUTION_BOUNDARY: boundary,
       PROVIDER_TRANSPORT: transport,
       pathDiagnostics: validated.pathDiagnostics,
+      forensics: {
+        ...forensicsBase,
+        BRAND_TOKEN_PATH_STATES: validated.pathDiagnostics.BRAND_TOKEN_PATH_STATES,
+        NEWS_PATH_STATES: validated.pathDiagnostics.NEWS_PATH_STATES,
+        PROVIDER_PARTIAL_SUBREASON: null,
+        MISSING_MACHINE_PATHS: [],
+        RETURNED_MACHINE_PATHS: validated.pathDiagnostics.RETURNED_MACHINE_PATHS,
+      },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "provider failure";
@@ -430,13 +694,12 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           ? (error as { code?: string }).code === "timeout"
           : false)) ||
       /timed out/i.test(message);
-    return {
-      ok: false,
+    return failResult({
       reason: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
-      PROVIDER_INPUT_BYTES: bytes,
-      message,
-      PROVIDER_EXECUTION_BOUNDARY: boundary,
-      PROVIDER_TRANSPORT: transport,
-    };
+      bytes,
+      transport,
+      forensics: emptyForensics({ expectedPaths }),
+      messagePrefix: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
+    });
   }
 }

@@ -1,8 +1,14 @@
 /**
- * RESET 05C.3 — structured PLP auto-build failure contract.
+ * RESET 05C.3 / 05D.5 — structured PLP auto-build failure contract.
  *
  * safeReason never includes bodies, prompts, secrets, URIs, or private data.
+ * RESET 05D.5 — forensics-first encoding; generic PARTIAL is not retryable.
  */
+
+import {
+  isProviderPartialSubtypeRetryable,
+  type ProviderPartialSubreason,
+} from "../../media-plp-materializer/provider-boundary-forensics.js";
 
 export type PlpAutoBuildFailureCode =
   | "PROCESSOR_DORMANT"
@@ -45,17 +51,55 @@ export type ProcessPlpBuildRequestResult =
       readonly failure: PlpAutoBuildStructuredFailure;
     };
 
-/** Safe reason codes only — strip URLs, payloads, long blobs. */
+const FORENSIC_KEYS = [
+  "PROVIDER_PARTIAL_SUBREASON",
+  "PROVIDER_RESPONSE_SHAPE",
+  "BRAND_TOKEN_PATHS",
+  "PATH_STATES",
+  "MISSING_MACHINE_PATHS",
+  "EXPECTED_MACHINE_PATHS",
+  "UNEXPECTED_MACHINE_PATHS",
+] as const;
+
+/**
+ * Safe reason codes only — strip URLs, payloads, long blobs.
+ * RESET 05D.5 — preserve structured forensic key=value segments; truncate prose.
+ */
 export function sanitizePlpAutoBuildFailureReason(reason: string): string {
-  const trimmed = reason.trim().slice(0, 800);
-  return (
-    trimmed
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return "UNKNOWN";
+  }
+
+  const segments = trimmed.split(";").map((s) => s.trim()).filter(Boolean);
+  const forensic: string[] = [];
+  const other: string[] = [];
+  for (const seg of segments) {
+    const key = seg.split("=")[0] ?? "";
+    const isForensic =
+      FORENSIC_KEYS.includes(key as (typeof FORENSIC_KEYS)[number]) ||
+      /^(PROVIDER_PARTIAL|PROVIDER_INTEGRITY|PROVIDER_FAILURE|PROVIDER_TIMEOUT|PROVIDER_PAYLOAD|PROVIDER_CAP|PARTIAL|PARSE_FAILURE|BRAND_TOKEN_PRESERVATION_FAILED|CONTENT_INTEGRITY_FAILURE|WRONG_TARGET_LANGUAGE|TIMEOUT|PAYLOAD_LIMIT)(:|$)/.test(
+        seg,
+      );
+    if (isForensic) {
+      forensic.push(seg);
+    } else {
+      other.push(seg);
+    }
+  }
+
+  const scrub = (value: string) =>
+    value
       .replace(/mongodb(\+srv)?:\/\/[^\s"']+/gi, "[redacted]")
       .replace(/https?:\/\/[^\s"']+/gi, "[redacted-url]")
-      .replace(/[A-Za-z0-9+/_-]{40,}/g, "[redacted]")
+      // Do not redact forensic path inventories (may contain long joined tokens).
       .replace(/\s+/g, " ")
-      .slice(0, 600) || "UNKNOWN"
-  );
+      .trim();
+
+  const forensicBlock = scrub(forensic.join(";")).slice(0, 700);
+  const proseBlock = scrub(other.join(";")).slice(0, 120);
+  const combined = [forensicBlock, proseBlock].filter(Boolean).join(";");
+  return combined.slice(0, 800) || "UNKNOWN";
 }
 
 export function structuredFailure(input: {
@@ -72,63 +116,122 @@ export function structuredFailure(input: {
   };
 }
 
+function extractForensicBlock(message: string): string {
+  const segments = message.split(";").map((s) => s.trim()).filter(Boolean);
+  return segments
+    .filter((seg) => {
+      const key = seg.split("=")[0] ?? "";
+      return (
+        FORENSIC_KEYS.includes(key as (typeof FORENSIC_KEYS)[number]) ||
+        /^(PROVIDER_PARTIAL_SUBREASON|BRAND_TOKEN_PATHS|PATH_STATES)=/.test(seg)
+      );
+    })
+    .join(";");
+}
+
+function extractPartialSubreason(
+  message: string,
+): ProviderPartialSubreason | null {
+  const fromKey = message.match(
+    /PROVIDER_PARTIAL_SUBREASON=([A-Z_]+)/,
+  )?.[1] as ProviderPartialSubreason | undefined;
+  if (fromKey) {
+    return fromKey;
+  }
+  if (/MISSING_PATH/.test(message)) return "MISSING_PATH";
+  if (/EMPTY_VALUE/.test(message)) return "EMPTY_VALUE";
+  if (/WRONG_TARGET_LANGUAGE/.test(message)) return "WRONG_TARGET_LANGUAGE";
+  if (/PATH_MAPPING_FAILURE/.test(message)) return "PATH_MAPPING_FAILURE";
+  if (/PARSE_FAILURE/.test(message)) return "PARSE_FAILURE";
+  if (/CONTENT_INTEGRITY/.test(message)) return "CONTENT_INTEGRITY_FAILURE";
+  return null;
+}
+
 export function mapProviderBoundaryReasonToFailure(input: {
   readonly reason: string;
   readonly message: string;
 }): PlpAutoBuildStructuredFailure {
   const reason = input.reason.toUpperCase();
-  const msg = sanitizePlpAutoBuildFailureReason(input.message);
+  const msg = input.message.trim();
+  const forensics = extractForensicBlock(msg);
+
   if (reason === "TIMEOUT") {
     return structuredFailure({
       failureCode: "PROVIDER_TIMEOUT",
       retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_TIMEOUT:${msg}`,
+      safeReason: forensics
+        ? `PROVIDER_TIMEOUT;${forensics}`
+        : "PROVIDER_TIMEOUT",
     });
   }
-  // Malformed / incomplete provider payload — may succeed on another attempt.
+
   if (reason === "PARTIAL") {
+    const sub =
+      extractPartialSubreason(msg) ?? ("OTHER_STRUCTURAL_FAILURE" as const);
     return structuredFailure({
       failureCode: "PROVIDER_PARTIAL",
-      retryable: true,
+      retryable: isProviderPartialSubtypeRetryable(sub),
       stage: "provider",
-      safeReason: `PROVIDER_PARTIAL:PARTIAL${msg ? `;${msg}` : ""}`,
+      safeReason: [
+        `PROVIDER_PARTIAL:${sub}`,
+        `PROVIDER_PARTIAL_SUBREASON=${sub}`,
+        forensics,
+      ]
+        .filter(Boolean)
+        .join(";"),
     });
   }
+
   if (reason === "PARSE_FAILURE") {
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
       retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_FAILURE:PARSE_FAILURE`,
+      safeReason: forensics
+        ? `PROVIDER_FAILURE:PARSE_FAILURE;PROVIDER_PARTIAL_SUBREASON=PARSE_FAILURE;${forensics}`
+        : "PROVIDER_FAILURE:PARSE_FAILURE;PROVIDER_PARTIAL_SUBREASON=PARSE_FAILURE",
     });
   }
-  // Provider left everything in source language — often transient model failure.
+
   if (reason === "WRONG_TARGET_LANGUAGE") {
     return structuredFailure({
       failureCode: "PROVIDER_PARTIAL",
       retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_PARTIAL:WRONG_TARGET_LANGUAGE`,
+      safeReason: [
+        "PROVIDER_PARTIAL:WRONG_TARGET_LANGUAGE",
+        "PROVIDER_PARTIAL_SUBREASON=WRONG_TARGET_LANGUAGE",
+        forensics,
+      ]
+        .filter(Boolean)
+        .join(";"),
     });
   }
-  // Deterministic content integrity / Brand contract violations — terminal.
+
   if (reason === "LOCALIZATION_CONTENT_INTEGRITY_FAILED") {
     return structuredFailure({
       failureCode: "PROVIDER_INTEGRITY",
       retryable: false,
       stage: "provider",
-      safeReason: "PROVIDER_INTEGRITY:LOCALIZATION_CONTENT_INTEGRITY_FAILED",
+      safeReason: forensics
+        ? `PROVIDER_INTEGRITY:CONTENT_INTEGRITY_FAILURE;${forensics}`
+        : "PROVIDER_INTEGRITY:LOCALIZATION_CONTENT_INTEGRITY_FAILED",
     });
   }
+
   if (reason === "BRAND_TOKEN_PRESERVATION_FAILED") {
+    // Must always retain at least one concrete path when forensics present.
     return structuredFailure({
       failureCode: "PROVIDER_INTEGRITY",
       retryable: false,
       stage: "provider",
-      safeReason: `PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED${msg ? `;${msg}` : ""}`,
+      safeReason: forensics
+        ? `PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED;${forensics}`
+        : "PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED;BRAND_TOKEN_PATHS=UNKNOWN:UNMAPPABLE",
     });
   }
+
   if (reason === "PAYLOAD_LIMIT") {
     return structuredFailure({
       failureCode: "PROVIDER_PAYLOAD",
@@ -137,6 +240,7 @@ export function mapProviderBoundaryReasonToFailure(input: {
       safeReason: "PROVIDER_PAYLOAD:PAYLOAD_LIMIT",
     });
   }
+
   if (reason === "PROVIDER_CALL_CAP") {
     return structuredFailure({
       failureCode: "PROVIDER_CAP",
@@ -145,19 +249,23 @@ export function mapProviderBoundaryReasonToFailure(input: {
       safeReason: "PROVIDER_CAP:PROVIDER_CALL_CAP",
     });
   }
+
   if (reason === "PROVIDER_FAILURE") {
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
       retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_FAILURE:PROVIDER_FAILURE`,
+      safeReason: forensics
+        ? `PROVIDER_FAILURE;${forensics}`
+        : "PROVIDER_FAILURE:PROVIDER_FAILURE",
     });
   }
+
   return structuredFailure({
     failureCode: "PROVIDER_FAILURE",
-    retryable: true,
+    retryable: false,
     stage: "provider",
-    safeReason: `PROVIDER_FAILURE:${msg || reason}`,
+    safeReason: `PROVIDER_FAILURE:UNKNOWN;${forensics || reason}`,
   });
 }
 

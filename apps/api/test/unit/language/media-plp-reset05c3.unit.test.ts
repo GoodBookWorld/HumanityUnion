@@ -308,7 +308,7 @@ describe("RESET 05C.3 — structured failure truth", () => {
     assert.equal(claimed, null);
   });
 
-  it("11: successful build preserves last failure forensic fields", async () => {
+  it("11: successful build clears current failure fields (05D.4+)", async () => {
     const article = makeNews(11);
     await upsertPublicNewsRecords([article]);
     const version = fingerprint(article);
@@ -361,9 +361,9 @@ describe("RESET 05C.3 — structured failure truth", () => {
     );
     assert.equal(work?.status, "completed");
     assert.equal(work?.canonicalVersion, version);
-    assert.equal(work?.failureCode, "PROVIDER_TIMEOUT");
-    assert.equal(work?.failureStage, "provider");
-    assert.ok(work?.lastFailureAt);
+    assert.equal(work?.failureCode, null);
+    assert.equal(work?.failureStage, null);
+    assert.equal(work?.lastError, null);
   });
 
   it("12: read path / resolve modules never import provider", async () => {

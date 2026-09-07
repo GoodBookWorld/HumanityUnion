@@ -56,6 +56,11 @@ export {
   flattenStructuredLocalizationValues,
   buildProviderMachinePathDiagnostics,
   formatProviderPathDiagnosticsSafe,
+  formatProviderForensicsSafe,
+  classifyBrandPathForensics,
+  classifyNewsPathForensics,
+  deriveProviderPartialSubreason,
+  isProviderPartialSubtypeRetryable,
 } from "./provider-boundary.js";
 export {
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,

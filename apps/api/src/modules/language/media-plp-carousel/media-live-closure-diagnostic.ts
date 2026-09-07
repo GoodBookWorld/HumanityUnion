@@ -158,6 +158,8 @@ export type MediaLiveClosureReport = {
     readonly EXPECTED_MACHINE_PATHS: readonly string[];
     readonly MISSING_MACHINE_PATHS: readonly string[];
     readonly FAILURE_RETRYABLE: boolean | null;
+    readonly PROVIDER_PARTIAL_SUBREASON: string | null;
+    readonly PATH_STATES: readonly string[];
   }[];
   readonly leaves: readonly MediaLiveClosureLeaf[];
 };
@@ -211,6 +213,24 @@ function parsePathListFromFailureReason(
     }
   }
   return [];
+}
+
+function parseLabeledValueFromFailureReason(
+  reason: string | null | undefined,
+  label: string,
+): string | null {
+  if (!reason) {
+    return null;
+  }
+  const marker = `${label}=`;
+  const idx = reason.indexOf(marker);
+  if (idx < 0) {
+    return null;
+  }
+  const rest = reason.slice(idx + marker.length);
+  const semi = rest.indexOf(";");
+  const raw = (semi >= 0 ? rest.slice(0, semi) : rest).trim();
+  return raw || null;
 }
 
 function readPresentationString(
@@ -338,6 +358,15 @@ export async function executeMediaLiveClosureReads(input: {
       newsWork?.lastError,
       "MISSING_MACHINE_PATHS",
     );
+    const partialSubreason =
+      newsWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            newsWork?.lastError,
+            "PROVIDER_PARTIAL_SUBREASON",
+          ) ??
+          newsWork?.lastError?.match(/PROVIDER_PARTIAL:([A-Z_]+)/)?.[1] ??
+          null;
     mediaRssRows.push({
       entityId,
       canonicalVersion,
@@ -361,6 +390,11 @@ export async function executeMediaLiveClosureReads(input: {
       MISSING_MACHINE_PATHS: missingFromFailure,
       FAILURE_RETRYABLE:
         newsWork?.status === "completed" ? null : newsWork?.retryable ?? null,
+      PROVIDER_PARTIAL_SUBREASON: partialSubreason,
+      PATH_STATES: parsePathListFromFailureReason(
+        newsWork?.lastError,
+        "PATH_STATES",
+      ),
     });
     leaves.push({
       surface: "media_rss",
