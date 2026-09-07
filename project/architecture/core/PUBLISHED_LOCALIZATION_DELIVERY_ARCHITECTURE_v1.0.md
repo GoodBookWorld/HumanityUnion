@@ -744,6 +744,6 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Authority | Rendered `MediaSemanticNode` leaves + stack-based unowned scan inside card surfaces |
 | Page status | `FULLY_LOCALIZED` / `PARTIALLY_LOCALIZED` / `CANONICAL_ONLY` / `INVALID_COVERAGE` from real leaves |
 | Fallback | Runtime availability unchanged; acceptance treats carousel `CANONICAL_FALLBACK` as not fully localized |
-| AUTO trees | `public_news` title/summary/category; fact-check mission/coverage; propaganda focus/explanation |
+| AUTO trees | `public_news` title/summary (category = controlled MediaRegistry vocab via UI dictionary); fact-check mission/coverage; propaganda focus/explanation |
 | Chips | Coverage chips are PLP `coverage` (machine-translatable civic content), not UI/terminology by default |
 | ACTIVE count | **30** — unchanged |

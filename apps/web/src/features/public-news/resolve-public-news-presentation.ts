@@ -93,7 +93,7 @@ export async function resolvePublicNewsLocalizedPresentation(
     targetLanguage,
     presentation,
     translations,
-    stalePaths: resolved.isStale ? (["title", "summary", "category"] as const) : undefined,
+    stalePaths: resolved.isStale ? (["title", "summary"] as const) : undefined,
     isMachineTranslated: resolved.presentationMode !== "original",
   });
 }

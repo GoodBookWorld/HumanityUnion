@@ -5205,6 +5205,20 @@
     },
     "errors": {
       "temporarilyUnavailable": "Новини тимчасово недоступні."
+    },
+    "categories": {
+      "democracy": "Демократія",
+      "publicParticipation": "Громадська участь",
+      "humanRights": "Права людини",
+      "publicHealth": "Громадське здоровʼя",
+      "education": "Освіта",
+      "climateResilience": "Кліматична стійкість",
+      "communityDevelopment": "Розвиток громад",
+      "peaceAndSecurity": "Мир і безпека",
+      "emergencyResponse": "Надзвичайне реагування",
+      "misinformationAndMediaLiteracy": "Дезінформація та медіаграмотність",
+      "socialJustice": "Соціальна справедливість",
+      "institutionalAccountability": "Інституційна підзвітність"
     }
   },
   "participantPublic": {

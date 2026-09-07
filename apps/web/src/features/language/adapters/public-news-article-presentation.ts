@@ -12,6 +12,7 @@
 import type { PublicNewsArticleItem } from "@hu/types";
 import {
   PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+  controlledTerminologyValue,
   protectedIdentity,
   protectedTechnical,
   unwrapPublicPresentationValue,
@@ -34,7 +35,8 @@ export type PublicNewsArticlePresentationTree = {
   readonly verificationStatus: PublicProtectedValue;
   readonly title: string;
   readonly summary: string;
-  readonly category: string;
+  /** MediaRegistryCategory key — CONTROLLED_VOCABULARY (not AUTO / Gemini). */
+  readonly category: PublicProtectedValue;
   readonly geographicScope: PublicProtectedValue;
   /**
    * Extension bag for future nested semantic fields.
@@ -57,7 +59,7 @@ export function buildPublicNewsArticlePresentation(
     verificationStatus: protectedTechnical(article.verificationStatus),
     title: article.title,
     summary: article.summary,
-    category: article.category ?? "",
+    category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
     ...(article.extensions ? { extensions: article.extensions } : {}),
   };
@@ -87,7 +89,10 @@ export function readPublicNewsPresentationCategory(
   presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
 ): string {
   const tree = presentation as PublicNewsArticlePresentationTree;
-  return typeof tree.category === "string" ? tree.category : "";
+  if (typeof tree.category === "string") {
+    return tree.category;
+  }
+  return unwrapPublicPresentationValue(tree.category) ?? "";
 }
 
 export function readPublicNewsProtectedSourceName(

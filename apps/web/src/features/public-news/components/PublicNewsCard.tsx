@@ -1,12 +1,17 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
+import {
+  isMediaRegistryCategory,
+  mediaRegistryCategoryMessageKey,
+} from "@hu/types";
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { MediaLogo } from "../../civic-media-center/components/MediaLogo";
 import {
   MediaSemanticNode,
+  type MediaSemanticOwner,
   type MediaSemanticResult,
 } from "../../language/media-plp/media-semantic-contract";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
@@ -98,6 +103,7 @@ export function PublicNewsCard({
 }: PublicNewsCardProps) {
   const locale = useLocale();
   const t = useTranslations("publicNews.card");
+  const tCategories = useTranslations("publicNews.categories");
   const view = useLocalizedPublicNewsCard(article, {
     skipClientTranslation: disableOnDemandTranslation || plpPresentation != null,
     plpPresentation,
@@ -114,6 +120,19 @@ export function PublicNewsCard({
       ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
       : undefined;
 
+  const categoryKey = view.category.trim();
+  let categoryLabel = categoryKey;
+  let categoryOwner: MediaSemanticOwner = "PROTECTED_CANONICAL";
+  let categoryResult: MediaSemanticResult = "PROTECTED_CANONICAL";
+  let categoryMessageKey: string | undefined;
+  if (categoryKey && isMediaRegistryCategory(categoryKey)) {
+    const messageKey = mediaRegistryCategoryMessageKey(categoryKey);
+    categoryLabel = tCategories(messageKey);
+    categoryOwner = "UI_DICTIONARY";
+    categoryResult = "LOCALIZED_DICTIONARY";
+    categoryMessageKey = `publicNews.categories.${messageKey}`;
+  }
+
   return (
     <article
       className="public-news-card"
@@ -123,18 +142,15 @@ export function PublicNewsCard({
       data-hu-fallback-nodes={String(view.coverage.canonicalFallbackNodeCount)}
     >
       <div className="public-news-card__header">
-        {view.category ? (
+        {categoryKey ? (
           <MediaSemanticNode
             as="span"
             className="public-news-card__badge"
-            owner="PLP_ENTITY"
-            result={entityResult}
-            entityType="public_news"
-            entityId={view.id}
-            semanticPath="category"
-            fallbackReason={fallbackReason}
+            owner={categoryOwner}
+            result={categoryResult}
+            messageKey={categoryMessageKey}
           >
-            {view.category}
+            {categoryLabel}
           </MediaSemanticNode>
         ) : null}
         <div className="public-news-card__provider">

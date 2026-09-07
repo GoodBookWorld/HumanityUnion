@@ -5205,6 +5205,20 @@
     },
     "errors": {
       "temporarilyUnavailable": "الأخبار غير متاحة مؤقتًا."
+    },
+    "categories": {
+      "democracy": "الديمقراطية",
+      "publicParticipation": "المشاركة العامة",
+      "humanRights": "حقوق الإنسان",
+      "publicHealth": "الصحة العامة",
+      "education": "التعليم",
+      "climateResilience": "القدرة على مواجهة تغير المناخ",
+      "communityDevelopment": "تنمية المجتمع",
+      "peaceAndSecurity": "السلام والأمن",
+      "emergencyResponse": "الاستجابة للطوارئ",
+      "misinformationAndMediaLiteracy": "المعلومات المضللة ومحو الأمية الإعلامية",
+      "socialJustice": "العدالة الاجتماعية",
+      "institutionalAccountability": "المساءلة المؤسسية"
     }
   },
   "participantPublic": {

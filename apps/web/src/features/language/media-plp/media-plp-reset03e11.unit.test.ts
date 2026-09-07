@@ -121,7 +121,7 @@ function sampleNews(): PublicNewsArticleItem {
     id: "news-1",
     title: "News title EN",
     summary: "News summary EN that is long enough for bullet extraction.",
-    category: "World",
+    category: "peace and security",
     sourceName: "Reuters",
     articleUrl: "https://example.com/n1",
     publishedAt: "2026-01-01T00:00:00.000Z",
@@ -215,7 +215,6 @@ function fullySeeded(locale: string) {
         {
           title: `[${locale}] news title`,
           summary: `[${locale}] news summary that is long enough for bullet extraction.`,
-          category: `[${locale}] World`,
         },
         locale,
       ),
@@ -264,9 +263,9 @@ async function renderMediaPage(input: {
 }
 
 describe("Reset 03E.11 — rendered carousel semantic closure", () => {
-  it("forensic: expected AUTO leaves match 03E.9 node counts (3 news / 2 fact / 2 propaganda)", () => {
+  it("forensic: expected AUTO leaves match policy (2 news / 2 fact / 2 propaganda)", () => {
     const contract = mediaCarouselExpectedLeafContract();
-    assert.equal(contract.filter((r) => r.entityType === "public_news").length, 3);
+    assert.equal(contract.filter((r) => r.entityType === "public_news").length, 2);
     assert.equal(
       contract.filter((r) => r.entityType === "civic_media_fact_check").length,
       2,
@@ -274,6 +273,12 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     assert.equal(
       contract.filter((r) => r.entityType === "civic_media_propaganda").length,
       2,
+    );
+    assert.deepEqual(
+      contract
+        .filter((r) => r.entityType === "public_news")
+        .map((r) => r.semanticPath),
+      ["title", "summary"],
     );
     assert.deepEqual(
       contract
@@ -452,13 +457,14 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     assert.equal(report.PAGE_STATUS, "INVALID_COVERAGE");
   });
 
-  it("8: public_news valid PLP.2 localizes headline/category/summary via card props", async () => {
+  it("8: public_news valid PLP.2 localizes headline/summary via card props; category via UI dictionary", async () => {
     const html = await renderMediaPage({ locale: "uk", ...fullySeeded("uk") });
     assert.match(html, /\[uk\] news title/);
-    assert.match(html, /\[uk\] World/);
+    assert.match(html, /Мир і безпека/);
     assert.match(html, /data-hu-semantic-path="title"/);
-    assert.match(html, /data-hu-semantic-path="category"/);
     assert.match(html, /data-hu-semantic-path="summary"/);
+    assert.match(html, /data-hu-message-key="publicNews\.categories\.peaceAndSecurity"/);
+    assert.doesNotMatch(html, /data-hu-semantic-path="category"/);
     assert.doesNotMatch(html, /News title EN/);
   });
 
@@ -576,6 +582,50 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
     assert.notEqual(report.FULLY_LOCALIZED, true);
     assert.equal(report.PAGE_STATUS, "INVALID_COVERAGE");
+  });
+
+  it("category is UI_DICTIONARY controlled vocab; title/summary remain PLP_ENTITY", async () => {
+    const html = await renderMediaPage({ locale: "uk", ...fullySeeded("uk") });
+    const nodes = collectRenderedMediaSemanticNodes(html);
+    const category = nodes.find(
+      (n) => n.messageKey === "publicNews.categories.peaceAndSecurity",
+    );
+    assert.equal(category?.owner, "UI_DICTIONARY");
+    assert.equal(category?.result, "LOCALIZED_DICTIONARY");
+    const title = nodes.find(
+      (n) => n.entityType === "public_news" && n.semanticPath === "title",
+    );
+    const summary = nodes.find(
+      (n) => n.entityType === "public_news" && n.semanticPath === "summary",
+    );
+    assert.equal(title?.owner, "PLP_ENTITY");
+    assert.equal(summary?.owner, "PLP_ENTITY");
+    assert.equal(title?.result, "PUBLISHED_LOCALIZED");
+  });
+
+  it("cannot be FULLY_LOCALIZED when news title/summary are canonical fallback", async () => {
+    const seeded = fullySeeded("uk");
+    const html = await renderMediaPage({
+      locale: "uk",
+      ...seeded,
+      plpNewsById: {
+        "news-1": plp(
+          MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+          "news-1",
+          "CANONICAL_FALLBACK",
+          {
+            title: "News title EN",
+            summary: "News summary EN that is long enough for bullet extraction.",
+          },
+          "uk",
+          "NO_PUBLISHED_SNAPSHOT",
+        ),
+      },
+    });
+    const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
+    assert.notEqual(report.FULLY_LOCALIZED, true);
+    assert.ok(report.CAROUSEL_PLP_FALLBACK_LEAVES > 0);
+    assert.match(html, /Мир і безпека/);
   });
 
   it("chips ownership: coverage splits are PLP_ENTITY coverage (not UI/terminology)", async () => {

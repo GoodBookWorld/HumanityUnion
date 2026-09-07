@@ -124,7 +124,7 @@ function sampleNews(): PublicNewsArticleItem {
     id: "news-1",
     title: "News title EN",
     summary: "News summary EN",
-    category: "World",
+    category: "peace and security",
     sourceName: "Reuters",
     articleUrl: "https://example.com/n1",
     publishedAt: "2026-01-01T00:00:00.000Z",
@@ -256,7 +256,6 @@ function fullySeededPlp(locale: string) {
         {
           title: `[${locale}] news title`,
           summary: `[${locale}] news summary that is long enough for bullets.`,
-          category: `[${locale}] World`,
         },
         locale,
       ),

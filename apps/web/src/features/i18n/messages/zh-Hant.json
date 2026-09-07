@@ -5205,6 +5205,20 @@
     },
     "errors": {
       "temporarilyUnavailable": "新聞暫時無法使用。"
+    },
+    "categories": {
+      "democracy": "民主",
+      "publicParticipation": "公眾參與",
+      "humanRights": "人權",
+      "publicHealth": "公共衛生",
+      "education": "教育",
+      "climateResilience": "氣候韌性",
+      "communityDevelopment": "社區發展",
+      "peaceAndSecurity": "和平與安全",
+      "emergencyResponse": "緊急應變",
+      "misinformationAndMediaLiteracy": "不實資訊與媒體素養",
+      "socialJustice": "社會正義",
+      "institutionalAccountability": "制度課責"
     }
   },
   "participantPublic": {

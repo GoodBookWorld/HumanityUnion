@@ -304,7 +304,7 @@ describe("Pack 08K.3.1 /media runtime closure", () => {
     const enqueue = readApi("modules/language/public-presentation-changed.ts");
     assert.match(enqueue, /scheduleContentTranslationWarmAfterMutation/);
     const eligibility = readApi("modules/language/content-translation-eligibility.ts");
-    assert.match(eligibility, /public_news: \["title", "summary", "category"\]/);
+    assert.match(eligibility, /public_news: \["title", "summary"\]/);
   });
 
   it("T: thin diagnostic remains isolated from Media app graph", () => {

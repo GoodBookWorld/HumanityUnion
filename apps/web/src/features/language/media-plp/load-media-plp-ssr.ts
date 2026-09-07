@@ -16,6 +16,7 @@ import type {
 import {
   MEDIA_PLP_EDITORIAL_ENTITY_ID,
   MEDIA_PLP_ENTITY_TYPE,
+  controlledTerminologyValue,
   mediaPlpEditorialEntityId,
   mediaPlpFactCheckEntityId,
   mediaPlpPrincipleEntityId,
@@ -92,7 +93,7 @@ export function buildCanonicalPublicNewsPresentationNode(
     verificationStatus: protectedTechnical(article.verificationStatus),
     title: article.title,
     summary: article.summary,
-    category: article.category ?? "",
+    category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
   };
 }

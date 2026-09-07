@@ -13,7 +13,7 @@ import type {
   PublicPresentationNode,
   TrustedMediaResource,
 } from "@hu/types";
-import { protectedIdentity, protectedTechnical } from "@hu/types";
+import { controlledTerminologyValue, protectedIdentity, protectedTechnical } from "@hu/types";
 
 import { fingerprintPublicPresentation } from "../../public-localized-presentation.js";
 
@@ -26,7 +26,11 @@ export type MediaPlpPublicNewsTree = {
   readonly verificationStatus: ReturnType<typeof protectedTechnical>;
   readonly title: string;
   readonly summary: string;
-  readonly category: string;
+  /**
+   * MediaRegistryCategory key — CONTROLLED_VOCABULARY (not Gemini AUTO).
+   * Localized via UI dictionary on the card; must not be plain AUTO string.
+   */
+  readonly category: ReturnType<typeof controlledTerminologyValue>;
   readonly geographicScope: ReturnType<typeof protectedTechnical>;
 };
 
@@ -84,7 +88,7 @@ export function buildCanonicalPublicNewsPresentation(
     verificationStatus: protectedTechnical(article.verificationStatus),
     title: article.title,
     summary: article.summary,
-    category: article.category ?? "",
+    category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
   };
 }

@@ -1713,6 +1713,20 @@ export type {
   MediaRegistryRssFeed,
 } from "./media-registry.js";
 export type {
+  PublicNewsFieldOwnershipClass,
+  PublicNewsMachineContentPath,
+} from "./public-news-field-policy.js";
+export {
+  MEDIA_REGISTRY_CATEGORY_MESSAGE_KEYS,
+  MEDIA_REGISTRY_CATEGORY_VALUES,
+  PUBLIC_NEWS_FIELD_OWNERSHIP,
+  PUBLIC_NEWS_MACHINE_CONTENT_PATHS,
+  isMediaRegistryCategory,
+  isPublicNewsMachineContentPath,
+  mediaRegistryCategoryMessageKey,
+  publicNewsFieldOwnership,
+} from "./public-news-field-policy.js";
+export type {
   MediaResource,
   MediaResourceScopeType,
   MediaResourceType,

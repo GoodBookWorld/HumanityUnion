@@ -496,7 +496,6 @@ export async function loadPublicNewsTranslationSource(
   const fields: Record<string, string> = {
     title: record.title,
     summary: record.summary,
-    category: record.category?.trim() ?? "",
   };
   return {
     sourceKind: "public_news",

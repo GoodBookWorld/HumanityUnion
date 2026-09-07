@@ -131,15 +131,13 @@ export function useLocalizedPublicNewsCard(
         typeof node.summary === "string" && node.summary.trim()
           ? node.summary.trim()
           : article.summary;
-      const category =
-        typeof node.category === "string" ? node.category : undefined;
+      // category is CONTROLLED_VOCABULARY — never take from PLP machine presentation.
       return resolveLocalizedPublicNewsCardView({
         article,
         locale: displayLanguage,
         translations: {
           title,
           summary,
-          ...(category != null ? { category } : {}),
         },
       });
     }

@@ -128,7 +128,7 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "initiativeFlowStages",
     "trustedMediaExplanations",
   ],
-  public_news: ["title", "summary", "category"],
+  public_news: ["title", "summary"],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /**

@@ -310,6 +310,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Materialize | **not executed in this pack** — continue 03E.10 carousel runner after deploy |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.11.1 / public_news.category note — CONTROLLED_VOCABULARY (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live abort | First `public_news` materialize: `Provider left 1 … canonical-identical (e.g. category)` |
+| Classification | `category` = curated `MediaRegistryCategory` (registry stamp), not free RSS prose |
+| Repair | `PUBLIC_NEWS_FIELD_OWNERSHIP` + `controlledTerminologyValue(category)` + UI `publicNews.categories.*`; AUTO = title/summary only |
+| Node count | public_news AUTO **2** (was 3) |
+| Schema bump | **No** PLP.2 bump — fingerprint changes via protected wrapper; rematerialize news after deploy |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

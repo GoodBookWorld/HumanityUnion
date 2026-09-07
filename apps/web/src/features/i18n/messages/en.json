@@ -5192,6 +5192,20 @@
       "linkCopied": "Link copied",
       "copyUnavailable": "Copy unavailable"
     },
+    "categories": {
+      "democracy": "Democracy",
+      "publicParticipation": "Public Participation",
+      "humanRights": "Human Rights",
+      "publicHealth": "Public Health",
+      "education": "Education",
+      "climateResilience": "Climate Resilience",
+      "communityDevelopment": "Community Development",
+      "peaceAndSecurity": "Peace and Security",
+      "emergencyResponse": "Emergency Response",
+      "misinformationAndMediaLiteracy": "Misinformation and Media Literacy",
+      "socialJustice": "Social Justice",
+      "institutionalAccountability": "Institutional Accountability"
+    },
     "pagination": {
       "ariaLabel": "News discovery pagination",
       "showingCount": "Showing {count} article",

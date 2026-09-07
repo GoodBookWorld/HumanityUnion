@@ -36,7 +36,7 @@ export type MediaCarouselPlpEntityType =
 export const MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS: Readonly<
   Record<MediaCarouselPlpEntityType, readonly string[]>
 > = {
-  public_news: ["title", "summary", "category"],
+  public_news: ["title", "summary"],
   civic_media_fact_check: ["mission", "coverage"],
   civic_media_propaganda: ["focus", "explanation"],
   civic_media_principle: ["title", "description"],
@@ -285,11 +285,7 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     }
     const required = MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS[entityType];
     for (const path of required) {
-      // category may be absent when article has no category — only require if any
-      // category leaf exists for that entity OR path is not category.
-      if (path === "category" && !paths.has("category")) {
-        continue;
-      }
+      // no special-case skip: required AUTO paths are title/summary only
       if (!paths.has(path)) {
         missingRequired.push(`${entityType}/${entityId}:${path}`);
       }
@@ -392,13 +388,6 @@ export function mediaCarouselExpectedLeafContract(): readonly {
   readonly translatable: true;
 }[] {
   return [
-    {
-      surface: "public-news-card",
-      entityType: "public_news",
-      semanticPath: "category",
-      owner: "PLP_ENTITY",
-      translatable: true,
-    },
     {
       surface: "public-news-card",
       entityType: "public_news",

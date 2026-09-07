@@ -20,7 +20,6 @@ describe("Pack 08K.3.1 public_news registration", () => {
     assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.public_news], [
       "title",
       "summary",
-      "category",
     ]);
     assert.ok(PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS.includes("public_news"));
   });

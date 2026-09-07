@@ -69,7 +69,7 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
   { id: "news.toolbar", section: "news", label: "News toolbar labels", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsToolbar.tsx" },
   { id: "news.card.title", section: "news", label: "News card title", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "public_news; canonical fallback OK" },
   { id: "news.card.summary", section: "news", label: "News card summary", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx" },
-  { id: "news.card.category", section: "news", label: "News card category", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx" },
+  { id: "news.card.category", section: "news", label: "News card category", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "MediaRegistryCategory controlled vocab via publicNews.categories.*" },
   { id: "news.card.sourceName", section: "news", label: "News source name", owner: "PROTECTED_CANONICAL", component: "features/public-news/components/PublicNewsCard.tsx" },
   { id: "news.card.ctas", section: "news", label: "News card CTAs", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsCard.tsx" },
 
