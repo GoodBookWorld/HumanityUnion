@@ -769,7 +769,7 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Core vs adapter | Universal core + domain adapters; Media is first adapter |
 | Field authority | PROTECTED → LEGAL → BRAND → MANUAL → CONTROLLED/UI → MACHINE |
 | Build | Async entity×locale queue; coalesce; concurrency default 1; PARTIAL not publishable |
-| News automation | Consumer-identity enqueue (`enqueueConsumerVisibleNewsPlpBuilds`); provider dormant until processor |
+| News automation | Consumer-identity enqueue (`enqueueConsumerVisibleNewsPlpBuilds`); RESET 05C activates in-process processor when `HU_PLP_AUTO_BUILD_LOCALES` is set |
 | Search/SEO | Post-publish invalidation hooks; HREFLANG DEFERRED |
 | RESET 05 | Audited inventory in `RESET_05_MIGRATION_INVENTORY_v1.0.md`; Initiative/Lifecycle + remaining domain adapters |
 | ACTIVE count | **30** — unchanged |
