@@ -34,6 +34,10 @@ import {
   toMediaPlpResolvedPresentation,
 } from "./media-plp-api";
 import {
+  attachMediaPlpBatchByIdentity,
+  indexMediaPlpBatchResultsByIdentity,
+} from "./media-plp-batch-identity-join";
+import {
   isMediaPlpLiveTruthProbeEnabled,
   recordMediaPlpLiveTruthEditorialResult,
 } from "./media-plp-live-truth-probe";
@@ -327,19 +331,18 @@ function resolveKeyedFromBatch(input: {
     readonly key: string;
   }[];
 }): Record<string, MediaPlpResolvedPresentation> {
-  const out: Record<string, MediaPlpResolvedPresentation> = {};
-  for (const item of input.items) {
-    const hit = input.byEntityKey.get(`${item.entityType}\0${item.entityId}`);
-    out[item.key] = hit
-      ? toMediaPlpResolvedPresentation(hit)
-      : coherentFallback({
-          entityType: item.entityType,
-          entityId: item.entityId,
-          locale: input.locale,
-          presentation: item.canonicalPresentation,
-        });
-  }
-  return out;
+  return attachMediaPlpBatchByIdentity({
+    items: input.items,
+    byEntityKey: input.byEntityKey,
+    mapHit: (hit) => toMediaPlpResolvedPresentation(hit),
+    fallback: (item) =>
+      coherentFallback({
+        entityType: item.entityType,
+        entityId: item.entityId,
+        locale: input.locale,
+        presentation: item.canonicalPresentation,
+      }),
+  });
 }
 
 function fallbackKeyed(input: {
@@ -458,9 +461,7 @@ export async function loadMediaPlpPagePresentations(input: {
       locale: input.locale,
       items,
     });
-    const byEntityKey = new Map(
-      results.map((row) => [`${row.entityType}\0${row.entityId}`, row]),
-    );
+    const byEntityKey = indexMediaPlpBatchResultsByIdentity(results);
 
     const trustedById = resolveKeyedFromBatch({
       locale: input.locale,

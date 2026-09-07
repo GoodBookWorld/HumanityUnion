@@ -39,6 +39,7 @@
     "diagnose:media-plp-preflight": "tsx src/scripts/diagnose-media-plp-preflight.ts",
     "diagnose:media-plp-consumer": "tsx src/scripts/diagnose-media-plp-consumer.ts",
     "diagnose:media-plp-carousel": "tsx src/scripts/diagnose-media-plp-carousel.ts",
+    "diagnose:media-plp-news-parity": "tsx src/scripts/diagnose-media-plp-news-parity.ts",
     "materialize:media-plp": "tsx src/scripts/materialize-media-plp.ts",
     "materialize:media-plp-carousel": "tsx src/scripts/materialize-media-plp-carousel.ts",
     "reconcile:public-localization": "tsx src/scripts/reconcile-public-localization.ts",

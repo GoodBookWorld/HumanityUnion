@@ -26,7 +26,8 @@ import {
 } from "./media-plp-live-truth-probe";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
-/** Bound news PLP entities so the single Media batch stays under resolve max items. */
+/** Bound news PLP entities so the single Media batch stays under resolve max items.
+ * Must stay identical to API `MEDIA_PLP_CAROUSEL_NEWS_LIMIT` / consumer news selection. */
 export const MEDIA_PLP_NEWS_BATCH_LIMIT = 12;
 
 export type MediaPageLocalizationComposition = {

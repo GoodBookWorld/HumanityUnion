@@ -747,3 +747,15 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | AUTO trees | `public_news` title/summary (category = controlled MediaRegistry vocab via UI dictionary); fact-check mission/coverage; propaganda focus/explanation |
 | Chips | Coverage chips are PLP `coverage` (machine-translatable civic content), not UI/terminology by default |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.13 — public_news live consumer parity
+
+**Invariant:** If materializer usability says current `public_news` entity E has a usable snapshot for locale L / version V / schema S, the HTTP + Web consumer for the `/media` News rail must resolve that same E/V/S to `PUBLISHED_LOCALIZED`. Localization must never attach to a different card.
+
+| Concern | Rule |
+|---------|------|
+| Authority ID set | Same as Web SSR: `findActivePublicNewsRecords({ language: "en", limit: 12 })` + source balance (`selectMediaPlpConsumerNewsArticles`) |
+| Batch key / join | `entityType` + `entityId` (= `article.id`); Web `newsById[article.id]` — not array index |
+| Diagnostic | `diagnose:media-plp-news-parity -- --mongo --locale uk` (read-only; `PROVIDER_CALLS=0`) |
+| Closure | 12-card News rail: all title+summary leaves localized for `FULLY_LOCALIZED`; 11+1 ⇒ `PARTIALLY_LOCALIZED` |
+| ACTIVE count | **30** — unchanged |

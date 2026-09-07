@@ -63,10 +63,18 @@ export type MediaCarouselSemanticClosureReport = {
   readonly CAROUSEL_PLP_LEAVES_MISSING_PATH: number;
   readonly UNOWNED_CARD_TEXT_CANDIDATES: number;
   readonly MISSING_REQUIRED_PATHS: readonly string[];
+  /** Reset 03E.13 — distinct public_news cards observed in rendered leaves. */
+  readonly PUBLIC_NEWS_CARD_COUNT: number;
+  readonly PUBLIC_NEWS_LOCALIZED_CARD_COUNT: number;
+  readonly PUBLIC_NEWS_FALLBACK_CARD_COUNT: number;
+  readonly PUBLIC_NEWS_OMITTED_CARD_COUNT: number;
   readonly leaves: readonly MediaCarouselLeafInventoryRow[];
   readonly FULLY_LOCALIZED: boolean;
   readonly reasons: readonly string[];
 };
+
+/** /media News rail bound (must match MEDIA_PLP_NEWS_BATCH_LIMIT). */
+export const MEDIA_PUBLIC_NEWS_CAROUSEL_EXPECTED_COUNT = 12;
 
 const CARD_OPEN_RE =
   /<(article|div)([^>]*\b(?:public-news-card|civic-media-resource-card--verification|civic-media-resource-card--analysis|civic-media-resource-card--principle|civic-media-resource-card--trusted|country-media-rail-card)\b[^>]*)>/gi;
@@ -292,6 +300,50 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     }
   }
 
+  // Reset 03E.13 — per-card public_news ownership (identity, not array position).
+  const newsCardStates = new Map<
+    string,
+    { localized: boolean; fallback: boolean; paths: Set<string> }
+  >();
+  for (const node of carouselPlpNodes) {
+    if (node.entityType !== "public_news" || !node.entityId) {
+      continue;
+    }
+    const state = newsCardStates.get(node.entityId) ?? {
+      localized: true,
+      fallback: false,
+      paths: new Set<string>(),
+    };
+    if (node.semanticPath) {
+      state.paths.add(node.semanticPath);
+    }
+    if (node.result === "CANONICAL_FALLBACK") {
+      state.fallback = true;
+      state.localized = false;
+    } else if (node.result !== "PUBLISHED_LOCALIZED") {
+      state.localized = false;
+    }
+    newsCardStates.set(node.entityId, state);
+  }
+
+  let publicNewsLocalized = 0;
+  let publicNewsFallback = 0;
+  let publicNewsOmitted = 0;
+  for (const [, state] of newsCardStates) {
+    const required = MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS.public_news;
+    const hasAllPaths = required.every((path) => state.paths.has(path));
+    if (!hasAllPaths) {
+      publicNewsOmitted += 1;
+      continue;
+    }
+    if (state.fallback || !state.localized) {
+      publicNewsFallback += 1;
+    } else {
+      publicNewsLocalized += 1;
+    }
+  }
+  const publicNewsCardCount = newsCardStates.size;
+
   const leaves: MediaCarouselLeafInventoryRow[] = carouselPlpNodes.map((n) => {
     const path = n.semanticPath ?? null;
     const reasonKey =
@@ -329,6 +381,18 @@ export function evaluateMediaCarouselSemanticClosure(input: {
   if (input.locale.toLowerCase() !== "en" && fallbackLeaves.length > 0) {
     reasons.push(`CAROUSEL_PLP_FALLBACK_LEAVES=${fallbackLeaves.length}`);
   }
+  if (
+    input.locale.toLowerCase() !== "en" &&
+    publicNewsCardCount >= MEDIA_PUBLIC_NEWS_CAROUSEL_EXPECTED_COUNT &&
+    publicNewsLocalized < MEDIA_PUBLIC_NEWS_CAROUSEL_EXPECTED_COUNT
+  ) {
+    reasons.push(
+      `PUBLIC_NEWS_NOT_FULLY_LOCALIZED=${publicNewsLocalized}/${publicNewsCardCount}`,
+    );
+  }
+  if (input.locale.toLowerCase() !== "en" && publicNewsOmitted > 0) {
+    reasons.push(`PUBLIC_NEWS_OMITTED_CARDS=${publicNewsOmitted}`);
+  }
 
   let pageStatus = coverage.PAGE_STATUS;
   if (
@@ -336,18 +400,29 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     coverage.MIXED_ENTITY_VIOLATIONS > 0 ||
     unownedCardText.length > 0 ||
     missingPathLeaves.length > 0 ||
-    missingRequired.length > 0
+    missingRequired.length > 0 ||
+    publicNewsOmitted > 0
   ) {
     pageStatus = "INVALID_COVERAGE";
-  } else if (input.locale.toLowerCase() !== "en" && fallbackLeaves.length > 0) {
+  } else if (
+    input.locale.toLowerCase() !== "en" &&
+    (fallbackLeaves.length > 0 || publicNewsFallback > 0)
+  ) {
     pageStatus =
-      coverage.LOCALIZED_NODES > 0 ? "PARTIALLY_LOCALIZED" : "CANONICAL_ONLY";
+      coverage.LOCALIZED_NODES > 0 || publicNewsLocalized > 0
+        ? "PARTIALLY_LOCALIZED"
+        : "CANONICAL_ONLY";
   }
 
   const fully =
     pageStatus === "FULLY_LOCALIZED" &&
     reasons.length === 0 &&
-    (input.locale.toLowerCase() === "en" || coverage.LOCALIZED_NODES > 0);
+    (input.locale.toLowerCase() === "en" || coverage.LOCALIZED_NODES > 0) &&
+    (input.locale.toLowerCase() === "en" ||
+      publicNewsCardCount === 0 ||
+      (publicNewsFallback === 0 &&
+        publicNewsOmitted === 0 &&
+        publicNewsLocalized === publicNewsCardCount));
 
   return {
     pack: "RESET_03E.11",
@@ -358,6 +433,10 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     CAROUSEL_PLP_LEAVES_MISSING_PATH: missingPathLeaves.length,
     UNOWNED_CARD_TEXT_CANDIDATES: unownedCardText.length,
     MISSING_REQUIRED_PATHS: missingRequired,
+    PUBLIC_NEWS_CARD_COUNT: publicNewsCardCount,
+    PUBLIC_NEWS_LOCALIZED_CARD_COUNT: publicNewsLocalized,
+    PUBLIC_NEWS_FALLBACK_CARD_COUNT: publicNewsFallback,
+    PUBLIC_NEWS_OMITTED_CARD_COUNT: publicNewsOmitted,
     leaves,
     FULLY_LOCALIZED: fully,
     reasons,

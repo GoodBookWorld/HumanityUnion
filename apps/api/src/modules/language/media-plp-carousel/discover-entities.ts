@@ -20,6 +20,7 @@ import {
   MEDIA_PLP_CAROUSEL_TRUSTED_COUNTRY_LIMIT,
   MEDIA_PLP_CAROUSEL_TRUSTED_WORLD_LIMIT,
 } from "./constants.js";
+import { selectMediaPlpConsumerNewsIds } from "./media-plp-news-selection.js";
 
 export type MediaPlpCarouselSurface =
   | "media_news"
@@ -157,29 +158,8 @@ export function discoverMediaPlpCarouselStaticEntities(): readonly MediaPlpCarou
 async function discoverActiveNewsIds(
   limit: number,
 ): Promise<readonly string[]> {
-  const collection = getMongoCollection<Record<string, unknown>>(
-    MONGO_COLLECTIONS.publicNewsArticles,
-  );
-  const now = new Date().toISOString();
-  const cursor = collection.find(
-    {
-      status: "active",
-      $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gt: now } }],
-    },
-    {
-      projection: { id: 1 },
-      sort: { publishedAt: -1, id: 1 },
-      limit,
-    },
-  );
-  const ids: string[] = [];
-  for await (const doc of cursor) {
-    const id = asString(doc.id);
-    if (id) {
-      ids.push(id);
-    }
-  }
-  return ids;
+  // Reset 03E.13 — same selection as Web /media SSR news rail (en + source balance).
+  return selectMediaPlpConsumerNewsIds({ limit });
 }
 
 async function discoverCountryTrustedIds(

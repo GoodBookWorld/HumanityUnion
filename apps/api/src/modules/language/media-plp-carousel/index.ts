@@ -1,5 +1,6 @@
 /**
- * Reset 03E.9 / 03E.10 — Media/Country carousel PLP diagnostic + materialize ceilings.
+ * Reset 03E.9 / 03E.10 / 03E.13 — Media/Country carousel PLP diagnostic +
+ * materialize ceilings + public_news consumer parity.
  */
 
 export {
@@ -20,6 +21,12 @@ export type {
   MediaPlpCarouselSurface,
 } from "./discover-entities.js";
 export { assertMediaPlpCarouselImportIsolation } from "./import-guards.js";
+export {
+  MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
+  listNewestActivePublicNewsIdsIgnoringConsumerBalance,
+  selectMediaPlpConsumerNewsArticles,
+  selectMediaPlpConsumerNewsIds,
+} from "./media-plp-news-selection.js";
 export { parseMediaPlpCarouselArgs } from "./parse-args.js";
 export {
   buildMediaPlpCarouselMaterializePlan,

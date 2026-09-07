@@ -321,6 +321,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Schema bump | **No** PLP.2 bump — fingerprint changes via protected wrapper; rematerialize news after deploy |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.13 note — public_news live consumer parity (no live ops)
+
+| Item | Status |
+|------|--------|
+| Miss class | Carousel materializer discovered newest-N news (no `language=en`, no source balance) while Web `/media` SSR listed balanced EN rail → ~5/12 ID overlap; materializer `ELIGIBLE=0` / `SKIPPED_USABLE` on discovery set while live cards fell back |
+| First divergence | Discovery / inventory ID set (before Mongo PLP, HTTP, or join) |
+| Repair | `selectMediaPlpConsumerNewsArticles` shared by discover + diagnostic; Web batch attach via `attachMediaPlpBatchByIdentity`; `diagnose:media-plp-news-parity` read-only |
+| Schema / fingerprint | **No** PLP.2 bump — existing Ukrainian snapshots remain valid for their entity IDs |
+| Live after deploy | Diagnostic consumer set may show `NO_SNAPSHOT` / `ELIGIBLE` until those IDs are rematerialized; do **not** rematerialize in this pack |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary
