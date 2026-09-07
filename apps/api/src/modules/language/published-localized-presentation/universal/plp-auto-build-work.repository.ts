@@ -12,6 +12,14 @@ import { plpBuildWorkKey } from "@hu/types";
 import { isMongoConfigured } from "../../../../infrastructure/mongodb/mongo-config.js";
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
+import {
+  sanitizePlpAutoBuildFailureReason,
+  type PlpAutoBuildFailureCode,
+  type PlpAutoBuildFailureStage,
+  type PlpAutoBuildStructuredFailure,
+} from "./plp-auto-build-failure.js";
+
+export { sanitizePlpAutoBuildFailureReason } from "./plp-auto-build-failure.js";
 
 export type PlpAutoBuildWorkStatus =
   | "pending"
@@ -33,12 +41,17 @@ export type PlpAutoBuildWorkRecord = {
   readonly attempts: number;
   readonly maxAttempts: number;
   readonly lastError: string | null;
+  /** RESET 05C.3 — structured failure (null for legacy FAILED-only rows). */
+  readonly failureCode: PlpAutoBuildFailureCode | null;
+  readonly failureStage: PlpAutoBuildFailureStage | null;
+  readonly retryable: boolean | null;
   readonly enqueuedAt: string;
   readonly claimedAt: string | null;
   readonly completedAt: string | null;
   readonly updatedAt: string;
   readonly lastFailureAt: string | null;
 };
+
 
 export type UpsertPlpAutoBuildWorkResult = {
   readonly accepted: boolean;
@@ -58,6 +71,9 @@ interface PlpAutoBuildWorkDocument extends Document {
   attempts: number;
   maxAttempts: number;
   lastError: string | null;
+  failureCode?: PlpAutoBuildFailureCode | null;
+  failureStage?: PlpAutoBuildFailureStage | null;
+  retryable?: boolean | null;
   enqueuedAt: string;
   claimedAt: string | null;
   completedAt: string | null;
@@ -118,6 +134,9 @@ function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
     attempts: doc.attempts,
     maxAttempts: doc.maxAttempts,
     lastError: doc.lastError,
+    failureCode: doc.failureCode ?? null,
+    failureStage: doc.failureStage ?? null,
+    retryable: doc.retryable ?? null,
     enqueuedAt: doc.enqueuedAt,
     claimedAt: doc.claimedAt,
     completedAt: doc.completedAt,
@@ -157,6 +176,9 @@ function coalesceUpsert(input: {
       attempts: 0,
       maxAttempts: input.maxAttempts,
       lastError: null,
+      failureCode: null,
+      failureStage: null,
+      retryable: null,
       enqueuedAt: updatedAt,
       claimedAt: null,
       completedAt: null,
@@ -171,6 +193,13 @@ function coalesceUpsert(input: {
     (existing.status === "completed" || existing.status === "skipped_usable") &&
     sameVersion
   ) {
+    return { accepted: false, deduped: true, record: existing };
+  }
+
+  // Same-version terminal failed: never reopen via coalesce (preserves forensic
+  // row; stops RSS refresh from restarting exhausted / non-retryable failures
+  // and climbing attemptCount past maxAttempts — live 6/5 evidence).
+  if (existing.status === "failed" && sameVersion) {
     return { accepted: false, deduped: true, record: existing };
   }
 
@@ -203,18 +232,25 @@ function coalesceUpsert(input: {
   }
 
   const newerRevision = Math.max(input.contentRevision, existing.contentRevision);
+  // New canonicalVersion → fresh attempt budget. Forensic last-failure fields retained.
+  const resetAttempts = !sameVersion;
   const record: PlpAutoBuildWorkRecord = {
     ...existing,
     canonicalVersion: input.canonicalVersion,
     contentRevision: newerRevision,
     trigger: input.trigger,
     status: "pending",
+    attempts: resetAttempts ? 0 : existing.attempts,
     maxAttempts: input.maxAttempts,
-    lastError: null,
+    // Keep last failure forensic fields across reopen/success (bounded metadata).
+    lastError: existing.lastError,
+    failureCode: existing.failureCode,
+    failureStage: existing.failureStage,
+    retryable: existing.retryable,
+    lastFailureAt: existing.lastFailureAt,
     claimedAt: null,
     completedAt: null,
     updatedAt,
-    // Preserve enqueuedAt for FIFO when still pending; refresh when reopening terminal.
     enqueuedAt:
       existing.status === "pending" || existing.status === "running"
         ? existing.enqueuedAt
@@ -284,14 +320,19 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
     const candidates = [...memoryByWorkKey.values()]
       .filter(
         (row) =>
-          row.status === "pending" ||
-          (row.status === "running" &&
-            row.claimedAt != null &&
-            row.claimedAt < stuckBefore),
+          row.attempts < row.maxAttempts &&
+          (row.status === "pending" ||
+            (row.status === "running" &&
+              row.claimedAt != null &&
+              row.claimedAt < stuckBefore)),
       )
       .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
     const next = candidates[0];
     if (!next) {
+      return null;
+    }
+    // Invariant: never start an attempt when attempts already >= maxAttempts.
+    if (next.attempts >= next.maxAttempts) {
       return null;
     }
     const claimed: PlpAutoBuildWorkRecord = {
@@ -308,9 +349,14 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
   const col = collection();
   const claimed = await col.findOneAndUpdate(
     {
-      $or: [
-        { status: "pending" },
-        { status: "running", claimedAt: { $lt: stuckBefore } },
+      $and: [
+        { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
+        {
+          $or: [
+            { status: "pending" },
+            { status: "running", claimedAt: { $lt: stuckBefore } },
+          ],
+        },
       ],
     },
     {
@@ -365,12 +411,20 @@ async function markTerminal(
         ...(patch.lastFailureAt !== undefined
           ? { lastFailureAt: patch.lastFailureAt }
           : {}),
+        ...(patch.failureCode !== undefined
+          ? { failureCode: patch.failureCode }
+          : {}),
+        ...(patch.failureStage !== undefined
+          ? { failureStage: patch.failureStage }
+          : {}),
+        ...(patch.retryable !== undefined ? { retryable: patch.retryable } : {}),
       },
     },
   );
 }
 
 export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<void> {
+  // Preserve last failure forensic fields on success.
   await markTerminal(workKey, "completed");
 }
 
@@ -384,13 +438,22 @@ export async function markPlpAutoBuildWorkSkippedUsable(workKey: string): Promis
 
 export async function markPlpAutoBuildWorkFailed(input: {
   readonly workKey: string;
-  readonly reason: string;
   readonly attempts: number;
   readonly maxAttempts: number;
+  readonly failure: PlpAutoBuildStructuredFailure;
 }): Promise<{ readonly requeued: boolean }> {
-  const safeReason = sanitizePlpAutoBuildFailureReason(input.reason);
+  const safeReason = sanitizePlpAutoBuildFailureReason(input.failure.safeReason);
   const now = nowIso();
-  const canRetry = input.attempts < input.maxAttempts;
+  const underCap = input.attempts < input.maxAttempts;
+  const canRetry = input.failure.retryable && underCap;
+
+  const failurePatch = {
+    lastError: safeReason,
+    failureCode: input.failure.failureCode,
+    failureStage: input.failure.stage,
+    retryable: input.failure.retryable,
+    lastFailureAt: now,
+  };
 
   if (usePlpAutoBuildWorkMemory()) {
     const existing = memoryByWorkKey.get(input.workKey);
@@ -400,9 +463,8 @@ export async function markPlpAutoBuildWorkFailed(input: {
     if (canRetry) {
       memoryByWorkKey.set(input.workKey, {
         ...existing,
+        ...failurePatch,
         status: "pending",
-        lastError: safeReason,
-        lastFailureAt: now,
         updatedAt: now,
         claimedAt: null,
         completedAt: null,
@@ -411,9 +473,8 @@ export async function markPlpAutoBuildWorkFailed(input: {
     }
     memoryByWorkKey.set(input.workKey, {
       ...existing,
+      ...failurePatch,
       status: "failed",
-      lastError: safeReason,
-      lastFailureAt: now,
       updatedAt: now,
       completedAt: now,
     });
@@ -426,8 +487,7 @@ export async function markPlpAutoBuildWorkFailed(input: {
       {
         $set: {
           status: "pending",
-          lastError: safeReason,
-          lastFailureAt: now,
+          ...failurePatch,
           updatedAt: now,
           claimedAt: null,
           completedAt: null,
@@ -442,25 +502,13 @@ export async function markPlpAutoBuildWorkFailed(input: {
     {
       $set: {
         status: "failed",
-        lastError: safeReason,
-        lastFailureAt: now,
+        ...failurePatch,
         updatedAt: now,
         completedAt: now,
       },
     },
   );
   return { requeued: false };
-}
-
-/** Safe reason codes only — strip URLs, payloads, long blobs. */
-export function sanitizePlpAutoBuildFailureReason(reason: string): string {
-  const trimmed = reason.trim().slice(0, 120);
-  return trimmed
-    .replace(/mongodb(\+srv)?:\/\/[^\s"']+/gi, "[redacted]")
-    .replace(/https?:\/\/[^\s"']+/gi, "[redacted-url]")
-    .replace(/[A-Za-z0-9+/_-]{40,}/g, "[redacted]")
-    .replace(/\s+/g, " ")
-    .slice(0, 80) || "FAILED";
 }
 
 export async function countPlpAutoBuildWorkByStatus(): Promise<{
@@ -506,26 +554,21 @@ export const PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT = 20;
 export const PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT = 20;
 
 export type PlpAutoBuildFailureClass =
+  | PlpAutoBuildFailureCode
   | "FAILED"
-  | "PROCESSOR_DORMANT"
-  | "PROVIDER_TIMEOUT"
-  | "PROVIDER_FAILURE"
-  | "PROVIDER_PARTIAL"
-  | "PROVIDER_INTEGRITY"
-  | "PROVIDER_PAYLOAD"
-  | "PROVIDER_CAP"
-  | "REJECTED_PARTIAL"
-  | "PUBLISH_FAILED"
-  | "ADAPTER_OR_SOURCE"
   | "UNKNOWN";
 
 /**
- * Map sanitized lastError into a stable failure class for grouping.
- * Does not invent reasons — only classifies stored safe codes/messages.
+ * Map sanitized lastError / persisted failureCode into a stable failure class.
+ * Prefers structured failureCode when present (05C.3).
  */
 export function normalizePlpAutoBuildFailureClass(
   lastError: string | null | undefined,
+  persistedCode?: PlpAutoBuildFailureCode | string | null,
 ): PlpAutoBuildFailureClass {
+  if (persistedCode && persistedCode !== "FAILED") {
+    return persistedCode as PlpAutoBuildFailureClass;
+  }
   const raw = (lastError ?? "").trim();
   if (!raw) {
     return "UNKNOWN";
@@ -533,6 +576,25 @@ export function normalizePlpAutoBuildFailureClass(
   const upper = raw.toUpperCase();
   if (upper === "FAILED") {
     return "FAILED";
+  }
+  const known: PlpAutoBuildFailureCode[] = [
+    "PROCESSOR_DORMANT",
+    "SOURCE_NOT_FOUND",
+    "ADAPTER_OR_SOURCE",
+    "PROVIDER_TIMEOUT",
+    "PROVIDER_FAILURE",
+    "PROVIDER_PARTIAL",
+    "PROVIDER_INTEGRITY",
+    "PROVIDER_PAYLOAD",
+    "PROVIDER_CAP",
+    "REJECTED_PARTIAL",
+    "PUBLISH_FAILED",
+    "STALE_CANONICAL_VERSION",
+  ];
+  for (const code of known) {
+    if (upper === code || upper.startsWith(`${code}:`)) {
+      return code;
+    }
   }
   if (upper.includes("PROCESSOR_DORMANT")) {
     return "PROCESSOR_DORMANT";
@@ -620,6 +682,9 @@ export async function listFailedPlpAutoBuildWork(input: {
           attempts: 1,
           maxAttempts: 1,
           lastError: 1,
+          failureCode: 1,
+          failureStage: 1,
+          retryable: 1,
           enqueuedAt: 1,
           claimedAt: 1,
           completedAt: 1,

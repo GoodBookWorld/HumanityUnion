@@ -1,17 +1,14 @@
 /**
- * RESET 05C — process one PLP build request (async queue worker only).
+ * RESET 05C / 05C.3 — process one PLP build request (async queue worker only).
  *
- * Never blocks HTTP/SSR callers. Provider/materializer imports stay dynamic
- * and confined to this module (not build-pipeline).
- *
- * Focus: public_news first; other Media types OK when the domain adapter resolves.
+ * Returns structured failure detail so durable work can persist real causes.
+ * Never blocks HTTP/SSR callers. Provider imports stay dynamic here only.
  */
 
 import type {
   LanguageCode,
   MediaPlpEntityType,
   PlpBuildRequest,
-  PlpBuildRequestStatus,
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 
@@ -23,6 +20,13 @@ import { runUniversalPlpBuild } from "./build-pipeline.js";
 import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
 import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
 import { machineEligiblePaths } from "./field-authority.js";
+import {
+  failureFromTimeoutError,
+  mapBuildStatusToFailure,
+  mapProviderBoundaryReasonToFailure,
+  structuredFailure,
+  type ProcessPlpBuildRequestResult,
+} from "./plp-auto-build-failure.js";
 import {
   ensureAllDefaultPlpAdaptersRegistered,
   ensureMediaPlpAdapterRegistered,
@@ -43,7 +47,11 @@ export type ProcessPlpBuildRequestDeps = {
     readonly PROVIDER_TRANSPORT?: string;
   }) => Promise<
     | { readonly ok: true; readonly values: Readonly<Record<string, string>> }
-    | { readonly ok: false; readonly message: string }
+    | {
+        readonly ok: false;
+        readonly message: string;
+        readonly reason?: string;
+      }
   >;
   readonly verifyDurability?: (input: {
     readonly entityType: string;
@@ -108,19 +116,31 @@ function collectMachineAutoValues(input: {
   return { autoPaths, autoValues };
 }
 
+function failed(result: ProcessPlpBuildRequestResult & { status: "FAILED" }): ProcessPlpBuildRequestResult {
+  return result;
+}
+
 /**
  * Process a single coalesced build request. Safe for concurrency=1 drain.
  */
 export async function processPlpBuildRequest(
   request: PlpBuildRequest,
   deps: ProcessPlpBuildRequestDeps = {},
-): Promise<PlpBuildRequestStatus> {
+): Promise<ProcessPlpBuildRequestResult> {
   ensureMediaPlpAdapterRegistered();
   ensureAllDefaultPlpAdaptersRegistered();
 
   const adapter = getPlpDomainAdapter(request.entityType);
   if (!adapter) {
-    return "FAILED";
+    return failed({
+      status: "FAILED",
+      failure: structuredFailure({
+        failureCode: "ADAPTER_OR_SOURCE",
+        retryable: false,
+        stage: "adapter",
+        safeReason: `ADAPTER_OR_SOURCE:no_adapter:${request.entityType}`,
+      }),
+    });
   }
 
   const contract = await adapter.resolveCanonicalEntity({
@@ -129,7 +149,15 @@ export async function processPlpBuildRequest(
     locale: request.locale as LanguageCode,
   });
   if (!contract) {
-    return "FAILED";
+    return failed({
+      status: "FAILED",
+      failure: structuredFailure({
+        failureCode: "SOURCE_NOT_FOUND",
+        retryable: false,
+        stage: "source",
+        safeReason: "SOURCE_NOT_FOUND",
+      }),
+    });
   }
 
   if (
@@ -138,7 +166,7 @@ export async function processPlpBuildRequest(
       liveCanonicalVersion: contract.canonicalVersion,
     })
   ) {
-    return "SUPERSEDED";
+    return { status: "SUPERSEDED" };
   }
 
   const existing = await findCurrentPublishedPresentation({
@@ -154,7 +182,7 @@ export async function processPlpBuildRequest(
     snapshot: existing,
   });
   if (usability.allowPublishedLocalized) {
-    return "SKIPPED_USABLE";
+    return { status: "SKIPPED_USABLE" };
   }
 
   const { autoPaths, autoValues } = collectMachineAutoValues({
@@ -193,11 +221,18 @@ export async function processPlpBuildRequest(
 
   if (localizationSource !== "EXISTING_CURRENT") {
     if (autoPaths.length === 0) {
-      return "FAILED";
+      return failed({
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "ADAPTER_OR_SOURCE",
+          retryable: false,
+          stage: "source",
+          safeReason: "ADAPTER_OR_SOURCE:no_machine_auto_paths",
+        }),
+      });
     }
 
     try {
-      // Per-request provider budget: materializer counters are one-shot CLI caps.
       const { resetMediaPlpMaterializerProviderCallBudget } = await import(
         "../../media-plp-materializer/counters.js"
       );
@@ -225,7 +260,11 @@ export async function processPlpBuildRequest(
               PROVIDER_TRANSPORT: input.PROVIDER_TRANSPORT,
             });
           if (!result.ok) {
-            return { ok: false as const, message: result.message };
+            return {
+              ok: false as const,
+              message: result.message,
+              reason: result.reason,
+            };
           }
           return { ok: true as const, values: result.values };
         });
@@ -249,15 +288,21 @@ export async function processPlpBuildRequest(
       );
 
       if (!providerResult.ok) {
-        // Leave canonical usable; do not corrupt existing snapshots.
-        return "FAILED";
+        return failed({
+          status: "FAILED",
+          failure: mapProviderBoundaryReasonToFailure({
+            reason: providerResult.reason ?? "PROVIDER_FAILURE",
+            message: providerResult.message,
+          }),
+        });
       }
       localizationValues = { ...providerResult.values };
       localizationSource = "PROVIDER";
     } catch (error) {
-      // Leave canonical usable; do not corrupt existing snapshots.
-      void error;
-      return "FAILED";
+      return failed({
+        status: "FAILED",
+        failure: failureFromTimeoutError(error),
+      });
     }
   }
 
@@ -276,8 +321,17 @@ export async function processPlpBuildRequest(
     ],
   });
 
+  if (built.status === "SUPERSEDED") {
+    return { status: "SUPERSEDED" };
+  }
   if (built.status !== "COMPLETED") {
-    return built.status;
+    return failed({
+      status: "FAILED",
+      failure: mapBuildStatusToFailure({
+        status: built.status,
+        reasonCodes: built.reasonCodes,
+      }),
+    });
   }
 
   const requireMongo =
@@ -295,11 +349,35 @@ export async function processPlpBuildRequest(
       requireMongo,
     });
     if (!durability.ok) {
-      return "FAILED";
+      return failed({
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "PUBLISH_FAILED",
+          retryable: true,
+          stage: "durability",
+          safeReason: `PUBLISH_FAILED:DURABILITY:${sanitizeSafe(durability.reason)}`,
+        }),
+      });
     }
-  } catch {
-    return "FAILED";
+  } catch (error) {
+    return failed({
+      status: "FAILED",
+      failure: structuredFailure({
+        failureCode: "PUBLISH_FAILED",
+        retryable: true,
+        stage: "durability",
+        safeReason: `PUBLISH_FAILED:DURABILITY_THROW:${sanitizeSafe(
+          error instanceof Error ? error.message : "unknown",
+        )}`,
+      }),
+    });
   }
 
-  return "COMPLETED";
+  return { status: "COMPLETED" };
 }
+
+function sanitizeSafe(value: string | undefined): string {
+  return (value ?? "unknown").replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+export type { ProcessPlpBuildRequestResult };

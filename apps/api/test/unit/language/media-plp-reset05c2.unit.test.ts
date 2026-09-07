@@ -60,12 +60,17 @@ describe("RESET 05C.2 — PLP auto-build failure diagnostic", () => {
         contentRevision: 1,
         trigger: "DYNAMIC_SOURCE_REFRESH",
       });
-      await markPlpAutoBuildWorkFailed({
-        workKey: upsert.record.workKey,
-        reason: i % 2 === 0 ? "FAILED" : "PROVIDER_TIMEOUT",
-        attempts: 5,
-        maxAttempts: 5,
-      });
+    await markPlpAutoBuildWorkFailed({
+      workKey: upsert.record.workKey,
+      failure: {
+        failureCode: i % 2 === 0 ? "UNKNOWN" : "PROVIDER_TIMEOUT",
+        retryable: false,
+        stage: "provider",
+        safeReason: i % 2 === 0 ? "FAILED" : "PROVIDER_TIMEOUT",
+      },
+      attempts: 5,
+      maxAttempts: 5,
+    });
     }
 
     // Also seed a completed row that must not appear.
@@ -95,7 +100,12 @@ describe("RESET 05C.2 — PLP auto-build failure diagnostic", () => {
     });
     await markPlpAutoBuildWorkFailed({
       workKey: upsert.record.workKey,
-      reason: "FAILED",
+      failure: {
+        failureCode: "UNKNOWN",
+        retryable: false,
+        stage: "provider",
+        safeReason: "FAILED",
+      },
       attempts: 5,
       maxAttempts: 5,
     });
@@ -118,13 +128,13 @@ describe("RESET 05C.2 — PLP auto-build failure diagnostic", () => {
     assert.equal(report.PLP_WRITES, 0);
     assert.equal(report.MONGO_WRITES, 0);
     assert.equal(report.ROWS_RETURNED, 1);
-    assert.equal(report.FAILURE_CLASSES.FAILED, 1);
+    assert.equal(report.FAILURE_CLASSES.UNKNOWN, 1);
     assert.equal(report.CURRENT_VERSION_FAILURES, 1);
     assert.equal(report.STALE_VERSION_FAILURES, 0);
     assert.equal(report.STILL_MISSING, 1);
     assert.equal(report.NOW_USABLE, 0);
     assert.equal(report.rows[0]?.entityId, "news-diag-1");
-    assert.equal(report.rows[0]?.failureCode, "FAILED");
+    assert.equal(report.rows[0]?.failureCode, "UNKNOWN");
     assert.equal(report.rows[0]?.canonicalVersionMatchesLive, true);
     assert.equal(report.rows[0]?.nextAttemptAt, null);
     assert.doesNotMatch(JSON.stringify(report), /mongodb(\+srv)?:\/\//i);
@@ -142,7 +152,12 @@ describe("RESET 05C.2 — PLP auto-build failure diagnostic", () => {
     });
     await markPlpAutoBuildWorkFailed({
       workKey: upsert.record.workKey,
-      reason: "FAILED",
+      failure: {
+        failureCode: "UNKNOWN",
+        retryable: false,
+        stage: "provider",
+        safeReason: "FAILED",
+      },
       attempts: 5,
       maxAttempts: 5,
     });

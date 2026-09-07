@@ -36,6 +36,8 @@ export type PlpAutoBuildFailedWorkRow = {
   readonly status: "failed";
   readonly failureCode: PlpAutoBuildFailureClass;
   readonly failureReason: string | null;
+  readonly failureStage: string | null;
+  readonly retryable: boolean | null;
   readonly lastAttemptAt: string | null;
   readonly nextAttemptAt: null;
   readonly liveCanonicalVersion: string | null;
@@ -144,7 +146,10 @@ export async function inspectPlpAutoBuildFailedWork(input?: {
   const rows: PlpAutoBuildFailedWorkRow[] = [];
 
   for (const work of failed) {
-    const failureCode = normalizePlpAutoBuildFailureClass(work.lastError);
+    const failureCode = normalizePlpAutoBuildFailureClass(
+      work.lastError,
+      work.failureCode,
+    );
     classCounts[failureCode] = (classCounts[failureCode] ?? 0) + 1;
 
     const live = await resolveLive({
@@ -221,6 +226,8 @@ export async function inspectPlpAutoBuildFailedWork(input?: {
       status: "failed",
       failureCode,
       failureReason: work.lastError,
+      failureStage: work.failureStage,
+      retryable: work.retryable,
       lastAttemptAt: work.lastFailureAt ?? work.claimedAt ?? work.updatedAt,
       nextAttemptAt: null,
       liveCanonicalVersion,

@@ -294,7 +294,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         },
       },
     );
-    assert.equal(status, "SUPERSEDED");
+    assert.equal(status.status, "SUPERSEDED");
     assert.notEqual(liveVersion, "stale-old-version");
   });
 
@@ -384,7 +384,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         }),
       },
     );
-    assert.equal(status, "FAILED");
+    assert.equal(status.status, "FAILED");
 
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -444,7 +444,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         }),
       },
     );
-    assert.equal(status, "COMPLETED");
+    assert.equal(status.status, "COMPLETED");
     assert.equal(hooked, 1);
     assert.equal(getPlpSearchSeoInvalidationStatsForTests().count, 1);
   });

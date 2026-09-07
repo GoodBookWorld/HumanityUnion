@@ -426,7 +426,7 @@ describe("RESET 05C.1 — durable automatic localization", () => {
         },
       },
     );
-    assert.equal(status, "SUPERSEDED");
+    assert.equal(status.status, "SUPERSEDED");
 
     const resolveSrc = readFileSync(
       join(plpRoot, "resolve-published-presentation.ts"),

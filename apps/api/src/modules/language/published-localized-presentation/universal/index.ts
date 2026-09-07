@@ -75,6 +75,18 @@ export type {
   PlpAutoBuildFailureClass,
 } from "./plp-auto-build-work.repository.js";
 export {
+  structuredFailure,
+  mapProviderBoundaryReasonToFailure,
+  mapBuildStatusToFailure,
+  sanitizePlpAutoBuildFailureReason as sanitizePlpAutoBuildFailureReasonCore,
+} from "./plp-auto-build-failure.js";
+export type {
+  PlpAutoBuildStructuredFailure,
+  PlpAutoBuildFailureCode,
+  PlpAutoBuildFailureStage,
+  ProcessPlpBuildRequestResult,
+} from "./plp-auto-build-failure.js";
+export {
   inspectPlpAutoBuildFailedWork,
   PLP_AUTO_BUILD_FAILURE_DIAGNOSTIC_PACK,
 } from "./plp-auto-build-work-failure-diagnostic.js";

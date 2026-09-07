@@ -33,6 +33,10 @@ import {
   setPlpAutoBuildProcessorRunning,
 } from "./plp-auto-build-runtime.js";
 import {
+  structuredFailure,
+  type ProcessPlpBuildRequestResult,
+} from "./plp-auto-build-failure.js";
+import {
   claimNextPlpAutoBuildWork,
   listPlpAutoBuildWorkForTests,
   markPlpAutoBuildWorkCompleted,
@@ -40,13 +44,14 @@ import {
   markPlpAutoBuildWorkSkippedUsable,
   markPlpAutoBuildWorkSuperseded,
   resetPlpAutoBuildWorkStoreForTests,
-  sanitizePlpAutoBuildFailureReason,
   upsertPendingPlpAutoBuildWork,
   type PlpAutoBuildWorkRecord,
 } from "./plp-auto-build-work.repository.js";
 import { resolvePlpProviderConcurrency } from "./safety.js";
 
-type ProcessorFn = (request: PlpBuildRequest) => Promise<PlpBuildRequestStatus>;
+type ProcessorFn = (
+  request: PlpBuildRequest,
+) => Promise<ProcessPlpBuildRequestResult | PlpBuildRequestStatus>;
 
 const completed: PlpBuildRequest[] = [];
 let running = 0;
@@ -335,64 +340,139 @@ async function drainPlpBuildQueue(): Promise<void> {
   }
 }
 
+function normalizeProcessorOutcome(
+  raw: ProcessPlpBuildRequestResult | PlpBuildRequestStatus,
+): ProcessPlpBuildRequestResult {
+  if (typeof raw !== "string") {
+    return raw;
+  }
+  switch (raw) {
+    case "COMPLETED":
+    case "SKIPPED_USABLE":
+    case "SUPERSEDED":
+    case "QUEUED":
+      return { status: raw };
+    case "FAILED":
+      return {
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "UNKNOWN",
+          retryable: false,
+          stage: "processor",
+          safeReason: "UNKNOWN:legacy_status_FAILED",
+        }),
+      };
+    case "REJECTED_PARTIAL":
+      return {
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "REJECTED_PARTIAL",
+          retryable: false,
+          stage: "validate",
+          safeReason: "REJECTED_PARTIAL",
+        }),
+      };
+    case "RUNNING":
+    default:
+      return {
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "UNKNOWN",
+          retryable: false,
+          stage: "processor",
+          safeReason: `UNKNOWN:legacy_status_${raw}`,
+        }),
+      };
+  }
+}
+
 async function processClaimedWork(
   work: PlpAutoBuildWorkRecord,
   runningRequest: PlpBuildRequest,
 ): Promise<void> {
   recordPlpAutoBuildStarted();
   try {
-    const status = processor
-      ? await processor(runningRequest)
-      : ("QUEUED" as PlpBuildRequestStatus);
-
-    if (processor == null || status === "QUEUED") {
-      // Should not claim without processor; restore pending defensively.
+    if (processor == null) {
       await markPlpAutoBuildWorkFailed({
         workKey: work.workKey,
-        reason: "PROCESSOR_DORMANT",
-        attempts: 0,
+        attempts: work.attempts,
         maxAttempts: work.maxAttempts,
+        failure: structuredFailure({
+          failureCode: "PROCESSOR_DORMANT",
+          retryable: true,
+          stage: "processor",
+          safeReason: "PROCESSOR_DORMANT",
+        }),
       });
       return;
     }
 
-    completed.push({ ...runningRequest, status });
+    const raw = await processor(runningRequest);
+    const outcome = normalizeProcessorOutcome(raw);
 
-    if (status === "COMPLETED") {
+    completed.push({
+      ...runningRequest,
+      status: outcome.status === "QUEUED" ? "QUEUED" : outcome.status,
+    });
+
+    if (outcome.status === "QUEUED") {
+      await markPlpAutoBuildWorkFailed({
+        workKey: work.workKey,
+        attempts: work.attempts,
+        maxAttempts: work.maxAttempts,
+        failure: structuredFailure({
+          failureCode: "PROCESSOR_DORMANT",
+          retryable: true,
+          stage: "processor",
+          safeReason: "PROCESSOR_DORMANT",
+        }),
+      });
+      return;
+    }
+
+    if (outcome.status === "COMPLETED") {
       await markPlpAutoBuildWorkCompleted(work.workKey);
       recordPlpAutoBuildSucceeded();
       recordPlpAutoBuildPublish();
       return;
     }
-    if (status === "SKIPPED_USABLE") {
+    if (outcome.status === "SKIPPED_USABLE") {
       await markPlpAutoBuildWorkSkippedUsable(work.workKey);
       recordPlpAutoBuildSucceeded();
       return;
     }
-    if (status === "SUPERSEDED") {
+    if (outcome.status === "SUPERSEDED") {
       await markPlpAutoBuildWorkSuperseded(work.workKey);
       return;
     }
 
-    const reason = sanitizePlpAutoBuildFailureReason(status);
-    recordPlpAutoBuildFailed(reason);
+    if (outcome.status !== "FAILED") {
+      return;
+    }
+
+    const failure = outcome.failure;
+    recordPlpAutoBuildFailed(failure.failureCode);
     await markPlpAutoBuildWorkFailed({
       workKey: work.workKey,
-      reason,
       attempts: work.attempts,
       maxAttempts: work.maxAttempts,
+      failure,
     });
   } catch (error) {
-    const reason = sanitizePlpAutoBuildFailureReason(
-      error instanceof Error ? error.message : "FAILED",
-    );
-    recordPlpAutoBuildFailed(reason);
+    const failure = structuredFailure({
+      failureCode: "UNKNOWN",
+      retryable: true,
+      stage: "processor",
+      safeReason:
+        error instanceof Error ? error.message : "UNKNOWN:processor_throw",
+    });
+    recordPlpAutoBuildFailed(failure.failureCode);
     completed.push({ ...runningRequest, status: "FAILED" });
     await markPlpAutoBuildWorkFailed({
       workKey: work.workKey,
-      reason,
       attempts: work.attempts,
       maxAttempts: work.maxAttempts,
+      failure,
     });
   }
 }
