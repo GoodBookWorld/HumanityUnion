@@ -1,8 +1,12 @@
 /**
- * RESET 05D — Media & Country deterministic delivery closure diagnostic.
+ * RESET 05D / 05D.1 — Media & Country deterministic delivery closure diagnostic.
  *
- * READ-ONLY against Mongo/public consumers. PROVIDER_CALLS=0, PLP_WRITES=0.
+ * READ-ONLY against Mongo/public consumers.
+ * PROVIDER_CALLS_FROM_READ=0, PLP_WRITES_FROM_READ=0, MONGO_WRITES_FROM_READ=0.
  * Reflects the SAME selectors used by live /media and country rails.
+ *
+ * RESET 05D.1 — `--mongo` uses the thin Render-safe bootstrap:
+ * bind PLP Mongo persistence → connectMongoClient → reads → disconnect.
  */
 
 import { createHash } from "node:crypto";
@@ -22,13 +26,23 @@ import {
 } from "@hu/media-registry";
 
 import {
+  connectMongoClient,
+  disconnectMongoClient,
+} from "../../../infrastructure/mongodb/mongo-connection.js";
+import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
+import {
   CIVIC_MEDIA_FAQ,
   CIVIC_MEDIA_OVERVIEW,
 } from "../../civic-media-center/content/sections.js";
 import {
+  getMediaPlpPersistenceObservability,
+  requireMediaPlpMaterializerMongoPersistence,
+  type MediaPlpPersistenceObservability,
+} from "../media-plp-materializer/persistence-selection.js";
+import {
   selectCountryPublicNewsRailArticles,
   selectMediaPlpConsumerNewsArticles,
-} from "../media-plp-carousel/media-plp-news-selection.js";
+} from "./media-plp-news-selection.js";
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
@@ -40,7 +54,7 @@ import {
   ensureMediaPlpAdapterRegistered,
   ensureAllDefaultPlpAdaptersRegistered,
 } from "../published-localized-presentation/universal/register-defaults.js";
-import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "../media-plp-carousel/constants.js";
+import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
 
 export const MEDIA_LIVE_CLOSURE_PACK = "RESET_05D" as const;
 
@@ -70,6 +84,8 @@ export type MediaLiveClosureReport = {
   readonly readOnly: true;
   readonly PROVIDER_CALLS_FROM_READ: 0;
   readonly PLP_WRITES_FROM_READ: 0;
+  readonly MONGO_WRITES_FROM_READ: 0;
+  readonly PLP_PERSISTENCE_MODE: "MONGO" | "MEMORY" | "UNSET";
   readonly locale: string;
   readonly countryCode: string | null;
   readonly MEDIA_RSS_TOTAL: number;
@@ -99,6 +115,20 @@ export type MediaLiveClosureReport = {
     readonly fallbackReason: string | null;
   }[];
   readonly leaves: readonly MediaLiveClosureLeaf[];
+};
+
+export type MediaLiveClosureDiagnosticDeps = {
+  readonly isMongoConfigured?: () => boolean;
+  readonly requirePersistence?: () => MediaPlpPersistenceObservability;
+  readonly connect?: () => Promise<void>;
+  readonly disconnect?: () => Promise<void>;
+  readonly executeReads?: (input: {
+    readonly locale: string;
+    readonly countryCode?: string | null;
+    readonly countryName?: string | null;
+    readonly regionName?: string | null;
+    readonly persistence: MediaPlpPersistenceObservability;
+  }) => Promise<MediaLiveClosureReport>;
 };
 
 function fp(value: string): string {
@@ -153,17 +183,20 @@ export function parseMediaLiveClosureArgs(argv: readonly string[]): {
   return { mongo, locale, countryCode, countryName, regionName };
 }
 
-export async function runMediaLiveClosureDiagnostic(input: {
+export async function executeMediaLiveClosureReads(input: {
   readonly locale: string;
   readonly countryCode?: string | null;
   readonly countryName?: string | null;
   readonly regionName?: string | null;
+  readonly persistence?: MediaPlpPersistenceObservability;
 }): Promise<MediaLiveClosureReport> {
   ensureMediaPlpAdapterRegistered();
   ensureAllDefaultPlpAdaptersRegistered();
   const locale = String(input.locale).toLowerCase() as LanguageCode;
   const leaves: MediaLiveClosureLeaf[] = [];
   const mediaRssRows: Array<MediaLiveClosureReport["mediaRssRows"][number]> = [];
+  const persistence =
+    input.persistence ?? getMediaPlpPersistenceObservability();
 
   const mediaArticles = await selectMediaPlpConsumerNewsArticles({
     limit: MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
@@ -461,6 +494,8 @@ export async function runMediaLiveClosureDiagnostic(input: {
     readOnly: true,
     PROVIDER_CALLS_FROM_READ: 0,
     PLP_WRITES_FROM_READ: 0,
+    MONGO_WRITES_FROM_READ: 0,
+    PLP_PERSISTENCE_MODE: persistence.PLP_PERSISTENCE_MODE,
     locale,
     countryCode,
     MEDIA_RSS_TOTAL: mediaArticles.length,
@@ -485,11 +520,96 @@ export async function runMediaLiveClosureDiagnostic(input: {
   };
 }
 
+/**
+ * Thin `--mongo` CLI entry: bind PLP Mongo → connect → read-only diagnostic → disconnect.
+ * Never enqueues, heals, materializes, or imports Gemini.
+ */
+export async function runMediaLiveClosureDiagnostic(
+  input: {
+    readonly locale: string;
+    readonly countryCode?: string | null;
+    readonly countryName?: string | null;
+    readonly regionName?: string | null;
+  },
+  deps: MediaLiveClosureDiagnosticDeps = {},
+): Promise<{
+  readonly exitCode: number;
+  readonly report: MediaLiveClosureReport | null;
+  readonly errorMessage: string | null;
+}> {
+  const mongoReady = (deps.isMongoConfigured ?? isMongoConfigured)();
+  if (!mongoReady) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage: "MONGODB_URI is not configured.",
+    };
+  }
+
+  let persistence: MediaPlpPersistenceObservability;
+  try {
+    persistence = deps.requirePersistence
+      ? deps.requirePersistence()
+      : requireMediaPlpMaterializerMongoPersistence(
+          "diagnose:media-live-closure --mongo",
+        );
+  } catch (error) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "Mongo PLP persistence required",
+    };
+  }
+  if (persistence.PLP_PERSISTENCE_MODE !== "MONGO") {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        "PLP persistence mode is not MONGO (diagnose:media-live-closure --mongo).",
+    };
+  }
+
+  let connected = false;
+  try {
+    await (deps.connect ?? connectMongoClient)();
+    connected = true;
+    const report = await (deps.executeReads ?? executeMediaLiveClosureReads)({
+      locale: input.locale,
+      countryCode: input.countryCode,
+      countryName: input.countryName,
+      regionName: input.regionName,
+      persistence,
+    });
+    return { exitCode: report.ok ? 0 : 2, report, errorMessage: null };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "media live closure diagnostic failed",
+    };
+  } finally {
+    if (connected) {
+      try {
+        await (deps.disconnect ?? disconnectMongoClient)();
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
 export function printMediaLiveClosureReport(report: MediaLiveClosureReport): void {
   const lines = [
     `pack=${report.pack}`,
     `locale=${report.locale}`,
     `countryCode=${report.countryCode ?? ""}`,
+    `PLP_PERSISTENCE_MODE=${report.PLP_PERSISTENCE_MODE}`,
     `MEDIA_RSS_TOTAL=${report.MEDIA_RSS_TOTAL}`,
     `MEDIA_RSS_LOCALIZED=${report.MEDIA_RSS_LOCALIZED}`,
     `MEDIA_RSS_FALLBACK=${report.MEDIA_RSS_FALLBACK}`,
@@ -508,6 +628,7 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `CONSUMER_BYPASSES=${report.CONSUMER_BYPASSES}`,
     `PROVIDER_CALLS_FROM_READ=${report.PROVIDER_CALLS_FROM_READ}`,
     `PLP_WRITES_FROM_READ=${report.PLP_WRITES_FROM_READ}`,
+    `MONGO_WRITES_FROM_READ=${report.MONGO_WRITES_FROM_READ}`,
     `ok=${report.ok}`,
   ];
   console.log(lines.join("\n"));

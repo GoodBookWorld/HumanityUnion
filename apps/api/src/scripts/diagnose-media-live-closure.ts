@@ -1,10 +1,15 @@
 /**
- * RESET 05D — diagnose:media-live-closure (READ-ONLY).
+ * RESET 05D / 05D.1 — diagnose:media-live-closure (READ-ONLY).
  *
  * Usage:
  *   pnpm --filter @hu/api diagnose:media-live-closure -- \
- *     --mongo --locale uk --country-code CA --country-name Canada --region-name Americas
+ *     --mongo \
+ *     --locale uk \
+ *     --country-code UA \
+ *     --country-name "Ukraine" \
+ *     --region-name ""
  *
+ * Thin Mongo bootstrap (05D.1): bind PLP Mongo → connect → reads → disconnect.
  * Do not run against staging from Cursor automation unless explicitly requested.
  */
 
@@ -33,14 +38,26 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const report = await runMediaLiveClosureDiagnostic({
+  const result = await runMediaLiveClosureDiagnostic({
     locale: args.locale,
     countryCode: args.countryCode,
     countryName: args.countryName ?? args.countryCode,
     regionName: args.regionName,
   });
-  printMediaLiveClosureReport(report);
-  process.exit(report.ok ? 0 : 2);
+
+  if (result.report) {
+    printMediaLiveClosureReport(result.report);
+  }
+  if (result.errorMessage) {
+    console.error(
+      JSON.stringify({
+        pack: "RESET_05D",
+        ok: false,
+        errorMessage: result.errorMessage,
+      }),
+    );
+  }
+  process.exit(result.exitCode);
 }
 
 main().catch((error) => {
