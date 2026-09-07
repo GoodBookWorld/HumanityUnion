@@ -101,6 +101,14 @@ export function mapProviderBoundaryReasonToFailure(input: {
       safeReason: "PROVIDER_INTEGRITY:LOCALIZATION_CONTENT_INTEGRITY_FAILED",
     });
   }
+  if (reason === "BRAND_TOKEN_PRESERVATION_FAILED") {
+    return structuredFailure({
+      failureCode: "PROVIDER_INTEGRITY",
+      retryable: false,
+      stage: "provider",
+      safeReason: "PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED",
+    });
+  }
   if (reason === "PAYLOAD_LIMIT") {
     return structuredFailure({
       failureCode: "PROVIDER_PAYLOAD",

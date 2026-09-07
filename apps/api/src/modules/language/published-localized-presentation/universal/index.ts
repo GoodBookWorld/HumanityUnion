@@ -5,6 +5,7 @@
 export {
   ownershipToProvenance,
   machineEligiblePaths,
+  isCollectedPathMachineEligible,
   machineMayOverwriteExisting,
   assertFieldAuthorityOrderDocumented,
 } from "./field-authority.js";
@@ -58,6 +59,7 @@ export {
   countPlpAutoBuildWorkByStatus,
   listFailedPlpAutoBuildWork,
   listPlpAutoBuildWorkForTests,
+  findPlpAutoBuildWorkByKey,
   resetPlpAutoBuildWorkStoreForTests,
   setPlpAutoBuildWorkForceMemoryForTests,
   resolvePlpAutoBuildMaxAttempts,

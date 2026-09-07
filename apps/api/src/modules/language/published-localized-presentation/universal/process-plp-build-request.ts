@@ -19,7 +19,7 @@ import { classifyUsableLocalizedPresentation } from "../usability.js";
 import { runUniversalPlpBuild } from "./build-pipeline.js";
 import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
 import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
-import { machineEligiblePaths } from "./field-authority.js";
+import { isCollectedPathMachineEligible } from "./field-authority.js";
 import {
   failureFromTimeoutError,
   mapBuildStatusToFailure,
@@ -97,17 +97,16 @@ function withTimeout<T>(
 
 function collectMachineAutoValues(input: {
   readonly presentation: unknown;
-  readonly fieldPolicy: Parameters<typeof machineEligiblePaths>[0];
+  readonly fieldPolicy: Parameters<typeof isCollectedPathMachineEligible>[1];
 }): {
   readonly autoPaths: readonly string[];
   readonly autoValues: Record<string, string>;
 } {
-  const machinePaths = new Set(machineEligiblePaths(input.fieldPolicy));
   const collected = collectAutoPaths(input.presentation as never);
   const autoValues: Record<string, string> = {};
   const autoPaths: string[] = [];
   for (const node of collected) {
-    if (!machinePaths.has(node.path)) {
+    if (!isCollectedPathMachineEligible(node.path, input.fieldPolicy)) {
       continue;
     }
     autoPaths.push(node.path);

@@ -7,6 +7,7 @@ import type { LanguageCode } from "@hu/types";
 import {
   protectBrandTokensForMachineTranslation,
   restoreBrandTokensAfterMachineTranslation,
+  templateHasBrandSiteNameToken,
 } from "@hu/types";
 
 import type { TranslationProvider } from "../translation-provider.js";
@@ -41,6 +42,7 @@ export type ProviderBoundaryResult =
         | "PARSE_FAILURE"
         | "WRONG_TARGET_LANGUAGE"
         | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
+        | "BRAND_TOKEN_PRESERVATION_FAILED"
         | "PARTIAL"
         | "TIMEOUT";
       readonly PROVIDER_INPUT_BYTES: number;
@@ -82,7 +84,8 @@ export function validateMediaPlpProviderLocalizationValues(input: {
       readonly reason:
         | "PARTIAL"
         | "WRONG_TARGET_LANGUAGE"
-        | "LOCALIZATION_CONTENT_INTEGRITY_FAILED";
+        | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
+        | "BRAND_TOKEN_PRESERVATION_FAILED";
       readonly message: string;
     } {
   const missing: string[] = [];
@@ -97,6 +100,26 @@ export function validateMediaPlpProviderLocalizationValues(input: {
       ok: false,
       reason: "PARTIAL",
       message: `Provider localization missing AUTO paths: ${missing.join(", ")}`,
+    };
+  }
+
+  // Brand tokens must survive MACHINE exactly; Brand Localization owns substitution later.
+  const brandTokenLoss: string[] = [];
+  for (const key of Object.keys(input.autoValues)) {
+    const source = input.autoValues[key]!;
+    const translated = input.translated[key]!;
+    if (
+      templateHasBrandSiteNameToken(source) &&
+      !templateHasBrandSiteNameToken(translated)
+    ) {
+      brandTokenLoss.push(key);
+    }
+  }
+  if (brandTokenLoss.length > 0) {
+    return {
+      ok: false,
+      reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+      message: `Provider removed/altered Brand {siteName} tokens on paths: ${brandTokenLoss.join(", ")}; refusing PARTIAL publish.`,
     };
   }
 

@@ -109,6 +109,11 @@ export function validatePublishedBuildResult(
   const byPath = provenanceByPath(input.provenance);
 
   for (const node of canonicalAutos) {
+    // Structural entity-local ids may remain canonical (not MACHINE prose).
+    if (isTechnicalIdentityPath(node.path)) {
+      continue;
+    }
+
     const localizedValue = getPresentationValueAtPath(input.localizedCandidate, node.path);
     const prov = byPath.get(node.path);
 

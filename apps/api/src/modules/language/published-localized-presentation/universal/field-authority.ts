@@ -30,6 +30,29 @@ export function machineEligiblePaths(
 }
 
 /**
+ * RESET 05D.2 — collected nested paths (e.g. `faq[0].question`) inherit MACHINE
+ * eligibility from parent policy roots (`faq`). Structural `.id` leaves stay out.
+ */
+export function isCollectedPathMachineEligible(
+  path: string,
+  fieldPolicy: PlpFieldPolicyMap,
+): boolean {
+  if (/\.id$/.test(path)) {
+    return false;
+  }
+  const roots = machineEligiblePaths(fieldPolicy);
+  for (const root of roots) {
+    if (path === root) {
+      return true;
+    }
+    if (path.startsWith(`${root}.`) || path.startsWith(`${root}[`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * MACHINE may never overwrite a higher-authority existing provenance.
  * Uses the same rank table as mergeLocalizedLayersByProvenance.
  */

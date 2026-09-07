@@ -16,7 +16,9 @@ import {
 } from "@hu/media-registry";
 
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
+import { TRUSTED_MEDIA_RESOURCES } from "../../civic-media-center/content/trusted-media.js";
 import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
+import { countryAffiliatedMediaRefs } from "./country-affiliated-media-sources.js";
 
 /** Same language Web /media SSR passes to the public news listing. */
 export const MEDIA_PLP_NEWS_CONSUMER_LANGUAGE = "en";
@@ -51,8 +53,8 @@ export async function selectMediaPlpConsumerNewsIds(input?: {
 }
 
 /**
- * RESET 05D — shared country rail selector (same as live country consumer).
- * Loads a candidate corpus first, then country-first + global supplement.
+ * RESET 05D / 05D.2 — shared country rail selector (same as live country consumer).
+ * Loads affiliated Trusted Media + registry sources when recommendedMedia omitted.
  */
 export async function selectCountryPublicNewsRailArticles(input: {
   readonly context: CountryPublicNewsContext;
@@ -64,19 +66,31 @@ export async function selectCountryPublicNewsRailArticles(input: {
   readonly countryRelevantCount: number;
   readonly countryRelevantExcludedByCap: number;
   readonly usedFallback: boolean;
+  readonly countryRelevantIncluded: number;
+  readonly globalSupplementCount: number;
 }> {
   const limit = input.limit ?? COUNTRY_PUBLIC_NEWS_RAIL_LIMIT;
+  const affiliated =
+    input.context.recommendedMedia && input.context.recommendedMedia.length > 0
+      ? input.context.recommendedMedia
+      : countryAffiliatedMediaRefs(input.context.countryCode);
+  const context: CountryPublicNewsContext = {
+    ...input.context,
+    recommendedMedia: affiliated,
+  };
   const candidates = await findActivePublicNewsRecords({
     limit: input.candidateLimit ?? COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
     language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
     now: input.now,
   });
-  const selected = selectCountryPublicNewsRail(candidates, input.context, limit);
+  const selected = selectCountryPublicNewsRail(candidates, context, limit);
   return {
     articles: selected.articles,
     countryRelevantCount: selected.countryRelevant.length,
     countryRelevantExcludedByCap: selected.countryRelevantExcludedByCap,
     usedFallback: selected.usedFallback,
+    countryRelevantIncluded: selected.countryRelevant.length,
+    globalSupplementCount: selected.supplemented.length,
   };
 }
 
@@ -89,6 +103,11 @@ function countryAffiliatedSourceNames(): Set<string> {
     names.add(provider.name);
     for (const alias of provider.aliases ?? []) {
       names.add(alias);
+    }
+  }
+  for (const resource of TRUSTED_MEDIA_RESOURCES) {
+    if (resource.countryCode) {
+      names.add(resource.name);
     }
   }
   return names;

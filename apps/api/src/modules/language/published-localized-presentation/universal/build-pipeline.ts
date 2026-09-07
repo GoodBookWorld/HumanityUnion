@@ -22,7 +22,7 @@ import {
 import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
 import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
 import { notifyPlpSearchSeoInvalidation } from "./search-seo-hooks.js";
-import { machineEligiblePaths } from "./field-authority.js";
+import { isCollectedPathMachineEligible } from "./field-authority.js";
 
 export type PlpLocalizationLayerInput = {
   readonly source: PublishedLocalizationProvenanceSource;
@@ -71,17 +71,15 @@ export async function runUniversalPlpBuild(
     };
   }
 
-  const machinePaths = new Set(
-    machineEligiblePaths(input.contract.fieldPolicy),
-  );
   // Drop MACHINE values for non-machine paths (controlled vocab etc.).
+  // Nested leaves inherit eligibility from parent policy roots (05D.2).
   const sanitizedLayers = input.layers.map((layer) => {
     if (layer.source !== "MACHINE") {
       return layer;
     }
     const values: Record<string, string> = {};
     for (const [path, value] of Object.entries(layer.values)) {
-      if (machinePaths.has(path)) {
+      if (isCollectedPathMachineEligible(path, input.contract.fieldPolicy)) {
         values[path] = value;
       }
     }

@@ -88,10 +88,15 @@ export function mapGeographyRegionToRegistryTag(
   return "international";
 }
 
+/** Shared source-identity key (case/space insensitive) for News ↔ affiliated matching. */
+export function normalizeMediaSourceIdentity(value: string): string {
+  return normalizeMatchValue(value);
+}
+
 function addProviderNames(target: Set<string>, providerName: string, aliases?: string[]): void {
-  target.add(providerName);
+  target.add(normalizeMediaSourceIdentity(providerName));
   for (const alias of aliases ?? []) {
-    target.add(alias);
+    target.add(normalizeMediaSourceIdentity(alias));
   }
 }
 
@@ -102,7 +107,11 @@ export function buildCountryPreferredSourceNames(context: CountryPublicNewsConte
   const language = normalizeMatchValue(context.language ?? "en");
 
   for (const media of context.recommendedMedia ?? []) {
-    names.add(media.name);
+    addProviderNames(names, media.name);
+    const registered = getMediaRegistryProviderByName(media.name);
+    if (registered) {
+      addProviderNames(names, registered.name, registered.aliases);
+    }
   }
 
   for (const provider of TRUSTED_GLOBAL_MEDIA_REGISTRY) {
@@ -126,11 +135,11 @@ export function buildCountryPreferredSourceNames(context: CountryPublicNewsConte
   return names;
 }
 
-function articleMatchesSourceName(
+export function articleMatchesPreferredSourceName(
   article: CountryNewsSelectableArticle,
   preferredSourceNames: Set<string>,
 ): boolean {
-  if (preferredSourceNames.has(article.sourceName)) {
+  if (preferredSourceNames.has(normalizeMediaSourceIdentity(article.sourceName))) {
     return true;
   }
   const provider = getMediaRegistryProviderByName(article.sourceName);
@@ -138,9 +147,28 @@ function articleMatchesSourceName(
     return false;
   }
   return (
-    preferredSourceNames.has(provider.name) ||
-    (provider.aliases?.some((alias) => preferredSourceNames.has(alias)) ?? false)
+    preferredSourceNames.has(normalizeMediaSourceIdentity(provider.name)) ||
+    (provider.aliases?.some((alias) =>
+      preferredSourceNames.has(normalizeMediaSourceIdentity(alias)),
+    ) ??
+      false)
   );
+}
+
+function articleMatchesSourceName(
+  article: CountryNewsSelectableArticle,
+  preferredSourceNames: Set<string>,
+): boolean {
+  return articleMatchesPreferredSourceName(article, preferredSourceNames);
+}
+
+/** Step 1 — article originates from configured country-affiliated sources (not body text). */
+export function isCountryAffiliatedSourceArticle(
+  article: CountryNewsSelectableArticle,
+  context: CountryPublicNewsContext,
+  preferredSourceNames: Set<string> = buildCountryPreferredSourceNames(context),
+): boolean {
+  return articleMatchesPreferredSourceName(article, preferredSourceNames);
 }
 
 function articleMatchesTopics(

@@ -716,3 +716,17 @@ export async function listFailedPlpAutoBuildWork(input: {
   return docs.map((doc) => mapDoc(doc as PlpAutoBuildWorkDocument));
 }
 
+/** READ-ONLY lookup by work identity (diagnostic). */
+export async function findPlpAutoBuildWorkByKey(input: {
+  readonly entityType: string;
+  readonly entityId: string;
+  readonly locale: string;
+}): Promise<PlpAutoBuildWorkRecord | null> {
+  const workKey = plpBuildWorkKey(input);
+  if (usePlpAutoBuildWorkMemory()) {
+    return memoryByWorkKey.get(workKey) ?? null;
+  }
+  const doc = await collection().findOne({ workKey });
+  return doc ? mapDoc(doc as PlpAutoBuildWorkDocument) : null;
+}
+

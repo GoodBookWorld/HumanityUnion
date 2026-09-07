@@ -22,7 +22,7 @@ import {
 } from "@hu/types";
 import {
   COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
-  type CountryPublicNewsContext,
+  isCountryAffiliatedSourceArticle,
 } from "@hu/media-registry";
 
 import {
@@ -43,6 +43,11 @@ import {
   selectCountryPublicNewsRailArticles,
   selectMediaPlpConsumerNewsArticles,
 } from "./media-plp-news-selection.js";
+import { listCountryAffiliatedMediaSources } from "./country-affiliated-media-sources.js";
+import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
+import { findPlpAutoBuildWorkByKey } from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
+import { findCurrentPublishedPresentation } from "../published-localized-presentation/persistence/repository.js";
+import { classifyUsableLocalizedPresentation } from "../published-localized-presentation/usability.js";
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
@@ -92,10 +97,33 @@ export type MediaLiveClosureReport = {
   readonly MEDIA_RSS_LOCALIZED: number;
   readonly MEDIA_RSS_FALLBACK: number;
   readonly COUNTRY_RSS_TOTAL: number;
+  readonly COUNTRY_AFFILIATED_SOURCE_COUNT: number;
+  readonly COUNTRY_AFFILIATED_SOURCE_IDS: readonly string[];
+  readonly COUNTRY_AFFILIATED_CURRENT_NEWS: number;
   readonly COUNTRY_RELEVANT_COUNT: number;
+  readonly COUNTRY_RELEVANT_INCLUDED: number;
   readonly COUNTRY_RELEVANT_EXCLUDED: number;
+  readonly COUNTRY_GLOBAL_SUPPLEMENT_COUNT: number;
+  readonly COUNTRY_SOURCE_COVERAGE_GAP: boolean;
   readonly EDITORIAL_MODE: string;
   readonly EDITORIAL_CANONICAL_LEAVES: number;
+  readonly EDITORIAL_CURRENT_CANONICAL_VERSION: string;
+  readonly EDITORIAL_WORK_ROW_FOUND: boolean;
+  readonly EDITORIAL_WORK_STATUS: string | null;
+  readonly EDITORIAL_FAILURE_CODE: string | null;
+  readonly EDITORIAL_FAILURE_STAGE: string | null;
+  readonly EDITORIAL_FAILURE_REASON_SAFE: string | null;
+  readonly EDITORIAL_WORK_CANONICAL_VERSION: string | null;
+  readonly EDITORIAL_ATTEMPT_COUNT: number | null;
+  readonly EDITORIAL_MAX_ATTEMPTS: number | null;
+  readonly EDITORIAL_RETRYABLE: boolean | null;
+  readonly EDITORIAL_SNAPSHOT_FOUND: boolean;
+  readonly EDITORIAL_SNAPSHOT_CANONICAL_VERSION: string | null;
+  readonly EDITORIAL_SNAPSHOT_SCHEMA_VERSION: string | null;
+  readonly EDITORIAL_SNAPSHOT_USABLE: boolean;
+  readonly EDITORIAL_RESOLVER_MODE: string;
+  readonly EDITORIAL_RESOLVER_FALLBACK_REASON: string | null;
+  readonly EDITORIAL_WORK_TRIGGER: string | null;
   readonly FAQ_MACHINE_LEAVES: number;
   readonly FAQ_MACHINE_LOCALIZED: number;
   readonly FAQ_CANONICAL_MACHINE_LEAVES: number;
@@ -284,21 +312,43 @@ export async function executeMediaLiveClosureReads(input: {
   let countryTotal = 0;
   let countryRelevantCount = 0;
   let countryRelevantExcluded = 0;
+  let countryRelevantIncluded = 0;
+  let countryGlobalSupplement = 0;
+  let countryAffiliatedSourceCount = 0;
+  let countryAffiliatedSourceIds: string[] = [];
+  let countryAffiliatedCurrentNews = 0;
+  let countrySourceCoverageGap = false;
   const countryCode = input.countryCode?.trim().toUpperCase() || null;
   if (countryCode && input.countryName) {
-    const context: CountryPublicNewsContext = {
+    const affiliated = listCountryAffiliatedMediaSources(countryCode);
+    countryAffiliatedSourceCount = affiliated.length;
+    countryAffiliatedSourceIds = affiliated.map((s) => s.id);
+    const countryContext = {
       countryCode,
       countryName: input.countryName,
       regionName: input.regionName ?? undefined,
-      language: "en",
+      language: "en" as const,
+      recommendedMedia: affiliated.map((s) => ({ id: s.id, name: s.name })),
     };
+    const candidatePool = await findActivePublicNewsRecords({
+      limit: 120,
+      language: "en",
+    });
+    countryAffiliatedCurrentNews = candidatePool.filter((a) =>
+      isCountryAffiliatedSourceArticle(a, countryContext),
+    ).length;
+    countrySourceCoverageGap =
+      countryAffiliatedSourceCount > 0 && countryAffiliatedCurrentNews === 0;
+
     const country = await selectCountryPublicNewsRailArticles({
-      context,
+      context: countryContext,
       limit: COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
     });
     countryTotal = country.articles.length;
     countryRelevantCount = country.countryRelevantCount;
     countryRelevantExcluded = country.countryRelevantExcludedByCap;
+    countryRelevantIncluded = country.countryRelevantIncluded;
+    countryGlobalSupplement = country.globalSupplementCount;
     for (const article of country.articles) {
       const tree = asMediaPlpPresentationNode(
         buildCanonicalPublicNewsPresentation({
@@ -360,6 +410,31 @@ export async function executeMediaLiveClosureReads(input: {
   );
   const editorialVersion = fingerprintMediaPlpCanonicalVersion(editorialTree);
   const editorialEntityId = mediaPlpEditorialEntityId(MEDIA_PLP_EDITORIAL_ENTITY_ID);
+  const editorialWork = await findPlpAutoBuildWorkByKey({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+    entityId: editorialEntityId,
+    locale,
+  });
+  const editorialSnapshot = await findCurrentPublishedPresentation({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+    entityId: editorialEntityId,
+    locale,
+  });
+  let editorialSnapshotUsable = false;
+  if (editorialSnapshot) {
+    try {
+      const usability = classifyUsableLocalizedPresentation({
+        locale,
+        liveCanonicalVersion: editorialVersion,
+        liveLocalizationSchemaVersion: PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+        canonicalPresentation: editorialTree,
+        snapshot: editorialSnapshot,
+      });
+      editorialSnapshotUsable = usability.allowPublishedLocalized;
+    } catch {
+      editorialSnapshotUsable = false;
+    }
+  }
   const editorialResolved = await resolveMediaPlpConsumerItem({
     locale,
     entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
@@ -478,15 +553,27 @@ export async function executeMediaLiveClosureReads(input: {
     }
   }
 
+  const countryContractOk =
+    countryCode == null
+      ? true
+      : countryAffiliatedSourceCount === 0
+        ? true
+        : countrySourceCoverageGap
+          ? false
+          : countryRelevantExcluded === 0 &&
+            countryRelevantIncluded >=
+              Math.min(countryAffiliatedCurrentNews, COUNTRY_PUBLIC_NEWS_RAIL_LIMIT);
+
   const ok =
     mediaFallback === 0 &&
-    countryRelevantExcluded === 0 &&
+    mediaLocalized === mediaArticles.length &&
     editorialResolved.mode === "PUBLISHED_LOCALIZED" &&
     editorialCanonicalLeaves === 0 &&
     faqMachineLocalized === faqMachineLeaves &&
     faqCanonicalMachine === 0 &&
     faqBrandResolved === faqBrandTokens &&
-    identityMismatches === 0;
+    identityMismatches === 0 &&
+    countryContractOk;
 
   return {
     pack: MEDIA_LIVE_CLOSURE_PACK,
@@ -502,10 +589,35 @@ export async function executeMediaLiveClosureReads(input: {
     MEDIA_RSS_LOCALIZED: mediaLocalized,
     MEDIA_RSS_FALLBACK: mediaFallback,
     COUNTRY_RSS_TOTAL: countryTotal,
+    COUNTRY_AFFILIATED_SOURCE_COUNT: countryAffiliatedSourceCount,
+    COUNTRY_AFFILIATED_SOURCE_IDS: countryAffiliatedSourceIds,
+    COUNTRY_AFFILIATED_CURRENT_NEWS: countryAffiliatedCurrentNews,
     COUNTRY_RELEVANT_COUNT: countryRelevantCount,
+    COUNTRY_RELEVANT_INCLUDED: countryRelevantIncluded,
     COUNTRY_RELEVANT_EXCLUDED: countryRelevantExcluded,
+    COUNTRY_GLOBAL_SUPPLEMENT_COUNT: countryGlobalSupplement,
+    COUNTRY_SOURCE_COVERAGE_GAP: countrySourceCoverageGap,
     EDITORIAL_MODE: editorialResolved.mode,
     EDITORIAL_CANONICAL_LEAVES: editorialCanonicalLeaves,
+    EDITORIAL_CURRENT_CANONICAL_VERSION: editorialVersion,
+    EDITORIAL_WORK_ROW_FOUND: editorialWork != null,
+    EDITORIAL_WORK_STATUS: editorialWork?.status ?? null,
+    EDITORIAL_FAILURE_CODE: editorialWork?.failureCode ?? null,
+    EDITORIAL_FAILURE_STAGE: editorialWork?.failureStage ?? null,
+    EDITORIAL_FAILURE_REASON_SAFE: editorialWork?.lastError ?? null,
+    EDITORIAL_WORK_CANONICAL_VERSION: editorialWork?.canonicalVersion ?? null,
+    EDITORIAL_ATTEMPT_COUNT: editorialWork?.attempts ?? null,
+    EDITORIAL_MAX_ATTEMPTS: editorialWork?.maxAttempts ?? null,
+    EDITORIAL_RETRYABLE: editorialWork?.retryable ?? null,
+    EDITORIAL_SNAPSHOT_FOUND: editorialSnapshot != null,
+    EDITORIAL_SNAPSHOT_CANONICAL_VERSION:
+      editorialSnapshot?.identity.canonicalVersion ?? null,
+    EDITORIAL_SNAPSHOT_SCHEMA_VERSION:
+      editorialSnapshot?.identity.localizationSchemaVersion ?? null,
+    EDITORIAL_SNAPSHOT_USABLE: editorialSnapshotUsable,
+    EDITORIAL_RESOLVER_MODE: editorialResolved.mode,
+    EDITORIAL_RESOLVER_FALLBACK_REASON: editorialResolved.reasonCode ?? null,
+    EDITORIAL_WORK_TRIGGER: editorialWork?.trigger ?? null,
     FAQ_MACHINE_LEAVES: faqMachineLeaves,
     FAQ_MACHINE_LOCALIZED: faqMachineLocalized,
     FAQ_CANONICAL_MACHINE_LEAVES: faqCanonicalMachine,
@@ -614,10 +726,32 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `MEDIA_RSS_LOCALIZED=${report.MEDIA_RSS_LOCALIZED}`,
     `MEDIA_RSS_FALLBACK=${report.MEDIA_RSS_FALLBACK}`,
     `COUNTRY_RSS_TOTAL=${report.COUNTRY_RSS_TOTAL}`,
+    `COUNTRY_AFFILIATED_SOURCE_COUNT=${report.COUNTRY_AFFILIATED_SOURCE_COUNT}`,
+    `COUNTRY_AFFILIATED_CURRENT_NEWS=${report.COUNTRY_AFFILIATED_CURRENT_NEWS}`,
     `COUNTRY_RELEVANT_COUNT=${report.COUNTRY_RELEVANT_COUNT}`,
+    `COUNTRY_RELEVANT_INCLUDED=${report.COUNTRY_RELEVANT_INCLUDED}`,
     `COUNTRY_RELEVANT_EXCLUDED=${report.COUNTRY_RELEVANT_EXCLUDED}`,
+    `COUNTRY_GLOBAL_SUPPLEMENT_COUNT=${report.COUNTRY_GLOBAL_SUPPLEMENT_COUNT}`,
+    `COUNTRY_SOURCE_COVERAGE_GAP=${report.COUNTRY_SOURCE_COVERAGE_GAP}`,
     `EDITORIAL_MODE=${report.EDITORIAL_MODE}`,
     `EDITORIAL_CANONICAL_LEAVES=${report.EDITORIAL_CANONICAL_LEAVES}`,
+    `EDITORIAL_CURRENT_CANONICAL_VERSION=${report.EDITORIAL_CURRENT_CANONICAL_VERSION}`,
+    `EDITORIAL_WORK_ROW_FOUND=${report.EDITORIAL_WORK_ROW_FOUND}`,
+    `EDITORIAL_WORK_STATUS=${report.EDITORIAL_WORK_STATUS ?? ""}`,
+    `EDITORIAL_FAILURE_CODE=${report.EDITORIAL_FAILURE_CODE ?? ""}`,
+    `EDITORIAL_FAILURE_STAGE=${report.EDITORIAL_FAILURE_STAGE ?? ""}`,
+    `EDITORIAL_FAILURE_REASON_SAFE=${report.EDITORIAL_FAILURE_REASON_SAFE ?? ""}`,
+    `EDITORIAL_WORK_CANONICAL_VERSION=${report.EDITORIAL_WORK_CANONICAL_VERSION ?? ""}`,
+    `EDITORIAL_ATTEMPT_COUNT=${report.EDITORIAL_ATTEMPT_COUNT ?? ""}`,
+    `EDITORIAL_MAX_ATTEMPTS=${report.EDITORIAL_MAX_ATTEMPTS ?? ""}`,
+    `EDITORIAL_RETRYABLE=${report.EDITORIAL_RETRYABLE ?? ""}`,
+    `EDITORIAL_SNAPSHOT_FOUND=${report.EDITORIAL_SNAPSHOT_FOUND}`,
+    `EDITORIAL_SNAPSHOT_CANONICAL_VERSION=${report.EDITORIAL_SNAPSHOT_CANONICAL_VERSION ?? ""}`,
+    `EDITORIAL_SNAPSHOT_SCHEMA_VERSION=${report.EDITORIAL_SNAPSHOT_SCHEMA_VERSION ?? ""}`,
+    `EDITORIAL_SNAPSHOT_USABLE=${report.EDITORIAL_SNAPSHOT_USABLE}`,
+    `EDITORIAL_RESOLVER_MODE=${report.EDITORIAL_RESOLVER_MODE}`,
+    `EDITORIAL_RESOLVER_FALLBACK_REASON=${report.EDITORIAL_RESOLVER_FALLBACK_REASON ?? ""}`,
+    `EDITORIAL_WORK_TRIGGER=${report.EDITORIAL_WORK_TRIGGER ?? ""}`,
     `FAQ_MACHINE_LEAVES=${report.FAQ_MACHINE_LEAVES}`,
     `FAQ_MACHINE_LOCALIZED=${report.FAQ_MACHINE_LOCALIZED}`,
     `FAQ_CANONICAL_MACHINE_LEAVES=${report.FAQ_CANONICAL_MACHINE_LEAVES}`,
