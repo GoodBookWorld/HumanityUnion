@@ -11,12 +11,15 @@ interface PublicNewsAiSummaryProps {
   bullets: string[];
   entityResult?: MediaSemanticResult;
   entityId?: string;
+  /** Reset 03E.11 — PLP fallback reason for summary leaves. */
+  fallbackReason?: string;
 }
 
 export function PublicNewsAiSummary({
   bullets,
   entityResult,
   entityId,
+  fallbackReason,
 }: PublicNewsAiSummaryProps) {
   const t = useTranslations("publicNews.card");
 
@@ -36,6 +39,8 @@ export function PublicNewsAiSummary({
                 result={entityResult}
                 entityType="public_news"
                 entityId={entityId}
+                semanticPath="summary"
+                fallbackReason={fallbackReason}
               >
                 {bullet}
               </MediaSemanticNode>

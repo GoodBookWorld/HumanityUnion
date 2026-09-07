@@ -734,3 +734,16 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Execution | one-by-one `materialize:media-plp`; provider concurrency 1; fail-fast (no `--continue-on-error`) |
 | Skip | usable snapshots (0 provider/writes), zero-node, Initiative domain, source missing |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.11 — rendered carousel semantic closure
+
+**Invariant:** Every participant-visible Media carousel semantic **leaf** must resolve ownership from the real rendered DOM (not declarative inventory counts). Non-English `FULLY_LOCALIZED` requires zero unowned card leaves and zero translatable `CANONICAL_FALLBACK` carousel PLP leaves.
+
+| Concern | Rule |
+|---------|------|
+| Authority | Rendered `MediaSemanticNode` leaves + stack-based unowned scan inside card surfaces |
+| Page status | `FULLY_LOCALIZED` / `PARTIALLY_LOCALIZED` / `CANONICAL_ONLY` / `INVALID_COVERAGE` from real leaves |
+| Fallback | Runtime availability unchanged; acceptance treats carousel `CANONICAL_FALLBACK` as not fully localized |
+| AUTO trees | `public_news` title/summary/category; fact-check mission/coverage; propaganda focus/explanation |
+| Chips | Coverage chips are PLP `coverage` (machine-translatable civic content), not UI/terminology by default |
+| ACTIVE count | **30** — unchanged |

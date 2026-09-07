@@ -123,6 +123,7 @@ function coherentFallback(input: {
   readonly locale: string;
   readonly presentation: PublicPresentationNode;
   readonly canonicalVersion?: string;
+  readonly reasonCode?: string;
 }): MediaPlpResolvedPresentation {
   return {
     mode: "CANONICAL_FALLBACK",
@@ -131,6 +132,7 @@ function coherentFallback(input: {
     entityId: input.entityId,
     locale: input.locale,
     canonicalVersion: input.canonicalVersion ?? "canonical",
+    reasonCode: input.reasonCode ?? "NO_PUBLISHED_SNAPSHOT",
   };
 }
 

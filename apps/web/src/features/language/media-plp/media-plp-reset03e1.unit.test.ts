@@ -160,6 +160,7 @@ async function renderMediaPage(input: {
   readonly plpEditorialPresentation?: MediaPlpResolvedPresentation;
   readonly plpFactCheckById?: Record<string, MediaPlpResolvedPresentation>;
   readonly plpPropagandaById?: Record<string, MediaPlpResolvedPresentation>;
+  readonly plpNewsById?: Record<string, MediaPlpResolvedPresentation>;
   readonly inject?: ReactNode;
 }): Promise<string> {
   const loaded = await loadUiMessagesForLocale(input.locale);
@@ -180,6 +181,7 @@ async function renderMediaPage(input: {
           plpEditorialPresentation: input.plpEditorialPresentation,
           plpFactCheckById: input.plpFactCheckById,
           plpPropagandaById: input.plpPropagandaById,
+          plpNewsById: input.plpNewsById,
           initialNewsArticles: input.news ?? [sampleNews()],
         }),
         input.inject ?? null,
@@ -243,6 +245,19 @@ function fullySeededPlp(locale: string) {
         "euvsdisinfo",
         "PUBLISHED_LOCALIZED",
         { focus: `[${locale}] focus`, explanation: `[${locale}] propaganda` },
+        locale,
+      ),
+    },
+    plpNewsById: {
+      "news-1": plp(
+        MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+        "news-1",
+        "PUBLISHED_LOCALIZED",
+        {
+          title: `[${locale}] news title`,
+          summary: `[${locale}] news summary that is long enough for bullets.`,
+          category: `[${locale}] World`,
+        },
         locale,
       ),
     },
@@ -486,12 +501,13 @@ describe("Reset 03E.1 — rendered semantic coverage authority", () => {
       );
       assert.equal(report.UNOWNED_NODES, 0, formatMediaRenderedCoverageReport(report));
       assert.equal(report.MIXED_ENTITY_VIOLATIONS, 0);
-      // News cards on PLP path without published news PLP remain canonical fallback —
-      // exclude news entity from FULLY_LOCALIZED by seeding skip: assert chrome+editorial+trusted.
-      const nonNews = report.nodes.filter((n) => n.entityType !== "public_news");
-      const nonNewsReport = summarizeRenderedMediaCoverage(nonNews, locale);
-      assert.equal(nonNewsReport.CANONICAL_FALLBACK_NODES, 0, formatMediaRenderedCoverageReport(nonNewsReport));
-      assertFullyLocalizedMediaCoverage(nonNewsReport);
+      // Reset 03E.11 — news leaves are part of page FULLY_LOCALIZED (no exclude).
+      assert.equal(
+        report.CANONICAL_FALLBACK_NODES,
+        0,
+        formatMediaRenderedCoverageReport(report),
+      );
+      assertFullyLocalizedMediaCoverage(report);
     });
   }
 

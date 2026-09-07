@@ -93,5 +93,6 @@ export function toMediaPlpResolvedPresentation(
     entityId: item.entityId,
     locale: item.locale,
     canonicalVersion: item.canonicalVersion,
+    ...(item.reasonCode ? { reasonCode: item.reasonCode } : {}),
   };
 }

@@ -47,6 +47,8 @@ export type MediaSemanticNodeRecord = {
   readonly semanticPath?: string;
   /** UI dictionary key, e.g. civicMediaPublic.pipeline.title */
   readonly messageKey?: string;
+  /** When result is CANONICAL_FALLBACK — e.g. NO_PUBLISHED_SNAPSHOT */
+  readonly fallbackReason?: string;
   readonly text?: string;
 };
 
@@ -69,6 +71,8 @@ type MediaSemanticNodeProps = {
   readonly entityId?: string;
   readonly semanticPath?: string;
   readonly messageKey?: string;
+  /** Reset 03E.11 — why PLP_ENTITY fell back (availability, not localization success). */
+  readonly fallbackReason?: string;
   readonly as?: ElementType;
   readonly children?: ReactNode;
   readonly className?: string;
@@ -84,6 +88,7 @@ export function MediaSemanticNode({
   entityId,
   semanticPath,
   messageKey,
+  fallbackReason,
   as = "span",
   children,
   className,
@@ -101,6 +106,9 @@ export function MediaSemanticNode({
       ...(entityId ? { "data-hu-plp-id": entityId } : {}),
       ...(semanticPath ? { "data-hu-semantic-path": semanticPath } : {}),
       ...(messageKey ? { "data-hu-message-key": messageKey } : {}),
+      ...(fallbackReason && result === "CANONICAL_FALLBACK"
+        ? { "data-hu-fallback-reason": fallbackReason }
+        : {}),
     },
     children,
   );

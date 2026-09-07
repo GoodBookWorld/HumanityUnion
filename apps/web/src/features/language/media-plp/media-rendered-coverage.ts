@@ -87,6 +87,7 @@ export function collectRenderedMediaSemanticNodes(
       entityId: readAttr(attrs, "data-hu-plp-id"),
       semanticPath: readAttr(attrs, "data-hu-semantic-path"),
       messageKey: readAttr(attrs, "data-hu-message-key"),
+      fallbackReason: readAttr(attrs, "data-hu-fallback-reason"),
       text: text || undefined,
     });
   }

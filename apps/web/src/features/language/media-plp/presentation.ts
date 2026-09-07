@@ -26,6 +26,8 @@ export type MediaPlpResolvedPresentation = {
   readonly entityId: string;
   readonly locale: string;
   readonly canonicalVersion: string;
+  /** Reset 03E.11 — resolver reason when mode is CANONICAL_FALLBACK. */
+  readonly reasonCode?: string;
 };
 
 export function readMediaPlpStringField(

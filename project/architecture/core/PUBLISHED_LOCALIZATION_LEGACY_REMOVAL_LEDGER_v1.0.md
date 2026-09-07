@@ -299,6 +299,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until staging dry-run then bounded --execute** |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.11 note — rendered carousel semantic closure (no live ops)
+
+| Item | Status |
+|------|--------|
+| Miss class | Prior FULLY gates excluded `public_news`; `CANONICAL_FALLBACK` was owned but not page-blocking for carousel; inventory never inspected render RESULT |
+| Repair | `media-carousel-semantic-closure` + news `semanticPath` + fact/propaganda both-AUTO usedPresentation + `fallbackReason` |
+| Acceptance | Missing news/fact/propaganda PLP ⇒ not FULLY; unowned body/chip ⇒ INVALID; complete fixtures ⇒ FULLY |
+| Staging before further materialize | news/fact/propaganda leaves `CANONICAL_FALLBACK` / `NO_PUBLISHED_SNAPSHOT` ⇒ `PARTIALLY_LOCALIZED` |
+| Materialize | **not executed in this pack** — continue 03E.10 carousel runner after deploy |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

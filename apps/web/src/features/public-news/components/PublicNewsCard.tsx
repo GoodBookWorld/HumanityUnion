@@ -29,10 +29,11 @@ interface PublicNewsCardProps {
   plpPresentation?: {
     readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
     readonly presentation: unknown;
+    readonly reasonCode?: string;
   };
 }
 
-function plpEntityResult(view: {
+function plpEntityResultFromView(view: {
   coverage: { status: string; canonicalFallbackNodeCount: number };
 }): MediaSemanticResult {
   if (
@@ -42,6 +43,21 @@ function plpEntityResult(view: {
     return "CANONICAL_FALLBACK";
   }
   return "PUBLISHED_LOCALIZED";
+}
+
+function resolveNewsEntityResult(
+  plpPresentation: PublicNewsCardProps["plpPresentation"],
+  view: {
+    coverage: { status: string; canonicalFallbackNodeCount: number };
+  },
+): MediaSemanticResult {
+  if (plpPresentation?.mode === "CANONICAL_FALLBACK") {
+    return "CANONICAL_FALLBACK";
+  }
+  if (plpPresentation?.mode === "PUBLISHED_LOCALIZED") {
+    return "PUBLISHED_LOCALIZED";
+  }
+  return plpEntityResultFromView(view);
 }
 
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
@@ -92,7 +108,11 @@ export function PublicNewsCard({
     () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),
     [view.summary, view.title],
   );
-  const entityResult = plpEntityResult(view);
+  const entityResult = resolveNewsEntityResult(plpPresentation, view);
+  const fallbackReason =
+    entityResult === "CANONICAL_FALLBACK"
+      ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
+      : undefined;
 
   return (
     <article
@@ -111,6 +131,8 @@ export function PublicNewsCard({
             result={entityResult}
             entityType="public_news"
             entityId={view.id}
+            semanticPath="category"
+            fallbackReason={fallbackReason}
           >
             {view.category}
           </MediaSemanticNode>
@@ -135,7 +157,14 @@ export function PublicNewsCard({
               {view.sourceName}
             </MediaSemanticNode>
             <p className="public-news-card__published">
-              <time dateTime={view.publishedAt}>{publishedLabel}</time>
+              <MediaSemanticNode
+                as="time"
+                dateTime={view.publishedAt}
+                owner="PROTECTED_CANONICAL"
+                result="PROTECTED_CANONICAL"
+              >
+                {publishedLabel}
+              </MediaSemanticNode>
             </p>
           </div>
         </div>
@@ -154,6 +183,8 @@ export function PublicNewsCard({
           result={entityResult}
           entityType="public_news"
           entityId={view.id}
+          semanticPath="title"
+          fallbackReason={fallbackReason}
         >
           {view.title}
         </MediaSemanticNode>
@@ -162,6 +193,7 @@ export function PublicNewsCard({
           bullets={aiSummaryBullets}
           entityResult={entityResult}
           entityId={view.id}
+          fallbackReason={fallbackReason}
         />
 
         <div className="public-news-card__actions">

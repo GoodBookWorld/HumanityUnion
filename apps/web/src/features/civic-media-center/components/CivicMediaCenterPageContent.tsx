@@ -170,25 +170,33 @@ function FactCheckCard({
   mission,
   coverage,
   plpMode,
+  fallbackReason,
 }: {
   resource: FactCheckResource;
   mission: string;
   coverage: string;
   plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+  fallbackReason?: string;
 }) {
   const t = useTranslations("civicMediaPublic");
   const chips = coverageToChips(coverage);
-  // Reset 03E.5 — do not claim LOCALIZED while rendering canonical mission/coverage.
+  // Reset 03E.5 / 03E.11 — do not claim LOCALIZED while rendering canonical mission/coverage.
+  const missionLocalized =
+    mission.trim().length > 0 && mission.trim() !== resource.mission.trim();
+  const coverageLocalized =
+    coverage.trim().length > 0 && coverage.trim() !== resource.coverage.trim();
   const usedPresentation =
-    plpMode === "PUBLISHED_LOCALIZED" &&
-    mission.trim().length > 0 &&
-    mission.trim() !== resource.mission.trim();
+    plpMode === "PUBLISHED_LOCALIZED" && missionLocalized && coverageLocalized;
   const effectiveMode = usedPresentation
     ? "PUBLISHED_LOCALIZED"
     : plpMode === "PUBLISHED_LOCALIZED"
       ? "CANONICAL_FALLBACK"
       : plpMode;
   const bodyResult = plpModeToSemanticResult(effectiveMode);
+  const leafFallbackReason =
+    bodyResult === "CANONICAL_FALLBACK"
+      ? fallbackReason ?? "NO_PUBLISHED_SNAPSHOT"
+      : undefined;
 
   return (
     <Card
@@ -235,6 +243,7 @@ function FactCheckCard({
         entityType="civic_media_fact_check"
         entityId={resource.id}
         semanticPath="mission"
+        fallbackReason={leafFallbackReason}
       >
         {mission}
       </MediaSemanticNode>
@@ -247,6 +256,7 @@ function FactCheckCard({
         entityType="civic_media_fact_check"
         entityId={resource.id}
         semanticPath="coverage"
+        fallbackReason={leafFallbackReason}
       >
         {chips.map((chip) => (
           <span key={chip} className="civic-media-chip">
@@ -264,23 +274,33 @@ function PropagandaCard({
   focus,
   explanation,
   plpMode,
+  fallbackReason,
 }: {
   resource: PropagandaAnalysisResource;
   focus: string;
   explanation: string;
   plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+  fallbackReason?: string;
 }) {
   const t = useTranslations("civicMediaPublic");
-  const usedPresentation =
-    plpMode === "PUBLISHED_LOCALIZED" &&
+  // Reset 03E.5 / 03E.11 — require both AUTO leaves before claiming LOCALIZED.
+  const focusLocalized =
+    focus.trim().length > 0 && focus.trim() !== resource.focus.trim();
+  const explanationLocalized =
     explanation.trim().length > 0 &&
     explanation.trim() !== resource.explanation.trim();
+  const usedPresentation =
+    plpMode === "PUBLISHED_LOCALIZED" && focusLocalized && explanationLocalized;
   const effectiveMode = usedPresentation
     ? "PUBLISHED_LOCALIZED"
     : plpMode === "PUBLISHED_LOCALIZED"
       ? "CANONICAL_FALLBACK"
       : plpMode;
   const bodyResult = plpModeToSemanticResult(effectiveMode);
+  const leafFallbackReason =
+    bodyResult === "CANONICAL_FALLBACK"
+      ? fallbackReason ?? "NO_PUBLISHED_SNAPSHOT"
+      : undefined;
 
   return (
     <Card
@@ -317,6 +337,7 @@ function PropagandaCard({
         entityType="civic_media_propaganda"
         entityId={resource.id}
         semanticPath="focus"
+        fallbackReason={leafFallbackReason}
       >
         <Badge status="neutral" variant="neutral" label={focus} />
       </MediaSemanticNode>
@@ -328,6 +349,7 @@ function PropagandaCard({
         entityType="civic_media_propaganda"
         entityId={resource.id}
         semanticPath="explanation"
+        fallbackReason={leafFallbackReason}
       >
         {explanation}
       </MediaSemanticNode>
@@ -742,6 +764,14 @@ function CivicMediaCenterLoaded({
                 plpMode={
                   plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
                 }
+                fallbackReason={
+                  plpMode
+                    ? resolved?.reasonCode ??
+                      (resolved?.mode !== "PUBLISHED_LOCALIZED"
+                        ? "NO_PUBLISHED_SNAPSHOT"
+                        : undefined)
+                    : undefined
+                }
               />
             );
           }}
@@ -775,6 +805,14 @@ function CivicMediaCenterLoaded({
                 }
                 plpMode={
                   plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
+                }
+                fallbackReason={
+                  plpMode
+                    ? resolved?.reasonCode ??
+                      (resolved?.mode !== "PUBLISHED_LOCALIZED"
+                        ? "NO_PUBLISHED_SNAPSHOT"
+                        : undefined)
+                    : undefined
                 }
               />
             );
