@@ -1,18 +1,19 @@
 /**
- * Reset 03E.13 — authoritative public_news ID set for /media PLP.
+ * Reset 03E.13 / RESET 05C / RESET 05D — authoritative public_news selection.
  *
- * MUST stay identical to Web SSR:
- *   fetchPublicNewsArticles({ limit: MEDIA_PLP_NEWS_BATCH_LIMIT, language: "en" })
- * which calls findActivePublicNewsRecords({ language: "en", limit }) + source balance.
- *
- * Pre-03E.13 carousel discovery used newest-by-publishedAt without language/balance,
- * so materializer USABLE rows did not match the live News rail (≈5/12 overlap).
- *
- * RESET 05C — auto-build union uses limit 24 (country rail) while preserving
- * selectMediaPlpConsumerNewsArticles default 12 for /media materializer 03E.13.
+ * /media PLP batch: limit 12 (unchanged 03E.13).
+ * Country rails: shared country-first selector (media-registry).
+ * Auto-build: media-12 ∪ country-rail IDs for requested countries ∪ country-affiliated sources.
  */
 
 import type { NewsArticleRecord } from "@hu/types";
+import {
+  COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
+  COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
+  selectCountryPublicNewsRail,
+  TRUSTED_GLOBAL_MEDIA_REGISTRY,
+  type CountryPublicNewsContext,
+} from "@hu/media-registry";
 
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
 import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
@@ -21,10 +22,10 @@ import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
 export const MEDIA_PLP_NEWS_CONSUMER_LANGUAGE = "en";
 
 /**
- * RESET 05C — matches Web PUBLIC_NEWS_RAIL_LIMIT (country + discovery fetch).
- * Auto-build enqueue covers this union; /media PLP batch stays at 12.
+ * RESET 05C — historical union label. RESET 05D auto-build expands beyond
+ * truncate-then-filter; keep export for diagnostic compatibility.
  */
-export const MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT = 24;
+export const MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT = COUNTRY_PUBLIC_NEWS_RAIL_LIMIT;
 
 /**
  * Articles that belong in the /media PLP batch and carousel materializer inventory.
@@ -50,20 +51,93 @@ export async function selectMediaPlpConsumerNewsIds(input?: {
 }
 
 /**
- * RESET 05C — consumer-visible union for automatic PLP builds.
- * Same findActivePublicNewsRecords language=en + balance as /media, limit 24.
+ * RESET 05D — shared country rail selector (same as live country consumer).
+ * Loads a candidate corpus first, then country-first + global supplement.
+ */
+export async function selectCountryPublicNewsRailArticles(input: {
+  readonly context: CountryPublicNewsContext;
+  readonly limit?: number;
+  readonly candidateLimit?: number;
+  readonly now?: string;
+}): Promise<{
+  readonly articles: readonly NewsArticleRecord[];
+  readonly countryRelevantCount: number;
+  readonly countryRelevantExcludedByCap: number;
+  readonly usedFallback: boolean;
+}> {
+  const limit = input.limit ?? COUNTRY_PUBLIC_NEWS_RAIL_LIMIT;
+  const candidates = await findActivePublicNewsRecords({
+    limit: input.candidateLimit ?? COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
+    language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
+    now: input.now,
+  });
+  const selected = selectCountryPublicNewsRail(candidates, input.context, limit);
+  return {
+    articles: selected.articles,
+    countryRelevantCount: selected.countryRelevant.length,
+    countryRelevantExcludedByCap: selected.countryRelevantExcludedByCap,
+    usedFallback: selected.usedFallback,
+  };
+}
+
+function countryAffiliatedSourceNames(): Set<string> {
+  const names = new Set<string>();
+  for (const provider of TRUSTED_GLOBAL_MEDIA_REGISTRY) {
+    if (!provider.countryCode) {
+      continue;
+    }
+    names.add(provider.name);
+    for (const alias of provider.aliases ?? []) {
+      names.add(alias);
+    }
+  }
+  return names;
+}
+
+/**
+ * RESET 05D — consumer-visible union for automatic PLP builds:
+ * exact /media 12 + country-affiliated source articles from the candidate pool
+ * (so country rails are not stuck waiting on global top-24 truncation).
  */
 export async function selectConsumerVisibleNewsArticlesForAutoBuild(input?: {
   readonly now?: string;
+  readonly countryContexts?: readonly CountryPublicNewsContext[];
 }): Promise<readonly NewsArticleRecord[]> {
-  return selectMediaPlpConsumerNewsArticles({
-    limit: MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT,
+  const mediaRail = await selectMediaPlpConsumerNewsArticles({
+    limit: MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
     now: input?.now,
   });
+  const candidates = await findActivePublicNewsRecords({
+    limit: COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
+    language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
+    now: input?.now,
+  });
+  const affiliated = countryAffiliatedSourceNames();
+  const byId = new Map<string, NewsArticleRecord>();
+  for (const article of mediaRail) {
+    byId.set(article.id, article);
+  }
+  for (const article of candidates) {
+    if (affiliated.has(article.sourceName)) {
+      byId.set(article.id, article);
+    }
+  }
+  for (const context of input?.countryContexts ?? []) {
+    const countryRail = selectCountryPublicNewsRail(
+      candidates,
+      context,
+      COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
+    );
+    for (const article of countryRail.articles) {
+      byId.set(article.id, article);
+    }
+  }
+  return [...byId.values()];
 }
 
 export async function selectConsumerVisibleNewsIdsForAutoBuild(input?: {
   readonly now?: string;
+  readonly countryContexts?: readonly CountryPublicNewsContext[];
 }): Promise<readonly string[]> {
   const records = await selectConsumerVisibleNewsArticlesForAutoBuild(input);
   return records.map((record) => record.id);

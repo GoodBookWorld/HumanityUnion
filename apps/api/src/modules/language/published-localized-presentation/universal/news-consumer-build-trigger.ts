@@ -1,12 +1,9 @@
 /**
- * RESET 04 / 05C / 05C.1 — dynamic RSS / consumer-visible News build trigger.
+ * RESET 04 / 05C / 05C.1 / 05D — dynamic RSS / consumer-visible News build trigger.
  *
- * RESET 05C uses the auto-build union (limit 24 = country rail) so both
- * /media (12) and country surfaces are covered. Does not call Gemini.
- * discoverActiveNewsIds / carousel materializer keep limit 12 via
- * selectMediaPlpConsumerNewsArticles (03E.13 unchanged).
- *
- * RESET 05C.1 — awaits durable upserts only (never provider builds).
+ * RESET 05D — auto-build covers /media 12 + country-affiliated candidates via
+ * selectConsumerVisibleNewsArticlesForAutoBuild. Exact media-12 rows may heal
+ * same-version failed work (targeted, not mass reopen of historical failures).
  */
 
 import { MEDIA_PLP_ENTITY_TYPE, mediaPlpPublicNewsEntityId } from "@hu/types";
@@ -27,8 +24,6 @@ import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
 /**
  * After RSS ingest / consumer-visible refresh: enqueue missing/stale news
  * localization for eligible Registry locales (caller supplies locales).
- * Default selection = auto-build union (limit 24). Optional limit override
- * still uses the same language=en + balance selector (tests may pass 12).
  */
 export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly locales: readonly string[];
@@ -42,9 +37,13 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
 }> {
   ensureMediaPlpAdapterRegistered();
   recordPlpAutoBuildCollectionEnqueueAttempt();
+  const mediaExact = await selectMediaPlpConsumerNewsArticles({
+    limit: input.limit ?? 12,
+  });
+  const mediaExactIds = new Set(mediaExact.map((article) => article.id));
   const articles =
     input.limit != null
-      ? await selectMediaPlpConsumerNewsArticles({ limit: input.limit })
+      ? mediaExact
       : await selectConsumerVisibleNewsArticlesForAutoBuild();
   let enqueued = 0;
   let skippedUsable = 0;
@@ -66,6 +65,7 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
       }),
     );
     const canonicalVersion = fingerprintMediaPlpCanonicalVersion(tree);
+    const healMediaRail = mediaExactIds.has(article.id);
     for (const locale of input.locales) {
       if (String(locale).toLowerCase() === "en") {
         continue;
@@ -78,6 +78,7 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
         contentRevision: 1,
         trigger: "CONSUMER_VISIBLE_COLLECTION_REFRESH",
         canonicalPresentation: tree,
+        reopenFailedSameVersion: healMediaRail,
       });
       if (result.skippedUsable) {
         skippedUsable += 1;

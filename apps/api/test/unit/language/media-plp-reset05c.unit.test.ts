@@ -334,7 +334,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     assert.doesNotMatch(countryFetch, /gemini|materialize|processPlpBuildRequest/);
   });
 
-  it("8: union auto-build covers limit 24 (media 12 ⊂ union)", async () => {
+  it("8: auto-build covers media 12 ⊂ consumer-visible union (05D)", async () => {
     assert.equal(MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT, 24);
     assert.equal(MEDIA_PLP_CAROUSEL_NEWS_LIMIT, 12);
 
@@ -344,7 +344,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     const media = await selectMediaPlpConsumerNewsArticles();
     const union = await selectConsumerVisibleNewsArticlesForAutoBuild();
     assert.equal(media.length, 12);
-    assert.equal(union.length, 24);
+    assert.ok(union.length >= media.length);
 
     const unionIds = new Set(union.map((a) => a.id));
     for (const article of media) {
@@ -352,8 +352,8 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     }
 
     const enqueued = await enqueueConsumerVisibleNewsPlpBuilds({ locales: ["uk"] });
-    assert.equal(enqueued.consumerCount, 24);
-    assert.equal(enqueued.enqueued, 24);
+    assert.equal(enqueued.consumerCount, union.length);
+    assert.ok(enqueued.enqueued >= 12);
     assert.equal(enqueued.PROVIDER_CALLS, 0);
   });
 

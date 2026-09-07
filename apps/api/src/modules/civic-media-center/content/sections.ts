@@ -75,11 +75,11 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
 ] as const;
 
 /**
- * RESET 05C — organization identity uses structural `{siteName}` tokens.
+ * RESET 05C / 05D — organization identity uses structural `{siteName}` tokens.
  * Brand Localization resolves display names at compose/render (English Brand
- * fallback remains "Humanity Union"). This changes the civic_media_editorial
- * canonical fingerprint — published editorial PLP snapshots need a later
- * rebuild (not part of this pack; do not materialize here).
+ * fallback remains "Humanity Union"). FAQ machine prose is PLP-owned and must
+ * be rebuilt via automatic editorial enqueue (RESET 05D bootstrap) — Brand
+ * substitution alone never counts as FAQ localization.
  */
 export const CIVIC_MEDIA_FAQ: readonly CivicMediaFaqItem[] = [
   {

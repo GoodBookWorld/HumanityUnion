@@ -158,6 +158,29 @@ export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBu
   }
 
   const pendingCount = await refreshPlpAutoBuildQueueDepthFromStore();
+
+  // RESET 05D — schedule editorial rebuild for current fingerprint (FAQ/overview).
+  try {
+    const { enqueueCivicMediaEditorialPlpBuilds } = await import(
+      "./editorial-build-trigger.js"
+    );
+    const editorial = await enqueueCivicMediaEditorialPlpBuilds({
+      locales: registered.locales,
+    });
+    logger.info("plp_auto_build_runtime.editorial_enqueue", {
+      component: "plp-auto-build",
+      enqueued: editorial.enqueued,
+      skippedUsable: editorial.skippedUsable,
+      deduped: editorial.deduped,
+      canonicalVersion: editorial.canonicalVersion,
+    });
+  } catch (error) {
+    logger.warn("plp_auto_build_runtime.editorial_enqueue_failed", {
+      component: "plp-auto-build",
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
   startPlpAutoBuildDrainInterval();
   kickPlpAutoBuildDrain();
 

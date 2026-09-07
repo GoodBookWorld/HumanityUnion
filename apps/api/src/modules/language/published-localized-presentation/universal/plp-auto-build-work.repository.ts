@@ -158,6 +158,7 @@ function coalesceUpsert(input: {
   readonly contentRevision: number;
   readonly trigger: PlpPublicationTriggerKind;
   readonly maxAttempts: number;
+  readonly reopenFailedSameVersion?: boolean;
 }): UpsertPlpAutoBuildWorkResult {
   const workKey = plpBuildWorkKey(input);
   const updatedAt = nowIso();
@@ -196,11 +197,24 @@ function coalesceUpsert(input: {
     return { accepted: false, deduped: true, record: existing };
   }
 
-  // Same-version terminal failed: never reopen via coalesce (preserves forensic
-  // row; stops RSS refresh from restarting exhausted / non-retryable failures
-  // and climbing attemptCount past maxAttempts — live 6/5 evidence).
+  // Same-version terminal failed: never reopen via normal coalesce (preserves
+  // forensic row; stops RSS refresh climbing attemptCount past maxAttempts).
+  // RESET 05D — explicit reopenFailedSameVersion allows targeted consumer-visible heal.
   if (existing.status === "failed" && sameVersion) {
-    return { accepted: false, deduped: true, record: existing };
+    if (!input.reopenFailedSameVersion) {
+      return { accepted: false, deduped: true, record: existing };
+    }
+    const record: PlpAutoBuildWorkRecord = {
+      ...existing,
+      status: "pending",
+      attempts: 0,
+      maxAttempts: input.maxAttempts,
+      claimedAt: null,
+      completedAt: null,
+      updatedAt,
+      enqueuedAt: updatedAt,
+    };
+    return { accepted: true, deduped: false, record };
   }
 
   // Same-version pending/running: coalesce in place (no duplicate work).
@@ -267,6 +281,7 @@ export async function upsertPendingPlpAutoBuildWork(input: {
   readonly contentRevision: number;
   readonly trigger: PlpPublicationTriggerKind;
   readonly maxAttempts?: number;
+  readonly reopenFailedSameVersion?: boolean;
 }): Promise<UpsertPlpAutoBuildWorkResult> {
   const maxAttempts = input.maxAttempts ?? resolvePlpAutoBuildMaxAttempts();
   const workKey = plpBuildWorkKey(input);

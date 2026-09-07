@@ -25,7 +25,8 @@ import {
   type PublicNewsFilters,
 } from "../public-news-discovery.utils";
 import {
-  filterPublicNewsForCountry,
+  selectCountryPublicNewsRail,
+  COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
   type CountryPublicNewsMediaRef,
 } from "../public-news-country.utils";
 import { PublicNewsPlaceholder } from "./PublicNewsPlaceholder";
@@ -135,10 +136,15 @@ export function PublicNewsSection({
     setError(null);
 
     try {
-      // Pack 08K.3 — fetch English source corpus; interface `locale` owns presentation.
+      // Pack 08K.3 / RESET 05D — English source corpus.
+      // Country rails fetch a larger candidate pool then apply shared
+      // country-first selection (never truncate-to-24 before relevance).
       void locale;
       const response = await fetchPublicNewsArticles({
-        limit: PUBLIC_NEWS_RAIL_LIMIT,
+        limit:
+          variant === "country"
+            ? COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT
+            : PUBLIC_NEWS_RAIL_LIMIT,
         language: "en",
       });
       setArticles(response.items);
@@ -154,7 +160,7 @@ export function PublicNewsSection({
     } finally {
       setLoading(false);
     }
-  }, [tErrors, locale]);
+  }, [tErrors, locale, variant]);
 
   useEffect(() => {
     if (hasInitialArticles) {
@@ -170,28 +176,27 @@ export function PublicNewsSection({
 
   const { processedArticles, usedGlobalFallback, countryScopedArticles } = useMemo(() => {
     if (variant === "country" && countryCode && countryName) {
-      const countryResult = filterPublicNewsForCountry(articles, {
-        countryCode,
-        countryName,
-        regionName,
-        recommendedMedia,
-        language: "en",
-      });
-
-      const sorted = sortPublicNewsArticles(countryResult.articles, "newest", "").slice(
-        0,
+      const selected = selectCountryPublicNewsRail(
+        articles,
+        {
+          countryCode,
+          countryName,
+          regionName,
+          recommendedMedia,
+          language: "en",
+        },
         PUBLIC_NEWS_RAIL_LIMIT,
       );
 
       const providerFiltered =
         countryProvider === "all"
-          ? sorted
-          : sorted.filter((article) => article.sourceName === countryProvider);
+          ? selected.articles
+          : selected.articles.filter((article) => article.sourceName === countryProvider);
 
       return {
-        processedArticles: providerFiltered,
-        usedGlobalFallback: countryResult.usedFallback,
-        countryScopedArticles: sorted,
+        processedArticles: [...providerFiltered],
+        usedGlobalFallback: selected.usedFallback,
+        countryScopedArticles: [...selected.articles],
       };
     }
 

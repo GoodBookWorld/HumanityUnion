@@ -41,6 +41,7 @@
     "diagnose:media-plp-carousel": "tsx src/scripts/diagnose-media-plp-carousel.ts",
     "diagnose:media-plp-news-parity": "tsx src/scripts/diagnose-media-plp-news-parity.ts",
     "diagnose:media-plp-rss-coverage": "tsx src/scripts/diagnose-media-plp-rss-coverage.ts",
+    "diagnose:media-live-closure": "tsx src/scripts/diagnose-media-live-closure.ts",
     "diagnose:plp-auto-build-work": "tsx src/scripts/diagnose-plp-auto-build-work.ts",
     "diagnose:initiative-plp": "tsx src/scripts/diagnose-initiative-plp.ts",
     "materialize:media-plp": "tsx src/scripts/materialize-media-plp.ts",

@@ -154,6 +154,7 @@ export {
   splitBrandTokenParts,
   templateHasBrandSiteNameToken,
   withPreservedBrandTokens,
+  classifyFaqMachineProseLocalization,
 } from "./brand-token-composition.js";
 export type {
   LegalDocumentType,

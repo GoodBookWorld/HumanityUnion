@@ -46,6 +46,7 @@ export type {
   RegisterPlpAutoBuildProcessorResult,
   BootstrapPlpAutoBuildRuntimeResult,
 } from "./register-plp-auto-build-processor.js";
+export { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";
 export {
   getPlpAutoBuildRuntimeSnapshot,
   resetPlpAutoBuildRuntimeForTests,

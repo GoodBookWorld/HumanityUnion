@@ -100,3 +100,36 @@ export function withPreservedBrandTokens(
     transform(protectBrandTokensForMachineTranslation(text)),
   );
 }
+
+/**
+ * Classify FAQ machine prose independently of Brand token substitution.
+ * Brand-only localization of `{siteName}` must NOT count as localized FAQ.
+ */
+export function classifyFaqMachineProseLocalization(input: {
+  readonly template: string;
+  readonly canonicalTemplate: string;
+  readonly editorialMode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK" | string;
+}): {
+  readonly hasBrandToken: boolean;
+  readonly proseEqualsCanonical: boolean;
+  readonly machineLocalized: boolean;
+  readonly brandOnlyIllusion: boolean;
+} {
+  const hasBrandToken = templateHasBrandSiteNameToken(input.template);
+  const stripTokens = (value: string) =>
+    value.replaceAll(BRAND_SITE_NAME_TOKEN, "").replace(/\s+/g, " ").trim();
+  const proseEqualsCanonical =
+    stripTokens(input.template) === stripTokens(input.canonicalTemplate);
+  const machineLocalized =
+    input.editorialMode === "PUBLISHED_LOCALIZED" && !proseEqualsCanonical;
+  const brandOnlyIllusion =
+    hasBrandToken &&
+    proseEqualsCanonical &&
+    input.editorialMode !== "PUBLISHED_LOCALIZED";
+  return {
+    hasBrandToken,
+    proseEqualsCanonical,
+    machineLocalized,
+    brandOnlyIllusion,
+  };
+}

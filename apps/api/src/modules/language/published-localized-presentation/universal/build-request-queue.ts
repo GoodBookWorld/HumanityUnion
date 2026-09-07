@@ -207,6 +207,11 @@ type EnqueueInput = {
   readonly canonicalPresentation?: PublicPresentationNode | null;
   /** Default true. Set false to skip usability probe (tests / forced rebuild). */
   readonly skipUsableCheck?: boolean;
+  /**
+   * RESET 05D — when true, same-version terminal failed rows may be reopened
+   * for consumer-visible heal (media-12 / editorial). Not for mass historical reopen.
+   */
+  readonly reopenFailedSameVersion?: boolean;
 };
 
 function finalizeUpsertResult(
@@ -268,6 +273,7 @@ export function enqueuePlpBuildRequest(
       canonicalVersion: input.canonicalVersion,
       contentRevision: input.contentRevision,
       trigger: input.trigger,
+      reopenFailedSameVersion: input.reopenFailedSameVersion === true,
     }).then(finalizeUpsertResult);
   }
 
@@ -289,6 +295,7 @@ export function enqueuePlpBuildRequest(
       canonicalVersion: input.canonicalVersion,
       contentRevision: input.contentRevision,
       trigger: input.trigger,
+      reopenFailedSameVersion: input.reopenFailedSameVersion === true,
     });
     return finalizeUpsertResult(upsert);
   })();
