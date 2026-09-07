@@ -1,10 +1,14 @@
 /**
- * Reset 03B.2 — thin provider execution boundary (execute only).
+ * Reset 03B.2 / RESET 05D.4 — thin provider execution boundary (execute only).
  * Never silently falls back to the heavy Gemini provider module / registry barrel.
+ *
+ * RESET 05D.4 — ASCII Brand transport sentinel; PARTIAL path diagnostics;
+ * structured failure metadata for retry taxonomy.
  */
 
-import type { LanguageCode } from "@hu/types";
+import type { BrandTokenPathTransportReport, LanguageCode } from "@hu/types";
 import {
+  classifyBrandTokenPathTransport,
   protectBrandTokensForMachineTranslation,
   restoreBrandTokensAfterMachineTranslation,
   templateHasBrandSiteNameToken,
@@ -24,6 +28,25 @@ import {
 
 export const MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY = "THIN" as const;
 
+export type ProviderMachinePathDiagnostics = {
+  readonly EXPECTED_MACHINE_PATHS: readonly string[];
+  readonly RETURNED_MACHINE_PATHS: readonly string[];
+  readonly MISSING_MACHINE_PATHS: readonly string[];
+  readonly UNEXPECTED_MACHINE_PATHS: readonly string[];
+  readonly BRAND_TOKEN_PATH_STATES: readonly BrandTokenPathTransportReport[];
+};
+
+export type ProviderBoundaryFailureReason =
+  | "PAYLOAD_LIMIT"
+  | "PROVIDER_CALL_CAP"
+  | "PROVIDER_FAILURE"
+  | "PARSE_FAILURE"
+  | "WRONG_TARGET_LANGUAGE"
+  | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
+  | "BRAND_TOKEN_PRESERVATION_FAILED"
+  | "PARTIAL"
+  | "TIMEOUT";
+
 export type ProviderBoundaryResult =
   | {
       readonly ok: true;
@@ -32,23 +55,16 @@ export type ProviderBoundaryResult =
       readonly providerId: string;
       readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
       readonly PROVIDER_TRANSPORT: string;
+      readonly pathDiagnostics: ProviderMachinePathDiagnostics;
     }
   | {
       readonly ok: false;
-      readonly reason:
-        | "PAYLOAD_LIMIT"
-        | "PROVIDER_CALL_CAP"
-        | "PROVIDER_FAILURE"
-        | "PARSE_FAILURE"
-        | "WRONG_TARGET_LANGUAGE"
-        | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
-        | "BRAND_TOKEN_PRESERVATION_FAILED"
-        | "PARTIAL"
-        | "TIMEOUT";
+      readonly reason: ProviderBoundaryFailureReason;
       readonly PROVIDER_INPUT_BYTES: number;
       readonly message: string;
       readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
       readonly PROVIDER_TRANSPORT: string;
+      readonly pathDiagnostics?: ProviderMachinePathDiagnostics;
     };
 
 export type ThinProviderImportResult = {
@@ -73,12 +89,49 @@ export async function importMediaPlpMaterializerProvider(): Promise<ThinProvider
   };
 }
 
+export function buildProviderMachinePathDiagnostics(input: {
+  readonly autoValues: Readonly<Record<string, string>>;
+  readonly translated: Readonly<Record<string, string>>;
+  readonly allReturnedKeys?: readonly string[];
+}): ProviderMachinePathDiagnostics {
+  const expected = Object.keys(input.autoValues).sort();
+  const returned = Object.keys(input.translated)
+    .filter((k) => typeof input.translated[k] === "string" && input.translated[k]!.trim())
+    .sort();
+  const expectedSet = new Set(expected);
+  const returnedSet = new Set(returned);
+  const missing = expected.filter((p) => !returnedSet.has(p));
+  const unexpected = (input.allReturnedKeys ?? returned).filter(
+    (p) => !expectedSet.has(p),
+  );
+  const brandStates: BrandTokenPathTransportReport[] = [];
+  for (const path of expected) {
+    const source = input.autoValues[path] ?? "";
+    const translated = input.translated[path] ?? "";
+    const report = classifyBrandTokenPathTransport({
+      path,
+      canonicalSource: source,
+      restoredTranslated: translated,
+    });
+    if (report) {
+      brandStates.push(report);
+    }
+  }
+  return {
+    EXPECTED_MACHINE_PATHS: expected,
+    RETURNED_MACHINE_PATHS: returned,
+    MISSING_MACHINE_PATHS: missing,
+    UNEXPECTED_MACHINE_PATHS: [...new Set(unexpected)].sort(),
+    BRAND_TOKEN_PATH_STATES: brandStates,
+  };
+}
+
 export function validateMediaPlpProviderLocalizationValues(input: {
   readonly locale: LanguageCode;
   readonly autoValues: Readonly<Record<string, string>>;
   readonly translated: Readonly<Record<string, string>>;
 }):
-  | { readonly ok: true }
+  | { readonly ok: true; readonly pathDiagnostics: ProviderMachinePathDiagnostics }
   | {
       readonly ok: false;
       readonly reason:
@@ -87,24 +140,37 @@ export function validateMediaPlpProviderLocalizationValues(input: {
         | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
         | "BRAND_TOKEN_PRESERVATION_FAILED";
       readonly message: string;
+      readonly pathDiagnostics: ProviderMachinePathDiagnostics;
     } {
-  const missing: string[] = [];
-  for (const key of Object.keys(input.autoValues)) {
-    const value = input.translated[key];
-    if (typeof value !== "string" || !value.trim()) {
-      missing.push(key);
-    }
-  }
-  if (missing.length > 0) {
+  const pathDiagnostics = buildProviderMachinePathDiagnostics({
+    autoValues: input.autoValues,
+    translated: input.translated,
+  });
+
+  if (pathDiagnostics.MISSING_MACHINE_PATHS.length > 0) {
     return {
       ok: false,
       reason: "PARTIAL",
-      message: `Provider localization missing AUTO paths: ${missing.join(", ")}`,
+      message: `Provider localization missing AUTO paths: ${pathDiagnostics.MISSING_MACHINE_PATHS.join(", ")}`,
+      pathDiagnostics,
     };
   }
 
-  // Brand tokens must survive MACHINE exactly; Brand Localization owns substitution later.
-  const brandTokenLoss: string[] = [];
+  const brandLoss = pathDiagnostics.BRAND_TOKEN_PATH_STATES.filter(
+    (row) => row.TOKEN_STATE !== "PRESERVED",
+  );
+  if (brandLoss.length > 0) {
+    return {
+      ok: false,
+      reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+      message: `Provider removed/altered Brand {siteName} tokens on paths: ${brandLoss
+        .map((r) => `${r.SEMANTIC_PATH}:${r.TOKEN_STATE}`)
+        .join(", ")}; refusing PARTIAL publish.`,
+      pathDiagnostics,
+    };
+  }
+
+  // Defensive: also catch missing tokens via template helper (count edge cases).
   for (const key of Object.keys(input.autoValues)) {
     const source = input.autoValues[key]!;
     const translated = input.translated[key]!;
@@ -112,22 +178,19 @@ export function validateMediaPlpProviderLocalizationValues(input: {
       templateHasBrandSiteNameToken(source) &&
       !templateHasBrandSiteNameToken(translated)
     ) {
-      brandTokenLoss.push(key);
+      return {
+        ok: false,
+        reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+        message: `Provider removed/altered Brand {siteName} tokens on paths: ${key}; refusing PARTIAL publish.`,
+        pathDiagnostics,
+      };
     }
-  }
-  if (brandTokenLoss.length > 0) {
-    return {
-      ok: false,
-      reason: "BRAND_TOKEN_PRESERVATION_FAILED",
-      message: `Provider removed/altered Brand {siteName} tokens on paths: ${brandTokenLoss.join(", ")}; refusing PARTIAL publish.`,
-    };
   }
 
   if (input.locale !== "en") {
     const identical: string[] = [];
     let anyProsePath = false;
     for (const key of Object.keys(input.autoValues)) {
-      // Technical identity paths may remain identical (protected by contract).
       if (key === "id" || key.endsWith(".id")) {
         continue;
       }
@@ -140,11 +203,15 @@ export function validateMediaPlpProviderLocalizationValues(input: {
         identical.push(key);
       }
     }
-    if (anyProsePath && identical.length === Object.keys(input.autoValues).filter((k) => k !== "id" && !k.endsWith(".id")).length) {
+    const proseKeys = Object.keys(input.autoValues).filter(
+      (k) => k !== "id" && !k.endsWith(".id"),
+    );
+    if (anyProsePath && identical.length === proseKeys.length) {
       return {
         ok: false,
         reason: "WRONG_TARGET_LANGUAGE",
         message: `Provider returned source-identical values for every translatable path (locale=${input.locale}); refusing publish.`,
+        pathDiagnostics,
       };
     }
     if (identical.length > 0) {
@@ -152,11 +219,12 @@ export function validateMediaPlpProviderLocalizationValues(input: {
         ok: false,
         reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
         message: `Provider left ${identical.length} translatable path(s) canonical-identical (e.g. ${identical.slice(0, 3).join(", ")}); refusing publish.`,
+        pathDiagnostics,
       };
     }
   }
 
-  return { ok: true };
+  return { ok: true, pathDiagnostics };
 }
 
 export function flattenStructuredLocalizationValues(
@@ -186,6 +254,37 @@ export function flattenStructuredLocalizationValues(
       flattenStructuredLocalizationValues(value, next, out);
     }
   }
+}
+
+export function formatProviderPathDiagnosticsSafe(
+  diagnostics: ProviderMachinePathDiagnostics | undefined,
+): string {
+  if (!diagnostics) {
+    return "";
+  }
+  const parts: string[] = [];
+  if (diagnostics.MISSING_MACHINE_PATHS.length > 0) {
+    parts.push(
+      `MISSING_MACHINE_PATHS=${diagnostics.MISSING_MACHINE_PATHS.slice(0, 24).join("|")}`,
+    );
+  }
+  if (diagnostics.EXPECTED_MACHINE_PATHS.length > 0) {
+    parts.push(
+      `EXPECTED_MACHINE_PATHS=${diagnostics.EXPECTED_MACHINE_PATHS.slice(0, 24).join("|")}`,
+    );
+  }
+  const brandFail = diagnostics.BRAND_TOKEN_PATH_STATES.filter(
+    (r) => r.TOKEN_STATE !== "PRESERVED",
+  );
+  if (brandFail.length > 0) {
+    parts.push(
+      `BRAND_TOKEN_PATHS=${brandFail
+        .slice(0, 16)
+        .map((r) => `${r.SEMANTIC_PATH}:${r.TOKEN_STATE}`)
+        .join("|")}`,
+    );
+  }
+  return parts.length > 0 ? `;${parts.join(";")}` : "";
 }
 
 export async function callMediaPlpMaterializerProviderOnce(input: {
@@ -263,6 +362,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         message: "Provider returned non-JSON structured payload.",
         PROVIDER_EXECUTION_BOUNDARY: boundary,
         PROVIDER_TRANSPORT: transport,
+        pathDiagnostics: buildProviderMachinePathDiagnostics({
+          autoValues: input.autoValues,
+          translated: {},
+        }),
       };
     }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -273,6 +376,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         message: "Provider returned unexpected structured shape.",
         PROVIDER_EXECUTION_BOUNDARY: boundary,
         PROVIDER_TRANSPORT: transport,
+        pathDiagnostics: buildProviderMachinePathDiagnostics({
+          autoValues: input.autoValues,
+          translated: {},
+        }),
       };
     }
     const values: Record<string, string> = {};
@@ -281,7 +388,6 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       values[key] = restoreBrandTokensAfterMachineTranslation(value);
     }
 
-    // Prefer exact autoValues keys from flat or nested provider payload.
     const aligned: Record<string, string> = {};
     for (const key of Object.keys(input.autoValues)) {
       const direct = values[key];
@@ -300,9 +406,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         ok: false,
         reason: validated.reason,
         PROVIDER_INPUT_BYTES: bytes,
-        message: validated.message,
+        message: `${validated.message}${formatProviderPathDiagnosticsSafe(validated.pathDiagnostics)}`,
         PROVIDER_EXECUTION_BOUNDARY: boundary,
         PROVIDER_TRANSPORT: transport,
+        pathDiagnostics: validated.pathDiagnostics,
       };
     }
 
@@ -313,6 +420,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       providerId: result.providerId,
       PROVIDER_EXECUTION_BOUNDARY: boundary,
       PROVIDER_TRANSPORT: transport,
+      pathDiagnostics: validated.pathDiagnostics,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "provider failure";

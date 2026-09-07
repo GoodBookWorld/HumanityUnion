@@ -150,7 +150,7 @@ describe("RESET 05D.2 — editorial + country affiliation", () => {
       await import("@hu/types");
     const source = "{siteName} curates sources that meet published selection principles.";
     const protectedText = protectBrandTokensForMachineTranslation(source);
-    assert.match(protectedText, /⟦HU_BRAND_SITE_NAME⟧/);
+    assert.match(protectedText, /__HU_BRAND_SITE_NAME__/);
     const restored = restoreBrandTokensAfterMachineTranslation(
       protectedText.replace("curates", "відбирає"),
     );

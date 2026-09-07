@@ -77,22 +77,42 @@ export function mapProviderBoundaryReasonToFailure(input: {
   readonly message: string;
 }): PlpAutoBuildStructuredFailure {
   const reason = input.reason.toUpperCase();
+  const msg = sanitizePlpAutoBuildFailureReason(input.message);
   if (reason === "TIMEOUT") {
     return structuredFailure({
       failureCode: "PROVIDER_TIMEOUT",
       retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_TIMEOUT:${sanitizePlpAutoBuildFailureReason(input.message)}`,
+      safeReason: `PROVIDER_TIMEOUT:${msg}`,
     });
   }
-  if (reason === "PARTIAL" || reason === "WRONG_TARGET_LANGUAGE") {
+  // Malformed / incomplete provider payload — may succeed on another attempt.
+  if (reason === "PARTIAL") {
     return structuredFailure({
       failureCode: "PROVIDER_PARTIAL",
-      retryable: false,
+      retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_PARTIAL:${reason}`,
+      safeReason: `PROVIDER_PARTIAL:PARTIAL${msg ? `;${msg}` : ""}`,
     });
   }
+  if (reason === "PARSE_FAILURE") {
+    return structuredFailure({
+      failureCode: "PROVIDER_FAILURE",
+      retryable: true,
+      stage: "provider",
+      safeReason: `PROVIDER_FAILURE:PARSE_FAILURE`,
+    });
+  }
+  // Provider left everything in source language — often transient model failure.
+  if (reason === "WRONG_TARGET_LANGUAGE") {
+    return structuredFailure({
+      failureCode: "PROVIDER_PARTIAL",
+      retryable: true,
+      stage: "provider",
+      safeReason: `PROVIDER_PARTIAL:WRONG_TARGET_LANGUAGE`,
+    });
+  }
+  // Deterministic content integrity / Brand contract violations — terminal.
   if (reason === "LOCALIZATION_CONTENT_INTEGRITY_FAILED") {
     return structuredFailure({
       failureCode: "PROVIDER_INTEGRITY",
@@ -106,7 +126,7 @@ export function mapProviderBoundaryReasonToFailure(input: {
       failureCode: "PROVIDER_INTEGRITY",
       retryable: false,
       stage: "provider",
-      safeReason: "PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED",
+      safeReason: `PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED${msg ? `;${msg}` : ""}`,
     });
   }
   if (reason === "PAYLOAD_LIMIT") {
@@ -125,19 +145,19 @@ export function mapProviderBoundaryReasonToFailure(input: {
       safeReason: "PROVIDER_CAP:PROVIDER_CALL_CAP",
     });
   }
-  if (reason === "PARSE_FAILURE" || reason === "PROVIDER_FAILURE") {
+  if (reason === "PROVIDER_FAILURE") {
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
-      retryable: reason === "PROVIDER_FAILURE",
+      retryable: true,
       stage: "provider",
-      safeReason: `PROVIDER_FAILURE:${reason}`,
+      safeReason: `PROVIDER_FAILURE:PROVIDER_FAILURE`,
     });
   }
   return structuredFailure({
     failureCode: "PROVIDER_FAILURE",
     retryable: true,
     stage: "provider",
-    safeReason: `PROVIDER_FAILURE:${sanitizePlpAutoBuildFailureReason(input.message || reason)}`,
+    safeReason: `PROVIDER_FAILURE:${msg || reason}`,
   });
 }
 

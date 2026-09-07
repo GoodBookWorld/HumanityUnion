@@ -144,13 +144,21 @@ export {
   isBrandLocalizationStatus,
   visualHeroUnityQuoteLines,
 } from "./brand-localization.js";
-export type { BrandTokenPart, BrandTokenValues } from "./brand-token-composition.js";
+export type {
+  BrandTokenPart,
+  BrandTokenValues,
+  BrandTokenTransportState,
+  BrandTokenPathTransportReport,
+} from "./brand-token-composition.js";
 export {
   BRAND_SITE_NAME_MACHINE_SENTINEL,
+  BRAND_SITE_NAME_MACHINE_SENTINEL_LEGACY,
   BRAND_SITE_NAME_TOKEN,
   composeBrandTokens,
   protectBrandTokensForMachineTranslation,
   restoreBrandTokensAfterMachineTranslation,
+  countBrandSiteNameTokens,
+  classifyBrandTokenPathTransport,
   splitBrandTokenParts,
   templateHasBrandSiteNameToken,
   withPreservedBrandTokens,

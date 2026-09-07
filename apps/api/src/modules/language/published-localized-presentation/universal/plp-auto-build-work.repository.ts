@@ -439,8 +439,13 @@ async function markTerminal(
 }
 
 export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<void> {
-  // Preserve last failure forensic fields on success.
-  await markTerminal(workKey, "completed");
+  // RESET 05D.4 — completed current truth must not expose stale failure codes.
+  await markTerminal(workKey, "completed", {
+    lastError: null,
+    failureCode: null,
+    failureStage: null,
+    retryable: null,
+  });
 }
 
 export async function markPlpAutoBuildWorkSuperseded(workKey: string): Promise<void> {

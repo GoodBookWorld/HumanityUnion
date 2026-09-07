@@ -162,12 +162,13 @@ describe("RESET 05C — Media FAQ Brand Localization", () => {
     const restored = restoreBrandTokensAfterMachineTranslation(machineOut);
     assert.match(restored, /\{siteName\}/);
     assert.doesNotMatch(restored, /⟦HU_BRAND_SITE_NAME⟧/);
+    assert.doesNotMatch(restored, /__HU_BRAND_SITE_NAME__/);
 
     const prompt = readRepo(
       "apps/api/src/modules/language/media-plp-materializer/thin-gemini-prompt.ts",
     );
-    assert.match(prompt, /\{siteName\}/);
-    assert.match(prompt, /Preserve ICU Brand placeholders/);
+    assert.match(prompt, /__HU_BRAND_SITE_NAME__/);
+    assert.match(prompt, /Preserve structural Brand transport placeholders/);
 
     const boundary = readRepo(
       "apps/api/src/modules/language/media-plp-materializer/provider-boundary.ts",
@@ -292,7 +293,7 @@ describe("RESET 05C — Media FAQ Brand Localization", () => {
     const sections = readRepo(
       "apps/api/src/modules/civic-media-center/content/sections.ts",
     );
-    assert.match(sections, /canonical fingerprint/i);
-    assert.match(sections, /rebuild/i);
+    assert.match(sections, /\{siteName\}/);
+    assert.match(sections, /rebuilt/i);
   });
 });

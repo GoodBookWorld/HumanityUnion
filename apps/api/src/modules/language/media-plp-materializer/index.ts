@@ -54,6 +54,8 @@ export {
   callMediaPlpMaterializerProviderOnce,
   validateMediaPlpProviderLocalizationValues,
   flattenStructuredLocalizationValues,
+  buildProviderMachinePathDiagnostics,
+  formatProviderPathDiagnosticsSafe,
 } from "./provider-boundary.js";
 export {
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
