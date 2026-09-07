@@ -392,6 +392,17 @@ Status vocabulary for this pack: `ACTIVE` | `REPLACED_PENDING_ACCEPTANCE` | `REM
 | Schema | **No** PLP.2 bump |
 | ACTIVE count | **30** |
 
+### Reset 05B note — Initiative PLP live acceptance operator (no live ops)
+
+| Item | Status |
+|------|--------|
+| Commands | `diagnose:initiative-plp` (READ-ONLY), `materialize:initiative-plp` (dry-run default; `--execute` staging-only) |
+| Identity | Entity type `initiative` / entityId = initiativeId (sole civic root) |
+| Machine nodes | `title`, `summary`, `electionName` (PUBLIC_CHOICE); geography/lifecycle excluded |
+| Schema | **No** PLP.2 bump; fingerprint includes `electionName` when present |
+| Provider | Default `fake_local`; optional `HU_INITIATIVE_PLP_PROVIDER=thin_gemini` |
+| ACTIVE count | **30** |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

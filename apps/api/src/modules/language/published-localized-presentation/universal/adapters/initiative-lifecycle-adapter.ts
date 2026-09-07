@@ -38,8 +38,16 @@ export function buildCanonicalInitiativeCardPresentation(
     | "communitySlug"
     | "publicInitiativeHref"
     | "publishedAt"
+    | "electionName"
+    | "lifecycleProfile"
   >,
 ): PublicPresentationNode {
+  const isPublicChoice = card.lifecycleProfile === "PUBLIC_CHOICE";
+  const electionName =
+    isPublicChoice && card.electionName?.trim()
+      ? card.electionName.trim()
+      : null;
+
   return {
     initiativeId: protectedTechnical(card.initiativeId),
     title: card.title,
@@ -55,6 +63,8 @@ export function buildCanonicalInitiativeCardPresentation(
       : null,
     publicInitiativeHref: protectedTechnical(card.publicInitiativeHref),
     publishedAt: protectedTechnical(card.publishedAt),
+    // Only present for PUBLIC_CHOICE; MACHINE_CONTENT when set.
+    ...(electionName ? { electionName } : {}),
   };
 }
 

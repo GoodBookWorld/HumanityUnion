@@ -21,6 +21,11 @@ export interface WorldInitiativeCardProjection {
   currentStageLabel?: string;
   publicInitiativeHref: string;
   publishedAt: string;
+  /**
+   * RESET 05B — PUBLIC_CHOICE election display name (from metadata.communityAssociation).
+   * MACHINE_CONTENT / PLP — not geography.
+   */
+  electionName?: string;
   supportSummary?: {
     likes: number;
     dislikes: number;

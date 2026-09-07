@@ -122,7 +122,13 @@ export function toCountryInitiativeCardProjection(
     administrativelyBlocked: isPublicChoice
       ? isInitiativeAdministrativelyBlocked(initiative)
       : undefined,
-    ...(isPublicChoice ? resolveElectionVotingFields(initiative) : {}),
+    ...(isPublicChoice
+      ? {
+          ...resolveElectionVotingFields(initiative),
+          electionName:
+            initiative.metadata.communityAssociation?.trim() || undefined,
+        }
+      : {}),
   };
 }
 
