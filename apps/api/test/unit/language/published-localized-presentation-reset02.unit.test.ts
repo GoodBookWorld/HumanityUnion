@@ -134,6 +134,7 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
           appliedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
+      fieldPolicy: { explanation: "MACHINE_CONTENT" as const, name: "PROTECTED_CANONICAL" as const, websiteUrl: "PROTECTED_CANONICAL" as const, title: "MACHINE_CONTENT" as const },
     });
     assert.equal(partial.status, "NOT_READY");
     assert.ok(partial.reasonCodes.includes("PARTIAL_AUTO_NODES"));
@@ -161,6 +162,7 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
       canonicalPresentation: canonicalTree,
       localizedCandidate: merged.presentation,
       provenance: merged.provenance,
+      fieldPolicy: { explanation: "MACHINE_CONTENT" as const, name: "PROTECTED_CANONICAL" as const, websiteUrl: "PROTECTED_CANONICAL" as const, title: "MACHINE_CONTENT" as const },
     });
     assert.equal(complete.status, "READY_TO_PUBLISH");
   });

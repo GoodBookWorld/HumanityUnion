@@ -21,6 +21,7 @@ import {
   evaluateLocalizationContentIntegrity,
   resolveLocalizationContentIntegrityForRead,
 } from "../published-localized-presentation/content-integrity.js";
+import { resolveFieldPolicyForEntityType } from "../published-localized-presentation/universal/resolve-field-policy.js";
 import { classifyUsableLocalizedPresentation } from "../published-localized-presentation/usability.js";
 import {
   getMediaPlpPreflightCounters,
@@ -149,6 +150,7 @@ export type MediaPlpPreflightDeps = {
 
 function computeContentIntegrityFields(input: {
   readonly locale: string;
+  readonly entityType: string;
   readonly source: MediaPlpPreflightSourceLookup;
   readonly plp: MediaPlpPreflightPlpLookup;
 }): {
@@ -180,10 +182,12 @@ function computeContentIntegrityFields(input: {
     };
   }
 
+  const fieldPolicy = resolveFieldPolicyForEntityType(input.entityType);
   const gate = resolveLocalizationContentIntegrityForRead({
     locale: input.locale,
     canonicalPresentation: input.source.canonicalPresentation,
     localizedPresentation: input.plp.presentation,
+    fieldPolicy,
     persisted: input.plp.contentIntegrity ?? null,
   });
 
@@ -194,6 +198,7 @@ function computeContentIntegrityFields(input: {
           locale: input.locale,
           canonicalPresentation: input.source.canonicalPresentation,
           localizedPresentation: input.plp.presentation,
+          fieldPolicy,
         })
       : gate.report;
 
@@ -445,6 +450,7 @@ export async function runMediaPlpPreflight(
     });
     const integrity = computeContentIntegrityFields({
       locale: identityArgs.locale,
+      entityType: identityArgs.entityType,
       source,
       plp,
     });

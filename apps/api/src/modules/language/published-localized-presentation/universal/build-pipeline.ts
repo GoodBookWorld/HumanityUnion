@@ -41,6 +41,11 @@ export type RunUniversalPlpBuildResult = {
   readonly status: PlpBuildRequestStatus;
   readonly reasonCodes: readonly string[];
   readonly snapshotId: string | null;
+  readonly pathDiagnostics?: {
+    readonly PARTIAL_AUTO_PATHS: readonly string[];
+    readonly CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: readonly string[];
+    readonly INTEGRITY_FAILED_PATHS: readonly string[];
+  };
 };
 
 /**
@@ -109,6 +114,7 @@ export async function runUniversalPlpBuild(
     locale: input.contract.targetLocale,
     entityType: input.contract.entityType,
     entityId: input.contract.entityId,
+    fieldPolicy: input.contract.fieldPolicy,
   });
 
   if (validation.status === "NOT_READY") {
@@ -117,6 +123,7 @@ export async function runUniversalPlpBuild(
       status: partial ? "REJECTED_PARTIAL" : "FAILED",
       reasonCodes: validation.reasonCodes,
       snapshotId: null,
+      pathDiagnostics: validation.pathDiagnostics,
     };
   }
 
@@ -131,6 +138,7 @@ export async function runUniversalPlpBuild(
     localizedCandidate: merged.presentation as PublicPresentationNode,
     provenance: merged.provenance,
     seo: input.contract.seo,
+    fieldPolicy: input.contract.fieldPolicy,
   });
 
   if (!published.ok) {
@@ -154,5 +162,6 @@ export async function runUniversalPlpBuild(
     status: "COMPLETED",
     reasonCodes: [],
     snapshotId: published.record.snapshotId,
+    pathDiagnostics: validation.pathDiagnostics,
   };
 }

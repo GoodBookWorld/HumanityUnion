@@ -66,8 +66,12 @@ const PROPAGANDA_POLICY: PlpFieldPolicyMap = {
 const EDITORIAL_POLICY: PlpFieldPolicyMap = {
   overviewTitle: "MACHINE_CONTENT",
   overviewSummary: "MACHINE_CONTENT",
-  overviewPoints: "MACHINE_CONTENT",
-  faq: "MACHINE_CONTENT",
+  "overviewPoints[*].id": "NON_LOCALIZABLE_DATA",
+  "overviewPoints[*].heading": "MACHINE_CONTENT",
+  "overviewPoints[*].body": "MACHINE_CONTENT",
+  "faq[*].id": "NON_LOCALIZABLE_DATA",
+  "faq[*].question": "MACHINE_CONTENT",
+  "faq[*].answer": "MACHINE_CONTENT",
 };
 
 function fieldPolicyFor(entityType: string): PlpFieldPolicyMap {

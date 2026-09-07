@@ -47,14 +47,14 @@ export type ProcessPlpBuildRequestResult =
 
 /** Safe reason codes only — strip URLs, payloads, long blobs. */
 export function sanitizePlpAutoBuildFailureReason(reason: string): string {
-  const trimmed = reason.trim().slice(0, 160);
+  const trimmed = reason.trim().slice(0, 800);
   return (
     trimmed
       .replace(/mongodb(\+srv)?:\/\/[^\s"']+/gi, "[redacted]")
       .replace(/https?:\/\/[^\s"']+/gi, "[redacted-url]")
       .replace(/[A-Za-z0-9+/_-]{40,}/g, "[redacted]")
       .replace(/\s+/g, " ")
-      .slice(0, 120) || "UNKNOWN"
+      .slice(0, 600) || "UNKNOWN"
   );
 }
 
@@ -144,14 +144,22 @@ export function mapProviderBoundaryReasonToFailure(input: {
 export function mapBuildStatusToFailure(input: {
   readonly status: string;
   readonly reasonCodes?: readonly string[];
+  readonly pathDiagnostics?: {
+    readonly PARTIAL_AUTO_PATHS?: readonly string[];
+    readonly CANONICAL_IDENTICAL_TRANSLATABLE_PATHS?: readonly string[];
+    readonly INTEGRITY_FAILED_PATHS?: readonly string[];
+  };
 }): PlpAutoBuildStructuredFailure {
   const codes = (input.reasonCodes ?? []).join(",");
+  const pathSuffix = formatPathDiagnostics(input.pathDiagnostics);
   if (input.status === "REJECTED_PARTIAL" || codes.includes("PARTIAL")) {
     return structuredFailure({
       failureCode: "REJECTED_PARTIAL",
       retryable: false,
       stage: "validate",
-      safeReason: codes ? `REJECTED_PARTIAL:${codes}` : "REJECTED_PARTIAL",
+      safeReason: codes
+        ? `REJECTED_PARTIAL:${codes}${pathSuffix}`
+        : `REJECTED_PARTIAL${pathSuffix}`,
     });
   }
   if (input.status === "SUPERSEDED" || codes.includes("STALE")) {
@@ -167,15 +175,45 @@ export function mapBuildStatusToFailure(input: {
       failureCode: "PUBLISH_FAILED",
       retryable: true,
       stage: "publish",
-      safeReason: codes ? `PUBLISH_FAILED:${codes}` : "PUBLISH_FAILED",
+      safeReason: codes
+        ? `PUBLISH_FAILED:${codes}${pathSuffix}`
+        : `PUBLISH_FAILED${pathSuffix}`,
     });
   }
   return structuredFailure({
     failureCode: "UNKNOWN",
     retryable: false,
     stage: "publish",
-    safeReason: `UNKNOWN:${input.status}${codes ? `:${codes}` : ""}`,
+    safeReason: `UNKNOWN:${input.status}${codes ? `:${codes}` : ""}${pathSuffix}`,
   });
+}
+
+function formatPathDiagnostics(
+  diagnostics:
+    | {
+        readonly PARTIAL_AUTO_PATHS?: readonly string[];
+        readonly CANONICAL_IDENTICAL_TRANSLATABLE_PATHS?: readonly string[];
+        readonly INTEGRITY_FAILED_PATHS?: readonly string[];
+      }
+    | undefined,
+): string {
+  if (!diagnostics) {
+    return "";
+  }
+  const parts: string[] = [];
+  const push = (label: string, paths: readonly string[] | undefined) => {
+    if (!paths || paths.length === 0) {
+      return;
+    }
+    parts.push(`${label}=${paths.slice(0, 24).join("|")}`);
+  };
+  push("PARTIAL_AUTO_PATHS", diagnostics.PARTIAL_AUTO_PATHS);
+  push(
+    "CANONICAL_IDENTICAL_TRANSLATABLE_PATHS",
+    diagnostics.CANONICAL_IDENTICAL_TRANSLATABLE_PATHS,
+  );
+  push("INTEGRITY_FAILED_PATHS", diagnostics.INTEGRITY_FAILED_PATHS);
+  return parts.length > 0 ? `;${parts.join(";")}` : "";
 }
 
 export function failureFromTimeoutError(error: unknown): PlpAutoBuildStructuredFailure {

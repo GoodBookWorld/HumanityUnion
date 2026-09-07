@@ -1,13 +1,14 @@
 /**
- * Reset 03E.2 — localization content integrity.
+ * Reset 03E.2 / RESET 05D.3 — localization content integrity.
  *
- * PUBLISHED_LOCALIZED means the translatable semantic payload was actually
- * localized for the requested locale. Publication state alone is insufficient.
+ * Only MACHINE_CONTENT paths (shared ownership resolver) must differ from
+ * canonical for non-English locales. Technical / protected paths may match.
  */
 
 import type {
   LocalizationContentIntegrityReport,
   LocalizationContentIntegritySubreason,
+  PlpFieldPolicyMap,
   PublicPresentationNode,
 } from "@hu/types";
 import { isPublicProtectedValue } from "@hu/types";
@@ -16,24 +17,20 @@ import {
   collectAutoPaths,
   getPresentationValueAtPath,
 } from "./presentation-paths.js";
+import {
+  isCollectedPathLocalizationRequired,
+  isTechnicalIdentityPath,
+  resolveCollectedPathOwnership,
+} from "./universal/field-authority.js";
 
 export const LOCALIZATION_CONTENT_INTEGRITY_VERSION = "CLI.1" as const;
 
-/**
- * Normalize for equality: trim + collapse internal whitespace.
- * No language detection / fuzzy semantics.
- */
 export function normalizeLocalizationCompareValue(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
 
-/**
- * Technical identity paths (entity-local ids) may remain canonical-identical.
- * Paths look like `overviewPoints[0].id` or `faq[2].id`.
- */
-export function isTechnicalIdentityPath(path: string): boolean {
-  return path === "id" || path.endsWith(".id");
-}
+/** @deprecated Prefer isTechnicalIdentityPath from field-authority — kept for import stability. */
+export { isTechnicalIdentityPath };
 
 function countProtectedNodes(tree: PublicPresentationNode): number {
   let count = 0;
@@ -59,19 +56,35 @@ function countProtectedNodes(tree: PublicPresentationNode): number {
   return count;
 }
 
+export type LocalizationContentIntegrityPathReport =
+  LocalizationContentIntegrityReport & {
+    readonly CANONICAL_IDENTICAL_PATHS: readonly string[];
+    readonly EMPTY_OR_MISSING_PATHS: readonly string[];
+  };
+
 /**
- * Evaluate whether a localized presentation actually changed translatable prose
- * relative to canonical for the target locale.
+ * Evaluate whether MACHINE_CONTENT paths actually changed for the target locale.
  */
 export function evaluateLocalizationContentIntegrity(input: {
   readonly locale: string;
   readonly canonicalPresentation: PublicPresentationNode;
   readonly localizedPresentation: PublicPresentationNode;
+  readonly fieldPolicy: PlpFieldPolicyMap;
   readonly evaluatedAt?: string;
-}): LocalizationContentIntegrityReport {
+}): LocalizationContentIntegrityPathReport {
   const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
   const protectedCount = countProtectedNodes(input.canonicalPresentation);
   const autos = collectAutoPaths(input.canonicalPresentation);
+  const technicalProtected = autos.filter((n) =>
+    isTechnicalIdentityPath(n.path),
+  ).length;
+  const ownershipProtected = autos.filter((n) => {
+    const ownership = resolveCollectedPathOwnership(n.path, input.fieldPolicy);
+    return (
+      ownership === "PROTECTED_CANONICAL" ||
+      ownership === "NON_LOCALIZABLE_DATA"
+    );
+  }).length;
 
   if (String(input.locale).toLowerCase() === "en") {
     return {
@@ -81,11 +94,11 @@ export function evaluateLocalizationContentIntegrity(input: {
       LOCALIZED_VALUE_NODE_COUNT: 0,
       CANONICAL_IDENTICAL_NODE_COUNT: 0,
       EMPTY_OR_MISSING_NODE_COUNT: 0,
-      PROTECTED_CANONICAL_NODE_COUNT:
-        protectedCount +
-        autos.filter((n) => isTechnicalIdentityPath(n.path)).length,
+      PROTECTED_CANONICAL_NODE_COUNT: protectedCount + ownershipProtected,
       reasonCodes: [],
       evaluatedAt,
+      CANONICAL_IDENTICAL_PATHS: [],
+      EMPTY_OR_MISSING_PATHS: [],
     };
   }
 
@@ -93,12 +106,12 @@ export function evaluateLocalizationContentIntegrity(input: {
   let localized = 0;
   let identical = 0;
   let emptyOrMissing = 0;
-  let technicalProtected = 0;
+  const identicalPaths: string[] = [];
+  const emptyPaths: string[] = [];
   const reasonCodes = new Set<LocalizationContentIntegritySubreason>();
 
   for (const node of autos) {
-    if (isTechnicalIdentityPath(node.path)) {
-      technicalProtected += 1;
+    if (!isCollectedPathLocalizationRequired(node.path, input.fieldPolicy)) {
       continue;
     }
     translatable += 1;
@@ -108,6 +121,7 @@ export function evaluateLocalizationContentIntegrity(input: {
     );
     if (typeof raw !== "string" || !raw.trim()) {
       emptyOrMissing += 1;
+      emptyPaths.push(node.path);
       reasonCodes.add("MISSING_TRANSLATED_VALUE");
       continue;
     }
@@ -116,6 +130,7 @@ export function evaluateLocalizationContentIntegrity(input: {
       normalizeLocalizationCompareValue(node.value)
     ) {
       identical += 1;
+      identicalPaths.push(node.path);
       reasonCodes.add("CANONICAL_IDENTICAL_TRANSLATABLE_VALUE");
       continue;
     }
@@ -146,24 +161,22 @@ export function evaluateLocalizationContentIntegrity(input: {
     LOCALIZED_VALUE_NODE_COUNT: localized,
     CANONICAL_IDENTICAL_NODE_COUNT: identical,
     EMPTY_OR_MISSING_NODE_COUNT: emptyOrMissing,
-    PROTECTED_CANONICAL_NODE_COUNT: protectedCount + technicalProtected,
+    PROTECTED_CANONICAL_NODE_COUNT: protectedCount + Math.max(technicalProtected, ownershipProtected),
     reasonCodes: [...reasonCodes],
     evaluatedAt,
+    CANONICAL_IDENTICAL_PATHS: identicalPaths,
+    EMPTY_OR_MISSING_PATHS: emptyPaths,
   };
 }
 
-/**
- * Resolve-time gate for persisted snapshots.
- * Missing CLI.1 metadata on non-English → fail closed (UNKNOWN_LEGACY).
- * Always recompute against live canonical — do not trust stale PASSED alone.
- */
 export function resolveLocalizationContentIntegrityForRead(input: {
   readonly locale: string;
   readonly canonicalPresentation: PublicPresentationNode;
   readonly localizedPresentation: PublicPresentationNode;
+  readonly fieldPolicy: PlpFieldPolicyMap;
   readonly persisted?: LocalizationContentIntegrityReport | null;
 }): {
-  readonly report: LocalizationContentIntegrityReport;
+  readonly report: LocalizationContentIntegrityPathReport;
   readonly allowPublishedLocalized: boolean;
   readonly reasonCode:
     | "OK"
@@ -175,6 +188,7 @@ export function resolveLocalizationContentIntegrityForRead(input: {
       locale: input.locale,
       canonicalPresentation: input.canonicalPresentation,
       localizedPresentation: input.localizedPresentation,
+      fieldPolicy: input.fieldPolicy,
     });
     return { report, allowPublishedLocalized: true, reasonCode: "OK" };
   }
@@ -183,6 +197,7 @@ export function resolveLocalizationContentIntegrityForRead(input: {
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: input.localizedPresentation,
+    fieldPolicy: input.fieldPolicy,
   });
 
   if (

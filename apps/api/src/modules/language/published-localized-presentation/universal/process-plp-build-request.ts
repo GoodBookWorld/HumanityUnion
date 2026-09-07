@@ -329,6 +329,7 @@ export async function processPlpBuildRequest(
       failure: mapBuildStatusToFailure({
         status: built.status,
         reasonCodes: built.reasonCodes,
+        pathDiagnostics: built.pathDiagnostics,
       }),
     });
   }

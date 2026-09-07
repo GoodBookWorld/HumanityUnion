@@ -4,11 +4,16 @@
 
 export {
   ownershipToProvenance,
+  resolveCollectedPathOwnership,
+  isTechnicalIdentityPath,
+  inventoryPresentationPathAuthority,
+  isCollectedPathLocalizationRequired,
   machineEligiblePaths,
   isCollectedPathMachineEligible,
   machineMayOverwriteExisting,
   assertFieldAuthorityOrderDocumented,
 } from "./field-authority.js";
+export { resolveFieldPolicyForEntityType } from "./resolve-field-policy.js";
 export {
   registerPlpDomainAdapter,
   getPlpDomainAdapter,

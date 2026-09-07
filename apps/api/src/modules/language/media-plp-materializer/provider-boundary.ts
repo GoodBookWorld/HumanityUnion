@@ -159,6 +159,35 @@ export function validateMediaPlpProviderLocalizationValues(input: {
   return { ok: true };
 }
 
+export function flattenStructuredLocalizationValues(
+  node: unknown,
+  prefix: string,
+  out: Record<string, string>,
+): void {
+  if (typeof node === "string") {
+    if (prefix && node.trim()) {
+      out[prefix] = node;
+    }
+    return;
+  }
+  if (node === null || node === undefined) {
+    return;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((entry, index) => {
+      const next = prefix ? `${prefix}[${index}]` : `[${index}]`;
+      flattenStructuredLocalizationValues(entry, next, out);
+    });
+    return;
+  }
+  if (typeof node === "object") {
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      const next = prefix ? `${prefix}.${key}` : key;
+      flattenStructuredLocalizationValues(value, next, out);
+    }
+  }
+}
+
 export async function callMediaPlpMaterializerProviderOnce(input: {
   readonly provider: TranslationProvider;
   readonly locale: LanguageCode;
@@ -247,17 +276,24 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       };
     }
     const values: Record<string, string> = {};
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof value === "string" && value.trim()) {
-        // RESET 05C — restore `{siteName}` after MACHINE hop (Brand owns identity).
-        values[key] = restoreBrandTokensAfterMachineTranslation(value);
+    flattenStructuredLocalizationValues(parsed, "", values);
+    for (const [key, value] of Object.entries(values)) {
+      values[key] = restoreBrandTokensAfterMachineTranslation(value);
+    }
+
+    // Prefer exact autoValues keys from flat or nested provider payload.
+    const aligned: Record<string, string> = {};
+    for (const key of Object.keys(input.autoValues)) {
+      const direct = values[key];
+      if (typeof direct === "string" && direct.trim()) {
+        aligned[key] = direct;
       }
     }
 
     const validated = validateMediaPlpProviderLocalizationValues({
       locale: input.locale,
       autoValues: input.autoValues,
-      translated: values,
+      translated: aligned,
     });
     if (!validated.ok) {
       return {
@@ -272,7 +308,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 
     return {
       ok: true,
-      values,
+      values: aligned,
       PROVIDER_INPUT_BYTES: bytes,
       providerId: result.providerId,
       PROVIDER_EXECUTION_BOUNDARY: boundary,

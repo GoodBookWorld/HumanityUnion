@@ -17,6 +17,8 @@ import {
   validatePublishedBuildResult,
 } from "../validate-build-result.js";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
+import { resolveFieldPolicyForEntityType } from "../universal/resolve-field-policy.js";
+import { isCollectedPathMachineEligible } from "../universal/field-authority.js";
 
 export type MediaPlpLayerInput = {
   readonly source: PublishedLocalizationProvenanceSource;
@@ -31,9 +33,22 @@ export type MediaPlpLayerInput = {
 export function buildDeterministicMachineLayer(input: {
   readonly canonicalPresentation: PublicPresentationNode;
   readonly locale: string;
+  readonly fieldPolicy?: import("@hu/types").PlpFieldPolicyMap;
+  readonly entityType?: string;
 }): MediaPlpLayerInput {
+  const fieldPolicy =
+    input.fieldPolicy ??
+    (input.entityType
+      ? resolveFieldPolicyForEntityType(input.entityType)
+      : {});
   const values: Record<string, string> = {};
   for (const node of collectAutoPaths(input.canonicalPresentation)) {
+    if (
+      Object.keys(fieldPolicy).length > 0 &&
+      !isCollectedPathMachineEligible(node.path, fieldPolicy)
+    ) {
+      continue;
+    }
     values[node.path] = `[${input.locale}] ${node.value}`;
   }
   return {
@@ -72,6 +87,7 @@ export function buildMediaPlpCandidate(
       buildDeterministicMachineLayer({
         canonicalPresentation: input.canonicalPresentation,
         locale: input.locale,
+        entityType: input.entityType,
       }),
     );
   }
@@ -91,6 +107,7 @@ export function buildMediaPlpCandidate(
     canonicalPresentation: input.canonicalPresentation,
     localizedCandidate: merged.presentation,
     provenance: merged.provenance,
+    fieldPolicy: resolveFieldPolicyForEntityType(input.entityType),
   });
 
   return {

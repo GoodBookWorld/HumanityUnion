@@ -234,6 +234,7 @@ export {
 export type {
   BuildValidationReasonCode,
   BuildValidationResult,
+  BuildValidationPathDiagnostics,
   LocalizationContentIntegrityReport,
   LocalizationContentIntegrityStatus,
   LocalizationContentIntegritySubreason,

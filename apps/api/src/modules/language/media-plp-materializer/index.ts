@@ -53,6 +53,7 @@ export {
   importMediaPlpMaterializerProvider,
   callMediaPlpMaterializerProviderOnce,
   validateMediaPlpProviderLocalizationValues,
+  flattenStructuredLocalizationValues,
 } from "./provider-boundary.js";
 export {
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,

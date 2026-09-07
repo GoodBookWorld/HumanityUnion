@@ -236,16 +236,24 @@ export type BuildValidationReasonCode =
   | "SOURCE_WITHOUT_BUILD"
   | "BUILD_WITHOUT_OUTPUT";
 
+export type BuildValidationPathDiagnostics = {
+  readonly PARTIAL_AUTO_PATHS: readonly string[];
+  readonly CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: readonly string[];
+  readonly INTEGRITY_FAILED_PATHS: readonly string[];
+};
+
 export type BuildValidationResult =
   | {
       readonly status: "READY_TO_PUBLISH";
       readonly missingPaths: readonly string[];
       readonly reasonCodes: readonly BuildValidationReasonCode[];
+      readonly pathDiagnostics: BuildValidationPathDiagnostics;
     }
   | {
       readonly status: "NOT_READY";
       readonly missingPaths: readonly string[];
       readonly reasonCodes: readonly BuildValidationReasonCode[];
+      readonly pathDiagnostics: BuildValidationPathDiagnostics;
     };
 
 export type PublishAtomicResult =

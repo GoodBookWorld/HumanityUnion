@@ -37,6 +37,23 @@ afterEach(() => {
   resetMediaPlpResolveCacheForTests();
 });
 
+const EDITORIAL_FIELD_POLICY = {
+  overviewTitle: "MACHINE_CONTENT",
+  overviewSummary: "MACHINE_CONTENT",
+  "overviewPoints[*].id": "NON_LOCALIZABLE_DATA",
+  "overviewPoints[*].heading": "MACHINE_CONTENT",
+  "overviewPoints[*].body": "MACHINE_CONTENT",
+  "faq[*].id": "NON_LOCALIZABLE_DATA",
+  "faq[*].question": "MACHINE_CONTENT",
+  "faq[*].answer": "MACHINE_CONTENT",
+} as const;
+
+const PRINCIPLE_FIELD_POLICY = {
+  title: "MACHINE_CONTENT",
+  description: "MACHINE_CONTENT",
+  whyItMatters: "MACHINE_CONTENT",
+} as const;
+
 const editorialCanonical = asMediaPlpPresentationNode(
   buildCanonicalEditorialPresentation({
     overview: {
@@ -50,7 +67,7 @@ const editorialCanonical = asMediaPlpPresentationNode(
 
 describe("Reset 03E.3 — localization structural integrity", () => {
   it("lists required source paths excluding technical ids", () => {
-    const paths = listRequiredLocalizationSourcePaths(editorialCanonical);
+    const paths = listRequiredLocalizationSourcePaths(editorialCanonical, EDITORIAL_FIELD_POLICY);
     assert.ok(paths.includes("overviewTitle"));
     assert.ok(paths.includes("faq[0].question"));
     assert.ok(!paths.some((p) => p.endsWith(".id")));
@@ -121,7 +138,7 @@ describe("Reset 03E.3 — localization structural integrity", () => {
         {
           source: "MACHINE",
           values: Object.fromEntries(
-            listRequiredLocalizationSourcePaths(editorialCanonical).map((p) => [
+            listRequiredLocalizationSourcePaths(editorialCanonical, EDITORIAL_FIELD_POLICY).map((p) => [
               p,
               `[uk] ${p}`,
             ]),
@@ -202,7 +219,7 @@ describe("Reset 03E.3 — localization structural integrity", () => {
         sortOrder: 1,
       }),
     );
-    const paths = listRequiredLocalizationSourcePaths(tree);
+    const paths = listRequiredLocalizationSourcePaths(tree, PRINCIPLE_FIELD_POLICY);
     assert.ok(paths.includes("whyItMatters"));
     const structural = evaluateLocalizationStructuralIntegrity({
       locale: "uk",
@@ -212,6 +229,7 @@ describe("Reset 03E.3 — localization structural integrity", () => {
         description: "Д",
         whyItMatters: "Чому",
       },
+      fieldPolicy: PRINCIPLE_FIELD_POLICY,
     });
     assert.equal(structural.status, "PASSED");
   });
@@ -247,6 +265,7 @@ describe("Reset 03E.3 — localization structural integrity", () => {
           appliedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
+      fieldPolicy: EDITORIAL_FIELD_POLICY,
     });
     assert.equal(validation.status, "NOT_READY");
   });

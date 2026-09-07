@@ -22,6 +22,8 @@ import {
   type ValidatePublishedBuildInput,
 } from "./validate-build-result.js";
 import { invalidateMediaPlpResolveCacheForEntity } from "./resolve-cache.js";
+import { resolveFieldPolicyForEntityType } from "./universal/resolve-field-policy.js";
+import type { PlpFieldPolicyMap } from "@hu/types";
 
 export type PublishPublishedLocalizedPresentationInput = {
   readonly entityType: string;
@@ -35,6 +37,7 @@ export type PublishPublishedLocalizedPresentationInput = {
   readonly provenance: readonly LocalizedNodeProvenance[];
   readonly seo?: PublishedLocalizedPresentationSeo;
   readonly snapshotId?: string;
+  readonly fieldPolicy?: PlpFieldPolicyMap;
 };
 
 export async function publishPublishedLocalizedPresentation(
@@ -42,6 +45,8 @@ export async function publishPublishedLocalizedPresentation(
 ): Promise<PublishAtomicResult> {
   const localizationSchemaVersion =
     input.localizationSchemaVersion ?? PUBLISHED_LOCALIZATION_SCHEMA_VERSION;
+  const fieldPolicy =
+    input.fieldPolicy ?? resolveFieldPolicyForEntityType(input.entityType);
 
   const validationInput: ValidatePublishedBuildInput = {
     canonicalPresentation: input.canonicalPresentation,
@@ -53,6 +58,7 @@ export async function publishPublishedLocalizedPresentation(
     locale: input.locale,
     entityType: input.entityType,
     entityId: input.entityId,
+    fieldPolicy,
   };
 
   const validation = validatePublishedBuildResult(validationInput);
@@ -70,12 +76,14 @@ export async function publishPublishedLocalizedPresentation(
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: input.localizedCandidate,
+    fieldPolicy,
     evaluatedAt: now,
   });
   const structuralIntegrity = evaluateLocalizationStructuralIntegrity({
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: input.localizedCandidate,
+    fieldPolicy,
     evaluatedAt: now,
   });
   // Validation already required PASSED (or NOT_APPLICABLE_EN). Persist attestation.

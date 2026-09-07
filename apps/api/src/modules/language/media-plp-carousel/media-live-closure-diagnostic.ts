@@ -124,6 +124,9 @@ export type MediaLiveClosureReport = {
   readonly EDITORIAL_RESOLVER_MODE: string;
   readonly EDITORIAL_RESOLVER_FALLBACK_REASON: string | null;
   readonly EDITORIAL_WORK_TRIGGER: string | null;
+  readonly EDITORIAL_PARTIAL_AUTO_PATHS: readonly string[];
+  readonly EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: readonly string[];
+  readonly EDITORIAL_INTEGRITY_FAILED_PATHS: readonly string[];
   readonly FAQ_MACHINE_LEAVES: number;
   readonly FAQ_MACHINE_LOCALIZED: number;
   readonly FAQ_CANONICAL_MACHINE_LEAVES: number;
@@ -141,6 +144,11 @@ export type MediaLiveClosureReport = {
     readonly titleLocalized: boolean;
     readonly summaryLocalized: boolean;
     readonly fallbackReason: string | null;
+    readonly WORK_ROW_FOUND: boolean;
+    readonly WORK_STATUS: string | null;
+    readonly FAILURE_CODE: string | null;
+    readonly ATTEMPTS: number | null;
+    readonly WORK_CANONICAL_VERSION: string | null;
   }[];
   readonly leaves: readonly MediaLiveClosureLeaf[];
 };
@@ -161,6 +169,27 @@ export type MediaLiveClosureDiagnosticDeps = {
 
 function fp(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 12);
+}
+
+function parsePathListFromFailureReason(
+  reason: string | null | undefined,
+  label: string,
+): string[] {
+  if (!reason) {
+    return [];
+  }
+  const marker = `${label}=`;
+  const idx = reason.indexOf(marker);
+  if (idx < 0) {
+    return [];
+  }
+  const rest = reason.slice(idx + marker.length);
+  const semi = rest.indexOf(";");
+  const raw = semi >= 0 ? rest.slice(0, semi) : rest;
+  return raw
+    .split("|")
+    .map((p) => p.trim())
+    .filter(Boolean);
 }
 
 function readPresentationString(
@@ -273,6 +302,11 @@ export async function executeMediaLiveClosureReads(input: {
     if (resolved.canonicalVersion && resolved.canonicalVersion !== canonicalVersion) {
       identityMismatches += 1;
     }
+    const newsWork = await findPlpAutoBuildWorkByKey({
+      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+      entityId,
+      locale,
+    });
     mediaRssRows.push({
       entityId,
       canonicalVersion,
@@ -286,6 +320,11 @@ export async function executeMediaLiveClosureReads(input: {
             ? null
             : "PARTIAL_OR_EQUALS_CANONICAL"
           : resolved.reasonCode ?? "CANONICAL_FALLBACK",
+      WORK_ROW_FOUND: newsWork != null,
+      WORK_STATUS: newsWork?.status ?? null,
+      FAILURE_CODE: newsWork?.failureCode ?? null,
+      ATTEMPTS: newsWork?.attempts ?? null,
+      WORK_CANONICAL_VERSION: newsWork?.canonicalVersion ?? null,
     });
     leaves.push({
       surface: "media_rss",
@@ -618,6 +657,18 @@ export async function executeMediaLiveClosureReads(input: {
     EDITORIAL_RESOLVER_MODE: editorialResolved.mode,
     EDITORIAL_RESOLVER_FALLBACK_REASON: editorialResolved.reasonCode ?? null,
     EDITORIAL_WORK_TRIGGER: editorialWork?.trigger ?? null,
+    EDITORIAL_PARTIAL_AUTO_PATHS: parsePathListFromFailureReason(
+      editorialWork?.lastError,
+      "PARTIAL_AUTO_PATHS",
+    ),
+    EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: parsePathListFromFailureReason(
+      editorialWork?.lastError,
+      "CANONICAL_IDENTICAL_TRANSLATABLE_PATHS",
+    ),
+    EDITORIAL_INTEGRITY_FAILED_PATHS: parsePathListFromFailureReason(
+      editorialWork?.lastError,
+      "INTEGRITY_FAILED_PATHS",
+    ),
     FAQ_MACHINE_LEAVES: faqMachineLeaves,
     FAQ_MACHINE_LOCALIZED: faqMachineLocalized,
     FAQ_CANONICAL_MACHINE_LEAVES: faqCanonicalMachine,
@@ -752,6 +803,9 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `EDITORIAL_RESOLVER_MODE=${report.EDITORIAL_RESOLVER_MODE}`,
     `EDITORIAL_RESOLVER_FALLBACK_REASON=${report.EDITORIAL_RESOLVER_FALLBACK_REASON ?? ""}`,
     `EDITORIAL_WORK_TRIGGER=${report.EDITORIAL_WORK_TRIGGER ?? ""}`,
+    `EDITORIAL_PARTIAL_AUTO_PATHS=${report.EDITORIAL_PARTIAL_AUTO_PATHS.join("|")}`,
+    `EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS=${report.EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS.join("|")}`,
+    `EDITORIAL_INTEGRITY_FAILED_PATHS=${report.EDITORIAL_INTEGRITY_FAILED_PATHS.join("|")}`,
     `FAQ_MACHINE_LEAVES=${report.FAQ_MACHINE_LEAVES}`,
     `FAQ_MACHINE_LOCALIZED=${report.FAQ_MACHINE_LOCALIZED}`,
     `FAQ_CANONICAL_MACHINE_LEAVES=${report.FAQ_CANONICAL_MACHINE_LEAVES}`,

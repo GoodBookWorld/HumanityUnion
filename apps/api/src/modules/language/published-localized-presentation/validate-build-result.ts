@@ -1,11 +1,16 @@
 /**
- * Reset 02 — pure build-result validator / finalizer (no provider).
+ * Reset 02 / RESET 05D.3 — pure build-result validator / finalizer (no provider).
+ *
+ * Path ownership comes from the shared field-authority resolver — the same
+ * MACHINE set used by collectMachineAutoValues.
  */
 
 import type {
+  BuildValidationPathDiagnostics,
   BuildValidationReasonCode,
   BuildValidationResult,
   LocalizedNodeProvenance,
+  PlpFieldPolicyMap,
   PublicPresentationNode,
   PublishedLocalizationProvenanceSource,
   PublishedLocalizationSchemaVersion,
@@ -17,8 +22,6 @@ import {
 
 import {
   evaluateLocalizationContentIntegrity,
-  isTechnicalIdentityPath,
-  normalizeLocalizationCompareValue,
 } from "./content-integrity.js";
 import { evaluateLocalizationStructuralIntegrity } from "./structural-integrity.js";
 import {
@@ -30,6 +33,11 @@ import {
   mayOverwriteProvenance,
   selectWinningProvenance,
 } from "./provenance-priority.js";
+import {
+  isCollectedPathLocalizationRequired,
+  isTechnicalIdentityPath,
+  resolveCollectedPathOwnership,
+} from "./universal/field-authority.js";
 
 export type ValidatePublishedBuildInput = {
   readonly canonicalPresentation: PublicPresentationNode;
@@ -42,7 +50,17 @@ export type ValidatePublishedBuildInput = {
   readonly locale: string;
   readonly entityType: string;
   readonly entityId: string;
+  /** RESET 05D.3 — required for path-aware MACHINE vs protected classification. */
+  readonly fieldPolicy: PlpFieldPolicyMap;
 };
+
+function emptyPathDiagnostics(): BuildValidationPathDiagnostics {
+  return {
+    PARTIAL_AUTO_PATHS: [],
+    CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: [],
+    INTEGRITY_FAILED_PATHS: [],
+  };
+}
 
 function provenanceByPath(
   provenance: readonly LocalizedNodeProvenance[],
@@ -67,14 +85,16 @@ function provenanceByPath(
 }
 
 /**
- * READY_TO_PUBLISH only when every AUTO path is localized (not left as
- * canonical+CANONICAL_FALLBACK). PARTIAL ⇒ NOT_READY — never publishable.
+ * READY_TO_PUBLISH only when every MACHINE_CONTENT path is localized.
+ * Technical / protected paths may remain canonical. PARTIAL ⇒ NOT_READY.
  */
 export function validatePublishedBuildResult(
   input: ValidatePublishedBuildInput,
 ): BuildValidationResult {
   const reasonCodes: BuildValidationReasonCode[] = [];
-  const missingPaths: string[] = [];
+  const partialAutoPaths: string[] = [];
+  const canonicalIdenticalPaths: string[] = [];
+  const integrityFailedPaths: string[] = [];
 
   if (!input.entityType.trim() || !input.entityId.trim() || !input.locale.trim()) {
     reasonCodes.push("INVALID_IDENTITY");
@@ -94,10 +114,14 @@ export function validatePublishedBuildResult(
   }
 
   const canonicalAutos = collectAutoPaths(input.canonicalPresentation);
+  const machinePaths = canonicalAutos.filter((node) =>
+    isCollectedPathLocalizationRequired(node.path, input.fieldPolicy),
+  );
+
   if (
     input.localizedCandidate === null ||
     input.localizedCandidate === undefined ||
-    (canonicalAutos.length > 0 &&
+    (machinePaths.length > 0 &&
       typeof input.localizedCandidate === "object" &&
       !isPublicProtectedValue(input.localizedCandidate) &&
       !Array.isArray(input.localizedCandidate) &&
@@ -108,23 +132,21 @@ export function validatePublishedBuildResult(
 
   const byPath = provenanceByPath(input.provenance);
 
-  for (const node of canonicalAutos) {
-    // Structural entity-local ids may remain canonical (not MACHINE prose).
-    if (isTechnicalIdentityPath(node.path)) {
-      continue;
-    }
-
-    const localizedValue = getPresentationValueAtPath(input.localizedCandidate, node.path);
+  for (const node of machinePaths) {
+    const localizedValue = getPresentationValueAtPath(
+      input.localizedCandidate,
+      node.path,
+    );
     const prov = byPath.get(node.path);
 
     if (typeof localizedValue !== "string" || !localizedValue.trim()) {
-      missingPaths.push(node.path);
+      partialAutoPaths.push(node.path);
       continue;
     }
 
     if (localizedValue === node.value) {
       if (!prov || prov.source === "CANONICAL_FALLBACK") {
-        missingPaths.push(node.path);
+        partialAutoPaths.push(node.path);
       }
     }
   }
@@ -141,7 +163,7 @@ export function validatePublishedBuildResult(
         candidate.value !== tree.value
       ) {
         reasonCodes.push("MISSING_REQUIRED_PROTECTED");
-        missingPaths.push(path || "(root)");
+        partialAutoPaths.push(path || "(root)");
       }
       return;
     }
@@ -163,6 +185,10 @@ export function validatePublishedBuildResult(
     if (applied.source !== "MACHINE") {
       continue;
     }
+    const ownership = resolveCollectedPathOwnership(path, input.fieldPolicy);
+    if (ownership !== "MACHINE_CONTENT") {
+      continue;
+    }
     const higher = input.provenance.find(
       (other) =>
         other.path === path &&
@@ -174,67 +200,44 @@ export function validatePublishedBuildResult(
     );
     if (higher && applied.source === "MACHINE") {
       reasonCodes.push("PROVENANCE_PRIORITY_VIOLATION");
-      missingPaths.push(path);
+      partialAutoPaths.push(path);
     }
   }
 
-  if (missingPaths.length > 0) {
+  if (partialAutoPaths.length > 0) {
     reasonCodes.push("PARTIAL_AUTO_NODES");
   }
 
-  // Reset 03E.2 — non-English candidates must actually localize translatable prose.
-  // MACHINE provenance with canonical-identical values is not publishable.
   if (String(input.locale).toLowerCase() !== "en") {
     const integrity = evaluateLocalizationContentIntegrity({
       locale: input.locale,
       canonicalPresentation: input.canonicalPresentation,
       localizedPresentation: input.localizedCandidate,
+      fieldPolicy: input.fieldPolicy,
     });
     if (integrity.status === "FAILED") {
       reasonCodes.push("LOCALIZATION_CONTENT_INTEGRITY_FAILED");
       for (const code of integrity.reasonCodes) {
         reasonCodes.push(code);
       }
-      if (integrity.CANONICAL_IDENTICAL_NODE_COUNT > 0) {
-        for (const node of canonicalAutos) {
-          if (isTechnicalIdentityPath(node.path)) {
-            continue;
-          }
-          const localizedValue = getPresentationValueAtPath(
-            input.localizedCandidate,
-            node.path,
-          );
-          if (
-            typeof localizedValue === "string" &&
-            localizedValue.trim() &&
-            normalizeLocalizationCompareValue(localizedValue) ===
-              normalizeLocalizationCompareValue(node.value)
-          ) {
-            missingPaths.push(node.path);
-          }
-        }
+      for (const path of integrity.CANONICAL_IDENTICAL_PATHS ?? []) {
+        canonicalIdenticalPaths.push(path);
+        integrityFailedPaths.push(path);
       }
-      if (integrity.EMPTY_OR_MISSING_NODE_COUNT > 0) {
-        for (const node of canonicalAutos) {
-          if (isTechnicalIdentityPath(node.path)) {
-            continue;
-          }
-          const localizedValue = getPresentationValueAtPath(
-            input.localizedCandidate,
-            node.path,
-          );
-          if (typeof localizedValue !== "string" || !localizedValue.trim()) {
-            missingPaths.push(node.path);
-          }
+      for (const path of integrity.EMPTY_OR_MISSING_PATHS ?? []) {
+        integrityFailedPaths.push(path);
+        if (!partialAutoPaths.includes(path)) {
+          partialAutoPaths.push(path);
         }
       }
     }
 
-    // Reset 03E.3 — structural reachability of AUTO paths in the presentation shape.
     const structural = evaluateLocalizationStructuralIntegrity({
       locale: input.locale,
       canonicalPresentation: input.canonicalPresentation,
       localizedPresentation: input.localizedCandidate,
+      fieldPolicy: input.fieldPolicy,
+      buildInputPaths: machinePaths.map((n) => n.path),
     });
     if (structural.status === "FAILED") {
       reasonCodes.push("LOCALIZATION_STRUCTURAL_INTEGRITY_FAILED");
@@ -250,14 +253,27 @@ export function validatePublishedBuildResult(
     }
   }
 
+  // Recompute PARTIAL flag if integrity added empty paths.
+  if (partialAutoPaths.length > 0 && !reasonCodes.includes("PARTIAL_AUTO_NODES")) {
+    reasonCodes.push("PARTIAL_AUTO_NODES");
+  }
+
   const uniqueReasons = [...new Set(reasonCodes)];
-  const uniqueMissing = [...new Set(missingPaths)];
+  const uniquePartial = [...new Set(partialAutoPaths)];
+  const uniqueIdentical = [...new Set(canonicalIdenticalPaths)];
+  const uniqueIntegrity = [...new Set(integrityFailedPaths)];
+  const pathDiagnostics: BuildValidationPathDiagnostics = {
+    PARTIAL_AUTO_PATHS: uniquePartial,
+    CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: uniqueIdentical,
+    INTEGRITY_FAILED_PATHS: uniqueIntegrity,
+  };
 
   if (uniqueReasons.length > 0) {
     return {
       status: "NOT_READY",
-      missingPaths: uniqueMissing,
+      missingPaths: uniquePartial.length > 0 ? uniquePartial : uniqueIntegrity,
       reasonCodes: uniqueReasons,
+      pathDiagnostics,
     };
   }
 
@@ -265,13 +281,12 @@ export function validatePublishedBuildResult(
     status: "READY_TO_PUBLISH",
     missingPaths: [],
     reasonCodes: [],
+    pathDiagnostics: emptyPathDiagnostics(),
   };
 }
 
 /**
  * Apply layered string maps by provenance priority onto canonical AUTO nodes.
- * Callers supply already-resolved Brand/Legal/Glossary/Geography/manual/machine maps —
- * this module does not duplicate those stores.
  */
 export function mergeLocalizedLayersByProvenance(input: {
   readonly canonicalPresentation: PublicPresentationNode;
@@ -331,3 +346,6 @@ export function mergeLocalizedLayersByProvenance(input: {
 
   return { presentation, provenance };
 }
+
+// Re-export for callers that imported technical-id helper from validate historically.
+export { isTechnicalIdentityPath };

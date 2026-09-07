@@ -25,6 +25,8 @@ import {
   resolveLocalizationStructuralIntegrityForRead,
 } from "./structural-integrity.js";
 import { mergeLocalizedLayersByProvenance } from "./validate-build-result.js";
+import { resolveFieldPolicyForEntityType } from "./universal/resolve-field-policy.js";
+import type { PlpFieldPolicyMap } from "@hu/types";
 
 export type UsableLocalizedPresentationSnapshot = {
   readonly state: PublishedLocalizedPresentationRecord["state"];
@@ -133,10 +135,13 @@ export function classifyUsableLocalizedPresentation(input: {
     );
   }
 
+  const fieldPolicy = resolveFieldPolicyForEntityType(snapshot.identity.entityType);
+
   const content = resolveLocalizationContentIntegrityForRead({
     locale: String(input.locale),
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: snapshot.presentation,
+    fieldPolicy,
     persisted: snapshot.contentIntegrity ?? null,
   });
 
@@ -158,6 +163,7 @@ export function classifyUsableLocalizedPresentation(input: {
     locale: String(input.locale),
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: snapshot.presentation,
+    fieldPolicy,
     persisted: snapshot.structuralIntegrity ?? null,
   });
 
@@ -193,11 +199,18 @@ export function translationValuesPassLocalizationIntegrity(input: {
   readonly locale: string;
   readonly canonicalPresentation: PublicPresentationNode;
   readonly values: Readonly<Record<string, string>>;
+  readonly fieldPolicy?: PlpFieldPolicyMap;
+  readonly entityType?: string;
 }): {
   readonly ok: boolean;
   readonly contentIntegrity: LocalizationContentIntegrityReport;
   readonly structuralIntegrity: LocalizationStructuralIntegrityReport;
 } {
+  const fieldPolicy =
+    input.fieldPolicy ??
+    (input.entityType
+      ? resolveFieldPolicyForEntityType(input.entityType)
+      : {});
   const merged = mergeLocalizedLayersByProvenance({
     canonicalPresentation: input.canonicalPresentation,
     layers: [{ source: "MACHINE", values: { ...input.values } }],
@@ -206,11 +219,13 @@ export function translationValuesPassLocalizationIntegrity(input: {
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: merged.presentation,
+    fieldPolicy,
   });
   const structuralIntegrity = evaluateLocalizationStructuralIntegrity({
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: merged.presentation,
+    fieldPolicy,
   });
   return {
     ok:

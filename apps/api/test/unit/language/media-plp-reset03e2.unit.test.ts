@@ -80,6 +80,17 @@ function ukEditorialValues(): Record<string, string> {
   };
 }
 
+const EDITORIAL_FIELD_POLICY = {
+  overviewTitle: "MACHINE_CONTENT",
+  overviewSummary: "MACHINE_CONTENT",
+  "overviewPoints[*].id": "NON_LOCALIZABLE_DATA",
+  "overviewPoints[*].heading": "MACHINE_CONTENT",
+  "overviewPoints[*].body": "MACHINE_CONTENT",
+  "faq[*].id": "NON_LOCALIZABLE_DATA",
+  "faq[*].question": "MACHINE_CONTENT",
+  "faq[*].answer": "MACHINE_CONTENT",
+} as const;
+
 function integrityPassed(report = evaluateLocalizationContentIntegrity({
   locale: "uk",
   canonicalPresentation: editorialCanonical,
@@ -87,6 +98,7 @@ function integrityPassed(report = evaluateLocalizationContentIntegrity({
     canonicalPresentation: editorialCanonical,
     layers: [{ source: "MACHINE", values: ukEditorialValues() }],
   }).presentation,
+  fieldPolicy: EDITORIAL_FIELD_POLICY,
 })) {
   assert.equal(report.status, "PASSED");
   return report;
@@ -184,6 +196,7 @@ describe("Reset 03E.2 — localization content integrity", () => {
       canonicalPresentation: editorialCanonical,
       localizedCandidate: merged.presentation,
       provenance: merged.provenance,
+      fieldPolicy: EDITORIAL_FIELD_POLICY,
     });
     assert.equal(validation.status, "READY_TO_PUBLISH");
     void tree;
@@ -241,6 +254,7 @@ describe("Reset 03E.2 — localization content integrity", () => {
       canonicalPresentation: editorialCanonical,
       localizedCandidate: merged.presentation,
       provenance: merged.provenance,
+      fieldPolicy: EDITORIAL_FIELD_POLICY,
     });
     assert.equal(validation.status, "NOT_READY");
     assert.ok(
@@ -330,6 +344,7 @@ describe("Reset 03E.2 — localization content integrity", () => {
       locale: "uk",
       canonicalPresentation: editorialCanonical,
       localizedPresentation: badPresentation,
+      fieldPolicy: EDITORIAL_FIELD_POLICY,
     });
     assert.equal(failedReport.status, "FAILED");
     const version = fingerprintMediaPlpCanonicalVersion(editorialCanonical);

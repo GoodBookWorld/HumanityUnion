@@ -1,55 +1,52 @@
 /**
- * Reset 03E.3 — localization structural integrity (LSI.1).
+ * Reset 03E.3 / RESET 05D.3 — localization structural integrity (LSI.1).
  *
- * Build/read contract: every required AUTO prose path from the canonical tree
- * must exist as a non-empty string in the localized presentation shape.
- *
- * Render-authority path parity (rendered markers ↔ apply) is evaluated in
- * web test/dev (`media-structural-integrity.ts`), not in the thin API operator.
+ * Required paths = MACHINE_CONTENT leaves from the shared ownership resolver.
  */
 
 import type {
   LocalizationStructuralIntegrityReport,
   LocalizationStructuralIntegritySubreason,
+  PlpFieldPolicyMap,
   PublicPresentationNode,
 } from "@hu/types";
 
-import { isTechnicalIdentityPath } from "./content-integrity.js";
 import {
   collectAutoPaths,
   getPresentationValueAtPath,
 } from "./presentation-paths.js";
+import { isCollectedPathLocalizationRequired } from "./universal/field-authority.js";
 
 export const LOCALIZATION_STRUCTURAL_INTEGRITY_VERSION = "LSI.1" as const;
 
 export function listRequiredLocalizationSourcePaths(
   canonicalPresentation: PublicPresentationNode,
+  fieldPolicy: PlpFieldPolicyMap,
 ): readonly string[] {
   return collectAutoPaths(canonicalPresentation)
-    .filter((node) => !isTechnicalIdentityPath(node.path))
+    .filter((node) =>
+      isCollectedPathLocalizationRequired(node.path, fieldPolicy),
+    )
     .map((node) => node.path);
 }
 
-/**
- * Evaluate whether a localized presentation structurally covers every required
- * canonical AUTO prose path (shape completeness — not content difference).
- */
 export function evaluateLocalizationStructuralIntegrity(input: {
   readonly locale: string;
   readonly canonicalPresentation: PublicPresentationNode;
   readonly localizedPresentation: PublicPresentationNode;
-  /** Optional build AUTO map keys (defaults to canonical source paths). */
+  readonly fieldPolicy: PlpFieldPolicyMap;
   readonly buildInputPaths?: readonly string[];
   readonly evaluatedAt?: string;
 }): LocalizationStructuralIntegrityReport {
   const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
   const sourcePaths = listRequiredLocalizationSourcePaths(
     input.canonicalPresentation,
+    input.fieldPolicy,
   );
   const buildPaths = [
     ...new Set(
-      (input.buildInputPaths ?? sourcePaths).filter(
-        (path) => !isTechnicalIdentityPath(path),
+      (input.buildInputPaths ?? sourcePaths).filter((path) =>
+        isCollectedPathLocalizationRequired(path, input.fieldPolicy),
       ),
     ),
   ];
@@ -82,7 +79,6 @@ export function evaluateLocalizationStructuralIntegrity(input: {
   }
   for (const path of buildPaths) {
     if (!sourceSet.has(path)) {
-      // Extra build paths are ignored for publish readiness; still counted.
       reasonCodes.add("RENDERED_PATH_NOT_IN_CANONICAL_LOCALIZATION_SOURCE");
     }
     const value = getPresentationValueAtPath(
@@ -114,6 +110,7 @@ export function resolveLocalizationStructuralIntegrityForRead(input: {
   readonly locale: string;
   readonly canonicalPresentation: PublicPresentationNode;
   readonly localizedPresentation: PublicPresentationNode;
+  readonly fieldPolicy: PlpFieldPolicyMap;
   readonly persisted?: LocalizationStructuralIntegrityReport | null;
 }): {
   readonly report: LocalizationStructuralIntegrityReport;
@@ -128,6 +125,7 @@ export function resolveLocalizationStructuralIntegrityForRead(input: {
       locale: input.locale,
       canonicalPresentation: input.canonicalPresentation,
       localizedPresentation: input.localizedPresentation,
+      fieldPolicy: input.fieldPolicy,
     });
     return { report, allowPublishedLocalized: true, reasonCode: "OK" };
   }
@@ -136,6 +134,7 @@ export function resolveLocalizationStructuralIntegrityForRead(input: {
     locale: input.locale,
     canonicalPresentation: input.canonicalPresentation,
     localizedPresentation: input.localizedPresentation,
+    fieldPolicy: input.fieldPolicy,
   });
 
   if (
