@@ -284,6 +284,28 @@ export {
   mediaPlpPublicNewsEntityId,
   mediaPlpTrustedEntityId,
 } from "./media-plp-identities.js";
+export type { InitiativePlpEntityType } from "./initiative-plp-identities.js";
+export {
+  INITIATIVE_PLP_ENTITY_TYPE,
+  INITIATIVE_PLP_ENTITY_TYPES,
+  initiativePlpEntityId,
+  isInitiativePlpEntityType,
+} from "./initiative-plp-identities.js";
+export {
+  INITIATIVE_CARD_FIELD_OWNERSHIP,
+  INITIATIVE_CARD_MACHINE_CONTENT_PATHS,
+} from "./initiative-card-field-policy.js";
+export type { InitiativeCardMachineContentPath } from "./initiative-card-field-policy.js";
+export {
+  INITIATIVE_LIFECYCLE_PLP_INVENTORY,
+  INITIATIVE_LIFECYCLE_REQUIRED_STAGE_IDS,
+  listInitiativeLifecycleInventoryStages,
+  evaluateInitiativeLifecycleSemanticClosure,
+} from "./initiative-lifecycle-plp-inventory.js";
+export type {
+  InitiativeLifecyclePlpInventoryRow,
+  InitiativeLifecyclePlpMigrationStatus,
+} from "./initiative-lifecycle-plp-inventory.js";
 export type {
   LocalizationOwnershipClass,
   LocalizationResolutionPriorityStep,

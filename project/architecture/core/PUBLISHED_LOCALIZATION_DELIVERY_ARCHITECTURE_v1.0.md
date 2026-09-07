@@ -771,5 +771,5 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Build | Async entity×locale queue; coalesce; concurrency default 1; PARTIAL not publishable |
 | News automation | Consumer-identity enqueue (`enqueueConsumerVisibleNewsPlpBuilds`); provider dormant until processor |
 | Search/SEO | Post-publish invalidation hooks; HREFLANG DEFERRED |
-| RESET 05 | Inventory in `RESET_05_MIGRATION_INVENTORY_v1.0.md` (includes `country-initiative-rail-card__meta`) |
+| RESET 05 | Audited inventory in `RESET_05_MIGRATION_INVENTORY_v1.0.md`; Initiative/Lifecycle + remaining domain adapters |
 | ACTIVE count | **30** — unchanged |

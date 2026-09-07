@@ -445,7 +445,7 @@ describe("Reset 03E.9 — carousel route composition render contract", () => {
     assert.match(materializer, /CIVIC_MEDIA_PROPAGANDA/);
   });
 
-  it("election/initiative remain DOMAIN_NOT_YET_MIGRATED (Initiative CT path)", () => {
+  it("election/initiative use Initiative lifecycle PLP adapter (not Media DOMAIN_NOT_YET_MIGRATED)", () => {
     const election = readFileSync(
       new URL(
         "../../country-experience/components/CountryElectionRailCard.tsx",
@@ -460,10 +460,12 @@ describe("Reset 03E.9 — carousel route composition render contract", () => {
       ),
       "utf8",
     );
-    assert.match(election, /DOMAIN_NOT_YET_MIGRATED/);
+    assert.doesNotMatch(election, /DOMAIN_NOT_YET_MIGRATED/);
+    assert.doesNotMatch(initiative, /DOMAIN_NOT_YET_MIGRATED/);
     assert.match(election, /data-hu-localization-domain="initiative"/);
-    assert.match(election, /useInitiativeCardTitlePresentation/);
-    assert.match(initiative, /DOMAIN_NOT_YET_MIGRATED/);
-    assert.match(initiative, /useInitiativeCardTitlePresentation/);
+    assert.match(election, /data-hu-plp-adapter="initiative_lifecycle"/);
+    assert.match(initiative, /data-hu-plp-adapter="initiative_lifecycle"/);
+    assert.doesNotMatch(election, /useInitiativeCardTitlePresentation/);
+    assert.doesNotMatch(initiative, /useInitiativeCardTitlePresentation/);
   });
 });

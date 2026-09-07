@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (RESET 04). Supplements ADR-026. Does **not** migrate Initiative/Blog/Discussions.
+Accepted (RESET 04). Supplemented by RESET 05 domain adapters. Supplements ADR-026.
 
 ## Context
 
@@ -57,10 +57,10 @@ Provider concurrency default **1**; no fanout; no build-on-read; thin import bou
 
 ## Consequences
 
-- RESET 05 migrates Initiative/Lifecycle (including `country-initiative-rail-card__meta`) through a new adapter — not Media forks.
-- Existing Media PLP.2 snapshots remain compatible (no schema bump in RESET 04).
-- Legacy CT remains until each domain migrates.
+- RESET 05 registers `initiative_lifecycle` (second production adapter), plus `blog_knowledge` / `discussion` / `participant_public`. Country Initiative/election rails migrate meta ownership; stage/detail consumers remain CT until live acceptance.
+- Existing Media PLP.2 snapshots remain compatible (no schema bump in RESET 04/05).
+- Legacy CT remains until each consumer migrates and RESET 07 removes runtime.
 
-## Non-goals
+## Non-goals (RESET 04/05 packs)
 
-No push/deploy/live Gemini; no Initiative migration; no locale URLs; no legacy removal.
+No push/deploy/live Gemini; no locale URLs/hreflang (RESET 08); no full legacy CT removal (RESET 07).

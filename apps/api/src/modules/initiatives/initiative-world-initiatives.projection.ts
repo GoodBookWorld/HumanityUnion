@@ -56,12 +56,17 @@ export function toWorldInitiativeCardProjection(
       ? initiative.metadata.activityAreaOther
       : initiative.metadata.activityArea;
 
+  const metadata = initiative.metadata;
+
   return {
     initiativeId: initiative.initiativeId,
     title: initiative.title,
     summary: summarizeText(initiative.description),
     activityArea,
     geographyLabel: resolveGeographyLabel(initiative),
+    countryCode: metadata.countrySlug,
+    regionCode: metadata.regionSlug,
+    communitySlug: metadata.communitySlug,
     imageUrl: initiative.metadata.imageUrl,
     coverMedia: resolveInitiativeCoverMedia(initiative.metadata),
     startDate: initiative.metadata.startDate,

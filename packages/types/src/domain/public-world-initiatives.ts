@@ -8,6 +8,10 @@ export interface WorldInitiativeCardProjection {
   summary: string;
   activityArea: string;
   geographyLabel: string;
+  /** RESET 05 — codes for locale-aware GEOGRAPHY display (not machine-translated labels). */
+  countryCode?: string;
+  regionCode?: string;
+  communitySlug?: string;
   imageUrl?: string;
   /** UX Evolution Pack 03 — public-safe (verificationReasonCode always stripped); approved media only. */
   coverMedia?: InitiativeCoverMedia;

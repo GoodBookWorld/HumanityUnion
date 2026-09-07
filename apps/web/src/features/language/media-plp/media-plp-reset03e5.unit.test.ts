@@ -447,7 +447,7 @@ describe("Reset 03E.5 — consumer value lineage", () => {
     assert.doesNotMatch(pageSrc, /resources:\s*media\.trustedMedia/);
   });
 
-  it("election/initiative rails are DOMAIN_NOT_YET_MIGRATED for Media PLP", async () => {
+  it("election/initiative rails use Initiative PLP adapter (not Media DOMAIN_NOT_YET_MIGRATED)", async () => {
     const fs = await import("node:fs");
     const initiative = fs.readFileSync(
       new URL(
@@ -463,9 +463,10 @@ describe("Reset 03E.5 — consumer value lineage", () => {
       ),
       "utf8",
     );
-    assert.match(initiative, /DOMAIN_NOT_YET_MIGRATED/);
-    assert.match(election, /DOMAIN_NOT_YET_MIGRATED/);
-    assert.match(initiative, /useInitiativeCardTitlePresentation/);
+    assert.doesNotMatch(initiative, /DOMAIN_NOT_YET_MIGRATED/);
+    assert.doesNotMatch(election, /DOMAIN_NOT_YET_MIGRATED/);
+    assert.match(initiative, /initiative_lifecycle/);
+    assert.doesNotMatch(initiative, /useInitiativeCardTitlePresentation/);
   });
 
   it("LSI.1 fails when consumer value lineage bypasses after resolver", () => {

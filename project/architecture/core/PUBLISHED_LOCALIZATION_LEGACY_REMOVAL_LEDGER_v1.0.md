@@ -351,6 +351,36 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | RESET 05 inventory | `RESET_05_MIGRATION_INVENTORY_v1.0.md` + ADR-027 |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 05 note — remaining public/civic migration (no live ops)
+
+| Item | Status |
+|------|--------|
+| Second production adapter | `initiative_lifecycle` (Initiative sole civic root; both profiles) |
+| Sentinel | `country-initiative-rail-card__meta` — activityArea CONTROLLED_VOCABULARY + GEOGRAPHY codes; `DOMAIN_NOT_YET_MIGRATED` removed |
+| Remaining adapters | `blog_knowledge`, `discussion`, `participant_public` registered (privacy gates; consumers still CT) |
+| Semantic gap | `evaluateCountryInitiativeRailSemanticGaps` / `evaluateReset05SemanticGaps` + lifecycle inventory closure |
+| Schema | **No** PLP.2 bump — Media snapshots remain compatible |
+| Flag | `HU_INITIATIVE_PLP_ENABLED` opt-in for HTTP consumption (default OFF) |
+| ACTIVE count | **30** — do not decrement until live staging acceptance |
+
+#### RESET 05 legacy reclassification (not deleted)
+
+Status vocabulary for this pack: `ACTIVE` | `REPLACED_PENDING_ACCEPTANCE` | `REMOVABLE_IN_RESET_07` | `INTENTIONALLY_RETAINED`
+
+| ID | Surface | Classification |
+|----|---------|----------------|
+| L16–L18 | Initiative detail CT resolve/seed/hooks | `REPLACED_PENDING_ACCEPTANCE` (adapter + card rails migrated; detail consumer still CT) |
+| L19 | Discussion comment CT | `REPLACED_PENDING_ACCEPTANCE` (`discussion` adapter privacy-gated) |
+| L20–L21 | Initiative card / civic title CT | `REPLACED_PENDING_ACCEPTANCE` (country rails no longer use CT title overlay) |
+| L22 | Lifecycle PublicTranslatedFields / warm sections | `REPLACED_PENDING_ACCEPTANCE` (inventory owned; consumer CT until stage publish wiring) |
+| L14–L15 | Blog CT | `REPLACED_PENDING_ACCEPTANCE` (`blog_knowledge` adapter) |
+| L26–L27 | Initiative SEO CT helpers | `REPLACED_PENDING_ACCEPTANCE` (publish hooks notify search/SEO; SEO consumer still CT) |
+| L07–L13 | Media CT | unchanged from RESET 03/04 (`REPLACED_PENDING_ACCEPTANCE` / live pending) |
+| K01–K13 | Brand/Legal/Geo/UI/etc. | `INTENTIONALLY_RETAINED` |
+| — | Full CT runtime removal | `REMOVABLE_IN_RESET_07` only after live acceptance proves PLP replacement |
+
+**Do not leave dual-authority silently:** country Initiative/election rails use PLP ownership markers + GEOGRAPHY/UI dict — not Media `DOMAIN_NOT_YET_MIGRATED` and not CT generate-on-read for title/meta.
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

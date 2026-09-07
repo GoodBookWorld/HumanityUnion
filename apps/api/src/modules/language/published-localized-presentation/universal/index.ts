@@ -55,9 +55,38 @@ export {
 } from "./safety.js";
 export {
   ensureMediaPlpAdapterRegistered,
+  ensureInitiativeLifecyclePlpAdapterRegistered,
+  ensureRemainingPublicPlpAdaptersRegistered,
+  ensureAllDefaultPlpAdaptersRegistered,
   resetMediaPlpAdapterRegistrationForTests,
+  resetInitiativePlpAdapterRegistrationForTests,
 } from "./register-defaults.js";
 export { mediaPlpDomainAdapter } from "./adapters/media-plp-adapter.js";
+export {
+  initiativeLifecyclePlpDomainAdapter,
+  buildCanonicalInitiativeCardPresentation,
+  fingerprintInitiativePlpCanonicalVersion,
+  seedInitiativePlpLiveCardForTests,
+  resetInitiativePlpLiveStoreForTests,
+} from "./adapters/initiative-lifecycle-adapter.js";
+export {
+  blogKnowledgePlpDomainAdapter,
+  BLOG_PLP_ENTITY_TYPE,
+  seedBlogPlpPostForTests,
+  resetBlogPlpStoreForTests,
+} from "./adapters/blog-knowledge-adapter.js";
+export {
+  discussionPlpDomainAdapter,
+  DISCUSSION_PLP_ENTITY_TYPE,
+  seedDiscussionPlpCommentForTests,
+  resetDiscussionPlpStoreForTests,
+} from "./adapters/discussion-adapter.js";
+export {
+  participantPublicPlpDomainAdapter,
+  PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+  seedParticipantPublicPlpForTests,
+  resetParticipantPublicPlpStoreForTests,
+} from "./adapters/participant-public-adapter.js";
 export {
   fixturePlpDomainAdapter,
   FIXTURE_PLP_ENTITY_TYPE,
