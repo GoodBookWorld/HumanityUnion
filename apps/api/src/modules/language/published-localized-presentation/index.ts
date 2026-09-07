@@ -8,6 +8,8 @@ export {
   PUBLISHED_LOCALIZATION_CONSUMER_ALLOWLIST,
   assertPublishedLocalizationConsumptionAllowed,
   isPublishedLocalizationConsumptionEnabled,
+  registerPlpConsumptionChecker,
+  resetPlpConsumptionCheckersForTests,
 } from "./feature-boundary.js";
 export {
   formatPublishedReadImportGuardCounters,
@@ -83,3 +85,4 @@ export {
 } from "./persistence/memory.store.js";
 
 export * from "./media/index.js";
+export * from "./universal/index.js";

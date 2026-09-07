@@ -343,13 +343,18 @@ describe("Reset 03 Media PLP vertical slice", () => {
     assert.match(counters, /CONTENT_TRANSLATION_WRITE_COUNT=0/);
   });
 
-  it("W: future publication hook inactive", () => {
-    assert.equal(MEDIA_LOCALIZATION_BUILD_HOOK_STATUS, "INACTIVE");
-    notifyMediaCanonicalPublishedForLocalizationBuild({
+  it("W: publication hook queues without provider (RESET 04)", () => {
+    assert.equal(
+      MEDIA_LOCALIZATION_BUILD_HOOK_STATUS,
+      "QUEUE_ACTIVE_PROVIDER_DORMANT",
+    );
+    const n = notifyMediaCanonicalPublishedForLocalizationBuild({
       entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
       entityId: "the-atlantic",
       canonicalVersion: "v1",
       contentRevision: 1,
+      locales: ["uk"],
     });
+    assert.equal(n, 1);
   });
 });

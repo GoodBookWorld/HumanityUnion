@@ -246,6 +246,31 @@ export {
   PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY,
   PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
 } from "./published-localized-presentation.js";
+export type {
+  PlpFieldOwnershipClass,
+} from "./plp-field-ownership.js";
+export {
+  PLP_FIELD_OWNERSHIP_CLASSES,
+  isPlpFieldOwnershipClass,
+  plpFieldMayEnterMachineLayer,
+} from "./plp-field-ownership.js";
+export type {
+  PlpBuildRequest,
+  PlpBuildRequestStatus,
+  PlpBuildWorkKey,
+  PlpFieldPolicyMap,
+  PlpLocalizableEntityContract,
+  PlpPublicationTrigger,
+  PlpPublicationTriggerKind,
+  PlpSearchSeoInvalidationHookInput,
+  PlpWorkerSafetyDefaults,
+} from "./plp-publication-contract.js";
+export {
+  PLP_FIELD_AUTHORITY_ORDER,
+  PLP_OWNERSHIP_TO_PROVENANCE,
+  PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+  plpBuildWorkKey,
+} from "./plp-publication-contract.js";
 export type { MediaPlpEntityType } from "./media-plp-identities.js";
 export {
   MEDIA_PLP_ENTITY_TYPE,

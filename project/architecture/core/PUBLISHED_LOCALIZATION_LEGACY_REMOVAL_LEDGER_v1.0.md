@@ -341,6 +341,16 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Repair | Same thin order as carousel diagnose/materialize (03E.10.1): require MONGO PLP → connect → reads → disconnect `finally` |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 04 note — universal PLP publication pipeline (no live ops)
+
+| Item | Status |
+|------|--------|
+| Extraction | Universal adapter registry, field authority, build queue, Media adapter, fixture adapter, search/SEO hooks |
+| Schema | **No** PLP.2 bump — Media snapshots compatible |
+| News automation | Queue path + `HU_PLP_AUTO_BUILD_LOCALES`; provider dormant |
+| RESET 05 inventory | `RESET_05_MIGRATION_INVENTORY_v1.0.md` + ADR-027 |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

@@ -1,16 +1,24 @@
 /**
- * Reset 02/03 — published localization consumption gates.
+ * Reset 02/04 — published localization consumption gates (domain-neutral).
  *
- * Media entity types are consumable only when HU_MEDIA_PLP_ENABLED=true
- * (or test override). Default remains legacy (flag OFF).
+ * Domain-specific flags (e.g. HU_MEDIA_PLP_ENABLED) register via
+ * `registerPlpConsumptionChecker` — core does not import Media entity IDs.
  */
 
-import { MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
-
-import { isMediaPlpConsumptionEnabled } from "./media/feature-flag.js";
-
-/** Non-Media allowlist (still empty — Media uses the Media PLP flag). */
+/** Explicit non-flag allowlist for migrated non-Media types (RESET 05+). */
 export const PUBLISHED_LOCALIZATION_CONSUMER_ALLOWLIST: readonly string[] = [];
+
+type PlpConsumptionChecker = (entityType: string) => boolean;
+
+const checkers: PlpConsumptionChecker[] = [];
+
+export function registerPlpConsumptionChecker(checker: PlpConsumptionChecker): void {
+  checkers.push(checker);
+}
+
+export function resetPlpConsumptionCheckersForTests(): void {
+  checkers.length = 0;
+}
 
 export function isPublishedLocalizationConsumptionEnabled(
   entityType: string,
@@ -18,11 +26,10 @@ export function isPublishedLocalizationConsumptionEnabled(
   if (PUBLISHED_LOCALIZATION_CONSUMER_ALLOWLIST.includes(entityType)) {
     return true;
   }
-  if (
-    (MEDIA_PLP_ENTITY_TYPES as readonly string[]).includes(entityType) &&
-    isMediaPlpConsumptionEnabled()
-  ) {
-    return true;
+  for (const checker of checkers) {
+    if (checker(entityType)) {
+      return true;
+    }
   }
   return false;
 }

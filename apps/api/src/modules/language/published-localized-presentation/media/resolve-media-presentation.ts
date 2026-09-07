@@ -10,6 +10,7 @@ import type {
 } from "@hu/types";
 
 import { resolvePublishedPresentation } from "../resolve-published-presentation.js";
+import { ensureMediaPlpAdapterRegistered } from "../universal/register-defaults.js";
 import { isMediaPlpEntityConsumptionEnabled } from "./feature-flag.js";
 import { markMediaPlpRead } from "./instrumentation.js";
 
@@ -30,6 +31,7 @@ export type ResolveMediaPlpPresentationInput = {
 export async function resolveMediaPlpPresentation(
   input: ResolveMediaPlpPresentationInput,
 ): Promise<ResolvePublishedPresentationResult> {
+  ensureMediaPlpAdapterRegistered();
   if (!isMediaPlpEntityConsumptionEnabled(input.entityType)) {
     return {
       mode: "CANONICAL_FALLBACK",

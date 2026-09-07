@@ -1,6 +1,6 @@
 /**
- * Pack 08K — schedule bounded content-translation warm after public presentation
- * mutations. Fire-and-forget; never awaits Gemini.
+ * Pack 08K / RESET 04 — schedule bounded content-translation warm AND PLP build
+ * enqueue after public presentation mutations. Fire-and-forget; never awaits Gemini.
  */
 
 import type {
@@ -10,6 +10,7 @@ import type {
 
 import { isSupportedContentTranslationSourceKind } from "./content-translation-eligibility.js";
 import { scheduleContentTranslationWarmAfterMutation } from "./content-translation-warm-enqueue.js";
+import { notifyPlpPublicSourceMutation } from "./published-localized-presentation/universal/public-source-mutation-bridge.js";
 
 const WARM_REASONS = new Set<ContentTranslationWarmReason>([
   "public_mutation",
@@ -29,6 +30,8 @@ export function notifyPublicPresentationChanged(input: {
   sourceKind: ContentTranslationSourceKind | string;
   sourceRecordId: string;
   reason?: string;
+  /** Optional fingerprint when caller already has canonical version (News). */
+  canonicalVersion?: string;
 }): void {
   if (!isSupportedContentTranslationSourceKind(input.sourceKind)) {
     return;
@@ -37,5 +40,10 @@ export function notifyPublicPresentationChanged(input: {
     sourceKind: input.sourceKind,
     sourceRecordId: input.sourceRecordId,
     reason: asWarmReason(input.reason),
+  });
+  notifyPlpPublicSourceMutation({
+    sourceKind: input.sourceKind,
+    sourceRecordId: input.sourceRecordId,
+    canonicalVersion: input.canonicalVersion,
   });
 }

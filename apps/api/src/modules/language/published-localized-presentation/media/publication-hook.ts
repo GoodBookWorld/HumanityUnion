@@ -1,26 +1,55 @@
 /**
- * Reset 03 — future publication hook (INACTIVE).
+ * Reset 03 / RESET 04 — Media canonical publication → LocalizationBuildRequested.
  *
- * Later: Media canonical publish/update → LocalizationBuildRequested → worker.
- * This pack only defines the seam; it must not enqueue, warm, or call providers.
+ * RESET 04 activates enqueue into the universal coalesce queue (no Gemini).
+ * Provider execution remains opt-in via setPlpBuildRequestProcessor.
  */
+
+import type { PlpPublicationTriggerKind } from "@hu/types";
+
+import { enqueuePlpBuildRequest } from "../universal/build-request-queue.js";
+import { ensureMediaPlpAdapterRegistered } from "../universal/register-defaults.js";
 
 export type MediaCanonicalLocalizationBuildHookInput = {
   readonly entityType: string;
   readonly entityId: string;
   readonly canonicalVersion: string;
   readonly contentRevision: number;
+  readonly locales?: readonly string[];
+  readonly trigger?: PlpPublicationTriggerKind;
 };
 
-export const MEDIA_LOCALIZATION_BUILD_HOOK_STATUS = "INACTIVE" as const;
+/** Queue accepts work; provider execution is still dormant until a processor is set. */
+export const MEDIA_LOCALIZATION_BUILD_HOOK_STATUS = "QUEUE_ACTIVE_PROVIDER_DORMANT" as const;
 
 /**
- * Defined for Reset 04+ worker wiring. No-op by design in Reset 03.
+ * Enqueue localization build requests for non-English Registry locales.
+ * Does not call Gemini / materializer.
  */
 export function notifyMediaCanonicalPublishedForLocalizationBuild(
-  _input: MediaCanonicalLocalizationBuildHookInput,
-): void {
-  // INACTIVE — do not enqueue LocalizationBuildRequested yet.
-  void _input;
-  void MEDIA_LOCALIZATION_BUILD_HOOK_STATUS;
+  input: MediaCanonicalLocalizationBuildHookInput,
+): number {
+  ensureMediaPlpAdapterRegistered();
+  const locales = input.locales ?? [];
+  if (locales.length === 0) {
+    // No locales supplied — nothing to enqueue (caller must pass Registry locales).
+    void MEDIA_LOCALIZATION_BUILD_HOOK_STATUS;
+    return 0;
+  }
+  let n = 0;
+  for (const locale of locales) {
+    if (String(locale).toLowerCase() === "en") {
+      continue;
+    }
+    enqueuePlpBuildRequest({
+      entityType: input.entityType,
+      entityId: input.entityId,
+      locale,
+      canonicalVersion: input.canonicalVersion,
+      contentRevision: input.contentRevision,
+      trigger: input.trigger ?? "CANONICAL_ENTITY_PUBLISHED",
+    });
+    n += 1;
+  }
+  return n;
 }

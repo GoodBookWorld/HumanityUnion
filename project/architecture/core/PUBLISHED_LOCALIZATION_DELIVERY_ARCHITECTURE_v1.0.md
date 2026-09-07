@@ -759,3 +759,17 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Diagnostic | `diagnose:media-plp-news-parity -- --mongo --locale uk` (read-only; `PROVIDER_CALLS=0`) |
 | Closure | 12-card News rail: all title+summary leaves localized for `FULLY_LOCALIZED`; 11+1 ⇒ `PARTIALLY_LOCALIZED` |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 04 — universal PLP publication pipeline
+
+**Rule:** Localization is a publication concern, not a rendering concern. See ADR-027.
+
+| Concern | Rule |
+|---------|------|
+| Core vs adapter | Universal core + domain adapters; Media is first adapter |
+| Field authority | PROTECTED → LEGAL → BRAND → MANUAL → CONTROLLED/UI → MACHINE |
+| Build | Async entity×locale queue; coalesce; concurrency default 1; PARTIAL not publishable |
+| News automation | Consumer-identity enqueue (`enqueueConsumerVisibleNewsPlpBuilds`); provider dormant until processor |
+| Search/SEO | Post-publish invalidation hooks; HREFLANG DEFERRED |
+| RESET 05 | Inventory in `RESET_05_MIGRATION_INVENTORY_v1.0.md` (includes `country-initiative-rail-card__meta`) |
+| ACTIVE count | **30** — unchanged |
