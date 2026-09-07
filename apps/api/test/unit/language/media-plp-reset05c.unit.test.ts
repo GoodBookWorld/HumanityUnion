@@ -470,15 +470,25 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     assert.equal(getMediaLocalizationBuildHookStatus(), QUEUE_ACTIVE_PROVIDER_DORMANT);
   });
 
-  it("refreshPublicNews source wires canonicalVersion + collection enqueue", () => {
+  it("refreshPublicNews source wires canonicalVersion + awaited collection enqueue", () => {
     const newsService = readFileSync(
       join(apiRoot, "src/modules/public-news/public-news.service.ts"),
       "utf8",
     );
     assert.match(newsService, /canonicalVersion/);
     assert.match(newsService, /fingerprintMediaPlpCanonicalVersion/);
-    assert.match(newsService, /enqueueConsumerVisibleNewsPlpBuilds/);
+    assert.match(newsService, /await enqueueConsumerVisibleNewsPlpBuilds/);
     assert.match(newsService, /resolvePlpAutoBuildLocales/);
+  });
+
+  it("05C.1: processor boots from index after PLP persistence (not event fire-and-forget)", () => {
+    const indexSrc = readFileSync(join(apiRoot, "src/index.ts"), "utf8");
+    assert.match(indexSrc, /bootstrapPlpAutoBuildRuntime/);
+    const eventBoot = readFileSync(
+      join(apiRoot, "src/infrastructure/events/bootstrap-event-infrastructure.ts"),
+      "utf8",
+    );
+    assert.doesNotMatch(eventBoot, /registerPlpAutoBuildProcessor/);
   });
 
   it("build-pipeline stays provider-free; processor owns dynamic materializer import", () => {

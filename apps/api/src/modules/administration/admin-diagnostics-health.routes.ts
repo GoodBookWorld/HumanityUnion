@@ -55,4 +55,25 @@ adminDiagnosticsHealthRouter.get(
   },
 );
 
+adminDiagnosticsHealthRouter.get(
+  "/plp-auto-build",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { getAdminDiagnosticsPlpAutoBuild } = await import(
+        "./admin-diagnostics-plp-auto-build.service.js"
+      );
+      const snapshot = await getAdminDiagnosticsPlpAutoBuild({
+        actorUserId: req.auth!.id,
+      });
+      res.json(
+        createSuccessResponse(snapshot, "PLP auto-build diagnostics loaded."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 export default adminDiagnosticsHealthRouter;

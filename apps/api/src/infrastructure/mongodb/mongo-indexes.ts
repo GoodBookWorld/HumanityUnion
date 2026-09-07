@@ -1132,6 +1132,21 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // RESET 05C.1 — durable PLP auto-build work claim/drain.
+    collectionName: MONGO_COLLECTIONS.plpAutoBuildWork,
+    indexes: [
+      {
+        key: { workKey: 1 },
+        unique: true,
+        name: "plp_auto_build_work_workKey_unique",
+      },
+      {
+        key: { status: 1, enqueuedAt: 1 },
+        name: "plp_auto_build_work_status_enqueuedAt",
+      },
+    ],
+  },
+  {
     // Production Completion Pack 02B — Language Registry.
     collectionName: MONGO_COLLECTIONS.languageRegistry,
     indexes: [

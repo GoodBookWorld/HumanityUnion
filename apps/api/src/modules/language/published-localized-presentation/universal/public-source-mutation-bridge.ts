@@ -1,5 +1,5 @@
 /**
- * RESET 04 / 05C — bridge public mutations → PLP build enqueue (no provider await).
+ * RESET 04 / 05C / 05C.1 — bridge public mutations → PLP build enqueue (no provider await).
  *
  * Locales come from HU_PLP_AUTO_BUILD_LOCALES (comma-separated) when set;
  * otherwise enqueue is skipped (safe default — no uncontrolled fanout).
@@ -7,6 +7,7 @@
  */
 
 import { enqueuePublicNewsArticlePlpBuild } from "./news-consumer-build-trigger.js";
+import { recordPlpAutoBuildMutationNotification } from "./plp-auto-build-runtime.js";
 
 /**
  * Safety allowlist for automatic PLP builds.
@@ -26,12 +27,14 @@ export function resolvePlpAutoBuildLocales(): readonly string[] {
 /**
  * Fire-and-forget PLP enqueue for supported source kinds.
  * Requires canonicalVersion + HU_PLP_AUTO_BUILD_LOCALES to enqueue News.
+ * Kick is durable-write-only (does not await provider).
  */
 export function notifyPlpPublicSourceMutation(input: {
   readonly sourceKind: string;
   readonly sourceRecordId: string;
   readonly canonicalVersion?: string;
 }): void {
+  recordPlpAutoBuildMutationNotification();
   if (input.sourceKind !== "public_news") {
     return;
   }
@@ -42,7 +45,7 @@ export function notifyPlpPublicSourceMutation(input: {
   if (locales.length === 0) {
     return;
   }
-  enqueuePublicNewsArticlePlpBuild({
+  void enqueuePublicNewsArticlePlpBuild({
     articleId: input.sourceRecordId,
     canonicalVersion: input.canonicalVersion,
     locales,

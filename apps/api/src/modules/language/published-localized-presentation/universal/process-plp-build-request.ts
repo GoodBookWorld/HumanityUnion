@@ -154,7 +154,7 @@ export async function processPlpBuildRequest(
     snapshot: existing,
   });
   if (usability.allowPublishedLocalized) {
-    return "COMPLETED";
+    return "SKIPPED_USABLE";
   }
 
   const { autoPaths, autoValues } = collectMachineAutoValues({
@@ -229,6 +229,11 @@ export async function processPlpBuildRequest(
           }
           return { ok: true as const, values: result.values };
         });
+
+      const { recordPlpAutoBuildProviderCall } = await import(
+        "./plp-auto-build-runtime.js"
+      );
+      recordPlpAutoBuildProviderCall();
 
       const providerResult = await withTimeout(
         callProvider({

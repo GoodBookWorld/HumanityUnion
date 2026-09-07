@@ -1,10 +1,12 @@
 /**
- * RESET 04 / 05C — dynamic RSS / consumer-visible News build trigger.
+ * RESET 04 / 05C / 05C.1 — dynamic RSS / consumer-visible News build trigger.
  *
  * RESET 05C uses the auto-build union (limit 24 = country rail) so both
  * /media (12) and country surfaces are covered. Does not call Gemini.
  * discoverActiveNewsIds / carousel materializer keep limit 12 via
  * selectMediaPlpConsumerNewsArticles (03E.13 unchanged).
+ *
+ * RESET 05C.1 — awaits durable upserts only (never provider builds).
  */
 
 import { MEDIA_PLP_ENTITY_TYPE, mediaPlpPublicNewsEntityId } from "@hu/types";
@@ -19,6 +21,7 @@ import {
   asMediaPlpPresentationNode,
 } from "../media/canonical-trees.js";
 import { enqueuePlpBuildRequest } from "./build-request-queue.js";
+import { recordPlpAutoBuildCollectionEnqueueAttempt } from "./plp-auto-build-runtime.js";
 import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
 
 /**
@@ -33,14 +36,19 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
 }): Promise<{
   readonly consumerCount: number;
   readonly enqueued: number;
+  readonly skippedUsable: number;
+  readonly deduped: number;
   readonly PROVIDER_CALLS: 0;
 }> {
   ensureMediaPlpAdapterRegistered();
+  recordPlpAutoBuildCollectionEnqueueAttempt();
   const articles =
     input.limit != null
       ? await selectMediaPlpConsumerNewsArticles({ limit: input.limit })
       : await selectConsumerVisibleNewsArticlesForAutoBuild();
   let enqueued = 0;
+  let skippedUsable = 0;
+  let deduped = 0;
   for (const article of articles) {
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -62,39 +70,49 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
       if (String(locale).toLowerCase() === "en") {
         continue;
       }
-      enqueuePlpBuildRequest({
+      const result = await enqueuePlpBuildRequest({
         entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
         entityId: mediaPlpPublicNewsEntityId(article.id),
         locale,
         canonicalVersion,
         contentRevision: 1,
         trigger: "CONSUMER_VISIBLE_COLLECTION_REFRESH",
+        canonicalPresentation: tree,
       });
-      enqueued += 1;
+      if (result.skippedUsable) {
+        skippedUsable += 1;
+      } else if (result.deduped) {
+        deduped += 1;
+      } else if (result.accepted) {
+        enqueued += 1;
+      }
     }
   }
   return {
     consumerCount: articles.length,
     enqueued,
+    skippedUsable,
+    deduped,
     PROVIDER_CALLS: 0,
   };
 }
 
 /**
  * Single-article dynamic refresh (post-upsert). Still identity-keyed.
+ * Awaits durable upsert only.
  */
-export function enqueuePublicNewsArticlePlpBuild(input: {
+export async function enqueuePublicNewsArticlePlpBuild(input: {
   readonly articleId: string;
   readonly canonicalVersion: string;
   readonly locales: readonly string[];
-}): number {
+}): Promise<number> {
   ensureMediaPlpAdapterRegistered();
   let n = 0;
   for (const locale of input.locales) {
     if (String(locale).toLowerCase() === "en") {
       continue;
     }
-    enqueuePlpBuildRequest({
+    const result = await enqueuePlpBuildRequest({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId: mediaPlpPublicNewsEntityId(input.articleId),
       locale,
@@ -102,7 +120,9 @@ export function enqueuePublicNewsArticlePlpBuild(input: {
       contentRevision: 1,
       trigger: "DYNAMIC_SOURCE_REFRESH",
     });
-    n += 1;
+    if (result.accepted) {
+      n += 1;
+    }
   }
   return n;
 }

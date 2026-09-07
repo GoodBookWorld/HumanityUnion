@@ -194,11 +194,11 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       }
     }
 
-    // After per-record enqueue: cover consumer-visible union (limit 24) without
-    // awaiting provider — enqueue only (fire-and-forget).
+    // After per-record enqueue: cover consumer-visible union (limit 24).
+    // Await durable upserts only — never await provider builds.
     const autoBuildLocales = resolvePlpAutoBuildLocales();
     if (autoBuildLocales.length > 0) {
-      void enqueueConsumerVisibleNewsPlpBuilds({ locales: autoBuildLocales });
+      await enqueueConsumerVisibleNewsPlpBuilds({ locales: autoBuildLocales });
     }
 
     return {

@@ -31,11 +31,41 @@ export {
   setPlpBuildRequestProcessorForTests,
   getPlpBuildRequestProcessorForTests,
   isPlpBuildStaleAgainstLive,
+  kickPlpAutoBuildDrain,
+  isExistingPlpUsableForEnqueue,
 } from "./build-request-queue.js";
+export type { EnqueuePlpBuildRequestResult } from "./build-request-queue.js";
 export { processPlpBuildRequest } from "./process-plp-build-request.js";
 export type { ProcessPlpBuildRequestDeps } from "./process-plp-build-request.js";
-export { registerPlpAutoBuildProcessor } from "./register-plp-auto-build-processor.js";
-export type { RegisterPlpAutoBuildProcessorResult } from "./register-plp-auto-build-processor.js";
+export {
+  registerPlpAutoBuildProcessor,
+  bootstrapPlpAutoBuildRuntime,
+  stopPlpAutoBuildRuntimeForTests,
+} from "./register-plp-auto-build-processor.js";
+export type {
+  RegisterPlpAutoBuildProcessorResult,
+  BootstrapPlpAutoBuildRuntimeResult,
+} from "./register-plp-auto-build-processor.js";
+export {
+  getPlpAutoBuildRuntimeSnapshot,
+  resetPlpAutoBuildRuntimeForTests,
+  resolvePlpAutoBuildQueueBackend,
+} from "./plp-auto-build-runtime.js";
+export {
+  upsertPendingPlpAutoBuildWork,
+  claimNextPlpAutoBuildWork,
+  countPlpAutoBuildWorkByStatus,
+  listPlpAutoBuildWorkForTests,
+  resetPlpAutoBuildWorkStoreForTests,
+  setPlpAutoBuildWorkForceMemoryForTests,
+  resolvePlpAutoBuildMaxAttempts,
+  usePlpAutoBuildWorkMemory,
+} from "./plp-auto-build-work.repository.js";
+export type {
+  PlpAutoBuildWorkRecord,
+  PlpAutoBuildWorkStatus,
+  UpsertPlpAutoBuildWorkResult,
+} from "./plp-auto-build-work.repository.js";
 export { resolvePlpAutoBuildLocales, notifyPlpPublicSourceMutation } from "./public-source-mutation-bridge.js";
 export {
   runUniversalPlpBuild,

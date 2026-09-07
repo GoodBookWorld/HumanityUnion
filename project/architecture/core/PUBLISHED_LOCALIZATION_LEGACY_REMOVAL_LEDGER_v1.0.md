@@ -425,6 +425,19 @@ Status vocabulary for this pack: `ACTIVE` | `REPLACED_PENDING_ACCEPTANCE` | `REM
 | Env (staging) | `HU_PLP_AUTO_BUILD_LOCALES` (e.g. `uk`); optional `HU_PLP_AUTO_BUILD_PROCESSOR=0` kill switch |
 | ACTIVE count | **30** |
 
+### Reset 05C.1 note — automatic RSS processor runtime truth (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live symptom | After refresh with locales=uk: PUBLISHED=8 / FALLBACK=16 unchanged |
+| Root cause | In-memory queue + fire-and-forget processor register before PLP bind; restart/OOM dropped work; no durable retry/observability |
+| Topology | RSS scheduler runs **inside** the long-lived API process (same process) — in-memory was topologically valid but not restart-safe |
+| Fix | Mongo `plp_auto_build_work` durable claim/drain; `await bootstrapPlpAutoBuildRuntime()` after PLP persistence, before news scheduler |
+| Diagnostics | Admin `GET /api/v1/admin/diagnostics/plp-auto-build` (process); `diagnose:plp-auto-build-work --mongo` (persisted counts only) |
+| Schema | **No** PLP.2 bump — news snapshots compatible |
+| Env | No new required vars; existing `HU_PLP_AUTO_BUILD_LOCALES` sufficient |
+| ACTIVE count | **30** |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

@@ -14,6 +14,11 @@ async function start(): Promise<void> {
   // materialize/diagnose --mongo (never silent empty memory).
   await bootstrapPublishedLocalizationPersistence();
 
+  const { bootstrapPlpAutoBuildRuntime } = await import(
+    "./modules/language/published-localized-presentation/universal/register-plp-auto-build-processor.js"
+  );
+  await bootstrapPlpAutoBuildRuntime();
+
   const { assertNormalCivicArchiveRuntimeDatabase, logCivicArchiveRuntimeDiagnostic } =
     await import("./modules/public-civic-archive/civic-archive-runtime-diagnostic.js");
 

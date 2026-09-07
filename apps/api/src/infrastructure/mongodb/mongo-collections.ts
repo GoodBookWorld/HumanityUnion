@@ -113,6 +113,11 @@ export const MONGO_COLLECTIONS = {
   publishedLocalizedPresentationsCurrent: "published_localized_presentations_current",
   /** Reset 02 — BUILDING/FAILED/SUPERSEDED/history snapshots (not used by normal reads). */
   publishedLocalizedPresentationsHistory: "published_localized_presentations_history",
+  /**
+   * RESET 05C.1 — durable PLP auto-build work (pending/running/terminal).
+   * Survives API restart; drain claims from this collection.
+   */
+  plpAutoBuildWork: "plp_auto_build_work",
   /** Pack 02B — Admin-managed Language Registry. */
   languageRegistry: "language_registry",
   /** Pack 02F — Canonical Terminology Glossary. */

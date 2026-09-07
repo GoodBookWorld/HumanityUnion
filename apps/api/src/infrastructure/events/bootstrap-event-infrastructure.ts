@@ -14,6 +14,9 @@ import { logger } from "../../shared/observability/logger.js";
 /**
  * Ensures event infrastructure indexes exist and starts the outbox dispatcher when enabled.
  * Safe to call on every API boot; no-op when MongoDB is not configured.
+ *
+ * RESET 05C.1 — PLP auto-build processor is bootstrapped from index.ts AFTER
+ * published-localization persistence (not fire-and-forget here).
  */
 export async function bootstrapEventInfrastructure(): Promise<void> {
   if (!isMongoConfigured()) {
@@ -34,27 +37,6 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   registerAdminNotificationHandlers();
   registerContentTranslationWarmHandlers();
   startOutboxDispatcher();
-
-  // RESET 05C — fire-and-forget PLP auto-build processor (in-process queue).
-  void import(
-    "../../modules/language/published-localized-presentation/universal/register-plp-auto-build-processor.js"
-  )
-    .then(({ registerPlpAutoBuildProcessor }) => {
-      const result = registerPlpAutoBuildProcessor();
-      logger.info("plp_auto_build_processor.register", {
-        component: "event-infrastructure",
-        registered: result.registered,
-        reason: result.reason,
-        locales: result.locales,
-        status: result.status,
-      });
-    })
-    .catch((error: unknown) => {
-      logger.warn("plp_auto_build_processor.register_failed", {
-        component: "event-infrastructure",
-        error: error instanceof Error ? error.message : "unknown",
-      });
-    });
 
   logger.info("event_infrastructure.ready", { component: "event-infrastructure" });
 }

@@ -55,7 +55,7 @@ export function resetMediaLocalizationBuildHookStatusForTests(): void {
 
 /**
  * Enqueue localization build requests for non-English Registry locales.
- * Does not call Gemini / materializer.
+ * Does not call Gemini / materializer. Kick is durable-write-only.
  */
 export function notifyMediaCanonicalPublishedForLocalizationBuild(
   input: MediaCanonicalLocalizationBuildHookInput,
@@ -72,7 +72,7 @@ export function notifyMediaCanonicalPublishedForLocalizationBuild(
     if (String(locale).toLowerCase() === "en") {
       continue;
     }
-    enqueuePlpBuildRequest({
+    void enqueuePlpBuildRequest({
       entityType: input.entityType,
       entityId: input.entityId,
       locale,

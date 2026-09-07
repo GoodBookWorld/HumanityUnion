@@ -27,6 +27,7 @@ describe("Production Completion Pack 01 — Admin diagnostics health", () => {
     assert.match(routes, /requireAuthenticationMiddleware/);
     assert.match(routes, /getAdminDiagnosticsHealth/);
     assert.match(routes, /"\/health"/);
+    assert.match(routes, /"\/plp-auto-build"/);
   });
 
   it("Admin diagnostics service reuses probes and never returns URI/credentials", () => {
@@ -40,6 +41,13 @@ describe("Production Completion Pack 01 — Admin diagnostics health", () => {
     assert.doesNotMatch(service, /MONGODB_URI\s*:/);
     assert.match(service, /databaseConfigured/);
     assert.match(service, /sanitizeProbeMessage|redacted/);
+
+    const plpDiag = readRepo(
+      "apps/api/src/modules/administration/admin-diagnostics-plp-auto-build.service.ts",
+    );
+    assert.match(plpDiag, /getPlpAutoBuildRuntimeSnapshot/);
+    assert.doesNotMatch(plpDiag, /MONGODB_URI/);
+    assert.doesNotMatch(plpDiag, /HU_PLP_AUTO_BUILD_LOCALES/);
   });
 
   it("public health remains redacted in production while Admin surface is separate", () => {

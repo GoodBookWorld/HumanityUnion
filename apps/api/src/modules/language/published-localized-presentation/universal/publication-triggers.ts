@@ -30,6 +30,7 @@ export function createPlpPublicationTrigger(input: {
 /**
  * Enqueue build for one entity×locale when locale + version are known.
  * Safe no-op when locale omitted (caller expands Registry locales).
+ * Kick is durable-write-only (does not await provider).
  */
 export function dispatchPlpPublicationTrigger(input: {
   readonly trigger: PlpPublicationTrigger;
@@ -47,7 +48,7 @@ export function dispatchPlpPublicationTrigger(input: {
     if (String(locale).toLowerCase() === "en") {
       continue;
     }
-    enqueuePlpBuildRequest({
+    void enqueuePlpBuildRequest({
       entityType: input.trigger.entityType,
       entityId: input.trigger.entityId,
       locale,
