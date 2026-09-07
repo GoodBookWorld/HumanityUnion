@@ -53,7 +53,7 @@ Provider concurrency default **1**; no fanout; no build-on-read; thin import bou
 
 ### Dynamic RSS
 
-`enqueueConsumerVisibleNewsPlpBuilds` / mutation bridge with `HU_PLP_AUTO_BUILD_LOCALES`. Queue active; provider dormant until processor wired. Selection = `/media` consumer set.
+`enqueueConsumerVisibleNewsPlpBuilds` / mutation bridge with `HU_PLP_AUTO_BUILD_LOCALES`. RESET 05C wires production processor (`processPlpBuildRequest`) when locales allowlist is set; concurrency default 1. Auto-build inventory = consumer-visible union (limit 24); `/media` SSR selection remains 03E.13 limit 12.
 
 ## Consequences
 

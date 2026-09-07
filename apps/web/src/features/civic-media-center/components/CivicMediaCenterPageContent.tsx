@@ -15,6 +15,7 @@ import type {
 
 import { Card } from "../../../design-system/components/Card";
 import { WorkspaceStatusBadge as Badge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { CIVIC_MEDIA_ROUTE } from "../routes";
 import { coverageToChips } from "../civic-media-card-utils";
 import {
@@ -28,6 +29,7 @@ import {
   useCivicMediaResolvedEditorial,
   type CivicMediaResolvedEditorial,
 } from "./CivicMediaTranslatedEditorial";
+import { BrandTokenizedSemanticText } from "./BrandTokenizedSemanticText";
 import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
@@ -518,6 +520,7 @@ function CivicMediaCenterLoaded({
   mediaPlpLiveTruthProbeAttr?: string;
 }) {
   const t = useTranslations("civicMediaPublic");
+  const brand = useLocalizedBrand();
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
   const runtimeBranch =
     mediaLocalizationRuntimeBranch ?? (plpMode ? "PLP" : "LEGACY");
@@ -832,26 +835,24 @@ function CivicMediaCenterLoaded({
             <div className="civic-media-page__faq-list">
               {editorial.faq.map((item, index) => (
                 <Card key={item.id} className="civic-media-resource-card">
-                  <MediaSemanticNode
+                  <BrandTokenizedSemanticText
                     as="h3"
-                    owner="PLP_ENTITY"
-                    result={editorialResult}
+                    template={item.question}
+                    siteName={brand.siteName}
+                    plpResult={editorialResult}
                     entityType="civic_media_editorial"
                     entityId="civic-media-center"
                     semanticPath={`faq[${index}].question`}
-                  >
-                    {item.question}
-                  </MediaSemanticNode>
-                  <MediaSemanticNode
+                  />
+                  <BrandTokenizedSemanticText
                     as="p"
-                    owner="PLP_ENTITY"
-                    result={editorialResult}
+                    template={item.answer}
+                    siteName={brand.siteName}
+                    plpResult={editorialResult}
                     entityType="civic_media_editorial"
                     entityId="civic-media-center"
                     semanticPath={`faq[${index}].answer`}
-                  >
-                    {item.answer}
-                  </MediaSemanticNode>
+                  />
                 </Card>
               ))}
             </div>

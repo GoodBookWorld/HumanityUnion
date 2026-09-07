@@ -1,9 +1,13 @@
 /**
- * RESET 04 — bounded in-process PLP build request queue.
+ * RESET 04 / 05C — bounded in-process PLP build request queue.
  *
- * Coalesces duplicate (entityType, entityId, locale) work.
- * Default concurrency 1. Does not call Gemini.
- * Provider execution remains opt-in via processBuildRequest handlers.
+ * Lifecycle (production):
+ * - In-process only: pending work is lost on process restart.
+ * - Duplicate-safe via coalesce key (entityType|entityId|locale).
+ * - Recovery: next RSS refresh re-enqueues the consumer-visible set
+ *   (enqueueConsumerVisibleNewsPlpBuilds) so missed work is rebuilt.
+ * - Default concurrency 1 (resolvePlpProviderConcurrency).
+ * - Provider execution requires setPlpBuildRequestProcessor (05C wires production).
  */
 
 import type {
@@ -26,10 +30,30 @@ let processor:
   | ((request: PlpBuildRequest) => Promise<PlpBuildRequestStatus>)
   | null = null;
 
-export function setPlpBuildRequestProcessorForTests(
+/**
+ * Production (and test) processor wiring. Sets the handler and kicks drain
+ * so work queued while dormant is processed.
+ */
+export function setPlpBuildRequestProcessor(
   fn: ((request: PlpBuildRequest) => Promise<PlpBuildRequestStatus>) | null,
 ): void {
   processor = fn;
+  if (fn != null) {
+    void drainPlpBuildQueue();
+  }
+}
+
+/** @deprecated Prefer setPlpBuildRequestProcessor — kept as test alias. */
+export function setPlpBuildRequestProcessorForTests(
+  fn: ((request: PlpBuildRequest) => Promise<PlpBuildRequestStatus>) | null,
+): void {
+  setPlpBuildRequestProcessor(fn);
+}
+
+export function getPlpBuildRequestProcessorForTests():
+  | ((request: PlpBuildRequest) => Promise<PlpBuildRequestStatus>)
+  | null {
+  return processor;
 }
 
 export function resetPlpBuildRequestQueueForTests(): void {
@@ -44,17 +68,23 @@ export function getPlpBuildRequestQueueStats(): {
   readonly running: number;
   readonly completed: number;
   readonly PROVIDER_CONCURRENCY: number;
+  readonly processorActive: boolean;
 } {
   return {
     pending: pending.size,
     running,
     completed: completed.length,
     PROVIDER_CONCURRENCY: resolvePlpProviderConcurrency(),
+    processorActive: processor != null,
   };
 }
 
 export function listPlpBuildRequestsPendingForTests(): readonly PlpBuildRequest[] {
   return [...pending.values()].map((e) => e.request);
+}
+
+export function listPlpBuildRequestsCompletedForTests(): readonly PlpBuildRequest[] {
+  return [...completed];
 }
 
 /**

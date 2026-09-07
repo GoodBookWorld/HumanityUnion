@@ -4,6 +4,10 @@
  */
 
 import type { LanguageCode } from "@hu/types";
+import {
+  protectBrandTokensForMachineTranslation,
+  restoreBrandTokensAfterMachineTranslation,
+} from "@hu/types";
 
 import type { TranslationProvider } from "../translation-provider.js";
 import {
@@ -155,7 +159,12 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     };
   }
 
-  const payload = JSON.stringify(input.autoValues);
+  const protectedAutoValues: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input.autoValues)) {
+    protectedAutoValues[key] = protectBrandTokensForMachineTranslation(value);
+  }
+
+  const payload = JSON.stringify(protectedAutoValues);
   const bytes = Buffer.byteLength(payload, "utf8");
   const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
   if (bytes > maxBytes) {
@@ -217,7 +226,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     const values: Record<string, string> = {};
     for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
       if (typeof value === "string" && value.trim()) {
-        values[key] = value;
+        // RESET 05C — restore `{siteName}` after MACHINE hop (Brand owns identity).
+        values[key] = restoreBrandTokensAfterMachineTranslation(value);
       }
     }
 

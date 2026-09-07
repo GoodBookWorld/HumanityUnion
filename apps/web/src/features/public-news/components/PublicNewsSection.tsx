@@ -12,7 +12,10 @@ import {
 } from "../../civic-media-center/media-rail";
 import { HuxDiscoveryShell } from "../../horizontal-experience";
 import { isApiUnavailableError } from "../../../lib/api-client";
+import { isMediaPlpWebEnabled } from "../../language/media-plp/feature-flag";
+import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 import { fetchPublicNewsArticles } from "../api";
+import { fetchCountryPublicNewsPlpById } from "../fetch-country-public-news-plp";
 import {
   collectFilterOptions,
   DEFAULT_PUBLIC_NEWS_FILTERS,
@@ -104,6 +107,9 @@ export function PublicNewsSection({
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PublicNewsFilters>(DEFAULT_PUBLIC_NEWS_FILTERS);
   const [countryProvider, setCountryProvider] = useState("all");
+  const [clientPlpNewsById, setClientPlpNewsById] = useState<
+    Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined
+  >(undefined);
   const hasInitialArticles = initialArticles != null;
 
   const resolvedShowToolbar = showToolbar ?? variant === "discovery";
@@ -116,6 +122,13 @@ export function PublicNewsSection({
     (variant === "country" && countryName
       ? tCountry("description", { countryName })
       : tDiscovery("description"));
+
+  const countryPlpEnabled = variant === "country" && isMediaPlpWebEnabled();
+  const effectivePlpNewsById = plpNewsById ?? clientPlpNewsById;
+  const effectiveDisableOnDemandTranslation =
+    disableOnDemandTranslation ||
+    effectivePlpNewsById != null ||
+    countryPlpEnabled;
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -202,6 +215,30 @@ export function PublicNewsSection({
     regionName,
     variant,
   ]);
+
+  // RESET 05C — country rail shares PLP identity with /media (read-only resolve).
+  useEffect(() => {
+    if (!countryPlpEnabled || plpNewsById != null) {
+      return;
+    }
+    if (processedArticles.length === 0) {
+      setClientPlpNewsById(undefined);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const map = await fetchCountryPublicNewsPlpById({
+        articles: processedArticles,
+        locale,
+      });
+      if (!cancelled) {
+        setClientPlpNewsById(map);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [countryPlpEnabled, plpNewsById, processedArticles, locale]);
 
   const countryProviders = useMemo(() => {
     const names = new Set(countryScopedArticles.map((article) => article.sourceName));
@@ -364,8 +401,8 @@ export function PublicNewsSection({
           renderItem={(article) => (
             <PublicNewsCard
               article={article}
-              disableOnDemandTranslation={disableOnDemandTranslation}
-              plpPresentation={plpNewsById?.[article.id]}
+              disableOnDemandTranslation={effectiveDisableOnDemandTranslation}
+              plpPresentation={effectivePlpNewsById?.[article.id]}
             />
           )}
           rail={rail}

@@ -3347,7 +3347,7 @@
     },
     "trustedCategorySourceCount": "{count, plural, one {مصدر واحد} other {# مصادر}}",
     "trustedCategoryRailLabel": "موارد إعلامية: {category}",
-    "metaTitle": "الإعلام المدني | Humanity Union",
+    "metaTitle": "الإعلام المدني | {siteName}",
     "metaDescription": "اعثر على مصادر إعلامية موثوقة، وتحقق من الادعاءات، وحوّل الأخبار الموثقة إلى مبادرات مدنية بنّاءة.",
     "logoAlt": "شعار {name}",
     "trustedCategoriesTablist": "فئات الإعلام الموثوق",

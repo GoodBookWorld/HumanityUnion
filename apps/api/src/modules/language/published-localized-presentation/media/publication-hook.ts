@@ -1,8 +1,8 @@
 /**
- * Reset 03 / RESET 04 — Media canonical publication → LocalizationBuildRequested.
+ * Reset 03 / RESET 04 / RESET 05C — Media canonical publication → LocalizationBuildRequested.
  *
  * RESET 04 activates enqueue into the universal coalesce queue (no Gemini).
- * Provider execution remains opt-in via setPlpBuildRequestProcessor.
+ * RESET 05C wires the production processor; status flips to ACTIVE when registered.
  */
 
 import type { PlpPublicationTriggerKind } from "@hu/types";
@@ -19,8 +19,39 @@ export type MediaCanonicalLocalizationBuildHookInput = {
   readonly trigger?: PlpPublicationTriggerKind;
 };
 
-/** Queue accepts work; provider execution is still dormant until a processor is set. */
-export const MEDIA_LOCALIZATION_BUILD_HOOK_STATUS = "QUEUE_ACTIVE_PROVIDER_DORMANT" as const;
+/** Historical RESET 04 string — queue accepts work; provider was dormant. */
+export const QUEUE_ACTIVE_PROVIDER_DORMANT = "QUEUE_ACTIVE_PROVIDER_DORMANT" as const;
+
+/** RESET 05C — production processor registered and draining. */
+export const QUEUE_ACTIVE_PROVIDER_ACTIVE = "QUEUE_ACTIVE_PROVIDER_ACTIVE" as const;
+
+export type MediaLocalizationBuildHookStatus =
+  | typeof QUEUE_ACTIVE_PROVIDER_DORMANT
+  | typeof QUEUE_ACTIVE_PROVIDER_ACTIVE;
+
+/**
+ * Static historical constant (RESET 04 tests assert this string).
+ * Runtime status: getMediaLocalizationBuildHookStatus().
+ */
+export const MEDIA_LOCALIZATION_BUILD_HOOK_STATUS =
+  QUEUE_ACTIVE_PROVIDER_DORMANT;
+
+let runtimeHookStatus: MediaLocalizationBuildHookStatus =
+  QUEUE_ACTIVE_PROVIDER_DORMANT;
+
+export function getMediaLocalizationBuildHookStatus(): MediaLocalizationBuildHookStatus {
+  return runtimeHookStatus;
+}
+
+export function setMediaLocalizationBuildHookStatus(
+  status: MediaLocalizationBuildHookStatus,
+): void {
+  runtimeHookStatus = status;
+}
+
+export function resetMediaLocalizationBuildHookStatusForTests(): void {
+  runtimeHookStatus = QUEUE_ACTIVE_PROVIDER_DORMANT;
+}
 
 /**
  * Enqueue localization build requests for non-English Registry locales.

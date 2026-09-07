@@ -58,6 +58,7 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
   { id: "overview.points", section: "overview", label: "Overview points", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx", notes: "civic_media_editorial.overviewPoints" },
   { id: "metadata.title", section: "metadata", label: "Document title", owner: "UI_DICTIONARY", component: "app/media/page.tsx" },
   { id: "metadata.description", section: "metadata", label: "Document description", owner: "UI_DICTIONARY", component: "app/media/page.tsx" },
+  { id: "metadata.brand.siteName", section: "metadata", label: "Document title brand", owner: "BRAND", component: "app/media/page.tsx", notes: "civicMediaPublic.metaTitle {siteName} via resolveBrandForMetadata" },
 
   // Initiative flow
   { id: "pipeline.chrome", section: "initiative-flow", label: "Pipeline eyebrow/title/description", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicPipelineWorkflow.tsx" },
@@ -102,7 +103,8 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
 
   // FAQ / knowledge / states / controls
   { id: "faq.heading", section: "faq", label: "FAQ heading", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "faq.items", section: "faq", label: "FAQ Q/A", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx", notes: "civic_media_editorial.faq" },
+  { id: "faq.items", section: "faq", label: "FAQ Q/A prose", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx", notes: "civic_media_editorial.faq surrounding prose; {siteName} tokens compose via Brand" },
+  { id: "faq.brand.siteName", section: "faq", label: "FAQ organization identity", owner: "BRAND", component: "features/civic-media-center/components/BrandTokenizedSemanticText.tsx", notes: "RESET 05C — Brand Localization siteName spans inside FAQ Q/A" },
   { id: "knowledge.link", section: "knowledge", label: "Knowledge link", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "states.loading", section: "states", label: "Loading", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "states.unavailable", section: "states", label: "Unavailable", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },

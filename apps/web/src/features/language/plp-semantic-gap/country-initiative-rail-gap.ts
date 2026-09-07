@@ -11,7 +11,9 @@ export type PlpSemanticGapKind =
   | "GEOGRAPHY_COLLAPSED_TO_WORLD"
   | "RAW_LIFECYCLE_STAGE_LABEL"
   | "TITLE_OWNERSHIP_BYPASS"
-  | "SIDEBAR_ELECTION_NAME_BYPASS";
+  | "SIDEBAR_ELECTION_NAME_BYPASS"
+  /** RESET 05C — Media FAQ organization identity bypasses Brand Localization. */
+  | "MEDIA_FAQ_BRAND_BYPASS";
 
 export type PlpSemanticGapFinding = {
   readonly kind: PlpSemanticGapKind;

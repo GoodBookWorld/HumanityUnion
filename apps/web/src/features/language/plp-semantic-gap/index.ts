@@ -1,5 +1,5 @@
 /**
- * RESET 05 / 05A — generalized PLP semantic-gap evaluation entry.
+ * RESET 05 / 05A / 05C — generalized PLP semantic-gap evaluation entry.
  * Domain-aware detectors share universal ownership/result semantics.
  */
 
@@ -13,6 +13,11 @@ export {
   type PlpSemanticGapReport,
 } from "./country-initiative-rail-gap";
 
+export {
+  evaluateMediaFaqBrandSemanticGaps,
+  assertNoMediaFaqBrandSemanticGaps,
+} from "./media-faq-brand-gap";
+
 import { evaluateInitiativeLifecycleSemanticClosure } from "@hu/types";
 
 import {
@@ -22,6 +27,7 @@ import {
   type PlpSemanticGapFinding,
   type PlpSemanticGapReport,
 } from "./country-initiative-rail-gap";
+import { evaluateMediaFaqBrandSemanticGaps } from "./media-faq-brand-gap";
 
 /**
  * Combine country-rail HTML gaps, lifecycle inventory closure, and 05A residual classes.
@@ -30,6 +36,9 @@ export function evaluateReset05SemanticGaps(input: {
   readonly html?: string;
   readonly locale: string;
   readonly hasSpecificGeographyCodes?: boolean;
+  /** When set with html, also run Media FAQ Brand bypass detection (05C). */
+  readonly mediaFaqBrandSiteName?: string;
+  readonly englishBrandSiteName?: string;
 }): PlpSemanticGapReport {
   const findings: PlpSemanticGapFinding[] = [];
 
@@ -52,6 +61,16 @@ export function evaluateReset05SemanticGaps(input: {
       locale: input.locale,
     });
     findings.push(...sidebar.findings);
+
+    if (input.mediaFaqBrandSiteName) {
+      const faqBrand = evaluateMediaFaqBrandSemanticGaps({
+        html: input.html,
+        locale: input.locale,
+        brandSiteName: input.mediaFaqBrandSiteName,
+        englishBrandSiteName: input.englishBrandSiteName,
+      });
+      findings.push(...faqBrand.findings);
+    }
   }
 
   const closure = evaluateInitiativeLifecycleSemanticClosure();

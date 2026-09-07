@@ -5,6 +5,13 @@ import type {
 } from "@hu/types";
 
 import { notifyPublicPresentationChanged } from "../language/public-presentation-changed.js";
+import {
+  asMediaPlpPresentationNode,
+  buildCanonicalPublicNewsPresentation,
+  fingerprintMediaPlpCanonicalVersion,
+} from "../language/published-localized-presentation/media/canonical-trees.js";
+import { enqueueConsumerVisibleNewsPlpBuilds } from "../language/published-localized-presentation/universal/news-consumer-build-trigger.js";
+import { resolvePlpAutoBuildLocales } from "../language/published-localized-presentation/universal/public-source-mutation-bridge.js";
 import { resolvePublicNewsConfig } from "./public-news.config.js";
 import type { ExternalNewsArticle } from "./public-news.normalize.js";
 import { filterExternalNewsArticles, validateExternalNewsArticleUrls } from "./public-news.filter.js";
@@ -23,6 +30,25 @@ import {
   upsertPublicNewsRecords,
 } from "./public-news.repository.js";
 import { resolveNewsProvider } from "./providers/resolve-news-provider.js";
+
+function fingerprintPublicNewsCanonicalVersion(record: NewsArticleRecord): string {
+  const tree = asMediaPlpPresentationNode(
+    buildCanonicalPublicNewsPresentation({
+      id: record.id,
+      title: record.title,
+      summary: record.summary,
+      category: record.category,
+      sourceName: record.sourceName,
+      articleUrl: record.articleUrl,
+      publishedAt: record.publishedAt,
+      verificationStatus: record.verificationStatus,
+      geographicScope: record.geographicScope,
+      language: record.language,
+      imageUrl: record.imageUrl,
+    }),
+  );
+  return fingerprintMediaPlpCanonicalVersion(tree);
+}
 
 let refreshInProgress = false;
 
@@ -157,12 +183,22 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
 
     for (const record of normalized) {
       if (record.status === "active") {
+        // RESET 05C — canonicalVersion required for PLP enqueue (mutation bridge).
+        const canonicalVersion = fingerprintPublicNewsCanonicalVersion(record);
         notifyPublicPresentationChanged({
           sourceKind: "public_news",
           sourceRecordId: record.id,
           reason: "public_mutation",
+          canonicalVersion,
         });
       }
+    }
+
+    // After per-record enqueue: cover consumer-visible union (limit 24) without
+    // awaiting provider — enqueue only (fire-and-forget).
+    const autoBuildLocales = resolvePlpAutoBuildLocales();
+    if (autoBuildLocales.length > 0) {
+      void enqueueConsumerVisibleNewsPlpBuilds({ locales: autoBuildLocales });
     }
 
     return {

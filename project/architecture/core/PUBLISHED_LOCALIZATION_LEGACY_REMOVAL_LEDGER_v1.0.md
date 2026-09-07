@@ -347,7 +347,7 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 |------|--------|
 | Extraction | Universal adapter registry, field authority, build queue, Media adapter, fixture adapter, search/SEO hooks |
 | Schema | **No** PLP.2 bump — Media snapshots compatible |
-| News automation | Queue path + `HU_PLP_AUTO_BUILD_LOCALES`; provider dormant |
+| News automation | Queue path + `HU_PLP_AUTO_BUILD_LOCALES`; provider dormant until RESET 05C |
 | RESET 05 inventory | `RESET_05_MIGRATION_INVENTORY_v1.0.md` + ADR-027 |
 | ACTIVE count | **30** — do not reduce yet |
 
@@ -401,6 +401,28 @@ Status vocabulary for this pack: `ACTIVE` | `REPLACED_PENDING_ACCEPTANCE` | `REM
 | Machine nodes | `title`, `summary`, `electionName` (PUBLIC_CHOICE); geography/lifecycle excluded |
 | Schema | **No** PLP.2 bump; fingerprint includes `electionName` when present |
 | Provider | Default `fake_local`; optional `HU_INITIATIVE_PLP_PROVIDER=thin_gemini` |
+| ACTIVE count | **30** |
+
+### Reset 05B.1 note — PUBLIC_CHOICE Initiative discovery (no live ops)
+
+| Item | Status |
+|------|--------|
+| Command | `diagnose:initiative-plp --mongo --list-public-choice` (READ-ONLY; max 20) |
+| Identity | Same Initiative PLP adapter authority (`entityType=initiative`) |
+| ACTIVE count | **30** |
+
+### Reset 05C note — dynamic RSS PLP lifecycle + Media FAQ Brand (no live ops)
+
+| Item | Status |
+|------|--------|
+| First failure (pre-05C) | RSS notify omitted `canonicalVersion` → PLP mutation bridge no-op; processor null |
+| Processor | In-process queue + `processPlpBuildRequest`; register when `HU_PLP_AUTO_BUILD_LOCALES` set and processor ≠ `0` |
+| Auto-build inventory | Union limit **24** (country pool ⊇ `/media` 12); `/media` SSR/materializer remain 03E.13 limit 12 |
+| Coverage diagnostic | `diagnose:media-plp-rss-coverage --mongo --locale <locale>` (READ-ONLY) |
+| Brand FAQ | Canonical `{siteName}` tokens; render Brand Localization spans; no global string replace |
+| Editorial fingerprint | `civic_media_editorial` FAQ template change → editorial snapshots stale (rebuild later; news untouched) |
+| Schema | **No** PLP.2 bump — existing Media **news** snapshots remain usable |
+| Env (staging) | `HU_PLP_AUTO_BUILD_LOCALES` (e.g. `uk`); optional `HU_PLP_AUTO_BUILD_PROCESSOR=0` kill switch |
 | ACTIVE count | **30** |
 
 ---

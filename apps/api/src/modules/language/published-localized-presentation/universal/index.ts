@@ -25,10 +25,18 @@ export {
   enqueuePlpBuildRequest,
   getPlpBuildRequestQueueStats,
   listPlpBuildRequestsPendingForTests,
+  listPlpBuildRequestsCompletedForTests,
   resetPlpBuildRequestQueueForTests,
+  setPlpBuildRequestProcessor,
   setPlpBuildRequestProcessorForTests,
+  getPlpBuildRequestProcessorForTests,
   isPlpBuildStaleAgainstLive,
 } from "./build-request-queue.js";
+export { processPlpBuildRequest } from "./process-plp-build-request.js";
+export type { ProcessPlpBuildRequestDeps } from "./process-plp-build-request.js";
+export { registerPlpAutoBuildProcessor } from "./register-plp-auto-build-processor.js";
+export type { RegisterPlpAutoBuildProcessorResult } from "./register-plp-auto-build-processor.js";
+export { resolvePlpAutoBuildLocales, notifyPlpPublicSourceMutation } from "./public-source-mutation-bridge.js";
 export {
   runUniversalPlpBuild,
 } from "./build-pipeline.js";

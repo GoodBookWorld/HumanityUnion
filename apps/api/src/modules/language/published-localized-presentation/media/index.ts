@@ -41,9 +41,17 @@ export type { MediaPlpLiveCanonicalSource } from "./live-source.js";
 export { default as publicMediaPlpRouter } from "./public-media-plp.routes.js";
 export {
   MEDIA_LOCALIZATION_BUILD_HOOK_STATUS,
+  QUEUE_ACTIVE_PROVIDER_ACTIVE,
+  QUEUE_ACTIVE_PROVIDER_DORMANT,
+  getMediaLocalizationBuildHookStatus,
+  setMediaLocalizationBuildHookStatus,
+  resetMediaLocalizationBuildHookStatusForTests,
   notifyMediaCanonicalPublishedForLocalizationBuild,
 } from "./publication-hook.js";
-export type { MediaCanonicalLocalizationBuildHookInput } from "./publication-hook.js";
+export type {
+  MediaCanonicalLocalizationBuildHookInput,
+  MediaLocalizationBuildHookStatus,
+} from "./publication-hook.js";
 export {
   formatMediaPlpInstrumentationCounters,
   getMediaPlpInstrumentationCounters,

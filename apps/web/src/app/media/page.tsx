@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import type { CivicMediaCenterPublic } from "@hu/types";
 
+import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 import { fetchCivicMediaCenter } from "../../features/civic-media-center/api";
 import { CivicMediaCenterPageContent } from "../../features/civic-media-center/components/CivicMediaCenterPageContent";
 import { applyMediaPlpPresentationsToEditorial } from "../../features/language/media-plp/apply-media-plp-editorial";
@@ -22,9 +23,12 @@ import { fetchPublicNewsArticles } from "../../features/public-news/api";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("civicMediaPublic");
+  const siteName = { siteName: brand.siteName };
   return {
-    title: t("metaTitle"),
+    title: t("metaTitle", siteName),
     description: t("metaDescription"),
     alternates: {
       canonical: "/media",

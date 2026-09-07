@@ -3347,7 +3347,7 @@
     },
     "trustedCategorySourceCount": "{count, plural, one {# джерело} few {# джерела} many {# джерел} other {# джерела}}",
     "trustedCategoryRailLabel": "Медіаресурси: {category}",
-    "metaTitle": "Громадянські медіа | Humanity Union",
+    "metaTitle": "Громадянські медіа | {siteName}",
     "metaDescription": "Знайдіть надійні джерела, перевіряйте твердження та перетворюйте перевірені новини на конструктивні громадянські ініціативи.",
     "logoAlt": "Логотип {name}",
     "trustedCategoriesTablist": "Категорії надійних медіа",

@@ -74,12 +74,19 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
   },
 ] as const;
 
+/**
+ * RESET 05C — organization identity uses structural `{siteName}` tokens.
+ * Brand Localization resolves display names at compose/render (English Brand
+ * fallback remains "Humanity Union"). This changes the civic_media_editorial
+ * canonical fingerprint — published editorial PLP snapshots need a later
+ * rebuild (not part of this pack; do not materialize here).
+ */
 export const CIVIC_MEDIA_FAQ: readonly CivicMediaFaqItem[] = [
   {
     id: "why-not-every-media",
     question: "Why isn't every media outlet listed?",
     answer:
-      "Humanity Union curates sources that meet published selection principles. Listing every outlet would imply endorsement through volume rather than standards.",
+      "{siteName} curates sources that meet published selection principles. Listing every outlet would imply endorsement through volume rather than standards.",
     sortOrder: 1,
   },
   {
@@ -91,16 +98,16 @@ export const CIVIC_MEDIA_FAQ: readonly CivicMediaFaqItem[] = [
   },
   {
     id: "recommend-new",
-    question: "Can Humanity Union recommend new sources?",
+    question: "Can {siteName} recommend new sources?",
     answer:
       "Participants may suggest sources through civic initiatives or support channels. Suggestions are evaluated against selection principles, not vote counts.",
     sortOrder: 3,
   },
   {
     id: "verify-every-article",
-    question: "Does Humanity Union verify every article?",
+    question: "Does {siteName} verify every article?",
     answer:
-      "No. Humanity Union recommends organizations with strong standards. Readers should still verify individual claims using fact-checking resources.",
+      "No. {siteName} recommends organizations with strong standards. Readers should still verify individual claims using fact-checking resources.",
     sortOrder: 4,
   },
   {

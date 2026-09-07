@@ -28,6 +28,16 @@ export function resetMediaPlpMaterializerCountersForTests(): void {
   counters.MONGO_CLOSED = false;
 }
 
+/**
+ * RESET 05C — per-request provider budget for the continuous auto-build queue.
+ * Materializer CLI counters are one-shot; the in-process processor resets the
+ * call cap before each queued build so concurrency=1 drain can continue.
+ */
+export function resetMediaPlpMaterializerProviderCallBudget(): void {
+  counters.PROVIDER_CALL_COUNT = 0;
+  counters.PROVIDER_IMPORTED = false;
+}
+
 export function markMaterializerSourceLookup(): void {
   counters.SOURCE_LOOKUP_COUNT += 1;
 }

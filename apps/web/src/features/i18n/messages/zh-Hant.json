@@ -3347,7 +3347,7 @@
     },
     "trustedCategorySourceCount": "{count} 個來源",
     "trustedCategoryRailLabel": "{category} 媒體資源",
-    "metaTitle": "公民媒體 | Humanity Union",
+    "metaTitle": "公民媒體 | {siteName}",
     "metaDescription": "尋找可信媒體來源、查核聲明，並將已查核新聞轉為建設性公民倡議。",
     "logoAlt": "{name} 標誌",
     "trustedCategoriesTablist": "可信媒體分類",

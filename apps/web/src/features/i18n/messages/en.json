@@ -3347,7 +3347,7 @@
     },
     "trustedCategorySourceCount": "{count, plural, one {# source} other {# sources}}",
     "trustedCategoryRailLabel": "{category} media resources",
-    "metaTitle": "Civic Media | Humanity Union",
+    "metaTitle": "Civic Media | {siteName}",
     "metaDescription": "Find trusted media sources, verify claims, and turn verified news into constructive civic initiatives.",
     "logoAlt": "{name} logo",
     "trustedCategoriesTablist": "Trusted media categories",

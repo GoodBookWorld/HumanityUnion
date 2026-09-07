@@ -1,13 +1,18 @@
 /**
- * RESET 04 — dynamic RSS / consumer-visible News build trigger.
+ * RESET 04 / 05C — dynamic RSS / consumer-visible News build trigger.
  *
- * Uses the SAME selection authority as /media SSR (selectMediaPlpConsumerNewsIds).
- * Enqueues PLP build work; does not call Gemini.
+ * RESET 05C uses the auto-build union (limit 24 = country rail) so both
+ * /media (12) and country surfaces are covered. Does not call Gemini.
+ * discoverActiveNewsIds / carousel materializer keep limit 12 via
+ * selectMediaPlpConsumerNewsArticles (03E.13 unchanged).
  */
 
 import { MEDIA_PLP_ENTITY_TYPE, mediaPlpPublicNewsEntityId } from "@hu/types";
 
-import { selectMediaPlpConsumerNewsArticles } from "../../media-plp-carousel/media-plp-news-selection.js";
+import {
+  selectConsumerVisibleNewsArticlesForAutoBuild,
+  selectMediaPlpConsumerNewsArticles,
+} from "../../media-plp-carousel/media-plp-news-selection.js";
 import {
   fingerprintMediaPlpCanonicalVersion,
   buildCanonicalPublicNewsPresentation,
@@ -19,6 +24,8 @@ import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
 /**
  * After RSS ingest / consumer-visible refresh: enqueue missing/stale news
  * localization for eligible Registry locales (caller supplies locales).
+ * Default selection = auto-build union (limit 24). Optional limit override
+ * still uses the same language=en + balance selector (tests may pass 12).
  */
 export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly locales: readonly string[];
@@ -29,9 +36,10 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly PROVIDER_CALLS: 0;
 }> {
   ensureMediaPlpAdapterRegistered();
-  const articles = await selectMediaPlpConsumerNewsArticles({
-    limit: input.limit,
-  });
+  const articles =
+    input.limit != null
+      ? await selectMediaPlpConsumerNewsArticles({ limit: input.limit })
+      : await selectConsumerVisibleNewsArticlesForAutoBuild();
   let enqueued = 0;
   for (const article of articles) {
     const tree = asMediaPlpPresentationNode(

@@ -22,11 +22,25 @@ export type {
 } from "./discover-entities.js";
 export { assertMediaPlpCarouselImportIsolation } from "./import-guards.js";
 export {
+  MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT,
   MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
   listNewestActivePublicNewsIdsIgnoringConsumerBalance,
+  selectConsumerVisibleNewsArticlesForAutoBuild,
+  selectConsumerVisibleNewsIdsForAutoBuild,
   selectMediaPlpConsumerNewsArticles,
   selectMediaPlpConsumerNewsIds,
 } from "./media-plp-news-selection.js";
+export {
+  MEDIA_PLP_RSS_COVERAGE_PACK,
+  executeMediaPlpRssCoverageReads,
+  parseMediaPlpRssCoverageArgs,
+  printMediaPlpRssCoverageReport,
+  runMediaPlpRssCoverageDiagnostic,
+} from "./rss-coverage-diagnostic.js";
+export type {
+  MediaPlpRssCoverageReport,
+  MediaPlpRssCoverageRow,
+} from "./rss-coverage-diagnostic.js";
 export { parseMediaPlpCarouselArgs } from "./parse-args.js";
 export {
   buildMediaPlpCarouselMaterializePlan,

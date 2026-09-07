@@ -7,3 +7,9 @@ export {
 } from "./resolve-localized-brand";
 export { resolveBrandForMetadata } from "./resolve-brand-for-metadata";
 export { useLocalizedBrand } from "./useLocalizedBrand";
+export {
+  BRAND_SITE_NAME_TOKEN,
+  composeBrandTokens,
+  splitBrandTokenParts,
+  templateHasBrandSiteNameToken,
+} from "@hu/types";

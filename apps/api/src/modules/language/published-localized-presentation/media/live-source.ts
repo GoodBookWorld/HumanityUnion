@@ -161,61 +161,36 @@ function resolvePropaganda(entityId: string): MediaPlpLiveCanonicalSource {
 }
 
 /**
- * Reset 03E.9 — public_news live canonical for HTTP version gate parity with
- * materializer (same bounded Mongo projection). Avoids CANONICAL_VERSION_MISMATCH
- * when Web sends a slightly skewed client tree.
+ * Reset 03E.9 / 05C — public_news live canonical for HTTP version gate parity
+ * with materializer fingerprint. Uses the public-news repository (memory or
+ * Mongo) so auto-build processor + unit tests share the same identity path.
  */
 async function resolvePublicNews(entityId: string): Promise<MediaPlpLiveCanonicalSource> {
-  const collection = getMongoCollection<Record<string, unknown>>(
-    MONGO_COLLECTIONS.publicNewsArticles,
+  const { findPublicNewsRecordById } = await import(
+    "../../../public-news/public-news.repository.js"
   );
-  const cursor = collection.find(
-    { id: entityId },
-    {
-      projection: {
-        id: 1,
-        title: 1,
-        summary: 1,
-        category: 1,
-        articleUrl: 1,
-        imageUrl: 1,
-        publishedAt: 1,
-        language: 1,
-        geographicScope: 1,
-        sourceName: 1,
-        verificationStatus: 1,
-        status: 1,
-        expiresAt: 1,
-      },
-      limit: 2,
-    },
-  );
-  const doc = (await cursor.next()) as Record<string, unknown> | null;
-  if (await cursor.next()) {
-    return empty();
-  }
-  if (!doc) {
+  const record = await findPublicNewsRecordById(entityId);
+  if (!record) {
     return empty();
   }
   const now = new Date().toISOString();
-  const expiresAt = asString(doc.expiresAt);
   const sourcePublic =
-    asString(doc.status) === "active" && (!expiresAt || expiresAt > now);
+    record.status === "active" &&
+    (!record.expiresAt || record.expiresAt > now);
   const article: PublicNewsArticleItem = {
-    id: asString(doc.id) || entityId,
-    sourceName: asString(doc.sourceName),
-    title: asString(doc.title),
-    summary: asString(doc.summary),
-    articleUrl: asString(doc.articleUrl),
-    ...(asString(doc.imageUrl) ? { imageUrl: asString(doc.imageUrl) } : {}),
-    publishedAt: asString(doc.publishedAt),
-    language: asString(doc.language) || "en",
-    ...(asString(doc.category) ? { category: asString(doc.category) } : {}),
-    ...(asString(doc.geographicScope)
-      ? { geographicScope: asString(doc.geographicScope) }
+    id: record.id,
+    sourceName: record.sourceName,
+    title: record.title,
+    summary: record.summary,
+    articleUrl: record.articleUrl,
+    ...(record.imageUrl ? { imageUrl: record.imageUrl } : {}),
+    publishedAt: record.publishedAt,
+    language: record.language || "en",
+    ...(record.category ? { category: record.category } : {}),
+    ...(record.geographicScope
+      ? { geographicScope: record.geographicScope }
       : {}),
-    verificationStatus:
-      doc.verificationStatus === "reviewed" ? "reviewed" : "external-source",
+    verificationStatus: record.verificationStatus,
   };
   return withTree(
     asMediaPlpPresentationNode(buildCanonicalPublicNewsPresentation(article)),

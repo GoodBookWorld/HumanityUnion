@@ -18,6 +18,7 @@ export {
   markMaterializerContentTranslationWriteForTests,
   markMaterializerSourceWriteForTests,
   resetMediaPlpMaterializerCountersForTests,
+  resetMediaPlpMaterializerProviderCallBudget,
 } from "./counters.js";
 export {
   assertMediaPlpMaterializerImportIsolation,
