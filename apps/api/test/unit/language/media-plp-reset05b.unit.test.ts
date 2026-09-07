@@ -329,16 +329,20 @@ describe("RESET 05B — Initiative PLP live acceptance operator", () => {
     );
     assert.equal(result.exitCode, 0);
     assert.ok(result.report);
-    assert.equal(result.report!.OPERATOR_MODE, "THIN_READ_ONLY");
-    assert.equal(result.report!.PROVIDER_CALLS, 0);
-    assert.equal(result.report!.PLP_WRITES, 0);
-    assert.equal(result.report!.MONGO_WRITES, 0);
-    assert.equal(result.report!.SCHEMA_VERSION, "PLP.2");
-    assert.ok(result.report!.MACHINE_AUTO_PATHS.includes("title"));
-    assert.ok(result.report!.MACHINE_AUTO_PATHS.includes("electionName"));
-    assert.equal(result.report!.MACHINE_NODES_EXCLUDE_GEO_LIFECYCLE, true);
-    assert.equal(result.report!.RESOLVER_MODE, "CANONICAL_FALLBACK");
-    assert.equal(result.report!.RESOLVER_REASON, "NO_PUBLISHED_SNAPSHOT");
+    assert.equal(result.report.DISCOVERY_MODE, "identity");
+    if (result.report.DISCOVERY_MODE !== "identity") {
+      return;
+    }
+    assert.equal(result.report.OPERATOR_MODE, "THIN_READ_ONLY");
+    assert.equal(result.report.PROVIDER_CALLS, 0);
+    assert.equal(result.report.PLP_WRITES, 0);
+    assert.equal(result.report.MONGO_WRITES, 0);
+    assert.equal(result.report.SCHEMA_VERSION, "PLP.2");
+    assert.ok(result.report.MACHINE_AUTO_PATHS.includes("title"));
+    assert.ok(result.report.MACHINE_AUTO_PATHS.includes("electionName"));
+    assert.equal(result.report.MACHINE_NODES_EXCLUDE_GEO_LIFECYCLE, true);
+    assert.equal(result.report.RESOLVER_MODE, "CANONICAL_FALLBACK");
+    assert.equal(result.report.RESOLVER_REASON, "NO_PUBLISHED_SNAPSHOT");
   });
 
   it("schema remains PLP.2; package scripts registered", () => {

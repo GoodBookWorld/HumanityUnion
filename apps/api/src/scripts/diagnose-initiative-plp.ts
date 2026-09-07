@@ -1,10 +1,16 @@
 /**
- * RESET 05B — diagnose:initiative-plp (READ-ONLY).
+ * RESET 05B / 05B.1 — diagnose:initiative-plp (READ-ONLY).
  *
+ * Identity:
  *   pnpm --filter @hu/api diagnose:initiative-plp -- \
  *     --mongo \
  *     --initiative-id <id> \
  *     --locale uk
+ *
+ * PUBLIC_CHOICE discovery (bounded):
+ *   pnpm --filter @hu/api diagnose:initiative-plp -- \
+ *     --mongo \
+ *     --list-public-choice
  *
  * Zero provider calls. Zero PLP writes. Zero Mongo writes.
  * Cursor must not run this against staging/prod in implementation tasks.

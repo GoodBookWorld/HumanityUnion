@@ -1,15 +1,28 @@
 /**
- * RESET 05B — parse diagnose/materialize Initiative PLP args.
+ * RESET 05B.1 — parse diagnose/materialize Initiative PLP args.
  */
 
 import { normalizeLanguageCode, type LanguageCode } from "@hu/types";
 
-export type InitiativePlpOperatorArgs = {
+import { INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT } from "./constants.js";
+
+export type InitiativePlpIdentityArgs = {
+  readonly mode: "identity";
   readonly mongo: true;
   readonly execute: boolean;
   readonly initiativeId: string;
   readonly locale: LanguageCode;
 };
+
+export type InitiativePlpListPublicChoiceArgs = {
+  readonly mode: "list_public_choice";
+  readonly mongo: true;
+  readonly limit: number;
+};
+
+export type InitiativePlpOperatorArgs =
+  | InitiativePlpIdentityArgs
+  | InitiativePlpListPublicChoiceArgs;
 
 function flagValue(argv: readonly string[], flag: string): string | null {
   const idx = argv.indexOf(flag);
@@ -44,7 +57,61 @@ export function parseInitiativePlpOperatorArgs(
   ) {
     return {
       ok: false,
-      errorMessage: `${cmd} refuses --all/--corpus/--sample-one; pass one --initiative-id`,
+      errorMessage: `${cmd} refuses --all/--corpus/--sample-one`,
+    };
+  }
+  if (operation === "diagnose" && argv.includes("--execute")) {
+    return {
+      ok: false,
+      errorMessage: `${cmd} is READ-ONLY; omit --execute`,
+    };
+  }
+
+  const listPublicChoice = argv.includes("--list-public-choice");
+  if (listPublicChoice) {
+    if (operation !== "diagnose") {
+      return {
+        ok: false,
+        errorMessage: `${cmd} refuses --list-public-choice; use diagnose:initiative-plp`,
+      };
+    }
+    if (flagValue(argv, "--initiative-id")) {
+      return {
+        ok: false,
+        errorMessage: `${cmd}: --list-public-choice and --initiative-id are mutually exclusive`,
+      };
+    }
+    if (flagValue(argv, "--locale")) {
+      return {
+        ok: false,
+        errorMessage: `${cmd}: --list-public-choice does not accept --locale (discovery is identity-only)`,
+      };
+    }
+    const limitRaw = flagValue(argv, "--limit");
+    let limit = INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT;
+    if (limitRaw) {
+      const parsed = Number(limitRaw);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        return {
+          ok: false,
+          errorMessage: `${cmd}: --limit must be a positive integer`,
+        };
+      }
+      if (parsed > INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT) {
+        return {
+          ok: false,
+          errorMessage: `${cmd}: --limit max is ${INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT}`,
+        };
+      }
+      limit = parsed;
+    }
+    return {
+      ok: true,
+      args: {
+        mode: "list_public_choice",
+        mongo: true,
+        limit,
+      },
     };
   }
 
@@ -54,7 +121,7 @@ export function parseInitiativePlpOperatorArgs(
   if (!initiativeId) {
     return {
       ok: false,
-      errorMessage: `${cmd} requires --initiative-id <id>`,
+      errorMessage: `${cmd} requires --initiative-id <id> (or diagnose --list-public-choice)`,
     };
   }
   if (initiativeId.toLowerCase() === "all" || initiativeId === "*") {
@@ -75,16 +142,11 @@ export function parseInitiativePlpOperatorArgs(
       errorMessage: `${cmd} accepts exactly one --locale`,
     };
   }
-  if (operation === "diagnose" && argv.includes("--execute")) {
-    return {
-      ok: false,
-      errorMessage: `${cmd} is READ-ONLY; omit --execute`,
-    };
-  }
 
   return {
     ok: true,
     args: {
+      mode: "identity",
       mongo: true,
       execute: operation === "materialize" && argv.includes("--execute"),
       initiativeId,

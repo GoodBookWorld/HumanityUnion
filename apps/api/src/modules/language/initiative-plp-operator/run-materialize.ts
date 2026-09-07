@@ -129,6 +129,14 @@ export async function runInitiativePlpMaterialize(
     return { exitCode: 2, report: null, errorMessage: parsed.errorMessage };
   }
   const args = parsed.args;
+  if (args.mode !== "identity") {
+    return {
+      exitCode: 2,
+      report: null,
+      errorMessage:
+        "materialize:initiative-plp requires --initiative-id <id> (no discovery mode)",
+    };
+  }
   ensureInitiativeLifecyclePlpAdapterRegistered();
 
   const refusal = deps.skipProductionRefusal

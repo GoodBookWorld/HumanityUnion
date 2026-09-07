@@ -6,6 +6,7 @@ export {
   INITIATIVE_PLP_STAGING_DATABASE,
   INITIATIVE_PLP_PROVIDER_EXECUTION_BOUNDARY,
   INITIATIVE_PLP_FAKE_LOCAL_TRANSPORT_ID,
+  INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT,
 } from "./constants.js";
 export {
   parseInitiativePlpOperatorArgs,
@@ -16,6 +17,11 @@ export {
   buildInitiativePlpContractFromCard,
   resolveInitiativePlpOperatorSource,
 } from "./source-resolve.js";
+export {
+  discoverPublicChoiceInitiativesForPlp,
+  mapPublicChoiceDiscoveryRows,
+  type InitiativePlpPublicChoiceDiscoveryRow,
+} from "./discover-public-choice.js";
 export {
   inventoryInitiativePlpSemanticNodes,
   assertInitiativeMachineNodesExcludeNonMachine,

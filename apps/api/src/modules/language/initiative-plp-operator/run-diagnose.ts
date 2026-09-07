@@ -1,5 +1,5 @@
 /**
- * RESET 05B — read-only diagnose:initiative-plp runner.
+ * RESET 05B / 05B.1 — read-only diagnose:initiative-plp runner.
  */
 
 import {
@@ -22,6 +22,11 @@ import {
   resetInitiativePlpOperatorCountersForTests,
 } from "./counters.js";
 import {
+  discoverPublicChoiceInitiativesForPlp,
+  type InitiativePlpPublicChoiceDiscoveryResult,
+  type InitiativePlpPublicChoiceDiscoveryRow,
+} from "./discover-public-choice.js";
+import {
   assertInitiativeMachineNodesExcludeNonMachine,
   inventoryInitiativePlpSemanticNodes,
 } from "./inventory.js";
@@ -33,10 +38,11 @@ import {
   type InitiativePlpOperatorSource,
 } from "./source-resolve.js";
 
-export type InitiativePlpDiagnoseReport = {
-  readonly pack: "RESET_05B";
+export type InitiativePlpDiagnoseIdentityReport = {
+  readonly pack: "RESET_05B" | "RESET_05B.1";
   readonly operation: "diagnose_initiative_plp";
   readonly OPERATOR_MODE: "THIN_READ_ONLY";
+  readonly DISCOVERY_MODE: "identity";
   readonly ENTITY_TYPE: string;
   readonly ENTITY_ID: string;
   readonly INITIATIVE_ID: string;
@@ -77,11 +83,34 @@ export type InitiativePlpDiagnoseReport = {
   readonly abortReason: string | null;
 };
 
+export type InitiativePlpDiagnoseListReport = {
+  readonly pack: "RESET_05B.1";
+  readonly operation: "diagnose_initiative_plp";
+  readonly OPERATOR_MODE: "THIN_READ_ONLY";
+  readonly DISCOVERY_MODE: "list_public_choice";
+  readonly FOUND_COUNT: number;
+  readonly LIMIT: number;
+  readonly ROWS: readonly InitiativePlpPublicChoiceDiscoveryRow[];
+  readonly PROVIDER_CALLS: number;
+  readonly PLP_WRITES: number;
+  readonly MONGO_WRITES: number;
+  readonly MONGO_CLOSED: boolean;
+  readonly database: string | null;
+  readonly abortReason: string | null;
+};
+
+export type InitiativePlpDiagnoseReport =
+  | InitiativePlpDiagnoseIdentityReport
+  | InitiativePlpDiagnoseListReport;
+
 export type InitiativePlpDiagnoseDeps = {
   readonly resolveSource?: (input: {
     readonly initiativeId: string;
     readonly locale: string;
   }) => Promise<InitiativePlpOperatorSource>;
+  readonly discoverPublicChoice?: (input?: {
+    readonly limit?: number;
+  }) => Promise<InitiativePlpPublicChoiceDiscoveryResult>;
   readonly loadLocale?: typeof loadInitiativePlpOperatorLocale;
   readonly inspectPlp?: typeof inspectInitiativePlpCurrent;
   readonly connect?: () => Promise<void>;
@@ -120,6 +149,31 @@ export async function runInitiativePlpDiagnose(
 
   try {
     await connect();
+
+    if (args.mode === "list_public_choice") {
+      // Discovery does not require PLP persistence — source collection only.
+      const discover =
+        deps.discoverPublicChoice ?? discoverPublicChoiceInitiativesForPlp;
+      const discovery = await discover({ limit: args.limit });
+      const counters = getInitiativePlpOperatorCounters();
+      const report: InitiativePlpDiagnoseListReport = {
+        pack: "RESET_05B.1",
+        operation: "diagnose_initiative_plp",
+        OPERATOR_MODE: "THIN_READ_ONLY",
+        DISCOVERY_MODE: "list_public_choice",
+        FOUND_COUNT: discovery.FOUND_COUNT,
+        LIMIT: discovery.LIMIT,
+        ROWS: discovery.ROWS,
+        PROVIDER_CALLS: counters.PROVIDER_CALLS,
+        PLP_WRITES: counters.PLP_WRITES,
+        MONGO_WRITES: counters.MONGO_WRITES,
+        MONGO_CLOSED: false,
+        database: resolveMongoConfig().database,
+        abortReason: null,
+      };
+      return { exitCode: 0, report, errorMessage: null };
+    }
+
     if (!deps.skipPersistenceRequire) {
       requirePublishedLocalizationMongoPersistence("diagnose:initiative-plp --mongo");
       assertPublishedLocalizationMongoPersistenceActive("diagnose:initiative-plp --mongo");
@@ -146,10 +200,11 @@ export async function runInitiativePlpDiagnose(
       source.autoPaths,
     );
     const counters = getInitiativePlpOperatorCounters();
-    const report: InitiativePlpDiagnoseReport = {
+    const report: InitiativePlpDiagnoseIdentityReport = {
       pack: "RESET_05B",
       operation: "diagnose_initiative_plp",
       OPERATOR_MODE: "THIN_READ_ONLY",
+      DISCOVERY_MODE: "identity",
       ENTITY_TYPE: source.entityType,
       ENTITY_ID: source.entityId,
       INITIATIVE_ID: source.initiativeId,
