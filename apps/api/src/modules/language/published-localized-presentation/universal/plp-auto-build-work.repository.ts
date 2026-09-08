@@ -14,6 +14,7 @@ import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-coll
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   sanitizePlpAutoBuildFailureReason,
+  isPlpQuotaDeferSafeReason,
   type PlpAutoBuildFailureCode,
   type PlpAutoBuildFailureStage,
   type PlpAutoBuildStructuredFailure,
@@ -24,6 +25,12 @@ import {
   parsePlpStructuredStaleFromSafeReason,
   PLP_STALE_ORIGIN,
 } from "./plp-stale-result.js";
+import { getThinGeminiCooldownSnapshot } from "../../media-plp-materializer/thin-gemini-provider-state.js";
+import {
+  PLP_PROVIDER_QUOTA_CLASS,
+  resolveQuotaCooldownSeconds,
+  type PlpProviderQuotaClass,
+} from "../../media-plp-materializer/gemini-quota-forensics.js";
 
 export { sanitizePlpAutoBuildFailureReason } from "./plp-auto-build-failure.js";
 
@@ -389,6 +396,17 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
   const now = nowIso();
   const stuckBefore = new Date(Date.now() - STUCK_RUNNING_MS).toISOString();
 
+  // RESET 05E.3 — do not claim while thin_gemini durable cooldown is active.
+  // Prevents attempt churn / request bursts during RESOURCE_EXHAUSTED.
+  try {
+    const cooldown = await getThinGeminiCooldownSnapshot();
+    if (cooldown.active) {
+      return null;
+    }
+  } catch {
+    // Fail open on state-read errors — ordinary claim path continues.
+  }
+
   if (usePlpAutoBuildWorkMemory()) {
     const candidates = [...memoryByWorkKey.values()]
       .filter(
@@ -524,12 +542,48 @@ export async function markPlpAutoBuildWorkSkippedUsable(workKey: string): Promis
   await markTerminal(workKey, "skipped_usable");
 }
 
+/**
+ * RESET 05E.3 — nextAttemptAt for quota deferral (does not use attempt exponential).
+ */
+export function computePlpQuotaDeferNextAttemptAt(
+  safeReason: string,
+  nowMs: number = Date.now(),
+  cooldownUntilIso?: string | null,
+): string {
+  if (cooldownUntilIso) {
+    const untilMs = Date.parse(cooldownUntilIso);
+    if (Number.isFinite(untilMs) && untilMs > nowMs) {
+      return new Date(untilMs).toISOString();
+    }
+  }
+  const quotaDelayMatch = safeReason.match(
+    /PROVIDER_QUOTA_RETRY_DELAY_SECONDS=(\d+)/,
+  )?.[1];
+  const retryAfterMatch = safeReason.match(/PROVIDER_RETRY_AFTER=(\d+)/)?.[1];
+  const quotaClassMatch = safeReason.match(
+    /PROVIDER_QUOTA_CLASS=([A-Z_]+)/,
+  )?.[1];
+  const delayFromReason = Number.parseInt(
+    quotaDelayMatch ?? retryAfterMatch ?? "",
+    10,
+  );
+  const quotaClass = (quotaClassMatch ??
+    PLP_PROVIDER_QUOTA_CLASS.UNKNOWN_QUOTA) as PlpProviderQuotaClass;
+  const seconds = resolveQuotaCooldownSeconds({
+    quotaClass,
+    quotaRetryDelaySeconds: Number.isFinite(delayFromReason)
+      ? delayFromReason
+      : null,
+  });
+  return new Date(nowMs + seconds * 1000).toISOString();
+}
+
 export async function markPlpAutoBuildWorkFailed(input: {
   readonly workKey: string;
   readonly attempts: number;
   readonly maxAttempts: number;
   readonly failure: PlpAutoBuildStructuredFailure;
-}): Promise<{ readonly requeued: boolean }> {
+}): Promise<{ readonly requeued: boolean; readonly quotaDeferred?: boolean }> {
   let safeReason = sanitizePlpAutoBuildFailureReason(input.failure.safeReason);
   // RESET 05D.8 — bare STALE_REVISION without origin/versions is a contract violation.
   if (
@@ -557,6 +611,64 @@ export async function markPlpAutoBuildWorkFailed(input: {
     }
   }
   const now = nowIso();
+  const quotaDefer =
+    input.failure.quotaDefer === true || isPlpQuotaDeferSafeReason(safeReason);
+
+  if (quotaDefer) {
+    let cooldownUntil: string | null = null;
+    try {
+      const snap = await getThinGeminiCooldownSnapshot();
+      cooldownUntil = snap.cooldownUntil;
+    } catch {
+      cooldownUntil = null;
+    }
+    const restoredAttempts = Math.max(0, Math.trunc(input.attempts) - 1);
+    const nextAttemptAt = computePlpQuotaDeferNextAttemptAt(
+      safeReason,
+      Date.now(),
+      cooldownUntil,
+    );
+    const failurePatch = {
+      lastError: safeReason,
+      failureCode: input.failure.failureCode,
+      failureStage: input.failure.stage,
+      retryable: true,
+      lastFailureAt: now,
+      nextAttemptAt,
+      attempts: restoredAttempts,
+    };
+
+    if (usePlpAutoBuildWorkMemory()) {
+      const existing = memoryByWorkKey.get(input.workKey);
+      if (!existing) {
+        return { requeued: false, quotaDeferred: true };
+      }
+      memoryByWorkKey.set(input.workKey, {
+        ...existing,
+        ...failurePatch,
+        status: "pending",
+        updatedAt: now,
+        claimedAt: null,
+        completedAt: null,
+      });
+      return { requeued: true, quotaDeferred: true };
+    }
+
+    await collection().updateOne(
+      { workKey: input.workKey },
+      {
+        $set: {
+          status: "pending",
+          ...failurePatch,
+          updatedAt: now,
+          claimedAt: null,
+          completedAt: null,
+        },
+      },
+    );
+    return { requeued: true, quotaDeferred: true };
+  }
+
   const underCap = input.attempts < input.maxAttempts;
   const canRetry = input.failure.retryable && underCap;
   const retryAfterMatch = safeReason.match(/PROVIDER_RETRY_AFTER=(\d+)/)?.[1];

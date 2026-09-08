@@ -538,6 +538,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     retryAfterSeconds?: number | null;
     geminiErrorStatus?: string | null;
     geminiErrorReason?: string | null;
+    quotaClass?: string | null;
+    quotaMetric?: string | null;
+    quotaLimitId?: string | null;
+    quotaRetryDelaySeconds?: number | null;
   } = {};
 
   const subtypeForensics = (
@@ -554,6 +558,11 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     PROVIDER_RETRY_AFTER: lastEnvelope.retryAfterSeconds ?? null,
     PROVIDER_GEMINI_ERROR_STATUS: lastEnvelope.geminiErrorStatus ?? null,
     PROVIDER_GEMINI_ERROR_REASON: lastEnvelope.geminiErrorReason ?? null,
+    PROVIDER_QUOTA_CLASS: lastEnvelope.quotaClass ?? null,
+    PROVIDER_QUOTA_METRIC: lastEnvelope.quotaMetric ?? null,
+    PROVIDER_QUOTA_LIMIT_ID: lastEnvelope.quotaLimitId ?? null,
+    PROVIDER_QUOTA_RETRY_DELAY_SECONDS:
+      lastEnvelope.quotaRetryDelaySeconds ?? null,
     PROVIDER_FINISH_REASON: lastEnvelope.finishReason ?? null,
     PROVIDER_CANDIDATE_COUNT: lastEnvelope.candidateCount ?? 0,
     PROVIDER_TEXT_PART_COUNT: lastEnvelope.textPartCount ?? 0,
@@ -967,6 +976,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         retryAfterSeconds: transportMeta.retryAfterSeconds ?? null,
         geminiErrorStatus: transportMeta.geminiErrorStatus ?? null,
         geminiErrorReason: transportMeta.geminiErrorReason ?? null,
+        quotaClass: transportMeta.quotaClass ?? null,
+        quotaMetric: transportMeta.quotaMetric ?? null,
+        quotaLimitId: transportMeta.quotaLimitId ?? null,
+        quotaRetryDelaySeconds: transportMeta.quotaRetryDelaySeconds ?? null,
       };
     }
     const subtype =
@@ -995,6 +1008,11 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         PROVIDER_RETRY_AFTER: transportMeta?.retryAfterSeconds ?? null,
         PROVIDER_GEMINI_ERROR_STATUS: transportMeta?.geminiErrorStatus ?? null,
         PROVIDER_GEMINI_ERROR_REASON: transportMeta?.geminiErrorReason ?? null,
+        PROVIDER_QUOTA_CLASS: transportMeta?.quotaClass ?? null,
+        PROVIDER_QUOTA_METRIC: transportMeta?.quotaMetric ?? null,
+        PROVIDER_QUOTA_LIMIT_ID: transportMeta?.quotaLimitId ?? null,
+        PROVIDER_QUOTA_RETRY_DELAY_SECONDS:
+          transportMeta?.quotaRetryDelaySeconds ?? null,
       },
       messagePrefix: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
     });

@@ -29,6 +29,8 @@ import {
   PLP_PROVIDER_FAILURE_SUBTYPE,
   sanitizeGeminiErrorToken,
 } from "./provider-response-contract.js";
+import { extractGeminiQuotaForensics } from "./gemini-quota-forensics.js";
+import { withThinGeminiGovernor } from "./thin-gemini-governor.js";
 
 /** Safe non-secret transport identifier for operator reports. */
 export const MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID =
@@ -66,14 +68,23 @@ function geminiTransportMeta(
   const geminiCode = sanitizeGeminiErrorToken(body.error?.code);
   // Prefer status token; never persist free-form error.message prose.
   const geminiReason = geminiStatus ?? geminiCode;
+  const quota = extractGeminiQuotaForensics({
+    error: body.error,
+    httpStatus: status,
+    retryAfterHeaderSeconds: retryAfterSeconds,
+  });
   return {
     httpStatus: status,
     httpClass: httpStatusClass(status),
     errorClass,
     errorCode: geminiCode,
-    retryAfterSeconds,
+    retryAfterSeconds: quota?.quotaRetryDelaySeconds ?? retryAfterSeconds,
     geminiErrorStatus: geminiStatus,
-    geminiErrorReason: geminiReason,
+    geminiErrorReason: quota?.geminiErrorReason ?? geminiReason,
+    quotaClass: quota?.quotaClass ?? null,
+    quotaMetric: quota?.quotaMetric ?? null,
+    quotaLimitId: quota?.quotaLimitId ?? null,
+    quotaRetryDelaySeconds: quota?.quotaRetryDelaySeconds ?? null,
   };
 }
 
@@ -205,13 +216,6 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
 
     assertGeminiTranslationConfigured(this.config);
 
-    if (this.requestCount >= this.maxRequests) {
-      throw new TranslationProviderError(
-        "bad_request",
-        `Thin Gemini transport hard-capped at ${this.maxRequests} request(s).`,
-      );
-    }
-
     if (request.sourceLanguage === request.targetLanguage) {
       this.requestCount += 1;
       return {
@@ -219,6 +223,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
         providerId: this.providerId,
         isPlaceholder: false,
       };
+    }
+
+    // RESET 05E.3 — all Gemini HTTP hops share the quota-aware governor.
+    return withThinGeminiGovernor(async () => {
+    if (this.requestCount >= this.maxRequests) {
+      throw new TranslationProviderError(
+        "bad_request",
+        `Thin Gemini transport hard-capped at ${this.maxRequests} request(s).`,
+      );
     }
 
     this.requestCount += 1;
@@ -460,6 +473,7 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
     } finally {
       clearTimeout(timeout);
     }
+    });
   }
 }
 

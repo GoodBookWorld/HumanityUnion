@@ -37,6 +37,9 @@ import {
   PLP_PROVIDER_FAILURE_SUBTYPE,
   resetMediaPlpMaterializerCountersForTests,
   resetMediaPlpMaterializerProviderCallBudget,
+  resetThinGeminiGovernorForTests,
+  resetThinGeminiProviderStateForTests,
+  setThinGeminiProviderStateForceMemoryForTests,
 } from "../../../src/modules/language/media-plp-materializer/index.js";
 import { resolveTranslationConfig } from "../../../src/modules/language/translation.config.js";
 import {
@@ -109,6 +112,10 @@ beforeEach(() => {
   resetPlpAutoBuildWorkStoreForTests();
   setPublishedLocalizationPersistenceModeForTests("memory");
   resetPublishedLocalizationPersistenceForTests();
+  process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS = "0";
+  setThinGeminiProviderStateForceMemoryForTests(true);
+  resetThinGeminiProviderStateForTests();
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 afterEach(() => {
@@ -116,6 +123,10 @@ afterEach(() => {
   resetPlpAutoBuildWorkStoreForTests();
   setPlpAutoBuildWorkForceMemoryForTests(false);
   resetPublishedLocalizationPersistenceForTests();
+  delete process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS;
+  resetThinGeminiProviderStateForTests();
+  setThinGeminiProviderStateForceMemoryForTests(false);
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 describe("RESET 05E — provider response contract", () => {

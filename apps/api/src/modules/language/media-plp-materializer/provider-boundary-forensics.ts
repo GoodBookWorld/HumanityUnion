@@ -82,6 +82,11 @@ export type ProviderBoundaryForensics = {
   readonly PROVIDER_RETRY_AFTER?: number | null;
   readonly PROVIDER_GEMINI_ERROR_STATUS?: string | null;
   readonly PROVIDER_GEMINI_ERROR_REASON?: string | null;
+  /** RESET 05E.3 — safe quota forensics. */
+  readonly PROVIDER_QUOTA_CLASS?: string | null;
+  readonly PROVIDER_QUOTA_METRIC?: string | null;
+  readonly PROVIDER_QUOTA_LIMIT_ID?: string | null;
+  readonly PROVIDER_QUOTA_RETRY_DELAY_SECONDS?: number | null;
 };
 
 const SENTINEL_RE = /__HU_BRAND_SITE_NAME__/g;
@@ -350,6 +355,20 @@ export function formatProviderForensicsSafe(
   if (forensics.PROVIDER_GEMINI_ERROR_REASON) {
     parts.push(
       `PROVIDER_GEMINI_ERROR_REASON=${forensics.PROVIDER_GEMINI_ERROR_REASON}`,
+    );
+  }
+  if (forensics.PROVIDER_QUOTA_CLASS) {
+    parts.push(`PROVIDER_QUOTA_CLASS=${forensics.PROVIDER_QUOTA_CLASS}`);
+  }
+  if (forensics.PROVIDER_QUOTA_METRIC) {
+    parts.push(`PROVIDER_QUOTA_METRIC=${forensics.PROVIDER_QUOTA_METRIC}`);
+  }
+  if (forensics.PROVIDER_QUOTA_LIMIT_ID) {
+    parts.push(`PROVIDER_QUOTA_LIMIT_ID=${forensics.PROVIDER_QUOTA_LIMIT_ID}`);
+  }
+  if (forensics.PROVIDER_QUOTA_RETRY_DELAY_SECONDS != null) {
+    parts.push(
+      `PROVIDER_QUOTA_RETRY_DELAY_SECONDS=${forensics.PROVIDER_QUOTA_RETRY_DELAY_SECONDS}`,
     );
   }
 

@@ -56,6 +56,11 @@ export type TranslationProviderTransportMeta = {
   readonly retryAfterSeconds?: number | null;
   readonly geminiErrorStatus?: string | null;
   readonly geminiErrorReason?: string | null;
+  /** RESET 05E.3 — safe quota forensics (no project identity / prose). */
+  readonly quotaClass?: string | null;
+  readonly quotaMetric?: string | null;
+  readonly quotaLimitId?: string | null;
+  readonly quotaRetryDelaySeconds?: number | null;
 };
 
 export function assertGeminiTranslationConfigured(

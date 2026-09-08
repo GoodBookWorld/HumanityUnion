@@ -118,6 +118,11 @@ export const MONGO_COLLECTIONS = {
    * Survives API restart; drain claims from this collection.
    */
   plpAutoBuildWork: "plp_auto_build_work",
+  /**
+   * RESET 05E.3 — durable thin_gemini provider cooldown / quota governor state.
+   * Singleton per providerId; survives API restart.
+   */
+  plpThinGeminiProviderState: "plp_thin_gemini_provider_state",
   /** Pack 02B — Admin-managed Language Registry. */
   languageRegistry: "language_registry",
   /** Pack 02F — Canonical Terminology Glossary. */

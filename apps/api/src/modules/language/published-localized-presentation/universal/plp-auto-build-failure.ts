@@ -46,6 +46,10 @@ export type PlpAutoBuildStructuredFailure = {
   readonly retryable: boolean;
   readonly safeReason: string;
   readonly stage: PlpAutoBuildFailureStage;
+  /**
+   * RESET 05E.3 — quota/cooldown deferral: keep pending, do not burn attempt budget.
+   */
+  readonly quotaDefer?: boolean;
 };
 
 export type ProcessPlpBuildRequestResult =
@@ -69,6 +73,10 @@ const FORENSIC_KEYS = [
   "PROVIDER_RETRY_AFTER",
   "PROVIDER_GEMINI_ERROR_STATUS",
   "PROVIDER_GEMINI_ERROR_REASON",
+  "PROVIDER_QUOTA_CLASS",
+  "PROVIDER_QUOTA_METRIC",
+  "PROVIDER_QUOTA_LIMIT_ID",
+  "PROVIDER_QUOTA_RETRY_DELAY_SECONDS",
   "PROVIDER_FINISH_REASON",
   "PROVIDER_CANDIDATE_COUNT",
   "PROVIDER_TEXT_PART_COUNT",
@@ -140,13 +148,26 @@ export function structuredFailure(input: {
   readonly retryable: boolean;
   readonly stage: PlpAutoBuildFailureStage;
   readonly safeReason: string;
+  readonly quotaDefer?: boolean;
 }): PlpAutoBuildStructuredFailure {
   return {
     failureCode: input.failureCode,
     retryable: input.retryable,
     stage: input.stage,
     safeReason: sanitizePlpAutoBuildFailureReason(input.safeReason),
+    ...(input.quotaDefer === true ? { quotaDefer: true } : {}),
   };
+}
+
+/** RESET 05E.3 — detect quota / cooldown deferral from durable safeReason. */
+export function isPlpQuotaDeferSafeReason(safeReason: string): boolean {
+  return (
+    /PROVIDER_ERROR_CLASS=HTTP_429\b/.test(safeReason) ||
+    /PROVIDER_ERROR_CLASS=PROVIDER_COOLDOWN\b/.test(safeReason) ||
+    /PROVIDER_HTTP_STATUS=429\b/.test(safeReason) ||
+    /PROVIDER_GEMINI_ERROR_STATUS=RESOURCE_EXHAUSTED\b/.test(safeReason) ||
+    /PROVIDER_QUOTA_CLASS=/.test(safeReason)
+  );
 }
 
 function extractForensicBlock(message: string): string {
@@ -287,13 +308,15 @@ export function mapProviderBoundaryReasonToFailure(input: {
 
   if (reason === "PROVIDER_FAILURE") {
     const subtypeMatch = msg.match(/PROVIDER_FAILURE_SUBTYPE=([A-Z_]+)/)?.[1];
+    const quotaDefer = isPlpQuotaDeferSafeReason(msg);
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
-      retryable: isPlpProviderFailureSubtypeRetryable(subtypeMatch),
+      retryable: quotaDefer ? true : isPlpProviderFailureSubtypeRetryable(subtypeMatch),
       stage: "provider",
       safeReason: forensics
         ? `PROVIDER_FAILURE;${forensics}`
         : "PROVIDER_FAILURE:PROVIDER_FAILURE",
+      quotaDefer,
     });
   }
 

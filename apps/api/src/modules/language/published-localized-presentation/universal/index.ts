@@ -85,6 +85,7 @@ export {
   sanitizePlpAutoBuildFailureReason,
   normalizePlpAutoBuildFailureClass,
   markPlpAutoBuildWorkFailed,
+  computePlpQuotaDeferNextAttemptAt,
   markPlpAutoBuildWorkCompleted,
   computePlpProviderRetryNextAttemptAt,
   PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT,
@@ -100,6 +101,7 @@ export {
   structuredFailure,
   mapProviderBoundaryReasonToFailure,
   mapBuildStatusToFailure,
+  isPlpQuotaDeferSafeReason,
   sanitizePlpAutoBuildFailureReason as sanitizePlpAutoBuildFailureReasonCore,
 } from "./plp-auto-build-failure.js";
 export type {

@@ -28,6 +28,9 @@ import {
   PLP_PROVIDER_FAILURE_SUBTYPE,
   resetMediaPlpMaterializerCountersForTests,
   resetMediaPlpMaterializerProviderCallBudget,
+  resetThinGeminiGovernorForTests,
+  resetThinGeminiProviderStateForTests,
+  setThinGeminiProviderStateForceMemoryForTests,
 } from "../../../src/modules/language/media-plp-materializer/index.js";
 import { resolveTranslationConfig, TranslationProviderError } from "../../../src/modules/language/translation.config.js";
 import {
@@ -81,6 +84,10 @@ beforeEach(() => {
   setPlpAutoBuildWorkForceMemoryForTests(true);
   resetPlpAutoBuildWorkStoreForTests();
   delete process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY;
+  process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS = "0";
+  setThinGeminiProviderStateForceMemoryForTests(true);
+  resetThinGeminiProviderStateForTests();
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 afterEach(() => {
@@ -88,6 +95,10 @@ afterEach(() => {
   resetPlpAutoBuildWorkStoreForTests();
   setPlpAutoBuildWorkForceMemoryForTests(false);
   delete process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY;
+  delete process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS;
+  resetThinGeminiProviderStateForTests();
+  setThinGeminiProviderStateForceMemoryForTests(false);
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 describe("RESET 05E.2 — Gemini HTTP transport forensics", () => {

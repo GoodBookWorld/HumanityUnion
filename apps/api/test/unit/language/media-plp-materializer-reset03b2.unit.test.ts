@@ -26,6 +26,9 @@ import {
   runMediaPlpMaterializer,
   ThinGeminiMediaPlpTransport,
   validateMediaPlpProviderLocalizationValues,
+  resetThinGeminiGovernorForTests,
+  resetThinGeminiProviderStateForTests,
+  setThinGeminiProviderStateForceMemoryForTests,
   type MediaPlpMaterializerDeps,
 } from "../../../src/modules/language/media-plp-materializer/index.js";
 import { TranslationProviderError } from "../../../src/modules/language/translation.config.js";
@@ -184,11 +187,19 @@ beforeEach(() => {
   resetMediaPlpMaterializerCountersForTests();
   resetPublishedLocalizationPersistenceForTests();
   setPublishedLocalizationPersistenceModeForTests("memory");
+  process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS = "0";
+  setThinGeminiProviderStateForceMemoryForTests(true);
+  resetThinGeminiProviderStateForTests();
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 afterEach(() => {
   resetMediaPlpMaterializerCountersForTests();
   resetPublishedLocalizationPersistenceForTests();
+  delete process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS;
+  resetThinGeminiProviderStateForTests();
+  setThinGeminiProviderStateForceMemoryForTests(false);
+  resetThinGeminiGovernorForTests({ clearStartupGuard: true });
 });
 
 describe("Reset 03B.2 thin Media PLP provider boundary", () => {

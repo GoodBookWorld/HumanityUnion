@@ -89,3 +89,27 @@ export {
   sanitizeGeminiErrorToken,
   httpStatusClass,
 } from "./provider-response-contract.js";
+export {
+  PLP_PROVIDER_QUOTA_CLASS,
+  extractGeminiQuotaForensics,
+  parseGeminiRetryDelaySeconds,
+  resolveQuotaCooldownSeconds,
+  sanitizeQuotaIdentifier,
+  isQuotaExhaustionTransport,
+} from "./gemini-quota-forensics.js";
+export {
+  THIN_GEMINI_PROVIDER_STATE_ID,
+  activateThinGeminiProviderCooldown,
+  clearThinGeminiProviderCooldown,
+  getThinGeminiCooldownSnapshot,
+  readThinGeminiProviderState,
+  resetThinGeminiProviderStateForTests,
+  setThinGeminiProviderStateForceMemoryForTests,
+} from "./thin-gemini-provider-state.js";
+export {
+  withThinGeminiGovernor,
+  resolveThinGeminiMinSpacingMs,
+  resetThinGeminiGovernorForTests,
+  getThinGeminiGovernorInFlightForTests,
+  getThinGeminiGovernorPeakConcurrencyForTests,
+} from "./thin-gemini-governor.js";

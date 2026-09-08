@@ -46,7 +46,9 @@ import {
 import { listCountryAffiliatedMediaSources } from "./country-affiliated-media-sources.js";
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
 import { findPlpAutoBuildWorkByKey } from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
+import { isPlpQuotaDeferSafeReason } from "../published-localized-presentation/universal/plp-auto-build-failure.js";
 import { classifyConsumerProviderRecoveryEligibility } from "../media-plp-materializer/provider-response-contract.js";
+import { getPlpProviderCooldownSnapshot } from "./plp-provider-cooldown-snapshot.js";
 import { findCurrentPublishedPresentation } from "../published-localized-presentation/persistence/repository.js";
 import { classifyUsableLocalizedPresentation } from "../published-localized-presentation/usability.js";
 import {
@@ -96,6 +98,14 @@ export type MediaLiveClosureReport = {
   readonly PROVIDER_CALLS_FROM_READ: 0;
   readonly PLP_WRITES_FROM_READ: 0;
   readonly MONGO_WRITES_FROM_READ: 0;
+  /** RESET 05E.3 — durable provider cooldown snapshot (read-only). */
+  readonly PROVIDER_QUOTA_CLASS: string | null;
+  readonly PROVIDER_QUOTA_METRIC: string | null;
+  readonly PROVIDER_QUOTA_LIMIT_ID: string | null;
+  readonly PROVIDER_QUOTA_RETRY_DELAY_SECONDS: number | null;
+  readonly PROVIDER_COOLDOWN_ACTIVE: boolean;
+  readonly PROVIDER_COOLDOWN_UNTIL: string | null;
+  readonly PROVIDER_COOLDOWN_REASON: string | null;
   readonly PLP_PERSISTENCE_MODE: "MONGO" | "MEMORY" | "UNSET";
   readonly locale: string;
   readonly countryCode: string | null;
@@ -193,6 +203,11 @@ export type MediaLiveClosureReport = {
     readonly PROVIDER_RETRY_AFTER: string | null;
     readonly PROVIDER_GEMINI_ERROR_STATUS: string | null;
     readonly PROVIDER_GEMINI_ERROR_REASON: string | null;
+    readonly PROVIDER_QUOTA_CLASS: string | null;
+    readonly PROVIDER_QUOTA_METRIC: string | null;
+    readonly PROVIDER_QUOTA_LIMIT_ID: string | null;
+    readonly PROVIDER_QUOTA_RETRY_DELAY_SECONDS: string | null;
+    readonly WORK_DEFERRED_BY_PROVIDER_COOLDOWN: boolean;
     readonly RECOVERY_ELIGIBLE: boolean | null;
     readonly RECOVERY_CLASS: string | null;
     readonly RECOVERY_GENERATION: string | null;
@@ -334,6 +349,10 @@ export async function executeMediaLiveClosureReads(input: {
   const mediaRssRows: Array<MediaLiveClosureReport["mediaRssRows"][number]> = [];
   const persistence =
     input.persistence ?? getMediaPlpPersistenceObservability();
+
+  // RESET 05E.3 — read-only durable cooldown snapshot (no writes / no provider calls).
+  const providerCooldown = await getPlpProviderCooldownSnapshot();
+  const nowIso = new Date().toISOString();
 
   const mediaArticles = await selectMediaPlpConsumerNewsArticles({
     limit: MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
@@ -549,6 +568,42 @@ export async function executeMediaLiveClosureReads(input: {
               newsWork?.lastError,
               "PROVIDER_GEMINI_ERROR_REASON",
             ),
+      PROVIDER_QUOTA_CLASS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_QUOTA_CLASS",
+            ),
+      PROVIDER_QUOTA_METRIC:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_QUOTA_METRIC",
+            ),
+      PROVIDER_QUOTA_LIMIT_ID:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_QUOTA_LIMIT_ID",
+            ),
+      PROVIDER_QUOTA_RETRY_DELAY_SECONDS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_QUOTA_RETRY_DELAY_SECONDS",
+            ),
+      WORK_DEFERRED_BY_PROVIDER_COOLDOWN: Boolean(
+        newsWork &&
+          (newsWork.status === "pending" || newsWork.status === "running") &&
+          (providerCooldown.active ||
+            (newsWork.nextAttemptAt != null &&
+              newsWork.nextAttemptAt > nowIso) ||
+            isPlpQuotaDeferSafeReason(newsWork.lastError ?? "")),
+      ),
       ...(() => {
         const recovery = classifyConsumerProviderRecoveryEligibility({
           work: newsWork
@@ -877,6 +932,14 @@ export async function executeMediaLiveClosureReads(input: {
     PROVIDER_CALLS_FROM_READ: 0,
     PLP_WRITES_FROM_READ: 0,
     MONGO_WRITES_FROM_READ: 0,
+    PROVIDER_QUOTA_CLASS: providerCooldown.quotaClass,
+    PROVIDER_QUOTA_METRIC: providerCooldown.quotaMetric,
+    PROVIDER_QUOTA_LIMIT_ID: providerCooldown.quotaLimitId,
+    PROVIDER_QUOTA_RETRY_DELAY_SECONDS:
+      providerCooldown.quotaRetryDelaySeconds,
+    PROVIDER_COOLDOWN_ACTIVE: providerCooldown.active,
+    PROVIDER_COOLDOWN_UNTIL: providerCooldown.cooldownUntil,
+    PROVIDER_COOLDOWN_REASON: providerCooldown.cooldownReason,
     PLP_PERSISTENCE_MODE: persistence.PLP_PERSISTENCE_MODE,
     locale,
     countryCode,
@@ -1054,7 +1117,7 @@ export async function executeMediaLiveClosureReads(input: {
 
 /**
  * Thin `--mongo` CLI entry: bind PLP Mongo → connect → read-only diagnostic → disconnect.
- * Never enqueues, heals, materializes, or imports Gemini.
+ * Never enqueues, heals, materializes, or imports a translation provider.
  */
 export async function runMediaLiveClosureDiagnostic(
   input: {
@@ -1203,6 +1266,13 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `PROVIDER_CALLS_FROM_READ=${report.PROVIDER_CALLS_FROM_READ}`,
     `PLP_WRITES_FROM_READ=${report.PLP_WRITES_FROM_READ}`,
     `MONGO_WRITES_FROM_READ=${report.MONGO_WRITES_FROM_READ}`,
+    `PROVIDER_QUOTA_CLASS=${report.PROVIDER_QUOTA_CLASS ?? ""}`,
+    `PROVIDER_QUOTA_METRIC=${report.PROVIDER_QUOTA_METRIC ?? ""}`,
+    `PROVIDER_QUOTA_LIMIT_ID=${report.PROVIDER_QUOTA_LIMIT_ID ?? ""}`,
+    `PROVIDER_QUOTA_RETRY_DELAY_SECONDS=${report.PROVIDER_QUOTA_RETRY_DELAY_SECONDS ?? ""}`,
+    `PROVIDER_COOLDOWN_ACTIVE=${report.PROVIDER_COOLDOWN_ACTIVE}`,
+    `PROVIDER_COOLDOWN_UNTIL=${report.PROVIDER_COOLDOWN_UNTIL ?? ""}`,
+    `PROVIDER_COOLDOWN_REASON=${report.PROVIDER_COOLDOWN_REASON ?? ""}`,
     `ok=${report.ok}`,
   ];
   console.log(lines.join("\n"));

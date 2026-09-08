@@ -1147,6 +1147,17 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // RESET 05E.3 — durable thin_gemini quota cooldown (singleton per providerId).
+    collectionName: MONGO_COLLECTIONS.plpThinGeminiProviderState,
+    indexes: [
+      {
+        key: { providerId: 1 },
+        unique: true,
+        name: "plp_thin_gemini_provider_state_providerId_unique",
+      },
+    ],
+  },
+  {
     // Production Completion Pack 02B — Language Registry.
     collectionName: MONGO_COLLECTIONS.languageRegistry,
     indexes: [
