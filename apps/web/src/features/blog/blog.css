@@ -927,7 +927,43 @@
 }
 
 .blog-post-grid--related {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: var(--hu-card-gap);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-block-end: var(--hu-space-2);
+  scrollbar-gutter: stable;
+}
+
+.blog-post-grid--related > .blog-post-card {
+  flex: 0 0 min(100%, 18rem);
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+.blog-post-card--related .blog-post-card__content {
   grid-template-columns: 1fr;
+  gap: var(--hu-space-2);
+}
+
+.blog-post-card--related .blog-post-card__image,
+.blog-post-card--related .blog-cover-image {
+  aspect-ratio: 16 / 9;
+  max-height: 5.5rem;
+  object-fit: cover;
+}
+
+.blog-post-card--related .blog-post-card__excerpt {
+  -webkit-line-clamp: 2;
+  min-height: 0;
+}
+
+.blog-post-card--related .blog-post-card__title {
+  -webkit-line-clamp: 2;
 }
 
 .blog-article__back {
@@ -1038,8 +1074,25 @@
     align-self: stretch;
   }
 
-  .blog-post-grid--related {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .blog-post-grid--related > .blog-post-card {
+    flex-basis: calc((100% - var(--hu-card-gap)) / 2);
+    max-width: calc((100% - var(--hu-card-gap)) / 2);
+  }
+
+  .blog-post-card--related .blog-post-card__content {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-post-card--related .blog-post-card__image,
+  .blog-post-card--related .blog-cover-image {
+    height: auto;
+    min-height: 0;
+    max-height: 6rem;
+  }
+
+  .blog-post-card--related .blog-post-card__excerpt {
+    -webkit-line-clamp: 2;
+    align-self: start;
   }
 }
 
@@ -1134,8 +1187,25 @@
     align-self: stretch;
   }
 
-  .blog-post-grid--related {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .blog-post-grid--related > .blog-post-card {
+    flex-basis: calc((100% - var(--hu-card-gap)) / 2);
+    max-width: calc((100% - var(--hu-card-gap)) / 2);
+  }
+
+  .blog-post-card--related .blog-post-card__content {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-post-card--related .blog-post-card__image,
+  .blog-post-card--related .blog-cover-image {
+    height: auto;
+    min-height: 0;
+    max-height: 6.5rem;
+  }
+
+  .blog-post-card--related .blog-post-card__excerpt {
+    -webkit-line-clamp: 2;
+    align-self: start;
   }
 }
 

@@ -127,7 +127,7 @@ export const MEMBERSHIP_BENEFITS = [
 export const MEMBERSHIP_FAQ = [
   {
     id: "what-is-member",
-    question: "What is a Member?",
+    question: "What is a Member of the Humanity Union?",
     answer:
       "A Member is a Participant who has completed the Membership application and confirmed a one-time Membership Contribution. Members remain equal Participants in all civic decisions.",
   },

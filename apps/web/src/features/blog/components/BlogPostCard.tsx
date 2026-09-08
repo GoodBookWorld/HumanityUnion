@@ -17,9 +17,24 @@ import { BlogCoverImage } from "./BlogCoverImage";
 
 interface BlogPostCardProps {
   post: PublicBlogPostListItem;
+  /** Related strip: compact media + presentation-only ~10-word excerpt. */
+  layout?: "default" | "related";
 }
 
-export function BlogPostCard({ post }: BlogPostCardProps) {
+/** Presentation-only word clamp — never mutates stored/source content. */
+function truncateWordsForDisplay(text: string, maxWords: number): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  const words = trimmed.split(/\s+/);
+  if (words.length <= maxWords) {
+    return trimmed;
+  }
+  return `${words.slice(0, maxWords).join(" ")}…`;
+}
+
+export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
@@ -92,9 +107,20 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
   const commentsHref = `${href}#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
   const titleForDisplay = displayTitle || post.title;
+  const excerptSource = displayExcerpt || post.excerpt;
+  const excerptForDisplay =
+    layout === "related"
+      ? truncateWordsForDisplay(excerptSource, 10)
+      : excerptSource;
+  const isRelated = layout === "related";
 
   return (
-    <article className="hu-card blog-post-card" aria-labelledby={titleId}>
+    <article
+      className={["hu-card", "blog-post-card", isRelated ? "blog-post-card--related" : null]
+        .filter(Boolean)
+        .join(" ")}
+      aria-labelledby={titleId}
+    >
       <div className="blog-post-card__body">
         <h2 id={titleId} className="hu-heading-3 blog-post-card__title">
           <Link href={href}>{titleForDisplay}</Link>
@@ -139,7 +165,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
               className="blog-post-card__image"
             />
           </Link>
-          <p className="hu-body-sm blog-post-card__excerpt">{displayExcerpt || post.excerpt}</p>
+          <p className="hu-body-sm blog-post-card__excerpt">{excerptForDisplay}</p>
         </div>
 
         <p className="blog-post-card__category">

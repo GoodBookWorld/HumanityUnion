@@ -363,6 +363,14 @@ function ArchiveRow({
           disabled={busy}
           onClick={() => void handleDelete()}
         >
+          <img
+            className="notifications-page__button-icon"
+            src="/icons/workspace/trash.png"
+            alt=""
+            aria-hidden="true"
+            width={38}
+            height={38}
+          />
           Delete
         </button>
       }
@@ -717,6 +725,14 @@ export function NotificationCenterPageContent() {
           <section className="notifications-page__archive" aria-labelledby="archive-section-heading">
             <div className="notifications-page__section-header">
               <h2 id="archive-section-heading" className="notifications-page__section-title">
+                <img
+                  className="notifications-page__section-title-icon"
+                  src="/icons/workspace/archive.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={38}
+                  height={38}
+                />
                 Archive
               </h2>
               {archivedNotifications.length > 0 ? (

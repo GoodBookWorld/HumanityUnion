@@ -222,6 +222,7 @@ describe("Production Completion Pack 02E Task 02 — remaining public chrome nav
       [
         { label: "Privacy", href: "/privacy" },
         { label: "Terms", href: "/terms" },
+        { label: "Sitemap", href: "/site-map" },
         { label: "Contact", href: "/contact" },
       ],
     );

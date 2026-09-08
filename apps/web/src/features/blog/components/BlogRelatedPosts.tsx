@@ -13,9 +13,7 @@ interface BlogRelatedPostsProps {
   excludePostId: string;
 }
 
-/**
- * Bounded same-category listing (max 3). Not AI-related; uses public Blog list API.
- */
+/** Same-category related strip: desktop shows 2 cards; extras scroll horizontally. */
 export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPostsProps) {
   const t = useTranslations("blogPublic.discovery.related");
   const [items, setItems] = useState<PublicBlogPostListItem[]>([]);
@@ -23,14 +21,14 @@ export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPosts
   useEffect(() => {
     let cancelled = false;
 
-    void fetchPublicBlogPosts({ categoryId, limit: 6, offset: 0, includeDiscovery: false })
+    void fetchPublicBlogPosts({ categoryId, limit: 12, offset: 0, includeDiscovery: false })
       .then((response) => {
         if (cancelled) {
           return;
         }
 
         setItems(
-          response.items.filter((item) => item.postId !== excludePostId).slice(0, 3),
+          response.items.filter((item) => item.postId !== excludePostId).slice(0, 8),
         );
       })
       .catch(() => {
@@ -53,9 +51,9 @@ export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPosts
       <h2 id="blog-related-heading" className="hu-heading-2">
         {t("heading")}
       </h2>
-      <div className="blog-post-grid blog-post-grid--related">
+      <div className="blog-post-grid blog-post-grid--related" tabIndex={0}>
         {items.map((post) => (
-          <BlogPostCard key={post.postId} post={post} />
+          <BlogPostCard key={post.postId} post={post} layout="related" />
         ))}
       </div>
     </section>

@@ -30,7 +30,18 @@
     "civicArchive": "Civic Archive",
     "privacy": "Privacy",
     "terms": "Terms",
+    "sitemap": "Sitemap",
     "contact": "Contact",
+    "siteMapPageTitle": "Sitemap",
+    "siteMapPageIntro": "Browse public pages on {siteName}.",
+    "siteMapGroupStart": "Start here",
+    "siteMapGroupPlatform": "Platform",
+    "siteMapGroupKnowledge": "Knowledge",
+    "siteMapGroupLegal": "Legal and transparency",
+    "siteMapHome": "Home",
+    "siteMapKnowledgeCenter": "Knowledge Center",
+    "siteMapKnowledgeMedia": "Knowledge Media",
+    "siteMapCivicActivity": "Civic Activity",
     "footerMission": "A global movement of citizens working together for a more just, peaceful and sustainable world.",
     "footerPlatformHeading": "Platform",
     "footerLegalHeading": "Legal and transparency",
@@ -4397,7 +4408,7 @@
       "regionLabel": "Membership FAQ",
       "items": {
         "what-is-member": {
-          "question": "What is a Member?",
+          "question": "What is a Member of the Humanity Union?",
           "answer": "A Member is a Participant who has completed the Membership application and confirmed a one-time Membership Contribution. Members remain equal Participants in all civic decisions."
         },
         "voting-power": {

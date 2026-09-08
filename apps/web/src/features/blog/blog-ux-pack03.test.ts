@@ -173,11 +173,16 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
 
   it("documents Previous/Next deferral and related same-category bound", () => {
     const article = read("features/blog/components/BlogArticlePageContent.tsx");
-    assert.match(article, /Previous\/Next neighbour navigation is deferred/);
     assert.match(article, /BlogRelatedPosts/);
+    assert.doesNotMatch(article, /previousPost|nextPost/);
 
     const related = read("features/blog/components/BlogRelatedPosts.tsx");
-    assert.match(related, /More from this category/);
-    assert.match(related, /slice\(0, 3\)/);
+    assert.match(related, /blogPublic\.discovery\.related/);
+    assert.match(related, /slice\(0, 8\)/);
+    assert.match(related, /layout="related"/);
+    const css = read("features/blog/blog.css");
+    assert.match(css, /blog-post-grid--related/);
+    assert.match(css, /overflow-x:\s*auto/);
+    assert.match(css, /flex-basis:\s*calc\(\(100% - var\(--hu-card-gap\)\) \/ 2\)/);
   });
 });

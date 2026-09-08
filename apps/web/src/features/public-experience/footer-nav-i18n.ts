@@ -16,6 +16,7 @@ export const FOOTER_FOUNDATION_MESSAGE_KEYS = {
   Search: "search",
   Privacy: "privacy",
   Terms: "terms",
+  Sitemap: "sitemap",
   Contact: "contact",
 } as const;
 

@@ -19,11 +19,11 @@ function resolveBrandedLogoMarkup(): string {
     ? `<img src="${logoUrl}" alt="Humanity Union" width="48" height="12" style="display:block;margin:0 auto;width:48px;height:auto;max-width:48px;border:0;outline:none;text-decoration:none;" />`
     : "";
 
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;">
   <tr>
-    <td style="background:${PRIMARY_COLOR};padding:24px 32px;text-align:center;">
+    <td class="hu-email-pad" style="background:${PRIMARY_COLOR};padding:24px 32px;text-align:center;">
       ${logoImage}
-      <p style="margin:${logoImage ? "8px" : "0"} 0 0;font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.02em;">Humanity Union</p>
+      <p style="margin:${logoImage ? "8px" : "0"} 0 0;font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.02em;word-wrap:break-word;">Humanity Union</p>
     </td>
   </tr>
 </table>`;
@@ -63,25 +63,40 @@ function wrapEmailLayout(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Humanity Union</title>
+  <!--[if mso]>
+  <style type="text/css">
+    table { border-collapse: collapse; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    img { max-width: 100% !important; height: auto !important; }
+    @media only screen and (max-width: 620px) {
+      .hu-email-shell { padding-left: 12px !important; padding-right: 12px !important; }
+      .hu-email-pad { padding-left: 16px !important; padding-right: 16px !important; }
+      .hu-email-pad-y { padding-top: 20px !important; padding-bottom: 20px !important; }
+      .hu-email-btn { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fa;padding:24px 0;">
+<body style="margin:0;padding:0;width:100% !important;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#f4f7fa;padding:24px 0;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <td class="hu-email-shell" align="center" style="padding:0 12px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
           <tr>
             <td style="padding:0;">
               ${resolveBrandedLogoMarkup()}
             </td>
           </tr>
           <tr>
-            <td style="padding:32px;">
+            <td class="hu-email-pad hu-email-pad-y" style="padding:32px;word-wrap:break-word;overflow-wrap:anywhere;word-break:break-word;">
               ${content}
             </td>
           </tr>
           <tr>
-            <td style="padding:24px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;line-height:1.6;">
+            <td class="hu-email-pad" style="padding:24px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;line-height:1.6;word-wrap:break-word;overflow-wrap:anywhere;word-break:break-word;">
               ${footerBody}
             </td>
           </tr>
@@ -159,7 +174,7 @@ export interface MemberBadgeContributionConfirmedTemplateInput {
 
 function primaryButton(label: string, href: string): string {
   return `<p style="margin:24px 0;">
-    <a href="${href}" style="display:inline-block;background:${PRIMARY_COLOR};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">${label}</a>
+    <a class="hu-email-btn" href="${href}" style="display:inline-block;max-width:100%;box-sizing:border-box;background:${PRIMARY_COLOR};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;word-break:break-word;">${label}</a>
   </p>`;
 }
 

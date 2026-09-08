@@ -32,11 +32,19 @@
   inset: 0;
   background-image: var(--public-home-resource-image);
   background-repeat: no-repeat;
+  /* Logical: image sits on the inline-end side in LTR (right), inline-start in RTL (left). */
   background-position: right center;
+  background-position: inline-end center;
   background-size: min(42%, 28rem);
   opacity: var(--public-home-resource-image-opacity);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Prefer physical fallback + dir for engines without background-position logical keywords. */
+[dir="rtl"] .public-home-v2__section--resource.public-home-v2__section--resource-media::before,
+[dir="rtl"] .public-home-v2__section--resource.public-home-v2__section--resource-archive::before {
+  background-position: left center;
 }
 
 .public-home-v2__resource-layout {
@@ -46,6 +54,7 @@
 
 .public-home-v2__resource-content {
   max-width: 36rem;
+  text-align: start;
 }
 
 .public-home-v2__resource-copy {

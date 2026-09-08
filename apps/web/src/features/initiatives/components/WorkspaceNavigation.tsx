@@ -187,7 +187,19 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                   aria-controls={`workspace-nav-group-${group.id}`}
                   onClick={() => toggleGroup(group.id)}
                 >
-                  <span>{displayLabel(group.label)}</span>
+                  <span className="workspace-navigation__group-heading">
+                    <img
+                      className="workspace-navigation__group-icon"
+                      src={group.iconSrc}
+                      alt=""
+                      aria-hidden="true"
+                      width={16}
+                      height={16}
+                    />
+                    <span className="workspace-navigation__group-title">
+                      {displayLabel(group.label)}
+                    </span>
+                  </span>
                   <span
                     className={`workspace-navigation__group-chevron${collapsed ? " workspace-navigation__group-chevron--collapsed" : ""}`}
                     aria-hidden="true"
@@ -196,11 +208,25 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                   </span>
                 </button>
               ) : (
-                <p className="workspace-navigation__label">{displayLabel(group.label)}</p>
+                <p className="workspace-navigation__label">
+                  <span className="workspace-navigation__group-heading">
+                    <img
+                      className="workspace-navigation__group-icon"
+                      src={group.iconSrc}
+                      alt=""
+                      aria-hidden="true"
+                      width={16}
+                      height={16}
+                    />
+                    <span className="workspace-navigation__group-title">
+                      {displayLabel(group.label)}
+                    </span>
+                  </span>
+                </p>
               )}
               <div
                 id={`workspace-nav-group-${group.id}`}
-                className="workspace-navigation__list"
+                className={`workspace-navigation__list${collapsed ? " workspace-navigation__list--collapsed" : ""}`}
                 hidden={collapsed}
               >
                 {group.routes.map((route) => {

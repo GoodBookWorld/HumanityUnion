@@ -13,10 +13,14 @@
 .public-experience-footer__grid {
   display: grid;
   gap: var(--hu-space-6);
+  align-items: stretch;
 }
 
 .public-experience-footer__block {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 100%;
 }
 
 .public-experience-footer__brand-row {
@@ -144,6 +148,17 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: #0174b0;
+  line-height: 1.2;
+}
+
+/**
+ * Keeps Platform column two aligned with the visible heading row without the
+ * old margin-top calc hack. Hidden from assistive tech; nav aria-label remains.
+ */
+.public-experience-footer__heading--align-slot {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
 }
 
 .public-experience-footer__heading--visually-hidden {
@@ -158,27 +173,36 @@
   border: 0;
 }
 
-.public-experience-footer__platform-secondary .public-experience-footer__nav-list {
-  margin-top: calc(0.8125rem + var(--hu-space-3));
-}
-
 .public-experience-footer__nav-list {
   list-style: none;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: var(--hu-space-1);
   margin: 0;
   padding: 0;
 }
 
-.public-experience-footer__nav-list a {
+.public-experience-footer__nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hu-space-2);
   color: #404040;
   text-decoration: none;
   font-size: var(--hu-font-size-sm);
+  min-width: 0;
 }
 
-.public-experience-footer__nav-list a:hover,
-.public-experience-footer__nav-list a:focus-visible {
+.public-experience-footer__nav-icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.public-experience-footer__nav-link:hover,
+.public-experience-footer__nav-link:focus-visible {
   color: var(--hu-color-text);
   text-decoration: underline;
 }
@@ -198,10 +222,6 @@
   .public-experience-footer__brand {
     grid-column: 1 / -1;
   }
-
-  .public-experience-footer__platform-secondary .public-experience-footer__nav-list {
-    margin-top: 0;
-  }
 }
 
 @media (min-width: 64rem) {
@@ -211,10 +231,6 @@
 
   .public-experience-footer__brand {
     grid-column: auto;
-  }
-
-  .public-experience-footer__platform-secondary .public-experience-footer__nav-list {
-    margin-top: calc(0.8125rem + var(--hu-space-3));
   }
 }
 

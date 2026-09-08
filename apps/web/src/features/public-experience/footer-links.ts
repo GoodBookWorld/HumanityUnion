@@ -6,6 +6,8 @@ export interface FooterLink {
   label: string;
   href?: string;
   status: FooterLinkStatus;
+  /** Optional leading icon under `/public/icons/…` (decorative; link text remains the accessible name). */
+  iconSrc?: string;
 }
 
 export const ORGANIZATION_NAME = "HUMANITY UNION SOCIETY";
@@ -34,9 +36,30 @@ export const FOOTER_PLATFORM_LINKS: FooterLink[] = [
 ];
 
 export const FOOTER_LEGAL_LINKS: FooterLink[] = [
-  { label: "Privacy", href: "/privacy", status: "active" },
-  { label: "Terms", href: "/terms", status: "active" },
-  { label: "Contact", href: "/contact", status: "active" },
+  {
+    label: "Privacy",
+    href: "/privacy",
+    status: "active",
+    iconSrc: "/icons/workspace/privacy-policy.png",
+  },
+  {
+    label: "Terms",
+    href: "/terms",
+    status: "active",
+    iconSrc: "/icons/workspace/terms.png",
+  },
+  {
+    label: "Sitemap",
+    href: "/site-map",
+    status: "active",
+    iconSrc: "/icons/workspace/sitemap.png",
+  },
+  {
+    label: "Contact",
+    href: "/contact",
+    status: "active",
+    iconSrc: "/icons/workspace/contact.png",
+  },
 ];
 
 /**

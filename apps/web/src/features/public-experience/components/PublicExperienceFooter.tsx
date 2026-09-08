@@ -22,7 +22,19 @@ function FooterNavItem({
   if (link.status === "active" && link.href) {
     return (
       <li>
-        <Link href={link.href}>{displayLabel}</Link>
+        <Link href={link.href} className="public-experience-footer__nav-link">
+          {link.iconSrc ? (
+            <img
+              className="public-experience-footer__nav-icon"
+              src={link.iconSrc}
+              alt=""
+              aria-hidden="true"
+              width={24}
+              height={24}
+            />
+          ) : null}
+          <span>{displayLabel}</span>
+        </Link>
       </li>
     );
   }
@@ -90,7 +102,7 @@ export async function PublicExperienceFooter() {
           </section>
 
           <section className="public-experience-footer__block public-experience-footer__platform-secondary">
-            <h2 className="public-experience-footer__heading public-experience-footer__heading--visually-hidden">
+            <h2 className="public-experience-footer__heading public-experience-footer__heading--align-slot" aria-hidden="true">
               {tNav("footerPlatformHeading")}
             </h2>
             <nav aria-label="Platform navigation column two">

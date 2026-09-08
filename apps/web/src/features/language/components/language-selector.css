@@ -1,11 +1,14 @@
 /* Production Completion Pack 02C Task 03 — compact header language selector */
 
 .hu-language-selector {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.15rem;
   max-width: 11rem;
+  --hu-language-selector-visible-rows: 10;
+  --hu-language-selector-option-block-size: 2.25rem;
 }
 
 .hu-language-selector--pending {
@@ -20,6 +23,11 @@
 
 .hu-language-selector__select {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  text-align: start;
   font: inherit;
   font-size: var(--hu-font-size-sm);
   font-weight: 600;
@@ -76,6 +84,58 @@
   cursor: wait;
 }
 
+.hu-language-selector__list {
+  position: absolute;
+  z-index: 60;
+  inset-inline-start: 0;
+  top: calc(100% + 0.25rem);
+  min-width: max(100%, 11rem);
+  max-height: calc(
+    var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md, 0.5rem);
+  box-shadow: var(--hu-shadow-sm, 0 4px 16px rgba(16, 24, 40, 0.12));
+}
+
+.hu-language-selector__option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--hu-language-selector-option-block-size);
+  padding-block: 0.35rem;
+  padding-inline: 0.75rem;
+  border: 0;
+  border-radius: var(--hu-radius-sm, 0.35rem);
+  background: transparent;
+  color: var(--hu-color-text);
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hu-language-selector__option:hover,
+.hu-language-selector__option--active {
+  background: color-mix(in srgb, var(--hu-color-primary) 10%, #ffffff);
+}
+
+.hu-language-selector__option--selected {
+  color: var(--hu-color-primary);
+}
+
+.hu-language-selector__option:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
 .hu-language-selector__error {
   margin: 0;
   font-size: 0.6875rem;
@@ -90,6 +150,11 @@
 }
 
 .hu-language-selector--mobile .hu-language-selector__select {
+  width: 100%;
+}
+
+.hu-language-selector--mobile .hu-language-selector__list {
+  min-width: 100%;
   width: 100%;
 }
 

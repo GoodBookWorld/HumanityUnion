@@ -2,7 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useId, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences, updateMyPreferences } from "../../preferences/preferences-api";
@@ -21,6 +30,9 @@ import {
 } from "../media-plp/media-plp-locale-switch-perf";
 
 import "./language-selector.css";
+
+/** Visible language rows before the list scrolls (does not cap total languages). */
+const LANGUAGE_SELECTOR_VISIBLE_ROWS = 10;
 
 interface LanguageSelectorProps {
   readonly className?: string;
@@ -49,12 +61,16 @@ export function LanguageSelector({
   const errorLabel = tCommon("error");
   const authStatus = useClientAuthStatus();
   const selectId = useId();
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
   const [options, setOptions] = useState<readonly SelectablePublicLanguage[]>([]);
   const [value, setValue] = useState("en");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
   const [catalogEpoch, setCatalogEpoch] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const onLanguagesChanged = () => {
@@ -138,6 +154,28 @@ export function LanguageSelector({
     };
   }, [authStatus, options]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   const applyLocale = useCallback(
     async (locale: string) => {
       setError(null);
@@ -173,24 +211,76 @@ export function LanguageSelector({
     [authStatus, router],
   );
 
-  async function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const next = event.target.value;
+  const currentLocale = options.some((row) => row.locale === value)
+    ? value
+    : (options[0]?.locale ?? "en");
+  const currentOption =
+    options.find((row) => row.locale === currentLocale) ?? options[0]!;
+  const disabled = pending || authStatus === "pending";
+
+  async function commitLocale(next: string) {
     const previous = value;
-    // Reset 03D — repeated selection of the active locale is a no-op.
     if (next === previous) {
+      setOpen(false);
       return;
     }
     setValue(next);
-
+    setOpen(false);
     try {
       await applyLocale(next);
     } catch {
-      // If prefs already persisted, keep `next`; only roll back when guest cookie write fails
-      // or prefs write failed before cookie.
       if (authStatus !== "authenticated") {
         setValue(previous);
       }
       setError(errorLabel);
+    }
+  }
+
+  function openList() {
+    if (disabled) {
+      return;
+    }
+    const index = Math.max(
+      0,
+      options.findIndex((row) => row.locale === currentLocale),
+    );
+    setActiveIndex(index);
+    setOpen(true);
+  }
+
+  function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (disabled) {
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (!open) {
+        openList();
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        void commitLocale(options[activeIndex]?.locale ?? currentLocale);
+      }
+    }
+    if (event.key === "ArrowUp" && open) {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(0, index - 1));
+    }
+    if (event.key === "ArrowDown" && open) {
+      event.preventDefault();
+      setActiveIndex((index) => Math.min(options.length - 1, index + 1));
+    }
+    if (event.key === "Home" && open) {
+      event.preventDefault();
+      setActiveIndex(0);
+    }
+    if (event.key === "End" && open) {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+    }
+    if (event.key === "Escape" && open) {
+      event.preventDefault();
+      setOpen(false);
     }
   }
 
@@ -214,29 +304,81 @@ export function LanguageSelector({
 
   return (
     <div
+      ref={rootRef}
       className={["hu-language-selector", className].filter(Boolean).join(" ")}
       data-pending={pending ? "true" : undefined}
+      data-open={open ? "true" : undefined}
+      style={
+        {
+          ["--hu-language-selector-visible-rows" as string]: String(
+            LANGUAGE_SELECTOR_VISIBLE_ROWS,
+          ),
+        } as CSSProperties
+      }
     >
-      <label className="hu-language-selector__label" htmlFor={selectId}>
-        <span className="hu-visually-hidden">{resolvedLabel}</span>
-        <select
+      <div className="hu-language-selector__label">
+        <span className="hu-visually-hidden" id={`${selectId}-label`}>
+          {resolvedLabel}
+        </span>
+        <button
+          type="button"
           id={selectId}
           className="hu-language-selector__select"
-          value={
-            options.some((row) => row.locale === value) ? value : (options[0]?.locale ?? "en")
-          }
-          onChange={(event) => void handleChange(event)}
-          disabled={pending || authStatus === "pending"}
           aria-label={resolvedLabel}
+          aria-labelledby={`${selectId}-label`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listId}
           title={resolvedLabel}
+          disabled={disabled}
+          onClick={() => {
+            if (open) {
+              setOpen(false);
+            } else {
+              openList();
+            }
+          }}
+          onKeyDown={onTriggerKeyDown}
         >
-          {options.map((option) => (
-            <option key={option.languageId} value={option.locale} lang={option.locale}>
-              {formatLanguageOptionLabel(option)}
-            </option>
-          ))}
-        </select>
-      </label>
+          {formatLanguageOptionLabel(currentOption)}
+        </button>
+      </div>
+      {open ? (
+        <ul
+          id={listId}
+          className="hu-language-selector__list"
+          role="listbox"
+          aria-labelledby={`${selectId}-label`}
+          tabIndex={-1}
+        >
+          {options.map((option, index) => {
+            const selected = option.locale === currentLocale;
+            const active = index === activeIndex;
+            return (
+              <li key={option.languageId} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  className={[
+                    "hu-language-selector__option",
+                    selected ? "hu-language-selector__option--selected" : null,
+                    active ? "hu-language-selector__option--active" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  lang={option.locale}
+                  aria-selected={selected}
+                  tabIndex={active ? 0 : -1}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => void commitLocale(option.locale)}
+                >
+                  {formatLanguageOptionLabel(option)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
       {error ? (
         <p className="hu-language-selector__error" role="alert">
           {error}

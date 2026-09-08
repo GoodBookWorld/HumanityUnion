@@ -4,12 +4,16 @@
 }
 
 .workspace-navigation__label {
+  display: flex;
+  align-items: center;
+  min-height: 1.75rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hu-workspace-secondary, var(--hu-color-text-muted));
-  margin: 0 0 var(--hu-space-3);
+  margin: 0;
+  padding: var(--hu-space-1) var(--hu-space-2);
 }
 
 .workspace-navigation__groups {
@@ -32,7 +36,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--hu-space-2);
   width: 100%;
+  min-height: 1.75rem;
   text-align: left;
   border: 0;
   background: transparent;
@@ -45,6 +51,27 @@
   cursor: pointer;
 }
 
+.workspace-navigation__group-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.workspace-navigation__group-icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+}
+
+.workspace-navigation__group-title {
+  min-width: 0;
+  line-height: 1.2;
+}
+
 .workspace-navigation__group-toggle:hover,
 .workspace-navigation__group-toggle:focus-visible {
   color: var(--hu-workspace-primary, var(--hu-color-primary));
@@ -53,8 +80,12 @@
 }
 
 .workspace-navigation__group-chevron {
-  display: inline-block;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
   font-size: 0.7rem;
+  line-height: 1;
   transition: transform 0.15s ease;
   transform: rotate(0deg);
 }
@@ -68,6 +99,15 @@
   flex-direction: column;
   gap: var(--hu-space-1);
   padding-left: var(--hu-space-2);
+}
+
+/**
+ * Author `display: flex` can beat the UA `[hidden]` rule in some resets.
+ * Keep the React `hidden` attribute for a11y tests and force collapse visually.
+ */
+.workspace-navigation__list[hidden],
+.workspace-navigation__list--collapsed {
+  display: none !important;
 }
 
 .workspace-navigation__link {
