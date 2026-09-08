@@ -1,8 +1,8 @@
 /**
- * Reset 03B.2 / RESET 05E — thin Gemini HTTP transport for Media PLP materializer.
+ * Reset 03B.2 / RESET 05E / 05E.2 — thin Gemini HTTP transport for Media PLP.
  *
- * RESET 05E — structured JSON responseMimeType + translations schema;
- * finishReason / safety / truncation classified; multi-request for sequential batches.
+ * RESET 05E.2 — safe HTTP/transport forensics on every failure path
+ * (status/class/errorClass/Retry-After/Gemini structural tokens). Never secrets.
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   resolveTranslationConfig,
   TranslationProviderError,
   type TranslationConfig,
+  type TranslationProviderTransportMeta,
 } from "../translation.config.js";
 import type {
   TranslationProvider,
@@ -19,9 +20,14 @@ import type {
 import { buildThinGeminiMediaPlpSystemInstruction } from "./thin-gemini-prompt.js";
 import {
   classifyFinishReasonSubtype,
+  classifyHttpTransportErrorClass,
+  classifyNetworkTransportErrorClass,
   extractJsonObjectText,
+  httpStatusClass,
+  parseRetryAfterSeconds,
   PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
   PLP_PROVIDER_FAILURE_SUBTYPE,
+  sanitizeGeminiErrorToken,
 } from "./provider-response-contract.js";
 
 /** Safe non-secret transport identifier for operator reports. */
@@ -45,19 +51,48 @@ interface GeminiGenerateContentResponse {
   error?: {
     message?: string;
     status?: string;
-    code?: number;
+    code?: number | string;
+    details?: unknown;
   };
 }
 
+function geminiTransportMeta(
+  status: number,
+  body: GeminiGenerateContentResponse,
+  retryAfterSeconds: number | null,
+): TranslationProviderTransportMeta {
+  const errorClass = classifyHttpTransportErrorClass(status);
+  const geminiStatus = sanitizeGeminiErrorToken(body.error?.status);
+  const geminiCode = sanitizeGeminiErrorToken(body.error?.code);
+  // Prefer status token; never persist free-form error.message prose.
+  const geminiReason = geminiStatus ?? geminiCode;
+  return {
+    httpStatus: status,
+    httpClass: httpStatusClass(status),
+    errorClass,
+    errorCode: geminiCode,
+    retryAfterSeconds,
+    geminiErrorStatus: geminiStatus,
+    geminiErrorReason: geminiReason,
+  };
+}
+
+/**
+ * Every non-2xx Gemini HTTP response → HTTP_FAILURE subtype + safe transport meta.
+ * Origins of PROVIDER_FAILURE_SUBTYPE=HTTP_FAILURE for HTTP responses.
+ */
 function classifyGeminiHttpFailure(
   status: number,
   body: GeminiGenerateContentResponse,
+  retryAfterSeconds: number | null,
 ): TranslationProviderError {
+  const transport = geminiTransportMeta(status, body, retryAfterSeconds);
   if (status === 401 || status === 403) {
     return new TranslationProviderError(
       "not_configured",
       `Gemini HTTP ${status}`,
       PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+      transport,
     );
   }
   if (status === 429) {
@@ -65,6 +100,7 @@ function classifyGeminiHttpFailure(
       "rate_limited",
       `Gemini HTTP ${status}`,
       PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+      transport,
     );
   }
   if (status >= 500) {
@@ -72,20 +108,52 @@ function classifyGeminiHttpFailure(
       "unavailable",
       `Gemini HTTP ${status}`,
       PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+      transport,
     );
   }
-  const vendorMessage = body.error?.message ?? "";
-  if (/API key|PERMISSION_DENIED|UNAUTHENTICATED/i.test(vendorMessage)) {
-    return new TranslationProviderError(
-      "not_configured",
-      "Gemini rejected credentials",
-      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
-    );
-  }
+  // 400 / 404 / other 4xx — often invalid request/schema/model.
   return new TranslationProviderError(
     "unavailable",
     `Gemini HTTP ${status}`,
     PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    transport,
+  );
+}
+
+function classifyFetchException(error: unknown): TranslationProviderError {
+  const errorClass = classifyNetworkTransportErrorClass(error);
+  if (errorClass === "ABORT" || errorClass === "TIMEOUT") {
+    return new TranslationProviderError(
+      "timeout",
+      errorClass === "ABORT"
+        ? "Gemini translation aborted"
+        : "Gemini translation timed out",
+      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT,
+      {
+        httpStatus: null,
+        httpClass: null,
+        errorClass,
+        errorCode: null,
+        retryAfterSeconds: null,
+        geminiErrorStatus: null,
+        geminiErrorReason: null,
+      },
+    );
+  }
+  // Network/DNS/TLS/SOCKET — historically collapsed to HTTP_FAILURE with null HTTP_CLASS.
+  return new TranslationProviderError(
+    "network_failure",
+    "Gemini network/transport failure",
+    PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    {
+      httpStatus: null,
+      httpClass: null,
+      errorClass,
+      errorCode: null,
+      retryAfterSeconds: null,
+      geminiErrorStatus: null,
+      geminiErrorReason: null,
+    },
   );
 }
 
@@ -160,6 +228,7 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
 
     try {
       const model = encodeURIComponent(this.config.geminiModel);
+      // API key is header-only — never embed in URL (avoids secret leakage in logs).
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
       let response: Response;
@@ -193,24 +262,14 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
               temperature: 0.2,
               maxOutputTokens: this.config.maxOutputTokens,
               responseMimeType: "application/json",
+              // OpenAPI-subset schema (lowercase types accepted by gemini-2.0-flash REST).
               responseSchema: PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
             },
           }),
           signal: controller.signal,
         });
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          throw new TranslationProviderError(
-            "timeout",
-            "Gemini translation timed out",
-            PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT,
-          );
-        }
-        throw new TranslationProviderError(
-          "network_failure",
-          error instanceof Error ? error.message : "Gemini network failure",
-          PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
-        );
+        throw classifyFetchException(error);
       }
 
       let body: GeminiGenerateContentResponse;
@@ -221,11 +280,26 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "malformed_response",
           "Gemini response was not JSON",
           PLP_PROVIDER_FAILURE_SUBTYPE.GEMINI_ENVELOPE_MISSING,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: classifyHttpTransportErrorClass(response.status) ?? "UNKNOWN_TRANSPORT",
+            errorCode: null,
+            retryAfterSeconds: parseRetryAfterSeconds(
+              response.headers.get("retry-after"),
+            ),
+            geminiErrorStatus: null,
+            geminiErrorReason: null,
+          },
         );
       }
 
       if (!response.ok) {
-        throw classifyGeminiHttpFailure(response.status, body);
+        throw classifyGeminiHttpFailure(
+          response.status,
+          body,
+          parseRetryAfterSeconds(response.headers.get("retry-after")),
+        );
       }
 
       if (body.promptFeedback?.blockReason) {
@@ -233,6 +307,19 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "safety_rejected",
           "Gemini blocked the translation request",
           PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: "SAFETY_BLOCKED",
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(
+              body.promptFeedback.blockReason,
+            ),
+            geminiErrorReason: sanitizeGeminiErrorToken(
+              body.promptFeedback.blockReason,
+            ),
+          },
         );
       }
 
@@ -242,6 +329,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "malformed_response",
           "Gemini returned no candidates",
           PLP_PROVIDER_FAILURE_SUBTYPE.CANDIDATE_MISSING,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: null,
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: null,
+            geminiErrorReason: null,
+          },
         );
       }
 
@@ -253,6 +349,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "safety_rejected",
           "Gemini finishReason safety block",
           finishSubtype,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: "SAFETY_BLOCKED",
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(finishReason),
+            geminiErrorReason: sanitizeGeminiErrorToken(finishReason),
+          },
         );
       }
 
@@ -263,6 +368,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "malformed_response",
           "Gemini candidate missing text parts",
           PLP_PROVIDER_FAILURE_SUBTYPE.TEXT_PART_MISSING,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: null,
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(finishReason),
+            geminiErrorReason: null,
+          },
         );
       }
 
@@ -273,6 +387,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "malformed_response",
           "Gemini returned empty translation",
           PLP_PROVIDER_FAILURE_SUBTYPE.EMPTY_RESPONSE,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: null,
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(finishReason),
+            geminiErrorReason: null,
+          },
         );
       }
 
@@ -286,6 +409,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
             ? "Gemini truncated output (MAX_TOKENS)"
             : `Gemini truncated/incomplete finishReason=${finishReason}`,
           finishSubtype,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: null,
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(finishReason),
+            geminiErrorReason: sanitizeGeminiErrorToken(finishReason),
+          },
         );
       }
 
@@ -295,6 +427,15 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           "malformed_response",
           "Gemini JSON extraction failed",
           extracted.subtype,
+          {
+            httpStatus: response.status,
+            httpClass: httpStatusClass(response.status),
+            errorClass: null,
+            errorCode: null,
+            retryAfterSeconds: null,
+            geminiErrorStatus: sanitizeGeminiErrorToken(finishReason),
+            geminiErrorReason: null,
+          },
         );
       }
 
@@ -309,6 +450,11 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
           textPartCount,
           extractedLength: extracted.text.length,
           failureSubtype: null,
+          errorClass: null,
+          errorCode: null,
+          retryAfterSeconds: null,
+          geminiErrorStatus: null,
+          geminiErrorReason: null,
         },
       };
     } finally {
@@ -376,6 +522,15 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
         "timeout",
         "Fake local transport timed out",
         PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT,
+        {
+          httpStatus: null,
+          httpClass: null,
+          errorClass: "TIMEOUT",
+          errorCode: null,
+          retryAfterSeconds: null,
+          geminiErrorStatus: null,
+          geminiErrorReason: null,
+        },
       );
     }
     if (delayMs > 0) {

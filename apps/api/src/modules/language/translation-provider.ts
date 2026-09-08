@@ -35,6 +35,12 @@ export interface TranslationProviderResult {
     readonly textPartCount?: number;
     readonly extractedLength?: number;
     readonly failureSubtype?: string | null;
+    /** RESET 05E.2 */
+    readonly errorClass?: string | null;
+    readonly errorCode?: string | null;
+    readonly retryAfterSeconds?: number | null;
+    readonly geminiErrorStatus?: string | null;
+    readonly geminiErrorReason?: string | null;
   };
 }
 

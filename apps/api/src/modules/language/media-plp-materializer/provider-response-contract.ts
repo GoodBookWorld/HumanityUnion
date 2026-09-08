@@ -143,6 +143,81 @@ export function httpStatusClass(status: number | null | undefined): string | nul
 }
 
 /**
+ * RESET 05E.2 — bounded safe HTTP/transport error class (no prose).
+ */
+export function classifyHttpTransportErrorClass(
+  status: number | null | undefined,
+): string | null {
+  if (status == null || !Number.isFinite(status)) {
+    return null;
+  }
+  if (status === 400) return "HTTP_400";
+  if (status === 401) return "HTTP_401";
+  if (status === 403) return "HTTP_403";
+  if (status === 404) return "HTTP_404";
+  if (status === 408) return "HTTP_408";
+  if (status === 429) return "HTTP_429";
+  if (status >= 500 && status < 600) return "HTTP_5XX";
+  if (status >= 400 && status < 500) return "HTTP_4XX";
+  return "UNKNOWN_TRANSPORT";
+}
+
+/** Classify fetch/network exceptions into safe ERROR_CLASS tokens. */
+export function classifyNetworkTransportErrorClass(
+  error: unknown,
+): "TIMEOUT" | "ABORT" | "DNS" | "TLS" | "SOCKET" | "NETWORK" | "UNKNOWN_TRANSPORT" {
+  if (error instanceof Error) {
+    if (error.name === "AbortError" || /aborted/i.test(error.message)) {
+      return "ABORT";
+    }
+    if (/timed?\s*out|TimeoutError/i.test(error.message) || error.name === "TimeoutError") {
+      return "TIMEOUT";
+    }
+    if (/ENOTFOUND|EAI_AGAIN|getaddrinfo|DNS/i.test(error.message)) {
+      return "DNS";
+    }
+    if (/CERT_|SSL|TLS|UNABLE_TO_VERIFY/i.test(error.message)) {
+      return "TLS";
+    }
+    if (/ECONNRESET|ECONNREFUSED|EPIPE|socket|UND_ERR/i.test(error.message)) {
+      return "SOCKET";
+    }
+    if (/fetch failed|network|ECONN|ENETUNREACH/i.test(error.message)) {
+      return "NETWORK";
+    }
+  }
+  return "NETWORK";
+}
+
+/** Parse Retry-After header: delta-seconds only (ignore HTTP-date). */
+export function parseRetryAfterSeconds(header: string | null | undefined): number | null {
+  if (!header) return null;
+  const trimmed = header.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const seconds = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  return Math.min(seconds, 3600);
+}
+
+/** Gemini error.status / reason — machine tokens only. */
+export function sanitizeGeminiErrorToken(
+  value: unknown,
+  maxLen = 64,
+): string | null {
+  if (typeof value !== "string") {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(Math.trunc(value));
+    }
+    return null;
+  }
+  const token = value.trim().toUpperCase().replace(/[^A-Z0-9_.-]/g, "");
+  if (!token || token.length > maxLen) {
+    return token ? token.slice(0, maxLen) : null;
+  }
+  return token;
+}
+
+/**
  * Bounded batching by key count + estimated output characters.
  * Provider concurrency stays 1; batches run sequentially.
  */

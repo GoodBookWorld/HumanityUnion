@@ -533,6 +533,11 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     candidateCount?: number;
     textPartCount?: number;
     extractedLength?: number;
+    errorClass?: string | null;
+    errorCode?: string | null;
+    retryAfterSeconds?: number | null;
+    geminiErrorStatus?: string | null;
+    geminiErrorReason?: string | null;
   } = {};
 
   const subtypeForensics = (
@@ -543,6 +548,12 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     ...emptyForensics({ expectedPaths, shape: "INVALID" }),
     PROVIDER_FAILURE_SUBTYPE: subtype,
     PROVIDER_HTTP_CLASS: httpStatusClass(lastEnvelope.httpStatus ?? null),
+    PROVIDER_HTTP_STATUS: lastEnvelope.httpStatus ?? null,
+    PROVIDER_ERROR_CLASS: lastEnvelope.errorClass ?? null,
+    PROVIDER_ERROR_CODE: lastEnvelope.errorCode ?? null,
+    PROVIDER_RETRY_AFTER: lastEnvelope.retryAfterSeconds ?? null,
+    PROVIDER_GEMINI_ERROR_STATUS: lastEnvelope.geminiErrorStatus ?? null,
+    PROVIDER_GEMINI_ERROR_REASON: lastEnvelope.geminiErrorReason ?? null,
     PROVIDER_FINISH_REASON: lastEnvelope.finishReason ?? null,
     PROVIDER_CANDIDATE_COUNT: lastEnvelope.candidateCount ?? 0,
     PROVIDER_TEXT_PART_COUNT: lastEnvelope.textPartCount ?? 0,
@@ -942,6 +953,22 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "provider failure";
+    const transportMeta =
+      error instanceof TranslationProviderError ? error.transport : undefined;
+    if (transportMeta) {
+      lastEnvelope = {
+        httpStatus: transportMeta.httpStatus ?? null,
+        finishReason: lastEnvelope.finishReason ?? null,
+        candidateCount: 0,
+        textPartCount: 0,
+        extractedLength: 0,
+        errorClass: transportMeta.errorClass ?? null,
+        errorCode: transportMeta.errorCode ?? null,
+        retryAfterSeconds: transportMeta.retryAfterSeconds ?? null,
+        geminiErrorStatus: transportMeta.geminiErrorStatus ?? null,
+        geminiErrorReason: transportMeta.geminiErrorReason ?? null,
+      };
+    }
     const subtype =
       error instanceof TranslationProviderError && error.providerFailureSubtype
         ? (error.providerFailureSubtype as PlpProviderFailureSubtype)
@@ -959,6 +986,15 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       forensics: {
         ...subtypeForensics(subtype, 0),
         PROVIDER_PARTIAL_SUBREASON: null,
+        PROVIDER_HTTP_CLASS:
+          transportMeta?.httpClass ??
+          httpStatusClass(transportMeta?.httpStatus ?? null),
+        PROVIDER_HTTP_STATUS: transportMeta?.httpStatus ?? null,
+        PROVIDER_ERROR_CLASS: transportMeta?.errorClass ?? null,
+        PROVIDER_ERROR_CODE: transportMeta?.errorCode ?? null,
+        PROVIDER_RETRY_AFTER: transportMeta?.retryAfterSeconds ?? null,
+        PROVIDER_GEMINI_ERROR_STATUS: transportMeta?.geminiErrorStatus ?? null,
+        PROVIDER_GEMINI_ERROR_REASON: transportMeta?.geminiErrorReason ?? null,
       },
       messagePrefix: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
     });

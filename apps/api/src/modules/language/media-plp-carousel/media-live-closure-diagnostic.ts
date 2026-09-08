@@ -187,6 +187,12 @@ export type MediaLiveClosureReport = {
     readonly PROVIDER_MISSING_KEY_COUNT: string | null;
     readonly PROVIDER_BATCH_INDEX: string | null;
     readonly PROVIDER_BATCH_COUNT: string | null;
+    readonly PROVIDER_HTTP_STATUS: string | null;
+    readonly PROVIDER_ERROR_CLASS: string | null;
+    readonly PROVIDER_ERROR_CODE: string | null;
+    readonly PROVIDER_RETRY_AFTER: string | null;
+    readonly PROVIDER_GEMINI_ERROR_STATUS: string | null;
+    readonly PROVIDER_GEMINI_ERROR_REASON: string | null;
     readonly RECOVERY_ELIGIBLE: boolean | null;
     readonly RECOVERY_CLASS: string | null;
     readonly RECOVERY_GENERATION: string | null;
@@ -500,6 +506,48 @@ export async function executeMediaLiveClosureReads(input: {
           : parseLabeledValueFromFailureReason(
               newsWork?.lastError,
               "PROVIDER_BATCH_COUNT",
+            ),
+      PROVIDER_HTTP_STATUS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_HTTP_STATUS",
+            ),
+      PROVIDER_ERROR_CLASS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_ERROR_CLASS",
+            ),
+      PROVIDER_ERROR_CODE:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_ERROR_CODE",
+            ),
+      PROVIDER_RETRY_AFTER:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_RETRY_AFTER",
+            ),
+      PROVIDER_GEMINI_ERROR_STATUS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_GEMINI_ERROR_STATUS",
+            ),
+      PROVIDER_GEMINI_ERROR_REASON:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_GEMINI_ERROR_REASON",
             ),
       ...(() => {
         const recovery = classifyConsumerProviderRecoveryEligibility({

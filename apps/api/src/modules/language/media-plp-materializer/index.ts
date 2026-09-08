@@ -83,4 +83,9 @@ export {
   classifyProviderResponseRecoveryFailure,
   classifyConsumerProviderRecoveryEligibility,
   classifyFinishReasonSubtype,
+  classifyHttpTransportErrorClass,
+  classifyNetworkTransportErrorClass,
+  parseRetryAfterSeconds,
+  sanitizeGeminiErrorToken,
+  httpStatusClass,
 } from "./provider-response-contract.js";

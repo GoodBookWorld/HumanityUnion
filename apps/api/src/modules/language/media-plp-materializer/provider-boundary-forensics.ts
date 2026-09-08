@@ -75,6 +75,13 @@ export type ProviderBoundaryForensics = {
   readonly PROVIDER_MISSING_KEY_COUNT?: number | null;
   readonly PROVIDER_BATCH_INDEX?: number | null;
   readonly PROVIDER_BATCH_COUNT?: number | null;
+  /** RESET 05E.2 — safe HTTP/transport forensics. */
+  readonly PROVIDER_HTTP_STATUS?: number | null;
+  readonly PROVIDER_ERROR_CLASS?: string | null;
+  readonly PROVIDER_ERROR_CODE?: string | null;
+  readonly PROVIDER_RETRY_AFTER?: number | null;
+  readonly PROVIDER_GEMINI_ERROR_STATUS?: string | null;
+  readonly PROVIDER_GEMINI_ERROR_REASON?: string | null;
 };
 
 const SENTINEL_RE = /__HU_BRAND_SITE_NAME__/g;
@@ -322,6 +329,28 @@ export function formatProviderForensicsSafe(
   }
   if (forensics.PROVIDER_BATCH_COUNT != null) {
     parts.push(`PROVIDER_BATCH_COUNT=${forensics.PROVIDER_BATCH_COUNT}`);
+  }
+  if (forensics.PROVIDER_HTTP_STATUS != null) {
+    parts.push(`PROVIDER_HTTP_STATUS=${forensics.PROVIDER_HTTP_STATUS}`);
+  }
+  if (forensics.PROVIDER_ERROR_CLASS) {
+    parts.push(`PROVIDER_ERROR_CLASS=${forensics.PROVIDER_ERROR_CLASS}`);
+  }
+  if (forensics.PROVIDER_ERROR_CODE) {
+    parts.push(`PROVIDER_ERROR_CODE=${forensics.PROVIDER_ERROR_CODE}`);
+  }
+  if (forensics.PROVIDER_RETRY_AFTER != null) {
+    parts.push(`PROVIDER_RETRY_AFTER=${forensics.PROVIDER_RETRY_AFTER}`);
+  }
+  if (forensics.PROVIDER_GEMINI_ERROR_STATUS) {
+    parts.push(
+      `PROVIDER_GEMINI_ERROR_STATUS=${forensics.PROVIDER_GEMINI_ERROR_STATUS}`,
+    );
+  }
+  if (forensics.PROVIDER_GEMINI_ERROR_REASON) {
+    parts.push(
+      `PROVIDER_GEMINI_ERROR_REASON=${forensics.PROVIDER_GEMINI_ERROR_REASON}`,
+    );
   }
 
   const brandFail = forensics.BRAND_TOKEN_PATH_STATES.filter(

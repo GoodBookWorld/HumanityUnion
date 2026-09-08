@@ -99,24 +99,34 @@ interface PlpAutoBuildWorkDocument extends Document {
 const DEFAULT_MAX_ATTEMPTS = 5;
 const STUCK_RUNNING_MS = 10 * 60 * 1000;
 /** RESET 05E — base backoff for retryable provider failures (ms). */
-const PROVIDER_RETRY_BACKOFF_BASE_MS = 2_000;
+const PROVIDER_RETRY_BACKOFF_BASE_MS = 5_000;
 const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
 
 /**
  * Bounded exponential backoff with jitter. attempts is the post-claim count.
  * Does not raise maxAttempts.
+ * RESET 05E.2 — minimum 5s so drain (3s) cannot reclaim in a tight loop;
+ * Retry-After (seconds) raises the floor when present.
  */
 export function computePlpProviderRetryNextAttemptAt(
   attempts: number,
   nowMs: number = Date.now(),
+  options?: { readonly retryAfterSeconds?: number | null },
 ): string {
   const exp = Math.max(0, Math.trunc(attempts) - 1);
-  const raw = Math.min(
+  const exponential = Math.min(
     PROVIDER_RETRY_BACKOFF_MAX_MS,
     PROVIDER_RETRY_BACKOFF_BASE_MS * 2 ** exp,
   );
-  const jitter = Math.floor(raw * 0.2 * Math.random());
-  return new Date(nowMs + raw + jitter).toISOString();
+  const retryAfterMs =
+    options?.retryAfterSeconds != null &&
+    Number.isFinite(options.retryAfterSeconds) &&
+    options.retryAfterSeconds > 0
+      ? Math.min(Math.trunc(options.retryAfterSeconds), 3600) * 1000
+      : 0;
+  const delay = Math.max(exponential, retryAfterMs);
+  const jitter = Math.floor(delay * 0.2 * Math.random());
+  return new Date(nowMs + delay + jitter).toISOString();
 }
 
 let forceMemoryForTests = false;
@@ -549,12 +559,21 @@ export async function markPlpAutoBuildWorkFailed(input: {
   const now = nowIso();
   const underCap = input.attempts < input.maxAttempts;
   const canRetry = input.failure.retryable && underCap;
-  // Memory/test drain is synchronous — skip wall-clock backoff there.
-  // Mongo durable queue uses bounded exponential backoff + jitter.
-  const nextAttemptAt =
-    canRetry && !usePlpAutoBuildWorkMemory()
-      ? computePlpProviderRetryNextAttemptAt(input.attempts)
-      : null;
+  const retryAfterMatch = safeReason.match(/PROVIDER_RETRY_AFTER=(\d+)/)?.[1];
+  const retryAfterSeconds = retryAfterMatch
+    ? Number.parseInt(retryAfterMatch, 10)
+    : null;
+  // Memory/test drain is synchronous — skip wall-clock backoff there unless
+  // tests opt in via HU_PLP_RETRY_BACKOFF_IN_MEMORY=1.
+  const applyBackoff =
+    canRetry &&
+    (!usePlpAutoBuildWorkMemory() ||
+      process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY === "1");
+  const nextAttemptAt = applyBackoff
+    ? computePlpProviderRetryNextAttemptAt(input.attempts, Date.now(), {
+        retryAfterSeconds,
+      })
+    : null;
 
   const failurePatch = {
     lastError: safeReason,

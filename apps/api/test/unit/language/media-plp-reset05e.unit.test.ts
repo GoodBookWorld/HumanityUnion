@@ -617,8 +617,8 @@ describe("RESET 05E — provider response contract", () => {
     const t0 = Date.parse("2026-01-01T00:00:00.000Z");
     const at1 = Date.parse(computePlpProviderRetryNextAttemptAt(1, t0));
     const at5 = Date.parse(computePlpProviderRetryNextAttemptAt(5, t0));
-    assert.ok(at1 - t0 >= 2_000);
-    assert.ok(at1 - t0 <= 2_000 * 1.25);
+    assert.ok(at1 - t0 >= 5_000);
+    assert.ok(at1 - t0 <= 5_000 * 1.25);
     assert.ok(at5 - t0 <= 60_000 * 1.25);
   });
 
