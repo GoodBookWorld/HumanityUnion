@@ -60,11 +60,21 @@ export function KnowledgeSidebar({
               <li>
                 <Link
                   href={CIVIC_MEDIA_ROUTE}
-                  className="knowledge-center__nav-link"
+                  className="knowledge-center__nav-heading-link"
                   aria-current={pathname === CIVIC_MEDIA_ROUTE ? "page" : undefined}
                   onClick={onNavigate}
                 >
                   {tNav("civicMediaCenter")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/volunteer"
+                  className="knowledge-center__nav-heading-link"
+                  aria-current={pathname === "/volunteer" ? "page" : undefined}
+                  onClick={onNavigate}
+                >
+                  {tNav("volunteering")}
                 </Link>
               </li>
             </ul>

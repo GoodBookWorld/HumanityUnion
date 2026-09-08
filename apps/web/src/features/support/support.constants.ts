@@ -22,6 +22,7 @@ export const SUPPORT_ILLUSTRATIONS = {
 /** Fallback defaults when Admin-configured Support links are empty / unavailable. */
 export const SUPPORT_LINK_FALLBACKS = {
   donation: SUPPORT_DONATE_URL,
-  volunteer: null as string | null,
+  /** HU-owned Volunteer page when Admin has not configured an override URL. */
+  volunteer: "/volunteer",
   regional_program: SUPPORT_REGIONAL_PROGRAM_URL,
 } as const;

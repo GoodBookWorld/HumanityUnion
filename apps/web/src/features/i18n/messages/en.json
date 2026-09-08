@@ -45,7 +45,8 @@
     "footerMission": "A global movement of citizens working together for a more just, peaceful and sustainable world.",
     "footerPlatformHeading": "Platform",
     "footerLegalHeading": "Legal and transparency",
-    "footerCopyright": "© {year} {siteName}. All rights reserved."
+    "footerCopyright": "© {year} {siteName}. All rights reserved.",
+    "siteMapVolunteering": "Volunteering"
   },
   "auth": {
     "logIn": "Log in",
@@ -3506,7 +3507,8 @@
       "title": "Knowledge Center",
       "ariaLabel": "Knowledge Center navigation",
       "subsections": "Subsections",
-      "civicMediaCenter": "Civic Media Center"
+      "civicMediaCenter": "Civic Media Center",
+      "volunteering": "Volunteering"
     },
     "categories": {
       "getting-started": {
@@ -4553,7 +4555,7 @@
       "body": "Contribute your time, knowledge, professional skills, research, translation, communication, organization, or community experience.",
       "cta": "Volunteer with {siteName}",
       "disabledLabel": "Volunteer with {siteName} (coming soon)",
-      "noteAvailable": "Volunteer opportunities are available through the link above.",
+      "noteAvailable": "Learn how to volunteer with {siteName} on the Volunteer page.",
       "noteSoon": "Volunteer applications will open here soon."
     },
     "regional": {
@@ -5324,5 +5326,89 @@
     "mottoSloganLabel": " // SLOGAN: ",
     "mottoSloganValue": "NEUTRALIZE IGNORANCE. DISARM AGGRESSION.",
     "cta": "[ Join The Vanguard ]"
+  },
+  "volunteerPublic": {
+    "eyebrow": "People create change",
+    "title": "Volunteer",
+    "lead": "Your actions today help build a kinder, safer and fairer tomorrow.",
+    "heroImageAlt": "People working together for a better shared future",
+    "values": {
+      "people": {
+        "title": "People",
+        "text": "Support Each Other"
+      },
+      "ideas": {
+        "title": "Ideas",
+        "text": "Create Solutions"
+      },
+      "together": {
+        "title": "Together",
+        "text": "We Build a Better World"
+      }
+    },
+    "intro": {
+      "number": "1",
+      "heading": "Introduction",
+      "subheading": "A personal contribution to our shared future",
+      "p1": "The development of the <platform>Humanity Union platform</platform> is a personal contribution each of us can make to our own future and to the future of generations to come.",
+      "p2": "If our ancestors had access to the technological tools we have today — the Internet, computers, smartphones, and educational and informational web platforms — our societies might have developed a higher level of social awareness and responsibility much earlier.",
+      "p3": "Greater social literacy helps people make more thoughtful and rational decisions. Such decisions create the foundation for social justice, well-being, and security.",
+      "p4": "We are a unique generation. We have lived through the transition from a largely traditional world into an age that gives ordinary people powerful technological tools for communication, education, cooperation, and collective action.",
+      "p5": "With these opportunities comes a choice. We can continue accumulating the consequences of old patterns of ignorance, fear, greed, and aggression, or we can develop new principles based on knowledge, responsibility, cooperation, and respect for human dignity.",
+      "p6": "Humanity has enough knowledge, experience, and potential to progress without aggression and tragedy.",
+      "p7": "Today, almost anyone can take a device in their hands and influence the world around them. Every responsible action can become another small part of a strong foundation for humanity — a foundation built on <emphasis>love, responsibility, and security</emphasis>.",
+      "honeyEarthAlt": "Illustration of Earth with a honeycomb pattern, suggesting shared care for our common home"
+    },
+    "meaning": {
+      "number": "2",
+      "heading": "What It Means to Be a Volunteer",
+      "subheading": "More than a title — a sign of responsibility",
+      "p1": "A <emphasis>Volunteer</emphasis> is not a title. It is a sign of responsibility — one that society often underestimates.",
+      "p2": "Much of our world is supported and improved by volunteers, enthusiasts, and people who decide to act without waiting for someone else to act first. But enthusiasm alone does not always lead to positive results. Education, values, upbringing, and understanding influence whether our energy serves progress and the common good or becomes driven by personal ambition, greed, prejudice, or manipulation.",
+      "p3": "We do not always notice when we ourselves begin to tolerate ignorance or aggression. Sometimes we spend more effort adapting to harmful circumstances than trying to change them. In doing so, we may unintentionally make life more difficult for ourselves and for others.",
+      "p4": "The <platform>Humanity Union platform</platform> is being developed as a safe tool for everyone — whether you live in a democratic society with functioning institutions or under an authoritarian and aggressive regime where people may be intimidated, silenced, or forced into rigid social hierarchies.",
+      "p5": "Our central task is simple: <emphasis>to unite around universal human values while respecting national cultures, traditions, and identities that are consistent with fundamental human rights and freedoms.</emphasis>",
+      "p6": "You do not need a special position, profession, or status to participate.",
+      "p7": "Come to the platform. Explore and support Initiatives created by other people. Participate in discussions, polls, and elections. Create your own Initiative when you see a problem that deserves attention. Help others improve their ideas. Whenever you are able, take part in turning worthwhile Initiatives into real action.",
+      "p8": "Every responsible action matters. It contributes to the quality of life and to the development of a more humane society. Inaction also has consequences. When someone feels powerless, unheard, or unable to act, we should not treat that with indifference — it matters to the whole community.",
+      "p9": "Do not hesitate to ask a question, share an idea, or ask others for help. Where the platform provides appropriate privacy and safety options, you can protect your identity and participate without unnecessarily exposing yourself to risk."
+    },
+    "actions": {
+      "support": {
+        "title": "Support",
+        "text": "other people's initiatives"
+      },
+      "participate": {
+        "title": "Participate",
+        "text": "in discussions and polls"
+      },
+      "create": {
+        "title": "Create",
+        "text": "your own Initiative"
+      },
+      "help": {
+        "title": "Help turn ideas",
+        "text": "into real action"
+      },
+      "safely": {
+        "title": "Participate safely",
+        "text": "with privacy options"
+      }
+    },
+    "takePart": {
+      "number": "3",
+      "heading": "Take Part",
+      "subheading": "Use the tools for good",
+      "p1": "You do not have to change the whole world by yourself.",
+      "p2": "Bring what you can: your knowledge, experience, time, ideas, questions, professional skills, or simply your willingness to support a good Initiative.",
+      "p3": "Take the tools of the <platform>Humanity Union platform</platform> and use them for good.",
+      "p4": "Support an Initiative.",
+      "p5": "Help another person.",
+      "p6": "Share knowledge.",
+      "p7": "Participate in a decision.",
+      "p8": "Create something that others can continue.",
+      "closing": "Every responsible action is a contribution to our shared future."
+    },
+    "createInitiativeCta": "Create Initiative"
   }
 }

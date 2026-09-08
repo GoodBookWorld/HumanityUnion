@@ -64,6 +64,21 @@
   text-decoration: underline;
 }
 
+.knowledge-center__nav-heading-link {
+  display: inline-block;
+  color: var(--hu-color-text);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  margin: 0 0 var(--hu-space-1);
+}
+
+.knowledge-center__nav-heading-link:hover,
+.knowledge-center__nav-heading-link[aria-current="page"] {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
 .knowledge-center__main {
   display: grid;
   gap: var(--hu-space-5);

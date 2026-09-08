@@ -59,6 +59,7 @@ export async function PublicSiteMapPage() {
       entries: [
         { href: "/knowledge", label: tNav("siteMapKnowledgeCenter") },
         { href: "/knowledge/media", label: tNav("siteMapKnowledgeMedia") },
+        { href: "/volunteer", label: tNav("siteMapVolunteering") },
         { href: "/civic-activity", label: tNav("siteMapCivicActivity") },
       ],
     },

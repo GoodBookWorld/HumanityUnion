@@ -52,9 +52,12 @@ describe("Support Page UX Pack 01", () => {
     assert.match(content, /t\("donate\.cta"\)/);
   });
 
-  it("Volunteer gracefully handles empty optional link without a volunteer subsystem", () => {
+  it("Volunteer CTA defaults to /volunteer while preserving Admin override architecture", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
+    const constants = read("features/support/support.constants.ts");
     assert.match(content, /t\("volunteer\.cta",\s*siteName\)/);
+    assert.match(content, /href=\{links\.volunteerUrl\}/);
+    assert.match(constants, /volunteer:\s*"\/volunteer"/);
     assert.match(content, /disabledLabel|disabled/);
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });

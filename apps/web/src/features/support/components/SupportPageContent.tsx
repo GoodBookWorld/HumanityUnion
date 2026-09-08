@@ -177,7 +177,9 @@ export function SupportPageContent() {
               </SupportAction>
             </div>
             <p className="support-page__note">
-              {links.volunteerUrl ? t("volunteer.noteAvailable") : t("volunteer.noteSoon")}
+              {links.volunteerUrl
+                ? t("volunteer.noteAvailable", siteName)
+                : t("volunteer.noteSoon")}
             </p>
           </Card>
 
