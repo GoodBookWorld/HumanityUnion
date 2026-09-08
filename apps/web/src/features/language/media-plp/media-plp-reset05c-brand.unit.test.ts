@@ -167,14 +167,14 @@ describe("RESET 05C — Media FAQ Brand Localization", () => {
     const prompt = readRepo(
       "apps/api/src/modules/language/media-plp-materializer/thin-gemini-prompt.ts",
     );
-    assert.match(prompt, /__HU_BRAND_SITE_NAME__/);
-    assert.match(prompt, /Preserve structural Brand transport placeholders/);
+    assert.match(prompt, /Organization Brand identity is owned outside this hop/);
+    assert.doesNotMatch(prompt, /__HU_BRAND_SITE_NAME__/);
 
     const boundary = readRepo(
       "apps/api/src/modules/language/media-plp-materializer/provider-boundary.ts",
     );
-    assert.match(boundary, /protectBrandTokensForMachineTranslation/);
-    assert.match(boundary, /restoreBrandTokensAfterMachineTranslation/);
+    assert.match(boundary, /buildProviderOwnedMachinePayload/);
+    assert.match(boundary, /reassembleBrandSlotPlans/);
   });
 
   it("no global Humanity Union string replacement in the Brand FAQ solution", () => {

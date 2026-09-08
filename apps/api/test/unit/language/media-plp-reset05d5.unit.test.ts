@@ -55,16 +55,14 @@ describe("RESET 05D.5 — provider boundary forensics", () => {
     assert.ok(sanitized.includes("faq[3].question"));
   });
 
-  it("token removed by provider → MISSING_AFTER_PROVIDER + persisted path", async () => {
+  it("token omitted from segment response → MISSING_PATH (Brand never in provider)", async () => {
     const source = `{siteName} curates sources.`;
-    const protectedText = protectBrandTokensForMachineTranslation(source);
-    assert.match(protectedText, new RegExp(BRAND_SITE_NAME_MACHINE_SENTINEL));
-
     const result = await callMediaPlpMaterializerProviderOnce({
       provider: new FakeLocalMediaPlpTransport({
         responseText: () =>
           JSON.stringify({
-            "faq[0].answer": "[uk] Союз Людяності curates sources.",
+            // Missing machine segments for the Brand-bearing path.
+            other: "[uk] x",
           }),
       }),
       locale: "uk",
@@ -75,23 +73,11 @@ describe("RESET 05D.5 — provider boundary forensics", () => {
     });
     assert.equal(result.ok, false);
     if (result.ok) return;
-    assert.equal(result.reason, "BRAND_TOKEN_PRESERVATION_FAILED");
-    const brand = result.forensics?.BRAND_TOKEN_PATH_STATES[0];
-    assert.ok(brand);
-    assert.equal(brand!.TOKEN_STATE, "MISSING_AFTER_PROVIDER");
-    assert.equal(brand!.PROVIDER_PATH_PRESENT, true);
-    assert.equal(brand!.PROTECTED_TOKEN_COUNT_BEFORE_SERIALIZE, 1);
-    assert.equal(brand!.TOKEN_COUNT_AFTER_PROVIDER_PARSE, 0);
-
-    const failure = mapProviderBoundaryReasonToFailure({
-      reason: result.reason,
-      message: result.message,
-    });
-    assert.match(failure.safeReason, /BRAND_TOKEN_PATHS=faq\[0\]\.answer:MISSING_AFTER_PROVIDER/);
-    assert.equal(failure.retryable, false);
+    assert.equal(result.reason, "PARTIAL");
+    assert.equal(result.forensics?.PROVIDER_PARTIAL_SUBREASON, "MISSING_PATH");
   });
 
-  it("path omitted by provider → MISSING_AFTER_PARSE / MISSING_PATH", async () => {
+  it("path omitted by provider → MISSING_PATH", async () => {
     const source = `{siteName} recommends organizations.`;
     const result = await callMediaPlpMaterializerProviderOnce({
       provider: new FakeLocalMediaPlpTransport({
@@ -108,9 +94,6 @@ describe("RESET 05D.5 — provider boundary forensics", () => {
     assert.equal(result.reason, "PARTIAL");
     assert.equal(result.forensics?.PROVIDER_PARTIAL_SUBREASON, "MISSING_PATH");
     assert.deepEqual(result.forensics?.MISSING_MACHINE_PATHS, ["faq[0].answer"]);
-    const brand = result.forensics?.BRAND_TOKEN_PATH_STATES[0];
-    assert.equal(brand?.TOKEN_STATE, "MISSING_AFTER_PARSE");
-    assert.equal(brand?.PROVIDER_PATH_PRESENT, false);
   });
 
   it("token survives provider but flatten loses nested path → MISSING_AFTER_FLATTEN", () => {

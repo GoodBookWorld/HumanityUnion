@@ -8,6 +8,7 @@ import {
   BRAND_SITE_NAME_MACHINE_SENTINEL,
   BRAND_SITE_NAME_MACHINE_SENTINEL_LEGACY,
   countBrandSiteNameTokens,
+  stripBrandSlotsForMachineCompare,
   templateHasBrandSiteNameToken,
 } from "@hu/types";
 
@@ -178,9 +179,9 @@ export function classifyNewsPathForensics(input: {
   const present = typeof input.returnedValue === "string";
   const nonEmpty = present && input.returnedValue!.trim().length > 0;
   const value = nonEmpty ? input.returnedValue!.trim() : "";
-  const source = input.canonicalSource.trim().replace(/\s+/g, " ");
-  const norm = value.replace(/\s+/g, " ");
-  const identical = nonEmpty && norm === source;
+  const source = stripBrandSlotsForMachineCompare(input.canonicalSource);
+  const norm = stripBrandSlotsForMachineCompare(value);
+  const identical = nonEmpty && source.length > 0 && norm === source;
   const targetAccepted =
     input.locale === "en" ? nonEmpty : nonEmpty && !identical;
   const integrityAccepted = nonEmpty && (input.locale === "en" || !identical);

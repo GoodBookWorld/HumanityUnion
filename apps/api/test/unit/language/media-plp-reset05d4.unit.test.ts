@@ -6,14 +6,14 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
 import {
-  BRAND_SITE_NAME_MACHINE_SENTINEL,
   BRAND_SITE_NAME_MACHINE_SENTINEL_LEGACY,
   BRAND_SITE_NAME_TOKEN,
   MEDIA_PLP_ENTITY_TYPE,
   MEDIA_PLP_EDITORIAL_ENTITY_ID,
   mediaPlpEditorialEntityId,
   mediaPlpPublicNewsEntityId,
-  protectBrandTokensForMachineTranslation,
+  assertProviderPayloadHasNoBrandArtifacts,
+  buildProviderOwnedMachinePayload,
   restoreBrandTokensAfterMachineTranslation,
   classifyBrandTokenPathTransport,
 } from "@hu/types";
@@ -110,13 +110,13 @@ afterEach(() => {
 });
 
 describe("RESET 05D.4 — provider boundary closure", () => {
-  it("1–4: ASCII Brand sentinel survives protect→translate→restore; presentation keeps {siteName}", async () => {
+  it("1–4: Brand-slot composition survives provider hop; presentation keeps {siteName}", async () => {
     const source =
       "{siteName} curates sources that meet published selection principles.";
-    const protectedText = protectBrandTokensForMachineTranslation(source);
-    assert.equal(protectedText.includes(BRAND_SITE_NAME_TOKEN), false);
-    assert.match(protectedText, new RegExp(BRAND_SITE_NAME_MACHINE_SENTINEL));
-    assert.doesNotMatch(protectedText, /⟦/);
+    const { payload } = buildProviderOwnedMachinePayload({
+      "faq[0].answer": source,
+    });
+    assert.equal(assertProviderPayloadHasNoBrandArtifacts(payload).length, 0);
 
     resetMediaPlpMaterializerCountersForTests();
     const provider = new FakeLocalMediaPlpTransport({});

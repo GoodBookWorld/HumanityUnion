@@ -1,16 +1,20 @@
 /**
- * Reset 03B.2 / RESET 05D.5 — thin provider execution boundary (execute only).
+ * Reset 03B.2 / RESET 05D.5 / 05D.6 — thin provider execution boundary (execute only).
  * Never silently falls back to the heavy Gemini provider module / registry barrel.
  *
- * RESET 05D.5 — stage-by-stage Brand/News forensics persisted as safe metadata.
- * Do not infer first-loss from final failure alone.
+ * RESET 05D.6 — Brand slots extracted before provider; Gemini never receives
+ * `{siteName}` or transport sentinels. Reassembly restores canonical Brand slots.
  */
 
 import type { LanguageCode } from "@hu/types";
 import {
-  protectBrandTokensForMachineTranslation,
-  restoreBrandTokensAfterMachineTranslation,
+  assertProviderPayloadHasNoBrandArtifacts,
+  buildProviderOwnedMachinePayload,
+  countBrandSiteNameTokens,
+  reassembleBrandSlotPlans,
+  stripBrandSlotsForMachineCompare,
   templateHasBrandSiteNameToken,
+  textContainsBrandTransportArtifact,
 } from "@hu/types";
 
 import type { TranslationProvider } from "../translation-provider.js";
@@ -25,13 +29,11 @@ import {
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
 } from "./thin-gemini-transport.js";
 import {
-  classifyBrandPathForensics,
   classifyNewsPathForensics,
   classifyProviderResponseShape,
   deriveProviderPartialSubreason,
   emptyForensics,
   formatProviderForensicsSafe,
-  readParsedStringAtPath,
   type BrandPathForensicReport,
   type NewsPathForensicState,
   type ProviderBoundaryForensics,
@@ -179,27 +181,37 @@ export function buildProviderMachinePathDiagnostics(input: {
     }),
   );
 
-  const brandStates =
-    input.brandStates ??
-    expected
-      .map((path) => {
-        const source = input.autoValues[path] ?? "";
-        if (!templateHasBrandSiteNameToken(source)) {
-          return null;
-        }
-        const protectedText = protectBrandTokensForMachineTranslation(source);
-        const restored = input.translated[path] ?? "";
-        return classifyBrandPathForensics({
-          path,
-          canonicalSource: source,
-          protectedBeforeSerialize: protectedText,
-          rawAfterParse: restored ? protectBrandTokensForMachineTranslation(restored) : null,
-          afterFlatten: restored ? protectBrandTokensForMachineTranslation(restored) : null,
-          afterRestore: restored || null,
-          pathPresentInProviderObject: path in input.translated,
+  const brandStates: BrandPathForensicReport[] =
+    input.brandStates != null
+      ? [...input.brandStates]
+      : expected.flatMap((path) => {
+          const source = input.autoValues[path] ?? "";
+          if (!templateHasBrandSiteNameToken(source)) {
+            return [];
+          }
+          const restored = input.translated[path] ?? "";
+          const expectedCount = countBrandSiteNameTokens(source);
+          const finalCount = countBrandSiteNameTokens(restored);
+          const state: BrandPathForensicReport["TOKEN_STATE"] =
+            finalCount === expectedCount
+              ? "PRESERVED"
+              : finalCount === 0
+                ? "MISSING_AFTER_PROVIDER"
+                : "ALTERED";
+          return [
+            {
+              SEMANTIC_PATH: path,
+              EXPECTED_TOKEN_COUNT: expectedCount,
+              PROTECTED_TOKEN_COUNT_BEFORE_SERIALIZE: 0,
+              TOKEN_COUNT_AFTER_PROVIDER_PARSE: 0,
+              TOKEN_COUNT_AFTER_FLATTEN: 0,
+              TOKEN_COUNT_AFTER_RESTORE: finalCount,
+              FINAL_CANONICAL_TOKEN_COUNT: finalCount,
+              TOKEN_STATE: state,
+              PROVIDER_PATH_PRESENT: path in input.translated,
+            },
+          ];
         });
-      })
-      .filter((r): r is BrandPathForensicReport => r != null);
 
   const subreason = deriveProviderPartialSubreason({
     pathStates: newsStates,
@@ -328,18 +340,25 @@ export function validateMediaPlpProviderLocalizationValues(input: {
         continue;
       }
       anyProsePath = true;
-      const source = input.autoValues[key]!;
-      const translated = input.translated[key]!;
-      const normSource = source.trim().replace(/\s+/g, " ");
-      const normTranslated = translated.trim().replace(/\s+/g, " ");
-      if (normTranslated === normSource) {
+      const source = stripBrandSlotsForMachineCompare(input.autoValues[key]!);
+      const translated = stripBrandSlotsForMachineCompare(
+        input.translated[key]!,
+      );
+      // Brand-slot-only paths (no machine prose) are not integrity subjects.
+      if (!source) {
+        continue;
+      }
+      if (translated === source) {
         identical.push(key);
       }
     }
-    const proseKeys = Object.keys(input.autoValues).filter(
-      (k) => k !== "id" && !k.endsWith(".id"),
-    );
-    if (anyProsePath && identical.length === proseKeys.length) {
+    const proseKeys = Object.keys(input.autoValues).filter((k) => {
+      if (k === "id" || k.endsWith(".id")) {
+        return false;
+      }
+      return stripBrandSlotsForMachineCompare(input.autoValues[k]!).length > 0;
+    });
+    if (anyProsePath && proseKeys.length > 0 && identical.length === proseKeys.length) {
       const forensics: ProviderBoundaryForensics = {
         ...pathDiagnostics,
         PROVIDER_PARTIAL_SUBREASON: "WRONG_TARGET_LANGUAGE",
@@ -466,12 +485,23 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     });
   }
 
-  const protectedAutoValues: Record<string, string> = {};
-  for (const [key, value] of Object.entries(input.autoValues)) {
-    protectedAutoValues[key] = protectBrandTokensForMachineTranslation(value);
+  // RESET 05D.6 — extract Brand slots; provider receives MACHINE_TEXT only.
+  const { payload: providerOwnedPayload, plans: brandSlotPlans } =
+    buildProviderOwnedMachinePayload(input.autoValues);
+  const brandPayloadViolators =
+    assertProviderPayloadHasNoBrandArtifacts(providerOwnedPayload);
+  if (brandPayloadViolators.length > 0) {
+    return failResult({
+      reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+      bytes: 0,
+      transport,
+      forensics: emptyForensics({ expectedPaths }),
+      messagePrefix:
+        "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_PAYLOAD_CONTAINS_BRAND",
+    });
   }
 
-  const payload = JSON.stringify(protectedAutoValues);
+  const payload = JSON.stringify(providerOwnedPayload);
   const bytes = Buffer.byteLength(payload, "utf8");
   const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
   if (bytes > maxBytes) {
@@ -537,56 +567,99 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       });
     }
 
-    const flattenedBeforeRestore: Record<string, string> = {};
-    flattenStructuredLocalizationValues(parsed, "", flattenedBeforeRestore);
+    const flattenedSegments: Record<string, string> = {};
+    flattenStructuredLocalizationValues(parsed, "", flattenedSegments);
 
-    const restored: Record<string, string> = {};
-    for (const [key, value] of Object.entries(flattenedBeforeRestore)) {
-      restored[key] = restoreBrandTokensAfterMachineTranslation(value);
+    // Defensive: provider must not inject Brand tokens/sentinels into segments.
+    const injectedBrandKeys = Object.entries(flattenedSegments)
+      .filter(([, value]) => textContainsBrandTransportArtifact(value))
+      .map(([key]) => key);
+    if (injectedBrandKeys.length > 0) {
+      const forensics: ProviderBoundaryForensics = {
+        ...emptyForensics({ expectedPaths, shape }),
+        PROVIDER_PARTIAL_SUBREASON: "OTHER_STRUCTURAL_FAILURE",
+        RETURNED_MACHINE_PATHS: Object.keys(flattenedSegments).sort(),
+      };
+      return failResult({
+        reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+        bytes,
+        transport,
+        forensics,
+        messagePrefix:
+          "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_INJECTED_BRAND",
+      });
     }
 
-    const aligned: Record<string, string> = {};
-    for (const key of expectedPaths) {
-      if (Object.prototype.hasOwnProperty.call(restored, key)) {
-        aligned[key] = restored[key]!;
-      }
+    const reassembled = reassembleBrandSlotPlans({
+      plans: brandSlotPlans,
+      translatedSegments: flattenedSegments,
+    });
+    if (reassembled.missingSegmentKeys.length > 0) {
+      const missingSemantic = expectedPaths.filter(
+        (p) => !(p in reassembled.values),
+      );
+      const newsStates = expectedPaths.map((path) =>
+        classifyNewsPathForensics({
+          path,
+          canonicalSource: input.autoValues[path] ?? "",
+          returnedValue:
+            path in reassembled.values ? reassembled.values[path] : undefined,
+          locale: input.locale,
+          mappedToExpectedPath: path in reassembled.values,
+        }),
+      );
+      const forensics: ProviderBoundaryForensics = {
+        PROVIDER_RESPONSE_SHAPE: shape,
+        BRAND_TOKEN_PATH_STATES: [],
+        NEWS_PATH_STATES: newsStates,
+        PROVIDER_PARTIAL_SUBREASON: "MISSING_PATH",
+        EXPECTED_MACHINE_PATHS: expectedPaths,
+        RETURNED_MACHINE_PATHS: Object.keys(reassembled.values).sort(),
+        MISSING_MACHINE_PATHS: missingSemantic,
+        UNEXPECTED_MACHINE_PATHS: [],
+      };
+      return failResult({
+        reason: "PARTIAL",
+        bytes,
+        transport,
+        forensics,
+        messagePrefix: "PARTIAL:MISSING_PATH",
+      });
     }
 
+    const aligned: Record<string, string> = { ...reassembled.values };
+    const presentKeys = Object.keys(aligned);
+
+    // Brand forensics after structural reassembly (slots never crossed provider).
     const brandStates: BrandPathForensicReport[] = [];
     for (const path of expectedPaths) {
       const source = input.autoValues[path] ?? "";
       if (!templateHasBrandSiteNameToken(source)) {
         continue;
       }
-      const protectedText = protectedAutoValues[path] ?? "";
-      const rawAtPath = readParsedStringAtPath(parsed, path);
-      const flatVal = Object.prototype.hasOwnProperty.call(
-        flattenedBeforeRestore,
-        path,
-      )
-        ? flattenedBeforeRestore[path]!
-        : null;
-      // Nested provider objects may omit flat keys; flatten recovers the path.
-      const parseStageValue = rawAtPath ?? flatVal;
-      const restoredVal = Object.prototype.hasOwnProperty.call(restored, path)
-        ? restored[path]!
-        : null;
-      const pathPresent = parseStageValue != null;
-      const report = classifyBrandPathForensics({
-        path,
-        canonicalSource: source,
-        protectedBeforeSerialize: protectedText,
-        rawAfterParse: parseStageValue,
-        afterFlatten: flatVal,
-        afterRestore: restoredVal,
-        pathPresentInProviderObject: pathPresent,
+      const restoredVal = aligned[path] ?? null;
+      const expectedCount = countBrandSiteNameTokens(source);
+      const finalCount = restoredVal
+        ? countBrandSiteNameTokens(restoredVal)
+        : 0;
+      brandStates.push({
+        SEMANTIC_PATH: path,
+        EXPECTED_TOKEN_COUNT: expectedCount,
+        PROTECTED_TOKEN_COUNT_BEFORE_SERIALIZE: 0,
+        TOKEN_COUNT_AFTER_PROVIDER_PARSE: 0,
+        TOKEN_COUNT_AFTER_FLATTEN: 0,
+        TOKEN_COUNT_AFTER_RESTORE: finalCount,
+        FINAL_CANONICAL_TOKEN_COUNT: finalCount,
+        TOKEN_STATE:
+          restoredVal != null && finalCount === expectedCount
+            ? "PRESERVED"
+            : restoredVal == null
+              ? "MISSING_AFTER_PARSE"
+              : "ALTERED",
+        PROVIDER_PATH_PRESENT: restoredVal != null,
       });
-      if (report) {
-        brandStates.push(report);
-      }
     }
 
-    const presentKeys = Object.keys(aligned);
     const newsStates = expectedPaths.map((path) =>
       classifyNewsPathForensics({
         path,
@@ -596,7 +669,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           : undefined,
         locale: input.locale,
         mappedToExpectedPath: Object.prototype.hasOwnProperty.call(
-          flattenedBeforeRestore,
+          aligned,
           path,
         ),
       }),
@@ -604,9 +677,13 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 
     const missing = expectedPaths.filter((p) => !presentKeys.includes(p));
     const returnedNonEmpty = presentKeys.filter((k) => aligned[k]!.trim());
-    const unexpected = Object.keys(flattenedBeforeRestore).filter(
-      (p) => !expectedPaths.includes(p),
-    );
+    const unexpected = Object.keys(flattenedSegments).filter((p) => {
+      // Segment keys (#mN) and expected semantic paths are expected.
+      if (expectedPaths.includes(p)) {
+        return false;
+      }
+      return !brandSlotPlans.some((plan) => plan.providerKeys.includes(p));
+    });
 
     const forensicsBase: ProviderBoundaryForensics = {
       PROVIDER_RESPONSE_SHAPE: shape,

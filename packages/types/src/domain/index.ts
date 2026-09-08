@@ -149,6 +149,8 @@ export type {
   BrandTokenValues,
   BrandTokenTransportState,
   BrandTokenPathTransportReport,
+  BrandSlotPlanPart,
+  BrandSlotExtraction,
 } from "./brand-token-composition.js";
 export {
   BRAND_SITE_NAME_MACHINE_SENTINEL,
@@ -163,6 +165,14 @@ export {
   templateHasBrandSiteNameToken,
   withPreservedBrandTokens,
   classifyFaqMachineProseLocalization,
+  machineSegmentProviderKey,
+  isMachineSegmentProviderKey,
+  extractBrandSlotsForProvider,
+  buildProviderOwnedMachinePayload,
+  reassembleBrandSlotPlans,
+  textContainsBrandTransportArtifact,
+  assertProviderPayloadHasNoBrandArtifacts,
+  stripBrandSlotsForMachineCompare,
 } from "./brand-token-composition.js";
 export type {
   LegalDocumentType,

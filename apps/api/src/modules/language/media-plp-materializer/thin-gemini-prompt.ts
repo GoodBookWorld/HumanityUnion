@@ -42,7 +42,7 @@ export function buildThinGeminiMediaPlpSystemInstruction(input: {
     "Translate every human-readable translatable string value into the target language.",
     "Do not summarize, omit, invent, rewrite for style, or add information.",
     "Preserve paragraph structure, lists, links, URLs, numeric/statistical values, IDs, enum tokens, routes, and JSON keys.",
-    "Preserve structural Brand transport placeholders such as `__HU_BRAND_SITE_NAME__` exactly — do not translate, remove, rename, or localize the placeholder; Brand Localization owns organization identity at compose/render time.",
+    "Organization Brand identity is owned outside this hop — do not invent, insert, or localize organization display names; translate only the prose string values provided.",
     "Civic content titles and human-readable headings (including JSON fields such as `title`, `subject`, `question`, `overviewTitle`, and `initiativeFlowTitle`) are translatable content — translate them into the target language normally.",
     "For cross-language structured requests, designated civic title/heading field values must not remain identical to the source.",
     "Do not preserve a civic artifact title merely because it resembles a proper name, campaign name, alliance name, or capitalized phrase.",
