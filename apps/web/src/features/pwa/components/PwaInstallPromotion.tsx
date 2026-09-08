@@ -102,7 +102,7 @@ export function PwaInstallPromotion() {
   /**
    * Pack 23D.1 — manual guide must not depend on beforeinstallprompt.
    * Visible when not installed / not dismissed, except iOS where the primary
-   * "Add to Home Screen" CTA already opens the same guidance modal.
+   * "Add to Home Screen" CTA opens the compact Safari A2HS modal instead.
    */
   const showInstallationGuide =
     !runningStandalone && !dismissed && uxState !== "ios_add_to_home";

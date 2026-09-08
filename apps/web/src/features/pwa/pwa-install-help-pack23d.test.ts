@@ -14,7 +14,7 @@ function read(relativePath: string): string {
 }
 
 describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
-  it("1 — modal title updated", () => {
+  it("1 — combined guide title for non-iOS kinds", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /install\.guideTitle/);
     assert.match(guidance, /install\.guideSubtitle/);
@@ -26,10 +26,30 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     assert.match(guidance, /titleId\}-android/);
   });
 
-  it("3 — modal supports iOS/iPadOS instructions", () => {
+  it("3 — combined guide retains iOS/iPadOS section", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /install\.iosTitle/);
     assert.match(guidance, /titleId\}-ios/);
+  });
+
+  it("3b — iOS kind uses compact A2HS modal only", () => {
+    const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
+    const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
+    assert.match(promo, /openGuidance\("ios"\)/);
+    assert.match(promo, /install\.addToHomeScreen/);
+    assert.match(guidance, /iosFocused = kind === "ios"/);
+    assert.match(guidance, /hu-pwa-ios-help__dialog--compact/);
+    assert.match(guidance, /install\.iosA2hsTitle/);
+    assert.match(guidance, /install\.iosA2hsStep1/);
+    assert.match(guidance, /install\.iosA2hsStep2/);
+    assert.match(guidance, /install\.iosA2hsStep3/);
+    assert.match(guidance, /install\.iosA2hsStandaloneNote/);
+    assert.match(guidance, /hu-pwa-ios-help__a2hs-steps/);
+    assert.match(guidance, /data-guidance-kind=\{kind\}/);
+    assert.match(
+      guidance,
+      /iosFocused \? \([\s\S]*iosA2hsStandaloneNote[\s\S]*\) : \(/,
+    );
   });
 
   it("4 — Android Chrome steps present", () => {
@@ -43,13 +63,16 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
 
   it("5 — iOS Safari Share → Add to Home Screen steps present", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
+    assert.match(guidance, /install\.iosA2hsStep1/);
+    assert.match(guidance, /install\.iosA2hsStep2/);
+    assert.match(guidance, /install\.iosA2hsStep3/);
     assert.match(guidance, /install\.iosStep1/);
     assert.match(guidance, /install\.iosStep2/);
     assert.match(guidance, /install\.iosStep3/);
     assert.match(guidance, /install\.iosHintSafari/);
   });
 
-  it("6 — notification/badge limitation note present", () => {
+  it("6 — notification/badge limitation note present on combined guide", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /install\.badgeNote/);
     assert.match(guidance, /install\.iosHintNotifications/);
@@ -80,10 +103,14 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     assert.match(register, /beforeinstallprompt/);
   });
 
-  it("10 — fallback manual instructions work", () => {
+  it("10 — fallback manual instructions work; iOS hides duplicate guide CTA", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /install\.installationGuide/);
     assert.match(promo, /openGuidance\("browser"\)|openGuidance\("android"\)|openGuidance\("ios"\)/);
+    assert.match(
+      promo,
+      /showInstallationGuide[\s\S]*=[\s\S]*!runningStandalone[\s\S]*!dismissed[\s\S]*ios_add_to_home/s,
+    );
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /hu-pwa-ios-help__platforms/);
   });
@@ -91,6 +118,7 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
   it("11 — modal size/scroll contract", () => {
     const css = read("features/pwa/pwa.css");
     assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*width:\s*min\(56rem/s);
+    assert.match(css, /\.hu-pwa-ios-help__dialog--compact\s*\{[^}]*width:\s*min\(26rem/s);
     assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*max-height:\s*min\(calc\(100dvh/s);
     assert.match(css, /\.hu-pwa-ios-help__body\s*\{[^}]*overflow-y:\s*auto/s);
   });
@@ -114,16 +142,19 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     assert.match(guidance, /aria-labelledby=\{titleId\}/);
     assert.match(guidance, /Escape/);
     assert.match(guidance, /trapTabKey/);
-    assert.match(guidance, /<ol>/);
+    assert.match(guidance, /<ol/);
     assert.match(guidance, /install\.closeGuideAria/);
   });
 
-  it("14 — no manifest/SW/Push changes", () => {
+  it("14 — no manifest/SW/Push changes; no navigator.share A2HS fake", () => {
     const manifest = read("app/manifest.ts");
     assert.match(manifest, /display:\s*"standalone"/);
     assert.doesNotMatch(manifest, /PushManager|VAPID/);
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
+    const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.doesNotMatch(guidance, /service worker|manifest\.webmanifest/i);
+    assert.doesNotMatch(guidance, /navigator\.share/);
+    assert.doesNotMatch(promo, /navigator\.share/);
   });
 
   it("15 — existing PWA install regressions remain green", () => {

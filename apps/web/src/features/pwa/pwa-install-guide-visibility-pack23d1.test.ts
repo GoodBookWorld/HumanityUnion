@@ -47,6 +47,8 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
       /showInstallationGuide\s*=\s*[^\n]*install_available/,
     );
     assert.match(promo, /ios_add_to_home/);
+    assert.match(promo, /openGuidance\("ios"\)/);
+    assert.match(promo, /prompt\.prompt\(\)/);
 
     const prompt = { prompt: async () => undefined } as BeforeInstallPromptLike;
     assert.equal(
