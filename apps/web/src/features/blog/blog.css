@@ -702,13 +702,18 @@
   margin-inline: auto;
   border-radius: var(--hu-radius-card);
   overflow: hidden;
+  aspect-ratio: 16 / 9;
 }
 
 .blog-article__cover .blog-cover-image,
 .blog-article__cover .blog-article__cover-image {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: auto;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
 }
 
 .blog-article-body {
