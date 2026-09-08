@@ -326,7 +326,7 @@ a.volunteer-page__cta.hu-button {
         color-mix(in srgb, #ffffff 18%, transparent) 58%,
         transparent 72%
       ),
-      url("/icons/volunteer/top-volunteer.webp");
+      url("/icons/volunteer/head-volunteer.webp");
     background-size: auto, contain;
     background-position: center, center right;
     background-repeat: no-repeat;

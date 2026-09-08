@@ -82,9 +82,9 @@ describe("Volunteer public page", () => {
       assert.ok(existsSync(absolute), `missing ${assetPath}`);
       assert.match(assetPath, /^\/icons\/volunteer\//);
     }
-    assert.equal(VOLUNTEER_ASSETS.hero, "/icons/volunteer/top-volunteer.webp");
+    assert.equal(VOLUNTEER_ASSETS.hero, "/icons/volunteer/head-volunteer.webp");
     assert.ok(
-      existsSync(path.join(webRoot, "public/icons/volunteer/top-volunteer.webp")),
+      existsSync(path.join(webRoot, "public/icons/volunteer/head-volunteer.webp")),
     );
     assert.doesNotMatch(Object.values(VOLUNTEER_ASSETS).join("\n"), /\.DS_Store/);
   });
@@ -96,14 +96,14 @@ describe("Volunteer public page", () => {
     assert.doesNotMatch(constants, /\.DS_Store|leaf\.png/);
   });
 
-  it("uses top-volunteer.webp as the full hero CSS background; no hero-art block", () => {
+  it("uses head-volunteer.webp as the full hero CSS background; no hero-art block", () => {
     const content = read("features/volunteer/components/VolunteerPageContent.tsx");
     const css = read("features/volunteer/volunteer-page.css");
     assert.doesNotMatch(content, /volunteer-page__hero-art|volunteer-page__hero-media|volunteer-page__hero-image/);
     assert.doesNotMatch(css, /volunteer-page__hero-art/);
     assert.match(
       css,
-      /\.volunteer-page__hero[\s\S]*top-volunteer\.webp/,
+      /\.volunteer-page__hero[\s\S]*head-volunteer\.webp/,
     );
     assert.match(
       css,

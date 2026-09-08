@@ -7,7 +7,7 @@ export const VOLUNTEER_CREATE_INITIATIVE_HREF = "/initiatives/create";
 export const VOLUNTEER_CREATE_INITIATIVE_ICON = "/icons/workspace/initiatives.svg";
 
 export const VOLUNTEER_ASSETS = {
-  hero: "/icons/volunteer/top-volunteer.webp",
+  hero: "/icons/volunteer/head-volunteer.webp",
   honeyEarth: "/icons/volunteer/honey-earth.webp",
   people: "/icons/volunteer/people.png",
   greenHome: "/icons/volunteer/green-home.png",
