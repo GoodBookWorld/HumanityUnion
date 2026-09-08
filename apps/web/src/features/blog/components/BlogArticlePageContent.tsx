@@ -274,38 +274,42 @@ export function BlogArticlePageContent({
             <Link href={categoryHref}>{categoryDisplayName}</Link>
           </nav>
 
-          <p className="hu-caption blog-article__category">
-            <Link href={categoryHref}>{categoryDisplayName}</Link>
-          </p>
           <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
             {titleForDisplay}
           </h1>
 
           <div className="blog-article__meta" aria-label={t("publicationDetailsAria")}>
             <span className="blog-article__meta-item">
-              <span className="blog-article__meta-label">{t("article.authorLabel")}</span>{" "}
               <BlogAuthorInline author={post.author} />
             </span>
+            <span className="blog-article__meta-sep" aria-hidden="true">
+              ·
+            </span>
             <span className="blog-article__meta-item">
-              <span className="blog-article__meta-label">{t("article.publishedLabel")}</span>{" "}
               <time className="hu-caption" dateTime={post.publishedAt}>
                 {formatBlogPublishedDate(post.publishedAt, locale)}
               </time>
             </span>
             {showUpdated ? (
-              <time className="hu-caption" dateTime={post.updatedAt}>
-                {t("updated", { date: formatBlogPublishedDate(post.updatedAt, locale) })}
-              </time>
+              <>
+                <span className="blog-article__meta-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="blog-article__meta-item">
+                  <time className="hu-caption" dateTime={post.updatedAt}>
+                    {t("updated", { date: formatBlogPublishedDate(post.updatedAt, locale) })}
+                  </time>
+                </span>
+              </>
             ) : null}
+            <span className="blog-article__meta-sep" aria-hidden="true">
+              ·
+            </span>
             <span className="blog-article__meta-item">
-              <span className="blog-article__meta-label">{t("article.categoryLabel")}</span>{" "}
-              <Link href={categoryHref} className="hu-caption">
-                {categoryDisplayName}
+              <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
+                {commentsLabel(post.commentCount)}
               </Link>
             </span>
-            <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
-              {commentsLabel(post.commentCount)}
-            </Link>
           </div>
 
           <div className="blog-article__cover">

@@ -113,4 +113,19 @@ describe("Pack 08I.5 — Blog body translation presentation", () => {
     const eligibility = readApi("modules/language/content-translation-eligibility.ts");
     assert.match(eligibility, /blog_post:\s*\[["']title["'],\s*["']excerpt["'],\s*["']content["']\]/);
   });
+
+  it("presentation path suppresses empty nbsp-only paragraphs without rewriting text", async () => {
+    const { normalizeBlogArticleHtmlForDisplay } = await import(
+      "./components/BlogArticleBody.js"
+    );
+
+    const input =
+      "<p>&amp;nbsp;</p><p>Hello&nbsp;world</p><p>&nbsp;</p><p>Keep me</p><p>&#160;</p>";
+    const out = normalizeBlogArticleHtmlForDisplay(input);
+    assert.doesNotMatch(out, /&amp;nbsp;/);
+    assert.doesNotMatch(out, /<p>\s*&nbsp;\s*<\/p>/);
+    assert.doesNotMatch(out, /&#160;/);
+    assert.match(out, /Hello&nbsp;world/);
+    assert.match(out, /Keep me/);
+  });
 });

@@ -62,8 +62,8 @@
 .workspace-navigation__group-icon {
   flex: 0 0 auto;
   display: block;
-  width: 1rem;
-  height: 1rem;
+  width: 2rem;
+  height: 2rem;
   object-fit: contain;
 }
 

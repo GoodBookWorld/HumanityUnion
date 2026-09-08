@@ -368,8 +368,8 @@ function ArchiveRow({
             src="/icons/workspace/trash.png"
             alt=""
             aria-hidden="true"
-            width={38}
-            height={38}
+            width={58}
+            height={58}
           />
           Delete
         </button>
@@ -730,8 +730,8 @@ export function NotificationCenterPageContent() {
                   src="/icons/workspace/archive.png"
                   alt=""
                   aria-hidden="true"
-                  width={38}
-                  height={38}
+                  width={58}
+                  height={58}
                 />
                 Archive
               </h2>

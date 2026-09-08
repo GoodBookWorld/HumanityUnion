@@ -128,14 +128,16 @@ describe("Pack 08I.10 — Category / article meta / body", () => {
     }
   });
 
-  it("article meta uses catalogs + locale-aware dates", () => {
+  it("article meta uses locale-aware dates in a compact editorial row", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     assert.match(article, /blog-article__meta/);
-    assert.match(article, /article\.authorLabel/);
-    assert.match(article, /article\.publishedLabel/);
-    assert.match(article, /article\.categoryLabel/);
+    assert.match(article, /BlogAuthorInline/);
+    assert.doesNotMatch(article, /article\.authorLabel/);
+    assert.doesNotMatch(article, /article\.publishedLabel/);
+    assert.doesNotMatch(article, /article\.categoryLabel/);
     assert.match(article, /formatBlogPublishedDate\(post\.publishedAt, locale\)/);
     assert.match(article, /resolveBlogCategoryDisplayName/);
+    assert.match(article, /blog-article__crumb/);
   });
 
   it("EXISTING UK HTML reaches article body prop chain (BLOG_ARTICLE_BODY_TRANSLATION_BYPASS=0)", async () => {

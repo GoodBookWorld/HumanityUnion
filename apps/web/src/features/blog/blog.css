@@ -693,11 +693,23 @@
 .blog-article__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hu-space-3);
+  column-gap: var(--hu-space-2);
+  row-gap: var(--hu-space-1);
   align-items: center;
   max-width: 48rem;
   margin-inline: auto;
   width: 100%;
+}
+
+.blog-article__meta-item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.blog-article__meta-sep {
+  color: var(--hu-color-text-muted);
+  user-select: none;
 }
 
 .blog-article__cover {

@@ -19,9 +19,11 @@ function resolveBrandedLogoMarkup(): string {
     ? `<img src="${logoUrl}" alt="Humanity Union" width="48" height="12" style="display:block;margin:0 auto;width:48px;height:auto;max-width:48px;border:0;outline:none;text-decoration:none;" />`
     : "";
 
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;">
+  // Full-bleed header: bgcolor + width=100% on the outer cell so clients that
+  // ignore nested-table width still paint the brand bar across the email card.
+  return `<table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
   <tr>
-    <td class="hu-email-pad" style="background:${PRIMARY_COLOR};padding:24px 32px;text-align:center;">
+    <td class="hu-email-pad" align="center" bgcolor="${PRIMARY_COLOR}" width="100%" style="background-color:${PRIMARY_COLOR};background:${PRIMARY_COLOR};width:100%;padding:24px 32px;text-align:center;">
       ${logoImage}
       <p style="margin:${logoImage ? "8px" : "0"} 0 0;font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.02em;word-wrap:break-word;">Humanity Union</p>
     </td>
@@ -84,9 +86,9 @@ function wrapEmailLayout(
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#f4f7fa;padding:24px 0;">
     <tr>
       <td class="hu-email-shell" align="center" style="padding:0 12px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
           <tr>
-            <td style="padding:0;">
+            <td align="left" width="100%" bgcolor="${PRIMARY_COLOR}" style="padding:0;width:100%;background-color:${PRIMARY_COLOR};background:${PRIMARY_COLOR};">
               ${resolveBrandedLogoMarkup()}
             </td>
           </tr>

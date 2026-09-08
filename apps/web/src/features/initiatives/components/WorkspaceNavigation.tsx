@@ -193,8 +193,8 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                       src={group.iconSrc}
                       alt=""
                       aria-hidden="true"
-                      width={16}
-                      height={16}
+                      width={32}
+                      height={32}
                     />
                     <span className="workspace-navigation__group-title">
                       {displayLabel(group.label)}
@@ -215,8 +215,8 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                       src={group.iconSrc}
                       alt=""
                       aria-hidden="true"
-                      width={16}
-                      height={16}
+                      width={32}
+                      height={32}
                     />
                     <span className="workspace-navigation__group-title">
                       {displayLabel(group.label)}

@@ -183,6 +183,11 @@
   padding: 0;
 }
 
+/* Icon rows read taller than Platform text links — tighten only this stack. */
+.public-experience-footer__nav-list--legal {
+  gap: 0;
+}
+
 .public-experience-footer__nav-link {
   display: inline-flex;
   align-items: center;
@@ -191,6 +196,12 @@
   text-decoration: none;
   font-size: var(--hu-font-size-sm);
   min-width: 0;
+}
+
+.public-experience-footer__block--legal .public-experience-footer__nav-link {
+  gap: 0.375rem;
+  line-height: 1.2;
+  padding-block: 0.0625rem;
 }
 
 .public-experience-footer__nav-icon {

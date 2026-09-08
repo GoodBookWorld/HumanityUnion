@@ -181,6 +181,7 @@ describe("Mail Delivery Reliability Pack 01", () => {
     assert.match(rendered.html, /alt="Humanity Union"/);
     assert.match(rendered.html, /width="48"/);
     assert.match(rendered.html, /height="12"/);
+    assert.match(rendered.html, /bgcolor="#0174B0"/);
     assert.equal(rendered.html.includes("localhost"), false);
     assert.equal(/src="\//.test(rendered.html), false);
     assert.ok(rendered.text.length > 0);

@@ -118,12 +118,12 @@ export async function PublicExperienceFooter() {
             </nav>
           </section>
 
-          <section className="public-experience-footer__block">
+          <section className="public-experience-footer__block public-experience-footer__block--legal">
             <h2 className="public-experience-footer__heading">
               {tNav("footerLegalHeading")}
             </h2>
             <nav aria-label="Legal and transparency navigation">
-              <ul className="public-experience-footer__nav-list">
+              <ul className="public-experience-footer__nav-list public-experience-footer__nav-list--legal">
                 {FOOTER_LEGAL_LINKS.map((link) => (
                   <FooterNavItem
                     key={`legal:${link.href ?? link.label}`}
