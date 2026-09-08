@@ -92,10 +92,29 @@ describe("Volunteer public page", () => {
     assert.doesNotMatch(constants, /\.DS_Store|leaf\.png/);
   });
 
-  it("does not render a duplicate foreground hero image", () => {
+  it("does not render a duplicate foreground <img> for the hero artwork", () => {
     const content = read("features/volunteer/components/VolunteerPageContent.tsx");
     assert.doesNotMatch(content, /volunteer-page__hero-media|volunteer-page__hero-image/);
+    assert.match(content, /volunteer-page__hero-art/);
     assert.doesNotMatch(content, /VOLUNTEER_ASSETS\.hero/);
+  });
+
+  it("hands wheel scrolling to the page at text-panel top/bottom boundaries", () => {
+    const content = read("features/volunteer/components/VolunteerPageContent.tsx");
+    assert.match(content, /mainRef/);
+    assert.match(content, /addEventListener\("wheel"/);
+    assert.match(content, /window\.scrollBy/);
+    assert.match(content, /atTop|scrollTop\s*<=\s*0/);
+    assert.match(content, /preventDefault/);
+  });
+
+  it("Create Initiative CTA centers icon+label as one cluster", () => {
+    const content = read("features/volunteer/components/VolunteerPageContent.tsx");
+    const css = read("features/volunteer/volunteer-page.css");
+    assert.match(content, /volunteer-page__cta-cluster/);
+    assert.match(css, /\.volunteer-page__cta-cluster[\s\S]*inline-flex/);
+    assert.match(css, /\.volunteer-page__cta\.hu-button[\s\S]*justify-content:\s*center/);
+    assert.match(css, /\.volunteer-page__cta-icon[\s\S]*width:\s*48px/);
   });
 
   it("Support Volunteer CTA defaults to /volunteer", () => {
@@ -127,7 +146,7 @@ describe("Volunteer public page", () => {
     assert.doesNotMatch(sitemap, /app\/sitemap\.ts|STATIC_PUBLIC_SITEMAP/);
   });
 
-  it("desktop uses 70/30 body layout; mobile disables height sync and hero artwork", () => {
+  it("uses 60/40 hero layout with contained art column; mobile hides artwork", () => {
     const css = read("features/volunteer/volunteer-page.css");
     assert.match(css, /@media \(min-width:\s*900px\)/);
     assert.match(
@@ -135,15 +154,18 @@ describe("Volunteer public page", () => {
       /\.volunteer-page__body[\s\S]*grid-template-columns:\s*minmax\(0,\s*7fr\)\s+minmax\(14rem,\s*3fr\)/,
     );
     assert.match(css, /\.volunteer-page__body-main--synced[\s\S]*max-height:\s*var\(--volunteer-sidebar-height\)/);
+    assert.match(css, /\.volunteer-page__body-main--synced[\s\S]*overscroll-behavior-y:\s*auto/);
+    assert.doesNotMatch(css, /overscroll-behavior:\s*contain|overscroll-behavior-y:\s*contain/);
     assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*max-height:\s*none/);
     assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*overflow:\s*visible/);
 
-    assert.match(css, /@media \(min-width:\s*600px\)[\s\S]*volunteer-top\.webp/);
-    assert.match(css, /background-size:\s*cover/);
     assert.match(
       css,
-      /@media \(max-width:\s*599px\)[\s\S]*background-image:\s*none/,
+      /@media \(min-width:\s*600px\)[\s\S]*\.volunteer-page__hero[\s\S]*grid-template-columns:\s*minmax\(0,\s*3fr\)\s+minmax\(0,\s*2fr\)/,
     );
+    assert.match(css, /\.volunteer-page__hero-art[\s\S]*background-size:\s*contain/);
+    assert.match(css, /\.volunteer-page__hero-art[\s\S]*volunteer-top\.webp/);
+    assert.match(css, /@media \(max-width:\s*599px\)[\s\S]*\.volunteer-page__hero-art[\s\S]*display:\s*none/);
   });
 });
 

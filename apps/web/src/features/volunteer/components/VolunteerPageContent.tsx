@@ -52,6 +52,7 @@ const ACTION_ITEMS = [
 export function VolunteerPageContent() {
   const t = useTranslations("volunteerPublic");
   const sidebarRef = useRef<HTMLElement | null>(null);
+  const mainRef = useRef<HTMLDivElement | null>(null);
   const [sidebarHeightPx, setSidebarHeightPx] = useState<number | null>(null);
 
   useEffect(() => {
@@ -83,6 +84,44 @@ export function VolunteerPageContent() {
       media.removeEventListener("change", syncHeight);
     };
   }, []);
+
+  useEffect(() => {
+    const panel = mainRef.current;
+    if (!panel || typeof window === "undefined") {
+      return;
+    }
+
+    const media = window.matchMedia(DESKTOP_LAYOUT_MQ);
+
+    const onWheel = (event: WheelEvent) => {
+      if (!media.matches) {
+        return;
+      }
+      if (!panel.classList.contains("volunteer-page__body-main--synced")) {
+        return;
+      }
+
+      const maxScroll = panel.scrollHeight - panel.clientHeight;
+      if (maxScroll <= 0) {
+        return;
+      }
+
+      const atTop = panel.scrollTop <= 0;
+      const atBottom = panel.scrollTop >= maxScroll - 1;
+      const scrollingUp = event.deltaY < 0;
+      const scrollingDown = event.deltaY > 0;
+
+      if ((atTop && scrollingUp) || (atBottom && scrollingDown)) {
+        window.scrollBy({ top: event.deltaY, left: 0, behavior: "auto" });
+        event.preventDefault();
+      }
+    };
+
+    panel.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      panel.removeEventListener("wheel", onWheel);
+    };
+  }, [sidebarHeightPx]);
 
   const bodyStyle =
     sidebarHeightPx != null
@@ -121,10 +160,16 @@ export function VolunteerPageContent() {
             ))}
           </ul>
         </div>
+        <div
+          className="volunteer-page__hero-art"
+          role="img"
+          aria-label={t("heroImageAlt")}
+        />
       </header>
 
       <div className="volunteer-page__body" style={bodyStyle}>
         <div
+          ref={mainRef}
           className={
             sidebarHeightPx != null
               ? "volunteer-page__body-main volunteer-page__body-main--synced"
@@ -281,15 +326,17 @@ export function VolunteerPageContent() {
               variant="primary"
               className="volunteer-page__cta"
             >
-              <Image
-                src={VOLUNTEER_CREATE_INITIATIVE_ICON}
-                alt=""
-                width={48}
-                height={48}
-                className="volunteer-page__cta-icon"
-                unoptimized
-              />
-              <span className="volunteer-page__cta-label">{t("createInitiativeCta")}</span>
+              <span className="volunteer-page__cta-cluster">
+                <Image
+                  src={VOLUNTEER_CREATE_INITIATIVE_ICON}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="volunteer-page__cta-icon"
+                  unoptimized
+                />
+                <span className="volunteer-page__cta-label">{t("createInitiativeCta")}</span>
+              </span>
             </Button>
           </div>
         </aside>

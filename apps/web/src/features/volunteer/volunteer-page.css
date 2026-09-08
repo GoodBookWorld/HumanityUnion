@@ -10,21 +10,28 @@
 .volunteer-page__hero {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--hu-space-6);
+  gap: var(--hu-space-5);
   align-items: center;
   padding: var(--hu-space-6) var(--hu-space-5);
   border-radius: var(--hu-radius-lg, 12px);
+  /* Mobile / base: clean HU treatment only — no hero artwork. */
   background: linear-gradient(
     135deg,
     color-mix(in srgb, #0174b0 10%, transparent) 0%,
     color-mix(in srgb, #df9815 8%, transparent) 100%
   );
+  overflow: hidden;
 }
 
 .volunteer-page__hero-copy {
   display: grid;
   gap: var(--hu-space-3);
   min-width: 0;
+  width: 100%;
+}
+
+.volunteer-page__hero-art {
+  display: none;
 }
 
 .volunteer-page__eyebrow {
@@ -58,6 +65,9 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--hu-space-3);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .volunteer-page__value {
@@ -192,17 +202,30 @@
 
 .volunteer-page__section-aside--cta {
   display: flex;
+  align-items: stretch;
+  justify-content: center;
   width: 100%;
 }
 
-.volunteer-page__cta {
+.volunteer-page__cta.hu-button,
+a.volunteer-page__cta.hu-button {
   width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-align: center;
+  /* Equal horizontal padding so the cluster is not left-biased. */
+  padding-inline: var(--hu-space-3);
+}
+
+.volunteer-page__cta-cluster {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: var(--hu-space-3);
-  box-sizing: border-box;
-  text-align: start;
+  max-width: 100%;
 }
 
 .volunteer-page__cta-icon {
@@ -213,7 +236,7 @@
 }
 
 .volunteer-page__cta-label {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -282,22 +305,53 @@
 }
 
 @media (min-width: 600px) {
-  .volunteer-page__values {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--hu-space-4);
+  /*
+   * Tablet + desktop: true 60/40 hero composition.
+   * Left column owns copy + values; right column owns contained artwork.
+   * Artwork is NOT a washed full-bleed background behind the text.
+   */
+  .volunteer-page__hero {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    column-gap: var(--hu-space-5);
+    align-items: center;
+    background-image: none;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, #0174b0 8%, #ffffff) 0%,
+      color-mix(in srgb, #df9815 6%, #ffffff) 55%,
+      color-mix(in srgb, #0174b0 4%, #ffffff) 100%
+    );
   }
 
-  /* Tablet + desktop: full-bleed hero artwork as background only. */
-  .volunteer-page__hero {
-    background-image:
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, #ffffff 78%, transparent) 0%,
-        color-mix(in srgb, #ffffff 62%, transparent) 45%,
-        color-mix(in srgb, #0174b0 18%, transparent) 100%
-      ),
-      url("/icons/volunteer/volunteer-top.webp");
-    background-size: cover;
+  .volunteer-page__hero-copy {
+    grid-column: 1;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .volunteer-page__values {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--hu-space-3);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  .volunteer-page__lead {
+    max-width: none;
+  }
+
+  .volunteer-page__hero-art {
+    display: block;
+    grid-column: 2;
+    width: 100%;
+    min-height: 10rem;
+    aspect-ratio: 1080 / 357;
+    align-self: center;
+    justify-self: stretch;
+    background-color: transparent;
+    background-image: url("/icons/volunteer/volunteer-top.webp");
+    background-size: contain;
     background-position: center right;
     background-repeat: no-repeat;
   }
@@ -313,7 +367,7 @@
   .volunteer-page__body-main--synced {
     max-height: var(--volunteer-sidebar-height);
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     padding-inline-end: var(--hu-space-2);
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--hu-color-primary, #0174b0) 35%, transparent) transparent;
@@ -342,13 +396,23 @@
 @media (max-width: 599px) {
   .volunteer-page__hero {
     padding: var(--hu-space-5) var(--hu-space-4);
-    /* Mobile: keep clean HU gradient only — no volunteer-top.webp background. */
     background-image: none;
     background: linear-gradient(
       135deg,
       color-mix(in srgb, #0174b0 10%, transparent) 0%,
       color-mix(in srgb, #df9815 8%, transparent) 100%
     );
+  }
+
+  .volunteer-page__hero-art {
+    display: none;
+    background-image: none;
+  }
+
+  .volunteer-page__values {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 }
 
