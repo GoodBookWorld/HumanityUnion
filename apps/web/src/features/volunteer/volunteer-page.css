@@ -28,10 +28,7 @@
   gap: var(--hu-space-3);
   min-width: 0;
   width: 100%;
-}
-
-.volunteer-page__hero-art {
-  display: none;
+  max-width: 100%;
 }
 
 .volunteer-page__eyebrow {
@@ -123,6 +120,7 @@
   align-content: start;
   min-width: 0;
   width: 100%;
+  overflow: visible;
 }
 
 .volunteer-page__section {
@@ -216,7 +214,6 @@ a.volunteer-page__cta.hu-button {
   justify-content: center;
   box-sizing: border-box;
   text-align: center;
-  /* Equal horizontal padding so the cluster is not left-biased. */
   padding-inline: var(--hu-space-3);
 }
 
@@ -251,7 +248,10 @@ a.volunteer-page__cta.hu-button {
   display: grid;
   place-items: center;
   padding: var(--hu-space-4);
-  overflow: hidden;
+  /* Allow hover enlargement to escape the card bounds. */
+  overflow: visible;
+  position: relative;
+  z-index: 0;
 }
 
 .volunteer-page__visual-image {
@@ -259,6 +259,13 @@ a.volunteer-page__cta.hu-button {
   max-width: 18rem;
   height: auto;
   object-fit: contain;
+  transform: scale(1);
+  transform-origin: center right;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+  position: relative;
+  z-index: 1;
 }
 
 .volunteer-page__actions-card {
@@ -306,27 +313,29 @@ a.volunteer-page__cta.hu-button {
 
 @media (min-width: 600px) {
   /*
-   * Tablet + desktop: true 60/40 hero composition.
-   * Left column owns copy + values; right column owns contained artwork.
-   * Artwork is NOT a washed full-bleed background behind the text.
+   * Tablet + desktop: ONE hero section with full-span background illustration.
+   * No separate hero-art column. Text stays left-constrained (~60%).
    */
   .volunteer-page__hero {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    column-gap: var(--hu-space-5);
-    align-items: center;
-    background-image: none;
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, #0174b0 8%, #ffffff) 0%,
-      color-mix(in srgb, #df9815 6%, #ffffff) 55%,
-      color-mix(in srgb, #0174b0 4%, #ffffff) 100%
-    );
+    grid-template-columns: 1fr;
+    background-image:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, #ffffff 86%, transparent) 0%,
+        color-mix(in srgb, #ffffff 62%, transparent) 38%,
+        color-mix(in srgb, #ffffff 18%, transparent) 58%,
+        transparent 72%
+      ),
+      url("/icons/volunteer/top-volunteer.webp");
+    background-size: auto, contain;
+    background-position: center, center right;
+    background-repeat: no-repeat;
   }
 
   .volunteer-page__hero-copy {
-    grid-column: 1;
-    width: 100%;
-    max-width: 100%;
+    width: 60%;
+    max-width: 60%;
+    justify-self: start;
   }
 
   .volunteer-page__values {
@@ -340,20 +349,18 @@ a.volunteer-page__cta.hu-button {
   .volunteer-page__lead {
     max-width: none;
   }
+}
 
-  .volunteer-page__hero-art {
-    display: block;
-    grid-column: 2;
-    width: 100%;
-    min-height: 10rem;
-    aspect-ratio: 1080 / 357;
-    align-self: center;
-    justify-self: stretch;
-    background-color: transparent;
-    background-image: url("/icons/volunteer/volunteer-top.webp");
-    background-size: contain;
-    background-position: center right;
-    background-repeat: no-repeat;
+@media (min-width: 768px) {
+  .volunteer-page__visual-card:hover,
+  .volunteer-page__visual-card:focus-within {
+    z-index: 8;
+  }
+
+  .volunteer-page__visual-image:hover {
+    transform: scale(2);
+    box-shadow: 0 12px 28px color-mix(in srgb, #000000 18%, transparent);
+    z-index: 9;
   }
 }
 
@@ -362,6 +369,7 @@ a.volunteer-page__cta.hu-button {
     grid-template-columns: minmax(0, 7fr) minmax(14rem, 3fr);
     column-gap: var(--hu-space-6);
     align-items: start;
+    overflow: visible;
   }
 
   .volunteer-page__body-main--synced {
@@ -404,11 +412,7 @@ a.volunteer-page__cta.hu-button {
     );
   }
 
-  .volunteer-page__hero-art {
-    display: none;
-    background-image: none;
-  }
-
+  .volunteer-page__hero-copy,
   .volunteer-page__values {
     width: 100%;
     max-width: 100%;
@@ -421,5 +425,12 @@ a.volunteer-page__cta.hu-button {
   .volunteer-page__body-main--synced {
     max-height: none;
     overflow: visible;
+  }
+}
+
+@media (max-width: 767px) {
+  .volunteer-page__visual-image:hover {
+    transform: none;
+    box-shadow: none;
   }
 }
