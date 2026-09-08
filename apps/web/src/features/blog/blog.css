@@ -651,10 +651,15 @@
 }
 
 .blog-article__center {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--hu-space-4);
-  align-content: start;
   min-width: 0;
+}
+
+/* Scrollable article column: do not flex-shrink sections into the viewport height. */
+.blog-article__center > * {
+  flex-shrink: 0;
 }
 
 .blog-article__comments-meta {
