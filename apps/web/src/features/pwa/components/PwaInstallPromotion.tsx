@@ -101,9 +101,11 @@ export function PwaInstallPromotion() {
   const showIosAction = uxState === "ios_add_to_home" && !dismissed;
   /**
    * Pack 23D.1 — manual guide must not depend on beforeinstallprompt.
-   * Visible whenever not installed (and not temporarily dismissed).
+   * Visible when not installed / not dismissed, except iOS where the primary
+   * "Add to Home Screen" CTA already opens the same guidance modal.
    */
-  const showInstallationGuide = !runningStandalone && !dismissed;
+  const showInstallationGuide =
+    !runningStandalone && !dismissed && uxState !== "ios_add_to_home";
   const automaticInstallAvailable = uxState === "install_available";
 
   return (

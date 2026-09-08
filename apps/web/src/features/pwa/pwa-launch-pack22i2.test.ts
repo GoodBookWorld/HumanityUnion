@@ -72,6 +72,7 @@ describe("Pack 22I.2 — first paint + interactive logo audio + emoji", () => {
 
   it("browser tab does not receive the launch cover bootstrap class without standalone", () => {
     assert.match(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /display-mode: standalone/);
+    assert.doesNotMatch(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /display-mode: fullscreen/);
     assert.match(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /if \(!standalone\) return/);
     const shell = readWeb("features/pwa/components/PwaShell.tsx");
     assert.match(shell, /standalone \? <PwaLaunchSequence/);

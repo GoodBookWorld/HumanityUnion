@@ -166,6 +166,25 @@ describe("Pack 22H — Mobile PWA App Badge diagnostic & hardening", () => {
       }),
       false,
     );
+    // Browser fullscreen must not count as installed (F11 / OS fullscreen).
+    assert.equal(
+      matchesInstalledDisplayMode(matchMediaFor(["(display-mode: fullscreen)"])),
+      false,
+    );
+    assert.equal(
+      isStandaloneDisplayMode({
+        matchMedia: matchMediaFor(["(display-mode: fullscreen)"]),
+        navigator: {} as Navigator,
+      }),
+      false,
+    );
+    assert.equal(
+      isStandaloneDisplayMode({
+        matchMedia: matchMediaFor(["(display-mode: window-controls-overlay)"]),
+        navigator: {} as Navigator,
+      }),
+      true,
+    );
   });
 
   it("iOS-style standalone detection via navigator.standalone", () => {

@@ -83,7 +83,10 @@ describe("Pack 23D.2 — install modal portal / viewport fix", () => {
 
   it("24 — Pack 23D.1 visibility logic unchanged", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(promo, /showInstallationGuide = !runningStandalone && !dismissed/);
+    assert.match(
+      promo,
+      /showInstallationGuide[\s\S]*=[\s\S]*!runningStandalone[\s\S]*!dismissed[\s\S]*ios_add_to_home/s,
+    );
     assert.match(promo, /showInstallAction = uxState === "install_available"/);
     assert.match(promo, /install\.installationGuide/);
   });

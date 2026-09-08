@@ -151,14 +151,21 @@
   line-height: 1.2;
 }
 
-/**
- * Keeps Platform column two aligned with the visible heading row without the
- * old margin-top calc hack. Hidden from assistive tech; nav aria-label remains.
- */
-.public-experience-footer__heading--align-slot {
-  visibility: hidden;
-  pointer-events: none;
-  user-select: none;
+.public-experience-footer__heading--platform {
+  text-align: center;
+}
+
+.public-experience-footer__platform {
+  min-width: 0;
+}
+
+.public-experience-footer__platform-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--hu-space-4);
+  flex: 1 1 auto;
+  align-items: start;
+  min-width: 0;
 }
 
 .public-experience-footer__heading--visually-hidden {
@@ -237,7 +244,7 @@
 
 @media (min-width: 64rem) {
   .public-experience-footer__grid {
-    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr) minmax(0, 1fr);
   }
 
   .public-experience-footer__brand {

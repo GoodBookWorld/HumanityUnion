@@ -84,38 +84,34 @@ export async function PublicExperienceFooter() {
             <FooterSocialLinks />
           </section>
 
-          <section className="public-experience-footer__block">
-            <h2 className="public-experience-footer__heading">
+          <section className="public-experience-footer__block public-experience-footer__platform">
+            <h2 className="public-experience-footer__heading public-experience-footer__heading--platform">
               {tNav("footerPlatformHeading")}
             </h2>
-            <nav aria-label="Platform navigation column one">
-              <ul className="public-experience-footer__nav-list">
-                {FOOTER_PLATFORM_COLUMN_ONE.map((link) => (
-                  <FooterNavItem
-                    key={`platform-one:${link.href ?? link.label}`}
-                    link={link}
-                    displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
-                  />
-                ))}
-              </ul>
-            </nav>
-          </section>
-
-          <section className="public-experience-footer__block public-experience-footer__platform-secondary">
-            <h2 className="public-experience-footer__heading public-experience-footer__heading--align-slot" aria-hidden="true">
-              {tNav("footerPlatformHeading")}
-            </h2>
-            <nav aria-label="Platform navigation column two">
-              <ul className="public-experience-footer__nav-list">
-                {FOOTER_PLATFORM_COLUMN_TWO.map((link) => (
-                  <FooterNavItem
-                    key={`platform-two:${link.href ?? link.label}`}
-                    link={link}
-                    displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
-                  />
-                ))}
-              </ul>
-            </nav>
+            <div className="public-experience-footer__platform-columns">
+              <nav aria-label="Platform navigation column one">
+                <ul className="public-experience-footer__nav-list">
+                  {FOOTER_PLATFORM_COLUMN_ONE.map((link) => (
+                    <FooterNavItem
+                      key={`platform-one:${link.href ?? link.label}`}
+                      link={link}
+                      displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
+                    />
+                  ))}
+                </ul>
+              </nav>
+              <nav aria-label="Platform navigation column two">
+                <ul className="public-experience-footer__nav-list">
+                  {FOOTER_PLATFORM_COLUMN_TWO.map((link) => (
+                    <FooterNavItem
+                      key={`platform-two:${link.href ?? link.label}`}
+                      link={link}
+                      displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
+                    />
+                  ))}
+                </ul>
+              </nav>
+            </div>
           </section>
 
           <section className="public-experience-footer__block public-experience-footer__block--legal">

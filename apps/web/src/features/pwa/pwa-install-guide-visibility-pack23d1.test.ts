@@ -40,12 +40,13 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     assert.match(promo, /showInstallAction = uxState === "install_available"/);
     assert.match(
       promo,
-      /showInstallationGuide = !runningStandalone && !dismissed/,
+      /showInstallationGuide[\s\S]*=[\s\S]*!runningStandalone[\s\S]*!dismissed[\s\S]*ios_add_to_home/s,
     );
     assert.doesNotMatch(
       promo,
       /showInstallationGuide\s*=\s*[^\n]*install_available/,
     );
+    assert.match(promo, /ios_add_to_home/);
 
     const prompt = { prompt: async () => undefined } as BeforeInstallPromptLike;
     assert.equal(
