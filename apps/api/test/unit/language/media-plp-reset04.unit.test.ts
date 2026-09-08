@@ -197,8 +197,19 @@ describe("RESET 04 — Universal PLP publication contract", () => {
       liveCanonicalVersion: contract!.canonicalVersion,
       layers: [{ source: "MACHINE", values: { title: "[uk] Title A" } }],
     });
-    assert.equal(result.status, "SUPERSEDED");
-    assert.deepEqual(result.reasonCodes, ["STALE_CANONICAL_VERSION"]);
+    assert.equal(result.status, "FAILED");
+    assert.ok(result.reasonCodes.includes("STALE_REVISION"));
+    assert.ok(
+      result.reasonCodes.some((c) => c.startsWith("STALE_WORK_VERSION=old-version")),
+    );
+    assert.ok(
+      result.reasonCodes.some((c) =>
+        c.startsWith(`STALE_CURRENT_SOURCE_VERSION=${contract!.canonicalVersion}`),
+      ),
+    );
+    assert.ok(
+      result.reasonCodes.includes("STALE_BOUNDARY=build_pipeline_pre_merge"),
+    );
   });
 
   it("6: Registry locale enablement trigger creates build eligibility", () => {

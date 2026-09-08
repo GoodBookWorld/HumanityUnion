@@ -232,7 +232,11 @@ describe("RESET 05C.3 — structured failure truth", () => {
         },
       },
     );
-    assert.equal(stale.status, "SUPERSEDED");
+    assert.equal(stale.status, "FAILED");
+    assert.equal(stale.failure?.failureCode, "STALE_CANONICAL_VERSION");
+    assert.match(stale.failure?.safeReason ?? "", /STALE_WORK_VERSION=stale-version/);
+    assert.match(stale.failure?.safeReason ?? "", /STALE_CURRENT_SOURCE_VERSION=/);
+    assert.match(stale.failure?.safeReason ?? "", /STALE_BOUNDARY=claim_source_reload/);
 
     const publishFail = await processPlpBuildRequest(requestFor(article), {
       importProvider: async () => ({

@@ -422,11 +422,14 @@ describe("RESET 05C.1 — durable automatic localization", () => {
       },
       {
         importProvider: async () => {
-          throw new Error("provider must not run for SUPERSEDED");
+          throw new Error("provider must not run for stale claim");
         },
       },
     );
-    assert.equal(status.status, "SUPERSEDED");
+    assert.equal(status.status, "FAILED");
+    assert.equal(status.failure?.failureCode, "STALE_CANONICAL_VERSION");
+    assert.match(status.failure?.safeReason ?? "", /STALE_WORK_VERSION=/);
+    assert.match(status.failure?.safeReason ?? "", /STALE_CURRENT_SOURCE_VERSION=/);
 
     const resolveSrc = readFileSync(
       join(plpRoot, "resolve-published-presentation.ts"),

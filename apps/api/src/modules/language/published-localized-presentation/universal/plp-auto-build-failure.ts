@@ -59,6 +59,12 @@ const FORENSIC_KEYS = [
   "MISSING_MACHINE_PATHS",
   "EXPECTED_MACHINE_PATHS",
   "UNEXPECTED_MACHINE_PATHS",
+  "STALE_WORK_VERSION",
+  "STALE_CURRENT_SOURCE_VERSION",
+  "STALE_BOUNDARY",
+  "STALE_AUTHORITY",
+  "STALE_WORK_CONTENT_REVISION",
+  "STALE_EXISTING_CONTENT_REVISION",
 ] as const;
 
 /**
@@ -78,7 +84,7 @@ export function sanitizePlpAutoBuildFailureReason(reason: string): string {
     const key = seg.split("=")[0] ?? "";
     const isForensic =
       FORENSIC_KEYS.includes(key as (typeof FORENSIC_KEYS)[number]) ||
-      /^(PROVIDER_PARTIAL|PROVIDER_INTEGRITY|PROVIDER_FAILURE|PROVIDER_TIMEOUT|PROVIDER_PAYLOAD|PROVIDER_CAP|PARTIAL|PARSE_FAILURE|BRAND_TOKEN_PRESERVATION_FAILED|CONTENT_INTEGRITY_FAILURE|WRONG_TARGET_LANGUAGE|TIMEOUT|PAYLOAD_LIMIT)(:|$)/.test(
+      /^(PROVIDER_PARTIAL|PROVIDER_INTEGRITY|PROVIDER_FAILURE|PROVIDER_TIMEOUT|PROVIDER_PAYLOAD|PROVIDER_CAP|PARTIAL|PARSE_FAILURE|BRAND_TOKEN_PRESERVATION_FAILED|CONTENT_INTEGRITY_FAILURE|WRONG_TARGET_LANGUAGE|TIMEOUT|PAYLOAD_LIMIT|STALE_REVISION|STALE_CANONICAL_VERSION)(:|$)/.test(
         seg,
       );
     if (isForensic) {
@@ -291,11 +297,31 @@ export function mapBuildStatusToFailure(input: {
     });
   }
   if (input.status === "SUPERSEDED" || codes.includes("STALE")) {
+    const reasonList = input.reasonCodes ?? [];
+    const staleParts = reasonList.filter(
+      (c) =>
+        c.startsWith("STALE_") ||
+        c === "STALE_REVISION" ||
+        c === "STALE_CANONICAL_VERSION",
+    );
+    const hasBothVersions =
+      staleParts.some((c) => c.startsWith("STALE_WORK_VERSION=")) &&
+      staleParts.some((c) => c.startsWith("STALE_CURRENT_SOURCE_VERSION="));
+    const forensicBlock = hasBothVersions
+      ? staleParts.join(";")
+      : [
+          "STALE_REVISION",
+          "STALE_WORK_VERSION=UNKNOWN",
+          "STALE_CURRENT_SOURCE_VERSION=UNKNOWN",
+          "STALE_BOUNDARY=UNKNOWN",
+          "STALE_AUTHORITY=UNKNOWN",
+          ...staleParts.filter((c) => c !== "STALE_REVISION"),
+        ].join(";");
     return structuredFailure({
       failureCode: "STALE_CANONICAL_VERSION",
       retryable: false,
       stage: "validate",
-      safeReason: codes || "STALE_CANONICAL_VERSION",
+      safeReason: `STALE_CANONICAL_VERSION;${forensicBlock}`,
     });
   }
   if (codes.includes("PUBLISH") || input.status === "FAILED") {

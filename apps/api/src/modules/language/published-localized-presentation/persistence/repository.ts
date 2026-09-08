@@ -230,7 +230,18 @@ export async function publishAtomicPublishedPresentation(input: {
       readonly supersededSnapshotId?: string;
       readonly idempotent: boolean;
     }
-  | { readonly ok: false; readonly reason: "STALE_REVISION" | "PERSISTENCE_ERROR" }
+  | {
+      readonly ok: false;
+      readonly reason: "STALE_REVISION" | "PERSISTENCE_ERROR";
+      readonly staleForensics?: {
+        readonly STALE_WORK_VERSION: string;
+        readonly STALE_CURRENT_SOURCE_VERSION: string;
+        readonly STALE_BOUNDARY: string;
+        readonly STALE_AUTHORITY: string;
+        readonly STALE_WORK_CONTENT_REVISION: number;
+        readonly STALE_EXISTING_CONTENT_REVISION: number;
+      };
+    }
 > {
   if (getPublishedLocalizationPersistenceMode() === "mongo") {
     const { publishAtomicMongo } = await import("./mongo.repository.js");
@@ -238,7 +249,11 @@ export async function publishAtomicPublishedPresentation(input: {
   }
   const result = publishAtomicMemory(input);
   if (!result.ok) {
-    return { ok: false, reason: result.reason };
+    return {
+      ok: false,
+      reason: result.reason,
+      staleForensics: result.staleForensics,
+    };
   }
   return {
     ok: true,

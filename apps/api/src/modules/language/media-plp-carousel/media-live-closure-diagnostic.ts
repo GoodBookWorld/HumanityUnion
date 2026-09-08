@@ -133,6 +133,10 @@ export type MediaLiveClosureReport = {
   readonly EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS: readonly string[];
   readonly EDITORIAL_INTEGRITY_FAILED_PATHS: readonly string[];
   readonly EDITORIAL_BRAND_TOKEN_PATH_STATES: readonly string[];
+  readonly EDITORIAL_STALE_WORK_VERSION: string | null;
+  readonly EDITORIAL_STALE_CURRENT_SOURCE_VERSION: string | null;
+  readonly EDITORIAL_STALE_BOUNDARY: string | null;
+  readonly EDITORIAL_STALE_AUTHORITY: string | null;
   readonly FAQ_MACHINE_LEAVES: number;
   readonly FAQ_MACHINE_LOCALIZED: number;
   readonly FAQ_CANONICAL_MACHINE_LEAVES: number;
@@ -755,6 +759,22 @@ export async function executeMediaLiveClosureReads(input: {
       editorialWork?.lastError,
       "BRAND_TOKEN_PATHS",
     ),
+    EDITORIAL_STALE_WORK_VERSION: parseLabeledValueFromFailureReason(
+      editorialWork?.lastError,
+      "STALE_WORK_VERSION",
+    ),
+    EDITORIAL_STALE_CURRENT_SOURCE_VERSION: parseLabeledValueFromFailureReason(
+      editorialWork?.lastError,
+      "STALE_CURRENT_SOURCE_VERSION",
+    ),
+    EDITORIAL_STALE_BOUNDARY: parseLabeledValueFromFailureReason(
+      editorialWork?.lastError,
+      "STALE_BOUNDARY",
+    ),
+    EDITORIAL_STALE_AUTHORITY: parseLabeledValueFromFailureReason(
+      editorialWork?.lastError,
+      "STALE_AUTHORITY",
+    ),
     FAQ_MACHINE_LEAVES: faqMachineLeaves,
     FAQ_MACHINE_LOCALIZED: faqMachineLocalized,
     FAQ_CANONICAL_MACHINE_LEAVES: faqCanonicalMachine,
@@ -893,6 +913,10 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS=${report.EDITORIAL_CANONICAL_IDENTICAL_TRANSLATABLE_PATHS.join("|")}`,
     `EDITORIAL_INTEGRITY_FAILED_PATHS=${report.EDITORIAL_INTEGRITY_FAILED_PATHS.join("|")}`,
     `EDITORIAL_BRAND_TOKEN_PATH_STATES=${report.EDITORIAL_BRAND_TOKEN_PATH_STATES.join("|")}`,
+    `EDITORIAL_STALE_WORK_VERSION=${report.EDITORIAL_STALE_WORK_VERSION ?? ""}`,
+    `EDITORIAL_STALE_CURRENT_SOURCE_VERSION=${report.EDITORIAL_STALE_CURRENT_SOURCE_VERSION ?? ""}`,
+    `EDITORIAL_STALE_BOUNDARY=${report.EDITORIAL_STALE_BOUNDARY ?? ""}`,
+    `EDITORIAL_STALE_AUTHORITY=${report.EDITORIAL_STALE_AUTHORITY ?? ""}`,
     `FAQ_MACHINE_LEAVES=${report.FAQ_MACHINE_LEAVES}`,
     `FAQ_MACHINE_LOCALIZED=${report.FAQ_MACHINE_LOCALIZED}`,
     `FAQ_CANONICAL_MACHINE_LEAVES=${report.FAQ_CANONICAL_MACHINE_LEAVES}`,

@@ -290,11 +290,18 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       },
       {
         importProvider: async () => {
-          throw new Error("provider must not run for SUPERSEDED");
+          throw new Error("provider must not run for stale claim");
         },
       },
     );
-    assert.equal(status.status, "SUPERSEDED");
+    assert.equal(status.status, "FAILED");
+    assert.equal(status.failure?.failureCode, "STALE_CANONICAL_VERSION");
+    assert.match(status.failure?.safeReason ?? "", /STALE_WORK_VERSION=stale-old-version/);
+    assert.match(
+      status.failure?.safeReason ?? "",
+      new RegExp(`STALE_CURRENT_SOURCE_VERSION=${liveVersion}`),
+    );
+    assert.match(status.failure?.safeReason ?? "", /STALE_BOUNDARY=claim_source_reload/);
     assert.notEqual(liveVersion, "stale-old-version");
   });
 

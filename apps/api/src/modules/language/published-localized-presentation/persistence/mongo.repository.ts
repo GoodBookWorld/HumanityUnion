@@ -1,6 +1,10 @@
 /**
- * Reset 02 — Mongo persistence for PublishedLocalizedPresentation (narrow projections).
+ * Reset 02 / RESET 05D.7 — Mongo persistence for PublishedLocalizedPresentation.
  * Current pointer collection is the only read path for PUBLISHED resolution.
+ *
+ * RESET 05D.7 — contentRevision CAS applies only within the same canonicalVersion.
+ * A newer canonical source version must supersede an older published pointer
+ * even when the candidate contentRevision is lower (editorial always uses 1).
  */
 
 import type { PublishedLocalizedPresentationRecord } from "@hu/types";
@@ -15,6 +19,15 @@ type CurrentDocument = PublishedLocalizedPresentationRecord & {
   readonly entityId: string;
   readonly locale: string;
   readonly _id?: unknown;
+};
+
+export type PublishAtomicStaleForensics = {
+  readonly STALE_WORK_VERSION: string;
+  readonly STALE_CURRENT_SOURCE_VERSION: string;
+  readonly STALE_BOUNDARY: string;
+  readonly STALE_AUTHORITY: string;
+  readonly STALE_WORK_CONTENT_REVISION: number;
+  readonly STALE_EXISTING_CONTENT_REVISION: number;
 };
 
 async function ensureMongoReady(): Promise<void> {
@@ -55,6 +68,16 @@ function fromCurrentDocument(doc: CurrentDocument): PublishedLocalizedPresentati
   };
 }
 
+function sameCanonicalIdentity(
+  a: PublishedLocalizedPresentationRecord["identity"],
+  b: PublishedLocalizedPresentationRecord["identity"],
+): boolean {
+  return (
+    a.canonicalVersion === b.canonicalVersion &&
+    a.localizationSchemaVersion === b.localizationSchemaVersion
+  );
+}
+
 export async function findCurrentPublishedMongo(input: {
   readonly entityType: string;
   readonly entityId: string;
@@ -85,7 +108,7 @@ export async function putPublishedSnapshotHistoryMongo(
   record: PublishedLocalizedPresentationRecord,
 ): Promise<void> {
   await ensureMongoReady();
-  const collection = getMongoCollection<PublishedLocalizedPresentationRecord>(
+  const collection = getMongoCollection(
     MONGO_COLLECTIONS.publishedLocalizedPresentationsHistory,
   );
   await collection.updateOne(
@@ -96,8 +119,10 @@ export async function putPublishedSnapshotHistoryMongo(
 }
 
 /**
- * Atomic current-pointer publish via compare-and-swap on contentRevision.
- * Unique index on (entityType, entityId, locale) prevents dual PUBLISHED rows.
+ * Atomic current-pointer publish via compare-and-swap.
+ *
+ * Same canonicalVersion: CAS on contentRevision (genuine concurrent stale).
+ * Different canonicalVersion: new source wins; bump contentRevision past existing.
  */
 export async function publishAtomicMongo(input: {
   readonly candidate: PublishedLocalizedPresentationRecord;
@@ -108,7 +133,11 @@ export async function publishAtomicMongo(input: {
       readonly supersededSnapshotId?: string;
       readonly idempotent: boolean;
     }
-  | { readonly ok: false; readonly reason: "STALE_REVISION" | "PERSISTENCE_ERROR" }
+  | {
+      readonly ok: false;
+      readonly reason: "STALE_REVISION" | "PERSISTENCE_ERROR";
+      readonly staleForensics?: PublishAtomicStaleForensics;
+    }
 > {
   try {
     await ensureMongoReady();
@@ -116,7 +145,7 @@ export async function publishAtomicMongo(input: {
       MONGO_COLLECTIONS.publishedLocalizedPresentationsCurrent,
     );
     const locale = String(input.candidate.identity.locale).toLowerCase();
-    const publishedDoc = toCurrentDocument({
+    let publishedDoc = toCurrentDocument({
       ...input.candidate,
       state: "PUBLISHED",
       publishedAt: input.candidate.publishedAt ?? new Date().toISOString(),
@@ -133,33 +162,63 @@ export async function publishAtomicMongo(input: {
     );
 
     if (existing) {
-      if (existing.contentRevision > publishedDoc.contentRevision) {
-        return { ok: false, reason: "STALE_REVISION" };
-      }
-      if (
-        existing.contentRevision === publishedDoc.contentRevision &&
-        existing.identity.canonicalVersion === publishedDoc.identity.canonicalVersion &&
-        existing.identity.localizationSchemaVersion ===
-          publishedDoc.identity.localizationSchemaVersion
-      ) {
-        return {
-          ok: true,
-          record: fromCurrentDocument(existing),
-          idempotent: true,
+      const sameVersion = sameCanonicalIdentity(
+        existing.identity,
+        publishedDoc.identity,
+      );
+
+      if (sameVersion) {
+        if (existing.contentRevision > publishedDoc.contentRevision) {
+          return {
+            ok: false,
+            reason: "STALE_REVISION",
+            staleForensics: {
+              STALE_WORK_VERSION: publishedDoc.identity.canonicalVersion,
+              STALE_CURRENT_SOURCE_VERSION: existing.identity.canonicalVersion,
+              STALE_BOUNDARY: "publish_cas_content_revision",
+              STALE_AUTHORITY: "publishAtomicMongo",
+              STALE_WORK_CONTENT_REVISION: publishedDoc.contentRevision,
+              STALE_EXISTING_CONTENT_REVISION: existing.contentRevision,
+            },
+          };
+        }
+        if (existing.contentRevision === publishedDoc.contentRevision) {
+          return {
+            ok: true,
+            record: fromCurrentDocument(existing),
+            idempotent: true,
+          };
+        }
+      } else {
+        // New canonical source must supersede old pointer (05D.7).
+        publishedDoc = {
+          ...publishedDoc,
+          contentRevision:
+            Math.max(existing.contentRevision, publishedDoc.contentRevision) + 1,
         };
       }
     }
 
+    const sameVersionFilter =
+      existing &&
+      sameCanonicalIdentity(existing.identity, publishedDoc.identity);
+
     const result = await collection.findOneAndUpdate(
-      {
-        entityType: publishedDoc.entityType,
-        entityId: publishedDoc.entityId,
-        locale,
-        $or: [
-          { contentRevision: { $exists: false } },
-          { contentRevision: { $lte: publishedDoc.contentRevision } },
-        ],
-      },
+      sameVersionFilter
+        ? {
+            entityType: publishedDoc.entityType,
+            entityId: publishedDoc.entityId,
+            locale,
+            $or: [
+              { contentRevision: { $exists: false } },
+              { contentRevision: { $lte: publishedDoc.contentRevision } },
+            ],
+          }
+        : {
+            entityType: publishedDoc.entityType,
+            entityId: publishedDoc.entityId,
+            locale,
+          },
       { $set: publishedDoc },
       { upsert: true, returnDocument: "before" },
     );
@@ -201,7 +260,18 @@ export async function publishAtomicMongo(input: {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("E11000") || message.includes("duplicate key")) {
-      return { ok: false, reason: "STALE_REVISION" };
+      return {
+        ok: false,
+        reason: "STALE_REVISION",
+        staleForensics: {
+          STALE_WORK_VERSION: input.candidate.identity.canonicalVersion,
+          STALE_CURRENT_SOURCE_VERSION: input.candidate.identity.canonicalVersion,
+          STALE_BOUNDARY: "publish_cas_duplicate_key",
+          STALE_AUTHORITY: "publishAtomicMongo",
+          STALE_WORK_CONTENT_REVISION: input.candidate.contentRevision,
+          STALE_EXISTING_CONTENT_REVISION: input.candidate.contentRevision,
+        },
+      };
     }
     return { ok: false, reason: "PERSISTENCE_ERROR" };
   }

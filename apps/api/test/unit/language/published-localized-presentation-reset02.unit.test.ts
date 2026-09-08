@@ -382,46 +382,8 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
       ],
     });
 
-    const [a, b] = await Promise.all([
-      publishPublishedLocalizedPresentation({
-        entityType: "civic_media_trusted",
-        entityId: "race",
-        locale: "uk",
-        canonicalVersion: "v1",
-        contentRevision: 5,
-        canonicalPresentation: canonicalTree,
-        localizedCandidate: merged.presentation,
-        provenance: merged.provenance,
-        snapshotId: "race-a",
-      }),
-      publishPublishedLocalizedPresentation({
-        entityType: "civic_media_trusted",
-        entityId: "race",
-        locale: "uk",
-        canonicalVersion: "v0-old",
-        contentRevision: 1,
-        canonicalPresentation: canonicalTree,
-        localizedCandidate: merged.presentation,
-        provenance: merged.provenance,
-        snapshotId: "race-b",
-      }),
-    ]);
-
-    const successes = [a, b].filter((r) => r.ok);
-    assert.ok(successes.length >= 1);
-    const current = findCurrentPublishedMemory({
-      entityType: "civic_media_trusted",
-      entityId: "race",
-      locale: "uk",
-    });
-    assert.equal(current?.contentRevision, 5);
-    assert.equal(current?.identity.canonicalVersion, "v1");
-    const stale = [a, b].find((r) => !r.ok);
-    if (stale && !stale.ok) {
-      assert.equal(stale.outcome, "STALE_REVISION");
-    }
-
-    const again = await publishPublishedLocalizedPresentation({
+    // Same-version concurrent race: higher contentRevision wins; lower is STALE.
+    const first = await publishPublishedLocalizedPresentation({
       entityType: "civic_media_trusted",
       entityId: "race",
       locale: "uk",
@@ -431,6 +393,66 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
       localizedCandidate: merged.presentation,
       provenance: merged.provenance,
       snapshotId: "race-a",
+    });
+    assert.equal(first.ok, true);
+
+    const staleSameVersion = await publishPublishedLocalizedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "race",
+      locale: "uk",
+      canonicalVersion: "v1",
+      contentRevision: 1,
+      canonicalPresentation: canonicalTree,
+      localizedCandidate: merged.presentation,
+      provenance: merged.provenance,
+      snapshotId: "race-stale-rev",
+    });
+    assert.equal(staleSameVersion.ok, false);
+    if (!staleSameVersion.ok) {
+      assert.equal(staleSameVersion.outcome, "STALE_REVISION");
+      assert.ok(
+        (staleSameVersion.reasonCodes ?? []).some((c) =>
+          c.startsWith("STALE_WORK_VERSION=v1"),
+        ),
+      );
+      assert.ok(
+        (staleSameVersion.reasonCodes ?? []).some((c) =>
+          c.startsWith("STALE_EXISTING_CONTENT_REVISION=5"),
+        ),
+      );
+    }
+
+    // RESET 05D.7 — new canonicalVersion supersedes even with lower contentRevision.
+    const advanced = await publishPublishedLocalizedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "race",
+      locale: "uk",
+      canonicalVersion: "v2-new-source",
+      contentRevision: 1,
+      canonicalPresentation: canonicalTree,
+      localizedCandidate: merged.presentation,
+      provenance: merged.provenance,
+      snapshotId: "race-v2",
+    });
+    assert.equal(advanced.ok, true);
+    const current = findCurrentPublishedMemory({
+      entityType: "civic_media_trusted",
+      entityId: "race",
+      locale: "uk",
+    });
+    assert.equal(current?.identity.canonicalVersion, "v2-new-source");
+    assert.equal(current?.contentRevision, 6);
+
+    const again = await publishPublishedLocalizedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "race",
+      locale: "uk",
+      canonicalVersion: "v2-new-source",
+      contentRevision: 6,
+      canonicalPresentation: canonicalTree,
+      localizedCandidate: merged.presentation,
+      provenance: merged.provenance,
+      snapshotId: "race-v2",
     });
     assert.equal(again.ok, true);
     if (again.ok) {
@@ -633,7 +655,7 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
     assert.equal(isPublishedLocalizationConsumptionEnabled("civic_media_trusted"), false);
   });
 
-  it("G: superseded cannot become current again accidentally", async () => {
+  it("G: superseded history retained; same-version lower revision cannot reclaim current", async () => {
     const merged = mergeLocalizedLayersByProvenance({
       canonicalPresentation: canonicalTree,
       layers: [
@@ -671,24 +693,41 @@ describe("Reset 02 PublishedLocalizedPresentation core", () => {
     });
     const old = findPublishedSnapshotByIdMemory("sup-1");
     assert.equal(old?.state, "SUPERSEDED");
-    // Re-publishing older revision fails
-    const stale = await publishPublishedLocalizedPresentation({
+
+    // RESET 05D.7 — contentRevision CAS is same-version only. A different
+    // canonicalVersion may supersede (identity advance); freshness vs live
+    // source is enforced at claim_source_reload, not by ordering hashes.
+    const advancedAgain = await publishPublishedLocalizedPresentation({
       entityType: "civic_media_trusted",
       entityId: "sup",
       locale: "uk",
-      canonicalVersion: "v1",
+      canonicalVersion: "v3",
       contentRevision: 1,
       canonicalPresentation: canonicalTree,
       localizedCandidate: merged.presentation,
       provenance: merged.provenance,
-      snapshotId: "sup-1-again",
+      snapshotId: "sup-3",
     });
-    assert.equal(stale.ok, false);
+    assert.equal(advancedAgain.ok, true);
+
+    const staleSameVersion = await publishPublishedLocalizedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "sup",
+      locale: "uk",
+      canonicalVersion: "v3",
+      contentRevision: 1,
+      canonicalPresentation: canonicalTree,
+      localizedCandidate: merged.presentation,
+      provenance: merged.provenance,
+      snapshotId: "sup-3-stale",
+    });
+    assert.equal(staleSameVersion.ok, false);
     const current = findCurrentPublishedMemory({
       entityType: "civic_media_trusted",
       entityId: "sup",
       locale: "uk",
     });
-    assert.equal(current?.snapshotId, "sup-2");
+    assert.equal(current?.snapshotId, "sup-3");
+    assert.equal(current?.identity.canonicalVersion, "v3");
   });
 });

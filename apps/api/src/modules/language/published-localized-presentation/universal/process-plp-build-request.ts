@@ -165,7 +165,22 @@ export async function processPlpBuildRequest(
       liveCanonicalVersion: contract.canonicalVersion,
     })
   ) {
-    return { status: "SUPERSEDED" };
+    return failed({
+      status: "FAILED",
+      failure: structuredFailure({
+        failureCode: "STALE_CANONICAL_VERSION",
+        retryable: false,
+        stage: "validate",
+        safeReason: [
+          "STALE_CANONICAL_VERSION",
+          "STALE_REVISION",
+          `STALE_WORK_VERSION=${request.canonicalVersion}`,
+          `STALE_CURRENT_SOURCE_VERSION=${contract.canonicalVersion}`,
+          "STALE_BOUNDARY=claim_source_reload",
+          "STALE_AUTHORITY=adapter.resolveCanonicalEntity",
+        ].join(";"),
+      }),
+    });
   }
 
   const existing = await findCurrentPublishedPresentation({

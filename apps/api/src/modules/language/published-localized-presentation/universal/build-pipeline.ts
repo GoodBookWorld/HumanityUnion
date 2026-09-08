@@ -2,7 +2,7 @@
  * RESET 04 — universal localization build pipeline (domain-neutral).
  *
  * Canonical projection → field policy → merge layers → validate → atomic publish.
- * PARTIAL ⇒ not publishable. Stale canonicalVersion ⇒ SUPERSEDED (no overwrite).
+ * PARTIAL ⇒ not publishable. Stale canonicalVersion ⇒ FAILED with dual-version forensics.
  * No Gemini in this module — adapters/tests supply layers.
  */
 
@@ -61,8 +61,15 @@ export async function runUniversalPlpBuild(
     })
   ) {
     return {
-      status: "SUPERSEDED",
-      reasonCodes: ["STALE_CANONICAL_VERSION"],
+      status: "FAILED",
+      reasonCodes: [
+        "STALE_CANONICAL_VERSION",
+        "STALE_REVISION",
+        `STALE_WORK_VERSION=${input.contract.canonicalVersion}`,
+        `STALE_CURRENT_SOURCE_VERSION=${input.liveCanonicalVersion}`,
+        "STALE_BOUNDARY=build_pipeline_pre_merge",
+        "STALE_AUTHORITY=isPlpBuildStaleAgainstLive",
+      ],
       snapshotId: null,
     };
   }

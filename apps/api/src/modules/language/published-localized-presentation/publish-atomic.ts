@@ -133,10 +133,22 @@ export async function publishPublishedLocalizedPresentation(
   const result = await publishAtomicPublishedPresentation({ candidate });
   if (!result.ok) {
     if (result.reason === "STALE_REVISION") {
+      const f = result.staleForensics;
+      const forensicCodes = f
+        ? [
+            "STALE_REVISION",
+            `STALE_WORK_VERSION=${f.STALE_WORK_VERSION}`,
+            `STALE_CURRENT_SOURCE_VERSION=${f.STALE_CURRENT_SOURCE_VERSION}`,
+            `STALE_BOUNDARY=${f.STALE_BOUNDARY}`,
+            `STALE_AUTHORITY=${f.STALE_AUTHORITY}`,
+            `STALE_WORK_CONTENT_REVISION=${f.STALE_WORK_CONTENT_REVISION}`,
+            `STALE_EXISTING_CONTENT_REVISION=${f.STALE_EXISTING_CONTENT_REVISION}`,
+          ]
+        : ["STALE_REVISION"];
       return {
         ok: false,
         outcome: "STALE_REVISION",
-        reasonCodes: ["STALE_REVISION"],
+        reasonCodes: forensicCodes,
       };
     }
     return {

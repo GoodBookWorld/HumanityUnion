@@ -79,6 +79,8 @@ export function findCurrentPublishedMemory(input: {
  * Atomic memory publish: replace current pointer + supersede previous.
  * JS is single-threaded; this critical section is synchronous and race-free
  * for in-process callers.
+ *
+ * RESET 05D.7 — contentRevision CAS only within the same canonicalVersion.
  */
 export function publishAtomicMemory(input: {
   readonly candidate: PublishedLocalizedPresentationRecord;
@@ -90,6 +92,14 @@ export function publishAtomicMemory(input: {
 } | {
   readonly ok: false;
   readonly reason: "STALE_REVISION";
+  readonly staleForensics?: {
+    readonly STALE_WORK_VERSION: string;
+    readonly STALE_CURRENT_SOURCE_VERSION: string;
+    readonly STALE_BOUNDARY: string;
+    readonly STALE_AUTHORITY: string;
+    readonly STALE_WORK_CONTENT_REVISION: number;
+    readonly STALE_EXISTING_CONTENT_REVISION: number;
+  };
 } {
   const key = publishedLocalizationEntityKey({
     entityType: input.candidate.identity.entityType,
@@ -98,21 +108,40 @@ export function publishAtomicMemory(input: {
   });
   const existing = currentByKey.get(key);
 
+  let candidateRevision = input.candidate.contentRevision;
+
   if (existing && existing.state === "PUBLISHED") {
-    if (existing.contentRevision > input.candidate.contentRevision) {
-      return { ok: false, reason: "STALE_REVISION" };
-    }
-    if (
-      existing.contentRevision === input.candidate.contentRevision &&
-      existing.identity.canonicalVersion === input.candidate.identity.canonicalVersion &&
+    const sameVersion =
+      existing.identity.canonicalVersion ===
+        input.candidate.identity.canonicalVersion &&
       existing.identity.localizationSchemaVersion ===
-        input.candidate.identity.localizationSchemaVersion
-    ) {
-      return {
-        ok: true,
-        record: existing,
-        idempotent: true,
-      };
+        input.candidate.identity.localizationSchemaVersion;
+
+    if (sameVersion) {
+      if (existing.contentRevision > input.candidate.contentRevision) {
+        return {
+          ok: false,
+          reason: "STALE_REVISION",
+          staleForensics: {
+            STALE_WORK_VERSION: input.candidate.identity.canonicalVersion,
+            STALE_CURRENT_SOURCE_VERSION: existing.identity.canonicalVersion,
+            STALE_BOUNDARY: "publish_cas_content_revision",
+            STALE_AUTHORITY: "publishAtomicMemory",
+            STALE_WORK_CONTENT_REVISION: input.candidate.contentRevision,
+            STALE_EXISTING_CONTENT_REVISION: existing.contentRevision,
+          },
+        };
+      }
+      if (existing.contentRevision === input.candidate.contentRevision) {
+        return {
+          ok: true,
+          record: existing,
+          idempotent: true,
+        };
+      }
+    } else {
+      candidateRevision =
+        Math.max(existing.contentRevision, input.candidate.contentRevision) + 1;
     }
   }
 
@@ -129,6 +158,7 @@ export function publishAtomicMemory(input: {
 
   const published: PublishedLocalizedPresentationRecord = {
     ...input.candidate,
+    contentRevision: candidateRevision,
     state: "PUBLISHED",
     publishedAt: input.candidate.publishedAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
