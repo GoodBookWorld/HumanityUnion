@@ -184,5 +184,8 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     assert.match(css, /blog-post-grid--related/);
     assert.match(css, /overflow-x:\s*auto/);
     assert.match(css, /flex-basis:\s*calc\(\(100% - var\(--hu-card-gap\)\) \/ 2\)/);
+    assert.match(css, /\.blog-article__cover[\s\S]*min-width:\s*0/);
+    assert.match(css, /\.blog-post-grid--related[\s\S]*min-width:\s*0/);
+    assert.match(read("features/blog/components/BlogPostCard.tsx"), /&nbsp;/);
   });
 });

@@ -23,13 +23,18 @@ interface BlogPostCardProps {
 
 /** Presentation-only word clamp — never mutates stored/source content. */
 function truncateWordsForDisplay(text: string, maxWords: number): string {
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return trimmed;
+  // Display-only: some excerpts contain literal HTML entities (e.g. `&nbsp;`).
+  const cleaned = text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) {
+    return cleaned;
   }
-  const words = trimmed.split(/\s+/);
+  const words = cleaned.split(/\s+/);
   if (words.length <= maxWords) {
-    return trimmed;
+    return cleaned;
   }
   return `${words.slice(0, maxWords).join(" ")}…`;
 }
