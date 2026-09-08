@@ -212,6 +212,8 @@ type EnqueueInput = {
    * for consumer-visible heal (media-12 / editorial). Not for mass historical reopen.
    */
   readonly reopenFailedSameVersion?: boolean;
+  /** RESET 05E.1 — stamp when reopening under provider-contract recovery. */
+  readonly recoveryGeneration?: string | null;
 };
 
 function finalizeUpsertResult(
@@ -274,6 +276,7 @@ export function enqueuePlpBuildRequest(
       contentRevision: input.contentRevision,
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
+      recoveryGeneration: input.recoveryGeneration,
     }).then(finalizeUpsertResult);
   }
 
@@ -296,6 +299,7 @@ export function enqueuePlpBuildRequest(
       contentRevision: input.contentRevision,
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
+      recoveryGeneration: input.recoveryGeneration,
     });
     return finalizeUpsertResult(upsert);
   })();

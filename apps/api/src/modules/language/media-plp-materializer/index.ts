@@ -73,11 +73,14 @@ export {
 export {
   PLP_PROVIDER_FAILURE_SUBTYPE,
   PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
+  PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION,
   encodePlpTranslationsContract,
   decodePlpTranslationsContract,
   planPlpProviderBatches,
   extractJsonObjectText,
   isPlpProviderFailureSubtypeRetryable,
   isProviderResponseClassFailureReason,
+  classifyProviderResponseRecoveryFailure,
+  classifyConsumerProviderRecoveryEligibility,
   classifyFinishReasonSubtype,
 } from "./provider-response-contract.js";

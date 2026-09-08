@@ -46,6 +46,7 @@ import {
 import { listCountryAffiliatedMediaSources } from "./country-affiliated-media-sources.js";
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
 import { findPlpAutoBuildWorkByKey } from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
+import { classifyConsumerProviderRecoveryEligibility } from "../media-plp-materializer/provider-response-contract.js";
 import { findCurrentPublishedPresentation } from "../published-localized-presentation/persistence/repository.js";
 import { classifyUsableLocalizedPresentation } from "../published-localized-presentation/usability.js";
 import {
@@ -186,6 +187,11 @@ export type MediaLiveClosureReport = {
     readonly PROVIDER_MISSING_KEY_COUNT: string | null;
     readonly PROVIDER_BATCH_INDEX: string | null;
     readonly PROVIDER_BATCH_COUNT: string | null;
+    readonly RECOVERY_ELIGIBLE: boolean | null;
+    readonly RECOVERY_CLASS: string | null;
+    readonly RECOVERY_GENERATION: string | null;
+    readonly RECOVERY_ALREADY_ATTEMPTED: boolean | null;
+    readonly RECOVERY_INELIGIBLE_REASON: string | null;
     readonly PATH_STATES: readonly string[];
   }[];
   readonly leaves: readonly MediaLiveClosureLeaf[];
@@ -495,6 +501,34 @@ export async function executeMediaLiveClosureReads(input: {
               newsWork?.lastError,
               "PROVIDER_BATCH_COUNT",
             ),
+      ...(() => {
+        const recovery = classifyConsumerProviderRecoveryEligibility({
+          work: newsWork
+            ? {
+                status: newsWork.status,
+                canonicalVersion: newsWork.canonicalVersion,
+                lastError: newsWork.lastError,
+                failureCode: newsWork.failureCode,
+                recoveryGeneration: newsWork.recoveryGeneration,
+              }
+            : null,
+          liveCanonicalVersion: canonicalVersion,
+          hasUsableSnapshot: localized,
+        });
+        return {
+          RECOVERY_ELIGIBLE: recovery.eligible,
+          RECOVERY_CLASS: recovery.eligible
+            ? recovery.recoveryClass
+            : null,
+          RECOVERY_GENERATION:
+            newsWork?.recoveryGeneration ??
+            (recovery.eligible ? recovery.recoveryGeneration : null),
+          RECOVERY_ALREADY_ATTEMPTED: recovery.alreadyAttempted,
+          RECOVERY_INELIGIBLE_REASON: recovery.eligible
+            ? null
+            : recovery.ineligibleReason,
+        };
+      })(),
       PATH_STATES: parsePathListFromFailureReason(
         newsWork?.lastError,
         "PATH_STATES",

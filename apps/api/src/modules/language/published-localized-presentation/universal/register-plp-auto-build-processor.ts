@@ -172,6 +172,9 @@ export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBu
       editorialEnqueued: healed.editorialEnqueued,
       newsEnqueued: healed.newsEnqueued,
       newsSkippedNotProviderClass: healed.newsSkippedNotProviderClass,
+      newsSkippedAlreadyRecovered: healed.newsSkippedAlreadyRecovered,
+      newsSkippedUsable: healed.newsSkippedUsable,
+      newsSkippedVersionMismatch: healed.newsSkippedVersionMismatch,
     });
   } catch (error) {
     logger.warn("plp_auto_build_runtime.consumer_provider_heal_failed", {

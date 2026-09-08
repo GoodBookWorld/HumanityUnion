@@ -58,6 +58,11 @@ export type PlpAutoBuildWorkRecord = {
   readonly lastFailureAt: string | null;
   /** RESET 05E — exponential backoff gate for retryable provider failures. */
   readonly nextAttemptAt: string | null;
+  /**
+   * RESET 05E.1 — one-shot provider-contract recovery generation (e.g. "05E").
+   * When set, bootstrap heal must not reset attempt budget again for that generation.
+   */
+  readonly recoveryGeneration: string | null;
 };
 
 
@@ -88,6 +93,7 @@ interface PlpAutoBuildWorkDocument extends Document {
   updatedAt: string;
   lastFailureAt: string | null;
   nextAttemptAt?: string | null;
+  recoveryGeneration?: string | null;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 5;
@@ -172,6 +178,7 @@ function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
     updatedAt: doc.updatedAt,
     lastFailureAt: doc.lastFailureAt,
     nextAttemptAt: doc.nextAttemptAt ?? null,
+    recoveryGeneration: doc.recoveryGeneration ?? null,
   };
 }
 
@@ -189,6 +196,8 @@ function coalesceUpsert(input: {
   readonly trigger: PlpPublicationTriggerKind;
   readonly maxAttempts: number;
   readonly reopenFailedSameVersion?: boolean;
+  /** RESET 05E.1 — stamp recovery generation when reopening exhausted provider failures. */
+  readonly recoveryGeneration?: string | null;
 }): UpsertPlpAutoBuildWorkResult {
   const workKey = plpBuildWorkKey(input);
   const updatedAt = nowIso();
@@ -216,6 +225,7 @@ function coalesceUpsert(input: {
       updatedAt,
       lastFailureAt: null,
       nextAttemptAt: null,
+      recoveryGeneration: null,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -230,7 +240,7 @@ function coalesceUpsert(input: {
 
   // Same-version terminal failed: never reopen via normal coalesce (preserves
   // forensic row; stops RSS refresh climbing attemptCount past maxAttempts).
-  // RESET 05D — explicit reopenFailedSameVersion allows targeted consumer-visible heal.
+  // RESET 05D / 05E.1 — explicit reopenFailedSameVersion allows one-shot heal.
   if (existing.status === "failed" && sameVersion) {
     if (!input.reopenFailedSameVersion) {
       return { accepted: false, deduped: true, record: existing };
@@ -245,6 +255,8 @@ function coalesceUpsert(input: {
       updatedAt,
       enqueuedAt: updatedAt,
       nextAttemptAt: null,
+      recoveryGeneration:
+        input.recoveryGeneration ?? existing.recoveryGeneration,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -279,6 +291,7 @@ function coalesceUpsert(input: {
 
   const newerRevision = Math.max(input.contentRevision, existing.contentRevision);
   // New canonicalVersion → fresh attempt budget. Forensic last-failure fields retained.
+  // New version is not the 05E migration reopen — clear recovery generation.
   const resetAttempts = !sameVersion;
   const record: PlpAutoBuildWorkRecord = {
     ...existing,
@@ -298,6 +311,7 @@ function coalesceUpsert(input: {
     completedAt: null,
     updatedAt,
     nextAttemptAt: null,
+    recoveryGeneration: resetAttempts ? null : existing.recoveryGeneration,
     enqueuedAt:
       existing.status === "pending" || existing.status === "running"
         ? existing.enqueuedAt
@@ -315,6 +329,7 @@ export async function upsertPendingPlpAutoBuildWork(input: {
   readonly trigger: PlpPublicationTriggerKind;
   readonly maxAttempts?: number;
   readonly reopenFailedSameVersion?: boolean;
+  readonly recoveryGeneration?: string | null;
 }): Promise<UpsertPlpAutoBuildWorkResult> {
   const maxAttempts = input.maxAttempts ?? resolvePlpAutoBuildMaxAttempts();
   const workKey = plpBuildWorkKey(input);

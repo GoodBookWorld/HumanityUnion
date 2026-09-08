@@ -316,24 +316,232 @@ export function isProviderResponseClassFailureReason(
   lastError: string | null | undefined,
   failureCode: string | null | undefined,
 ): boolean {
+  return classifyProviderResponseRecoveryFailure(lastError, failureCode) != null;
+}
+
+/**
+ * RESET 05E.1 — recovery generation for one-shot current-consumer reopen under
+ * the structured provider contract. Prevents bootstrap restart budget resets.
+ */
+export const PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION = "05E" as const;
+
+export type ConsumerProviderRecoveryClass =
+  | "PROVIDER_RESPONSE"
+  | "LEGACY_PROVIDER_RESPONSE_FAILURE";
+
+export type ConsumerProviderRecoveryIneligibleReason =
+  | "NO_WORK_ROW"
+  | "NOT_FAILED"
+  | "VERSION_MISMATCH"
+  | "USABLE_SNAPSHOT"
+  | "RECOVERY_ALREADY_ATTEMPTED"
+  | "STALE_OR_CANONICAL"
+  | "INTEGRITY_OR_BRAND"
+  | "NON_PROVIDER"
+  | "NOT_PROVIDER_RESPONSE_CLASS";
+
+/**
+ * Classify whether a durable failure is a (legacy or current) provider-response
+ * class safe for bounded current-consumer recovery. Never treats stale,
+ * integrity/Brand, source/adapter, or deterministic validate failures as eligible.
+ */
+export function classifyProviderResponseRecoveryFailure(
+  lastError: string | null | undefined,
+  failureCode: string | null | undefined,
+): ConsumerProviderRecoveryClass | null {
   const code = (failureCode ?? "").toUpperCase();
+  const reason = (lastError ?? "").toUpperCase();
+
+  // Explicit exclusions first.
+  if (
+    code === "STALE_CANONICAL_VERSION" ||
+    code === "SOURCE_NOT_FOUND" ||
+    code === "ADAPTER_OR_SOURCE" ||
+    code === "PROVIDER_INTEGRITY" ||
+    code === "PROVIDER_PAYLOAD" ||
+    code === "PROVIDER_CAP" ||
+    code === "REJECTED_PARTIAL" ||
+    code === "PUBLISH_FAILED"
+  ) {
+    return null;
+  }
+  if (
+    reason.includes("STALE_REVISION") ||
+    reason.includes("STALE_CANONICAL_VERSION") ||
+    reason.includes("STALE_ORIGIN_ID=") ||
+    reason.includes("PROVIDER_INTEGRITY") ||
+    reason.includes("BRAND_TOKEN_PRESERVATION_FAILED") ||
+    reason.includes("BRAND_ARTIFACT") ||
+    reason.includes("SOURCE_NOT_FOUND") ||
+    reason.includes("ADAPTER_OR_SOURCE") ||
+    reason.includes("REJECTED_PARTIAL")
+  ) {
+    return null;
+  }
+
+  // Current 05E structured taxonomy.
+  if (
+    reason.includes("PROVIDER_FAILURE_SUBTYPE=") ||
+    reason.includes("PROVIDER_HTTP_CLASS=") ||
+    reason.includes("PROVIDER_FINISH_REASON=")
+  ) {
+    return "PROVIDER_RESPONSE";
+  }
+
+  // Structured codes that are provider-response class.
   if (
     code === "PROVIDER_FAILURE" ||
     code === "PROVIDER_TIMEOUT" ||
     code === "PROVIDER_PARTIAL"
   ) {
-    return true;
+    // PARTIAL that is really integrity/Brand already excluded above.
+    const hasModernForensics =
+      reason.includes("PROVIDER_FAILURE_SUBTYPE=") ||
+      reason.includes("PROVIDER_BATCH_COUNT=");
+    return hasModernForensics
+      ? "PROVIDER_RESPONSE"
+      : "LEGACY_PROVIDER_RESPONSE_FAILURE";
   }
-  const reason = (lastError ?? "").toUpperCase();
-  return (
-    reason.includes("PROVIDER_FAILURE") ||
-    reason.includes("PARSE_FAILURE") ||
+
+  // Legacy pre-05E shapes (safe subset).
+  if (
     reason.includes("PROVIDER_RESPONSE_SHAPE=INVALID") ||
-    reason.includes("PROVIDER_FAILURE_SUBTYPE=") ||
+    reason.includes("PROVIDER_FAILURE") ||
     reason.includes("PROVIDER_TIMEOUT") ||
-    reason.includes("TRUNCATED") ||
+    reason.includes("PROVIDER_PARTIAL") ||
+    reason.includes("PARSE_FAILURE") ||
+    reason.includes("WRONG_TARGET_LANGUAGE") ||
+    reason.includes("MISSING_PATH") ||
+    reason.includes("MISSING_MACHINE_PATHS=") ||
     reason.includes("JSON_PARSE") ||
     reason.includes("EMPTY_RESPONSE") ||
-    reason.includes("TOKEN_LIMIT")
+    reason.includes("TOKEN_LIMIT") ||
+    reason.includes("TRUNCATED") ||
+    reason.includes("MALFORMED")
+  ) {
+    return "LEGACY_PROVIDER_RESPONSE_FAILURE";
+  }
+
+  return null;
+}
+
+export function classifyConsumerProviderRecoveryEligibility(input: {
+  readonly work: {
+    readonly status: string;
+    readonly canonicalVersion: string;
+    readonly lastError: string | null;
+    readonly failureCode: string | null;
+    readonly recoveryGeneration: string | null;
+  } | null;
+  readonly liveCanonicalVersion: string;
+  readonly hasUsableSnapshot: boolean;
+}):
+  | {
+      readonly eligible: true;
+      readonly recoveryClass: ConsumerProviderRecoveryClass;
+      readonly recoveryGeneration: typeof PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION;
+      readonly alreadyAttempted: false;
+      readonly ineligibleReason: null;
+    }
+  | {
+      readonly eligible: false;
+      readonly recoveryClass: null;
+      readonly recoveryGeneration: string | null;
+      readonly alreadyAttempted: boolean;
+      readonly ineligibleReason: ConsumerProviderRecoveryIneligibleReason;
+    } {
+  const work = input.work;
+  if (!work) {
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: null,
+      alreadyAttempted: false,
+      ineligibleReason: "NO_WORK_ROW",
+    };
+  }
+  const alreadyAttempted =
+    work.recoveryGeneration === PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION;
+  if (input.hasUsableSnapshot) {
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: work.recoveryGeneration,
+      alreadyAttempted,
+      ineligibleReason: "USABLE_SNAPSHOT",
+    };
+  }
+  if (work.status !== "failed") {
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: work.recoveryGeneration,
+      alreadyAttempted,
+      ineligibleReason: "NOT_FAILED",
+    };
+  }
+  if (work.canonicalVersion !== input.liveCanonicalVersion) {
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: work.recoveryGeneration,
+      alreadyAttempted,
+      ineligibleReason: "VERSION_MISMATCH",
+    };
+  }
+  if (alreadyAttempted) {
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: work.recoveryGeneration,
+      alreadyAttempted: true,
+      ineligibleReason: "RECOVERY_ALREADY_ATTEMPTED",
+    };
+  }
+
+  const recoveryClass = classifyProviderResponseRecoveryFailure(
+    work.lastError,
+    work.failureCode,
   );
+  if (!recoveryClass) {
+    const code = (work.failureCode ?? "").toUpperCase();
+    const reason = (work.lastError ?? "").toUpperCase();
+    let ineligibleReason: ConsumerProviderRecoveryIneligibleReason =
+      "NOT_PROVIDER_RESPONSE_CLASS";
+    if (
+      code === "STALE_CANONICAL_VERSION" ||
+      reason.includes("STALE_REVISION") ||
+      reason.includes("STALE_CANONICAL")
+    ) {
+      ineligibleReason = "STALE_OR_CANONICAL";
+    } else if (
+      code === "PROVIDER_INTEGRITY" ||
+      reason.includes("BRAND_TOKEN") ||
+      reason.includes("PROVIDER_INTEGRITY")
+    ) {
+      ineligibleReason = "INTEGRITY_OR_BRAND";
+    } else if (
+      code === "SOURCE_NOT_FOUND" ||
+      code === "ADAPTER_OR_SOURCE" ||
+      code === "REJECTED_PARTIAL" ||
+      code === "PUBLISH_FAILED"
+    ) {
+      ineligibleReason = "NON_PROVIDER";
+    }
+    return {
+      eligible: false,
+      recoveryClass: null,
+      recoveryGeneration: work.recoveryGeneration,
+      alreadyAttempted: false,
+      ineligibleReason,
+    };
+  }
+
+  return {
+    eligible: true,
+    recoveryClass,
+    recoveryGeneration: PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION,
+    alreadyAttempted: false,
+    ineligibleReason: null,
+  };
 }
