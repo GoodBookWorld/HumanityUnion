@@ -92,26 +92,35 @@
   line-height: 1.4;
 }
 
-.volunteer-page__hero-media {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-}
-
-.volunteer-page__hero-image {
-  width: 100%;
-  max-width: 28rem;
-  height: auto;
-  object-fit: contain;
-}
-
-.volunteer-page__section {
+.volunteer-page__body {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--hu-space-5);
   align-items: start;
+  min-width: 0;
+}
+
+.volunteer-page__body-main {
+  display: grid;
+  gap: var(--hu-space-8, 2.5rem);
+  min-width: 0;
+  min-height: 0;
+}
+
+.volunteer-page__sidebar {
+  display: grid;
+  gap: var(--hu-space-4);
+  align-content: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.volunteer-page__section {
+  display: grid;
+  gap: var(--hu-space-4);
+  align-items: start;
   position: relative;
+  min-width: 0;
 }
 
 .volunteer-page__section-main {
@@ -178,12 +187,41 @@
 
 .volunteer-page__section-aside {
   min-width: 0;
+  width: 100%;
 }
 
 .volunteer-page__section-aside--cta {
   display: flex;
-  align-items: flex-start;
+  width: 100%;
+}
+
+.volunteer-page__cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
   justify-content: flex-start;
+  gap: var(--hu-space-3);
+  box-sizing: border-box;
+  text-align: start;
+}
+
+.volunteer-page__cta-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.volunteer-page__cta-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.volunteer-page__visual-card,
+.volunteer-page__actions-card,
+.volunteer-page__section-aside--cta {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .volunteer-page__visual-card {
@@ -248,36 +286,76 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--hu-space-4);
   }
+
+  /* Tablet + desktop: full-bleed hero artwork as background only. */
+  .volunteer-page__hero {
+    background-image:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, #ffffff 78%, transparent) 0%,
+        color-mix(in srgb, #ffffff 62%, transparent) 45%,
+        color-mix(in srgb, #0174b0 18%, transparent) 100%
+      ),
+      url("/icons/volunteer/volunteer-top.webp");
+    background-size: cover;
+    background-position: center right;
+    background-repeat: no-repeat;
+  }
 }
 
 @media (min-width: 900px) {
-  .volunteer-page__hero {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  }
-
-  .volunteer-page__section {
-    grid-template-columns: minmax(0, 1.35fr) minmax(14rem, 0.75fr);
+  .volunteer-page__body {
+    grid-template-columns: minmax(0, 7fr) minmax(14rem, 3fr);
     column-gap: var(--hu-space-6);
+    align-items: start;
   }
 
-  .volunteer-page__section-aside--cta {
-    justify-content: center;
-    padding-block-start: 3.25rem;
+  .volunteer-page__body-main--synced {
+    max-height: var(--volunteer-sidebar-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: var(--hu-space-2);
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--hu-color-primary, #0174b0) 35%, transparent) transparent;
+  }
+
+  .volunteer-page__body-main--synced::-webkit-scrollbar {
+    width: 0.45rem;
+  }
+
+  .volunteer-page__body-main--synced::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 35%, transparent);
+    border-radius: 999px;
   }
 
   .volunteer-page__section + .volunteer-page__section::before {
     content: "";
     position: absolute;
     inset-inline-start: 1.05rem;
-    top: -1.5rem;
+    top: calc(-1 * var(--hu-space-8, 2.5rem) / 2 - 0.75rem);
     width: 2px;
-    height: 1.5rem;
+    height: calc(var(--hu-space-8, 2.5rem) / 2 + 0.75rem);
     background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 28%, transparent);
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 599px) {
   .volunteer-page__hero {
     padding: var(--hu-space-5) var(--hu-space-4);
+    /* Mobile: keep clean HU gradient only — no volunteer-top.webp background. */
+    background-image: none;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, #0174b0 10%, transparent) 0%,
+      color-mix(in srgb, #df9815 8%, transparent) 100%
+    );
+  }
+}
+
+@media (max-width: 899px) {
+  .volunteer-page__body-main,
+  .volunteer-page__body-main--synced {
+    max-height: none;
+    overflow: visible;
   }
 }

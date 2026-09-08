@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   VOLUNTEER_ASSETS,
   VOLUNTEER_CREATE_INITIATIVE_HREF,
+  VOLUNTEER_CREATE_INITIATIVE_ICON,
   VOLUNTEER_ROUTE,
 } from "./volunteer.constants.js";
 import { SUPPORT_LINK_FALLBACKS } from "../support/support.constants.js";
@@ -42,11 +43,37 @@ describe("Volunteer public page", () => {
     assert.match(content, /t\("takePart\.heading"\)/);
   });
 
-  it("Create Initiative CTA links to canonical create route", () => {
+  it("uses a desktop main column plus one shared sidebar for visual, actions, and CTA", () => {
+    const content = read("features/volunteer/components/VolunteerPageContent.tsx");
+    assert.match(content, /volunteer-page__body-main/);
+    assert.match(content, /volunteer-page__sidebar/);
+    assert.match(content, /ResizeObserver/);
+    assert.match(content, /--volunteer-sidebar-height/);
+
+    const sidebarBlock = content.slice(
+      content.indexOf('className="volunteer-page__sidebar"'),
+      content.indexOf("</aside>", content.indexOf('className="volunteer-page__sidebar"')),
+    );
+    const visualAt = sidebarBlock.indexOf("volunteer-page__visual-card");
+    const actionsAt = sidebarBlock.indexOf("volunteer-page__actions-card");
+    const ctaAt = sidebarBlock.indexOf("volunteer-page__section-aside--cta");
+    assert.ok(visualAt >= 0 && actionsAt > visualAt && ctaAt > actionsAt);
+    assert.doesNotMatch(
+      content.slice(content.indexOf("volunteer-page__body-main"), content.indexOf("volunteer-page__sidebar")),
+      /volunteer-page__visual-card|volunteer-page__actions-card|volunteer-page__section-aside--cta/,
+    );
+  });
+
+  it("Create Initiative CTA links to canonical create route with workspace icon", () => {
     const content = read("features/volunteer/components/VolunteerPageContent.tsx");
     assert.equal(VOLUNTEER_CREATE_INITIATIVE_HREF, "/initiatives/create");
+    assert.equal(VOLUNTEER_CREATE_INITIATIVE_ICON, "/icons/workspace/initiatives.svg");
     assert.match(content, /VOLUNTEER_CREATE_INITIATIVE_HREF/);
+    assert.match(content, /VOLUNTEER_CREATE_INITIATIVE_ICON/);
     assert.match(content, /t\("createInitiativeCta"\)/);
+    assert.ok(
+      existsSync(path.join(webRoot, "public", VOLUNTEER_CREATE_INITIATIVE_ICON.replace(/^\//, ""))),
+    );
   });
 
   it("required volunteer assets resolve under public/icons/volunteer", () => {
@@ -65,6 +92,12 @@ describe("Volunteer public page", () => {
     assert.doesNotMatch(constants, /\.DS_Store|leaf\.png/);
   });
 
+  it("does not render a duplicate foreground hero image", () => {
+    const content = read("features/volunteer/components/VolunteerPageContent.tsx");
+    assert.doesNotMatch(content, /volunteer-page__hero-media|volunteer-page__hero-image/);
+    assert.doesNotMatch(content, /VOLUNTEER_ASSETS\.hero/);
+  });
+
   it("Support Volunteer CTA defaults to /volunteer", () => {
     assert.equal(SUPPORT_LINK_FALLBACKS.volunteer, "/volunteer");
     const content = read("features/support/components/SupportPageContent.tsx");
@@ -72,13 +105,19 @@ describe("Volunteer public page", () => {
     assert.match(content, /volunteer\.noteAvailable/);
   });
 
-  it("Knowledge Subsections includes Civic Media Center and Volunteering", () => {
+  it("Knowledge Subsections highlight Civic Media Center and Volunteering", () => {
     const sidebar = read("features/knowledge-center/components/KnowledgeSidebar.tsx");
+    const css = read("features/knowledge-center/knowledge-center.css");
     assert.match(sidebar, /CIVIC_MEDIA_ROUTE/);
     assert.match(sidebar, /tNav\("civicMediaCenter"\)/);
     assert.match(sidebar, /href="\/volunteer"/);
     assert.match(sidebar, /tNav\("volunteering"\)/);
-    assert.match(sidebar, /knowledge-center__nav-heading-link/);
+    assert.match(sidebar, /knowledge-center__nav-heading-link--accent/);
+    assert.match(css, /\.knowledge-center__nav-heading-link--accent\s*\{[^}]*color:\s*#df9815/s);
+    assert.match(
+      css,
+      /\.knowledge-center__nav-heading-link--accent:hover[\s\S]*color:\s*var\(--hu-color-primary\)/,
+    );
   });
 
   it("HTML Sitemap includes /volunteer Volunteering entry", () => {
@@ -88,14 +127,23 @@ describe("Volunteer public page", () => {
     assert.doesNotMatch(sitemap, /app\/sitemap\.ts|STATIC_PUBLIC_SITEMAP/);
   });
 
-  it("responsive CSS stacks sections below ~900px and uses two columns on desktop", () => {
+  it("desktop uses 70/30 body layout; mobile disables height sync and hero artwork", () => {
     const css = read("features/volunteer/volunteer-page.css");
     assert.match(css, /@media \(min-width:\s*900px\)/);
     assert.match(
       css,
-      /\.volunteer-page__section[\s\S]*grid-template-columns:\s*minmax\(0,\s*1\.35fr\)/,
+      /\.volunteer-page__body[\s\S]*grid-template-columns:\s*minmax\(0,\s*7fr\)\s+minmax\(14rem,\s*3fr\)/,
     );
-    assert.match(css, /\.volunteer-page__section[\s\S]*grid-template-columns:\s*1fr/);
+    assert.match(css, /\.volunteer-page__body-main--synced[\s\S]*max-height:\s*var\(--volunteer-sidebar-height\)/);
+    assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*max-height:\s*none/);
+    assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*overflow:\s*visible/);
+
+    assert.match(css, /@media \(min-width:\s*600px\)[\s\S]*volunteer-top\.webp/);
+    assert.match(css, /background-size:\s*cover/);
+    assert.match(
+      css,
+      /@media \(max-width:\s*599px\)[\s\S]*background-image:\s*none/,
+    );
   });
 });
 

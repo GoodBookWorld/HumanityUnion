@@ -73,8 +73,18 @@
   margin: 0 0 var(--hu-space-1);
 }
 
+.knowledge-center__nav-heading-link--accent {
+  color: #df9815;
+}
+
 .knowledge-center__nav-heading-link:hover,
 .knowledge-center__nav-heading-link[aria-current="page"] {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
+.knowledge-center__nav-heading-link--accent:hover,
+.knowledge-center__nav-heading-link--accent[aria-current="page"] {
   color: var(--hu-color-primary);
   text-decoration: underline;
 }

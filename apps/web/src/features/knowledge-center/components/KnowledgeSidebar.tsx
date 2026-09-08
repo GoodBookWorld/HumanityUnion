@@ -60,7 +60,7 @@ export function KnowledgeSidebar({
               <li>
                 <Link
                   href={CIVIC_MEDIA_ROUTE}
-                  className="knowledge-center__nav-heading-link"
+                  className="knowledge-center__nav-heading-link knowledge-center__nav-heading-link--accent"
                   aria-current={pathname === CIVIC_MEDIA_ROUTE ? "page" : undefined}
                   onClick={onNavigate}
                 >
@@ -70,7 +70,7 @@ export function KnowledgeSidebar({
               <li>
                 <Link
                   href="/volunteer"
-                  className="knowledge-center__nav-heading-link"
+                  className="knowledge-center__nav-heading-link knowledge-center__nav-heading-link--accent"
                   aria-current={pathname === "/volunteer" ? "page" : undefined}
                   onClick={onNavigate}
                 >

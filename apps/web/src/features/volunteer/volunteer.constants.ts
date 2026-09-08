@@ -4,6 +4,8 @@ export const VOLUNTEER_ROUTE = "/volunteer";
 
 export const VOLUNTEER_CREATE_INITIATIVE_HREF = "/initiatives/create";
 
+export const VOLUNTEER_CREATE_INITIATIVE_ICON = "/icons/workspace/initiatives.svg";
+
 export const VOLUNTEER_ASSETS = {
   hero: "/icons/volunteer/volunteer-top.webp",
   honeyEarth: "/icons/volunteer/honey-earth.webp",
