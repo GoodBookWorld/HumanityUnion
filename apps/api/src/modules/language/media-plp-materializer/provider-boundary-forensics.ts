@@ -63,6 +63,18 @@ export type ProviderBoundaryForensics = {
   readonly RETURNED_MACHINE_PATHS: readonly string[];
   readonly MISSING_MACHINE_PATHS: readonly string[];
   readonly UNEXPECTED_MACHINE_PATHS: readonly string[];
+  /** RESET 05E — bounded provider envelope taxonomy. */
+  readonly PROVIDER_FAILURE_SUBTYPE?: string | null;
+  readonly PROVIDER_HTTP_CLASS?: string | null;
+  readonly PROVIDER_FINISH_REASON?: string | null;
+  readonly PROVIDER_CANDIDATE_COUNT?: number | null;
+  readonly PROVIDER_TEXT_PART_COUNT?: number | null;
+  readonly PROVIDER_EXTRACTED_LENGTH?: number | null;
+  readonly PROVIDER_EXPECTED_KEY_COUNT?: number | null;
+  readonly PROVIDER_RETURNED_KEY_COUNT?: number | null;
+  readonly PROVIDER_MISSING_KEY_COUNT?: number | null;
+  readonly PROVIDER_BATCH_INDEX?: number | null;
+  readonly PROVIDER_BATCH_COUNT?: number | null;
 };
 
 const SENTINEL_RE = /__HU_BRAND_SITE_NAME__/g;
@@ -278,6 +290,39 @@ export function formatProviderForensicsSafe(
     );
   }
   parts.push(`PROVIDER_RESPONSE_SHAPE=${forensics.PROVIDER_RESPONSE_SHAPE}`);
+  if (forensics.PROVIDER_FAILURE_SUBTYPE) {
+    parts.push(`PROVIDER_FAILURE_SUBTYPE=${forensics.PROVIDER_FAILURE_SUBTYPE}`);
+  }
+  if (forensics.PROVIDER_HTTP_CLASS) {
+    parts.push(`PROVIDER_HTTP_CLASS=${forensics.PROVIDER_HTTP_CLASS}`);
+  }
+  if (forensics.PROVIDER_FINISH_REASON) {
+    parts.push(`PROVIDER_FINISH_REASON=${forensics.PROVIDER_FINISH_REASON}`);
+  }
+  if (forensics.PROVIDER_CANDIDATE_COUNT != null) {
+    parts.push(`PROVIDER_CANDIDATE_COUNT=${forensics.PROVIDER_CANDIDATE_COUNT}`);
+  }
+  if (forensics.PROVIDER_TEXT_PART_COUNT != null) {
+    parts.push(`PROVIDER_TEXT_PART_COUNT=${forensics.PROVIDER_TEXT_PART_COUNT}`);
+  }
+  if (forensics.PROVIDER_EXTRACTED_LENGTH != null) {
+    parts.push(`PROVIDER_EXTRACTED_LENGTH=${forensics.PROVIDER_EXTRACTED_LENGTH}`);
+  }
+  if (forensics.PROVIDER_EXPECTED_KEY_COUNT != null) {
+    parts.push(`PROVIDER_EXPECTED_KEY_COUNT=${forensics.PROVIDER_EXPECTED_KEY_COUNT}`);
+  }
+  if (forensics.PROVIDER_RETURNED_KEY_COUNT != null) {
+    parts.push(`PROVIDER_RETURNED_KEY_COUNT=${forensics.PROVIDER_RETURNED_KEY_COUNT}`);
+  }
+  if (forensics.PROVIDER_MISSING_KEY_COUNT != null) {
+    parts.push(`PROVIDER_MISSING_KEY_COUNT=${forensics.PROVIDER_MISSING_KEY_COUNT}`);
+  }
+  if (forensics.PROVIDER_BATCH_INDEX != null) {
+    parts.push(`PROVIDER_BATCH_INDEX=${forensics.PROVIDER_BATCH_INDEX}`);
+  }
+  if (forensics.PROVIDER_BATCH_COUNT != null) {
+    parts.push(`PROVIDER_BATCH_COUNT=${forensics.PROVIDER_BATCH_COUNT}`);
+  }
 
   const brandFail = forensics.BRAND_TOKEN_PATH_STATES.filter(
     (r) => r.TOKEN_STATE !== "PRESERVED",

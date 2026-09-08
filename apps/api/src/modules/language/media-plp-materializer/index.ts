@@ -70,3 +70,14 @@ export {
   FakeLocalMediaPlpTransport,
   createThinMediaPlpProviderFromConfig,
 } from "./thin-gemini-transport.js";
+export {
+  PLP_PROVIDER_FAILURE_SUBTYPE,
+  PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
+  encodePlpTranslationsContract,
+  decodePlpTranslationsContract,
+  planPlpProviderBatches,
+  extractJsonObjectText,
+  isPlpProviderFailureSubtypeRetryable,
+  isProviderResponseClassFailureReason,
+  classifyFinishReasonSubtype,
+} from "./provider-response-contract.js";

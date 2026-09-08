@@ -159,23 +159,22 @@ export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBu
 
   const pendingCount = await refreshPlpAutoBuildQueueDepthFromStore();
 
-  // RESET 05D — schedule editorial rebuild for current fingerprint (FAQ/overview).
+  // RESET 05D / 05E — schedule editorial + bounded current-consumer provider heal.
   try {
-    const { enqueueCivicMediaEditorialPlpBuilds } = await import(
-      "./editorial-build-trigger.js"
+    const { healCurrentConsumerProviderFailures } = await import(
+      "./current-consumer-provider-heal.js"
     );
-    const editorial = await enqueueCivicMediaEditorialPlpBuilds({
+    const healed = await healCurrentConsumerProviderFailures({
       locales: registered.locales,
     });
-    logger.info("plp_auto_build_runtime.editorial_enqueue", {
+    logger.info("plp_auto_build_runtime.consumer_provider_heal", {
       component: "plp-auto-build",
-      enqueued: editorial.enqueued,
-      skippedUsable: editorial.skippedUsable,
-      deduped: editorial.deduped,
-      canonicalVersion: editorial.canonicalVersion,
+      editorialEnqueued: healed.editorialEnqueued,
+      newsEnqueued: healed.newsEnqueued,
+      newsSkippedNotProviderClass: healed.newsSkippedNotProviderClass,
     });
   } catch (error) {
-    logger.warn("plp_auto_build_runtime.editorial_enqueue_failed", {
+    logger.warn("plp_auto_build_runtime.consumer_provider_heal_failed", {
       component: "plp-auto-build",
       error: error instanceof Error ? error.message : "unknown",
     });

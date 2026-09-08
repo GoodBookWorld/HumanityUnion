@@ -56,6 +56,8 @@ export type PlpAutoBuildWorkRecord = {
   readonly completedAt: string | null;
   readonly updatedAt: string;
   readonly lastFailureAt: string | null;
+  /** RESET 05E — exponential backoff gate for retryable provider failures. */
+  readonly nextAttemptAt: string | null;
 };
 
 
@@ -85,10 +87,31 @@ interface PlpAutoBuildWorkDocument extends Document {
   completedAt: string | null;
   updatedAt: string;
   lastFailureAt: string | null;
+  nextAttemptAt?: string | null;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const STUCK_RUNNING_MS = 10 * 60 * 1000;
+/** RESET 05E — base backoff for retryable provider failures (ms). */
+const PROVIDER_RETRY_BACKOFF_BASE_MS = 2_000;
+const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
+
+/**
+ * Bounded exponential backoff with jitter. attempts is the post-claim count.
+ * Does not raise maxAttempts.
+ */
+export function computePlpProviderRetryNextAttemptAt(
+  attempts: number,
+  nowMs: number = Date.now(),
+): string {
+  const exp = Math.max(0, Math.trunc(attempts) - 1);
+  const raw = Math.min(
+    PROVIDER_RETRY_BACKOFF_MAX_MS,
+    PROVIDER_RETRY_BACKOFF_BASE_MS * 2 ** exp,
+  );
+  const jitter = Math.floor(raw * 0.2 * Math.random());
+  return new Date(nowMs + raw + jitter).toISOString();
+}
 
 let forceMemoryForTests = false;
 const memoryByWorkKey = new Map<string, PlpAutoBuildWorkRecord>();
@@ -148,6 +171,7 @@ function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
     completedAt: doc.completedAt,
     updatedAt: doc.updatedAt,
     lastFailureAt: doc.lastFailureAt,
+    nextAttemptAt: doc.nextAttemptAt ?? null,
   };
 }
 
@@ -191,6 +215,7 @@ function coalesceUpsert(input: {
       completedAt: null,
       updatedAt,
       lastFailureAt: null,
+      nextAttemptAt: null,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -219,6 +244,7 @@ function coalesceUpsert(input: {
       completedAt: null,
       updatedAt,
       enqueuedAt: updatedAt,
+      nextAttemptAt: null,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -271,6 +297,7 @@ function coalesceUpsert(input: {
     claimedAt: null,
     completedAt: null,
     updatedAt,
+    nextAttemptAt: null,
     enqueuedAt:
       existing.status === "pending" || existing.status === "running"
         ? existing.enqueuedAt
@@ -342,6 +369,7 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
       .filter(
         (row) =>
           row.attempts < row.maxAttempts &&
+          (row.nextAttemptAt == null || row.nextAttemptAt <= now) &&
           (row.status === "pending" ||
             (row.status === "running" &&
               row.claimedAt != null &&
@@ -362,6 +390,7 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
       claimedAt: now,
       updatedAt: now,
       attempts: next.attempts + 1,
+      nextAttemptAt: null,
     };
     memoryByWorkKey.set(next.workKey, claimed);
     return claimed;
@@ -372,6 +401,13 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
     {
       $and: [
         { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
+        {
+          $or: [
+            { nextAttemptAt: null },
+            { nextAttemptAt: { $exists: false } },
+            { nextAttemptAt: { $lte: now } },
+          ],
+        },
         {
           $or: [
             { status: "pending" },
@@ -385,6 +421,7 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
         status: "running",
         claimedAt: now,
         updatedAt: now,
+        nextAttemptAt: null,
       },
       $inc: { attempts: 1 },
     },
@@ -497,6 +534,12 @@ export async function markPlpAutoBuildWorkFailed(input: {
   const now = nowIso();
   const underCap = input.attempts < input.maxAttempts;
   const canRetry = input.failure.retryable && underCap;
+  // Memory/test drain is synchronous — skip wall-clock backoff there.
+  // Mongo durable queue uses bounded exponential backoff + jitter.
+  const nextAttemptAt =
+    canRetry && !usePlpAutoBuildWorkMemory()
+      ? computePlpProviderRetryNextAttemptAt(input.attempts)
+      : null;
 
   const failurePatch = {
     lastError: safeReason,
@@ -504,6 +547,7 @@ export async function markPlpAutoBuildWorkFailed(input: {
     failureStage: input.failure.stage,
     retryable: input.failure.retryable,
     lastFailureAt: now,
+    nextAttemptAt,
   };
 
   if (usePlpAutoBuildWorkMemory()) {
@@ -528,6 +572,7 @@ export async function markPlpAutoBuildWorkFailed(input: {
       status: "failed",
       updatedAt: now,
       completedAt: now,
+      nextAttemptAt: null,
     });
     return { requeued: false };
   }
@@ -554,6 +599,7 @@ export async function markPlpAutoBuildWorkFailed(input: {
       $set: {
         status: "failed",
         ...failurePatch,
+        nextAttemptAt: null,
         updatedAt: now,
         completedAt: now,
       },

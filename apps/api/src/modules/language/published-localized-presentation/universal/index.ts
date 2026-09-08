@@ -65,6 +65,7 @@ export type {
   BootstrapPlpAutoBuildRuntimeResult,
 } from "./register-plp-auto-build-processor.js";
 export { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";
+export { healCurrentConsumerProviderFailures } from "./current-consumer-provider-heal.js";
 export {
   getPlpAutoBuildRuntimeSnapshot,
   resetPlpAutoBuildRuntimeForTests,
@@ -85,6 +86,7 @@ export {
   normalizePlpAutoBuildFailureClass,
   markPlpAutoBuildWorkFailed,
   markPlpAutoBuildWorkCompleted,
+  computePlpProviderRetryNextAttemptAt,
   PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT,
   PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT,
 } from "./plp-auto-build-work.repository.js";

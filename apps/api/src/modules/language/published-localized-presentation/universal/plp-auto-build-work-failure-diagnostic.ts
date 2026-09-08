@@ -39,7 +39,7 @@ export type PlpAutoBuildFailedWorkRow = {
   readonly failureStage: string | null;
   readonly retryable: boolean | null;
   readonly lastAttemptAt: string | null;
-  readonly nextAttemptAt: null;
+  readonly nextAttemptAt: string | null;
   readonly liveCanonicalVersion: string | null;
   readonly canonicalVersionMatchesLive: boolean | null;
   readonly usablePlpSnapshotExists: boolean;
@@ -229,7 +229,7 @@ export async function inspectPlpAutoBuildFailedWork(input?: {
       failureStage: work.failureStage,
       retryable: work.retryable,
       lastAttemptAt: work.lastFailureAt ?? work.claimedAt ?? work.updatedAt,
-      nextAttemptAt: null,
+      nextAttemptAt: work.nextAttemptAt,
       liveCanonicalVersion,
       canonicalVersionMatchesLive,
       usablePlpSnapshotExists,

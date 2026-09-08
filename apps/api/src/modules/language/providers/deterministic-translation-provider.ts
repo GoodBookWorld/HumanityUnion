@@ -44,15 +44,10 @@ export class DeterministicTranslationProvider implements TranslationProvider {
     if (request.contentType === "structured_json") {
       try {
         const parsed = JSON.parse(request.text) as Record<string, unknown>;
-        const translated: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(parsed)) {
-          if (typeof value !== "string") {
-            translated[key] = value;
-            continue;
-          }
+        const translateString = (value: string): string => {
           // Pack 08I.5 — for HTML-looking strings, translate text nodes only; keep tags/attrs.
           if (/<[a-z][\s\S]*>/i.test(value)) {
-            translated[key] = value.replace(
+            return value.replace(
               /(^|>)([^<]+)(?=<|$)/g,
               (_match, boundary: string, text: string) => {
                 if (!text.trim()) {
@@ -61,9 +56,36 @@ export class DeterministicTranslationProvider implements TranslationProvider {
                 return `${boundary}[${request.targetLanguage}] ${text}`;
               },
             );
-          } else {
-            translated[key] = `[${request.targetLanguage}] ${value}`;
           }
+          return `[${request.targetLanguage}] ${value}`;
+        };
+
+        // RESET 05E — PLP translations-array contract.
+        if (Array.isArray(parsed.translations)) {
+          const translations = parsed.translations.map((entry) => {
+            if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+              return entry;
+            }
+            const row = entry as Record<string, unknown>;
+            if (typeof row.key !== "string" || typeof row.value !== "string") {
+              return entry;
+            }
+            return { key: row.key, value: translateString(row.value) };
+          });
+          return {
+            translatedText: JSON.stringify({ translations }),
+            providerId: this.providerId,
+            isPlaceholder: false,
+          };
+        }
+
+        const translated: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          if (typeof value !== "string") {
+            translated[key] = value;
+            continue;
+          }
+          translated[key] = translateString(value);
         }
         return {
           translatedText: JSON.stringify(translated),

@@ -1,9 +1,8 @@
 /**
- * Reset 03B.2 — thin Gemini HTTP transport for Media PLP materializer only.
+ * Reset 03B.2 / RESET 05E — thin Gemini HTTP transport for Media PLP materializer.
  *
- * Native fetch → Generative Language API. No registry barrel, no API
- * bootstrap, no Google SDK package. Credentials from resolveTranslationConfig;
- * never logged. Max one request; no retries; no streaming; no session objects.
+ * RESET 05E — structured JSON responseMimeType + translations schema;
+ * finishReason / safety / truncation classified; multi-request for sequential batches.
  */
 
 import {
@@ -18,6 +17,12 @@ import type {
   TranslationProviderResult,
 } from "../translation-provider.js";
 import { buildThinGeminiMediaPlpSystemInstruction } from "./thin-gemini-prompt.js";
+import {
+  classifyFinishReasonSubtype,
+  extractJsonObjectText,
+  PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
+  PLP_PROVIDER_FAILURE_SUBTYPE,
+} from "./provider-response-contract.js";
 
 /** Safe non-secret transport identifier for operator reports. */
 export const MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID =
@@ -49,19 +54,39 @@ function classifyGeminiHttpFailure(
   body: GeminiGenerateContentResponse,
 ): TranslationProviderError {
   if (status === 401 || status === 403) {
-    return new TranslationProviderError("not_configured", `Gemini HTTP ${status}`);
+    return new TranslationProviderError(
+      "not_configured",
+      `Gemini HTTP ${status}`,
+      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    );
   }
   if (status === 429) {
-    return new TranslationProviderError("rate_limited", `Gemini HTTP ${status}`);
+    return new TranslationProviderError(
+      "rate_limited",
+      `Gemini HTTP ${status}`,
+      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    );
   }
   if (status >= 500) {
-    return new TranslationProviderError("unavailable", `Gemini HTTP ${status}`);
+    return new TranslationProviderError(
+      "unavailable",
+      `Gemini HTTP ${status}`,
+      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    );
   }
   const vendorMessage = body.error?.message ?? "";
   if (/API key|PERMISSION_DENIED|UNAUTHENTICATED/i.test(vendorMessage)) {
-    return new TranslationProviderError("not_configured", "Gemini rejected credentials");
+    return new TranslationProviderError(
+      "not_configured",
+      "Gemini rejected credentials",
+      PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+    );
   }
-  return new TranslationProviderError("unavailable", `Gemini HTTP ${status}`);
+  return new TranslationProviderError(
+    "unavailable",
+    `Gemini HTTP ${status}`,
+    PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
+  );
 }
 
 export type ThinGeminiFetch = (
@@ -69,22 +94,36 @@ export type ThinGeminiFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
+export type MediaPlpBatchableTransport = TranslationProvider & {
+  setMaxRequestsForBatching?(maxRequests: number): void;
+  getRequestCountForTests?(): number;
+};
+
 /**
- * One-request-max Gemini transport for the Media PLP operator.
+ * Gemini transport for the Media PLP operator.
+ * RESET 05E — maxRequests allows sequential batch hops (still concurrency=1).
  */
 export class ThinGeminiMediaPlpTransport implements TranslationProvider {
   readonly providerId = "gemini" as const;
   readonly transportId = MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
 
   private requestCount = 0;
+  private maxRequests: number;
 
   constructor(
     private readonly config: TranslationConfig = resolveTranslationConfig(),
     private readonly fetchImpl: ThinGeminiFetch = fetch,
-  ) {}
+    options?: { readonly maxRequests?: number },
+  ) {
+    this.maxRequests = Math.max(1, Math.trunc(options?.maxRequests ?? 1));
+  }
 
   getRequestCountForTests(): number {
     return this.requestCount;
+  }
+
+  setMaxRequestsForBatching(maxRequests: number): void {
+    this.maxRequests = Math.max(1, Math.trunc(maxRequests));
   }
 
   async translate(request: TranslationProviderRequest): Promise<TranslationProviderResult> {
@@ -92,15 +131,16 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
       throw new TranslationProviderError(
         "safety_rejected",
         "Translation refused: content was not marked safety-cleared.",
+        PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED,
       );
     }
 
     assertGeminiTranslationConfigured(this.config);
 
-    if (this.requestCount >= 1) {
+    if (this.requestCount >= this.maxRequests) {
       throw new TranslationProviderError(
         "bad_request",
-        "Thin Gemini transport hard-capped at one request.",
+        `Thin Gemini transport hard-capped at ${this.maxRequests} request(s).`,
       );
     }
 
@@ -152,17 +192,24 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
             generationConfig: {
               temperature: 0.2,
               maxOutputTokens: this.config.maxOutputTokens,
+              responseMimeType: "application/json",
+              responseSchema: PLP_GEMINI_TRANSLATIONS_RESPONSE_SCHEMA,
             },
           }),
           signal: controller.signal,
         });
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
-          throw new TranslationProviderError("timeout", "Gemini translation timed out");
+          throw new TranslationProviderError(
+            "timeout",
+            "Gemini translation timed out",
+            PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT,
+          );
         }
         throw new TranslationProviderError(
           "network_failure",
           error instanceof Error ? error.message : "Gemini network failure",
+          PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_FAILURE,
         );
       }
 
@@ -170,7 +217,11 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
       try {
         body = (await response.json()) as GeminiGenerateContentResponse;
       } catch {
-        throw new TranslationProviderError("malformed_response", "Gemini response was not JSON");
+        throw new TranslationProviderError(
+          "malformed_response",
+          "Gemini response was not JSON",
+          PLP_PROVIDER_FAILURE_SUBTYPE.GEMINI_ENVELOPE_MISSING,
+        );
       }
 
       if (!response.ok) {
@@ -181,28 +232,84 @@ export class ThinGeminiMediaPlpTransport implements TranslationProvider {
         throw new TranslationProviderError(
           "safety_rejected",
           "Gemini blocked the translation request",
+          PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED,
         );
       }
 
-      const text =
-        body.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+      const candidates = body.candidates ?? [];
+      if (candidates.length === 0) {
+        throw new TranslationProviderError(
+          "malformed_response",
+          "Gemini returned no candidates",
+          PLP_PROVIDER_FAILURE_SUBTYPE.CANDIDATE_MISSING,
+        );
+      }
+
+      const candidate = candidates[0]!;
+      const finishReason = candidate.finishReason ?? null;
+      const finishSubtype = classifyFinishReasonSubtype(finishReason);
+      if (finishSubtype === PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED) {
+        throw new TranslationProviderError(
+          "safety_rejected",
+          "Gemini finishReason safety block",
+          finishSubtype,
+        );
+      }
+
+      const parts = candidate.content?.parts ?? [];
+      const textPartCount = parts.filter((p) => typeof p.text === "string").length;
+      if (parts.length === 0 || textPartCount === 0) {
+        throw new TranslationProviderError(
+          "malformed_response",
+          "Gemini candidate missing text parts",
+          PLP_PROVIDER_FAILURE_SUBTYPE.TEXT_PART_MISSING,
+        );
+      }
+
+      const text = parts.map((part) => part.text ?? "").join("");
       const trimmed = text.trim();
       if (!trimmed) {
         throw new TranslationProviderError(
           "malformed_response",
           "Gemini returned empty translation",
+          PLP_PROVIDER_FAILURE_SUBTYPE.EMPTY_RESPONSE,
         );
       }
 
-      const cleaned = trimmed
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
+      if (
+        finishSubtype === PLP_PROVIDER_FAILURE_SUBTYPE.TOKEN_LIMIT_OR_FINISH_REASON ||
+        finishSubtype === PLP_PROVIDER_FAILURE_SUBTYPE.TRUNCATED_RESPONSE
+      ) {
+        throw new TranslationProviderError(
+          "malformed_response",
+          finishSubtype === PLP_PROVIDER_FAILURE_SUBTYPE.TOKEN_LIMIT_OR_FINISH_REASON
+            ? "Gemini truncated output (MAX_TOKENS)"
+            : `Gemini truncated/incomplete finishReason=${finishReason}`,
+          finishSubtype,
+        );
+      }
+
+      const extracted = extractJsonObjectText(trimmed);
+      if (!extracted.ok) {
+        throw new TranslationProviderError(
+          "malformed_response",
+          "Gemini JSON extraction failed",
+          extracted.subtype,
+        );
+      }
 
       return {
-        translatedText: cleaned,
+        translatedText: extracted.text,
         providerId: this.providerId,
         isPlaceholder: false,
+        envelope: {
+          httpStatus: response.status,
+          finishReason,
+          candidateCount: candidates.length,
+          textPartCount,
+          extractedLength: extracted.text.length,
+          failureSubtype: null,
+        },
       };
     } finally {
       clearTimeout(timeout);
@@ -218,6 +325,7 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
   readonly transportId = MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID;
 
   private requestCount = 0;
+  private maxRequests: number;
 
   constructor(
     private readonly behavior: {
@@ -225,11 +333,19 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
       readonly timeoutMs?: number;
       readonly responseText?: string | ((request: TranslationProviderRequest) => string);
       readonly failWith?: Error;
+      readonly maxRequests?: number;
+      readonly finishReason?: string;
     } = {},
-  ) {}
+  ) {
+    this.maxRequests = Math.max(1, Math.trunc(behavior.maxRequests ?? 1));
+  }
 
   getRequestCountForTests(): number {
     return this.requestCount;
+  }
+
+  setMaxRequestsForBatching(maxRequests: number): void {
+    this.maxRequests = Math.max(1, Math.trunc(maxRequests));
   }
 
   async translate(request: TranslationProviderRequest): Promise<TranslationProviderResult> {
@@ -237,13 +353,14 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
       throw new TranslationProviderError(
         "safety_rejected",
         "Translation refused: content was not marked safety-cleared.",
+        PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED,
       );
     }
 
-    if (this.requestCount >= 1) {
+    if (this.requestCount >= this.maxRequests) {
       throw new TranslationProviderError(
         "bad_request",
-        "Fake local transport hard-capped at one request.",
+        `Fake local transport hard-capped at ${this.maxRequests} request(s).`,
       );
     }
     this.requestCount += 1;
@@ -255,10 +372,27 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
     const delayMs = this.behavior.delayMs ?? 0;
     const timeoutMs = this.behavior.timeoutMs;
     if (timeoutMs !== undefined && delayMs >= timeoutMs) {
-      throw new TranslationProviderError("timeout", "Fake local transport timed out");
+      throw new TranslationProviderError(
+        "timeout",
+        "Fake local transport timed out",
+        PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT,
+      );
     }
     if (delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (this.behavior.finishReason) {
+      const subtype = classifyFinishReasonSubtype(this.behavior.finishReason);
+      if (subtype) {
+        throw new TranslationProviderError(
+          subtype === PLP_PROVIDER_FAILURE_SUBTYPE.SAFETY_BLOCKED
+            ? "safety_rejected"
+            : "malformed_response",
+          `Fake finishReason=${this.behavior.finishReason}`,
+          subtype,
+        );
+      }
     }
 
     let translatedText: string;
@@ -267,18 +401,43 @@ export class FakeLocalMediaPlpTransport implements TranslationProvider {
     } else if (typeof this.behavior.responseText === "string") {
       translatedText = this.behavior.responseText;
     } else {
-      const parsed = JSON.parse(request.text) as Record<string, string>;
-      const out: Record<string, string> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        out[k] = `[${request.targetLanguage}] ${v}`;
+      const parsed = JSON.parse(request.text) as {
+        translations?: Array<{ key: string; value: string }>;
+      } & Record<string, string>;
+      if (Array.isArray(parsed.translations)) {
+        translatedText = JSON.stringify({
+          translations: parsed.translations.map((row) => ({
+            key: row.key,
+            value: `[${request.targetLanguage}] ${row.value}`,
+          })),
+        });
+      } else {
+        const out: Record<string, string> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === "string") {
+            out[k] = `[${request.targetLanguage}] ${v}`;
+          }
+        }
+        translatedText = JSON.stringify({
+          translations: Object.keys(out)
+            .sort()
+            .map((key) => ({ key, value: out[key]! })),
+        });
       }
-      translatedText = JSON.stringify(out);
     }
 
     return {
       translatedText,
       providerId: this.providerId,
       isPlaceholder: false,
+      envelope: {
+        httpStatus: 200,
+        finishReason: "STOP",
+        candidateCount: 1,
+        textPartCount: 1,
+        extractedLength: translatedText.length,
+        failureSubtype: null,
+      },
     };
   }
 }

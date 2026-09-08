@@ -18,6 +18,7 @@ import {
 } from "@hu/types";
 
 import type { TranslationProvider } from "../translation-provider.js";
+import { TranslationProviderError } from "../translation.config.js";
 import {
   markMaterializerProviderCall,
   markMaterializerProviderImported,
@@ -27,6 +28,7 @@ import { resolveMediaPlpOperatorMaxProviderInputBytes } from "./constants.js";
 import {
   createThinMediaPlpProviderFromConfig,
   MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
+  type MediaPlpBatchableTransport,
 } from "./thin-gemini-transport.js";
 import {
   classifyNewsPathForensics,
@@ -40,6 +42,14 @@ import {
   type ProviderPartialSubreason,
   type ProviderResponseShape,
 } from "./provider-boundary-forensics.js";
+import {
+  decodePlpTranslationsContract,
+  encodePlpTranslationsContract,
+  httpStatusClass,
+  planPlpProviderBatches,
+  PLP_PROVIDER_FAILURE_SUBTYPE,
+  type PlpProviderFailureSubtype,
+} from "./provider-response-contract.js";
 
 export const MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY = "THIN" as const;
 
@@ -474,16 +484,6 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
   const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
   const expectedPaths = Object.keys(input.autoValues).sort();
-  const counters = getMediaPlpMaterializerCounters();
-  if (counters.PROVIDER_CALL_COUNT >= 1) {
-    return failResult({
-      reason: "PROVIDER_CALL_CAP",
-      bytes: 0,
-      transport,
-      forensics: emptyForensics({ expectedPaths }),
-      messagePrefix: "PROVIDER_CALL_CAP",
-    });
-  }
 
   // RESET 05D.6 — extract Brand slots; provider receives MACHINE_TEXT only.
   const { payload: providerOwnedPayload, plans: brandSlotPlans } =
@@ -495,96 +495,255 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       reason: "BRAND_TOKEN_PRESERVATION_FAILED",
       bytes: 0,
       transport,
-      forensics: emptyForensics({ expectedPaths }),
+      forensics: {
+        ...emptyForensics({ expectedPaths }),
+        PROVIDER_FAILURE_SUBTYPE: PLP_PROVIDER_FAILURE_SUBTYPE.BRAND_ARTIFACT,
+      },
       messagePrefix:
         "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_PAYLOAD_CONTAINS_BRAND",
     });
   }
 
-  const payload = JSON.stringify(providerOwnedPayload);
-  const bytes = Buffer.byteLength(payload, "utf8");
-  const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
-  if (bytes > maxBytes) {
-    return failResult({
-      reason: "PAYLOAD_LIMIT",
-      bytes,
-      transport,
-      forensics: emptyForensics({ expectedPaths }),
-      messagePrefix: "PAYLOAD_LIMIT",
-    });
-  }
-
-  markMaterializerProviderCall();
-  if (getMediaPlpMaterializerCounters().PROVIDER_CALL_COUNT > 1) {
+  const batches = planPlpProviderBatches(providerOwnedPayload);
+  const batchCount = Math.max(1, batches.length);
+  const counters = getMediaPlpMaterializerCounters();
+  // RESET 05E — allow one sequential call per batch (concurrency still 1).
+  if (counters.PROVIDER_CALL_COUNT >= batchCount) {
     return failResult({
       reason: "PROVIDER_CALL_CAP",
-      bytes,
+      bytes: 0,
       transport,
       forensics: emptyForensics({ expectedPaths }),
       messagePrefix: "PROVIDER_CALL_CAP",
     });
   }
 
+  const batchable = input.provider as MediaPlpBatchableTransport;
+  if (typeof batchable.setMaxRequestsForBatching === "function") {
+    batchable.setMaxRequestsForBatching(batchCount);
+  }
+
+  const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
+  let totalBytes = 0;
+  const flattenedSegments: Record<string, string> = {};
+  let lastProviderId = "unknown";
+  let lastEnvelope: {
+    httpStatus?: number | null;
+    finishReason?: string | null;
+    candidateCount?: number;
+    textPartCount?: number;
+    extractedLength?: number;
+  } = {};
+
+  const subtypeForensics = (
+    subtype: PlpProviderFailureSubtype,
+    batchIndex: number,
+    extras?: Partial<ProviderBoundaryForensics>,
+  ): ProviderBoundaryForensics => ({
+    ...emptyForensics({ expectedPaths, shape: "INVALID" }),
+    PROVIDER_FAILURE_SUBTYPE: subtype,
+    PROVIDER_HTTP_CLASS: httpStatusClass(lastEnvelope.httpStatus ?? null),
+    PROVIDER_FINISH_REASON: lastEnvelope.finishReason ?? null,
+    PROVIDER_CANDIDATE_COUNT: lastEnvelope.candidateCount ?? 0,
+    PROVIDER_TEXT_PART_COUNT: lastEnvelope.textPartCount ?? 0,
+    PROVIDER_EXTRACTED_LENGTH: lastEnvelope.extractedLength ?? 0,
+    PROVIDER_EXPECTED_KEY_COUNT: expectedPaths.length,
+    PROVIDER_RETURNED_KEY_COUNT: Object.keys(flattenedSegments).length,
+    PROVIDER_MISSING_KEY_COUNT: Math.max(
+      0,
+      expectedPaths.length - Object.keys(flattenedSegments).length,
+    ),
+    PROVIDER_BATCH_INDEX: batchIndex,
+    PROVIDER_BATCH_COUNT: batchCount,
+    ...extras,
+  });
+
   try {
-    const result = await input.provider.translate({
-      sourceLanguage: "en",
-      targetLanguage: input.locale,
-      text: payload,
-      contentType: "structured_json",
-      sourceRecordId: input.sourceRecordId,
-      sourceVersion: input.sourceVersion,
-      safetyCleared: true,
-    });
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(result.translatedText);
-    } catch {
-      const forensics: ProviderBoundaryForensics = {
-        ...emptyForensics({ expectedPaths, shape: "INVALID" }),
-        PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
-      };
-      return failResult({
-        reason: "PARSE_FAILURE",
-        bytes,
-        transport,
-        forensics,
-        messagePrefix: "PARSE_FAILURE",
-      });
-    }
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+      const batch = batches[batchIndex]!;
+      const contract = encodePlpTranslationsContract(batch);
+      const payload = JSON.stringify(contract);
+      const bytes = Buffer.byteLength(payload, "utf8");
+      totalBytes += bytes;
+      if (bytes > maxBytes) {
+        return failResult({
+          reason: "PAYLOAD_LIMIT",
+          bytes: totalBytes,
+          transport,
+          forensics: subtypeForensics(
+            PLP_PROVIDER_FAILURE_SUBTYPE.UNKNOWN_PROVIDER_SHAPE,
+            batchIndex,
+          ),
+          messagePrefix: "PAYLOAD_LIMIT",
+        });
+      }
 
-    const shape = classifyProviderResponseShape(parsed);
-    if (shape !== "OBJECT") {
-      const forensics: ProviderBoundaryForensics = {
-        ...emptyForensics({ expectedPaths, shape }),
-        PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
-      };
-      return failResult({
-        reason: "PARSE_FAILURE",
-        bytes,
-        transport,
-        forensics,
-        messagePrefix: "PARSE_FAILURE",
-      });
-    }
+      markMaterializerProviderCall();
+      if (getMediaPlpMaterializerCounters().PROVIDER_CALL_COUNT > batchCount) {
+        return failResult({
+          reason: "PROVIDER_CALL_CAP",
+          bytes: totalBytes,
+          transport,
+          forensics: subtypeForensics(
+            PLP_PROVIDER_FAILURE_SUBTYPE.BATCH_INCOMPLETE,
+            batchIndex,
+          ),
+          messagePrefix: "PROVIDER_CALL_CAP",
+        });
+      }
 
-    const flattenedSegments: Record<string, string> = {};
-    flattenStructuredLocalizationValues(parsed, "", flattenedSegments);
+      const result = await input.provider.translate({
+        sourceLanguage: "en",
+        targetLanguage: input.locale,
+        text: payload,
+        contentType: "structured_json",
+        sourceRecordId: input.sourceRecordId,
+        sourceVersion: input.sourceVersion,
+        safetyCleared: true,
+      });
+      lastProviderId = result.providerId;
+      lastEnvelope = result.envelope ?? {};
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(result.translatedText);
+      } catch {
+        return failResult({
+          reason: "PARSE_FAILURE",
+          bytes: totalBytes,
+          transport,
+          forensics: {
+            ...subtypeForensics(
+              PLP_PROVIDER_FAILURE_SUBTYPE.JSON_PARSE_FAILED,
+              batchIndex,
+            ),
+            PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
+            PROVIDER_EXTRACTED_LENGTH: result.translatedText.length,
+          },
+          messagePrefix: "PARSE_FAILURE",
+        });
+      }
+
+      const shape = classifyProviderResponseShape(parsed);
+      if (shape !== "OBJECT") {
+        return failResult({
+          reason: "PARSE_FAILURE",
+          bytes: totalBytes,
+          transport,
+          forensics: {
+            ...subtypeForensics(
+              PLP_PROVIDER_FAILURE_SUBTYPE.JSON_ROOT_NOT_OBJECT,
+              batchIndex,
+              { PROVIDER_RESPONSE_SHAPE: shape },
+            ),
+            PROVIDER_PARTIAL_SUBREASON: "PARSE_FAILURE",
+          },
+          messagePrefix: "PARSE_FAILURE",
+        });
+      }
+
+      const decoded = decodePlpTranslationsContract(parsed);
+      if (!decoded.ok) {
+        return failResult({
+          reason:
+            decoded.subtype === PLP_PROVIDER_FAILURE_SUBTYPE.DUPLICATE_KEY
+              ? "PARTIAL"
+              : "PARSE_FAILURE",
+          bytes: totalBytes,
+          transport,
+          forensics: {
+            ...subtypeForensics(decoded.subtype, batchIndex, {
+              PROVIDER_RESPONSE_SHAPE: "OBJECT",
+            }),
+            PROVIDER_PARTIAL_SUBREASON:
+              decoded.subtype === PLP_PROVIDER_FAILURE_SUBTYPE.DUPLICATE_KEY
+                ? "PATH_MAPPING_FAILURE"
+                : "PARSE_FAILURE",
+          },
+          messagePrefix:
+            decoded.subtype === PLP_PROVIDER_FAILURE_SUBTYPE.DUPLICATE_KEY
+              ? "PARTIAL:DUPLICATE_KEY"
+              : "PARSE_FAILURE",
+        });
+      }
+
+      for (const [key, value] of Object.entries(decoded.values)) {
+        if (Object.prototype.hasOwnProperty.call(flattenedSegments, key)) {
+          return failResult({
+            reason: "PARTIAL",
+            bytes: totalBytes,
+            transport,
+            forensics: {
+              ...subtypeForensics(PLP_PROVIDER_FAILURE_SUBTYPE.DUPLICATE_KEY, batchIndex, {
+                PROVIDER_RESPONSE_SHAPE: "OBJECT",
+              }),
+              PROVIDER_PARTIAL_SUBREASON: "PATH_MAPPING_FAILURE",
+            },
+            messagePrefix: "PARTIAL:DUPLICATE_KEY",
+          });
+        }
+        flattenedSegments[key] = value;
+      }
+
+      // Batch must return every requested provider key.
+      const missingBatchKeys = Object.keys(batch).filter(
+        (k) => !(k in decoded.values) || !decoded.values[k]!.trim(),
+      );
+      if (missingBatchKeys.length > 0) {
+        const missingSemantic = [
+          ...new Set(
+            missingBatchKeys.map((key) => {
+              const hash = key.lastIndexOf("#m");
+              if (hash > 0 && /^#m\d+$/.test(key.slice(hash))) {
+                return key.slice(0, hash);
+              }
+              return key;
+            }),
+          ),
+        ].sort();
+        return failResult({
+          reason: "PARTIAL",
+          bytes: totalBytes,
+          transport,
+          forensics: {
+            ...subtypeForensics(
+              PLP_PROVIDER_FAILURE_SUBTYPE.EXPECTED_KEY_MISSING,
+              batchIndex,
+              { PROVIDER_RESPONSE_SHAPE: "OBJECT" },
+            ),
+            PROVIDER_PARTIAL_SUBREASON: "MISSING_PATH",
+            MISSING_MACHINE_PATHS: missingSemantic,
+            RETURNED_MACHINE_PATHS: Object.keys(decoded.values)
+              .map((key) => {
+                const hash = key.lastIndexOf("#m");
+                if (hash > 0 && /^#m\d+$/.test(key.slice(hash))) {
+                  return key.slice(0, hash);
+                }
+                return key;
+              })
+              .sort(),
+          },
+          messagePrefix: "PARTIAL:MISSING_PATH",
+        });
+      }
+    }
 
     // Defensive: provider must not inject Brand tokens/sentinels into segments.
     const injectedBrandKeys = Object.entries(flattenedSegments)
       .filter(([, value]) => textContainsBrandTransportArtifact(value))
       .map(([key]) => key);
     if (injectedBrandKeys.length > 0) {
-      const forensics: ProviderBoundaryForensics = {
-        ...emptyForensics({ expectedPaths, shape }),
-        PROVIDER_PARTIAL_SUBREASON: "OTHER_STRUCTURAL_FAILURE",
-        RETURNED_MACHINE_PATHS: Object.keys(flattenedSegments).sort(),
-      };
       return failResult({
         reason: "BRAND_TOKEN_PRESERVATION_FAILED",
-        bytes,
+        bytes: totalBytes,
         transport,
-        forensics,
+        forensics: {
+          ...subtypeForensics(PLP_PROVIDER_FAILURE_SUBTYPE.BRAND_ARTIFACT, 0, {
+            PROVIDER_RESPONSE_SHAPE: "OBJECT",
+          }),
+          PROVIDER_PARTIAL_SUBREASON: "OTHER_STRUCTURAL_FAILURE",
+          RETURNED_MACHINE_PATHS: Object.keys(flattenedSegments).sort(),
+        },
         messagePrefix:
           "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_INJECTED_BRAND",
       });
@@ -609,7 +768,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         }),
       );
       const forensics: ProviderBoundaryForensics = {
-        PROVIDER_RESPONSE_SHAPE: shape,
+        PROVIDER_RESPONSE_SHAPE: "OBJECT",
         BRAND_TOKEN_PATH_STATES: [],
         NEWS_PATH_STATES: newsStates,
         PROVIDER_PARTIAL_SUBREASON: "MISSING_PATH",
@@ -617,10 +776,15 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         RETURNED_MACHINE_PATHS: Object.keys(reassembled.values).sort(),
         MISSING_MACHINE_PATHS: missingSemantic,
         UNEXPECTED_MACHINE_PATHS: [],
+        PROVIDER_FAILURE_SUBTYPE: PLP_PROVIDER_FAILURE_SUBTYPE.EXPECTED_KEY_MISSING,
+        PROVIDER_BATCH_COUNT: batchCount,
+        PROVIDER_EXPECTED_KEY_COUNT: expectedPaths.length,
+        PROVIDER_RETURNED_KEY_COUNT: Object.keys(reassembled.values).length,
+        PROVIDER_MISSING_KEY_COUNT: missingSemantic.length,
       };
       return failResult({
         reason: "PARTIAL",
-        bytes,
+        bytes: totalBytes,
         transport,
         forensics,
         messagePrefix: "PARTIAL:MISSING_PATH",
@@ -629,8 +793,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 
     const aligned: Record<string, string> = { ...reassembled.values };
     const presentKeys = Object.keys(aligned);
+    const shape: ProviderResponseShape = "OBJECT";
 
-    // Brand forensics after structural reassembly (slots never crossed provider).
     const brandStates: BrandPathForensicReport[] = [];
     for (const path of expectedPaths) {
       const source = input.autoValues[path] ?? "";
@@ -678,7 +842,6 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     const missing = expectedPaths.filter((p) => !presentKeys.includes(p));
     const returnedNonEmpty = presentKeys.filter((k) => aligned[k]!.trim());
     const unexpected = Object.keys(flattenedSegments).filter((p) => {
-      // Segment keys (#mN) and expected semantic paths are expected.
       if (expectedPaths.includes(p)) {
         return false;
       }
@@ -694,6 +857,15 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       RETURNED_MACHINE_PATHS: returnedNonEmpty.sort(),
       MISSING_MACHINE_PATHS: missing,
       UNEXPECTED_MACHINE_PATHS: [...new Set(unexpected)].sort(),
+      PROVIDER_BATCH_COUNT: batchCount,
+      PROVIDER_EXPECTED_KEY_COUNT: expectedPaths.length,
+      PROVIDER_RETURNED_KEY_COUNT: returnedNonEmpty.length,
+      PROVIDER_MISSING_KEY_COUNT: missing.length,
+      PROVIDER_HTTP_CLASS: httpStatusClass(lastEnvelope.httpStatus ?? 200),
+      PROVIDER_FINISH_REASON: lastEnvelope.finishReason ?? null,
+      PROVIDER_CANDIDATE_COUNT: lastEnvelope.candidateCount ?? 1,
+      PROVIDER_TEXT_PART_COUNT: lastEnvelope.textPartCount ?? 1,
+      PROVIDER_EXTRACTED_LENGTH: lastEnvelope.extractedLength ?? 0,
     };
 
     const validated = validateMediaPlpProviderLocalizationValues({
@@ -729,11 +901,15 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         PROVIDER_PARTIAL_SUBREASON: sub,
         MISSING_MACHINE_PATHS: validated.pathDiagnostics.MISSING_MACHINE_PATHS,
         RETURNED_MACHINE_PATHS: validated.pathDiagnostics.RETURNED_MACHINE_PATHS,
+        PROVIDER_FAILURE_SUBTYPE:
+          sub === "WRONG_TARGET_LANGUAGE" || sub === "CONTENT_INTEGRITY_FAILURE"
+            ? null
+            : PLP_PROVIDER_FAILURE_SUBTYPE.EXPECTED_KEY_MISSING,
       };
       return {
         ok: false,
         reason: validated.reason,
-        PROVIDER_INPUT_BYTES: bytes,
+        PROVIDER_INPUT_BYTES: totalBytes,
         message: formatProviderForensicsSafe(forensics)
           ? `${validated.reason};${formatProviderForensicsSafe(forensics)}`
           : validated.message,
@@ -749,8 +925,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       values: Object.fromEntries(
         Object.entries(aligned).filter(([, v]) => v.trim().length > 0),
       ),
-      PROVIDER_INPUT_BYTES: bytes,
-      providerId: result.providerId,
+      PROVIDER_INPUT_BYTES: totalBytes,
+      providerId: lastProviderId,
       PROVIDER_EXECUTION_BOUNDARY: boundary,
       PROVIDER_TRANSPORT: transport,
       pathDiagnostics: validated.pathDiagnostics,
@@ -761,21 +937,29 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         PROVIDER_PARTIAL_SUBREASON: null,
         MISSING_MACHINE_PATHS: [],
         RETURNED_MACHINE_PATHS: validated.pathDiagnostics.RETURNED_MACHINE_PATHS,
+        PROVIDER_MISSING_KEY_COUNT: 0,
       },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "provider failure";
+    const subtype =
+      error instanceof TranslationProviderError && error.providerFailureSubtype
+        ? (error.providerFailureSubtype as PlpProviderFailureSubtype)
+        : /timed out/i.test(message)
+          ? PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT
+          : PLP_PROVIDER_FAILURE_SUBTYPE.UNKNOWN_PROVIDER_SHAPE;
     const isTimeout =
-      (error instanceof Error &&
-        ("code" in error
-          ? (error as { code?: string }).code === "timeout"
-          : false)) ||
+      subtype === PLP_PROVIDER_FAILURE_SUBTYPE.HTTP_TIMEOUT ||
+      (error instanceof TranslationProviderError && error.code === "timeout") ||
       /timed out/i.test(message);
     return failResult({
       reason: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
-      bytes,
+      bytes: totalBytes,
       transport,
-      forensics: emptyForensics({ expectedPaths }),
+      forensics: {
+        ...subtypeForensics(subtype, 0),
+        PROVIDER_PARTIAL_SUBREASON: null,
+      },
       messagePrefix: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
     });
   }

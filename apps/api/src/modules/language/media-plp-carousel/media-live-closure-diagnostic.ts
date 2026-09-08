@@ -138,6 +138,17 @@ export type MediaLiveClosureReport = {
   readonly EDITORIAL_STALE_BOUNDARY: string | null;
   readonly EDITORIAL_STALE_AUTHORITY: string | null;
   readonly EDITORIAL_STALE_ORIGIN_ID: string | null;
+  readonly EDITORIAL_PROVIDER_FAILURE_SUBTYPE: string | null;
+  readonly EDITORIAL_PROVIDER_HTTP_CLASS: string | null;
+  readonly EDITORIAL_PROVIDER_FINISH_REASON: string | null;
+  readonly EDITORIAL_PROVIDER_CANDIDATE_COUNT: string | null;
+  readonly EDITORIAL_PROVIDER_TEXT_PART_COUNT: string | null;
+  readonly EDITORIAL_PROVIDER_EXTRACTED_LENGTH: string | null;
+  readonly EDITORIAL_PROVIDER_EXPECTED_KEY_COUNT: string | null;
+  readonly EDITORIAL_PROVIDER_RETURNED_KEY_COUNT: string | null;
+  readonly EDITORIAL_PROVIDER_MISSING_KEY_COUNT: string | null;
+  readonly EDITORIAL_PROVIDER_BATCH_INDEX: string | null;
+  readonly EDITORIAL_PROVIDER_BATCH_COUNT: string | null;
   readonly FAQ_MACHINE_LEAVES: number;
   readonly FAQ_MACHINE_LOCALIZED: number;
   readonly FAQ_CANONICAL_MACHINE_LEAVES: number;
@@ -164,6 +175,17 @@ export type MediaLiveClosureReport = {
     readonly MISSING_MACHINE_PATHS: readonly string[];
     readonly FAILURE_RETRYABLE: boolean | null;
     readonly PROVIDER_PARTIAL_SUBREASON: string | null;
+    readonly PROVIDER_FAILURE_SUBTYPE: string | null;
+    readonly PROVIDER_HTTP_CLASS: string | null;
+    readonly PROVIDER_FINISH_REASON: string | null;
+    readonly PROVIDER_CANDIDATE_COUNT: string | null;
+    readonly PROVIDER_TEXT_PART_COUNT: string | null;
+    readonly PROVIDER_EXTRACTED_LENGTH: string | null;
+    readonly PROVIDER_EXPECTED_KEY_COUNT: string | null;
+    readonly PROVIDER_RETURNED_KEY_COUNT: string | null;
+    readonly PROVIDER_MISSING_KEY_COUNT: string | null;
+    readonly PROVIDER_BATCH_INDEX: string | null;
+    readonly PROVIDER_BATCH_COUNT: string | null;
     readonly PATH_STATES: readonly string[];
   }[];
   readonly leaves: readonly MediaLiveClosureLeaf[];
@@ -396,6 +418,83 @@ export async function executeMediaLiveClosureReads(input: {
       FAILURE_RETRYABLE:
         newsWork?.status === "completed" ? null : newsWork?.retryable ?? null,
       PROVIDER_PARTIAL_SUBREASON: partialSubreason,
+      PROVIDER_FAILURE_SUBTYPE:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_FAILURE_SUBTYPE",
+            ),
+      PROVIDER_HTTP_CLASS:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_HTTP_CLASS",
+            ),
+      PROVIDER_FINISH_REASON:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_FINISH_REASON",
+            ),
+      PROVIDER_CANDIDATE_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_CANDIDATE_COUNT",
+            ),
+      PROVIDER_TEXT_PART_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_TEXT_PART_COUNT",
+            ),
+      PROVIDER_EXTRACTED_LENGTH:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_EXTRACTED_LENGTH",
+            ),
+      PROVIDER_EXPECTED_KEY_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_EXPECTED_KEY_COUNT",
+            ),
+      PROVIDER_RETURNED_KEY_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_RETURNED_KEY_COUNT",
+            ),
+      PROVIDER_MISSING_KEY_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_MISSING_KEY_COUNT",
+            ),
+      PROVIDER_BATCH_INDEX:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_BATCH_INDEX",
+            ),
+      PROVIDER_BATCH_COUNT:
+        newsWork?.status === "completed"
+          ? null
+          : parseLabeledValueFromFailureReason(
+              newsWork?.lastError,
+              "PROVIDER_BATCH_COUNT",
+            ),
       PATH_STATES: parsePathListFromFailureReason(
         newsWork?.lastError,
         "PATH_STATES",
@@ -780,6 +879,83 @@ export async function executeMediaLiveClosureReads(input: {
       editorialWork?.lastError,
       "STALE_ORIGIN_ID",
     ),
+    EDITORIAL_PROVIDER_FAILURE_SUBTYPE:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_FAILURE_SUBTYPE",
+          ),
+    EDITORIAL_PROVIDER_HTTP_CLASS:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_HTTP_CLASS",
+          ),
+    EDITORIAL_PROVIDER_FINISH_REASON:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_FINISH_REASON",
+          ),
+    EDITORIAL_PROVIDER_CANDIDATE_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_CANDIDATE_COUNT",
+          ),
+    EDITORIAL_PROVIDER_TEXT_PART_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_TEXT_PART_COUNT",
+          ),
+    EDITORIAL_PROVIDER_EXTRACTED_LENGTH:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_EXTRACTED_LENGTH",
+          ),
+    EDITORIAL_PROVIDER_EXPECTED_KEY_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_EXPECTED_KEY_COUNT",
+          ),
+    EDITORIAL_PROVIDER_RETURNED_KEY_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_RETURNED_KEY_COUNT",
+          ),
+    EDITORIAL_PROVIDER_MISSING_KEY_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_MISSING_KEY_COUNT",
+          ),
+    EDITORIAL_PROVIDER_BATCH_INDEX:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_BATCH_INDEX",
+          ),
+    EDITORIAL_PROVIDER_BATCH_COUNT:
+      editorialWork?.status === "completed"
+        ? null
+        : parseLabeledValueFromFailureReason(
+            editorialWork?.lastError,
+            "PROVIDER_BATCH_COUNT",
+          ),
     FAQ_MACHINE_LEAVES: faqMachineLeaves,
     FAQ_MACHINE_LOCALIZED: faqMachineLocalized,
     FAQ_CANONICAL_MACHINE_LEAVES: faqCanonicalMachine,
@@ -923,6 +1099,17 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `EDITORIAL_STALE_BOUNDARY=${report.EDITORIAL_STALE_BOUNDARY ?? ""}`,
     `EDITORIAL_STALE_AUTHORITY=${report.EDITORIAL_STALE_AUTHORITY ?? ""}`,
     `EDITORIAL_STALE_ORIGIN_ID=${report.EDITORIAL_STALE_ORIGIN_ID ?? ""}`,
+    `EDITORIAL_PROVIDER_FAILURE_SUBTYPE=${report.EDITORIAL_PROVIDER_FAILURE_SUBTYPE ?? ""}`,
+    `EDITORIAL_PROVIDER_HTTP_CLASS=${report.EDITORIAL_PROVIDER_HTTP_CLASS ?? ""}`,
+    `EDITORIAL_PROVIDER_FINISH_REASON=${report.EDITORIAL_PROVIDER_FINISH_REASON ?? ""}`,
+    `EDITORIAL_PROVIDER_CANDIDATE_COUNT=${report.EDITORIAL_PROVIDER_CANDIDATE_COUNT ?? ""}`,
+    `EDITORIAL_PROVIDER_TEXT_PART_COUNT=${report.EDITORIAL_PROVIDER_TEXT_PART_COUNT ?? ""}`,
+    `EDITORIAL_PROVIDER_EXTRACTED_LENGTH=${report.EDITORIAL_PROVIDER_EXTRACTED_LENGTH ?? ""}`,
+    `EDITORIAL_PROVIDER_EXPECTED_KEY_COUNT=${report.EDITORIAL_PROVIDER_EXPECTED_KEY_COUNT ?? ""}`,
+    `EDITORIAL_PROVIDER_RETURNED_KEY_COUNT=${report.EDITORIAL_PROVIDER_RETURNED_KEY_COUNT ?? ""}`,
+    `EDITORIAL_PROVIDER_MISSING_KEY_COUNT=${report.EDITORIAL_PROVIDER_MISSING_KEY_COUNT ?? ""}`,
+    `EDITORIAL_PROVIDER_BATCH_INDEX=${report.EDITORIAL_PROVIDER_BATCH_INDEX ?? ""}`,
+    `EDITORIAL_PROVIDER_BATCH_COUNT=${report.EDITORIAL_PROVIDER_BATCH_COUNT ?? ""}`,
     `FAQ_MACHINE_LEAVES=${report.FAQ_MACHINE_LEAVES}`,
     `FAQ_MACHINE_LOCALIZED=${report.FAQ_MACHINE_LOCALIZED}`,
     `FAQ_CANONICAL_MACHINE_LEAVES=${report.FAQ_CANONICAL_MACHINE_LEAVES}`,

@@ -2,6 +2,8 @@
  * RESET 05C — API-side Brand FAQ authority (canonical tokens + provenance).
  * Fingerprint: `{siteName}` in CIVIC_MEDIA_FAQ changes civic_media_editorial
  * canonicalVersion — editorial snapshot rebuild is deferred (no materialize here).
+ *
+ * RESET 05D.6/05E — Brand stays outside Gemini via slot extraction (not sentinel wrap).
  */
 
 import assert from "node:assert/strict";
@@ -14,9 +16,10 @@ import {
   BRAND_SITE_NAME_TOKEN,
   CANONICAL_ENGLISH_BRAND_FALLBACK,
   PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY,
+  assertProviderPayloadHasNoBrandArtifacts,
+  buildProviderOwnedMachinePayload,
   composeBrandTokens,
-  protectBrandTokensForMachineTranslation,
-  restoreBrandTokensAfterMachineTranslation,
+  reassembleBrandSlotPlans,
 } from "@hu/types";
 
 import { CIVIC_MEDIA_FAQ } from "../../../src/modules/civic-media-center/content/sections.js";
@@ -92,18 +95,27 @@ describe("RESET 05C — API Media FAQ Brand tokens", () => {
     );
   });
 
-  it("provider boundary preserves Brand tokens through MACHINE hop helpers", () => {
+  it("provider boundary keeps Brand outside Gemini via slot extraction (RESET 05D.6/05E)", () => {
     const source = "{siteName} curates sources.";
-    const protectedText = protectBrandTokensForMachineTranslation(source);
-    const restored = restoreBrandTokensAfterMachineTranslation(
-      protectedText.replace("curates", "відбирає"),
-    );
-    assert.equal(restored, "{siteName} відбирає sources.");
+    const { payload, plans } = buildProviderOwnedMachinePayload({
+      "faq[0].answer": source,
+    });
+    assert.equal(assertProviderPayloadHasNoBrandArtifacts(payload).length, 0);
+    const translatedSegments: Record<string, string> = {};
+    for (const [key, value] of Object.entries(payload)) {
+      translatedSegments[key] = value.replace("curates", "відбирає");
+    }
+    const reassembled = reassembleBrandSlotPlans({
+      plans,
+      translatedSegments,
+    });
+    assert.equal(reassembled.values["faq[0].answer"], "{siteName} відбирає sources.");
 
     const boundary = readApi(
       "src/modules/language/media-plp-materializer/provider-boundary.ts",
     );
-    assert.match(boundary, /protectBrandTokensForMachineTranslation/);
+    assert.match(boundary, /buildProviderOwnedMachinePayload/);
+    assert.match(boundary, /reassembleBrandSlotPlans/);
     assert.doesNotMatch(boundary, /replaceAll\(\s*["']Humanity Union["']/);
   });
 });

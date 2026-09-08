@@ -9,6 +9,7 @@ import {
   isProviderPartialSubtypeRetryable,
   type ProviderPartialSubreason,
 } from "../../media-plp-materializer/provider-boundary-forensics.js";
+import { isPlpProviderFailureSubtypeRetryable } from "../../media-plp-materializer/provider-response-contract.js";
 import {
   encodePlpStructuredStaleSafeReason,
   parsePlpStructuredStaleFromSafeReason,
@@ -60,6 +61,17 @@ export type ProcessPlpBuildRequestResult =
 const FORENSIC_KEYS = [
   "PROVIDER_PARTIAL_SUBREASON",
   "PROVIDER_RESPONSE_SHAPE",
+  "PROVIDER_FAILURE_SUBTYPE",
+  "PROVIDER_HTTP_CLASS",
+  "PROVIDER_FINISH_REASON",
+  "PROVIDER_CANDIDATE_COUNT",
+  "PROVIDER_TEXT_PART_COUNT",
+  "PROVIDER_EXTRACTED_LENGTH",
+  "PROVIDER_EXPECTED_KEY_COUNT",
+  "PROVIDER_RETURNED_KEY_COUNT",
+  "PROVIDER_MISSING_KEY_COUNT",
+  "PROVIDER_BATCH_INDEX",
+  "PROVIDER_BATCH_COUNT",
   "BRAND_TOKEN_PATHS",
   "PATH_STATES",
   "MISSING_MACHINE_PATHS",
@@ -199,9 +211,11 @@ export function mapProviderBoundaryReasonToFailure(input: {
   }
 
   if (reason === "PARSE_FAILURE") {
+    const subtypeMatch = msg.match(/PROVIDER_FAILURE_SUBTYPE=([A-Z_]+)/)?.[1];
+    const retryable = isPlpProviderFailureSubtypeRetryable(subtypeMatch);
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
-      retryable: true,
+      retryable,
       stage: "provider",
       safeReason: forensics
         ? `PROVIDER_FAILURE:PARSE_FAILURE;PROVIDER_PARTIAL_SUBREASON=PARSE_FAILURE;${forensics}`
@@ -266,9 +280,10 @@ export function mapProviderBoundaryReasonToFailure(input: {
   }
 
   if (reason === "PROVIDER_FAILURE") {
+    const subtypeMatch = msg.match(/PROVIDER_FAILURE_SUBTYPE=([A-Z_]+)/)?.[1];
     return structuredFailure({
       failureCode: "PROVIDER_FAILURE",
-      retryable: true,
+      retryable: isPlpProviderFailureSubtypeRetryable(subtypeMatch),
       stage: "provider",
       safeReason: forensics
         ? `PROVIDER_FAILURE;${forensics}`

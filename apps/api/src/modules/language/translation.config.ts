@@ -38,6 +38,7 @@ export class TranslationProviderError extends Error {
       | "forbidden"
       | "bad_request",
     message: string,
+    readonly providerFailureSubtype?: string,
   ) {
     super(message);
     this.name = "TranslationProviderError";

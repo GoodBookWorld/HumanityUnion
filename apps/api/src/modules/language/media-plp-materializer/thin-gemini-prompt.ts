@@ -24,15 +24,13 @@ export function buildThinGeminiMediaPlpSystemInstruction(input: {
   const structured =
     input.contentType === "structured_json"
       ? [
-          "The user message is a JSON object.",
-          "Translate every human-readable translatable string value into the target language.",
-          "Preserve JSON keys and structure exactly.",
-          "Do not invent keys or fields.",
-          "Return valid JSON only — no markdown fences.",
-          "When a JSON string value contains HTML markup: translate only participant-facing text nodes.",
+          "The user message is a JSON object with shape {\"translations\":[{\"key\":\"...\",\"value\":\"...\"}]}.",
+          "Translate every human-readable `value` string into the target language.",
+          "Preserve each `key` exactly; do not invent, rename, drop, or duplicate keys.",
+          "Return JSON only with the same {\"translations\":[...]} shape — no markdown fences, no prose wrapper.",
+          "When a value contains HTML markup: translate only participant-facing text nodes.",
           "Do not translate, rename, invent, or remove HTML tags, attributes, classes, IDs, data-* attributes, href/src URLs, or script/style/code contents.",
           "Preserve link URLs and image sources exactly.",
-          "Do not wrap the entire HTML value in markdown fences.",
         ].join(" ")
       : "Return only the translated text in the target language — no preface, no markdown fences.";
 
