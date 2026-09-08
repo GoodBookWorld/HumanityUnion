@@ -18,6 +18,12 @@ import {
   type PlpAutoBuildFailureStage,
   type PlpAutoBuildStructuredFailure,
 } from "./plp-auto-build-failure.js";
+import {
+  encodePlpStructuredStaleSafeReason,
+  isBareStaleRevisionReason,
+  parsePlpStructuredStaleFromSafeReason,
+  PLP_STALE_ORIGIN,
+} from "./plp-stale-result.js";
 
 export { sanitizePlpAutoBuildFailureReason } from "./plp-auto-build-failure.js";
 
@@ -462,7 +468,32 @@ export async function markPlpAutoBuildWorkFailed(input: {
   readonly maxAttempts: number;
   readonly failure: PlpAutoBuildStructuredFailure;
 }): Promise<{ readonly requeued: boolean }> {
-  const safeReason = sanitizePlpAutoBuildFailureReason(input.failure.safeReason);
+  let safeReason = sanitizePlpAutoBuildFailureReason(input.failure.safeReason);
+  // RESET 05D.8 — bare STALE_REVISION without origin/versions is a contract violation.
+  if (
+    input.failure.failureCode === "STALE_CANONICAL_VERSION" ||
+    safeReason.includes("STALE_REVISION") ||
+    isBareStaleRevisionReason(safeReason)
+  ) {
+    const parsed = parsePlpStructuredStaleFromSafeReason(safeReason);
+    if (!parsed || isBareStaleRevisionReason(safeReason)) {
+      safeReason = encodePlpStructuredStaleSafeReason({
+        code: "STALE_CANONICAL_VERSION",
+        reason: "STALE_REVISION",
+        originId: parsed?.originId ?? PLP_STALE_ORIGIN.MAP_BUILD_STATUS,
+        boundary: parsed?.boundary ?? PLP_STALE_ORIGIN.MAP_BUILD_STATUS,
+        authority: parsed?.authority ?? "markPlpAutoBuildWorkFailed",
+        workCanonicalVersion: parsed?.workCanonicalVersion ?? "UNKNOWN",
+        currentSourceCanonicalVersion:
+          parsed?.currentSourceCanonicalVersion ?? "UNKNOWN",
+        candidateCanonicalVersion: parsed?.candidateCanonicalVersion,
+        existingSnapshotCanonicalVersion:
+          parsed?.existingSnapshotCanonicalVersion,
+        candidateContentRevision: parsed?.candidateContentRevision,
+        existingContentRevision: parsed?.existingContentRevision,
+      });
+    }
+  }
   const now = nowIso();
   const underCap = input.attempts < input.maxAttempts;
   const canRetry = input.failure.retryable && underCap;

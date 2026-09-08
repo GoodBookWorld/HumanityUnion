@@ -24,6 +24,11 @@ import {
 import { invalidateMediaPlpResolveCacheForEntity } from "./resolve-cache.js";
 import { resolveFieldPolicyForEntityType } from "./universal/resolve-field-policy.js";
 import type { PlpFieldPolicyMap } from "@hu/types";
+import {
+  encodePlpStructuredStaleReasonCodes,
+  PLP_STALE_ORIGIN,
+  type PlpStructuredStaleDetail,
+} from "./universal/plp-stale-result.js";
 
 export type PublishPublishedLocalizedPresentationInput = {
   readonly entityType: string;
@@ -133,22 +138,23 @@ export async function publishPublishedLocalizedPresentation(
   const result = await publishAtomicPublishedPresentation({ candidate });
   if (!result.ok) {
     if (result.reason === "STALE_REVISION") {
-      const f = result.staleForensics;
-      const forensicCodes = f
-        ? [
-            "STALE_REVISION",
-            `STALE_WORK_VERSION=${f.STALE_WORK_VERSION}`,
-            `STALE_CURRENT_SOURCE_VERSION=${f.STALE_CURRENT_SOURCE_VERSION}`,
-            `STALE_BOUNDARY=${f.STALE_BOUNDARY}`,
-            `STALE_AUTHORITY=${f.STALE_AUTHORITY}`,
-            `STALE_WORK_CONTENT_REVISION=${f.STALE_WORK_CONTENT_REVISION}`,
-            `STALE_EXISTING_CONTENT_REVISION=${f.STALE_EXISTING_CONTENT_REVISION}`,
-          ]
-        : ["STALE_REVISION"];
+      const detail: PlpStructuredStaleDetail =
+        result.staleDetail ??
+        ({
+          code: "STALE_CANONICAL_VERSION",
+          reason: "STALE_REVISION",
+          originId: PLP_STALE_ORIGIN.PUBLISH_ATOMIC_MAPPER,
+          boundary: PLP_STALE_ORIGIN.PUBLISH_ATOMIC_MAPPER,
+          authority: "publishPublishedLocalizedPresentation",
+          workCanonicalVersion: input.canonicalVersion,
+          currentSourceCanonicalVersion: input.canonicalVersion,
+          candidateCanonicalVersion: input.canonicalVersion,
+          candidateContentRevision: input.contentRevision,
+        } satisfies PlpStructuredStaleDetail);
       return {
         ok: false,
         outcome: "STALE_REVISION",
-        reasonCodes: forensicCodes,
+        reasonCodes: encodePlpStructuredStaleReasonCodes(detail),
       };
     }
     return {

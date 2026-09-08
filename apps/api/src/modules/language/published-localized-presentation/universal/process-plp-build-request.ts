@@ -28,6 +28,10 @@ import {
   type ProcessPlpBuildRequestResult,
 } from "./plp-auto-build-failure.js";
 import {
+  encodePlpStructuredStaleSafeReason,
+  PLP_STALE_ORIGIN,
+} from "./plp-stale-result.js";
+import {
   ensureAllDefaultPlpAdaptersRegistered,
   ensureMediaPlpAdapterRegistered,
 } from "./register-defaults.js";
@@ -171,14 +175,16 @@ export async function processPlpBuildRequest(
         failureCode: "STALE_CANONICAL_VERSION",
         retryable: false,
         stage: "validate",
-        safeReason: [
-          "STALE_CANONICAL_VERSION",
-          "STALE_REVISION",
-          `STALE_WORK_VERSION=${request.canonicalVersion}`,
-          `STALE_CURRENT_SOURCE_VERSION=${contract.canonicalVersion}`,
-          "STALE_BOUNDARY=claim_source_reload",
-          "STALE_AUTHORITY=adapter.resolveCanonicalEntity",
-        ].join(";"),
+        safeReason: encodePlpStructuredStaleSafeReason({
+          code: "STALE_CANONICAL_VERSION",
+          reason: "STALE_REVISION",
+          originId: PLP_STALE_ORIGIN.CLAIM_SOURCE_RELOAD,
+          boundary: PLP_STALE_ORIGIN.CLAIM_SOURCE_RELOAD,
+          authority: "adapter.resolveCanonicalEntity",
+          workCanonicalVersion: request.canonicalVersion,
+          currentSourceCanonicalVersion: contract.canonicalVersion,
+          candidateCanonicalVersion: request.canonicalVersion,
+        }),
       }),
     });
   }

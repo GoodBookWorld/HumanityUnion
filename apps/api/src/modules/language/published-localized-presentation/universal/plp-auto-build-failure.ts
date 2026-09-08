@@ -9,6 +9,12 @@ import {
   isProviderPartialSubtypeRetryable,
   type ProviderPartialSubreason,
 } from "../../media-plp-materializer/provider-boundary-forensics.js";
+import {
+  encodePlpStructuredStaleSafeReason,
+  parsePlpStructuredStaleFromSafeReason,
+  PLP_STALE_ORIGIN,
+  type PlpStructuredStaleDetail,
+} from "./plp-stale-result.js";
 
 export type PlpAutoBuildFailureCode =
   | "PROCESSOR_DORMANT"
@@ -59,12 +65,15 @@ const FORENSIC_KEYS = [
   "MISSING_MACHINE_PATHS",
   "EXPECTED_MACHINE_PATHS",
   "UNEXPECTED_MACHINE_PATHS",
+  "STALE_ORIGIN_ID",
   "STALE_WORK_VERSION",
   "STALE_CURRENT_SOURCE_VERSION",
   "STALE_BOUNDARY",
   "STALE_AUTHORITY",
   "STALE_WORK_CONTENT_REVISION",
   "STALE_EXISTING_CONTENT_REVISION",
+  "STALE_CANDIDATE_VERSION",
+  "STALE_EXISTING_SNAPSHOT_VERSION",
 ] as const;
 
 /**
@@ -297,31 +306,24 @@ export function mapBuildStatusToFailure(input: {
     });
   }
   if (input.status === "SUPERSEDED" || codes.includes("STALE")) {
-    const reasonList = input.reasonCodes ?? [];
-    const staleParts = reasonList.filter(
-      (c) =>
-        c.startsWith("STALE_") ||
-        c === "STALE_REVISION" ||
-        c === "STALE_CANONICAL_VERSION",
-    );
-    const hasBothVersions =
-      staleParts.some((c) => c.startsWith("STALE_WORK_VERSION=")) &&
-      staleParts.some((c) => c.startsWith("STALE_CURRENT_SOURCE_VERSION="));
-    const forensicBlock = hasBothVersions
-      ? staleParts.join(";")
-      : [
-          "STALE_REVISION",
-          "STALE_WORK_VERSION=UNKNOWN",
-          "STALE_CURRENT_SOURCE_VERSION=UNKNOWN",
-          "STALE_BOUNDARY=UNKNOWN",
-          "STALE_AUTHORITY=UNKNOWN",
-          ...staleParts.filter((c) => c !== "STALE_REVISION"),
-        ].join(";");
+    const joined = (input.reasonCodes ?? []).join(";");
+    const parsed = parsePlpStructuredStaleFromSafeReason(joined);
+    const detail: PlpStructuredStaleDetail =
+      parsed ??
+      ({
+        code: "STALE_CANONICAL_VERSION",
+        reason: "STALE_REVISION",
+        originId: PLP_STALE_ORIGIN.MAP_BUILD_STATUS,
+        boundary: PLP_STALE_ORIGIN.MAP_BUILD_STATUS,
+        authority: "mapBuildStatusToFailure",
+        workCanonicalVersion: "UNKNOWN",
+        currentSourceCanonicalVersion: "UNKNOWN",
+      } satisfies PlpStructuredStaleDetail);
     return structuredFailure({
       failureCode: "STALE_CANONICAL_VERSION",
       retryable: false,
       stage: "validate",
-      safeReason: `STALE_CANONICAL_VERSION;${forensicBlock}`,
+      safeReason: encodePlpStructuredStaleSafeReason(detail),
     });
   }
   if (codes.includes("PUBLISH") || input.status === "FAILED") {

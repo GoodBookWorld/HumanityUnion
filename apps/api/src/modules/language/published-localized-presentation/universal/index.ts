@@ -44,6 +44,18 @@ export type { EnqueuePlpBuildRequestResult } from "./build-request-queue.js";
 export { processPlpBuildRequest } from "./process-plp-build-request.js";
 export type { ProcessPlpBuildRequestDeps } from "./process-plp-build-request.js";
 export {
+  PLP_STALE_ORIGIN,
+  PLP_STALE_ORIGIN_INVENTORY,
+  encodePlpStructuredStaleSafeReason,
+  encodePlpStructuredStaleReasonCodes,
+  parsePlpStructuredStaleFromSafeReason,
+  isBareStaleRevisionReason,
+} from "./plp-stale-result.js";
+export type {
+  PlpStaleOriginId,
+  PlpStructuredStaleDetail,
+} from "./plp-stale-result.js";
+export {
   registerPlpAutoBuildProcessor,
   bootstrapPlpAutoBuildRuntime,
   stopPlpAutoBuildRuntimeForTests,

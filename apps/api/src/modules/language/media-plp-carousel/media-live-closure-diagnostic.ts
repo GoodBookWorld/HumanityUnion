@@ -137,6 +137,7 @@ export type MediaLiveClosureReport = {
   readonly EDITORIAL_STALE_CURRENT_SOURCE_VERSION: string | null;
   readonly EDITORIAL_STALE_BOUNDARY: string | null;
   readonly EDITORIAL_STALE_AUTHORITY: string | null;
+  readonly EDITORIAL_STALE_ORIGIN_ID: string | null;
   readonly FAQ_MACHINE_LEAVES: number;
   readonly FAQ_MACHINE_LOCALIZED: number;
   readonly FAQ_CANONICAL_MACHINE_LEAVES: number;
@@ -775,6 +776,10 @@ export async function executeMediaLiveClosureReads(input: {
       editorialWork?.lastError,
       "STALE_AUTHORITY",
     ),
+    EDITORIAL_STALE_ORIGIN_ID: parseLabeledValueFromFailureReason(
+      editorialWork?.lastError,
+      "STALE_ORIGIN_ID",
+    ),
     FAQ_MACHINE_LEAVES: faqMachineLeaves,
     FAQ_MACHINE_LOCALIZED: faqMachineLocalized,
     FAQ_CANONICAL_MACHINE_LEAVES: faqCanonicalMachine,
@@ -917,6 +922,7 @@ export function printMediaLiveClosureReport(report: MediaLiveClosureReport): voi
     `EDITORIAL_STALE_CURRENT_SOURCE_VERSION=${report.EDITORIAL_STALE_CURRENT_SOURCE_VERSION ?? ""}`,
     `EDITORIAL_STALE_BOUNDARY=${report.EDITORIAL_STALE_BOUNDARY ?? ""}`,
     `EDITORIAL_STALE_AUTHORITY=${report.EDITORIAL_STALE_AUTHORITY ?? ""}`,
+    `EDITORIAL_STALE_ORIGIN_ID=${report.EDITORIAL_STALE_ORIGIN_ID ?? ""}`,
     `FAQ_MACHINE_LEAVES=${report.FAQ_MACHINE_LEAVES}`,
     `FAQ_MACHINE_LOCALIZED=${report.FAQ_MACHINE_LOCALIZED}`,
     `FAQ_CANONICAL_MACHINE_LEAVES=${report.FAQ_CANONICAL_MACHINE_LEAVES}`,

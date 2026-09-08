@@ -137,6 +137,7 @@ function emptyDiagReport(): MediaLiveClosureReport {
     EDITORIAL_STALE_CURRENT_SOURCE_VERSION: "v-b",
     EDITORIAL_STALE_BOUNDARY: "publish_cas_content_revision",
     EDITORIAL_STALE_AUTHORITY: "publishAtomicMemory",
+    EDITORIAL_STALE_ORIGIN_ID: "publish_cas_content_revision",
     FAQ_MACHINE_LEAVES: 0,
     FAQ_MACHINE_LOCALIZED: 0,
     FAQ_CANONICAL_MACHINE_LEAVES: 0,
@@ -316,7 +317,9 @@ describe("RESET 05D.7 — canonical-version authority", () => {
     const failure = mapBuildStatusToFailure({
       status: "FAILED",
       reasonCodes: [
+        "STALE_CANONICAL_VERSION",
         "STALE_REVISION",
+        "STALE_ORIGIN_ID=publish_cas_content_revision",
         "STALE_WORK_VERSION=v-work",
         "STALE_CURRENT_SOURCE_VERSION=v-live",
         "STALE_BOUNDARY=publish_cas_content_revision",
@@ -324,6 +327,7 @@ describe("RESET 05D.7 — canonical-version authority", () => {
       ],
     });
     assert.equal(failure.failureCode, "STALE_CANONICAL_VERSION");
+    assert.match(failure.safeReason, /STALE_ORIGIN_ID=publish_cas_content_revision/);
     assert.match(failure.safeReason, /STALE_WORK_VERSION=v-work/);
     assert.match(failure.safeReason, /STALE_CURRENT_SOURCE_VERSION=v-live/);
     assert.match(failure.safeReason, /STALE_BOUNDARY=publish_cas_content_revision/);

@@ -23,6 +23,10 @@ import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
 import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
 import { notifyPlpSearchSeoInvalidation } from "./search-seo-hooks.js";
 import { isCollectedPathMachineEligible } from "./field-authority.js";
+import {
+  encodePlpStructuredStaleReasonCodes,
+  PLP_STALE_ORIGIN,
+} from "./plp-stale-result.js";
 
 export type PlpLocalizationLayerInput = {
   readonly source: PublishedLocalizationProvenanceSource;
@@ -62,14 +66,16 @@ export async function runUniversalPlpBuild(
   ) {
     return {
       status: "FAILED",
-      reasonCodes: [
-        "STALE_CANONICAL_VERSION",
-        "STALE_REVISION",
-        `STALE_WORK_VERSION=${input.contract.canonicalVersion}`,
-        `STALE_CURRENT_SOURCE_VERSION=${input.liveCanonicalVersion}`,
-        "STALE_BOUNDARY=build_pipeline_pre_merge",
-        "STALE_AUTHORITY=isPlpBuildStaleAgainstLive",
-      ],
+      reasonCodes: encodePlpStructuredStaleReasonCodes({
+        code: "STALE_CANONICAL_VERSION",
+        reason: "STALE_REVISION",
+        originId: PLP_STALE_ORIGIN.BUILD_PIPELINE_PRE_MERGE,
+        boundary: PLP_STALE_ORIGIN.BUILD_PIPELINE_PRE_MERGE,
+        authority: "isPlpBuildStaleAgainstLive",
+        workCanonicalVersion: input.contract.canonicalVersion,
+        currentSourceCanonicalVersion: input.liveCanonicalVersion,
+        candidateCanonicalVersion: input.contract.canonicalVersion,
+      }),
       snapshotId: null,
     };
   }

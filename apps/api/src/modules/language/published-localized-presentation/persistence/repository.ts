@@ -234,13 +234,17 @@ export async function publishAtomicPublishedPresentation(input: {
       readonly ok: false;
       readonly reason: "STALE_REVISION" | "PERSISTENCE_ERROR";
       readonly staleForensics?: {
+        readonly STALE_ORIGIN_ID: string;
         readonly STALE_WORK_VERSION: string;
         readonly STALE_CURRENT_SOURCE_VERSION: string;
         readonly STALE_BOUNDARY: string;
         readonly STALE_AUTHORITY: string;
         readonly STALE_WORK_CONTENT_REVISION: number;
         readonly STALE_EXISTING_CONTENT_REVISION: number;
+        readonly STALE_CANDIDATE_VERSION?: string;
+        readonly STALE_EXISTING_SNAPSHOT_VERSION?: string;
       };
+      readonly staleDetail?: import("../universal/plp-stale-result.js").PlpStructuredStaleDetail;
     }
 > {
   if (getPublishedLocalizationPersistenceMode() === "mongo") {
@@ -253,6 +257,7 @@ export async function publishAtomicPublishedPresentation(input: {
       ok: false,
       reason: result.reason,
       staleForensics: result.staleForensics,
+      staleDetail: result.staleDetail,
     };
   }
   return {
