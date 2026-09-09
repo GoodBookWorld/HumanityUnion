@@ -213,7 +213,8 @@ describe("Production Completion Pack 02D Task 03 — foundation chrome + parity"
 
   it("Pack 2.1 SEO [locale] may exist; chrome must not adopt next-intl localePrefix", () => {
     assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
 
     const footer = readWeb("features/public-experience/components/PublicExperienceFooter.tsx");
     const selector = readWeb("features/language/components/LanguageSelector.tsx");

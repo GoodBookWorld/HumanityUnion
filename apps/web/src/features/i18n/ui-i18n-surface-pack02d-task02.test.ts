@@ -234,7 +234,8 @@ describe("Production Completion Pack 02D Task 02 — first UI translation surfac
 
   it("Pack 2.1 SEO [locale] may exist; header chrome must not adopt next-intl localePrefix", () => {
     assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
 
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");

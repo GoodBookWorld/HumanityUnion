@@ -187,12 +187,13 @@ describe("Production Completion Pack 02D Task 01 — UI i18n foundation", () => 
 
   it("Pack 2.1 may add thin SEO [locale] routes; next-intl localePrefix remains forbidden", () => {
     assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
 
-    const middleware = readFileSync(path.join(webRoot, "middleware.ts"), "utf8");
-    assert.doesNotMatch(middleware, /\bcreateMiddleware\s*\(/);
-    assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
-    assert.doesNotMatch(middleware, /from ["']next-intl\/middleware["']/);
+    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    assert.doesNotMatch(proxy, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(proxy, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(proxy, /from ["']next-intl\/middleware["']/);
 
     const nextConfig = readFileSync(path.join(webRoot, "next.config.ts"), "utf8");
     assert.match(nextConfig, /createNextIntlPlugin/);

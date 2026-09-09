@@ -78,13 +78,14 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
     assert.doesNotMatch(nextConfig, /\bdefineRouting\s*\(/);
     assert.doesNotMatch(nextConfig, /localePrefix\s*:/);
 
-    // Pack 2.1 — thin SEO [locale] tree + header middleware allowed; next-intl routing not.
+    // Pack 2.1B — Next 16 proxy + SEO [locale] tree; next-intl routing not.
     assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
-    const middleware = readFileSync(path.join(webRoot, "middleware.ts"), "utf8");
-    assert.doesNotMatch(middleware, /\bcreateMiddleware\s*\(/);
-    assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
-    assert.doesNotMatch(middleware, /from ["']next-intl\/middleware["']/);
+    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
+    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    assert.doesNotMatch(proxy, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(proxy, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(proxy, /from ["']next-intl\/middleware["']/);
 
     assert.doesNotMatch(barrel, /export \{[^}]*resolveDocumentHtmlLocale/);
     assert.doesNotMatch(barrel, /from ["']\.\/resolve-document-locale["']/);

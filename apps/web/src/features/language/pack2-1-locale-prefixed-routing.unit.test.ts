@@ -194,13 +194,14 @@ describe("Pack 2.1 — locale-prefixed public routing foundation", () => {
     assert.doesNotMatch(documentLocale, /generateContent|gemini\.generate/i);
     assert.match(documentLocale, /resolvePublicSeoLocaleDocument/);
 
-    const middleware = readFileSync(path.join(webRoot, "middleware.ts"), "utf8");
+    const middleware = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
     assert.doesNotMatch(middleware, /from ["']next-intl\/middleware["']/);
     assert.doesNotMatch(middleware, /\bcreateMiddleware\s*\(/);
     assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
     assert.match(middleware, /parsePublicSeoLocalePrefixedPath/);
     assert.match(middleware, /HU_URL_LOCALE_SEGMENT_HEADER/);
     assert.match(middleware, /HU_PATHNAME_HEADER/);
+    assert.match(middleware, /export async function proxy/);
   });
 
   it("thin [locale] tree exists only for SEO public perimeter and validates in layout", () => {
