@@ -191,6 +191,21 @@ export function resolveLifecycleStageDisplayLabel(
   return resolveLabel(messagesOrT, `stages.${code}`, humanFallback);
 }
 
+/**
+ * Join stable lifecycle stage ids into a participant-visible localized list.
+ * Ids themselves are never mutated — only display labels are resolved.
+ */
+export function formatLifecycleStageDisplayList(
+  stageIds: readonly string[],
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  return stageIds
+    .map((stageId) => stageId.trim())
+    .filter(Boolean)
+    .map((stageId) => resolveLifecycleStageDisplayLabel(stageId, messagesOrT))
+    .join(", ");
+}
+
 export function resolveLifecycleStateDisplayLabel(
   state: InitiativeExperienceLifecycleStageState | string,
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,

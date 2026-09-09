@@ -16,6 +16,7 @@ import type {
 } from "@hu/types";
 
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
+import { formatLifecycleStageDisplayList } from "../public-initiative-experience/initiative-experience-i18n";
 
 export type ApiConsistencyStageId =
   | "revision"
@@ -82,15 +83,7 @@ function formatStageIds(
   if (!stageIds || stageIds.length === 0) {
     return "";
   }
-  return stageIds
-    .map((stageId) => {
-      try {
-        return t(`author.sidebar.apiConsistency.stages.${stageId}`);
-      } catch {
-        return stageId;
-      }
-    })
-    .join(", ");
+  return formatLifecycleStageDisplayList(stageIds, t);
 }
 
 /**

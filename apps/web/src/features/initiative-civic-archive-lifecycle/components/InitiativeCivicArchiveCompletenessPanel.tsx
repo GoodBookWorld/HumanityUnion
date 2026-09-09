@@ -4,7 +4,10 @@ import { useTranslations } from "next-intl";
 
 import type { InitiativeCivicArchiveCompleteness } from "@hu/types";
 
-import { resolveCivicArchiveCompletenessSummaryDisplay } from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  formatLifecycleStageDisplayList,
+  resolveCivicArchiveCompletenessSummaryDisplay,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 
 export function InitiativeCivicArchiveCompletenessPanel({
   completeness,
@@ -23,6 +26,14 @@ export function InitiativeCivicArchiveCompletenessPanel({
     : t("author.archive.completeness.traceabilityIncomplete");
 
   const summaryText = resolveCivicArchiveCompletenessSummaryDisplay(completeness, t);
+  const stagesPublishedLabel =
+    completeness.stagesPublished.length > 0
+      ? formatLifecycleStageDisplayList(completeness.stagesPublished, t)
+      : t("author.archive.completeness.noneYet");
+  const missingOptionalLabel =
+    completeness.missingOptionalStages.length > 0
+      ? formatLifecycleStageDisplayList(completeness.missingOptionalStages, t)
+      : t("author.archive.completeness.none");
 
   return (
     <section className="ica-source-panel" aria-label={t("author.archive.document.completeness")}>
@@ -35,21 +46,13 @@ export function InitiativeCivicArchiveCompletenessPanel({
           <span className="ica-source-panel__label">
             {t("author.archive.completeness.stagesPublished")}
           </span>
-          <p className="ica-source-panel__summary">
-            {completeness.stagesPublished.length > 0
-              ? completeness.stagesPublished.join(", ")
-              : t("author.archive.completeness.noneYet")}
-          </p>
+          <p className="ica-source-panel__summary">{stagesPublishedLabel}</p>
         </li>
         <li className="ica-source-panel__item">
           <span className="ica-source-panel__label">
             {t("author.archive.completeness.missingOptional")}
           </span>
-          <p className="ica-source-panel__summary">
-            {completeness.missingOptionalStages.length > 0
-              ? completeness.missingOptionalStages.join(", ")
-              : t("author.archive.completeness.none")}
-          </p>
+          <p className="ica-source-panel__summary">{missingOptionalLabel}</p>
         </li>
         <li className="ica-source-panel__item">
           <span className="ica-source-panel__label">

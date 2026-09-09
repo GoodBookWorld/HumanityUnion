@@ -6,6 +6,7 @@
  */
 
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
+import { formatLifecycleStageDisplayList } from "../public-initiative-experience/initiative-experience-i18n";
 import {
   ANALYSIS_ADVISORY_MESSAGE_KEY,
   CIVIC_ARCHIVE_ADVISORY_MESSAGE_KEY,
@@ -245,6 +246,12 @@ function buildInterpolationValues(
     for (const [key, value] of Object.entries(advisory.params)) {
       if (typeof value === "boolean") {
         values[key] = value ? "true" : "false";
+      } else if (key === "stages" && typeof value === "string") {
+        // Controlled lifecycle stage ids → localized display labels before t(...).
+        values.stages = formatLifecycleStageDisplayList(
+          value.split(",").map((part) => part.trim()),
+          t,
+        );
       } else {
         values[key] = value;
       }

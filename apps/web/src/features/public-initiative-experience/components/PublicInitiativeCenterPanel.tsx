@@ -306,14 +306,19 @@ function LifecycleStagePanel({ stage }: { stage: PublicInitiativeLifecycleStageC
   if (stage.records.length === 0) {
     const code = stage.emptyStateCode ?? `stage_${stage.stageId}_default`;
     const key = `lifecycleEmpty.${code}`;
-    let message = stage.emptyStateMessage;
+    // WEB_UI catalog is participant-visible authority when present; API English
+    // emptyStateMessage is fallback only for unmapped codes.
+    let message: string | undefined;
     try {
       const localized = t(key);
       if (localized.trim() && !looksLikeRawI18nKey(localized) && localized !== key) {
         message = localized;
       }
     } catch {
-      // keep API compatibility English
+      // fall through to API / generic fallback
+    }
+    if (!message) {
+      message = stage.emptyStateMessage?.trim() || t("lifecycleEmpty.stage_generic_none_available");
     }
     return <p className="pie-empty">{message}</p>;
   }
@@ -746,8 +751,12 @@ export function PublicInitiativeCenterPanel({
             aria-labelledby={`pie-stage-${activeStage.stageId}`}
           >
             <h2 id={`pie-stage-${activeStage.stageId}`}>
-              {experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
-                ?.label ?? "Lifecycle"}
+              {resolveLifecycleStageDisplayLabel(
+                activeStage.stageId,
+                t,
+                experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
+                  ?.label,
+              )}
             </h2>
             <LifecycleStagePanel stage={activeStage} />
           </section>
