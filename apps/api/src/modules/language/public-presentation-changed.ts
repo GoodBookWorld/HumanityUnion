@@ -36,11 +36,15 @@ export function notifyPublicPresentationChanged(input: {
   if (!isSupportedContentTranslationSourceKind(input.sourceKind)) {
     return;
   }
-  scheduleContentTranslationWarmAfterMutation({
-    sourceKind: input.sourceKind,
-    sourceRecordId: input.sourceRecordId,
-    reason: asWarmReason(input.reason),
-  });
+  // Final Localization Closure 02 — RSS/public_news is original-language-only.
+  // Never schedule CT warm (no Gemini quota). PLP mutation bridge remains a no-op enqueue.
+  if (input.sourceKind !== "public_news") {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: input.sourceKind,
+      sourceRecordId: input.sourceRecordId,
+      reason: asWarmReason(input.reason),
+    });
+  }
   notifyPlpPublicSourceMutation({
     sourceKind: input.sourceKind,
     sourceRecordId: input.sourceRecordId,

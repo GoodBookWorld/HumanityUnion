@@ -38,33 +38,6 @@ interface PublicNewsCardProps {
   };
 }
 
-function plpEntityResultFromView(view: {
-  coverage: { status: string; canonicalFallbackNodeCount: number };
-}): MediaSemanticResult {
-  if (
-    view.coverage.status === "FALLBACK_CANONICAL" ||
-    view.coverage.canonicalFallbackNodeCount > 0
-  ) {
-    return "CANONICAL_FALLBACK";
-  }
-  return "PUBLISHED_LOCALIZED";
-}
-
-function resolveNewsEntityResult(
-  plpPresentation: PublicNewsCardProps["plpPresentation"],
-  view: {
-    coverage: { status: string; canonicalFallbackNodeCount: number };
-  },
-): MediaSemanticResult {
-  if (plpPresentation?.mode === "CANONICAL_FALLBACK") {
-    return "CANONICAL_FALLBACK";
-  }
-  if (plpPresentation?.mode === "PUBLISHED_LOCALIZED") {
-    return "PUBLISHED_LOCALIZED";
-  }
-  return plpEntityResultFromView(view);
-}
-
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
   const authStatus = useClientAuthStatus();
   const t = useTranslations("publicNews.card");
@@ -114,11 +87,6 @@ export function PublicNewsCard({
     () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),
     [view.summary, view.title],
   );
-  const entityResult = resolveNewsEntityResult(plpPresentation, view);
-  const fallbackReason =
-    entityResult === "CANONICAL_FALLBACK"
-      ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
-      : undefined;
 
   const categoryKey = view.category.trim();
   let categoryLabel = categoryKey;
@@ -195,21 +163,19 @@ export function PublicNewsCard({
           as="h3"
           id={`public-news-title-${view.id}`}
           className="public-news-card__headline"
-          owner="PLP_ENTITY"
-          result={entityResult}
+          owner="PROTECTED_CANONICAL"
+          result="PROTECTED_CANONICAL"
           entityType="public_news"
           entityId={view.id}
           semanticPath="title"
-          fallbackReason={fallbackReason}
         >
           {view.title}
         </MediaSemanticNode>
 
         <PublicNewsAiSummary
           bullets={aiSummaryBullets}
-          entityResult={entityResult}
+          entityResult="PROTECTED_CANONICAL"
           entityId={view.id}
-          fallbackReason={fallbackReason}
         />
 
         <div className="public-news-card__actions">

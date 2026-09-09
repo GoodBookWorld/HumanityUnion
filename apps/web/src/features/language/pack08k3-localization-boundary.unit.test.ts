@@ -121,13 +121,14 @@ describe("Pack 08K.3 geography display names", () => {
 });
 
 describe("Pack 08K.3 public news presentation", () => {
-  it("H–K: shared card presentation localizes title/summary; protects URL/source", () => {
+  it("H–K: shared card presentation keeps original title/summary; protects URL/source", () => {
     const article = sampleArticle();
     const locale = "uk";
     seedCompletePublicNewsFixtureForTests(article, locale);
     const view = resolveLocalizedPublicNewsCardView({ article, locale });
-    assert.match(view.title, /^\[uk\]/);
-    assert.match(view.summary, /^\[uk\]/);
+    assert.equal(view.title, article.title);
+    assert.equal(view.summary, article.summary);
+    assert.doesNotMatch(view.title, /^\[uk\]/);
     assert.equal(view.sourceName, "The Atlantic");
     assert.equal(view.articleUrl, "https://example.com/news/shoreline");
     assert.equal(view.coverage.canonicalFallbackNodeCount, 0);

@@ -30,8 +30,11 @@ export type MediaCarouselPlpEntityType =
   (typeof MEDIA_CAROUSEL_PLP_ENTITY_TYPES)[number];
 
 /**
- * Required AUTO semantic paths per entity type (must appear as PLP_ENTITY leaves
- * when that entity is rendered on the page).
+ * Required semantic paths per entity type (must appear as owned leaves when
+ * that entity is rendered on the page).
+ *
+ * Final Localization Closure 02 — public_news title/summary are
+ * original-language PROTECTED_CANONICAL success paths (not Gemini AUTO).
  */
 export const MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS: Readonly<
   Record<MediaCarouselPlpEntityType, readonly string[]>
@@ -265,15 +268,23 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     (n) => n.owner === "PLP_ENTITY" && isCarouselPlpType(n.entityType),
   );
 
+  // public_news original-language leaves use PROTECTED_CANONICAL ownership.
+  const publicNewsOwnedNodes = nodes.filter(
+    (n) =>
+      n.entityType === "public_news" &&
+      Boolean(n.entityId) &&
+      (n.owner === "PLP_ENTITY" || n.owner === "PROTECTED_CANONICAL"),
+  );
+
   const fallbackLeaves = carouselPlpNodes.filter(
-    (n) => n.result === "CANONICAL_FALLBACK",
+    (n) => n.result === "CANONICAL_FALLBACK" && n.entityType !== "public_news",
   );
   const missingPathLeaves = carouselPlpNodes.filter(
     (n) => !n.semanticPath || !String(n.semanticPath).trim(),
   );
 
   const renderedByEntity = new Map<string, Set<string>>();
-  for (const node of carouselPlpNodes) {
+  for (const node of [...carouselPlpNodes, ...publicNewsOwnedNodes]) {
     if (!node.entityType || !node.entityId) {
       continue;
     }
@@ -293,20 +304,20 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     }
     const required = MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS[entityType];
     for (const path of required) {
-      // no special-case skip: required AUTO paths are title/summary only
       if (!paths.has(path)) {
         missingRequired.push(`${entityType}/${entityId}:${path}`);
       }
     }
   }
 
-  // Reset 03E.13 — per-card public_news ownership (identity, not array position).
+  // Reset 03E.13 / Closure 02 — per-card public_news ownership.
+  // Original-language PROTECTED_CANONICAL (or legacy CANONICAL_FALLBACK) is policy-success.
   const newsCardStates = new Map<
     string,
     { localized: boolean; fallback: boolean; paths: Set<string> }
   >();
-  for (const node of carouselPlpNodes) {
-    if (node.entityType !== "public_news" || !node.entityId) {
+  for (const node of publicNewsOwnedNodes) {
+    if (!node.entityId) {
       continue;
     }
     const state = newsCardStates.get(node.entityId) ?? {
@@ -317,11 +328,16 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     if (node.semanticPath) {
       state.paths.add(node.semanticPath);
     }
-    if (node.result === "CANONICAL_FALLBACK") {
+    if (
+      node.result === "PROTECTED_CANONICAL" ||
+      node.result === "CANONICAL_FALLBACK" ||
+      node.result === "PUBLISHED_LOCALIZED"
+    ) {
+      // Original-language-only policy: protected/canonical originals are success.
+      // Historical PUBLISHED_LOCALIZED overlays are also treated as present leaves.
+    } else {
+      state.localized = false;
       state.fallback = true;
-      state.localized = false;
-    } else if (node.result !== "PUBLISHED_LOCALIZED") {
-      state.localized = false;
     }
     newsCardStates.set(node.entityId, state);
   }
@@ -344,7 +360,10 @@ export function evaluateMediaCarouselSemanticClosure(input: {
   }
   const publicNewsCardCount = newsCardStates.size;
 
-  const leaves: MediaCarouselLeafInventoryRow[] = carouselPlpNodes.map((n) => {
+  const leaves: MediaCarouselLeafInventoryRow[] = [
+    ...carouselPlpNodes,
+    ...publicNewsOwnedNodes.filter((n) => n.owner === "PROTECTED_CANONICAL"),
+  ].map((n) => {
     const path = n.semanticPath ?? null;
     const reasonKey =
       n.entityType && n.entityId && path
@@ -458,28 +477,28 @@ export function assertMediaCarouselFullyLocalized(
   }
 }
 
-/** Stable forensic table for News / Verification / Analysis expected AUTO leaves. */
+/** Stable forensic table for News / Verification / Analysis expected leaves. */
 export function mediaCarouselExpectedLeafContract(): readonly {
   readonly surface: string;
   readonly entityType: MediaCarouselPlpEntityType;
   readonly semanticPath: string;
-  readonly owner: "PLP_ENTITY";
-  readonly translatable: true;
+  readonly owner: "PLP_ENTITY" | "PROTECTED_CANONICAL";
+  readonly translatable: boolean;
 }[] {
   return [
     {
       surface: "public-news-card",
       entityType: "public_news",
       semanticPath: "title",
-      owner: "PLP_ENTITY",
-      translatable: true,
+      owner: "PROTECTED_CANONICAL",
+      translatable: false,
     },
     {
       surface: "public-news-card",
       entityType: "public_news",
       semanticPath: "summary",
-      owner: "PLP_ENTITY",
-      translatable: true,
+      owner: "PROTECTED_CANONICAL",
+      translatable: false,
     },
     {
       surface: "civic-media-resource-card--verification",

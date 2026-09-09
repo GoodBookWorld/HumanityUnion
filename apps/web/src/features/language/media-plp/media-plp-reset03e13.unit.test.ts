@@ -322,7 +322,7 @@ describe("Reset 03E.13 — batch identity join", () => {
 });
 
 describe("Reset 03E.13 — 12-card News semantic closure", () => {
-  it("12 localized news cards → FULLY_LOCALIZED", async () => {
+  it("12 original-language news cards → FULLY_LOCALIZED", async () => {
     const news = Array.from({ length: 12 }, (_, i) => makeNews(i));
     const plpNewsById: Record<string, MediaPlpResolvedPresentation> = {};
     for (const article of news) {
@@ -341,9 +341,11 @@ describe("Reset 03E.13 — 12-card News semantic closure", () => {
     assert.equal(report.PUBLIC_NEWS_LOCALIZED_CARD_COUNT, 12);
     assert.equal(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT, 0);
     assert.equal(report.FULLY_LOCALIZED, true);
+    assert.match(html, /News title EN news-00/);
+    assert.doesNotMatch(html, /\[uk\] News title EN/);
   });
 
-  it("11 localized + 1 missing → PARTIAL with exactly one fallback card", async () => {
+  it("missing PLP for one card still FULLY_LOCALIZED (original-language policy)", async () => {
     const news = Array.from({ length: 12 }, (_, i) => makeNews(i));
     const plpNewsById: Record<string, MediaPlpResolvedPresentation> = {};
     for (const article of news) {
@@ -368,13 +370,12 @@ describe("Reset 03E.13 — 12-card News semantic closure", () => {
     const html = await renderNewsRail({ news, plpNewsById });
     const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
     assert.equal(report.PUBLIC_NEWS_CARD_COUNT, 12);
-    assert.equal(report.PUBLIC_NEWS_LOCALIZED_CARD_COUNT, 11);
-    assert.equal(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT, 1);
-    assert.notEqual(report.FULLY_LOCALIZED, true);
-    assert.equal(report.PAGE_STATUS, "PARTIALLY_LOCALIZED");
+    assert.equal(report.PUBLIC_NEWS_LOCALIZED_CARD_COUNT, 12);
+    assert.equal(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT, 0);
+    assert.equal(report.FULLY_LOCALIZED, true);
   });
 
-  it("silent batch omission for one card cannot pass FULLY_LOCALIZED", async () => {
+  it("silent batch omission still FULLY_LOCALIZED via original RSS fields", async () => {
     const news = Array.from({ length: 12 }, (_, i) => makeNews(i));
     const plpNewsById: Record<string, MediaPlpResolvedPresentation> = {};
     for (const article of news) {
@@ -393,7 +394,8 @@ describe("Reset 03E.13 — 12-card News semantic closure", () => {
     const html = await renderNewsRail({ news, plpNewsById });
     const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
     assert.equal(report.PUBLIC_NEWS_CARD_COUNT, 12);
-    assert.ok(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT >= 1);
-    assert.notEqual(report.FULLY_LOCALIZED, true);
+    assert.equal(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT, 0);
+    assert.equal(report.FULLY_LOCALIZED, true);
+    assert.match(html, /News title EN news-03/);
   });
 });

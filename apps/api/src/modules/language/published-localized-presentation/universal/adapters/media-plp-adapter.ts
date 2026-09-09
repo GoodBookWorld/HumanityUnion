@@ -4,6 +4,7 @@
  */
 
 import type {
+  PlpFieldOwnershipClass,
   PlpFieldPolicyMap,
   PlpLocalizableEntityContract,
   PublicPresentationNode,
@@ -13,6 +14,7 @@ import {
   MEDIA_PLP_ENTITY_TYPES,
   PUBLIC_NEWS_FIELD_OWNERSHIP,
   PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+  type PublicNewsFieldOwnershipClass,
 } from "@hu/types";
 
 import type { PlpDomainAdapter } from "../domain-adapter-registry.js";
@@ -28,18 +30,21 @@ import {
 } from "../../media/canonical-trees.js";
 import { loadMediaPlpLiveCanonicalSource } from "../../media/live-source.js";
 
-const PUBLIC_NEWS_POLICY: PlpFieldPolicyMap = {
-  title: "MACHINE_CONTENT",
-  summary: "MACHINE_CONTENT",
-  category: "CONTROLLED_VOCABULARY",
-  sourceName: "PROTECTED_CANONICAL",
-  id: "PROTECTED_CANONICAL",
-  articleUrl: "PROTECTED_CANONICAL",
-  imageUrl: "PROTECTED_CANONICAL",
-  publishedAt: "PROTECTED_CANONICAL",
-  verificationStatus: "PROTECTED_CANONICAL",
-  geographicScope: "PROTECTED_CANONICAL",
-};
+function mapPublicNewsOwnershipToPlp(
+  ownership: PublicNewsFieldOwnershipClass,
+): PlpFieldOwnershipClass {
+  if (ownership === "PROTECTED_SOURCE_VALUE") {
+    return "PROTECTED_CANONICAL";
+  }
+  return ownership;
+}
+
+const PUBLIC_NEWS_POLICY: PlpFieldPolicyMap = Object.fromEntries(
+  Object.entries(PUBLIC_NEWS_FIELD_OWNERSHIP).map(([field, ownership]) => [
+    field,
+    mapPublicNewsOwnershipToPlp(ownership),
+  ]),
+) as PlpFieldPolicyMap;
 
 const TRUSTED_POLICY: PlpFieldPolicyMap = {
   explanation: "MACHINE_CONTENT",
@@ -93,7 +98,7 @@ function fieldPolicyFor(entityType: string): PlpFieldPolicyMap {
   }
 }
 
-// Satisfy typecheck that PUBLIC_NEWS_FIELD_OWNERSHIP remains source of truth for news AUTO.
+// PUBLIC_NEWS_POLICY is derived from PUBLIC_NEWS_FIELD_OWNERSHIP (source of truth).
 void PUBLIC_NEWS_FIELD_OWNERSHIP;
 
 export const mediaPlpDomainAdapter: PlpDomainAdapter = {

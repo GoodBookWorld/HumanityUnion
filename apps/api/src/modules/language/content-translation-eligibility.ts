@@ -128,7 +128,8 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "initiativeFlowStages",
     "trustedMediaExplanations",
   ],
-  public_news: ["title", "summary"],
+  /** Final Localization Closure 02 — RSS original-language-only; no CT AUTO fields. */
+  public_news: [] as readonly string[],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /**
@@ -153,7 +154,8 @@ export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
   public_impact: ["title"],
   civic_archive: ["title"],
   civic_media: ["overviewTitle", "initiativeFlowTitle"],
-  public_news: ["title"],
+  /** Final Localization Closure 02 — no RSS title CT generation. */
+  public_news: [] as readonly string[],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /** Public kinds that require published/public projection eligibility for generation. */
@@ -293,6 +295,14 @@ export function assertCanonicalSourceEligibleForTranslation(input: {
     throw new TranslationProviderError(
       "forbidden",
       "Private surfaces cannot be content-translation eligible.",
+    );
+  }
+
+  // Final Localization Closure 02 — RSS/public_news never enters CT generation.
+  if (source.sourceKind === "public_news") {
+    throw new TranslationProviderError(
+      "forbidden",
+      "public_news is original-language-only and is not content-translation eligible.",
     );
   }
 

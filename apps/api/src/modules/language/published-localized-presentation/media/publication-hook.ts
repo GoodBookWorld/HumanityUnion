@@ -56,11 +56,17 @@ export function resetMediaLocalizationBuildHookStatusForTests(): void {
 /**
  * Enqueue localization build requests for non-English Registry locales.
  * Does not call Gemini / materializer. Kick is durable-write-only.
+ *
+ * Final Localization Closure 02 — public_news is original-language-only;
+ * never enqueue PLP builds for RSS entities.
  */
 export function notifyMediaCanonicalPublishedForLocalizationBuild(
   input: MediaCanonicalLocalizationBuildHookInput,
 ): number {
   ensureMediaPlpAdapterRegistered();
+  if (input.entityType === "public_news") {
+    return 0;
+  }
   const locales = input.locales ?? [];
   if (locales.length === 0) {
     // No locales supplied — nothing to enqueue (caller must pass Registry locales).

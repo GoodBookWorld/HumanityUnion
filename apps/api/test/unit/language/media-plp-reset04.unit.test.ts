@@ -318,13 +318,15 @@ describe("RESET 04 — Universal PLP publication contract", () => {
       canonicalPresentation: tree,
     });
     assert.equal(resolved.mode, "CANONICAL_FALLBACK");
+    const titleNode = (resolved.presentation as { title?: { value?: string } | string })
+      .title;
     assert.equal(
-      (resolved.presentation as { title?: string }).title,
+      typeof titleNode === "string" ? titleNode : titleNode?.value,
       "EN title",
     );
   });
 
-  it("11: dynamic News build inventory uses consumer identity authority", async () => {
+  it("11: dynamic News build inventory accepts no public_news enqueue under original-language policy", async () => {
     const now = "2030-01-01T00:00:00.000Z";
     const expiresAt = "2030-12-31T00:00:00.000Z";
     const records: NewsArticleRecord[] = Array.from({ length: 3 }, (_, i) => ({
@@ -352,8 +354,8 @@ describe("RESET 04 — Universal PLP publication contract", () => {
       limit: 12,
     });
     assert.equal(result.PROVIDER_CALLS, 0);
-    assert.equal(result.consumerCount, 3);
-    assert.equal(result.enqueued, 3);
+    assert.equal(result.consumerCount, 0);
+    assert.equal(result.enqueued, 0);
     assert.ok(
       getPlpDomainAdapter(MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS)
         ?.usesConsumerIdentityAuthority,
@@ -420,19 +422,29 @@ describe("RESET 04 — Universal PLP publication contract", () => {
     );
   });
 
-  it("Media publication hook enqueues without provider", () => {
+  it("Media publication hook skips public_news; HU-owned Media still enqueues", () => {
     assert.equal(
       MEDIA_LOCALIZATION_BUILD_HOOK_STATUS,
       "QUEUE_ACTIVE_PROVIDER_DORMANT",
     );
-    const n = notifyMediaCanonicalPublishedForLocalizationBuild({
+    const news = notifyMediaCanonicalPublishedForLocalizationBuild({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId: "news-1",
       canonicalVersion: "v1",
       contentRevision: 1,
       locales: ["uk", "en"],
     });
-    assert.equal(n, 1);
+    assert.equal(news, 0);
+    assert.equal(getPlpBuildRequestQueueStats().pending, 0);
+
+    const editorial = notifyMediaCanonicalPublishedForLocalizationBuild({
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "civic-media-center",
+      canonicalVersion: "v1",
+      contentRevision: 1,
+      locales: ["uk", "en"],
+    });
+    assert.equal(editorial, 1);
     assert.equal(getPlpBuildRequestQueueStats().pending, 1);
   });
 
@@ -456,7 +468,7 @@ describe("RESET 04 — Universal PLP publication contract", () => {
     assert.equal(getPlpBuildRequestQueueStats().pending, 1);
   });
 
-  it("direct atomic publish still works (Media path unchanged)", async () => {
+  it("direct atomic publish of machine overlays for public_news title/summary is rejected", async () => {
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
         id: "n-direct",
@@ -497,6 +509,6 @@ describe("RESET 04 — Universal PLP publication contract", () => {
         },
       ],
     });
-    assert.equal(published.ok, true);
+    assert.equal(published.ok, false);
   });
 });

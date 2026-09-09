@@ -167,7 +167,7 @@ describe("RESET 05D.4 — provider boundary closure", () => {
     assert.match(restored, /\{siteName\}/);
   });
 
-  it("6–7: public_news expected paths from ownership; PARTIAL reports missing paths", () => {
+  it("6–7: public_news has empty machine AUTO bag under original-language policy", () => {
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
         id: "news-524c08bdec9253ae24ed",
@@ -188,28 +188,12 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       .filter((n) => isCollectedPathMachineEligible(n.path, policy))
       .map((n) => n.path)
       .sort();
-    assert.deepEqual(expected, ["summary", "title"]);
-
-    const diag = buildProviderMachinePathDiagnostics({
-      autoValues: { title: "Title EN", summary: "Summary EN" },
-      translated: { title: "[uk] Title EN" },
-    });
-    assert.deepEqual(diag.MISSING_MACHINE_PATHS, ["summary"]);
-    assert.deepEqual(diag.EXPECTED_MACHINE_PATHS, ["summary", "title"]);
-
-    const partial = validateMediaPlpProviderLocalizationValues({
-      locale: "uk",
-      autoValues: { title: "Title EN", summary: "Summary EN" },
-      translated: { title: "[uk] Title EN" },
-    });
-    assert.equal(partial.ok, false);
-    if (!partial.ok) {
-      assert.equal(partial.reason, "PARTIAL");
-      assert.deepEqual(partial.pathDiagnostics.MISSING_MACHINE_PATHS, ["summary"]);
-    }
+    assert.deepEqual(expected, []);
+    assert.equal(policy.title, "PROTECTED_CANONICAL");
+    assert.equal(policy.summary, "PROTECTED_CANONICAL");
   });
 
-  it("8–10: retryable PARTIAL requeues; integrity remains terminal; success publishes", async () => {
+  it("8–10: provider taxonomy unchanged; public_news fails closed with no_machine_auto_paths", async () => {
     const partialFailure = mapProviderBoundaryReasonToFailure({
       reason: "PARTIAL",
       message:
@@ -250,7 +234,7 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       }),
     );
     const version = fingerprintMediaPlpCanonicalVersion(tree);
-    const upsert = await upsertPendingPlpAutoBuildWork({
+    await upsertPendingPlpAutoBuildWork({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId,
       locale: "uk",
@@ -258,16 +242,6 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       contentRevision: 1,
       trigger: "ADMIN_REBUILD",
     });
-    const requeued = await markPlpAutoBuildWorkFailed({
-      workKey: upsert.record.workKey,
-      attempts: 1,
-      maxAttempts: 5,
-      failure: partialFailure,
-    });
-    assert.equal(requeued.requeued, true);
-    const after = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId)!;
-    assert.equal(after.status, "pending");
-    assert.equal(after.failureCode, "PROVIDER_PARTIAL");
 
     setPlpBuildRequestProcessor((request) =>
       processPlpBuildRequest(request, {
@@ -285,15 +259,14 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       await new Promise((r) => setTimeout(r, 25));
     }
     const done = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId)!;
-    assert.equal(done.status, "completed", done.lastError ?? "");
-    assert.equal(done.failureCode, null);
-    assert.equal(done.lastError, null);
+    assert.equal(done.status, "failed", done.lastError ?? "");
+    assert.match(String(done.lastError ?? ""), /no_machine_auto_paths/);
     const snapshot = await findCurrentPublishedPresentation({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId,
       locale: "uk",
     });
-    assert.ok(snapshot);
+    assert.equal(snapshot, null);
   });
 
   it("11: completed work clears current failure metadata", async () => {

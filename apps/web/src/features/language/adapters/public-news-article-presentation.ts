@@ -1,12 +1,9 @@
 /**
  * Pack 08K.3 — Public news article → PublicPresentationNode adapter.
  *
- * Semantic card copy is AUTO_TRANSLATABLE (plain strings).
- * Publisher/source organization name is protectedIdentity (outlet identity).
- * URL / id / timestamps / image URLs are protectedTechnical.
- *
- * Unknown nested semantic fields remain plain strings → auto-collected by the
- * PublicLocalizedPresentation walker (no field-name allowlist).
+ * Final Localization Closure 02 — RSS title/summary are PROTECTED (original
+ * language only). Category is CONTROLLED_VOCABULARY. Outlet identity / URLs
+ * remain protected. No AUTO_TRANSLATABLE prose for Gemini/CT overlays.
  */
 
 import type { PublicNewsArticleItem } from "@hu/types";
@@ -33,8 +30,10 @@ export type PublicNewsArticlePresentationTree = {
   readonly publishedAt: PublicProtectedValue;
   readonly sourceName: PublicProtectedValue;
   readonly verificationStatus: PublicProtectedValue;
-  readonly title: string;
-  readonly summary: string;
+  /** Original RSS title — never machine-localized. */
+  readonly title: PublicProtectedValue;
+  /** Original RSS summary — never machine-localized. */
+  readonly summary: PublicProtectedValue;
   /** MediaRegistryCategory key — CONTROLLED_VOCABULARY (not AUTO / Gemini). */
   readonly category: PublicProtectedValue;
   readonly geographicScope: PublicProtectedValue;
@@ -57,8 +56,8 @@ export function buildPublicNewsArticlePresentation(
     publishedAt: protectedTechnical(article.publishedAt),
     sourceName: protectedIdentity(article.sourceName),
     verificationStatus: protectedTechnical(article.verificationStatus),
-    title: article.title,
-    summary: article.summary,
+    title: protectedIdentity(article.title),
+    summary: protectedIdentity(article.summary),
     category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
     ...(article.extensions ? { extensions: article.extensions } : {}),
@@ -75,14 +74,20 @@ export function readPublicNewsPresentationTitle(
   presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
 ): string {
   const tree = presentation as PublicNewsArticlePresentationTree;
-  return typeof tree.title === "string" ? tree.title : "";
+  if (typeof tree.title === "string") {
+    return tree.title;
+  }
+  return unwrapPublicPresentationValue(tree.title) ?? "";
 }
 
 export function readPublicNewsPresentationSummary(
   presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
 ): string {
   const tree = presentation as PublicNewsArticlePresentationTree;
-  return typeof tree.summary === "string" ? tree.summary : "";
+  if (typeof tree.summary === "string") {
+    return tree.summary;
+  }
+  return unwrapPublicPresentationValue(tree.summary) ?? "";
 }
 
 export function readPublicNewsPresentationCategory(

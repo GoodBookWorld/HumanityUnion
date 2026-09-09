@@ -146,7 +146,9 @@ describe("Pack 08K.3.1 /media runtime closure", () => {
     const service = readApi("modules/language/content-translation.service.ts");
     assert.match(newsResolve, /sourceKind: "public_news"/);
     assert.match(adapter, /sourceKind: "public_news"/);
-    assert.match(newsHook, /resolvePublicNewsLocalizedPresentation/);
+    assert.match(newsHook, /localizePublicNewsArticlePresentation/);
+    assert.match(newsHook, /original-language-only|Original-language-only/);
+    assert.doesNotMatch(newsHook, /generateContentTranslation|generateIfMissing:\s*true/);
     assert.match(loader, /loadPublicNewsTranslationSource/);
     assert.match(service, /public_news/);
     assert.match(country, /useTrustedMediaExplanationsOverlay/);
@@ -304,7 +306,7 @@ describe("Pack 08K.3.1 /media runtime closure", () => {
     const enqueue = readApi("modules/language/public-presentation-changed.ts");
     assert.match(enqueue, /scheduleContentTranslationWarmAfterMutation/);
     const eligibility = readApi("modules/language/content-translation-eligibility.ts");
-    assert.match(eligibility, /public_news: \["title", "summary"\]/);
+    assert.match(eligibility, /public_news: \[\] as readonly string\[\]/);
   });
 
   it("T: thin diagnostic remains isolated from Media app graph", () => {

@@ -162,7 +162,7 @@ afterEach(() => {
 });
 
 describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
-  it("1: newly consumer-visible RSS News becomes build-eligible with canonicalVersion", async () => {
+  it("1: newly consumer-visible RSS News does not enqueue PLP under original-language policy", async () => {
     process.env.HU_PLP_AUTO_BUILD_LOCALES = "uk";
     const article = makeNews(1);
     await upsertPublicNewsRecords([article]);
@@ -175,11 +175,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       canonicalVersion: version,
     });
 
-    assert.equal(getPlpBuildRequestQueueStats().pending, 1);
-    const pending = listPlpBuildRequestsPendingForTests();
-    assert.equal(pending[0]?.entityId, mediaPlpPublicNewsEntityId(article.id));
-    assert.equal(pending[0]?.canonicalVersion, version);
-    assert.equal(pending[0]?.locale, "uk");
+    assert.equal(getPlpBuildRequestQueueStats().pending, 0);
   });
 
   it("1b: mutation without canonicalVersion does not enqueue (forensic gate)", () => {
@@ -191,7 +187,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     assert.equal(getPlpBuildRequestQueueStats().pending, 0);
   });
 
-  it("2: no manual materializer required — processor publishes", async () => {
+  it("2: public_news processor fails closed with no_machine_auto_paths (no Gemini)", async () => {
     const article = makeNews(2);
     await upsertPublicNewsRecords([article]);
     ensureMediaPlpAdapterRegistered();
@@ -218,7 +214,8 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
 
     await waitForQueueIdle();
     const completed = listPlpBuildRequestsCompletedForTests();
-    assert.ok(completed.some((r) => r.status === "COMPLETED"));
+    assert.ok(completed.some((r) => r.status === "FAILED"));
+    assert.equal(fake.getRequestCountForTests(), 0);
 
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -240,8 +237,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       entityId: mediaPlpPublicNewsEntityId(article.id),
       canonicalPresentation: tree,
     });
-    assert.equal(resolved.mode, "PUBLISHED_LOCALIZED");
-    assert.match(String((resolved.presentation as { title?: string }).title), /\[uk\]/);
+    assert.equal(resolved.mode, "CANONICAL_FALLBACK");
   });
 
   it("3: concurrency defaults to 1", () => {
@@ -359,12 +355,13 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     }
 
     const enqueued = await enqueueConsumerVisibleNewsPlpBuilds({ locales: ["uk"] });
-    assert.equal(enqueued.consumerCount, union.length);
-    assert.ok(enqueued.enqueued >= 12);
+    // Final Localization Closure 02 — public_news original-language-only: no enqueue.
+    assert.equal(enqueued.consumerCount, 0);
+    assert.equal(enqueued.enqueued, 0);
     assert.equal(enqueued.PROVIDER_CALLS, 0);
   });
 
-  it("9: provider failure leaves canonical fallback coherent", async () => {
+  it("9: residual public_news build fails closed; canonical presentation coherent", async () => {
     const article = makeNews(9);
     await upsertPublicNewsRecords([article]);
     ensureMediaPlpAdapterRegistered();
@@ -392,6 +389,8 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       },
     );
     assert.equal(status.status, "FAILED");
+    assert.equal(status.failure?.failureCode, "ADAPTER_OR_SOURCE");
+    assert.match(String(status.failure?.safeReason ?? ""), /no_machine_auto_paths/);
 
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -414,13 +413,14 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       canonicalPresentation: tree,
     });
     assert.equal(resolved.mode, "CANONICAL_FALLBACK");
+    const titleNode = (resolved.presentation as { title?: { value?: string } | string }).title;
     assert.equal(
-      (resolved.presentation as { title?: string }).title,
+      typeof titleNode === "string" ? titleNode : titleNode?.value,
       article.title,
     );
   });
 
-  it("10: successful publish invalidates search/SEO", async () => {
+  it("10: public_news residual process does not publish or invalidate search/SEO", async () => {
     const article = makeNews(10);
     await upsertPublicNewsRecords([article]);
     ensureMediaPlpAdapterRegistered();
@@ -451,9 +451,10 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         }),
       },
     );
-    assert.equal(status.status, "COMPLETED");
-    assert.equal(hooked, 1);
-    assert.equal(getPlpSearchSeoInvalidationStatsForTests().count, 1);
+    assert.equal(status.status, "FAILED");
+    assert.equal(status.failure?.failureCode, "ADAPTER_OR_SOURCE");
+    assert.equal(hooked, 0);
+    assert.equal(fake.getRequestCountForTests(), 0);
   });
 
   it("processor registration respects locales allowlist + env kill switch", () => {

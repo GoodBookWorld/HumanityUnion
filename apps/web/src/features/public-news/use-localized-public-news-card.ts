@@ -1,13 +1,16 @@
 /**
  * Pack 08K.3.1 — client resolve for public-news-card presentation.
  * Interface locale is authoritative. Never use reading-language preference as render locale.
- * Translations load via resolveLocalizedPresentation (generate-on-miss when preferred).
+ *
+ * Final Localization Closure 02 — RSS title/summary are original-language-only.
+ * Never apply PLP machine overlays or CT generate-on-miss for those fields.
+ * Category / UI chrome remain localized via dictionary elsewhere.
  */
 
 "use client";
 
 import type { PublicNewsArticleItem, PublicLocalizedPresentation } from "@hu/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useLocale } from "next-intl";
 
 import {
@@ -23,8 +26,6 @@ import {
   readPublicNewsProtectedSourceName,
 } from "../language/adapters/public-news-article-presentation.js";
 import { resolvePublicContentDisplayLanguage } from "../language/resolve-public-content-display-language";
-import { usePublicContentReadingContext } from "../language/use-public-content-reading-context";
-import { resolvePublicNewsLocalizedPresentation } from "./resolve-public-news-presentation";
 
 /** Test-only injection: complete translation maps keyed by article id. */
 const fixtureTranslationsByArticleId = new Map<string, Record<string, string>>();
@@ -80,27 +81,38 @@ export function resolveLocalizedPublicNewsCardView(input: {
   readonly locale: string;
   readonly translations?: Readonly<Record<string, string>>;
 }): LocalizedPublicNewsCardView {
+  // Original-language-only: ignore injected machine translations for title/summary.
+  // Fixtures may still set category-only maps; title/summary always stay canonical.
   const injected = fixtureTranslationsByArticleId.get(input.article.id);
+  const raw = input.translations ?? injected;
+  const translations =
+    raw && Object.keys(raw).length > 0
+      ? {
+          // Never overlay RSS prose from CT/PLP fixtures in runtime policy path.
+          // Tests that need translated fixtures must use localize helper directly.
+          ...(typeof raw.category === "string" ? { category: raw.category } : {}),
+        }
+      : undefined;
   const localized = localizePublicNewsArticlePresentation({
     article: input.article,
     targetLanguage: input.locale,
-    translations: input.translations ?? injected,
+    translations,
   });
   return viewFromLocalized(localized);
 }
 
 /**
- * Hook: localize shared public-news-card presentation for the interface locale.
- * Sync fixture path for tests; async resolve/generate for runtime.
+ * Hook: render public-news-card from stored original title/summary.
+ * Never resolve/generate content_translations; never apply PLP machine overlays.
  */
 export function useLocalizedPublicNewsCard(
   article: PublicNewsArticleItem,
   options?: {
-    /** Reset 03E — Media PLP path: never resolve/generate content_translations. */
+    /** @deprecated Kept for call-site compatibility; CT is never used for RSS. */
     readonly skipClientTranslation?: boolean;
     /**
-     * Reset 03E.5 — explicit Media PLP presentation for this article.
-     * When mode is PUBLISHED_LOCALIZED, title/summary come from the presentation.
+     * Accepted for call-site compatibility. Historical PUBLISHED_LOCALIZED
+     * overlays are ignored for title/summary (original-language-only policy).
      */
     readonly plpPresentation?: {
       readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
@@ -108,100 +120,14 @@ export function useLocalizedPublicNewsCard(
     };
   },
 ): LocalizedPublicNewsCardView {
+  void options;
   const locale = useLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const readingContext = usePublicContentReadingContext();
-  const requestGenerationRef = useRef(0);
-  const skipClientTranslation = options?.skipClientTranslation === true;
-  const plpPresentation = options?.plpPresentation;
 
-  const seed = useMemo(() => {
-    if (
-      plpPresentation &&
-      plpPresentation.mode === "PUBLISHED_LOCALIZED" &&
-      plpPresentation.presentation &&
-      typeof plpPresentation.presentation === "object"
-    ) {
-      const node = plpPresentation.presentation as Record<string, unknown>;
-      const title =
-        typeof node.title === "string" && node.title.trim()
-          ? node.title.trim()
-          : article.title;
-      const summary =
-        typeof node.summary === "string" && node.summary.trim()
-          ? node.summary.trim()
-          : article.summary;
-      // category is CONTROLLED_VOCABULARY — never take from PLP machine presentation.
-      return resolveLocalizedPublicNewsCardView({
-        article,
-        locale: displayLanguage,
-        translations: {
-          title,
-          summary,
-        },
-      });
-    }
-    return resolveLocalizedPublicNewsCardView({ article, locale: displayLanguage });
-  }, [article, displayLanguage, plpPresentation]);
-
-  const [view, setView] = useState(seed);
-
-  useEffect(() => {
-    setView(seed);
-    if (skipClientTranslation || plpPresentation) {
-      return;
-    }
-    const injected = fixtureTranslationsByArticleId.get(article.id);
-    if (injected) {
-      setView(
-        resolveLocalizedPublicNewsCardView({
-          article,
-          locale: displayLanguage,
-          translations: injected,
-        }),
-      );
-      return;
-    }
-
-    if (!readingContext.ready) {
-      return;
-    }
-
-    const requestGeneration = ++requestGenerationRef.current;
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const localized = await resolvePublicNewsLocalizedPresentation({
-          article,
-          displayLanguage,
-          ready: readingContext.ready,
-          translationPreference: readingContext.translationPreference,
-          requestGeneration,
-        });
-        if (cancelled || requestGeneration !== requestGenerationRef.current) {
-          return;
-        }
-        setView(viewFromLocalized(localized));
-      } catch {
-        // keep seed / canonical fallback
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    article,
-    displayLanguage,
-    readingContext.ready,
-    readingContext.translationPreference,
-    seed,
-    skipClientTranslation,
-    plpPresentation,
-  ]);
-
-  return view;
+  return useMemo(
+    () => resolveLocalizedPublicNewsCardView({ article, locale: displayLanguage }),
+    [article, displayLanguage],
+  );
 }
 
 /** Helper for complete fixture coverage in tests. */

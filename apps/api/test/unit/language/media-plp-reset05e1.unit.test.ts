@@ -203,7 +203,7 @@ afterEach(() => {
 });
 
 describe("RESET 05E.1 — current consumer recovery compatibility", () => {
-  it("1: exhausted legacy PROVIDER_FAILURE current consumer row is reopened once", async () => {
+  it("Closure 02: public_news heal never enqueues news (no Gemini recovery)", async () => {
     const article = makeNews("news-legacy-pf");
     await upsertPublicNewsRecords([article]);
     await seedFailedProviderWork({
@@ -212,16 +212,15 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       safeReason: "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID",
     });
     const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsEnqueued >= 1);
+    assert.equal(healed.newsEnqueued, 0);
+    assert.equal(healed.PROVIDER_CALLS, 0);
     const row = listPlpAutoBuildWorkForTests().find(
       (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
     )!;
-    assert.equal(row.status, "pending");
-    assert.equal(row.attempts, 0);
-    assert.equal(row.recoveryGeneration, PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION);
+    assert.equal(row.status, "failed");
   });
 
-  it("2: legacy INVALID response row reopened once", async () => {
+  it("2: classifier still recognizes legacy INVALID response shapes", () => {
     assert.equal(
       classifyProviderResponseRecoveryFailure(
         "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID;MISSING_MACHINE_PATHS=summary|title",
@@ -229,24 +228,6 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       ),
       "LEGACY_PROVIDER_RESPONSE_FAILURE",
     );
-    const article = makeNews("news-legacy-invalid");
-    await upsertPublicNewsRecords([article]);
-    await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_FAILURE",
-      safeReason:
-        "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID;MISSING_MACHINE_PATHS=summary|title",
-    });
-    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsEnqueued >= 1);
-    const row = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(row.recoveryGeneration, "05E");
-    assert.equal(row.attempts, 0);
-  });
-
-  it("3: legacy retryable PROVIDER_PARTIAL reopened when eligible", async () => {
     assert.equal(
       classifyProviderResponseRecoveryFailure(
         "PROVIDER_PARTIAL:MISSING_PATH;PROVIDER_PARTIAL_SUBREASON=MISSING_PATH",
@@ -254,57 +235,15 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       ),
       "LEGACY_PROVIDER_RESPONSE_FAILURE",
     );
-    const article = makeNews("news-legacy-partial");
-    await upsertPublicNewsRecords([article]);
-    await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_PARTIAL",
-      safeReason:
-        "PROVIDER_PARTIAL:MISSING_PATH;PROVIDER_PARTIAL_SUBREASON=MISSING_PATH;MISSING_MACHINE_PATHS=summary",
-    });
-    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsEnqueued >= 1);
   });
 
-  it("4: stale failure not reopened", async () => {
-    const article = makeNews("news-stale");
-    await upsertPublicNewsRecords([article]);
-    await seedFailedProviderWork({
-      article,
-      failureCode: "STALE_CANONICAL_VERSION",
-      safeReason:
-        "STALE_CANONICAL_VERSION;STALE_REVISION;STALE_ORIGIN_ID=publish_cas;STALE_WORK_VERSION=v-a;STALE_CURRENT_SOURCE_VERSION=v-b;STALE_BOUNDARY=publish;STALE_AUTHORITY=x",
-    });
-    const before = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(before.status, "failed");
+  it("editorial heal remains available while news heal is disabled", async () => {
     const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsSkippedNotProviderClass >= 1);
-    const after = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(after.status, "failed");
-    assert.equal(after.attempts, before.attempts);
+    assert.equal(healed.newsEnqueued, 0);
+    assert.ok(healed.editorialEnqueued >= 0);
   });
 
-  it("5: integrity/Brand failure not reopened", async () => {
-    const article = makeNews("news-integrity");
-    await upsertPublicNewsRecords([article]);
-    await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_INTEGRITY",
-      safeReason: "PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED",
-    });
-    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsSkippedNotProviderClass >= 1);
-    const after = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(after.status, "failed");
-  });
-
-  it("6: non-current News not reopened", async () => {
+  it("6: historical failed news rows stay failed (heal no-ops news)", async () => {
     const historical = makeNews("news-historical-out");
     await seedFailedProviderWork({
       article: historical,
@@ -320,41 +259,7 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
     assert.equal(hist.status, "failed");
   });
 
-  it("7: canonical-version mismatch not reopened", async () => {
-    const article = makeNews("news-version-mismatch");
-    await upsertPublicNewsRecords([article]);
-    const live = fingerprintMediaPlpCanonicalVersion(treeFor(article));
-    await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_FAILURE",
-      safeReason: "PROVIDER_FAILURE",
-      canonicalVersion: "v-old-not-live",
-    });
-    const decision = classifyConsumerProviderRecoveryEligibility({
-      work: {
-        status: "failed",
-        canonicalVersion: "v-old-not-live",
-        lastError: "PROVIDER_FAILURE",
-        failureCode: "PROVIDER_FAILURE",
-        recoveryGeneration: null,
-      },
-      liveCanonicalVersion: live,
-      hasUsableSnapshot: false,
-    });
-    assert.equal(decision.eligible, false);
-    if (!decision.eligible) {
-      assert.equal(decision.ineligibleReason, "VERSION_MISMATCH");
-    }
-    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsSkippedVersionMismatch >= 1);
-    const after = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(after.status, "failed");
-    assert.equal(after.canonicalVersion, "v-old-not-live");
-  });
-
-  it("8: usable snapshot not reopened", () => {
+  it("8: usable snapshot classifier still reports USABLE_SNAPSHOT", () => {
     const decision = classifyConsumerProviderRecoveryEligibility({
       work: {
         status: "failed",
@@ -372,35 +277,7 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
     }
   });
 
-  it("9: restart does not repeatedly reset recovery budget", async () => {
-    const article = makeNews("news-no-loop");
-    await upsertPublicNewsRecords([article]);
-    const seeded = await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_FAILURE",
-      safeReason: "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID",
-    });
-    await stampRecoveryGenerationAndFail({
-      entityId: seeded.entityId,
-      version: seeded.version,
-      failureCode: "PROVIDER_FAILURE",
-      safeReason: "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID",
-    });
-    const before = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === seeded.entityId,
-    )!;
-    assert.equal(before.recoveryGeneration, "05E");
-    assert.equal(before.status, "failed");
-    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    assert.ok(healed.newsSkippedAlreadyRecovered >= 1);
-    const after = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === seeded.entityId,
-    )!;
-    assert.equal(after.status, "failed");
-    assert.equal(after.attempts, before.attempts);
-  });
-
-  it("10–11: reopened row executes structured provider and success clears failure", async () => {
+  it("10: residual public_news process fails closed with no_machine_auto_paths", async () => {
     const article = makeNews("news-recover-ok");
     await upsertPublicNewsRecords([article]);
     const { version, entityId, tree } = await seedFailedProviderWork({
@@ -408,32 +285,19 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       failureCode: "PROVIDER_FAILURE",
       safeReason: "PROVIDER_FAILURE;PROVIDER_RESPONSE_SHAPE=INVALID",
     });
-    await healCurrentConsumerProviderFailures({ locales: ["uk"] });
-    const pending = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId)!;
-    assert.equal(pending.status, "pending");
-    assert.equal(pending.recoveryGeneration, "05E");
-
-    resetMediaPlpMaterializerProviderCallBudget();
-    const providerResult = await callMediaPlpMaterializerProviderOnce({
-      provider: new FakeLocalMediaPlpTransport({}),
-      locale: "uk",
-      autoValues: { title: article.title, summary: article.summary },
-      sourceRecordId: entityId,
-      sourceVersion: version,
-      PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
-    });
-    assert.equal(providerResult.ok, true);
+    const healed = await healCurrentConsumerProviderFailures({ locales: ["uk"] });
+    assert.equal(healed.newsEnqueued, 0);
 
     const outcome = await processPlpBuildRequest(
       {
-        workKey: pending.workKey,
+        workKey: "residual-news",
         entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
         entityId,
         locale: "uk",
         canonicalVersion: version,
         contentRevision: 1,
         trigger: "ADMIN_REBUILD",
-        enqueuedAt: pending.enqueuedAt,
+        enqueuedAt: new Date().toISOString(),
         status: "RUNNING",
         canonicalPresentation: tree,
       },
@@ -445,15 +309,12 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
         verifyDurability: async () => ({ ok: true }),
       },
     );
-    assert.equal(outcome.status, "COMPLETED");
-    await markPlpAutoBuildWorkCompleted(pending.workKey);
-    const done = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId)!;
-    assert.equal(done.status, "completed");
-    assert.equal(done.failureCode, null);
-    assert.equal(done.lastError, null);
+    assert.equal(outcome.status, "FAILED");
+    assert.equal(outcome.failure?.failureCode, "ADAPTER_OR_SOURCE");
+    assert.match(String(outcome.failure?.safeReason ?? ""), /no_machine_auto_paths/);
   });
 
-  it("12: new RSS uses new provider directly; exhausted legacy needs recovery classifier", async () => {
+  it("12: collection enqueue accepts no public_news work", async () => {
     const article = makeNews("news-fresh-rss");
     await upsertPublicNewsRecords([article]);
     await seedFailedProviderWork({
@@ -461,41 +322,19 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       failureCode: "PROVIDER_FAILURE",
       safeReason: "PROVIDER_FAILURE",
     });
-    // Collection refresh may one-shot recover media-12 legacy provider failures.
     const rss = await enqueueConsumerVisibleNewsPlpBuilds({
       locales: ["uk"],
       limit: 12,
     });
     assert.equal(rss.PROVIDER_CALLS, 0);
+    assert.equal(rss.enqueued, 0);
     const afterRss = listPlpAutoBuildWorkForTests().find(
       (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
     )!;
-    assert.equal(afterRss.status, "pending");
-    assert.equal(afterRss.recoveryGeneration, "05E");
-    assert.equal(afterRss.attempts, 0);
-
-    // Brand-new article with no prior failure enters without recovery stamp.
-    const fresh = makeNews("news-brand-new");
-    await upsertPublicNewsRecords([fresh]);
-    const enq = await enqueuePlpBuildRequest({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: mediaPlpPublicNewsEntityId(fresh.id),
-      locale: "uk",
-      canonicalVersion: fingerprintMediaPlpCanonicalVersion(treeFor(fresh)),
-      contentRevision: 1,
-      trigger: "DYNAMIC_SOURCE_REFRESH",
-      canonicalPresentation: treeFor(fresh),
-      reopenFailedSameVersion: false,
-    });
-    assert.equal(enq.accepted, true);
-    const freshRow = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(fresh.id),
-    )!;
-    assert.equal(freshRow.recoveryGeneration, null);
-    assert.equal(freshRow.status, "pending");
+    assert.equal(afterRss.status, "failed");
   });
 
-  it("13: recovery remains bounded to current /media 12", () => {
+  it("13: heal source disables news recovery under original-language policy", () => {
     const src = readFileSync(
       join(
         apiRoot,
@@ -503,8 +342,10 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       ),
       "utf8",
     );
-    assert.match(src, /selectMediaPlpConsumerNewsArticles\(\{\s*limit:\s*12/);
-    assert.match(src, /PLP_PROVIDER_CONTRACT_RECOVERY_GENERATION/);
+    assert.match(src, /newsEnqueued:\s*0/);
+    assert.match(src, /original-language-only/);
+    assert.doesNotMatch(src, /selectMediaPlpConsumerNewsArticles/);
+    assert.match(src, /enqueueCivicMediaEditorialPlpBuilds/);
   });
 
   it("14: provider concurrency remains 1", () => {

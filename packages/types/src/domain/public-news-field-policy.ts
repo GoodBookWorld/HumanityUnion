@@ -4,6 +4,11 @@
  * Single contract for PLP candidate construction, provider eligibility,
  * integrity validation, semantic ownership, and rendered carousel closure.
  *
+ * Final Localization Closure 02 — RSS original-language-only:
+ * `title` / `summary` are third-party syndication prose. They must remain in
+ * the source language, must not enter Gemini AUTO bags, and must not consume
+ * PLP machine-localization quota. Historical PLP/CT rows may remain unread.
+ *
  * Classification of `category` (Reset 03E.11.1 / publication fix):
  * CONTROLLED_VOCABULARY — curated MediaRegistryCategory labels assigned at
  * RSS ingest from the media registry (not free-text RSS body, not outlet
@@ -21,10 +26,11 @@ export type PublicNewsFieldOwnershipClass =
 /**
  * Participant-facing public_news semantic fields and their ownership class.
  * MACHINE_CONTENT paths are the only Gemini / CLI.1 identity-checked AUTO nodes.
+ * RSS title/summary are PROTECTED_SOURCE_VALUE (original-language-only).
  */
 export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
-  title: "MACHINE_CONTENT",
-  summary: "MACHINE_CONTENT",
+  title: "PROTECTED_SOURCE_VALUE",
+  summary: "PROTECTED_SOURCE_VALUE",
   category: "CONTROLLED_VOCABULARY",
   sourceName: "PROTECTED_SOURCE_VALUE",
   id: "PROTECTED_SOURCE_VALUE",
@@ -35,11 +41,11 @@ export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
   geographicScope: "PROTECTED_SOURCE_VALUE",
 } as const satisfies Record<string, PublicNewsFieldOwnershipClass>;
 
-/** PLP / Gemini AUTO paths for public_news (excludes controlled + protected). */
-export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = [
-  "title",
-  "summary",
-] as const;
+/**
+ * PLP / Gemini AUTO paths for public_news.
+ * Empty under original-language-only RSS policy (title/summary are protected).
+ */
+export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = [] as const;
 
 export type PublicNewsMachineContentPath =
   (typeof PUBLIC_NEWS_MACHINE_CONTENT_PATHS)[number];

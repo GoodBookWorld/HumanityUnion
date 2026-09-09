@@ -16,11 +16,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const apiSrc = join(__dirname, "../../../src");
 
 describe("Pack 08K.3.1 public_news registration", () => {
-  it("allowlist + public kinds include public_news", () => {
-    assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.public_news], [
-      "title",
-      "summary",
-    ]);
+  it("allowlist + public kinds include public_news kind with empty AUTO fields", () => {
+    assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.public_news], []);
     assert.ok(PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS.includes("public_news"));
   });
 

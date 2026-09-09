@@ -294,7 +294,7 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     );
   });
 
-  it("1: UK + missing public_news PLP → not FULLY_LOCALIZED", async () => {
+  it("1: UK + missing public_news PLP still FULLY_LOCALIZED (original-language policy)", async () => {
     const seeded = fullySeeded("uk");
     const html = await renderMediaPage({
       locale: "uk",
@@ -302,13 +302,11 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
       plpNewsById: undefined,
     });
     const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
-    assert.notEqual(report.PAGE_STATUS, "FULLY_LOCALIZED");
-    assert.ok(report.CAROUSEL_PLP_FALLBACK_LEAVES > 0);
+    assert.equal(report.PAGE_STATUS, "FULLY_LOCALIZED");
     const newsLeaves = report.leaves.filter((l) => l.entityType === "public_news");
-    assert.ok(newsLeaves.every((l) => l.result === "CANONICAL_FALLBACK"));
-    assert.ok(
-      newsLeaves.some((l) => l.fallbackReason === "NO_PUBLISHED_SNAPSHOT"),
-    );
+    assert.ok(newsLeaves.length >= 2);
+    assert.ok(newsLeaves.every((l) => l.result === "PROTECTED_CANONICAL"));
+    assert.ok(newsLeaves.every((l) => l.owner === "PROTECTED_CANONICAL"));
   });
 
   it("2: UK + missing fact-check PLP → not FULLY_LOCALIZED", async () => {
@@ -457,15 +455,15 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     assert.equal(report.PAGE_STATUS, "INVALID_COVERAGE");
   });
 
-  it("8: public_news valid PLP.2 localizes headline/summary via card props; category via UI dictionary", async () => {
+  it("8: public_news renders original RSS headline/summary; category via UI dictionary", async () => {
     const html = await renderMediaPage({ locale: "uk", ...fullySeeded("uk") });
-    assert.match(html, /\[uk\] news title/);
+    assert.match(html, /News title EN/);
     assert.match(html, /Мир і безпека/);
     assert.match(html, /data-hu-semantic-path="title"/);
     assert.match(html, /data-hu-semantic-path="summary"/);
     assert.match(html, /data-hu-message-key="publicNews\.categories\.peaceAndSecurity"/);
     assert.doesNotMatch(html, /data-hu-semantic-path="category"/);
-    assert.doesNotMatch(html, /News title EN/);
+    assert.doesNotMatch(html, /\[uk\] news title/);
   });
 
   it("9: fact-check valid PLP.2 localizes mission + coverage chips", async () => {
@@ -584,7 +582,7 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     assert.equal(report.PAGE_STATUS, "INVALID_COVERAGE");
   });
 
-  it("category is UI_DICTIONARY controlled vocab; title/summary remain PLP_ENTITY", async () => {
+  it("category is UI_DICTIONARY controlled vocab; title/summary are PROTECTED_CANONICAL originals", async () => {
     const html = await renderMediaPage({ locale: "uk", ...fullySeeded("uk") });
     const nodes = collectRenderedMediaSemanticNodes(html);
     const category = nodes.find(
@@ -598,12 +596,13 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
     const summary = nodes.find(
       (n) => n.entityType === "public_news" && n.semanticPath === "summary",
     );
-    assert.equal(title?.owner, "PLP_ENTITY");
-    assert.equal(summary?.owner, "PLP_ENTITY");
-    assert.equal(title?.result, "PUBLISHED_LOCALIZED");
+    assert.equal(title?.owner, "PROTECTED_CANONICAL");
+    assert.equal(summary?.owner, "PROTECTED_CANONICAL");
+    assert.equal(title?.result, "PROTECTED_CANONICAL");
+    assert.equal(summary?.result, "PROTECTED_CANONICAL");
   });
 
-  it("cannot be FULLY_LOCALIZED when news title/summary are canonical fallback", async () => {
+  it("historical PLP overlays cannot override original RSS title/summary presentation", async () => {
     const seeded = fullySeeded("uk");
     const html = await renderMediaPage({
       locale: "uk",
@@ -612,19 +611,19 @@ describe("Reset 03E.11 — rendered carousel semantic closure", () => {
         "news-1": plp(
           MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
           "news-1",
-          "CANONICAL_FALLBACK",
+          "PUBLISHED_LOCALIZED",
           {
-            title: "News title EN",
-            summary: "News summary EN that is long enough for bullet extraction.",
+            title: "[uk] overlay must not win",
+            summary: "[uk] overlay summary must not win for bullet extraction.",
           },
           "uk",
-          "NO_PUBLISHED_SNAPSHOT",
         ),
       },
     });
     const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
-    assert.notEqual(report.FULLY_LOCALIZED, true);
-    assert.ok(report.CAROUSEL_PLP_FALLBACK_LEAVES > 0);
+    assert.equal(report.FULLY_LOCALIZED, true);
+    assert.match(html, /News title EN/);
+    assert.doesNotMatch(html, /overlay must not win/);
     assert.match(html, /Мир і безпека/);
   });
 

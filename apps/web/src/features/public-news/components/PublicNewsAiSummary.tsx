@@ -35,12 +35,11 @@ export function PublicNewsAiSummary({
             {entityResult && entityId ? (
               <MediaSemanticNode
                 as="span"
-                owner="PLP_ENTITY"
-                result={entityResult}
+                owner="PROTECTED_CANONICAL"
+                result="PROTECTED_CANONICAL"
                 entityType="public_news"
                 entityId={entityId}
                 semanticPath="summary"
-                fallbackReason={fallbackReason}
               >
                 {bullet}
               </MediaSemanticNode>
