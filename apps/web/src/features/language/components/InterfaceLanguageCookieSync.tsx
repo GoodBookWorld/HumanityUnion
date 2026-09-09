@@ -1,11 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences } from "../../preferences/preferences-api";
 import { readHuLangCookieFromDocument } from "../hu-lang-cookie.web";
+import { shouldSuppressInterfaceLanguageCookieSyncForPath } from "../public-seo-locale-request";
 import { writeHuLangCookieViaWebRoute } from "../write-hu-lang-cookie";
 
 /**
@@ -29,6 +30,10 @@ export function resetInterfaceLanguageCookieSyncForTests(): void {
  * Pack 02C Task 03/04 — after authenticated session resolution/login, sync
  * Participant `interfaceLanguage` → Web-origin `hu_lang` when they differ.
  *
+ * Pack 2.1A — on a valid locale-prefixed SEO public document URL, do not write
+ * a conflicting cookie or `router.refresh()` (URL locale remains authoritative).
+ * Locale-free pages keep the existing preference → cookie sync behavior.
+ *
  * Does not read API host-only auth cookies from the server. Uses the existing
  * credentialed Preferences API from the browser after auth status is known.
  * Does not mutate documentElement.lang/dir (SSR refresh applies attributes).
@@ -36,12 +41,17 @@ export function resetInterfaceLanguageCookieSyncForTests(): void {
 export function InterfaceLanguageCookieSync() {
   const authStatus = useClientAuthStatus();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (authStatus !== "authenticated") {
       if (authStatus === "unauthenticated") {
         lastSyncedInterfaceLocale = null;
       }
+      return;
+    }
+
+    if (shouldSuppressInterfaceLanguageCookieSyncForPath(pathname)) {
       return;
     }
 
@@ -90,7 +100,7 @@ export function InterfaceLanguageCookieSync() {
     return () => {
       cancelled = true;
     };
-  }, [authStatus, router]);
+  }, [authStatus, router, pathname]);
 
   return null;
 }

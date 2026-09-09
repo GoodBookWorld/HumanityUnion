@@ -1,6 +1,6 @@
 /**
  * Production Completion Pack 02C Task 02 — server document locale resolution.
- * Pack 2.1 — URL locale segment (SEO-prefixed public paths) wins over cookie.
+ * Pack 2.1 / 2.1A — SEO URL locale wins over cookie / Accept-Language / prefs.
  *
  * Uses the shared `@hu/types` catalog resolver (same precedence as API).
  * Does not use legacy base-tag collapse helpers for html lang/dir.
@@ -29,7 +29,11 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 import { API_BASE_URL } from "../../lib/api-base-url";
-import { HU_URL_LOCALE_SEGMENT_HEADER } from "./public-seo-locale-headers";
+import {
+  HU_PATHNAME_HEADER,
+  HU_URL_LOCALE_SEGMENT_HEADER,
+} from "./public-seo-locale-headers";
+import { resolveUrlLocaleSegmentFromRequestSignals } from "./public-seo-locale-request";
 
 const ENGLISH_ONLY_CATALOG: readonly PublicSeoLocaleRoutingCatalogEntry[] = [
   {
@@ -57,6 +61,7 @@ function toSeoRoutingCatalog(
     };
   });
 }
+
 async function fetchEnabledLocaleCatalogUncached(): Promise<
   readonly PublicSeoLocaleRoutingCatalogEntry[]
 > {
@@ -97,26 +102,56 @@ async function fetchEnabledLocaleCatalogUncached(): Promise<
  */
 const fetchEnabledLocaleCatalog = cache(fetchEnabledLocaleCatalogUncached);
 
-async function readUrlLocaleSegment(
-  override: string | null | undefined,
-): Promise<string | null> {
-  if (override !== undefined) {
-    return override;
+/**
+ * Pack 2.1A — recover URL locale for root SSR without child `[locale]` params.
+ * Pathname (via shared SEO parser) wins over the explicit segment header.
+ */
+async function readUrlLocaleSegment(overrides?: {
+  readonly urlLocaleSegment?: string | null;
+  readonly pathname?: string | null;
+}): Promise<string | null> {
+  // Layout / unit callers that pass only `urlLocaleSegment` keep that contract.
+  if (
+    overrides &&
+    Object.prototype.hasOwnProperty.call(overrides, "urlLocaleSegment") &&
+    !Object.prototype.hasOwnProperty.call(overrides, "pathname")
+  ) {
+    const direct = overrides.urlLocaleSegment;
+    return typeof direct === "string" && direct.trim().length > 0 ? direct.trim() : null;
   }
-  try {
-    const headerStore = await headers();
-    const fromHeader = headerStore.get(HU_URL_LOCALE_SEGMENT_HEADER);
-    return fromHeader && fromHeader.trim().length > 0 ? fromHeader.trim() : null;
-  } catch {
-    return null;
+
+  let pathname: string | null | undefined = overrides?.pathname;
+  let segmentHeader: string | null | undefined = overrides?.urlLocaleSegment;
+
+  const needPathname = pathname === undefined;
+  const needSegment = segmentHeader === undefined;
+
+  if (needPathname || needSegment) {
+    try {
+      const headerStore = await headers();
+      if (needPathname) {
+        pathname = headerStore.get(HU_PATHNAME_HEADER);
+      }
+      if (needSegment) {
+        segmentHeader = headerStore.get(HU_URL_LOCALE_SEGMENT_HEADER);
+      }
+    } catch {
+      // Outside a request context (tests / build).
+    }
   }
+
+  return resolveUrlLocaleSegmentFromRequestSignals({
+    pathname: pathname ?? null,
+    urlLocaleSegmentHeader: segmentHeader ?? null,
+  });
 }
 
 /**
- * Pack 2.1 — full public SEO locale document resolution for the current request.
+ * Pack 2.1 / 2.1A — full public SEO locale document resolution for the current request.
  */
 export async function resolvePublicSeoLocaleDocumentForRequest(overrides?: {
   readonly urlLocaleSegment?: string | null;
+  readonly pathname?: string | null;
   readonly huLangCookie?: string | null;
   readonly acceptLanguageHeader?: string | null;
   readonly catalog?: readonly RuntimeLocaleCatalogEntry[];
@@ -126,7 +161,20 @@ export async function resolvePublicSeoLocaleDocumentForRequest(overrides?: {
   const catalog = toSeoRoutingCatalog(
     overrides?.catalog ?? (await fetchEnabledLocaleCatalog()),
   );
-  const urlLocaleSegment = await readUrlLocaleSegment(overrides?.urlLocaleSegment);
+  const segmentOverrides: {
+    urlLocaleSegment?: string | null;
+    pathname?: string | null;
+  } = {};
+  if (overrides && Object.prototype.hasOwnProperty.call(overrides, "pathname")) {
+    segmentOverrides.pathname = overrides.pathname;
+  }
+  if (overrides && Object.prototype.hasOwnProperty.call(overrides, "urlLocaleSegment")) {
+    segmentOverrides.urlLocaleSegment = overrides.urlLocaleSegment;
+  }
+
+  const urlLocaleSegment = await readUrlLocaleSegment(
+    Object.keys(segmentOverrides).length > 0 ? segmentOverrides : undefined,
+  );
 
   let huLangCookie = overrides?.huLangCookie ?? null;
   let acceptLanguageHeader = overrides?.acceptLanguageHeader ?? null;
@@ -161,11 +209,12 @@ export async function resolvePublicSeoLocaleDocumentForRequest(overrides?: {
 /**
  * Resolve document locale for the current Next.js request (server-only).
  * Pure catalog precedence — resolved on the server before paint.
- * Pack 2.1 — SEO URL locale segment overrides cookie / Accept-Language when valid.
+ * Pack 2.1A — SEO URL locale (pathname/header) overrides cookie / Accept-Language.
  */
 export async function resolveDocumentHtmlLocale(
   overrides?: {
     readonly urlLocaleSegment?: string | null;
+    readonly pathname?: string | null;
     readonly huLangCookie?: string | null;
     readonly acceptLanguageHeader?: string | null;
     readonly catalog?: readonly RuntimeLocaleCatalogEntry[];

@@ -200,6 +200,7 @@ describe("Pack 2.1 — locale-prefixed public routing foundation", () => {
     assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
     assert.match(middleware, /parsePublicSeoLocalePrefixedPath/);
     assert.match(middleware, /HU_URL_LOCALE_SEGMENT_HEADER/);
+    assert.match(middleware, /HU_PATHNAME_HEADER/);
   });
 
   it("thin [locale] tree exists only for SEO public perimeter and validates in layout", () => {

@@ -133,9 +133,16 @@ describe("Production Completion Pack 02C Task 04 — local acceptance", () => {
     const typesRuntime = readFileSync(typesRuntimePath, "utf8");
     const apiResolve = readApi("modules/language/resolve-runtime-locale.ts");
     const webResolve = readWeb("features/language/resolve-document-locale.ts");
+    const typesSeo = readFileSync(
+      path.resolve(typesRuntimePath, "../public-seo-locale-routing.ts"),
+      "utf8",
+    );
     assert.match(typesRuntime, /resolveRuntimeLocaleFromCatalog/);
     assert.match(apiResolve, /resolveRuntimeLocaleFromCatalog/);
-    assert.match(webResolve, /resolveRuntimeLocaleFromCatalog/);
+    // Pack 2.1A — web document locale goes through SEO document resolver, which
+    // still uses resolveRuntimeLocaleFromCatalog for cookie/AL/fallback.
+    assert.match(webResolve, /resolvePublicSeoLocaleDocument/);
+    assert.match(typesSeo, /resolveRuntimeLocaleFromCatalog/);
   });
 
   it("Pack 02C runtime paths: no base-tag collapse / no client lang mutation / no hardcoded catalogs", () => {
