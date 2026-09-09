@@ -327,7 +327,7 @@ a.volunteer-page__cta.hu-button {
         transparent 72%
       ),
       url("/icons/volunteer/head-volunteer.webp");
-    background-size: auto, contain;
+    background-size: auto, cover;
     background-position: center, center right;
     background-repeat: no-repeat;
   }

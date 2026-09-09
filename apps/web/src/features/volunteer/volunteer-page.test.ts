@@ -107,7 +107,7 @@ describe("Volunteer public page", () => {
     );
     assert.match(
       css,
-      /@media \(min-width:\s*600px\)[\s\S]*background-size:\s*auto,\s*contain|@media \(min-width:\s*600px\)[\s\S]*background-size:\s*contain/,
+      /@media \(min-width:\s*600px\)[\s\S]*background-size:\s*auto,\s*cover|@media \(min-width:\s*600px\)[\s\S]*background-size:\s*cover/,
     );
     assert.match(
       css,
