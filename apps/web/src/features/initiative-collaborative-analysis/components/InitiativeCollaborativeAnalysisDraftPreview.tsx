@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { InitiativeCollaborativeAnalysis } from "@hu/types";
 
 import { getMyCurrentInitiativeAnalysis } from "../api";
+import { presentCollaborativeAnalysisForAuthorEditor } from "../collaborative-analysis-author-presentation";
 import { InitiativeCollaborativeAnalysisContentFields } from "./InitiativeCollaborativeAnalysisContentFields";
 
 import "./initiative-collaborative-analysis-workspace.css";
@@ -31,7 +32,8 @@ import "./initiative-collaborative-analysis-workspace.css";
  * boundary otherwise leaves empty.
  *
  * Pack 02G 08D.4 — preview chrome via author.analysis.preview.*;
- * draft body values remain canonical.
+ * draft body values remain canonical English presentation (03C.5A —
+ * lifecycle tokens composed before render; never raw `{lifecycleStage:...}`).
  */
 export function InitiativeCollaborativeAnalysisDraftPreview({ initiativeId }: { readonly initiativeId: string }) {
   const t = useTranslations("initiativeExperience");
@@ -78,16 +80,18 @@ export function InitiativeCollaborativeAnalysisDraftPreview({ initiativeId }: { 
     return <p className="lsw-result__placeholder">{t("author.analysis.preview.empty")}</p>;
   }
 
+  const presented = presentCollaborativeAnalysisForAuthorEditor(analysis);
+
   return (
     <div className="ica-public-result">
       <InitiativeCollaborativeAnalysisContentFields
-        title={analysis.title}
-        summary={analysis.summary}
-        supportingEvidence={analysis.supportingEvidence}
-        risks={analysis.risks}
-        openQuestions={analysis.openQuestions}
-        suggestedImprovements={analysis.suggestedImprovements}
-        references={analysis.references}
+        title={presented.title}
+        summary={presented.summary}
+        supportingEvidence={presented.supportingEvidence}
+        risks={presented.risks}
+        openQuestions={presented.openQuestions}
+        suggestedImprovements={presented.suggestedImprovements}
+        references={presented.references}
       />
       <div className="ica-public-result__field">
         <h4>{t("author.analysis.fields.author")}</h4>

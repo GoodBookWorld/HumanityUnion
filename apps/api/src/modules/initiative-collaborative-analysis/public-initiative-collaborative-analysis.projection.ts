@@ -1,7 +1,8 @@
-import type {
-  InitiativeCollaborativeAnalysis,
-  PublicInitiativeCollaborativeAnalysisListItem,
-  PublicInitiativeCollaborativeAnalysisProjection,
+import {
+  presentLifecycleStageTokensAsEnglish,
+  type InitiativeCollaborativeAnalysis,
+  type PublicInitiativeCollaborativeAnalysisListItem,
+  type PublicInitiativeCollaborativeAnalysisProjection,
 } from "@hu/types";
 
 import { getMemberById } from "../member/member-access.js";
@@ -15,6 +16,20 @@ async function resolveAuthorDisplayName(authorId: string): Promise<string> {
   const member = await getMemberById(authorId);
 
   return member?.profile.displayName ?? "Unknown Author";
+}
+
+function presentAnalysisFieldsForParticipants(analysis: InitiativeCollaborativeAnalysis) {
+  return {
+    title: presentLifecycleStageTokensAsEnglish(analysis.title),
+    summary: presentLifecycleStageTokensAsEnglish(analysis.summary),
+    supportingEvidence: presentLifecycleStageTokensAsEnglish(analysis.supportingEvidence),
+    risks: presentLifecycleStageTokensAsEnglish(analysis.risks),
+    openQuestions: presentLifecycleStageTokensAsEnglish(analysis.openQuestions ?? ""),
+    suggestedImprovements: presentLifecycleStageTokensAsEnglish(
+      analysis.suggestedImprovements,
+    ),
+    references: presentLifecycleStageTokensAsEnglish(analysis.references),
+  };
 }
 
 export async function toPublicInitiativeCollaborativeAnalysisProjection(
@@ -32,13 +47,7 @@ export async function toPublicInitiativeCollaborativeAnalysisProjection(
   return {
     analysisId: analysis.analysisId,
     initiativeId: analysis.initiativeId,
-    title: analysis.title,
-    summary: analysis.summary,
-    supportingEvidence: analysis.supportingEvidence,
-    risks: analysis.risks,
-    openQuestions: analysis.openQuestions ?? "",
-    suggestedImprovements: analysis.suggestedImprovements,
-    references: analysis.references,
+    ...presentAnalysisFieldsForParticipants(analysis),
     authorDisplayName,
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
     initiativeVersion: analysis.initiativeVersion ?? 1,
@@ -49,10 +58,11 @@ export async function toPublicInitiativeCollaborativeAnalysisProjection(
 export async function toPublicInitiativeCollaborativeAnalysisListItem(
   analysis: InitiativeCollaborativeAnalysis,
 ): Promise<PublicInitiativeCollaborativeAnalysisListItem> {
+  const fields = presentAnalysisFieldsForParticipants(analysis);
   return {
     analysisId: analysis.analysisId,
-    title: analysis.title,
-    summary: analysis.summary,
+    title: fields.title,
+    summary: fields.summary,
     authorDisplayName: await resolveAuthorDisplayName(analysis.authorId),
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
     initiativeVersion: analysis.initiativeVersion ?? 1,

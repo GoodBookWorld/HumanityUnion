@@ -1,4 +1,11 @@
-import type { InitiativeAnalysisSourceSnapshot } from "@hu/types";
+import {
+  lifecycleStageToken,
+  type InitiativeAnalysisSourceSnapshot,
+} from "@hu/types";
+
+/** HU-owned controlled vocabulary refs — never free-text stage labels. */
+const DISCUSSION_STAGE = lifecycleStageToken("discussion");
+const ANALYSIS_STAGE = lifecycleStageToken("analysis");
 
 /**
  * Initiative Lifecycle — Part B, Section 4: AI Draft Pipeline.
@@ -55,7 +62,7 @@ function buildSummary(input: AnalysisDraftProviderInput): string {
 
   if (discussionStatistics.commentCount === 0) {
     return (
-      `No Discussion activity has been collected for "${input.initiativeTitle}" yet. ` +
+      `No ${DISCUSSION_STAGE} activity has been collected for "${input.initiativeTitle}" yet. ` +
       "This summary will update automatically once participants begin commenting."
     );
   }
@@ -113,7 +120,7 @@ function buildAreasRequiringClarification(input: AnalysisDraftProviderInput): st
 function buildProposalReferences(input: AnalysisDraftProviderInput): string {
   return bulletList(
     input.snapshot.proposalCandidates.map(
-      (item) => `"${item.excerpt}" — ${item.authorDisplayName} (see Discussion)`,
+      (item) => `"${item.excerpt}" — ${item.authorDisplayName} (see ${DISCUSSION_STAGE})`,
     ),
     "No proposal-marked discussion contributions exist yet.",
   );
@@ -121,7 +128,7 @@ function buildProposalReferences(input: AnalysisDraftProviderInput): string {
 
 async function generateDeterministicDraft(input: AnalysisDraftProviderInput): Promise<AnalysisDraftContent> {
   return {
-    title: `Collaborative Analysis: ${input.initiativeTitle}`,
+    title: `${ANALYSIS_STAGE}: ${input.initiativeTitle}`,
     summary: buildSummary(input),
     supportingEvidence: buildSupportingEvidence(input),
     risks: buildRisks(input),

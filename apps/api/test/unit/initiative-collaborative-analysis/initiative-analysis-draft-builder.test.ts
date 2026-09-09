@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { InitiativeAnalysisSourceSnapshot } from "@hu/types";
+import { lifecycleStageToken } from "@hu/types";
 
 import { generateAnalysisDraft } from "../../../src/modules/initiative-collaborative-analysis/initiative-analysis-draft-builder.js";
 
@@ -13,6 +14,13 @@ import { generateAnalysisDraft } from "../../../src/modules/initiative-collabora
  * hand-built `InitiativeAnalysisSourceSnapshot` fixtures, so they run in
  * every `pnpm test` invocation without any database.
  */
+
+const ANALYSIS_TOKEN = lifecycleStageToken("analysis");
+const DISCUSSION_TOKEN = lifecycleStageToken("discussion");
+
+function escapeToken(token: string): string {
+  return token.replace(/[{}]/g, "\\$&");
+}
 
 const EMPTY_SNAPSHOT: InitiativeAnalysisSourceSnapshot = {
   initiativeId: "draft-builder-empty",
@@ -77,12 +85,12 @@ const POPULATED_SNAPSHOT: InitiativeAnalysisSourceSnapshot = {
 
 describe("generateAnalysisDraft (Deterministic Draft Builder)", () => {
   describe("empty Source Snapshot", () => {
-    it("embeds the real Initiative title in the generated title", async () => {
+    it("embeds the real Initiative title in the generated title with analysis stage token", async () => {
       const draft = await generateAnalysisDraft({
         initiativeTitle: "Empty Initiative",
         snapshot: EMPTY_SNAPSHOT,
       });
-      assert.equal(draft.title, "Collaborative Analysis: Empty Initiative");
+      assert.equal(draft.title, `${ANALYSIS_TOKEN}: Empty Initiative`);
     });
 
     it("uses honest 'no activity yet' fallbacks for every section, inventing nothing", async () => {
@@ -91,7 +99,7 @@ describe("generateAnalysisDraft (Deterministic Draft Builder)", () => {
         snapshot: EMPTY_SNAPSHOT,
       });
 
-      assert.match(draft.summary, /No Discussion activity/);
+      assert.match(draft.summary, new RegExp(`No ${escapeToken(DISCUSSION_TOKEN)} activity`));
       assert.match(draft.supportingEvidence, /No discussion comments have received Helpful reactions/);
       assert.match(draft.risks, /No discussion comments have been identified as concerns/);
       assert.match(draft.openQuestions, /No open questions identified/);
@@ -155,13 +163,26 @@ describe("generateAnalysisDraft (Deterministic Draft Builder)", () => {
       assert.match(draft.suggestedImprovements, /mentioned 3 times/);
     });
 
-    it("cites the real proposal candidate verbatim in references", async () => {
+    it("cites the real proposal candidate verbatim in references with discussion stage token", async () => {
       const draft = await generateAnalysisDraft({
         initiativeTitle: "Community Garden",
         snapshot: POPULATED_SNAPSHOT,
       });
 
       assert.match(draft.references, /Add a dedicated composting station\./);
+      assert.match(draft.references, new RegExp(`see ${escapeToken(DISCUSSION_TOKEN)}`));
+    });
+
+    it("does not tokenize Initiative titles, comment excerpts, or author names", async () => {
+      const draft = await generateAnalysisDraft({
+        initiativeTitle: "Discussion about Discussion",
+        snapshot: POPULATED_SNAPSHOT,
+      });
+
+      assert.equal(draft.title, `${ANALYSIS_TOKEN}: Discussion about Discussion`);
+      assert.match(draft.supportingEvidence, /This plan improves community access\./);
+      assert.doesNotMatch(draft.supportingEvidence, /\{lifecycleStage:/);
+      assert.match(draft.supportingEvidence, /Ally Two/);
     });
   });
 

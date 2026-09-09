@@ -45,6 +45,10 @@ import {
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import {
+  presentCollaborativeAnalysisCanonicalFields,
+  translateCollaborativeAnalysisFieldsWithLifecycleSlots,
+} from "./content-translation-lifecycle-slots.js";
 import { buildContentTranslationSourceVersion } from "./content-translation-version.js";
 import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
 import {
@@ -358,52 +362,97 @@ export async function getOrCreateContentTranslation(input: {
     throw error;
   }
 
-  const result = await withContentTranslationWorkerSlot(() =>
-    provider.translate({
+  let translatedFields: Record<string, string>;
+  let translationProviderId: string;
+
+  if (source.sourceKind === "collaborative_analysis") {
+    // 03C.5 / 03C.5C — extract lifecycle slots; validate machine prose before
+    // glossary reassembly so preferredTerm cannot fake translation quality.
+    translationProviderId = provider.providerId;
+    translatedFields = await translateCollaborativeAnalysisFieldsWithLifecycleSlots({
+      sanitizedFields: providerFields,
       sourceLanguage: source.sourceLanguage,
       targetLanguage,
-      text: JSON.stringify(providerFields),
-      contentType: "structured_json",
-      sourceRecordId: source.sourceRecordId,
-      sourceVersion: source.sourceVersion,
-      terminologyContext,
-      safetyCleared: true,
-    }),
-  );
+      translatePayload: async (payload) => {
+        const result = await withContentTranslationWorkerSlot(() =>
+          provider.translate({
+            sourceLanguage: source.sourceLanguage,
+            targetLanguage,
+            text: JSON.stringify(payload),
+            contentType: "structured_json",
+            sourceRecordId: source.sourceRecordId,
+            sourceVersion: source.sourceVersion,
+            terminologyContext,
+            safetyCleared: true,
+          }),
+        );
+        translationProviderId = result.providerId;
+        try {
+          return parseStructuredTranslation(result.translatedText);
+        } catch {
+          throw new ContentTranslationValidationError(
+            "INVALID_PROVIDER_PAYLOAD",
+            "Translation provider returned malformed structured content.",
+            "malformed_response",
+          );
+        }
+      },
+    });
 
-  let translatedFields: Record<string, string>;
-  try {
-    translatedFields = parseStructuredTranslation(result.translatedText);
-  } catch {
-    throw new ContentTranslationValidationError(
-      "INVALID_PROVIDER_PAYLOAD",
-      "Translation provider returned malformed structured content.",
-      "malformed_response",
+    // Final bag: allowlist / key shape only. Machine prose + civic title already
+    // validated against the provider machine payload inside the CA lifecycle hop.
+    translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+  } else {
+    const result = await withContentTranslationWorkerSlot(() =>
+      provider.translate({
+        sourceLanguage: source.sourceLanguage,
+        targetLanguage,
+        text: JSON.stringify(providerFields),
+        contentType: "structured_json",
+        sourceRecordId: source.sourceRecordId,
+        sourceVersion: source.sourceVersion,
+        terminologyContext,
+        safetyCleared: true,
+      }),
     );
+    translationProviderId = result.providerId;
+
+    try {
+      translatedFields = parseStructuredTranslation(result.translatedText);
+    } catch {
+      throw new ContentTranslationValidationError(
+        "INVALID_PROVIDER_PAYLOAD",
+        "Translation provider returned malformed structured content.",
+        "malformed_response",
+      );
+    }
+
+    // Pack 02G Task 07C / 07E.1 / 08J — keep AUTO_TRANSLATABLE projection keys;
+    // reject all-unchanged prose; require civic title fields to differ.
+    translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertTranslatedProseChangedFromSource({
+      sourceKind: source.sourceKind,
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertCivicTitleFieldsTranslatedFromSource({
+      sourceKind: source.sourceKind,
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      sourceFields: providerFields,
+      translatedFields,
+    });
   }
-
-  // Pack 02G Task 07C / 07E.1 / 08J — keep AUTO_TRANSLATABLE projection keys;
-  // reject all-unchanged prose; require civic title fields to differ.
-  translatedFields = filterTranslatedFieldsToSourceAllowlist({
-    sourceKind: source.sourceKind,
-    sourceFields: providerFields,
-    translatedFields,
-  });
-  assertTranslatedProseChangedFromSource({
-    sourceKind: source.sourceKind,
-    sourceLanguage: source.sourceLanguage,
-    targetLanguage,
-    sourceFields: providerFields,
-    translatedFields,
-  });
-  assertCivicTitleFieldsTranslatedFromSource({
-    sourceKind: source.sourceKind,
-    sourceLanguage: source.sourceLanguage,
-    targetLanguage,
-    sourceFields: providerFields,
-    translatedFields,
-  });
-
   // Pack 08I.5 — Blog HTML body: re-sanitize after provider so markup stays structurally safe.
   if (source.sourceKind === "blog_post" && typeof translatedFields.content === "string") {
     translatedFields = {
@@ -420,7 +469,7 @@ export async function getOrCreateContentTranslation(input: {
     sourceLanguage: source.sourceLanguage,
     targetLanguage,
     translatedContent: translatedFields,
-    translationProvider: result.providerId,
+    translationProvider: translationProviderId,
     translationKind: "machine",
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -471,7 +520,10 @@ export async function resolvePublicTranslatedContent(input: {
         });
       }
       return resolveStructuredTranslatedDisplay({
-        originalFields: created.source.fields,
+        originalFields:
+          created.source.sourceKind === "collaborative_analysis"
+            ? presentCollaborativeAnalysisCanonicalFields(created.source.fields)
+            : created.source.fields,
         originalLanguage: created.source.sourceLanguage,
         preferredReadingLanguage,
         translationPreference,
@@ -489,7 +541,10 @@ export async function resolvePublicTranslatedContent(input: {
           throw error;
         }
         return resolveStructuredTranslatedDisplay({
-          originalFields: source.fields,
+          originalFields:
+            source.sourceKind === "collaborative_analysis"
+              ? presentCollaborativeAnalysisCanonicalFields(source.fields)
+              : source.fields,
           originalLanguage: source.sourceLanguage,
           preferredReadingLanguage,
           translationPreference,
@@ -512,7 +567,10 @@ export async function resolvePublicTranslatedContent(input: {
   );
 
   return resolveStructuredTranslatedDisplay({
-    originalFields: source.fields,
+    originalFields:
+      source.sourceKind === "collaborative_analysis"
+        ? presentCollaborativeAnalysisCanonicalFields(source.fields)
+        : source.fields,
     originalLanguage: source.sourceLanguage,
     preferredReadingLanguage,
     translationPreference,

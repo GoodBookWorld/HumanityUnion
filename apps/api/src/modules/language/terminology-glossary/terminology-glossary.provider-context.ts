@@ -4,6 +4,10 @@
  * Presentation vocabulary only. Never attaches private content or Initiative history.
  * Failure policy: unknown locale → TerminologyGlossaryValidationError (caller/locale
  * authority). Glossary persistence failures → English seed compatibility fallback.
+ *
+ * Localization 03C.5 — for `workflow_stage` concepts only: when the target-locale
+ * preferredTerm is missing and the target is not English, omit the concept from
+ * provider context rather than instructing the provider to preserve English.
  */
 
 import type { TerminologyConcept } from "@hu/types";
@@ -26,6 +30,18 @@ export interface ProviderTerminologyConceptLine {
   readonly guidance?: string;
 }
 
+function shouldOmitWorkflowStageWithoutPreferredTerm(
+  concept: TerminologyConcept,
+  preferredRaw: string | undefined,
+  targetLocale: string,
+): boolean {
+  return (
+    concept.category === "workflow_stage" &&
+    !preferredRaw &&
+    targetLocale !== "en"
+  );
+}
+
 /**
  * Pure formatter — published concepts only; deterministic seed order.
  */
@@ -44,6 +60,10 @@ export function formatProviderTerminologyContext(
 
     const translation = concept.translations[targetLocale];
     const preferredRaw = translation?.preferredTerm?.trim();
+    if (shouldOmitWorkflowStageWithoutPreferredTerm(concept, preferredRaw, targetLocale)) {
+      continue;
+    }
+
     const preferredTerm = preferredRaw || concept.canonicalEnglishTerm;
     const usedEnglishFallback = !preferredRaw;
     const aliases = (translation?.aliases ?? [])
@@ -81,6 +101,9 @@ export function listPublishedProviderTerminologyLines(
     }
     const translation = concept.translations[targetLocale];
     const preferredRaw = translation?.preferredTerm?.trim();
+    if (shouldOmitWorkflowStageWithoutPreferredTerm(concept, preferredRaw, targetLocale)) {
+      continue;
+    }
     lines.push({
       conceptId: concept.conceptId,
       canonicalEnglishTerm: concept.canonicalEnglishTerm,

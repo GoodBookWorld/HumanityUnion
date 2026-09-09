@@ -100,6 +100,16 @@ describe("Production Completion Pack 02F Task 05 — provider terminology inject
     assert.match(context, /Member \(member\) => Member \| fallback: en/);
   });
 
+  it("5b. workflow_stage missing preferredTerm is omitted for non-English (03C.5)", async () => {
+    const context = await buildProviderTerminologyContext("uk");
+    assert.doesNotMatch(context, /Discussion \(discussion\) => Discussion/);
+    assert.doesNotMatch(
+      context,
+      /Collaborative Analysis \(collaborative_analysis\) => Collaborative Analysis/,
+    );
+    assert.doesNotMatch(context, /\(discussion\).*fallback: en/);
+  });
+
   it("6. zh-TW resolves to zh-Hant", async () => {
     await updateTerminologyConcept("workspace", {
       translations: {

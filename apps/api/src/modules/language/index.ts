@@ -377,6 +377,13 @@ export {
   resolvePublicTranslatedContent,
 } from "./content-translation.service.js";
 export {
+  presentCollaborativeAnalysisCanonicalFields,
+  resolveWorkflowStagePreferredTerm,
+  translateCollaborativeAnalysisFieldsWithLifecycleSlots,
+  assertCollaborativeAnalysisMachineProseTranslated,
+  assertCollaborativeAnalysisMachineCivicTitleTranslated,
+} from "./content-translation-lifecycle-slots.js";
+export {
   resolveTranslationConfig,
   TranslationProviderError,
 } from "./translation.config.js";

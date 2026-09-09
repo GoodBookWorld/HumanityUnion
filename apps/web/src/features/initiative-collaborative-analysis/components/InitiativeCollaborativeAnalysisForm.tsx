@@ -20,18 +20,14 @@ import {
   generateInitiativeAnalysisDraft,
   publishInitiativeAnalysis,
   saveInitiativeAnalysisDraft,
-  type SaveInitiativeCollaborativeAnalysisDraftInput,
 } from "../api";
+import {
+  buildCollaborativeAnalysisAuthorSaveInput,
+  presentCollaborativeAnalysisForAuthorEditor,
+  type CollaborativeAnalysisAuthorPresentedFields,
+} from "../collaborative-analysis-author-presentation";
 
-interface AnalysisFormState {
-  title: string;
-  summary: string;
-  supportingEvidence: string;
-  risks: string;
-  openQuestions: string;
-  suggestedImprovements: string;
-  references: string;
-}
+type AnalysisFormState = CollaborativeAnalysisAuthorPresentedFields;
 
 const ANALYSIS_FORM_SECTION_KEYS = [
   "title",
@@ -51,15 +47,8 @@ interface InitiativeCollaborativeAnalysisFormProps {
 }
 
 function buildFormState(analysis: InitiativeCollaborativeAnalysis): AnalysisFormState {
-  return {
-    title: analysis.title,
-    summary: analysis.summary,
-    supportingEvidence: analysis.supportingEvidence,
-    risks: analysis.risks,
-    openQuestions: analysis.openQuestions ?? "",
-    suggestedImprovements: analysis.suggestedImprovements,
-    references: analysis.references,
-  };
+  // 03C.5A — Author Mode never binds raw `{lifecycleStage:...}` tokens into inputs.
+  return presentCollaborativeAnalysisForAuthorEditor(analysis);
 }
 
 function detailFromError(error: unknown, fallback: string): string {
@@ -179,7 +168,10 @@ export function InitiativeCollaborativeAnalysisForm({
   async function handleSaveDraft() {
     setMessage(null);
 
-    const input: SaveInitiativeCollaborativeAnalysisDraftInput = { ...form };
+    const input = buildCollaborativeAnalysisAuthorSaveInput({
+      analysis,
+      presented: form,
+    });
 
     try {
       const updated = await savePhase.runSave(() => saveInitiativeAnalysisDraft(analysis.analysisId, input));
@@ -204,7 +196,13 @@ export function InitiativeCollaborativeAnalysisForm({
 
     try {
       const updated = await publishPhase.runSave(async () => {
-        await saveInitiativeAnalysisDraft(analysis.analysisId, { ...form });
+        await saveInitiativeAnalysisDraft(
+          analysis.analysisId,
+          buildCollaborativeAnalysisAuthorSaveInput({
+            analysis,
+            presented: form,
+          }),
+        );
         return publishInitiativeAnalysis(analysis.analysisId);
       });
       onUpdated(updated);

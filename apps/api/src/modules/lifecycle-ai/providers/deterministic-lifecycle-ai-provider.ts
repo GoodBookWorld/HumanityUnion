@@ -1,4 +1,5 @@
 import type { InitiativeLifecycleAiAssistSuggestion } from "@hu/types";
+import { lifecycleStageToken } from "@hu/types";
 
 import { parseSectionedSuggestions } from "../build-lifecycle-ai-prompt.js";
 import type { LifecycleAiProvider, LifecycleAiProviderRequest } from "../lifecycle-ai-provider.js";
@@ -205,23 +206,28 @@ function buildDeterministicWholeDocumentDraft(
   const title = request.initiativeTitle;
 
   switch (request.stageId) {
-    case "analysis":
+    case "analysis": {
+      // Localization 03C.5 / 03C.5D — HU-owned stage refs as semantic tokens (CT resolves labels).
+      const discussionStage = lifecycleStageToken("discussion");
+      const analysisStage = lifecycleStageToken("analysis");
+      const proposalStage = lifecycleStageToken("proposal");
       return [
         "Section: title",
-        `Collaborative Analysis — ${title}`,
+        `${analysisStage} — ${title}`,
         "Section: summary",
         `Suggested summary for "${title}" based on ${sources}. ${context}`,
         "Section: supportingEvidence",
         "List the strongest Helpful discussion arguments and proposal-marked contributions from the Source Snapshot.",
         "Section: risks",
-        "List the main concerns and Not Helpful themes from Discussion.",
+        `List the main concerns and Not Helpful themes from ${discussionStage}.`,
         "Section: openQuestions",
-        "Capture unanswered questions still open in Discussion.",
+        `Capture unanswered questions still open in ${discussionStage}.`,
         "Section: suggestedImprovements",
-        "Note areas that need clarification before an Improvement Proposal stage.",
+        `Note areas that need clarification before the ${proposalStage} stage.`,
         "Section: references",
-        "Reference Discussion comments, Active Allies, and Ready-to-Collaborate signals used above.",
+        `Reference ${discussionStage} comments, Active Allies, and Ready-to-Collaborate signals used above.`,
       ].join("\n");
+    }
     case "proposal":
       return [
         "Section: title",

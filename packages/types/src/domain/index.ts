@@ -175,6 +175,35 @@ export {
   stripBrandSlotsForMachineCompare,
 } from "./brand-token-composition.js";
 export type {
+  LifecycleStageTokenPart,
+  LifecycleStageSlotPlanPart,
+  LifecycleStageSlotExtraction,
+  LifecycleStageComposeResult,
+} from "./lifecycle-stage-token-composition.js";
+export {
+  LIFECYCLE_STAGE_TOKEN_PREFIX,
+  LIFECYCLE_STAGE_TOKEN_SUFFIX,
+  lifecycleStageToken,
+  isLifecycleStageTokenShape,
+  parseLifecycleStageToken,
+  templateHasLifecycleStageToken,
+  textContainsLifecycleStageToken,
+  countLifecycleStageTokens,
+  splitLifecycleStageTokenParts,
+  trySplitLifecycleStageTokenParts,
+  extractLifecycleStageSlotsForProvider,
+  buildProviderOwnedLifecycleMachinePayload,
+  reassembleLifecycleStageSlotPlans,
+  composeLifecycleStageTokens,
+  composeLifecycleStageTokensToEnglishRegistry,
+  presentLifecycleStageTokensAsEnglish,
+  presentLifecycleStageTokenFieldsAsEnglish,
+  preserveLifecycleStageTokensWhenPresentationUnchanged,
+  mergeLifecycleStageTokensFromAuthorPresentation,
+  mergeCollaborativeAnalysisAuthorSaveFields,
+  assertProviderPayloadHasNoLifecycleStageTokens,
+} from "./lifecycle-stage-token-composition.js";
+export type {
   LegalDocumentType,
   LegalLocalizationAdminListItem,
   LegalLocalizationAdminListResponse,
