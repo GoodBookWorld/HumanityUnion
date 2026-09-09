@@ -1,12 +1,15 @@
 /**
  * Pack 08J.1 — generic localized presentation boundary for public Web surfaces.
  *
+ * Pack 1.1 — participant reads are cache-only (GET resolve). Never POST /generate.
+ * Missing/stale/partial → canonical fallback. Async warm builds CURRENT elsewhere.
+ *
  * Contract:
  * - Interface/document locale drives resolve language (not readingLanguages[0]).
  * - readingContext supplies ready + translationPreference only.
- * - Always GET warm resolve when ready; generate only when preferred + miss.
+ * - Always GET warm resolve when ready; never on-demand generate.
  * - Applies resolved field bags via the generic walker when a nested projection
- *   shape is provided; flat bags merge by key.
+ *   shape is provided; flat bags merge by key (per-field canonical fill).
  * - Stale async responses cannot overwrite a newer locale request.
  */
 
@@ -21,10 +24,7 @@ import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "./translation-api";
-import {
-  emitPublicTranslationDiagnostic,
-  shouldAttemptOnDemandContentTranslation,
-} from "./public-translation-presentation-lifecycle";
+import { emitPublicTranslationDiagnostic } from "./public-translation-presentation-lifecycle";
 
 /** Detect incomplete translated field bags (Pack 08K.3.2 PARTIAL). */
 export function isPartialTranslatedFieldBag(input: {
@@ -49,6 +49,7 @@ export function isPartialTranslatedFieldBag(input: {
 
 export interface LocalizedPresentationDeps {
   readonly resolveTranslatedContent: typeof resolveTranslatedContent;
+  /** @deprecated Pack 1.1 — unused; retained for injectable test deps shape. */
   readonly generateContentTranslation: typeof generateContentTranslation;
 }
 
@@ -64,6 +65,9 @@ export interface LocalizedPresentationRequest {
   readonly displayLanguage: LanguageCode | string;
   readonly ready: boolean;
   readonly translationPreference: string;
+  /**
+   * @deprecated Pack 1.1 — participant on-demand generation is retired; ignored.
+   */
   readonly enableOnDemandGenerate?: boolean;
   /**
    * Monotonic request generation — callers bump when locale/source changes so
@@ -87,8 +91,7 @@ export interface LocalizedPresentationResult<TProjection = Record<string, string
 
 /**
  * Resolve CURRENT/manual translation for a source and return a field bag ready
- * for walker application. Never calls Gemini during SSR — network deps are
- * injected by the client path only.
+ * for walker application. Never calls Gemini / TranslationProvider.
  */
 export async function resolveLocalizedPresentation(input: {
   readonly request: LocalizedPresentationRequest;
@@ -99,8 +102,6 @@ export async function resolveLocalizedPresentation(input: {
   const deps = input.deps ?? defaultDeps;
   const requestGeneration = input.request.requestGeneration ?? 0;
   const displayLanguage = input.request.displayLanguage;
-  const preference = input.request.translationPreference;
-  const enableOnDemandGenerate = input.request.enableOnDemandGenerate !== false;
 
   if (!input.request.ready) {
     emitPublicTranslationDiagnostic({
@@ -124,51 +125,20 @@ export async function resolveLocalizedPresentation(input: {
   }
 
   try {
-    let resolved = await deps.resolveTranslatedContent({
+    const resolved = await deps.resolveTranslatedContent({
       sourceKind: input.request.sourceKind,
       sourceRecordId: input.request.sourceRecordId,
       language: displayLanguage as LanguageCode,
     });
 
-    let isPartial = false;
-    if (resolved.presentationMode !== "original") {
-      const translatedFields: Record<string, string> = {};
-      for (const [key, value] of Object.entries(resolved.content)) {
-        if (typeof value === "string") {
-          translatedFields[key] = value;
-        }
-      }
-      isPartial = isPartialTranslatedFieldBag({
-        canonicalFields: input.canonicalFields,
-        translatedFields,
-      });
-    }
-
-    if (
-      enableOnDemandGenerate &&
-      shouldAttemptOnDemandContentTranslation({
-        ready: input.request.ready,
-        translationPreference: preference,
-        readingLanguage: displayLanguage,
-        resolvePresentationMode: resolved.presentationMode,
-        originalLanguage: resolved.originalLanguage,
-        isStale: resolved.isStale,
-        isPartial,
-      })
-    ) {
-      try {
-        const generated = await deps.generateContentTranslation({
-          sourceKind: input.request.sourceKind,
-          sourceRecordId: input.request.sourceRecordId,
-          targetLanguage: displayLanguage as LanguageCode,
-        });
-        resolved = generated.display;
-      } catch {
-        // keep resolve result
-      }
-    }
-
     if (resolved.presentationMode === "original") {
+      emitPublicTranslationDiagnostic({
+        phase: resolved.isStale ? "TRANSLATION_STALE" : "TRANSLATION_CACHE_MISS",
+        sourceKind: input.request.sourceKind,
+        sourceRecordId: input.request.sourceRecordId,
+        language: displayLanguage,
+        presentationMode: "original",
+      });
       return {
         fields: input.canonicalFields,
         projection: (input.canonicalProjection ?? input.canonicalFields) as Record<string, string>,
@@ -199,9 +169,10 @@ export async function resolveLocalizedPresentation(input: {
       };
     }
 
+    // Per-field merge: missing translated keys keep canonical (PARTIAL-safe).
     const fields: Record<string, string> = { ...input.canonicalFields };
     for (const [key, value] of Object.entries(resolved.content)) {
-      if (typeof value === "string") {
+      if (typeof value === "string" && value.trim()) {
         fields[key] = value;
       }
     }
@@ -213,6 +184,14 @@ export async function resolveLocalizedPresentation(input: {
             fields,
           )
         : fields;
+
+    emitPublicTranslationDiagnostic({
+      phase: "TRANSLATION_DISPLAYED",
+      sourceKind: input.request.sourceKind,
+      sourceRecordId: input.request.sourceRecordId,
+      language: displayLanguage,
+      presentationMode: resolved.presentationMode,
+    });
 
     return {
       fields,

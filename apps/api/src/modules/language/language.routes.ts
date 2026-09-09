@@ -7,7 +7,6 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import {
-  getOrCreateContentTranslation,
   loadTranslatableSource,
   resolvePublicTranslatedContent,
 } from "./content-translation.service.js";
@@ -108,7 +107,7 @@ languageRouter.get(
       // Pack 08I.13 — explicit public `?language=` requests warm translation DISPLAY.
       // Member `translationPreference: none` must not hide current content_translations
       // for public surfaces (Live: Initiative/Blog/Media stayed English despite warm rows).
-      // On-demand generation remains gated by POST /generate + Web preferred preference.
+      // Pack 1.1 — cache-only resolve; never generate on read.
       const resolved = await resolvePublicTranslatedContent({
         sourceKind,
         sourceRecordId,
@@ -125,57 +124,22 @@ languageRouter.get(
 );
 
 /**
- * Generate missing translation for a published record (rate limited).
+ * Pack 1.1 — participant on-demand generation retired.
+ *
+ * Translations are built only via automatic_warm / authorized rebuild operators.
+ * Author draft assist remains at POST /draft. Route kept as 410 so old Web
+ * clients fail closed instead of invoking TranslationProvider.
  */
 languageRouter.post(
   "/generate",
   optionalAuthenticationMiddleware,
   translationRateLimiter,
-  async (req, res) => {
-    const sourceKind = parseSourceKind(req.body?.sourceKind);
-    const sourceRecordId =
-      typeof req.body?.sourceRecordId === "string" ? req.body.sourceRecordId.trim() : "";
-    let targetLanguage: string;
-    try {
-      targetLanguage = await assertEnabledSelectableLocale(req.body?.targetLanguage);
-    } catch (error) {
-      handleTranslationError(res, error);
-      return;
-    }
-
-    if (!sourceKind || sourceKind === "lifecycle_stage" || !sourceRecordId) {
-      res.status(400).json(failure("sourceKind and sourceRecordId are required."));
-      return;
-    }
-
-    try {
-      const result = await getOrCreateContentTranslation({
-        sourceKind,
-        sourceRecordId,
-        targetLanguage,
-        generateIfMissing: true,
-      });
-      const resolved = await resolvePublicTranslatedContent({
-        sourceKind,
-        sourceRecordId,
-        participantId: req.auth?.memberId,
-        preferredReadingLanguage: targetLanguage,
-        translationPreference: "preferred",
-        generateIfMissing: false,
-      });
-      res.json(
-        createSuccessResponse(
-          {
-            generated: result.generated,
-            translation: result.translation,
-            display: resolved,
-          },
-          result.generated ? "Translation generated." : "Existing translation reused.",
-        ),
-      );
-    } catch (error) {
-      handleTranslationError(res, error);
-    }
+  async (_req, res) => {
+    res.status(410).json(
+      failure(
+        "On-demand content translation is retired. Translations are built asynchronously; use cache resolve or wait for warm CURRENT.",
+      ),
+    );
   },
 );
 

@@ -60,6 +60,7 @@ export {
 } from "./providers/gemini-translation-provider.js";
 export {
   assertCivicTitleFieldsTranslatedFromSource,
+  assertEligibleSourceFieldsFullyTranslated,
   assertTranslatedProseChangedFromSource,
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";

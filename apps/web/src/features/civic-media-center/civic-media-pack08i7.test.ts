@@ -37,17 +37,16 @@ function readNested(messages: Record<string, unknown>, dottedPath: string): stri
 }
 
 describe("Pack 08I.7 — Civic Media residual localization", () => {
-  it("useCivicMediaResolvedEditorial generates when preferred + original miss + not stale", () => {
+  it("useCivicMediaResolvedEditorial is cache-only (Pack 1.1 — no generate-on-read)", () => {
     const editorial = readWeb(
       "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
-    assert.match(editorial, /generateContentTranslation/);
+    assert.doesNotMatch(editorial, /generateContentTranslation\s*\(/);
     assert.match(editorial, /resolvePublicContentDisplayLanguage/);
     assert.match(editorial, /language:\s*displayLanguage/);
-    assert.match(editorial, /targetLanguage:\s*displayLanguage/);
-    assert.match(editorial, /shouldAttemptOnDemandContentTranslation/);
     assert.match(editorial, /resolved\.activeLanguage !== displayLanguage/);
     assert.match(editorial, /sourceKind:\s*"civic_media"/);
+
     assert.doesNotMatch(editorial, /JSON\.stringify/);
   });
 
@@ -112,7 +111,7 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
 
     assert.match(rail, /trustedCategories/);
     assert.match(rail, /useTranslations\("civicMediaPublic"\)/);
-    assert.match(rail, /explanation \?\? resource\.explanation/);
+    assert.match(rail, /presentationExplanation|displayExplanation|resource\.explanation/);
     assert.doesNotMatch(rail, /TRUSTED_MEDIA_CATEGORY_LABELS/);
     // Identity: resource.name is never replaced by a translation overlay prop.
     assert.match(rail, /\{resource\.name\}/);

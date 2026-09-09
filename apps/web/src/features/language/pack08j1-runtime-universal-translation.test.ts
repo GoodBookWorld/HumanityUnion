@@ -311,7 +311,7 @@ describe("Pack 08J.1 — runtime presentation boundary", () => {
     );
     assert.match(
       readWeb("features/public-initiative-experience/components/LifecycleTranslatedRecordCard.tsx"),
-      /enableOnDemandGenerate=\{true\}/,
+      /PublicTranslatedFields/,
     );
     assert.match(
       readWeb("features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),

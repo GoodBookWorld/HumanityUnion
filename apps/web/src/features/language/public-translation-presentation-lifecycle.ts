@@ -25,13 +25,13 @@ export interface PublicTranslationDiagnosticEvent {
 }
 
 /**
- * Whether preferred reading context should attempt on-demand generation after
- * a cache-only resolve returned original, OR after a PARTIAL field bag.
+ * Pack 1.1 — participant on-demand generation is retired.
  *
- * SSR seeds are cache-only GET — client hydration MUST still be allowed to
- * POST generate when preferred translation is missing/incomplete.
+ * Always returns false. Public reads use GET resolve + canonical fallback;
+ * CURRENT rows are produced only by automatic_warm / authorized rebuilds.
+ * Parameter retained so existing call sites compile until removed.
  */
-export function shouldAttemptOnDemandContentTranslation(input: {
+export function shouldAttemptOnDemandContentTranslation(_input: {
   readonly ready: boolean;
   readonly translationPreference: string;
   readonly readingLanguage: string;
@@ -41,29 +41,7 @@ export function shouldAttemptOnDemandContentTranslation(input: {
   /** Pack 08K.3.2 — current-version row exists but AUTO fields incomplete. */
   readonly isPartial?: boolean;
 }): boolean {
-  if (!input.ready) {
-    return false;
-  }
-  if (input.translationPreference !== "preferred") {
-    return false;
-  }
-  if (input.isStale) {
-    return false;
-  }
-  const original = input.originalLanguage;
-  if (typeof original === "string" && original.length > 0) {
-    if (input.readingLanguage === original) {
-      return false;
-    }
-  }
-  // PARTIAL rows must regenerate — do not treat preferred_translation as done.
-  if (input.isPartial === true) {
-    return true;
-  }
-  if (input.resolvePresentationMode !== "original") {
-    return false;
-  }
-  return true;
+  return false;
 }
 
 export function classifyResolvedTranslationPhase(input: {

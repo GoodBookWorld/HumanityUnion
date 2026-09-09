@@ -41,6 +41,7 @@ import {
 } from "./content-translation-eligibility.js";
 import {
   assertCivicTitleFieldsTranslatedFromSource,
+  assertEligibleSourceFieldsFullyTranslated,
   assertTranslatedProseChangedFromSource,
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
@@ -401,7 +402,13 @@ export async function getOrCreateContentTranslation(input: {
 
     // Final bag: allowlist / key shape only. Machine prose + civic title already
     // validated against the provider machine payload inside the CA lifecycle hop.
+    // Pack 1.2 — require all eligible non-empty source fields before CURRENT upsert.
     translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertEligibleSourceFieldsFullyTranslated({
       sourceKind: source.sourceKind,
       sourceFields: providerFields,
       translatedFields,
@@ -431,9 +438,14 @@ export async function getOrCreateContentTranslation(input: {
       );
     }
 
-    // Pack 02G Task 07C / 07E.1 / 08J — keep AUTO_TRANSLATABLE projection keys;
-    // reject all-unchanged prose; require civic title fields to differ.
+    // Pack 02G Task 07C / 07E.1 / 08J / Pack 1.2 — keep AUTO_TRANSLATABLE projection
+    // keys; require full eligible coverage; reject all-unchanged prose; require civic titles.
     translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertEligibleSourceFieldsFullyTranslated({
       sourceKind: source.sourceKind,
       sourceFields: providerFields,
       translatedFields,

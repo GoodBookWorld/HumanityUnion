@@ -232,12 +232,12 @@ describe("Pack 08K.3.3 home map + country media", () => {
     assert.match(formatted, /surface=COUNTRY_RECOMMENDED_MEDIA/);
   });
 
-  it("preserves 08K.3.2 PARTIAL + overlay contracts", () => {
+  it("preserves trusted overlay resolve contract (Pack 1.1 — no on-demand generate)", () => {
     const overlay = readWeb(
       "features/civic-media-center/components/use-trusted-media-explanations-overlay.ts",
     );
-    assert.match(overlay, /isPartial/);
-    assert.match(overlay, /shouldAttemptOnDemandContentTranslation/);
-    assert.match(overlay, /trustedMediaExplanations/);
+    assert.doesNotMatch(overlay, /shouldAttemptOnDemandContentTranslation/);
+    assert.doesNotMatch(overlay, /generateContentTranslation\s*\(/);
+    assert.match(overlay, /trustedMediaExplanations|mergeTrustedExplanations/);
   });
 });

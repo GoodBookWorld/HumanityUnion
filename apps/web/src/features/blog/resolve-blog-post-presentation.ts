@@ -111,7 +111,6 @@ export async function resolveBlogPostPresentation(
       ready,
       translationPreference,
       requestGeneration: input.requestGeneration,
-      enableOnDemandGenerate: true,
     },
     canonicalFields,
     deps,

@@ -62,7 +62,6 @@ export async function resolveDiscussionCommentPresentation(
       ready,
       translationPreference,
       requestGeneration: input.requestGeneration,
-      enableOnDemandGenerate: true,
     },
     canonicalFields: { body: input.canonicalBody },
     deps,

@@ -672,6 +672,18 @@ export function republishInitiativeContent(
   invalidateGlobalSearchIndex();
   invalidateCommunityIntelligenceCache(initiativeId);
 
+  // Pack 1.2 — republish can change CT-eligible title/description; warm via existing outbox.
+  if (
+    republished.title !== initiative.title ||
+    republished.description !== initiative.description
+  ) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "initiative",
+      sourceRecordId: initiativeId,
+      reason: "public_update",
+    });
+  }
+
   return republished;
 }
 

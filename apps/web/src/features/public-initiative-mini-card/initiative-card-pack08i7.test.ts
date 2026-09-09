@@ -138,8 +138,7 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
     assert.match(resolver, /sourceRecordId:\s*input\.initiativeId/);
     assert.match(shared, /resolveTranslatedContent/);
     assert.match(resolver, /TRANSLATION_EXISTS|non-original|presentationMode === "original"/);
-    assert.match(shared, /shouldAttemptOnDemandContentTranslation/);
-    assert.match(shared, /generateContentTranslation/);
+    assert.doesNotMatch(shared, /generateContentTranslation\s*\(/);
   });
 
   it("EXISTING current translation fixture → translated title/summary on card presentation", async () => {

@@ -83,7 +83,7 @@ describe("Pack 08I.12 — Reading context + generation lifecycle", () => {
     assert.equal(resolved.readingLanguage, "uk");
   });
 
-  it("canonical SSR seed does not block on-demand generate", () => {
+  it("canonical SSR seed does not trigger on-demand generate (Pack 1.1 retired)", () => {
     assert.equal(
       shouldAttemptOnDemandContentTranslation({
         ready: true,
@@ -93,7 +93,7 @@ describe("Pack 08I.12 — Reading context + generation lifecycle", () => {
         originalLanguage: "en",
         isStale: false,
       }),
-      true,
+      false,
     );
     assert.equal(
       shouldAttemptOnDemandContentTranslation({
@@ -183,7 +183,7 @@ describe("Pack 08I.12 — Reading context + generation lifecycle", () => {
     );
   });
 
-  it("cache miss after preferred → generation attempted (deadlock=0)", async () => {
+  it("cache miss after preferred → canonical fallback, no generation (Pack 1.1)", async () => {
     let generated = false;
     const presented = await resolveBlogPostPresentation(
       {
@@ -214,35 +214,14 @@ describe("Pack 08I.12 — Reading context + generation lifecycle", () => {
         }),
         generateContentTranslation: async () => {
           generated = true;
-          return {
-            generated: true,
-            display: {
-              presentationMode: "preferred_translation",
-              content: {
-                title: "UK title",
-                excerpt: "UK excerpt",
-                content: "<p>UK</p>",
-              },
-              activeLanguage: "uk",
-              originalLanguage: "en",
-              originalContent: {
-                title: "EN title",
-                excerpt: "EN excerpt",
-                content: "<p>EN</p>",
-              },
-              isMachineTranslated: true,
-              isStale: false,
-              canViewOriginal: true,
-              canViewTranslation: true,
-              translation: null,
-            },
-          };
+          throw new Error("must not generate");
         },
       },
     );
-    assert.equal(generated, true);
-    assert.equal(presented.title, "UK title");
-    assert.equal(presented.contentHtml, "<p>UK</p>");
+    assert.equal(generated, false);
+    assert.equal(presented.title, "EN title");
+    assert.equal(presented.contentHtml, "<p>EN</p>");
+    assert.equal(presented.presentationMode, "original");
   });
 });
 

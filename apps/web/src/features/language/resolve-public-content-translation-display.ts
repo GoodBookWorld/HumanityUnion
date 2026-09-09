@@ -1,15 +1,8 @@
 /**
  * Pack 08I.13 — shared public content presentation lifecycle.
  *
- * Live staging root cause: authenticated members with stored
- * `translationPreference: "none"` (the historical default) caused Web resolvers
- * to short-circuit to canonical English and never GET warm content_translations,
- * while SSR metadata/seed could still show Ukrainian. Warm rows existed; Web wiped them.
- *
- * Contract:
- * - ready=false → keep caller seed/canonical (do not resolve yet)
- * - always GET resolve when ready (warm display)
- * - POST generate only when preference === "preferred" (and miss / not stale)
+ * Pack 1.1 — cache-only GET resolve. Never POST /generate on miss/stale/partial.
+ * Missing/stale → caller keeps canonical/original fallback.
  */
 
 import type {
@@ -22,10 +15,7 @@ import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "./translation-api";
-import {
-  emitPublicTranslationDiagnostic,
-  shouldAttemptOnDemandContentTranslation,
-} from "./public-translation-presentation-lifecycle";
+import { emitPublicTranslationDiagnostic } from "./public-translation-presentation-lifecycle";
 import type { PublicContentReadingContext } from "./use-public-content-reading-context";
 
 export type PublicContentTranslationSourceKind = Extract<
@@ -35,6 +25,7 @@ export type PublicContentTranslationSourceKind = Extract<
 
 export interface PublicContentTranslationDeps {
   readonly resolveTranslatedContent: typeof resolveTranslatedContent;
+  /** @deprecated Pack 1.1 — unused; retained for injectable test deps shape. */
   readonly generateContentTranslation: typeof generateContentTranslation;
 }
 
@@ -44,8 +35,9 @@ const defaultDeps: PublicContentTranslationDeps = {
 };
 
 /**
- * Resolve (+ optional generate) for public civic content.
+ * Resolve warm CURRENT translation for public civic content (cache-only).
  * Never skips warm GET solely because translationPreference is "none".
+ * Never invokes TranslationProvider.
  */
 export async function resolvePublicContentTranslationDisplay(input: {
   readonly sourceKind: PublicContentTranslationSourceKind;
@@ -70,45 +62,11 @@ export async function resolvePublicContentTranslationDisplay(input: {
   }
 
   try {
-    let resolved = await deps.resolveTranslatedContent({
+    const resolved = await deps.resolveTranslatedContent({
       sourceKind: input.sourceKind,
       sourceRecordId: input.sourceRecordId,
       language: readingContext.readingLanguage as LanguageCode,
     });
-
-    if (
-      shouldAttemptOnDemandContentTranslation({
-        ready: readingContext.ready,
-        translationPreference: readingContext.translationPreference,
-        readingLanguage: readingContext.readingLanguage,
-        resolvePresentationMode: resolved.presentationMode,
-        originalLanguage: resolved.originalLanguage,
-        isStale: resolved.isStale,
-      })
-    ) {
-      emitPublicTranslationDiagnostic({
-        phase: "TRANSLATION_GENERATION_STARTED",
-        sourceKind: input.sourceKind,
-        sourceRecordId: input.sourceRecordId,
-        language: readingContext.readingLanguage,
-        presentationMode: resolved.presentationMode,
-      });
-      try {
-        const generated = await deps.generateContentTranslation({
-          sourceKind: input.sourceKind,
-          targetLanguage: readingContext.readingLanguage as LanguageCode,
-          sourceRecordId: input.sourceRecordId,
-        });
-        resolved = generated.display;
-      } catch {
-        emitPublicTranslationDiagnostic({
-          phase: "TRANSLATION_GENERATION_FAILED",
-          sourceKind: input.sourceKind,
-          sourceRecordId: input.sourceRecordId,
-          language: readingContext.readingLanguage,
-        });
-      }
-    }
 
     if (resolved.presentationMode === "original") {
       emitPublicTranslationDiagnostic({

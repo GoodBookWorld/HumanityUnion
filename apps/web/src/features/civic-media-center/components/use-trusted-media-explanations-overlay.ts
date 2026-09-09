@@ -17,10 +17,8 @@ import {
   type CivicMediaTrustedExplanationsById,
 } from "./CivicMediaTranslatedEditorial";
 import {
-  generateContentTranslation,
   resolveTranslatedContent,
 } from "../../language/translation-api";
-import { shouldAttemptOnDemandContentTranslation } from "../../language/public-translation-presentation-lifecycle";
 import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { fetchCivicMediaCenter } from "../api";
@@ -89,7 +87,6 @@ export function useTrustedMediaExplanationsOverlay(input?: {
 
     const requestGeneration = ++requestGenerationRef.current;
     let cancelled = false;
-    const preference = readingContext.translationPreference;
 
     void (async () => {
       try {
@@ -99,71 +96,12 @@ export function useTrustedMediaExplanationsOverlay(input?: {
         }
         const canonical = buildTrustedExplanationsById(media);
 
-        let resolved = await resolveTranslatedContent({
+        // Pack 1.1 — cache-only GET resolve; never generate on read.
+        const resolved = await resolveTranslatedContent({
           sourceKind: "civic_media",
           sourceRecordId: CIVIC_MEDIA_RECORD_ID,
           language: displayLanguage as LanguageCode,
         });
-
-        const isPartial =
-          resolved.presentationMode !== "original" &&
-          (() => {
-            const translated = parseCivicMediaJsonArray(
-              resolved.content.trustedMediaExplanations,
-              isTrustedExplanationTranslated,
-            );
-            if (!translated || translated.length === 0) {
-              return false;
-            }
-            // WORLD + COUNTRY explanations share one civic_media bag (08K.3.3).
-            let present = 0;
-            let missing = 0;
-            for (const item of translated) {
-              if (item.explanation.trim()) {
-                present += 1;
-              } else {
-                missing += 1;
-              }
-            }
-            for (const resource of media.trustedMedia) {
-              const match = translated.find((entry) => entry.id === resource.id);
-              if (!match || !match.explanation.trim()) {
-                missing += 1;
-              }
-            }
-            if (input?.seedById) {
-              for (const id of Object.keys(input.seedById)) {
-                const match = translated.find((entry) => entry.id === id);
-                if (!match || !match.explanation.trim()) {
-                  missing += 1;
-                }
-              }
-            }
-            return present > 0 && missing > 0;
-          })();
-
-        if (
-          shouldAttemptOnDemandContentTranslation({
-            ready: readingContext.ready,
-            translationPreference: preference,
-            readingLanguage: displayLanguage,
-            resolvePresentationMode: resolved.presentationMode,
-            originalLanguage: resolved.originalLanguage,
-            isStale: resolved.isStale,
-            isPartial,
-          })
-        ) {
-          try {
-            const generated = await generateContentTranslation({
-              sourceKind: "civic_media",
-              sourceRecordId: CIVIC_MEDIA_RECORD_ID,
-              targetLanguage: displayLanguage as LanguageCode,
-            });
-            resolved = generated.display;
-          } catch {
-            // keep resolve
-          }
-        }
 
         if (cancelled || requestGeneration !== requestGenerationRef.current) {
           return;
@@ -191,7 +129,6 @@ export function useTrustedMediaExplanationsOverlay(input?: {
     input?.disabled,
     input?.seedById,
     readingContext.ready,
-    readingContext.translationPreference,
   ]);
 
   return byId;

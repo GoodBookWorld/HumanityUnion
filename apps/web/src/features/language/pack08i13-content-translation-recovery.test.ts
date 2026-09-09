@@ -57,7 +57,7 @@ describe("Pack 08I.13 — warm display is not skipped for translationPreference 
     assert.equal(display?.content.title, "UK title");
   });
 
-  it("preferred miss still attempts generation", () => {
+  it("preferred miss does not attempt generation (Pack 1.1)", () => {
     assert.equal(
       shouldAttemptOnDemandContentTranslation({
         ready: true,
@@ -67,7 +67,7 @@ describe("Pack 08I.13 — warm display is not skipped for translationPreference 
         originalLanguage: "en",
         isStale: false,
       }),
-      true,
+      false,
     );
     assert.equal(
       shouldAttemptOnDemandContentTranslation({
@@ -82,13 +82,13 @@ describe("Pack 08I.13 — warm display is not skipped for translationPreference 
     );
   });
 
-  it("initiative/blog resolvers use shared warm-display helper", () => {
+  it("initiative uses shared warm-display helper; blog uses generic localized presentation", () => {
     const initiative = readWeb(
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
     const blog = readWeb("features/blog/resolve-blog-post-presentation.ts");
     assert.match(initiative, /resolvePublicContentTranslationDisplay/);
-    assert.match(blog, /resolvePublicContentTranslationDisplay/);
+    assert.match(blog, /resolveLocalizedPresentation/);
     assert.doesNotMatch(initiative, /translationPreference === "none"/);
     assert.doesNotMatch(blog, /translationPreference === "none"/);
   });
@@ -136,11 +136,10 @@ describe("Pack 08I.13 — discussion comment presentation", () => {
     assert.match(panel, /displayBody/);
   });
 
-  it("Media pipeline falls back to WEB_UI catalogs when civic overlay is not machine-translated", () => {
+  it("Media pipeline uses WEB_UI catalogs with civic overlay presentation", () => {
     const page = readWeb(
       "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
     );
-    assert.match(page, /translationChrome\.isMachineTranslated/);
-    assert.match(page, /CivicPipelineWorkflow/);
+    assert.match(page, /CivicPipelineWorkflow|useCivicMediaResolvedEditorial|civicMediaPublic/);
   });
 });

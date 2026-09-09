@@ -19,6 +19,40 @@ import {
 import { TranslationProviderError } from "./translation.config.js";
 
 /**
+ * Pack 1.2 — every eligible non-empty source field must have a non-empty
+ * translated counterpart before CURRENT upsert. Optional/empty source fields
+ * are skipped. Does not require prose change (title/prose validators cover that).
+ */
+export function assertEligibleSourceFieldsFullyTranslated(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceFields: Readonly<Record<string, string>>;
+  readonly translatedFields: Readonly<Record<string, string>>;
+}): void {
+  const eligibleKeys = resolveAutomaticTranslationFieldKeys({
+    sourceFields: input.sourceFields,
+    compatibilityAllowlist:
+      CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+  }).filter((key) => {
+    const sourceValue = input.sourceFields[key];
+    return typeof sourceValue === "string" && sourceValue.trim().length > 0;
+  });
+
+  for (const key of eligibleKeys) {
+    const translatedValue =
+      typeof input.translatedFields[key] === "string"
+        ? input.translatedFields[key]!.trim()
+        : "";
+    if (!translatedValue) {
+      throw new ContentTranslationValidationError(
+        "MISSING_REQUIRED_PATH",
+        `Translation provider omitted required eligible field "${key}".`,
+        "malformed_response",
+      );
+    }
+  }
+}
+
+/**
  * After structured JSON parse, before persistence.
  * Individual fields may stay identical (URLs, proper nouns); rejecting only when
  * every eligible non-empty source field is byte-identical to the translation.

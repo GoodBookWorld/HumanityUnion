@@ -27,7 +27,7 @@ describe("Pack 08K.3.2 web PARTIAL contract", () => {
     assert.deepEqual([...localized.coverage.canonicalFallbackPaths], ["summary"]);
   });
 
-  it("PARTIAL schedules on-demand generate", () => {
+  it("PARTIAL does not schedule on-demand generate (Pack 1.1); detection remains", () => {
     assert.equal(
       shouldAttemptOnDemandContentTranslation({
         ready: true,
@@ -37,7 +37,7 @@ describe("Pack 08K.3.2 web PARTIAL contract", () => {
         originalLanguage: "en",
         isPartial: true,
       }),
-      true,
+      false,
     );
     assert.equal(
       isPartialTranslatedFieldBag({

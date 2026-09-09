@@ -274,7 +274,8 @@ describe("Production Completion Pack 02G Task 05 — civic translated read API",
       "utf8",
     );
     assert.match(fields, /enableOnDemandGenerate/);
-    assert.match(fields, /generateContentTranslation/);
+    assert.doesNotMatch(fields, /generateContentTranslation/);
+    assert.match(fields, /resolveTranslatedContent/);
 
     const civicSection = readFileSync(
       path.join(

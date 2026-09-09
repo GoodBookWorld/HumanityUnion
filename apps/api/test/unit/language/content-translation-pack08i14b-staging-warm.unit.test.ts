@@ -62,9 +62,17 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     );
   });
 
-  it("Initiative publish/update warm hooks remain connected", () => {
+  it("Initiative publish/update/republish warm hooks remain connected", () => {
     const initiative = readApi("src/modules/initiatives/initiative.service.ts");
     assert.match(initiative, /sourceKind:\s*"initiative"/);
     assert.match(initiative, /scheduleContentTranslationWarmAfterMutation/);
+    assert.match(initiative, /export function republishInitiativeContent/);
+    // Pack 1.2 — republish schedules warm when title/description change.
+    const republish = initiative.slice(
+      initiative.indexOf("export function republishInitiativeContent"),
+      initiative.indexOf("export function republishInitiative("),
+    );
+    assert.match(republish, /scheduleContentTranslationWarmAfterMutation/);
+    assert.match(republish, /republished\.title !== initiative\.title/);
   });
 });

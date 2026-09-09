@@ -8,7 +8,7 @@ import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../format-language-display-name";
 import { resolvePublicContentDisplayLanguage } from "../resolve-public-content-display-language";
-import { resolveTranslatedContent, generateContentTranslation } from "../translation-api";
+import { resolveTranslatedContent } from "../translation-api";
 import { usePublicContentReadingContext } from "../use-public-content-reading-context";
 import { TranslatedContentView } from "./TranslatedContentView";
 
@@ -23,9 +23,8 @@ export interface PublicTranslatedFieldsProps {
   readonly fallbackFields: Record<string, string>;
   readonly className?: string;
   /**
-   * When true (default), preferred preference may POST /generate on cache miss
-   * (Initiative / Analysis / Petition compatibility).
-   * Task 05 civic kinds set false — Task 04 warm is the generation path.
+   * @deprecated Pack 1.1 — participant on-demand generation is retired.
+   * Prop is ignored; public reads are cache-only (GET resolve) with canonical fallback.
    */
   readonly enableOnDemandGenerate?: boolean;
 }
@@ -33,6 +32,8 @@ export interface PublicTranslatedFieldsProps {
 /**
  * Loads Pack 02 resolved translation for a published record and renders
  * each text field through TranslatedContentView.
+ *
+ * Pack 1.1 — cache-only: never POST /generate; missing/stale → canonical fallback.
  */
 export function PublicTranslatedFields({
   sourceKind,
@@ -41,7 +42,6 @@ export function PublicTranslatedFields({
   fieldLabels,
   fallbackFields,
   className,
-  enableOnDemandGenerate = true,
 }: PublicTranslatedFieldsProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -71,37 +71,15 @@ export function PublicTranslatedFields({
     }
 
     let cancelled = false;
-    const preference = readingContext.translationPreference;
     setPreferredLanguage(displayLanguage);
 
     void (async () => {
       try {
-        let resolved = await resolveTranslatedContent({
+        const resolved = await resolveTranslatedContent({
           sourceKind,
           sourceRecordId,
           language: displayLanguage,
         });
-
-        // Initiative/Analysis/Petition compatibility: optional on-demand generate.
-        // Civic Pack 02G kinds keep enableOnDemandGenerate=false (warm-only).
-        if (
-          enableOnDemandGenerate &&
-          preference === "preferred" &&
-          resolved.presentationMode === "original" &&
-          displayLanguage !== resolved.originalLanguage &&
-          !resolved.isStale
-        ) {
-          try {
-            const generated = await generateContentTranslation({
-              sourceKind,
-              sourceRecordId,
-              targetLanguage: displayLanguage,
-            });
-            resolved = generated.display;
-          } catch {
-            // Keep original on provider failure.
-          }
-        }
 
         if (cancelled) {
           return;
@@ -133,10 +111,8 @@ export function PublicTranslatedFields({
     sourceKind,
     sourceRecordId,
     fallbackSignature,
-    enableOnDemandGenerate,
     readingContext.ready,
     displayLanguage,
-    readingContext.translationPreference,
   ]);
 
   return (

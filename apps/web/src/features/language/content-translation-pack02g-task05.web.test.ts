@@ -75,19 +75,19 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
     const mediaEditorial = readWeb(
       "src/features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
-    assert.match(mediaEditorial, /civic-media-center/);
+    assert.match(mediaEditorial, /CIVIC_MEDIA_RECORD_ID|sourceKind:\s*"civic_media"/);
     assert.match(mediaEditorial, /sourceKind:\s*"civic_media"/);
-    // Pack 08I.7 — preferred miss generates (blog parity); page shell still does not.
-    assert.match(mediaEditorial, /generateContentTranslation/);
-    // Pack 08J.1 — trusted explanations are semantic; names/URLs/diagram stay identity-only.
-    assert.match(mediaEditorial, /trustedMediaExplanations|trustedExplanationsById/);
+    // Pack 1.1 — cache-only; no participant generate-on-read.
+    assert.doesNotMatch(mediaEditorial, /generateContentTranslation\s*\(/);
+    // Pack 08J.1 — trusted explanations remain re-exported for overlay consumers.
+    assert.match(mediaEditorial, /trustedExplanationsById|buildTrustedExplanationsById/);
     assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl/);
   });
 
-  it("keeps Initiative/Analysis/Petition on-demand generate; disables for civic section", () => {
+  it("Pack 1.1 — public surfaces are cache-only (no participant on-demand generate)", () => {
     const fields = readWeb("src/features/language/components/PublicTranslatedFields.tsx");
-    assert.match(fields, /enableOnDemandGenerate = true/);
-    assert.match(fields, /generateContentTranslation/);
+    assert.doesNotMatch(fields, /generateContentTranslation/);
+    assert.match(fields, /resolveTranslatedContent/);
 
     const civic = readWeb("src/features/language/components/CivicPublicTranslatedSection.tsx");
     assert.match(civic, /enableOnDemandGenerate=\{false\}/);
@@ -96,7 +96,6 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
       "src/features/initiative-petition-lifecycle/components/InitiativePetitionPublicResult.tsx",
     );
     assert.match(petition, /PublicTranslatedFields/);
-    assert.doesNotMatch(petition, /enableOnDemandGenerate=\{false\}/);
 
     const analysis = readWeb(
       "src/features/initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisPublicResult.tsx",
