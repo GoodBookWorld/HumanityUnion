@@ -1,5 +1,5 @@
 /**
- * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 / 08J.1 — STAGING-ONLY ContentTranslationWarm.
+ * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 / 08J.1 / Pack 1.3 — STAGING-ONLY ContentTranslationWarm.
  *
  * Defaults to DRY RUN (no outbox writes).
  *
@@ -10,6 +10,8 @@
  *   --repair --execute  enqueue repair warms for MISSING/STALE only
  *   --wait-for-materialization
  *                       after execute/repair execute, poll until CURRENT or timeout
+ *   --kinds=a,b,c       bound discovery + operator hydrate (Pack 1.3)
+ *   --help | -h         print help and exit before dotenv/Mongo
  *
  * Execute requires ALL of:
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true
@@ -17,56 +19,70 @@
  *   Mongo database name === humanity_union_staging
  *   PLATFORM_MODE is not production
  *
- * Pack 08I.14B.1 — MUST hydrate Initiative-path discovery stores before enumeration.
- * Pack 08I.14B.3 — enqueue is not materialization success; optional wait verifies CURRENT.
- * Pack 08I.16 — lightweight operator bootstrap (not full API hydrate); wait uses compact identities.
- * Pack 08I.16.1 — bootstrap must hydrate+sync Initiative/Analysis maps; staging zero-discovery fails closed
- *                 unless --allow-empty-discovery.
- * Pack 08J — recovery/migration operator only. Normal content translation is
- * mutation-driven (scheduleContentTranslationWarmAfterMutation /
- * notifyPublicPresentationChanged). Do not use
- * this script for ordinary create/publish/update. Always process.exit after
- * disconnect so Mongo driver heartbeats cannot hang the shell.
- * Pack 08J.1 — discovery covers all CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS
- * (Initiative-path civic families + blog_post + civic_media), not Initiative-path only.
- * Pack 08K — repair JSON includes recoveryIdentitiesCurrentForDiscoveredFamilies
- * alongside CURRENT_SKIPPED. That field counts identities already CURRENT for
- * discovered families during recovery — it is NOT site_translation_coverage.
+ * Pack 1.3 — parse/validate --kinds and --help before loadApiEnvironment /
+ * bootstrap so unrelated CA/CD maps are not hydrated for --kinds=initiative.
  *
  * Usage (from apps/api):
- *   pnpm warm:staging-content-translations
- *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --execute
- *   pnpm warm:staging-content-translations -- --repair
- *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute
- *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute --wait-for-materialization --timeout-ms=600000
+ *   pnpm warm:staging-content-translations -- --help
+ *   pnpm warm:staging-content-translations -- --kinds=initiative
+ *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --kinds=initiative --execute
+ *   pnpm warm:staging-content-translations -- --repair --kinds=initiative
+ *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute --kinds=initiative
  *
  * Never prints MONGODB_URI / passwords / API keys / translated bodies.
  * Do NOT run execute/repair against production.
  */
 
-import { loadApiEnvironment } from "../config/load-api-environment.js";
-import { bootstrapContentTranslationOperatorPersistence } from "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js";
 import {
-  isMongoConfigured,
-  resolveMongoConfig,
-} from "../infrastructure/mongodb/mongo-config.js";
-import { disconnectMongoClient } from "../infrastructure/mongodb/mongo-connection.js";
-import {
-  runStagingInitiativePathContentTranslationWarm,
-  type StagingWarmSourceKind,
+  formatStagingWarmHelp,
+  isStagingWarmHelpRequested,
+  parseStagingWarmKindsFromArgv,
+  resolveContentTranslationOperatorHydrateScopes,
+  StagingWarmCliValidationError,
   STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
-} from "../modules/language/content-translation-staging-warm-backfill.js";
-import {
+  type StagingWarmSourceKind,
+} from "../modules/language/content-translation-staging-warm-operator-scope.js";
+
+if (isStagingWarmHelpRequested()) {
+  console.log(formatStagingWarmHelp());
+  process.exit(0);
+}
+
+let kinds: StagingWarmSourceKind[] | undefined;
+try {
+  kinds = parseStagingWarmKindsFromArgv();
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(JSON.stringify({ success: false, error: message }));
+  process.exit(1);
+}
+
+const hydrateScopes = resolveContentTranslationOperatorHydrateScopes(kinds);
+
+const { loadApiEnvironment } = await import("../config/load-api-environment.js");
+loadApiEnvironment();
+
+const { bootstrapContentTranslationOperatorPersistence } = await import(
+  "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js"
+);
+const { isMongoConfigured, resolveMongoConfig } = await import(
+  "../infrastructure/mongodb/mongo-config.js"
+);
+const { disconnectMongoClient } = await import(
+  "../infrastructure/mongodb/mongo-connection.js"
+);
+const {
+  runStagingInitiativePathContentTranslationWarm,
+} = await import("../modules/language/content-translation-staging-warm-backfill.js");
+const {
   assertStagingWarmDiscoveryNotSilentlyEmpty,
   resolveStagingWarmDiscoveryExpectation,
   StagingContentTranslationDiscoveryFailure,
-} from "../modules/language/content-translation-staging-warm-discovery-safety.js";
-import {
+} = await import("../modules/language/content-translation-staging-warm-discovery-safety.js");
+const {
   runStagingInitiativePathContentTranslationRepair,
   waitForStagingWarmMaterialization,
-} from "../modules/language/content-translation-staging-warm-repair.js";
-
-loadApiEnvironment();
+} = await import("../modules/language/content-translation-staging-warm-repair.js");
 
 const STAGING_DATABASE = "humanity_union_staging";
 const ALLOW_FLAG = "ALLOW_STAGING_CONTENT_TRANSLATION_WARM";
@@ -90,19 +106,6 @@ function parseTimeoutMs(): number {
   }
   const parsed = Number.parseInt(match.slice("--timeout-ms=".length), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 300_000;
-}
-
-function parseKinds(): StagingWarmSourceKind[] | undefined {
-  const match = process.argv.find((entry) => entry.startsWith("--kinds="));
-  if (!match) {
-    return undefined;
-  }
-  const raw = match.slice("--kinds=".length);
-  const kinds = raw
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean) as StagingWarmSourceKind[];
-  return kinds.length ? kinds : undefined;
 }
 
 function assertStagingWarmGuards(input: {
@@ -132,7 +135,6 @@ async function main(): Promise<void> {
   const execute = isExecuteModeRequested();
   const repair = isRepairModeRequested();
   const waitForMaterialization = isWaitForMaterializationRequested();
-  const kinds = parseKinds();
   const timeoutMs = parseTimeoutMs();
 
   if (!isMongoConfigured()) {
@@ -142,7 +144,10 @@ async function main(): Promise<void> {
   const mongo = resolveMongoConfig();
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
-  const bootstrap = await bootstrapContentTranslationOperatorPersistence();
+  const bootstrap = await bootstrapContentTranslationOperatorPersistence({
+    kinds,
+    hydrateScopes,
+  });
   const discoveryExpectation = resolveStagingWarmDiscoveryExpectation({
     databaseName: mongo.database,
   });
@@ -188,11 +193,12 @@ async function main(): Promise<void> {
       console.log(
         JSON.stringify(
           {
-            pack: "08I.16.1",
+            pack: "1.3",
             operation: "staging_content_translation_repair",
             mode: result.mode,
             database: mongo.database,
             persistenceBootstrap: bootstrap.mode,
+            hydrateScopes: bootstrap.hydrateScopes,
             discoveryExpectation: discoveryExpectation.reason,
             kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
             discovery: {
@@ -210,11 +216,6 @@ async function main(): Promise<void> {
             },
             totals: {
               ...result.totals,
-              /**
-               * Pack 08K — alias of CURRENT_SKIPPED for clarity.
-               * Counts recovery identities already CURRENT for discovered families.
-               * NOT site_translation_coverage.
-               */
               recoveryIdentitiesCurrentForDiscoveredFamilies: result.totals.CURRENT_SKIPPED,
             },
             byKindLocale: result.byKindLocale.map((row) => ({
@@ -274,7 +275,7 @@ async function main(): Promise<void> {
         onProgress: (progress) => {
           console.log(
             JSON.stringify({
-              pack: "08I.16.1",
+              pack: "1.3",
               operation: "wait_for_materialization_progress",
               TARGETS_TOTAL: progress.targetsTotal,
               CURRENT: progress.current,
@@ -291,12 +292,13 @@ async function main(): Promise<void> {
     console.log(
       JSON.stringify(
         {
-          pack: "08I.16.1",
+          pack: "1.3",
           operation: "staging_content_translation_warm",
           mode: result.mode,
           database: mongo.database,
           kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
           persistenceBootstrap: bootstrap.mode,
+          hydrateScopes: bootstrap.hydrateScopes,
           discoveryExpectation: discoveryExpectation.reason,
           discoveryHint: result.discoveryHint,
           totals: {
@@ -352,11 +354,14 @@ async function main(): Promise<void> {
     await disconnectMongoClient().catch(() => undefined);
   }
 
-  // Pack 08J — Mongo driver timers can keep the event loop alive after disconnect.
   process.exit(process.exitCode ?? 0);
 }
 
 main().catch(async (error) => {
+  if (error instanceof StagingWarmCliValidationError) {
+    console.error(JSON.stringify({ success: false, error: error.message }));
+    process.exit(1);
+  }
   if (error instanceof StagingContentTranslationDiscoveryFailure) {
     console.error(
       JSON.stringify({

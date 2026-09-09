@@ -37,7 +37,12 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     assert.match(script, /ALLOW_STAGING_CONTENT_TRANSLATION_WARM/);
     assert.match(script, /--execute/);
     assert.match(script, /bootstrapContentTranslationOperatorPersistence/);
-    assert.match(script, /blog_post/);
+    assert.match(script, /--help/);
+
+    const scopeSource = readApi(
+      "src/modules/language/content-translation-staging-warm-operator-scope.ts",
+    );
+    assert.match(scopeSource, /blog_post/);
 
     const moduleSource = readApi(
       "src/modules/language/content-translation-staging-warm-backfill.ts",

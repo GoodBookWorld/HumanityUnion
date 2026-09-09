@@ -16,8 +16,6 @@
  * recovery / staging operator use only.
  */
 
-import type { ContentTranslationSourceKind } from "@hu/types";
-
 import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import {
   listApprovedInitiativeComments,
@@ -37,39 +35,19 @@ import { loadTranslatableSource } from "./content-translation.service.js";
 import {
   assertCanonicalSourceEligibleForTranslation,
 } from "./content-translation-eligibility.js";
+import {
+  CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
+  STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
+  STAGING_WARM_INITIATIVE_SCOPED_KINDS,
+  isWarmRecoveryKind,
+  type StagingWarmSourceKind,
+} from "./content-translation-staging-warm-operator-scope.js";
 
-/**
- * Pack 08J.1 — universal recovery/discovery source kinds.
- * Includes Initiative-path civic families plus blog_post and civic_media.
- */
-export const CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS = [
-  "initiative",
-  "discussion_comment",
-  "collaborative_analysis",
-  "petition",
-  "improvement_proposal",
-  "initiative_revision",
-  "decision_session",
-  "collective_decision",
-  "implementation_commitment",
-  "implementation_tracking",
-  "official_response",
-  "public_impact",
-  "civic_archive",
-  "blog_post",
-  "civic_media",
-  "public_news",
-] as const satisfies readonly ContentTranslationSourceKind[];
-
-/**
- * Backward-compatible alias — same array as CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS
- * so existing warm/repair scripts and tests pick up new kinds automatically.
- */
-export const STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS =
-  CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS;
-
-export type StagingWarmSourceKind =
-  (typeof CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS)[number];
+export {
+  CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
+  STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
+  type StagingWarmSourceKind,
+} from "./content-translation-staging-warm-operator-scope.js";
 
 export interface StagingWarmCandidate {
   readonly sourceKind: StagingWarmSourceKind;
@@ -123,7 +101,7 @@ export interface StagingWarmBackfillResult {
 }
 
 function isWarmKind(value: string): value is StagingWarmSourceKind {
-  return (CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS as readonly string[]).includes(value);
+  return isWarmRecoveryKind(value);
 }
 
 function emptyDiscovery(kind: StagingWarmSourceKind): StagingWarmDiscoveryKindCounts {
@@ -376,21 +354,7 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
   };
 
   const allInitiatives = listInitiativesFn();
-  const initiativeScopedKinds: StagingWarmSourceKind[] = [
-    "initiative",
-    "discussion_comment",
-    "collaborative_analysis",
-    "petition",
-    "improvement_proposal",
-    "initiative_revision",
-    "decision_session",
-    "collective_decision",
-    "implementation_commitment",
-    "implementation_tracking",
-    "official_response",
-    "public_impact",
-    "civic_archive",
-  ];
+  const initiativeScopedKinds = STAGING_WARM_INITIATIVE_SCOPED_KINDS;
   if (initiativeScopedKinds.some((kind) => allowed.has(kind))) {
     bumpField("initiative", "sourceRecordsDiscovered", allInitiatives.length);
   }

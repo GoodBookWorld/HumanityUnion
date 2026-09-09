@@ -7,6 +7,7 @@ export {
 } from "./bootstrap-content-translation-operator-persistence.js";
 export type {
   ContentTranslationOperatorBootstrapMode,
+  ContentTranslationOperatorBootstrapResult,
 } from "./bootstrap-content-translation-operator-persistence.js";
 export { createMongoSnapshotPersistence } from "./create-mongo-snapshot-persistence.js";
 export type { MongoSnapshotPersistenceHandles } from "./create-mongo-snapshot-persistence.js";
