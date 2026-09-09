@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 
-const DEFAULT_SECTION = "Overview";
+const DEFAULT_SECTION_ID = "section-overview";
 
-function sectionIdFromTitle(title: string): string {
-  return `section-${title.replace(/\s+/g, "-").toLowerCase()}`;
-}
+export function useWorkspaceSectionTracker(
+  sections: readonly { readonly id: string; readonly label: string }[],
+): string {
+  // Tracker identity is id-order only — ignore translated label / array reference churn.
+  const sectionIdsKey = sections.map((section) => section.id).join("\0");
 
-export function useWorkspaceSectionTracker(sectionTitles: readonly string[]): string {
-  const [currentSection, setCurrentSection] = useState(DEFAULT_SECTION);
+  const [currentSectionId, setCurrentSectionId] = useState(
+    () => sections[0]?.id ?? DEFAULT_SECTION_ID,
+  );
 
   useEffect(() => {
-    const sectionIds = sectionTitles.map(sectionIdFromTitle);
+    const sectionIds = sectionIdsKey.length === 0 ? [] : sectionIdsKey.split("\0");
     const elements = sectionIds
       .map((id) => document.getElementById(id))
       .filter((element): element is HTMLElement => element !== null);
@@ -29,7 +32,7 @@ export function useWorkspaceSectionTracker(sectionTitles: readonly string[]): st
           visibility.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
         }
 
-        let bestId = sectionIdFromTitle(DEFAULT_SECTION);
+        let bestId = sectionIds[0] ?? DEFAULT_SECTION_ID;
         let bestRatio = 0;
 
         for (const [id, ratio] of visibility.entries()) {
@@ -39,10 +42,8 @@ export function useWorkspaceSectionTracker(sectionTitles: readonly string[]): st
           }
         }
 
-        const matchedTitle = sectionTitles.find((title) => sectionIdFromTitle(title) === bestId);
-
-        if (matchedTitle && bestRatio > 0) {
-          setCurrentSection(matchedTitle);
+        if (sectionIds.includes(bestId) && bestRatio > 0) {
+          setCurrentSectionId(bestId);
         }
       },
       {
@@ -59,7 +60,7 @@ export function useWorkspaceSectionTracker(sectionTitles: readonly string[]): st
     return () => {
       observer.disconnect();
     };
-  }, [sectionTitles]);
+  }, [sectionIdsKey]);
 
-  return currentSection;
+  return currentSectionId;
 }

@@ -52,10 +52,12 @@ export function WorkspaceMemberIdentity() {
   if (requiresLogin) {
     return (
       <div className="workspace-member-identity workspace-member-identity--prompt">
-        <p className="workspace-member-identity__label">Sign in required</p>
+        <p className="workspace-member-identity__label">{tWorkspace("signInRequired")}</p>
         <p className="workspace-member-identity__copy">
-          <a href="/login">Log in</a> or <a href="/register">create an account</a> to use workspace
-          features.
+          {tWorkspace.rich("signInRequiredCopy", {
+            login: (chunks) => <a href="/login">{chunks}</a>,
+            register: (chunks) => <a href="/register">{chunks}</a>,
+          })}
         </p>
       </div>
     );

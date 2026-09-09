@@ -226,7 +226,73 @@
     "unableToRevokeSessions": "Unable to revoke other sessions.",
     "signedOutOtherSessions": "Signed out {count} other session(s).",
     "homeSubtitle": "Your personal civic dashboard",
-    "passwordChangedSuccess": "Password changed successfully. Other active sessions were signed out for security."
+    "passwordChangedSuccess": "Password changed successfully. Other active sessions were signed out for security.",
+    "signInRequired": "Sign in required",
+    "signInRequiredCopy": "<login>Log in</login> or <register>create an account</register> to use workspace features."
+  },
+  "civicActivity": {
+    "pageSubtitle": "Your private civic work across the Humanity Union lifecycle",
+    "backToHome": "Back to Home",
+    "intro": "Your private civic work dashboard. This shows your own contributions across the {siteName} lifecycle — not popularity, followers, or social ranking.",
+    "statusLoaded": "Last loaded {date}. Counts reflect your authenticated workspace data only.",
+    "loading": "Loading your civic activity…",
+    "unavailable": "Civic activity data is not available right now.",
+    "sections": {
+      "summary": "Activity Summary",
+      "timeline": "Activity Timeline",
+      "navLabel": "Sections",
+      "navAria": "Initiative workspace sections",
+      "workspaceNavAria": "Workspace navigation"
+    },
+    "groups": {
+      "initiatives": "My Initiatives",
+      "analyses": "My Collaborative Analyses",
+      "proposals": "My Improvement Proposals",
+      "decision-participation": "My Decision Participation",
+      "implementation-commitments": "My Implementation Commitments",
+      "implementation-tracking": "My Implementation Tracking",
+      "public-impact": "My Public Impact"
+    },
+    "notes": {
+      "decisionVotesLinked": "Vote counts reflect decisions linked to your initiatives.",
+      "decisionVotesLinkedPendingApi": "Vote counts reflect decisions linked to your initiatives. A participant-wide votes API is not connected yet."
+    },
+    "metrics": {
+      "total": "Total",
+      "drafts": "Drafts",
+      "published": "Published",
+      "submitted": "Submitted",
+      "active": "Active",
+      "votesCast": "Votes cast",
+      "completed": "Completed",
+      "verified": "Verified",
+      "proposed": "Proposed",
+      "latestActivity": "Latest activity",
+      "noActivityYet": "No activity yet",
+      "notAvailableYet": "Not available yet"
+    },
+    "timeline": {
+      "empty": "No civic activity timeline entries yet. As you create initiatives, publish analyses, submit proposals, or participate in decisions, your recent actions will appear here.",
+      "viewRecord": "View record",
+      "events": {
+        "initiative_created": "Initiative created",
+        "initiative_published": "Initiative published",
+        "analysis_published": "Analysis published",
+        "proposal_submitted": "Proposal submitted",
+        "proposal_accepted": "Proposal accepted",
+        "proposal_partially_accepted": "Proposal partially accepted",
+        "proposal_declined": "Proposal declined",
+        "vote_cast": "Vote cast",
+        "vote_updated": "Vote updated",
+        "decision_session_published": "Decision session published",
+        "commitment_published": "Commitment published",
+        "implementation_tracking_activated": "Implementation tracking activated",
+        "implementation_update_added": "Implementation update added",
+        "implementation_tracking_completed": "Implementation tracking completed",
+        "public_impact_published": "Public impact published",
+        "public_impact_verified": "Public impact verified"
+      }
+    }
   },
   "preferences": {
     "title": "Preferences",

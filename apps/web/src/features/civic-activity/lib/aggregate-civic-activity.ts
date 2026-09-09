@@ -42,7 +42,6 @@ function buildInitiativesGroup(initiatives: Initiative[]): ActiveActivityGroup {
   return {
     kind: "active",
     id: "initiatives",
-    title: "My Initiatives",
     metrics: {
       total: initiatives.length,
       draft,
@@ -61,7 +60,6 @@ function buildAnalysesGroup(analyses: InitiativeCollaborativeAnalysis[]): Active
   return {
     kind: "active",
     id: "analyses",
-    title: "My Collaborative Analyses",
     metrics: {
       total: analyses.length,
       draft,
@@ -84,7 +82,6 @@ function buildProposalsGroup(proposals: InitiativeImprovementProposal[]): Active
   return {
     kind: "active",
     id: "proposals",
-    title: "My Improvement Proposals",
     metrics: {
       total: proposals.length,
       draft,
@@ -110,7 +107,6 @@ function buildDecisionParticipationGroup(
   return {
     kind: "active",
     id: "decision-participation",
-    title: "My Decision Participation",
     metrics: {
       total: decisionSessions.length + votes.length,
       draft,
@@ -127,10 +123,8 @@ function buildDecisionParticipationGroup(
         ...votes.map((record) => record.vote.updatedAt),
       ]),
     },
-    note:
-      votes.length === 0
-        ? "Vote counts reflect decisions linked to your initiatives. A participant-wide votes API is not connected yet."
-        : "Vote counts reflect decisions linked to your initiatives.",
+    noteKey:
+      votes.length === 0 ? "decisionVotesLinkedPendingApi" : "decisionVotesLinked",
   };
 }
 
@@ -163,7 +157,6 @@ function buildCommitmentsGroup(
   return {
     kind: "active",
     id: "implementation-commitments",
-    title: "My Implementation Commitments",
     metrics: {
       total: counted.length,
       draft,
@@ -192,7 +185,6 @@ function buildTrackingGroup(trackings: InitiativeImplementationTracking[]): Acti
   return {
     kind: "active",
     id: "implementation-tracking",
-    title: "My Implementation Tracking",
     metrics: {
       total: trackings.length,
       draft,
@@ -219,7 +211,6 @@ function buildPublicImpactGroup(impacts: InitiativePublicImpact[]): ActiveActivi
   return {
     kind: "active",
     id: "public-impact",
-    title: "My Public Impact",
     metrics: {
       total: impacts.length,
       draft,
@@ -249,7 +240,6 @@ function buildInitiativeTimelineEntries(initiatives: Initiative[]): CivicTimelin
     pushTimelineEntry(entries, {
       id: `initiative-created-${initiative.initiativeId}`,
       type: "initiative_created",
-      label: "Initiative created",
       detail: initiative.title,
       occurredAt: initiative.createdAt,
       href: "/initiatives",
@@ -260,7 +250,6 @@ function buildInitiativeTimelineEntries(initiatives: Initiative[]): CivicTimelin
         pushTimelineEntry(entries, {
           id: `initiative-published-${event.eventId}`,
           type: "initiative_published",
-          label: "Initiative published",
           detail: initiative.title,
           occurredAt: event.timestamp,
           href: `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`,
@@ -280,7 +269,6 @@ function buildAnalysisTimelineEntries(
     .map((analysis) => ({
       id: `analysis-published-${analysis.analysisId}`,
       type: "analysis_published" as const,
-      label: "Analysis published",
       detail: analysis.title,
       occurredAt: analysis.publishedAt ?? analysis.updatedAt,
       href: `/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`,
@@ -297,7 +285,6 @@ function buildProposalTimelineEntries(
       pushTimelineEntry(entries, {
         id: `proposal-submitted-${proposal.proposalId}`,
         type: "proposal_submitted",
-        label: "Proposal submitted",
         detail: proposal.targetSection,
         occurredAt: proposal.updatedAt,
         href: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
@@ -307,11 +294,10 @@ function buildProposalTimelineEntries(
     if (proposal.status === "accepted" || proposal.status === "partially_accepted") {
       pushTimelineEntry(entries, {
         id: `proposal-accepted-${proposal.proposalId}`,
-        type: "proposal_accepted",
-        label:
+        type:
           proposal.status === "partially_accepted"
-            ? "Proposal partially accepted"
-            : "Proposal accepted",
+            ? "proposal_partially_accepted"
+            : "proposal_accepted",
         detail: proposal.targetSection,
         occurredAt: proposal.decidedAt ?? proposal.updatedAt,
         href: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
@@ -322,7 +308,6 @@ function buildProposalTimelineEntries(
       pushTimelineEntry(entries, {
         id: `proposal-declined-${proposal.proposalId}`,
         type: "proposal_declined",
-        label: "Proposal declined",
         detail: proposal.targetSection,
         occurredAt: proposal.decidedAt ?? proposal.updatedAt,
         href: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
@@ -337,7 +322,6 @@ function buildVoteTimelineEntries(votes: MyDecisionVoteRecord[]): CivicTimelineE
   return votes.map((record) => ({
     id: `vote-${record.vote.voteId}-${record.vote.version}`,
     type: record.vote.version > 1 ? ("vote_updated" as const) : ("vote_cast" as const),
-    label: record.vote.version > 1 ? "Vote updated" : "Vote cast",
     detail: `${record.decisionQuestion} · ${record.vote.choice.replace(/_/g, " ")}`,
     occurredAt: record.vote.updatedAt,
     href: `/collective-decisions/public/${encodeURIComponent(record.vote.decisionId)}`,
@@ -352,7 +336,6 @@ function buildDecisionSessionTimelineEntries(
     .map((session) => ({
       id: `decision-session-published-${session.sessionId}`,
       type: "decision_session_published" as const,
-      label: "Decision session published",
       detail: session.title,
       occurredAt: session.publishedAt ?? session.updatedAt,
       href: `/decision-sessions/public/${encodeURIComponent(session.sessionId)}`,
@@ -370,7 +353,6 @@ function buildCommitmentTimelineEntries(
     .map((commitment) => ({
       id: `commitment-published-${commitment.commitmentId}`,
       type: "commitment_published" as const,
-      label: "Commitment published",
       detail: commitment.commitmentTitle,
       occurredAt: commitment.publishedAt ?? commitment.updatedAt,
       href: `/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`,
@@ -387,7 +369,6 @@ function buildTrackingTimelineEntries(
       pushTimelineEntry(entries, {
         id: `tracking-activated-${tracking.trackingId}`,
         type: "implementation_tracking_activated",
-        label: "Implementation tracking activated",
         detail: tracking.summary,
         occurredAt: tracking.activatedAt,
         href: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
@@ -398,7 +379,6 @@ function buildTrackingTimelineEntries(
       pushTimelineEntry(entries, {
         id: `tracking-completed-${tracking.trackingId}`,
         type: "implementation_tracking_completed",
-        label: "Implementation tracking completed",
         detail: tracking.summary,
         occurredAt: tracking.completedAt,
         href: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
@@ -415,7 +395,6 @@ function buildTrackingUpdateTimelineEntries(
   return updates.map((update) => ({
     id: `tracking-update-${update.updateId}`,
     type: "implementation_update_added" as const,
-    label: "Implementation update added",
     detail: update.title,
     occurredAt: update.createdAt,
     href: `/implementation-tracking/public/${encodeURIComponent(update.trackingId)}`,
@@ -430,7 +409,6 @@ function buildPublicImpactTimelineEntries(impacts: InitiativePublicImpact[]): Ci
       pushTimelineEntry(entries, {
         id: `public-impact-published-${impact.impactId}`,
         type: "public_impact_published",
-        label: "Public impact published",
         detail: impact.title,
         occurredAt: impact.publishedAt,
         href: `/public-impact/${encodeURIComponent(impact.impactId)}`,
@@ -441,7 +419,6 @@ function buildPublicImpactTimelineEntries(impacts: InitiativePublicImpact[]): Ci
       pushTimelineEntry(entries, {
         id: `public-impact-verified-${impact.impactId}`,
         type: "public_impact_verified",
-        label: "Public impact verified",
         detail: impact.title,
         occurredAt: impact.verifiedAt,
         href: `/public-impact/${encodeURIComponent(impact.impactId)}`,

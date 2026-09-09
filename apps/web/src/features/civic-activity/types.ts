@@ -16,11 +16,25 @@ export interface MyDecisionVoteRecord {
   initiativeId: string;
 }
 
+/** Stable activity-summary group identity (not a display label). */
+export type CivicActivityGroupId =
+  | "initiatives"
+  | "analyses"
+  | "proposals"
+  | "decision-participation"
+  | "implementation-commitments"
+  | "implementation-tracking"
+  | "public-impact";
+
+/** Stable WEB_UI note key for optional group footnotes. */
+export type CivicActivityGroupNoteKey =
+  | "decisionVotesLinked"
+  | "decisionVotesLinkedPendingApi";
+
 export interface DeferredActivityGroup {
   kind: "deferred";
-  id: string;
-  title: string;
-  reason: string;
+  id: CivicActivityGroupId | string;
+  reasonKey: string;
 }
 
 export interface ActivityGroupMetrics {
@@ -39,10 +53,9 @@ export interface ActivityGroupMetrics {
 
 export interface ActiveActivityGroup {
   kind: "active";
-  id: string;
-  title: string;
+  id: CivicActivityGroupId | string;
   metrics: ActivityGroupMetrics;
-  note?: string;
+  noteKey?: CivicActivityGroupNoteKey;
 }
 
 export type CivicActivityGroup = ActiveActivityGroup | DeferredActivityGroup;
@@ -53,6 +66,7 @@ export type CivicTimelineEventType =
   | "analysis_published"
   | "proposal_submitted"
   | "proposal_accepted"
+  | "proposal_partially_accepted"
   | "proposal_declined"
   | "vote_cast"
   | "vote_updated"
@@ -67,7 +81,7 @@ export type CivicTimelineEventType =
 export interface CivicTimelineEntry {
   id: string;
   type: CivicTimelineEventType;
-  label: string;
+  /** Canonical/API entity prose — not WEB_UI chrome. */
   detail: string;
   occurredAt: string;
   href?: string;

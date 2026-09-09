@@ -226,7 +226,73 @@
     "unableToRevokeSessions": "تعذّر إنهاء الجلسات الأخرى.",
     "signedOutOtherSessions": "تم تسجيل الخروج من {count} جلسة أخرى.",
     "homeSubtitle": "لوحتك المدنية الشخصية",
-    "passwordChangedSuccess": "تم تغيير كلمة المرور. تم إنهاء الجلسات النشطة الأخرى لأسباب أمنية."
+    "passwordChangedSuccess": "تم تغيير كلمة المرور. تم إنهاء الجلسات النشطة الأخرى لأسباب أمنية.",
+    "signInRequired": "يلزم تسجيل الدخول",
+    "signInRequiredCopy": "<login>سجّل الدخول</login> أو <register>أنشئ حسابًا</register> لاستخدام ميزات مساحة العمل."
+  },
+  "civicActivity": {
+    "pageSubtitle": "عملك المدني الخاص عبر دورة حياة Humanity Union",
+    "backToHome": "العودة إلى الصفحة الرئيسية",
+    "intro": "لوحة عملك المدني الخاصة. تعرض مساهماتك أنت عبر دورة حياة {siteName} — وليس الشعبية أو المتابعين أو الترتيب الاجتماعي.",
+    "statusLoaded": "آخر تحميل {date}. تعكس العدادات بيانات مساحة عملك المصادق عليها فقط.",
+    "loading": "جارٍ تحميل نشاطك المدني…",
+    "unavailable": "بيانات النشاط المدني غير متاحة الآن.",
+    "sections": {
+      "summary": "ملخص النشاط",
+      "timeline": "الجدول الزمني للنشاط",
+      "navLabel": "الأقسام",
+      "navAria": "أقسام مساحة عمل المبادرة",
+      "workspaceNavAria": "تنقل مساحة العمل"
+    },
+    "groups": {
+      "initiatives": "مبادراتي",
+      "analyses": "تحليلاتي التعاونية",
+      "proposals": "مقترحات التحسين الخاصة بي",
+      "decision-participation": "مشاركتي في القرارات",
+      "implementation-commitments": "التزامات التنفيذ الخاصة بي",
+      "implementation-tracking": "تتبع التنفيذ الخاص بي",
+      "public-impact": "أثري العام"
+    },
+    "notes": {
+      "decisionVotesLinked": "تعكس أعداد الأصوات القرارات المرتبطة بمبادراتك.",
+      "decisionVotesLinkedPendingApi": "تعكس أعداد الأصوات القرارات المرتبطة بمبادراتك. واجهة برمجة أصوات المشاركين على نطاق واسع غير متصلة بعد."
+    },
+    "metrics": {
+      "total": "الإجمالي",
+      "drafts": "المسودات",
+      "published": "منشور",
+      "submitted": "مُقدَّم",
+      "active": "نشط",
+      "votesCast": "الأصوات المُدلى بها",
+      "completed": "مكتمل",
+      "verified": "مُتحقَّق",
+      "proposed": "مقترح",
+      "latestActivity": "آخر نشاط",
+      "noActivityYet": "لا يوجد نشاط بعد",
+      "notAvailableYet": "غير متاح بعد"
+    },
+    "timeline": {
+      "empty": "لا توجد إدخالات في الجدول الزمني للنشاط المدني بعد. عندما تُنشئ مبادرات أو تنشر تحليلات أو تقدّم مقترحات أو تشارك في القرارات، ستظهر أفعالك الأخيرة هنا.",
+      "viewRecord": "عرض السجل",
+      "events": {
+        "initiative_created": "تم إنشاء المبادرة",
+        "initiative_published": "تم نشر المبادرة",
+        "analysis_published": "تم نشر التحليل",
+        "proposal_submitted": "تم تقديم المقترح",
+        "proposal_accepted": "تم قبول المقترح",
+        "proposal_partially_accepted": "تم قبول المقترح جزئيًا",
+        "proposal_declined": "تم رفض المقترح",
+        "vote_cast": "تم الإدلاء بالصوت",
+        "vote_updated": "تم تحديث الصوت",
+        "decision_session_published": "تم نشر جلسة القرار",
+        "commitment_published": "تم نشر الالتزام",
+        "implementation_tracking_activated": "تم تفعيل تتبع التنفيذ",
+        "implementation_update_added": "تمت إضافة تحديث التنفيذ",
+        "implementation_tracking_completed": "اكتمل تتبع التنفيذ",
+        "public_impact_published": "تم نشر الأثر العام",
+        "public_impact_verified": "تم التحقق من الأثر العام"
+      }
+    }
   },
   "preferences": {
     "title": "التفضيلات",

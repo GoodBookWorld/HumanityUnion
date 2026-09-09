@@ -226,7 +226,73 @@
     "unableToRevokeSessions": "無法撤銷其他工作階段。",
     "signedOutOtherSessions": "已登出 {count} 個其他工作階段。",
     "homeSubtitle": "您的個人公民儀表板",
-    "passwordChangedSuccess": "密碼已變更。為安全起見，其他作用中工作階段已登出。"
+    "passwordChangedSuccess": "密碼已變更。為安全起見，其他作用中工作階段已登出。",
+    "signInRequired": "需要登入",
+    "signInRequiredCopy": "<login>登入</login>或<register>建立帳戶</register>以使用工作區功能。"
+  },
+  "civicActivity": {
+    "pageSubtitle": "您在 Humanity Union 生命週期中的私人公民工作",
+    "backToHome": "返回首頁",
+    "intro": "您的私人公民工作儀表板。這裡顯示您在 {siteName} 生命週期中的個人貢獻——不是人氣、追蹤者或社交排名。",
+    "statusLoaded": "上次載入 {date}。計數僅反映您已驗證工作區的資料。",
+    "loading": "正在載入您的公民活動…",
+    "unavailable": "目前無法取得公民活動資料。",
+    "sections": {
+      "summary": "活動摘要",
+      "timeline": "活動時間軸",
+      "navLabel": "區段",
+      "navAria": "倡議工作區區段",
+      "workspaceNavAria": "工作區導覽"
+    },
+    "groups": {
+      "initiatives": "我的倡議",
+      "analyses": "我的協作分析",
+      "proposals": "我的改進提案",
+      "decision-participation": "我的決策參與",
+      "implementation-commitments": "我的實施承諾",
+      "implementation-tracking": "我的實施追蹤",
+      "public-impact": "我的公共影響"
+    },
+    "notes": {
+      "decisionVotesLinked": "投票計數反映與您的倡議相關的決策。",
+      "decisionVotesLinkedPendingApi": "投票計數反映與您的倡議相關的決策。參與者範圍的投票 API 尚未連接。"
+    },
+    "metrics": {
+      "total": "總計",
+      "drafts": "草稿",
+      "published": "已發布",
+      "submitted": "已提交",
+      "active": "進行中",
+      "votesCast": "已投票數",
+      "completed": "已完成",
+      "verified": "已驗證",
+      "proposed": "已提議",
+      "latestActivity": "最近活動",
+      "noActivityYet": "尚無活動",
+      "notAvailableYet": "尚不可用"
+    },
+    "timeline": {
+      "empty": "尚無公民活動時間軸紀錄。當您建立倡議、發布分析、提交提案或參與決策時，最近的行動會顯示在這裡。",
+      "viewRecord": "查看紀錄",
+      "events": {
+        "initiative_created": "已建立倡議",
+        "initiative_published": "已發布倡議",
+        "analysis_published": "已發布分析",
+        "proposal_submitted": "已提交提案",
+        "proposal_accepted": "已接受提案",
+        "proposal_partially_accepted": "已部分接受提案",
+        "proposal_declined": "已拒絕提案",
+        "vote_cast": "已投票",
+        "vote_updated": "已更新投票",
+        "decision_session_published": "已發布決策會議",
+        "commitment_published": "已發布承諾",
+        "implementation_tracking_activated": "已啟動實施追蹤",
+        "implementation_update_added": "已新增實施更新",
+        "implementation_tracking_completed": "已完成實施追蹤",
+        "public_impact_published": "已發布公共影響",
+        "public_impact_verified": "已驗證公共影響"
+      }
+    }
   },
   "preferences": {
     "title": "偏好設定",

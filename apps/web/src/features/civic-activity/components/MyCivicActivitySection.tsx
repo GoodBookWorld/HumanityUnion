@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { loadCivicActivitySnapshot } from "../api";
@@ -15,6 +16,8 @@ import {
 import "./civic-activity-workspace.css";
 
 export function MyCivicActivitySection() {
+  const t = useTranslations("civicActivity");
+  const tWorkspace = useTranslations("workspace");
   const [snapshot, setSnapshot] = useState<CivicActivitySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export function MyCivicActivitySection() {
         }
       } catch {
         if (!cancelled) {
-          setError("Civic activity data is not available right now.");
+          setError(t("unavailable"));
           setSnapshot(null);
         }
       } finally {
@@ -49,35 +52,35 @@ export function MyCivicActivitySection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
-      <ProfileSection title="My Civic Activity">
-        <p>Loading your civic activity...</p>
+      <ProfileSection title={tWorkspace("myCivicActivity")}>
+        <p>{t("loading")}</p>
       </ProfileSection>
     );
   }
 
   if (error || !snapshot) {
     return (
-      <ProfileSection title="My Civic Activity">
-        <p>{error ?? "Civic activity data is not available right now."}</p>
+      <ProfileSection title={tWorkspace("myCivicActivity")}>
+        <p>{error ?? t("unavailable")}</p>
       </ProfileSection>
     );
   }
 
   return (
     <div className="civic-activity-workspace">
-      <ProfileSection title="My Civic Activity" id="section-my-civic-activity">
+      <ProfileSection title={tWorkspace("myCivicActivity")} id="section-my-civic-activity">
         <CivicActivityIntro loadedAt={snapshot.loadedAt} />
       </ProfileSection>
 
-      <ProfileSection title="Activity Summary" id="section-activity-summary">
+      <ProfileSection title={t("sections.summary")} id="section-activity-summary">
         <CivicActivitySummaryCards groups={snapshot.groups} />
       </ProfileSection>
 
-      <ProfileSection title="Activity Timeline" id="section-activity-timeline">
+      <ProfileSection title={t("sections.timeline")} id="section-activity-timeline">
         <div className="civic-activity-workspace__timeline-viewport">
           <CivicActivityTimeline timeline={snapshot.timeline} />
         </div>

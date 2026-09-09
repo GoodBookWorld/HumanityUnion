@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { MyCivicActivitySection } from "../../features/civic-activity/components/MyCivicActivitySection";
@@ -6,22 +7,41 @@ import { WorkspaceNavigation } from "../../features/initiatives/components/Works
 
 import "./civic-activity-page.css";
 
-const NAV_ITEMS = ["My Civic Activity", "Activity Summary", "Activity Timeline"];
+export default async function CivicActivityPage() {
+  const t = await getTranslations("civicActivity");
+  const tWorkspace = await getTranslations("workspace");
 
-export default function CivicActivityPage() {
+  const navItems = [
+    {
+      id: "section-my-civic-activity",
+      label: tWorkspace("myCivicActivity"),
+    },
+    {
+      id: "section-activity-summary",
+      label: t("sections.summary"),
+    },
+    {
+      id: "section-activity-timeline",
+      label: t("sections.timeline"),
+    },
+  ] as const;
+
   return (
     <main className="civic-activity-page humanity-workspace-page">
       <MemberWorkspace
-        title="My Civic Activity"
-        subtitle="Your private civic work across the Humanity Union lifecycle"
-        navItems={NAV_ITEMS}
+        title={tWorkspace("myCivicActivity")}
+        subtitle={t("pageSubtitle")}
+        navItems={navItems}
+        sectionsLabel={t("sections.navLabel")}
+        sectionsAriaLabel={t("sections.navAria")}
+        navAriaLabel={t("sections.workspaceNavAria")}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <MyCivicActivitySection />
       </MemberWorkspace>
 
       <p className="civic-activity-page__back">
-        <Link href="/">Back to Home</Link>
+        <Link href="/">{t("backToHome")}</Link>
       </p>
     </main>
   );
