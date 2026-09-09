@@ -234,6 +234,21 @@ export {
   resolveEnabledCatalogEntryForCandidate,
   resolveRuntimeLocaleFromCatalog,
 } from "./runtime-locale.js";
+export type {
+  PublicSeoLocaleDocumentResolution,
+  PublicSeoLocaleRoutingCatalogEntry,
+} from "./public-seo-locale-routing.js";
+export {
+  PUBLIC_SEO_LOCALE_PATH_PATTERNS,
+  PUBLIC_SEO_LOCALE_RESERVED_BLOG_SLUGS,
+  PUBLIC_SEO_LOCALE_RESERVED_KNOWLEDGE_SLUGS,
+  PUBLIC_SEO_LOCALE_RESERVED_TOP_SEGMENTS,
+  isPublicSeoLocalePath,
+  matchPublicSeoLocaleCatalogEntry,
+  parsePublicSeoLocalePrefixedPath,
+  resolvePublicSeoLocaleDocument,
+  toPublicSeoLocaleUrlSegment,
+} from "./public-seo-locale-routing.js";
 export type { AcceptLanguagePreference } from "./accept-language.js";
 export {
   expandLocaleLookupCandidates,

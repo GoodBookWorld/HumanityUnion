@@ -164,7 +164,9 @@ describe("Production Completion Pack 02D Task 01 — UI i18n foundation", () => 
     const requestSrc = readWeb("i18n/request.ts");
     assert.match(requestSrc, /resolveDocumentHtmlLocale/);
     assert.match(requestSrc, /locale: documentLocale\.locale/);
-    assert.doesNotMatch(requestSrc, /createMiddleware|defineRouting|localePrefix/);
+    assert.doesNotMatch(requestSrc, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(requestSrc, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(requestSrc, /from ["']next-intl\/middleware["']/);
   });
 
   it("missing key does not crash — deep merge + fallback helpers", () => {
@@ -183,14 +185,20 @@ describe("Production Completion Pack 02D Task 01 — UI i18n foundation", () => 
     assert.match(requestSrc, /getMessageFallback/);
   });
 
-  it("no locale-prefixed routing / next-intl middleware introduced", () => {
-    assert.equal(existsSync(path.join(webSrc, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), false);
+  it("Pack 2.1 may add thin SEO [locale] routes; next-intl localePrefix remains forbidden", () => {
+    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
+
+    const middleware = readFileSync(path.join(webRoot, "middleware.ts"), "utf8");
+    assert.doesNotMatch(middleware, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(middleware, /from ["']next-intl\/middleware["']/);
 
     const nextConfig = readFileSync(path.join(webRoot, "next.config.ts"), "utf8");
     assert.match(nextConfig, /createNextIntlPlugin/);
-    assert.doesNotMatch(nextConfig, /localePrefix|createMiddleware|defineRouting/);
+    assert.doesNotMatch(nextConfig, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(nextConfig, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(nextConfig, /localePrefix\s*:/);
 
     const remoteSeam = readWeb("features/i18n/remote-pack-seam.ts");
     assert.match(remoteSeam, /UiMessagePackSource/);

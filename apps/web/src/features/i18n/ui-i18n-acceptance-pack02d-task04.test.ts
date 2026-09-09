@@ -70,13 +70,21 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
 
     assert.match(request, /resolveDocumentHtmlLocale/);
     assert.match(request, /locale: documentLocale\.locale/);
-    assert.doesNotMatch(request, /createMiddleware|defineRouting|localePrefix/);
+    assert.doesNotMatch(request, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(request, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(request, /from ["']next-intl\/middleware["']/);
     assert.match(nextConfig, /createNextIntlPlugin/);
-    assert.doesNotMatch(nextConfig, /localePrefix|createMiddleware|defineRouting/);
+    assert.doesNotMatch(nextConfig, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(nextConfig, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(nextConfig, /localePrefix\s*:/);
 
-    assert.equal(existsSync(path.join(webSrc, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), false);
+    // Pack 2.1 — thin SEO [locale] tree + header middleware allowed; next-intl routing not.
+    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
+    const middleware = readFileSync(path.join(webRoot, "middleware.ts"), "utf8");
+    assert.doesNotMatch(middleware, /\bcreateMiddleware\s*\(/);
+    assert.doesNotMatch(middleware, /\bdefineRouting\s*\(/);
+    assert.doesNotMatch(middleware, /from ["']next-intl\/middleware["']/);
 
     assert.doesNotMatch(barrel, /export \{[^}]*resolveDocumentHtmlLocale/);
     assert.doesNotMatch(barrel, /from ["']\.\/resolve-document-locale["']/);

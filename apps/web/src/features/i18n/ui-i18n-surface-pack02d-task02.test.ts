@@ -232,15 +232,14 @@ describe("Production Completion Pack 02D Task 02 — first UI translation surfac
     );
   });
 
-  it("no locale-prefixed routing introduced", () => {
-    assert.equal(existsSync(path.join(webSrc, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), false);
+  it("Pack 2.1 SEO [locale] may exist; header chrome must not adopt next-intl localePrefix", () => {
+    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
 
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
-    assert.doesNotMatch(header, /\/\[locale\]|localePrefix|createMiddleware/);
-    assert.doesNotMatch(mobile, /\/\[locale\]|localePrefix|createMiddleware/);
+    assert.doesNotMatch(header, /localePrefix|createMiddleware/);
+    assert.doesNotMatch(mobile, /localePrefix|createMiddleware/);
     assert.doesNotMatch(header, /document\.documentElement/);
     assert.doesNotMatch(mobile, /document\.documentElement/);
   });

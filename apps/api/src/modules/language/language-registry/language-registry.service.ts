@@ -75,6 +75,7 @@ function toPublicLanguage(record: LanguageRegistryRecord): LanguageRegistryPubli
     textDirection: record.textDirection,
     fallbackLocale: record.fallbackLocale,
     uiTranslationStatus: record.uiTranslationStatus,
+    seoIndexingEnabled: record.seoIndexingEnabled === true,
     aliases: [...record.aliases],
   };
 }

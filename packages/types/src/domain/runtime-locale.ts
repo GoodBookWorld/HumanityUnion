@@ -19,6 +19,7 @@ import {
 
 /** How the active interface locale was chosen. */
 export type RuntimeLocaleResolutionSource =
+  | "url"
   | "participant"
   | "cookie"
   | "browser"

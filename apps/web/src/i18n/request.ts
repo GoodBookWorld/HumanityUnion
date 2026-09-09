@@ -1,8 +1,8 @@
 /**
  * Production Completion Pack 02D Task 01 — next-intl request config.
  *
- * Locale comes ONLY from Pack 02C `resolveDocumentHtmlLocale` — no second
- * resolver, no locale-prefixed routing, no next-intl middleware.
+ * Locale comes ONLY from Pack 02C / Pack 2.1 `resolveDocumentHtmlLocale`.
+ * No second resolver. No next-intl path-based routing plugin.
  */
 
 import { getRequestConfig } from "next-intl/server";

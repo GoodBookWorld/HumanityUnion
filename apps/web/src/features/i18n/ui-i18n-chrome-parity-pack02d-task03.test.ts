@@ -211,15 +211,14 @@ describe("Production Completion Pack 02D Task 03 — foundation chrome + parity"
     assert.equal(resolveMergedMessage(loaded.messages, "navigation", "home"), "Home");
   });
 
-  it("no locale-prefixed routing / Pack 02E scope creep", () => {
-    assert.equal(existsSync(path.join(webSrc, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), false);
+  it("Pack 2.1 SEO [locale] may exist; chrome must not adopt next-intl localePrefix", () => {
+    assert.equal(existsSync(path.join(webSrc, "app", "[locale]")), true);
+    assert.equal(existsSync(path.join(webRoot, "middleware.ts")), true);
 
     const footer = readWeb("features/public-experience/components/PublicExperienceFooter.tsx");
     const selector = readWeb("features/language/components/LanguageSelector.tsx");
-    assert.doesNotMatch(footer, /localePrefix|createMiddleware|\/\[locale\]/);
-    assert.doesNotMatch(selector, /localePrefix|createMiddleware|\/\[locale\]/);
+    assert.doesNotMatch(footer, /localePrefix|createMiddleware/);
+    assert.doesNotMatch(selector, /localePrefix|createMiddleware/);
     assert.doesNotMatch(footer, /document\.documentElement/);
     assert.doesNotMatch(selector, /document\.documentElement/);
   });

@@ -103,6 +103,10 @@ export interface LanguageRegistryUpdateInput {
 /**
  * Public-safe Language Registry projection (enabled languages only).
  * Omits providerMappings, persistence keys, and Admin/audit internals.
+ *
+ * Pack 2.1 — includes `seoIndexingEnabled` so public SEO locale-prefixed
+ * routing / later hreflang can stay Registry-authoritative without Admin auth.
+ * Membership in this list already implies `enabled=true`.
  */
 export interface LanguageRegistryPublic {
   readonly languageId: LanguageRegistryId;
@@ -113,6 +117,8 @@ export interface LanguageRegistryPublic {
   readonly textDirection: LanguageTextDirection;
   readonly fallbackLocale: LanguageRegistryLocale;
   readonly uiTranslationStatus: LanguageUiTranslationStatus;
+  /** Eligible for SEO-indexable locale-prefixed public documents when true. */
+  readonly seoIndexingEnabled: boolean;
   readonly aliases: readonly LanguageRegistryLocale[];
 }
 
