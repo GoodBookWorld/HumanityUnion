@@ -233,12 +233,11 @@ describe("Pack 2.1B — proxy URL locale cookie authority", () => {
     assert.match(page, /export const dynamic = "force-dynamic"/);
   });
 
-  it("diagnostic header is temporary and response-only", () => {
+  it("Pack 2.1D: temporary x-hu-seo-locale diagnostic is removed", () => {
     const headers = readWeb("features/language/public-seo-locale-headers.ts");
-    assert.match(headers, /HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
-    assert.match(headers, /temporary|Temporary|easy to remove/i);
     const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
-    assert.match(proxy, /response\.headers\.set\(HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
-    assert.doesNotMatch(proxy, /requestHeaders\.set\(HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
+    assert.doesNotMatch(headers, /HU_SEO_LOCALE_DIAGNOSTIC_HEADER|x-hu-seo-locale/);
+    assert.doesNotMatch(proxy, /HU_SEO_LOCALE_DIAGNOSTIC_HEADER|x-hu-seo-locale/);
+    assert.doesNotMatch(proxy, /diagnosticLocale/);
   });
 });

@@ -4,7 +4,6 @@
  * Stamps internal request headers and, for Registry SEO-valid prefixes, overrides
  * the incoming request `hu_lang` cookie for THIS REQUEST ONLY (no Set-Cookie).
  *
- * Temporary response diagnostic: `x-hu-seo-locale` when SEO-valid.
  * Fail closed when Registry is unavailable or locale is not SEO-indexable.
  *
  * Location: `src/proxy.ts` (same level as `src/app`) — required for Next 16
@@ -21,7 +20,6 @@ import {
 import { API_BASE_URL } from "./lib/api-base-url";
 import {
   HU_PATHNAME_HEADER,
-  HU_SEO_LOCALE_DIAGNOSTIC_HEADER,
   HU_URL_LOCALE_SEGMENT_HEADER,
 } from "./features/language/public-seo-locale-headers";
 import {
@@ -75,7 +73,6 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set(HU_PATHNAME_HEADER, pathname);
 
   const parsed = parsePublicSeoLocalePrefixedPath(pathname);
-  let diagnosticLocale: string | null = null;
 
   if (parsed) {
     requestHeaders.set(HU_URL_LOCALE_SEGMENT_HEADER, parsed.segment);
@@ -87,7 +84,6 @@ export async function proxy(request: NextRequest) {
     });
 
     if (decision.applyOverride) {
-      diagnosticLocale = decision.locale;
       requestHeaders.set(
         "cookie",
         rewriteRequestCookieHeaderHuLang(
@@ -98,17 +94,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next({
+  return NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
-
-  if (diagnosticLocale) {
-    response.headers.set(HU_SEO_LOCALE_DIAGNOSTIC_HEADER, diagnosticLocale);
-  }
-
-  return response;
 }
 
 /**
