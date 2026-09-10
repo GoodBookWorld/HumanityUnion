@@ -186,7 +186,7 @@ function buildConsistencyChecks(input: {
           checkId: "revision-available",
           label: "Published Revision",
           status: "ok",
-          detail: `Revision v${input.revision.version} is referenced.`,
+          detail: `Published version ${input.revision.version} is referenced.`,
           params: { version: input.revision.version },
         }
       : {

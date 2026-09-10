@@ -351,9 +351,8 @@ async function main(): Promise<void> {
       "The public Petition must show the Author's real (possibly manually edited) Request Statement.",
     );
     assert(
-      typeof publicPetition!.participationTransparencyNote === "string" &&
-        publicPetition!.participationTransparencyNote.length > 0,
-      "The public Petition must always show the participation transparency note.",
+      publicPetition!.participationTransparencyNote === null,
+      "Participation transparency note is WEB_UI chrome — projection must not ship the English domain constant.",
     );
     assert(
       publicPetition!.supportBreakdown.participantSignatures === 0 &&

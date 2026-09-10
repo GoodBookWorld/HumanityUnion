@@ -1991,6 +1991,13 @@
         "counts": {
           "proposals": "{count, plural, =0 {No proposals} one {# proposal} other {# proposals}}"
         },
+        "generated": {
+          "raisedTimesIntro": "This idea was raised {count, plural, one {# time} other {# times}} in {stage}, in similar words:",
+          "reasonRaisedIndependently": "Raised independently by {count, plural, one {# participant} other {# participants}} in the {category} area of {stage} — repetition suggests shared concern.",
+          "reasonRaisedBy": "Raised by {count, plural, one {# participant} other {# participants}} in the {category} area of {stage}.",
+          "supportingHelpful": "{helpful, plural, one {# Helpful reaction} other {# Helpful reactions}} across {members, plural, one {# related comment} other {# related comments}} in {stage}.",
+          "supportingRelated": "{members, plural, one {# related comment} other {# related comments}} in {stage} (no Helpful reactions recorded yet)."
+        },
         "sourceSnapshot": {
           "title": "Proposal Sources",
           "lede": "Automatically collected and grouped from Discussion — nothing below is editable or invented.",
@@ -2189,7 +2196,8 @@
           "signaturesTitle": "Representative Signatures",
           "supportCountersAria": "Petition support counters",
           "shareAria": "Share petition: {title}",
-          "previewSignatureDisabled": "The Signature widget is disabled while previewing — signing becomes available to visitors once this Petition is published and open."
+          "previewSignatureDisabled": "The Signature widget is disabled while previewing — signing becomes available to visitors once this Petition is published and open.",
+          "participationTransparencyNote": "Signing this Petition is a form of civic participation on Humanity Union. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation."
         },
         "sourceSnapshot": {
           "title": "Petition Sources",

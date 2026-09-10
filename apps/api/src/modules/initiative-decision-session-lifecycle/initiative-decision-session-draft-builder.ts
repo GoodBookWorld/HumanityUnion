@@ -65,7 +65,7 @@ function generateDeterministicDecisionSessionDraftContent(
       ? `Published Petition: ${snapshot.petitionReference.summary || snapshot.petitionReference.title}`
       : null,
     snapshot.revisionReference
-      ? `Based on Revision v${snapshot.revisionReference.version}: ${snapshot.revisionReference.revisionSummary}`
+      ? `Based on published version ${snapshot.revisionReference.version}: ${snapshot.revisionReference.revisionSummary}`
       : null,
     snapshot.analysisReference
       ? `Collaborative Analysis: ${snapshot.analysisReference.summary}`
@@ -77,7 +77,7 @@ function generateDeterministicDecisionSessionDraftContent(
       ? `Respond to the public request in "${snapshot.petitionReference.title}".`
       : "",
     snapshot.revisionReference
-      ? `Evaluate adoption of Revision v${snapshot.revisionReference.version}.`
+      ? `Evaluate adoption of published version ${snapshot.revisionReference.version}.`
       : "",
     "Prepare a clear, implementable Collective Decision.",
   ]);
@@ -116,7 +116,7 @@ function generateDeterministicDecisionSessionDraftContent(
   const dependencies = uniqueNonEmpty([
     snapshot.petitionReference ? `Published Petition ${snapshot.petitionReference.petitionId}` : "",
     snapshot.revisionReference
-      ? `Published Revision v${snapshot.revisionReference.version}`
+      ? `Published version ${snapshot.revisionReference.version}`
       : "",
     ...snapshot.proposalReferences.map((proposal) => `Proposal ${proposal.proposalId}`),
   ]);

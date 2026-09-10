@@ -105,7 +105,7 @@ export function InitiativeImprovementProposalsPublicResult({
     <div
       className="iip-public-result"
       data-hu-localization-domain="initiative"
-      data-hu-presentation-authority="manual_author"
+      data-hu-presentation-authority="mixed_manual_author_and_web_ui"
       data-hu-structured-proposal="true"
     >
       <div className="iip-public-result__field">
@@ -127,7 +127,7 @@ export function InitiativeImprovementProposalsPublicResult({
             key={proposal.proposalId}
             className="iip-public-result__proposal"
             data-proposal-id={proposal.proposalId}
-            data-hu-content-class="manual_author"
+            data-hu-content-class="mixed_manual_author_and_web_ui"
           >
             <div className="iip-proposal-card__header">
               <h3>{titlePresented || t("author.proposal.untitledProposal")}</h3>
@@ -145,6 +145,7 @@ export function InitiativeImprovementProposalsPublicResult({
               supportingSources={proposal.supportingSources}
               relatedDiscussionReferences={proposal.relatedDiscussionReferences}
               originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
+              huSystemGeneration={proposal.huSystemGeneration}
             />
 
             {isPreview ? (

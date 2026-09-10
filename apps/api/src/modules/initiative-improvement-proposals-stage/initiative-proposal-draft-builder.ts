@@ -5,37 +5,18 @@ import {
   type InitiativeProposalGroup,
   type InitiativeProposalIntelligenceSnapshot,
   type InitiativeStructuredProposal,
+  type ImprovementProposalHuSystemGeneration,
 } from "@hu/types";
 
 /**
- * Initiative Lifecycle — Part D, Section 2/4 (Automatic Proposal
- * Collection → Author Editing seam).
+ * Initiative Lifecycle — Part D, Section 4 (AI Draft Pipeline).
  *
- * Mirrors the provider-independence pattern from
- * `initiative-analysis-draft-builder.ts` (Part B / Part C's "Future AI
- * Providers"): a small interface + a deterministic reference
- * implementation + one resolution function, so a future AI provider can
- * be swapped in later without any caller changing.
- *
- * Unlike Collaborative Analysis's single-document draft (where
- * "Generate" always overwrites the one draft wholesale), this stage
- * drafts MANY independent structured proposals — one per detected group.
- * Overwriting every existing proposal on every Generate call would
- * destroy Author edits already made to previously-reviewed proposals, so
- * this provider is deliberately ENRICHING, not replacing: it returns one
- * new draft item for every group that does not already have a backing
- * proposal (matched by `groupId`), and the caller (the collection
- * service) only ever appends these — it never touches an existing
- * proposal's fields. This is a direct application of Part C's Universal
- * AI Principle "never changes content autonomously" — a still-untouched
- * group becomes a NEW draft, it never silently rewrites an Author's
- * already-drafted proposal for the same group.
- *
- * Closure 04 — controlled lifecycle terms use `{lifecycleStage:...}` tokens
- * (resolved Terminology → WEB_UI → Registry at presentation). System field
- * prompts (e.g. expectedImprovement) are not embedded as English prose —
- * Authors fill them; WEB_UI owns field labels/placeholders.
+ * Localization repair — HU system frames are structured
+ * (`huSystemGeneration`) + WEB_UI composition at presentation.
+ * Participant excerpts remain MANUAL_AUTHOR. Do not persist English glue
+ * sentences that only get lifecycle-word substituted at render time.
  */
+
 export interface GeneratedProposalDraftItem {
   readonly title: string;
   readonly summary: string;
@@ -47,6 +28,7 @@ export interface GeneratedProposalDraftItem {
   readonly originalAuthorDisplayNames: readonly string[];
   readonly sourceCommentIds: readonly string[];
   readonly groupId: string;
+  readonly huSystemGeneration: ImprovementProposalHuSystemGeneration;
 }
 
 export interface ImprovementProposalDraftProviderInput {
@@ -59,7 +41,6 @@ export interface ImprovementProposalDraftProvider {
   generateDraftProposals(input: ImprovementProposalDraftProviderInput): Promise<GeneratedProposalDraftItem[]>;
 }
 
-/** HU-owned controlled vocabulary refs — never free-text stage labels. */
 const DISCUSSION_STAGE = lifecycleStageToken("discussion");
 const PROPOSAL_STAGE = lifecycleStageToken("proposal");
 const INITIATIVE_STAGE = lifecycleStageToken("initiative");
@@ -69,28 +50,33 @@ function truncateForTitle(excerpt: string, maxLength = 72): string {
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 1)}…` : trimmed;
 }
 
-function buildDescription(group: InitiativeProposalGroup, memberExcerpts: readonly string[]): string {
+/**
+ * Description body stores participant excerpts only (MANUAL_AUTHOR).
+ * The "raised N times" frame is WEB_UI via huSystemGeneration.
+ */
+function buildDescriptionExcerpts(memberExcerpts: readonly string[]): string {
   if (memberExcerpts.length <= 1) {
-    return group.representativeExcerpt;
+    return memberExcerpts[0] ?? "";
   }
-
-  const bullets = memberExcerpts.map((excerpt) => `- "${excerpt}"`).join("\n");
-  return `This idea was raised ${memberExcerpts.length} times in ${DISCUSSION_STAGE}, in similar words:\n${bullets}`;
+  return memberExcerpts.map((excerpt) => `- "${excerpt}"`).join("\n");
 }
 
-function buildReason(group: InitiativeProposalGroup): string {
-  const authorCount = group.authorDisplayNames.length;
-  const participantsLabel = authorCount === 1 ? "1 participant" : `${authorCount} participants`;
-
-  return group.isDuplicateGroup
-    ? `Raised independently by ${participantsLabel} in the ${group.category} area of ${DISCUSSION_STAGE} — repetition suggests shared concern.`
-    : `Raised by ${participantsLabel} in the ${group.category} area of ${DISCUSSION_STAGE}.`;
-}
-
-function buildSupportingSources(group: InitiativeProposalGroup): string {
-  return group.totalHelpfulCount > 0
-    ? `${group.totalHelpfulCount} Helpful reaction(s) across ${group.memberCount} related comment(s) in ${DISCUSSION_STAGE}.`
-    : `${group.memberCount} related comment(s) in ${DISCUSSION_STAGE} (no Helpful reactions recorded yet).`;
+function buildHuSystemGeneration(
+  group: InitiativeProposalGroup,
+  memberExcerpts: readonly string[],
+): ImprovementProposalHuSystemGeneration {
+  return {
+    descriptionKind: memberExcerpts.length > 1 ? "raised_times" : "single_excerpt",
+    raisedCount: memberExcerpts.length,
+    reasonKind: group.isDuplicateGroup ? "raised_independently" : "raised_by",
+    participantCount: group.authorDisplayNames.length,
+    category: group.category,
+    discussionStageToken: DISCUSSION_STAGE,
+    helpfulCount: group.totalHelpfulCount,
+    memberCount: group.memberCount,
+    supportingSourcesKind:
+      group.totalHelpfulCount > 0 ? "helpful_reactions" : "related_comments",
+  };
 }
 
 function generateDeterministicDraftProposals(
@@ -111,20 +97,24 @@ function generateDeterministicDraftProposals(
         .filter((excerpt) => excerpt !== group.representativeExcerpt),
     ];
 
+    const huSystemGeneration = buildHuSystemGeneration(group, memberExcerpts);
+
     generated.push({
+      // Stage token + participant excerpt — CV localizes the stage; excerpt is MANUAL_AUTHOR.
       title: `${PROPOSAL_STAGE}: ${truncateForTitle(group.representativeExcerpt)}`,
       summary: group.representativeExcerpt,
-      description: buildDescription(group, memberExcerpts),
-      reason: buildReason(group),
-      // System prompt belongs to WEB_UI — leave empty for the Author to fill.
+      description: buildDescriptionExcerpts(memberExcerpts),
+      // Empty — WEB_UI composes from huSystemGeneration (not English glue).
+      reason: "",
       expectedImprovement: "",
-      supportingSources: buildSupportingSources(group),
+      supportingSources: "",
       relatedDiscussionReferences: group.discussionUrl,
       originalAuthorDisplayNames: group.authorDisplayNames,
       sourceCommentIds: input.snapshot.candidates
         .filter((candidate) => group.memberCandidateIds.includes(candidate.candidateId))
         .map((candidate) => candidate.commentId),
       groupId: group.groupId,
+      huSystemGeneration,
     });
   }
 
@@ -147,8 +137,10 @@ export async function generateImprovementProposalDrafts(
   return provider.generateDraftProposals(input);
 }
 
-/** Converts a freshly generated draft item into a persistable `InitiativeStructuredProposal`, assigning its permanent, stable `proposalId` (Part 7). */
-export function toStructuredProposal(item: GeneratedProposalDraftItem, now: string): InitiativeStructuredProposal {
+export function toStructuredProposal(
+  item: GeneratedProposalDraftItem,
+  now: string,
+): InitiativeStructuredProposal {
   return {
     proposalId: `initiative-structured-proposal-${randomUUID()}`,
     title: item.title,
@@ -164,6 +156,7 @@ export function toStructuredProposal(item: GeneratedProposalDraftItem, now: stri
     status: "draft",
     createdAt: now,
     updatedAt: now,
+    huSystemGeneration: item.huSystemGeneration,
   };
 }
 
@@ -173,3 +166,13 @@ export const IMPROVEMENT_PROPOSAL_DRAFT_STAGE_TOKENS = {
   proposal: PROPOSAL_STAGE,
   initiative: INITIATIVE_STAGE,
 } as const;
+
+/** True when stored prose still contains banned English HU glue templates. */
+export function improvementProposalContainsBannedEnglishGlue(text: string): boolean {
+  return (
+    /This idea was raised \d+ times in/i.test(text) ||
+    /Raised independently by .+ in the .+ area of/i.test(text) ||
+    /Raised by .+ in the .+ area of/i.test(text) ||
+    /\d+ Helpful reaction\(s\) across/i.test(text)
+  );
+}

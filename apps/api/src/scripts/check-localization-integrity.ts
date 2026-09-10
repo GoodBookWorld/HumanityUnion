@@ -86,6 +86,9 @@ loadApiEnvironment();
 const { bootstrapContentTranslationOperatorPersistence } = await import(
   "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js"
 );
+const { resolveContentTranslationOperatorHydrateScopes } = await import(
+  "../modules/language/content-translation-staging-warm-operator-scope.js"
+);
 const { disconnectMongoClient } = await import(
   "../infrastructure/mongodb/mongo-connection.js"
 );
@@ -95,12 +98,14 @@ const { runLocalizationIntegrityCheck } = await import(
 
 let exitCode = 0;
 try {
+  // Same hydrate contract as warm:staging — do not hand-maintain a second map.
+  // collaborative_analysis (and other initiative-scoped kinds) must hydrate
+  // Initiative so published CA artifacts are discoverable.
+  const hydrateScopes = resolveContentTranslationOperatorHydrateScopes(
+    kinds as never,
+  );
   await bootstrapContentTranslationOperatorPersistence({
-    hydrateScopes: {
-      initiative: kinds.includes("initiative") || kinds.includes("discussion_comment"),
-      collaborativeAnalysis: kinds.includes("collaborative_analysis"),
-      collectiveDecision: kinds.includes("collective_decision"),
-    },
+    hydrateScopes,
   });
 
   const report = await runLocalizationIntegrityCheck({

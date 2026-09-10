@@ -35,6 +35,7 @@ import {
   runLocalizationIntegrityCheck,
   setLanguageRegistryForceMemoryForTests,
 } from "../../../src/modules/language/index.js";
+import { resolveContentTranslationOperatorHydrateScopes } from "../../../src/modules/language/content-translation-staging-warm-operator-scope.js";
 import { checkPublicCatalogReadiness } from "../../../../web/src/features/language/public-catalog-readiness.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -304,12 +305,114 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
   it("5. CLI script is bounded read-only and exits 2 on blocking", () => {
     const script = readApi("scripts/check-localization-integrity.ts");
     assert.match(script, /runLocalizationIntegrityCheck/);
+    assert.match(script, /resolveContentTranslationOperatorHydrateScopes/);
     assert.match(script, /exitCode = 2/);
     assert.match(script, /Refuses unbounded|--kind=all/);
     assert.match(script, /No provider\. No writes\. No enqueue/);
     assert.doesNotMatch(script, /\bTranslationProvider\b|generateContentTranslation\s*\(/);
     const pkg = readRepo("apps/api/package.json");
     assert.match(pkg, /"localization:check"/);
+  });
+
+  it("5b. collaborative_analysis hydrate scopes match warm resolver", () => {
+    assert.deepEqual(
+      resolveContentTranslationOperatorHydrateScopes(["collaborative_analysis"]),
+      {
+        initiative: true,
+        collaborativeAnalysis: true,
+        collectiveDecision: false,
+      },
+    );
+    const script = readApi("scripts/check-localization-integrity.ts");
+    assert.match(script, /resolveContentTranslationOperatorHydrateScopes/);
+    assert.doesNotMatch(
+      script,
+      /initiative:\s*kinds\.includes\("initiative"\)\s*\|\|\s*kinds\.includes\("discussion_comment"\)/,
+    );
+  });
+
+  it("5c. failed/empty discovery cannot yield false READY", async () => {
+    const report = await runLocalizationIntegrityCheck({
+      locale: "uk",
+      kinds: ["collaborative_analysis"],
+      auditCorpus: async () =>
+        ({
+          discoveryStatus: "FAILED",
+          discoveryHint: "SOURCE_RECORDS_DISCOVERED.initiative=0",
+          discoveryByKind: [
+            {
+              sourceKind: "collaborative_analysis",
+              sourceRecordsDiscovered: 0,
+              publicRecords: 0,
+            },
+          ],
+          targetLocales: ["uk"],
+          schemaVersion: "test",
+          byFamily: [],
+          byLocale: [
+            {
+              targetLanguage: "uk",
+              MISSING_TARGET_TRANSLATION_IDENTITIES: 0,
+              STALE_TARGET_TRANSLATION_IDENTITIES: 0,
+              FAILED_TARGET_TRANSLATION_IDENTITIES: 0,
+              CURRENT_TARGET_TRANSLATION_IDENTITIES: 0,
+              WORK_ITEMS_REQUIRED: 0,
+            },
+          ],
+          totals: {},
+          workItems: [],
+          candidates: [],
+        }) as never,
+      evaluateReadiness: async () => readyReadiness("uk"),
+    });
+    assert.equal(
+      report.artifacts.find((row) => row.kindId === "collaborative_analysis")?.state,
+      "NO_CORPUS",
+    );
+    assert.equal(report.overallStatus, "DATA_NOT_READY");
+    assert.equal(report.blocking, true);
+  });
+
+  it("5d. complete discovered corpus with CURRENT can still yield READY", async () => {
+    const report = await runLocalizationIntegrityCheck({
+      locale: "uk",
+      kinds: ["collaborative_analysis"],
+      auditCorpus: async () =>
+        ({
+          discoveryStatus: "COMPLETE",
+          discoveryHint: null,
+          discoveryByKind: [
+            {
+              sourceKind: "collaborative_analysis",
+              sourceRecordsDiscovered: 2,
+              publicRecords: 2,
+            },
+          ],
+          targetLocales: ["uk"],
+          schemaVersion: "test",
+          byFamily: [],
+          byLocale: [
+            {
+              targetLanguage: "uk",
+              MISSING_TARGET_TRANSLATION_IDENTITIES: 0,
+              STALE_TARGET_TRANSLATION_IDENTITIES: 0,
+              FAILED_TARGET_TRANSLATION_IDENTITIES: 0,
+              CURRENT_TARGET_TRANSLATION_IDENTITIES: 2,
+              WORK_ITEMS_REQUIRED: 0,
+            },
+          ],
+          totals: {},
+          workItems: [],
+          candidates: [{ sourceKind: "collaborative_analysis", sourceRecordId: "ca-1" }],
+        }) as never,
+      evaluateReadiness: async () => readyReadiness("uk"),
+    });
+    assert.equal(
+      report.artifacts.find((row) => row.kindId === "collaborative_analysis")?.state,
+      "CURRENT",
+    );
+    assert.equal(report.overallStatus, "READY");
+    assert.equal(report.blocking, false);
   });
 
   it("6. Media carousel required discrete PLP types; public_news excluded", async () => {

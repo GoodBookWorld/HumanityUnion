@@ -108,7 +108,7 @@ export function InitiativePetitionPublicResult({
     return <p className="lsw-result__placeholder">{t("author.petition.public.loading")}</p>;
   }
 
-  const { petitionIdentity, petitionSubject, traceability, supportBreakdown, participationTransparencyNote } =
+  const { petitionIdentity, petitionSubject, traceability, supportBreakdown } =
     projection;
   const publishedAtLabel = formatDate(projection.petitionSummary.publishedAt, locale);
 
@@ -221,7 +221,9 @@ export function InitiativePetitionPublicResult({
             <span className="ipl-support__counter-label">{t("sidebar.support.visitors")}</span>
           </div>
         </div>
-        <p className="ipl-support__note">{participationTransparencyNote}</p>
+        <p className="ipl-support__note">
+          {t("author.petition.public.participationTransparencyNote")}
+        </p>
 
         {isPreview ? (
           <p className="ipl-support__note">

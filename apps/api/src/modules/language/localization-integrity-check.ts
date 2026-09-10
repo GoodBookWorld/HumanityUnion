@@ -118,12 +118,48 @@ export async function runLocalizationIntegrityCheck(
   const artifacts: LocalizationIntegrityArtifactRow[] = [];
   let ctBucket = emptyLanguageLocalizationCountBucket();
   let plpBucket = emptyLanguageLocalizationCountBucket();
+  let corpusDiscoveryBlocked = false;
 
   for (const kind of ctKinds) {
     const audit = await auditCorpus({
       kinds: [kind as StagingWarmSourceKind],
       targetLocales: [locale as LanguageCode],
     });
+
+    // Align with warm staging safety: silent empty / failed discovery is not
+    // CURRENT and must not yield READY. Genuinely complete discovery with
+    // zero work remains eligible for CURRENT/READY.
+    const discovered =
+      audit.discoveryByKind?.reduce(
+        (sum, row) => sum + (row.sourceRecordsDiscovered ?? 0),
+        0,
+      ) ?? 0;
+    const candidateCount = audit.candidates?.length ?? 0;
+    const discoveryFailed =
+      audit.discoveryStatus === "FAILED" ||
+      (audit.discoveryStatus !== "COMPLETE" && candidateCount === 0) ||
+      (discovered === 0 && candidateCount === 0 && audit.discoveryStatus !== "COMPLETE");
+
+    // discoveryStatus COMPLETE with zero candidates means an empty eligible
+    // public corpus for this kind (nothing to translate) — not a silent failure.
+    const silentEmpty =
+      audit.discoveryStatus === "FAILED" ||
+      (candidateCount === 0 && discovered === 0 && audit.discoveryStatus !== "COMPLETE");
+
+    if (silentEmpty || discoveryFailed) {
+      corpusDiscoveryBlocked = true;
+      artifacts.push({
+        kindId: kind,
+        ownership: "CT_OWNED",
+        state: "NO_CORPUS",
+        detail:
+          `discoveryStatus=${audit.discoveryStatus} candidates=${candidateCount} ` +
+          `sourceRecordsDiscovered=${discovered}` +
+          (audit.discoveryHint ? ` hint=${audit.discoveryHint}` : ""),
+      });
+      continue;
+    }
+
     const row = audit.byLocale.find((entry) => entry.targetLanguage === locale);
     const counts = {
       current: row?.CURRENT_TARGET_TRANSLATION_IDENTITIES ?? 0,
@@ -289,5 +325,6 @@ export async function runLocalizationIntegrityCheck(
     artifacts,
     controlledEnglishLeakCount: 0,
     canonicalFallbackTruthful: true,
+    corpusDiscoveryBlocked,
   });
 }

@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   applyControlledPublicVocabularyToProse,
+  composeImprovementProposalHuSystemFields,
   lifecycleStageToken,
   presentImprovementProposalFieldsWithControlledVocabulary,
   resolveControlledLifecycleLabel,
@@ -127,7 +128,7 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
     assert.equal(webUiOnly?.controlledLifecycleSource, "web_ui_controlled_label");
   });
 
-  it("H. Part D structured ids must not use Cap02 CT resolution in PublicResult", () => {
+  it("H. Part D public authority is mixed MANUAL_AUTHOR + WEB_UI (no Cap02 CT on PublicResult)", () => {
     const src = readFileSync(
       path.join(
         webRoot,
@@ -135,8 +136,8 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
       ),
       "utf8",
     );
-    assert.match(src, /data-hu-presentation-authority=["']manual_author["']/);
-    assert.match(src, /initiative-structured-proposal|structured-proposal|manual_author/);
+    assert.match(src, /data-hu-presentation-authority=["']mixed_manual_author_and_web_ui["']/);
+    assert.match(src, /huSystemGeneration=\{proposal\.huSystemGeneration\}/);
     assert.doesNotMatch(src, /resolveTranslatedContent|loadImprovementProposalTranslationSource/);
   });
 
@@ -326,5 +327,63 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
     });
     assert.equal(applied.text, "Add a composting station near the entrance ramp.");
     assert.equal(applied.substitutions.length, 0);
+  });
+
+  it("S. untouched HU system frames are not MANUAL_AUTHOR; participant prose remains MANUAL_AUTHOR", () => {
+    const builder = readFileSync(
+      path.join(
+        repoRoot,
+        "apps/api/src/modules/initiative-improvement-proposals-stage/initiative-proposal-draft-builder.ts",
+      ),
+      "utf8",
+    );
+    assert.match(builder, /huSystemGeneration/);
+    assert.match(builder, /reason:\s*""/);
+    assert.match(builder, /supportingSources:\s*""/);
+    assert.doesNotMatch(builder, /reason:\s*`This idea was raised/);
+    assert.doesNotMatch(builder, /description:\s*`This idea was raised/);
+
+    const contentFields = readFileSync(
+      path.join(
+        webRoot,
+        "src/features/initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsContentFields.tsx",
+      ),
+      "utf8",
+    );
+    assert.match(contentFields, /hu_system_web_ui/);
+    assert.match(contentFields, /composeImprovementProposalHuSystemFields/);
+    assert.doesNotMatch(contentFields, /PublicTranslatedFields/);
+    assert.doesNotMatch(contentFields, /TranslationProvider/);
+
+    const composed = composeImprovementProposalHuSystemFields({
+      generation: {
+        descriptionKind: "raised_times",
+        raisedCount: 2,
+        reasonKind: "raised_independently",
+        participantCount: 3,
+        category: "process",
+        discussionStageToken: lifecycleStageToken("discussion"),
+        helpfulCount: 4,
+        memberCount: 3,
+        supportingSourcesKind: "helpful_reactions",
+      },
+      descriptionExcerpts: "Participant said compost bins.",
+      t: (key) => `WEB_UI:${key}`,
+      labelLookup: webUiLookup("uk"),
+    });
+    assert.match(composed.reason, /^WEB_UI:/);
+    assert.doesNotMatch(composed.reason, /Raised independently by/);
+    assert.match(composed.description, /Participant said compost bins/);
+  });
+
+  it("T. Draft Preview and Public share huSystemGeneration presentation authority", () => {
+    const preview = readFileSync(
+      path.join(
+        webRoot,
+        "src/features/initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsDraftPreview.tsx",
+      ),
+      "utf8",
+    );
+    assert.match(preview, /huSystemGeneration=\{proposal\.huSystemGeneration/);
   });
 });

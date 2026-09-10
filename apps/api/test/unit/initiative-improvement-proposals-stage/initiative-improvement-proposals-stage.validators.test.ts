@@ -130,4 +130,25 @@ describe("validateInitiativeStructuredProposalForPublication", () => {
     const proposal = buildProposal({ reason: "   " });
     assert.throws(() => validateInitiativeStructuredProposalForPublication(proposal), /Reason is required/);
   });
+
+  it("accepts empty reason when HU system generation provenance supplies the WEB_UI frame", () => {
+    assert.doesNotThrow(() =>
+      validateInitiativeStructuredProposalForPublication(
+        buildProposal({
+          reason: "",
+          huSystemGeneration: {
+            descriptionKind: "single_excerpt",
+            raisedCount: 1,
+            reasonKind: "raised_by",
+            participantCount: 2,
+            category: "process",
+            discussionStageToken: "{lifecycleStage:discussion}",
+            supportingSourcesKind: "related_comments",
+            helpfulCount: 0,
+            memberCount: 2,
+          },
+        }),
+      ),
+    );
+  });
 });

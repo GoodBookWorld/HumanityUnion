@@ -158,7 +158,7 @@ describe("Pack 02G Task 08E.8c — derivePetitionAiAssistantInsights structured 
             checkId: "revision-available",
             label: "Published Revision",
             status: "ok",
-            detail: "Petition will reference Revision v1.",
+            detail: "Petition will reference published version 1.",
             params: {},
           },
         ],

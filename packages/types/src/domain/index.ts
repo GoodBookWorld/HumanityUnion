@@ -478,7 +478,10 @@ export {
   getControlledPublicVocabularyEntry,
 } from "./controlled-public-vocabulary.js";
 export { presentCollaborativeAnalysisFieldsWithControlledVocabulary } from "./present-controlled-collaborative-analysis.js";
-export { presentImprovementProposalFieldsWithControlledVocabulary } from "./present-controlled-improvement-proposals.js";
+export {
+  composeImprovementProposalHuSystemFields,
+  presentImprovementProposalFieldsWithControlledVocabulary,
+} from "./present-controlled-improvement-proposals.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,
@@ -608,6 +611,7 @@ export type {
   InitiativeImprovementProposalStatus,
 } from "./initiative-improvement-proposal.js";
 export type {
+  ImprovementProposalHuSystemGeneration,
   InitiativeImprovementProposalsCollection,
   InitiativeImprovementProposalsCollectionStatus,
   InitiativeStructuredProposal,

@@ -1991,6 +1991,13 @@
         "counts": {
           "proposals": "{count, plural, =0 {لا مقترحات} one {مقترح #} other {# مقترحات}}"
         },
+        "generated": {
+          "raisedTimesIntro": "طُرحت هذه الفكرة {count, plural, one {مرة واحدة} other {# مرات}} في {stage}، بصياغات متشابهة:",
+          "reasonRaisedIndependently": "طُرحت بشكل مستقل من قِبل {count, plural, one {مشارك واحد} other {# مشاركين}} في مجال {category} ضمن {stage} — والتكرار يشير إلى قلق مشترك.",
+          "reasonRaisedBy": "طُرحت من قِبل {count, plural, one {مشارك واحد} other {# مشاركين}} في مجال {category} ضمن {stage}.",
+          "supportingHelpful": "{helpful, plural, one {تفاعل مفيد واحد} other {# تفاعلات مفيدة}} عبر {members, plural, one {تعليق ذي صلة} other {# تعليقات ذات صلة}} في {stage}.",
+          "supportingRelated": "{members, plural, one {تعليق ذو صلة} other {# تعليقات ذات صلة}} في {stage} (لا تفاعلات مفيدة مسجّلة بعد)."
+        },
         "sourceSnapshot": {
           "title": "مصادر المقترحات",
           "lede": "جُمعت وجُمّعت تلقائياً من النقاش — لا شيء أدناه قابل للتحرير أو مختلق.",
@@ -2189,7 +2196,8 @@
           "signaturesTitle": "التوقيعات التمثيلية",
           "supportCountersAria": "عدّادات دعم العريضة",
           "shareAria": "مشاركة العريضة: {title}",
-          "previewSignatureDisabled": "أداة التوقيع معطّلة أثناء المعاينة — يصبح التوقيع متاحاً للزوّار بعد نشر هذه العريضة وفتحها."
+          "previewSignatureDisabled": "أداة التوقيع معطّلة أثناء المعاينة — يصبح التوقيع متاحاً للزوّار بعد نشر هذه العريضة وفتحها.",
+          "participationTransparencyNote": "توقيع هذه العريضة شكل من أشكال المشاركة المدنية على Humanity Union. وهي ليست عريضة مُلزمة قانوناً ولا تُنشئ بحد ذاتها أي التزام قانوني أو حكومي."
         },
         "sourceSnapshot": {
           "title": "مصادر العريضة",

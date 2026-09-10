@@ -1991,6 +1991,13 @@
         "counts": {
           "proposals": "{count, plural, =0 {沒有提案} one {# 則提案} other {# 則提案}}"
         },
+        "generated": {
+          "raisedTimesIntro": "此想法在 {stage} 中被提出 {count} 次，用詞相近：",
+          "reasonRaisedIndependently": "由 {count} 位參與者在 {stage} 的「{category}」領域獨立提出 — 重複出現顯示共同關切。",
+          "reasonRaisedBy": "由 {count} 位參與者在 {stage} 的「{category}」領域提出。",
+          "supportingHelpful": "在 {stage} 中，{members} 則相關留言共有 {helpful} 次「有幫助」反應。",
+          "supportingRelated": "在 {stage} 中有 {members} 則相關留言（尚無「有幫助」反應）。"
+        },
         "sourceSnapshot": {
           "title": "提案來源",
           "lede": "自動從討論收集並分組 — 下方內容不可編輯，也非憑空產生。",
@@ -2189,7 +2196,8 @@
           "signaturesTitle": "代表性簽署",
           "supportCountersAria": "請願支持計數",
           "shareAria": "分享請願：{title}",
-          "previewSignatureDisabled": "預覽時簽署小工具已停用 — 此請願發布並開放後，訪客才能簽署。"
+          "previewSignatureDisabled": "預覽時簽署小工具已停用 — 此請願發布並開放後，訪客才能簽署。",
+          "participationTransparencyNote": "簽署此請願是 Humanity Union 上的公民參與形式。它不是具法律約束力的請願，本身也不會產生任何法律或政府義務。"
         },
         "sourceSnapshot": {
           "title": "請願來源",

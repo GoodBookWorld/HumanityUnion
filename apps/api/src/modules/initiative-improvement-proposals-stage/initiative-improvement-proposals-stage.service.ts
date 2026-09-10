@@ -179,15 +179,27 @@ export async function saveInitiativeStructuredProposal(
   const now = new Date().toISOString();
   const nextProposals = [...collection.proposals];
   const current = nextProposals[proposalIndex]!;
+  const nextReason = input.reason ?? current.reason;
+  const nextSupportingSources = input.supportingSources ?? current.supportingSources;
+  const nextDescription = input.description ?? current.description;
+  // Author free-text edits leave MANUAL_AUTHOR ownership; clear HU system
+  // frames so WEB_UI composition does not override participant prose.
+  const authorEditedSystemOwnedFields =
+    (input.reason !== undefined && input.reason.trim() !== (current.reason ?? "").trim()) ||
+    (input.supportingSources !== undefined &&
+      input.supportingSources.trim() !== (current.supportingSources ?? "").trim()) ||
+    (input.description !== undefined &&
+      input.description.trim() !== (current.description ?? "").trim());
   nextProposals[proposalIndex] = {
     ...current,
     title: input.title ?? current.title,
     summary: input.summary ?? current.summary,
-    description: input.description ?? current.description,
-    reason: input.reason ?? current.reason,
+    description: nextDescription,
+    reason: nextReason,
     expectedImprovement: input.expectedImprovement ?? current.expectedImprovement,
-    supportingSources: input.supportingSources ?? current.supportingSources,
+    supportingSources: nextSupportingSources,
     relatedDiscussionReferences: input.relatedDiscussionReferences ?? current.relatedDiscussionReferences,
+    huSystemGeneration: authorEditedSystemOwnedFields ? null : current.huSystemGeneration,
     updatedAt: now,
   };
 

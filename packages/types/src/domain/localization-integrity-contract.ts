@@ -25,7 +25,9 @@ export type LocalizationIntegrityArtifactState =
   | "FAILED"
   | "PENDING"
   | "PROTECTED"
-  | "NO_OWNER";
+  | "NO_OWNER"
+  /** Discovery failed / silently empty — must not be treated as CURRENT/READY. */
+  | "NO_CORPUS";
 
 export type LocalizationIntegrityArtifactRow = {
   readonly kindId: string;
@@ -98,6 +100,11 @@ export function buildLocalizationIntegrityReport(input: {
   readonly artifacts?: readonly LocalizationIntegrityArtifactRow[];
   readonly controlledEnglishLeakCount?: number;
   readonly canonicalFallbackTruthful?: boolean;
+  /**
+   * When true, CT discovery failed or was silently empty for a kind that
+   * requires corpus discovery — overall READY is forbidden (DATA_NOT_READY).
+   */
+  readonly corpusDiscoveryBlocked?: boolean;
 }): LocalizationIntegrityReport {
   const readiness = input.readiness;
   const historicalBackfillRequired =
@@ -139,11 +146,22 @@ export function buildLocalizationIntegrityReport(input: {
   if (input.canonicalFallbackTruthful === false) {
     gaps.push("Canonical fallback incorrectly marked as translated");
   }
+  if (input.corpusDiscoveryBlocked) {
+    gaps.push(
+      "CT corpus discovery failed or silently empty — cannot claim READY (NO_CORPUS)",
+    );
+  }
+
+  const overallStatus: LanguageLocalizationReadinessState =
+    input.corpusDiscoveryBlocked &&
+    (readiness.state === "READY" || readiness.state === "CONFIGURED")
+      ? "DATA_NOT_READY"
+      : readiness.state;
 
   const blocking =
-    readiness.state === "FAILED" ||
-    readiness.state === "DATA_NOT_READY" ||
-    readiness.state === "DEGRADED" ||
+    overallStatus === "FAILED" ||
+    overallStatus === "DATA_NOT_READY" ||
+    overallStatus === "DEGRADED" ||
     (input.controlledEnglishLeakCount ?? 0) > 0 ||
     input.canonicalFallbackTruthful === false;
 
@@ -152,13 +170,23 @@ export function buildLocalizationIntegrityReport(input: {
     locale: readiness.locale,
     kindScope: [...input.kindScope],
     readiness,
-    overallStatus: readiness.state,
+    overallStatus,
     artifacts,
     controlledEnglishLeakCount: input.controlledEnglishLeakCount ?? 0,
     canonicalFallbackTruthful: input.canonicalFallbackTruthful ?? true,
     historicalBackfillRequired,
-    seoReady: isLocalizationReadyForSeo(readiness),
-    searchReady: isLocalizationReadyForSearch(readiness),
+    seoReady: isLocalizationReadyForSeo({
+      ...readiness,
+      state: overallStatus,
+      languageDataReady:
+        input.corpusDiscoveryBlocked ? false : readiness.languageDataReady,
+    }),
+    searchReady: isLocalizationReadyForSearch({
+      ...readiness,
+      state: overallStatus,
+      languageDataReady:
+        input.corpusDiscoveryBlocked ? false : readiness.languageDataReady,
+    }),
     safety: {
       providerCalls: 0,
       writesPerformed: 0,

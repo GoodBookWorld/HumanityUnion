@@ -4,7 +4,33 @@ import type {
   TranslatedContentRecord,
   TranslationDisplayPreference,
 } from "@hu/types";
-import { DEFAULT_PLATFORM_LANGUAGE, normalizeLanguageCode } from "@hu/types";
+import {
+  DEFAULT_PLATFORM_LANGUAGE,
+  normalizeLanguageRegistryLocaleKey,
+} from "@hu/types";
+
+/**
+ * Preserve Registry locale structure (`zh-Hant`). Do not use
+ * `normalizeLanguageCode` here — it collapses `zh-Hant` → `zh` and breaks
+ * CT targetLanguage matching for structured Registry locales.
+ */
+function coerceReadingLocale(
+  value: unknown,
+  fallback: LanguageCode,
+): LanguageCode {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? (trimmed as LanguageCode) : fallback;
+}
+
+function localesEqual(a: string, b: string): boolean {
+  return (
+    normalizeLanguageRegistryLocaleKey(a) ===
+    normalizeLanguageRegistryLocaleKey(b)
+  );
+}
 
 export interface ResolveTranslatedDisplayInput<TContent = string> {
   readonly originalContent: TContent;
@@ -65,11 +91,11 @@ function baseOriginal(input: {
 export function resolveTranslatedDisplay(
   input: ResolveTranslatedDisplayInput<string>,
 ): ResolvedTranslatedDisplay<string> {
-  const originalLanguage = normalizeLanguageCode(
+  const originalLanguage = coerceReadingLocale(
     input.originalLanguage,
     DEFAULT_PLATFORM_LANGUAGE,
   );
-  const preferred = normalizeLanguageCode(
+  const preferred = coerceReadingLocale(
     input.preferredReadingLanguage,
     originalLanguage,
   );
@@ -79,7 +105,7 @@ export function resolveTranslatedDisplay(
 
   const preferredCurrent = translations.find(
     (item) =>
-      item.targetLanguage === preferred &&
+      localesEqual(item.targetLanguage, preferred) &&
       !item.stale &&
       item.freshness === "current",
   );
@@ -91,15 +117,17 @@ export function resolveTranslatedDisplay(
             !item.stale &&
             item.freshness === "current" &&
             (item.translationKind === "human" || item.translationKind === "author-approved") &&
-            item.targetLanguage !== originalLanguage,
+            !localesEqual(item.targetLanguage, originalLanguage),
         )
       : undefined;
 
   const stalePreferred = translations.find(
-    (item) => item.targetLanguage === preferred && (item.stale || item.freshness === "stale"),
+    (item) =>
+      localesEqual(item.targetLanguage, preferred) &&
+      (item.stale || item.freshness === "stale"),
   );
 
-  if (preference === "none" || preferred === originalLanguage) {
+  if (preference === "none" || localesEqual(preferred, originalLanguage)) {
     return baseOriginal({
       originalContent,
       originalLanguage,
@@ -185,6 +213,11 @@ export function resolveTranslatedDisplay(
 /**
  * Structured-field variant — same freshness / preference rules.
  * `content` is the field map shown to the reader.
+ *
+ * Permanent invariant: a CURRENT translation that omits any non-empty
+ * original eligible field must not present as localized (partial merge
+ * caused uk-vs-ar/zh-Hant Supporting Arguments asymmetry). Incomplete
+ * bags fall back to canonical original with isStale=true.
  */
 export function resolveStructuredTranslatedDisplay(input: {
   readonly originalFields: Record<string, string>;
@@ -205,33 +238,56 @@ export function resolveStructuredTranslatedDisplay(input: {
   });
 
   let content = input.originalFields;
+  let presentationMode = textResolved.presentationMode;
+  let activeLanguage = textResolved.activeLanguage;
+  let isMachineTranslated = textResolved.isMachineTranslated;
+  let isStale = textResolved.isStale;
+
   if (
     textResolved.presentationMode !== "original" &&
     textResolved.translation &&
     typeof textResolved.translation.translatedContent === "object" &&
     textResolved.translation.translatedContent !== null
   ) {
-    const fields: Record<string, string> = { ...input.originalFields };
-    for (const [key, value] of Object.entries(textResolved.translation.translatedContent)) {
-      // Pack 08J.1 — apply every translated string key onto the projection bag.
-      // Exclusion policy already stripped NON_TRANSLATABLE before provider write;
-      // do not require a second allowlist at consume time.
-      if (typeof value === "string") {
-        fields[key] = value;
+    const translated = textResolved.translation.translatedContent;
+    const missingRequiredKeys: string[] = [];
+    for (const [key, originalValue] of Object.entries(input.originalFields)) {
+      if (typeof originalValue !== "string" || originalValue.trim().length === 0) {
+        continue;
+      }
+      const translatedValue = translated[key];
+      if (typeof translatedValue !== "string" || translatedValue.trim().length === 0) {
+        missingRequiredKeys.push(key);
       }
     }
-    content = fields;
+
+    if (missingRequiredKeys.length > 0) {
+      // Partial CURRENT must not paint English leftover fields as localized.
+      content = input.originalFields;
+      presentationMode = "original";
+      activeLanguage = textResolved.originalLanguage;
+      isMachineTranslated = false;
+      isStale = true;
+    } else {
+      const fields: Record<string, string> = { ...input.originalFields };
+      for (const [key, value] of Object.entries(translated)) {
+        if (typeof value === "string") {
+          fields[key] = value;
+        }
+      }
+      content = fields;
+    }
   }
 
   return {
-    presentationMode: textResolved.presentationMode,
+    presentationMode,
     content,
-    activeLanguage: textResolved.activeLanguage,
+    activeLanguage,
     originalLanguage: textResolved.originalLanguage,
     originalContent: input.originalFields,
     translation: textResolved.translation,
-    isMachineTranslated: textResolved.isMachineTranslated,
-    isStale: textResolved.isStale,
+    isMachineTranslated,
+    isStale,
     canViewOriginal: textResolved.canViewOriginal,
     canViewTranslation: textResolved.canViewTranslation,
   };

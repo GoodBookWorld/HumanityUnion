@@ -98,6 +98,7 @@ export function InitiativeImprovementProposalsDraftPreview({ initiativeId }: { r
               supportingSources={presented.supportingSources}
               relatedDiscussionReferences={presented.relatedDiscussionReferences}
               originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
+              huSystemGeneration={proposal.huSystemGeneration ?? null}
             />
 
             <section

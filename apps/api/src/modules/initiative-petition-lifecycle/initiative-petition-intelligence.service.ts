@@ -120,7 +120,7 @@ function buildConsistencyChecks(input: {
           checkId: "revision-available",
           label: "Published Revision",
           status: "ok",
-          detail: `Petition will reference Revision v${input.revision.version}.`,
+          detail: `Petition will reference published version ${input.revision.version}.`,
           params: { version: input.revision.version },
         }
       : {

@@ -1,6 +1,5 @@
 import type {
   CollectiveDecision,
-  CollaborativeAnalysis,
   Initiative,
   Petition,
   PetitionState,
@@ -17,9 +16,7 @@ import type {
   PublicSupportState,
   PublicSupportStatistics,
 } from "@hu/types";
-import { PETITION_PARTICIPATION_TRANSPARENCY_NOTE } from "@hu/types";
 
-import { getAnalysisByInitiativeId } from "../collaborative-analysis/collaborative-analysis.store.js";
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getMemberById } from "../member/member-access.js";
@@ -121,37 +118,21 @@ function buildApprovedResultSummary(decision: CollectiveDecision | null): string
   return winningOption?.label ?? null;
 }
 
-function buildAnalysisContextSummary(analysis: CollaborativeAnalysis | null): string | null {
-  if (!analysis) {
-    return null;
-  }
-
-  const publishedSummaries = analysis.summaries.filter(
-    (summary) => summary.status.toLowerCase() !== "draft",
-  );
-
-  if (publishedSummaries.length === 0) {
-    return null;
-  }
-
-  const currentSummary = [...publishedSummaries].sort(
-    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  )[0];
-
-  return currentSummary?.summaryText ?? null;
-}
-
 function buildApprovedDecisionContext(
   petition: Petition,
   decision: CollectiveDecision | null,
   initiative: Initiative | null,
-  analysis: CollaborativeAnalysis | null,
 ): PublicApprovedDecisionContext {
   const decisionSummary = decision?.ballot.question ?? null;
   const approvedOutcomeSummary = decision?.outcome?.explanation ?? null;
   const approvedResultSummary = buildApprovedResultSummary(decision);
   const initiativeContextSummary = initiative?.description ?? petition.subject.summary;
-  const analysisContextSummary = buildAnalysisContextSummary(analysis);
+  // Localization repair — do not join legacy Stage CA
+  // (`collaborative-analysis.store`) for human-facing analysis prose.
+  // Canonical Initiative CA localization is initiative-collaborative-analysis + CT.
+  // Wiring a localized canonical CA summary into Petition context is a separate
+  // Petition store canonicalization task.
+  const analysisContextSummary = null;
   const contextAvailable = Boolean(
     decisionSummary || approvedOutcomeSummary || approvedResultSummary,
   );
@@ -357,7 +338,6 @@ export async function toPublicPetitionProjection(
 
   const decision = getDecision(petition.collectiveDecisionId);
   const initiative = getInitiativeById(petition.subject.initiativeId);
-  const analysis = getAnalysisByInitiativeId(petition.subject.initiativeId);
   const relatedRevisionContext = await buildPetitionRevisionContext(petition.subject.initiativeId);
   const supportBreakdown = await buildSupportBreakdown(petition);
   const viewerHasSigned = viewerParticipantId
@@ -370,13 +350,17 @@ export async function toPublicPetitionProjection(
     petitionIdentity: buildPetitionIdentity(petition),
     petitionSummary: buildPetitionSummary(petition),
     petitionSubject: buildPetitionSubject(petition),
-    approvedDecisionContext: buildApprovedDecisionContext(petition, decision, initiative, analysis),
+    approvedDecisionContext: buildApprovedDecisionContext(petition, decision, initiative),
     relatedRevisionContext,
     publicSupportStatistics: buildPublicSupportStatistics(petition),
     supportBreakdown,
     traceability: petition.traceability ?? null,
     viewerHasSigned,
-    participationTransparencyNote: PETITION_PARTICIPATION_TRANSPARENCY_NOTE,
+    // Localization repair — human-facing participation note is WEB_UI
+    // (`author.petition.public.participationTransparencyNote`). Projection keeps
+    // a nullable slot for API compatibility; do not ship the English domain
+    // constant as public copy.
+    participationTransparencyNote: null,
     petitionOutcome: buildPublicPetitionOutcome(petition),
     shareReference: buildShareReference(petition),
     participationEntryGuidance: buildParticipationEntryGuidance(petition),
