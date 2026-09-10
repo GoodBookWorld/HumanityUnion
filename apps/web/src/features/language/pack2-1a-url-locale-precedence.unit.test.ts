@@ -142,7 +142,7 @@ describe("Pack 2.1A — URL locale precedence end-to-end", () => {
   it("G. no provider generation path is introduced", () => {
     const documentLocale = readWeb("features/language/resolve-document-locale.ts");
     const requestSignals = readWeb("features/language/public-seo-locale-request.ts");
-    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
 
     assert.doesNotMatch(documentLocale, /from ["'][^"']*translation-provider/i);
     assert.doesNotMatch(documentLocale, /generateContent|gemini\.generate/i);

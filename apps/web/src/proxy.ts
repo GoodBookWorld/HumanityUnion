@@ -6,6 +6,9 @@
  *
  * Temporary response diagnostic: `x-hu-seo-locale` when SEO-valid.
  * Fail closed when Registry is unavailable or locale is not SEO-indexable.
+ *
+ * Location: `src/proxy.ts` (same level as `src/app`) — required for Next 16
+ * discovery when App Router lives under `src/app` (Pack 2.1C).
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -15,17 +18,17 @@ import {
   type LanguageRegistryPublicListResponse,
 } from "@hu/types";
 
-import { API_BASE_URL } from "./src/lib/api-base-url";
+import { API_BASE_URL } from "./lib/api-base-url";
 import {
   HU_PATHNAME_HEADER,
   HU_SEO_LOCALE_DIAGNOSTIC_HEADER,
   HU_URL_LOCALE_SEGMENT_HEADER,
-} from "./src/features/language/public-seo-locale-headers";
+} from "./features/language/public-seo-locale-headers";
 import {
   decideSeoProxyCookieAuthority,
   rewriteRequestCookieHeaderHuLang,
   type SeoProxyRegistryLocaleRow,
-} from "./src/features/language/public-seo-locale-request";
+} from "./features/language/public-seo-locale-request";
 
 /**
  * Public languages list only includes enabled locales (membership ⇒ enabled).

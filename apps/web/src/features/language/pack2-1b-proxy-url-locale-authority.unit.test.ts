@@ -181,7 +181,7 @@ describe("Pack 2.1B — proxy URL locale cookie authority", () => {
   });
 
   it("proxy fail-closed: no cookie override when Registry unavailable", () => {
-    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
     const helpers = readWeb("features/language/public-seo-locale-request.ts");
     assert.match(proxy, /decideSeoProxyCookieAuthority/);
     assert.match(proxy, /decision\.applyOverride/);
@@ -191,14 +191,20 @@ describe("Pack 2.1B — proxy URL locale cookie authority", () => {
     assert.match(helpers, /registry_unavailable/);
   });
 
-  it("F. proxy replaces middleware; matcher preserved", () => {
+  it("F. proxy at src/proxy.ts; obsolete root proxy/middleware absent; matcher preserved", () => {
+    // Pack 2.1C — Next 16 discovers proxy next to src/app, not project root.
+    assert.equal(existsSync(path.join(webSrc, "proxy.ts")), true);
+    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), false);
     assert.equal(existsSync(path.join(webRoot, "middleware.ts")), false);
-    assert.equal(existsSync(path.join(webRoot, "proxy.ts")), true);
-    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    assert.equal(existsSync(path.join(webSrc, "middleware.ts")), false);
+    const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
     assert.match(proxy, /export async function proxy/);
     assert.match(proxy, /matcher:/);
     assert.match(proxy, /_next\/static/);
     assert.match(proxy, /favicon\.ico/);
+    assert.match(proxy, /from ["']\.\/lib\//);
+    assert.match(proxy, /from ["']\.\/features\//);
+    assert.doesNotMatch(proxy, /from ["']\.\/src\//);
   });
 
   it("G. root and next-intl still share resolveDocumentHtmlLocale", () => {
@@ -211,7 +217,7 @@ describe("Pack 2.1B — proxy URL locale cookie authority", () => {
   });
 
   it("H. no provider generation path is introduced", () => {
-    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
     const requestHelpers = readWeb("features/language/public-seo-locale-request.ts");
     assert.doesNotMatch(proxy, /TranslationProvider|generateContent|gemini\.generate/i);
     assert.doesNotMatch(requestHelpers, /generateContent|gemini\.generate/i);
@@ -231,7 +237,7 @@ describe("Pack 2.1B — proxy URL locale cookie authority", () => {
     const headers = readWeb("features/language/public-seo-locale-headers.ts");
     assert.match(headers, /HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
     assert.match(headers, /temporary|Temporary|easy to remove/i);
-    const proxy = readFileSync(path.join(webRoot, "proxy.ts"), "utf8");
+    const proxy = readFileSync(path.join(webSrc, "proxy.ts"), "utf8");
     assert.match(proxy, /response\.headers\.set\(HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
     assert.doesNotMatch(proxy, /requestHeaders\.set\(HU_SEO_LOCALE_DIAGNOSTIC_HEADER/);
   });
