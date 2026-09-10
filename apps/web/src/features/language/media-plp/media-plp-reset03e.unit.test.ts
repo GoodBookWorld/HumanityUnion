@@ -150,6 +150,7 @@ describe("Reset 03E — Media semantic coverage", () => {
         locale: "uk",
         canonicalVersion: "v1",
       },
+      requestedLocale: "uk",
     });
     assert.equal(editorial.overview.title, "UK Overview");
     assert.equal(editorial.faq[0]?.question, "UK Q1?");
@@ -288,6 +289,7 @@ describe("Reset 03E — Media semantic coverage", () => {
         locale: "uk",
         canonicalVersion: "canonical",
       },
+      requestedLocale: "uk",
     });
     // Fail-closed: CANONICAL_FALLBACK keeps whole canonical overview (no partial mix).
     assert.equal(mixedForbidden.overview.title, media.overview.title);

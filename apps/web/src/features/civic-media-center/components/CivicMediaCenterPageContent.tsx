@@ -521,10 +521,14 @@ function CivicMediaCenterLoaded({
 }) {
   const t = useTranslations("civicMediaPublic");
   const brand = useLocalizedBrand();
+  const locale = useLocale();
+  // Soft-nav correctness: document/interface locale wins over stale SSR PLP props.
+  const requestedLocale = locale;
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
   const runtimeBranch =
     mediaLocalizationRuntimeBranch ?? (plpMode ? "PLP" : "LEGACY");
   // Reset 03C.2 / 03E — stable identity; editorial overview/FAQ from PLP when present.
+  // Implementation 02 — locale isolation at apply; locale in deps so soft-nav recomputes.
   const plpEditorial = useMemo(
     () =>
       plpMode && plpTrustedById && plpPrinciplesById
@@ -533,9 +537,17 @@ function CivicMediaCenterLoaded({
             trustedById: plpTrustedById,
             principlesById: plpPrinciplesById,
             editorialPresentation: plpEditorialPresentation,
+            requestedLocale,
           })
         : undefined,
-    [plpMode, media, plpTrustedById, plpPrinciplesById, plpEditorialPresentation],
+    [
+      plpMode,
+      media,
+      plpTrustedById,
+      plpPrinciplesById,
+      plpEditorialPresentation,
+      requestedLocale,
+    ],
   );
   const factCheckMaps = useMemo(
     () =>
@@ -543,9 +555,10 @@ function CivicMediaCenterLoaded({
         ? applyMediaPlpFactCheckMaps({
             resources: media.factChecking,
             factCheckById: plpFactCheckById,
+            requestedLocale,
           })
         : undefined,
-    [plpMode, media.factChecking, plpFactCheckById],
+    [plpMode, media.factChecking, plpFactCheckById, requestedLocale],
   );
   const propagandaMaps = useMemo(
     () =>
@@ -553,9 +566,10 @@ function CivicMediaCenterLoaded({
         ? applyMediaPlpPropagandaMaps({
             resources: media.propagandaAnalysis,
             propagandaById: plpPropagandaById,
+            requestedLocale,
           })
         : undefined,
-    [plpMode, media.propagandaAnalysis, plpPropagandaById],
+    [plpMode, media.propagandaAnalysis, plpPropagandaById, requestedLocale],
   );
   const editorial = useCivicMediaResolvedEditorial(
     media,

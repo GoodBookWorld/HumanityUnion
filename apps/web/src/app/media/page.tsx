@@ -91,6 +91,7 @@ export default async function CivicMediaPage() {
       trustedById: composition.plpTrustedById ?? {},
       principlesById: composition.plpPrinciplesById ?? {},
       editorialPresentation: composition.plpEditorialPresentation,
+      requestedLocale: documentLocale.locale,
     });
     mediaPlpLiveTruthProbeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
       overviewSummary: applied.overview.summary,

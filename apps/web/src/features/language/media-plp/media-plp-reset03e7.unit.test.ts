@@ -120,6 +120,7 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
       trustedById: {},
       principlesById: {},
       editorialPresentation: wire,
+      requestedLocale: "uk",
     });
     assert.equal(applied.overview.summary, LOCALIZED_SUMMARY);
     assert.equal(applied.faq[0]?.question, LOCALIZED_Q);
@@ -177,6 +178,7 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
       trustedById: {},
       principlesById: {},
       editorialPresentation: composition.plpEditorialPresentation,
+      requestedLocale: "uk",
     });
     const probeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
       overviewSummary: applied.overview.summary,
@@ -267,6 +269,7 @@ describe("Reset 03E.7 — live truth probe + payload contract", () => {
       trustedById: composition.plpTrustedById ?? {},
       principlesById: composition.plpPrinciplesById ?? {},
       editorialPresentation: composition.plpEditorialPresentation,
+      requestedLocale: "uk",
     });
     const probeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
       overviewSummary: applied.overview.summary,

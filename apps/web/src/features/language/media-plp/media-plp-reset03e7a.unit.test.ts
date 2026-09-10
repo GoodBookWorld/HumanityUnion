@@ -160,6 +160,7 @@ describe("Reset 03E.7A — live truth probe activation", () => {
       trustedById: {},
       principlesById: {},
       editorialPresentation: composition.plpEditorialPresentation,
+      requestedLocale: "uk",
     });
     const probeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
       overviewSummary: applied.overview.summary,

@@ -301,6 +301,7 @@ describe("Reset 03E.6 — live runtime truth", () => {
       trustedById: maps.trusted,
       principlesById: maps.principles,
       editorialPresentation: maps.editorial,
+      requestedLocale: "uk",
     });
     assert.equal(applied.overview.summary, S.overviewSummary.localized);
     assert.equal(applied.faq[0]?.question, S.faqQ0.localized);

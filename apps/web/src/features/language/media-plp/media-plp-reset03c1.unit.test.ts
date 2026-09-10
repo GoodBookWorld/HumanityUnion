@@ -215,6 +215,7 @@ describe("Reset 03C.1 Media structural parity", () => {
       media,
       trustedById,
       principlesById,
+      requestedLocale: "uk",
     });
 
     assert.equal(Object.keys(editorial.trustedExplanationsById).length, 2);

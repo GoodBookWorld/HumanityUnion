@@ -280,6 +280,7 @@ describe("Reset 03E.2 — content integrity × rendered coverage", () => {
         ukEditorialPresentation,
         "uk",
       ),
+      requestedLocale: "uk",
     });
     assert.equal(applied.overview.title, "Overview title EN");
     assert.equal(applied.faq[0]?.question, "FAQ question EN?");
@@ -298,6 +299,7 @@ describe("Reset 03E.2 — content integrity × rendered coverage", () => {
         ukEditorialPresentation,
         "uk",
       ),
+      requestedLocale: "uk",
     });
     assert.equal(applied.overview.title, "Огляд заголовок");
     assert.equal(applied.overview.summary, "Огляд резюме");

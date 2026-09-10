@@ -317,6 +317,7 @@ describe("Reset 03E.5 — consumer value lineage", () => {
       trustedById: {},
       principlesById: {},
       editorialPresentation: resolved,
+      requestedLocale: "uk",
     });
     const paths = [
       "overviewTitle",

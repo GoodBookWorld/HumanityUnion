@@ -3,6 +3,9 @@
  * Principles + trusted explanations + overview/FAQ (civic_media_editorial).
  * Fact-check mission/coverage and propaganda focus/explanation maps (exported helpers).
  * Initiative-flow participant UX remains UI_DICTIONARY (pipeline.*).
+ *
+ * Implementation 02 — fail-closed locale isolation: apply PUBLISHED_LOCALIZED
+ * strings only when presentation locale equals requested document locale.
  */
 
 import type {
@@ -12,6 +15,7 @@ import type {
   FactCheckResource,
   PropagandaAnalysisResource,
 } from "@hu/types";
+import { mayApplyPersistedLocalizedPresentation } from "@hu/types";
 
 import type { CivicMediaResolvedEditorial } from "../../civic-media-center/civic-media-canonical-editorial";
 import { buildCanonicalCivicMediaEditorial } from "../../civic-media-center/civic-media-canonical-editorial";
@@ -21,6 +25,20 @@ import {
   isMediaPlpLiveTruthProbeEnabled,
   recordMediaPlpLiveTruthProjected,
 } from "./media-plp-live-truth-probe";
+
+function mayApplyMediaPlpPresentation(input: {
+  readonly resolved: MediaPlpResolvedPresentation | undefined;
+  readonly requestedLocale: string;
+}): boolean {
+  if (!input.resolved) {
+    return false;
+  }
+  return mayApplyPersistedLocalizedPresentation({
+    presentationLocale: input.resolved.locale,
+    requestedLocale: input.requestedLocale,
+    mode: input.resolved.mode,
+  });
+}
 
 function readRowString(row: Record<string, unknown>, key: string): string {
   const raw = row[key];
@@ -122,13 +140,19 @@ function readFaqItems(
 function applyPrincipleFromPlp(
   principle: CivicMediaSelectionPrinciple,
   resolved: MediaPlpResolvedPresentation | undefined,
+  requestedLocale: string,
 ): CivicMediaSelectionPrinciple {
-  if (!resolved || resolved.mode !== "PUBLISHED_LOCALIZED") {
+  if (
+    !mayApplyMediaPlpPresentation({
+      resolved,
+      requestedLocale,
+    })
+  ) {
     return principle;
   }
-  const title = readMediaPlpStringField(resolved.presentation, "title");
-  const description = readMediaPlpStringField(resolved.presentation, "description");
-  const whyItMatters = readMediaPlpStringField(resolved.presentation, "whyItMatters");
+  const title = readMediaPlpStringField(resolved!.presentation, "title");
+  const description = readMediaPlpStringField(resolved!.presentation, "description");
+  const whyItMatters = readMediaPlpStringField(resolved!.presentation, "whyItMatters");
   const canonicalWhy = (principle.whyItMatters ?? "").trim();
 
   // Whole-entity: title+description always required.
@@ -162,6 +186,8 @@ function applyPrincipleFromPlp(
 export function applyMediaPlpFactCheckMaps(input: {
   readonly resources: readonly FactCheckResource[];
   readonly factCheckById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Document / participant requested locale — never inferred from PLP. */
+  readonly requestedLocale: string;
 }): {
   readonly missionsById: Readonly<Record<string, string>>;
   readonly coverageById: Readonly<Record<string, string>>;
@@ -172,7 +198,13 @@ export function applyMediaPlpFactCheckMaps(input: {
     missionsById[resource.id] = resource.mission;
     coverageById[resource.id] = resource.coverage;
     const resolved = input.factCheckById[resource.id];
-    if (!resolved || resolved.mode !== "PUBLISHED_LOCALIZED") {
+    if (
+      !resolved ||
+      !mayApplyMediaPlpPresentation({
+        resolved,
+        requestedLocale: input.requestedLocale,
+      })
+    ) {
       continue;
     }
     const mission = readMediaPlpStringField(resolved.presentation, "mission");
@@ -189,6 +221,8 @@ export function applyMediaPlpFactCheckMaps(input: {
 export function applyMediaPlpPropagandaMaps(input: {
   readonly resources: readonly PropagandaAnalysisResource[];
   readonly propagandaById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Document / participant requested locale — never inferred from PLP. */
+  readonly requestedLocale: string;
 }): {
   readonly focusById: Readonly<Record<string, string>>;
   readonly explanationsById: Readonly<Record<string, string>>;
@@ -199,7 +233,13 @@ export function applyMediaPlpPropagandaMaps(input: {
     focusById[resource.id] = resource.focus;
     explanationsById[resource.id] = resource.explanation;
     const resolved = input.propagandaById[resource.id];
-    if (!resolved || resolved.mode !== "PUBLISHED_LOCALIZED") {
+    if (
+      !resolved ||
+      !mayApplyMediaPlpPresentation({
+        resolved,
+        requestedLocale: input.requestedLocale,
+      })
+    ) {
       continue;
     }
     const focus = readMediaPlpStringField(resolved.presentation, "focus");
@@ -217,12 +257,18 @@ export function applyMediaPlpPresentationsToEditorial(input: {
   readonly trustedById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   readonly principlesById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   readonly editorialPresentation?: MediaPlpResolvedPresentation;
+  /** Document / participant requested locale — never inferred from PLP. */
+  readonly requestedLocale: string;
 }): CivicMediaResolvedEditorial {
   const canonical = buildCanonicalCivicMediaEditorial(input.media);
 
   const selectionPrinciples: CivicMediaSelectionPrinciple[] =
     canonical.selectionPrinciples.map((principle) =>
-      applyPrincipleFromPlp(principle, input.principlesById[principle.id]),
+      applyPrincipleFromPlp(
+        principle,
+        input.principlesById[principle.id],
+        input.requestedLocale,
+      ),
     );
 
   const trustedExplanationsById: Record<string, string> = {
@@ -230,7 +276,13 @@ export function applyMediaPlpPresentationsToEditorial(input: {
   };
   for (const resource of input.media.trustedMedia) {
     const resolved = input.trustedById[resource.id];
-    if (!resolved || resolved.mode !== "PUBLISHED_LOCALIZED") {
+    if (
+      !resolved ||
+      !mayApplyMediaPlpPresentation({
+        resolved,
+        requestedLocale: input.requestedLocale,
+      })
+    ) {
       continue;
     }
     const explanation = readMediaPlpStringField(resolved.presentation, "explanation");
@@ -242,10 +294,12 @@ export function applyMediaPlpPresentationsToEditorial(input: {
   let overview = canonical.overview;
   let faq = [...canonical.faq];
   if (
-    input.editorialPresentation &&
-    input.editorialPresentation.mode === "PUBLISHED_LOCALIZED"
+    mayApplyMediaPlpPresentation({
+      resolved: input.editorialPresentation,
+      requestedLocale: input.requestedLocale,
+    })
   ) {
-    const presentation = input.editorialPresentation.presentation;
+    const presentation = input.editorialPresentation!.presentation;
     const overviewTitle = readMediaPlpStringField(presentation, "overviewTitle").trim();
     const overviewSummary = readMediaPlpStringField(presentation, "overviewSummary").trim();
     const localizedPoints = readOverviewPoints(presentation, canonical.overview.points);

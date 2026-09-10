@@ -268,6 +268,7 @@ describe("Reset 03E.7A.1 — Media RSC server/client boundary", () => {
       trustedById: plpComposition.plpTrustedById ?? {},
       principlesById: plpComposition.plpPrinciplesById ?? {},
       editorialPresentation: plpComposition.plpEditorialPresentation,
+      requestedLocale: "uk",
     });
     const attr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
       overviewSummary: applied.overview.summary,
@@ -330,7 +331,8 @@ describe("Reset 03E.7A.1 — Media RSC server/client boundary", () => {
           media: m,
           trustedById: {},
           principlesById: {},
-        }),
+      requestedLocale: "uk",
+    }),
     });
     assert.equal(legacy.runtimeBranch, "LEGACY");
     assert.ok(legacy.initialEditorial);
