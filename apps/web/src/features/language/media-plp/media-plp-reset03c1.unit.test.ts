@@ -241,9 +241,9 @@ describe("Reset 03C.1 Media structural parity", () => {
     );
   });
 
-  it("G: flag OFF default preserved", () => {
+  it("G: flag defaults ON (Reset 01)", () => {
     setMediaPlpWebEnabledForTests(null);
-    assert.equal(isMediaPlpWebEnabled(), false);
+    assert.equal(isMediaPlpWebEnabled(), true);
   });
 
   it("H: flag ON path skips legacy generate-on-miss", () => {

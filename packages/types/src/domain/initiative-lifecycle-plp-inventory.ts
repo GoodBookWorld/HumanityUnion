@@ -88,7 +88,7 @@ export const INITIATIVE_LIFECYCLE_PLP_INVENTORY = [
     canonicalSource: "DiscussionComment.body (visibility=public)",
     migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
   },
-  // Collaborative Analysis
+  // Collaborative Analysis — full browser-visible prose boundary (Reset 01)
   {
     stageId: "collaborative_analysis",
     entityKind: "collaborative_analysis",
@@ -103,6 +103,46 @@ export const INITIATIVE_LIFECYCLE_PLP_INVENTORY = [
     fieldPath: "summary",
     ownership: "MACHINE_CONTENT",
     canonicalSource: "CollaborativeAnalysis.summary",
+    migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
+  },
+  {
+    stageId: "collaborative_analysis",
+    entityKind: "collaborative_analysis",
+    fieldPath: "supportingEvidence",
+    ownership: "MACHINE_CONTENT",
+    canonicalSource: "CollaborativeAnalysis.supportingEvidence",
+    migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
+  },
+  {
+    stageId: "collaborative_analysis",
+    entityKind: "collaborative_analysis",
+    fieldPath: "risks",
+    ownership: "MACHINE_CONTENT",
+    canonicalSource: "CollaborativeAnalysis.risks",
+    migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
+  },
+  {
+    stageId: "collaborative_analysis",
+    entityKind: "collaborative_analysis",
+    fieldPath: "openQuestions",
+    ownership: "MACHINE_CONTENT",
+    canonicalSource: "CollaborativeAnalysis.openQuestions",
+    migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
+  },
+  {
+    stageId: "collaborative_analysis",
+    entityKind: "collaborative_analysis",
+    fieldPath: "suggestedImprovements",
+    ownership: "MACHINE_CONTENT",
+    canonicalSource: "CollaborativeAnalysis.suggestedImprovements",
+    migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
+  },
+  {
+    stageId: "collaborative_analysis",
+    entityKind: "collaborative_analysis",
+    fieldPath: "references",
+    ownership: "MACHINE_CONTENT",
+    canonicalSource: "CollaborativeAnalysis.references",
     migrationStatus: "ADAPTER_READY_CONSUMER_LEGACY",
   },
   // Improvement Proposals

@@ -227,9 +227,9 @@ describe("Reset 03E — Media semantic coverage", () => {
     assert.match(hook, /skipClientTranslation/);
   });
 
-  it("default Web flag remains OFF", () => {
+  it("default Web flag remains ON (Reset 01)", () => {
     setMediaPlpWebEnabledForTests(null);
-    assert.equal(isMediaPlpWebEnabled(), false);
+    assert.equal(isMediaPlpWebEnabled(), true);
   });
 
   it("uk/zh-Hant/ar UI dictionary owns Media chrome keys; no orphan English labels", () => {

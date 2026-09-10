@@ -52,6 +52,7 @@ import {
   setMediaPlpConsumptionEnabledForTests,
   setPublishedLocalizationPersistenceModeForTests,
   setPlpBuildRequestProcessorForTests,
+  setPlpAutoBuildWorkForceMemoryForTests,
   PLP_UNIVERSAL_WORKER_SAFETY_DEFAULTS,
   PLP_PUBLICATION_TRIGGER_KINDS,
   createPlpPublicationTrigger,
@@ -91,6 +92,7 @@ function walkTsFiles(dir: string): string[] {
 
 beforeEach(() => {
   process.env.PUBLIC_NEWS_PERSISTENCE = "memory";
+  setPlpAutoBuildWorkForceMemoryForTests(true);
   resetPublicNewsMemoryStoreForTests();
   resetPublishedLocalizationPersistenceForTests();
   setPublishedLocalizationPersistenceModeForTests("memory");
@@ -114,6 +116,7 @@ afterEach(() => {
   resetPlpSearchSeoInvalidationForTests();
   resetFixturePlpStoreForTests();
   setPlpBuildRequestProcessorForTests(null);
+  setPlpAutoBuildWorkForceMemoryForTests(false);
   resetPublicNewsMemoryStoreForTests();
 });
 
@@ -326,7 +329,7 @@ describe("RESET 04 — Universal PLP publication contract", () => {
     );
   });
 
-  it("11: dynamic News build inventory accepts no public_news enqueue under original-language policy", async () => {
+  it("11: dynamic News build inventory enqueues bounded selected public_news cards", async () => {
     const now = "2030-01-01T00:00:00.000Z";
     const expiresAt = "2030-12-31T00:00:00.000Z";
     const records: NewsArticleRecord[] = Array.from({ length: 3 }, (_, i) => ({
@@ -349,13 +352,14 @@ describe("RESET 04 — Universal PLP publication contract", () => {
       updatedAt: now,
     }));
     await upsertPublicNewsRecords(records);
+    ensureMediaPlpAdapterRegistered();
     const result = await enqueueConsumerVisibleNewsPlpBuilds({
       locales: ["uk"],
       limit: 12,
     });
     assert.equal(result.PROVIDER_CALLS, 0);
-    assert.equal(result.consumerCount, 0);
-    assert.equal(result.enqueued, 0);
+    assert.equal(result.consumerCount, 3);
+    assert.equal(result.enqueued, 3);
     assert.ok(
       getPlpDomainAdapter(MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS)
         ?.usesConsumerIdentityAuthority,
@@ -468,7 +472,8 @@ describe("RESET 04 — Universal PLP publication contract", () => {
     assert.equal(getPlpBuildRequestQueueStats().pending, 1);
   });
 
-  it("direct atomic publish of machine overlays for public_news title/summary is rejected", async () => {
+  it("direct atomic publish of machine overlays for public_news title/summary is allowed (Reset 01)", async () => {
+    ensureMediaPlpAdapterRegistered();
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
         id: "n-direct",
@@ -509,6 +514,6 @@ describe("RESET 04 — Universal PLP publication contract", () => {
         },
       ],
     });
-    assert.equal(published.ok, false);
+    assert.equal(published.ok, true);
   });
 });

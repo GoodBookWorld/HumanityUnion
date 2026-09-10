@@ -1,87 +1,59 @@
 /**
- * Final Localization Closure 02 — web presentation + semantic closure for RSS originals.
+ * Reset 01 — public_news title/summary are PLP MACHINE (replaces Closure 02
+ * original-language-only web suite).
  */
-
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
-import type { PublicNewsArticleItem } from "@hu/types";
+import {
+  PUBLIC_NEWS_FIELD_OWNERSHIP,
+  PUBLIC_NEWS_MACHINE_CONTENT_PATHS,
+} from "@hu/types";
 
-import { evaluateMediaCarouselSemanticClosure } from "./media-carousel-semantic-closure.js";
-import { resolveLocalizedPublicNewsCardView } from "../../public-news/use-localized-public-news-card.js";
-import { resolvePublicNewsLocalizedPresentation } from "../../public-news/resolve-public-news-presentation.js";
+import {
+  evaluateMediaCarouselSemanticClosure,
+} from "./media-carousel-semantic-closure.js";
 
-function sampleArticle(): PublicNewsArticleItem {
-  return {
-    id: "news-web-closure02",
-    title: "Original English RSS headline",
-    summary: "Original English RSS summary stays source-language.",
-    category: "democracy",
-    sourceName: "Reuters",
-    articleUrl: "https://example.com/article",
-    publishedAt: "2026-01-01T00:00:00.000Z",
-    verificationStatus: "external-source",
-    geographicScope: "global",
-    language: "en",
-  };
-}
+const here = path.dirname(fileURLToPath(import.meta.url));
 
-describe("Final Localization Closure 02 — web public_news originals", () => {
-  it("non-English UI locale still renders original RSS title/summary", () => {
-    const article = sampleArticle();
-    const view = resolveLocalizedPublicNewsCardView({
-      article,
-      locale: "uk",
-      translations: {
-        title: "Перекладений заголовок",
-        summary: "Перекладений короткий виклад",
-      },
-    });
-    assert.equal(view.title, article.title);
-    assert.equal(view.summary, article.summary);
+describe("Reset 01 — web public_news PLP carousel prose", () => {
+  it("policy: title/summary MACHINE; identity/URL protected", () => {
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.sourceName, "PROTECTED_SOURCE_VALUE");
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
   });
 
-  it("resolvePublicNewsLocalizedPresentation never machine-translates RSS prose", async () => {
-    const article = sampleArticle();
-    const localized = await resolvePublicNewsLocalizedPresentation({
-      article,
-      displayLanguage: "uk",
-      ready: true,
-      translationPreference: "preferred",
-    });
-    assert.equal(localized.isMachineTranslated, false);
-    const presentation = localized.presentation as {
-      title?: { value?: string } | string;
-      summary?: { value?: string } | string;
-    };
-    const title =
-      typeof presentation.title === "string"
-        ? presentation.title
-        : presentation.title?.value;
-    const summary =
-      typeof presentation.summary === "string"
-        ? presentation.summary
-        : presentation.summary?.value;
-    assert.equal(title, article.title);
-    assert.equal(summary, article.summary);
+  it("hook applies PLP whole-entity; no provider-on-read", () => {
+    const hook = readFileSync(
+      path.join(here, "../../public-news/use-localized-public-news-card.ts"),
+      "utf8",
+    );
+    assert.match(hook, /resolvePublicNewsCardFieldsFromPlp/);
+    assert.doesNotMatch(hook, /TranslationProvider/);
+    assert.doesNotMatch(hook, /generateContentTranslation/);
+    assert.doesNotMatch(hook, /original-language-only/);
   });
 
-  it("semantic closure treats protected original news leaves as policy-success", () => {
+  it("carousel closure counts PLP_ENTITY public_news leaves", () => {
     const cards = Array.from({ length: 12 }, (_, i) => {
-      const id = `news-card-${i}`;
+      const id = `news-${i + 1}`;
       return `
 <article class="public-news-card">
-  <span data-hu-semantic-node="1" data-hu-semantic-owner="PROTECTED_CANONICAL" data-hu-semantic-result="PROTECTED_CANONICAL" data-hu-plp-entity="public_news" data-hu-plp-id="${id}" data-hu-semantic-path="title">Original title ${i}</span>
-  <span data-hu-semantic-node="1" data-hu-semantic-owner="PROTECTED_CANONICAL" data-hu-semantic-result="PROTECTED_CANONICAL" data-hu-plp-entity="public_news" data-hu-plp-id="${id}" data-hu-semantic-path="summary">Original summary ${i}</span>
-  <span data-hu-semantic-node="1" data-hu-semantic-owner="UI_DICTIONARY" data-hu-semantic-result="LOCALIZED_DICTIONARY">Новини</span>
+  <span data-hu-semantic-node="1" data-hu-semantic-owner="PLP_ENTITY" data-hu-semantic-result="PUBLISHED_LOCALIZED" data-hu-plp-entity="public_news" data-hu-plp-id="${id}" data-hu-semantic-path="title">Localized title ${i}</span>
+  <span data-hu-semantic-node="1" data-hu-semantic-owner="PLP_ENTITY" data-hu-semantic-result="PUBLISHED_LOCALIZED" data-hu-plp-entity="public_news" data-hu-plp-id="${id}" data-hu-semantic-path="summary">Localized summary ${i}</span>
 </article>`;
     }).join("\n");
-    const html = `<main>${cards}</main>`;
-    const report = evaluateMediaCarouselSemanticClosure({ html, locale: "uk" });
+    const report = evaluateMediaCarouselSemanticClosure({
+      html: `<main>${cards}</main>`,
+      locale: "uk",
+    });
     assert.equal(report.PUBLIC_NEWS_CARD_COUNT, 12);
+    assert.equal(report.PUBLIC_NEWS_LOCALIZED_CARD_COUNT, 12);
     assert.equal(report.PUBLIC_NEWS_FALLBACK_CARD_COUNT, 0);
     assert.equal(report.PUBLIC_NEWS_OMITTED_CARD_COUNT, 0);
-    assert.equal(report.PUBLIC_NEWS_LOCALIZED_CARD_COUNT, 12);
-    assert.equal(report.CAROUSEL_PLP_FALLBACK_LEAVES, 0);
   });
 });

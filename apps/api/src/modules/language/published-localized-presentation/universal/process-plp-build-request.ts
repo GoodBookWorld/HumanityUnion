@@ -190,6 +190,9 @@ export async function processPlpBuildRequest(
   }
 
   // Closure 05 — Media HU-owned PLP builds require Registry CT eligibility.
+  // public_news locale targets are already Registry-bounded at the carousel
+  // collection enqueue site (resolvePlpAutoBuildLocales); skip process-time
+  // Registry I/O here to avoid coupling residual builds to live Registry.
   const isMediaTypeEarly = (MEDIA_PLP_ENTITY_TYPES as readonly string[]).includes(
     request.entityType,
   );

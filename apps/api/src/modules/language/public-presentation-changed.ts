@@ -36,8 +36,8 @@ export function notifyPublicPresentationChanged(input: {
   if (!isSupportedContentTranslationSourceKind(input.sourceKind)) {
     return;
   }
-  // Final Localization Closure 02 — RSS/public_news is original-language-only.
-  // Never schedule CT warm (no Gemini quota). PLP mutation bridge remains a no-op enqueue.
+  // Reset 01 — public_news CT warm stays off (PLP carousel owns title/summary).
+  // Unchanged fingerprint → no re-warm; PLP CURRENT reuse handles identity.
   if (input.sourceKind !== "public_news") {
     scheduleContentTranslationWarmAfterMutation({
       sourceKind: input.sourceKind,

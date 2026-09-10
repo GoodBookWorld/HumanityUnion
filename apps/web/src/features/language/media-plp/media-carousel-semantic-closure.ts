@@ -33,8 +33,8 @@ export type MediaCarouselPlpEntityType =
  * Required semantic paths per entity type (must appear as owned leaves when
  * that entity is rendered on the page).
  *
- * Final Localization Closure 02 — public_news title/summary are
- * original-language PROTECTED_CANONICAL success paths (not Gemini AUTO).
+ * Reset 01 — public_news title/summary are PLP MACHINE leaves
+ * (PUBLISHED_LOCALIZED or coherent CANONICAL_FALLBACK).
  */
 export const MEDIA_CAROUSEL_REQUIRED_SEMANTIC_PATHS: Readonly<
   Record<MediaCarouselPlpEntityType, readonly string[]>
@@ -265,19 +265,22 @@ export function evaluateMediaCarouselSemanticClosure(input: {
   const unownedCardText = findUnownedTextInMediaCarouselCards(input.html);
 
   const carouselPlpNodes = nodes.filter(
-    (n) => n.owner === "PLP_ENTITY" && isCarouselPlpType(n.entityType),
+    (n) =>
+      n.owner === "PLP_ENTITY" &&
+      isCarouselPlpType(n.entityType) &&
+      n.entityType !== "public_news",
   );
 
-  // public_news original-language leaves use PROTECTED_CANONICAL ownership.
+  // public_news carousel leaves use PLP_ENTITY ownership (Reset 01).
   const publicNewsOwnedNodes = nodes.filter(
     (n) =>
       n.entityType === "public_news" &&
       Boolean(n.entityId) &&
-      (n.owner === "PLP_ENTITY" || n.owner === "PROTECTED_CANONICAL"),
+      n.owner === "PLP_ENTITY",
   );
 
   const fallbackLeaves = carouselPlpNodes.filter(
-    (n) => n.result === "CANONICAL_FALLBACK" && n.entityType !== "public_news",
+    (n) => n.result === "CANONICAL_FALLBACK",
   );
   const missingPathLeaves = carouselPlpNodes.filter(
     (n) => !n.semanticPath || !String(n.semanticPath).trim(),
@@ -310,8 +313,7 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     }
   }
 
-  // Reset 03E.13 / Closure 02 — per-card public_news ownership.
-  // Original-language PROTECTED_CANONICAL (or legacy CANONICAL_FALLBACK) is policy-success.
+  // Reset 01 — per-card public_news PLP ownership (localized or coherent fallback).
   const newsCardStates = new Map<
     string,
     { localized: boolean; fallback: boolean; paths: Set<string> }
@@ -328,13 +330,11 @@ export function evaluateMediaCarouselSemanticClosure(input: {
     if (node.semanticPath) {
       state.paths.add(node.semanticPath);
     }
-    if (
-      node.result === "PROTECTED_CANONICAL" ||
-      node.result === "CANONICAL_FALLBACK" ||
-      node.result === "PUBLISHED_LOCALIZED"
-    ) {
-      // Original-language-only policy: protected/canonical originals are success.
-      // Historical PUBLISHED_LOCALIZED overlays are also treated as present leaves.
+    if (node.result === "PUBLISHED_LOCALIZED") {
+      // keep localized unless another leaf falls back
+    } else if (node.result === "CANONICAL_FALLBACK") {
+      state.localized = false;
+      state.fallback = true;
     } else {
       state.localized = false;
       state.fallback = true;
@@ -362,7 +362,7 @@ export function evaluateMediaCarouselSemanticClosure(input: {
 
   const leaves: MediaCarouselLeafInventoryRow[] = [
     ...carouselPlpNodes,
-    ...publicNewsOwnedNodes.filter((n) => n.owner === "PROTECTED_CANONICAL"),
+    ...publicNewsOwnedNodes,
   ].map((n) => {
     const path = n.semanticPath ?? null;
     const reasonKey =

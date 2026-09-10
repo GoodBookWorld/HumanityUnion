@@ -6,6 +6,7 @@ import type {
 } from "@hu/types";
 import {
   DEFAULT_PLATFORM_LANGUAGE,
+  isCompleteLocalizedProseBag,
   normalizeLanguageRegistryLocaleKey,
 } from "@hu/types";
 
@@ -250,18 +251,16 @@ export function resolveStructuredTranslatedDisplay(input: {
     textResolved.translation.translatedContent !== null
   ) {
     const translated = textResolved.translation.translatedContent;
-    const missingRequiredKeys: string[] = [];
-    for (const [key, originalValue] of Object.entries(input.originalFields)) {
-      if (typeof originalValue !== "string" || originalValue.trim().length === 0) {
-        continue;
-      }
-      const translatedValue = translated[key];
-      if (typeof translatedValue !== "string" || translatedValue.trim().length === 0) {
-        missingRequiredKeys.push(key);
-      }
-    }
+    const complete = isCompleteLocalizedProseBag({
+      originalFields: input.originalFields,
+      localizedFields: Object.fromEntries(
+        Object.entries(translated).filter(
+          (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+      ),
+    });
 
-    if (missingRequiredKeys.length > 0) {
+    if (!complete) {
       // Partial CURRENT must not paint English leftover fields as localized.
       content = input.originalFields;
       presentationMode = "original";

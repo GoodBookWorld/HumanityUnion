@@ -116,8 +116,8 @@ export async function assertPlpAutoBuildLocaleEligible(
 
 /**
  * Fire-and-forget PLP mutation notification.
- * Final Localization Closure 02 — public_news is original-language-only;
- * never enqueue PLP builds for RSS entities (no Registry I/O on this path).
+ * Reset 01 — public_news is not enqueued per-item here (would unbounded-fan-out).
+ * RSS title/summary PLP builds use enqueueConsumerVisibleNewsPlpBuilds after refresh.
  */
 export function notifyPlpPublicSourceMutation(input: {
   readonly sourceKind: string;
@@ -127,6 +127,6 @@ export function notifyPlpPublicSourceMutation(input: {
   recordPlpAutoBuildMutationNotification();
   void input.sourceRecordId;
   void input.canonicalVersion;
-  // public_news and all other kinds: no automatic enqueue here.
-  // Media HU-owned entities use publication hooks + Registry-driven heal/bootstrap.
+  // No automatic per-record enqueue. Media HU-owned entities use publication
+  // hooks; public_news uses the bounded carousel collection trigger only.
 }

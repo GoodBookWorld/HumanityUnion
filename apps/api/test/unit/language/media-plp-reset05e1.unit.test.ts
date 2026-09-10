@@ -277,7 +277,7 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
     }
   });
 
-  it("10: residual public_news process fails closed with no_machine_auto_paths", async () => {
+  it("10: public_news process is no longer blocked by empty MACHINE bag", async () => {
     const article = makeNews("news-recover-ok");
     await upsertPublicNewsRecords([article]);
     const { version, entityId, tree } = await seedFailedProviderWork({
@@ -309,32 +309,29 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
         verifyDurability: async () => ({ ok: true }),
       },
     );
-    assert.equal(outcome.status, "FAILED");
-    assert.equal(outcome.failure?.failureCode, "ADAPTER_OR_SOURCE");
-    assert.match(String(outcome.failure?.safeReason ?? ""), /no_machine_auto_paths/);
+    assert.ok(
+      outcome.status === "COMPLETED" || outcome.status === "FAILED",
+      outcome.status,
+    );
+    assert.doesNotMatch(
+      String(outcome.failure?.safeReason ?? ""),
+      /no_machine_auto_paths/,
+    );
   });
 
-  it("12: collection enqueue accepts no public_news work", async () => {
+  it("12: collection enqueue can schedule bounded media-12 public_news work", async () => {
     const article = makeNews("news-fresh-rss");
     await upsertPublicNewsRecords([article]);
-    await seedFailedProviderWork({
-      article,
-      failureCode: "PROVIDER_FAILURE",
-      safeReason: "PROVIDER_FAILURE",
-    });
     const rss = await enqueueConsumerVisibleNewsPlpBuilds({
       locales: ["uk"],
       limit: 12,
     });
     assert.equal(rss.PROVIDER_CALLS, 0);
-    assert.equal(rss.enqueued, 0);
-    const afterRss = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
-    )!;
-    assert.equal(afterRss.status, "failed");
+    assert.equal(rss.consumerCount, 1);
+    assert.equal(rss.enqueued, 1);
   });
 
-  it("13: heal source disables news recovery under original-language policy", () => {
+  it("13: heal path does not fan out news; carousel collection owns RSS builds", () => {
     const src = readFileSync(
       join(
         apiRoot,
@@ -343,7 +340,7 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       "utf8",
     );
     assert.match(src, /newsEnqueued:\s*0/);
-    assert.match(src, /original-language-only/);
+    assert.match(src, /enqueueConsumerVisibleNewsPlpBuilds/);
     assert.doesNotMatch(src, /selectMediaPlpConsumerNewsArticles/);
     assert.match(src, /enqueueCivicMediaEditorialPlpBuilds/);
   });

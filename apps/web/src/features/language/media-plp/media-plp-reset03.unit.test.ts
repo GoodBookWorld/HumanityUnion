@@ -20,8 +20,10 @@ import {
 const webSrc = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 describe("Reset 03 web Media PLP boundary", () => {
-  it("feature flag defaults OFF", () => {
+  it("feature flag defaults ON (Reset 01 — PLP sole public owner)", () => {
     setMediaPlpWebEnabledForTests(null);
+    assert.equal(isMediaPlpWebEnabled(), true);
+    setMediaPlpWebEnabledForTests(false);
     assert.equal(isMediaPlpWebEnabled(), false);
     setMediaPlpWebEnabledForTests(true);
     assert.equal(isMediaPlpWebEnabled(), true);

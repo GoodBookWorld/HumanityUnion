@@ -89,8 +89,8 @@ export const LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY = {
   mediaCarouselDecision: "REQUIRED_PLP_DISCRETE_ENTITY_TYPES" as const,
   mediaCarouselNote:
     "Public /media carousel HU-owned cards are discrete PLP entity types " +
-    "(principle/trusted/fact_check/propaganda) plus editorial. " +
-    "public_news carousel cards remain PROTECTED original-language. " +
+    "(principle/trusted/fact_check/propaganda/public_news) plus editorial. " +
+    "public_news title+summary are MACHINE_CONTENT via bounded carousel PLP. " +
     "Synthetic planner kind civic_media_carousel is an enqueue bucket, not an entityType.",
 } as const;
 
@@ -120,7 +120,7 @@ export function buildLocalizationIntegrityReport(input: {
         kindId,
         ownership: "PROTECTED_EXCLUDED" as const,
         state: "PROTECTED" as const,
-        detail: "RSS / protected original — never machine-translated",
+        detail: "No protected-excluded kinds under Reset 01 Media correction",
       })),
       ...LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY.noOwner.map((kindId) => ({
         kindId,

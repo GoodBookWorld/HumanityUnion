@@ -1,5 +1,6 @@
 /**
- * Reset 03 — Media PLP consumption flag (default OFF = legacy Media path).
+ * Reset 01 — Media PLP is the sole public presentation owner by default.
+ * Set HU_MEDIA_PLP_ENABLED=false only for explicit legacy rollback.
  */
 
 import {
@@ -7,10 +8,6 @@ import {
   type MediaPlpEntityType,
 } from "@hu/types";
 
-/**
- * Master switch. Default false — production/staging stay on legacy until
- * explicit enablement after cold-cache acceptance.
- */
 let mediaPlpEnabledOverride: boolean | null = null;
 
 export function setMediaPlpConsumptionEnabledForTests(enabled: boolean | null): void {
@@ -21,7 +18,11 @@ export function isMediaPlpConsumptionEnabled(): boolean {
   if (mediaPlpEnabledOverride !== null) {
     return mediaPlpEnabledOverride;
   }
-  return process.env.HU_MEDIA_PLP_ENABLED === "true";
+  const raw = process.env.HU_MEDIA_PLP_ENABLED;
+  if (raw === undefined || raw === "") {
+    return true;
+  }
+  return raw === "true";
 }
 
 export function isMediaPlpEntityConsumptionEnabled(

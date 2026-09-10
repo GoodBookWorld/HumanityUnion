@@ -57,7 +57,7 @@ export type LanguageLocalizationOwnershipClass =
 
 /**
  * CT kinds eligible for historical activation backfill.
- * Explicitly excludes public_news (protected RSS / original-language).
+ * public_news is PLP-owned (not CT) — see LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES.
  */
 export const LANGUAGE_ACTIVATION_CT_OWNED_KINDS = [
   "initiative",
@@ -80,10 +80,11 @@ export const LANGUAGE_ACTIVATION_CT_OWNED_KINDS = [
 export type LanguageActivationCtOwnedKind =
   (typeof LANGUAGE_ACTIVATION_CT_OWNED_KINDS)[number];
 
-/** Explicitly excluded from machine translation / activation backfill. */
-export const LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS = [
-  "public_news",
-] as const satisfies readonly ContentTranslationSourceKind[];
+/**
+ * Explicitly excluded from machine translation / activation backfill.
+ * Empty after Reset 01 Media correction — public_news is PLP-owned MACHINE.
+ */
+export const LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS = [] as const;
 
 /**
  * Content kinds with no CT/PLP ownership under current architecture.
@@ -97,9 +98,8 @@ export type LanguageActivationNoOwnerKindId =
   (typeof LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS)[number];
 
 /**
- * Closure 08 — PLP-owned Media entity types required for public /media presentation.
- * Discrete entity types (not the synthetic planner bucket `civic_media_carousel`).
- * Excludes public_news (protected original-language carousel cards).
+ * Closure 08 / Reset 01 — PLP-owned Media entity types for public /media.
+ * Includes public_news carousel cards (title+summary MACHINE).
  */
 export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_editorial",
@@ -107,6 +107,7 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
+  "public_news",
 ] as const;
 
 export type LanguageActivationPlpOwnedMediaEntityType =

@@ -210,12 +210,14 @@ describe("Localization Authority Closure 03 — Initiative / CA controlled prese
     }
   });
 
-  it("Q. English locale remains canonical and unchanged at PublicTranslatedFields gate", () => {
+  it("Q. Reset 01 — PublicTranslatedFields uses complete bag or coherent original (no CV prose substitute)", () => {
     const publicFields = readFileSync(
       path.join(webRoot, "src/features/language/components/PublicTranslatedFields.tsx"),
       "utf8",
     );
-    assert.match(publicFields, /displayLanguage === DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(publicFields, /isCompleteLocalizedProseBag/);
+    assert.match(publicFields, /data-hu-localization-boundary=["']visible-content["']/);
+    assert.doesNotMatch(publicFields, /presentCollaborativeAnalysisFieldsWithControlledVocabulary/);
   });
 
   it("R. user-authored arbitrary English prose is not globally rewritten", () => {

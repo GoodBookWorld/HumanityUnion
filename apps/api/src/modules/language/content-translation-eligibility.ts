@@ -17,6 +17,7 @@ import type {
   ContentTranslationSourceKind,
   LanguageCode,
 } from "@hu/types";
+import { COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS } from "@hu/types";
 
 import {
   assertSafeForAutomaticTranslation,
@@ -29,18 +30,12 @@ import { TranslationProviderError } from "./translation.config.js";
  * Compatibility field shim per sourceKind (Pack 08J — not the primary gate).
  * New projection keys are accepted when present on the loaded source bag and
  * not NON_TRANSLATABLE, without editing this map.
+ *
+ * Reset 01 — collaborative_analysis uses the browser-visible prose boundary.
  */
 export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
   initiative: ["title", "description"],
-  collaborative_analysis: [
-    "title",
-    "summary",
-    "supportingEvidence",
-    "risks",
-    "openQuestions",
-    "suggestedImprovements",
-    "references",
-  ],
+  collaborative_analysis: [...COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS],
   petition: [
     "title",
     "summary",
@@ -128,7 +123,7 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "initiativeFlowStages",
     "trustedMediaExplanations",
   ],
-  /** Final Localization Closure 02 — RSS original-language-only; no CT AUTO fields. */
+  /** Final Localization Closure 02 / Reset 01 — PLP owns RSS card title/summary; CT allowlist empty. */
   public_news: [] as readonly string[],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
@@ -154,7 +149,7 @@ export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
   public_impact: ["title"],
   civic_archive: ["title"],
   civic_media: ["overviewTitle", "initiativeFlowTitle"],
-  /** Final Localization Closure 02 — no RSS title CT generation. */
+  /** Reset 01 — public_news titles localize via PLP, not CT. */
   public_news: [] as readonly string[],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
@@ -298,11 +293,11 @@ export function assertCanonicalSourceEligibleForTranslation(input: {
     );
   }
 
-  // Final Localization Closure 02 — RSS/public_news never enters CT generation.
+  // Reset 01 — public_news localizes via PLP carousel path, not CT.
   if (source.sourceKind === "public_news") {
     throw new TranslationProviderError(
       "forbidden",
-      "public_news is original-language-only and is not content-translation eligible.",
+      "public_news is PLP-owned (carousel title/summary); not content-translation eligible.",
     );
   }
 

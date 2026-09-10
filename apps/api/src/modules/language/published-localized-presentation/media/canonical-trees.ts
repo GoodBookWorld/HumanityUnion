@@ -24,9 +24,9 @@ export type MediaPlpPublicNewsTree = {
   readonly publishedAt: ReturnType<typeof protectedTechnical>;
   readonly sourceName: ReturnType<typeof protectedIdentity>;
   readonly verificationStatus: ReturnType<typeof protectedTechnical>;
-  /** Original RSS prose — PROTECTED (not Gemini AUTO). */
-  readonly title: ReturnType<typeof protectedIdentity>;
-  readonly summary: ReturnType<typeof protectedIdentity>;
+  /** RSS card prose — MACHINE_CONTENT (persisted PLP localization). */
+  readonly title: string;
+  readonly summary: string;
   /**
    * MediaRegistryCategory key — CONTROLLED_VOCABULARY (not Gemini AUTO).
    * Localized via UI dictionary on the card; must not be plain AUTO string.
@@ -87,9 +87,9 @@ export function buildCanonicalPublicNewsPresentation(
     publishedAt: protectedTechnical(article.publishedAt),
     sourceName: protectedIdentity(article.sourceName),
     verificationStatus: protectedTechnical(article.verificationStatus),
-    // Final Localization Closure 02 — RSS original-language-only (not Gemini AUTO).
-    title: protectedIdentity(article.title),
-    summary: protectedIdentity(article.summary),
+    // Reset 01 — title/summary are MACHINE_CONTENT plain strings for PLP AUTO.
+    title: article.title,
+    summary: article.summary,
     category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
   };

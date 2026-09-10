@@ -1,9 +1,8 @@
 /**
  * Pack 08K.3 — Public news article → PublicPresentationNode adapter.
  *
- * Final Localization Closure 02 — RSS title/summary are PROTECTED (original
- * language only). Category is CONTROLLED_VOCABULARY. Outlet identity / URLs
- * remain protected. No AUTO_TRANSLATABLE prose for Gemini/CT overlays.
+ * Reset 01 — RSS card title/summary are MACHINE_CONTENT (persisted PLP).
+ * Category is CONTROLLED_VOCABULARY. Outlet identity / URLs remain protected.
  */
 
 import type { PublicNewsArticleItem } from "@hu/types";
@@ -30,10 +29,10 @@ export type PublicNewsArticlePresentationTree = {
   readonly publishedAt: PublicProtectedValue;
   readonly sourceName: PublicProtectedValue;
   readonly verificationStatus: PublicProtectedValue;
-  /** Original RSS title — never machine-localized. */
-  readonly title: PublicProtectedValue;
-  /** Original RSS summary — never machine-localized. */
-  readonly summary: PublicProtectedValue;
+  /** RSS card title — MACHINE_CONTENT / PLP AUTO. */
+  readonly title: string;
+  /** RSS card summary — MACHINE_CONTENT / PLP AUTO. */
+  readonly summary: string;
   /** MediaRegistryCategory key — CONTROLLED_VOCABULARY (not AUTO / Gemini). */
   readonly category: PublicProtectedValue;
   readonly geographicScope: PublicProtectedValue;
@@ -56,8 +55,8 @@ export function buildPublicNewsArticlePresentation(
     publishedAt: protectedTechnical(article.publishedAt),
     sourceName: protectedIdentity(article.sourceName),
     verificationStatus: protectedTechnical(article.verificationStatus),
-    title: protectedIdentity(article.title),
-    summary: protectedIdentity(article.summary),
+    title: article.title,
+    summary: article.summary,
     category: controlledTerminologyValue(article.category ?? ""),
     geographicScope: protectedTechnical(article.geographicScope ?? ""),
     ...(article.extensions ? { extensions: article.extensions } : {}),

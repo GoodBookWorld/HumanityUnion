@@ -1,17 +1,27 @@
 /**
- * RESET 04 / 05C / 05C.1 / 05D / 05E.1 — dynamic RSS / consumer-visible News build trigger.
+ * RESET 04 / 05C / Reset 01 — bounded RSS /media carousel News PLP build trigger.
  *
- * Final Localization Closure 02 — public_news is original-language-only.
- * Enqueue entry points remain for call-site compatibility but accept no work
- * and never call the provider.
+ * After RSS ingest, enqueue PLP only for the currently selected /media news
+ * rail (MEDIA_PLP_CAROUSEL_NEWS_LIMIT). Never fan out the full RSS corpus.
+ * Durable enqueue only — does not call Gemini.
  */
 
+import { MEDIA_PLP_ENTITY_TYPE, mediaPlpPublicNewsEntityId } from "@hu/types";
+
+import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "../../media-plp-carousel/constants.js";
+import { selectMediaPlpConsumerNewsArticles } from "../../media-plp-carousel/media-plp-news-selection.js";
+import {
+  fingerprintMediaPlpCanonicalVersion,
+  buildCanonicalPublicNewsPresentation,
+  asMediaPlpPresentationNode,
+} from "../media/canonical-trees.js";
+import { enqueuePlpBuildRequest } from "./build-request-queue.js";
 import { recordPlpAutoBuildCollectionEnqueueAttempt } from "./plp-auto-build-runtime.js";
 import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
 
 /**
- * After RSS ingest / consumer-visible refresh.
- * Original-language-only policy: no PLP auto-build enqueue for public_news.
+ * After RSS ingest / consumer-visible refresh: enqueue missing/stale news
+ * localization for the current /media carousel selection × eligible locales.
  */
 export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly locales: readonly string[];
@@ -23,21 +33,69 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly deduped: number;
   readonly PROVIDER_CALLS: 0;
 }> {
-  void input;
   ensureMediaPlpAdapterRegistered();
   recordPlpAutoBuildCollectionEnqueueAttempt();
+  const articles = await selectMediaPlpConsumerNewsArticles({
+    limit: input.limit ?? MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
+  });
+  let enqueued = 0;
+  let skippedUsable = 0;
+  let deduped = 0;
+  for (const article of articles) {
+    const tree = asMediaPlpPresentationNode(
+      buildCanonicalPublicNewsPresentation({
+        id: article.id,
+        title: article.title,
+        summary: article.summary,
+        category: article.category,
+        sourceName: article.sourceName,
+        articleUrl: article.articleUrl,
+        publishedAt: article.publishedAt,
+        verificationStatus: article.verificationStatus,
+        geographicScope: article.geographicScope,
+        language: article.language,
+        imageUrl: article.imageUrl,
+      }),
+    );
+    const canonicalVersion = fingerprintMediaPlpCanonicalVersion(tree);
+    const entityId = mediaPlpPublicNewsEntityId(article.id);
+
+    for (const locale of input.locales) {
+      if (String(locale).toLowerCase() === "en") {
+        continue;
+      }
+
+      const result = await enqueuePlpBuildRequest({
+        entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+        entityId,
+        locale,
+        canonicalVersion,
+        contentRevision: 1,
+        trigger: "CONSUMER_VISIBLE_COLLECTION_REFRESH",
+        canonicalPresentation: tree,
+      });
+      if (result.skippedUsable) {
+        skippedUsable += 1;
+      } else if (result.deduped) {
+        deduped += 1;
+      } else if (result.accepted) {
+        enqueued += 1;
+      }
+    }
+  }
   return {
-    consumerCount: 0,
-    enqueued: 0,
-    skippedUsable: 0,
-    deduped: 0,
+    consumerCount: articles.length,
+    enqueued,
+    skippedUsable,
+    deduped,
     PROVIDER_CALLS: 0,
   };
 }
 
 /**
- * Single-article dynamic refresh (post-upsert).
- * Original-language-only policy: no PLP auto-build enqueue for public_news.
+ * Single-article path — intentionally a no-op.
+ * Arbitrary RSS publication must not locale-fan-out; only the bounded
+ * carousel collection trigger may enqueue public_news PLP work.
  */
 export async function enqueuePublicNewsArticlePlpBuild(input: {
   readonly articleId: string;

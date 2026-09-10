@@ -572,7 +572,8 @@ describe("Reset 03B Media PLP materializer", () => {
       ),
       "utf8",
     );
-    assert.match(flag, /HU_MEDIA_PLP_ENABLED === "true"/);
+    assert.match(flag, /HU_MEDIA_PLP_ENABLED/);
+    assert.match(flag, /sole public presentation owner by default|return true/i);
     const ledger = readFileSync(
       join(
         apiRoot,

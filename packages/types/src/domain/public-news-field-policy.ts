@@ -4,16 +4,15 @@
  * Single contract for PLP candidate construction, provider eligibility,
  * integrity validation, semantic ownership, and rendered carousel closure.
  *
- * Final Localization Closure 02 — RSS original-language-only:
- * `title` / `summary` are third-party syndication prose. They must remain in
- * the source language, must not enter Gemini AUTO bags, and must not consume
- * PLP machine-localization quota. Historical PLP/CT rows may remain unread.
+ * Reset 01 Media correction — participant-visible RSS card prose:
+ * `title` / `summary` are MACHINE_CONTENT (persisted PLP localization).
+ * Canonical RSS source remains immutable; incomplete CURRENT falls back
+ * to the coherent original card (no hybrid).
  *
- * Classification of `category` (Reset 03E.11.1 / publication fix):
- * CONTROLLED_VOCABULARY — curated MediaRegistryCategory labels assigned at
- * RSS ingest from the media registry (not free-text RSS body, not outlet
- * identity). Localized via UI dictionary / controlled terminology; never
- * machine-translated by Gemini.
+ * Still never machine-translated:
+ * - source/outlet name, URLs, IDs, timestamps, geographicScope
+ * - category (CONTROLLED_VOCABULARY via UI dictionary)
+ * - external article body (not rendered as Media card prose)
  */
 
 import type { MediaRegistryCategory } from "./media-registry.js";
@@ -25,12 +24,11 @@ export type PublicNewsFieldOwnershipClass =
 
 /**
  * Participant-facing public_news semantic fields and their ownership class.
- * MACHINE_CONTENT paths are the only Gemini / CLI.1 identity-checked AUTO nodes.
- * RSS title/summary are PROTECTED_SOURCE_VALUE (original-language-only).
+ * MACHINE_CONTENT paths are Gemini / PLP AUTO nodes for carousel cards.
  */
 export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
-  title: "PROTECTED_SOURCE_VALUE",
-  summary: "PROTECTED_SOURCE_VALUE",
+  title: "MACHINE_CONTENT",
+  summary: "MACHINE_CONTENT",
   category: "CONTROLLED_VOCABULARY",
   sourceName: "PROTECTED_SOURCE_VALUE",
   id: "PROTECTED_SOURCE_VALUE",
@@ -42,10 +40,10 @@ export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
 } as const satisfies Record<string, PublicNewsFieldOwnershipClass>;
 
 /**
- * PLP / Gemini AUTO paths for public_news.
- * Empty under original-language-only RSS policy (title/summary are protected).
+ * PLP / Gemini AUTO paths for public_news carousel cards.
+ * Bounded to title+summary — the only participant-visible RSS prose on /media.
  */
-export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = [] as const;
+export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = ["title", "summary"] as const;
 
 export type PublicNewsMachineContentPath =
   (typeof PUBLIC_NEWS_MACHINE_CONTENT_PATHS)[number];

@@ -1,9 +1,10 @@
 /**
- * RESET 05E / 05E.1 — bounded heal for current Editorial + /media-12 News
- * provider-response failures (including legacy pre-05E shapes).
+ * RESET 05E / 05E.1 — bounded heal for current Editorial provider-response
+ * failures (including legacy pre-05E shapes).
  *
- * Final Localization Closure 02 — public_news is original-language-only.
- * News heal enqueue is disabled (no Gemini). Editorial heal remains active.
+ * Reset 01 — News title/summary builds are owned by
+ * enqueueConsumerVisibleNewsPlpBuilds (MEDIA_PLP_CAROUSEL_NEWS_LIMIT after RSS
+ * refresh), not this heal path. newsEnqueued stays 0 here.
  */
 
 import { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";

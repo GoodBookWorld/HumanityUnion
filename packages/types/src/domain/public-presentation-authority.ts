@@ -331,11 +331,11 @@ export const PERSISTED_TRANSLATION_MECHANISM_RULE =
   "layers must never overwrite Legal, Brand, Manual, Terminology, controlled " +
   "WEB_UI, or Geography.";
 
-/** public_news / RSS originals — intentional non-translation. */
+/** public_news / RSS card prose — Reset 01 PLP MACHINE (title+summary). */
 export const PUBLIC_NEWS_PROTECTED_ORIGINAL_RULE =
-  "public_news title/summary (and equivalent RSS originals) are " +
-  "PROTECTED_CANONICAL. They must not be machine-translated and must not be " +
-  "treated as localization bugs when they remain in the source language.";
+  "public_news title/summary are MACHINE_CONTENT via bounded carousel PLP. " +
+  "sourceName, URLs, IDs, and timestamps remain PROTECTED_CANONICAL. " +
+  "Incomplete CURRENT falls back to the coherent canonical card.";
 
 export const PUBLIC_PRESENTATION_AUTHORITY_INVARIANTS = [
   "Canonical English is fallback, never a competing peer authority.",
@@ -343,6 +343,6 @@ export const PUBLIC_PRESENTATION_AUTHORITY_INVARIANTS = [
   "Controlled lifecycle vocabulary in public prose resolves Terminology → WEB_UI → Registry English — never Gemini orthography.",
   "WEB_UI remains authority for system/chrome/instructional text; do not move UI prose into CT/PLP.",
   "CT/PLP remain persistence for owned translatable content; no new translation store.",
-  "public_news/RSS originals remain PROTECTED_CANONICAL.",
+  "public_news carousel title/summary localize via PLP; identity/URL fields stay protected.",
   "Missing localized data must be distinguishable from intentional protected canonical content.",
 ] as const;

@@ -39,14 +39,15 @@ export type MediaSemanticField = {
 
 /**
  * Complete inventory for shared CivicMediaCenterPageContent (/media).
- * Ownership decisions (03E):
- * - Overview + FAQ bodies → PLP_ENTITY civic_media_editorial
- * - Initiative-flow stage UX → UI_DICTIONARY (pipeline.*)
- * - Fact-check / propaganda bodies → UI_DICTIONARY (civicMediaPublic.*)
- * - Trusted explanation / principle title+description → PLP_ENTITY
+ * Ownership decisions (Reset 01 — visible content boundary):
+ * - Overview + FAQ bodies → PLP civic_media_editorial (sole public owner)
+ * - Initiative-flow stage UX → UI_DICTIONARY (pipeline.* chrome)
+ * - Fact-check / propaganda bodies → PLP civic_media_fact_check / civic_media_propaganda
+ * - Trusted explanation / principle title+description+why → PLP
  * - Outlet names / URLs → PROTECTED_CANONICAL
  * - Country labels with codes → GEOGRAPHY
- * - News cards → PLP_ENTITY (canonical fallback; no generate-on-read on PLP path)
+ * - News card title/summary → PLP public_news (MACHINE; coherent card or canonical)
+ * - Legacy civic_media CT is non-authoritative on the public path when PLP is enabled
  * - Rail/chrome a11y → UI_DICTIONARY
  */
 export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
@@ -68,8 +69,8 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
   // News
   { id: "news.chrome", section: "news", label: "News section chrome", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsSection.tsx" },
   { id: "news.toolbar", section: "news", label: "News toolbar labels", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsToolbar.tsx" },
-  { id: "news.card.title", section: "news", label: "News card title", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "public_news; canonical fallback OK" },
-  { id: "news.card.summary", section: "news", label: "News card summary", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx" },
+  { id: "news.card.title", section: "news", label: "News card title", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "public_news.title MACHINE via carousel PLP" },
+  { id: "news.card.summary", section: "news", label: "News card summary", owner: "PLP_ENTITY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "public_news.summary MACHINE via carousel PLP" },
   { id: "news.card.category", section: "news", label: "News card category", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsCard.tsx", notes: "MediaRegistryCategory controlled vocab via publicNews.categories.*" },
   { id: "news.card.sourceName", section: "news", label: "News source name", owner: "PROTECTED_CANONICAL", component: "features/public-news/components/PublicNewsCard.tsx" },
   { id: "news.card.ctas", section: "news", label: "News card CTAs", owner: "UI_DICTIONARY", component: "features/public-news/components/PublicNewsCard.tsx" },

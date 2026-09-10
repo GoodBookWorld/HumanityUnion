@@ -41,15 +41,17 @@ function readRowString(row: Record<string, unknown>, key: string): string {
 function readOverviewPoints(
   presentation: MediaPlpResolvedPresentation["presentation"],
   canonical: CivicMediaResolvedEditorial["overview"]["points"],
-): CivicMediaResolvedEditorial["overview"]["points"] {
+): CivicMediaResolvedEditorial["overview"]["points"] | null {
   if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) {
-    return canonical;
+    return null;
   }
   const raw = (presentation as Record<string, unknown>).overviewPoints;
   if (!Array.isArray(raw)) {
-    return canonical;
+    return null;
   }
-  return canonical.map((point, index) => {
+  const next: CivicMediaResolvedEditorial["overview"]["points"] = [];
+  for (let index = 0; index < canonical.length; index += 1) {
+    const point = canonical[index]!;
     const hit = raw.find(
       (row) =>
         row &&
@@ -60,30 +62,37 @@ function readOverviewPoints(
     const byIndex = raw[index] as Record<string, unknown> | undefined;
     const row = hit ?? byIndex;
     if (!row) {
-      return point;
+      return null;
     }
     const heading = readRowString(row, "heading");
     const body = readRowString(row, "body");
-    return {
+    // Whole-entity: every canonical point must be fully localized — no hybrid.
+    if (!heading || !body) {
+      return null;
+    }
+    next.push({
       ...point,
-      heading: heading || point.heading,
-      body: body || point.body,
-    };
-  });
+      heading,
+      body,
+    });
+  }
+  return next;
 }
 
 function readFaqItems(
   presentation: MediaPlpResolvedPresentation["presentation"],
   canonical: readonly CivicMediaFaqItem[],
-): CivicMediaFaqItem[] {
+): CivicMediaFaqItem[] | null {
   if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) {
-    return [...canonical];
+    return null;
   }
   const raw = (presentation as Record<string, unknown>).faq;
   if (!Array.isArray(raw)) {
-    return [...canonical];
+    return null;
   }
-  return canonical.map((item, index) => {
+  const next: CivicMediaFaqItem[] = [];
+  for (let index = 0; index < canonical.length; index += 1) {
+    const item = canonical[index]!;
     const hit = raw.find(
       (row) =>
         row &&
@@ -94,16 +103,20 @@ function readFaqItems(
     const byIndex = raw[index] as Record<string, unknown> | undefined;
     const row = hit ?? byIndex;
     if (!row) {
-      return { ...item };
+      return null;
     }
     const question = readRowString(row, "question");
     const answer = readRowString(row, "answer");
-    return {
+    if (!question || !answer) {
+      return null;
+    }
+    next.push({
       ...item,
-      question: question || item.question,
-      answer: answer || item.answer,
-    };
-  });
+      question,
+      answer,
+    });
+  }
+  return next;
 }
 
 function applyPrincipleFromPlp(
@@ -145,7 +158,7 @@ function applyPrincipleFromPlp(
   };
 }
 
-/** Apply fact-check mission/coverage from PLP — same whole-field pattern as trusted explanations. */
+/** Apply fact-check mission/coverage from PLP — whole-entity only (no field hybrid). */
 export function applyMediaPlpFactCheckMaps(input: {
   readonly resources: readonly FactCheckResource[];
   readonly factCheckById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
@@ -164,17 +177,15 @@ export function applyMediaPlpFactCheckMaps(input: {
     }
     const mission = readMediaPlpStringField(resolved.presentation, "mission");
     const coverage = readMediaPlpStringField(resolved.presentation, "coverage");
-    if (mission.trim()) {
+    if (mission.trim() && coverage.trim()) {
       missionsById[resource.id] = mission;
-    }
-    if (coverage.trim()) {
       coverageById[resource.id] = coverage;
     }
   }
   return { missionsById, coverageById };
 }
 
-/** Apply propaganda focus/explanation from PLP — same pattern as trusted explanations. */
+/** Apply propaganda focus/explanation from PLP — whole-entity only (no field hybrid). */
 export function applyMediaPlpPropagandaMaps(input: {
   readonly resources: readonly PropagandaAnalysisResource[];
   readonly propagandaById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
@@ -193,10 +204,8 @@ export function applyMediaPlpPropagandaMaps(input: {
     }
     const focus = readMediaPlpStringField(resolved.presentation, "focus");
     const explanation = readMediaPlpStringField(resolved.presentation, "explanation");
-    if (focus.trim()) {
+    if (focus.trim() && explanation.trim()) {
       focusById[resource.id] = focus;
-    }
-    if (explanation.trim()) {
       explanationsById[resource.id] = explanation;
     }
   }
@@ -239,14 +248,16 @@ export function applyMediaPlpPresentationsToEditorial(input: {
     const presentation = input.editorialPresentation.presentation;
     const overviewTitle = readMediaPlpStringField(presentation, "overviewTitle").trim();
     const overviewSummary = readMediaPlpStringField(presentation, "overviewSummary").trim();
-    // Whole-entity editorial: require title+summary; otherwise keep complete canonical.
-    if (overviewTitle && overviewSummary) {
+    const localizedPoints = readOverviewPoints(presentation, canonical.overview.points);
+    const localizedFaq = readFaqItems(presentation, canonical.faq);
+    // Whole-entity editorial: title+summary+all points+all FAQ or keep complete canonical.
+    if (overviewTitle && overviewSummary && localizedPoints && localizedFaq) {
       overview = {
         title: overviewTitle,
         summary: overviewSummary,
-        points: readOverviewPoints(presentation, canonical.overview.points),
+        points: localizedPoints,
       };
-      faq = readFaqItems(presentation, canonical.faq);
+      faq = localizedFaq;
     }
   }
 

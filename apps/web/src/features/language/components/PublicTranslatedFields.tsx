@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import {
+  COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS,
   DEFAULT_PLATFORM_LANGUAGE,
-  presentCollaborativeAnalysisFieldsWithControlledVocabulary,
+  isCompleteLocalizedProseBag,
 } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../format-language-display-name";
 import { resolvePublicContentDisplayLanguage } from "../resolve-public-content-display-language";
 import { resolveTranslatedContent } from "../translation-api";
 import { usePublicContentReadingContext } from "../use-public-content-reading-context";
-import { buildInitiativeControlledVocabularyLabelLookup } from "../../public-initiative-experience/build-initiative-controlled-vocabulary-label-lookup";
 import { TranslatedContentView } from "./TranslatedContentView";
 
 import "./public-translated-fields.css";
@@ -34,10 +34,13 @@ export interface PublicTranslatedFieldsProps {
 }
 
 /**
- * Loads Pack 02 resolved translation for a published record and renders
- * each text field through TranslatedContentView.
+ * Loads persisted translation for a published record and renders each text
+ * field through TranslatedContentView.
  *
- * Pack 1.1 — cache-only: never POST /generate; missing/stale → canonical fallback.
+ * Reset 01 — visible content is the localization boundary:
+ * - cache-only resolve (never provider-on-read)
+ * - complete localized bag or coherent original — never per-field hybrid merge
+ * - Controlled Vocabulary is not a post-render substitute for ordinary prose
  */
 export function PublicTranslatedFields({
   sourceKind,
@@ -50,28 +53,8 @@ export function PublicTranslatedFields({
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
-  // Pack 08I.14B — Initiative Lifecycle/Discussion civic fields follow UI locale.
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const controlledLabelLookup = useMemo(
-    () =>
-      buildInitiativeControlledVocabularyLabelLookup({
-        tInitiativeExperience: t,
-      }),
-    [t],
-  );
-  const applyControlledVocabulary = (bag: Record<string, string>) => {
-    if (sourceKind !== "collaborative_analysis") {
-      return bag;
-    }
-    if (displayLanguage === DEFAULT_PLATFORM_LANGUAGE) {
-      return bag;
-    }
-    return presentCollaborativeAnalysisFieldsWithControlledVocabulary({
-      fields: bag,
-      labelLookup: controlledLabelLookup,
-    });
-  };
-  const [fields, setFields] = useState(() => applyControlledVocabulary(fallbackFields));
+  const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
   const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
   const [originalLanguage, setOriginalLanguage] =
@@ -81,13 +64,20 @@ export function PublicTranslatedFields({
   const [isMachineTranslated, setIsMachineTranslated] = useState(false);
   const [isStale, setIsStale] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState<LanguageCode | null>(null);
+  const [presentationMode, setPresentationMode] = useState<"original" | "localized">(
+    "original",
+  );
 
   const fallbackSignature = JSON.stringify(fallbackFields);
 
   useEffect(() => {
     const fallback = JSON.parse(fallbackSignature) as Record<string, string>;
-    setFields(applyControlledVocabulary(fallback));
+    setFields(fallback);
     setOriginalFields(fallback);
+    setPresentationMode("original");
+    setActiveLanguage(DEFAULT_PLATFORM_LANGUAGE);
+    setIsMachineTranslated(false);
+    setCanViewOriginal(false);
 
     if (!readingContext.ready) {
       return;
@@ -107,22 +97,51 @@ export function PublicTranslatedFields({
         if (cancelled) {
           return;
         }
-        if (resolved.activeLanguage !== displayLanguage) {
+
+        const original = resolved.originalContent;
+        const localized = resolved.content;
+        const requiredFields =
+          sourceKind === "collaborative_analysis"
+            ? COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS
+            : fieldOrder;
+
+        const complete =
+          resolved.presentationMode !== "original" &&
+          resolved.activeLanguage === displayLanguage &&
+          isCompleteLocalizedProseBag({
+            originalFields: original,
+            localizedFields: localized,
+            requiredFields,
+          });
+
+        if (!complete) {
+          setFields(original);
+          setOriginalFields(original);
+          setActiveLanguage(resolved.originalLanguage);
+          setOriginalLanguage(resolved.originalLanguage);
+          setCanViewOriginal(false);
+          setCanViewTranslation(false);
+          setIsMachineTranslated(false);
+          setIsStale(resolved.isStale);
+          setPresentationMode("original");
           return;
         }
 
-        setFields(applyControlledVocabulary(resolved.content));
-        setOriginalFields(resolved.originalContent);
+        setFields(localized);
+        setOriginalFields(original);
         setActiveLanguage(resolved.activeLanguage);
         setOriginalLanguage(resolved.originalLanguage);
         setCanViewOriginal(resolved.canViewOriginal);
         setCanViewTranslation(resolved.canViewTranslation);
         setIsMachineTranslated(resolved.isMachineTranslated);
         setIsStale(resolved.isStale);
+        setPresentationMode("localized");
       } catch {
         if (!cancelled) {
-          setFields(applyControlledVocabulary(fallback));
+          setFields(fallback);
           setOriginalFields(fallback);
+          setPresentationMode("original");
+          setIsMachineTranslated(false);
         }
       }
     })();
@@ -136,15 +155,19 @@ export function PublicTranslatedFields({
     fallbackSignature,
     readingContext.ready,
     displayLanguage,
-    controlledLabelLookup,
+    fieldOrder,
   ]);
+
+  const displayBag = presentationMode === "localized" ? fields : originalFields;
 
   return (
     <div
       className={["hu-public-translated-fields", className].filter(Boolean).join(" ")}
+      data-hu-localization-boundary="visible-content"
+      data-hu-presentation-mode={presentationMode}
     >
       {fieldOrder.map((fieldKey) => {
-        const value = fields[fieldKey]?.trim();
+        const value = displayBag[fieldKey]?.trim() ?? "";
         const original = originalFields[fieldKey] ?? "";
         if (!value && !original) {
           return null;
@@ -153,12 +176,12 @@ export function PublicTranslatedFields({
           <div key={fieldKey} className="hu-public-translated-field">
             <h4>{fieldLabels[fieldKey] ?? fieldKey}</h4>
             <TranslatedContentView
-              content={value || original}
+              content={value.length > 0 ? value : original}
               originalContent={original}
               activeLanguage={activeLanguage}
               originalLanguage={originalLanguage}
-              canViewOriginal={canViewOriginal || canViewTranslation}
-              isMachineTranslated={isMachineTranslated}
+              canViewOriginal={presentationMode === "localized" && (canViewOriginal || canViewTranslation)}
+              isMachineTranslated={presentationMode === "localized" && isMachineTranslated}
               isStale={isStale}
             />
           </div>

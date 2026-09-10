@@ -8,6 +8,7 @@ import type { PublicInitiativeCollaborativeAnalysisProjection } from "@hu/types"
 import { PublicTranslatedFields } from "../../language";
 import { getPublicInitiativeAnalysis } from "../api";
 import { InitiativeAnalysisReactionWidget } from "./InitiativeAnalysisReactionWidget";
+import { COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS } from "@hu/types";
 
 import "./initiative-collaborative-analysis-workspace.css";
 
@@ -25,13 +26,9 @@ interface InitiativeCollaborativeAnalysisPublicResultProps {
 
 /**
  * Initiative Lifecycle — Part B, Section 8/9 (Public Result / Reaction
- * Model). Pack 02: published body fields resolve through provider-backed
- * translation when available.
- *
- * Pack 02G 08D.4 — field-label / loading / preview-reaction chrome via
- * author.analysis.*; civic body values remain canonical / translated
- * content (never UI dictionaries). Interactive ReactionWidget left for
- * public-path localization.
+ * Model). Reset 01 — visible CA prose is the localization boundary via
+ * persisted CT (complete bag or coherent original). WEB_UI owns field
+ * labels / loading chrome only.
  */
 export function InitiativeCollaborativeAnalysisPublicResult({
   analysisId,
@@ -78,15 +75,7 @@ export function InitiativeCollaborativeAnalysisPublicResult({
       <PublicTranslatedFields
         sourceKind="collaborative_analysis"
         sourceRecordId={analysisId}
-        fieldOrder={[
-          "title",
-          "summary",
-          "supportingEvidence",
-          "risks",
-          "openQuestions",
-          "suggestedImprovements",
-          "references",
-        ]}
+        fieldOrder={[...COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS]}
         fieldLabels={{
           title: t("author.analysis.fields.title"),
           summary: t("author.analysis.fields.summary"),

@@ -6,6 +6,7 @@
  */
 
 import type { PlpPublicationTriggerKind } from "@hu/types";
+import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
 import { enqueuePlpBuildRequest } from "../universal/build-request-queue.js";
 import { ensureMediaPlpAdapterRegistered } from "../universal/register-defaults.js";
@@ -57,14 +58,15 @@ export function resetMediaLocalizationBuildHookStatusForTests(): void {
  * Enqueue localization build requests for non-English Registry locales.
  * Does not call Gemini / materializer. Kick is durable-write-only.
  *
- * Final Localization Closure 02 — public_news is original-language-only;
- * never enqueue PLP builds for RSS entities.
+ * Reset 01 — public_news is NEVER enqueued here. Per-item RSS publication
+ * must not locale-fan-out the archive. Carousel title/summary PLP builds go
+ * through enqueueConsumerVisibleNewsPlpBuilds (MEDIA_PLP_CAROUSEL_NEWS_LIMIT).
  */
 export function notifyMediaCanonicalPublishedForLocalizationBuild(
   input: MediaCanonicalLocalizationBuildHookInput,
 ): number {
   ensureMediaPlpAdapterRegistered();
-  if (input.entityType === "public_news") {
+  if (input.entityType === MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS) {
     return 0;
   }
   const locales = input.locales ?? [];

@@ -156,7 +156,8 @@ describe("Reset 03 Media PLP vertical slice", () => {
     void partial;
   });
 
-  it("E/F: feature flag default OFF; PLP read disabled until enabled", async () => {
+  it("E/F: feature flag OFF disables PLP read; ON enables (Reset 01 default ON)", async () => {
+    setMediaPlpConsumptionEnabledForTests(false);
     assert.equal(isMediaPlpConsumptionEnabled(), false);
     const tree = asMediaPlpPresentationNode(
       buildCanonicalTrustedPresentation(trustedResource),
@@ -181,6 +182,7 @@ describe("Reset 03 Media PLP vertical slice", () => {
     assert.equal(disabled.mode, "CANONICAL_FALLBACK");
 
     setMediaPlpConsumptionEnabledForTests(true);
+    assert.equal(isMediaPlpConsumptionEnabled(), true);
     const enabled = await resolveMediaPlpPresentation({
       entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
       entityId: mediaPlpTrustedEntityId(trustedResource.id),
@@ -318,7 +320,7 @@ describe("Reset 03 Media PLP vertical slice", () => {
     });
     assert.equal(principlePub.ok, true);
 
-    // title translated but description missing → NOT_READY
+    // Reset 01 — title without summary is incomplete MACHINE bag → NOT_READY.
     const partialNews = buildMediaPlpCandidate({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId: mediaPlpPublicNewsEntityId(newsArticle.id),

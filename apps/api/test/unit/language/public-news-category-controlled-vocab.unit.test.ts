@@ -1,6 +1,6 @@
 /**
  * public_news.category ownership — CONTROLLED_VOCABULARY (not Gemini AUTO).
- * Final Localization Closure 02 — title/summary are original-language protected.
+ * Reset 01 — title/summary are MACHINE_CONTENT AUTO paths via PLP.
  */
 
 import assert from "node:assert/strict";
@@ -45,30 +45,33 @@ function sampleArticle(
 describe("public_news category CONTROLLED_VOCABULARY policy", () => {
   it("classifies staging category shape as MediaRegistryCategory controlled vocab", () => {
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.category, "CONTROLLED_VOCABULARY");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "PROTECTED_SOURCE_VALUE");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "PROTECTED_SOURCE_VALUE");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
     assert.ok(isMediaRegistryCategory(stagingCategoryShape));
-    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], []);
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
     assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.public_news], []);
   });
 
-  it("canonical tree wraps category + title/summary; AUTO bag empty", () => {
+  it("canonical tree: category controlled; title/summary plain MACHINE AUTO strings", () => {
     const tree = buildCanonicalPublicNewsPresentation(sampleArticle());
     assert.ok(isPublicProtectedValue(tree.category));
     assert.equal(tree.category.category, "controlled_terminology");
     assert.equal(tree.category.value, stagingCategoryShape);
-    assert.ok(isPublicProtectedValue(tree.title));
-    assert.ok(isPublicProtectedValue(tree.summary));
+    assert.equal(typeof tree.title, "string");
+    assert.equal(typeof tree.summary, "string");
+    assert.equal(isPublicProtectedValue(tree.title), false);
+    assert.equal(isPublicProtectedValue(tree.summary), false);
     const auto = collectAutoPaths(asMediaPlpPresentationNode(tree));
-    assert.deepEqual(auto, []);
+    const paths = auto.map((n) => n.path).sort();
+    assert.deepEqual(paths, ["summary", "title"]);
   });
 
-  it("category-identical alone is not a provider AUTO path under the new contract", () => {
+  it("category is not a provider AUTO path; title/summary are", () => {
     const tree = buildCanonicalPublicNewsPresentation(sampleArticle());
     const auto = collectAutoPaths(asMediaPlpPresentationNode(tree));
     const autoValues = Object.fromEntries(auto.map((n) => [n.path, n.value]));
     assert.equal(autoValues.category, undefined);
-    assert.equal(autoValues.title, undefined);
-    assert.equal(autoValues.summary, undefined);
+    assert.equal(autoValues.title, sampleArticle().title);
+    assert.equal(autoValues.summary, sampleArticle().summary);
   });
 });

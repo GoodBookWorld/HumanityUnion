@@ -473,9 +473,8 @@ export async function loadCivicMediaTranslationSource(
 /**
  * Pack 08K.3.1 — public_news active article → content-translation source.
  *
- * Final Localization Closure 02 — RSS is original-language-only. Loader returns
- * null so warm/generate-on-miss never obtains a CT source bag for public_news.
- * Historical content_translations rows remain untouched in storage.
+ * Reset 01 — public_news is PLP-owned. CT loader returns null so warm never
+ * obtains a CT source bag. Carousel PLP materializer owns title/summary.
  */
 export async function loadPublicNewsTranslationSource(
   sourceRecordId: string,
@@ -484,7 +483,7 @@ export async function loadPublicNewsTranslationSource(
   return null;
 }
 
-/** Warm/recovery discovery: disabled for public_news under original-language-only policy. */
+/** Warm/recovery discovery: CT disabled — PLP carousel materializer owns news. */
 export async function discoverPublicNewsTranslationRecordIds(input?: {
   readonly limit?: number;
 }): Promise<readonly string[]> {

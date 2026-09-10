@@ -194,9 +194,8 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       }
     }
 
-    // After per-record enqueue: cover consumer-visible union (limit 24).
-    // Await durable upserts only — never await provider builds.
-    // Closure 02 — public_news PLP enqueue is a no-op; locales still Registry-driven.
+    // After ingest: bounded /media carousel PLP only (MEDIA_PLP_CAROUSEL_NEWS_LIMIT).
+    // Await durable upserts only — never await provider builds. No per-item fan-out.
     const autoBuildLocales = await resolvePlpAutoBuildLocales();
     if (autoBuildLocales.length > 0) {
       await enqueueConsumerVisibleNewsPlpBuilds({ locales: autoBuildLocales });

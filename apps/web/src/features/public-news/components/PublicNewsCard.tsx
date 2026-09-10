@@ -87,6 +87,13 @@ export function PublicNewsCard({
     () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),
     [view.summary, view.title],
   );
+  const proseOwner: MediaSemanticOwner = "PLP_ENTITY";
+  const proseResult: MediaSemanticResult =
+    view.plpResult === "PUBLISHED_LOCALIZED" ? "PUBLISHED_LOCALIZED" : "CANONICAL_FALLBACK";
+  const proseFallbackReason =
+    view.plpResult === "CANONICAL_FALLBACK"
+      ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
+      : undefined;
 
   const categoryKey = view.category.trim();
   let categoryLabel = categoryKey;
@@ -163,19 +170,21 @@ export function PublicNewsCard({
           as="h3"
           id={`public-news-title-${view.id}`}
           className="public-news-card__headline"
-          owner="PROTECTED_CANONICAL"
-          result="PROTECTED_CANONICAL"
+          owner={proseOwner}
+          result={proseResult}
           entityType="public_news"
           entityId={view.id}
           semanticPath="title"
+          fallbackReason={proseFallbackReason}
         >
           {view.title}
         </MediaSemanticNode>
 
         <PublicNewsAiSummary
           bullets={aiSummaryBullets}
-          entityResult="PROTECTED_CANONICAL"
+          entityResult={proseResult}
           entityId={view.id}
+          fallbackReason={proseFallbackReason}
         />
 
         <div className="public-news-card__actions">

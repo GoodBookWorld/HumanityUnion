@@ -2,8 +2,9 @@
  * Pack 08K.3.1 — public_news → PublicLocalizedPresentation via resolveLocalizedPresentation.
  * Interface display language owns resolve; readingContext supplies ready + preference only.
  *
- * Final Localization Closure 02 — RSS title/summary stay original-language-only.
- * Never enable CT generate-on-miss; never apply machine translation overlays.
+ * Reset 01 — title/summary are PLP MACHINE fields. This helper builds the
+ * canonical presentation tree only (no provider-on-read). Callers apply
+ * persisted PLP overlays via useLocalizedPublicNewsCard.
  */
 
 import type {
@@ -26,8 +27,8 @@ export interface PublicNewsPresentationDeps {
 }
 
 /**
- * Resolve presentation for a public news article.
- * Canonical article fields are never mutated; title/summary always original.
+ * Resolve canonical presentation for a public news article.
+ * Canonical article fields are never mutated.
  */
 export async function resolvePublicNewsLocalizedPresentation(
   input: {

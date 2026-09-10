@@ -27,10 +27,11 @@ export function isMediaPlpWebForceLegacy(): boolean {
 
 /**
  * Master switch for /media and Country Recommended Media PLP consumption.
- * Default false — one env flip enables; unset restores legacy without deploy rollback.
  *
- * Reset 03E.6: same env name as API, read at request time (not NEXT_PUBLIC / build bake).
- * Independent Web FORCE_LEGACY preserves rollback when API stays enabled.
+ * Reset 01 — PLP is the sole public Media presentation owner by default.
+ * Legacy CT is non-authoritative on the public path. Set
+ * HU_MEDIA_PLP_ENABLED=false or HU_MEDIA_PLP_WEB_FORCE_LEGACY=true only for
+ * explicit rollback.
  */
 export function isMediaPlpWebEnabled(): boolean {
   if (mediaPlpEnabledOverride !== null) {
@@ -39,7 +40,12 @@ export function isMediaPlpWebEnabled(): boolean {
   if (isMediaPlpWebForceLegacy()) {
     return false;
   }
-  return readProcessEnv("HU_MEDIA_PLP_ENABLED") === "true";
+  const raw = readProcessEnv("HU_MEDIA_PLP_ENABLED");
+  // Default ON — PLP is the public Media localization boundary.
+  if (raw === undefined || raw === "") {
+    return true;
+  }
+  return raw === "true";
 }
 
 export function readMediaPlpWebFlagSourceForTests(): {

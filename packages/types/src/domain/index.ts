@@ -415,6 +415,12 @@ export {
   listInitiativeLifecycleInventoryStages,
   evaluateInitiativeLifecycleSemanticClosure,
 } from "./initiative-lifecycle-plp-inventory.js";
+export {
+  COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS,
+  isCompleteCollaborativeAnalysisLocalizedBag,
+  isCompleteLocalizedProseBag,
+} from "./collaborative-analysis-localization-boundary.js";
+export type { CollaborativeAnalysisBrowserVisibleProseField } from "./collaborative-analysis-localization-boundary.js";
 export type {
   InitiativeLifecyclePlpInventoryRow,
   InitiativeLifecyclePlpMigrationStatus,

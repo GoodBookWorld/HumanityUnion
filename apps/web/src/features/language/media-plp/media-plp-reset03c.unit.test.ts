@@ -53,8 +53,10 @@ afterEach(() => {
 });
 
 describe("Reset 03C web Media PLP consumer", () => {
-  it("N: flag defaults OFF; OFF skips PLP loader", async () => {
+  it("N: flag OFF skips PLP loader; default ON", async () => {
     setMediaPlpWebEnabledForTests(null);
+    assert.equal(isMediaPlpWebEnabled(), true);
+    setMediaPlpWebEnabledForTests(false);
     assert.equal(isMediaPlpWebEnabled(), false);
     const off = await loadMediaPlpTrustedPresentations({
       resources: [reuters],

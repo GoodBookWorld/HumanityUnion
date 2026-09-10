@@ -538,8 +538,8 @@ describe("Reset 03A Media PLP safety preflight", () => {
       ),
       "utf8",
     );
-    assert.match(flag, /HU_MEDIA_PLP_ENABLED === "true"/);
-    assert.match(flag, /Default false|default OFF/i);
+    assert.match(flag, /HU_MEDIA_PLP_ENABLED/);
+    assert.match(flag, /sole public presentation owner by default|return true/i);
 
     const ledger = readFileSync(
       join(
