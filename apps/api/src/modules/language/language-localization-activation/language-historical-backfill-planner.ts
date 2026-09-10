@@ -6,6 +6,7 @@
 import {
   LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
+  LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
   emptyLanguageLocalizationCountBucket,
   type LanguageCode,
@@ -176,16 +177,14 @@ export async function planLanguageHistoricalBackfill(input: {
     action: plpAction,
   });
 
-  // Closure 08 — public /media carousel HU-owned discrete entity types are required.
-  // public_news remains protected and is never planned as PLP machine work.
+  // Closure 08 / Reset 01 — public /media carousel discrete PLP entity types
+  // (including public_news title+summary MACHINE) are required backfill scope.
   const carousel = await assessCarousel({ locale, pageSize: 50 });
   let plpCarouselWork = 0;
-  for (const entityType of [
-    "civic_media_principle",
-    "civic_media_trusted",
-    "civic_media_fact_check",
-    "civic_media_propaganda",
-  ] as const) {
+  const carouselEntityTypes = LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES.filter(
+    (entityType) => entityType !== "civic_media_editorial",
+  );
+  for (const entityType of carouselEntityTypes) {
     const measured = carousel.byKind.find((row) => row.kindId === entityType);
     const counts = measured?.counts ?? emptyLanguageLocalizationCountBucket();
     const action =

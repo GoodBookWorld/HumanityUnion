@@ -242,10 +242,27 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     if (input?.deps?.listPublicInitiativeImprovementProposals) {
       return input.deps.listPublicInitiativeImprovementProposals;
     }
-    const mod = await import(
-      "../initiative-improvement-proposal/public-initiative-improvement-proposal.projection.js"
+    // Implementation 01 — discover Part D published structured proposals.
+    const { listPublishedCollectionsByInitiative } = await import(
+      "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
     );
-    return mod.listPublicInitiativeImprovementProposals;
+    return async (initiativeId: string) => {
+      const collections = await listPublishedCollectionsByInitiative(initiativeId);
+      const proposals: { proposalId: string }[] = [];
+      for (const collection of collections) {
+        for (const proposal of collection.proposals) {
+          if (
+            proposal.status === "published" ||
+            proposal.status === "included_in_revision" ||
+            proposal.status === "keep_for_later" ||
+            proposal.status === "not_applicable"
+          ) {
+            proposals.push({ proposalId: proposal.proposalId });
+          }
+        }
+      }
+      return proposals;
+    };
   };
   const resolveListRevisionsByInitiative = async () => {
     if (input?.deps?.listRevisionsByInitiative) {

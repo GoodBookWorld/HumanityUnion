@@ -30,10 +30,11 @@ interface PublicNewsCardProps {
   article: PublicNewsArticleItem;
   /** Reset 03E — Media PLP path: never generate-on-read. */
   disableOnDemandTranslation?: boolean;
-  /** Reset 03E.5 — resolved Media PLP presentation for this article. */
+  /** Reset 03E.5 — resolved Media PLP presentation for this article (must include locale). */
   plpPresentation?: {
     readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
     readonly presentation: unknown;
+    readonly locale?: string;
     readonly reasonCode?: string;
   };
 }

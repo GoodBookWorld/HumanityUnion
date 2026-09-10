@@ -1947,6 +1947,7 @@
           "relatedDiscussionReferences": "Пов’язані посилання з обговорення",
           "author": "Автор",
           "originalAuthors": "Автор(и) оригіналу",
+          "category": "Категорія",
           "expectedImprovementPlaceholder": "Опишіть конкретне покращення, яке має принести ця зміна."
         },
         "curation": {

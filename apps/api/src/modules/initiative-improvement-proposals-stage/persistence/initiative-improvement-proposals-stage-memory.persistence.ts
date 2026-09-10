@@ -14,6 +14,33 @@ export class MemoryInitiativeImprovementProposalsStagePersistenceAdapter
     return Promise.resolve(collection ? structuredClone(collection) : null);
   }
 
+  findPublishedProposalById(
+    proposalId: string,
+  ): Promise<{
+    readonly collection: InitiativeImprovementProposalsCollection;
+    readonly proposal: InitiativeImprovementProposalsCollection["proposals"][number];
+  } | null> {
+    for (const collection of this.collections.values()) {
+      if (collection.status !== "published") {
+        continue;
+      }
+      const proposal = collection.proposals.find((row) => row.proposalId === proposalId);
+      if (
+        proposal &&
+        (proposal.status === "published" ||
+          proposal.status === "included_in_revision" ||
+          proposal.status === "keep_for_later" ||
+          proposal.status === "not_applicable")
+      ) {
+        return Promise.resolve({
+          collection: structuredClone(collection),
+          proposal: structuredClone(proposal),
+        });
+      }
+    }
+    return Promise.resolve(null);
+  }
+
   listByInitiativeAndAuthor(
     initiativeId: string,
     authorId: string,

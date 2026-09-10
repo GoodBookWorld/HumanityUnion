@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   useCallback,
@@ -28,8 +28,11 @@ import { recordLocaleSwitchStarted } from "../media-plp/media-plp-locale-switch-
 import {
   markMediaLocaleSwitchPerfPhase,
 } from "../media-plp/media-plp-locale-switch-perf";
+import { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
 
 import "./language-selector.css";
+
+export { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
 
 /** Visible language rows before the list scrolls (does not cap total languages). */
 const LANGUAGE_SELECTOR_VISIBLE_ROWS = 10;
@@ -55,6 +58,7 @@ export function LanguageSelector({
   label,
 }: LanguageSelectorProps) {
   const router = useRouter();
+  const pathname = usePathname() || "/";
   const tCommon = useTranslations("common");
   const resolvedLabel = label ?? tCommon("language");
   const loadingLabel = tCommon("loading");
@@ -204,11 +208,19 @@ export function LanguageSelector({
       // Reset 03C.2 — locale switch ownership starts here; Media PLP completes after refresh.
       recordLocaleSwitchStarted(written.locale);
       markMediaLocaleSwitchPerfPhase("T2_NAVIGATION_START");
+      const href = resolveLocaleSwitchNavigationHref({
+        pathname,
+        nextLocale: written.locale,
+      });
       startTransition(() => {
-        router.refresh();
+        if (href && href !== pathname) {
+          router.replace(href);
+        } else {
+          router.refresh();
+        }
       });
     },
-    [authStatus, router],
+    [authStatus, pathname, router],
   );
 
   const currentLocale = options.some((row) => row.locale === value)

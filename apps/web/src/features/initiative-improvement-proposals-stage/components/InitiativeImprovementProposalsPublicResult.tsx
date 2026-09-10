@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
-  DEFAULT_PLATFORM_LANGUAGE,
-  presentImprovementProposalFieldsWithControlledVocabulary,
+  IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS,
+  buildImprovementProposalCtFields,
   type PublicInitiativeImprovementProposalsCollectionProjection,
 } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
+import { PublicTranslatedFields } from "../../language";
 import {
   resolveProposalCurationDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
-import { buildInitiativeControlledVocabularyLabelLookup } from "../../public-initiative-experience/build-initiative-controlled-vocabulary-label-lookup";
 import { getPublicImprovementProposalsCollection } from "../api";
-import { InitiativeImprovementProposalsContentFields } from "./InitiativeImprovementProposalsContentFields";
 import { InitiativeProposalReactionWidget } from "./InitiativeProposalReactionWidget";
 
 import "./initiative-improvement-proposals-stage-workspace.css";
@@ -34,34 +32,18 @@ interface InitiativeImprovementProposalsPublicResultProps {
 }
 
 /**
- * Initiative Lifecycle — Part D, Section 8/9 (Public Result / Community
- * Reactions). Renders inside the shared shell's
- * `InitiativeLifecyclePublicResultPanel` boundary as its
- * `publicResultSlot` — that boundary already renders the stage title,
- * Publication Date, and Version generically; this adds the list of
- * published structured proposals, each with its own body, Author(s), and
- * Support / Do Not Support reaction, all fetched in a single request.
+ * Initiative Lifecycle — Part D Public Result.
  *
- * Closure 04 — Part D `initiative-structured-proposal-*` identities are
- * MANUAL_AUTHOR / HU-owned canonical content. They are NOT Cap02
- * `improvement_proposal` CT records. Field headings use WEB_UI
- * `author.proposal.fields.*` (same authority as Draft Preview). Controlled
- * vocabulary is applied cache-only at presentation.
+ * Implementation 01 — browser-visible proposal prose is PERSISTED_LOCALIZED_CONTENT
+ * via Content Translation (sourceKind improvement_proposal, Part D field bag).
+ * Complete CT bag or coherent canonical — never field hybrid.
+ * Labels/status remain WEB_UI. Identities remain protected.
  */
 export function InitiativeImprovementProposalsPublicResult({
   collectionId,
   isPreview = false,
 }: InitiativeImprovementProposalsPublicResultProps) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const labelLookup = useMemo(
-    () =>
-      buildInitiativeControlledVocabularyLabelLookup({
-        tInitiativeExperience: t,
-      }),
-    [t],
-  );
   const [projection, setProjection] = useState<PublicInitiativeImprovementProposalsCollectionProjection | null>(
     null,
   );
@@ -105,7 +87,7 @@ export function InitiativeImprovementProposalsPublicResult({
     <div
       className="iip-public-result"
       data-hu-localization-domain="initiative"
-      data-hu-presentation-authority="mixed_manual_author_and_web_ui"
+      data-hu-presentation-authority="persisted_localized_content"
       data-hu-structured-proposal="true"
     >
       <div className="iip-public-result__field">
@@ -114,39 +96,45 @@ export function InitiativeImprovementProposalsPublicResult({
       </div>
 
       {projection.proposals.map((proposal) => {
-        const titlePresented =
-          displayLanguage === DEFAULT_PLATFORM_LANGUAGE
-            ? proposal.title
-            : presentImprovementProposalFieldsWithControlledVocabulary({
-                fields: { title: proposal.title },
-                labelLookup,
-              }).title;
-
+        const fallbackFields = buildImprovementProposalCtFields(proposal);
         return (
           <article
             key={proposal.proposalId}
             className="iip-public-result__proposal"
             data-proposal-id={proposal.proposalId}
-            data-hu-content-class="mixed_manual_author_and_web_ui"
+            data-hu-content-class="persisted_localized_content"
           >
             <div className="iip-proposal-card__header">
-              <h3>{titlePresented || t("author.proposal.untitledProposal")}</h3>
               <WorkspaceStatusBadge
                 status={proposal.status}
                 label={resolveProposalCurationDisplayLabel(proposal.status, t)}
               />
             </div>
 
-            <InitiativeImprovementProposalsContentFields
-              summary={proposal.summary}
-              description={proposal.description}
-              reason={proposal.reason}
-              expectedImprovement={proposal.expectedImprovement}
-              supportingSources={proposal.supportingSources}
-              relatedDiscussionReferences={proposal.relatedDiscussionReferences}
-              originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
-              huSystemGeneration={proposal.huSystemGeneration}
+            <PublicTranslatedFields
+              sourceKind="improvement_proposal"
+              sourceRecordId={proposal.proposalId}
+              fieldOrder={[...IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS]}
+              fieldLabels={{
+                title: t("author.proposal.fields.title"),
+                summary: t("author.proposal.fields.summary"),
+                description: t("author.proposal.fields.description"),
+                reason: t("author.proposal.fields.reason"),
+                expectedImprovement: t("author.proposal.fields.expectedImprovement"),
+                supportingSources: t("author.proposal.fields.supportingSources"),
+                relatedDiscussionReferences: t(
+                  "author.proposal.fields.relatedDiscussionReferences",
+                ),
+              }}
+              fallbackFields={fallbackFields}
             />
+
+            {proposal.originalAuthorDisplayNames.length > 0 ? (
+              <div className="iip-content-fields__field" data-hu-field-ownership="protected">
+                <h4>{t("author.proposal.fields.originalAuthors")}</h4>
+                <p>{proposal.originalAuthorDisplayNames.join(", ")}</p>
+              </div>
+            ) : null}
 
             {isPreview ? (
               <section

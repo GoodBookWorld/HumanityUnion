@@ -16,6 +16,15 @@ export function getCollectionById(
   return resolveInitiativeImprovementProposalsStagePersistenceAdapter().findById(collectionId);
 }
 
+export function findPublishedStructuredProposalById(proposalId: string): Promise<{
+  readonly collection: InitiativeImprovementProposalsCollection;
+  readonly proposal: InitiativeStructuredProposal;
+} | null> {
+  return resolveInitiativeImprovementProposalsStagePersistenceAdapter().findPublishedProposalById(
+    proposalId,
+  );
+}
+
 export function listCollectionsByInitiativeAndAuthor(
   initiativeId: string,
   authorId: string,

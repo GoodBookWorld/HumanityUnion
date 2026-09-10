@@ -1947,6 +1947,7 @@
           "relatedDiscussionReferences": "相關討論參考",
           "author": "作者",
           "originalAuthors": "原始作者",
+          "category": "類別",
           "expectedImprovementPlaceholder": "說明此變更預期帶來的具體改善。"
         },
         "curation": {

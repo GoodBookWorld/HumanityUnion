@@ -25,6 +25,7 @@ import {
 import { buildInitiativeProposalIntelligenceSnapshot } from "./initiative-proposal-intelligence.service.js";
 import { generateImprovementProposalDrafts, toStructuredProposal } from "./initiative-proposal-draft-builder.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import {
   createInitiativeRevisionDraft,
   publishInitiativeRevisionStage,
@@ -373,6 +374,15 @@ export async function publishImprovementProposalsCollection(
   ).filter((entry) => entry.status === "published").length;
 
   await notifyLifecycleStageProposalPublished(published, identity.participantId, publishedCount);
+
+  // Implementation 01 — async CT warm for each newly published Part D proposal.
+  for (const proposal of readyProposals) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "improvement_proposal",
+      sourceRecordId: proposal.proposalId,
+      reason: "public_mutation",
+    });
+  }
 
   return published;
 }

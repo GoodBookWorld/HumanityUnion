@@ -69,7 +69,7 @@ function webUiLookup(locale: "uk" | "ar" | "zh-Hant"): ControlledVocabularyLabel
 }
 
 describe("Localization Authority Closure 04 — Improvement Proposals", () => {
-  it("A. PublicResult uses WEB_UI ContentFields, not Cap02 CIVIC_TRANSLATION_FIELD_META headings", () => {
+  it("A. PublicResult uses CT PublicTranslatedFields with WEB_UI labels (Part D bag, not Cap02)", () => {
     const src = readFileSync(
       path.join(
         webRoot,
@@ -77,11 +77,12 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
       ),
       "utf8",
     );
-    assert.match(src, /InitiativeImprovementProposalsContentFields/);
+    assert.match(src, /PublicTranslatedFields/);
+    assert.match(src, /sourceKind=["']improvement_proposal["']/);
+    assert.match(src, /IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS/);
     assert.match(src, /author\.proposal\.fields/);
     assert.doesNotMatch(src, /CivicPublicTranslatedSection/);
     assert.doesNotMatch(src, /CIVIC_TRANSLATION_FIELD_META/);
-    assert.doesNotMatch(src, /sourceKind=["']improvement_proposal["']/);
     assert.doesNotMatch(src, /proposedChange|currentIssue|rationale/);
   });
 
@@ -128,7 +129,7 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
     assert.equal(webUiOnly?.controlledLifecycleSource, "web_ui_controlled_label");
   });
 
-  it("H. Part D public authority is mixed MANUAL_AUTHOR + WEB_UI (no Cap02 CT on PublicResult)", () => {
+  it("H. Part D public authority is PERSISTED_LOCALIZED_CONTENT via CT (Part D bag)", () => {
     const src = readFileSync(
       path.join(
         webRoot,
@@ -136,9 +137,11 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
       ),
       "utf8",
     );
-    assert.match(src, /data-hu-presentation-authority=["']mixed_manual_author_and_web_ui["']/);
-    assert.match(src, /huSystemGeneration=\{proposal\.huSystemGeneration\}/);
-    assert.doesNotMatch(src, /resolveTranslatedContent|loadImprovementProposalTranslationSource/);
+    assert.match(src, /data-hu-presentation-authority=["']persisted_localized_content["']/);
+    assert.match(src, /PublicTranslatedFields/);
+    assert.match(src, /buildImprovementProposalCtFields/);
+    assert.doesNotMatch(src, /mixed_manual_author_and_web_ui/);
+    assert.doesNotMatch(src, /proposedChange|currentIssue|rationale/);
   });
 
   it("I. Participant-authored Part D values remain MANUAL_AUTHOR (no Cap02 CT owner)", () => {
@@ -202,11 +205,11 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
     }
   });
 
-  it("L. English locale remains canonical (PublicResult skips CV when en)", () => {
-    const src = readFileSync(
+  it("L. English locale remains canonical (PublicTranslatedFields + ContentFields skip CV when en)", () => {
+    const translated = readFileSync(
       path.join(
         webRoot,
-        "src/features/initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsPublicResult.tsx",
+        "src/features/language/components/PublicTranslatedFields.tsx",
       ),
       "utf8",
     );
@@ -217,7 +220,7 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
       ),
       "utf8",
     );
-    assert.match(src, /DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(translated, /DEFAULT_PLATFORM_LANGUAGE/);
     assert.match(fields, /DEFAULT_PLATFORM_LANGUAGE/);
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
+import { mayApplyPersistedLocalizedPresentation } from "@hu/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -57,13 +58,15 @@ export interface PublicNewsSectionProps {
   disableOnDemandTranslation?: boolean;
   /** SSR/static seed — skip initial fetch when provided. */
   initialArticles?: PublicNewsArticleItem[];
-  /** Reset 03E.5 — Media PLP presentations keyed by article id. */
+  /** Reset 03E.5 — Media PLP presentations keyed by article id (include locale). */
   plpNewsById?: Readonly<
     Record<
       string,
       {
         readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
         readonly presentation: unknown;
+        readonly locale?: string;
+        readonly reasonCode?: string;
       }
     >
   >;
@@ -125,7 +128,38 @@ export function PublicNewsSection({
       : tDiscovery("description"));
 
   const countryPlpEnabled = variant === "country" && isMediaPlpWebEnabled();
-  const effectivePlpNewsById = plpNewsById ?? clientPlpNewsById;
+  // Implementation 01 — reject SSR/client PLP maps whose locale ≠ selected locale
+  // so stale Ukrainian discovery cannot stay authoritative under Arabic.
+  const localeMatchedSsrPlp = useMemo(() => {
+    if (!plpNewsById) {
+      return undefined;
+    }
+    const entries = Object.values(plpNewsById);
+    if (entries.length === 0) {
+      return plpNewsById;
+    }
+    for (const entry of entries) {
+      if (entry.mode !== "PUBLISHED_LOCALIZED") {
+        continue;
+      }
+      if (
+        !mayApplyPersistedLocalizedPresentation({
+          presentationLocale: entry.locale,
+          requestedLocale: locale,
+          mode: entry.mode,
+        })
+      ) {
+        return undefined;
+      }
+    }
+    return plpNewsById;
+  }, [plpNewsById, locale]);
+
+  useEffect(() => {
+    setClientPlpNewsById(undefined);
+  }, [locale]);
+
+  const effectivePlpNewsById = localeMatchedSsrPlp ?? clientPlpNewsById;
   const effectiveDisableOnDemandTranslation =
     disableOnDemandTranslation ||
     effectivePlpNewsById != null ||
@@ -223,7 +257,7 @@ export function PublicNewsSection({
 
   // RESET 05C — country rail shares PLP identity with /media (read-only resolve).
   useEffect(() => {
-    if (!countryPlpEnabled || plpNewsById != null) {
+    if (!countryPlpEnabled || localeMatchedSsrPlp != null) {
       return;
     }
     if (processedArticles.length === 0) {
@@ -243,7 +277,7 @@ export function PublicNewsSection({
     return () => {
       cancelled = true;
     };
-  }, [countryPlpEnabled, plpNewsById, processedArticles, locale]);
+  }, [countryPlpEnabled, localeMatchedSsrPlp, processedArticles, locale]);
 
   const countryProviders = useMemo(() => {
     const names = new Set(countryScopedArticles.map((article) => article.sourceName));

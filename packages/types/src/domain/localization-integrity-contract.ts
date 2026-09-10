@@ -133,7 +133,7 @@ export function buildLocalizationIntegrityReport(input: {
         kindId,
         ownership: "MANUAL_AUTHOR" as const,
         state: "CURRENT" as const,
-        detail: "Closure 04 Part D — MANUAL_AUTHOR; not Cap02 CT chrome",
+        detail: "No MANUAL_AUTHOR public kinds after Implementation 01 (Part D is CT-owned)",
       })),
     ] as const);
 

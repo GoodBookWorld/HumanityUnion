@@ -421,6 +421,13 @@ export {
   isCompleteLocalizedProseBag,
 } from "./collaborative-analysis-localization-boundary.js";
 export type { CollaborativeAnalysisBrowserVisibleProseField } from "./collaborative-analysis-localization-boundary.js";
+export { IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS } from "./improvement-proposal-localization-boundary.js";
+export type { ImprovementProposalBrowserVisibleProseField } from "./improvement-proposal-localization-boundary.js";
+export { buildImprovementProposalCtFields } from "./build-improvement-proposal-ct-fields.js";
+export {
+  mayApplyPersistedLocalizedPresentation,
+  persistedPresentationLocaleMatchesRequested,
+} from "./persisted-presentation-locale-isolation.js";
 export type {
   InitiativeLifecyclePlpInventoryRow,
   InitiativeLifecyclePlpMigrationStatus,

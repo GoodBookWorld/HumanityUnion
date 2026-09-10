@@ -114,13 +114,10 @@ export type LanguageActivationPlpOwnedMediaEntityType =
   (typeof LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES)[number];
 
 /**
- * Closure 04 — Improvement Proposals Part D remains MANUAL_AUTHOR at field
- * ownership. `improvement_proposal` CT kind may still exist for Cap02 legacy
- * warm, but Part D public presentation must not prefer Cap02 field-meta chrome.
+ * Empty after Browser-Visible Implementation 01 — Part D prose is CT-owned
+ * (`improvement_proposal` with Part D field bag). No MANUAL_AUTHOR public kind.
  */
-export const LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS = [
-  "improvement_proposal_part_d",
-] as const;
+export const LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS = [] as const;
 
 export type LanguageLocalizationCountBucket = {
   readonly current: number;

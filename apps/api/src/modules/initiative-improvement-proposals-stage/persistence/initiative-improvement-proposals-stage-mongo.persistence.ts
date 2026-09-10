@@ -41,6 +41,37 @@ export class MongoInitiativeImprovementProposalsStagePersistenceAdapter
     return document ? stripDocument(document) : null;
   }
 
+  async findPublishedProposalById(
+    proposalId: string,
+  ): Promise<{
+    readonly collection: InitiativeImprovementProposalsCollection;
+    readonly proposal: InitiativeImprovementProposalsCollection["proposals"][number];
+  } | null> {
+    await ensureMongoReady();
+    const collection = getMongoCollection<InitiativeImprovementProposalsCollectionDocument>(
+      MONGO_COLLECTIONS.initiativeImprovementProposalsCollections,
+    );
+    const document = await collection.findOne({
+      status: "published",
+      "proposals.proposalId": proposalId,
+    });
+    if (!document) {
+      return null;
+    }
+    const record = stripDocument(document);
+    const proposal = record.proposals.find((row) => row.proposalId === proposalId);
+    if (
+      !proposal ||
+      (proposal.status !== "published" &&
+        proposal.status !== "included_in_revision" &&
+        proposal.status !== "keep_for_later" &&
+        proposal.status !== "not_applicable")
+    ) {
+      return null;
+    }
+    return { collection: record, proposal };
+  }
+
   async listByInitiativeAndAuthor(
     initiativeId: string,
     authorId: string,

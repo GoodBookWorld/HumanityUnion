@@ -2,8 +2,9 @@
  * Pack 08K.3.1 — client resolve for public-news-card presentation.
  * Interface locale is authoritative. Never use reading-language preference as render locale.
  *
- * Reset 01 — RSS title/summary use persisted PLP CURRENT when complete;
- * otherwise coherent canonical card. Never provider-on-read.
+ * Reset 01 / Implementation 01 — RSS title/summary use persisted PLP CURRENT when
+ * complete AND locale-matched; otherwise coherent canonical card.
+ * Never provider-on-read. Never apply wrong-locale PLP (e.g. uk under ar).
  */
 
 "use client";
@@ -16,8 +17,6 @@ import {
   buildCompletePublicNewsFixtureTranslations,
   localizePublicNewsArticlePresentation,
   readPublicNewsPresentationCategory,
-  readPublicNewsPresentationSummary,
-  readPublicNewsPresentationTitle,
   readPublicNewsProtectedArticleUrl,
   readPublicNewsProtectedId,
   readPublicNewsProtectedImageUrl,
@@ -25,6 +24,15 @@ import {
   readPublicNewsProtectedSourceName,
 } from "../language/adapters/public-news-article-presentation.js";
 import { resolvePublicContentDisplayLanguage } from "../language/resolve-public-content-display-language";
+import {
+  resolvePublicNewsCardFieldsFromPlp,
+  type PublicNewsPlpPresentationInput,
+} from "./resolve-public-news-card-fields-from-plp.js";
+
+export {
+  resolvePublicNewsCardFieldsFromPlp,
+  type PublicNewsPlpPresentationInput,
+} from "./resolve-public-news-card-fields-from-plp.js";
 
 /** Test-only injection: complete translation maps keyed by article id. */
 const fixtureTranslationsByArticleId = new Map<string, Record<string, string>>();
@@ -59,69 +67,6 @@ export type LocalizedPublicNewsCardView = {
   readonly plpResult: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
 };
 
-function readPlpStringField(presentation: unknown, key: string): string {
-  if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) {
-    return "";
-  }
-  const raw = (presentation as Record<string, unknown>)[key];
-  if (typeof raw === "string") {
-    return raw.trim();
-  }
-  if (
-    raw &&
-    typeof raw === "object" &&
-    "value" in raw &&
-    typeof (raw as { value: unknown }).value === "string"
-  ) {
-    return String((raw as { value: string }).value).trim();
-  }
-  return "";
-}
-
-/**
- * Whole-entity RSS card: title+summary both required for localized presentation.
- */
-export function resolvePublicNewsCardFieldsFromPlp(input: {
-  readonly article: PublicNewsArticleItem;
-  readonly plpPresentation?: {
-    readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
-    readonly presentation: unknown;
-  } | null;
-}): {
-  readonly title: string;
-  readonly summary: string;
-  readonly presentationMode: "localized" | "canonical";
-  readonly plpResult: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
-} {
-  const canonicalTitle = input.article.title;
-  const canonicalSummary = input.article.summary;
-  const plp = input.plpPresentation;
-  if (!plp || plp.mode !== "PUBLISHED_LOCALIZED") {
-    return {
-      title: canonicalTitle,
-      summary: canonicalSummary,
-      presentationMode: "canonical",
-      plpResult: "CANONICAL_FALLBACK",
-    };
-  }
-  const title = readPlpStringField(plp.presentation, "title");
-  const summary = readPlpStringField(plp.presentation, "summary");
-  if (!title || !summary) {
-    return {
-      title: canonicalTitle,
-      summary: canonicalSummary,
-      presentationMode: "canonical",
-      plpResult: "CANONICAL_FALLBACK",
-    };
-  }
-  return {
-    title,
-    summary,
-    presentationMode: "localized",
-    plpResult: "PUBLISHED_LOCALIZED",
-  };
-}
-
 function viewFromLocalized(
   localized: PublicLocalizedPresentation,
   card: {
@@ -152,13 +97,11 @@ export function resolveLocalizedPublicNewsCardView(input: {
   readonly article: PublicNewsArticleItem;
   readonly locale: string;
   readonly translations?: Readonly<Record<string, string>>;
-  readonly plpPresentation?: {
-    readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
-    readonly presentation: unknown;
-  } | null;
+  readonly plpPresentation?: PublicNewsPlpPresentationInput | null;
 }): LocalizedPublicNewsCardView {
   const card = resolvePublicNewsCardFieldsFromPlp({
     article: input.article,
+    requestedLocale: input.locale,
     plpPresentation: input.plpPresentation,
   });
 
@@ -192,10 +135,7 @@ export function useLocalizedPublicNewsCard(
   options?: {
     /** @deprecated Kept for call-site compatibility; CT is never used for RSS. */
     readonly skipClientTranslation?: boolean;
-    readonly plpPresentation?: {
-      readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
-      readonly presentation: unknown;
-    };
+    readonly plpPresentation?: PublicNewsPlpPresentationInput;
   },
 ): LocalizedPublicNewsCardView {
   void options?.skipClientTranslation;

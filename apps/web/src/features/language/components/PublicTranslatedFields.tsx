@@ -7,6 +7,7 @@ import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import {
   COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS,
   DEFAULT_PLATFORM_LANGUAGE,
+  IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS,
   isCompleteLocalizedProseBag,
 } from "@hu/types";
 
@@ -103,7 +104,9 @@ export function PublicTranslatedFields({
         const requiredFields =
           sourceKind === "collaborative_analysis"
             ? COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS
-            : fieldOrder;
+            : sourceKind === "improvement_proposal"
+              ? IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS
+              : fieldOrder;
 
         const complete =
           resolved.presentationMode !== "original" &&

@@ -7,6 +7,7 @@
 
 import {
   DEFAULT_PLATFORM_LANGUAGE,
+  buildImprovementProposalCtFields,
   type ContentTranslationSourceKind,
   type LanguageCode,
 } from "@hu/types";
@@ -16,7 +17,7 @@ import { getPublicDecisionSession } from "../decision-session/public-decision-se
 import { getPublicInitiativeCollectiveDecision } from "../initiative-collective-decision/public-initiative-collective-decision.projection.js";
 import { getPublicInitiativeImplementationCommitment } from "../initiative-implementation-commitment/public-initiative-implementation-commitment.projection.js";
 import { getPublicInitiativeImplementationTracking } from "../initiative-implementation-tracking/public-initiative-implementation-tracking.projection.js";
-import { getPublicInitiativeImprovementProposal } from "../initiative-improvement-proposal/public-initiative-improvement-proposal.projection.js";
+import { findPublishedStructuredProposalById } from "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
 import { getPublicInitiativePublicImpact } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getRevisionById } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getPublicInitiativeVersionRevision } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
@@ -56,31 +57,27 @@ export function discoverCivicMediaTranslationRecordIds(): readonly string[] {
 export async function loadImprovementProposalTranslationSource(
   sourceRecordId: string,
 ): Promise<CivicTranslatableSourceLoad | null> {
-  const projection = await getPublicInitiativeImprovementProposal(sourceRecordId);
-  if (!projection) {
-    return null;
-  }
-  const fields = {
-    targetSection: projection.targetSection,
-    currentIssue: projection.currentIssue,
-    proposedChange: projection.proposedChange,
-    rationale: projection.rationale,
-    expectedImprovement: projection.expectedImprovement,
-    references: projection.references,
-    decisionNote: projection.decisionNote ?? "",
-  };
-  return {
-    sourceKind: "improvement_proposal",
-    sourceRecordId: projection.proposalId,
-    sourceVersion: buildContentTranslationSourceVersion({
+  // Implementation 01 — Part D structured proposals are the authoritative
+  // improvement_proposal CT schema (title/summary/description/…).
+  const partD = await findPublishedStructuredProposalById(sourceRecordId);
+  if (partD) {
+    const fields = buildImprovementProposalCtFields(partD.proposal);
+    return {
+      sourceKind: "improvement_proposal",
+      sourceRecordId: partD.proposal.proposalId,
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: partD.proposal.updatedAt,
+      }),
+      sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
-      versionStamp: projection.updatedAt,
-    }),
-    sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
-    fields,
-    authorParticipantId: null,
-    isPublished: true,
-  };
+      authorParticipantId: partD.collection.authorId,
+      isPublished: true,
+    };
+  }
+
+  // Cap02 legacy records are no longer CT-eligible under the Part D schema.
+  return null;
 }
 
 export async function loadInitiativeRevisionTranslationSource(

@@ -1947,6 +1947,7 @@
           "relatedDiscussionReferences": "مراجع النقاش ذات الصلة",
           "author": "المؤلف",
           "originalAuthors": "المؤلف(ون) الأصليون",
+          "category": "الفئة",
           "expectedImprovementPlaceholder": "صف التحسين الملموس الذي يُتوقع أن تحققه هذا التغيير."
         },
         "curation": {

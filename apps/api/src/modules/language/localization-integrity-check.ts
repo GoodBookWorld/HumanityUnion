@@ -33,6 +33,7 @@ const HU_CAROUSEL_KINDS = new Set([
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
+  "public_news",
 ]);
 
 function mapMediaStatus(
@@ -290,7 +291,7 @@ export async function runLocalizationIntegrityCheck(
         kindId: kind,
         ownership: "MANUAL_AUTHOR",
         state: "CURRENT",
-        detail: "Closure 04 Part D — MANUAL_AUTHOR; not Cap02 CT chrome",
+        detail: "No MANUAL_AUTHOR public kinds after Implementation 01 (Part D is CT-owned)",
       });
       continue;
     }
