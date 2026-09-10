@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
-import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
+import {
+  DEFAULT_PLATFORM_LANGUAGE,
+  presentCollaborativeAnalysisFieldsWithControlledVocabulary,
+} from "@hu/types";
 
 import { formatLanguageDisplayName } from "../format-language-display-name";
 import { resolvePublicContentDisplayLanguage } from "../resolve-public-content-display-language";
 import { resolveTranslatedContent } from "../translation-api";
 import { usePublicContentReadingContext } from "../use-public-content-reading-context";
+import { buildInitiativeControlledVocabularyLabelLookup } from "../../public-initiative-experience/build-initiative-controlled-vocabulary-label-lookup";
 import { TranslatedContentView } from "./TranslatedContentView";
 
 import "./public-translated-fields.css";
@@ -48,7 +52,26 @@ export function PublicTranslatedFields({
   const readingContext = usePublicContentReadingContext();
   // Pack 08I.14B — Initiative Lifecycle/Discussion civic fields follow UI locale.
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const [fields, setFields] = useState(fallbackFields);
+  const controlledLabelLookup = useMemo(
+    () =>
+      buildInitiativeControlledVocabularyLabelLookup({
+        tInitiativeExperience: t,
+      }),
+    [t],
+  );
+  const applyControlledVocabulary = (bag: Record<string, string>) => {
+    if (sourceKind !== "collaborative_analysis") {
+      return bag;
+    }
+    if (displayLanguage === DEFAULT_PLATFORM_LANGUAGE) {
+      return bag;
+    }
+    return presentCollaborativeAnalysisFieldsWithControlledVocabulary({
+      fields: bag,
+      labelLookup: controlledLabelLookup,
+    });
+  };
+  const [fields, setFields] = useState(() => applyControlledVocabulary(fallbackFields));
   const [originalFields, setOriginalFields] = useState(fallbackFields);
   const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
   const [originalLanguage, setOriginalLanguage] =
@@ -63,7 +86,7 @@ export function PublicTranslatedFields({
 
   useEffect(() => {
     const fallback = JSON.parse(fallbackSignature) as Record<string, string>;
-    setFields(fallback);
+    setFields(applyControlledVocabulary(fallback));
     setOriginalFields(fallback);
 
     if (!readingContext.ready) {
@@ -88,7 +111,7 @@ export function PublicTranslatedFields({
           return;
         }
 
-        setFields(resolved.content);
+        setFields(applyControlledVocabulary(resolved.content));
         setOriginalFields(resolved.originalContent);
         setActiveLanguage(resolved.activeLanguage);
         setOriginalLanguage(resolved.originalLanguage);
@@ -98,7 +121,7 @@ export function PublicTranslatedFields({
         setIsStale(resolved.isStale);
       } catch {
         if (!cancelled) {
-          setFields(fallback);
+          setFields(applyControlledVocabulary(fallback));
           setOriginalFields(fallback);
         }
       }
@@ -113,6 +136,7 @@ export function PublicTranslatedFields({
     fallbackSignature,
     readingContext.ready,
     displayLanguage,
+    controlledLabelLookup,
   ]);
 
   return (

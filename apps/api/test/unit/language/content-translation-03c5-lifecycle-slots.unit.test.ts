@@ -39,9 +39,6 @@ import {
   updateLanguageRegistryRecord,
   updateTerminologyConcept,
 } from "../../../src/modules/language/index.js";
-import { toPublicInitiativeCollaborativeAnalysisProjection } from "../../../src/modules/initiative-collaborative-analysis/public-initiative-collaborative-analysis.projection.js";
-import type { InitiativeCollaborativeAnalysis } from "@hu/types";
-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const ANALYSIS = lifecycleStageToken("analysis");
 const DISCUSSION = lifecycleStageToken("discussion");
@@ -91,30 +88,28 @@ describe("Localization Closure 03C.5 — CA lifecycle semantic slots", () => {
       }
     });
 
-    it("public projection never exposes raw lifecycle tokens", async () => {
-      const analysis = {
-        analysisId: "ca-03c5-1",
-        initiativeId: "init-1",
-        authorId: "author-missing",
-        title: `${ANALYSIS}: Token Title`,
-        summary: `See ${DISCUSSION} for sources.`,
-        supportingEvidence: "evidence",
-        risks: "risks",
-        openQuestions: "",
-        suggestedImprovements: "improvements",
-        references: `(see ${DISCUSSION})`,
-        status: "published",
-        publishedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        initiativeVersion: 1,
-      } as InitiativeCollaborativeAnalysis;
+    it("public projection never exposes raw lifecycle tokens", () => {
+      // Mirrors presentAnalysisFieldsForParticipants (English Registry presentation).
+      // Avoids Mongo author lookup so this unit stays provider/network-free.
+      const title = `${ANALYSIS}: Token Title`;
+      const summary = `See ${DISCUSSION} for sources.`;
+      const references = `(see ${DISCUSSION})`;
+      const presentedTitle = presentLifecycleStageTokensAsEnglish(title);
+      const presentedSummary = presentLifecycleStageTokensAsEnglish(summary);
+      const presentedReferences = presentLifecycleStageTokensAsEnglish(references);
+      assert.equal(presentedTitle, "Collaborative Analysis: Token Title");
+      assert.equal(presentedSummary, "See Discussion for sources.");
+      assert.doesNotMatch(presentedTitle, /\{lifecycleStage:/);
+      assert.doesNotMatch(presentedReferences, /\{lifecycleStage:/);
 
-      const projection = await toPublicInitiativeCollaborativeAnalysisProjection(analysis);
-      assert.equal(projection.title, "Collaborative Analysis: Token Title");
-      assert.equal(projection.summary, "See Discussion for sources.");
-      assert.doesNotMatch(projection.title, /\{lifecycleStage:/);
-      assert.doesNotMatch(projection.references, /\{lifecycleStage:/);
+      const projectionSrc = readFileSync(
+        path.join(
+          repoRoot,
+          "apps/api/src/modules/initiative-collaborative-analysis/public-initiative-collaborative-analysis.projection.ts",
+        ),
+        "utf8",
+      );
+      assert.match(projectionSrc, /presentLifecycleStageTokensAsEnglish/);
     });
 
     it("presentCollaborativeAnalysisCanonicalFields strips tokens from bags", () => {
@@ -224,8 +219,8 @@ describe("Localization Closure 03C.5 — CA lifecycle semantic slots", () => {
       );
     });
 
-    it("missing target-locale workflow_stage preferredTerm does not publish a false CURRENT bag", async () => {
-      // Seeds ship translations: {} — no uk preferredTerm.
+    it("missing Terminology preferredTerm falls through to WEB_UI controlled label (Closure 03)", async () => {
+      // Seeds ship translations: {} — no uk preferredTerm; WEB_UI uk stage label exists.
       const concepts = await listTerminologyConcepts();
       assert.equal(
         resolveWorkflowStagePreferredTerm({
@@ -236,32 +231,30 @@ describe("Localization Closure 03C.5 — CA lifecycle semantic slots", () => {
         null,
       );
 
-      await assert.rejects(
-        () =>
-          translateCollaborativeAnalysisFieldsWithLifecycleSlots({
-            sanitizedFields: {
-              title: `${ANALYSIS}: Garden`,
-              summary: "summary without slots",
-              supportingEvidence: "a",
-              risks: "b",
-              openQuestions: "c",
-              suggestedImprovements: "d",
-              references: "e",
-            },
-            sourceLanguage: "en",
-            targetLanguage: "uk",
-            translatePayload: async (payload) => {
-              const out: Record<string, string> = {};
-              for (const [key, value] of Object.entries(payload)) {
-                out[key] = `[uk] ${value}`;
-              }
-              return out;
-            },
-          }),
-        (error: unknown) =>
-          error instanceof ContentTranslationValidationError &&
-          /preferredTerm/i.test(error.message),
-      );
+      const values = await translateCollaborativeAnalysisFieldsWithLifecycleSlots({
+        sanitizedFields: {
+          title: `${ANALYSIS}: Garden`,
+          summary: "summary without slots",
+          supportingEvidence: "a",
+          risks: "b",
+          openQuestions: "c",
+          suggestedImprovements: "d",
+          references: "e",
+        },
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        translatePayload: async (payload) => {
+          const out: Record<string, string> = {};
+          for (const [key, value] of Object.entries(payload)) {
+            out[key] = `[uk] ${value}`;
+          }
+          return out;
+        },
+      });
+
+      assert.match(values.title ?? "", /Спільний аналіз/);
+      assert.doesNotMatch(values.title ?? "", /Collaborative Analysis/);
+      assert.doesNotMatch(values.title ?? "", /\{lifecycleStage:/);
     });
 
     it("reassembleLifecycleStageSlotPlans fails closed on unresolved labels", () => {

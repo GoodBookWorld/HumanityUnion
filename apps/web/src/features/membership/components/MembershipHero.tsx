@@ -16,12 +16,14 @@ export function MembershipHero({ cohortLabel = "Participant" }: MembershipHeroPr
   const t = useTranslations("membershipPublic");
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
+  const cohortDisplayLabel =
+    cohortLabel === "Member" ? t("status.memberCohort") : t("status.participantCohort");
 
   return (
     <section className="membership-hero" aria-labelledby="membership-hero-title">
       <div className="membership-hero__layout">
         <div className="membership-hero__content">
-          <MembershipCohortBadge cohortLabel={cohortLabel} />
+          <MembershipCohortBadge cohortLabel={cohortLabel} displayLabel={cohortDisplayLabel} />
           <h1 id="membership-hero-title" className="membership-hero__title">
             {t("hero.title", siteName)}
           </h1>

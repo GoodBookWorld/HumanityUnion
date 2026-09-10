@@ -156,10 +156,31 @@ export {
   assertAdminDomainNotMachineTranslated,
 } from "./localization-ownership.js";
 export {
+  applyControlledPublicVocabularyToProse,
+  resolveProtectedPublicNewsField,
+  resolvePublicPresentationField,
+  PUBLIC_PRESENTATION_AUTHORITY,
+  resolveControlledLifecycleLabel,
+} from "@hu/types";
+export type {
+  ResolvePublicPresentationFieldInput,
+  ResolvePublicPresentationFieldResult,
+  ControlledVocabularyLabelLookup,
+} from "@hu/types";
+export {
   assertAutomaticContentTranslationTargetLocale,
   listAutomaticContentTranslationTargetLocales,
   resolveAutomaticContentTranslationWarmTargets,
 } from "./content-translation-warm-targets.js";
+export {
+  runMediaHuOwnedLocalizationIntegrityCheck,
+  classifyMediaEditorialLocalizationForLocale,
+} from "./media-hu-localization-integrity.js";
+export type {
+  MediaHuLocalizationIntegrityReport,
+  MediaHuLocalizationIntegrityRow,
+  MediaHuLocalizationIntegrityStatus,
+} from "./media-hu-localization-integrity.js";
 export {
   assertStagingWarmDiscoveryNotSilentlyEmpty,
   resolveStagingWarmDiscoveryExpectation,
@@ -379,6 +400,7 @@ export {
 } from "./content-translation.service.js";
 export {
   presentCollaborativeAnalysisCanonicalFields,
+  resolveWorkflowStageControlledLabel,
   resolveWorkflowStagePreferredTerm,
   translateCollaborativeAnalysisFieldsWithLifecycleSlots,
   assertCollaborativeAnalysisMachineProseTranslated,
@@ -454,3 +476,29 @@ export type {
   TerminologyGlossarySeedResult,
 } from "./terminology-glossary/index.js";
 export { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "./hu-terminology-glossary.js";
+
+/** Localization Authority Closure 07 — activation / readiness / backfill planner. */
+export {
+  activateLanguageLocalization,
+  assessControlledVocabularyReadinessForLocale,
+  assessWebUiCatalogReadinessForLocale,
+  assertNoHardcodedLocaleEligibilityPolicy,
+  evaluateLanguageLocalizationReadiness,
+  findHardcodedLocaleEligibilityPolicy,
+  planLanguageHistoricalBackfill,
+} from "./language-localization-activation/index.js";
+export type {
+  ActivateLanguageLocalizationInput,
+  EvaluateLanguageLocalizationReadinessInput,
+  LanguageActivationResult,
+  LanguageHistoricalBackfillPlannerDeps,
+} from "./language-localization-activation/index.js";
+
+/** Localization Authority Closure 08 — bounded integrity diagnostic. */
+export { runLocalizationIntegrityCheck } from "./localization-integrity-check.js";
+export type { RunLocalizationIntegrityCheckInput } from "./localization-integrity-check.js";
+export { assessMediaCarouselPlpPresenceForLocale } from "./assess-media-carousel-plp-presence.js";
+export type {
+  AssessMediaCarouselPlpPresenceInput,
+  MediaCarouselPlpPresenceByKind,
+} from "./assess-media-carousel-plp-presence.js";

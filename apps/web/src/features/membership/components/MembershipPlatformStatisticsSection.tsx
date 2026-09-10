@@ -1,6 +1,7 @@
 "use client";
 
 import type { MembershipStatisticsPayload } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { fetchMembershipStatistics } from "../../membership-statistics/membership-statistics-api";
@@ -13,10 +14,11 @@ interface MembershipPlatformStatisticsSectionProps {
 }
 
 export function MembershipPlatformStatisticsSection({
-  title = "Platform Membership participation",
+  title,
   className,
   showUpdatedAt = false,
 }: MembershipPlatformStatisticsSectionProps) {
+  const t = useTranslations("membershipPublic");
   const [statistics, setStatistics] = useState<MembershipStatisticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -53,7 +55,7 @@ export function MembershipPlatformStatisticsSection({
       statistics={statistics}
       loading={loading}
       error={error}
-      title={title}
+      title={title ?? t("platformStatisticsTitle")}
       className={className}
       showUpdatedAt={showUpdatedAt}
     />

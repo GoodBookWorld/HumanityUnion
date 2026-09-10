@@ -36,7 +36,7 @@ export function ApiUnavailableState({
       <p className="hu-unavailable__explanation">{explanation}</p>
       {possibleReason ? (
         <p className="hu-unavailable__reason">
-          <strong>Possible reason:</strong> {possibleReason}
+          <strong>{tCommon("possibleReasonPrefix")}</strong> {possibleReason}
         </p>
       ) : null}
       <div className="hu-unavailable__actions">

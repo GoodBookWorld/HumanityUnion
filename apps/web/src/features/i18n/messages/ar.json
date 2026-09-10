@@ -10,7 +10,8 @@
     "show": "إظهار",
     "hide": "إخفاء",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور"
+    "hidePassword": "إخفاء كلمة المرور",
+    "possibleReasonPrefix": "السبب المحتمل:"
   },
   "a11y": {
     "skipToMainContent": "التخطي إلى المحتوى الرئيسي"
@@ -46,7 +47,15 @@
     "footerPlatformHeading": "المنصة",
     "footerLegalHeading": "الشؤون القانونية والشفافية",
     "footerCopyright": "© {year} {siteName}. جميع الحقوق محفوظة.",
-    "siteMapVolunteering": "التطوع"
+    "siteMapVolunteering": "التطوع",
+    "brandHomeAria": "{siteName} — الصفحة الرئيسية",
+    "primaryNavAria": "التنقل الرئيسي",
+    "mobileNavAria": "التنقل على الجوال",
+    "closeNavMenuAria": "إغلاق قائمة التنقل",
+    "openNavMenuAria": "فتح قائمة التنقل",
+    "footerPlatformNavCol1Aria": "تنقل المنصة — العمود الأول",
+    "footerPlatformNavCol2Aria": "تنقل المنصة — العمود الثاني",
+    "footerLegalNavAria": "تنقل الشؤون القانونية والشفافية"
   },
   "auth": {
     "logIn": "تسجيل الدخول",
@@ -1937,7 +1946,8 @@
           "supportingSources": "المصادر الداعمة",
           "relatedDiscussionReferences": "مراجع النقاش ذات الصلة",
           "author": "المؤلف",
-          "originalAuthors": "المؤلف(ون) الأصليون"
+          "originalAuthors": "المؤلف(ون) الأصليون",
+          "expectedImprovementPlaceholder": "صف التحسين الملموس الذي يُتوقع أن تحققه هذا التغيير."
         },
         "curation": {
           "draft": "مسودة",
@@ -4114,7 +4124,9 @@
         "knowledgeTitle": "هيكل مرجعي فقط",
         "nonNominationNote": "نماذج ترشيح المكاتب الإقليمية مؤجلة."
       }
-    }
+    },
+    "relatedActivityAreaFallback": "مبادرة مدنية",
+    "relatedGeographyUnspecified": "لم تُحدَّد الجغرافيا"
   },
   "worldInitiativesPublic": {
     "pageTitle": "المبادرات العالمية",
@@ -4376,7 +4388,8 @@
       "hintZoomed": "اسحب الخريطة للتحريك أثناء التكبير. النقر على البلد يفتح النشاط المدني.",
       "exploreByCountry": "استكشف النشاط المدني حسب البلد",
       "selectCountry": "اختر بلدًا"
-    }
+    },
+    "unityIllustrationAria": "رسم توضيحي لوحدة الإنسانية"
   },
   "publicInitiativeMiniCard": {
     "viewInitiative": "عرض المبادرة ←",
@@ -4514,7 +4527,8 @@
       "memberSince": "عضو منذ",
       "contribution": "المساهمة",
       "ariaFacts": "حقائق حالة العضوية",
-      "memberCohort": "عضو"
+      "memberCohort": "عضو",
+      "participantCohort": "مشارك"
     },
     "journey": {
       "title": "مسار العضوية",
@@ -4600,6 +4614,16 @@
         "notYet": "لم يكتمل بعد"
       },
       "journeySummary": "{completed} من {total} خطوات مكتملة"
+    },
+    "statistics": {
+      "defaultTitle": "المشاركة في العضوية",
+      "loading": "جارٍ تحميل إحصاءات المشاركة...",
+      "unavailable": "إحصاءات المشاركة غير متاحة مؤقتًا.",
+      "totalParticipation": "إجمالي المشاركة",
+      "members": "الأعضاء",
+      "participants": "المشاركون",
+      "lastUpdated": "آخر تحديث {when}",
+      "votingExplanation": "حالة العضوية لا تغيّر وزن التصويت. هذه النتيجة مؤشر إحصائي على الدعم المدني."
     }
   },
   "supportPublic": {
@@ -5391,7 +5415,8 @@
     "mottoStatusValue": "دفاع نشط",
     "mottoSloganLabel": " // الشعار: ",
     "mottoSloganValue": "حيّد الجهل. انزع سلاح العدوان.",
-    "cta": "[ انضم إلى الطليعة ]"
+    "cta": "[ انضم إلى الطليعة ]",
+    "homeSlogan": "مركز وحدة العمل"
   },
   "volunteerPublic": {
     "eyebrow": "الناس يصنعون التغيير",

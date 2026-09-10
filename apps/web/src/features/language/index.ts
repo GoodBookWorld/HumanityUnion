@@ -33,6 +33,20 @@ export {
 } from "./localization-ownership";
 export type { CivicContentSourceKind } from "./localization-ownership";
 export {
+  applyControlledPublicVocabularyToProse,
+  presentCollaborativeAnalysisFieldsWithControlledVocabulary,
+  presentImprovementProposalFieldsWithControlledVocabulary,
+  resolveProtectedPublicNewsField,
+  resolvePublicPresentationField,
+  PUBLIC_PRESENTATION_AUTHORITY,
+  resolveControlledLifecycleLabel,
+} from "@hu/types";
+export type {
+  ResolvePublicPresentationFieldInput,
+  ResolvePublicPresentationFieldResult,
+  ControlledVocabularyLabelLookup,
+} from "@hu/types";
+export {
   applyTranslatedPresentationFields,
   isNonTranslatableFieldKey,
 } from "./translate-presentation";
@@ -46,6 +60,20 @@ export {
 } from "./public-localized-presentation";
 export type { PublicAutoTranslatableNode } from "./public-localized-presentation";
 export { assertPublicLocalizationBoundary } from "./assert-public-localization-boundary";
+export {
+  assertPublicLocalizationIntegrity,
+  inspectPublicLocalizationIntegrity,
+  assertControlledVocabularyPresentationIntegrity,
+} from "./assert-public-localization-integrity";
+export {
+  checkPublicCatalogReadiness,
+  collectRequiredPublicChromePaths,
+  PUBLIC_SURFACE_WEB_UI_NAMESPACE_PREFIXES,
+} from "./public-catalog-readiness";
+export type {
+  PublicCatalogReadinessReport,
+  PublicCatalogReadinessIssue,
+} from "./public-catalog-readiness";
 export { resolveLocalizedPresentation } from "./resolve-localized-presentation";
 export type {
   LocalizedPresentationDeps,

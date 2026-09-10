@@ -1,7 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { actucAudiowide } from "../actuc-audiowide";
 import { ActucPresentationModal } from "./ActucPresentationModal";
 
@@ -10,10 +12,13 @@ import "./actuc-home.css";
 /**
  * Pack 24C — compact ACTUC Home presentation section.
  * Placed after Civic Archive. Opens presentation modal via division badge button.
+ * Closure 06 — chrome via WEB_UI (`actuc`); site name via Brand Localization.
  */
 export function PublicHomeActucSection() {
   const titleId = useId();
   const [modalOpen, setModalOpen] = useState(false);
+  const t = useTranslations("actuc");
+  const brand = useLocalizedBrand();
 
   return (
     <section
@@ -42,7 +47,7 @@ export function PublicHomeActucSection() {
               />
             </div>
             <p id={titleId} className={`actuc-home__slogan ${actucAudiowide.className}`}>
-              Action Unity Center
+              {t("homeSlogan")}
             </p>
           </div>
 
@@ -54,7 +59,7 @@ export function PublicHomeActucSection() {
             onClick={() => setModalOpen(true)}
           >
             <span className="actuc-home__badge-dot" aria-hidden="true" />
-            <span>Humanity Union // Intellectual Defense Division</span>
+            <span>{t("badge", { siteName: brand.siteName })}</span>
           </button>
         </div>
       </div>

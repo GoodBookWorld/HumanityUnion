@@ -57,6 +57,7 @@ export type {
 } from "./plp-stale-result.js";
 export {
   registerPlpAutoBuildProcessor,
+  registerPlpAutoBuildProcessorWithLocalesForTests,
   bootstrapPlpAutoBuildRuntime,
   stopPlpAutoBuildRuntimeForTests,
 } from "./register-plp-auto-build-processor.js";
@@ -118,7 +119,14 @@ export type {
   PlpAutoBuildFailedWorkReport,
   PlpAutoBuildFailedWorkRow,
 } from "./plp-auto-build-work-failure-diagnostic.js";
-export { resolvePlpAutoBuildLocales, notifyPlpPublicSourceMutation } from "./public-source-mutation-bridge.js";
+export {
+  resolvePlpAutoBuildLocales,
+  resolvePlpAutoBuildLocaleResolution,
+  parsePlpAutoBuildLocaleOpsLimiter,
+  assertPlpAutoBuildLocaleEligible,
+  notifyPlpPublicSourceMutation,
+} from "./public-source-mutation-bridge.js";
+export type { PlpAutoBuildLocaleResolution } from "./public-source-mutation-bridge.js";
 export {
   runUniversalPlpBuild,
 } from "./build-pipeline.js";

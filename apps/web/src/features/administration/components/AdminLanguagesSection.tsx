@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type {
   AuthUserPublic,
+  LanguageLocalizationReadinessReport,
   LanguageRegistryAdmin,
   LanguageTextDirection,
   LanguageUiTranslationStatus,
@@ -15,6 +16,7 @@ import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
   createAdminLanguage,
+  fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
   updateAdminLanguage,
   type AdminLanguageCreateInput,
@@ -98,6 +100,9 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [readinessById, setReadinessById] = useState<
+    Record<string, LanguageLocalizationReadinessReport | "loading" | "error">
+  >({});
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LanguageFormState>(emptyForm());
@@ -210,6 +215,22 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     }
   }
 
+  async function handleCheckReadiness(row: LanguageRegistryAdmin) {
+    setReadinessById((prev) => ({ ...prev, [row.languageId]: "loading" }));
+    setError(null);
+    try {
+      const report = await fetchAdminLanguageLocalizationReadiness(row.languageId);
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: report }));
+      setStatus(
+        `${row.locale} localization readiness: ${report.state}` +
+          (report.seoReady ? " (SEO-ready)" : " (SEO not ready)"),
+      );
+    } catch (readinessError) {
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: "error" }));
+      setError(formatAuthFormError(readinessError));
+    }
+  }
+
   const editingEnglish = Boolean(editingId && isEnglishLocale(form.locale));
 
   return (
@@ -220,6 +241,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           Canonical Language Registry — Admin-managed locales for platform selection, translation,
           and SEO readiness. Runtime pickers and Translate Draft use enabled languages only. Locale
           is immutable after creation. Backend policy is authoritative for conflicts and fallbacks.
+          Use Readiness to inspect localization state (WEB_UI / CT / PLP) without enabling SEO.
+          Historical activation uses{" "}
+          <code>pnpm --filter @hu/api localization:activate-language -- --locale &lt;locale&gt;</code>{" "}
+          (dry-run by default).
         </p>
 
         <div className="admin-languages__toolbar">
@@ -416,6 +441,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   <th>Content</th>
                   <th>Search</th>
                   <th>SEO</th>
+                  <th>Localization</th>
                   <th>Fallback</th>
                   <th>Actions</th>
                 </tr>
@@ -424,6 +450,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                 {items.map((row) => {
                   const english = isEnglishLocale(row.locale);
                   const busy = togglingId === row.languageId;
+                  const readiness = readinessById[row.languageId];
                   return (
                     <tr key={row.languageId}>
                       <td>{row.englishName}</td>
@@ -441,6 +468,22 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>{yesNo(row.searchEnabled)}</td>
                       <td>{yesNo(row.seoIndexingEnabled)}</td>
                       <td>
+                        {readiness === "loading" ? (
+                          <span className="hu-caption">Checking…</span>
+                        ) : readiness === "error" ? (
+                          <span className="hu-caption">Unavailable</span>
+                        ) : readiness ? (
+                          <div className="hu-caption">
+                            <code>{readiness.state}</code>
+                            {readiness.gaps.length > 0 ? (
+                              <div>{readiness.gaps.slice(0, 2).join(" · ")}</div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="hu-caption">—</span>
+                        )}
+                      </td>
+                      <td>
                         <code>{row.fallbackLocale}</code>
                       </td>
                       <td>
@@ -452,6 +495,16 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             onClick={() => openEdit(row)}
                           >
                             Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="tertiary"
+                            disabled={saving || busy || readiness === "loading"}
+                            onClick={() => {
+                              void handleCheckReadiness(row);
+                            }}
+                          >
+                            Readiness
                           </Button>
                           <Button
                             type="button"

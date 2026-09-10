@@ -14,6 +14,10 @@ import { resolveProposalCurationDisplayLabel } from "../../public-initiative-exp
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
+  buildImprovementProposalAuthorSaveInput,
+  presentImprovementProposalForAuthorEditor,
+} from "../improvement-proposal-author-presentation";
+import {
   saveInitiativeStructuredProposal,
   setInitiativeStructuredProposalStatus,
   type SaveInitiativeStructuredProposalInput,
@@ -30,7 +34,7 @@ interface ProposalFormState {
 }
 
 function buildFormState(proposal: InitiativeStructuredProposal): ProposalFormState {
-  return {
+  return presentImprovementProposalForAuthorEditor({
     title: proposal.title,
     summary: proposal.summary,
     description: proposal.description,
@@ -38,7 +42,7 @@ function buildFormState(proposal: InitiativeStructuredProposal): ProposalFormSta
     expectedImprovement: proposal.expectedImprovement,
     supportingSources: proposal.supportingSources,
     relatedDiscussionReferences: proposal.relatedDiscussionReferences,
-  };
+  });
 }
 
 function detailFromError(error: unknown, fallback: string): string {
@@ -106,7 +110,19 @@ export function InitiativeStructuredProposalCard({
   async function handleSave() {
     setMessage(null);
 
-    const input: SaveInitiativeStructuredProposalInput = { ...form };
+    const input: SaveInitiativeStructuredProposalInput =
+      buildImprovementProposalAuthorSaveInput({
+        canonical: {
+          title: proposal.title,
+          summary: proposal.summary,
+          description: proposal.description,
+          reason: proposal.reason,
+          expectedImprovement: proposal.expectedImprovement,
+          supportingSources: proposal.supportingSources,
+          relatedDiscussionReferences: proposal.relatedDiscussionReferences,
+        },
+        presented: form,
+      });
 
     try {
       const updated = await savePhase.runSave(() =>
@@ -227,6 +243,7 @@ export function InitiativeStructuredProposalCard({
             <textarea
               id={`iip-expected-${proposal.proposalId}`}
               value={form.expectedImprovement}
+              placeholder={t("author.proposal.fields.expectedImprovementPlaceholder")}
               disabled={savePhase.isBusy}
               onChange={(event) =>
                 setForm((current) => ({ ...current, expectedImprovement: event.target.value }))

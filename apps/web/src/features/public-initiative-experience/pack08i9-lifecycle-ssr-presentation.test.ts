@@ -115,8 +115,11 @@ describe("Pack 08I.9 — Lifecycle sourceKind matrix + presentation", () => {
     }
   });
 
-  it("PublicResults use warm translation sections (no ContentFields dual-render)", () => {
+  it("PublicResults use warm translation or Part D WEB_UI ContentFields (Closure 04)", () => {
     for (const entry of PUBLIC_RESULT_SOURCES) {
+      if (entry.kind === "improvement_proposal") {
+        continue;
+      }
       const src = readWeb(entry.file);
       assert.match(
         src,
@@ -127,7 +130,10 @@ describe("Pack 08I.9 — Lifecycle sourceKind matrix + presentation", () => {
     const proposals = readWeb(
       "features/initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsPublicResult.tsx",
     );
-    assert.doesNotMatch(proposals, /InitiativeImprovementProposalsContentFields/);
+    // Closure 04 — Part D structured proposals are MANUAL_AUTHOR; share Draft Preview renderer.
+    assert.match(proposals, /InitiativeImprovementProposalsContentFields/);
+    assert.doesNotMatch(proposals, /CivicPublicTranslatedSection/);
+    assert.doesNotMatch(proposals, /sourceKind=["']improvement_proposal["']/);
   });
 
   it("Public Impact / Civic Archive prefer semantic labels over raw EN headings", () => {

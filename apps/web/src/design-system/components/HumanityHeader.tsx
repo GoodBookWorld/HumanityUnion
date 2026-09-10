@@ -91,7 +91,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             <Link
               href="/"
               className="humanity-header__logo-link"
-              aria-label={`${brand.siteName} home`}
+              aria-label={tNav("brandHomeAria", { siteName: brand.siteName })}
             >
               <img
                 src="/brand/humanity-union-logo.svg"
@@ -110,7 +110,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
           </div>
           <nav
             className="humanity-header__nav humanity-header__nav--desktop"
-            aria-label="Primary navigation"
+            aria-label={tNav("primaryNavAria")}
           >
             <ul className="humanity-header__nav-list">
               {DESKTOP_CAPSULE_NAVIGATION.map((item) => {

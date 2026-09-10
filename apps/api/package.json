@@ -33,6 +33,8 @@
     "reconcile:production-initiative-migration-recovery-rollback-state": "tsx src/scripts/reconcile-production-initiative-migration-recovery-rollback-state.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "warm:staging-content-translations": "tsx src/scripts/warm-staging-content-translations.ts",
+    "localization:activate-language": "tsx src/scripts/activate-language-localization.ts",
+    "localization:check": "tsx src/scripts/check-localization-integrity.ts",
     "diagnose:public-localization": "tsx src/scripts/diagnose-public-localization-coverage.ts",
     "diagnose:localization-residuals": "tsx src/scripts/diagnose-localization-residuals.ts",
     "diagnose:media-localization": "tsx src/scripts/diagnose-media-localization.ts",

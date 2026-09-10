@@ -57,6 +57,7 @@ import {
   resolvePlpAutoBuildLocales,
   resolvePlpProviderConcurrency,
   setMediaPlpConsumptionEnabledForTests,
+  setPlpAutoBuildWorkForceMemoryForTests,
   setPlpBuildRequestProcessor,
   setPlpBuildRequestProcessorForTests,
   setPublishedLocalizationPersistenceModeForTests,
@@ -132,6 +133,7 @@ beforeEach(() => {
   process.env.PUBLIC_NEWS_PERSISTENCE = "memory";
   delete process.env.HU_PLP_AUTO_BUILD_LOCALES;
   delete process.env.HU_PLP_AUTO_BUILD_PROCESSOR;
+  setPlpAutoBuildWorkForceMemoryForTests(true);
   resetPublicNewsMemoryStoreForTests();
   resetPublishedLocalizationPersistenceForTests();
   setPublishedLocalizationPersistenceModeForTests("memory");
@@ -156,6 +158,7 @@ afterEach(() => {
   resetPlpSearchSeoInvalidationForTests();
   resetMediaLocalizationBuildHookStatusForTests();
   setPlpBuildRequestProcessorForTests(null);
+  setPlpAutoBuildWorkForceMemoryForTests(false);
   resetPublicNewsMemoryStoreForTests();
   delete process.env.HU_PLP_AUTO_BUILD_LOCALES;
   delete process.env.HU_PLP_AUTO_BUILD_PROCESSOR;
@@ -457,22 +460,26 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     assert.equal(fake.getRequestCountForTests(), 0);
   });
 
-  it("processor registration respects locales allowlist + env kill switch", () => {
-    assert.deepEqual(resolvePlpAutoBuildLocales(), []);
+  it("processor registration respects Registry CT targets + env kill switch", async () => {
     assert.equal(
       MEDIA_LOCALIZATION_BUILD_HOOK_STATUS,
       QUEUE_ACTIVE_PROVIDER_DORMANT,
     );
 
+    // Closure 05 — product registration accepts Registry-derived locale lists.
+    // This suite uses the explicit helper to avoid live Mongo Registry dependency.
     process.env.HU_PLP_AUTO_BUILD_LOCALES = "uk, ar";
-    const active = registerPlpAutoBuildProcessor();
+    const { registerPlpAutoBuildProcessorWithLocalesForTests } = await import(
+      "../../../src/modules/language/published-localized-presentation/universal/register-plp-auto-build-processor.js"
+    );
+    const active = registerPlpAutoBuildProcessorWithLocalesForTests(["uk", "ar"]);
     assert.equal(active.registered, true);
     assert.equal(active.status, QUEUE_ACTIVE_PROVIDER_ACTIVE);
     assert.equal(getMediaLocalizationBuildHookStatus(), QUEUE_ACTIVE_PROVIDER_ACTIVE);
     assert.deepEqual([...active.locales], ["uk", "ar"]);
 
     process.env.HU_PLP_AUTO_BUILD_PROCESSOR = "0";
-    const disabled = registerPlpAutoBuildProcessor();
+    const disabled = await registerPlpAutoBuildProcessor();
     assert.equal(disabled.registered, false);
     assert.equal(disabled.reason, "disabled_by_env");
     assert.equal(getMediaLocalizationBuildHookStatus(), QUEUE_ACTIVE_PROVIDER_DORMANT);

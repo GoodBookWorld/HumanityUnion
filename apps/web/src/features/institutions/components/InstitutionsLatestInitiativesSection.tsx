@@ -22,6 +22,7 @@ const RELATED_INITIATIVES_SLOT_COUNT = 3;
 
 function mapSearchResultToMiniCard(
   result: Awaited<ReturnType<typeof fetchLatestPublicInitiatives>>[number],
+  labels: { activityAreaFallback: string; geographyUnspecified: string },
 ): WorldInitiativeCardProjection {
   const geographyParts = [result.community, result.region, result.country].filter(Boolean);
 
@@ -30,9 +31,9 @@ function mapSearchResultToMiniCard(
     title: result.title,
     summary: result.summary,
     imageUrl: result.imageUrl,
-    activityArea: result.activityArea ?? "Civic initiative",
+    activityArea: result.activityArea ?? labels.activityAreaFallback,
     geographyLabel:
-      geographyParts.length > 0 ? geographyParts.join(", ") : "Geography not specified",
+      geographyParts.length > 0 ? geographyParts.join(", ") : labels.geographyUnspecified,
     publicStatus: result.status,
     currentStageLabel: result.status,
     publishedAt: result.updatedAt,
@@ -46,12 +47,16 @@ export function InstitutionsLatestInitiativesSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const labels = {
+      activityAreaFallback: t("relatedActivityAreaFallback"),
+      geographyUnspecified: t("relatedGeographyUnspecified"),
+    };
     void fetchLatestPublicInitiatives(RELATED_INITIATIVES_SLOT_COUNT)
-      .then((results) => results.map(mapSearchResultToMiniCard))
+      .then((results) => results.map((result) => mapSearchResultToMiniCard(result, labels)))
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const collectionItems = useMemo<InitiativeCollectionItem[]>(() => {
     const realItems = items.slice(0, RELATED_INITIATIVES_SLOT_COUNT);

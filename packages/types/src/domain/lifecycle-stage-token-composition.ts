@@ -6,10 +6,11 @@
  * Mirrors Brand slot extraction: provider receives MACHINE prose only; slots are
  * reassembled after translation with controlled vocabulary labels.
  *
- * Authority:
- * - CT build-time labels → Terminology Glossary `workflow_stage.preferredTerm`
- * - Canonical English participant fallback → lifecycle registry `label`
- * - WEB_UI `initiativeExperience.stages.*` remains chrome-only (not used here)
+ * Authority (Pack 03C.5 write / Closure 03 presentation):
+ * - CT build-time / presentation labels → Closure 01/02 controlledLifecycle
+ *   (Terminology preferredTerm → WEB_UI controlled label → Registry English last)
+ * - Canonical English participant originalFields → lifecycle registry `label`
+ *   (presentation then applies controlled vocabulary when locale ≠ en)
  */
 
 import {

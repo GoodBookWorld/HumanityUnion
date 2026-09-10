@@ -110,6 +110,44 @@ export {
   normalizeLanguageRegistryLocaleKey,
 } from "./language-registry.js";
 export type {
+  LanguageActivationCtOwnedKind,
+  LanguageActivationNoOwnerKindId,
+  LanguageActivationPlpOwnedMediaEntityType,
+  LanguageControlledVocabularyReadinessSlice,
+  LanguageHistoricalBackfillPlan,
+  LanguageHistoricalBackfillPlanItem,
+  LanguageHigherAuthorityReadinessSlice,
+  LanguageLocalizationCountBucket,
+  LanguageLocalizationKindStatusRow,
+  LanguageLocalizationOwnershipClass,
+  LanguageLocalizationReadinessReport,
+  LanguageLocalizationReadinessState,
+  LanguageWebUiReadinessSlice,
+} from "./language-localization-readiness.js";
+export {
+  LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
+  LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS,
+  LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
+  LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
+  LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
+  LANGUAGE_LOCALIZATION_READINESS_STATES,
+  deriveLanguageLocalizationReadinessState,
+  emptyLanguageLocalizationCountBucket,
+  isLanguageLocalizationReadinessState,
+  isLocalizationReadyForSearch,
+  isLocalizationReadyForSeo,
+} from "./language-localization-readiness.js";
+export type {
+  LocalizationIntegrityArtifactRow,
+  LocalizationIntegrityArtifactState,
+  LocalizationIntegrityReport,
+  LocalizationIntegritySafetyFlags,
+} from "./localization-integrity-contract.js";
+export {
+  LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY,
+  buildLocalizationIntegrityReport,
+} from "./localization-integrity-contract.js";
+export type {
   TerminologyConcept,
   TerminologyConceptCategory,
   TerminologyConceptId,
@@ -389,7 +427,58 @@ export {
   DEFAULT_LOCALIZABLE_RULE,
   LOCALIZATION_OWNERSHIP_SYNONYMS,
   LOCALIZATION_RESOLUTION_PRIORITY,
+  LEGACY_PACK08I15_LOCALIZATION_RESOLUTION_PRIORITY,
 } from "./localization-ownership.js";
+export type {
+  ControlledLifecycleLabelCandidates,
+  ControlledLifecycleLabelResolution,
+  ControlledLifecycleLabelSource,
+  PersistedTranslationMechanism,
+  PublicPresentationAuthority,
+  PublicPresentationAuthorityCandidate,
+  PublicPresentationFieldClass,
+  PublicPresentationLocalizationPresence,
+} from "./public-presentation-authority.js";
+export {
+  PUBLIC_NEWS_PROTECTED_ORIGINAL_RULE,
+  PUBLIC_PRESENTATION_AUTHORITY,
+  PUBLIC_PRESENTATION_AUTHORITY_INVARIANTS,
+  PUBLIC_PRESENTATION_FIELD_CLASS_ELIGIBLE_AUTHORITIES,
+  PERSISTED_TRANSLATION_MECHANISM_RULE,
+  classifyPublicPresentationLocalizationPresence,
+  comparePublicPresentationAuthority,
+  isHigherPublicPresentationAuthority,
+  publicPresentationAuthorityRank,
+  publicPresentationFieldClassAllowsAuthority,
+  registryCanonicalLifecycleStageLabel,
+  resolveControlledLifecycleLabel,
+  selectWinningPublicPresentationCandidate,
+} from "./public-presentation-authority.js";
+export type {
+  ResolvePublicPresentationFieldInput,
+  ResolvePublicPresentationFieldResult,
+} from "./resolve-public-presentation-field.js";
+export {
+  resolveProtectedPublicNewsField,
+  resolvePublicPresentationField,
+} from "./resolve-public-presentation-field.js";
+export type {
+  ApplyControlledPublicVocabularyResult,
+  ControlledPublicDomainConceptId,
+  ControlledPublicVocabularyConceptId,
+  ControlledPublicVocabularyEntry,
+  ControlledPublicVocabularySubstitution,
+  ControlledVocabularyLabelLookup,
+} from "./controlled-public-vocabulary.js";
+export {
+  COLLABORATIVE_ANALYSIS_CONTROLLED_CONCEPT_IDS,
+  CONTROLLED_PUBLIC_DOMAIN_CONCEPT_IDS,
+  CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
+  applyControlledPublicVocabularyToProse,
+  getControlledPublicVocabularyEntry,
+} from "./controlled-public-vocabulary.js";
+export { presentCollaborativeAnalysisFieldsWithControlledVocabulary } from "./present-controlled-collaborative-analysis.js";
+export { presentImprovementProposalFieldsWithControlledVocabulary } from "./present-controlled-improvement-proposals.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,

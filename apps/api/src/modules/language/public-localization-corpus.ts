@@ -408,9 +408,8 @@ export async function auditPublicLocalizationCorpus(input?: {
       targetLocales = [];
     }
   }
-  if (targetLocales.length === 0) {
-    targetLocales = ["uk", "zh-Hant", "ar"] as LanguageCode[];
-  }
+  // Closure 05 — never fall back to a hardcoded locale triple.
+  // Empty Registry CT targets ⇒ empty corpus work (honest), not uk/ar/zh-Hant.
 
   const byFamilyMap = new Map<string, PublicLocalizationCorpusFamilyCounts>();
   const byLocaleMap = new Map<

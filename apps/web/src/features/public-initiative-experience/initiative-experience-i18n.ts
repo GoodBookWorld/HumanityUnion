@@ -6,6 +6,7 @@
 import {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
+  resolvePublicPresentationField,
   type InitiativeActivityAreaOption,
   type InitiativeCollaborationSystemEventKind,
   type InitiativeExperienceLifecycleStageState,
@@ -187,8 +188,22 @@ export function resolveLifecycleStageDisplayLabel(
   fallbackLabel?: string,
 ): string {
   const code = normalizeInitiativeStageCode(stageId);
-  const humanFallback = humanizeFallback(fallbackLabel || code);
-  return resolveLabel(messagesOrT, `stages.${code}`, humanFallback);
+  const webUi = resolveLabel(messagesOrT, `stages.${code}`, "");
+  const webUiControlledLabel =
+    webUi && webUi !== `stages.${code}` ? webUi : null;
+  const registryCanonicalEnglishLabel =
+    PUBLIC_INITIATIVE_EXPERIENCE_STAGES.find((stage) => stage.stageId === code)
+      ?.label ?? fallbackLabel ?? humanizeFallback(code);
+
+  return resolvePublicPresentationField({
+    fieldClass: "controlled_vocabulary",
+    controlledLifecycle: {
+      terminologyPreferredTerm: null,
+      webUiControlledLabel,
+      registryCanonicalEnglishLabel,
+      stageId: code,
+    },
+  })?.value ?? registryCanonicalEnglishLabel;
 }
 
 /**

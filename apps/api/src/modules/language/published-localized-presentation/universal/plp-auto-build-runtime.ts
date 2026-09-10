@@ -219,7 +219,7 @@ export async function getPlpAutoBuildRuntimeSnapshot(): Promise<{
 }> {
   const workCounts = await countPlpAutoBuildWorkByStatus();
   state.queueDepth = workCounts.pending;
-  const locales = resolvePlpAutoBuildLocales();
+  const locales = await resolvePlpAutoBuildLocales();
   return {
     QUEUE_BACKEND: resolvePlpAutoBuildQueueBackend(),
     AUTO_LOCALES_CONFIGURED: locales.length > 0,

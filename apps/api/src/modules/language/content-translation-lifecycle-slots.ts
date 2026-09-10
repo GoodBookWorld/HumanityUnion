@@ -1,8 +1,10 @@
 /**
- * Localization Closure 03C.5 / 03C.5C — Collaborative Analysis CT lifecycle-slot hop.
+ * Localization Closure 03C.5 / 03C.5C / Authority Closure 03 —
+ * Collaborative Analysis CT lifecycle-slot hop.
  *
  * Brand-slot pattern without importing Media/PLP consumer code.
- * Glossary `workflow_stage.preferredTerm` is the build-time label authority.
+ * Slot labels resolve via Closure 01/02 controlledLifecycle:
+ * Terminology preferredTerm → WEB_UI controlled label → Registry English last.
  *
  * 03C.5C — machine-only provider output is validated BEFORE glossary reassembly
  * so preferredTerm substitution cannot falsely satisfy prose/title change checks.
@@ -18,16 +20,17 @@ import {
   buildProviderOwnedLifecycleMachinePayload,
   presentLifecycleStageTokenFieldsAsEnglish,
   reassembleLifecycleStageSlotPlans,
+  resolveControlledLifecycleLabel,
   textContainsLifecycleStageToken,
 } from "@hu/types";
 
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { loadWebUiControlledLifecycleStageLabel } from "./controlled-lifecycle-web-ui-labels.js";
 import { listTerminologyConcepts } from "./terminology-glossary/terminology-glossary.repository.js";
 
 /**
  * Resolve published Terminology Glossary preferredTerm for a workflow_stage
- * linked by stable stageId. Returns null when unavailable (fail-closed for
- * non-English CT persistence).
+ * linked by stable stageId. Returns null when unavailable.
  */
 export function resolveWorkflowStagePreferredTerm(input: {
   readonly concepts: readonly TerminologyConcept[];
@@ -45,6 +48,26 @@ export function resolveWorkflowStagePreferredTerm(input: {
   }
   const preferred = concept.translations[input.targetLocale]?.preferredTerm?.trim();
   return preferred && preferred.length > 0 ? preferred : null;
+}
+
+/**
+ * Closure 03 — Terminology → WEB_UI → Registry English for CT slot reassembly.
+ */
+export function resolveWorkflowStageControlledLabel(input: {
+  readonly concepts: readonly TerminologyConcept[];
+  readonly stageId: InitiativeLifecycleStageId;
+  readonly targetLocale: string;
+}): string {
+  const terminologyPreferredTerm = resolveWorkflowStagePreferredTerm(input);
+  const webUiControlledLabel = loadWebUiControlledLifecycleStageLabel({
+    stageId: input.stageId,
+    locale: input.targetLocale,
+  });
+  return resolveControlledLifecycleLabel({
+    terminologyPreferredTerm,
+    webUiControlledLabel,
+    stageId: input.stageId,
+  }).label;
 }
 
 function isCollaborativeAnalysisTitleMachineKey(key: string): boolean {
@@ -209,18 +232,13 @@ export async function translateCollaborativeAnalysisFieldsWithLifecycleSlots(inp
   });
 
   const concepts = await listTerminologyConcepts();
-  const unresolved: InitiativeLifecycleStageId[] = [];
   const resolveStageLabel = (stageId: InitiativeLifecycleStageId): string | null => {
-    const preferred = resolveWorkflowStagePreferredTerm({
+    const label = resolveWorkflowStageControlledLabel({
       concepts,
       stageId,
       targetLocale: input.targetLanguage,
     });
-    if (!preferred) {
-      unresolved.push(stageId);
-      return null;
-    }
-    return preferred;
+    return label.trim() ? label : null;
   };
 
   const reassembled = reassembleLifecycleStageSlotPlans({
@@ -237,10 +255,10 @@ export async function translateCollaborativeAnalysisFieldsWithLifecycleSlots(inp
     );
   }
 
-  if (reassembled.unresolvedStageIds.length > 0 || unresolved.length > 0) {
+  if (reassembled.unresolvedStageIds.length > 0) {
     throw new ContentTranslationValidationError(
       "OTHER_VALIDATION_FAILURE",
-      "Published workflow_stage preferredTerm is required for Collaborative Analysis CT.",
+      "Controlled lifecycle label could not be resolved for Collaborative Analysis CT.",
       "malformed_response",
     );
   }

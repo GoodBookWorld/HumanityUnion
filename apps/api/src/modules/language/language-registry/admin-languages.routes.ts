@@ -118,4 +118,42 @@ adminLanguagesRouter.patch(
   },
 );
 
+/**
+ * Closure 07 — localization readiness for one Admin language (provider-free).
+ * Does not enqueue backfill and does not mutate seoIndexingEnabled.
+ */
+adminLanguagesRouter.get(
+  "/:languageId/localization-readiness",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      await listAdminLanguages({ actorUserId: req.auth!.id });
+      const languageId = Array.isArray(req.params.languageId)
+        ? req.params.languageId[0]
+        : req.params.languageId;
+      const { listLanguageRegistry } = await import("./language-registry.repository.js");
+      const { evaluateLanguageLocalizationReadiness } = await import(
+        "../language-localization-activation/index.js"
+      );
+      const records = await listLanguageRegistry();
+      const record = records.find((row) => row.languageId === (languageId ?? ""));
+      if (!record) {
+        throw new LanguageRegistryNotFoundError(
+          `Language registry record not found: ${languageId}`,
+        );
+      }
+      const readiness = await evaluateLanguageLocalizationReadiness({
+        locale: record.locale,
+        registryRecord: record,
+      });
+      res.json(
+        createSuccessResponse(readiness, "Language localization readiness loaded."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 export default adminLanguagesRouter;

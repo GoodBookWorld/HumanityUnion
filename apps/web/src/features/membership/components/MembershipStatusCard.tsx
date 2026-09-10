@@ -37,7 +37,10 @@ export function MembershipStatusCard({ membership }: MembershipStatusCardProps) 
     {
       id: "current-status",
       label: t("status.currentStatus"),
-      value: membership.cohortLabel,
+      value:
+        membership.cohortLabel === "Member"
+          ? t("status.memberCohort")
+          : t("status.participantCohort"),
       tone: "pale-blue",
     },
   ];
@@ -91,7 +94,14 @@ export function MembershipStatusCard({ membership }: MembershipStatusCardProps) 
               <MemberBadgeIcon size="medium" decorative />
             </div>
           ) : (
-            <MembershipCohortBadge cohortLabel={membership.cohortLabel} />
+            <MembershipCohortBadge
+              cohortLabel={membership.cohortLabel}
+              displayLabel={
+                membership.cohortLabel === "Member"
+                  ? t("status.memberCohort")
+                  : t("status.participantCohort")
+              }
+            />
           )}
         </div>
         <MembershipFactsTiles tiles={tiles} ariaLabel={t("status.ariaFacts")} />

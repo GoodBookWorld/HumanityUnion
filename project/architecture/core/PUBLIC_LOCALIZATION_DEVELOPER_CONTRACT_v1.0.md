@@ -2,10 +2,39 @@
 
 **Normative one-pager.** Participant-facing semantic text localizes by default.
 
-> **TRANSLATION DELIVERY RESET 01:** Future public delivery reads an atomic  
-> **PublishedLocalizedPresentation** (publication concern). Ownership wrappers and  
-> AUTO-by-default remain required when **authoring canonical presentation trees**  
-> for Localization Build. Web must **not** add new generate-on-miss / overlay paths.  
+> **Localization Authority Closure 01–04:** Public presentation uses one typed authority
+> ladder — `PUBLIC_PRESENTATION_AUTHORITY` in `@hu/types`
+> (`packages/types/src/domain/public-presentation-authority.ts`):
+> Protected → Legal → Brand → Manual/Author → Controlled vocabulary → Geography →
+> Persisted translation (CT **or** PLP by artifact ownership) → Canonical English fallback.
+> **Executable selection:** `resolvePublicPresentationField`
+> (`resolve-public-presentation-field.ts`) — normative runtime mechanism.
+> Controlled lifecycle labels: Terminology preferredTerm → WEB_UI controlled label →
+> Registry English **last** (WEB_UI must win when preferredTerm is missing).
+> Controlled terms in prose: `applyControlledPublicVocabularyToProse` (known concepts /
+> `{lifecycleStage:*}` tokens only; no provider).
+> **Closure 03:** Initiative / Collaborative Analysis public presentation + Pack 03C.5
+> CT slot reassembly consume this contract; historical CT English labels are corrected
+> at presentation without rewriting stored translations.
+> **Closure 04:** Part D Improvement Proposals public result uses WEB_UI
+> `author.proposal.fields.*` (same as Draft Preview). Structured
+> `initiative-structured-proposal-*` identities are MANUAL_AUTHOR — not Cap02
+> `improvement_proposal` CT. Controlled vocabulary applies cache-only at presentation.
+> CT and PLP are persistence mechanisms beneath authority — not a merged store.
+> Pack 08I.15 `LOCALIZATION_RESOLUTION_PRIORITY` (Brand > Legal) is **legacy** for
+> public presentation — do not use it to select winners.
+> Further surface migrations land in Closure 06+.
+>
+> **Closure 05:** Media HU-owned PLP auto-build targets are Language Registry
+> `enabled ∩ contentTranslationEnabled` (same rule as CT warm).
+> `HU_PLP_AUTO_BUILD_LOCALES` is an optional ops limiter only — never the
+> product allowlist. Admin enabling CT for a locale must not require a
+> production code change. RSS/`public_news` remains original-language-only.
+
+> **TRANSLATION DELIVERY RESET 01:** Future public delivery reads an atomic
+> **PublishedLocalizedPresentation** (publication concern). Ownership wrappers and
+> AUTO-by-default remain required when **authoring canonical presentation trees**
+> for Localization Build. Web must **not** add new generate-on-miss / overlay paths.
 > See `PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md`. Runtime unchanged until migration packs.
 
 ## What you must do
@@ -82,8 +111,10 @@ Also forbidden:
 
 | Text kind | Path |
 |-----------|------|
-| Semantic public prose | `PublicLocalizedPresentation` |
-| UI chrome | next-intl / `uiDictionaryValue` |
-| Names, IDs, URLs, secrets | explicit `protected*` helpers |
+| Semantic public prose | `PublicLocalizedPresentation` / CT or PLP by artifact ownership (`PERSISTED_TRANSLATION`) |
+| UI chrome / instructional | next-intl / WEB_UI (`ui_system_chrome` — never CT/PLP) |
+| Controlled lifecycle labels | Terminology → WEB_UI → Registry English (`resolveControlledLifecycleLabel`) |
+| Names, IDs, URLs, secrets, RSS originals | `PROTECTED_CANONICAL` / explicit `protected*` helpers |
 
-See also: `LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md` § Pack 08K.
+See also: `LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md` § Pack 08K;
+`packages/types/src/domain/public-presentation-authority.ts`.

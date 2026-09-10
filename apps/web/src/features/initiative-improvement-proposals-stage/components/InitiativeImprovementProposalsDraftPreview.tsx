@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import type { InitiativeImprovementProposalsCollection } from "@hu/types";
 
+import { presentImprovementProposalForAuthorEditor } from "../improvement-proposal-author-presentation";
 import { getMyCurrentImprovementProposalsCollection } from "../api";
 import { InitiativeImprovementProposalsContentFields } from "./InitiativeImprovementProposalsContentFields";
 
@@ -81,35 +82,38 @@ export function InitiativeImprovementProposalsDraftPreview({ initiativeId }: { r
         <p>{t("author.proposal.preview.authorYou")}</p>
       </div>
 
-      {collection.proposals.map((proposal) => (
-        <article key={proposal.proposalId} className="iip-public-result__proposal">
-          <div className="iip-proposal-card__header">
-            <h3>{proposal.title || t("author.proposal.untitledProposal")}</h3>
-          </div>
+      {collection.proposals.map((proposal) => {
+        const presented = presentImprovementProposalForAuthorEditor(proposal);
+        return (
+          <article key={proposal.proposalId} className="iip-public-result__proposal">
+            <div className="iip-proposal-card__header">
+              <h3>{presented.title || t("author.proposal.untitledProposal")}</h3>
+            </div>
 
-          <InitiativeImprovementProposalsContentFields
-            summary={proposal.summary}
-            description={proposal.description}
-            reason={proposal.reason}
-            expectedImprovement={proposal.expectedImprovement}
-            supportingSources={proposal.supportingSources}
-            relatedDiscussionReferences={proposal.relatedDiscussionReferences}
-            originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
-          />
+            <InitiativeImprovementProposalsContentFields
+              summary={presented.summary}
+              description={presented.description}
+              reason={presented.reason}
+              expectedImprovement={presented.expectedImprovement}
+              supportingSources={presented.supportingSources}
+              relatedDiscussionReferences={presented.relatedDiscussionReferences}
+              originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
+            />
 
-          <section
-            className="iip-reaction"
-            aria-label={t("author.proposal.preview.reactionAria")}
-          >
-            <p className="iip-reaction__title">
-              {t("author.proposal.preview.reactionTitle")}
-            </p>
-            <p className="iip-reaction__note">
-              {t("author.proposal.preview.reactionNoteDraft")}
-            </p>
-          </section>
-        </article>
-      ))}
+            <section
+              className="iip-reaction"
+              aria-label={t("author.proposal.preview.reactionAria")}
+            >
+              <p className="iip-reaction__title">
+                {t("author.proposal.preview.reactionTitle")}
+              </p>
+              <p className="iip-reaction__note">
+                {t("author.proposal.preview.reactionNoteDraft")}
+              </p>
+            </section>
+          </article>
+        );
+      })}
     </div>
   );
 }

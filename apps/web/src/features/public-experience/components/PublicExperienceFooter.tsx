@@ -65,7 +65,7 @@ export async function PublicExperienceFooter() {
               <Link
                 href="/"
                 className="public-experience-footer__logo-link"
-                aria-label={`${brand.siteName} home`}
+                aria-label={tNav("brandHomeAria", { siteName: brand.siteName })}
               >
                 <img
                   src="/brand/humanity-union-logo.svg"
@@ -89,7 +89,7 @@ export async function PublicExperienceFooter() {
               {tNav("footerPlatformHeading")}
             </h2>
             <div className="public-experience-footer__platform-columns">
-              <nav aria-label="Platform navigation column one">
+              <nav aria-label={tNav("footerPlatformNavCol1Aria")}>
                 <ul className="public-experience-footer__nav-list">
                   {FOOTER_PLATFORM_COLUMN_ONE.map((link) => (
                     <FooterNavItem
@@ -100,7 +100,7 @@ export async function PublicExperienceFooter() {
                   ))}
                 </ul>
               </nav>
-              <nav aria-label="Platform navigation column two">
+              <nav aria-label={tNav("footerPlatformNavCol2Aria")}>
                 <ul className="public-experience-footer__nav-list">
                   {FOOTER_PLATFORM_COLUMN_TWO.map((link) => (
                     <FooterNavItem
@@ -118,7 +118,7 @@ export async function PublicExperienceFooter() {
             <h2 className="public-experience-footer__heading">
               {tNav("footerLegalHeading")}
             </h2>
-            <nav aria-label="Legal and transparency navigation">
+            <nav aria-label={tNav("footerLegalNavAria")}>
               <ul className="public-experience-footer__nav-list public-experience-footer__nav-list--legal">
                 {FOOTER_LEGAL_LINKS.map((link) => (
                   <FooterNavItem

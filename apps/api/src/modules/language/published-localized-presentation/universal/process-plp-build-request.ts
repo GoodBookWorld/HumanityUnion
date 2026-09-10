@@ -189,6 +189,28 @@ export async function processPlpBuildRequest(
     });
   }
 
+  // Closure 05 — Media HU-owned PLP builds require Registry CT eligibility.
+  const isMediaTypeEarly = (MEDIA_PLP_ENTITY_TYPES as readonly string[]).includes(
+    request.entityType,
+  );
+  if (isMediaTypeEarly && request.entityType !== "public_news") {
+    const { assertPlpAutoBuildLocaleEligible } = await import(
+      "./public-source-mutation-bridge.js"
+    );
+    const eligible = await assertPlpAutoBuildLocaleEligible(request.locale);
+    if (!eligible) {
+      return failed({
+        status: "FAILED",
+        failure: structuredFailure({
+          failureCode: "ADAPTER_OR_SOURCE",
+          retryable: false,
+          stage: "validate",
+          safeReason: `REGISTRY_CT_INELIGIBLE:${request.locale}`,
+        }),
+      });
+    }
+  }
+
   const existing = await findCurrentPublishedPresentation({
     entityType: request.entityType,
     entityId: request.entityId,

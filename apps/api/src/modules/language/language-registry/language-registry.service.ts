@@ -371,6 +371,29 @@ export async function updateAdminLanguage(input: {
     invalidateGlobalSearchIndex();
   }
 
+  // Closure 05 — Admin enabling content translation must enqueue Media HU PLP
+  // builds for that locale without a code/env redeploy.
+  const becameCtEligible =
+    updated.enabled === true &&
+    updated.contentTranslationEnabled === true &&
+    !(before.enabled === true && before.contentTranslationEnabled === true);
+  if (becameCtEligible && updated.locale.trim().toLowerCase() !== "en") {
+    try {
+      const { enqueueCivicMediaEditorialPlpBuilds } = await import(
+        "../published-localized-presentation/universal/editorial-build-trigger.js"
+      );
+      const { registerPlpAutoBuildProcessor } = await import(
+        "../published-localized-presentation/universal/register-plp-auto-build-processor.js"
+      );
+      await registerPlpAutoBuildProcessor();
+      await enqueueCivicMediaEditorialPlpBuilds({
+        locales: [updated.locale],
+      });
+    } catch {
+      // Best-effort; Admin update must not fail because of enqueue.
+    }
+  }
+
   await recordAdministrationAudit({
     actorParticipantId: admin.participantId,
     action: resolveUpdateAuditAction(before, updated),

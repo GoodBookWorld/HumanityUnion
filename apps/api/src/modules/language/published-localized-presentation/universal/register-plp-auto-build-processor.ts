@@ -1,12 +1,12 @@
 /**
- * RESET 05C / 05C.1 — register + bootstrap the PLP auto-build processor.
+ * RESET 05C / 05C.1 / Closure 05 — register + bootstrap the PLP auto-build processor.
  *
  * Enable when:
- * - HU_PLP_AUTO_BUILD_PROCESSOR is not "0" (default: enabled when locales set)
- * - HU_PLP_AUTO_BUILD_LOCALES is non-empty (safety allowlist — no uncontrolled fanout)
+ * - HU_PLP_AUTO_BUILD_PROCESSOR is not "0"
+ * - At least one Registry locale is enabled ∩ contentTranslationEnabled
+ *   (optionally narrowed by HU_PLP_AUTO_BUILD_LOCALES ops limiter)
  *
- * RESET 05C.1 — durable work + bounded drain interval; call from index.ts
- * AFTER bootstrapPublishedLocalizationPersistence and BEFORE news scheduler.
+ * Closure 05 — locales are Registry-driven, not a hardcoded product allowlist.
  */
 
 import { isMongoConfigured } from "../../../../infrastructure/mongodb/mongo-config.js";
@@ -62,11 +62,9 @@ function startPlpAutoBuildDrainInterval(): void {
   drainTimer.unref?.();
 }
 
-/**
- * Synchronous register (tests + bootstrap helper).
- * Does not start the drain interval — prefer bootstrapPlpAutoBuildRuntime in production.
- */
-export function registerPlpAutoBuildProcessor(): RegisterPlpAutoBuildProcessorResult {
+function applyRegistration(
+  locales: readonly string[],
+): RegisterPlpAutoBuildProcessorResult {
   if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0") {
     setPlpBuildRequestProcessor(null);
     setPlpAutoBuildProcessorRegistered(false);
@@ -81,7 +79,6 @@ export function registerPlpAutoBuildProcessor(): RegisterPlpAutoBuildProcessorRe
     };
   }
 
-  const locales = resolvePlpAutoBuildLocales();
   if (locales.length === 0) {
     setPlpBuildRequestProcessor(null);
     setPlpAutoBuildProcessorRegistered(false);
@@ -108,17 +105,38 @@ export function registerPlpAutoBuildProcessor(): RegisterPlpAutoBuildProcessorRe
   };
 }
 
+/**
+ * Register processor using Registry-driven target locales (Closure 05).
+ */
+export async function registerPlpAutoBuildProcessor(): Promise<RegisterPlpAutoBuildProcessorResult> {
+  // Kill switch must short-circuit before Registry I/O.
+  if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0") {
+    return applyRegistration([]);
+  }
+  const locales = await resolvePlpAutoBuildLocales();
+  return applyRegistration(locales);
+}
+
+/**
+ * Test helper — register with an explicit locale list (still subject to processor kill switch).
+ */
+export function registerPlpAutoBuildProcessorWithLocalesForTests(
+  locales: readonly string[],
+): RegisterPlpAutoBuildProcessorResult {
+  return applyRegistration(locales);
+}
+
 export type BootstrapPlpAutoBuildRuntimeResult = RegisterPlpAutoBuildProcessorResult & {
   readonly queueBackend: "MONGO" | "MEMORY";
   readonly pendingCount: number;
 };
 
 /**
- * Deterministic API startup: locales → persistence → register → drain interval + kick.
+ * Deterministic API startup: Registry locales → persistence → register → drain interval + kick.
  */
 export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBuildRuntimeResult> {
   const queueBackend = resolvePlpAutoBuildQueueBackend();
-  const registered = registerPlpAutoBuildProcessor();
+  const registered = await registerPlpAutoBuildProcessor();
 
   if (!registered.registered) {
     setPlpAutoBuildStartupStatus({

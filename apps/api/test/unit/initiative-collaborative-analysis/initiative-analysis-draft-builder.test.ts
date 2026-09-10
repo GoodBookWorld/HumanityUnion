@@ -100,8 +100,14 @@ describe("generateAnalysisDraft (Deterministic Draft Builder)", () => {
       });
 
       assert.match(draft.summary, new RegExp(`No ${escapeToken(DISCUSSION_TOKEN)} activity`));
-      assert.match(draft.supportingEvidence, /No discussion comments have received Helpful reactions/);
-      assert.match(draft.risks, /No discussion comments have been identified as concerns/);
+      assert.match(
+        draft.supportingEvidence,
+        /No \{lifecycleStage:discussion\} contributions have received Helpful reactions/,
+      );
+      assert.match(
+        draft.risks,
+        /No \{lifecycleStage:discussion\} contributions have been identified as concerns/,
+      );
       assert.match(draft.openQuestions, /No open questions identified/);
       assert.match(draft.suggestedImprovements, /No repeated discussion themes/);
       assert.match(draft.references, /No proposal-marked discussion contributions/);
@@ -115,7 +121,7 @@ describe("generateAnalysisDraft (Deterministic Draft Builder)", () => {
         snapshot: POPULATED_SNAPSHOT,
       });
 
-      assert.match(draft.summary, /5 discussion comments/);
+      assert.match(draft.summary, /5 \{lifecycleStage:discussion\} comments/);
       assert.match(draft.summary, /3 marked Helpful/);
       assert.match(draft.summary, /1 marked Not Helpful/);
       assert.match(draft.summary, /1 proposal-marked contribution/);

@@ -44,7 +44,7 @@ export function HumanityHeaderMobileMenu({
       <button
         type="button"
         className="humanity-header__mobile-backdrop"
-        aria-label="Close navigation menu"
+        aria-label={tNav("closeNavMenuAria")}
         onClick={onClose}
       />
       <div
@@ -52,9 +52,9 @@ export function HumanityHeaderMobileMenu({
         className="humanity-header__mobile-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Mobile navigation"
+        aria-label={tNav("mobileNavAria")}
       >
-        <nav aria-label="Primary navigation">
+        <nav aria-label={tNav("primaryNavAria")}>
           <ul className="humanity-header__mobile-nav-list">
             {PRIMARY_NAVIGATION.map((item) => {
               if (!item.href) {
@@ -156,12 +156,13 @@ export const HumanityHeaderMenuButton = forwardRef<
     onToggle: () => void;
   }
 >(function HumanityHeaderMenuButton({ isOpen, menuId, onToggle }, ref) {
+  const tNav = useTranslations("navigation");
   return (
     <button
       ref={ref}
       type="button"
       className="humanity-header__menu-button"
-      aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+      aria-label={isOpen ? tNav("closeNavMenuAria") : tNav("openNavMenuAria")}
       aria-expanded={isOpen}
       aria-controls={menuId}
       onClick={onToggle}

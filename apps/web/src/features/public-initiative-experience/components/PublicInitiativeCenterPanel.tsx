@@ -785,9 +785,12 @@ export function PublicInitiativeCenterPanel({
                 experience.currentStageId,
                 experience.lifecycleProfile,
               );
-              const facingLabel =
-                experience.lifecycleStages.find((stage) => stage.stageId === facingStageId)?.label ??
-                "Initiative";
+              const facingLabel = resolveLifecycleStageDisplayLabel(
+                facingStageId,
+                t,
+                experience.lifecycleStages.find((stage) => stage.stageId === facingStageId)
+                  ?.label,
+              );
               return (
                 <PublicInitiativeOverview
                   initiative={experience.initiative}

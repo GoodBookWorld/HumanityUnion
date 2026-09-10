@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import type { InitiativeProposalGroup, InitiativeProposalIntelligenceSnapshot, InitiativeStructuredProposal } from "@hu/types";
+import {
+  lifecycleStageToken,
+  type InitiativeProposalGroup,
+  type InitiativeProposalIntelligenceSnapshot,
+  type InitiativeStructuredProposal,
+} from "@hu/types";
 
 /**
  * Initiative Lifecycle — Part D, Section 2/4 (Automatic Proposal
@@ -25,6 +30,11 @@ import type { InitiativeProposalGroup, InitiativeProposalIntelligenceSnapshot, I
  * AI Principle "never changes content autonomously" — a still-untouched
  * group becomes a NEW draft, it never silently rewrites an Author's
  * already-drafted proposal for the same group.
+ *
+ * Closure 04 — controlled lifecycle terms use `{lifecycleStage:...}` tokens
+ * (resolved Terminology → WEB_UI → Registry at presentation). System field
+ * prompts (e.g. expectedImprovement) are not embedded as English prose —
+ * Authors fill them; WEB_UI owns field labels/placeholders.
  */
 export interface GeneratedProposalDraftItem {
   readonly title: string;
@@ -49,6 +59,11 @@ export interface ImprovementProposalDraftProvider {
   generateDraftProposals(input: ImprovementProposalDraftProviderInput): Promise<GeneratedProposalDraftItem[]>;
 }
 
+/** HU-owned controlled vocabulary refs — never free-text stage labels. */
+const DISCUSSION_STAGE = lifecycleStageToken("discussion");
+const PROPOSAL_STAGE = lifecycleStageToken("proposal");
+const INITIATIVE_STAGE = lifecycleStageToken("initiative");
+
 function truncateForTitle(excerpt: string, maxLength = 72): string {
   const trimmed = excerpt.trim().replace(/[.?!…]+$/, "");
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 1)}…` : trimmed;
@@ -60,7 +75,7 @@ function buildDescription(group: InitiativeProposalGroup, memberExcerpts: readon
   }
 
   const bullets = memberExcerpts.map((excerpt) => `- "${excerpt}"`).join("\n");
-  return `This idea was raised ${memberExcerpts.length} times in Discussion, in similar words:\n${bullets}`;
+  return `This idea was raised ${memberExcerpts.length} times in ${DISCUSSION_STAGE}, in similar words:\n${bullets}`;
 }
 
 function buildReason(group: InitiativeProposalGroup): string {
@@ -68,14 +83,14 @@ function buildReason(group: InitiativeProposalGroup): string {
   const participantsLabel = authorCount === 1 ? "1 participant" : `${authorCount} participants`;
 
   return group.isDuplicateGroup
-    ? `Raised independently by ${participantsLabel} in the ${group.category} area of Discussion — repetition suggests shared concern.`
-    : `Raised by ${participantsLabel} in the ${group.category} area of Discussion.`;
+    ? `Raised independently by ${participantsLabel} in the ${group.category} area of ${DISCUSSION_STAGE} — repetition suggests shared concern.`
+    : `Raised by ${participantsLabel} in the ${group.category} area of ${DISCUSSION_STAGE}.`;
 }
 
 function buildSupportingSources(group: InitiativeProposalGroup): string {
   return group.totalHelpfulCount > 0
-    ? `${group.totalHelpfulCount} Helpful reaction(s) across ${group.memberCount} related comment(s) in Discussion.`
-    : `${group.memberCount} related comment(s) in Discussion (no Helpful reactions recorded yet).`;
+    ? `${group.totalHelpfulCount} Helpful reaction(s) across ${group.memberCount} related comment(s) in ${DISCUSSION_STAGE}.`
+    : `${group.memberCount} related comment(s) in ${DISCUSSION_STAGE} (no Helpful reactions recorded yet).`;
 }
 
 function generateDeterministicDraftProposals(
@@ -97,12 +112,12 @@ function generateDeterministicDraftProposals(
     ];
 
     generated.push({
-      title: `Proposal: ${truncateForTitle(group.representativeExcerpt)}`,
+      title: `${PROPOSAL_STAGE}: ${truncateForTitle(group.representativeExcerpt)}`,
       summary: group.representativeExcerpt,
       description: buildDescription(group, memberExcerpts),
       reason: buildReason(group),
-      expectedImprovement:
-        "Describe the concrete improvement this change is expected to deliver for the Initiative.",
+      // System prompt belongs to WEB_UI — leave empty for the Author to fill.
+      expectedImprovement: "",
       supportingSources: buildSupportingSources(group),
       relatedDiscussionReferences: group.discussionUrl,
       originalAuthorDisplayNames: group.authorDisplayNames,
@@ -151,3 +166,10 @@ export function toStructuredProposal(item: GeneratedProposalDraftItem, now: stri
     updatedAt: now,
   };
 }
+
+/** Exported for Closure 04 / tests — tokens used in deterministic HU-owned prose. */
+export const IMPROVEMENT_PROPOSAL_DRAFT_STAGE_TOKENS = {
+  discussion: DISCUSSION_STAGE,
+  proposal: PROPOSAL_STAGE,
+  initiative: INITIATIVE_STAGE,
+} as const;

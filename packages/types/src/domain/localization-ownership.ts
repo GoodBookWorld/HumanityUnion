@@ -28,8 +28,15 @@ export const LOCALIZATION_OWNERSHIP_SYNONYMS = {
 } as const satisfies Record<string, LocalizationOwnershipClass>;
 
 /**
- * Resolution priority for participant-facing text (highest first).
- * Admin Brand/Legal must never be overwritten by machine translation.
+ * Compatibility note (Localization Authority Closure 01/02):
+ * This Pack 08I.15 array keeps historical Brand-before-Legal order and is
+ * **legacy / non-normative for public presentation**.
+ *
+ * Normative public presentation:
+ * - ordering: `PUBLIC_PRESENTATION_AUTHORITY`
+ * - executable selection: `resolvePublicPresentationField`
+ *
+ * Do not use this constant to select public presentation winners.
  */
 export const LOCALIZATION_RESOLUTION_PRIORITY = [
   "BRAND_LOCALIZATION",
@@ -39,6 +46,10 @@ export const LOCALIZATION_RESOLUTION_PRIORITY = [
   "CIVIC_CONTENT_CURRENT_MACHINE",
   "CANONICAL_ENGLISH_FALLBACK",
 ] as const;
+
+/** Explicit alias documenting legacy status for public presentation. */
+export const LEGACY_PACK08I15_LOCALIZATION_RESOLUTION_PRIORITY =
+  LOCALIZATION_RESOLUTION_PRIORITY;
 
 export type LocalizationResolutionPriorityStep =
   (typeof LOCALIZATION_RESOLUTION_PRIORITY)[number];

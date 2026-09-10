@@ -1,4 +1,5 @@
 import type {
+  LanguageLocalizationReadinessReport,
   LanguageRegistryAdmin,
   LanguageRegistryAdminListResponse,
   LanguageTextDirection,
@@ -39,6 +40,15 @@ export interface AdminLanguagePatchInput {
 
 export async function fetchAdminLanguages(): Promise<LanguageRegistryAdminListResponse> {
   return apiRequest<LanguageRegistryAdminListResponse>(ADMIN_LANGUAGES_PATH);
+}
+
+/** Closure 07 — provider-free localization readiness for one Admin language. */
+export async function fetchAdminLanguageLocalizationReadiness(
+  languageId: string,
+): Promise<LanguageLocalizationReadinessReport> {
+  return apiRequest<LanguageLocalizationReadinessReport>(
+    `${ADMIN_LANGUAGES_PATH}/${encodeURIComponent(languageId)}/localization-readiness`,
+  );
 }
 
 export async function createAdminLanguage(

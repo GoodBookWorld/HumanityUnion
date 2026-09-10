@@ -10,7 +10,8 @@
     "show": "顯示",
     "hide": "隱藏",
     "showPassword": "顯示密碼",
-    "hidePassword": "隱藏密碼"
+    "hidePassword": "隱藏密碼",
+    "possibleReasonPrefix": "可能原因："
   },
   "a11y": {
     "skipToMainContent": "跳至主要內容"
@@ -46,7 +47,15 @@
     "footerPlatformHeading": "平台",
     "footerLegalHeading": "法律與透明",
     "footerCopyright": "© {year} {siteName}. 版權所有。",
-    "siteMapVolunteering": "志工參與"
+    "siteMapVolunteering": "志工參與",
+    "brandHomeAria": "{siteName} 首頁",
+    "primaryNavAria": "主要導覽",
+    "mobileNavAria": "行動版導覽",
+    "closeNavMenuAria": "關閉導覽選單",
+    "openNavMenuAria": "開啟導覽選單",
+    "footerPlatformNavCol1Aria": "平台導覽第一欄",
+    "footerPlatformNavCol2Aria": "平台導覽第二欄",
+    "footerLegalNavAria": "法律與透明度導覽"
   },
   "auth": {
     "logIn": "登入",
@@ -1937,7 +1946,8 @@
           "supportingSources": "支持來源",
           "relatedDiscussionReferences": "相關討論參考",
           "author": "作者",
-          "originalAuthors": "原始作者"
+          "originalAuthors": "原始作者",
+          "expectedImprovementPlaceholder": "說明此變更預期帶來的具體改善。"
         },
         "curation": {
           "draft": "草稿",
@@ -4114,7 +4124,9 @@
         "knowledgeTitle": "僅供參考架構",
         "nonNominationNote": "區域辦公室提名模式暫緩。"
       }
-    }
+    },
+    "relatedActivityAreaFallback": "公民倡議",
+    "relatedGeographyUnspecified": "未指定地理範圍"
   },
   "worldInitiativesPublic": {
     "pageTitle": "世界倡議",
@@ -4376,7 +4388,8 @@
       "hintZoomed": "放大後可拖曳地圖平移。點選國家仍會開啟公民活動頁面。",
       "exploreByCountry": "依國家探索公民活動",
       "selectCountry": "選擇國家"
-    }
+    },
+    "unityIllustrationAria": "人類團結插圖"
   },
   "publicInitiativeMiniCard": {
     "viewInitiative": "查看倡議 →",
@@ -4514,7 +4527,8 @@
       "memberSince": "成為會員自",
       "contribution": "貢獻",
       "ariaFacts": "會籍狀態資訊",
-      "memberCohort": "會員"
+      "memberCohort": "會員",
+      "participantCohort": "參與者"
     },
     "journey": {
       "title": "會籍歷程",
@@ -4600,6 +4614,16 @@
         "notYet": "尚未完成"
       },
       "journeySummary": "已完成 {completed}／{total} 個步驟"
+    },
+    "statistics": {
+      "defaultTitle": "會員參與",
+      "loading": "正在載入參與統計…",
+      "unavailable": "參與統計暫時無法使用。",
+      "totalParticipation": "總參與人數",
+      "members": "會員",
+      "participants": "參與者",
+      "lastUpdated": "最後更新 {when}",
+      "votingExplanation": "會員身分不會改變投票權重。此結果為公民支持度的統計指標。"
     }
   },
   "supportPublic": {
@@ -5391,7 +5415,8 @@
     "mottoStatusValue": "主動防衛",
     "mottoSloganLabel": " // 口號：",
     "mottoSloganValue": "消解無知。解除侵略。",
-    "cta": "[ 加入先鋒 ]"
+    "cta": "[ 加入先鋒 ]",
+    "homeSlogan": "行動團結中心"
   },
   "volunteerPublic": {
     "eyebrow": "人創造改變",

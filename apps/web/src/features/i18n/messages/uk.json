@@ -10,7 +10,8 @@
     "show": "Показати",
     "hide": "Сховати",
     "showPassword": "Показати пароль",
-    "hidePassword": "Сховати пароль"
+    "hidePassword": "Сховати пароль",
+    "possibleReasonPrefix": "Можлива причина:"
   },
   "a11y": {
     "skipToMainContent": "Перейти до основного вмісту"
@@ -46,7 +47,15 @@
     "footerPlatformHeading": "Платформа",
     "footerLegalHeading": "Правові положення та прозорість",
     "footerCopyright": "© {year} {siteName}. Усі права захищено.",
-    "siteMapVolunteering": "Волонтерство"
+    "siteMapVolunteering": "Волонтерство",
+    "brandHomeAria": "{siteName} — головна",
+    "primaryNavAria": "Основна навігація",
+    "mobileNavAria": "Мобільна навігація",
+    "closeNavMenuAria": "Закрити меню навігації",
+    "openNavMenuAria": "Відкрити меню навігації",
+    "footerPlatformNavCol1Aria": "Навігація платформи, колонка 1",
+    "footerPlatformNavCol2Aria": "Навігація платформи, колонка 2",
+    "footerLegalNavAria": "Навігація: правові відомості та прозорість"
   },
   "auth": {
     "logIn": "Увійти",
@@ -1937,7 +1946,8 @@
           "supportingSources": "Підтримувальні джерела",
           "relatedDiscussionReferences": "Пов’язані посилання з обговорення",
           "author": "Автор",
-          "originalAuthors": "Автор(и) оригіналу"
+          "originalAuthors": "Автор(и) оригіналу",
+          "expectedImprovementPlaceholder": "Опишіть конкретне покращення, яке має принести ця зміна."
         },
         "curation": {
           "draft": "Чернетка",
@@ -4114,7 +4124,9 @@
         "knowledgeTitle": "Довідкова архітектура",
         "nonNominationNote": "Моделі номінації регіональних офісів відкладені."
       }
-    }
+    },
+    "relatedActivityAreaFallback": "Громадянська ініціатива",
+    "relatedGeographyUnspecified": "Географію не вказано"
   },
   "worldInitiativesPublic": {
     "pageTitle": "Світові ініціативи",
@@ -4376,7 +4388,8 @@
       "hintZoomed": "Перетягуйте карту для панорамування зі збільшенням. Натискання країни відкриває громадянську активність.",
       "exploreByCountry": "Досліджуйте громадянську активність за країною",
       "selectCountry": "Оберіть країну"
-    }
+    },
+    "unityIllustrationAria": "Ілюстрація єдності людства"
   },
   "publicInitiativeMiniCard": {
     "viewInitiative": "Переглянути ініціативу →",
@@ -4514,7 +4527,8 @@
       "memberSince": "Член з",
       "contribution": "Внесок",
       "ariaFacts": "Факти про статус членства",
-      "memberCohort": "Член"
+      "memberCohort": "Член",
+      "participantCohort": "Учасник"
     },
     "journey": {
       "title": "Шлях членства",
@@ -4600,6 +4614,16 @@
         "notYet": "Ще не завершено"
       },
       "journeySummary": "{completed} з {total} кроків завершено"
+    },
+    "statistics": {
+      "defaultTitle": "Участь у членстві",
+      "loading": "Завантаження статистики участі...",
+      "unavailable": "Статистика участі тимчасово недоступна.",
+      "totalParticipation": "Загальна участь",
+      "members": "Члени",
+      "participants": "Учасники",
+      "lastUpdated": "Оновлено {when}",
+      "votingExplanation": "Статус членства не змінює вагу голосу. Цей результат є статистичним показником громадянської підтримки."
     }
   },
   "supportPublic": {
@@ -5391,7 +5415,8 @@
     "mottoStatusValue": "АКТИВНИЙ ЗАХИСТ",
     "mottoSloganLabel": " // ГАСЛО: ",
     "mottoSloganValue": "НЕЙТРАЛІЗУВАТИ НЕВІГЛАСТВО. РОЗЗБРОЇТИ АГРЕСІЮ.",
-    "cta": "[ Приєднатися до авангарду ]"
+    "cta": "[ Приєднатися до авангарду ]",
+    "homeSlogan": "Центр єдності дій"
   },
   "volunteerPublic": {
     "eyebrow": "Люди створюють зміни",

@@ -10,7 +10,8 @@
     "show": "Show",
     "hide": "Hide",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "possibleReasonPrefix": "Possible reason:"
   },
   "a11y": {
     "skipToMainContent": "Skip to main content"
@@ -46,7 +47,15 @@
     "footerPlatformHeading": "Platform",
     "footerLegalHeading": "Legal and transparency",
     "footerCopyright": "© {year} {siteName}. All rights reserved.",
-    "siteMapVolunteering": "Volunteering"
+    "siteMapVolunteering": "Volunteering",
+    "brandHomeAria": "{siteName} home",
+    "primaryNavAria": "Primary navigation",
+    "mobileNavAria": "Mobile navigation",
+    "closeNavMenuAria": "Close navigation menu",
+    "openNavMenuAria": "Open navigation menu",
+    "footerPlatformNavCol1Aria": "Platform navigation column one",
+    "footerPlatformNavCol2Aria": "Platform navigation column two",
+    "footerLegalNavAria": "Legal and transparency navigation"
   },
   "auth": {
     "logIn": "Log in",
@@ -1937,7 +1946,8 @@
           "supportingSources": "Supporting Sources",
           "relatedDiscussionReferences": "Related Discussion References",
           "author": "Author",
-          "originalAuthors": "Original Author(s)"
+          "originalAuthors": "Original Author(s)",
+          "expectedImprovementPlaceholder": "Describe the concrete improvement this change is expected to deliver."
         },
         "curation": {
           "draft": "Draft",
@@ -4114,7 +4124,9 @@
         "knowledgeTitle": "Reference-only architecture",
         "nonNominationNote": "Regional office nomination models are deferred."
       }
-    }
+    },
+    "relatedActivityAreaFallback": "Civic initiative",
+    "relatedGeographyUnspecified": "Geography not specified"
   },
   "worldInitiativesPublic": {
     "pageTitle": "World Initiatives",
@@ -4376,7 +4388,8 @@
       "hintZoomed": "Drag the map to pan while zoomed. Country taps still open civic activity.",
       "exploreByCountry": "Explore civic activity by country",
       "selectCountry": "Select a country"
-    }
+    },
+    "unityIllustrationAria": "Humanity unity illustration"
   },
   "publicInitiativeMiniCard": {
     "viewInitiative": "View Initiative →",
@@ -4514,7 +4527,8 @@
       "memberSince": "Member Since",
       "contribution": "Contribution",
       "ariaFacts": "Membership status facts",
-      "memberCohort": "Member"
+      "memberCohort": "Member",
+      "participantCohort": "Participant"
     },
     "journey": {
       "title": "Membership Journey",
@@ -4600,6 +4614,16 @@
         "notYet": "Not yet completed"
       },
       "journeySummary": "{completed} of {total} steps complete"
+    },
+    "statistics": {
+      "defaultTitle": "Membership participation",
+      "loading": "Loading participation statistics...",
+      "unavailable": "Participation statistics are temporarily unavailable.",
+      "totalParticipation": "Total participation",
+      "members": "Members",
+      "participants": "Participants",
+      "lastUpdated": "Last updated {when}",
+      "votingExplanation": "Membership status does not change vote weight. This result is a statistical indicator of civic support."
     }
   },
   "supportPublic": {
@@ -5391,7 +5415,8 @@
     "mottoStatusValue": "ACTIVE DEFENSE",
     "mottoSloganLabel": " // SLOGAN: ",
     "mottoSloganValue": "NEUTRALIZE IGNORANCE. DISARM AGGRESSION.",
-    "cta": "[ Join The Vanguard ]"
+    "cta": "[ Join The Vanguard ]",
+    "homeSlogan": "Action Unity Center"
   },
   "volunteerPublic": {
     "eyebrow": "People create change",

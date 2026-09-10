@@ -1,11 +1,11 @@
 # Published Localization Delivery Architecture v1.0
 
-**Document ID:** TRANSLATION_DELIVERY_RESET_01  
-**Status:** Normative baseline — architecture / audit only  
-**Date:** 2026-09-05  
-**Supersedes (direction):** runtime assembly of localized semantic content in Web (Pack 08K–08K.3.3 path)  
-**Does not change:** participant-facing runtime behavior until a later implementation pack  
-**Companion ADR:** `ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md`  
+**Document ID:** TRANSLATION_DELIVERY_RESET_01
+**Status:** Normative baseline — architecture / audit only
+**Date:** 2026-09-05
+**Supersedes (direction):** runtime assembly of localized semantic content in Web (Pack 08K–08K.3.3 path)
+**Does not change:** participant-facing runtime behavior until a later implementation pack
+**Companion ADR:** `ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md`
 **Companion ledger:** `PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md`
 
 ---
@@ -22,7 +22,7 @@ Canonical Public Content
 
 **LOCALIZATION IS A PUBLICATION CONCERN, NOT A RENDERING CONCERN.**
 
-Web and public API **read** a completed publication artifact.  
+Web and public API **read** a completed publication artifact.
 They do **not** assemble, merge, generate, or repair semantic localization during render.
 
 ---
@@ -200,12 +200,12 @@ type PublishedLocalizedPresentation = {
 
 Deterministic precedence (highest wins; machine rebuild MUST NOT overwrite higher layers):
 
-1. **Protected canonical identity / technical values**  
-2. **Legal Localization** (admin-approved)  
-3. **Brand Localization** (admin-approved)  
-4. **Manual / author-approved content localization**  
-5. **Controlled terminology / geography resolution**  
-6. **Machine localization** (`TranslationProvider`)  
+1. **Protected canonical identity / technical values**
+2. **Legal Localization** (admin-approved)
+3. **Brand Localization** (admin-approved)
+4. **Manual / author-approved content localization**
+5. **Controlled terminology / geography resolution**
+6. **Machine localization** (`TranslationProvider`)
 7. **Canonical English fallback** (only as whole-presentation fallback at read time — see §6)
 
 ### Provenance (per localized node/value)
@@ -224,6 +224,19 @@ Each applied value records at least:
 Machine rebuild applies only where no higher-priority value exists for that path.
 
 **Note:** Existing `LOCALIZATION_RESOLUTION_PRIORITY` in types is **aligned and extended**: protected identity/technical is explicit step 1; Legal before Brand matches admin control intent (Reset 01 normative order above). Implementation packs must reconcile the typed constant with this ADR without changing runtime in Reset 01.
+
+**Localization Authority Closure 01 (normative for public presentation):**
+Use `PUBLIC_PRESENTATION_AUTHORITY` / `resolveControlledLifecycleLabel` /
+`selectWinningPublicPresentationCandidate` in `@hu/types`
+(`public-presentation-authority.ts`). That ladder is the single public
+presentation contract: Legal before Brand; controlled vocabulary =
+Terminology → WEB_UI → Registry English; `PERSISTED_TRANSLATION` is CT or PLP
+by existing artifact ownership (not a merged store).
+`PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY` remains the PLP build/merge ladder
+(`MACHINE` maps to persisted translation). Pack 08I.15
+`LOCALIZATION_RESOLUTION_PRIORITY` remains a compatibility enum
+(Brand-before-Legal historical order) — do not treat it as Closure 01.
+See `PUBLIC_LOCALIZATION_DEVELOPER_CONTRACT_v1.0.md`.
 
 ---
 
@@ -334,14 +347,14 @@ Snapshots MUST support future locale-addressable routes consuming the **same** `
 
 Snapshot SEO subtree (minimum):
 
-- page title  
-- meta description  
-- OG / Twitter presentation fields  
-- public semantic body (presentation tree)  
-- structured fields needed by future JSON-LD  
+- page title
+- meta description
+- OG / Twitter presentation fields
+- public semantic body (presentation tree)
+- structured fields needed by future JSON-LD
 
-**Reset 01 does NOT implement locale-prefixed routes.**  
-**Reset 01 does NOT add hreflang.**  
+**Reset 01 does NOT implement locale-prefixed routes.**
+**Reset 01 does NOT add hreflang.**
 
 `HREFLANG_STATUS` remains **`DEFERRED`** until durable locale URLs exist (`hreflang-policy.ts`).
 
@@ -362,11 +375,11 @@ Canonical Media presentation (civic_media + nested trusted/principles/news ident
 
 ### After Media migration, Media React MUST NOT use
 
-- Per-card translation generation  
-- Semantic raw/localized overlays  
-- Generation-on-miss waiting  
-- Route-specific translation identity for the same resource  
-- Field-level mixed fallback  
+- Per-card translation generation
+- Semantic raw/localized overlays
+- Generation-on-miss waiting
+- Route-specific translation identity for the same resource
+- Field-level mixed fallback
 
 ### Shared trusted media
 
@@ -375,7 +388,7 @@ Canonical Media presentation (civic_media + nested trusted/principles/news ident
 Nested presentation strategy (design choice for Phase B):
 
 - Prefer **one published snapshot per public resource identity** (e.g. trusted outlet explanation identity), composed by Media page from published children; **or**
-- One aggregate `civic_media` snapshot that is always complete for the center singleton  
+- One aggregate `civic_media` snapshot that is always complete for the center singleton
 
 Either way: **atomic complete** for what the page renders; no PARTIAL publish; country rail reuses the same trusted entity snapshots.
 
@@ -385,10 +398,10 @@ Either way: **atomic complete** for what the page renders; no PARTIAL publish; c
 
 Start with:
 
-- Empty browser cache  
-- Fresh browser context  
-- No warmed client translation cache  
-- Hard navigation directly to `/media`  
+- Empty browser cache
+- Fresh browser context
+- No warmed client translation cache
+- Hard navigation directly to `/media`
 
 Locales: **uk**, **zh-Hant**, **ar**
 
@@ -410,7 +423,7 @@ MIXED_LANGUAGE_SEMANTIC_NODES = 0
 PROVIDER_CALLS_FROM_READ_PATH = 0
 ```
 
-A **canonical fallback** is allowed as one coherent presentation.  
+A **canonical fallback** is allowed as one coherent presentation.
 A **mixed** localized/canonical card is **not**.
 
 ---
@@ -446,14 +459,14 @@ A **mixed** localized/canonical card is **not**.
 
 ## 15. Explicit non-goals (Reset 01)
 
-- Mongo schema migration  
-- Runtime persistence writes  
-- Web behavior changes  
-- Provider / worker / reconcile / warm / staging / prod / Render commands  
-- Translation backfill  
-- New translation hooks  
-- Component fixes  
-- Locale-prefixed routes / hreflang  
+- Mongo schema migration
+- Runtime persistence writes
+- Web behavior changes
+- Provider / worker / reconcile / warm / staging / prod / Render commands
+- Translation backfill
+- New translation hooks
+- Component fixes
+- Locale-prefixed routes / hreflang
 
 ---
 
@@ -613,9 +626,9 @@ Provider boundary: every AUTO prose path must be present and non-identical to so
 
 **Invariant:** Ownership alone, publication state alone, and content difference alone are each insufficient. A participant-facing localized presentation requires:
 
-1. **OWNERSHIP** — every rendered semantic node has a stable owner  
-2. **STRUCTURAL REACHABILITY (`LSI.1`)** — every PLP-owned rendered path exists in canonical source → build AUTO map → presentation → apply → renderer  
-3. **LOCALIZED CONTENT INTEGRITY (`CLI.1`)** — values are not merely canonical source  
+1. **OWNERSHIP** — every rendered semantic node has a stable owner
+2. **STRUCTURAL REACHABILITY (`LSI.1`)** — every PLP-owned rendered path exists in canonical source → build AUTO map → presentation → apply → renderer
+3. **LOCALIZED CONTENT INTEGRITY (`CLI.1`)** — values are not merely canonical source
 
 **PLP.2 decision:** Schema version stays **PLP.2**. `LSI.1` is an independent attestation on the snapshot (like `CLI.1`). Entity allowlist expands with `civic_media_fact_check` / `civic_media_propaganda`; principle trees gain `whyItMatters`. Fingerprint changes fail-close old principle snapshots until rematerialized (not done in this pack).
 
@@ -649,12 +662,12 @@ Shared classifier: `classifyUsableLocalizedPresentation` (API domain). For `loca
 
 Normative chain:
 
-1. OWNERSHIP  
-2. STRUCTURAL REACHABILITY (`LSI.1`)  
-3. CONTENT INTEGRITY (`CLI.1`)  
-4. RESOLVER VALIDITY (`PUBLISHED_LOCALIZED`)  
-5. **CONSUMER VALUE LINEAGE** — `RESOLVED_LOCALIZED` → `PROJECTED_LOCALIZED` → `PROPAGATED_LOCALIZED` → `RENDERED_LOCALIZED`  
-6. RENDERED LOCALIZED VALUE  
+1. OWNERSHIP
+2. STRUCTURAL REACHABILITY (`LSI.1`)
+3. CONTENT INTEGRITY (`CLI.1`)
+4. RESOLVER VALIDITY (`PUBLISHED_LOCALIZED`)
+5. **CONSUMER VALUE LINEAGE** — `RESOLVED_LOCALIZED` → `PROJECTED_LOCALIZED` → `PROPAGATED_LOCALIZED` → `RENDERED_LOCALIZED`
+6. RENDERED LOCALIZED VALUE
 
 A break after resolver is a localization failure (`LOCALIZED_PRESENTATION_CONSUMER_BYPASS`). Path presence markers alone are insufficient — resolved localized values must equal projected/card/rendered values (opaque sentinels in tests).
 
@@ -672,12 +685,12 @@ A break after resolver is a localization failure (`LOCALIZED_PRESENTATION_CONSUM
 
 Normative runtime success requires:
 
-1. published presentation validity (CLI.1 + LSI.1 + resolver)  
-2. correct requested locale (`uk → uk → uk`)  
-3. correct runtime branch (`MEDIA_LOCALIZATION_RUNTIME_BRANCH=PLP`)  
-4. consumer value lineage  
-5. localized SSR value  
-6. localized settled hydrated value  
+1. published presentation validity (CLI.1 + LSI.1 + resolver)
+2. correct requested locale (`uk → uk → uk`)
+3. correct runtime branch (`MEDIA_LOCALIZATION_RUNTIME_BRANCH=PLP`)
+4. consumer value lineage
+5. localized SSR value
+6. localized settled hydrated value
 
 **False-positive architecture found:** API consumer acceptance (`CONSUMER_MODE=PUBLISHED_LOCALIZED`) proved the **API** process with `HU_MEDIA_PLP_ENABLED=true`, while staging Web historically rolled back to `HU_MEDIA_PLP_ENABLED` unset/false → `/media` stayed on **LEGACY** (`loadCivicMediaEditorialSeed` / CT). RSS cards still translated via generate-on-miss; editorial/FAQ/PLP cards remained English. Deploying consumer fixes (03E.5) without Web entering the PLP branch produces **zero visual change**.
 
