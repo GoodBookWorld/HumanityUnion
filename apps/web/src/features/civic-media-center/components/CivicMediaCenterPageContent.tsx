@@ -12,6 +12,7 @@ import type {
   PublicNewsArticleItem,
   TrustedMediaResource,
 } from "@hu/types";
+import { mediaSsrPlpAlignedWithRequestedLocale } from "../../language/media-plp/media-ssr-plp-locale-alignment";
 
 import { Card } from "../../../design-system/components/Card";
 import { WorkspaceStatusBadge as Badge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
@@ -524,67 +525,89 @@ function CivicMediaCenterLoaded({
   const locale = useLocale();
   // Soft-nav correctness: document/interface locale wins over stale SSR PLP props.
   const requestedLocale = locale;
-  const plpMode = plpTrustedById != null && plpPrinciplesById != null;
+  const ssrPlpAlignedWithRequestedLocale = mediaSsrPlpAlignedWithRequestedLocale({
+    batchLocale: mediaLocalizationBatchLocale,
+    requestedLocale,
+  });
+  const effectiveTrustedById = ssrPlpAlignedWithRequestedLocale
+    ? plpTrustedById
+    : undefined;
+  const effectivePrinciplesById = ssrPlpAlignedWithRequestedLocale
+    ? plpPrinciplesById
+    : undefined;
+  const effectiveEditorialPresentation = ssrPlpAlignedWithRequestedLocale
+    ? plpEditorialPresentation
+    : undefined;
+  const effectiveFactCheckById = ssrPlpAlignedWithRequestedLocale
+    ? plpFactCheckById
+    : undefined;
+  const effectivePropagandaById = ssrPlpAlignedWithRequestedLocale
+    ? plpPropagandaById
+    : undefined;
+  const effectiveNewsById = ssrPlpAlignedWithRequestedLocale
+    ? plpNewsById
+    : undefined;
+  const plpMode = effectiveTrustedById != null && effectivePrinciplesById != null;
   const runtimeBranch =
     mediaLocalizationRuntimeBranch ?? (plpMode ? "PLP" : "LEGACY");
   // Reset 03C.2 / 03E — stable identity; editorial overview/FAQ from PLP when present.
   // Implementation 02 — locale isolation at apply; locale in deps so soft-nav recomputes.
   const plpEditorial = useMemo(
     () =>
-      plpMode && plpTrustedById && plpPrinciplesById
+      plpMode && effectiveTrustedById && effectivePrinciplesById
         ? applyMediaPlpPresentationsToEditorial({
             media,
-            trustedById: plpTrustedById,
-            principlesById: plpPrinciplesById,
-            editorialPresentation: plpEditorialPresentation,
+            trustedById: effectiveTrustedById,
+            principlesById: effectivePrinciplesById,
+            editorialPresentation: effectiveEditorialPresentation,
             requestedLocale,
           })
         : undefined,
     [
       plpMode,
       media,
-      plpTrustedById,
-      plpPrinciplesById,
-      plpEditorialPresentation,
+      effectiveTrustedById,
+      effectivePrinciplesById,
+      effectiveEditorialPresentation,
       requestedLocale,
     ],
   );
   const factCheckMaps = useMemo(
     () =>
-      plpMode && plpFactCheckById
+      plpMode && effectiveFactCheckById
         ? applyMediaPlpFactCheckMaps({
             resources: media.factChecking,
-            factCheckById: plpFactCheckById,
+            factCheckById: effectiveFactCheckById,
             requestedLocale,
           })
         : undefined,
-    [plpMode, media.factChecking, plpFactCheckById, requestedLocale],
+    [plpMode, media.factChecking, effectiveFactCheckById, requestedLocale],
   );
   const propagandaMaps = useMemo(
     () =>
-      plpMode && plpPropagandaById
+      plpMode && effectivePropagandaById
         ? applyMediaPlpPropagandaMaps({
             resources: media.propagandaAnalysis,
-            propagandaById: plpPropagandaById,
+            propagandaById: effectivePropagandaById,
             requestedLocale,
           })
         : undefined,
-    [plpMode, media.propagandaAnalysis, plpPropagandaById, requestedLocale],
+    [plpMode, media.propagandaAnalysis, effectivePropagandaById, requestedLocale],
   );
   const editorial = useCivicMediaResolvedEditorial(
     media,
-    plpEditorial ?? initialEditorial,
+    plpEditorial ?? (ssrPlpAlignedWithRequestedLocale ? initialEditorial : undefined),
     { skipClientTranslation: plpMode },
   );
   useMediaPlpLocaleSwitchLifecycle({
     plpMode,
-    plpTrustedById,
-    plpPrinciplesById,
+    plpTrustedById: effectiveTrustedById,
+    plpPrinciplesById: effectivePrinciplesById,
   });
 
   const editorialApplied =
     plpMode &&
-    plpEditorialPresentation?.mode === "PUBLISHED_LOCALIZED" &&
+    effectiveEditorialPresentation?.mode === "PUBLISHED_LOCALIZED" &&
     editorial.overview.title.trim() !== media.overview.title.trim() &&
     editorial.overview.summary.trim() !== media.overview.summary.trim();
   const editorialResult = plpMode
@@ -594,7 +617,7 @@ function CivicMediaCenterLoaded({
     : "CANONICAL_FALLBACK";
   const editorialMode = editorialApplied
     ? "PUBLISHED_LOCALIZED"
-    : plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
+    : effectiveEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
 
   const liveTruthProbeStatus =
     mediaPlpLiveTruthProbeStatus ?? "NOT_WIRED";
@@ -697,9 +720,9 @@ function CivicMediaCenterLoaded({
         <PublicNewsSection
           sectionId="news-widgets"
           variant="discovery"
-          disableOnDemandTranslation={plpMode || plpNewsById != null}
+          disableOnDemandTranslation={plpMode || effectiveNewsById != null}
           initialArticles={initialNewsArticles}
-          plpNewsById={plpNewsById}
+          plpNewsById={effectiveNewsById}
         />
 
         <HuxEducationSection
@@ -715,11 +738,11 @@ function CivicMediaCenterLoaded({
           renderItem={(principle) => (
             <PrincipleCard
               principle={principle}
-              plpMode={
-                plpMode
-                  ? plpPrinciplesById[principle.id]?.mode ?? "CANONICAL_FALLBACK"
-                  : undefined
-              }
+                plpMode={
+                  plpMode
+                    ? effectivePrinciplesById?.[principle.id]?.mode ?? "CANONICAL_FALLBACK"
+                    : undefined
+                }
               plpEntityId={plpMode ? principle.id : undefined}
             />
           )}
@@ -743,11 +766,11 @@ function CivicMediaCenterLoaded({
                 resource={resource}
                 categoryTitle={categoryTitle}
                 explanation={editorial.trustedExplanationsById[resource.id]}
-                plpMode={
-                  plpMode
-                    ? plpTrustedById[resource.id]?.mode ?? "CANONICAL_FALLBACK"
-                    : undefined
-                }
+                  plpMode={
+                    plpMode
+                      ? effectiveTrustedById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
+                      : undefined
+                  }
               />
             )}
           />
@@ -763,7 +786,7 @@ function CivicMediaCenterLoaded({
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
-            const resolved = plpFactCheckById?.[resource.id];
+            const resolved = effectiveFactCheckById?.[resource.id];
             const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
             return (
               <FactCheckCard
@@ -804,7 +827,7 @@ function CivicMediaCenterLoaded({
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
-            const resolved = plpPropagandaById?.[resource.id];
+            const resolved = effectivePropagandaById?.[resource.id];
             const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
             return (
               <PropagandaCard

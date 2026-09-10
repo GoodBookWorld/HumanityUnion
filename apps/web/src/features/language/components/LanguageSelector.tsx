@@ -29,10 +29,12 @@ import {
   markMediaLocaleSwitchPerfPhase,
 } from "../media-plp/media-plp-locale-switch-perf";
 import { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
+import { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
 
 import "./language-selector.css";
 
 export { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
+export { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
 
 /** Visible language rows before the list scrolls (does not cap total languages). */
 const LANGUAGE_SELECTOR_VISIBLE_ROWS = 10;
@@ -212,12 +214,15 @@ export function LanguageSelector({
         pathname,
         nextLocale: written.locale,
       });
+      // Implementation 03 — replace updates the SEO URL; refresh re-fetches
+      // locale-scoped Server Component payloads (Media PLP maps). Soft nav
+      // without refresh left previous-locale SSR props authoritative.
       startTransition(() => {
-        if (href && href !== pathname) {
-          router.replace(href);
-        } else {
-          router.refresh();
-        }
+        runLocaleSwitchNavigation({
+          router,
+          pathname,
+          href,
+        });
       });
     },
     [authStatus, pathname, router],
