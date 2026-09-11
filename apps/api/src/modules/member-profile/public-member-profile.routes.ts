@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import {
   MemberProfileAccessDeniedError,
   MemberProfileNotFoundError,
@@ -37,6 +38,17 @@ function resolvePublicMemberProfileErrorStatus(error: unknown): number {
   return 500;
 }
 
+async function resolveRequestPresentationLocale(
+  req: Parameters<typeof attachRuntimeLocale>[0],
+): Promise<string> {
+  const queryLocale = typeof req.query.locale === "string" ? req.query.locale.trim() : "";
+  if (queryLocale) {
+    return queryLocale;
+  }
+  const runtime = await attachRuntimeLocale(req);
+  return runtime.locale;
+}
+
 /**
  * UX Evolution Pack 02.4 Part 6 — the actual public-facing route:
  * `/member/{publicName}` (comment author links, Initiative steward links)
@@ -58,10 +70,12 @@ publicMemberProfileRouter.get(
     const viewerParticipantId = req.auth?.memberId;
 
     try {
+      const locale = await resolveRequestPresentationLocale(req);
       const profile = await getPublicMemberProfileByPublicName(publicName, {
         viewerIsAuthenticated,
         viewerUserId,
         viewerParticipantId,
+        locale,
       });
 
       res.json(createSuccessResponse(profile, "Public member profile loaded."));
@@ -83,10 +97,12 @@ publicMemberProfileRouter.get("/:profileId", optionalAuthenticationMiddleware, a
   const viewerParticipantId = req.auth?.memberId;
 
   try {
+    const locale = await resolveRequestPresentationLocale(req);
     const profile = await getPublicMemberProfileById(profileId, {
       viewerIsAuthenticated,
       viewerUserId,
       viewerParticipantId,
+      locale,
     });
 
     res.json(createSuccessResponse(profile, "Public member profile loaded."));

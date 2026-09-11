@@ -18,10 +18,7 @@ export function InitiativesUnavailableWorkspace({
       <div className="initiative-workspace-layout__content initiative-workspace-layout__content--unavailable">
         <div className="workspace-unavailable-center">{children}</div>
       </div>
-      <HumanityUnionAssistantWidget
-        surfaceId="initiatives"
-        description="I can help you create, review and advance your Initiatives."
-      />
+      <HumanityUnionAssistantWidget surfaceId="initiatives" />
     </div>
   );
 }

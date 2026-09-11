@@ -185,7 +185,10 @@ export {
   PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
   seedParticipantPublicPlpForTests,
   resetParticipantPublicPlpStoreForTests,
+  buildParticipantPublicCanonicalPresentation,
 } from "./adapters/participant-public-adapter.js";
+export { applyParticipantPublicPlpToProjection } from "./adapters/apply-participant-public-plp.js";
+export { enqueueParticipantPublicPlpBuilds } from "./adapters/enqueue-participant-public-plp.js";
 export {
   fixturePlpDomainAdapter,
   FIXTURE_PLP_ENTITY_TYPE,

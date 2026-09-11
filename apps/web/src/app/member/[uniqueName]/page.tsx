@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import type { PublicMemberProfile } from "@hu/types";
 
@@ -28,9 +28,12 @@ type PublicMemberPageState =
   | { status: "not_found" }
   | { status: "restricted" };
 
-async function loadPublicMemberProfile(publicName: string): Promise<PublicMemberPageState> {
+async function loadPublicMemberProfile(
+  publicName: string,
+  locale: string,
+): Promise<PublicMemberPageState> {
   try {
-    const profile = await getPublicMemberProfileByPublicName(publicName);
+    const profile = await getPublicMemberProfileByPublicName(publicName, locale);
     return { status: "found", profile };
   } catch (error) {
     if (error instanceof ApiRequestError && error.status === 403) {
@@ -54,7 +57,8 @@ function collectPublicSameAs(profile: PublicMemberProfile): string[] {
 
 export async function generateMetadata({ params }: PublicMemberPageProps): Promise<Metadata> {
   const { uniqueName: publicName } = await params;
-  const state = await loadPublicMemberProfile(publicName);
+  const locale = await getLocale();
+  const state = await loadPublicMemberProfile(publicName, locale);
 
   if (state.status === "restricted") {
     return buildUnavailablePublicMetadata("Public Profile | Humanity Union");
@@ -104,8 +108,9 @@ export async function generateMetadata({ params }: PublicMemberPageProps): Promi
  */
 export default async function PublicMemberPage({ params }: PublicMemberPageProps) {
   const t = await getTranslations("participantPublic");
+  const locale = await getLocale();
   const { uniqueName: publicName } = await params;
-  const state = await loadPublicMemberProfile(publicName);
+  const state = await loadPublicMemberProfile(publicName, locale);
 
   if (state.status === "restricted" || state.status === "not_found") {
     return (

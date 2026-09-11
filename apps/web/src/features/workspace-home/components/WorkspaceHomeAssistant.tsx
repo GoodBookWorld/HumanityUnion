@@ -11,18 +11,13 @@ interface WorkspaceHomeAssistantProps {
 
 /**
  * Pack 04 — Workspace Home right rail is the canonical Assistant Widget.
- * Legacy Civic Assistant intelligence panel removed from this surface.
+ * Widget copy comes from WEB_UI (`initiativeExperience.assistant.entry.widgetCopy.*`)
+ * via Brand `siteName` — never hardcoded English `description` overrides.
  */
-export function WorkspaceHomeAssistant({ context }: WorkspaceHomeAssistantProps) {
-  const section = context?.currentSection ?? "Workspace Home";
-  const description =
-    section.toLowerCase().includes("commitment")
-      ? "I can help with responsibilities, resources and Implementation Commitments."
-      : "I can help you understand your Workspace, priorities, notifications and next civic actions.";
-
+export function WorkspaceHomeAssistant(_props: WorkspaceHomeAssistantProps) {
   return (
     <div className="workspace-home-assistant-rail">
-      <HumanityUnionAssistantWidget surfaceId="workspace" description={description} />
+      <HumanityUnionAssistantWidget surfaceId="workspace" />
     </div>
   );
 }

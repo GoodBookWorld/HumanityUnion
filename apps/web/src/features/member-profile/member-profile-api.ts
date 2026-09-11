@@ -65,13 +65,22 @@ export async function getWorkspaceMemberIdentity(): Promise<WorkspaceMemberIdent
  * `getMyPublicMemberProfilePreview` (API) for why this never duplicates
  * Privacy logic.
  */
-export async function getMyPublicMemberProfilePreview(): Promise<MemberProfilePublicPreview> {
-  return apiRequest<MemberProfilePublicPreview>("/api/v1/member-profile/me/public-preview");
+export async function getMyPublicMemberProfilePreview(
+  locale?: string,
+): Promise<MemberProfilePublicPreview> {
+  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
+  return apiRequest<MemberProfilePublicPreview>(
+    `/api/v1/member-profile/me/public-preview${query}`,
+  );
 }
 
-export async function getPublicMemberProfile(profileId: string): Promise<PublicMemberProfile> {
+export async function getPublicMemberProfile(
+  profileId: string,
+  locale?: string,
+): Promise<PublicMemberProfile> {
+  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
   return apiRequest<PublicMemberProfile>(
-    `/api/v1/public/member-profiles/${encodeURIComponent(profileId)}`,
+    `/api/v1/public/member-profiles/${encodeURIComponent(profileId)}${query}`,
   );
 }
 
@@ -83,8 +92,10 @@ export async function getPublicMemberProfile(profileId: string): Promise<PublicM
  */
 export async function getPublicMemberProfileByPublicName(
   publicName: string,
+  locale?: string,
 ): Promise<PublicMemberProfile> {
+  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
   return apiRequest<PublicMemberProfile>(
-    `/api/v1/public/member-profiles/by-name/${encodeURIComponent(publicName)}`,
+    `/api/v1/public/member-profiles/by-name/${encodeURIComponent(publicName)}${query}`,
   );
 }

@@ -3,6 +3,7 @@ import { Router, type Request, type Response } from "express";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import { getMemberById } from "../member/member-access.js";
 import { loadParticipationAreaWorkspaceForParticipant } from "../participation-area/participation-area.service.js";
 import {
@@ -22,6 +23,15 @@ import {
 } from "./member-profile.service.js";
 
 const memberProfileRouter = Router();
+
+async function resolveRequestPresentationLocale(req: Request): Promise<string> {
+  const queryLocale = typeof req.query.locale === "string" ? req.query.locale.trim() : "";
+  if (queryLocale) {
+    return queryLocale;
+  }
+  const runtime = await attachRuntimeLocale(req);
+  return runtime.locale;
+}
 
 function createFailureResponse(message: string) {
   return {
@@ -216,7 +226,8 @@ memberProfileRouter.get(
         displayName: await resolveDisplayName(req),
       });
 
-      const preview = await getMyPublicMemberProfilePreview(userId);
+      const locale = await resolveRequestPresentationLocale(req);
+      const preview = await getMyPublicMemberProfilePreview(userId, { locale });
       res.json(createSuccessResponse(preview, "Public profile preview loaded."));
     } catch (error) {
       handleMemberProfileError(res, error);

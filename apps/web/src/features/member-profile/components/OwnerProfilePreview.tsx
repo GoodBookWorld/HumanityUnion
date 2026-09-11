@@ -2,7 +2,7 @@
 
 import type { MemberProfilePublicPreview } from "@hu/types";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
@@ -39,6 +39,7 @@ type OwnerProfilePreviewState =
  * receives the already-Privacy-filtered projection.
  */
 export function OwnerProfilePreview() {
+  const locale = useLocale();
   const t = useTranslations("memberProfile.preview");
   const tProfile = useTranslations("memberProfile");
   const tWorkspace = useTranslations("workspace");
@@ -50,7 +51,7 @@ export function OwnerProfilePreview() {
   useEffect(() => {
     let cancelled = false;
 
-    void getMyPublicMemberProfilePreview()
+    void getMyPublicMemberProfilePreview(locale)
       .then((preview) => {
         if (!cancelled) {
           setState({ status: "ready", preview });
@@ -82,7 +83,7 @@ export function OwnerProfilePreview() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   if (state.status === "loading") {
     return <p>{t("loading")}</p>;
