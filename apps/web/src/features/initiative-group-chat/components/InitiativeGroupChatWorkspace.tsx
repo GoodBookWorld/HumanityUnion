@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { MyInitiativeGroupSummary } from "@hu/types";
 
@@ -42,6 +43,7 @@ export function InitiativeGroupChatWorkspace({
   onSelectInitiative,
   onSectionChange,
 }: InitiativeGroupChatWorkspaceProps) {
+  const t = useTranslations("workspace.messagesPage.group");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [groups, setGroups] = useState<MyInitiativeGroupSummary[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,13 +62,11 @@ export function InitiativeGroupChatWorkspace({
       }
 
       setErrorMessage(
-        error instanceof ApiRequestError
-          ? error.message
-          : "Unable to load your Initiative Groups. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("loadError"),
       );
       setLoadState("error");
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadGroups();
@@ -92,7 +92,7 @@ export function InitiativeGroupChatWorkspace({
   if (loadState === "unauthenticated") {
     return (
       <div className="igc-workspace igc-workspace--empty">
-        <p className="igc-workspace__empty-title">Sign in to view your Initiative Groups.</p>
+        <p className="igc-workspace__empty-title">{t("signIn")}</p>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export function InitiativeGroupChatWorkspace({
       <div className="igc-workspace__main">
         {loadState === "loading" ? (
           <p className="igc-workspace__status" role="status">
-            Loading your Initiative Groups…
+            {t("loading")}
           </p>
         ) : loadState === "error" ? (
           <p className="igc-workspace__status igc-workspace__status--error" role="alert">
@@ -110,11 +110,8 @@ export function InitiativeGroupChatWorkspace({
           </p>
         ) : groups.length === 0 ? (
           <div className="igc-workspace__empty-state">
-            <p className="igc-workspace__empty-title">No Initiative Groups yet.</p>
-            <p className="igc-workspace__empty-text">
-              You will see an Initiative Group Chat here once you author an Initiative or become an active
-              Ally on one.
-            </p>
+            <p className="igc-workspace__empty-title">{t("empty")}</p>
+            <p className="igc-workspace__empty-text">{t("emptyHint")}</p>
           </div>
         ) : selectedGroup ? (
           <InitiativeCollaborationWorkspace
@@ -124,15 +121,13 @@ export function InitiativeGroupChatWorkspace({
           />
         ) : (
           <div className="igc-workspace__empty-state">
-            <p className="igc-workspace__empty-title">Select an Initiative Group</p>
-            <p className="igc-workspace__empty-text">
-              Choose an Initiative from the list to open its Collaboration Channel.
-            </p>
+            <p className="igc-workspace__empty-title">{t("selectTitle")}</p>
+            <p className="igc-workspace__empty-text">{t("selectBody")}</p>
           </div>
         )}
       </div>
 
-      <aside className="igc-workspace__sidebar" aria-label="Initiative Group Chat sidebar">
+      <aside className="igc-workspace__sidebar" aria-label={t("sidebarAria")}>
         <InitiativeGroupList
           groups={groups}
           selectedInitiativeId={initiativeId}

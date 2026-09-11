@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useId, useMemo, useState } from "react";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
@@ -32,6 +33,8 @@ function ActiveAllyMessageButton({
   errorMessage: string | null;
   onMessage: () => void;
 }) {
+  const tMessaging = useTranslations("participantPublic.messaging");
+
   return (
     <div className="active-allies-panel__message-wrap">
       <button
@@ -43,18 +46,18 @@ function ActiveAllyMessageButton({
           onMessage();
         }}
         disabled={isOpening}
-        aria-label={`Message ${ally.displayName}`}
+        aria-label={tMessaging("messageAria", { name: ally.displayName })}
         aria-live="polite"
       >
         <Image src={MESSAGE_ICON} alt="" width={16} height={16} aria-hidden="true" />
         <span className="active-allies-panel__message-label">
-          {isOpening ? "Opening…" : "Message"}
+          {isOpening ? tMessaging("opening") : tMessaging("message")}
         </span>
         {ally.hasUnreadMessages ? (
           <>
             <span className="active-allies-panel__unread-dot" aria-hidden="true" />
             <span className="active-allies-panel__visually-hidden">
-              Unread messages from {ally.displayName}
+              {tMessaging("unreadFrom", { name: ally.displayName })}
             </span>
           </>
         ) : null}
@@ -71,6 +74,7 @@ function ActiveAllyMessageButton({
  * the Message button — opens the same conversation in the Messenger.
  */
 function ActiveAllyCard({ ally, isActive }: { ally: WorkspaceHomeAllyEntry; isActive: boolean }) {
+  const tMessaging = useTranslations("participantPublic.messaging");
   const { isOpening, errorMessage, openConversation } = useOpenDirectConversation();
 
   const openThisConversation = () => openConversation({ participantId: ally.participantId });
@@ -83,7 +87,7 @@ function ActiveAllyCard({ ally, isActive }: { ally: WorkspaceHomeAllyEntry; isAc
         onClick={openThisConversation}
         disabled={isOpening}
         aria-current={isActive ? "true" : undefined}
-        aria-label={`Open conversation with ${ally.displayName}`}
+        aria-label={tMessaging("openConversationAria", { name: ally.displayName })}
       >
         <HumanityAvatar
           className="active-allies-panel__avatar"
@@ -134,6 +138,7 @@ export function ActiveAlliesPanel({
   errorMessage,
   activeParticipantId,
 }: ActiveAlliesPanelProps) {
+  const t = useTranslations("workspace.messagesPage.allies");
   const searchInputId = useId();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -147,7 +152,7 @@ export function ActiveAlliesPanel({
     if (state === "loading") {
       return (
         <p className="active-allies-panel__status" role="status">
-          Loading Active Allies…
+          {t("loading")}
         </p>
       );
     }
@@ -155,7 +160,7 @@ export function ActiveAlliesPanel({
     if (state === "error") {
       return (
         <p className="active-allies-panel__status active-allies-panel__status--error">
-          {errorMessage ?? "Unable to load your Active Allies."}
+          {errorMessage ?? t("loadError")}
         </p>
       );
     }
@@ -163,9 +168,9 @@ export function ActiveAlliesPanel({
     if (allies.length === 0) {
       return (
         <div className="active-allies-panel__empty">
-          <p className="active-allies-panel__empty-title">No Active Allies yet.</p>
+          <p className="active-allies-panel__empty-title">{t("emptyTitle")}</p>
           <Link href="/workspace/initiatives" className="active-allies-panel__empty-action">
-            View Initiatives
+            {t("viewInitiatives")}
           </Link>
         </div>
       );
@@ -173,12 +178,12 @@ export function ActiveAlliesPanel({
 
     if (visibleAllies.length === 0) {
       return (
-        <p className="active-allies-panel__status">No Active Allies match &ldquo;{searchTerm.trim()}&rdquo;.</p>
+        <p className="active-allies-panel__status">{t("noMatch", { term: searchTerm.trim() })}</p>
       );
     }
 
     return (
-      <ul className="active-allies-panel__list" aria-label="Active Allies">
+      <ul className="active-allies-panel__list" aria-label={t("listAria")}>
         {visibleAllies.map((ally) => (
           <ActiveAllyCard
             key={ally.participantId}
@@ -191,14 +196,16 @@ export function ActiveAlliesPanel({
   })();
 
   return (
-    <aside className="active-allies-panel" aria-label="Active Allies panel">
+    <aside className="active-allies-panel" aria-label={t("panelAria")}>
       <div className="active-allies-panel__sticky">
         <div className="active-allies-panel__panel">
           <header className="active-allies-panel__header">
-            <h2 className="active-allies-panel__title">Active Allies</h2>
+            <h2 className="active-allies-panel__title">{t("title")}</h2>
             {state === "ready" && alliesCount > 0 ? (
               <span className="active-allies-panel__count">
-                {alliesCount} active {alliesCount === 1 ? "Ally" : "Allies"}
+                {alliesCount === 1
+                  ? t("countOne", { count: alliesCount })
+                  : t("countOther", { count: alliesCount })}
               </span>
             ) : null}
           </header>
@@ -206,13 +213,13 @@ export function ActiveAlliesPanel({
           {state === "ready" && allies.length > 0 ? (
             <div className="active-allies-panel__search">
               <label htmlFor={searchInputId} className="active-allies-panel__visually-hidden">
-                Search Active Allies by name
+                {t("searchLabel")}
               </label>
               <input
                 id={searchInputId}
                 type="search"
                 className="active-allies-panel__search-input"
-                placeholder="Search Allies by name"
+                placeholder={t("searchPlaceholder")}
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />

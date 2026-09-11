@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeActiveAlliesProjection } from "@hu/types";
 
@@ -23,6 +24,7 @@ type LoadState = "loading" | "ready" | "error";
  * widget already use — never a second Ally projection.
  */
 export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPanelProps) {
+  const t = useTranslations("workspace.messagesPage.group");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [team, setTeam] = useState<InitiativeActiveAlliesProjection | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPa
           return;
         }
         setErrorMessage(
-          error instanceof ApiRequestError ? error.message : "Unable to load this Initiative's Team.",
+          error instanceof ApiRequestError ? error.message : t("teamLoadError"),
         );
         setLoadState("error");
       });
@@ -53,14 +55,14 @@ export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPa
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (loadState === "loading") {
     return (
-      <section className="igc-team-panel" aria-label="Selected Initiative Team">
-        <h3 className="igc-team-panel__title">Initiative Team</h3>
+      <section className="igc-team-panel" aria-label={t("teamAria")}>
+        <h3 className="igc-team-panel__title">{t("teamTitle")}</h3>
         <p className="igc-team-panel__status" role="status">
-          Loading Team…
+          {t("teamLoading")}
         </p>
       </section>
     );
@@ -68,10 +70,10 @@ export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPa
 
   if (loadState === "error" || !team) {
     return (
-      <section className="igc-team-panel" aria-label="Selected Initiative Team">
-        <h3 className="igc-team-panel__title">Initiative Team</h3>
+      <section className="igc-team-panel" aria-label={t("teamAria")}>
+        <h3 className="igc-team-panel__title">{t("teamTitle")}</h3>
         <p className="igc-team-panel__status igc-team-panel__status--error" role="alert">
-          {errorMessage ?? "Unable to load this Initiative's Team."}
+          {errorMessage ?? t("teamLoadError")}
         </p>
       </section>
     );
@@ -80,9 +82,9 @@ export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPa
   const entries = [team.author, ...team.allies];
 
   return (
-    <section className="igc-team-panel" aria-label="Selected Initiative Team">
+    <section className="igc-team-panel" aria-label={t("teamAria")}>
       <h3 className="igc-team-panel__title">
-        Initiative Team <span className="igc-team-panel__count">({entries.length})</span>
+        {t("teamTitle")} <span className="igc-team-panel__count">({entries.length})</span>
       </h3>
       <ul className="igc-team-panel__list">
         {entries.map((entry, index) => (
@@ -98,7 +100,9 @@ export function InitiativeGroupTeamPanel({ initiativeId }: InitiativeGroupTeamPa
                 <span className="igc-team-panel__name">{entry.displayName}</span>
               </span>
             )}
-            <span className="igc-team-panel__role">{entry.role === "author" ? "Author" : "Ally"}</span>
+            <span className="igc-team-panel__role">
+              {entry.role === "author" ? t("author") : t("activeAlly")}
+            </span>
           </li>
         ))}
       </ul>

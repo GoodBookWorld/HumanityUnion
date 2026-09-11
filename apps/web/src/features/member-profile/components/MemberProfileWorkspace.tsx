@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { MemberProfile, MemberProfilePrivacySettings, ParticipantStatistics } from "@hu/types";
 
@@ -31,22 +32,27 @@ import { MemberProfessionalLinksSection } from "./MemberProfessionalLinksSection
 
 import "./member-profile-workspace.css";
 
-const SECTIONS = [
-  "Statistics",
-  "Profile",
-  "Skills",
-  "Professional Links",
-  "Privacy",
-  "Participation Area",
-  "Preferences",
+const SECTION_IDS = [
+  "statistics",
+  "profile",
+  "skills",
+  "professional-links",
+  "privacy",
+  "participation-area",
+  "preferences",
 ] as const;
 
-function formatLocation(profile: MemberProfile): string {
+type SectionId = (typeof SECTION_IDS)[number];
+
+function formatLocation(profile: MemberProfile, notSpecified: string): string {
   const parts = [profile.community, profile.region, profile.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Not specified";
+  return parts.length > 0 ? parts.join(", ") : notSpecified;
 }
 
+const VISIBILITY_OPTION_KEYS = ["public", "members_only", "private"] as const;
+
 export function MemberProfileWorkspace() {
+  const t = useTranslations("memberProfile");
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [privacy, setPrivacy] = useState<MemberProfilePrivacySettings | null>(null);
   const [statistics, setStatistics] = useState<ParticipantStatistics | null>(null);
@@ -84,9 +90,7 @@ export function MemberProfileWorkspace() {
             setApiUnavailable(true);
             setError(null);
           } else {
-            setError(
-              loadError instanceof Error ? loadError.message : "Unable to load member profile.",
-            );
+            setError(loadError instanceof Error ? loadError.message : t("loadError"));
             setApiUnavailable(false);
           }
         }
@@ -100,7 +104,7 @@ export function MemberProfileWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +158,7 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : "Unable to save profile.");
+        setError(saveError instanceof Error ? saveError.message : t("saveProfileError"));
       }
     }
   }
@@ -196,9 +200,7 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(
-          saveError instanceof Error ? saveError.message : "Unable to save professional links.",
-        );
+        setError(saveError instanceof Error ? saveError.message : t("saveLinksError"));
       }
     }
   }
@@ -220,32 +222,30 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(
-          saveError instanceof Error ? saveError.message : "Unable to save privacy settings.",
-        );
+        setError(saveError instanceof Error ? saveError.message : t("savePrivacyError"));
       }
     }
   }
 
   if (loading) {
-    return <p>Loading profile…</p>;
+    return <p>{t("loading")}</p>;
   }
 
   if (authRequired) {
     return (
-      <ProfileSection title="Profile">
-        <p>Sign in to manage your Participant profile.</p>
-        <Button href="/login">Log in</Button>
+      <ProfileSection title={t("title")}>
+        <p>{t("signInBody")}</p>
+        <Button href="/login">{t("logIn")}</Button>
       </ProfileSection>
     );
   }
 
   if (apiUnavailable) {
     return (
-      <ProfileSection title="Profile">
+      <ProfileSection title={t("title")}>
         <ApiUnavailableState
-          title="Profile temporarily unavailable"
-          explanation="We couldn't connect to the Humanity Union service. Please try again shortly."
+          title={t("unavailableTitle")}
+          explanation={t("unavailableExplanation")}
           retryHref="/member"
         />
       </ProfileSection>
@@ -254,8 +254,8 @@ export function MemberProfileWorkspace() {
 
   if (!profile || !privacy) {
     return (
-      <ProfileSection title="Profile">
-        <p>{error ?? "Profile is unavailable."}</p>
+      <ProfileSection title={t("title")}>
+        <p>{error ?? t("unavailable")}</p>
       </ProfileSection>
     );
   }
@@ -270,52 +270,49 @@ export function MemberProfileWorkspace() {
 
       <ProfileAssistantEntry />
 
-      <nav className="member-profile-workspace__sections" aria-label="Profile sections">
-        {SECTIONS.map((section) => {
-          const sectionId = section.toLowerCase().replace(/\s+/g, "-");
-          return (
-            <a
-              key={section}
-              className="member-profile-workspace__section-link"
-              href={`#${sectionId}`}
-            >
-              {section}
-            </a>
-          );
-        })}
+      <nav className="member-profile-workspace__sections" aria-label={t("sectionsAria")}>
+        {SECTION_IDS.map((sectionId: SectionId) => (
+          <a
+            key={sectionId}
+            className="member-profile-workspace__section-link"
+            href={`#${sectionId}`}
+          >
+            {t(`sections.${sectionId}`)}
+          </a>
+        ))}
       </nav>
 
-      <ProfileSection title="Statistics" id="statistics">
+      <ProfileSection title={t("sections.statistics")} id="statistics">
         <PersonalStatisticsCards statistics={statistics} loading={statisticsLoading} />
       </ProfileSection>
 
-      <ProfileSection title="Profile" id="profile">
+      <ProfileSection title={t("sections.profile")} id="profile">
         <form className="member-profile-workspace__form" onSubmit={handleProfileSave}>
           <label className="member-profile-workspace__field">
-            <span>Display name</span>
+            <span>{t("fields.displayName")}</span>
             <input
               value={profile.displayName}
               onChange={(event) => setProfile({ ...profile, displayName: event.target.value })}
             />
           </label>
           <label className="member-profile-workspace__field">
-            <span>Public name</span>
+            <span>{t("fields.publicName")}</span>
             <input
               value={profile.publicName}
               onChange={(event) => setProfile({ ...profile, publicName: event.target.value })}
             />
           </label>
           <label className="member-profile-workspace__field">
-            <span>Biography</span>
+            <span>{t("fields.biography")}</span>
             <textarea
               value={profile.biography ?? ""}
               onChange={(event) => setProfile({ ...profile, biography: event.target.value })}
             />
           </label>
           <AvatarImageUploadField
-            label="Avatar"
+            label={t("fields.avatar")}
             imageUrl={resolveMediaUrl(profile.avatarUrl)}
-            helperText="Choose a JPEG, PNG, or WEBP image up to 2 MB, then crop and position it before saving."
+            helperText={t("fields.avatarHelper")}
             onUpload={async (file) => {
               const uploaded = await uploadAvatarImage(file);
               const updated = await updateMyMemberProfile({ avatarUrl: uploaded.mediaUrl });
@@ -330,21 +327,24 @@ export function MemberProfileWorkspace() {
             }}
           />
           <label className="member-profile-workspace__field">
-            <span>Organization</span>
+            <span>{t("fields.organization")}</span>
             <input
               value={profile.organization ?? ""}
               onChange={(event) => setProfile({ ...profile, organization: event.target.value })}
             />
           </label>
-          <ProfileField label="Member Number" value={profile.memberNumber} />
-          <ProfileField label="Location" value={formatLocation(profile)} />
+          <ProfileField label={t("fields.memberNumber")} value={profile.memberNumber} />
+          <ProfileField
+            label={t("fields.location")}
+            value={formatLocation(profile, t("fields.notSpecified"))}
+          />
           <Button type="submit" variant="primary" disabled={profilePhase.isBusy} ariaLive="polite">
-            {resolveSaveButtonLabel(profilePhase.phase, "Save profile")}
+            {resolveSaveButtonLabel(profilePhase.phase, t("saveProfile"))}
           </Button>
         </form>
       </ProfileSection>
 
-      <ProfileSection title="Skills" id="skills">
+      <ProfileSection title={t("sections.skills")} id="skills">
         <MemberSkillsEditor
           skills={profile.skills}
           onChange={(skills) => setProfile({ ...profile, skills })}
@@ -352,7 +352,7 @@ export function MemberProfileWorkspace() {
         />
       </ProfileSection>
 
-      <ProfileSection title="Professional Links" id="professional-links">
+      <ProfileSection title={t("sections.professional-links")} id="professional-links">
         <MemberProfessionalLinksSection
           website={profile.website}
           linkedinUrl={profile.linkedinUrl}
@@ -366,10 +366,10 @@ export function MemberProfileWorkspace() {
         />
       </ProfileSection>
 
-      <ProfileSection title="Privacy" id="privacy">
+      <ProfileSection title={t("sections.privacy")} id="privacy">
         <form className="member-profile-workspace__form" onSubmit={handlePrivacySave}>
           <label className="member-profile-workspace__field">
-            <span>Who can see my public profile</span>
+            <span>{t("privacy.profileVisibility")}</span>
             <select
               value={privacy.profileVisibility}
               onChange={(event) =>
@@ -380,13 +380,15 @@ export function MemberProfileWorkspace() {
                 })
               }
             >
-              <option value="public">Public</option>
-              <option value="members_only">Members only</option>
-              <option value="private">Private</option>
+              {VISIBILITY_OPTION_KEYS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`visibility.${value}`)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Who can see my Participation Areas</span>
+            <span>{t("privacy.participationVisibility")}</span>
             <select
               value={privacy.participationVisibility}
               onChange={(event) =>
@@ -397,13 +399,15 @@ export function MemberProfileWorkspace() {
                 })
               }
             >
-              <option value="public">Public</option>
-              <option value="members_only">Members only</option>
-              <option value="private">Private</option>
+              {VISIBILITY_OPTION_KEYS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`visibility.${value}`)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Who can see my Skills</span>
+            <span>{t("privacy.skillsVisibility")}</span>
             <select
               value={privacy.skillsVisibility}
               onChange={(event) =>
@@ -414,13 +418,15 @@ export function MemberProfileWorkspace() {
                 })
               }
             >
-              <option value="public">Public</option>
-              <option value="members_only">Members only</option>
-              <option value="private">Private</option>
+              {VISIBILITY_OPTION_KEYS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`visibility.${value}`)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Who can see my Professional Links</span>
+            <span>{t("privacy.professionalLinksVisibility")}</span>
             <select
               value={privacy.professionalLinksVisibility}
               onChange={(event) =>
@@ -431,13 +437,15 @@ export function MemberProfileWorkspace() {
                 })
               }
             >
-              <option value="public">Public</option>
-              <option value="members_only">Members only</option>
-              <option value="private">Private</option>
+              {VISIBILITY_OPTION_KEYS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`visibility.${value}`)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Who can message me?</span>
+            <span>{t("privacy.messagingPolicy")}</span>
             <select
               value={privacy.messagingPolicy}
               onChange={(event) =>
@@ -448,15 +456,12 @@ export function MemberProfileWorkspace() {
                 })
               }
             >
-              <option value="active_allies">Active Allies (recommended)</option>
-              <option value="registered_participants">Registered Participants</option>
-              <option value="nobody">Nobody</option>
+              <option value="active_allies">{t("privacy.messagingActiveAllies")}</option>
+              <option value="registered_participants">{t("privacy.messagingRegistered")}</option>
+              <option value="nobody">{t("privacy.messagingNobody")}</option>
             </select>
           </label>
-          <p className="member-profile-workspace__field-hint">
-            Controls who can start a new Direct Collaboration conversation with you. Existing
-            conversation history remains visible; choosing &ldquo;Nobody&rdquo; only blocks new messages.
-          </p>
+          <p className="member-profile-workspace__field-hint">{t("privacy.messagingHint")}</p>
           <label className="member-profile-workspace__checkbox">
             <input
               type="checkbox"
@@ -465,7 +470,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showOrganization: event.target.checked })
               }
             />
-            <span>Show organization publicly when allowed</span>
+            <span>{t("privacy.showOrganization")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -473,7 +478,7 @@ export function MemberProfileWorkspace() {
               checked={privacy.showLocation}
               onChange={(event) => setPrivacy({ ...privacy, showLocation: event.target.checked })}
             />
-            <span>Show location publicly when allowed</span>
+            <span>{t("privacy.showLocation")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -483,7 +488,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showParticipationArea: event.target.checked })
               }
             />
-            <span>Show participation area publicly when allowed</span>
+            <span>{t("privacy.showParticipationArea")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -493,7 +498,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showInitiativesStatistics: event.target.checked })
               }
             />
-            <span>Show Initiatives statistics publicly</span>
+            <span>{t("privacy.showInitiativesStatistics")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -506,7 +511,7 @@ export function MemberProfileWorkspace() {
                 })
               }
             />
-            <span>Show Collective Decisions statistics publicly</span>
+            <span>{t("privacy.showCollectiveDecisionsStatistics")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -516,7 +521,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showAlliesStatistics: event.target.checked })
               }
             />
-            <span>Show Allies statistics publicly</span>
+            <span>{t("privacy.showAlliesStatistics")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -526,7 +531,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showProposalsStatistics: event.target.checked })
               }
             />
-            <span>Show Proposals statistics publicly</span>
+            <span>{t("privacy.showProposalsStatistics")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -536,7 +541,7 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showPetitionsStatistics: event.target.checked })
               }
             />
-            <span>Show Petitions statistics publicly</span>
+            <span>{t("privacy.showPetitionsStatistics")}</span>
           </label>
           <label className="member-profile-workspace__checkbox">
             <input
@@ -546,10 +551,10 @@ export function MemberProfileWorkspace() {
                 setPrivacy({ ...privacy, showCommitmentsStatistics: event.target.checked })
               }
             />
-            <span>Show Implementation Commitments statistics publicly</span>
+            <span>{t("privacy.showCommitmentsStatistics")}</span>
           </label>
           <Button type="submit" variant="primary" disabled={privacyPhase.isBusy} ariaLive="polite">
-            {resolveSaveButtonLabel(privacyPhase.phase, "Save privacy settings")}
+            {resolveSaveButtonLabel(privacyPhase.phase, t("savePrivacy"))}
           </Button>
         </form>
       </ProfileSection>

@@ -92,15 +92,20 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
 
   it("6 — Participant/Member visible terminology follows canonical distinction", () => {
     const memberPage = read("app/member/page.tsx");
-    assert.match(memberPage, /title="Profile"/);
-    assert.match(memberPage, /Participant profile/);
+    assert.match(memberPage, /MemberProfilePageShell/);
+    assert.doesNotMatch(memberPage, /title="Member Profile"/);
+
+    const shell = read("features/member-profile/components/MemberProfilePageShell.tsx");
+    assert.match(shell, /useTranslations\("memberProfile"\)/);
+    assert.match(shell, /t\("title"\)/);
+    assert.match(shell, /t\("subtitle"\)/);
 
     const publicProfile = read("app/member/[uniqueName]/page.tsx");
     assert.match(publicProfile, /Public Profile/);
     assert.doesNotMatch(publicProfile, /Public Member Profile/);
 
     const workspace = read("features/member-profile/components/MemberProfileWorkspace.tsx");
-    assert.match(workspace, /title="Profile"/);
+    assert.match(workspace, /title=\{t\("title"\)\}/);
     assert.doesNotMatch(workspace, /title="Member Profile"/);
 
     const landing = read("features/initiatives/components/PublicInitiativesLanding.tsx");

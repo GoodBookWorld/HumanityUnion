@@ -235,7 +235,7 @@ describe("Member public profile preview + honorary Member indicator", () => {
     const section = read("features/membership/components/MembershipProfileSection.tsx");
     assert.match(section, /MembershipPublicVisibilityControl/);
     assert.match(section, /MembershipTimeline/);
-    assert.match(section, /Open Membership|View Membership Success/);
+    assert.match(section, /openMembership|viewMembershipSuccess/);
     assert.match(section, /MembershipPublicDisplayPreview/);
   });
 });

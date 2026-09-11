@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { ApiRequestError } from "../../lib/api-client";
 
@@ -33,6 +34,7 @@ export interface OpenDirectConversationState {
  */
 export function useOpenDirectConversation(): OpenDirectConversationState {
   const router = useRouter();
+  const t = useTranslations("workspace.messagesPage.conversation");
   const [isOpening, setIsOpening] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const openingRef = useRef(false);
@@ -53,7 +55,7 @@ export function useOpenDirectConversation(): OpenDirectConversationState {
         })
         .catch((error: unknown) => {
           setErrorMessage(
-            error instanceof ApiRequestError ? error.message : "Unable to open this conversation.",
+            error instanceof ApiRequestError ? error.message : t("openError"),
           );
         })
         .finally(() => {
@@ -61,7 +63,7 @@ export function useOpenDirectConversation(): OpenDirectConversationState {
           setIsOpening(false);
         });
     },
-    [router],
+    [router, t],
   );
 
   const clearError = useCallback(() => setErrorMessage(null), []);

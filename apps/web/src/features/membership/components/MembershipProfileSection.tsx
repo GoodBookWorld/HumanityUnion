@@ -2,6 +2,7 @@
 
 import type { MembershipMePayload } from "@hu/types";
 import type { MemberProfile, MemberProfilePrivacySettings } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { ProfileField } from "../../../components/member/ProfileField";
@@ -14,9 +15,9 @@ import {
 } from "../../member-profile/member-profile-api";
 import { getMembershipMe } from "../membership-api";
 import {
-  formatMembershipApplicationStatus,
-  formatMembershipContributionStatus,
-  formatMembershipJourneySummary,
+  membershipApplicationStatusLabelKey,
+  membershipContributionStatusLabelKey,
+  membershipJourneyCompletedCount,
 } from "../membership-labels";
 import { formatMemberSince, isActiveMembershipStatus } from "../membership-formatters";
 
@@ -30,6 +31,8 @@ import "./membership-page.css";
 import "./membership-success-page.css";
 
 export function MembershipProfileSection() {
+  const t = useTranslations("membershipPublic");
+  const tProfile = useTranslations("memberProfile");
   const [payload, setPayload] = useState<MembershipMePayload | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [privacy, setPrivacy] = useState<MemberProfilePrivacySettings | null>(null);
@@ -66,16 +69,16 @@ export function MembershipProfileSection() {
 
   if (loading) {
     return (
-      <ProfileSection title="Membership">
-        <p>Loading Membership status...</p>
+      <ProfileSection title={t("pageTitle")}>
+        <p>{tProfile("loadingMembership")}</p>
       </ProfileSection>
     );
   }
 
   if (error || !payload || !profile || !privacy) {
     return (
-      <ProfileSection title="Membership">
-        <p>{error ?? "Membership status is unavailable."}</p>
+      <ProfileSection title={t("pageTitle")}>
+        <p>{error ?? tProfile("membershipUnavailable")}</p>
       </ProfileSection>
     );
   }
@@ -87,21 +90,26 @@ export function MembershipProfileSection() {
     isActiveMember ||
     membership.status === "application_completed" ||
     membership.status === "pending_payment";
+  const cohortSemantic = isActiveMember ? "Member" : membership.cohortLabel;
+  const cohortDisplayLabel =
+    cohortSemantic === "Member" ? t("status.memberCohort") : t("status.participantCohort");
+  const journeyCompleted = membershipJourneyCompletedCount(payload.timeline);
 
   const membershipTiles: MembershipFactTile[] = [
     {
       id: "current-status",
-      label: "Current status",
-      value: membership.cohortLabel,
+      label: t("status.currentStatus"),
+      value: cohortDisplayLabel,
       tone: "pale-blue",
     },
   ];
 
   if (applicationStarted) {
+    const applicationKey = membershipApplicationStatusLabelKey(membership.applicationStatus);
     membershipTiles.push({
       id: "application-status",
-      label: "Application status",
-      value: formatMembershipApplicationStatus(membership.applicationStatus),
+      label: t("status.applicationStatus"),
+      value: t(`labels.applicationStatus.${applicationKey}`),
       tone: "pale-amber",
     });
   }
@@ -109,43 +117,53 @@ export function MembershipProfileSection() {
   if (isActiveMember) {
     membershipTiles.push({
       id: "member-number",
-      label: "Member Number",
+      label: t("status.memberNumber"),
       value: membership.memberNumber ?? "—",
       tone: "pale-green",
     });
     membershipTiles.push({
       id: "member-since",
-      label: "Member Since",
+      label: t("status.memberSince"),
       value: formatMemberSince(membership.memberSince),
       tone: "pale-violet",
     });
   }
 
   if (contributionReached) {
+    const contributionKey = membershipContributionStatusLabelKey(membership.status);
     membershipTiles.push({
       id: "contribution",
-      label: "Contribution",
-      value: formatMembershipContributionStatus(membership.status),
+      label: t("status.contribution"),
+      value: t(`labels.contributionStatus.${contributionKey}`),
       tone: "pale-cyan",
     });
   }
 
   return (
-    <ProfileSection title="Membership">
+    <ProfileSection title={t("pageTitle")}>
       <div className="membership-profile-section__badge-row">
         {isActiveMember ? (
           <div className="membership-active-member-row">
-            <MembershipCohortBadge cohortLabel="Member" />
+            <MembershipCohortBadge
+              cohortLabel="Member"
+              displayLabel={t("status.memberCohort")}
+            />
             <MemberBadgeIcon size="medium" decorative />
           </div>
         ) : (
-          <MembershipCohortBadge cohortLabel="Participant" />
+          <MembershipCohortBadge
+            cohortLabel={membership.cohortLabel}
+            displayLabel={cohortDisplayLabel}
+          />
         )}
       </div>
-      <MembershipFactsTiles tiles={membershipTiles} ariaLabel="Membership status facts" />
+      <MembershipFactsTiles tiles={membershipTiles} ariaLabel={t("status.ariaFacts")} />
       <ProfileField
-        label="Journey progress"
-        value={formatMembershipJourneySummary(payload.timeline)}
+        label={tProfile("journeyProgress")}
+        value={t("labels.journeySummary", {
+          completed: journeyCompleted,
+          total: payload.timeline.length,
+        })}
       />
       <div className="membership-profile-section__timeline">
         <MembershipTimeline steps={payload.timeline} compact />
@@ -166,17 +184,14 @@ export function MembershipProfileSection() {
         }
         previewMemberStatus={!isActiveMember}
       />
-      <p className="membership-profile-section__note">
-        Membership confirms voluntary support for Humanity Union. It does not change voting power or
-        grant identity verification.
-      </p>
+      <p className="membership-profile-section__note">{tProfile("membershipNote")}</p>
       {isActiveMember ? (
         <Button href="/membership/success" variant="primary">
-          View Membership Success
+          {tProfile("viewMembershipSuccess")}
         </Button>
       ) : (
         <Button href="/membership" variant="primary">
-          Open Membership
+          {tProfile("openMembership")}
         </Button>
       )}
     </ProfileSection>

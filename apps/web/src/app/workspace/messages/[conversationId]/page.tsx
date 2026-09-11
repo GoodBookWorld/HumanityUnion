@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { DirectMessagesWorkspace } from "../../../../features/direct-messaging/components/DirectMessagesWorkspace";
+import { MessagesLoadingFallback } from "../../../../features/direct-messaging/components/MessagesLoadingFallback";
 
 interface WorkspaceMessageConversationPageProps {
   params: Promise<{
@@ -27,7 +28,7 @@ export default async function WorkspaceMessageConversationPage({
 
   return (
     <main className="workspace-messages-page humanity-workspace-page">
-      <Suspense fallback={<p>Loading Messages…</p>}>
+      <Suspense fallback={<MessagesLoadingFallback />}>
         <DirectMessagesWorkspace activeConversationId={conversationId} />
       </Suspense>
     </main>

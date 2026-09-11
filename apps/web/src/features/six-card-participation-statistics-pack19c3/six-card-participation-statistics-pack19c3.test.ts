@@ -172,12 +172,12 @@ describe("Pack 19C.3 — privacy controls UI", () => {
     assert.match(workspace, /showProposalsStatistics/);
     assert.match(workspace, /showPetitionsStatistics/);
     assert.match(workspace, /showCommitmentsStatistics/);
-    assert.match(workspace, /Show Proposals statistics publicly/);
-    assert.match(workspace, /Show Petitions statistics publicly/);
-    assert.match(workspace, /Show Implementation Commitments statistics publicly/);
-    assert.match(workspace, /Show Initiatives statistics publicly/);
-    assert.match(workspace, /Show Collective Decisions statistics publicly/);
-    assert.match(workspace, /Show Allies statistics publicly/);
+    assert.match(workspace, /privacy\.showProposalsStatistics/);
+    assert.match(workspace, /privacy\.showPetitionsStatistics/);
+    assert.match(workspace, /privacy\.showCommitmentsStatistics/);
+    assert.match(workspace, /privacy\.showInitiativesStatistics/);
+    assert.match(workspace, /privacy\.showCollectiveDecisionsStatistics/);
+    assert.match(workspace, /privacy\.showAlliesStatistics/);
   });
 });
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type {
@@ -82,14 +83,16 @@ async function fetchDirectConversationWithReconciliationRetry(
   }
 }
 
-function sharedContextLabel(sharedContext: DirectConversationDetail["sharedContext"]): string | null {
+function sharedContextLabel(
+  sharedContext: DirectConversationDetail["sharedContext"],
+  allyInOne: string,
+  allyInMany: string,
+): string | null {
   if (!sharedContext || !sharedContext.isActiveAlly) {
     return null;
   }
 
-  return sharedContext.sharedInitiativeCount === 1
-    ? "Active Ally in 1 Initiative"
-    : `Active Ally in ${sharedContext.sharedInitiativeCount} Initiatives`;
+  return sharedContext.sharedInitiativeCount === 1 ? allyInOne : allyInMany;
 }
 
 function createClientMessageId(): string {
@@ -180,6 +183,8 @@ export function DirectConversationView({
   onConversationChanged,
   onParticipantResolved,
 }: DirectConversationViewProps) {
+  const t = useTranslations("workspace.messagesPage.conversation");
+  const tMessaging = useTranslations("participantPublic.messaging");
   const [state, setState] = useState<ViewState>({ phase: "loading" });
   const [detail, setDetail] = useState<DirectConversationDetail | null>(null);
   const [messages, setMessages] = useState<DirectMessageProjection[]>([]);
@@ -226,7 +231,7 @@ export function DirectConversationView({
 
         if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
           void navigator.clipboard.writeText(absoluteUrl);
-          setShareStatusMessage("Public profile link copied to clipboard.");
+          setShareStatusMessage(t("profileCopied"));
           return;
         }
 
@@ -336,11 +341,11 @@ export function DirectConversationView({
         message:
           error instanceof ApiRequestError
             ? error.message
-            : "Unable to load this conversation. Please try again.",
+            : t("loadError"),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onConversationChanged/onParticipantResolved intentionally not tracked to avoid reload loops.
-  }, [conversationId]);
+  }, [conversationId, t]);
 
   useEffect(() => {
     void loadConversation();
@@ -413,7 +418,7 @@ export function DirectConversationView({
       setMessages((current) => [...page.messages, ...current]);
       setHasMoreOlder(page.hasMoreOlderMessages);
     } catch {
-      setSendError("Unable to load earlier messages. Please try again.");
+      setSendError(t("loadEarlierError"));
     } finally {
       setLoadingOlder(false);
     }
@@ -435,12 +440,12 @@ export function DirectConversationView({
       const message = await sendDirectMessage(conversationId, normalized, createClientMessageId());
       setMessages((current) => mergeNewMessages(current, [message]));
       setDraft("");
-      setStatusMessage("Message sent.");
+      setStatusMessage(t("sent"));
       dispatchDirectMessagesChanged();
       onConversationChanged?.();
     } catch (error) {
       setSendError(
-        error instanceof ApiRequestError ? error.message : "Unable to send this message. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("sendError"),
       );
     } finally {
       setSending(false);
@@ -448,12 +453,16 @@ export function DirectConversationView({
   }
 
   if (state.phase === "loading" && !detail) {
-    return <p className="direct-messaging__conversation-status" role="status">Loading conversation…</p>;
+    return (
+      <p className="direct-messaging__conversation-status" role="status">
+        {t("loading")}
+      </p>
+    );
   }
 
   if (state.phase === "error" && !detail) {
     return (
-      <HuFeedbackMessage variant="error" title="Conversation unavailable">
+      <HuFeedbackMessage variant="error" title={t("unavailableTitle")}>
         {state.message}
       </HuFeedbackMessage>
     );
@@ -463,19 +472,23 @@ export function DirectConversationView({
     return null;
   }
 
-  const sharedLabel = sharedContextLabel(detail.sharedContext);
+  const sharedLabel = sharedContextLabel(
+    detail.sharedContext,
+    t("allyInOne"),
+    t("allyInMany", { count: detail.sharedContext?.sharedInitiativeCount ?? 0 }),
+  );
 
   return (
-    <section className="direct-messaging__conversation" aria-label="Direct Collaboration conversation">
+    <section className="direct-messaging__conversation" aria-label={t("aria")}>
       <header className="direct-messaging__conversation-header">
         <HumanityAvatar avatarUrl={detail.otherParticipant.avatarUrl} size={48} alt="" />
         <div className="direct-messaging__conversation-heading">
           {/* Part 13 — a fixed category label, not a second page heading; the Participant's name below is the real heading for this panel. */}
-          <p className="direct-messaging__conversation-kicker">Direct Collaboration</p>
+          <p className="direct-messaging__conversation-kicker">{t("kicker")}</p>
           <h2 className="direct-messaging__conversation-title">{detail.otherParticipant.displayName}</h2>
           {/* Communication UX Pack 03.8 Part 3 — conversation status; falls back to a generic label when there is no shared Active Ally context to report. */}
           <p className="direct-messaging__conversation-status-line">
-            {sharedLabel ?? "Direct Collaboration conversation"}
+            {sharedLabel ?? t("titleFallback")}
           </p>
         </div>
         {detail.otherParticipant.profileUrl ? (
@@ -483,7 +496,7 @@ export function DirectConversationView({
             href={detail.otherParticipant.profileUrl}
             className="hu-button hu-button--secondary direct-messaging__profile-button"
           >
-            View public profile
+            {t("viewProfile")}
           </Link>
         ) : null}
 
@@ -498,13 +511,13 @@ export function DirectConversationView({
          * profile to share; otherwise it is a truthful disabled
          * placeholder, never a fake-looking active button.
          */}
-        <div className="direct-messaging__toolbar" role="toolbar" aria-label="Conversation actions">
-          <ConversationToolbarButton icon="/icons/messenger/call.svg" label="Call" disabledHint="coming soon" />
-          <ConversationToolbarButton icon="/icons/messenger/camera.svg" label="Video" disabledHint="coming soon" />
+        <div className="direct-messaging__toolbar" role="toolbar" aria-label={t("toolbarAria")}>
+          <ConversationToolbarButton icon="/icons/messenger/call.svg" label={t("call")} disabledHint={t("comingSoon")} />
+          <ConversationToolbarButton icon="/icons/messenger/camera.svg" label={t("video")} disabledHint={t("comingSoon")} />
           {isCallActive ? (
             <ConversationToolbarButton
               icon="/icons/messenger/end-call.svg"
-              label="End call"
+              label={t("endCall")}
               onClick={() => {
                 /* No active call state exists yet; unreachable until a real call feature ships. */
               }}
@@ -512,8 +525,8 @@ export function DirectConversationView({
           ) : null}
           <ConversationToolbarButton
             icon="/icons/messenger/share.svg"
-            label="Share"
-            disabledHint="coming soon"
+            label={t("share")}
+            disabledHint={t("comingSoon")}
             onClick={handleShare}
           />
         </div>
@@ -531,7 +544,7 @@ export function DirectConversationView({
       <div
         className="direct-messaging__history"
         role="log"
-        aria-label="Message history"
+        aria-label={t("historyAria")}
         ref={historyRef}
         onScroll={handleHistoryScroll}
       >
@@ -542,7 +555,7 @@ export function DirectConversationView({
             onClick={() => void handleLoadOlder()}
             disabled={loadingOlder}
           >
-            {loadingOlder ? "Loading…" : "Load earlier messages"}
+            {loadingOlder ? t("loading") : t("loadEarlier")}
           </button>
         ) : null}
 
@@ -559,9 +572,7 @@ export function DirectConversationView({
         </ul>
 
         {messages.length === 0 ? (
-          <p className="direct-messaging__conversation-status">
-            No messages yet. Start the conversation below.
-          </p>
+          <p className="direct-messaging__conversation-status">{t("empty")}</p>
         ) : null}
       </div>
 
@@ -574,7 +585,7 @@ export function DirectConversationView({
             setShowJumpToLatest(false);
           }}
         >
-          New message — Jump to latest
+          {t("jumpLatest")}
         </button>
       ) : null}
 
@@ -590,7 +601,7 @@ export function DirectConversationView({
        */}
       <form className="direct-messaging__composer" onSubmit={(event) => void handleSubmit(event)}>
         <label htmlFor="direct-message-composer-input" className="direct-messaging__composer-label">
-          Message {detail.otherParticipant.displayName}
+          {tMessaging("messageAria", { name: detail.otherParticipant.displayName })}
         </label>
         <textarea
           id="direct-message-composer-input"
@@ -599,23 +610,24 @@ export function DirectConversationView({
           value={draft}
           maxLength={MAX_MESSAGE_LENGTH}
           disabled={sending}
+          placeholder={t("placeholder")}
           onChange={(event) => setDraft(event.target.value)}
         />
         <div className="direct-messaging__composer-actions">
-          <div className="direct-messaging__composer-toolbar" role="toolbar" aria-label="Message actions">
+          <div className="direct-messaging__composer-toolbar" role="toolbar" aria-label={t("composerAria")}>
             <ConversationToolbarButton
               icon="/icons/messenger/add-file.svg"
-              label="Attach a file"
+              label={t("attachFile")}
               onClick={() => sharedDocumentsPanelRef.current?.openUploadPicker()}
             />
             <ConversationToolbarButton
               icon="/icons/messenger/microphone.svg"
-              label="Voice messages"
-              disabledHint="coming soon"
+              label={t("voiceMessages")}
+              disabledHint={t("comingSoon")}
             />
           </div>
           <button type="submit" className="hu-button hu-button--primary" disabled={sending || !draft.trim()}>
-            {sending ? "Sending…" : "Send"}
+            {sending ? t("sending") : t("send")}
           </button>
         </div>
       </form>

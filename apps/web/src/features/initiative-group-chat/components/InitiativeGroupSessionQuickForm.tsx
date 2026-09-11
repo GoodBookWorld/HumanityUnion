@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCollaborationSessionInput } from "@hu/types";
 
@@ -55,6 +56,8 @@ interface InitiativeGroupSessionQuickFormProps {
  */
 export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: InitiativeGroupSessionQuickFormProps) {
   const formId = useId();
+  const t = useTranslations("workspace.messagesPage.group");
+  const tSessions = useTranslations("initiativeExperience.collaboration.sessions");
   const [title, setTitle] = useState("");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
@@ -93,7 +96,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
       setError(
         submitError instanceof ApiRequestError
           ? submitError.message
-          : "Unable to schedule this Session. Please try again.",
+          : tSessions("scheduleFailed"),
       );
     } finally {
       setSubmitting(false);
@@ -101,11 +104,11 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
   }
 
   return (
-    <section className="igc-session-form" aria-label="Schedule a Collaboration Session">
-      <h3 className="igc-session-form__title">Schedule a Session</h3>
+    <section className="igc-session-form" aria-label={t("sessionFormAria")}>
+      <h3 className="igc-session-form__title">{t("scheduleHeading")}</h3>
       <form onSubmit={(event) => void handleSubmit(event)}>
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-title`}>Title</label>
+          <label htmlFor={`${formId}-title`}>{tSessions("title")}</label>
           <input
             id={`${formId}-title`}
             type="text"
@@ -118,7 +121,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         </div>
 
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-date`}>Date</label>
+          <label htmlFor={`${formId}-date`}>{tSessions("meetingDate")}</label>
           <input
             id={`${formId}-date`}
             type="date"
@@ -130,7 +133,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         </div>
 
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-time`}>Time</label>
+          <label htmlFor={`${formId}-time`}>{tSessions("meetingTime")}</label>
           <input
             id={`${formId}-time`}
             type="time"
@@ -142,7 +145,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         </div>
 
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-timezone`}>Timezone</label>
+          <label htmlFor={`${formId}-timezone`}>{tSessions("timezone")}</label>
           <select
             id={`${formId}-timezone`}
             className="hu-form-control"
@@ -159,7 +162,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         </div>
 
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-duration`}>Duration (minutes)</label>
+          <label htmlFor={`${formId}-duration`}>{tSessions("durationMinutes")}</label>
           <input
             id={`${formId}-duration`}
             type="number"
@@ -174,12 +177,12 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         </div>
 
         <div className="igc-session-form__field">
-          <label htmlFor={`${formId}-link`}>Meeting link (optional)</label>
+          <label htmlFor={`${formId}-link`}>{tSessions("externalLink")}</label>
           <input
             id={`${formId}-link`}
             type="url"
             className="hu-form-control"
-            placeholder="https://meet.google.com/..."
+            placeholder={tSessions("linkPlaceholder")}
             value={externalMeetingLink}
             onChange={(event) => setExternalMeetingLink(event.target.value)}
           />
@@ -192,7 +195,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
         ) : null}
 
         <button type="submit" className="hu-button hu-button--primary igc-session-form__submit" disabled={submitting}>
-          {submitting ? "Scheduling…" : "Schedule Session"}
+          {submitting ? t("scheduling") : tSessions("scheduleSession")}
         </button>
       </form>
     </section>

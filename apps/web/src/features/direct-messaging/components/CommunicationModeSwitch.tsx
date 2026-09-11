@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { CommunicationMode } from "../direct-messaging-format";
 
 interface CommunicationModeSwitchProps {
@@ -15,8 +17,10 @@ interface CommunicationModeSwitchProps {
  * state, so a direct link or refresh lands on the right mode.
  */
 export function CommunicationModeSwitch({ mode, onChange }: CommunicationModeSwitchProps) {
+  const t = useTranslations("workspace.messagesPage");
+
   return (
-    <div className="communication-mode-switch" role="tablist" aria-label="Communication mode">
+    <div className="communication-mode-switch" role="tablist" aria-label={t("modeAria")}>
       <button
         type="button"
         role="tab"
@@ -26,7 +30,7 @@ export function CommunicationModeSwitch({ mode, onChange }: CommunicationModeSwi
         className={`communication-mode-switch__tab${mode === "personal" ? " communication-mode-switch__tab--active" : ""}`}
         onClick={() => onChange("personal")}
       >
-        Personal Chat
+        {t("modePersonal")}
       </button>
       <button
         type="button"
@@ -37,7 +41,7 @@ export function CommunicationModeSwitch({ mode, onChange }: CommunicationModeSwi
         className={`communication-mode-switch__tab${mode === "initiative" ? " communication-mode-switch__tab--active" : ""}`}
         onClick={() => onChange("initiative")}
       >
-        Initiative Group Chat
+        {t("modeInitiative")}
       </button>
     </div>
   );
