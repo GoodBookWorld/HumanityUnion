@@ -4720,6 +4720,12 @@
       },
       "journeySummary": "已完成 {completed}／{total} 個步驟"
     },
+    "workspaceWidget": {
+      "unavailable": "會籍目前無法使用。",
+      "journey": "旅程",
+      "continueCta": "繼續會籍",
+      "viewSuccessCta": "查看會籍成功頁面"
+    },
     "statistics": {
       "defaultTitle": "會員參與",
       "loading": "正在載入參與統計…",

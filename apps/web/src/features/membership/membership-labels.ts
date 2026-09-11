@@ -52,10 +52,17 @@ export function formatMembershipContributionStatus(status: MembershipStatus): st
   return labels[key];
 }
 
+/** Count of timeline steps in `complete` state — numeric param for WEB_UI journeySummary. */
+export function membershipJourneyCompletedCount(
+  timeline: { state: "complete" | "current" | "upcoming" }[],
+): number {
+  return timeline.filter((step) => step.state === "complete").length;
+}
+
 /** @deprecated Pack 08I.7 — prefer membershipPublic.labels.journeySummary via useTranslations. */
 export function formatMembershipJourneySummary(
   timeline: { state: "complete" | "current" | "upcoming" }[],
 ): string {
-  const completed = timeline.filter((step) => step.state === "complete").length;
+  const completed = membershipJourneyCompletedCount(timeline);
   return `${completed} of ${timeline.length} steps complete`;
 }

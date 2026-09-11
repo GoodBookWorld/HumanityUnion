@@ -4720,6 +4720,12 @@
       },
       "journeySummary": "{completed} of {total} steps complete"
     },
+    "workspaceWidget": {
+      "unavailable": "Membership is unavailable.",
+      "journey": "Journey",
+      "continueCta": "Continue Membership",
+      "viewSuccessCta": "View Membership Success"
+    },
     "statistics": {
       "defaultTitle": "Membership participation",
       "loading": "Loading participation statistics...",

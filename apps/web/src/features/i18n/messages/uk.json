@@ -4720,6 +4720,12 @@
       },
       "journeySummary": "{completed} з {total} кроків завершено"
     },
+    "workspaceWidget": {
+      "unavailable": "Членство недоступне.",
+      "journey": "Шлях",
+      "continueCta": "Продовжити членство",
+      "viewSuccessCta": "Переглянути успіх членства"
+    },
     "statistics": {
       "defaultTitle": "Участь у членстві",
       "loading": "Завантаження статистики участі...",

@@ -4720,6 +4720,12 @@
       },
       "journeySummary": "{completed} من {total} خطوات مكتملة"
     },
+    "workspaceWidget": {
+      "unavailable": "العضوية غير متاحة.",
+      "journey": "المسار",
+      "continueCta": "متابعة العضوية",
+      "viewSuccessCta": "عرض نجاح العضوية"
+    },
     "statistics": {
       "defaultTitle": "المشاركة في العضوية",
       "loading": "جارٍ تحميل إحصاءات المشاركة...",
