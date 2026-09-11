@@ -31,7 +31,11 @@ import {
   resolveMediaPlpOperatorPreProviderMaxRssMb,
 } from "./constants.js";
 import { assertMediaPlpMaterializerImportIsolation } from "./import-guards.js";
-import { loadMediaPlpMaterializerLocale } from "./locale-lookup.js";
+import { normalizeMediaPlpRegistryLocaleIdentity } from "./locale-identity.js";
+import {
+  loadMediaPlpMaterializerLocale,
+  type MediaPlpMaterializerLocaleLookup,
+} from "./locale-lookup.js";
 import {
   captureMaterializerAfterImport,
   captureMaterializerAfterMongoConnect,
@@ -63,7 +67,6 @@ import type { MediaPlpMaterializerArgs } from "./parse-args.js";
 import type { MediaPlpMaterializerSourceResolve } from "./source-resolve.js";
 import type { MediaPlpExistingTranslationLookup } from "./translation-reuse.js";
 import type { MediaPlpMaterializerPlpInspect } from "./plp-inspect.js";
-import type { MediaPlpMaterializerLocaleLookup } from "./locale-lookup.js";
 import type { TranslationProvider } from "../translation-provider.js";
 import type {
   ProviderBoundaryResult,
@@ -255,7 +258,7 @@ export async function runMediaPlpMaterializer(
   if (!parsed.ok) {
     return { exitCode: 2, report: null, errorMessage: parsed.errorMessage };
   }
-  const args = parsed.args;
+  let args = parsed.args;
 
   const production = evaluateMediaPlpMaterializerProductionRefusal({
     database: deps.resolveDatabase?.() ?? undefined,
@@ -331,6 +334,16 @@ export async function runMediaPlpMaterializer(
     }
     captureMaterializerAfterMongoConnect();
 
+    const localeInfo = await (deps.loadLocale ?? loadMediaPlpMaterializerLocale)(
+      args.locale,
+    );
+    args = {
+      ...args,
+      locale:
+        localeInfo.CANONICAL_LOCALE ??
+        normalizeMediaPlpRegistryLocaleIdentity(args.locale),
+    };
+
     const source = await (deps.resolveSource ?? resolveMediaPlpMaterializerSource)(args);
     captureMaterializerAfterSourceLookup();
 
@@ -357,8 +370,6 @@ export async function runMediaPlpMaterializer(
       autoPaths: source.autoPaths.map((n) => n.path),
     });
     captureMaterializerAfterTranslationLookup();
-
-    const localeInfo = await (deps.loadLocale ?? loadMediaPlpMaterializerLocale)(args.locale);
 
     const database =
       deps.resolveDatabase?.() ??

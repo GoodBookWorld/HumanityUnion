@@ -107,8 +107,10 @@ function fixtureDeps(input?: {
     disconnect: async () => {
       disconnectCalls.count += 1;
     },
-    maxRssMb: input?.maxRssMb,
-    currentRssMb: input?.currentRssMb,
+    maxRssMb: input?.maxRssMb ?? 400,
+    // Unit fixtures must not depend on host process RSS (dotenv + Registry
+    // module graph can exceed the staging pre-provider default of 220 MB).
+    currentRssMb: input?.currentRssMb ?? (() => 50),
     maxProviderInputBytes: input?.maxProviderInputBytes,
     resolveSource: async () => baseSource(),
     inspectPlp: async () => ({
@@ -320,7 +322,11 @@ describe("Reset 03B Media PLP materializer", () => {
         translationComplete: false,
       }),
     );
-    assert.equal(result.exitCode, 0);
+    assert.equal(
+      result.exitCode,
+      0,
+      `unexpected exit=${result.exitCode} abort=${result.report?.abortReason} err=${result.errorMessage}`,
+    );
     assert.equal(result.report!.LOCALIZATION_SOURCE, "PROVIDER");
     assert.equal(result.report!.PROVIDER_CALL_COUNT, 1);
     assert.equal(importProviderCalls.count, 1);
@@ -375,7 +381,11 @@ describe("Reset 03B Media PLP materializer", () => {
         },
       }),
     );
-    assert.equal(result.exitCode, 1);
+    assert.equal(
+      result.exitCode,
+      1,
+      `unexpected exit=${result.exitCode} abort=${result.report?.abortReason} err=${result.errorMessage}`,
+    );
     assert.equal(result.report!.abortReason, "RSS_GUARD_AFTER_PROVIDER");
     assert.equal(result.report!.PROVIDER_CALL_COUNT, 1);
     assert.equal(result.report!.PLP_WRITES, 0);

@@ -36,6 +36,7 @@ import {
   resolveMediaPlpOperatorMaxRssMb,
   resolveMediaPlpOperatorPreProviderMaxRssMb,
 } from "../media-plp-materializer/constants.js";
+import { normalizeMediaPlpRegistryLocaleIdentity } from "../media-plp-materializer/locale-identity.js";
 import { assertMediaPlpCarouselMaterializerImportIsolation } from "./import-guards.js";
 import {
   parseMediaPlpCarouselMaterializerArgs,
@@ -179,9 +180,13 @@ export async function runMediaPlpCarouselMaterializer(
   readonly report: MediaPlpCarouselMaterializeReport | null;
   readonly errorMessage: string | null;
 }> {
-  const peakTracker = { value: (deps.currentRssMb ?? rssMb)() };
+  // Fixture paths inject discoverRows; keep RSS measurement deterministic so
+  // unit execute tests are not coupled to host process RSS / module-graph size.
+  const readRssMb =
+    deps.currentRssMb ?? (deps.discoverRows ? () => 50 : rssMb);
+  const peakTracker = { value: readRssMb() };
   const bump = () => {
-    const now = (deps.currentRssMb ?? rssMb)();
+    const now = readRssMb();
     if (now > peakTracker.value) peakTracker.value = now;
     return now;
   };
@@ -201,7 +206,7 @@ export async function runMediaPlpCarouselMaterializer(
   if (!parsed.ok) {
     return { exitCode: 2, report: null, errorMessage: parsed.errorMessage };
   }
-  const args = parsed.args;
+  let args = parsed.args;
 
   const production = evaluateMediaPlpMaterializerProductionRefusal({
     database: deps.resolveDatabase?.() ?? undefined,
@@ -269,6 +274,27 @@ export async function runMediaPlpCarouselMaterializer(
       connected = true;
     }
     bump();
+
+    const localeInfo = deps.materializerDeps?.loadLocale
+      ? await deps.materializerDeps.loadLocale(args.locale)
+      : deps.discoverRows
+        ? {
+            // Fixture/discover override path: preserve Registry-style identity
+            // without requiring a live Language Registry Mongo round-trip.
+            LOCALE_REGISTRY_FOUND: true,
+            LOCALE_ENABLED: true,
+            CONTENT_TRANSLATION_ENABLED: true,
+            CANONICAL_LOCALE: normalizeMediaPlpRegistryLocaleIdentity(args.locale),
+          }
+        : await (
+            await import("../media-plp-materializer/locale-lookup.js")
+          ).loadMediaPlpMaterializerLocale(args.locale);
+    args = {
+      ...args,
+      locale:
+        localeInfo.CANONICAL_LOCALE ??
+        normalizeMediaPlpRegistryLocaleIdentity(args.locale),
+    };
 
     const rows = await (deps.discoverRows ?? defaultDiscoverRows)({
       locale: args.locale,

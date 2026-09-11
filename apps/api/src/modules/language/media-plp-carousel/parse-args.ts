@@ -2,7 +2,9 @@
  * Reset 03E.9 — parse diagnose:media-plp-carousel args.
  */
 
-import { normalizeLanguageCode, type LanguageCode } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
+
+import { normalizeMediaPlpRegistryLocaleIdentity } from "../media-plp-materializer/locale-identity.js";
 
 export type MediaPlpCarouselArgs = {
   readonly mongo: true;
@@ -66,7 +68,7 @@ export function parseMediaPlpCarouselArgs(
     ok: true,
     args: {
       mongo: true,
-      locale: normalizeLanguageCode(localeRaw, "en"),
+      locale: normalizeMediaPlpRegistryLocaleIdentity(localeRaw),
       countryCode: countryRaw ? countryRaw.toUpperCase() : null,
     },
   };

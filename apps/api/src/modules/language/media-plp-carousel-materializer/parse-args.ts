@@ -2,12 +2,13 @@
  * Reset 03E.10 — parse materialize:media-plp-carousel args.
  */
 
-import { normalizeLanguageCode, type LanguageCode } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 
 import {
   MEDIA_PLP_CAROUSEL_MATERIALIZE_DEFAULT_LIMIT,
   MEDIA_PLP_CAROUSEL_MATERIALIZE_PLAN_MAX,
 } from "../media-plp-carousel/constants.js";
+import { normalizeMediaPlpRegistryLocaleIdentity } from "../media-plp-materializer/locale-identity.js";
 
 export type MediaPlpCarouselMaterializerArgs = {
   readonly mongo: true;
@@ -92,7 +93,7 @@ export function parseMediaPlpCarouselMaterializerArgs(
     args: {
       mongo: true,
       execute: argv.includes("--execute"),
-      locale: normalizeLanguageCode(localeRaw, "en"),
+      locale: normalizeMediaPlpRegistryLocaleIdentity(localeRaw),
       countryCode: countryRaw ? countryRaw.toUpperCase() : null,
       limit,
     },

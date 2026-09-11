@@ -61,6 +61,11 @@ export function assertMediaPlpMaterializerImportIsolation(): {
     }
     for (const fragment of FORBIDDEN_STATIC) {
       if (text.includes(fragment)) {
+        // Locale eligibility must resolve canonical Registry locale/aliases.
+        // Keep the dependency confined to locale-lookup.ts (not provider/transport).
+        if (file === "locale-lookup.ts" && fragment === "language-registry/index") {
+          continue;
+        }
         violations.push(`${file}:${fragment}`);
       }
     }

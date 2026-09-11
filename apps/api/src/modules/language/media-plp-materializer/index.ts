@@ -29,6 +29,13 @@ export {
   type MediaPlpMaterializerArgs,
 } from "./parse-args.js";
 export {
+  normalizeMediaPlpRegistryLocaleIdentity,
+} from "./locale-identity.js";
+export {
+  loadMediaPlpMaterializerLocale,
+  type MediaPlpMaterializerLocaleLookup,
+} from "./locale-lookup.js";
+export {
   getMediaPlpPersistenceObservability,
   requireMediaPlpMaterializerMongoPersistence,
 } from "./persistence-selection.js";

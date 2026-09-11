@@ -7,7 +7,9 @@ import {
   MEDIA_PLP_ENTITY_TYPES,
   type MediaPlpEntityType,
 } from "@hu/types";
-import { normalizeLanguageCode, type LanguageCode } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
+
+import { normalizeMediaPlpRegistryLocaleIdentity } from "./locale-identity.js";
 
 export type MediaPlpMaterializerArgs = {
   readonly mongo: true;
@@ -99,7 +101,7 @@ export function parseMediaPlpMaterializerArgs(
       execute: argv.includes("--execute"),
       entityType: entityTypeRaw,
       entityId: entityIdRaw,
-      locale: normalizeLanguageCode(localeRaw, "en"),
+      locale: normalizeMediaPlpRegistryLocaleIdentity(localeRaw),
     },
   };
 }
