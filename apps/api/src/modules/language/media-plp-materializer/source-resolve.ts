@@ -28,6 +28,8 @@ import {
   fingerprintMediaPlpCanonicalVersion,
 } from "../published-localized-presentation/media/canonical-trees.js";
 import { collectAutoPaths } from "../published-localized-presentation/presentation-paths.js";
+import { isCollectedPathMachineEligible } from "../published-localized-presentation/universal/field-authority.js";
+import { resolveMediaPlpFieldPolicy } from "../published-localized-presentation/universal/adapters/media-plp-field-policies.js";
 import { markMaterializerSourceLookup } from "./counters.js";
 
 export type MediaPlpMaterializerSourceResolve = {
@@ -35,6 +37,10 @@ export type MediaPlpMaterializerSourceResolve = {
   readonly SOURCE_PUBLIC: boolean;
   readonly CANONICAL_VERSION: string | null;
   readonly canonicalPresentation: PublicPresentationNode | null;
+  /**
+   * Machine-eligible string leaves only (field-policy filtered).
+   * Structural IDs / protected scalars are excluded from the provider hop.
+   */
   readonly autoPaths: readonly { readonly path: string; readonly value: string }[];
   readonly identityCollision: boolean;
 };
@@ -57,14 +63,19 @@ function empty(): MediaPlpMaterializerSourceResolve {
 function withTree(
   presentation: PublicPresentationNode,
   sourcePublic: boolean,
+  entityType: string,
 ): MediaPlpMaterializerSourceResolve {
   const canonicalVersion = fingerprintMediaPlpCanonicalVersion(presentation);
+  const fieldPolicy = resolveMediaPlpFieldPolicy(entityType);
+  const autoPaths = collectAutoPaths(presentation).filter((node) =>
+    isCollectedPathMachineEligible(node.path, fieldPolicy),
+  );
   return {
     SOURCE_FOUND: true,
     SOURCE_PUBLIC: sourcePublic,
     CANONICAL_VERSION: canonicalVersion,
     canonicalPresentation: presentation,
-    autoPaths: collectAutoPaths(presentation),
+    autoPaths,
     identityCollision: false,
   };
 }
@@ -127,6 +138,7 @@ async function resolvePublicNews(
   return withTree(
     asMediaPlpPresentationNode(buildCanonicalPublicNewsPresentation(article)),
     sourcePublic,
+    MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
   );
 }
 
@@ -143,6 +155,7 @@ function resolvePrinciple(entityId: string): MediaPlpMaterializerSourceResolve {
   return withTree(
     asMediaPlpPresentationNode(buildCanonicalPrinciplePresentation(principle)),
     true,
+    MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
   );
 }
 
@@ -199,6 +212,7 @@ async function resolveTrusted(
       }),
     ),
     sourcePublic,
+    MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
   );
 }
 
@@ -215,6 +229,7 @@ function resolveEditorial(entityId: string): MediaPlpMaterializerSourceResolve {
       }),
     ),
     true,
+    MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
   );
 }
 
@@ -231,6 +246,7 @@ function resolveFactCheck(entityId: string): MediaPlpMaterializerSourceResolve {
   return withTree(
     asMediaPlpPresentationNode(buildCanonicalFactCheckPresentation(resource)),
     true,
+    MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
   );
 }
 
@@ -247,6 +263,7 @@ function resolvePropaganda(entityId: string): MediaPlpMaterializerSourceResolve 
   return withTree(
     asMediaPlpPresentationNode(buildCanonicalPropagandaPresentation(resource)),
     true,
+    MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
   );
 }
 
