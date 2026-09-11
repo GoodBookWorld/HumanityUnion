@@ -8,6 +8,7 @@
 import type { LanguageCode, ResolvedTranslatedDisplay } from "@hu/types";
 
 import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
+import { isPartialTranslatedFieldBag } from "../language/resolve-localized-presentation";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
@@ -40,18 +41,6 @@ const defaultDeps: InitiativeDetailPresentationDeps = {
   resolveTranslatedContent,
   generateContentTranslation,
 };
-
-function pickTranslatedField(
-  resolved: ResolvedTranslatedDisplay<Record<string, string>>,
-  key: string,
-  fallback: string,
-): string {
-  const value = resolved.content[key];
-  if (typeof value === "string" && value.trim()) {
-    return value;
-  }
-  return fallback;
-}
 
 function pickOriginalField(
   resolved: ResolvedTranslatedDisplay<Record<string, string>>,
@@ -131,9 +120,46 @@ export async function resolveInitiativeDetailPresentation(
     };
   }
 
+  const translatedTitle =
+    typeof resolved.content.title === "string" ? resolved.content.title.trim() : "";
+  const translatedDescription =
+    typeof resolved.content.description === "string"
+      ? resolved.content.description.trim()
+      : "";
+  const translatedBag = {
+    title: translatedTitle,
+    description: translatedDescription,
+  };
+
+  // Whole-representation: usable only when BOTH required fields are non-empty.
+  // Partial bags (isPartialTranslatedFieldBag) and fully empty bags both fall back.
+  const completeTranslatedBag =
+    translatedTitle.length > 0 && translatedDescription.length > 0;
+  if (
+    !completeTranslatedBag ||
+    isPartialTranslatedFieldBag({
+      canonicalFields: {
+        title: canonical.title,
+        description: canonical.description,
+      },
+      translatedFields: translatedBag,
+    })
+  ) {
+    return {
+      ...originalFallback,
+      isStale: Boolean(resolved.isStale),
+      activeLanguage: resolved.activeLanguage,
+      originalLanguage: resolved.originalLanguage,
+      originalTitle,
+      originalDescription,
+      canViewOriginal: resolved.canViewOriginal,
+      canViewTranslation: resolved.canViewTranslation,
+    };
+  }
+
   return {
-    title: pickTranslatedField(resolved, "title", canonical.title),
-    description: pickTranslatedField(resolved, "description", canonical.description),
+    title: translatedTitle,
+    description: translatedDescription,
     presentationMode: "translated",
     isStale: Boolean(resolved.isStale),
     activeLanguage: resolved.activeLanguage,

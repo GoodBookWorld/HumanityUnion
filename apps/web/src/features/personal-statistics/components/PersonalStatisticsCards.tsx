@@ -1,20 +1,16 @@
+"use client";
+
 import type { ParticipantStatistics } from "@hu/types";
+import { useTranslations } from "next-intl";
 
 import {
   PERSONAL_STATISTICS_CARDS,
   type PersonalStatisticsCardConfig,
 } from "../personal-statistics-cards.config";
+import { resolveWorkspaceStatsLabel } from "../../workspace-home/workspace-home-i18n";
 
 import "../personal-statistics.css";
 
-/**
- * Re-exported so existing importers of the card config keep working;
- * the config itself now lives in a CSS-free module (see
- * `personal-statistics-cards.config.ts`) so the Public Profile's
- * Privacy-filtered "Participation Statistics" cards (Profile UX Pack 03.2
- * Part 7) can reuse the exact same labels/icons from pure, testable
- * presentation logic without pulling in this component's `.css` import.
- */
 export { PERSONAL_STATISTICS_CARDS, type PersonalStatisticsCardConfig };
 
 interface PersonalStatisticsCardsProps {
@@ -35,23 +31,20 @@ function StatisticSkeletonCard({ label }: { label: string }) {
   );
 }
 
-/**
- * Profile UX Pack 02 Part 1/4/11 / Pack 19C.3 — the ONE shared "Personal
- * Statistics" component reused verbatim by Workspace (Part 1) and the Member
- * Profile page (Part 4). Visually mirrors the existing `platform-statistics__card`
- * language (border, radius, shadow, icon-over-value-over-label), scoped under
- * its own `personal-statistics__` class names since these numbers are
- * per-Participant, not platform-wide. Six cards from `PERSONAL_STATISTICS_CARDS`.
- */
 export function PersonalStatisticsCards({
   statistics,
   loading = false,
 }: PersonalStatisticsCardsProps) {
+  const t = useTranslations("workspace");
+
   if (loading || !statistics) {
     return (
       <ul className="personal-statistics__grid" aria-hidden="true">
         {PERSONAL_STATISTICS_CARDS.map((card) => (
-          <StatisticSkeletonCard key={card.key} label={card.label} />
+          <StatisticSkeletonCard
+            key={card.key}
+            label={resolveWorkspaceStatsLabel(t, card.key)}
+          />
         ))}
       </ul>
     );
@@ -70,7 +63,9 @@ export function PersonalStatisticsCards({
             height={64}
           />
           <p className="personal-statistics__value">{statistics[card.key]}</p>
-          <p className="personal-statistics__label">{card.label}</p>
+          <p className="personal-statistics__label">
+            {resolveWorkspaceStatsLabel(t, card.key)}
+          </p>
         </li>
       ))}
     </ul>

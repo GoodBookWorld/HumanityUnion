@@ -237,7 +237,97 @@
     "homeSubtitle": "Ваша особиста громадянська панель",
     "passwordChangedSuccess": "Пароль змінено. Інші активні сеанси завершено з міркувань безпеки.",
     "signInRequired": "Потрібен вхід",
-    "signInRequiredCopy": "<login>Увійдіть</login> або <register>створіть обліковий запис</register>, щоб користуватися функціями робочого простору."
+    "signInRequiredCopy": "<login>Увійдіть</login> або <register>створіть обліковий запис</register>, щоб користуватися функціями робочого простору.",
+    "home": {
+      "welcomeTitle": "Welcome to {siteName}",
+      "welcomeBody": "You are now part of a global community of people who want to improve society through cooperation.",
+      "welcomeLead": "Before you begin:",
+      "welcomeChecklistProfile": "Complete your profile so other participants can better understand your experience.",
+      "welcomeChecklistPreferences": "Choose your Preferences to discover initiatives and connect with people who share your interests.",
+      "welcomeChecklistParticipation": "Select your Participation Area. It does not have to be the country where you currently live — it is the community where you want to contribute.",
+      "welcomeClosing": "When you're ready, start your first initiative or join an existing one.",
+      "welcomeBackTitle": "Welcome back.",
+      "welcomeBackBody": "Thank you for your continued civic participation and social responsibility. We are glad to have you back.",
+      "stillNeeded": "Still needed: {items}",
+      "quickActionsTitle": "Quick Actions",
+      "alliesTitle": "Allies",
+      "membershipTitle": "Membership",
+      "recentActivityTitle": "My Recent Activity",
+      "loading": "Loading your workspace…",
+      "loadError": "Unable to load workspace home.",
+      "unavailable": "Workspace home is unavailable.",
+      "noRecentActivity": "No recent activity yet.",
+      "openRecord": "Open record",
+      "collaborationOpportunitiesTitle": "Collaboration Opportunities",
+      "collaborationOpportunitiesAria": "Collaboration Opportunities",
+      "ciEmpty": "No collaboration opportunities are available yet.",
+      "ciWhyRelevant": "Why this is relevant:",
+      "ciView": "View",
+      "platformMembershipStats": "Platform Membership participation",
+      "currentWorkspace": "Current Workspace",
+      "logout": "Log out",
+      "welcomeAria": "Workspace welcome",
+      "personalStatisticsAria": "Personal statistics",
+      "alliesEmpty": "Your active Initiative Allies will appear here after collaboration requests are accepted.",
+      "alliesMessage": "Message",
+      "alliesOpening": "Opening…",
+      "alliesMessageAria": "Message {name}",
+      "alliesUnreadAria": "Unread messages from {name}",
+      "alliesSharedInitiatives": "{count, plural, one {# shared initiative} other {# shared initiatives}}",
+      "alliesListAria": "Allies",
+      "beta": {
+        "title": "Getting started",
+        "dismiss": "Dismiss",
+        "items": {
+          "member-profile": "Complete Member Profile",
+          "participation-area": "Configure Participation Area",
+          "verify-email": "Verify Email",
+          "first-initiative": "Create first Initiative"
+        }
+      },
+      "readiness": {
+        "email_verification": "email verification",
+        "profile": "profile",
+        "participation_area": "participation area"
+      },
+      "quickActions": {
+        "continue-draft-initiative": "Continue Draft Initiative",
+        "continue-analysis": "Continue Analysis",
+        "continue-proposal": "Continue Proposal",
+        "continue-revision": "Continue Revision",
+        "open-initiatives": "Open My Initiatives",
+        "participation-area": "Participation Area",
+        "search-civic-records": "Search civic records",
+        "civic-activity": "View Civic Activity",
+        "create-initiative": "Create New Initiative"
+      },
+      "stats": {
+        "initiativesCount": "Initiatives",
+        "collectiveDecisionsCount": "Collective Decisions",
+        "alliesCount": "Allies",
+        "proposalsCount": "Proposals",
+        "petitionsCount": "Petitions",
+        "commitmentsFulfilledCount": "Implementation Commitments"
+      },
+      "ci": {
+        "reasons": {
+          "preferred_activity_area": "Matches your selected Participation Area",
+          "interested_topic": "Shares your selected priority topic",
+          "participation_interest": "Aligns with your initiative interest",
+          "active_ally_related": "Active Ally in related Initiatives",
+          "public_skill_match": "Publicly lists a relevant skill",
+          "public_participation_area": "Public Participation Area is available for collaboration context",
+          "anchored_to_owned_initiative": "Related to one of your Initiatives",
+          "same_activity_area": "Same Participation Area",
+          "shared_themes": "Overlapping themes",
+          "shared_title_terms": "Shared title terms",
+          "shared_tags": "Shared keywords",
+          "complementary_focus": "Complementary focus",
+          "possible_overlap": "Strong topical overlap",
+          "topical_affinity": "Topical affinity"
+        }
+      }
+    }
   },
   "civicActivity": {
     "pageSubtitle": "Ваша приватна громадянська робота в життєвому циклі Humanity Union",
@@ -605,7 +695,9 @@
       "archived": "В архіві",
       "revived": "Відновлено",
       "superseded": "Замінено",
-      "merged": "Об'єднано"
+      "merged": "Об'єднано",
+      "current": "Current",
+      "published": "Published"
     },
     "activityAreas": {
       "humanRights": "Права людини",
@@ -3242,6 +3334,10 @@
     "lifecycleRecordFields": {
       "title": "Назва",
       "summary": "Короткий опис"
+    },
+    "lifecycleRecordSummaries": {
+      "published_proposals_count": "{count, plural, one {# published proposal} other {# published proposals}}",
+      "no_official_response_received": "No official response received"
     }
   },
   "civicMediaPublic": {

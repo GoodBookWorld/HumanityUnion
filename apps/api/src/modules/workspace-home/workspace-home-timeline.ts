@@ -1,3 +1,4 @@
+import type { WorkspaceHomeTimelineEntry } from "./workspace-home.types.js";
 import type { DecisionSession } from "@hu/types";
 import type {
   Initiative,
@@ -7,8 +8,6 @@ import type {
   InitiativeImprovementProposal,
   InitiativePublicImpact,
 } from "@hu/types";
-
-import type { WorkspaceHomeTimelineEntry } from "./workspace-home.types.js";
 
 interface WorkspaceHomeTimelineSource {
   initiatives: Initiative[];
@@ -24,6 +23,10 @@ function pushEntry(entries: WorkspaceHomeTimelineEntry[], entry: WorkspaceHomeTi
   entries.push(entry);
 }
 
+/**
+ * Timeline `label` is a stable event code for WEB_UI mapping
+ * (civicActivity.timeline.events.* / workspace.home.activityEvents.*).
+ */
 export function buildWorkspaceHomeTimeline(
   source: WorkspaceHomeTimelineSource,
 ): WorkspaceHomeTimelineEntry[] {
@@ -32,7 +35,7 @@ export function buildWorkspaceHomeTimeline(
   for (const initiative of source.initiatives) {
     pushEntry(entries, {
       id: `initiative-created-${initiative.initiativeId}`,
-      label: "Initiative created",
+      label: "initiative_created",
       detail: initiative.title,
       occurredAt: initiative.createdAt,
       href: "/initiatives",
@@ -42,7 +45,7 @@ export function buildWorkspaceHomeTimeline(
       if (event.eventType === "initiative_published") {
         pushEntry(entries, {
           id: `initiative-published-${event.eventId}`,
-          label: "Initiative published",
+          label: "initiative_published",
           detail: initiative.title,
           occurredAt: event.timestamp,
           href: `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`,
@@ -55,7 +58,7 @@ export function buildWorkspaceHomeTimeline(
     if (analysis.status === "published" && analysis.publishedAt) {
       pushEntry(entries, {
         id: `analysis-published-${analysis.analysisId}`,
-        label: "Analysis published",
+        label: "analysis_published",
         detail: analysis.title,
         occurredAt: analysis.publishedAt,
         href: `/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`,
@@ -67,7 +70,7 @@ export function buildWorkspaceHomeTimeline(
     if (["submitted", "accepted", "partially_accepted", "declined"].includes(proposal.status)) {
       pushEntry(entries, {
         id: `proposal-submitted-${proposal.proposalId}`,
-        label: "Proposal submitted",
+        label: "proposal_submitted",
         detail: proposal.targetSection,
         occurredAt: proposal.updatedAt,
         href: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
@@ -79,7 +82,7 @@ export function buildWorkspaceHomeTimeline(
     if (session.publishedAt) {
       pushEntry(entries, {
         id: `decision-session-published-${session.sessionId}`,
-        label: "Decision session published",
+        label: "decision_session_published",
         detail: session.title,
         occurredAt: session.publishedAt,
         href: `/decision-sessions/public/${encodeURIComponent(session.sessionId)}`,
@@ -91,7 +94,7 @@ export function buildWorkspaceHomeTimeline(
     if (commitment.status === "published" && commitment.publishedAt) {
       pushEntry(entries, {
         id: `commitment-published-${commitment.commitmentId}`,
-        label: "Commitment published",
+        label: "commitment_published",
         detail: commitment.commitmentTitle,
         occurredAt: commitment.publishedAt,
         href: `/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`,
@@ -103,7 +106,7 @@ export function buildWorkspaceHomeTimeline(
     if (tracking.activatedAt) {
       pushEntry(entries, {
         id: `tracking-activated-${tracking.trackingId}`,
-        label: "Implementation tracking activated",
+        label: "implementation_tracking_activated",
         detail: tracking.summary,
         occurredAt: tracking.activatedAt,
         href: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
@@ -115,7 +118,7 @@ export function buildWorkspaceHomeTimeline(
     if (impact.publishedAt) {
       pushEntry(entries, {
         id: `public-impact-published-${impact.impactId}`,
-        label: "Public impact published",
+        label: "public_impact_published",
         detail: impact.title,
         occurredAt: impact.publishedAt,
         href: `/public-impact/${encodeURIComponent(impact.impactId)}`,

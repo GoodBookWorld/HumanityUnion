@@ -152,6 +152,9 @@ function CatalogOrCanonicalTitle({
   record: PublicInitiativeLifecycleRecordItem;
 }) {
   const t = useTranslations("initiativeExperience");
+  if (record.titleCode === "version" && record.titleVersion != null) {
+    return <h3>{t("common.versionN", { version: record.titleVersion })}</h3>;
+  }
   if (record.titleCode) {
     const key = `lifecycleRecordTitles.${record.titleCode}`;
     try {
@@ -172,6 +175,48 @@ function CatalogOrCanonicalTitle({
   return null;
 }
 
+function resolveRecordSummary(
+  record: PublicInitiativeLifecycleRecordItem,
+  t: (key: string, values?: Record<string, string | number | Date>) => string,
+): string | undefined {
+  if (record.summaryCode === "published_proposals_count" && record.summaryCount != null) {
+    return t("lifecycleRecordSummaries.published_proposals_count", {
+      count: record.summaryCount,
+    });
+  }
+  if (record.summaryCode) {
+    const key = `lifecycleRecordSummaries.${record.summaryCode}`;
+    try {
+      const localized = t(key);
+      if (localized.trim() && !looksLikeRawI18nKey(localized) && localized !== key) {
+        return localized;
+      }
+    } catch {
+      // fall through
+    }
+    const titleKey = `lifecycleRecordTitles.${record.summaryCode}`;
+    try {
+      const localized = t(titleKey);
+      if (localized.trim() && !looksLikeRawI18nKey(localized) && localized !== titleKey) {
+        return localized;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return record.summary;
+}
+
+function resolveRecordDetail(
+  record: PublicInitiativeLifecycleRecordItem,
+  t: (key: string, values?: Record<string, string | number | Date>) => string,
+): string | undefined {
+  if (record.detailCode === "version" && record.detailVersion != null) {
+    return t("common.versionN", { version: record.detailVersion });
+  }
+  return record.detail;
+}
+
 export function LifecycleTranslatedRecordCard({
   record,
 }: {
@@ -180,11 +225,13 @@ export function LifecycleTranslatedRecordCard({
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const statusLabel = resolveRecordStatusLabel(record, t);
+  const detailLabel = resolveRecordDetail(record, t);
+  const summaryLabel = resolveRecordSummary(record, t);
   const sourceKind = record.sourceKind;
 
   const meta = (
     <p className="pie-record__meta">
-      {[statusLabel, record.authorDisplayName, record.detail].filter(Boolean).join(" · ")}
+      {[statusLabel, record.authorDisplayName, detailLabel].filter(Boolean).join(" · ")}
       {record.updatedAt ? ` · ${formatInitiativeExperienceDate(locale, record.updatedAt)}` : ""}
     </p>
   );
@@ -327,7 +374,7 @@ export function LifecycleTranslatedRecordCard({
     body = (
       <>
         <CatalogOrCanonicalTitle record={record} />
-        {record.summary ? <p>{record.summary}</p> : null}
+        {summaryLabel ? <p>{summaryLabel}</p> : null}
         {meta}
       </>
     );

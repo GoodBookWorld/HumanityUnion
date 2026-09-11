@@ -231,6 +231,8 @@ export async function buildStageRecords(
       updatedAt: analysis.publishedAt,
       publicHref: `/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`,
       authorDisplayName: analysis.authorDisplayName,
+      detailCode: "version",
+      detailVersion: analysis.initiativeVersion,
       detail: `Version ${analysis.initiativeVersion}`,
     })),
   );
@@ -238,16 +240,23 @@ export async function buildStageRecords(
   records.set(
     "proposal",
     publishedProposalCollections.length > 0
-      ? publishedProposalCollections.map((collection) => ({
-          recordId: collection.collectionId,
-          title: "Improvement Proposals collection",
-          titleCode: "improvement_proposals_collection",
-          summary: `${collection.proposals.filter((proposal) => proposal.status === "published").length} published proposal(s)`,
-          status: collection.status,
-          statusCode: collection.status,
-          updatedAt: collection.publishedAt ?? collection.updatedAt,
-          publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#improvement-proposals`,
-        }))
+      ? publishedProposalCollections.map((collection) => {
+          const publishedCount = collection.proposals.filter(
+            (proposal) => proposal.status === "published",
+          ).length;
+          return {
+            recordId: collection.collectionId,
+            title: "Improvement Proposals collection",
+            titleCode: "improvement_proposals_collection",
+            summaryCode: "published_proposals_count",
+            summaryCount: publishedCount,
+            summary: `${publishedCount} published proposal(s)`,
+            status: collection.status,
+            statusCode: collection.status,
+            updatedAt: collection.publishedAt ?? collection.updatedAt,
+            publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#improvement-proposals`,
+          };
+        })
       : legacyProposals.map((proposal) => ({
           recordId: proposal.proposalId,
           title: `${proposal.targetSection}: ${proposal.proposedChange}`,
@@ -266,6 +275,8 @@ export async function buildStageRecords(
     filterLifecycleProgressRevisions(versionHistory.revisions).map((revision) => ({
       recordId: revision.revisionId,
       title: `Version ${revision.version}`,
+      titleCode: "version",
+      titleVersion: revision.version,
       sourceKind: "initiative_revision",
       summary: revision.revisionSummary,
       status: revision.isCurrent ? "Current" : "Published",
@@ -427,6 +438,10 @@ export async function buildStageRecords(
               recordId: lifecycleOfficialPackage.packageId,
               title: lifecycleOfficialPackage.title,
               titleCode: "official_response_package",
+              summaryCode:
+                lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
+                  ? "no_official_response_received"
+                  : undefined,
               summary:
                 lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
                   ? lifecycleOfficialPackage.noResponseDetail?.note ||

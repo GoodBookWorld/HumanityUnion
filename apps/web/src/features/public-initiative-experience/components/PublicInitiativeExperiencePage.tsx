@@ -403,6 +403,7 @@ export function PublicInitiativeExperiencePage({
               initialDiscussionFilter={initialDiscussionFilter}
               focusDiscussionCommentId={focusDiscussionCommentId}
               focusCollaborationParticipantId={focusCollaborationParticipantId}
+              presentationTitle={initiativePresentation.title}
               presentationDescription={initiativePresentation.description}
               managePanel={
                 canShowManage && manageInitiative ? (

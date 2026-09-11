@@ -88,9 +88,8 @@ export function PublicInitiativeSupportStatistics({
   const t = useTranslations("initiativeExperience");
   const rootClass = className ? `pie-support ${className}` : "pie-support";
   const resolvedTitle = title ?? t("sidebar.support.title");
-  // Prefer catalog chrome; preserve arbitrary server transparency notes without English matching.
-  const transparencyNote =
-    statistics.transparencyNote?.trim() || t("sidebar.support.transparencyNote");
+  // WEB_UI owns participant-facing transparency chrome. API English is non-authoritative.
+  const transparencyNote = t("sidebar.support.transparencyNote");
 
   return (
     <section className={rootClass} aria-labelledby="pie-support-title">

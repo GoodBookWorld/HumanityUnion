@@ -419,9 +419,10 @@ interface PublicInitiativeCenterPanelProps {
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
   /**
-   * Pack 08I.14A — presentation description owned by the page.
-   * Overview must not independently re-resolve title/description.
+   * Pack 08I.14A — presentation fields owned by the page.
+   * Share + Overview must not independently re-resolve title/description.
    */
+  presentationTitle?: string;
   presentationDescription?: string;
 }
 
@@ -444,6 +445,7 @@ export function PublicInitiativeCenterPanel({
   onToggleStagePreviewMode,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
+  presentationTitle,
   presentationDescription,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
@@ -517,15 +519,23 @@ export function PublicInitiativeCenterPanel({
           <CivicShareButton
             payload={buildPublicInitiativeSharePayload({
               initiativeId: experience.initiativeId,
-              title: experience.initiative.title,
+              title:
+                presentationTitle?.trim() ||
+                experience.initiative.title,
               image:
                 experience.hero.imageUrl ??
                 experience.initiative.metadata.imageUrl ??
                 experience.initiative.metadata.coverMedia?.thumbnailUrl ??
                 experience.initiative.metadata.coverMedia?.url,
-              optionalText: experience.hero.summary || experience.initiative.description,
+              optionalText:
+                presentationDescription?.trim() ||
+                experience.hero.summary ||
+                experience.initiative.description,
             })}
-            ariaLabel={t("common.shareInitiative", { title: experience.initiative.title })}
+            ariaLabel={t("common.shareInitiative", {
+              title:
+                presentationTitle?.trim() || experience.initiative.title,
+            })}
           />
           <InitiativeAuthorIdentity
             className="pie-center__author-identity"

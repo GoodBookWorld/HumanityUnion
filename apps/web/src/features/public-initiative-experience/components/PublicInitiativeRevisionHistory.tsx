@@ -4,6 +4,7 @@ import type { PublicInitiativeWithVersionHistory } from "@hu/types";
 import { useLocale, useTranslations } from "next-intl";
 
 import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
+import { InitiativeRevisionSummaryText } from "./InitiativeRevisionSummaryText";
 
 interface PublicInitiativeRevisionHistoryProps {
   initiativeId: string;
@@ -58,7 +59,12 @@ export function PublicInitiativeRevisionHistory({
                     month: "short",
                   })}
                 </span>
-                <span className="pie-revisions__summary">{revision.revisionSummary}</span>
+                <span className="pie-revisions__summary">
+                  <InitiativeRevisionSummaryText
+                    revisionId={revision.revisionId}
+                    canonicalSummary={revision.revisionSummary}
+                  />
+                </span>
               </button>
             </li>
           ))}

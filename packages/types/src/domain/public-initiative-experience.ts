@@ -114,6 +114,15 @@ export interface PublicInitiativeLifecycleRecordItem {
    * for synthetic titles that are not civic content_translations.
    */
   titleCode?: string;
+  /** When titleCode needs a version number (e.g. common.versionN). */
+  titleVersion?: number;
+  /** Catalog key under initiativeExperience.lifecycleRecordSummaries.* */
+  summaryCode?: string;
+  /** Count interpolation for summaryCode (e.g. published proposals). */
+  summaryCount?: number;
+  /** Catalog key under initiativeExperience.lifecycleRecordDetails.* */
+  detailCode?: string;
+  detailVersion?: number;
   updatedAt: string;
   publicHref?: string;
   authorDisplayName?: string;

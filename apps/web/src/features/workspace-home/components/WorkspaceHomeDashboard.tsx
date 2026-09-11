@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { BetaOnboardingChecklist } from "../../closed-beta/components/BetaOnboardingChecklist";
@@ -14,35 +15,22 @@ import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { CollaborationOpportunitiesWidget } from "../../community-intelligence/components/CollaborationOpportunitiesWidget";
 import { PwaStandaloneInitiativeFeed } from "../../pwa/components/PwaStandaloneInitiativeFeed";
 import { getWorkspaceHome, type WorkspaceHomeState } from "../workspace-home-api";
+import {
+  resolveWorkspaceActivityEventLabel,
+  resolveWorkspaceQuickActionLabel,
+} from "../workspace-home-i18n";
 import { AlliesWidget } from "./AlliesWidget";
 import { WorkspaceWelcomeBanner } from "./WorkspaceWelcomeBanner";
 
 import "./workspace-home-dashboard.css";
 
-/**
- * UX Evolution Pack 01 — Workspace Home Visual Correction.
- * Profile UX Pack 02 Part 1 — added the "Personal statistics" section
- * directly below Welcome.
- *
- * The central column now renders exactly six sections, in this fixed
- * order: Welcome banner, Personal statistics, Quick Actions, Allies,
- * Membership, My Recent Activity. "Participation Summary", "Notifications",
- * and "Recent Public Contributions" were removed from this page only — their backend data
- * (`WorkspaceHomeState.participationSummary` / `.notifications` /
- * `.recentPublicContributions`), routes, and dedicated pages
- * (`/preferences`, `/notifications`, etc.) are untouched. The "Preferred
- * landing section" control (and all of its state, storage, and
- * scroll-into-view/focus behavior) has been removed entirely — see
- * `workspace-preferences-store.ts`, which no longer exports any
- * landing-section functions (confirmed unused anywhere else before
- * removal). The page now simply renders top-to-bottom with normal browser
- * scrolling and no section-anchor IDs, since nothing links to them anymore.
- */
 interface WorkspaceHomeDashboardProps {
   onLoaded?: (state: WorkspaceHomeState) => void;
 }
 
 export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps) {
+  const t = useTranslations("workspace");
+  const tCivic = useTranslations("civicActivity");
   const authStatus = useClientAuthStatus();
   const [state, setState] = useState<WorkspaceHomeState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +58,7 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
       } catch (loadError) {
         if (!cancelled) {
           setError(
-            loadError instanceof Error ? loadError.message : "Unable to load workspace home.",
+            loadError instanceof Error ? loadError.message : t("home.loadError"),
           );
         }
       } finally {
@@ -92,37 +80,41 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
       cancelled = true;
       window.removeEventListener(MEMBER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
     };
-  }, [authStatus, onLoaded]);
+  }, [authStatus, onLoaded, t]);
 
   if (loading) {
-    return <p>Loading your workspace...</p>;
+    return <p>{t("home.loading")}</p>;
   }
 
   if (error || !state) {
-    return <p>{error ?? "Workspace home is unavailable."}</p>;
+    return <p>{error ?? t("home.unavailable")}</p>;
   }
 
   return (
     <div className="workspace-home-dashboard">
       <BetaOnboardingChecklist />
 
-      <section className="workspace-home-section" aria-label="Workspace welcome">
+      <section className="workspace-home-section" aria-label={t("home.welcomeAria")}>
         <WorkspaceWelcomeBanner workspaceReadiness={state.workspaceReadiness} />
       </section>
 
       <PwaStandaloneInitiativeFeed />
 
-      <section className="workspace-home-section" aria-label="Personal statistics">
+      <section
+        className="workspace-home-section"
+        aria-label={t("home.personalStatisticsAria")}
+      >
         <PersonalStatisticsCards statistics={state.statistics} />
       </section>
 
       <section className="workspace-home-section">
-        <ProfileSection title="Quick Actions">
+        <ProfileSection title={t("home.quickActionsTitle")}>
           <div className="workspace-home-actions">
-            {state.quickActions.map((action) =>
-              action.available ? (
+            {state.quickActions.map((action) => {
+              const label = resolveWorkspaceQuickActionLabel(t, action.id);
+              return action.available ? (
                 <Link key={action.id} className="workspace-home-actions__link" href={action.href}>
-                  <span className="workspace-home-actions__label">{action.label}</span>
+                  <span className="workspace-home-actions__label">{label}</span>
                 </Link>
               ) : (
                 <span
@@ -131,43 +123,40 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
                   aria-disabled="true"
                   title={action.unavailableReason}
                 >
-                  <span className="workspace-home-actions__label">{action.label}</span>
+                  <span className="workspace-home-actions__label">{label}</span>
                   {action.unavailableReason ? (
                     <span className="workspace-home-actions__reason">
                       {action.unavailableReason}
                     </span>
                   ) : null}
                 </span>
-              ),
-            )}
+              );
+            })}
           </div>
         </ProfileSection>
       </section>
 
       <section className="workspace-home-section">
-        <ProfileSection title="Allies">
+        <ProfileSection title={t("home.alliesTitle")}>
           <AlliesWidget allies={state.allies.items} />
         </ProfileSection>
       </section>
 
       <section
         className="workspace-home-section"
-        aria-label="Collaboration Opportunities"
+        aria-label={t("home.collaborationOpportunitiesAria")}
       >
         <CollaborationOpportunitiesWidget
           items={state.communityIntelligence?.items ?? []}
-          emptyMessage={
-            state.communityIntelligence?.emptyMessage ??
-            "No collaboration opportunities are available yet."
-          }
+          emptyMessage={t("home.ciEmpty")}
         />
       </section>
 
       <section className="workspace-home-section">
-        <ProfileSection title="Membership">
+        <ProfileSection title={t("home.membershipTitle")}>
           <MembershipWorkspaceWidget />
           <MembershipPlatformStatisticsSection
-            title="Platform Membership participation"
+            title={t("home.platformMembershipStats")}
             className="membership-workspace-widget__platform-stats"
             showUpdatedAt
           />
@@ -175,9 +164,9 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
       </section>
 
       <section className="workspace-home-section">
-        <ProfileSection title="My Recent Activity">
+        <ProfileSection title={t("home.recentActivityTitle")}>
           {state.recentActivity.length === 0 ? (
-            <p className="workspace-home-empty">No recent activity yet.</p>
+            <p className="workspace-home-empty">{t("home.noRecentActivity")}</p>
           ) : (
             <ul className="workspace-home-timeline">
               {state.recentActivity.map((entry) => (
@@ -185,9 +174,11 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
                   <p className="workspace-home-timeline__date">
                     {formatInitiativeDate(entry.occurredAt)}
                   </p>
-                  <p className="workspace-home-timeline__label">{entry.label}</p>
+                  <p className="workspace-home-timeline__label">
+                    {resolveWorkspaceActivityEventLabel(t, tCivic, entry.label)}
+                  </p>
                   <p>{entry.detail}</p>
-                  {entry.href ? <Link href={entry.href}>Open record</Link> : null}
+                  {entry.href ? <Link href={entry.href}>{t("home.openRecord")}</Link> : null}
                 </li>
               ))}
             </ul>
