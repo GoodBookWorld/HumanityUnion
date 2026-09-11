@@ -3670,26 +3670,26 @@
     },
     "assistant": {
       "entry": {
-        "title": "Humanity Union Assistant",
-        "openAria": "Open Humanity Union Assistant",
+        "title": "{siteName} Assistant",
+        "openAria": "Open {siteName} Assistant",
         "askAssistant": "Ask Assistant",
-        "openAssistant": "Open Humanity Union Assistant",
+        "openAssistant": "Open {siteName} Assistant",
         "shortLabel": "Assistant",
-        "preferencesLauncher": "Ask Humanity Union Assistant about Preferences",
+        "preferencesLauncher": "Ask {siteName} Assistant about Preferences",
         "widgetCopy": {
           "workspace": "I can help you understand your Workspace, priorities, notifications and next civic actions.",
           "initiatives": "I can help you create, review and advance your Initiatives.",
           "commitment": "I can help with responsibilities, resources and Implementation Commitments.",
-          "notifications": "Ask Humanity Union Assistant about Notifications",
+          "notifications": "Ask {siteName} Assistant about Notifications",
           "messages": "I can explain communication features and privacy — without reading private message history.",
           "preferences": "I can help you understand Preferences, notifications and privacy choices.",
           "profile": "I can explain Profile and Participation Area choices.",
           "blog": "I can explain the Blog publishing workflow, authorship, and categories — I never publish for you.",
-          "default": "I can help with this context or answer questions about Humanity Union."
+          "default": "I can help with this context or answer questions about {siteName}."
         }
       },
       "modal": {
-        "title": "Humanity Union Assistant",
+        "title": "{siteName} Assistant",
         "close": "Close",
         "closeAria": "Close Assistant",
         "loadingContext": "Loading context…",
@@ -3703,14 +3703,14 @@
         "suggestedQuestions": "Suggested questions",
         "privacyNotice": "Conversation memory is temporary for this browser session only. Private messages are never read automatically. AI never publishes.",
         "askLabel": "Ask the Assistant",
-        "askPlaceholder": "Ask about this context or Humanity Union…",
+        "askPlaceholder": "Ask about this context or {siteName}…",
         "send": "Send",
         "explainContext": "Explain this context",
         "useSuggestion": "Use suggestion in draft editor",
         "newConversation": "New Conversation",
         "clearContext": "Clear Current Context",
         "continueDefault": "Continue Conversation is the default.",
-        "guestGuidance": "Sign in to use the Humanity Union Assistant with your Workspace and Initiative context.",
+        "guestGuidance": "Sign in to use the {siteName} Assistant with your Workspace and Initiative context.",
         "signIn": "Sign in",
         "register": "Register",
         "diagnosticsSummary": "Development diagnostics",
@@ -3727,15 +3727,165 @@
         "diagnosticsHistory": "History turns sent: {value}",
         "diagnosticsNone": "none",
         "diagnosticsNa": "n/a",
-        "diagnosticsSafeNote": "Diagnostics never include prompts or API keys."
+        "diagnosticsSafeNote": "Diagnostics never include prompts or API keys.",
+        "sourcesLabel": "Sources"
       },
       "messages": {
-        "openFailed": "Could not open Humanity Union Assistant.",
+        "openFailed": "Could not open {siteName} Assistant.",
         "rateLimited": "Too many Assistant requests. Please wait a moment and try again.",
         "temporarilyUnavailable": "The Assistant is temporarily unavailable. Please try again shortly.",
         "autoApplyForbidden": "AI attempted an automatic edit or publication, which is forbidden.",
         "appliedToDraft": "Suggestion copied into your draft editor locally. Edit it, then {saveDraft} → {preview} → {publish}. Nothing was published automatically.",
         "appliedToBlog": "Suggestion queued for the publication editor. Review Apply / Replace / Dismiss there. Nothing was published automatically."
+      },
+      "surfaces": {
+        "workspace": {
+          "featureLabel": "Workspace",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What should I review next?",
+          "q2": "How do Active Allies work?",
+          "q3": "Explain my current commitments."
+        },
+        "profile": {
+          "featureLabel": "Profile",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What does my Participation Area show?",
+          "q2": "How do I update my display name?",
+          "q3": "What is the difference between Participant and Member?"
+        },
+        "preferences": {
+          "featureLabel": "Preferences",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "How do I change my Preferences?",
+          "q2": "How do Notifications and Reminders work?",
+          "q3": "What privacy choices do I have?"
+        },
+        "initiatives": {
+          "featureLabel": "Initiatives",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What is {siteName}?",
+          "q2": "How does the Initiative Lifecycle work?",
+          "q3": "How do I create an Initiative?"
+        },
+        "initiative": {
+          "featureLabel": "Initiative",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What is the next Lifecycle stage?",
+          "q2": "What is an Active Ally?",
+          "q3": "How does Discussion relate to Analysis?"
+        },
+        "discussion": {
+          "featureLabel": "Discussion",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "How can I write a constructive comment?",
+          "q2": "What does marking a comment Helpful mean?",
+          "q3": "When should a comment become a proposal candidate?"
+        },
+        "analysis": {
+          "featureLabel": "Collaborative Analysis",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What evidence is missing?",
+          "q2": "What questions remain unresolved?",
+          "q3": "Explain the strongest disagreement."
+        },
+        "proposal": {
+          "featureLabel": "Improvement Proposals",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Is this proposal clear and actionable?",
+          "q2": "Does this overlap with another proposal?",
+          "q3": "What evidence should support this proposal?"
+        },
+        "revision": {
+          "featureLabel": "Revision",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Are these Revision changes traceable?",
+          "q2": "What should stay consistent with Analysis?",
+          "q3": "How do I explain this change neutrally?"
+        },
+        "petition": {
+          "featureLabel": "Petition",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Is this request clear?",
+          "q2": "Are there unsupported claims?",
+          "q3": "Make the wording more neutral."
+        },
+        "decision_session": {
+          "featureLabel": "Decision Session",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Is the Decision Session framing complete?",
+          "q2": "What options and risks should be visible?",
+          "q3": "What is the difference between Decision Session and Collective Decision?"
+        },
+        "collective_decision": {
+          "featureLabel": "Collective Decision",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What happens after a Collective Decision?",
+          "q2": "How do Commitments follow this decision?",
+          "q3": "What should remain neutral in the results summary?"
+        },
+        "commitment": {
+          "featureLabel": "Implementation Commitments",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Are responsibilities and resources clear?",
+          "q2": "Where can I see my Commitments?",
+          "q3": "What makes a Commitment feasible?"
+        },
+        "tracking": {
+          "featureLabel": "Implementation Tracking",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Which commitments may be delayed?",
+          "q2": "What evidence is missing?",
+          "q3": "How should blockers be documented?"
+        },
+        "official_response": {
+          "featureLabel": "Official Responses",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Is this Official Response complete?",
+          "q2": "What sources should be cited?",
+          "q3": "How do I keep the wording factual?"
+        },
+        "public_impact": {
+          "featureLabel": "Public Impact",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Which claims need stronger evidence?",
+          "q2": "What does Public Impact mean?",
+          "q3": "How do I keep the language neutral?"
+        },
+        "archive": {
+          "featureLabel": "Civic Archive",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What lessons should be preserved?",
+          "q2": "How should the Historical Summary read?",
+          "q3": "What belongs in Knowledge Contribution?"
+        },
+        "notifications": {
+          "featureLabel": "Notifications",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What does this kind of notification mean?",
+          "q2": "How do Notifications and Reminders work?",
+          "q3": "Where do Lifecycle publication alerts appear?"
+        },
+        "messages": {
+          "featureLabel": "Messages",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "How can I message an Ally?",
+          "q2": "What is private in Direct Messages?",
+          "q3": "How does Initiative Group Chat differ from Direct Messages?"
+        },
+        "blog": {
+          "featureLabel": "Blog",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "What is the {siteName} Blog?",
+          "q2": "How can I become a Blog Author?",
+          "q3": "What should I write about?"
+        },
+        "publicationAuthoring": {
+          "featureLabel": "Publication Authoring",
+          "greeting": "Hello, {name}. I can help you with {feature} or answer questions about {siteName}.",
+          "q1": "Suggest a clearer title.",
+          "q2": "Improve clarity and readability.",
+          "q3": "Suggest structure improvements."
+        }
       }
     },
     "civicArchivePublic": {
@@ -6136,6 +6286,7 @@
   "memberProfile": {
     "title": "Profile",
     "subtitle": "Your Humanity Union Participant profile",
+    "previewSubtitle": "Preview how your profile appears to other Participants",
     "sectionsAria": "Profile sections",
     "sections": {
       "statistics": "Statistics",
@@ -6150,7 +6301,7 @@
     "signInBody": "Sign in to manage your Participant profile.",
     "logIn": "Log in",
     "unavailableTitle": "Profile temporarily unavailable",
-    "unavailableExplanation": "We couldn't connect to the Humanity Union service. Please try again shortly.",
+    "unavailableExplanation": "We couldn't connect to the {siteName} service. Please try again shortly.",
     "unavailable": "Profile is unavailable.",
     "loadError": "Unable to load member profile.",
     "saveProfileError": "Unable to save profile.",
@@ -6243,6 +6394,416 @@
       "professionalLinksVisibility": "Professional links visibility",
       "interestsVisibility": "Interests visibility",
       "interestMatchNotifications": "Interest match notifications"
+    },
+    "participationArea": {
+      "loading": "Loading Participation Area...",
+      "loadError": "Unable to load Participation Area workspace.",
+      "createError": "Unable to create area.",
+      "requestError": "Unable to request change.",
+      "cancelError": "Unable to cancel change.",
+      "currentTitle": "Current Participation Area",
+      "areaLabel": "Area",
+      "verificationStatus": "Verification status",
+      "statusLabel": "Status",
+      "notDeclared": "Not declared",
+      "empty": "You have not declared a Participation Area yet.",
+      "pendingTitle": "Pending Change",
+      "requestedArea": "Requested area",
+      "effectiveAt": "Effective at",
+      "cancelling": "Cancelling...",
+      "cancelPending": "Cancel pending change",
+      "changeTitle": "Change Participation Area",
+      "declareTitle": "Declare Participation Area",
+      "countryLabel": "Participation country (not nationality)",
+      "countryHelper": "Choose the country where you participate in civic activity.",
+      "regionLabel": "Participation region (optional)",
+      "regionName": "Region name",
+      "regionNameNote": "Free-text fallback — not a canonical region identifier.",
+      "requestChange": "Request area change",
+      "createArea": "Create Participation Area",
+      "votingTitle": "How this affects voting",
+      "votingBody1": "Participation Area is declared by you. Eligibility uses your declared civic geography, not IP address, VPN signals, or automatic geolocation.",
+      "votingBody2": "Verification status is shown for transparency only. It does not change vote weight.",
+      "votingBody3": "World-scope initiatives remain open to all registered participants.",
+      "worldDecisions": "World decisions",
+      "countryDecisions": "Country decisions: {name}",
+      "regionDecisions": "Region decisions: {name}",
+      "communityDecisions": "Community decisions: {name}",
+      "status": {
+        "unverified": "Unverified",
+        "verified": "Verified",
+        "pending": "Pending",
+        "active": "Active"
+      },
+      "transitionPolicyNote": "Your current area remains active until the change becomes effective.",
+      "transitionPolicyGeneric": "Area changes take effect after a delay. Your current area stays active until then."
+    },
+    "preview": {
+      "title": "Public Profile Preview",
+      "bannerBody": "This is how your profile appears to other Participants based on your current Privacy settings.",
+      "openPublicProfile": "Open Public Profile",
+      "linkUnavailable": "Your public profile link is not available right now.",
+      "loading": "Loading your profile preview...",
+      "signInBody": "Sign in to preview your public profile.",
+      "privateBody": "Your Profile Visibility is currently set to Private, so other Participants cannot open your profile at all.",
+      "unavailable": "Profile preview is unavailable.",
+      "unavailableTitle": "Profile preview temporarily unavailable"
+    }
+  },
+  "notifications": {
+    "title": "Notification Center",
+    "summary": "Your active hub for civic notifications, incoming messages, and personal reminders.",
+    "signInPrompt": "Sign in to view your Notification Center.",
+    "signIn": "Sign in",
+    "sections": {
+      "notifications": "Notifications",
+      "messages": "Messages",
+      "reminders": "Reminders",
+      "archive": "Archive"
+    },
+    "actions": {
+      "markRead": "Mark read",
+      "markAllRead": "Mark all read",
+      "archive": "Archive",
+      "delete": "Delete",
+      "clearArchived": "Clear archive",
+      "cancel": "Cancel",
+      "reviewApplication": "Review application",
+      "viewEditorPanel": "View Editor Panel",
+      "reviewPublication": "Review publication",
+      "viewAuthoring": "View Authoring",
+      "openPublishing": "Open Publishing",
+      "viewRelatedCivicRecord": "View related civic record",
+      "openWorkspaceMessages": "Open Workspace Messages"
+    },
+    "empty": {
+      "notifications": "No active notifications.",
+      "messages": "No unread messages.",
+      "reminders": "No reminders yet.",
+      "archive": "Nothing archived yet.",
+      "noMessagesYet": "No messages yet."
+    },
+    "loading": {
+      "notifications": "Loading notifications…",
+      "messages": "Loading messages…",
+      "reminders": "Loading reminders…"
+    },
+    "priorities": {
+      "critical": "Critical",
+      "important": "Important",
+      "normal": "Normal",
+      "informational": "Informational"
+    },
+    "meta": {
+      "recorded": "Recorded {date}",
+      "archived": "Archived {date}"
+    },
+    "unread": {
+      "notification": "Unread notification",
+      "channelActivity": "Unread Initiative Collaboration Channel activity",
+      "messageFrom": "Unread message from {name}"
+    },
+    "summaryBar": {
+      "aria": "Communication summary",
+      "unreadNotifications": "Unread Notifications",
+      "unreadMessages": "Unread Messages",
+      "pendingReminders": "Pending Reminders"
+    },
+    "clearArchiveDialog": {
+      "title": "Clear notification archive?",
+      "description": "This will permanently remove all archived notifications. This action cannot be undone.",
+      "confirm": "Clear archive"
+    },
+    "errors": {
+      "notificationsFailed": "Notification center request failed.",
+      "messagesFailed": "Messages preview request failed."
+    },
+    "openConversationAria": "Open conversation with {name}",
+    "types": {
+      "initiative_published": {
+        "title": "Initiative published",
+        "message": "Your initiative was published."
+      },
+      "analysis_published": {
+        "title": "Collaborative analysis published",
+        "message": "A collaborative analysis was published for your initiative."
+      },
+      "proposal_submitted": {
+        "title": "Improvement proposal submitted",
+        "message": "A new improvement proposal was submitted."
+      },
+      "proposal_decided": {
+        "title": "Proposal reviewed",
+        "message": "Your proposal was reviewed."
+      },
+      "revision_published": {
+        "title": "Initiative revision published",
+        "message": "An initiative revision was published."
+      },
+      "decision_opened": {
+        "title": "Collective decision open",
+        "message": "A collective decision is open."
+      },
+      "decision_closed": {
+        "title": "Collective decision closed",
+        "message": "Collective decision result is available."
+      },
+      "civic_action_package_issued": {
+        "title": "Civic Action Package ready",
+        "message": "Civic Action Package is ready."
+      },
+      "official_response_received": {
+        "title": "Official response recorded",
+        "message": "An official response was recorded."
+      },
+      "official_response_verified": {
+        "title": "Official response verified",
+        "message": "An official response was verified."
+      },
+      "civic_accountability_event_added": {
+        "title": "Accountability timeline updated",
+        "message": "Accountability timeline was updated."
+      },
+      "civic_accountability_closed": {
+        "title": "Accountability timeline closed",
+        "message": "A civic accountability timeline was closed."
+      },
+      "commitment_published": {
+        "title": "Implementation commitment published",
+        "message": "An implementation commitment was published."
+      },
+      "implementation_commitment_proposed": {
+        "title": "You have a proposed responsibility",
+        "message": "You were proposed as responsible for an Implementation Commitment. Accept or decline to respond."
+      },
+      "implementation_commitment_taken": {
+        "title": "Implementation Commitment taken",
+        "message": "A Participant took responsibility for an Implementation Commitment."
+      },
+      "tracking_updated": {
+        "title": "Implementation tracking updated",
+        "message": "Implementation tracking was updated."
+      },
+      "impact_verified": {
+        "title": "Public impact verified",
+        "message": "Your public impact was verified."
+      },
+      "archive_published": {
+        "title": "Archive record published",
+        "message": "Archive record was published."
+      },
+      "civic_nomination_submitted": {
+        "title": "Civic nomination submitted",
+        "message": "Your civic nomination was submitted for review."
+      },
+      "civic_nomination_published": {
+        "title": "Civic nomination published",
+        "message": "Your civic nomination poster was published."
+      },
+      "civic_nomination_withdrawn": {
+        "title": "Civic nomination withdrawn",
+        "message": "Your civic nomination was withdrawn."
+      },
+      "civic_nomination_voting_opened": {
+        "title": "Civic nomination voting opened",
+        "message": "Transparent support voting opened on your civic nomination poster."
+      },
+      "civic_nomination_vote_cast": {
+        "title": "Civic nomination vote recorded",
+        "message": "Your civic nomination support vote was recorded."
+      },
+      "civic_nomination_voting_closed": {
+        "title": "Civic nomination voting closed",
+        "message": "Transparent support voting closed on your civic nomination poster."
+      },
+      "initiative_interest_match": {
+        "title": "New initiative matches your interests",
+        "message": "A new initiative matches one of your saved interests."
+      },
+      "member_badge_contribution_confirmed": {
+        "title": "Official Member item request confirmed",
+        "message": "Your official Humanity Union Member item request has been confirmed."
+      },
+      "member_badge_shipped": {
+        "title": "Official Member item shipped",
+        "message": "Your official Humanity Union Member item request has shipped."
+      },
+      "member_badge_delivered": {
+        "title": "Official Member item delivered",
+        "message": "Your official Humanity Union Member item request was delivered."
+      },
+      "member_badge_contribution_refunded": {
+        "title": "Additional Member contribution refunded",
+        "message": "Your additional Member item contribution was refunded."
+      },
+      "initiative_comment_posted": {
+        "title": "New initiative comment",
+        "message": "A new comment was posted on your initiative discussion."
+      },
+      "initiative_comment_reply": {
+        "title": "Reply to your comment",
+        "message": "Someone replied to your comment in an initiative discussion."
+      },
+      "initiative_collaboration_interest_expressed": {
+        "title": "New collaboration interest",
+        "message": "A participant expressed readiness to collaborate on your initiative."
+      },
+      "initiative_collaboration_interest_accepted": {
+        "title": "Collaboration request accepted",
+        "message": "Your collaboration request was accepted. You are now an Ally of this initiative."
+      },
+      "initiative_collaboration_interest_declined": {
+        "title": "Collaboration request update",
+        "message": "Your collaboration request was not accepted at this time."
+      },
+      "initiative_allies_invitation_received": {
+        "title": "Allies invitation",
+        "message": "You were invited to become an Ally on an initiative."
+      },
+      "initiative_allies_invitation_accepted": {
+        "title": "Allies invitation accepted",
+        "message": "A participant accepted your Allies invitation."
+      },
+      "initiative_allies_invitation_declined": {
+        "title": "Allies invitation declined",
+        "message": "A participant declined your Allies invitation."
+      },
+      "direct_message_received": {
+        "title": "New message",
+        "message": "You received a new Direct Collaboration message."
+      },
+      "initiative_collaboration_channel_message_received": {
+        "title": "New Collaboration Channel message",
+        "message": "You received a new message in an Initiative Collaboration Channel."
+      },
+      "initiative_collaboration_channel_system_event": {
+        "title": "Collaboration Channel update",
+        "message": "There is a new collaboration update in an Initiative Collaboration Channel."
+      },
+      "initiative_collaboration_session_created": {
+        "title": "New Collaboration Session scheduled",
+        "message": "A new Collaboration Session was scheduled for an Initiative."
+      },
+      "initiative_collaboration_session_updated": {
+        "title": "Collaboration Session updated",
+        "message": "A Collaboration Session was edited or rescheduled."
+      },
+      "initiative_collaboration_session_cancelled": {
+        "title": "Collaboration Session cancelled",
+        "message": "A Collaboration Session was cancelled."
+      },
+      "initiative_collaboration_session_attendance_changed": {
+        "title": "Attendance updated",
+        "message": "An Active Ally updated their attendance for a Collaboration Session."
+      },
+      "initiative_collaboration_session_upcoming_reminder": {
+        "title": "Collaboration Session starting soon",
+        "message": "A Collaboration Session you are part of is starting soon."
+      },
+      "shared_document_uploaded": {
+        "title": "New document shared",
+        "message": "A new document was shared in a conversation you are part of."
+      },
+      "shared_document_replaced": {
+        "title": "Document replaced",
+        "message": "A shared document was replaced with a new version."
+      },
+      "shared_document_removed": {
+        "title": "Document removed",
+        "message": "A shared document was removed."
+      },
+      "initiative_lifecycle_stage_published": {
+        "title": "Initiative stage published",
+        "message": "A lifecycle stage of an Initiative you collaborate on was published."
+      },
+      "blog_author_application_submitted": {
+        "title": "Application received",
+        "message": "Your Author application has been received. We will review it and respond as soon as possible."
+      },
+      "blog_author_application_approved": {
+        "title": "Author application accepted",
+        "message": "Your Author application has been accepted. You can now use the Author tools in your Workspace."
+      },
+      "blog_author_application_changes_requested": {
+        "title": "Blog Author application needs changes",
+        "message": "An Editor requested changes on your Blog Author application."
+      },
+      "blog_author_application_declined": {
+        "title": "Author application update",
+        "message": "Your Author application was not accepted at this time."
+      },
+      "blog_author_application_review_requested": {
+        "title": "New Author application",
+        "message": "A Participant submitted an Author application."
+      },
+      "blog_author_access_blocked": {
+        "title": "Author access blocked",
+        "message": "Your Author access has been blocked. Please contact the administrator."
+      },
+      "blog_author_access_restored": {
+        "title": "Author access restored",
+        "message": "Your Author access has been restored. You can use Author tools in your Workspace again."
+      },
+      "blog_author_trusted_publishing_enabled": {
+        "title": "Trusted Publishing enabled",
+        "message": "An Administrator enabled Publish without manual review for your Author account. Future submissions may publish or schedule directly when eligible."
+      },
+      "blog_author_trusted_publishing_disabled": {
+        "title": "Trusted Publishing disabled",
+        "message": "An Administrator disabled Publish without manual review for your Author account. Future submissions require editorial review again."
+      },
+      "blog_publication_blocked": {
+        "title": "Publication unavailable",
+        "message": "One of your Blog publications is no longer publicly available."
+      },
+      "blog_publication_restored": {
+        "title": "Publication restored",
+        "message": "Your Blog publication visibility has been restored according to its publication status."
+      },
+      "blog_publication_review_requested": {
+        "title": "Publication submitted for review",
+        "message": "An Author submitted a publication for review."
+      },
+      "blog_post_changes_requested": {
+        "title": "Publication returned for changes",
+        "message": "Changes were requested for your Blog publication. Open Publishing to revise and resubmit."
+      },
+      "blog_post_published": {
+        "title": "Publication approved",
+        "message": "Your Blog publication has been approved and published (or scheduled)."
+      },
+      "blog_post_declined": {
+        "title": "Publication not accepted",
+        "message": "Your Blog publication was not accepted. Open Publishing for details."
+      },
+      "blog_comment_posted": {
+        "title": "New comment on your Blog publication",
+        "message": "A Participant commented on your Blog publication."
+      },
+      "blog_comment_reply": {
+        "title": "New reply to your Blog comment",
+        "message": "A Participant replied to your Blog comment."
+      },
+      "editor_access_assigned": {
+        "title": "Editor access assigned",
+        "message": "You can now use the Editor Panel for your assigned editing area and permissions."
+      },
+      "editor_access_activated": {
+        "title": "Editor access activated",
+        "message": "Your Editor access has been activated. Open the Editor Panel to continue."
+      },
+      "editor_access_deactivated": {
+        "title": "Editor access deactivated",
+        "message": "Your Editor access has been deactivated."
+      },
+      "editor_permissions_updated": {
+        "title": "Editor permissions updated",
+        "message": "Your Editor permissions were updated."
+      },
+      "editor_editing_area_updated": {
+        "title": "Editor editing area updated",
+        "message": "Your Editor editing area was updated."
+      }
     }
   }
 }

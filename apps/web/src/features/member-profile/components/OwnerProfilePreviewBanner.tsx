@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Button } from "../../../design-system/components/Button";
 
 import "./owner-profile-preview-banner.css";
@@ -20,33 +24,32 @@ export function OwnerProfilePreviewBanner({
   managePrivacyHref,
   publicProfileHref,
 }: OwnerProfilePreviewBannerProps) {
+  const t = useTranslations("memberProfile.preview");
+  const tWorkspace = useTranslations("workspace");
+  const tHidden = useTranslations("participantPublic.ownerHidden");
+
   return (
     <section
       className="owner-profile-preview-banner"
       aria-labelledby="owner-profile-preview-banner-title"
     >
       <h2 id="owner-profile-preview-banner-title" className="owner-profile-preview-banner__title">
-        Public Profile Preview
+        {t("title")}
       </h2>
-      <p className="owner-profile-preview-banner__text">
-        This is how your profile appears to other Participants based on your current Privacy
-        settings.
-      </p>
+      <p className="owner-profile-preview-banner__text">{t("bannerBody")}</p>
       <div className="owner-profile-preview-banner__actions">
         <Button href={editProfileHref} variant="primary">
-          Edit Profile
+          {tWorkspace("editProfile")}
         </Button>
         <Button href={managePrivacyHref} variant="secondary">
-          Manage Privacy
+          {tHidden("managePrivacy")}
         </Button>
         {publicProfileHref ? (
           <Button href={publicProfileHref} variant="secondary">
-            Open Public Profile
+            {t("openPublicProfile")}
           </Button>
         ) : (
-          <p className="owner-profile-preview-banner__unavailable">
-            Your public profile link is not available right now.
-          </p>
+          <p className="owner-profile-preview-banner__unavailable">{t("linkUnavailable")}</p>
         )}
       </div>
     </section>

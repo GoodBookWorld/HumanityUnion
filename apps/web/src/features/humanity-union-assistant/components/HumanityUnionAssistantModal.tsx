@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   HumanityUnionAssistantAssistResult,
   HumanityUnionAssistantSessionContext,
@@ -27,6 +29,7 @@ import {
   toAssistConversationHistory,
   type AssistantSessionTurn,
 } from "../assistant-session-memory";
+import { resolveAssistantPresentation } from "../resolve-assistant-presentation";
 
 import "../humanity-union-assistant.css";
 
@@ -55,6 +58,8 @@ export function HumanityUnionAssistantModal({
   pagePath,
 }: HumanityUnionAssistantModalProps) {
   const t = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -125,7 +130,13 @@ export function HumanityUnionAssistantModal({
           const greetingTurn: AssistantSessionTurn = {
             id: "greeting",
             role: "assistant",
-            text: session.greeting,
+            text: resolveAssistantPresentation({
+              surfaceId: session.surfaceId,
+              displayName: session.participantDisplayName,
+              siteName,
+              t,
+              publicationAuthoring: session.presentationMode === "author_workspace",
+            }).greeting,
             meta: session.specializationSummary,
           };
           setTurns([greetingTurn]);
@@ -147,14 +158,14 @@ export function HumanityUnionAssistantModal({
         setLoadError(
           error instanceof Error && error.message.trim()
             ? error.message
-            : t("assistant.messages.openFailed"),
+            : t("assistant.messages.openFailed", { siteName }),
         );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [initiativeId, isOpen, pagePath, stageId, surfaceId, t]);
+  }, [initiativeId, isOpen, pagePath, siteName, stageId, surfaceId, t]);
 
   useEffect(() => {
     if (!isOpen || !sessionId) {
@@ -243,7 +254,13 @@ export function HumanityUnionAssistantModal({
       const greetingTurn: AssistantSessionTurn = {
         id: "greeting",
         role: "assistant",
-        text: context.greeting,
+        text: resolveAssistantPresentation({
+          surfaceId: context.surfaceId,
+          displayName: context.participantDisplayName,
+          siteName,
+          t,
+          publicationAuthoring: context.presentationMode === "author_workspace",
+        }).greeting,
         meta: context.specializationSummary,
       };
       greetedForSessionRef.current = next.sessionId;
@@ -272,7 +289,13 @@ export function HumanityUnionAssistantModal({
       const greetingTurn: AssistantSessionTurn = {
         id: "greeting",
         role: "assistant",
-        text: context.greeting,
+        text: resolveAssistantPresentation({
+          surfaceId: context.surfaceId,
+          displayName: context.participantDisplayName,
+          siteName,
+          t,
+          publicationAuthoring: context.presentationMode === "author_workspace",
+        }).greeting,
         meta: context.specializationSummary,
       };
       setTurns([greetingTurn]);
@@ -401,7 +424,18 @@ export function HumanityUnionAssistantModal({
     );
   }
 
-  const contextLabel = context?.currentFeatureLabel ?? t("assistant.modal.loadingContext");
+  const publicationAuthoring = context?.presentationMode === "author_workspace";
+  const presentation = context
+    ? resolveAssistantPresentation({
+        surfaceId: context.surfaceId,
+        displayName: context.participantDisplayName,
+        siteName,
+        t,
+        publicationAuthoring,
+      })
+    : null;
+  const contextLabel = presentation?.featureLabel ?? t("assistant.modal.loadingContext");
+  const suggestedQuestions = presentation?.suggestedQuestions ?? [];
   const showDevDiagnostics =
     process.env.NODE_ENV === "development" &&
     Boolean(result?.diagnostics || context?.diagnostics);
@@ -432,7 +466,7 @@ export function HumanityUnionAssistantModal({
             />
             <div>
               <h2 id={titleId} className="hu-assistant-modal__title hu-widget-title">
-                {t("assistant.modal.title")}
+                {t("assistant.modal.title", { siteName })}
               </h2>
               <p id={descriptionId} className="hu-assistant-modal__context-label">
                 {contextLabel}
@@ -453,7 +487,7 @@ export function HumanityUnionAssistantModal({
         <div className="hu-assistant-modal__body">
           {needsSignIn ? (
             <div className="hu-assistant-modal__guest">
-              <p>{t("assistant.modal.guestGuidance")}</p>
+              <p>{t("assistant.modal.guestGuidance", { siteName })}</p>
               <div className="hu-assistant-modal__actions">
                 <Link href="/login" className="hu-assistant-modal__link-button">
                   {t("assistant.modal.signIn")}
@@ -513,7 +547,11 @@ export function HumanityUnionAssistantModal({
                         ? t("assistant.modal.roleAssistant")
                         : t("assistant.modal.roleYou")}
                     </h3>
-                    <p>{turn.text}</p>
+                    <p>
+                      {turn.id === "greeting" && presentation
+                        ? presentation.greeting
+                        : turn.text}
+                    </p>
                   </article>
                 ))}
                 {busy ? (
@@ -523,13 +561,13 @@ export function HumanityUnionAssistantModal({
                 ) : null}
               </div>
 
-              {context.suggestedQuestions.length > 0 ? (
+              {suggestedQuestions.length > 0 ? (
                 <>
                   <p className="hu-assistant-modal__notice">
                     {t("assistant.modal.suggestedQuestions")}
                   </p>
                   <ul className="hu-assistant-modal__suggestions-list">
-                    {context.suggestedQuestions.slice(0, 4).map((suggestion) => (
+                    {suggestedQuestions.slice(0, 4).map((suggestion) => (
                       <li key={suggestion}>
                         <button
                           type="button"
@@ -666,7 +704,7 @@ export function HumanityUnionAssistantModal({
                   <textarea
                     value={question}
                     onChange={(event) => setQuestion(event.target.value)}
-                    placeholder={t("assistant.modal.askPlaceholder")}
+                    placeholder={t("assistant.modal.askPlaceholder", { siteName })}
                     disabled={busy}
                   />
                 </label>

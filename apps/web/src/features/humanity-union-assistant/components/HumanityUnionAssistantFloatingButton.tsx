@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useRef, useState } from "react";
 
 import { useOptionalHumanityUnionAssistant } from "../assistant-context";
@@ -14,6 +16,8 @@ import "../humanity-union-assistant.css";
  */
 export function HumanityUnionAssistantFloatingButton() {
   const t = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const assistant = useOptionalHumanityUnionAssistant();
   const pathname = usePathname() ?? "/";
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -35,8 +39,9 @@ export function HumanityUnionAssistantFloatingButton() {
 
   const launch = resolveAssistantLaunchContext(pathname, hash);
   const open = assistant.isOpen;
-  const title = t("assistant.entry.title");
-  const openAria = t("assistant.entry.openAria");
+  const site = { siteName };
+  const title = t("assistant.entry.title", site);
+  const openAria = t("assistant.entry.openAria", site);
 
   return (
     <button

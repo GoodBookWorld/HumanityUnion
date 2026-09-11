@@ -2,6 +2,7 @@
 
 import type { MemberProfilePublicPreview } from "@hu/types";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
@@ -11,6 +12,7 @@ import {
   isApiUnavailableError,
   isAuthenticationRequiredError,
 } from "../../../lib/api-client";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { getMyPublicMemberProfilePreview } from "../member-profile-api";
 import { MembershipProfileSection } from "../../membership/components/MembershipProfileSection";
 import { ParticipantProfileSurface } from "./ParticipantProfileSurface";
@@ -37,6 +39,12 @@ type OwnerProfilePreviewState =
  * receives the already-Privacy-filtered projection.
  */
 export function OwnerProfilePreview() {
+  const t = useTranslations("memberProfile.preview");
+  const tProfile = useTranslations("memberProfile");
+  const tWorkspace = useTranslations("workspace");
+  const tHidden = useTranslations("participantPublic.ownerHidden");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [state, setState] = useState<OwnerProfilePreviewState>({ status: "loading" });
 
   useEffect(() => {
@@ -77,14 +85,14 @@ export function OwnerProfilePreview() {
   }, []);
 
   if (state.status === "loading") {
-    return <p>Loading your profile preview...</p>;
+    return <p>{t("loading")}</p>;
   }
 
   if (state.status === "api_unavailable") {
     return (
       <ApiUnavailableState
-        title="Profile preview temporarily unavailable"
-        explanation="We couldn't connect to the Humanity Union service. Please try again shortly."
+        title={t("unavailableTitle")}
+        explanation={tProfile("unavailableExplanation", siteName)}
         retryHref="/profile"
       />
     );
@@ -92,9 +100,9 @@ export function OwnerProfilePreview() {
 
   if (state.status === "auth_required") {
     return (
-      <ProfileSection title="Public Profile Preview">
-        <p>Sign in to preview your public profile.</p>
-        <Button href="/login?returnTo=/profile">Log in</Button>
+      <ProfileSection title={t("title")}>
+        <p>{t("signInBody")}</p>
+        <Button href="/login?returnTo=/profile">{tProfile("logIn")}</Button>
       </ProfileSection>
     );
   }
@@ -102,17 +110,14 @@ export function OwnerProfilePreview() {
   if (state.status === "profile_private") {
     return (
       <>
-        <ProfileSection title="Public Profile Preview">
-          <p>
-            Your Profile Visibility is currently set to Private, so other Participants cannot open
-            your profile at all.
-          </p>
+        <ProfileSection title={t("title")}>
+          <p>{t("privateBody")}</p>
           <div className="owner-profile-preview-banner__actions">
             <Button href={EDIT_PROFILE_HREF} variant="primary">
-              Edit Profile
+              {tWorkspace("editProfile")}
             </Button>
             <Button href={MANAGE_PRIVACY_HREF} variant="secondary">
-              Manage Privacy
+              {tHidden("managePrivacy")}
             </Button>
           </div>
         </ProfileSection>
@@ -123,8 +128,8 @@ export function OwnerProfilePreview() {
 
   if (state.status === "unavailable") {
     return (
-      <ProfileSection title="Public Profile Preview">
-        <p>Profile preview is unavailable.</p>
+      <ProfileSection title={t("title")}>
+        <p>{t("unavailable")}</p>
       </ProfileSection>
     );
   }

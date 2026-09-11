@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   HumanityUnionAssistantSurfaceId,
   InitiativeLifecycleStageId,
@@ -33,6 +35,8 @@ export function HumanityUnionAssistantWidget({
   className,
 }: HumanityUnionAssistantWidgetProps) {
   const t = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const assistant = useOptionalHumanityUnionAssistant();
   const launchRef = useRef<HTMLButtonElement>(null);
 
@@ -49,8 +53,9 @@ export function HumanityUnionAssistantWidget({
     return null;
   }
 
-  const copy = description ?? t(assistantWidgetCopyKey(surfaceId));
-  const title = t("assistant.entry.title");
+  const site = { siteName };
+  const copy = description ?? t(assistantWidgetCopyKey(surfaceId), site);
+  const title = t("assistant.entry.title", site);
   const askLabel = t("assistant.entry.askAssistant");
 
   return (

@@ -3670,26 +3670,26 @@
     },
     "assistant": {
       "entry": {
-        "title": "مساعد Humanity Union",
-        "openAria": "فتح مساعد Humanity Union",
+        "title": "مساعد {siteName}",
+        "openAria": "فتح مساعد {siteName}",
         "askAssistant": "اسأل المساعد",
-        "openAssistant": "فتح مساعد Humanity Union",
+        "openAssistant": "فتح مساعد {siteName}",
         "shortLabel": "المساعد",
-        "preferencesLauncher": "اسأل مساعد Humanity Union عن التفضيلات",
+        "preferencesLauncher": "اسأل مساعد {siteName} عن التفضيلات",
         "widgetCopy": {
           "workspace": "يمكنني مساعدتك على فهم مساحة العمل والأولويات والإشعارات والإجراءات المدنية التالية.",
           "initiatives": "يمكنني مساعدتك على إنشاء مبادراتك ومراجعتها وتطويرها.",
           "commitment": "يمكنني المساعدة في المسؤوليات والموارد والتزامات التنفيذ.",
-          "notifications": "اسأل مساعد Humanity Union عن الإشعارات",
+          "notifications": "اسأل مساعد {siteName} عن الإشعارات",
           "messages": "يمكنني شرح ميزات التواصل والخصوصية — دون قراءة سجل الرسائل الخاصة.",
           "preferences": "يمكنني مساعدتك على فهم التفضيلات والإشعارات وخيارات الخصوصية.",
           "profile": "يمكنني شرح خيارات الملف الشخصي ومنطقة المشاركة.",
           "blog": "يمكنني شرح سير عمل نشر المدونة والتأليف والفئات — ولا أنشر نيابةً عنك أبدًا.",
-          "default": "يمكنني المساعدة في هذا السياق أو الإجابة عن أسئلة حول Humanity Union."
+          "default": "يمكنني المساعدة في هذا السياق أو الإجابة عن أسئلة حول {siteName}."
         }
       },
       "modal": {
-        "title": "مساعد Humanity Union",
+        "title": "مساعد {siteName}",
         "close": "إغلاق",
         "closeAria": "إغلاق المساعد",
         "loadingContext": "جارٍ تحميل السياق…",
@@ -3703,14 +3703,14 @@
         "suggestedQuestions": "أسئلة مقترحة",
         "privacyNotice": "ذاكرة المحادثة مؤقتة لجلسة هذا المتصفح فقط. لا تُقرأ الرسائل الخاصة تلقائيًا أبدًا. الذكاء الاصطناعي لا ينشر أبدًا.",
         "askLabel": "اسأل المساعد",
-        "askPlaceholder": "اسأل عن هذا السياق أو Humanity Union…",
+        "askPlaceholder": "اسأل عن هذا السياق أو {siteName}…",
         "send": "إرسال",
         "explainContext": "اشرح هذا السياق",
         "useSuggestion": "استخدم الاقتراح في محرر المسودة",
         "newConversation": "محادثة جديدة",
         "clearContext": "مسح السياق الحالي",
         "continueDefault": "متابعة المحادثة هي الوضع الافتراضي.",
-        "guestGuidance": "سجّل الدخول لاستخدام مساعد Humanity Union مع سياق مساحة العمل والمبادرة.",
+        "guestGuidance": "سجّل الدخول لاستخدام مساعد {siteName} مع سياق مساحة العمل والمبادرة.",
         "signIn": "تسجيل الدخول",
         "register": "إنشاء حساب",
         "diagnosticsSummary": "تشخيص التطوير",
@@ -3727,15 +3727,165 @@
         "diagnosticsHistory": "دورات السجل المُرسلة: {value}",
         "diagnosticsNone": "لا شيء",
         "diagnosticsNa": "غير متاح",
-        "diagnosticsSafeNote": "التشخيص لا يتضمن أبدًا المطالبات أو مفاتيح API."
+        "diagnosticsSafeNote": "التشخيص لا يتضمن أبدًا المطالبات أو مفاتيح API.",
+        "sourcesLabel": "المصادر"
       },
       "messages": {
-        "openFailed": "تعذر فتح مساعد Humanity Union.",
+        "openFailed": "تعذر فتح مساعد {siteName}.",
         "rateLimited": "طلبات كثيرة جدًا للمساعد. انتظر لحظة ثم أعد المحاولة.",
         "temporarilyUnavailable": "المساعد غير متاح مؤقتًا. أعد المحاولة قريبًا.",
         "autoApplyForbidden": "حاول الذكاء الاصطناعي تعديلًا أو نشرًا تلقائيًا، وهذا محظور.",
         "appliedToDraft": "نُسخ الاقتراح إلى محرر المسودة محليًا. عدّل ثم {saveDraft} → {preview} → {publish}. لم يُنشر شيء تلقائيًا.",
         "appliedToBlog": "وُضع الاقتراح في قائمة محرر النشر. راجع تطبيق / استبدال / رفض هناك. لم يُنشر شيء تلقائيًا."
+      },
+      "surfaces": {
+        "workspace": {
+          "featureLabel": "مساحة العمل",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما الذي ينبغي أن أراجعه بعد ذلك؟",
+          "q2": "كيف يعمل الحلفاء النشطون؟",
+          "q3": "اشرح التزاماتي الحالية."
+        },
+        "profile": {
+          "featureLabel": "الملف الشخصي",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ماذا تُظهر منطقة مشاركتي؟",
+          "q2": "كيف أحدّث اسم العرض؟",
+          "q3": "ما الفرق بين المشارك والعضو؟"
+        },
+        "preferences": {
+          "featureLabel": "التفضيلات",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "كيف أغيّر تفضيلاتي؟",
+          "q2": "كيف تعمل الإشعارات والتذكيرات؟",
+          "q3": "ما خيارات الخصوصية المتاحة لدي؟"
+        },
+        "initiatives": {
+          "featureLabel": "المبادرات",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما هو {siteName}؟",
+          "q2": "كيف تعمل دورة حياة المبادرة؟",
+          "q3": "كيف أنشئ مبادرة؟"
+        },
+        "initiative": {
+          "featureLabel": "المبادرة",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما المرحلة التالية في دورة الحياة؟",
+          "q2": "ما هو الحليف النشط؟",
+          "q3": "كيف يرتبط النقاش بالتحليل؟"
+        },
+        "discussion": {
+          "featureLabel": "النقاش",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "كيف أكتب تعليقًا بنّاءً؟",
+          "q2": "ماذا يعني تعليم تعليق بأنه مفيد؟",
+          "q3": "متى ينبغي أن يصبح التعليق مرشحًا لاقتراح؟"
+        },
+        "analysis": {
+          "featureLabel": "التحليل التعاوني",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما الأدلة الناقصة؟",
+          "q2": "ما الأسئلة التي ما زالت دون حل؟",
+          "q3": "اشرح أقوى خلاف."
+        },
+        "proposal": {
+          "featureLabel": "اقتراحات التحسين",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل هذا الاقتراح واضح وقابل للتنفيذ؟",
+          "q2": "هل يتداخل مع اقتراح آخر؟",
+          "q3": "ما الأدلة التي ينبغي أن تدعم هذا الاقتراح؟"
+        },
+        "revision": {
+          "featureLabel": "المراجعة",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل يمكن تتبع تغييرات المراجعة هذه؟",
+          "q2": "ما الذي ينبغي أن يبقى متسقًا مع التحليل؟",
+          "q3": "كيف أشرح هذا التغيير بحياد؟"
+        },
+        "petition": {
+          "featureLabel": "العريضة",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل هذا الطلب واضح؟",
+          "q2": "هل هناك ادعاءات غير مدعومة؟",
+          "q3": "اجعل الصياغة أكثر حيادًا."
+        },
+        "decision_session": {
+          "featureLabel": "جلسة القرار",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل إطار جلسة القرار مكتمل؟",
+          "q2": "ما الخيارات والمخاطر التي ينبغي أن تكون ظاهرة؟",
+          "q3": "ما الفرق بين جلسة القرار والقرار الجماعي؟"
+        },
+        "collective_decision": {
+          "featureLabel": "القرار الجماعي",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ماذا يحدث بعد القرار الجماعي؟",
+          "q2": "كيف تتبع الالتزامات هذا القرار؟",
+          "q3": "ما الذي ينبغي أن يبقى محايدًا في ملخص النتائج؟"
+        },
+        "commitment": {
+          "featureLabel": "التزامات التنفيذ",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل المسؤوليات والموارد واضحة؟",
+          "q2": "أين يمكنني رؤية التزاماتي؟",
+          "q3": "ما الذي يجعل الالتزام قابلاً للتنفيذ؟"
+        },
+        "tracking": {
+          "featureLabel": "تتبع التنفيذ",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "أي الالتزامات قد تتأخر؟",
+          "q2": "ما الأدلة الناقصة؟",
+          "q3": "كيف ينبغي توثيق المعوقات؟"
+        },
+        "official_response": {
+          "featureLabel": "الردود الرسمية",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "هل هذا الرد الرسمي مكتمل؟",
+          "q2": "ما المصادر التي ينبغي الاستشهاد بها؟",
+          "q3": "كيف أحافظ على صياغة وقائعية؟"
+        },
+        "public_impact": {
+          "featureLabel": "الأثر العام",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "أي الادعاءات تحتاج أدلة أقوى؟",
+          "q2": "ماذا يعني الأثر العام؟",
+          "q3": "كيف أحافظ على لغة محايدة؟"
+        },
+        "archive": {
+          "featureLabel": "الأرشيف المدني",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما الدروس التي ينبغي حفظها؟",
+          "q2": "كيف ينبغي أن يُقرأ الملخص التاريخي؟",
+          "q3": "ما الذي ينتمي إلى مساهمة المعرفة؟"
+        },
+        "notifications": {
+          "featureLabel": "الإشعارات",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ماذا يعني هذا النوع من الإشعار؟",
+          "q2": "كيف تعمل الإشعارات والتذكيرات؟",
+          "q3": "أين تظهر تنبيهات نشر مراحل دورة الحياة؟"
+        },
+        "messages": {
+          "featureLabel": "الرسائل",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "كيف يمكنني مراسلة حليف؟",
+          "q2": "ما الخاص في الرسائل المباشرة؟",
+          "q3": "كيف تختلف دردشة مجموعة المبادرة عن الرسائل المباشرة؟"
+        },
+        "blog": {
+          "featureLabel": "المدونة",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "ما هي مدونة {siteName}؟",
+          "q2": "كيف أصبح مؤلف مدونة؟",
+          "q3": "عمَّ ينبغي أن أكتب؟"
+        },
+        "publicationAuthoring": {
+          "featureLabel": "تأليف المنشور",
+          "greeting": "مرحبًا، {name}. يمكنني مساعدتك في {feature} أو الإجابة عن أسئلة حول {siteName}.",
+          "q1": "اقترح عنوانًا أوضح.",
+          "q2": "حسّن الوضوح وسهولة القراءة.",
+          "q3": "اقترح تحسينات على الهيكل."
+        }
       }
     },
     "civicArchivePublic": {
@@ -6136,6 +6286,7 @@
   "memberProfile": {
     "title": "الملف الشخصي",
     "subtitle": "ملف مشارك Humanity Union الخاص بك",
+    "previewSubtitle": "معاينة كيف يظهر ملفك الشخصي للمشاركين الآخرين",
     "sectionsAria": "أقسام الملف الشخصي",
     "sections": {
       "statistics": "الإحصاءات",
@@ -6150,7 +6301,7 @@
     "signInBody": "سجّل الدخول لإدارة ملف المشارك.",
     "logIn": "تسجيل الدخول",
     "unavailableTitle": "الملف الشخصي غير متاح مؤقتًا",
-    "unavailableExplanation": "تعذّر الاتصال بخدمة Humanity Union. يُرجى المحاولة مجددًا قريبًا.",
+    "unavailableExplanation": "تعذّر الاتصال بخدمة {siteName}. يُرجى المحاولة مجددًا قريبًا.",
     "unavailable": "الملف الشخصي غير متاح.",
     "loadError": "تعذّر تحميل ملف المشارك.",
     "saveProfileError": "تعذّر حفظ الملف الشخصي.",
@@ -6243,6 +6394,416 @@
       "professionalLinksVisibility": "ظهور الروابط المهنية",
       "interestsVisibility": "ظهور الاهتمامات",
       "interestMatchNotifications": "إشعارات تطابق الاهتمامات"
+    },
+    "participationArea": {
+      "loading": "جارٍ تحميل منطقة المشاركة...",
+      "loadError": "تعذّر تحميل مساحة عمل منطقة المشاركة.",
+      "createError": "تعذّر إنشاء المنطقة.",
+      "requestError": "تعذّر طلب التغيير.",
+      "cancelError": "تعذّر إلغاء التغيير.",
+      "currentTitle": "منطقة المشاركة الحالية",
+      "areaLabel": "المنطقة",
+      "verificationStatus": "حالة التحقق",
+      "statusLabel": "الحالة",
+      "notDeclared": "غير مُعلَنة",
+      "empty": "لم تعلن منطقة مشاركة بعد.",
+      "pendingTitle": "تغيير معلّق",
+      "requestedArea": "المنطقة المطلوبة",
+      "effectiveAt": "يسري اعتبارًا من",
+      "cancelling": "جارٍ الإلغاء...",
+      "cancelPending": "إلغاء التغيير المعلّق",
+      "changeTitle": "تغيير منطقة المشاركة",
+      "declareTitle": "إعلان منطقة المشاركة",
+      "countryLabel": "بلد المشاركة (وليس الجنسية)",
+      "countryHelper": "اختر البلد الذي تشارك فيه في النشاط المدني.",
+      "regionLabel": "منطقة المشاركة (اختياري)",
+      "regionName": "اسم المنطقة",
+      "regionNameNote": "نص حر — وليس معرّفًا قياسيًا للمنطقة.",
+      "requestChange": "طلب تغيير المنطقة",
+      "createArea": "إنشاء منطقة المشاركة",
+      "votingTitle": "كيف يؤثر ذلك على التصويت",
+      "votingBody1": "تُعلن منطقة المشاركة بواسطتك. تعتمد الأهلية على الجغرافيا المدنية المعلنة، وليس على عنوان IP أو إشارات VPN أو تحديد الموقع التلقائي.",
+      "votingBody2": "تُعرض حالة التحقق للشفافية فقط. وهي لا تغيّر وزن الصوت.",
+      "votingBody3": "تظل المبادرات ذات النطاق العالمي مفتوحة لجميع المشاركين المسجّلين.",
+      "worldDecisions": "قرارات العالم",
+      "countryDecisions": "قرارات البلد: {name}",
+      "regionDecisions": "قرارات المنطقة: {name}",
+      "communityDecisions": "قرارات المجتمع: {name}",
+      "status": {
+        "unverified": "غير مُتحقق",
+        "verified": "مُتحقق",
+        "pending": "معلّق",
+        "active": "نشط"
+      },
+      "transitionPolicyNote": "تظل منطقتك الحالية نشطة حتى يصبح التغيير ساريًا.",
+      "transitionPolicyGeneric": "تسري تغييرات المنطقة بعد تأخير. تظل منطقتك الحالية نشطة حتى ذلك الحين."
+    },
+    "preview": {
+      "title": "معاينة الملف الشخصي العام",
+      "bannerBody": "هكذا يظهر ملفك الشخصي للمشاركين الآخرين وفق إعدادات الخصوصية الحالية.",
+      "openPublicProfile": "فتح الملف الشخصي العام",
+      "linkUnavailable": "رابط ملفك الشخصي العام غير متاح الآن.",
+      "loading": "جارٍ تحميل معاينة ملفك الشخصي...",
+      "signInBody": "سجّل الدخول لمعاينة ملفك الشخصي العام.",
+      "privateBody": "ظهور ملفك الشخصي مضبوط حاليًا على «خاص»، لذا لا يمكن للمشاركين الآخرين فتح ملفك على الإطلاق.",
+      "unavailable": "معاينة الملف الشخصي غير متاحة.",
+      "unavailableTitle": "معاينة الملف الشخصي غير متاحة مؤقتًا"
+    }
+  },
+  "notifications": {
+    "title": "مركز الإشعارات",
+    "summary": "مركزك النشط للإشعارات المدنية والرسائل الواردة والتذكيرات الشخصية.",
+    "signInPrompt": "سجّل الدخول لعرض مركز الإشعارات.",
+    "signIn": "تسجيل الدخول",
+    "sections": {
+      "notifications": "الإشعارات",
+      "messages": "الرسائل",
+      "reminders": "التذكيرات",
+      "archive": "الأرشيف"
+    },
+    "actions": {
+      "markRead": "تعليم كمقروء",
+      "markAllRead": "تعليم الكل كمقروء",
+      "archive": "أرشفة",
+      "delete": "حذف",
+      "clearArchived": "مسح الأرشيف",
+      "cancel": "إلغاء",
+      "reviewApplication": "مراجعة الطلب",
+      "viewEditorPanel": "عرض لوحة المحرر",
+      "reviewPublication": "مراجعة المنشور",
+      "viewAuthoring": "عرض التأليف",
+      "openPublishing": "فتح النشر",
+      "viewRelatedCivicRecord": "عرض السجل المدني ذي الصلة",
+      "openWorkspaceMessages": "فتح رسائل مساحة العمل"
+    },
+    "empty": {
+      "notifications": "لا توجد إشعارات نشطة.",
+      "messages": "لا توجد رسائل غير مقروءة.",
+      "reminders": "لا توجد تذكيرات بعد.",
+      "archive": "لا يوجد شيء في الأرشيف بعد.",
+      "noMessagesYet": "لا توجد رسائل بعد."
+    },
+    "loading": {
+      "notifications": "جارٍ تحميل الإشعارات…",
+      "messages": "جارٍ تحميل الرسائل…",
+      "reminders": "جارٍ تحميل التذكيرات…"
+    },
+    "priorities": {
+      "critical": "حرج",
+      "important": "مهم",
+      "normal": "عادي",
+      "informational": "إعلامي"
+    },
+    "meta": {
+      "recorded": "سُجّل في {date}",
+      "archived": "أُرشف في {date}"
+    },
+    "unread": {
+      "notification": "إشعار غير مقروء",
+      "channelActivity": "نشاط غير مقروء في قناة تعاون المبادرة",
+      "messageFrom": "رسالة غير مقروءة من {name}"
+    },
+    "summaryBar": {
+      "aria": "ملخص التواصل",
+      "unreadNotifications": "إشعارات غير مقروءة",
+      "unreadMessages": "رسائل غير مقروءة",
+      "pendingReminders": "تذكيرات قيد الانتظار"
+    },
+    "clearArchiveDialog": {
+      "title": "مسح أرشيف الإشعارات؟",
+      "description": "سيؤدي هذا إلى إزالة جميع الإشعارات المؤرشفة نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+      "confirm": "مسح الأرشيف"
+    },
+    "errors": {
+      "notificationsFailed": "فشل طلب مركز الإشعارات.",
+      "messagesFailed": "فشل طلب معاينة الرسائل."
+    },
+    "openConversationAria": "فتح المحادثة مع {name}",
+    "types": {
+      "initiative_published": {
+        "title": "نُشرت المبادرة",
+        "message": "تم نشر مبادرتك."
+      },
+      "analysis_published": {
+        "title": "نُشر التحليل التعاوني",
+        "message": "نُشر تحليل تعاوني لمبادرتك."
+      },
+      "proposal_submitted": {
+        "title": "قُدّمت مقترحات التحسين",
+        "message": "قُدّم مقترح تحسين جديد."
+      },
+      "proposal_decided": {
+        "title": "تمت مراجعة المقترح",
+        "message": "تمت مراجعة مقترحك."
+      },
+      "revision_published": {
+        "title": "نُشرت مراجعة المبادرة",
+        "message": "نُشرت مراجعة للمبادرة."
+      },
+      "decision_opened": {
+        "title": "القرار الجماعي مفتوح",
+        "message": "القرار الجماعي مفتوح."
+      },
+      "decision_closed": {
+        "title": "أُغلق القرار الجماعي",
+        "message": "نتيجة القرار الجماعي متاحة."
+      },
+      "civic_action_package_issued": {
+        "title": "حزمة العمل المدني جاهزة",
+        "message": "حزمة العمل المدني جاهزة."
+      },
+      "official_response_received": {
+        "title": "سُجّل رد رسمي",
+        "message": "سُجّل رد رسمي."
+      },
+      "official_response_verified": {
+        "title": "تم التحقق من الرد الرسمي",
+        "message": "تم التحقق من رد رسمي."
+      },
+      "civic_accountability_event_added": {
+        "title": "تحديث جدول المساءلة",
+        "message": "تم تحديث جدول المساءلة."
+      },
+      "civic_accountability_closed": {
+        "title": "أُغلق جدول المساءلة",
+        "message": "أُغلق جدول مساءلة مدنية."
+      },
+      "commitment_published": {
+        "title": "نُشر التزام التنفيذ",
+        "message": "نُشر التزام تنفيذ."
+      },
+      "implementation_commitment_proposed": {
+        "title": "لديك مسؤولية مقترحة",
+        "message": "اقتُرحت عليك مسؤولية التزام تنفيذ. اقبل أو ارفض للرد."
+      },
+      "implementation_commitment_taken": {
+        "title": "تم تولي التزام التنفيذ",
+        "message": "تولّى مشارك مسؤولية التزام تنفيذ."
+      },
+      "tracking_updated": {
+        "title": "تحديث تتبع التنفيذ",
+        "message": "تم تحديث تتبع التنفيذ."
+      },
+      "impact_verified": {
+        "title": "تم التحقق من الأثر العام",
+        "message": "تم التحقق من أثرك العام."
+      },
+      "archive_published": {
+        "title": "نُشر سجل الأرشيف",
+        "message": "نُشر سجل الأرشيف."
+      },
+      "civic_nomination_submitted": {
+        "title": "قُدّمت الترشيحة المدنية",
+        "message": "قُدّمت ترشيحتك المدنية للمراجعة."
+      },
+      "civic_nomination_published": {
+        "title": "نُشرت الترشيحة المدنية",
+        "message": "نُشر ملصق ترشيحتك المدنية."
+      },
+      "civic_nomination_withdrawn": {
+        "title": "سُحبت الترشيحة المدنية",
+        "message": "سُحبت ترشيحتك المدنية."
+      },
+      "civic_nomination_voting_opened": {
+        "title": "فُتح التصويت على الترشيحة المدنية",
+        "message": "فُتح تصويت الدعم الشفاف على ملصق ترشيحتك المدنية."
+      },
+      "civic_nomination_vote_cast": {
+        "title": "سُجّل صوت الترشيحة المدنية",
+        "message": "سُجّل صوت دعم ترشيحتك المدنية."
+      },
+      "civic_nomination_voting_closed": {
+        "title": "أُغلق التصويت على الترشيحة المدنية",
+        "message": "أُغلق تصويت الدعم الشفاف على ملصق ترشيحتك المدنية."
+      },
+      "initiative_interest_match": {
+        "title": "مبادرة جديدة تطابق اهتماماتك",
+        "message": "مبادرة جديدة تطابق أحد اهتماماتك المحفوظة."
+      },
+      "member_badge_contribution_confirmed": {
+        "title": "تأكيد طلب عنصر العضو الرسمي",
+        "message": "تم تأكيد طلب عنصر العضو الرسمي في Humanity Union."
+      },
+      "member_badge_shipped": {
+        "title": "شُحن عنصر العضو الرسمي",
+        "message": "تم شحن طلب عنصر العضو الرسمي في Humanity Union."
+      },
+      "member_badge_delivered": {
+        "title": "تم تسليم عنصر العضو الرسمي",
+        "message": "تم تسليم طلب عنصر العضو الرسمي في Humanity Union."
+      },
+      "member_badge_contribution_refunded": {
+        "title": "أُعيدت مساهمة العضو الإضافية",
+        "message": "أُعيدت مساهمتك الإضافية لعنصر العضو."
+      },
+      "initiative_comment_posted": {
+        "title": "تعليق جديد على المبادرة",
+        "message": "نُشر تعليق جديد في نقاش مبادرتك."
+      },
+      "initiative_comment_reply": {
+        "title": "رد على تعليقك",
+        "message": "رد شخص ما على تعليقك في نقاش مبادرة."
+      },
+      "initiative_collaboration_interest_expressed": {
+        "title": "اهتمام جديد بالتعاون",
+        "message": "أبدى مشارك استعداده للتعاون في مبادرتك."
+      },
+      "initiative_collaboration_interest_accepted": {
+        "title": "قُبل طلب التعاون",
+        "message": "قُبل طلب تعاونك. أنت الآن حليف لهذه المبادرة."
+      },
+      "initiative_collaboration_interest_declined": {
+        "title": "تحديث بشأن طلب التعاون",
+        "message": "لم يُقبل طلب تعاونك في هذا الوقت."
+      },
+      "initiative_allies_invitation_received": {
+        "title": "دعوة الحلفاء",
+        "message": "دُعيت لتصبح حليفًا في مبادرة."
+      },
+      "initiative_allies_invitation_accepted": {
+        "title": "قُبلت دعوة الحلفاء",
+        "message": "قبل مشارك دعوتك للانضمام كحليف."
+      },
+      "initiative_allies_invitation_declined": {
+        "title": "رُفضت دعوة الحلفاء",
+        "message": "رفض مشارك دعوتك للانضمام كحليف."
+      },
+      "direct_message_received": {
+        "title": "رسالة جديدة",
+        "message": "تلقيت رسالة تعاون مباشر جديدة."
+      },
+      "initiative_collaboration_channel_message_received": {
+        "title": "رسالة جديدة في قناة التعاون",
+        "message": "تلقيت رسالة جديدة في قناة تعاون المبادرة."
+      },
+      "initiative_collaboration_channel_system_event": {
+        "title": "تحديث قناة التعاون",
+        "message": "هناك تحديث تعاون جديد في قناة تعاون المبادرة."
+      },
+      "initiative_collaboration_session_created": {
+        "title": "جُدولت جلسة تعاون جديدة",
+        "message": "جُدولت جلسة تعاون جديدة لمبادرة."
+      },
+      "initiative_collaboration_session_updated": {
+        "title": "حُدّثت جلسة التعاون",
+        "message": "عُدّلت جلسة تعاون أو أُعيدت جدولتها."
+      },
+      "initiative_collaboration_session_cancelled": {
+        "title": "أُلغيت جلسة التعاون",
+        "message": "أُلغيت جلسة تعاون."
+      },
+      "initiative_collaboration_session_attendance_changed": {
+        "title": "تحديث الحضور",
+        "message": "حدّث حليف نشط حضوره لجلسة تعاون."
+      },
+      "initiative_collaboration_session_upcoming_reminder": {
+        "title": "جلسة التعاون تبدأ قريبًا",
+        "message": "جلسة تعاون تشارك فيها ستبدأ قريبًا."
+      },
+      "shared_document_uploaded": {
+        "title": "مستند جديد مُشارك",
+        "message": "شارَك مستند جديد في محادثة أنت جزء منها."
+      },
+      "shared_document_replaced": {
+        "title": "استُبدل المستند",
+        "message": "استُبدل مستند مشترك بإصدار جديد."
+      },
+      "shared_document_removed": {
+        "title": "أُزيل المستند",
+        "message": "أُزيل مستند مشترك."
+      },
+      "initiative_lifecycle_stage_published": {
+        "title": "نُشرت مرحلة المبادرة",
+        "message": "نُشرت مرحلة من دورة حياة مبادرة تتعاون فيها."
+      },
+      "blog_author_application_submitted": {
+        "title": "تم استلام الطلب",
+        "message": "تم استلام طلبك كمؤلف. سنراجعه ونرد في أقرب وقت ممكن."
+      },
+      "blog_author_application_approved": {
+        "title": "قُبل طلب المؤلف",
+        "message": "قُبل طلبك كمؤلف. يمكنك الآن استخدام أدوات المؤلف في مساحة العمل."
+      },
+      "blog_author_application_changes_requested": {
+        "title": "طلب مؤلف المدونة يحتاج إلى تعديلات",
+        "message": "طلب محرر تعديلات على طلبك كمؤلف للمدونة."
+      },
+      "blog_author_application_declined": {
+        "title": "تحديث بشأن طلب المؤلف",
+        "message": "لم يُقبل طلبك كمؤلف في هذا الوقت."
+      },
+      "blog_author_application_review_requested": {
+        "title": "طلب مؤلف جديد",
+        "message": "قدّم مشارك طلبًا كمؤلف."
+      },
+      "blog_author_access_blocked": {
+        "title": "حُظر وصول المؤلف",
+        "message": "حُظر وصولك كمؤلف. يُرجى التواصل مع المسؤول."
+      },
+      "blog_author_access_restored": {
+        "title": "استُعيد وصول المؤلف",
+        "message": "استُعيد وصولك كمؤلف. يمكنك استخدام أدوات المؤلف في مساحة العمل مرة أخرى."
+      },
+      "blog_author_trusted_publishing_enabled": {
+        "title": "فُعّل النشر الموثوق",
+        "message": "فعّل مسؤول النشر دون مراجعة يدوية لحسابك كمؤلف. قد تُنشر أو تُجدول المشاركات المستقبلية مباشرة عند استيفاء الشروط."
+      },
+      "blog_author_trusted_publishing_disabled": {
+        "title": "عُطّل النشر الموثوق",
+        "message": "عطّل مسؤول النشر دون مراجعة يدوية لحسابك كمؤلف. تتطلب المشاركات المستقبلية مراجعة تحريرية مرة أخرى."
+      },
+      "blog_publication_blocked": {
+        "title": "المنشور غير متاح",
+        "message": "أحد منشورات مدونتك لم يعد متاحًا للعامة."
+      },
+      "blog_publication_restored": {
+        "title": "استُعيد المنشور",
+        "message": "استُعيدت رؤية منشور مدونتك وفق حالة نشره."
+      },
+      "blog_publication_review_requested": {
+        "title": "قُدّم المنشور للمراجعة",
+        "message": "قدّم مؤلف منشورًا للمراجعة."
+      },
+      "blog_post_changes_requested": {
+        "title": "أُعيد المنشور للتعديل",
+        "message": "طُلبت تعديلات على منشور مدونتك. افتح النشر للمراجعة وإعادة الإرسال."
+      },
+      "blog_post_published": {
+        "title": "وُوفق على المنشور",
+        "message": "وُوفق على منشور مدونتك ونُشر (أو جُدول)."
+      },
+      "blog_post_declined": {
+        "title": "لم يُقبل المنشور",
+        "message": "لم يُقبل منشور مدونتك. افتح النشر للتفاصيل."
+      },
+      "blog_comment_posted": {
+        "title": "تعليق جديد على منشور مدونتك",
+        "message": "علّق مشارك على منشور مدونتك."
+      },
+      "blog_comment_reply": {
+        "title": "رد جديد على تعليقك في المدونة",
+        "message": "رد مشارك على تعليقك في المدونة."
+      },
+      "editor_access_assigned": {
+        "title": "مُنح وصول المحرر",
+        "message": "يمكنك الآن استخدام لوحة المحرر لمجال التحرير والأذونات المعيّنة لك."
+      },
+      "editor_access_activated": {
+        "title": "فُعّل وصول المحرر",
+        "message": "فُعّل وصولك كمحرر. افتح لوحة المحرر للمتابعة."
+      },
+      "editor_access_deactivated": {
+        "title": "عُطّل وصول المحرر",
+        "message": "عُطّل وصولك كمحرر."
+      },
+      "editor_permissions_updated": {
+        "title": "حُدّثت أذونات المحرر",
+        "message": "حُدّثت أذوناتك كمحرر."
+      },
+      "editor_editing_area_updated": {
+        "title": "حُدّث مجال تحرير المحرر",
+        "message": "حُدّث مجال تحريرك كمحرر."
+      }
     }
   }
 }

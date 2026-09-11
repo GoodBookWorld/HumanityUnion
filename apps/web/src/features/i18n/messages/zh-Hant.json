@@ -3670,26 +3670,26 @@
     },
     "assistant": {
       "entry": {
-        "title": "Humanity Union 助理",
-        "openAria": "開啟 Humanity Union 助理",
+        "title": "{siteName} 助理",
+        "openAria": "開啟 {siteName} 助理",
         "askAssistant": "詢問助理",
-        "openAssistant": "開啟 Humanity Union 助理",
+        "openAssistant": "開啟 {siteName} 助理",
         "shortLabel": "助理",
-        "preferencesLauncher": "詢問 Humanity Union 助理關於偏好設定",
+        "preferencesLauncher": "詢問 {siteName} 助理關於偏好設定",
         "widgetCopy": {
           "workspace": "我可以協助你了解工作區、優先事項、通知與下一步公民行動。",
           "initiatives": "我可以協助你建立、檢視並推進倡議。",
           "commitment": "我可以協助責任、資源與實施承諾。",
-          "notifications": "詢問 Humanity Union 助理關於通知",
+          "notifications": "詢問 {siteName} 助理關於通知",
           "messages": "我可以說明通訊功能與隱私——不會讀取私人訊息紀錄。",
           "preferences": "我可以協助你了解偏好設定、通知與隱私選項。",
           "profile": "我可以說明個人檔案與參與區域選項。",
           "blog": "我可以說明部落格發布流程、作者身分與分類——我絕不會代你發布。",
-          "default": "我可以協助這個上下文，或回答關於 Humanity Union 的問題。"
+          "default": "我可以協助這個上下文，或回答關於 {siteName} 的問題。"
         }
       },
       "modal": {
-        "title": "Humanity Union 助理",
+        "title": "{siteName} 助理",
         "close": "關閉",
         "closeAria": "關閉助理",
         "loadingContext": "正在載入上下文…",
@@ -3703,14 +3703,14 @@
         "suggestedQuestions": "建議問題",
         "privacyNotice": "對話記憶僅暫時保存在此瀏覽器工作階段。絕不會自動讀取私人訊息。AI 絕不會代為發布。",
         "askLabel": "詢問助理",
-        "askPlaceholder": "詢問此上下文或 Humanity Union…",
+        "askPlaceholder": "詢問此上下文或 {siteName}…",
         "send": "傳送",
         "explainContext": "說明此上下文",
         "useSuggestion": "在草稿編輯器使用建議",
         "newConversation": "新對話",
         "clearContext": "清除目前上下文",
         "continueDefault": "預設會繼續目前對話。",
-        "guestGuidance": "請登入，以便在工作區與倡議上下文中使用 Humanity Union 助理。",
+        "guestGuidance": "請登入，以便在工作區與倡議上下文中使用 {siteName} 助理。",
         "signIn": "登入",
         "register": "註冊",
         "diagnosticsSummary": "開發診斷",
@@ -3727,15 +3727,165 @@
         "diagnosticsHistory": "已傳送歷史回合：{value}",
         "diagnosticsNone": "無",
         "diagnosticsNa": "不適用",
-        "diagnosticsSafeNote": "診斷資訊絕不會包含提示或 API 金鑰。"
+        "diagnosticsSafeNote": "診斷資訊絕不會包含提示或 API 金鑰。",
+        "sourcesLabel": "來源"
       },
       "messages": {
-        "openFailed": "無法開啟 Humanity Union 助理。",
+        "openFailed": "無法開啟 {siteName} 助理。",
         "rateLimited": "助理請求過多。請稍候再試。",
         "temporarilyUnavailable": "助理暫時無法使用。請稍後再試。",
         "autoApplyForbidden": "AI 試圖自動編輯或發布，這是禁止的。",
         "appliedToDraft": "建議已在本機複製到草稿編輯器。請編輯後再 {saveDraft} → {preview} → {publish}。尚未自動發布任何內容。",
         "appliedToBlog": "建議已排入出版編輯器。請在該處檢閱套用／取代／關閉。尚未自動發布任何內容。"
+      },
+      "surfaces": {
+        "workspace": {
+          "featureLabel": "工作區",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "我接下來應該檢視什麼？",
+          "q2": "活躍盟友如何運作？",
+          "q3": "請說明我目前的承諾。"
+        },
+        "profile": {
+          "featureLabel": "個人檔案",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "我的參與區域顯示什麼？",
+          "q2": "如何更新顯示名稱？",
+          "q3": "參與者與會員有何不同？"
+        },
+        "preferences": {
+          "featureLabel": "偏好設定",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "如何變更偏好設定？",
+          "q2": "通知與提醒如何運作？",
+          "q3": "我有哪些隱私選項？"
+        },
+        "initiatives": {
+          "featureLabel": "倡議",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "{siteName}是什麼？",
+          "q2": "倡議生命週期如何運作？",
+          "q3": "如何建立倡議？"
+        },
+        "initiative": {
+          "featureLabel": "倡議",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "下一個生命週期階段是什麼？",
+          "q2": "什麼是活躍盟友？",
+          "q3": "討論與分析有何關聯？"
+        },
+        "discussion": {
+          "featureLabel": "討論",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "如何撰寫具建設性的留言？",
+          "q2": "將留言標示為「有幫助」代表什麼？",
+          "q3": "何時應將留言變成提案候選？"
+        },
+        "analysis": {
+          "featureLabel": "協作分析",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "缺少哪些證據？",
+          "q2": "哪些問題仍未解決？",
+          "q3": "請說明最強的分歧。"
+        },
+        "proposal": {
+          "featureLabel": "改進提案",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "這個提案是否清楚且可執行？",
+          "q2": "是否與其他提案重疊？",
+          "q3": "哪些證據應支持這個提案？"
+        },
+        "revision": {
+          "featureLabel": "修訂",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "這些修訂變更是否可追蹤？",
+          "q2": "哪些內容應與分析保持一致？",
+          "q3": "如何中立地說明這項變更？"
+        },
+        "petition": {
+          "featureLabel": "請願",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "這項請求是否清楚？",
+          "q2": "是否有未經佐證的主張？",
+          "q3": "請將用詞改得更中立。"
+        },
+        "decision_session": {
+          "featureLabel": "決策會議",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "決策會議的框架是否完整？",
+          "q2": "應顯示哪些選項與風險？",
+          "q3": "決策會議與集體決策有何不同？"
+        },
+        "collective_decision": {
+          "featureLabel": "集體決策",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "集體決策之後會發生什麼？",
+          "q2": "承諾如何承接這項決策？",
+          "q3": "結果摘要中哪些內容應保持中立？"
+        },
+        "commitment": {
+          "featureLabel": "實施承諾",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "責任與資源是否清楚？",
+          "q2": "我可以在哪裡查看自己的承諾？",
+          "q3": "什麼會讓承諾可行？"
+        },
+        "tracking": {
+          "featureLabel": "實施追蹤",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "哪些承諾可能延遲？",
+          "q2": "缺少哪些證據？",
+          "q3": "應如何記錄阻礙因素？"
+        },
+        "official_response": {
+          "featureLabel": "官方回應",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "這份官方回應是否完整？",
+          "q2": "應引用哪些來源？",
+          "q3": "如何保持用詞符合事實？"
+        },
+        "public_impact": {
+          "featureLabel": "公共影響",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "哪些主張需要更強的證據？",
+          "q2": "公共影響是什麼意思？",
+          "q3": "如何保持語言中立？"
+        },
+        "archive": {
+          "featureLabel": "公民檔案",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "應保存哪些教訓？",
+          "q2": "歷史摘要應如何閱讀？",
+          "q3": "哪些內容屬於知識貢獻？"
+        },
+        "notifications": {
+          "featureLabel": "通知",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "這類通知代表什麼？",
+          "q2": "通知與提醒如何運作？",
+          "q3": "生命週期發布警示出現在哪裡？"
+        },
+        "messages": {
+          "featureLabel": "訊息",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "如何傳訊給盟友？",
+          "q2": "私人訊息中哪些內容是私密的？",
+          "q3": "倡議群組聊天與私人訊息有何不同？"
+        },
+        "blog": {
+          "featureLabel": "部落格",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "{siteName}部落格是什麼？",
+          "q2": "如何成為部落格作者？",
+          "q3": "我應該寫些什麼？"
+        },
+        "publicationAuthoring": {
+          "featureLabel": "出版撰寫",
+          "greeting": "你好，{name}。我可以協助你處理{feature}，或回答關於{siteName}的問題。",
+          "q1": "建議更清楚的標題。",
+          "q2": "改善清晰度與可讀性。",
+          "q3": "建議結構改進。"
+        }
       }
     },
     "civicArchivePublic": {
@@ -6136,6 +6286,7 @@
   "memberProfile": {
     "title": "個人資料",
     "subtitle": "您的 Humanity Union 參與者個人資料",
+    "previewSubtitle": "預覽其他參與者會如何看到您的個人資料",
     "sectionsAria": "個人資料區段",
     "sections": {
       "statistics": "統計",
@@ -6150,7 +6301,7 @@
     "signInBody": "登入以管理您的參與者個人資料。",
     "logIn": "登入",
     "unavailableTitle": "個人資料暫時無法使用",
-    "unavailableExplanation": "無法連線至 Humanity Union 服務。請稍後再試。",
+    "unavailableExplanation": "無法連線至 {siteName} 服務。請稍後再試。",
     "unavailable": "個人資料無法使用。",
     "loadError": "無法載入參與者個人資料。",
     "saveProfileError": "無法儲存個人資料。",
@@ -6243,6 +6394,416 @@
       "professionalLinksVisibility": "專業連結可見度",
       "interestsVisibility": "興趣可見度",
       "interestMatchNotifications": "興趣相符通知"
+    },
+    "participationArea": {
+      "loading": "正在載入參與地區...",
+      "loadError": "無法載入參與地區工作區。",
+      "createError": "無法建立地區。",
+      "requestError": "無法請求變更。",
+      "cancelError": "無法取消變更。",
+      "currentTitle": "目前參與地區",
+      "areaLabel": "地區",
+      "verificationStatus": "驗證狀態",
+      "statusLabel": "狀態",
+      "notDeclared": "尚未宣告",
+      "empty": "您尚未宣告參與地區。",
+      "pendingTitle": "待處理變更",
+      "requestedArea": "請求的地區",
+      "effectiveAt": "生效時間",
+      "cancelling": "正在取消...",
+      "cancelPending": "取消待處理變更",
+      "changeTitle": "變更參與地區",
+      "declareTitle": "宣告參與地區",
+      "countryLabel": "參與國家（非國籍）",
+      "countryHelper": "選擇您參與公民活動的國家。",
+      "regionLabel": "參與區域（選填）",
+      "regionName": "區域名稱",
+      "regionNameNote": "自由文字備援 — 非標準區域識別碼。",
+      "requestChange": "請求變更地區",
+      "createArea": "建立參與地區",
+      "votingTitle": "這如何影響投票",
+      "votingBody1": "參與地區由您自行宣告。資格依據您宣告的公民地理範圍，而非 IP 位址、VPN 訊號或自動定位。",
+      "votingBody2": "驗證狀態僅供透明顯示，不會改變投票權重。",
+      "votingBody3": "世界範圍的倡議對所有已註冊參與者開放。",
+      "worldDecisions": "世界決策",
+      "countryDecisions": "國家決策：{name}",
+      "regionDecisions": "區域決策：{name}",
+      "communityDecisions": "社區決策：{name}",
+      "status": {
+        "unverified": "未驗證",
+        "verified": "已驗證",
+        "pending": "待處理",
+        "active": "作用中"
+      },
+      "transitionPolicyNote": "在變更生效前，您目前的地區仍會保持作用中。",
+      "transitionPolicyGeneric": "地區變更會在延遲後生效。在此之前，您目前的地區仍會保持作用中。"
+    },
+    "preview": {
+      "title": "公開個人資料預覽",
+      "bannerBody": "這是依您目前隱私設定，其他參與者會看到的個人資料樣貌。",
+      "openPublicProfile": "開啟公開個人資料",
+      "linkUnavailable": "您的公開個人資料連結目前無法使用。",
+      "loading": "正在載入個人資料預覽...",
+      "signInBody": "登入以預覽您的公開個人資料。",
+      "privateBody": "您的個人資料可見度目前設為私人，因此其他參與者完全無法開啟您的個人資料。",
+      "unavailable": "個人資料預覽無法使用。",
+      "unavailableTitle": "個人資料預覽暫時無法使用"
+    }
+  },
+  "notifications": {
+    "title": "通知中心",
+    "summary": "您的公民通知、收件訊息與個人提醒的活躍中心。",
+    "signInPrompt": "請登入以查看通知中心。",
+    "signIn": "登入",
+    "sections": {
+      "notifications": "通知",
+      "messages": "訊息",
+      "reminders": "提醒",
+      "archive": "封存"
+    },
+    "actions": {
+      "markRead": "標為已讀",
+      "markAllRead": "全部標為已讀",
+      "archive": "封存",
+      "delete": "刪除",
+      "clearArchived": "清除封存",
+      "cancel": "取消",
+      "reviewApplication": "審核申請",
+      "viewEditorPanel": "查看編輯面板",
+      "reviewPublication": "審核文章",
+      "viewAuthoring": "查看寫作",
+      "openPublishing": "開啟發表",
+      "viewRelatedCivicRecord": "查看相關公民紀錄",
+      "openWorkspaceMessages": "開啟工作區訊息"
+    },
+    "empty": {
+      "notifications": "目前沒有進行中的通知。",
+      "messages": "沒有未讀訊息。",
+      "reminders": "尚無提醒。",
+      "archive": "尚無封存項目。",
+      "noMessagesYet": "尚無訊息。"
+    },
+    "loading": {
+      "notifications": "正在載入通知…",
+      "messages": "正在載入訊息…",
+      "reminders": "正在載入提醒…"
+    },
+    "priorities": {
+      "critical": "緊急",
+      "important": "重要",
+      "normal": "一般",
+      "informational": "資訊"
+    },
+    "meta": {
+      "recorded": "記錄於 {date}",
+      "archived": "封存於 {date}"
+    },
+    "unread": {
+      "notification": "未讀通知",
+      "channelActivity": "未讀倡議協作頻道活動",
+      "messageFrom": "來自 {name} 的未讀訊息"
+    },
+    "summaryBar": {
+      "aria": "通訊摘要",
+      "unreadNotifications": "未讀通知",
+      "unreadMessages": "未讀訊息",
+      "pendingReminders": "待處理提醒"
+    },
+    "clearArchiveDialog": {
+      "title": "清除通知封存？",
+      "description": "這將永久移除所有已封存的通知。此操作無法復原。",
+      "confirm": "清除封存"
+    },
+    "errors": {
+      "notificationsFailed": "通知中心請求失敗。",
+      "messagesFailed": "訊息預覽請求失敗。"
+    },
+    "openConversationAria": "開啟與 {name} 的對話",
+    "types": {
+      "initiative_published": {
+        "title": "倡議已發布",
+        "message": "您的倡議已發布。"
+      },
+      "analysis_published": {
+        "title": "協作分析已發布",
+        "message": "您的倡議已發布協作分析。"
+      },
+      "proposal_submitted": {
+        "title": "已提交改進提案",
+        "message": "已提交新的改進提案。"
+      },
+      "proposal_decided": {
+        "title": "提案已審核",
+        "message": "您的提案已審核。"
+      },
+      "revision_published": {
+        "title": "倡議修訂已發布",
+        "message": "已發布倡議修訂。"
+      },
+      "decision_opened": {
+        "title": "集體決策已開放",
+        "message": "集體決策已開放。"
+      },
+      "decision_closed": {
+        "title": "集體決策已關閉",
+        "message": "集體決策結果已可查看。"
+      },
+      "civic_action_package_issued": {
+        "title": "公民行動包已就緒",
+        "message": "公民行動包已就緒。"
+      },
+      "official_response_received": {
+        "title": "已記錄官方回應",
+        "message": "已記錄官方回應。"
+      },
+      "official_response_verified": {
+        "title": "官方回應已驗證",
+        "message": "官方回應已驗證。"
+      },
+      "civic_accountability_event_added": {
+        "title": "問責時間軸已更新",
+        "message": "問責時間軸已更新。"
+      },
+      "civic_accountability_closed": {
+        "title": "問責時間軸已關閉",
+        "message": "公民問責時間軸已關閉。"
+      },
+      "commitment_published": {
+        "title": "執行承諾已發布",
+        "message": "已發布執行承諾。"
+      },
+      "implementation_commitment_proposed": {
+        "title": "您有一項擬議責任",
+        "message": "您被提議負責一項執行承諾。請接受或拒絕以回覆。"
+      },
+      "implementation_commitment_taken": {
+        "title": "已承接執行承諾",
+        "message": "一位參與者已承接執行承諾的責任。"
+      },
+      "tracking_updated": {
+        "title": "執行追蹤已更新",
+        "message": "執行追蹤已更新。"
+      },
+      "impact_verified": {
+        "title": "公開影響已驗證",
+        "message": "您的公開影響已驗證。"
+      },
+      "archive_published": {
+        "title": "封存紀錄已發布",
+        "message": "封存紀錄已發布。"
+      },
+      "civic_nomination_submitted": {
+        "title": "公民提名已提交",
+        "message": "您的公民提名已提交審核。"
+      },
+      "civic_nomination_published": {
+        "title": "公民提名已發布",
+        "message": "您的公民提名海報已發布。"
+      },
+      "civic_nomination_withdrawn": {
+        "title": "公民提名已撤回",
+        "message": "您的公民提名已撤回。"
+      },
+      "civic_nomination_voting_opened": {
+        "title": "公民提名投票已開放",
+        "message": "您的公民提名海報已開放透明支持投票。"
+      },
+      "civic_nomination_vote_cast": {
+        "title": "公民提名投票已記錄",
+        "message": "您的公民提名支持票已記錄。"
+      },
+      "civic_nomination_voting_closed": {
+        "title": "公民提名投票已關閉",
+        "message": "您的公民提名海報的透明支持投票已關閉。"
+      },
+      "initiative_interest_match": {
+        "title": "新倡議符合您的興趣",
+        "message": "一項新倡議符合您儲存的興趣之一。"
+      },
+      "member_badge_contribution_confirmed": {
+        "title": "正式會員物品申請已確認",
+        "message": "您的 Humanity Union 正式會員物品申請已確認。"
+      },
+      "member_badge_shipped": {
+        "title": "正式會員物品已寄出",
+        "message": "您的 Humanity Union 正式會員物品申請已寄出。"
+      },
+      "member_badge_delivered": {
+        "title": "正式會員物品已送達",
+        "message": "您的 Humanity Union 正式會員物品申請已送達。"
+      },
+      "member_badge_contribution_refunded": {
+        "title": "額外會員貢獻已退款",
+        "message": "您的額外會員物品貢獻已退款。"
+      },
+      "initiative_comment_posted": {
+        "title": "倡議有新留言",
+        "message": "您的倡議討論區有新留言。"
+      },
+      "initiative_comment_reply": {
+        "title": "有人回覆您的留言",
+        "message": "有人回覆了您在倡議討論中的留言。"
+      },
+      "initiative_collaboration_interest_expressed": {
+        "title": "新的協作意願",
+        "message": "一位參與者表示願意協作您的倡議。"
+      },
+      "initiative_collaboration_interest_accepted": {
+        "title": "協作請求已接受",
+        "message": "您的協作請求已接受。您現在是此倡議的盟友。"
+      },
+      "initiative_collaboration_interest_declined": {
+        "title": "協作請求更新",
+        "message": "您的協作請求目前未被接受。"
+      },
+      "initiative_allies_invitation_received": {
+        "title": "盟友邀請",
+        "message": "您受邀成為某倡議的盟友。"
+      },
+      "initiative_allies_invitation_accepted": {
+        "title": "盟友邀請已接受",
+        "message": "一位參與者接受了您的盟友邀請。"
+      },
+      "initiative_allies_invitation_declined": {
+        "title": "盟友邀請已婉拒",
+        "message": "一位參與者婉拒了您的盟友邀請。"
+      },
+      "direct_message_received": {
+        "title": "新訊息",
+        "message": "您收到一則新的直接協作訊息。"
+      },
+      "initiative_collaboration_channel_message_received": {
+        "title": "協作頻道有新訊息",
+        "message": "您在倡議協作頻道收到一則新訊息。"
+      },
+      "initiative_collaboration_channel_system_event": {
+        "title": "協作頻道更新",
+        "message": "倡議協作頻道有新的協作更新。"
+      },
+      "initiative_collaboration_session_created": {
+        "title": "已排定新的協作場次",
+        "message": "已為一項倡議排定新的協作場次。"
+      },
+      "initiative_collaboration_session_updated": {
+        "title": "協作場次已更新",
+        "message": "協作場次已編輯或改期。"
+      },
+      "initiative_collaboration_session_cancelled": {
+        "title": "協作場次已取消",
+        "message": "協作場次已取消。"
+      },
+      "initiative_collaboration_session_attendance_changed": {
+        "title": "出席狀態已更新",
+        "message": "一位活躍盟友更新了協作場次的出席狀態。"
+      },
+      "initiative_collaboration_session_upcoming_reminder": {
+        "title": "協作場次即將開始",
+        "message": "您參與的協作場次即將開始。"
+      },
+      "shared_document_uploaded": {
+        "title": "分享了新文件",
+        "message": "您參與的對話中分享了一份新文件。"
+      },
+      "shared_document_replaced": {
+        "title": "文件已取代",
+        "message": "一份共享文件已被新版本取代。"
+      },
+      "shared_document_removed": {
+        "title": "文件已移除",
+        "message": "一份共享文件已移除。"
+      },
+      "initiative_lifecycle_stage_published": {
+        "title": "倡議階段已發布",
+        "message": "您協作的倡議有生命週期階段已發布。"
+      },
+      "blog_author_application_submitted": {
+        "title": "已收到申請",
+        "message": "已收到您的作者申請。我們將審核並盡快回覆。"
+      },
+      "blog_author_application_approved": {
+        "title": "作者申請已通過",
+        "message": "您的作者申請已通過。您現在可以在工作區使用作者工具。"
+      },
+      "blog_author_application_changes_requested": {
+        "title": "部落格作者申請需修改",
+        "message": "編輯要求您修改部落格作者申請。"
+      },
+      "blog_author_application_declined": {
+        "title": "作者申請更新",
+        "message": "您的作者申請目前未被接受。"
+      },
+      "blog_author_application_review_requested": {
+        "title": "新的作者申請",
+        "message": "一位參與者提交了作者申請。"
+      },
+      "blog_author_access_blocked": {
+        "title": "作者權限已封鎖",
+        "message": "您的作者權限已封鎖。請聯絡管理員。"
+      },
+      "blog_author_access_restored": {
+        "title": "作者權限已恢復",
+        "message": "您的作者權限已恢復。您可以再次在工作區使用作者工具。"
+      },
+      "blog_author_trusted_publishing_enabled": {
+        "title": "已啟用信任發表",
+        "message": "管理員已為您的作者帳號啟用免人工審核發表。符合條件的未來稿件可直接發表或排程。"
+      },
+      "blog_author_trusted_publishing_disabled": {
+        "title": "已停用信任發表",
+        "message": "管理員已為您的作者帳號停用免人工審核發表。未來稿件需再次經過編輯審核。"
+      },
+      "blog_publication_blocked": {
+        "title": "文章不可用",
+        "message": "您的一篇部落格文章已不再公開可用。"
+      },
+      "blog_publication_restored": {
+        "title": "文章已恢復",
+        "message": "您的部落格文章可見度已依其發表狀態恢復。"
+      },
+      "blog_publication_review_requested": {
+        "title": "文章已提交審核",
+        "message": "一位作者提交了文章供審核。"
+      },
+      "blog_post_changes_requested": {
+        "title": "文章已退回修改",
+        "message": "您的部落格文章被要求修改。請開啟發表以修訂並重新提交。"
+      },
+      "blog_post_published": {
+        "title": "文章已核准",
+        "message": "您的部落格文章已核准並發表（或已排程）。"
+      },
+      "blog_post_declined": {
+        "title": "文章未被接受",
+        "message": "您的部落格文章未被接受。請開啟發表查看詳情。"
+      },
+      "blog_comment_posted": {
+        "title": "您的部落格文章有新留言",
+        "message": "一位參與者在您的部落格文章留言。"
+      },
+      "blog_comment_reply": {
+        "title": "您的部落格留言有新回覆",
+        "message": "一位參與者回覆了您的部落格留言。"
+      },
+      "editor_access_assigned": {
+        "title": "已指派編輯權限",
+        "message": "您現在可以使用編輯面板處理指派的編輯範圍與權限。"
+      },
+      "editor_access_activated": {
+        "title": "編輯權限已啟用",
+        "message": "您的編輯權限已啟用。請開啟編輯面板繼續。"
+      },
+      "editor_access_deactivated": {
+        "title": "編輯權限已停用",
+        "message": "您的編輯權限已停用。"
+      },
+      "editor_permissions_updated": {
+        "title": "編輯權限已更新",
+        "message": "您的編輯權限已更新。"
+      },
+      "editor_editing_area_updated": {
+        "title": "編輯範圍已更新",
+        "message": "您的編輯範圍已更新。"
+      }
     }
   }
 }

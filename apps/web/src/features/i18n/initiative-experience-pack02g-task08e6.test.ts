@@ -36,6 +36,7 @@ const ASSISTANT_MODAL_KEYS = [
   "assistant.modal.working",
   "assistant.modal.conversationAria",
   "assistant.modal.sourcesPrefix",
+  "assistant.modal.sourcesLabel",
   "assistant.modal.platformKnowledge",
   "assistant.modal.roleAssistant",
   "assistant.modal.roleYou",
@@ -78,7 +79,7 @@ describe("Pack 02G Task 08E.6 — Humanity Union Assistant modal chrome", () => 
 
   it("Ukrainian modal chrome resolves for title / composer / loading / close", async () => {
     const uk = await loadUiMessagesForLocale("uk");
-    assert.equal(ieKey(uk.messages, "assistant.modal.title"), "Асистент Humanity Union");
+    assert.equal(ieKey(uk.messages, "assistant.modal.title"), "Асистент {siteName}");
     assert.equal(ieKey(uk.messages, "assistant.modal.close"), "Закрити");
     assert.equal(ieKey(uk.messages, "assistant.modal.closeAria"), "Закрити асистента");
     assert.equal(ieKey(uk.messages, "assistant.modal.send"), "Надіслати");
@@ -105,7 +106,7 @@ describe("Pack 02G Task 08E.6 — Humanity Union Assistant modal chrome", () => 
       "New Conversation",
       "Clear Current Context",
       "Use suggestion in draft editor",
-      "Could not open Humanity Union Assistant.",
+      "Could not open {siteName} Assistant.",
       "Too many Assistant requests",
     ];
     for (const locale of ["uk", "zh-Hant", "ar"] as const) {
@@ -151,18 +152,24 @@ describe("Pack 02G Task 08E.6 — Humanity Union Assistant modal chrome", () => 
     assert.doesNotMatch(modal, /"Working…"/);
     assert.doesNotMatch(modal, /"Use suggestion in draft editor"/);
 
-    // AI / API / civic content rendered raw
-    assert.match(modal, /\{turn\.text\}/);
+    // Brand + WEB_UI own participant greeting / feature / suggestions
+    assert.match(modal, /useLocalizedBrand/);
+    assert.match(modal, /resolveAssistantPresentation/);
+    assert.match(modal, /presentation\.greeting/);
+    assert.match(modal, /presentation\?\.featureLabel/);
+    assert.match(modal, /suggestedQuestions/);
+    assert.doesNotMatch(modal, /context\?\.currentFeatureLabel/);
+    assert.doesNotMatch(modal, /context\.suggestedQuestions/);
+    assert.doesNotMatch(modal, /session\.greeting/);
+    assert.doesNotMatch(modal, /context\.greeting/);
+
+    // AI / API / civic content still rendered raw (answers, titles)
     assert.match(modal, /\{suggestion\}/);
     assert.match(modal, /assistResult\.suggestions\.map/);
-    assert.match(modal, /context\?\.currentFeatureLabel/);
     assert.match(modal, /context\.stageLabel/);
     assert.match(modal, /context\.initiativeTitle/);
-    assert.match(modal, /context\.suggestedQuestions/);
-    assert.doesNotMatch(modal, /t\(".*turn\.text/);
     assert.doesNotMatch(modal, /t\(".*suggestedText/);
     assert.doesNotMatch(modal, /t\(".*stageLabel/);
-    assert.doesNotMatch(modal, /t\(".*currentFeatureLabel/);
   });
 
   it("OpenButton default label reuses author.sidebar.askAssistant", () => {

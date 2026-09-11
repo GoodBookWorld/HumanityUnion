@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -22,12 +23,27 @@ import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile
 
 import "./participation-area-section.css";
 
-function formatArea(labels: { country?: string; region?: string; community?: string }): string {
+const KNOWN_TRANSITION_POLICY =
+  "Your current area remains active until the change becomes effective.";
+
+const STATUS_KEYS = ["unverified", "verified", "pending", "active"] as const;
+type StatusKey = (typeof STATUS_KEYS)[number];
+
+function isStatusKey(value: string): value is StatusKey {
+  return (STATUS_KEYS as readonly string[]).includes(value);
+}
+
+function formatArea(
+  labels: { country?: string; region?: string; community?: string },
+  notDeclared: string,
+): string {
   const parts = [labels.community, labels.region, labels.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Not declared";
+  return parts.length > 0 ? parts.join(", ") : notDeclared;
 }
 
 export function ParticipationAreaSection() {
+  const t = useTranslations("memberProfile.participationArea");
+  const tProfile = useTranslations("memberProfile");
   const [state, setState] = useState<ParticipationAreaWorkspaceResponse | null>(null);
   const [countrySlug, setCountrySlug] = useState("");
   const [regionSlug, setRegionSlug] = useState("");
@@ -39,6 +55,18 @@ export function ParticipationAreaSection() {
   const savePhase = useSaveButtonPhase();
   const hydratedFormRef = useRef(false);
 
+  function resolveStatusLabel(code: string | undefined, fallback: StatusKey): string {
+    const value = code ?? fallback;
+    return isStatusKey(value) ? t(`status.${value}`) : value;
+  }
+
+  function resolveTransitionPolicy(explanation: string): string {
+    if (explanation.trim() === KNOWN_TRANSITION_POLICY) {
+      return t("transitionPolicyNote");
+    }
+    return t("transitionPolicyGeneric");
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -49,13 +77,9 @@ export function ParticipationAreaSection() {
           setError(null);
         }
       })
-      .catch((loadError) => {
+      .catch(() => {
         if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Unable to load Participation Area workspace.",
-          );
+          setError(t("loadError"));
         }
       })
       .finally(() => {
@@ -67,7 +91,7 @@ export function ParticipationAreaSection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (hydratedFormRef.current || !state?.activeArea) {
@@ -104,8 +128,8 @@ export function ParticipationAreaSection() {
         const nextState = await createMyParticipationArea(await submitAreaInput());
         await refreshState(nextState);
       });
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to create area.");
+    } catch {
+      setError(t("createError"));
     }
   }
 
@@ -118,8 +142,8 @@ export function ParticipationAreaSection() {
         const nextState = await requestMyParticipationAreaTransition(await submitAreaInput());
         await refreshState(nextState);
       });
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to request change.");
+    } catch {
+      setError(t("requestError"));
     }
   }
 
@@ -130,15 +154,15 @@ export function ParticipationAreaSection() {
     try {
       const nextState = await cancelMyParticipationAreaTransition();
       await refreshState(nextState);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to cancel change.");
+    } catch {
+      setError(t("cancelError"));
     } finally {
       setCancelling(false);
     }
   }
 
   if (loading) {
-    return <p>Loading Participation Area...</p>;
+    return <p>{t("loading")}</p>;
   }
 
   if (error && !state) {
@@ -153,27 +177,36 @@ export function ParticipationAreaSection() {
 
   return (
     <div className="participation-area-section">
-      <ProfileSection title="Participation Area" id="participation-area">
+      <ProfileSection title={tProfile("sections.participation-area")} id="participation-area">
         {hasActiveArea ? (
           <div className="participation-area-section__card">
-            <h3 className="participation-area-section__card-title">Current Participation Area</h3>
-            <ProfileField label="Area" value={formatArea(state.labels)} />
+            <h3 className="participation-area-section__card-title">{t("currentTitle")}</h3>
             <ProfileField
-              label="Verification status"
-              value={state.activeArea?.verificationStatus ?? "unverified"}
+              label={t("areaLabel")}
+              value={formatArea(state.labels, t("notDeclared"))}
             />
-            <ProfileField label="Status" value={state.activeArea?.status ?? "active"} />
+            <ProfileField
+              label={t("verificationStatus")}
+              value={resolveStatusLabel(state.activeArea?.verificationStatus, "unverified")}
+            />
+            <ProfileField
+              label={t("statusLabel")}
+              value={resolveStatusLabel(state.activeArea?.status, "active")}
+            />
           </div>
         ) : (
-          <p>You have not declared a Participation Area yet.</p>
+          <p>{t("empty")}</p>
         )}
 
         {state.pendingTransition ? (
           <div className="participation-area-section__card participation-area-section__card--pending">
-            <h3 className="participation-area-section__card-title">Pending Change</h3>
-            <ProfileField label="Requested area" value={formatArea(state.pendingLabels ?? {})} />
+            <h3 className="participation-area-section__card-title">{t("pendingTitle")}</h3>
             <ProfileField
-              label="Effective at"
+              label={t("requestedArea")}
+              value={formatArea(state.pendingLabels ?? {}, t("notDeclared"))}
+            />
+            <ProfileField
+              label={t("effectiveAt")}
               value={new Date(state.pendingTransition.effectiveAt).toLocaleString()}
             />
             <Button
@@ -181,7 +214,7 @@ export function ParticipationAreaSection() {
               disabled={cancelling}
               onClick={() => void handleCancelTransition()}
             >
-              {cancelling ? "Cancelling..." : "Cancel pending change"}
+              {cancelling ? t("cancelling") : t("cancelPending")}
             </Button>
           </div>
         ) : null}
@@ -191,12 +224,12 @@ export function ParticipationAreaSection() {
           onSubmit={(event) => void (hasActiveArea ? handleTransition(event) : handleCreate(event))}
         >
           <h3 className="participation-area-section__card-title">
-            {hasActiveArea ? "Change Participation Area" : "Declare Participation Area"}
+            {hasActiveArea ? t("changeTitle") : t("declareTitle")}
           </h3>
           <CountrySelect
             id="participation-country"
-            label="Participation country (not nationality)"
-            helperText="Choose the country where you participate in civic activity."
+            label={t("countryLabel")}
+            helperText={t("countryHelper")}
             value={countrySlug}
             onChange={(nextCountry) => {
               setCountrySlug(nextCountry);
@@ -208,7 +241,7 @@ export function ParticipationAreaSection() {
           />
           <RegionSelect
             id="participation-region"
-            label="Participation region (optional)"
+            label={t("regionLabel")}
             countryCode={countrySlug}
             value={regionSlug}
             includeOther
@@ -222,15 +255,13 @@ export function ParticipationAreaSection() {
           />
           {isCanonicalOtherRegion(regionSlug) ? (
             <label className="participation-area-section__field">
-              <span>Region name</span>
+              <span>{t("regionName")}</span>
               <input
                 value={regionLabel}
                 onChange={(event) => setRegionLabel(event.target.value)}
                 required
               />
-              <span className="participation-area-section__note">
-                Free-text fallback — not a canonical region identifier.
-              </span>
+              <span className="participation-area-section__note">{t("regionNameNote")}</span>
             </label>
           ) : null}
           <CitySelect
@@ -245,32 +276,31 @@ export function ParticipationAreaSection() {
           <Button type="submit" variant="primary" disabled={savePhase.isBusy} ariaLive="polite">
             {resolveSaveButtonLabel(
               savePhase.phase,
-              hasActiveArea ? "Request area change" : "Create Participation Area",
+              hasActiveArea ? t("requestChange") : t("createArea"),
             )}
           </Button>
           {hasActiveArea ? (
-            <p className="participation-area-section__note">{state.transitionPolicy.explanation}</p>
+            <p className="participation-area-section__note">
+              {resolveTransitionPolicy(state.transitionPolicy.explanation)}
+            </p>
           ) : null}
         </form>
 
         <div className="participation-area-section__card participation-area-section__card--info">
-          <h3 className="participation-area-section__card-title">How this affects voting</h3>
-          <p>
-            Participation Area is declared by you. Eligibility uses your declared civic geography,
-            not IP address, VPN signals, or automatic geolocation.
-          </p>
-          <p>Verification status is shown for transparency only. It does not change vote weight.</p>
-          <p>World-scope initiatives remain open to all registered participants.</p>
+          <h3 className="participation-area-section__card-title">{t("votingTitle")}</h3>
+          <p>{t("votingBody1")}</p>
+          <p>{t("votingBody2")}</p>
+          <p>{t("votingBody3")}</p>
           <ul className="participation-area-section__eligibility">
-            <li>World decisions</li>
+            <li>{t("worldDecisions")}</li>
             {state.eligibilityPreview.country ? (
-              <li>Country decisions: {state.eligibilityPreview.country}</li>
+              <li>{t("countryDecisions", { name: state.eligibilityPreview.country })}</li>
             ) : null}
             {state.eligibilityPreview.region ? (
-              <li>Region decisions: {state.eligibilityPreview.region}</li>
+              <li>{t("regionDecisions", { name: state.eligibilityPreview.region })}</li>
             ) : null}
             {state.eligibilityPreview.community ? (
-              <li>Community decisions: {state.eligibilityPreview.community}</li>
+              <li>{t("communityDecisions", { name: state.eligibilityPreview.community })}</li>
             ) : null}
           </ul>
         </div>

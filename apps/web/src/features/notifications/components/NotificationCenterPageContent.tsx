@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DirectConversationSummary } from "@hu/types";
@@ -19,10 +20,14 @@ import {
   fetchMyNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-  priorityLabel,
   type MemberNotificationView,
 } from "../api";
 import { dispatchNotificationsChanged, NOTIFICATIONS_CHANGED_EVENT } from "../notification-events";
+import {
+  resolveNotificationPresentation,
+  resolveNotificationPriorityLabel,
+  type NotificationsTranslator,
+} from "../resolve-notification-presentation";
 import {
   completeReminder,
   deleteReminder,
@@ -91,6 +96,26 @@ function dedupeChannelNotificationsByInitiative(
   return [...latestByInitiative.values()];
 }
 
+function relatedActionLabel(eventType: string, t: NotificationsTranslator): string {
+  if (
+    eventType.startsWith("editor_access_") ||
+    eventType.startsWith("editor_permissions_") ||
+    eventType.startsWith("editor_editing_area_")
+  ) {
+    return t("actions.viewEditorPanel");
+  }
+  if (eventType === "blog_publication_review_requested") {
+    return t("actions.reviewPublication");
+  }
+  if (eventType.startsWith("blog_author_application_")) {
+    return t("actions.viewAuthoring");
+  }
+  if (eventType.startsWith("blog_post_")) {
+    return t("actions.openPublishing");
+  }
+  return t("actions.viewRelatedCivicRecord");
+}
+
 function NotificationRow({
   notification,
   viewerParticipantId,
@@ -102,7 +127,9 @@ function NotificationRow({
   onUpdated: () => void;
   onReviewAuthorApplication?: (applicationId: string) => void;
 }) {
+  const t = useTranslations("notifications");
   const [busy, setBusy] = useState(false);
+  const presentation = resolveNotificationPresentation(notification, t);
 
   async function handleMarkRead() {
     setBusy(true);
@@ -136,16 +163,16 @@ function NotificationRow({
   return (
     <CommunicationCard
       mode="notification"
-      title={notification.title}
-      description={notification.message}
-      meta={`Recorded ${formatInitiativeDate(notification.createdAt)}`}
+      title={presentation.title}
+      description={presentation.message}
+      meta={t("meta.recorded", { date: formatInitiativeDate(notification.createdAt) })}
       unread={notification.status === "unread"}
-      unreadLabel="Unread notification"
+      unreadLabel={t("unread.notification")}
       badge={
         <span
           className={`notifications-page__badge notifications-page__badge--${notification.priority}`}
         >
-          {priorityLabel(notification.priority)}
+          {resolveNotificationPriorityLabel(notification.priority, t)}
         </span>
       }
       actions={
@@ -174,7 +201,7 @@ function NotificationRow({
                 onReviewAuthorApplication(notification.relatedEntityId);
               }}
             >
-              Review application
+              {t("actions.reviewApplication")}
             </button>
           ) : notification.relatedUrl ? (
             <Link
@@ -186,17 +213,7 @@ function NotificationRow({
                 }
               }}
             >
-              {notification.eventType.startsWith("editor_access_") ||
-              notification.eventType.startsWith("editor_permissions_") ||
-              notification.eventType.startsWith("editor_editing_area_")
-                ? "View Editor Panel"
-                : notification.eventType === "blog_publication_review_requested"
-                  ? "Review publication"
-                  : notification.eventType.startsWith("blog_author_application_")
-                    ? "View Authoring"
-                    : notification.eventType.startsWith("blog_post_")
-                      ? "Open Publishing"
-                      : "View related civic record"}
+              {relatedActionLabel(notification.eventType, t)}
             </Link>
           ) : null}
           {notification.status === "unread" ? (
@@ -206,7 +223,7 @@ function NotificationRow({
               disabled={busy}
               onClick={() => void handleMarkRead()}
             >
-              Mark read
+              {t("actions.markRead")}
             </button>
           ) : null}
           <button
@@ -215,7 +232,7 @@ function NotificationRow({
             disabled={busy}
             onClick={() => void handleArchive()}
           >
-            Archive
+            {t("actions.archive")}
           </button>
         </>
       }
@@ -224,17 +241,19 @@ function NotificationRow({
 }
 
 function DirectMessageRow({ conversation }: { conversation: DirectConversationSummary }) {
+  const t = useTranslations("notifications");
+
   return (
     <CommunicationCard
       mode="message"
       avatarUrl={conversation.otherParticipant.avatarUrl}
       title={conversation.otherParticipant.displayName}
-      description={conversation.lastMessagePreview ?? "No messages yet."}
+      description={conversation.lastMessagePreview ?? t("empty.noMessagesYet")}
       meta={formatDirectConversationActivity(conversation.lastMessageAt)}
       unread={conversation.unread}
-      unreadLabel={`Unread message from ${conversation.otherParticipant.displayName}`}
+      unreadLabel={t("unread.messageFrom", { name: conversation.otherParticipant.displayName })}
       href={`/workspace/messages/${encodeURIComponent(conversation.conversationId)}`}
-      ariaLabel={`Open conversation with ${conversation.otherParticipant.displayName}`}
+      ariaLabel={t("openConversationAria", { name: conversation.otherParticipant.displayName })}
     />
   );
 }
@@ -248,16 +267,19 @@ function DirectMessageRow({ conversation }: { conversation: DirectConversationSu
  * unread-only list on next load without any extra call from here.
  */
 function ChannelMessageRow({ notification }: { notification: MemberNotificationView }) {
+  const t = useTranslations("notifications");
+  const presentation = resolveNotificationPresentation(notification, t);
+
   return (
     <CommunicationCard
       mode="message"
-      title={notification.title}
-      description={notification.message}
+      title={presentation.title}
+      description={presentation.message}
       meta={formatInitiativeDate(notification.createdAt)}
       unread
-      unreadLabel="Unread Initiative Collaboration Channel activity"
+      unreadLabel={t("unread.channelActivity")}
       href={notification.relatedUrl}
-      ariaLabel={notification.title}
+      ariaLabel={presentation.title}
     />
   );
 }
@@ -326,6 +348,7 @@ function ArchiveRow({
     | { kind: "reminder"; record: CommunicationReminderView; timestamp: number };
   onDeleted: () => void;
 }) {
+  const t = useTranslations("notifications");
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
@@ -350,12 +373,17 @@ function ArchiveRow({
       ? item.record.archivedAt ?? item.record.createdAt
       : item.record.completedAt ?? item.record.createdAt;
 
+  const presentation =
+    item.kind === "notification"
+      ? resolveNotificationPresentation(item.record, t)
+      : { title: record.title, message: record.message };
+
   return (
     <CommunicationCard
       mode={item.kind}
-      title={record.title}
-      description={record.message}
-      meta={`Archived ${formatInitiativeDate(timestampLabel)}`}
+      title={presentation.title}
+      description={presentation.message}
+      meta={t("meta.archived", { date: formatInitiativeDate(timestampLabel) })}
       actions={
         <button
           type="button"
@@ -371,7 +399,7 @@ function ArchiveRow({
             width={58}
             height={58}
           />
-          Delete
+          {t("actions.delete")}
         </button>
       }
     />
@@ -381,6 +409,7 @@ function ArchiveRow({
 type SectionLoadState = "loading" | "unauthenticated" | "ready" | "error";
 
 export function NotificationCenterPageContent() {
+  const t = useTranslations("notifications");
   const [authenticated, setAuthenticated] = useState(false);
   const [viewerParticipantId, setViewerParticipantId] = useState<string | null>(null);
 
@@ -427,12 +456,12 @@ export function NotificationCenterPageContent() {
         setNotifications([]);
       } else {
         setNotificationsError(
-          fetchError instanceof Error ? fetchError.message : "Notification center request failed.",
+          fetchError instanceof Error ? fetchError.message : t("errors.notificationsFailed"),
         );
         setNotificationsState("error");
       }
     }
-  }, []);
+  }, [t]);
 
   const loadConversations = useCallback(async () => {
     setConversationsState((current) => (current === "ready" ? current : "loading"));
@@ -447,12 +476,12 @@ export function NotificationCenterPageContent() {
         setConversations([]);
       } else {
         setConversationsError(
-          fetchError instanceof Error ? fetchError.message : "Messages preview request failed.",
+          fetchError instanceof Error ? fetchError.message : t("errors.messagesFailed"),
         );
         setConversationsState("error");
       }
     }
-  }, []);
+  }, [t]);
 
   const loadReminders = useCallback(async () => {
     setRemindersState((current) => (current === "ready" ? current : "loading"));
@@ -582,11 +611,9 @@ export function NotificationCenterPageContent() {
         <div className="notifications-page__header-copy">
           <div className="notifications-page__title-row">
             {authenticated ? <NotificationCenterParticipantIdentity /> : null}
-            <h1 className="notifications-page__title hu-heading-1">Notification Center</h1>
+            <h1 className="notifications-page__title hu-heading-1">{t("title")}</h1>
           </div>
-          <p className="notifications-page__summary">
-            Your active hub for civic notifications, incoming messages, and personal reminders.
-          </p>
+          <p className="notifications-page__summary">{t("summary")}</p>
         </div>
         <div className="notifications-page__header-assistant">
           <HumanityUnionAssistantWidget surfaceId="notifications" />
@@ -595,9 +622,9 @@ export function NotificationCenterPageContent() {
 
       {!authenticated ? (
         <div className="notifications-page__login-prompt">
-          <p>Sign in to view your Notification Center.</p>
+          <p>{t("signInPrompt")}</p>
           <Link className="notifications-page__link" href="/login">
-            Sign in
+            {t("signIn")}
           </Link>
         </div>
       ) : (
@@ -615,7 +642,7 @@ export function NotificationCenterPageContent() {
             >
               <div className="notifications-page__section-header">
                 <h2 id="notifications-section-heading" className="notifications-page__section-title">
-                  Notifications
+                  {t("sections.notifications")}
                 </h2>
                 {unreadNotificationsCount > 0 ? (
                   <button
@@ -623,19 +650,19 @@ export function NotificationCenterPageContent() {
                     className="notifications-page__button"
                     onClick={() => void handleMarkAllRead()}
                   >
-                    Mark all read
+                    {t("actions.markAllRead")}
                   </button>
                 ) : null}
               </div>
 
               {notificationsState === "loading" ? (
-                <p className="notifications-page__empty">Loading notifications…</p>
+                <p className="notifications-page__empty">{t("loading.notifications")}</p>
               ) : null}
               {notificationsState === "error" ? (
                 <p className="notifications-page__error">{notificationsError}</p>
               ) : null}
               {notificationsState === "ready" && activeNotifications.length === 0 ? (
-                <p className="notifications-page__empty">No active notifications.</p>
+                <p className="notifications-page__empty">{t("empty.notifications")}</p>
               ) : null}
               {notificationsState === "ready" && activeNotifications.length > 0 ? (
                 <ul className="notifications-page__list">
@@ -655,15 +682,15 @@ export function NotificationCenterPageContent() {
             <section className="notifications-page__section" aria-labelledby="messages-section-heading">
               <div className="notifications-page__section-header">
                 <h2 id="messages-section-heading" className="notifications-page__section-title">
-                  Messages
+                  {t("sections.messages")}
                 </h2>
                 <Link className="notifications-page__link" href="/workspace/messages">
-                  Open Workspace Messages
+                  {t("actions.openWorkspaceMessages")}
                 </Link>
               </div>
 
               {conversationsState === "loading" ? (
-                <p className="notifications-page__empty">Loading messages…</p>
+                <p className="notifications-page__empty">{t("loading.messages")}</p>
               ) : null}
               {conversationsState === "error" ? (
                 <p className="notifications-page__error">{conversationsError}</p>
@@ -671,7 +698,7 @@ export function NotificationCenterPageContent() {
               {conversationsState === "ready" &&
               unreadDirectConversations.length === 0 &&
               unreadChannelConversations.length === 0 ? (
-                <p className="notifications-page__empty">No unread messages.</p>
+                <p className="notifications-page__empty">{t("empty.messages")}</p>
               ) : null}
               {conversationsState === "ready" &&
               (unreadDirectConversations.length > 0 || unreadChannelConversations.length > 0) ? (
@@ -689,15 +716,15 @@ export function NotificationCenterPageContent() {
             <section className="notifications-page__section" aria-labelledby="reminders-section-heading">
               <div className="notifications-page__section-header">
                 <h2 id="reminders-section-heading" className="notifications-page__section-title">
-                  Reminders
+                  {t("sections.reminders")}
                 </h2>
               </div>
 
               {remindersState === "loading" ? (
-                <p className="notifications-page__empty">Loading reminders…</p>
+                <p className="notifications-page__empty">{t("loading.reminders")}</p>
               ) : null}
               {remindersState === "ready" && activeReminders.length === 0 ? (
-                <p className="notifications-page__empty">No reminders yet.</p>
+                <p className="notifications-page__empty">{t("empty.reminders")}</p>
               ) : null}
               {remindersState === "ready" && activeReminders.length > 0 ? (
                 <ul className="notifications-page__list">
@@ -733,7 +760,7 @@ export function NotificationCenterPageContent() {
                   width={58}
                   height={58}
                 />
-                Archive
+                {t("sections.archive")}
               </h2>
               {archivedNotifications.length > 0 ? (
                 <button
@@ -741,13 +768,13 @@ export function NotificationCenterPageContent() {
                   className="notifications-page__button"
                   onClick={() => setClearArchiveOpen(true)}
                 >
-                  Clear archive
+                  {t("actions.clearArchived")}
                 </button>
               ) : null}
             </div>
 
             {archiveItems.length === 0 ? (
-              <p className="notifications-page__empty">Nothing archived yet.</p>
+              <p className="notifications-page__empty">{t("empty.archive")}</p>
             ) : (
               <ul className="notifications-page__archive-list">
                 {archiveItems.map((item) => (
@@ -768,10 +795,10 @@ export function NotificationCenterPageContent() {
 
           <ConfirmDialog
             isOpen={clearArchiveOpen}
-            title="Clear notification archive?"
-            description="This will permanently remove all archived notifications. This action cannot be undone."
-            cancelLabel="Cancel"
-            confirmLabel="Clear archive"
+            title={t("clearArchiveDialog.title")}
+            description={t("clearArchiveDialog.description")}
+            cancelLabel={t("actions.cancel")}
+            confirmLabel={t("clearArchiveDialog.confirm")}
             destructive
             isConfirming={clearingArchive}
             onCancel={() => {

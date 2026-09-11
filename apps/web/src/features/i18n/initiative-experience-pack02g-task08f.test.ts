@@ -96,6 +96,8 @@ describe("Pack 02G Task 08F — Assistant entry / PC intake / geography", () => 
 
   it("Ukrainian Assistant entry / PC intake / geography resolve without English leftovers", async () => {
     const uk = await loadUiMessagesForLocale("uk");
+    assert.match(ieKey(uk.messages, "assistant.entry.title"), /\{siteName\}/);
+    assert.match(ieKey(uk.messages, "assistant.entry.openAria"), /\{siteName\}/);
     assert.doesNotMatch(ieKey(uk.messages, "assistant.entry.openAria"), /Open Humanity/);
     assert.doesNotMatch(ieKey(uk.messages, "assistant.entry.askAssistant"), /Ask Assistant/);
     assert.doesNotMatch(ieKey(uk.messages, "geography.world"), /^World$/);
@@ -133,8 +135,10 @@ describe("Pack 02G Task 08F — Assistant entry / PC intake / geography", () => 
     const fab = readWeb(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
     );
+    assert.match(fab, /useLocalizedBrand/);
     assert.match(fab, /assistant\.entry\.openAria/);
     assert.match(fab, /assistant\.entry\.title/);
+    assert.match(fab, /siteName/);
     assert.doesNotMatch(fab, /aria-label="Open Humanity Union Assistant"/);
 
     const widget = readWeb(

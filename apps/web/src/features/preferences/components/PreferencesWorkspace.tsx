@@ -24,6 +24,8 @@ import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
 import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { PreferenceOption, PreferenceOptionGrid } from "./PreferenceOption";
@@ -85,6 +87,8 @@ export function PreferencesWorkspace() {
   const t = useTranslations("preferences");
   const tAuth = useTranslations("auth");
   const tExperience = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
   const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,7 +212,7 @@ export function PreferencesWorkspace() {
 
       <SurfaceAssistantEntry
         surfaceId="preferences"
-        label={tExperience("assistant.entry.preferencesLauncher")}
+        label={tExperience("assistant.entry.preferencesLauncher", { siteName })}
       />
 
       <ProfileSection title={t("sections.language")} id="language">

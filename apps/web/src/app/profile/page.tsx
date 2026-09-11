@@ -1,6 +1,5 @@
-import { MemberWorkspace } from "../../components/member/MemberWorkspace";
+import { ProfilePageShell } from "../../features/member-profile/components/ProfilePageShell";
 import { OwnerProfilePreview } from "../../features/member-profile/components/OwnerProfilePreview";
-import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 
 import "./profile-page.css";
 
@@ -16,13 +15,9 @@ import "./profile-page.css";
 export default function ProfilePage() {
   return (
     <main className="profile-page humanity-workspace-page">
-      <MemberWorkspace
-        title="Profile"
-        subtitle="Preview how your profile appears to other Participants"
-        workspaceNavigation={<WorkspaceNavigation />}
-      >
+      <ProfilePageShell>
         <OwnerProfilePreview />
-      </MemberWorkspace>
+      </ProfilePageShell>
     </main>
   );
 }

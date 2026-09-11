@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { HumanityUnionAssistantSurfaceId } from "@hu/types";
 
 import { HumanityUnionAssistantOpenButton } from "./HumanityUnionAssistantOpenButton";
@@ -17,7 +19,8 @@ export function SurfaceAssistantEntry({
   readonly label?: string;
 }) {
   const t = useTranslations("initiativeExperience");
-  const resolvedLabel = label ?? t("assistant.entry.openAssistant");
+  const brand = useLocalizedBrand();
+  const resolvedLabel = label ?? t("assistant.entry.openAssistant", { siteName: brand.siteName });
 
   return (
     <div className="hu-assistant-surface-entry">

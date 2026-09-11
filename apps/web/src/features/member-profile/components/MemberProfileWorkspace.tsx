@@ -10,6 +10,7 @@ import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { ApiUnavailableState } from "../../../design-system/components/ApiUnavailableState";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { AvatarImageUploadField } from "../../media-upload/components/AvatarImageUploadField";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { uploadAvatarImage } from "../../media-upload/media-upload-api";
@@ -53,6 +54,8 @@ const VISIBILITY_OPTION_KEYS = ["public", "members_only", "private"] as const;
 
 export function MemberProfileWorkspace() {
   const t = useTranslations("memberProfile");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [privacy, setPrivacy] = useState<MemberProfilePrivacySettings | null>(null);
   const [statistics, setStatistics] = useState<ParticipantStatistics | null>(null);
@@ -245,7 +248,7 @@ export function MemberProfileWorkspace() {
       <ProfileSection title={t("title")}>
         <ApiUnavailableState
           title={t("unavailableTitle")}
-          explanation={t("unavailableExplanation")}
+          explanation={t("unavailableExplanation", siteName)}
           retryHref="/member"
         />
       </ProfileSection>
