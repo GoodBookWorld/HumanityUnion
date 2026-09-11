@@ -2,7 +2,8 @@
  * Closure 07 — language activation / historical backfill orchestrator.
  *
  * Default DRY RUN. --execute delegates to existing bounded CT residual retry
- * + Media editorial PLP enqueue. Provider concurrency remains existing policy (≤1).
+ * + consumer-visible Media PLP enqueue (all /media families). Provider
+ * concurrency remains existing policy (≤1).
  */
 
 import {
@@ -44,6 +45,8 @@ export type ActivateLanguageLocalizationInput = {
   readonly kinds?: readonly StagingWarmSourceKind[];
   readonly plannerDeps?: LanguageHistoricalBackfillPlannerDeps;
   readonly enqueuePlpEditorial?: (locales: readonly string[]) => Promise<void>;
+  /** Optional override for full consumer-visible Media PLP activation enqueue. */
+  readonly enqueuePlpMediaConsumer?: (locales: readonly string[]) => Promise<void>;
   readonly runResidualRetry?: typeof runPublicLocalizationResidualRetry;
   /**
    * When true, skip corpus discovery in readiness (tests / status-only).
@@ -55,7 +58,7 @@ export type ActivateLanguageLocalizationInput = {
 /**
  * Single logical activation contract for one locale.
  * Dry-run: plan + readiness only (zero writes).
- * Execute: residual CT retry for eligible kinds + editorial PLP enqueue.
+ * Execute: residual CT retry for eligible kinds + Media consumer PLP enqueue.
  */
 export async function activateLanguageLocalization(
   input: ActivateLanguageLocalizationInput,
@@ -116,45 +119,29 @@ export async function activateLanguageLocalization(
     );
 
     const needsPlp = plan.items.some(
-      (item) =>
-        item.owner === "PLP" &&
-        item.kindId === "civic_media_editorial" &&
-        item.workItemsRequired > 0,
+      (item) => item.owner === "PLP" && item.workItemsRequired > 0,
     );
     if (needsPlp) {
       const enqueue =
+        input.enqueuePlpMediaConsumer ??
         input.enqueuePlpEditorial ??
         (async (locales: readonly string[]) => {
-          const { enqueueCivicMediaEditorialPlpBuilds } = await import(
-            "../published-localized-presentation/universal/editorial-build-trigger.js"
+          const { enqueueConsumerVisibleMediaPlpBuildsForLocales } = await import(
+            "../published-localized-presentation/universal/media-consumer-plp-activation-enqueue.js"
           );
-          await enqueueCivicMediaEditorialPlpBuilds({ locales: [...locales] });
+          await enqueueConsumerVisibleMediaPlpBuildsForLocales({
+            locales: [...locales],
+          });
         });
       await enqueue([locale]);
       plpEditorialEnqueued = true;
       writes += 1;
-      notes.push("PLP editorial enqueue requested for locale.");
-    } else {
-      notes.push("PLP editorial already CURRENT — no enqueue.");
-    }
-
-    const carouselWork = plan.items
-      .filter(
-        (item) =>
-          item.owner === "PLP" &&
-          item.action === "enqueue_plp_carousel" &&
-          item.workItemsRequired > 0,
-      )
-      .reduce((sum, item) => sum + item.workItemsRequired, 0);
-    if (carouselWork > 0) {
       notes.push(
-        `PLP carousel HU-owned workItems=${carouselWork} — use bounded ` +
-          `pnpm --filter @hu/api materialize:media-plp-carousel -- --locale ${locale} ` +
-          `(never reconcile:public-localization / unbounded warm). ` +
-          `Provider concurrency policy unchanged (≤1).`,
+        "PLP Media consumer enqueue requested for locale " +
+          "(editorial + principles/trusted/fact/propaganda + bounded news).",
       );
     } else {
-      notes.push("PLP carousel HU-owned static catalog CURRENT within probe bound.");
+      notes.push("PLP Media consumer families already CURRENT — no enqueue.");
     }
 
     notes.push(

@@ -272,13 +272,46 @@ describe("Localization Authority Closure 07 — language activation", () => {
       deps: {
         auditCorpus: async () => missingAuditForLocale("fr", 1) as never,
         classifyMediaEditorial: async () => "MISSING",
+        assessCarouselPlp: async () => ({
+          total: {
+            ...emptyLanguageLocalizationCountBucket(),
+            missing: 4,
+            workItemsRequired: 4,
+          },
+          byKind: [
+            "civic_media_principle",
+            "civic_media_trusted",
+            "civic_media_fact_check",
+            "civic_media_propaganda",
+            "public_news",
+          ].map((kindId) => ({
+            kindId,
+            counts:
+              kindId === "public_news"
+                ? emptyLanguageLocalizationCountBucket()
+                : {
+                    ...emptyLanguageLocalizationCountBucket(),
+                    missing: 1,
+                    workItemsRequired: 1,
+                  },
+            checked: kindId === "public_news" ? 0 : 1,
+          })),
+        }),
       },
     });
     assert.equal(plan.registryEligible, true);
     assert.ok(plan.summary.ctWorkItems > 0);
     assert.ok(plan.summary.plpWorkItems > 0);
     assert.ok(
-      plan.excluded.some((row) => row.kindId === "public_news"),
+      plan.items.some(
+        (item) =>
+          item.owner === "PLP" && item.kindId === "civic_media_principle",
+      ),
+    );
+    assert.ok(
+      plan.items.some(
+        (item) => item.owner === "PLP" && item.kindId === "public_news",
+      ),
     );
     assert.ok(
       plan.excluded.some((row) => row.kindId === "knowledge_article"),
@@ -381,6 +414,20 @@ describe("Localization Authority Closure 07 — language activation", () => {
       deps: {
         auditCorpus: async () => emptyAuditForLocale("pt") as never,
         classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+        assessCarouselPlp: async () => ({
+          total: emptyLanguageLocalizationCountBucket(),
+          byKind: [
+            "civic_media_principle",
+            "civic_media_trusted",
+            "civic_media_fact_check",
+            "civic_media_propaganda",
+            "public_news",
+          ].map((kindId) => ({
+            kindId,
+            counts: emptyLanguageLocalizationCountBucket(),
+            checked: 0,
+          })),
+        }),
       },
     });
     assert.equal(plan.locale, "pt");
@@ -447,6 +494,21 @@ describe("Localization Authority Closure 07 — language activation", () => {
 
     let residualCalls = 0;
     let plpCalls = 0;
+    const carouselCurrent = {
+      total: emptyLanguageLocalizationCountBucket(),
+      byKind: [
+        "civic_media_principle",
+        "civic_media_trusted",
+        "civic_media_fact_check",
+        "civic_media_propaganda",
+        "public_news",
+      ].map((kindId) => ({
+        kindId,
+        counts: emptyLanguageLocalizationCountBucket(),
+        checked: 0,
+      })),
+    };
+
     const dry = await activateLanguageLocalization({
       locale: "fr",
       execute: false,
@@ -454,12 +516,13 @@ describe("Localization Authority Closure 07 — language activation", () => {
       plannerDeps: {
         auditCorpus: async () => missingAuditForLocale("fr", 1) as never,
         classifyMediaEditorial: async () => "MISSING",
+        assessCarouselPlp: async () => carouselCurrent,
       },
       runResidualRetry: async () => {
         residualCalls += 1;
         throw new Error("should not run in dry-run");
       },
-      enqueuePlpEditorial: async () => {
+      enqueuePlpMediaConsumer: async () => {
         plpCalls += 1;
       },
     });
@@ -477,6 +540,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
       plannerDeps: {
         auditCorpus: async () => missingAuditForLocale("fr", 1) as never,
         classifyMediaEditorial: async () => "MISSING",
+        assessCarouselPlp: async () => carouselCurrent,
       },
       runResidualRetry: async () => {
         residualCalls += 1;
@@ -500,7 +564,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
           abortReason: null,
         };
       },
-      enqueuePlpEditorial: async () => {
+      enqueuePlpMediaConsumer: async () => {
         plpCalls += 1;
       },
     });
@@ -519,6 +583,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
       plannerDeps: {
         auditCorpus: async () => emptyAuditForLocale("fr") as never,
         classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+        assessCarouselPlp: async () => carouselCurrent,
       },
       runResidualRetry: async () => {
         residualCalls += 1;
@@ -542,7 +607,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
           abortReason: null,
         };
       },
-      enqueuePlpEditorial: async () => {
+      enqueuePlpMediaConsumer: async () => {
         plpCalls += 1;
       },
     });
@@ -555,7 +620,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
       path.join(apiSrc, "modules/language/language-registry/language-registry.service.ts"),
       "utf8",
     );
-    assert.match(service, /enqueueCivicMediaEditorialPlpBuilds/);
+    assert.match(service, /enqueueConsumerVisibleMediaPlpBuildsForLocales/);
     assert.doesNotMatch(service, /seoIndexingEnabled:\s*true/);
     assert.doesNotMatch(
       service,
@@ -563,12 +628,12 @@ describe("Localization Authority Closure 07 — language activation", () => {
     );
   });
 
-  it("CT kinds include owned public kinds; exclude public_news; Knowledge is no-owner", () => {
+  it("CT kinds include owned public kinds; public_news is PLP-owned; Knowledge is no-owner", () => {
     assert.ok(LANGUAGE_ACTIVATION_CT_OWNED_KINDS.includes("initiative"));
     assert.ok(LANGUAGE_ACTIVATION_CT_OWNED_KINDS.includes("blog_post"));
     assert.ok(LANGUAGE_ACTIVATION_CT_OWNED_KINDS.includes("collaborative_analysis"));
     assert.ok(!LANGUAGE_ACTIVATION_CT_OWNED_KINDS.includes("public_news" as never));
-    assert.deepEqual([...LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS], ["public_news"]);
+    assert.deepEqual([...LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS], []);
     assert.deepEqual([...LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS], ["knowledge_article"]);
   });
 

@@ -235,8 +235,8 @@ describe("Localization Authority Closure 05 — Media registry-driven targets", 
       ),
       "utf8",
     );
-    assert.match(hook, /public_news[\s\S]{0,80}return 0/);
-    assert.match(newsTrigger, /return 0|original-language-only/i);
+    assert.match(hook, /PUBLIC_NEWS[\s\S]{0,400}?return 0/);
+    assert.match(newsTrigger, /MEDIA_PLP_CAROUSEL_NEWS_LIMIT/);
   });
 
   it("O. WEB_UI chrome remains WEB_UI authority on /media", () => {
@@ -284,7 +284,7 @@ describe("Localization Authority Closure 05 — Media registry-driven targets", 
     );
   });
 
-  it("Admin CT enable path re-registers processor + enqueues editorial (source guard)", () => {
+  it("Admin CT enable path re-registers processor + enqueues Media consumer PLP (source guard)", () => {
     const service = readFileSync(
       path.join(
         repoRoot,
@@ -293,7 +293,7 @@ describe("Localization Authority Closure 05 — Media registry-driven targets", 
       "utf8",
     );
     assert.match(service, /becameCtEligible|contentTranslationEnabled/);
-    assert.match(service, /enqueueCivicMediaEditorialPlpBuilds/);
+    assert.match(service, /enqueueConsumerVisibleMediaPlpBuildsForLocales/);
     assert.match(service, /registerPlpAutoBuildProcessor/);
   });
 });

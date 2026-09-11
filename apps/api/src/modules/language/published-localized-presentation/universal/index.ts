@@ -66,6 +66,7 @@ export type {
   BootstrapPlpAutoBuildRuntimeResult,
 } from "./register-plp-auto-build-processor.js";
 export { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";
+export { enqueueConsumerVisibleMediaPlpBuildsForLocales } from "./media-consumer-plp-activation-enqueue.js";
 export { healCurrentConsumerProviderFailures } from "./current-consumer-provider-heal.js";
 export {
   getPlpAutoBuildRuntimeSnapshot,

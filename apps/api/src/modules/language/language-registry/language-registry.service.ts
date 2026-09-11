@@ -13,8 +13,10 @@ import type {
   LanguageUiTranslationStatus,
 } from "@hu/types";
 import {
+  DEFAULT_PLATFORM_LANGUAGE,
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
+  normalizeLanguageRegistryLocaleKey,
 } from "@hu/types";
 
 import {
@@ -371,22 +373,27 @@ export async function updateAdminLanguage(input: {
     invalidateGlobalSearchIndex();
   }
 
-  // Closure 05 — Admin enabling content translation must enqueue Media HU PLP
-  // builds for that locale without a code/env redeploy.
+  // Closure 05 / activation auto-materialization — Admin enabling content
+  // translation schedules bounded Media PLP for all consumer-visible families
+  // (editorial + principles/trusted/fact/propaganda + bounded news).
   const becameCtEligible =
     updated.enabled === true &&
     updated.contentTranslationEnabled === true &&
     !(before.enabled === true && before.contentTranslationEnabled === true);
-  if (becameCtEligible && updated.locale.trim().toLowerCase() !== "en") {
+  if (
+    becameCtEligible &&
+    normalizeLanguageRegistryLocaleKey(updated.locale) !==
+      normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
+  ) {
     try {
-      const { enqueueCivicMediaEditorialPlpBuilds } = await import(
-        "../published-localized-presentation/universal/editorial-build-trigger.js"
+      const { enqueueConsumerVisibleMediaPlpBuildsForLocales } = await import(
+        "../published-localized-presentation/universal/media-consumer-plp-activation-enqueue.js"
       );
       const { registerPlpAutoBuildProcessor } = await import(
         "../published-localized-presentation/universal/register-plp-auto-build-processor.js"
       );
       await registerPlpAutoBuildProcessor();
-      await enqueueCivicMediaEditorialPlpBuilds({
+      await enqueueConsumerVisibleMediaPlpBuildsForLocales({
         locales: [updated.locale],
       });
     } catch {
