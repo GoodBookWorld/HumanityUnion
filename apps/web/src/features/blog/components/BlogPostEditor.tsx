@@ -10,7 +10,9 @@ import type {
   BlogCategory,
   BlogCategoryId,
   BlogCoverMedia,
+  BlogPostStatus,
   BlogPublicationOptimization,
+  BlogReviewStatus,
   LifecycleSafetyOutcome,
 } from "@hu/types";
 import { BLOG_CATEGORIES, BLOG_PUBLICATION_DATE_MIN } from "@hu/types";
@@ -40,12 +42,47 @@ import { BlogRichTextEditor } from "./BlogRichTextEditor";
 
 const MAX_TAGS = 12;
 
+type PublishingTranslator = ReturnType<typeof useTranslations<"workspace.publishingPage">>;
+
 function isoToPublicationDateOnly(iso: string | undefined): string {
   if (!iso) {
     return "";
   }
   const match = /^(\d{4}-\d{2}-\d{2})/.exec(iso);
   return match?.[1] ?? "";
+}
+
+function safetyMessage(
+  outcome: LifecycleSafetyOutcome | null | undefined,
+  t: PublishingTranslator,
+): {
+  title: string;
+  message: string;
+} | null {
+  if (!outcome || outcome === "accepted") {
+    return null;
+  }
+  if (outcome === "needs_review") {
+    return {
+      title: t("editor.banners.safetyNeedsReviewTitle"),
+      message: t("editor.banners.safetyNeedsReviewBody"),
+    };
+  }
+  return {
+    title: t("editor.banners.safetyBlockedTitle"),
+    message: t("editor.banners.safetyBlockedBody"),
+  };
+}
+
+function resolveLifecycleStatusLabel(status: BlogPostStatus, t: PublishingTranslator): string {
+  return t(`status.${status}`);
+}
+
+function resolveReviewStatusLabel(
+  reviewStatus: Exclude<BlogReviewStatus, "none">,
+  t: PublishingTranslator,
+): string {
+  return t(`editor.reviewStatuses.${reviewStatus}`);
 }
 
 export interface BlogPostEditorProps {
@@ -55,34 +92,13 @@ export interface BlogPostEditorProps {
   authorDisplayName?: string;
 }
 
-function safetyMessage(outcome: LifecycleSafetyOutcome | null | undefined): {
-  title: string;
-  message: string;
-} | null {
-  if (!outcome || outcome === "accepted") {
-    return null;
-  }
-  if (outcome === "needs_review") {
-    return {
-      title: "Safety review required",
-      message:
-        "This publication needs a human Safety review before it can be published directly. You may still save and submit for editorial review.",
-    };
-  }
-  return {
-    title: "Publishing blocked by Safety",
-    message:
-      "This content cannot be submitted or published in its current form. Please revise the text and try again.",
-  };
-}
-
 export function BlogPostEditor({
   mode,
   initialPost,
   canDirectPublish,
   authorDisplayName,
 }: BlogPostEditorProps) {
-  const tPublishing = useTranslations("workspace.publishingPage");
+  const t = useTranslations("workspace.publishingPage");
   const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const titleId = useId();
@@ -159,19 +175,19 @@ export function BlogPostEditor({
 
   const saveStatusLabel = useMemo(() => {
     if (saveFailed) {
-      return "Save failed";
+      return t("editor.saveStatus.failed");
     }
     if (savePhase.phase === "saving") {
-      return "Saving…";
+      return t("editor.saveStatus.saving");
     }
     if (savePhase.phase === "success") {
-      return "Saved";
+      return t("editor.saveStatus.saved");
     }
     if (dirty) {
-      return "Unsaved changes";
+      return t("editor.saveStatus.unsaved");
     }
-    return "All changes saved";
-  }, [dirty, saveFailed, savePhase.phase]);
+    return t("editor.saveStatus.allSaved");
+  }, [dirty, saveFailed, savePhase.phase, t]);
 
   useEffect(() => {
     if (!dirty) {
@@ -200,16 +216,16 @@ export function BlogPostEditor({
 
   function validateLocal(): string | null {
     if (title.trim().length < 3) {
-      return "Title must be at least 3 characters.";
+      return t("editor.validation.titleMin", { min: 3 });
     }
     if (!category) {
-      return "Category is required.";
+      return t("editor.validation.categoryRequired");
     }
     if (parseTags().length > MAX_TAGS) {
-      return `Use at most ${MAX_TAGS} tags.`;
+      return t("editor.validation.tagsMax", { max: MAX_TAGS });
     }
     if (publicationDate && publicationDate < BLOG_PUBLICATION_DATE_MIN) {
-      return `Publication date must be on or after ${BLOG_PUBLICATION_DATE_MIN}.`;
+      return t("editor.validation.publicationDateMin", { min: BLOG_PUBLICATION_DATE_MIN });
     }
     return null;
   }
@@ -324,7 +340,7 @@ export function BlogPostEditor({
     }
   }
 
-  const safety = safetyMessage(safetyOutcome);
+  const safety = safetyMessage(safetyOutcome, t);
   const showPublish =
     canDirectPublish &&
     !administrativelyBlocked &&
@@ -334,55 +350,58 @@ export function BlogPostEditor({
   return (
     <div className="blog-post-editor blog-post-editor--pack15b">
       <p className="hu-caption">
-        Author: {authorDisplayName ?? "Your Participant identity"} (attribution is set by the
-        platform).
+        {t("editor.attribution", {
+          name: authorDisplayName ?? t("editor.attributionFallback"),
+        })}
       </p>
 
       {administrativelyBlocked ? (
         <StatusBanner
-          title="Blocked by administrator"
-          message="This publication is blocked by an administrator and cannot be edited or made public."
+          title={t("editor.banners.blockedTitle")}
+          message={t("editor.banners.blockedBody")}
         />
       ) : null}
 
       {status === "scheduled" ? (
         <StatusBanner
-          title="Scheduled"
-          message="This publication is scheduled and will become public automatically on the publication date (noon UTC)."
+          title={t("editor.banners.scheduledTitle")}
+          message={t("editor.banners.scheduledBody")}
         />
       ) : null}
 
       {status === "submitted_for_review" ? (
         <StatusBanner
-          title="Under editorial review"
-          message="This publication is waiting for editorial review. Withdraw is available from the API for Editors; Authors should wait for feedback."
+          title={t("editor.banners.underReviewTitle")}
+          message={t("editor.banners.underReviewBody")}
         />
       ) : null}
 
       {changesRequested ? (
         <StatusBanner
-          title="Changes Requested"
+          title={t("editor.banners.changesRequestedTitle")}
           message={
             reviewNote
-              ? `An Editor requested changes: ${reviewNote}`
-              : "An Editor requested changes. Edit, save, preview, and resubmit this same publication."
+              ? t("editor.banners.changesRequestedWithNote", { note: reviewNote })
+              : t("editor.banners.changesRequestedBody")
           }
         />
       ) : null}
 
       {declined ? (
         <StatusBanner
-          title="Publication declined"
+          title={t("editor.banners.declinedTitle")}
           message={
             reviewNote
-              ? `Editorial decision: ${reviewNote}`
-              : "This publication was declined. You may revise and resubmit if appropriate."
+              ? t("editor.banners.declinedWithNote", { note: reviewNote })
+              : t("editor.banners.declinedBody")
           }
         />
       ) : null}
 
       {safety ? <StatusBanner title={safety.title} message={safety.message} /> : null}
-      {error ? <StatusBanner title="Could not complete the action" message={error} /> : null}
+      {error ? (
+        <StatusBanner title={t("editor.banners.actionFailed")} message={error} />
+      ) : null}
 
       <div className="blog-post-editor__chrome">
         <p className="blog-post-editor__save-status" aria-live="polite">
@@ -399,13 +418,13 @@ export function BlogPostEditor({
                 void handleSaveDraft();
               }}
             >
-              {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+              {resolveSaveButtonLabel(savePhase.phase, t("editor.chrome.saveDraft"))}
             </Button>
           ) : null}
 
           {postId ? (
             <Button href={`/workspace/publishing/${postId}/preview`} variant="secondary">
-              Preview
+              {t("editor.chrome.preview")}
             </Button>
           ) : null}
 
@@ -416,7 +435,7 @@ export function BlogPostEditor({
               disabled={busyAction !== null}
               onClick={() => setSubmitOpen(true)}
             >
-              Submit for Review
+              {t("editor.chrome.submitForReview")}
             </Button>
           ) : null}
 
@@ -427,12 +446,12 @@ export function BlogPostEditor({
               disabled={busyAction !== null || safetyOutcome === "needs_review"}
               onClick={() => setPublishOpen(true)}
             >
-              Publish
+              {t("editor.chrome.publish")}
             </Button>
           ) : null}
 
           <Link href="/workspace/publishing" className="hu-button hu-button--tertiary">
-            Back to Publishing
+            {t("editor.chrome.backToPublishing")}
           </Link>
         </div>
       </div>
@@ -440,7 +459,7 @@ export function BlogPostEditor({
       <div className="blog-post-editor__layout">
         <div className="blog-post-editor__main">
           <label className="hu-label blog-post-editor__title-label" htmlFor={titleId}>
-            Title
+            {t("editor.labels.title")}
           </label>
           <input
             id={titleId}
@@ -454,15 +473,15 @@ export function BlogPostEditor({
               markDirty();
             }}
           />
-          <HelperText>Required. The Assistant never overwrites your title automatically.</HelperText>
+          <HelperText>{t("editor.helpers.title")}</HelperText>
 
           <p className="hu-caption blog-post-editor__slug">
-            URL preview: /blog/{slugPreview}
-            {publishedLockedSlug ? " (stable after publication)" : ""}
+            {t("editor.helpers.urlPreview", { slug: slugPreview })}
+            {publishedLockedSlug ? t("editor.helpers.urlPreviewStable") : ""}
           </p>
 
           <p className="hu-label" id={contentLabelId}>
-            Article Content
+            {t("editor.labels.articleContent")}
           </p>
           <BlogRichTextEditor
             value={content}
@@ -491,7 +510,7 @@ export function BlogPostEditor({
         <aside className="blog-post-editor__aside" aria-labelledby={settingsToggleId}>
           <div className="blog-post-editor__aside-header">
             <h2 className="hu-heading-3" id={settingsToggleId}>
-              Publication settings
+              {t("editor.labels.publicationSettings")}
             </h2>
             <button
               type="button"
@@ -499,7 +518,7 @@ export function BlogPostEditor({
               aria-expanded={settingsOpen}
               onClick={() => setSettingsOpen((open) => !open)}
             >
-              {settingsOpen ? "Hide settings" : "Show settings"}
+              {settingsOpen ? t("editor.chrome.hideSettings") : t("editor.chrome.showSettings")}
             </button>
           </div>
 
@@ -507,18 +526,20 @@ export function BlogPostEditor({
             <div className="blog-post-editor__aside-body">
               <section className="blog-post-editor__settings-group" aria-labelledby="blog-settings-status">
                 <h3 className="hu-heading-4" id="blog-settings-status">
-                  Status &amp; review
+                  {t("editor.labels.statusAndReview")}
                 </h3>
                 <p className="hu-caption">
-                  Lifecycle: {status.replaceAll("_", " ")}
-                  {reviewStatus !== "none" ? ` · Review: ${reviewStatus.replaceAll("_", " ")}` : ""}
+                  {t("editor.lifecycle.lifecycleLabel", {
+                    status: resolveLifecycleStatusLabel(status, t),
+                  })}
+                  {reviewStatus !== "none"
+                    ? t("editor.lifecycle.reviewLabel", {
+                        status: resolveReviewStatusLabel(reviewStatus, t),
+                      })
+                    : ""}
                 </p>
-                <p className="hu-caption">
-                  Use Save Draft, Submit for Review, or Publish — not generic Public/Private toggles.
-                </p>
-                <p className="hu-caption">
-                  Autosave: manual Save Draft only (no aggressive background autosave).
-                </p>
+                <p className="hu-caption">{t("editor.helpers.lifecycleGuidance")}</p>
+                <p className="hu-caption">{t("editor.helpers.autosave")}</p>
               </section>
 
               <section
@@ -526,10 +547,10 @@ export function BlogPostEditor({
                 aria-labelledby="blog-settings-publication"
               >
                 <h3 className="hu-heading-4" id="blog-settings-publication">
-                  Publication
+                  {t("editor.labels.publication")}
                 </h3>
                 <label className="hu-label" htmlFor={publicationDateId}>
-                  Publication date
+                  {t("editor.labels.publicationDate")}
                 </label>
                 <input
                   id={publicationDateId}
@@ -544,13 +565,11 @@ export function BlogPostEditor({
                   }}
                 />
                 <HelperText>
-                  Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
-                  works. Future dates schedule publication (noon UTC on the chosen day). createdAt
-                  stays the platform record time.
+                  {t("editor.helpers.publicationDate", { min: BLOG_PUBLICATION_DATE_MIN })}
                 </HelperText>
 
                 <label className="hu-label" htmlFor={categoryId}>
-                  {tPublishing("category")}
+                  {t("category")}
                 </label>
                 <select
                   id={categoryId}
@@ -563,7 +582,7 @@ export function BlogPostEditor({
                     markDirty();
                   }}
                 >
-                  <option value="">{tPublishing("selectCategory")}</option>
+                  <option value="">{t("selectCategory")}</option>
                   {categoryOptions.map((entry) => (
                     <option key={entry.categoryId} value={entry.categoryId}>
                       {resolveBlogCategoryDisplayName(entry.categoryId, tBlog)}
@@ -572,29 +591,29 @@ export function BlogPostEditor({
                 </select>
 
                 <label className="hu-label" htmlFor={tagsId}>
-                  Tags
+                  {t("editor.labels.tags")}
                 </label>
                 <input
                   id={tagsId}
                   className="hu-form-control"
                   value={tagsInput}
                   disabled={readOnly}
-                  placeholder="Optional, comma-separated (max 12)"
+                  placeholder={t("editor.helpers.tagsPlaceholder", { max: MAX_TAGS })}
                   onChange={(event) => {
                     setTagsInput(event.target.value);
                     markDirty();
                   }}
                 />
-                <HelperText>Optional. Tags are normalized and limited to 12 by the server.</HelperText>
+                <HelperText>{t("editor.helpers.tags", { max: MAX_TAGS })}</HelperText>
               </section>
 
               <section className="blog-post-editor__settings-group" aria-labelledby="blog-settings-media">
                 <h3 className="hu-heading-4" id="blog-settings-media">
-                  Media
+                  {t("editor.labels.media")}
                 </h3>
                 <fieldset className="blog-post-editor__cover" disabled={readOnly}>
-                  <legend className="hu-label">Cover Image</legend>
-                  <HelperText>Cover is separate from inline article images.</HelperText>
+                  <legend className="hu-label">{t("editor.labels.coverImage")}</legend>
+                  <HelperText>{t("editor.helpers.coverSeparate")}</HelperText>
                   <BlogCoverField
                     coverMedia={coverMedia}
                     title={title}
@@ -612,10 +631,10 @@ export function BlogPostEditor({
                 aria-labelledby="blog-settings-discovery"
               >
                 <h3 className="hu-heading-4" id="blog-settings-discovery">
-                  Discovery
+                  {t("editor.labels.discovery")}
                 </h3>
                 <label className="hu-label" htmlFor={excerptId}>
-                  Excerpt
+                  {t("editor.labels.excerpt")}
                 </label>
                 <textarea
                   id={excerptId}
@@ -629,10 +648,8 @@ export function BlogPostEditor({
                     markDirty();
                   }}
                 />
-                <HelperText>This short summary appears on the Blog listing cards.</HelperText>
-                <p className="hu-caption">
-                  Search and social metadata live in Publication Optimization below the article.
-                </p>
+                <HelperText>{t("editor.helpers.excerptListing")}</HelperText>
+                <p className="hu-caption">{t("editor.helpers.discoverySeoPointer")}</p>
               </section>
 
               <section
@@ -651,7 +668,7 @@ export function BlogPostEditor({
                     height={22}
                     aria-hidden="true"
                   />
-                  Assistant
+                  {t("editor.labels.assistant")}
                 </h3>
                 <BlogAuthoringAssistantPanel
                   postId={postId}
@@ -698,7 +715,9 @@ export function BlogPostEditor({
                         .replace(/</g, "&lt;")
                         .replace(/>/g, "&gt;");
                       const block = `<blockquote><p><strong>${
-                        field === "structure" ? "Structure suggestion" : "Clarity suggestion"
+                        field === "structure"
+                          ? t("editor.helpers.structureSuggestion")
+                          : t("editor.helpers.claritySuggestion")
                       }</strong></p><p>${safe.replace(/\n/g, "<br />")}</p></blockquote>`;
                       setContent(mode === "replace" ? block : `${block}${content}`);
                     }
@@ -713,25 +732,19 @@ export function BlogPostEditor({
 
       <div className="blog-post-editor__actions hu-form-actions">
         {!canDirectPublish && status === "draft" ? (
-          <HelperText>
-            Standard Authors submit for review; direct Publish is for Trusted Authors when Safety
-            allows.
-          </HelperText>
+          <HelperText>{t("editor.helpers.standardAuthorPublish")}</HelperText>
         ) : null}
 
         {canDirectPublish && safetyOutcome === "needs_review" ? (
-          <HelperText>
-            Safety requires review — direct publication is blocked until an Editor handles the Safety
-            review.
-          </HelperText>
+          <HelperText>{t("editor.helpers.safetyNeedsReview")}</HelperText>
         ) : null}
       </div>
 
       <ConfirmDialog
         isOpen={submitOpen}
-        title="Submit for editorial review?"
-        description="Submit this publication for editorial review? You will not be able to edit it while it is under review."
-        confirmLabel="Submit for Review"
+        title={t("editor.dialogs.submitTitle")}
+        description={t("editor.dialogs.submitBody")}
+        confirmLabel={t("editor.dialogs.submitConfirm")}
         destructive={false}
         isConfirming={busyAction === "submit"}
         onCancel={() => setSubmitOpen(false)}
@@ -742,9 +755,9 @@ export function BlogPostEditor({
 
       <ConfirmDialog
         isOpen={publishOpen}
-        title="Publish this publication?"
-        description="This will make the article public on the Blog when Safety and permissions allow."
-        confirmLabel="Publish"
+        title={t("editor.dialogs.publishTitle")}
+        description={t("editor.dialogs.publishBody")}
+        confirmLabel={t("editor.dialogs.publishConfirm")}
         destructive={false}
         isConfirming={busyAction === "publish"}
         onCancel={() => setPublishOpen(false)}

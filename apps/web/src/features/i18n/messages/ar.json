@@ -419,7 +419,165 @@
       "deleteConfirm": "حذف",
       "deleting": "جارٍ الحذف…",
       "selectCategory": "اختر فئة",
-      "category": "الفئة"
+      "category": "الفئة",
+      "editor": {
+        "page": {
+          "createTitle": "منشور جديد",
+          "createSubtitle": "اكتب مسودة. احفظ كثيرًا. عاين قبل الإرسال.",
+          "editTitle": "تحرير المنشور",
+          "editSubtitle": "حدّث مسودتك أو مقالك المنشور وفق صلاحيات المؤلف.",
+          "assistantDescription": "مساعدة في البنية وSEO والوضوح. الاقتراحات تتطلب تطبيق/رفض — لا تُكتب فوق المحتوى ولا تُنشر تلقائيًا.",
+          "assistantEditDescription": "مساعدة في الوضوح وSEO والمراجعة. الاقتراحات تتطلب تطبيق/رفض — المساعد لا يحفظ أو يرسل أو ينشر."
+        },
+        "gate": {
+          "loading": "جارٍ تحميل المحرر…",
+          "unavailableTitle": "المحرر غير متاح",
+          "authorRequired": "يلزم الوصول كمؤلف.",
+          "authorRequiredEdit": "يلزم الوصول كمؤلف لتحرير المنشورات.",
+          "signIn": "سجّل الدخول لفتح محرر النشر.",
+          "notFoundTitle": "غير موجود",
+          "notFoundBody": "تعذّر العثور على المنشور أو ليس لديك وصول.",
+          "loadFailed": "تعذّر تحميل هذا المنشور.",
+          "openAuthoring": "فتح التأليف"
+        },
+        "attribution": "المؤلف: {name} (تحدّد المنصة الإسناد).",
+        "attributionFallback": "هويتك كمشارك",
+        "chrome": {
+          "saveDraft": "حفظ المسودة",
+          "preview": "معاينة",
+          "submitForReview": "إرسال للمراجعة",
+          "publish": "نشر",
+          "backToPublishing": "العودة إلى النشر",
+          "hideSettings": "إخفاء الإعدادات",
+          "showSettings": "إظهار الإعدادات"
+        },
+        "saveStatus": {
+          "failed": "فشل الحفظ",
+          "saving": "جارٍ الحفظ…",
+          "saved": "تم الحفظ",
+          "unsaved": "تغييرات غير محفوظة",
+          "allSaved": "تم حفظ كل التغييرات"
+        },
+        "labels": {
+          "title": "العنوان",
+          "articleContent": "محتوى المقال",
+          "publicationSettings": "إعدادات المنشور",
+          "statusAndReview": "الحالة والمراجعة",
+          "publication": "النشر",
+          "publicationDate": "تاريخ النشر",
+          "tags": "الوسوم",
+          "media": "الوسائط",
+          "coverImage": "صورة الغلاف",
+          "discovery": "الاكتشاف",
+          "excerpt": "المقتطف",
+          "assistant": "المساعد"
+        },
+        "helpers": {
+          "title": "مطلوب. المساعد لا يستبدل عنوانك تلقائيًا.",
+          "urlPreview": "معاينة الرابط: /blog/{slug}",
+          "urlPreviewStable": " (ثابت بعد النشر)",
+          "tags": "اختياري. تُطبَّع الوسوم وتُحدَّد بـ {max} على الخادم.",
+          "tagsPlaceholder": "اختياري، مفصولة بفواصل (بحد أقصى {max})",
+          "coverSeparate": "الغلاف منفصل عن صور المقال المضمنة.",
+          "excerptListing": "يظهر هذا الملخص القصير على بطاقات قائمة المدونة.",
+          "discoverySeoPointer": "بيانات البحث والاجتماع موجودة في تحسين المنشور أسفل المقال.",
+          "autosave": "الحفظ التلقائي: حفظ المسودة يدويًا فقط (بدون حفظ خلفية عدواني).",
+          "lifecycleGuidance": "استخدم حفظ المسودة أو إرسال للمراجعة أو النشر — وليس مفاتيح عام/خاص عامة.",
+          "publicationDate": "اختياري. التواريخ السابقة حتى {min} مسموحة للأعمال التاريخية. التواريخ المستقبلية تجدول النشر (ظهر UTC). يبقى createdAt وقت سجل المنصة.",
+          "standardAuthorPublish": "المؤلفون العاديون يرسلون للمراجعة؛ النشر المباشر للمؤلفين الموثوقين عندما تسمح السلامة.",
+          "safetyNeedsReview": "السلامة تتطلب مراجعة — النشر المباشر محظور حتى يعالج محرر مراجعة السلامة.",
+          "structureSuggestion": "اقتراح البنية",
+          "claritySuggestion": "اقتراح الوضوح"
+        },
+        "lifecycle": {
+          "lifecycleLabel": "دورة الحياة: {status}",
+          "reviewLabel": " · المراجعة: {status}"
+        },
+        "banners": {
+          "blockedTitle": "محظور من المسؤول",
+          "blockedBody": "هذا المنشور محظور من مسؤول ولا يمكن تحريره أو جعله عامًا.",
+          "scheduledTitle": "مجدول",
+          "scheduledBody": "هذا المنشور مجدول وسيصبح عامًا تلقائيًا في تاريخ النشر (ظهر UTC).",
+          "underReviewTitle": "قيد المراجعة التحريرية",
+          "underReviewBody": "المنشور ينتظر المراجعة التحريرية. السحب متاح عبر API للمحررين؛ على المؤلفين انتظار الملاحظات.",
+          "changesRequestedTitle": "طُلبت تعديلات",
+          "changesRequestedWithNote": "طلب محرر تعديلات: {note}",
+          "changesRequestedBody": "طلب محرر تعديلات. حرّر واحفظ وعاين وأعد إرسال المنشور نفسه.",
+          "declinedTitle": "رُفض المنشور",
+          "declinedWithNote": "قرار تحريري: {note}",
+          "declinedBody": "رُفض هذا المنشور. يمكنك المراجعة وإعادة الإرسال إن كان مناسبًا.",
+          "safetyNeedsReviewTitle": "مراجعة السلامة مطلوبة",
+          "safetyNeedsReviewBody": "يحتاج المنشور مراجعة سلامة بشرية قبل النشر المباشر. ما زال بإمكانك الحفظ والإرسال للمراجعة التحريرية.",
+          "safetyBlockedTitle": "النشر محظور بسبب السلامة",
+          "safetyBlockedBody": "لا يمكن إرسال أو نشر هذا المحتوى بشكله الحالي. راجع النص وحاول مجددًا.",
+          "actionFailed": "تعذّر إكمال الإجراء"
+        },
+        "validation": {
+          "titleMin": "يجب أن يكون العنوان {min} أحرف على الأقل.",
+          "categoryRequired": "الفئة مطلوبة.",
+          "tagsMax": "استخدم {max} وسومًا كحد أقصى.",
+          "publicationDateMin": "يجب أن يكون تاريخ النشر في أو بعد {min}."
+        },
+        "dialogs": {
+          "submitTitle": "إرسال للمراجعة التحريرية؟",
+          "submitBody": "إرسال هذا المنشور للمراجعة التحريرية؟ لن تتمكن من تحريره أثناء المراجعة.",
+          "submitConfirm": "إرسال للمراجعة",
+          "publishTitle": "نشر هذا المنشور؟",
+          "publishBody": "سيجعل المقال عامًا على المدونة عندما تسمح السلامة والصلاحيات.",
+          "publishConfirm": "نشر"
+        },
+        "seo": {
+          "heading": "تحسين المنشور",
+          "lede": "تبقى بيانات SEO والاجتماع على هذا المنشور. أذونات التوزيع تمر عبر صندوق المنصة للقنوات الرسمية — ولا تخترع بيانات اعتماد خارجية أو تدّعي إرسالًا ناجحًا.",
+          "searchHeading": "تحسين البحث",
+          "searchCopy": "عنوان ووصف بحث اختياريان. اتركهما فارغين لاستخدام عنوان المنشور والمقتطف في الصفحة العامة.",
+          "seoTitle": "عنوان SEO",
+          "metaDescription": "الوصف التعريفي",
+          "charHint": "{length} / الموصى به {guide} · الحد الأقصى {max}",
+          "defaultsToTitle": "الافتراضي عنوان المنشور",
+          "defaultsToExcerpt": "الافتراضي المقتطف",
+          "untitled": "منشور بلا عنوان",
+          "addMetaDescription": "أضف وصفًا تعريفيًا لنتائج البحث.",
+          "canonicalPreview": "معاينة الرابط الأساسي: {path}",
+          "serpAria": "معاينة نتيجة البحث",
+          "socialHeading": "معاينة اجتماعية",
+          "socialCopy": "كيف قد يظهر المنشور عند المشاركة. الصورة الافتراضية هي الغلاف إن لم تُعيَّن صورة اجتماعية.",
+          "socialTitle": "العنوان الاجتماعي",
+          "socialDescription": "الوصف الاجتماعي",
+          "socialImage": "الصورة الاجتماعية",
+          "socialImageHelper": "اختياري. عند الفراغ تُستخدم صورة الغلاف للمعاينات الاجتماعية.",
+          "socialPreviewAria": "بطاقة معاينة المشاركة الاجتماعية",
+          "noSocialImage": "لا صورة اجتماعية بعد",
+          "distributionHeading": "التوزيع",
+          "distributionCopy": "اختر قنوات Humanity Union الاجتماعية التي يمكن توزيع المنشور عبرها. هذا ليس وصولًا إلى حساباتك الشخصية.",
+          "huShareLegend": "توزيع Humanity Union الاجتماعي",
+          "huShareHelper": "اختيار قناة يسمح لـ Humanity Union بتوزيع المنشور عبر القناة الرسمية المكوّنة. رابط الملف الشخصي وحده لا ينشر تلقائيًا. التفضيلات لا تتجاوز المراجعة أو الجدولة أو الحظر.",
+          "channelLoading": "جارٍ التحميل…",
+          "channelApiOnly": "واجهة برمجة خارجية غير متصلة — إذن فقط",
+          "channelNotConfigured": "القناة الرسمية غير مكوّنة"
+        },
+        "media": {
+          "noCover": "لم تُحدَّد صورة غلاف",
+          "noCoverAria": "لم تُحدَّد صورة غلاف",
+          "upload": "رفع الغلاف",
+          "replace": "استبدال الغلاف",
+          "remove": "إزالة الغلاف",
+          "uploading": "جارٍ رفع الغلاف…",
+          "uploadFailed": "فشل رفع الغلاف.",
+          "altLabel": "وصف الصورة / نص بديل",
+          "altPlaceholder": "صف صورة الغلاف لإمكانية الوصول",
+          "altHelper": "مطلوب لإمكانية الوصول عند وجود غلاف. لا تخترع أوصافًا تلقائيًا.",
+          "mediaUrlPrefix": "الوسائط: {url}",
+          "coverFallbackTitle": "صورة الغلاف"
+        },
+        "reviewStatuses": {
+          "none": "لا شيء",
+          "pending": "معلّق",
+          "changes_requested": "طُلبت تعديلات",
+          "approved": "موافق عليه",
+          "declined": "مرفوض"
+        }
+      }
     },
     "editorialPage": {
       "title": "المراجعة التحريرية",
@@ -1021,7 +1179,10 @@
         "updateFailed": "فشل التحديث: {detail}",
         "republishFailed": "فشلت إعادة النشر: {detail}",
         "deleteFailed": "فشل الحذف: {detail}",
-        "closeElectionFailed": "فشل إغلاق الانتخابات: {detail}"
+        "closeElectionFailed": "فشل إغلاق الانتخابات: {detail}",
+        "serviceUnavailable": "خدمة Humanity Union غير متاحة مؤقتًا.",
+        "saveUnable": "تعذّر حفظ المبادرة.",
+        "publicChoiceCountryRequired": "البلد مطلوب لمبادرات الاختيار العام."
       },
       "links": {
         "viewCollaborativeAnalysis": "عرض التحليل التعاوني",
@@ -1097,6 +1258,43 @@
         "selectEllipsis": "اختر…",
         "allCommunities": "كل المجتمعات",
         "filterAria": "تصفية {label}"
+      },
+      "createHeading": "بدء مبادرة جديدة",
+      "lifecycleRoute": {
+        "legend": "مسار دورة الحياة",
+        "standard": {
+          "title": "مبادرة قياسية",
+          "description": "دورة حياة مدنية كاملة لتطوير المبادرة واتخاذ القرار وتنفيذها وتوثيقها."
+        },
+        "publicChoice": {
+          "title": "اختيار عام",
+          "description": "لاختيار مرشح/شخص أو اختيار عام آخر عبر النقاش والقرار الجماعي."
+        }
+      },
+      "auth": {
+        "logIn": "تسجيل الدخول",
+        "createAccount": "إنشاء حساب"
+      },
+      "newsSource": {
+        "disclaimer": "مرجع ناشر خارجي. لم تتحقق Humanity Union بشكل مستقل من هذه المقالة.",
+        "remove": "إزالة المصدر"
+      },
+      "overlap": {
+        "title": "توجد مبادرات ذات صلة بالفعل",
+        "intro": "يمكنك مراجعة أعمال مشابهة قبل المتابعة. هذا لا يمنعك من إنشاء مبادرتك.",
+        "unavailable": "فحص المبادرات ذات الصلة غير متاح مؤقتًا.",
+        "continue": "متابعة الإنشاء",
+        "viewInitiative": "عرض المبادرة",
+        "considerCollaboration": "النظر في التعاون",
+        "viewAria": "عرض المبادرة {title} (تُفتح في علامة تبويب جديدة)",
+        "collaborateAria": "النظر في التعاون بشأن {title} (تُفتح في علامة تبويب جديدة)",
+        "collaborateTitle": "يفتح خيارات التعاون لهذه المبادرة.",
+        "types": {
+          "possible_duplicate": "تداخل محتمل",
+          "complementary": "عمل مكمّل",
+          "related": "مبادرة ذات صلة"
+        },
+        "prompt": "توجد مبادرات ذات صلة بالفعل. راجعها أو واصل الإنشاء."
       }
     },
     "sidebar": {

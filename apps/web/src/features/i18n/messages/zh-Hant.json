@@ -419,7 +419,165 @@
       "deleteConfirm": "刪除",
       "deleting": "刪除中…",
       "selectCategory": "選擇分類",
-      "category": "分類"
+      "category": "分類",
+      "editor": {
+        "page": {
+          "createTitle": "新文章",
+          "createSubtitle": "撰寫草稿。經常儲存。提交前先預覽。",
+          "editTitle": "編輯文章",
+          "editSubtitle": "依您的作者權限更新草稿或已發布文章。",
+          "assistantDescription": "協助結構、SEO 與清晰度。建議需套用／關閉 — 絕不會自動覆寫或發布。",
+          "assistantEditDescription": "協助清晰度、SEO 與審核。建議需套用／關閉 — 助理絕不會儲存、提交或發布。"
+        },
+        "gate": {
+          "loading": "正在載入編輯器…",
+          "unavailableTitle": "編輯器無法使用",
+          "authorRequired": "需要作者權限。",
+          "authorRequiredEdit": "編輯文章需要作者權限。",
+          "signIn": "登入以開啟出版編輯器。",
+          "notFoundTitle": "找不到",
+          "notFoundBody": "找不到此文章，或您沒有存取權限。",
+          "loadFailed": "無法載入此文章。",
+          "openAuthoring": "開啟寫作"
+        },
+        "attribution": "作者：{name}（署名由平台設定）。",
+        "attributionFallback": "您的參與者身分",
+        "chrome": {
+          "saveDraft": "儲存草稿",
+          "preview": "預覽",
+          "submitForReview": "送交審核",
+          "publish": "發布",
+          "backToPublishing": "返回出版",
+          "hideSettings": "隱藏設定",
+          "showSettings": "顯示設定"
+        },
+        "saveStatus": {
+          "failed": "儲存失敗",
+          "saving": "儲存中…",
+          "saved": "已儲存",
+          "unsaved": "尚未儲存的變更",
+          "allSaved": "所有變更已儲存"
+        },
+        "labels": {
+          "title": "標題",
+          "articleContent": "文章內容",
+          "publicationSettings": "文章設定",
+          "statusAndReview": "狀態與審核",
+          "publication": "發布",
+          "publicationDate": "發布日期",
+          "tags": "標籤",
+          "media": "媒體",
+          "coverImage": "封面圖片",
+          "discovery": "探索",
+          "excerpt": "摘要",
+          "assistant": "助理"
+        },
+        "helpers": {
+          "title": "必填。助理絕不會自動覆寫您的標題。",
+          "urlPreview": "網址預覽：/blog/{slug}",
+          "urlPreviewStable": "（發布後固定）",
+          "tags": "選填。標籤會正規化，伺服器上限為 {max}。",
+          "tagsPlaceholder": "選填，以逗號分隔（最多 {max}）",
+          "coverSeparate": "封面與內文圖片分開。",
+          "excerptListing": "此短摘要會顯示在部落格列表卡片上。",
+          "discoverySeoPointer": "搜尋與社群中繼資料位於文章下方的出版優化。",
+          "autosave": "自動儲存：僅手動「儲存草稿」（無積極背景自動儲存）。",
+          "lifecycleGuidance": "請使用儲存草稿、送交審核或發布 — 而非一般公開／私人開關。",
+          "publicationDate": "選填。允許回溯至 {min} 的歷史日期。未來日期會排程發布（當天 UTC 中午）。createdAt 仍為平台紀錄時間。",
+          "standardAuthorPublish": "一般作者需送交審核；在安全允許時，受信任作者可直接發布。",
+          "safetyNeedsReview": "安全需要審核 — 在編輯處理安全審核前無法直接發布。",
+          "structureSuggestion": "結構建議",
+          "claritySuggestion": "清晰度建議"
+        },
+        "lifecycle": {
+          "lifecycleLabel": "生命週期：{status}",
+          "reviewLabel": " · 審核：{status}"
+        },
+        "banners": {
+          "blockedTitle": "已被管理員封鎖",
+          "blockedBody": "此文章已被管理員封鎖，無法編輯或公開。",
+          "scheduledTitle": "已排程",
+          "scheduledBody": "此文章已排程，將於發布日期（UTC 中午）自動公開。",
+          "underReviewTitle": "編輯審核中",
+          "underReviewBody": "此文章正在等待編輯審核。編輯可透過 API 撤回；作者應等待回饋。",
+          "changesRequestedTitle": "已要求修改",
+          "changesRequestedWithNote": "編輯要求修改：{note}",
+          "changesRequestedBody": "編輯要求修改。請編輯、儲存、預覽並重新提交同一篇文章。",
+          "declinedTitle": "文章已拒絕",
+          "declinedWithNote": "編輯決定：{note}",
+          "declinedBody": "此文章已被拒絕。如適當，您可修改後重新提交。",
+          "safetyNeedsReviewTitle": "需要安全審核",
+          "safetyNeedsReviewBody": "此文章在直接發布前需要人工安全審核。您仍可儲存並送交編輯審核。",
+          "safetyBlockedTitle": "安全封鎖發布",
+          "safetyBlockedBody": "此內容目前無法提交或發布。請修改文字後再試。",
+          "actionFailed": "動作無法完成"
+        },
+        "validation": {
+          "titleMin": "標題至少需 {min} 個字元。",
+          "categoryRequired": "必須選擇分類。",
+          "tagsMax": "最多使用 {max} 個標籤。",
+          "publicationDateMin": "發布日期必須在 {min} 當天或之後。"
+        },
+        "dialogs": {
+          "submitTitle": "送交編輯審核？",
+          "submitBody": "將此文章送交編輯審核？審核期間您將無法編輯。",
+          "submitConfirm": "送交審核",
+          "publishTitle": "發布此文章？",
+          "publishBody": "在安全與權限允許時，文章將在部落格公開。",
+          "publishConfirm": "發布"
+        },
+        "seo": {
+          "heading": "出版優化",
+          "lede": "SEO 與社群中繼資料保留在此文章上。發送權限經平台佇列送往官方 Humanity Union 頻道 — 絕不會捏造外部憑證或宣稱發送成功。",
+          "searchHeading": "搜尋優化",
+          "searchCopy": "選填搜尋標題與描述。留空則公開頁使用文章標題與摘要。",
+          "seoTitle": "SEO 標題",
+          "metaDescription": "Meta 描述",
+          "charHint": "{length}／建議 {guide} · 上限 {max}",
+          "defaultsToTitle": "預設為文章標題",
+          "defaultsToExcerpt": "預設為摘要",
+          "untitled": "未命名文章",
+          "addMetaDescription": "為搜尋結果新增 meta 描述。",
+          "canonicalPreview": "Slug／正規網址預覽：{path}",
+          "serpAria": "搜尋結果預覽",
+          "socialHeading": "社群預覽",
+          "socialCopy": "分享時可能呈現的樣貌。未設定社群圖片時預設使用封面。",
+          "socialTitle": "社群標題",
+          "socialDescription": "社群描述",
+          "socialImage": "社群圖片",
+          "socialImageHelper": "選填。空白時社群預覽使用封面圖片。",
+          "socialPreviewAria": "社群分享預覽卡",
+          "noSocialImage": "尚無社群圖片",
+          "distributionHeading": "發送",
+          "distributionCopy": "選擇可發送此文章的 Humanity Union 社群頻道。這不是您個人社群帳號的存取權。",
+          "huShareLegend": "Humanity Union 社群發送",
+          "huShareHelper": "選擇頻道即允許 Humanity Union 透過官方設定頻道發送。僅有個人檔案網址不會自動張貼。偏好設定絕不會略過審核、排程或封鎖。",
+          "channelLoading": "載入中…",
+          "channelApiOnly": "外部 API 未連線 — 僅權限",
+          "channelNotConfigured": "官方頻道未設定"
+        },
+        "media": {
+          "noCover": "尚未選擇封面圖片",
+          "noCoverAria": "尚未選擇封面圖片",
+          "upload": "上傳封面",
+          "replace": "更換封面",
+          "remove": "移除封面",
+          "uploading": "正在上傳封面…",
+          "uploadFailed": "封面上傳失敗。",
+          "altLabel": "圖片描述／替代文字",
+          "altPlaceholder": "描述封面圖片以利無障礙",
+          "altHelper": "有封面時為無障礙必填。請勿自動捏造描述。",
+          "mediaUrlPrefix": "媒體：{url}",
+          "coverFallbackTitle": "封面圖片"
+        },
+        "reviewStatuses": {
+          "none": "無",
+          "pending": "待處理",
+          "changes_requested": "已要求修改",
+          "approved": "已核准",
+          "declined": "已拒絕"
+        }
+      }
     },
     "editorialPage": {
       "title": "編輯審核",
@@ -1021,7 +1179,10 @@
         "updateFailed": "更新失敗：{detail}",
         "republishFailed": "重新發布失敗：{detail}",
         "deleteFailed": "刪除失敗：{detail}",
-        "closeElectionFailed": "結束選舉失敗：{detail}"
+        "closeElectionFailed": "結束選舉失敗：{detail}",
+        "serviceUnavailable": "Humanity Union 服務暫時無法使用。",
+        "saveUnable": "無法儲存倡議。",
+        "publicChoiceCountryRequired": "公共選擇倡議必須填寫國家。"
       },
       "links": {
         "viewCollaborativeAnalysis": "檢視協作分析",
@@ -1097,6 +1258,43 @@
         "selectEllipsis": "選擇…",
         "allCommunities": "所有社區",
         "filterAria": "篩選 {label}"
+      },
+      "createHeading": "開始新倡議",
+      "lifecycleRoute": {
+        "legend": "生命週期路線",
+        "standard": {
+          "title": "標準倡議",
+          "description": "完整公民生命週期，用於發展、決策、執行並記錄倡議。"
+        },
+        "publicChoice": {
+          "title": "公共選擇",
+          "description": "透過討論與集體決策，選擇候選人／個人或其他公共選項。"
+        }
+      },
+      "auth": {
+        "logIn": "登入",
+        "createAccount": "建立帳戶"
+      },
+      "newsSource": {
+        "disclaimer": "外部出版者參考。Humanity Union 未獨立查證此文章。",
+        "remove": "移除來源"
+      },
+      "overlap": {
+        "title": "已有相關倡議存在",
+        "intro": "您可以在繼續前檢視類似工作。這不會阻止您建立倡議。",
+        "unavailable": "相關倡議檢查暫時無法使用。",
+        "continue": "繼續建立",
+        "viewInitiative": "查看倡議",
+        "considerCollaboration": "考慮合作",
+        "viewAria": "查看倡議 {title}（於新分頁開啟）",
+        "collaborateAria": "考慮就 {title} 合作（於新分頁開啟）",
+        "collaborateTitle": "開啟此倡議的合作選項。",
+        "types": {
+          "possible_duplicate": "可能重疊",
+          "complementary": "互補工作",
+          "related": "相關倡議"
+        },
+        "prompt": "已有相關倡議存在。請檢視它們或繼續建立。"
       }
     },
     "sidebar": {

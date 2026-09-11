@@ -1,6 +1,7 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system";
 import { formatNewsPublishedDate } from "../../public-news/api";
@@ -14,17 +15,18 @@ interface InitiativeNewsSourcePanelProps {
 }
 
 export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsSourcePanelProps) {
+  const tCommon = useTranslations("initiativeExperience.common");
+  const tManage = useTranslations("initiativeExperience.manage");
+
   return (
     <aside className="public-news-source-panel" aria-labelledby="initiative-news-source-heading">
       <div className="public-news-source-panel__header">
         <div>
-          <h3 id="initiative-news-source-heading">Source article</h3>
-          <p className="public-news-source-panel__meta">
-            External publisher reference. Humanity Union has not independently verified this article.
-          </p>
+          <h3 id="initiative-news-source-heading">{tCommon("sourceArticle")}</h3>
+          <p className="public-news-source-panel__meta">{tManage("newsSource.disclaimer")}</p>
         </div>
         <Button type="button" variant="secondary" onClick={onRemove}>
-          Remove source
+          {tManage("newsSource.remove")}
         </Button>
       </div>
       <div className="public-news-source-panel__content">
@@ -39,11 +41,11 @@ export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsS
             <strong>{article.title}</strong>
           </p>
           <p className="public-news-source-panel__meta">
-            Published {formatNewsPublishedDate(article.publishedAt)}
+            {tCommon("publishedPrefix", { date: formatNewsPublishedDate(article.publishedAt) })}
           </p>
           <p>
             <a href={article.articleUrl} target="_blank" rel="noopener noreferrer">
-              View original source
+              {tCommon("viewOriginalSource")}
             </a>
           </p>
         </div>

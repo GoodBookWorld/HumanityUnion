@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 import type { BlogCoverMedia } from "@hu/types";
@@ -19,6 +20,7 @@ export interface BlogCoverFieldProps {
 }
 
 export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCoverFieldProps) {
+  const t = useTranslations("workspace.publishingPage");
   const inputId = useId();
   const altId = useId();
   const [uploading, setUploading] = useState(false);
@@ -39,7 +41,7 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
         altText: coverMedia?.altText,
       });
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Cover upload failed.");
+      setError(uploadError instanceof Error ? uploadError.message : t("editor.media.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -52,22 +54,26 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
       <div className="blog-cover-field__preview">
         {hasCover ? (
           <BlogCoverImage
-            title={title || "Cover image"}
+            title={title || t("editor.media.coverFallbackTitle")}
             imageUrl={coverMedia?.mediaUrl}
             altText={coverMedia?.altText}
             allowTitleAsAltFallback={false}
             className="blog-cover-field__image"
           />
         ) : (
-          <div className="blog-cover-field__empty" role="img" aria-label="No cover image selected">
-            <span className="hu-caption">No cover image selected</span>
+          <div
+            className="blog-cover-field__empty"
+            role="img"
+            aria-label={t("editor.media.noCoverAria")}
+          >
+            <span className="hu-caption">{t("editor.media.noCover")}</span>
           </div>
         )}
       </div>
 
       <div className="blog-cover-field__actions hu-form-actions">
         <label className="hu-button hu-button--secondary hu-button--sm" htmlFor={inputId}>
-          {hasCover ? "Replace Cover" : "Upload Cover"}
+          {hasCover ? t("editor.media.replace") : t("editor.media.upload")}
         </label>
         <input
           id={inputId}
@@ -90,23 +96,27 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
               onChange(null);
             }}
           >
-            Remove Cover
+            {t("editor.media.remove")}
           </Button>
         ) : null}
       </div>
 
-      {uploading ? <HelperText>Uploading cover…</HelperText> : null}
+      {uploading ? <HelperText>{t("editor.media.uploading")}</HelperText> : null}
       {error ? (
         <p className="hu-body" role="alert">
           {error}
         </p>
       ) : null}
       {coverMedia?.mediaUrl ? (
-        <HelperText>Media: {resolveMediaUrl(coverMedia.mediaUrl) ?? coverMedia.mediaUrl}</HelperText>
+        <HelperText>
+          {t("editor.media.mediaUrlPrefix", {
+            url: resolveMediaUrl(coverMedia.mediaUrl) ?? coverMedia.mediaUrl,
+          })}
+        </HelperText>
       ) : null}
 
       <label className="hu-label" htmlFor={altId}>
-        Image description / alt text
+        {t("editor.media.altLabel")}
       </label>
       <input
         id={altId}
@@ -124,11 +134,9 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
             altText: event.target.value,
           });
         }}
-        placeholder="Describe the cover image for accessibility"
+        placeholder={t("editor.media.altPlaceholder")}
       />
-      <HelperText>
-        Required for accessibility when a cover is present. Do not invent descriptions automatically.
-      </HelperText>
+      <HelperText>{t("editor.media.altHelper")}</HelperText>
     </div>
   );
 }

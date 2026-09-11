@@ -419,7 +419,165 @@
       "deleteConfirm": "Delete",
       "deleting": "Deleting…",
       "selectCategory": "Select a category",
-      "category": "Category"
+      "category": "Category",
+      "editor": {
+        "page": {
+          "createTitle": "New Publication",
+          "createSubtitle": "Write a draft. Save often. Preview before you submit.",
+          "editTitle": "Edit Publication",
+          "editSubtitle": "Update your draft or published article according to your Author permissions.",
+          "assistantDescription": "Help with structure, SEO, and clarity. Suggestions require Apply / Dismiss — never overwrite or publish automatically.",
+          "assistantEditDescription": "Help with clarity, SEO, and review. Suggestions require Apply / Dismiss — the Assistant never saves, submits, or publishes."
+        },
+        "gate": {
+          "loading": "Loading editor…",
+          "unavailableTitle": "Editor unavailable",
+          "authorRequired": "Author access required.",
+          "authorRequiredEdit": "Author access is required to edit publications.",
+          "signIn": "Sign in to open the Publishing editor.",
+          "notFoundTitle": "Not found",
+          "notFoundBody": "This publication could not be found, or you do not have access.",
+          "loadFailed": "This publication could not be loaded.",
+          "openAuthoring": "Open Authoring"
+        },
+        "attribution": "Author: {name} (attribution is set by the platform).",
+        "attributionFallback": "Your Participant identity",
+        "chrome": {
+          "saveDraft": "Save Draft",
+          "preview": "Preview",
+          "submitForReview": "Submit for Review",
+          "publish": "Publish",
+          "backToPublishing": "Back to Publishing",
+          "hideSettings": "Hide settings",
+          "showSettings": "Show settings"
+        },
+        "saveStatus": {
+          "failed": "Save failed",
+          "saving": "Saving…",
+          "saved": "Saved",
+          "unsaved": "Unsaved changes",
+          "allSaved": "All changes saved"
+        },
+        "labels": {
+          "title": "Title",
+          "articleContent": "Article Content",
+          "publicationSettings": "Publication settings",
+          "statusAndReview": "Status & review",
+          "publication": "Publication",
+          "publicationDate": "Publication date",
+          "tags": "Tags",
+          "media": "Media",
+          "coverImage": "Cover Image",
+          "discovery": "Discovery",
+          "excerpt": "Excerpt",
+          "assistant": "Assistant"
+        },
+        "helpers": {
+          "title": "Required. The Assistant never overwrites your title automatically.",
+          "urlPreview": "URL preview: /blog/{slug}",
+          "urlPreviewStable": " (stable after publication)",
+          "tags": "Optional. Tags are normalized and limited to {max} by the server.",
+          "tagsPlaceholder": "Optional, comma-separated (max {max})",
+          "coverSeparate": "Cover is separate from inline article images.",
+          "excerptListing": "This short summary appears on the Blog listing cards.",
+          "discoverySeoPointer": "Search and social metadata live in Publication Optimization below the article.",
+          "autosave": "Autosave: manual Save Draft only (no aggressive background autosave).",
+          "lifecycleGuidance": "Use Save Draft, Submit for Review, or Publish — not generic Public/Private toggles.",
+          "publicationDate": "Optional. Past dates back to {min} are allowed for historical works. Future dates schedule publication (noon UTC on the chosen day). createdAt stays the platform record time.",
+          "standardAuthorPublish": "Standard Authors submit for review; direct Publish is for Trusted Authors when Safety allows.",
+          "safetyNeedsReview": "Safety requires review — direct publication is blocked until an Editor handles the Safety review.",
+          "structureSuggestion": "Structure suggestion",
+          "claritySuggestion": "Clarity suggestion"
+        },
+        "lifecycle": {
+          "lifecycleLabel": "Lifecycle: {status}",
+          "reviewLabel": " · Review: {status}"
+        },
+        "banners": {
+          "blockedTitle": "Blocked by administrator",
+          "blockedBody": "This publication is blocked by an administrator and cannot be edited or made public.",
+          "scheduledTitle": "Scheduled",
+          "scheduledBody": "This publication is scheduled and will become public automatically on the publication date (noon UTC).",
+          "underReviewTitle": "Under editorial review",
+          "underReviewBody": "This publication is waiting for editorial review. Withdraw is available from the API for Editors; Authors should wait for feedback.",
+          "changesRequestedTitle": "Changes Requested",
+          "changesRequestedWithNote": "An Editor requested changes: {note}",
+          "changesRequestedBody": "An Editor requested changes. Edit, save, preview, and resubmit this same publication.",
+          "declinedTitle": "Publication declined",
+          "declinedWithNote": "Editorial decision: {note}",
+          "declinedBody": "This publication was declined. You may revise and resubmit if appropriate.",
+          "safetyNeedsReviewTitle": "Safety review required",
+          "safetyNeedsReviewBody": "This publication needs a human Safety review before it can be published directly. You may still save and submit for editorial review.",
+          "safetyBlockedTitle": "Publishing blocked by Safety",
+          "safetyBlockedBody": "This content cannot be submitted or published in its current form. Please revise the text and try again.",
+          "actionFailed": "Could not complete the action"
+        },
+        "validation": {
+          "titleMin": "Title must be at least {min} characters.",
+          "categoryRequired": "Category is required.",
+          "tagsMax": "Use at most {max} tags.",
+          "publicationDateMin": "Publication date must be on or after {min}."
+        },
+        "dialogs": {
+          "submitTitle": "Submit for editorial review?",
+          "submitBody": "Submit this publication for editorial review? You will not be able to edit it while it is under review.",
+          "submitConfirm": "Submit for Review",
+          "publishTitle": "Publish this publication?",
+          "publishBody": "This will make the article public on the Blog when Safety and permissions allow.",
+          "publishConfirm": "Publish"
+        },
+        "seo": {
+          "heading": "Publication Optimization",
+          "lede": "SEO and social metadata stay on this publication. Distribution permissions queue through the platform outbox for official Humanity Union channels — they never invent external credentials or claim a successful send.",
+          "searchHeading": "Search Optimization",
+          "searchCopy": "Optional search title and description. Leave blank to fall back to the publication title and excerpt on the public page.",
+          "seoTitle": "SEO title",
+          "metaDescription": "Meta description",
+          "charHint": "{length} / {guide} recommended · max {max}",
+          "defaultsToTitle": "Defaults to publication title",
+          "defaultsToExcerpt": "Defaults to excerpt",
+          "untitled": "Untitled publication",
+          "addMetaDescription": "Add a meta description for search results.",
+          "canonicalPreview": "Slug / canonical URL preview: {path}",
+          "serpAria": "Search result preview",
+          "socialHeading": "Social Preview",
+          "socialCopy": "How this publication may appear when shared. Image defaults to the cover when a social image is not set.",
+          "socialTitle": "Social title",
+          "socialDescription": "Social description",
+          "socialImage": "Social image",
+          "socialImageHelper": "Optional. When empty, the cover image is used for social previews.",
+          "socialPreviewAria": "Social share preview card",
+          "noSocialImage": "No social image yet",
+          "distributionHeading": "Distribution",
+          "distributionCopy": "Choose the Humanity Union social channels where this publication may be distributed. This is not access to your personal social accounts.",
+          "huShareLegend": "Humanity Union social distribution",
+          "huShareHelper": "Selecting a channel permits Humanity Union to distribute this publication through the official configured channel. A profile URL alone does not auto-post — delivery waits for a real provider integration. Preferences never bypass review, scheduling, or blocks.",
+          "channelLoading": "Loading…",
+          "channelApiOnly": "External API not connected — permission only",
+          "channelNotConfigured": "Official channel not configured"
+        },
+        "media": {
+          "noCover": "No cover image selected",
+          "noCoverAria": "No cover image selected",
+          "upload": "Upload Cover",
+          "replace": "Replace Cover",
+          "remove": "Remove Cover",
+          "uploading": "Uploading cover…",
+          "uploadFailed": "Cover upload failed.",
+          "altLabel": "Image description / alt text",
+          "altPlaceholder": "Describe the cover image for accessibility",
+          "altHelper": "Required for accessibility when a cover is present. Do not invent descriptions automatically.",
+          "mediaUrlPrefix": "Media: {url}",
+          "coverFallbackTitle": "Cover image"
+        },
+        "reviewStatuses": {
+          "none": "None",
+          "pending": "Pending",
+          "changes_requested": "Changes Requested",
+          "approved": "Approved",
+          "declined": "Declined"
+        }
+      }
     },
     "editorialPage": {
       "title": "Editorial Review",
@@ -1021,7 +1179,10 @@
         "updateFailed": "Update failed: {detail}",
         "republishFailed": "Republish failed: {detail}",
         "deleteFailed": "Delete failed: {detail}",
-        "closeElectionFailed": "Close election failed: {detail}"
+        "closeElectionFailed": "Close election failed: {detail}",
+        "serviceUnavailable": "The Humanity Union service is temporarily unavailable.",
+        "saveUnable": "Unable to save initiative.",
+        "publicChoiceCountryRequired": "Country is required for Public Choice initiatives."
       },
       "links": {
         "viewCollaborativeAnalysis": "View Collaborative Analysis",
@@ -1097,6 +1258,43 @@
         "selectEllipsis": "Select…",
         "allCommunities": "All communities",
         "filterAria": "Filter {label}"
+      },
+      "createHeading": "Start New Initiative",
+      "lifecycleRoute": {
+        "legend": "Lifecycle route",
+        "standard": {
+          "title": "Standard Initiative",
+          "description": "Full civic lifecycle for developing, deciding, implementing and documenting an initiative."
+        },
+        "publicChoice": {
+          "title": "Public Choice",
+          "description": "For choosing a candidate/person or another public choice through discussion and collective decision."
+        }
+      },
+      "auth": {
+        "logIn": "Log In",
+        "createAccount": "Create Account"
+      },
+      "newsSource": {
+        "disclaimer": "External publisher reference. Humanity Union has not independently verified this article.",
+        "remove": "Remove source"
+      },
+      "overlap": {
+        "title": "Related Initiatives already exist",
+        "intro": "You can review similar work before continuing. This does not prevent you from creating your Initiative.",
+        "unavailable": "Related Initiative check is temporarily unavailable.",
+        "continue": "Continue creating",
+        "viewInitiative": "View Initiative",
+        "considerCollaboration": "Consider collaboration",
+        "viewAria": "View Initiative {title} (opens in a new tab)",
+        "collaborateAria": "Consider collaboration on {title} (opens in a new tab)",
+        "collaborateTitle": "Opens collaboration options for this Initiative.",
+        "types": {
+          "possible_duplicate": "Possible overlap",
+          "complementary": "Complementary work",
+          "related": "Related Initiative"
+        },
+        "prompt": "Related Initiatives already exist. Review them or continue creating."
       }
     },
     "sidebar": {
