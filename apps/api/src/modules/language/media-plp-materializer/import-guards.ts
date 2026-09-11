@@ -10,6 +10,9 @@ const FORBIDDEN_STATIC = [
   "gemini-translation-provider",
   "GeminiTranslationProvider",
   "language-registry/index",
+  "language-registry.service",
+  "public-languages.routes",
+  "admin-languages.routes",
   "content-translation-warm-consumer",
   "content-translation-worker-concurrency",
   "public-localization-reconciliation",
@@ -61,13 +64,16 @@ export function assertMediaPlpMaterializerImportIsolation(): {
     }
     for (const fragment of FORBIDDEN_STATIC) {
       if (text.includes(fragment)) {
-        // Locale eligibility must resolve canonical Registry locale/aliases.
-        // Keep the dependency confined to locale-lookup.ts (not provider/transport).
-        if (file === "locale-lookup.ts" && fragment === "language-registry/index") {
-          continue;
-        }
         violations.push(`${file}:${fragment}`);
       }
+    }
+    // Locale eligibility may use the Registry repository (localeKey/alias
+    // resolve) but must never pull the language-registry barrel.
+    if (
+      file === "locale-lookup.ts" &&
+      !text.includes("language-registry.repository")
+    ) {
+      violations.push("locale-lookup.ts:missing-language-registry.repository");
     }
     if (/\.toArray\s*\(/.test(text)) {
       violations.push(`${file}:toArray`);

@@ -2,7 +2,10 @@
  * Media PLP materializer — Registry locale identity (script/region preserved).
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   normalizeLanguageCode,
@@ -22,6 +25,8 @@ import {
   parseMediaPlpMaterializerArgs,
 } from "../../../src/modules/language/media-plp-materializer/index.js";
 import { parseMediaPlpCarouselMaterializerArgs } from "../../../src/modules/language/media-plp-carousel-materializer/index.js";
+
+const apiSrc = join(dirname(fileURLToPath(import.meta.url)), "../../../src");
 
 describe("Media PLP materializer Registry locale identity", () => {
   beforeEach(async () => {
@@ -147,5 +152,29 @@ describe("Media PLP materializer Registry locale identity", () => {
     const ukLookup = await loadMediaPlpMaterializerLocale("uk");
     assert.equal(ukLookup.LOCALE_REGISTRY_FOUND, true);
     assert.equal(ukLookup.CANONICAL_LOCALE, "uk");
+  });
+
+  it("4. locale-lookup stays on Registry repository (no barrel/service/routes)", () => {
+    const lookup = readFileSync(
+      join(apiSrc, "modules/language/media-plp-materializer/locale-lookup.ts"),
+      "utf8",
+    );
+    assert.match(
+      lookup,
+      /from\s+["']\.\.\/language-registry\/language-registry\.repository\.js["']/,
+    );
+    assert.doesNotMatch(
+      lookup,
+      /from\s+["'][^"']*language-registry\/index[^"']*["']/,
+    );
+    assert.doesNotMatch(
+      lookup,
+      /from\s+["'][^"']*language-registry\.service[^"']*["']/,
+    );
+    assert.doesNotMatch(
+      lookup,
+      /from\s+["'][^"']*(public-languages\.routes|admin-languages\.routes)[^"']*["']/,
+    );
+    assert.doesNotMatch(lookup, /from\s+["'][^"']*(global-search|language\/index)[^"']*["']/);
   });
 });

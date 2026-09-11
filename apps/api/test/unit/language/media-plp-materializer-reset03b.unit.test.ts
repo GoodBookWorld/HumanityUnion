@@ -556,7 +556,16 @@ describe("Reset 03B Media PLP materializer", () => {
     assert.equal(joined.includes("public-localization-reconciliation"), false);
     assert.equal(joined.includes("content-translation.service"), false);
     assert.equal(joined.includes("discover-media-presentations"), false);
+    assert.equal(joined.includes("language-registry/index"), false);
+    assert.equal(joined.includes("language-registry.service"), false);
+    assert.equal(joined.includes("public-languages.routes"), false);
+    assert.equal(joined.includes("admin-languages.routes"), false);
+    assert.equal(joined.includes("global-search"), false);
     assert.ok(joined.includes("media-plp-materializer/source-resolve.ts"));
+    assert.ok(
+      joined.includes("language-registry.repository"),
+      "locale eligibility must use Registry repository, not the barrel",
+    );
 
     const sourceResolve = readFileSync(
       join(apiSrc, "modules/language/media-plp-materializer/source-resolve.ts"),

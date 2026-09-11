@@ -1,13 +1,17 @@
 /**
  * Reset 03B — Language Registry eligibility lookup for Media PLP materializer.
  *
- * Uses Registry locale / alias resolution (canonical locale identity).
+ * Canonical locale / alias resolution via the Registry repository module only.
+ * Avoid the language-registry barrel entrypoint: it re-exports HTTP routes,
+ * Admin service, auth, and search-index invalidation modules, which inflated
+ * dry-run RSS past the Render 512 MB limit after the locale-identity fix.
+ *
  * Does not collapse script/region tags to a base languageCode.
  */
 
 import type { LanguageCode } from "@hu/types";
 
-import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
+import { resolveLanguageRegistryLocale } from "../language-registry/language-registry.repository.js";
 import { markMaterializerLanguageRegistryLookup } from "./counters.js";
 import { normalizeMediaPlpRegistryLocaleIdentity } from "./locale-identity.js";
 
