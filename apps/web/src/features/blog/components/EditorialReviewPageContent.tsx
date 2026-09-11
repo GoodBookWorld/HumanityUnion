@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 
-import type { BlogEditorialHistoryEntry, BlogEditorialReviewDetail } from "@hu/types";
-import { BLOG_CATEGORIES } from "@hu/types";
+import type { BlogEditorialReviewDetail } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
@@ -19,6 +19,12 @@ import {
 } from "../../../lib/api-client";
 import { formatBlogPublishedDate } from "../api";
 import {
+  resolveEditorialHistoryActionLabel,
+  resolveEditorialPublicationStatusLabel,
+  resolveEditorialReviewStatusLabel,
+  resolveEditorialSafetyOutcomeLabel,
+} from "../blog-workspace-i18n";
+import {
   approveAndPublishEditorialPost,
   declineEditorialPost,
   fetchEditorialReviewDetail,
@@ -27,37 +33,13 @@ import {
   requestEditorialChanges,
   type BlogPreviewProjection,
 } from "../editorial-api";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCoverImage } from "./BlogCoverImage";
 
 import "../blog.css";
-
-function historyLabel(action: BlogEditorialHistoryEntry["action"]): string {
-  switch (action) {
-    case "submitted":
-      return "Submitted";
-    case "resubmitted":
-      return "Resubmitted";
-    case "changes_requested":
-      return "Changes Requested";
-    case "approved_published":
-      return "Approved & Published";
-    case "published_after_safety_review":
-      return "Published After Safety Review";
-    case "declined":
-      return "Declined";
-    case "withdrawn":
-      return "Withdrawn";
-    case "archived":
-      return "Archived";
-    case "correction_started":
-      return "Correction Started";
-    default:
-      return action;
-  }
-}
 
 function formatDate(value?: string): string {
   if (!value) {
@@ -73,52 +55,6 @@ function formatDate(value?: string): string {
   }
 }
 
-/** Pack 15D — human-readable lifecycle label (block is separate). */
-function publicationStatusLabel(
-  status: BlogEditorialReviewDetail["status"],
-  reviewStatus: BlogEditorialReviewDetail["review"]["reviewStatus"],
-): string {
-  if (status === "draft" && reviewStatus === "changes_requested") {
-    return "Draft · Changes Requested";
-  }
-  if (status === "draft" && reviewStatus === "declined") {
-    return "Draft · Declined";
-  }
-  switch (status) {
-    case "draft":
-      return "Draft";
-    case "submitted_for_review":
-      return "Pending Review";
-    case "scheduled":
-      return "Scheduled";
-    case "published":
-      return "Published";
-    case "archived":
-      return "Archived";
-    default:
-      return status;
-  }
-}
-
-function reviewStatusLabel(
-  reviewStatus: BlogEditorialReviewDetail["review"]["reviewStatus"],
-): string {
-  switch (reviewStatus) {
-    case "none":
-      return "None";
-    case "pending":
-      return "Pending";
-    case "changes_requested":
-      return "Changes Requested";
-    case "approved":
-      return "Approved";
-    case "declined":
-      return "Declined";
-    default:
-      return reviewStatus;
-  }
-}
-
 function isFuturePublicationDate(iso?: string): boolean {
   if (!iso) {
     return false;
@@ -128,6 +64,8 @@ function isFuturePublicationDate(iso?: string): boolean {
 }
 
 export function EditorialReviewPageContent({ postId }: { postId: string }) {
+  const t = useTranslations("workspace.editorialPage");
+  const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const noteId = useId();
   const [detail, setDetail] = useState<BlogEditorialReviewDetail | null>(null);
@@ -153,11 +91,11 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
           return;
         }
         if (isAuthenticationRequiredError(loadError)) {
-          setError("Sign in to open Editorial Review.");
+          setError(t("signIn"));
         } else if (isForbiddenError(loadError)) {
-          setError("Editorial Review is available to Editors and Administrators only.");
+          setError(t("accessRestrictedBody"));
         } else if (isNotFoundError(loadError)) {
-          setError("Publication not found.");
+          setError(t("notFound"));
         } else {
           setError(formatAuthFormError(loadError));
         }
@@ -165,12 +103,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [postId]);
+  }, [postId, t]);
 
-  async function runAction(
-    action: string,
-    runner: () => Promise<unknown>,
-  ): Promise<void> {
+  async function runAction(action: string, runner: () => Promise<unknown>): Promise<void> {
     setBusy(action);
     setError(null);
     try {
@@ -186,11 +121,11 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   }
 
   if (error && !detail) {
-    return <StatusBanner title="Review unavailable" message={error} />;
+    return <StatusBanner title={t("reviewUnavailableTitle")} message={error} />;
   }
 
   if (!detail || !preview) {
-    return <p className="hu-body">Loading review…</p>;
+    return <p className="hu-body">{t("loadingReview")}</p>;
   }
 
   const safety = detail.safetyOutcome;
@@ -202,115 +137,118 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const needsSafetyOverride =
     isSubmitted && !publicationBlocked && safety === "needs_review";
   const rejected = safety === "rejected";
-  const categoryName =
-    BLOG_CATEGORIES.find((category) => category.categoryId === detail.categoryId)?.name ??
-    detail.categoryId;
+  const categoryName = resolveBlogCategoryDisplayName(detail.categoryId, tBlog);
   const tags = detail.tags.length > 0 ? detail.tags : preview.tags;
-  /** Canonical calendar date — never substitute review/submission time. */
   const publicationDate = detail.publishedAt ?? preview.publishedAt;
   const willScheduleOnApprove =
     isSubmitted && !publicationBlocked && isFuturePublicationDate(publicationDate);
+  const safetyDisplay = resolveEditorialSafetyOutcomeLabel(safety, t);
+  const previewCategory = resolveBlogCategoryDisplayName(preview.category.categoryId, tBlog);
 
   return (
     <div className="editorial-review editorial-review--pack15d">
-      <aside className="editorial-review__context" aria-label="Publication context">
+      <aside className="editorial-review__context" aria-label={t("publicationContextAria")}>
         <p className="hu-caption">
-          <Link href="/workspace/editorial">← Editorial Review</Link>
+          <Link href="/workspace/editorial">{t("backLink")}</Link>
         </p>
 
         <section aria-labelledby="editorial-author-heading">
           <h2 id="editorial-author-heading" className="hu-heading-3">
-            Author
+            {t("author")}
           </h2>
           <p className="hu-body">{detail.authorDisplayName}</p>
           {authorBlocked ? (
             <p className="hu-caption editorial-review__state-note" role="status">
-              Author is administratively blocked. This does not automatically block this
-              publication.
+              {t("authorBlockedNote")}
             </p>
           ) : null}
         </section>
 
         <section aria-labelledby="editorial-meta-heading">
           <h2 id="editorial-meta-heading" className="hu-heading-3">
-            Publication metadata
+            {t("metadataHeading")}
           </h2>
           <dl className="editorial-review__meta-list">
             <div>
-              <dt className="hu-caption">Category</dt>
+              <dt className="hu-caption">{t("category")}</dt>
               <dd className="hu-body">{categoryName}</dd>
             </div>
             <div>
-              <dt className="hu-caption">Tags</dt>
+              <dt className="hu-caption">{t("tags")}</dt>
               <dd className="hu-body">{tags.length > 0 ? tags.join(", ") : "—"}</dd>
             </div>
             <div>
-              <dt className="hu-caption">Publication date</dt>
+              <dt className="hu-caption">{t("publicationDate")}</dt>
               <dd className="hu-body">
                 {publicationDate ? formatBlogPublishedDate(publicationDate) : "—"}
               </dd>
             </div>
             <div>
-              <dt className="hu-caption">Submission date</dt>
+              <dt className="hu-caption">{t("submissionDate")}</dt>
               <dd className="hu-body">{formatDate(detail.submittedAt)}</dd>
             </div>
             <div>
-              <dt className="hu-caption">Status</dt>
+              <dt className="hu-caption">{t("status")}</dt>
               <dd className="hu-body">
-                {publicationStatusLabel(detail.status, detail.review.reviewStatus)}
+                {resolveEditorialPublicationStatusLabel(
+                  detail.status,
+                  detail.review.reviewStatus,
+                  t,
+                )}
               </dd>
             </div>
             <div>
-              <dt className="hu-caption">Review</dt>
-              <dd className="hu-body">{reviewStatusLabel(detail.review.reviewStatus)}</dd>
-            </div>
-            <div>
-              <dt className="hu-caption">Admin block</dt>
+              <dt className="hu-caption">{t("review")}</dt>
               <dd className="hu-body">
-                {publicationBlocked ? "Blocked" : "Not blocked"}
+                {resolveEditorialReviewStatusLabel(detail.review.reviewStatus, t)}
               </dd>
             </div>
             <div>
-              <dt className="hu-caption">Version</dt>
+              <dt className="hu-caption">{t("adminBlock")}</dt>
+              <dd className="hu-body">
+                {publicationBlocked ? t("blocked") : t("notBlocked")}
+              </dd>
+            </div>
+            <div>
+              <dt className="hu-caption">{t("version")}</dt>
               <dd className="hu-body">{detail.publishedVersion}</dd>
             </div>
             <div>
-              <dt className="hu-caption">Updated</dt>
+              <dt className="hu-caption">{t("updatedLabel")}</dt>
               <dd className="hu-body">{formatDate(detail.updatedAt)}</dd>
             </div>
           </dl>
           {detail.status === "scheduled" || willScheduleOnApprove ? (
             <p className="hu-caption editorial-review__state-note" role="status">
               {detail.status === "scheduled"
-                ? `Scheduled for ${publicationDate ? formatBlogPublishedDate(publicationDate) : "—"}.`
-                : `Future publication date — Approve will Schedule (not publish early).`}
+                ? t("scheduledFor", {
+                    date: publicationDate ? formatBlogPublishedDate(publicationDate) : "—",
+                  })
+                : t("futureDateNote")}
             </p>
           ) : null}
         </section>
 
         <section aria-labelledby="editorial-safety-heading">
           <h2 id="editorial-safety-heading" className="hu-heading-3">
-            Safety status
+            {t("safetyHeading")}
           </h2>
           <p className="hu-body" aria-live="polite">
-            Safety: {safety ?? "not evaluated"}
+            {t("safetyLabel", { outcome: safetyDisplay })}
           </p>
           {publicationBlocked ? (
             <StatusBanner
-              title="Publication administratively blocked"
-              message="This publication cannot be published while blocked. Block/Unblock remains on Admin Publishing — independent of Author block."
+              title={t("publicationBlockedTitle")}
+              message={t("publicationBlockedBody")}
             />
           ) : null}
           {rejected ? (
-            <StatusBanner
-              title="Safety rejected"
-              message="This publication cannot be published in its current form."
-            />
+            <StatusBanner title={t("safetyRejectedTitle")} message={t("safetyRejectedBody")} />
           ) : null}
           {needsSafetyOverride ? (
             <StatusBanner
-              title="Safety needs review"
-              message="Ordinary Approve & Publish is unavailable. Use Publish After Safety Review only after deliberate human review."
+              title={t("safetyNeedsReviewTitle")}
+              message={t("safetyNeedsReviewBody")}
             />
           ) : null}
         </section>
@@ -322,9 +260,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
           className="blog-article editorial-review__article"
         >
           <h2 id="editorial-article-heading" className="hu-heading-2">
-            Article Preview
+            {t("articlePreview")}
           </h2>
-          <p className="hu-caption blog-article__category">{preview.category.name}</p>
+          <p className="hu-caption blog-article__category">{previewCategory}</p>
           <h3 className="hu-heading-1 blog-article__title">{preview.title}</h3>
           <div className="blog-article__meta">
             <BlogAuthorInline author={preview.author} />
@@ -348,26 +286,24 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
         </article>
       </div>
 
-      <aside className="editorial-review__tools" aria-label="Editorial review tools">
+      <aside className="editorial-review__tools" aria-label={t("toolsAria")}>
         <div className="editorial-review__panel">
-          <h2 className="hu-heading-3">Editorial guidance</h2>
+          <h2 className="hu-heading-3">{t("guidanceHeading")}</h2>
           <ul className="editorial-review__checklist hu-body">
-            <li>Clarity</li>
-            <li>Evidence / sourcing where relevant</li>
-            <li>Fact vs opinion distinction</li>
-            <li>Constructive framing</li>
-            <li>Category fit</li>
-            <li>Readable structure</li>
-            <li>Safety status</li>
+            <li>{t("guidanceClarity")}</li>
+            <li>{t("guidanceEvidence")}</li>
+            <li>{t("guidanceFactOpinion")}</li>
+            <li>{t("guidanceFraming")}</li>
+            <li>{t("guidanceCategory")}</li>
+            <li>{t("guidanceStructure")}</li>
+            <li>{t("guidanceSafety")}</li>
           </ul>
-          <HelperText>
-            Guidance only — not a score. Final editorial decision belongs to the human Editor.
-          </HelperText>
+          <HelperText>{t("guidanceHelper")}</HelperText>
         </div>
 
         <div className="editorial-review__panel">
           <label className="hu-label" htmlFor={noteId}>
-            Editorial notes
+            {t("editorialNotes")}
           </label>
           <textarea
             id={noteId}
@@ -377,13 +313,10 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
             onChange={(event) => setReviewNote(event.target.value)}
             disabled={!isSubmitted || busy !== null}
           />
-          <HelperText>
-            Required for Request Changes, Decline, and Publish After Safety Review. Optional for
-            ordinary approval.
-          </HelperText>
+          <HelperText>{t("reviewNoteHelper")}</HelperText>
         </div>
 
-        {error ? <StatusBanner title="Action could not complete" message={error} /> : null}
+        {error ? <StatusBanner title={t("actionFailedTitle")} message={error} /> : null}
 
         <div className="editorial-review__actions">
           {ordinaryPublishOk ? (
@@ -403,27 +336,19 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
             >
               {busy === "publish"
                 ? willScheduleOnApprove
-                  ? "Scheduling…"
-                  : "Publishing…"
+                  ? t("scheduling")
+                  : t("publishing")
                 : willScheduleOnApprove
-                  ? "Approve & Schedule"
-                  : "Approve & Publish"}
+                  ? t("approveSchedule")
+                  : t("approvePublish")}
             </Button>
           ) : null}
 
           {willScheduleOnApprove && ordinaryPublishOk ? (
-            <HelperText>
-              Selected publication date is in the future. Approval schedules the post; it will not
-              publish early.
-            </HelperText>
+            <HelperText>{t("scheduleApproveHelper")}</HelperText>
           ) : null}
 
-          {publicationBlocked ? (
-            <HelperText>
-              Publication Block/Unblock is managed from Admin Publishing. Author block does not
-              cascade here.
-            </HelperText>
-          ) : null}
+          {publicationBlocked ? <HelperText>{t("publicationBlockHelper")}</HelperText> : null}
 
           {isSubmitted && !rejected ? (
             <Button
@@ -440,7 +365,7 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
                 )
               }
             >
-              {busy === "changes" ? "Sending…" : "Request Changes"}
+              {busy === "changes" ? t("sending") : t("requestChanges")}
             </Button>
           ) : null}
 
@@ -459,7 +384,7 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
                 )
               }
             >
-              {busy === "changes" ? "Sending…" : "Request Changes"}
+              {busy === "changes" ? t("sending") : t("requestChanges")}
             </Button>
           ) : null}
 
@@ -471,7 +396,7 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
               disabled={busy !== null}
               onClick={() => setSafetyConfirmOpen(true)}
             >
-              Publish After Safety Review
+              {t("publishAfterSafety")}
             </Button>
           ) : null}
 
@@ -482,22 +407,27 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
               disabled={busy !== null}
               onClick={() => setDeclineConfirmOpen(true)}
             >
-              Decline
+              {t("decline")}
             </Button>
           ) : null}
         </div>
 
         <div className="editorial-review__panel">
-          <h2 className="hu-heading-3">Review history</h2>
+          <h2 className="hu-heading-3">{t("reviewHistory")}</h2>
           {(detail.editorialHistory?.length ?? 0) === 0 ? (
-            <p className="hu-caption">No editorial history yet.</p>
+            <p className="hu-caption">{t("historyEmpty")}</p>
           ) : (
             <ol className="editorial-review__history">
               {[...(detail.editorialHistory ?? [])].reverse().map((entry, index) => (
                 <li key={`${entry.at}-${entry.action}-${index}`} className="hu-caption">
-                  <strong>{historyLabel(entry.action)}</strong> · {formatDate(entry.at)}
-                  {entry.safetyOutcome ? ` · Safety: ${entry.safetyOutcome}` : ""}
-                  {entry.reviewNote ? ` · Note recorded` : ""}
+                  <strong>{resolveEditorialHistoryActionLabel(entry.action, t)}</strong> ·{" "}
+                  {formatDate(entry.at)}
+                  {entry.safetyOutcome
+                    ? t("historySafety", {
+                        outcome: resolveEditorialSafetyOutcomeLabel(entry.safetyOutcome, t),
+                      })
+                    : ""}
+                  {entry.reviewNote ? t("noteRecorded") : ""}
                 </li>
               ))}
             </ol>
@@ -507,9 +437,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
 
       <ConfirmDialog
         isOpen={safetyConfirmOpen}
-        title="Publish after Safety review?"
-        description="You are accepting editorial responsibility to publish while Safety is needs_review. This does not claim the Safety system was wrong. A review note is required."
-        confirmLabel={busy === "safety" ? "Publishing…" : "Publish After Safety Review"}
+        title={t("safetyConfirmTitle")}
+        description={t("safetyConfirmBody")}
+        confirmLabel={busy === "safety" ? t("publishing") : t("publishAfterSafety")}
         destructive={false}
         isConfirming={busy === "safety"}
         onCancel={() => setSafetyConfirmOpen(false)}
@@ -526,9 +456,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
 
       <ConfirmDialog
         isOpen={declineConfirmOpen}
-        title="Decline this publication?"
-        description="The post is preserved as a draft with declined review status. A review note is required. Author capability is unchanged."
-        confirmLabel={busy === "decline" ? "Declining…" : "Decline"}
+        title={t("declineConfirmTitle")}
+        description={t("declineConfirmBody")}
+        confirmLabel={busy === "decline" ? t("declining") : t("decline")}
         destructive
         isConfirming={busy === "decline"}
         onCancel={() => setDeclineConfirmOpen(false)}

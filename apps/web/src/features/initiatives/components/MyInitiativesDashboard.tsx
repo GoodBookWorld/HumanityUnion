@@ -1,10 +1,11 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
-  MY_INITIATIVE_SECTIONS,
+  MY_INITIATIVE_SECTION_IDS,
   groupInitiativesByLifecyclePhase,
 } from "../initiative-lifecycle-labels";
 
@@ -17,34 +18,37 @@ interface MyInitiativesDashboardProps {
 }
 
 export function MyInitiativesDashboard({ initiatives }: MyInitiativesDashboardProps) {
+  const t = useTranslations("workspace.initiativesPage");
   const grouped = groupInitiativesByLifecyclePhase(initiatives);
   const [openSectionId, setOpenSectionId] = useState<string | null>(
-    MY_INITIATIVE_SECTIONS.find((section) => grouped[section.id].length > 0)?.id ?? null,
+    MY_INITIATIVE_SECTION_IDS.find((sectionId) => grouped[sectionId].length > 0) ?? null,
   );
 
   return (
     <div className="my-initiatives-dashboard">
-      {MY_INITIATIVE_SECTIONS.map((section) => {
-        const sectionInitiatives = grouped[section.id];
-        const isOpen = openSectionId === section.id;
-        const panelId = `my-initiatives-panel-${section.id}`;
+      {MY_INITIATIVE_SECTION_IDS.map((sectionId) => {
+        const sectionInitiatives = grouped[sectionId];
+        const isOpen = openSectionId === sectionId;
+        const panelId = `my-initiatives-panel-${sectionId}`;
 
         return (
-          <section key={section.id} className="my-initiatives-dashboard__section">
+          <section key={sectionId} className="my-initiatives-dashboard__section">
             <button
               type="button"
               className="my-initiatives-dashboard__summary"
               aria-expanded={isOpen}
               aria-controls={panelId}
-              onClick={() => setOpenSectionId(isOpen ? null : section.id)}
+              onClick={() => setOpenSectionId(isOpen ? null : sectionId)}
             >
-              <span className="my-initiatives-dashboard__heading">{section.title}</span>
+              <span className="my-initiatives-dashboard__heading">
+                {t(`sections.${sectionId}`)}
+              </span>
               <span className="my-initiatives-dashboard__count">{sectionInitiatives.length}</span>
             </button>
             {isOpen ? (
               <div id={panelId} className="my-initiatives-dashboard__panel">
                 {sectionInitiatives.length === 0 ? (
-                  <p className="my-initiatives-dashboard__empty">No initiatives in this section.</p>
+                  <p className="my-initiatives-dashboard__empty">{t("emptySection")}</p>
                 ) : (
                   <div className="my-initiatives-dashboard__cards">
                     {sectionInitiatives.map((initiative) => (

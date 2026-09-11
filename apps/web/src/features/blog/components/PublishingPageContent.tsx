@@ -1,17 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { BlogAuthoringAccessState } from "@hu/types";
 
+import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import {
   formatAuthFormError,
   isAuthenticationRequiredError,
 } from "../../../lib/api-client";
+import { HumanityUnionAssistantWidget } from "../../humanity-union-assistant/components/HumanityUnionAssistantWidget";
+import { WorkspaceNavigation } from "../../initiatives/components/WorkspaceNavigation";
 import { fetchBlogAuthoringAccessState } from "../authoring-api";
 import { PublishingDashboard } from "./PublishingDashboard";
+
+import "../publishing.css";
 
 function isAuthorCapable(state: BlogAuthoringAccessState): boolean {
   return (
@@ -26,7 +32,8 @@ function isAuthorCapable(state: BlogAuthoringAccessState): boolean {
   );
 }
 
-export function PublishingPageContent() {
+function PublishingPageBody() {
+  const t = useTranslations("workspace.publishingPage");
   const [state, setState] = useState<BlogAuthoringAccessState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +50,7 @@ export function PublishingPageContent() {
           return;
         }
         if (isAuthenticationRequiredError(loadError)) {
-          setError("Sign in to open the Publishing Workspace.");
+          setError(t("signInOpen"));
           return;
         }
         setError(formatAuthFormError(loadError));
@@ -51,34 +58,29 @@ export function PublishingPageContent() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (error) {
-    return <StatusBanner title="Publishing unavailable" message={error} />;
+    return <StatusBanner title={t("unavailableTitle")} message={error} />;
   }
 
   if (!state) {
-    return <p className="hu-body">Checking Author access…</p>;
+    return <p className="hu-body">{t("checkingAccess")}</p>;
   }
 
   if (!isAuthorCapable(state)) {
     return (
       <div className="publishing-page__gate">
-        <StatusBanner
-          title="Author access required"
-          message="Publishing is available after you become a Blog Author."
-        />
+        <StatusBanner title={t("authorRequiredTitle")} message={t("authorRequiredBody")} />
         <p className="hu-body">
           <Link href="/workspace/authoring" className="hu-button hu-button--primary">
-            Become an Author
+            {t("becomeAuthor")}
           </Link>
         </p>
       </div>
     );
   }
 
-  // Pack 16H — Trusted Publishing bypasses manual review on submit/publish only.
-  // It must NOT grant in-place Edit of published posts (that remains trusted_author/editor/admin).
   const canDirectPublish =
     state.capabilities.includes("trusted_author") ||
     state.capabilities.includes("editor") ||
@@ -98,4 +100,32 @@ export function PublishingPageContent() {
       />
     </div>
   );
+}
+
+/** Client shell — page chrome + Publishing dashboard via WEB_UI. */
+export function PublishingWorkspacePage() {
+  const t = useTranslations("workspace.publishingPage");
+
+  return (
+    <main className="humanity-workspace-page">
+      <MemberWorkspace
+        title={t("title")}
+        subtitle={t("subtitle")}
+        workspaceNavigation={<WorkspaceNavigation />}
+        assistant={
+          <HumanityUnionAssistantWidget
+            surfaceId="blog"
+            description={t("assistantDescription")}
+          />
+        }
+      >
+        <PublishingPageBody />
+      </MemberWorkspace>
+    </main>
+  );
+}
+
+/** @deprecated Prefer PublishingWorkspacePage for localized chrome. */
+export function PublishingPageContent() {
+  return <PublishingPageBody />;
 }

@@ -17,6 +17,15 @@ export const INITIATIVE_TIMELINE_EVENT_LABELS: Record<string, string> = {
   initiative_archived: "Archived",
 };
 
+/** Stable lifecycle section ids for My Initiatives dashboard (labels via WEB_UI). */
+export const MY_INITIATIVE_SECTION_IDS: readonly InitiativeLifecyclePhase[] = [
+  "draft",
+  "published",
+  "projected",
+  "archived",
+];
+
+/** @deprecated Prefer MY_INITIATIVE_SECTION_IDS + workspace.initiativesPage.sections.* */
 export const MY_INITIATIVE_SECTIONS: readonly {
   id: InitiativeLifecyclePhase;
   title: string;

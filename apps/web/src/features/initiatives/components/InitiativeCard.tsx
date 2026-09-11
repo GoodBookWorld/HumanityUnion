@@ -2,16 +2,19 @@
 
 import type { Initiative } from "@hu/types";
 import { resolveInitiativeCoverMedia } from "@hu/types";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
-import {
-  INITIATIVE_LIFECYCLE_PHASE_LABELS,
-  formatInitiativeDate,
-} from "../initiative-lifecycle-labels";
+import { formatInitiativeDate } from "../initiative-lifecycle-labels";
 import {
   buildInitiativeExperienceHref,
   buildInitiativeExperienceManageHref,
 } from "../../initiative-owner-studio/initiative-experience-routes";
+import {
+  resolveActivityAreaDisplayLabel,
+  resolveLifecyclePhaseDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 
 import { InitiativeImage } from "./InitiativeImage";
 
@@ -21,46 +24,58 @@ interface InitiativeCardProps {
   initiative: Initiative;
 }
 
-function communityLabel(initiative: Initiative): string {
-  return (
-    initiative.metadata.communityAssociation || initiative.metadata.communitySlug || "Not specified"
-  );
-}
-
-function resolveActionLabel(initiative: Initiative): string {
-  return initiative.lifecyclePhase === "draft" ? "Manage Initiative" : "Open Initiative";
-}
-
 export function InitiativeCard({ initiative }: InitiativeCardProps) {
+  const tWorkspace = useTranslations("workspace.initiativesPage");
+  const tExperience = useTranslations("initiativeExperience");
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+  });
+
   const href =
     initiative.lifecyclePhase === "draft"
       ? buildInitiativeExperienceManageHref(initiative.initiativeId)
       : buildInitiativeExperienceHref(initiative.initiativeId);
 
+  const actionLabel =
+    initiative.lifecyclePhase === "draft"
+      ? tWorkspace("manageInitiative")
+      : tWorkspace("openInitiative");
+
+  const phaseLabel = resolveLifecyclePhaseDisplayLabel(initiative.lifecyclePhase, tExperience);
+  const activityAreaLabel = resolveActivityAreaDisplayLabel(
+    initiative.metadata.activityArea,
+    tExperience,
+  );
+  const community =
+    initiative.metadata.communityAssociation ||
+    initiative.metadata.communitySlug ||
+    tWorkspace("notSpecified");
+
   return (
     <Link
       href={href}
       className="initiative-card initiative-card--link"
-      aria-label={`${resolveActionLabel(initiative)}: ${initiative.title}`}
+      aria-label={`${actionLabel}: ${displayTitle}`}
     >
       <span className="initiative-card__media">
         <InitiativeImage
-          title={initiative.title}
+          title={displayTitle}
           imageUrl={initiative.metadata.imageUrl}
           coverMedia={resolveInitiativeCoverMedia(initiative.metadata)}
         />
       </span>
-      <span className="initiative-card__title">{initiative.title}</span>
+      <span className="initiative-card__title">{displayTitle}</span>
       <span className="initiative-card__meta">
-        <span>{INITIATIVE_LIFECYCLE_PHASE_LABELS[initiative.lifecyclePhase]}</span>
-        <span>{initiative.metadata.activityArea}</span>
-        <span>{communityLabel(initiative)}</span>
+        <span>{phaseLabel}</span>
+        <span>{activityAreaLabel}</span>
+        <span>{community}</span>
       </span>
       <span className="initiative-card__dates">
-        <span>Created {formatInitiativeDate(initiative.createdAt)}</span>
-        <span>Updated {formatInitiativeDate(initiative.updatedAt)}</span>
+        <span>{tWorkspace("created", { date: formatInitiativeDate(initiative.createdAt) })}</span>
+        <span>{tWorkspace("updated", { date: formatInitiativeDate(initiative.updatedAt) })}</span>
       </span>
-      <span className="initiative-card__action">{resolveActionLabel(initiative)}</span>
+      <span className="initiative-card__action">{actionLabel}</span>
     </Link>
   );
 }

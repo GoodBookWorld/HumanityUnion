@@ -1,12 +1,13 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
-import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { ApiUnavailableState } from "../../../design-system";
 import { isApiUnavailableError, isAuthenticationRequiredError } from "../../../lib/api-client";
-import { INITIATIVE_WORKSPACE_SECTIONS } from "../../workspace-civic-assistant/initiative-workspace-sections";
+import { INITIATIVE_WORKSPACE_SECTION_IDS } from "../../workspace-civic-assistant/initiative-workspace-sections";
 import { listMyInitiatives } from "../api";
 
 import { InitiativesUnavailableWorkspace } from "./InitiativesUnavailableWorkspace";
@@ -14,13 +15,20 @@ import { InitiativeWorkspace } from "./InitiativeWorkspace";
 import { PublicInitiativesLanding } from "./PublicInitiativesLanding";
 import { WorkspaceNavigation } from "./WorkspaceNavigation";
 
-const NAV_ITEMS = [...INITIATIVE_WORKSPACE_SECTIONS];
-
 type GateState = "loading" | "public" | "workspace" | "unavailable";
 
 export function InitiativesPageGate() {
+  const t = useTranslations("workspace.initiativesPage");
   const [state, setState] = useState<GateState>("loading");
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+
+  const navItems = useMemo(
+    () => [
+      { id: INITIATIVE_WORKSPACE_SECTION_IDS[0], label: t("myInitiatives") },
+      { id: INITIATIVE_WORKSPACE_SECTION_IDS[1], label: t("startNew") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -58,13 +66,15 @@ export function InitiativesPageGate() {
   if (state === "loading") {
     return (
       <MemberWorkspace
-        title="Initiatives"
-        subtitle="Participation initiatives in Humanity Union"
-        navItems={NAV_ITEMS}
+        title={t("title")}
+        subtitle={t("subtitle")}
+        navItems={navItems}
+        sectionsLabel={t("sectionsNavLabel")}
+        sectionsAriaLabel={t("sectionsNavAria")}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <InitiativesUnavailableWorkspace>
-          <p role="status">Loading initiatives workspace…</p>
+          <p role="status">{t("loading")}</p>
         </InitiativesUnavailableWorkspace>
       </MemberWorkspace>
     );
@@ -77,18 +87,20 @@ export function InitiativesPageGate() {
   if (state === "unavailable") {
     return (
       <MemberWorkspace
-        title="Initiatives"
-        subtitle="Participation initiatives in Humanity Union"
-        navItems={NAV_ITEMS}
+        title={t("title")}
+        subtitle={t("subtitle")}
+        navItems={navItems}
+        sectionsLabel={t("sectionsNavLabel")}
+        sectionsAriaLabel={t("sectionsNavAria")}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <InitiativesUnavailableWorkspace>
           <ApiUnavailableState
-            title="Workspace temporarily unavailable"
-            explanation="We couldn't connect to the Initiative service. Please try again shortly."
+            title={t("unavailableTitle")}
+            explanation={t("unavailableExplanation")}
             retryHref="/workspace/initiatives"
-            retryLabel="Retry"
-            homeLabel="Return Home"
+            retryLabel={t("retry")}
+            homeLabel={t("returnHome")}
           />
         </InitiativesUnavailableWorkspace>
       </MemberWorkspace>
@@ -97,9 +109,11 @@ export function InitiativesPageGate() {
 
   return (
     <MemberWorkspace
-      title="Initiatives"
-      subtitle="Participation initiatives in Humanity Union"
-      navItems={NAV_ITEMS}
+      title={t("title")}
+      subtitle={t("subtitle")}
+      navItems={navItems}
+      sectionsLabel={t("sectionsNavLabel")}
+      sectionsAriaLabel={t("sectionsNavAria")}
       workspaceNavigation={<WorkspaceNavigation />}
     >
       <InitiativeWorkspace initialInitiatives={initiatives} />

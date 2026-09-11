@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useState } from "react";
 
 import type {
@@ -24,6 +25,7 @@ import {
   useSaveButtonPhase,
 } from "../../member-profile/use-save-button-phase";
 import { fetchPublicBlogCategories } from "../api";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import {
   createBlogDraft,
   previewBlogSlugFromTitle,
@@ -80,6 +82,8 @@ export function BlogPostEditor({
   canDirectPublish,
   authorDisplayName,
 }: BlogPostEditorProps) {
+  const tPublishing = useTranslations("workspace.publishingPage");
+  const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const titleId = useId();
   const categoryId = useId();
@@ -546,7 +550,7 @@ export function BlogPostEditor({
                 </HelperText>
 
                 <label className="hu-label" htmlFor={categoryId}>
-                  Category
+                  {tPublishing("category")}
                 </label>
                 <select
                   id={categoryId}
@@ -559,10 +563,10 @@ export function BlogPostEditor({
                     markDirty();
                   }}
                 >
-                  <option value="">Select a category</option>
+                  <option value="">{tPublishing("selectCategory")}</option>
                   {categoryOptions.map((entry) => (
                     <option key={entry.categoryId} value={entry.categoryId}>
-                      {entry.name}
+                      {resolveBlogCategoryDisplayName(entry.categoryId, tBlog)}
                     </option>
                   ))}
                 </select>
