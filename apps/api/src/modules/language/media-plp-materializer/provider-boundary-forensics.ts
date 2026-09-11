@@ -70,11 +70,18 @@ export type ProviderBoundaryForensics = {
   readonly PROVIDER_CANDIDATE_COUNT?: number | null;
   readonly PROVIDER_TEXT_PART_COUNT?: number | null;
   readonly PROVIDER_EXTRACTED_LENGTH?: number | null;
+  /** Entity-level semantic MACHINE path count (compatibility). */
   readonly PROVIDER_EXPECTED_KEY_COUNT?: number | null;
   readonly PROVIDER_RETURNED_KEY_COUNT?: number | null;
   readonly PROVIDER_MISSING_KEY_COUNT?: number | null;
   readonly PROVIDER_BATCH_INDEX?: number | null;
   readonly PROVIDER_BATCH_COUNT?: number | null;
+  /** Current batch provider-key counts (post Brand-split keys). */
+  readonly PROVIDER_BATCH_EXPECTED_KEY_COUNT?: number | null;
+  readonly PROVIDER_BATCH_RETURNED_KEY_COUNT?: number | null;
+  readonly PROVIDER_BATCH_MISSING_KEY_COUNT?: number | null;
+  /** 1 = first attempt, 2 = bounded same-batch retry. */
+  readonly PROVIDER_BATCH_ATTEMPT?: number | null;
   /** RESET 05E.2 — safe HTTP/transport forensics. */
   readonly PROVIDER_HTTP_STATUS?: number | null;
   readonly PROVIDER_ERROR_CLASS?: string | null;
@@ -334,6 +341,24 @@ export function formatProviderForensicsSafe(
   }
   if (forensics.PROVIDER_BATCH_COUNT != null) {
     parts.push(`PROVIDER_BATCH_COUNT=${forensics.PROVIDER_BATCH_COUNT}`);
+  }
+  if (forensics.PROVIDER_BATCH_EXPECTED_KEY_COUNT != null) {
+    parts.push(
+      `PROVIDER_BATCH_EXPECTED_KEY_COUNT=${forensics.PROVIDER_BATCH_EXPECTED_KEY_COUNT}`,
+    );
+  }
+  if (forensics.PROVIDER_BATCH_RETURNED_KEY_COUNT != null) {
+    parts.push(
+      `PROVIDER_BATCH_RETURNED_KEY_COUNT=${forensics.PROVIDER_BATCH_RETURNED_KEY_COUNT}`,
+    );
+  }
+  if (forensics.PROVIDER_BATCH_MISSING_KEY_COUNT != null) {
+    parts.push(
+      `PROVIDER_BATCH_MISSING_KEY_COUNT=${forensics.PROVIDER_BATCH_MISSING_KEY_COUNT}`,
+    );
+  }
+  if (forensics.PROVIDER_BATCH_ATTEMPT != null) {
+    parts.push(`PROVIDER_BATCH_ATTEMPT=${forensics.PROVIDER_BATCH_ATTEMPT}`);
   }
   if (forensics.PROVIDER_HTTP_STATUS != null) {
     parts.push(`PROVIDER_HTTP_STATUS=${forensics.PROVIDER_HTTP_STATUS}`);
