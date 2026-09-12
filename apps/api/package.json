@@ -49,6 +49,7 @@
     "materialize:media-plp": "tsx src/scripts/materialize-media-plp.ts",
     "materialize:media-plp-carousel": "tsx src/scripts/materialize-media-plp-carousel.ts",
     "materialize:initiative-plp": "tsx src/scripts/materialize-initiative-plp.ts",
+    "materialize:participant-public-plp": "tsx src/scripts/materialize-participant-public-plp.ts",
     "reconcile:public-localization": "tsx src/scripts/reconcile-public-localization.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
