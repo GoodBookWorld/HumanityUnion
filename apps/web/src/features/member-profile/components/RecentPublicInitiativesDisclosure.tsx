@@ -6,14 +6,32 @@ import { useTranslations } from "next-intl";
 
 import type { MemberProfilePublicRecentInitiative } from "@hu/types";
 
-import { buildCiRailPresentation } from "../../language/adapters/ci-rail-presentation";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 
 /**
  * Pack 17F — white Pack-17A 3D disclosure for Recent Public Initiatives.
  * Lists only initiatives already on the public projection (server-filtered).
  *
- * Pack 08K — titles via PublicPresentationNode (ci-rail adapter).
+ * Titles: CT `initiative` via shared card presentation (same path as other
+ * Initiative surfaces). Canonical `initiative.title` remains fallback only.
  */
+function RecentInitiativeTitleLink({
+  initiative,
+}: {
+  initiative: MemberProfilePublicRecentInitiative;
+}) {
+  const title = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+  });
+
+  return (
+    <li className="public-member-page__initiatives-item">
+      <Link href={initiative.href}>{title}</Link>
+    </li>
+  );
+}
+
 export function RecentPublicInitiativesDisclosure({
   initiatives,
 }: {
@@ -68,17 +86,12 @@ export function RecentPublicInitiativesDisclosure({
           className="public-member-page__initiatives-list"
           aria-label={recentInitiativesLabel}
         >
-          {initiatives.map((initiative) => {
-            const presentation = buildCiRailPresentation({
-              recordId: initiative.initiativeId,
-              title: initiative.title,
-            });
-            return (
-              <li key={initiative.initiativeId} className="public-member-page__initiatives-item">
-                <Link href={initiative.href}>{presentation.title}</Link>
-              </li>
-            );
-          })}
+          {initiatives.map((initiative) => (
+            <RecentInitiativeTitleLink
+              key={initiative.initiativeId}
+              initiative={initiative}
+            />
+          ))}
         </ul>
       </div>
     </section>
