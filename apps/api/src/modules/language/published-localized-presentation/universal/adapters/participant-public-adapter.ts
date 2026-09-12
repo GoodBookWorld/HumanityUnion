@@ -27,8 +27,11 @@ export const PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE = "participant_public" as const;
 const POLICY: PlpFieldPolicyMap = {
   profileId: "PROTECTED_CANONICAL",
   displayName: "PROTECTED_CANONICAL",
+  // Organization is an identity/proper-name field (parallel to displayName /
+  // NON_TRANSLATABLE organizationName). Leaving it MACHINE_CONTENT rejects
+  // correct identical provider returns as CONTENT_INTEGRITY_FAILURE.
   biography: "MACHINE_CONTENT",
-  organization: "MACHINE_CONTENT",
+  organization: "PROTECTED_CANONICAL",
   skills: "MACHINE_CONTENT",
 };
 
@@ -89,7 +92,7 @@ function buildPresentation(input: {
     profileId: protectedTechnical(input.profileId),
     displayName: protectedIdentity(input.displayName),
     biography: input.biography,
-    organization: input.organization,
+    organization: protectedIdentity(input.organization),
     skills: [...input.skills],
   };
 }

@@ -16,12 +16,14 @@ function read(relative: string): string {
 }
 
 describe("participant_public PLP production wiring", () => {
-  it("adapter includes skills MACHINE_CONTENT and Mongo live source", () => {
+  it("adapter protects organization identity; biography/skills remain MACHINE_CONTENT", () => {
     const adapter = read(
       "src/modules/language/published-localized-presentation/universal/adapters/participant-public-adapter.ts",
     );
     assert.match(adapter, /skills:\s*"MACHINE_CONTENT"/);
     assert.match(adapter, /biography:\s*"MACHINE_CONTENT"/);
+    assert.match(adapter, /organization:\s*"PROTECTED_CANONICAL"/);
+    assert.match(adapter, /organization:\s*protectedIdentity/);
     assert.match(adapter, /findMemberProfileByProfileId/);
     assert.match(adapter, /members_only/);
   });
