@@ -64,7 +64,11 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
 
   const href = `/blog/${encodeURIComponent(post.slug)}`;
   const titleForDisplay = displayTitle || post.title;
-  const categoryLabel = resolveBlogCategoryDisplayName(post.category.categoryId, t);
+  const categoryLabel = resolveBlogCategoryDisplayName(
+    post.category.categoryId,
+    t,
+    post.category.name,
+  );
 
   return (
     <li className="blog-latest-mini__item">

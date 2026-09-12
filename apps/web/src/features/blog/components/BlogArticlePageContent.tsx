@@ -241,7 +241,11 @@ export function BlogArticlePageContent({
     Date.parse(post.updatedAt) - Date.parse(post.publishedAt) > 60_000;
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
-  const categoryDisplayName = resolveBlogCategoryDisplayName(post.category.categoryId, t);
+  const categoryDisplayName = resolveBlogCategoryDisplayName(
+    post.category.categoryId,
+    t,
+    post.category.name,
+  );
   // Pack 08I.10 — presentation owns title/body; canonical only when presentation empty.
   const titleForDisplay =
     displayTitle.trim() || initialPresentation?.title || post.title;

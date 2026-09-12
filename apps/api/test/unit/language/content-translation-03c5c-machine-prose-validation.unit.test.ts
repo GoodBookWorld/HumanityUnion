@@ -1,5 +1,8 @@
 /**
  * Localization Closure 03C.5C — validate CA machine prose before lifecycle reassembly.
+ *
+ * CA CURRENT completeness is structural: every eligible machine segment must be
+ * present and non-empty. Equality with source is not a reject reason for prose.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -82,29 +85,146 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
     setLanguageRegistryForceMemoryForTests(false);
   });
 
-  it("A. unchanged machine prose + different glossary labels → validation fails", async () => {
-    await assert.rejects(
+  it("A. one required eligible field missing → reject", () => {
+    assert.throws(
       () =>
-        translateCollaborativeAnalysisFieldsWithLifecycleSlots({
-          sanitizedFields: { ...CA_FIELDS },
+        assertCollaborativeAnalysisMachineProseTranslated({
           sourceLanguage: "en",
-          targetLanguage: "uk",
-          translatePayload: async (payload) => ({ ...payload }),
+          targetLanguage: "xx-TEST",
+          machinePayload: {
+            "summary#m0": "Review signals carefully.",
+            "risks#m0": "Flood risk remains.",
+          },
+          translatedSegments: {
+            "summary#m0": "[xx] Review signals carefully.",
+          },
         }),
       (error: unknown) =>
         error instanceof ContentTranslationValidationError &&
-        (error.reasonCode === "UNCHANGED_SOURCE_PROSE" ||
-          error.reasonCode === "UNCHANGED_CIVIC_TITLE"),
+        error.reasonCode === "MISSING_REQUIRED_PATH",
     );
   });
 
-  it("B. title machine prose unchanged while glossary resolves analysis → UNCHANGED_CIVIC_TITLE", async () => {
+  it("B. malformed/empty required localized field → reject", () => {
+    assert.throws(
+      () =>
+        assertCollaborativeAnalysisMachineProseTranslated({
+          sourceLanguage: "en",
+          targetLanguage: "xx-TEST",
+          machinePayload: {
+            "summary#m0": "Review signals carefully.",
+            "risks#m0": "Flood risk remains.",
+          },
+          translatedSegments: {
+            "summary#m0": "[xx] Review signals carefully.",
+            "risks#m0": "   ",
+          },
+        }),
+      (error: unknown) =>
+        error instanceof ContentTranslationValidationError &&
+        error.reasonCode === "MISSING_REQUIRED_PATH",
+    );
+  });
+
+  it("C. all required fields structurally represented → accept", () => {
+    assert.doesNotThrow(() =>
+      assertCollaborativeAnalysisMachineProseTranslated({
+        sourceLanguage: "en",
+        targetLanguage: "xx-TEST",
+        machinePayload: {
+          "summary#m0": "Review signals carefully.",
+          "risks#m0": "Flood risk remains.",
+          "references#m0": "https://example.org/report",
+        },
+        translatedSegments: {
+          "summary#m0": "[xx] Review signals carefully.",
+          "risks#m0": "[xx] Flood risk remains.",
+          "references#m0": "https://example.org/report",
+        },
+      }),
+    );
+  });
+
+  it("D. legitimate identical localized value does not fail solely due to equality", () => {
+    assert.doesNotThrow(() =>
+      assertCollaborativeAnalysisMachineProseTranslated({
+        sourceLanguage: "en",
+        targetLanguage: "xx-TEST",
+        machinePayload: {
+          "summary#m0": "Review signals carefully.",
+          "risks#m0": "Flood risk remains.",
+          "openQuestions#m0": "What timeline fits?",
+        },
+        translatedSegments: {
+          "summary#m0": "Review signals carefully.",
+          "risks#m0": "Flood risk remains.",
+          "openQuestions#m0": "What timeline fits?",
+        },
+      }),
+    );
+  });
+
+  it("E. quoted/source-preserved content remains allowed", () => {
+    const quoted = `"The river breached at midnight," the mayor said.`;
+    assert.doesNotThrow(() =>
+      assertCollaborativeAnalysisMachineProseTranslated({
+        sourceLanguage: "en",
+        targetLanguage: "xx-TEST",
+        machinePayload: {
+          "summary#m0": "Community impact remains elevated.",
+          "supportingEvidence#m0": quoted,
+          "references#m0": "https://example.org/a",
+        },
+        translatedSegments: {
+          "summary#m0": "[xx] Community impact remains elevated.",
+          "supportingEvidence#m0": quoted,
+          "references#m0": "https://example.org/a",
+        },
+      }),
+    );
+  });
+
+  it("F. arbitrary Registry locale works without locale branching", () => {
+    assert.doesNotThrow(() =>
+      assertCollaborativeAnalysisMachineProseTranslated({
+        sourceLanguage: "en",
+        targetLanguage: "zz-Future",
+        machinePayload: {
+          "summary#m0": "Review signals carefully.",
+          "risks#m0": "Flood risk remains.",
+        },
+        translatedSegments: {
+          "summary#m0": "Review signals carefully.",
+          "risks#m0": "[zz] Flood risk remains.",
+        },
+      }),
+    );
+
+    const lifecycle = readFileSync(
+      path.join(
+        repoRoot,
+        "apps/api/src/modules/language/content-translation-lifecycle-slots.ts",
+      ),
+      "utf8",
+    );
+    const assertFn = lifecycle.slice(
+      lifecycle.indexOf("export function assertCollaborativeAnalysisMachineProseTranslated"),
+      lifecycle.indexOf(
+        "export function assertCollaborativeAnalysisMachineCivicTitleTranslated",
+      ),
+    );
+    assert.doesNotMatch(assertFn, /targetLanguage\s*===\s*["'](uk|ar|zh)/);
+    assert.doesNotMatch(assertFn, /\b(uk|ar|zh-Hant)\b/);
+    assert.doesNotMatch(assertFn, /UNCHANGED_SOURCE_PROSE/);
+    assert.doesNotMatch(assertFn, /isAllowedIdentical/);
+  });
+
+  it("G. civic-title machine prose unchanged still fails (existing title gate)", async () => {
     await assert.rejects(
       () =>
         translateCollaborativeAnalysisFieldsWithLifecycleSlots({
           sanitizedFields: {
             ...CA_FIELDS,
-            // Keep non-title machine prose changing so title is the failing civic check.
             summary: `Review ${DISCUSSION} signals carefully.`,
           },
           sourceLanguage: "en",
@@ -124,9 +244,22 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
         error instanceof ContentTranslationValidationError &&
         error.reasonCode === "UNCHANGED_CIVIC_TITLE",
     );
+
+    assert.throws(
+      () =>
+        assertCollaborativeAnalysisMachineCivicTitleTranslated({
+          sourceLanguage: "en",
+          targetLanguage: "uk",
+          machinePayload: { "title#m0": ": Climate Safety" },
+          translatedSegments: { "title#m0": ": Climate Safety" },
+        }),
+      (error: unknown) =>
+        error instanceof ContentTranslationValidationError &&
+        error.reasonCode === "UNCHANGED_CIVIC_TITLE",
+    );
   });
 
-  it("C. title machine prose translated + glossary slot → success", async () => {
+  it("H. title machine prose translated + glossary slot → success", async () => {
     const translated = await translateCollaborativeAnalysisFieldsWithLifecycleSlots({
       sanitizedFields: { ...CA_FIELDS },
       sourceLanguage: "en",
@@ -145,43 +278,26 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
     assert.doesNotMatch(translated.title, /\{lifecycleStage:/);
   });
 
-  it("D. all eligible machine prose unchanged fails even when slots would localize", () => {
-    assert.throws(
-      () =>
-        assertCollaborativeAnalysisMachineProseTranslated({
-          sourceLanguage: "en",
-          targetLanguage: "uk",
-          machinePayload: {
-            "title#m0": ": Climate Safety",
-            "summary#m0": "Review ",
-            "summary#m1": " signals carefully.",
-          },
-          translatedSegments: {
-            "title#m0": ": Climate Safety",
-            "summary#m0": "Review ",
-            "summary#m1": " signals carefully.",
-          },
-        }),
-      (error: unknown) =>
-        error instanceof ContentTranslationValidationError &&
-        error.reasonCode === "UNCHANGED_SOURCE_PROSE",
-    );
-
-    assert.throws(
-      () =>
-        assertCollaborativeAnalysisMachineCivicTitleTranslated({
-          sourceLanguage: "en",
-          targetLanguage: "uk",
-          machinePayload: { "title#m0": ": Climate Safety" },
-          translatedSegments: { "title#m0": ": Climate Safety" },
-        }),
-      (error: unknown) =>
-        error instanceof ContentTranslationValidationError &&
-        error.reasonCode === "UNCHANGED_CIVIC_TITLE",
+  it("I. structurally complete identical prose passes; unchanged title still gated separately", () => {
+    assert.doesNotThrow(() =>
+      assertCollaborativeAnalysisMachineProseTranslated({
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        machinePayload: {
+          "title#m0": ": Climate Safety",
+          "summary#m0": "Review ",
+          "summary#m1": " signals carefully.",
+        },
+        translatedSegments: {
+          "title#m0": ": Climate Safety",
+          "summary#m0": "Review ",
+          "summary#m1": " signals carefully.",
+        },
+      }),
     );
   });
 
-  it("E. non-CA sourceKind civic/prose validators remain unchanged", () => {
+  it("J. non-CA sourceKind civic/prose validators remain unchanged", () => {
     assert.throws(
       () =>
         assertTranslatedProseChangedFromSource({
@@ -221,7 +337,7 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
     );
   });
 
-  it("F. CA service path validates machine payload before reassembly comments/guards", () => {
+  it("K. CA service path validates machine payload before reassembly comments/guards", () => {
     const lifecycle = readFileSync(
       path.join(
         repoRoot,
@@ -236,7 +352,6 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
     assert.match(lifecycle, /validateCollaborativeAnalysisMachineTranslation/);
     assert.match(lifecycle, /BEFORE glossary reassembly|before glossary reassembly/i);
     assert.match(service, /sourceLanguage: source\.sourceLanguage/);
-    // CA branch must not run generic reassembled-vs-tokenized prose/title asserts.
     const caBranch = service.slice(
       service.indexOf('source.sourceKind === "collaborative_analysis"'),
       service.indexOf("} else {", service.indexOf('source.sourceKind === "collaborative_analysis"')),

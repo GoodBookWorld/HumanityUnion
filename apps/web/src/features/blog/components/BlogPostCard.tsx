@@ -183,7 +183,13 @@ export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
               className="blog-post-card__meta-icon"
               aria-hidden="true"
             />
-            <span>{resolveBlogCategoryDisplayName(post.category.categoryId, t)}</span>
+            <span>
+              {resolveBlogCategoryDisplayName(
+                post.category.categoryId,
+                t,
+                post.category.name,
+              )}
+            </span>
           </Link>
         </p>
 

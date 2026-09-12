@@ -88,6 +88,11 @@ function eligibleMachineKeys(
 /**
  * 03C.5C — validate provider machine-only segments against the exact payload
  * sent to the provider (never against glossary-reassembled fields).
+ *
+ * Completeness contract (structural): every eligible machine segment must be
+ * present as a non-empty string. Textual equality with source is NOT a reject
+ * reason — legitimate identical values (URLs, references, quotes, names) are
+ * allowed. Civic-title equality remains a separate existing check.
  */
 export function assertCollaborativeAnalysisMachineProseTranslated(input: {
   readonly sourceLanguage: LanguageCode | string;
@@ -113,20 +118,6 @@ export function assertCollaborativeAnalysisMachineProseTranslated(input: {
         "malformed_response",
       );
     }
-  }
-
-  const anyChanged = eligibleKeys.some((key) => {
-    const sourceValue = input.machinePayload[key]!.trim();
-    const translatedValue = input.translatedSegments[key]!.trim();
-    return translatedValue !== sourceValue;
-  });
-
-  if (!anyChanged) {
-    throw new ContentTranslationValidationError(
-      "UNCHANGED_SOURCE_PROSE",
-      "Translation provider returned unchanged source text for all eligible Collaborative Analysis machine segments.",
-      "malformed_response",
-    );
   }
 }
 

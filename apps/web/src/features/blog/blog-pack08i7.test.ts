@@ -60,6 +60,7 @@ describe("Pack 08I.7 — Blog categories / cards / authors", () => {
       "categories.conscious_existence.name": "Свідоме існування",
       "categories.human_security.name": "Людська безпека",
       "categories.our_life.name": "Наше життя",
+      "categories.human_potential.name": "Людський потенціал",
     };
     const t = Object.assign((key: string) => messages[key] ?? key, {
       has: (key: string) => key in messages,
@@ -68,7 +69,50 @@ describe("Pack 08I.7 — Blog categories / cards / authors", () => {
     assert.equal(resolveBlogCategoryDisplayName("conscious_existence", t), "Свідоме існування");
     assert.equal(resolveBlogCategoryDisplayName("conscious-existence", t), "Свідоме існування");
     assert.equal(resolveBlogCategoryDisplayName("human-security", t), "Людська безпека");
-    assert.equal(resolveBlogCategoryDisplayName("unknown-category", t), "unknown-category");
+    assert.equal(resolveBlogCategoryDisplayName("human_potential", t), "Людський потенціал");
+  });
+
+  it("resolveBlogCategoryDisplayName prefers API name then humanized token for unknown ids", () => {
+    const emptyT = Object.assign((key: string) => key, {
+      has: () => false,
+    });
+
+    assert.equal(
+      resolveBlogCategoryDisplayName("admin_created_topic", emptyT, "Civic Futures"),
+      "Civic Futures",
+    );
+    assert.equal(
+      resolveBlogCategoryDisplayName("admin_created_topic", emptyT),
+      "Admin Created Topic",
+    );
+    assert.notEqual(
+      resolveBlogCategoryDisplayName("human_potential", emptyT),
+      "human_potential",
+    );
+  });
+
+  it("human_potential catalog labels exist across locales", async () => {
+    const expected: Record<string, string> = {
+      en: "Human Potential",
+      uk: "Людський потенціал",
+      ar: "الإمكانات البشرية",
+      "zh-Hant": "人類潛能",
+    };
+    for (const [locale, label] of Object.entries(expected)) {
+      const loaded = await loadUiMessagesForLocale(locale);
+      assert.equal(
+        readNested(loaded.messages, "blogPublic.categories.human_potential.name"),
+        label,
+        locale,
+      );
+    }
+  });
+
+  it("resolver has no locale-specific runtime branch", () => {
+    const resolver = readWeb("features/blog/resolve-blog-category-display-name.ts");
+    assert.doesNotMatch(resolver, /locale\s*===\s*["'](uk|ar|zh)/);
+    assert.doesNotMatch(resolver, /switch\s*\(/);
+    assert.doesNotMatch(resolver, /case\s+["']human_potential["']/);
   });
 
   it("sidebar / card / chart / article / latest / authors wire helpers", () => {
@@ -80,6 +124,8 @@ describe("Pack 08I.7 — Blog categories / cards / authors", () => {
     const authors = readWeb("features/blog/components/BlogAuthorsSidebar.tsx");
 
     assert.match(sidebar, /resolveBlogCategoryDisplayName/);
+    assert.match(sidebar, /selectedCategory\.name/);
+    assert.match(sidebar, /category\.name/);
     assert.match(card, /resolveBlogCategoryDisplayName/);
     assert.match(chart, /resolveBlogCategoryDisplayName/);
     assert.match(article, /resolveBlogCategoryDisplayName/);

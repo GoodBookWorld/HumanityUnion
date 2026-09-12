@@ -66,8 +66,12 @@ export function BlogCategoriesSidebar({
       ? allLabel
       : formatOptionLabel(
           selectedCategory
-            ? resolveBlogCategoryDisplayName(selectedCategory.categoryId, t)
-            : selected,
+            ? resolveBlogCategoryDisplayName(
+                selectedCategory.categoryId,
+                t,
+                selectedCategory.name,
+              )
+            : resolveBlogCategoryDisplayName(selected, t),
           countForSlug(categoryCounts, selected),
         );
 
@@ -93,7 +97,7 @@ export function BlogCategoriesSidebar({
         {categories.map((category) => (
           <option key={category.categoryId} value={category.slug}>
             {formatOptionLabel(
-              resolveBlogCategoryDisplayName(category.categoryId, t),
+              resolveBlogCategoryDisplayName(category.categoryId, t, category.name),
               countForSlug(categoryCounts, category.slug),
             )}
           </option>
