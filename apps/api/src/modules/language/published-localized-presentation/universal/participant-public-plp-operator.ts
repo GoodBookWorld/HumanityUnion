@@ -5,6 +5,10 @@
  * Thin path: runUniversalPlpBuild + dynamic provider import only.
  * Does not pull the durable queue, Registry service barrel, or all-adapter
  * registration graph (those inflate RSS past Render Starter 512 MB).
+ *
+ * Historical backfill (`--historical`): Mongo pages ordered by profileId,
+ * process one page, release, next page. Never materializes the full corpus
+ * array. Resume with `--after-profile-id`. Provider concurrency = 1.
  */
 
 import type { LanguageCode, MemberProfile, PlpLocalizableEntityContract } from "@hu/types";
@@ -81,16 +85,41 @@ export type ParticipantPublicPlpProfileReport = {
   readonly locales: readonly ParticipantPublicPlpLocaleOutcome[];
 };
 
+export type ParticipantPublicPlpActionTotals = {
+  readonly SKIP_CURRENT: number;
+  readonly WOULD_BUILD: number;
+  readonly BUILT: number;
+  readonly FAILED: number;
+  readonly SKIP_SOURCE: number;
+  readonly ineligible: number;
+};
+
 export type ParticipantPublicPlpMaterializeReport = {
   readonly pack: "PARTICIPANT_PUBLIC_PLP";
   readonly operation: "materialize_participant_public_plp";
   readonly OPERATOR_MODE: "DRY_RUN" | "EXECUTE";
+  readonly TRAVERSAL: "identity" | "page" | "historical";
   readonly ENTITY_TYPE: typeof PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE;
   readonly PLP_PERSISTENCE_MODE: string;
   readonly database: string | null;
+  readonly targetLocales: readonly string[];
+  readonly pageSize: number | null;
+  readonly pagesProcessed: number;
+  readonly profilesProcessed: number;
+  /** Exclusive resume cursor for the next invocation (`--after-profile-id`). */
+  readonly resumeAfterProfileId: string | null;
+  readonly hasMore: boolean;
+  readonly totals: ParticipantPublicPlpActionTotals;
+  /** Identity/limit: all rows. Historical: last page only (memory bound). */
   readonly profiles: readonly ParticipantPublicPlpProfileReport[];
   readonly PROVIDER_CALLS: number;
+  readonly PROVIDER_CONCURRENCY: 1;
   readonly abortReason: string | null;
+};
+
+export type ParticipantPublicPlpEligiblePageInput = {
+  readonly pageSize: number;
+  readonly afterProfileId: string | null;
 };
 
 export type ParticipantPublicPlpMaterializeDeps = {
@@ -98,7 +127,11 @@ export type ParticipantPublicPlpMaterializeDeps = {
   readonly loadProfileByPublicName?: (
     publicName: string,
   ) => Promise<MemberProfile | null>;
+  /** @deprecated Prefer listEligibleProfilesPage (deterministic profileId cursor). */
   readonly listEligibleProfiles?: (limit: number) => Promise<MemberProfile[]>;
+  readonly listEligibleProfilesPage?: (
+    input: ParticipantPublicPlpEligiblePageInput,
+  ) => Promise<MemberProfile[]>;
   readonly resolveLocales?: (
     localeFilter: string | null,
   ) => Promise<readonly string[]>;
@@ -159,22 +192,85 @@ export async function loadParticipantPublicPlpProfileByPublicName(
   return asProfile(doc as Record<string, unknown> | null);
 }
 
-export async function listParticipantPublicPlpEligibleProfiles(
-  limit: number,
+/**
+ * One Mongo page of eligible profiles. Deterministic `profileId` ascending
+ * cursor — never loads the full corpus. `afterProfileId` is exclusive.
+ */
+export async function listParticipantPublicPlpEligibleProfilesPage(
+  input: ParticipantPublicPlpEligiblePageInput,
 ): Promise<MemberProfile[]> {
+  const pageSize = Math.max(1, Math.min(input.pageSize, 25));
   const collection = getMongoCollection(MONGO_COLLECTIONS.memberProfiles);
+  const filter: Record<string, unknown> = {
+    status: { $ne: "suspended" },
+    profileVisibility: { $in: ["public", "members_only"] },
+  };
+  const after = input.afterProfileId?.trim() || null;
+  if (after) {
+    filter.profileId = { $gt: after };
+  }
   const docs = await collection
-    .find({
-      status: { $ne: "suspended" },
-      profileVisibility: { $in: ["public", "members_only"] },
-    })
+    .find(filter)
     .project(PROFILE_PROJECTION)
-    .sort({ updatedAt: -1 })
-    .limit(limit)
+    .sort({ profileId: 1 })
+    .limit(pageSize)
     .toArray();
   return docs
     .map((doc) => asProfile(doc as Record<string, unknown>))
     .filter((row): row is MemberProfile => row != null);
+}
+
+/** Single-page helper (ad-hoc `--limit`). */
+export async function listParticipantPublicPlpEligibleProfiles(
+  limit: number,
+): Promise<MemberProfile[]> {
+  return listParticipantPublicPlpEligibleProfilesPage({
+    pageSize: limit,
+    afterProfileId: null,
+  });
+}
+
+function emptyActionTotals(): ParticipantPublicPlpActionTotals {
+  return {
+    SKIP_CURRENT: 0,
+    WOULD_BUILD: 0,
+    BUILT: 0,
+    FAILED: 0,
+    SKIP_SOURCE: 0,
+    ineligible: 0,
+  };
+}
+
+function accumulateProfileTotals(
+  totals: ParticipantPublicPlpActionTotals,
+  report: ParticipantPublicPlpProfileReport,
+): ParticipantPublicPlpActionTotals {
+  if (!report.ELIGIBLE) {
+    return { ...totals, ineligible: totals.ineligible + 1 };
+  }
+  let next = { ...totals };
+  for (const locale of report.locales) {
+    switch (locale.ACTION) {
+      case "SKIP_CURRENT":
+        next = { ...next, SKIP_CURRENT: next.SKIP_CURRENT + 1 };
+        break;
+      case "WOULD_BUILD":
+        next = { ...next, WOULD_BUILD: next.WOULD_BUILD + 1 };
+        break;
+      case "BUILT":
+        next = { ...next, BUILT: next.BUILT + 1 };
+        break;
+      case "FAILED":
+        next = { ...next, FAILED: next.FAILED + 1 };
+        break;
+      case "SKIP_SOURCE":
+        next = { ...next, SKIP_SOURCE: next.SKIP_SOURCE + 1 };
+        break;
+      default:
+        break;
+    }
+  }
+  return next;
 }
 
 /** Thin Registry read — never import language-registry barrel / service. */
@@ -553,56 +649,138 @@ export async function runParticipantPublicPlpMaterialize(
     const loadById = deps.loadProfileById ?? loadParticipantPublicPlpProfileById;
     const loadByName =
       deps.loadProfileByPublicName ?? loadParticipantPublicPlpProfileByPublicName;
-    const listEligible =
-      deps.listEligibleProfiles ?? listParticipantPublicPlpEligibleProfiles;
-
-    const profiles: MemberProfile[] = [];
-    if (args.profileId) {
-      const profile = await loadById(args.profileId);
-      if (profile) {
-        profiles.push(profile);
-      }
-    } else if (args.publicName) {
-      const profile = await loadByName(args.publicName);
-      if (profile) {
-        profiles.push(profile);
-      }
-    } else if (args.limit) {
-      profiles.push(...(await listEligible(args.limit)));
-    }
+    const listPage =
+      deps.listEligibleProfilesPage ??
+      (deps.listEligibleProfiles
+        ? async (input: ParticipantPublicPlpEligiblePageInput) => {
+            // Legacy test dep: ignore cursor; one page only.
+            if (input.afterProfileId) {
+              return [];
+            }
+            return deps.listEligibleProfiles!(input.pageSize);
+          }
+        : listParticipantPublicPlpEligibleProfilesPage);
 
     const runProvider = deps.runProvider ?? defaultRunProvider;
     const publishBuild = deps.publishBuild ?? runUniversalPlpBuild;
 
-    const profileReports: ParticipantPublicPlpProfileReport[] = [];
+    let traversal: ParticipantPublicPlpMaterializeReport["TRAVERSAL"] = "identity";
+    let pagesProcessed = 0;
+    let profilesProcessed = 0;
     let providerCalls = 0;
-    for (const profile of profiles) {
-      const result = await materializeProfile({
-        profile,
-        locales,
-        execute: args.execute,
-        runProvider,
-        publishBuild,
-      });
-      profileReports.push(result.report);
-      providerCalls += result.providerCalls;
-    }
+    let totals = emptyActionTotals();
+    let resumeAfterProfileId: string | null = args.afterProfileId;
+    let hasMore = false;
+    let lastPageReports: ParticipantPublicPlpProfileReport[] = [];
+    let sourceNotFound = false;
 
-    if (profiles.length === 0) {
-      profileReports.push({
-        profileId: args.profileId ?? "",
-        publicName: args.publicName,
-        SOURCE_FOUND: false,
-        ELIGIBLE: false,
-        CANONICAL_VERSION: null,
-        locales: [],
-      });
+    if (args.profileId || args.publicName) {
+      traversal = "identity";
+      const profile = args.profileId
+        ? await loadById(args.profileId)
+        : await loadByName(args.publicName!);
+      if (!profile) {
+        sourceNotFound = true;
+        lastPageReports = [
+          {
+            profileId: args.profileId ?? "",
+            publicName: args.publicName,
+            SOURCE_FOUND: false,
+            ELIGIBLE: false,
+            CANONICAL_VERSION: null,
+            locales: [],
+          },
+        ];
+      } else {
+        const result = await materializeProfile({
+          profile,
+          locales,
+          execute: args.execute,
+          runProvider,
+          publishBuild,
+        });
+        lastPageReports = [result.report];
+        profilesProcessed = 1;
+        pagesProcessed = 1;
+        providerCalls += result.providerCalls;
+        totals = accumulateProfileTotals(totals, result.report);
+        resumeAfterProfileId = profile.profileId;
+      }
+    } else {
+      traversal = args.historical ? "historical" : "page";
+      let afterProfileId = args.afterProfileId;
+      const maxPages = args.historical ? args.maxPages : 1;
+
+      for (;;) {
+        if (maxPages != null && pagesProcessed >= maxPages) {
+          hasMore = true;
+          break;
+        }
+
+        const page = await listPage({
+          pageSize: args.pageSize,
+          afterProfileId,
+        });
+        if (page.length === 0) {
+          hasMore = false;
+          if (pagesProcessed === 0 && !args.afterProfileId) {
+            sourceNotFound = true;
+            lastPageReports = [
+              {
+                profileId: "",
+                publicName: null,
+                SOURCE_FOUND: false,
+                ELIGIBLE: false,
+                CANONICAL_VERSION: null,
+                locales: [],
+              },
+            ];
+          }
+          break;
+        }
+
+        pagesProcessed += 1;
+        const pageReports: ParticipantPublicPlpProfileReport[] = [];
+        for (const profile of page) {
+          const result = await materializeProfile({
+            profile,
+            locales,
+            execute: args.execute,
+            runProvider,
+            publishBuild,
+          });
+          pageReports.push(result.report);
+          providerCalls += result.providerCalls;
+          totals = accumulateProfileTotals(totals, result.report);
+          profilesProcessed += 1;
+          afterProfileId = profile.profileId;
+        }
+        lastPageReports = pageReports;
+        resumeAfterProfileId = afterProfileId;
+
+        // Release page before next Mongo read (do not retain prior pages).
+        if (page.length < args.pageSize) {
+          hasMore = false;
+          break;
+        }
+        if (!args.historical) {
+          // Probe one more id to set hasMore for single-page --limit ops.
+          const probe = await listPage({
+            pageSize: 1,
+            afterProfileId,
+          });
+          hasMore = probe.length > 0;
+          break;
+        }
+        hasMore = true;
+      }
     }
 
     const report: ParticipantPublicPlpMaterializeReport = {
       pack: "PARTICIPANT_PUBLIC_PLP",
       operation: "materialize_participant_public_plp",
       OPERATOR_MODE: args.execute ? "EXECUTE" : "DRY_RUN",
+      TRAVERSAL: traversal,
       ENTITY_TYPE: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
       PLP_PERSISTENCE_MODE:
         getPublishedLocalizationPersistenceMode() === "mongo"
@@ -611,15 +789,23 @@ export async function runParticipantPublicPlpMaterialize(
             ? "MEMORY"
             : "UNSET",
       database: resolveMongoConfig().database,
-      profiles: profileReports,
+      targetLocales: locales,
+      pageSize: traversal === "identity" ? null : args.pageSize,
+      pagesProcessed,
+      profilesProcessed,
+      resumeAfterProfileId,
+      hasMore,
+      totals,
+      profiles: lastPageReports,
       PROVIDER_CALLS: providerCalls,
-      abortReason: profiles.length === 0 ? "SOURCE_NOT_FOUND" : null,
+      PROVIDER_CONCURRENCY: 1,
+      abortReason: sourceNotFound ? "SOURCE_NOT_FOUND" : null,
     };
 
     return {
-      exitCode: profiles.length === 0 ? 1 : 0,
+      exitCode: sourceNotFound ? 1 : 0,
       report,
-      errorMessage: profiles.length === 0 ? "SOURCE_NOT_FOUND" : null,
+      errorMessage: sourceNotFound ? "SOURCE_NOT_FOUND" : null,
     };
   } finally {
     await disconnect();

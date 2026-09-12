@@ -1,15 +1,21 @@
 /**
- * Bounded materialize:participant-public-plp (one profile or small batch).
+ * Bounded materialize:participant-public-plp (identity, page, or historical).
  *
  * Dry-run (default):
  *   pnpm materialize:participant-public-plp -- --mongo --profile-id <id>
  *   pnpm materialize:participant-public-plp -- --mongo --public-name <name>
  *   pnpm materialize:participant-public-plp -- --mongo --limit 5
+ *   pnpm materialize:participant-public-plp -- --mongo --historical
+ *
+ * Resume historical / paged limit:
+ *   ... --historical --after-profile-id <resumeAfterProfileId from prior report>
  *
  * Execute (staging only; not run from Cursor tasks):
  *   ... --execute
  *
- * Optional: --locale <code> (otherwise Registry targets excluding source en).
+ * Optional: --locale <code> (otherwise Registry targets excluding source en)
+ * Optional: --page-size <1..25> (historical default 10)
+ * Optional: --max-pages <n> (historical safety cap per invocation)
  */
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";

@@ -38,7 +38,7 @@ describe("materialize:participant-public-plp operator", () => {
     }
   });
 
-  it("refuses --all/--corpus and oversized --limit", () => {
+  it("refuses --all/--corpus and oversized --limit; accepts --historical", () => {
     assert.equal(
       parseParticipantPublicPlpMaterializeArgs(["--mongo", "--all"]).ok,
       false,
@@ -53,6 +53,15 @@ describe("materialize:participant-public-plp operator", () => {
       "5",
     ]);
     assert.equal(limited.ok, true);
+    const historical = parseParticipantPublicPlpMaterializeArgs([
+      "--mongo",
+      "--historical",
+    ]);
+    assert.equal(historical.ok, true);
+    if (historical.ok) {
+      assert.equal(historical.args.historical, true);
+      assert.equal(historical.args.pageSize, 10);
+    }
   });
 
   it("refuses production and non-staging execute", () => {
@@ -86,13 +95,16 @@ describe("materialize:participant-public-plp operator", () => {
       "src/modules/language/published-localized-presentation/universal/participant-public-plp-operator-args.ts",
     );
     assert.match(args, /refuses --all\/--corpus/);
+    assert.match(args, /--historical/);
     const operator = read(
       "src/modules/language/published-localized-presentation/universal/participant-public-plp-operator.ts",
     );
     assert.match(operator, /runUniversalPlpBuild/);
     assert.match(operator, /listParticipantPublicPlpRegistryLocales/);
+    assert.match(operator, /listParticipantPublicPlpEligibleProfilesPage/);
     assert.match(operator, /excludeSourceLanguage:\s*"en"/);
     assert.match(operator, /SKIP_CURRENT/);
+    assert.match(operator, /PROVIDER_CONCURRENCY:\s*1/);
     assert.doesNotMatch(operator, /from ["'].*process-plp-build-request/);
     assert.doesNotMatch(operator, /ensureAllDefaultPlpAdaptersRegistered/);
     assert.doesNotMatch(operator, /localization:check|warm:staging-content-translations/);

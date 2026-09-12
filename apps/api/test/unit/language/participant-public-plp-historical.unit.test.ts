@@ -1,0 +1,275 @@
+/**
+ * Historical participant_public PLP materialize — bounded pages, Registry locales,
+ * CURRENT skip, provider concurrency 1, no full-corpus array.
+ */
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { after, before, beforeEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+
+import type { MemberProfile } from "@hu/types";
+import { PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION } from "@hu/types";
+
+import {
+  resetPublishedLocalizationPersistenceForTests,
+  setPublishedLocalizationPersistenceModeForTests,
+} from "../../../src/modules/language/published-localized-presentation/persistence/repository.js";
+import { publishPublishedLocalizedPresentation } from "../../../src/modules/language/published-localized-presentation/publish-atomic.js";
+import {
+  buildParticipantPublicCanonicalPresentation,
+  PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+  participantPublicPlpDomainAdapter,
+} from "../../../src/modules/language/published-localized-presentation/universal/adapters/participant-public-adapter.js";
+import {
+  parseParticipantPublicPlpMaterializeArgs,
+} from "../../../src/modules/language/published-localized-presentation/universal/participant-public-plp-operator-args.js";
+import { runParticipantPublicPlpMaterialize } from "../../../src/modules/language/published-localized-presentation/universal/participant-public-plp-operator.js";
+import { mergeLocalizedLayersByProvenance } from "../../../src/modules/language/published-localized-presentation/validate-build-result.js";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const apiRoot = path.resolve(here, "../../..");
+
+function read(relative: string): string {
+  return readFileSync(path.join(apiRoot, relative), "utf8");
+}
+
+function sampleProfile(overrides: Partial<MemberProfile> = {}): MemberProfile {
+  return {
+    profileId: "profile-hist-01",
+    userId: "user-1",
+    memberNumber: "HU-TEST",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    displayName: "Participant One",
+    publicName: "participant-one",
+    biography: "English biography for localization.",
+    organization: "Humanity Union",
+    skills: ["Skill Alpha"],
+    profileVisibility: "public",
+    showOrganization: true,
+    showLocation: true,
+    showParticipationArea: true,
+    membershipPubliclyVisible: false,
+    skillsVisibility: "public",
+    professionalLinksVisibility: "public",
+    showInitiativesStatistics: true,
+    showCollectiveDecisionsStatistics: true,
+    showAlliesStatistics: true,
+    showProposalsStatistics: true,
+    showPetitionsStatistics: true,
+    showCommitmentsStatistics: true,
+    messagingPolicy: "active_allies",
+    status: "active",
+    ...overrides,
+  };
+}
+
+describe("materialize:participant-public-plp historical bounds", () => {
+  before(() => {
+    setPublishedLocalizationPersistenceModeForTests("memory");
+  });
+  beforeEach(() => {
+    resetPublishedLocalizationPersistenceForTests();
+    setPublishedLocalizationPersistenceModeForTests("memory");
+  });
+  after(() => {
+    resetPublishedLocalizationPersistenceForTests();
+  });
+
+  it("parses --historical with page-size / after-profile-id / max-pages; refuses --all", () => {
+    assert.equal(parseParticipantPublicPlpMaterializeArgs(["--mongo", "--all"]).ok, false);
+    const hist = parseParticipantPublicPlpMaterializeArgs([
+      "--mongo",
+      "--historical",
+      "--page-size",
+      "5",
+      "--after-profile-id",
+      "profile-a",
+      "--max-pages",
+      "2",
+    ]);
+    assert.equal(hist.ok, true);
+    if (hist.ok) {
+      assert.equal(hist.args.historical, true);
+      assert.equal(hist.args.pageSize, 5);
+      assert.equal(hist.args.afterProfileId, "profile-a");
+      assert.equal(hist.args.maxPages, 2);
+    }
+  });
+
+  it("processes multiple profiles in bounded pages; never holds full corpus; concurrency 1", async () => {
+    const corpus = [
+      sampleProfile({ profileId: "p-a", publicName: "a", biography: "Bio A" }),
+      sampleProfile({ profileId: "p-b", publicName: "b", biography: "Bio B" }),
+      sampleProfile({ profileId: "p-c", publicName: "c", biography: "Bio C" }),
+      sampleProfile({ profileId: "p-d", publicName: "d", biography: "Bio D" }),
+    ];
+    const pageLoads: number[] = [];
+    let maxPageLen = 0;
+    let providerInFlight = 0;
+    let maxProviderInFlight = 0;
+    let providerCalls = 0;
+
+    const result = await runParticipantPublicPlpMaterialize(
+      ["--mongo", "--historical", "--page-size", "2", "--execute"],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        resolveLocales: async () => ["xx-Future"],
+        listEligibleProfilesPage: async ({ pageSize, afterProfileId }) => {
+          const start = afterProfileId
+            ? corpus.findIndex((row) => row.profileId > afterProfileId)
+            : 0;
+          const from = start < 0 ? corpus.length : start;
+          const page = corpus.slice(from, from + pageSize);
+          pageLoads.push(page.length);
+          maxPageLen = Math.max(maxPageLen, page.length);
+          return page;
+        },
+        runProvider: async (input) => {
+          providerInFlight += 1;
+          maxProviderInFlight = Math.max(maxProviderInFlight, providerInFlight);
+          providerCalls += 1;
+          const values: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.autoValues)) {
+            values[k] = `[${input.locale}] ${v}`;
+          }
+          providerInFlight -= 1;
+          return { ok: true, values };
+        },
+        publishBuild: async () => ({
+          status: "COMPLETED",
+          reasonCodes: [],
+          snapshotId: "snap",
+        }),
+      },
+    );
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report?.TRAVERSAL, "historical");
+    assert.equal(result.report?.pagesProcessed, 2);
+    assert.equal(result.report?.profilesProcessed, 4);
+    assert.equal(result.report?.hasMore, false);
+    assert.equal(result.report?.PROVIDER_CONCURRENCY, 1);
+    assert.equal(maxProviderInFlight, 1);
+    assert.equal(providerCalls, 4);
+    assert.ok(maxPageLen <= 2);
+    assert.deepEqual(pageLoads.filter((n) => n > 0), [2, 2]);
+    assert.ok(pageLoads.includes(0), "terminal empty page confirms corpus exhaustion");
+    // Historical report retains last page only (not full corpus).
+    assert.equal(result.report?.profiles.length, 2);
+    assert.equal(result.report?.resumeAfterProfileId, "p-d");
+    assert.equal(result.report?.totals.BUILT, 4);
+  });
+
+  it("skips usable CURRENT; builds missing locale; discovers Registry-added locale without hardcoding", async () => {
+    const profile = sampleProfile({ profileId: "p-current", publicName: "current-one" });
+    const full = buildParticipantPublicCanonicalPresentation({
+      profileId: profile.profileId,
+      displayName: profile.displayName,
+      biography: profile.biography,
+      organization: profile.organization,
+      skills: profile.skills,
+    });
+    const merged = mergeLocalizedLayersByProvenance({
+      canonicalPresentation: full.presentation,
+      fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
+        PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+      ),
+      layers: [
+        {
+          source: "MACHINE",
+          values: {
+            biography: "Already localized biography.",
+            "skills[0]": "Already localized skill",
+          },
+        },
+      ],
+    });
+    await publishPublishedLocalizedPresentation({
+      entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+      entityId: profile.profileId,
+      locale: "xx-Present",
+      canonicalVersion: full.canonicalVersion,
+      contentRevision: 1,
+      localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+      canonicalPresentation: full.presentation,
+      localizedCandidate: merged.presentation,
+      provenance: merged.provenance,
+      fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
+        PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+      ),
+    });
+
+    let providerCalls = 0;
+    const result = await runParticipantPublicPlpMaterialize(
+      ["--mongo", "--historical", "--page-size", "10", "--execute"],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        // Future Registry locale appears here without uk/ar/zh-Hant literals.
+        resolveLocales: async () => ["xx-Present", "yy-Future"],
+        listEligibleProfilesPage: async ({ afterProfileId }) => {
+          if (afterProfileId) {
+            return [];
+          }
+          return [profile];
+        },
+        runProvider: async (input) => {
+          providerCalls += 1;
+          assert.equal(input.locale, "yy-Future");
+          const values: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.autoValues)) {
+            values[k] = `[yy] ${v}`;
+          }
+          return { ok: true, values };
+        },
+        publishBuild: async () => ({
+          status: "COMPLETED",
+          reasonCodes: [],
+          snapshotId: "snap-yy",
+        }),
+      },
+    );
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report?.totals.SKIP_CURRENT, 1);
+    assert.equal(result.report?.totals.BUILT, 1);
+    assert.equal(providerCalls, 1);
+    const locales = result.report?.profiles[0]?.locales ?? [];
+    assert.equal(locales.find((row) => row.locale === "xx-Present")?.ACTION, "SKIP_CURRENT");
+    assert.equal(locales.find((row) => row.locale === "yy-Future")?.ACTION, "BUILT");
+  });
+
+  it("operator + enqueue remain Registry-driven (no hardcoded locale triple)", () => {
+    const operator = read(
+      "src/modules/language/published-localized-presentation/universal/participant-public-plp-operator.ts",
+    );
+    assert.match(operator, /listParticipantPublicPlpEligibleProfilesPage/);
+    assert.match(operator, /--historical/);
+    assert.match(operator, /PROVIDER_CONCURRENCY:\s*1/);
+    assert.doesNotMatch(operator, /\["uk",\s*"ar",\s*"zh-Hant"\]/);
+    assert.doesNotMatch(operator, /locale\s*===\s*["']uk["']/);
+
+    const enqueue = read(
+      "src/modules/language/published-localized-presentation/universal/adapters/enqueue-participant-public-plp.js".replace(
+        /\.js$/,
+        ".ts",
+      ),
+    );
+    assert.match(enqueue, /resolvePlpAutoBuildLocales/);
+    assert.doesNotMatch(enqueue, /\["uk",\s*"ar",\s*"zh-Hant"\]/);
+
+    const service = read("src/modules/member-profile/member-profile.service.ts");
+    assert.match(service, /enqueueParticipantPublicPlpBuilds/);
+  });
+});
