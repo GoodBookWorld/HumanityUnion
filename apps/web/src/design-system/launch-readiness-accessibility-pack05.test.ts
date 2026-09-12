@@ -126,7 +126,8 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
     const surface = read("features/member-profile/components/ParticipantProfileSurface.tsx");
     assert.match(surface, /MemberStatusIndicator/);
     const indicator = read("features/member-profile/components/MemberStatusIndicator.tsx");
-    assert.match(indicator, /MEMBER_STATUS_INDICATOR_LABEL/);
+    assert.match(indicator, /useTranslations\("membershipPublic"\)/);
+    assert.match(indicator, /status\.memberCohort/);
     assert.match(indicator, /alt=""/);
     assert.match(indicator, />Member</);
   });

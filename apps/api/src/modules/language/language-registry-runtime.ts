@@ -15,7 +15,7 @@ import { PreferencesValidationError } from "../preferences/preferences.errors.js
 import {
   listLanguageRegistry,
   resolveLanguageRegistryLocale,
-} from "./language-registry/index.js";
+} from "./language-registry/language-registry.repository.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 /**

@@ -1,5 +1,5 @@
 import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "../hu-terminology-glossary.js";
-import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
+import { resolveLanguageRegistryLocale } from "../language-registry/language-registry.repository.js";
 import {
   assertGeminiTranslationConfigured,
   resolveTranslationConfig,

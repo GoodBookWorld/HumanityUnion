@@ -5394,6 +5394,70 @@
       "saved": "Membership visibility preference saved.",
       "saveError": "Unable to save visibility setting."
     },
+    "publicPreview": {
+      "captionActiveWithNumber": "Public profile: Member status appears automatically, including your Member Number.",
+      "captionActivePrivateNumber": "Public profile: Member status appears automatically. Your Member Number stays private until you enable it.",
+      "captionPreview": "Public profile preview (future Member status)",
+      "statusLabel": "Status",
+      "ariaLabel": "Public Membership status preview"
+    },
+    "badgeProduct": {
+      "title": "Wear Your Commitment",
+      "body": "Apply for your official {siteName} Member Badge. The CA$28 contribution includes delivery.",
+      "subtitle": "A symbol of solidarity, responsibility, and global unity.",
+      "productName": "Official {siteName} Member Badge",
+      "features": {
+        "securePin": "Secure pin backing",
+        "deliveryIncluded": "Delivery included",
+        "optionalContribution": "Optional Member contribution"
+      },
+      "deliveryIncluded": "Delivery included",
+      "ctaLabel": "Member Badge Application",
+      "applicationIntro": "Confirm where your official {siteName} Member Badge should be delivered.",
+      "membersOnly": "The official Member Badge is available only to active {siteName} Members.",
+      "unavailable": "Member Badge Application is temporarily unavailable."
+    },
+    "badgeApplication": {
+      "title": "Member Badge Application",
+      "widgetTitle": "My Member Badge Application",
+      "recipient": "Recipient",
+      "deliveryAddress": "Delivery Address",
+      "contribution": "Contribution",
+      "payment": "Payment",
+      "fulfillment": "Fulfillment",
+      "updated": "Updated",
+      "edit": "Edit application",
+      "contributionAria": "Badge contribution",
+      "productNameShort": "Official Member Badge",
+      "fields": {
+        "recipientName": "Recipient name *",
+        "addressLine1": "Address line 1 *",
+        "addressLine2": "Address line 2",
+        "city": "City *",
+        "provinceStateRegion": "Province / State / Region *",
+        "postalCode": "Postal / ZIP code *",
+        "country": "Country *",
+        "phone": "Phone (optional)"
+      },
+      "saveForLater": "Save for Later",
+      "saving": "Saving…",
+      "continueToPayment": "Continue to Payment",
+      "continuing": "Continuing…",
+      "paymentStatus": {
+        "paid": "Paid",
+        "refunded": "Refunded",
+        "unpaid": "Not paid"
+      },
+      "fulfillmentStatus": {
+        "awaitingPayment": "Awaiting payment",
+        "paymentRefunded": "Payment refunded",
+        "awaiting_fulfillment": "Awaiting fulfillment",
+        "preparing": "Preparing",
+        "shipped": "Shipped",
+        "completed": "Delivered",
+        "notReady": "Not ready"
+      }
+    },
     "statistics": {
       "defaultTitle": "Membership participation",
       "loading": "Loading participation statistics...",
@@ -5403,6 +5467,121 @@
       "participants": "Participants",
       "lastUpdated": "Last updated {when}",
       "votingExplanation": "Membership status does not change vote weight. This result is a statistical indicator of civic support."
+    },
+    "successPage": {
+      "title": "Membership Success",
+      "subtitle": "Thank you for supporting {siteName}",
+      "loading": "Loading Membership success...",
+      "signInRequired": "Sign in to view your Membership confirmation.",
+      "unavailable": "Membership confirmation is unavailable.",
+      "activationUnavailable": "Membership activation has not been confirmed.",
+      "previewBanner": "Development preview mode is enabled. Member confirmation details appear only after backend-confirmed Membership activation.",
+      "returnToMembership": "Return to Membership",
+      "viewMembership": "View Membership",
+      "returnToWorkspace": "Return to Workspace",
+      "eyebrow": "Membership confirmed",
+      "heading": "Thank You!",
+      "subheading": "Your trust and support mean a lot.",
+      "body": "Your symbolic contribution helps {siteName} continue building a transparent and responsible global civic platform.",
+      "confirmationTitle": "You are now a Member!",
+      "confirmationContributionLabel": "Membership Contribution",
+      "memberSince": "Member Since",
+      "memberNumber": "Member Number",
+      "valueUnavailable": "Unavailable",
+      "publicMemberNote": "Your Member badge appears automatically on your public profile. You can choose whether to show your Member Number publicly from Membership settings.",
+      "confirmationTemporarilyUnavailable": "Membership confirmation details are temporarily unavailable.",
+      "permanentTitle": "Membership is permanent.",
+      "permanentBody": "Thank you for being part of a better future for all.",
+      "meaningTitle": "What Membership Means",
+      "meaningPoints": {
+        "support": "You support {siteName} and its mission.",
+        "equal": "You participate equally with all other participants.",
+        "vote": "Membership does not increase voting power.",
+        "profile": "Your Member status appears automatically on your public profile.",
+        "community": "You help build a global community of responsibility and solidarity."
+      }
+    },
+    "badgePages": {
+      "officialTitle": "Official Member Badge",
+      "officialSubtitle": "Optional additional Membership Contribution",
+      "loadingInfo": "Loading Member Badge information...",
+      "successTitle": "Member Badge Success",
+      "successSubtitle": "Contribution confirmation",
+      "loadingStatus": "Loading Badge request status...",
+      "missingCheckout": "Missing Checkout session reference.",
+      "requestsTitle": "Member Badge Requests",
+      "requestsSubtitle": "Private request history",
+      "loadingRequests": "Loading Badge requests...",
+      "detailTitle": "Badge Request Details",
+      "detailSubtitle": "Private request information",
+      "loadingDetail": "Loading Badge request...",
+      "notFound": "Badge request not found.",
+      "iconAlt": "{siteName} Member Badge",
+      "heroTitle": "Official {siteName} Member Badge",
+      "heroSubtitle": "The Badge is an optional symbol of solidarity, responsibility, and commitment to the {siteName} community.",
+      "meaningTitle": "Meaning of the Badge",
+      "meaningBody": "The physical Member Badge is a symbolic Membership item. It is not proof of identity, a government credential, a voting credential, or a source of greater civic authority.",
+      "contributionTitle": "Additional Membership Contribution",
+      "contributionAmountFallback": "20 CAD",
+      "contributionNote": "Shipping is calculated separately according to the available destination and delivery method.",
+      "optionalClarification": "Requesting the physical Badge is optional and does not affect Membership status, voting, or civic participation.",
+      "shippingTitle": "Shipping information",
+      "shippingBody": "Shipping is additional and destination-dependent. Available destinations are limited to configured regions.",
+      "configuredDestinations": "Configured destinations: {countries}",
+      "eligibilityTitle": "Eligibility",
+      "eligibilityBody": "The official Member Badge is available to active {siteName} Members. Public visibility of Membership does not affect eligibility.",
+      "disabledMessage": "Member Badge Contributions are not currently open.",
+      "comingSoon": "Coming Soon",
+      "logIn": "Log In",
+      "becomeMember": "Become a Member",
+      "requestCta": "Request Member Badge",
+      "checkoutHint": "You will complete shipping and payment through a secure Checkout flow.",
+      "cancelMessage": "Your Member Badge Contribution was not completed. Your Membership and civic participation were not affected.",
+      "emptyRequests": "You have not requested a physical Member Badge.",
+      "historyTitle": "Your Badge Requests",
+      "viewAll": "View all",
+      "viewDetails": "View Details",
+      "faqTitle": "Frequently Asked Questions",
+      "faqRegionLabel": "Member Badge FAQ",
+      "backToMembership": "Back to Membership",
+      "returnToWorkspace": "Return to Workspace",
+      "faq": {
+        "required": {
+          "question": "Is the physical Member Badge required for Membership?",
+          "answer": "No. The physical Badge is an optional additional Membership Contribution for active Members who choose to request it."
+        },
+        "membershipImpact": {
+          "question": "Does requesting the Badge change my Membership?",
+          "answer": "No. Requesting, cancelling, refunding, or not requesting the Badge does not change Membership status, Member Number, voting, or civic participation."
+        },
+        "amount": {
+          "question": "What is the Member Badge Contribution amount?",
+          "answer": "The additional Membership Contribution is 20 CAD. Shipping is calculated separately based on configured destination and delivery method."
+        },
+        "shipping": {
+          "question": "Where can badges be shipped?",
+          "answer": "Shipping destinations are limited to operationally configured regions. Additional destinations may become available later."
+        }
+      },
+      "contributionStatus": {
+        "not_started": "Not started",
+        "checkout_created": "Checkout created",
+        "payment_pending": "Payment pending",
+        "contribution_confirmed": "Contribution confirmed",
+        "payment_failed": "Payment failed",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded",
+        "disputed": "Disputed",
+        "technical_error": "Technical error"
+      },
+      "requestFulfillmentStatus": {
+        "not_ready": "Not ready",
+        "pending": "Pending",
+        "preparing": "Preparing",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled"
+      }
     }
   },
   "supportPublic": {

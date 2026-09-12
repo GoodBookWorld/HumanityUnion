@@ -51,6 +51,23 @@ export async function listPublishedCollectionsByInitiative(
     .sort((left, right) => (right.publishedAt ?? "").localeCompare(left.publishedAt ?? ""));
 }
 
+/**
+ * Memory-bounded published proposal ID page for staging CT warm discovery.
+ * Does not load Initiative corpus; projections exclude prose bodies on Mongo.
+ */
+export function listPublishedImprovementProposalIdsPage(input: {
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<{
+  readonly proposalIds: readonly string[];
+  readonly collectionsReturned: number;
+  readonly hasMore: boolean;
+}> {
+  return resolveInitiativeImprovementProposalsStagePersistenceAdapter().listPublishedProposalIdsPage(
+    input,
+  );
+}
+
 export async function createCollection(
   collection: InitiativeImprovementProposalsCollection,
 ): Promise<InitiativeImprovementProposalsCollection> {

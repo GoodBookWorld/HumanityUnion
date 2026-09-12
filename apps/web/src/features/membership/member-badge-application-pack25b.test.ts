@@ -137,6 +137,8 @@ describe("Pack 25B — Member Badge Application web foundation", () => {
     const constants = read("features/membership/membership.constants.ts");
     assert.match(offer, /MemberBadgeApplicationModal/);
     assert.match(offer, /MemberBadgeApplicationWidget/);
+    assert.match(offer, /badgeProduct\.ctaLabel/);
+    assert.match(offer, /MEMBER_BADGE_APPLICATION_PRICE_LABEL/);
     assert.match(constants, /Member Badge Application/);
     assert.match(constants, /CA\$28/);
     assert.match(constants, /Delivery included/);
@@ -150,8 +152,9 @@ describe("Pack 25B — Member Badge Application web foundation", () => {
     const offer = read("features/membership/components/MembershipMemberBadgeOffer.tsx");
     const widget = read("features/membership/components/MemberBadgeApplicationWidget.tsx");
     assert.match(offer, /application \? \([\s\S]*MemberBadgeApplicationWidget/);
-    assert.match(widget, /My Member Badge Application/);
-    assert.match(widget, /Not paid|Awaiting payment/);
+    assert.match(widget, /badgeApplication\.widgetTitle/);
+    assert.match(widget, /badgeApplication\.paymentStatus\./);
+    assert.match(widget, /badgeApplication\.fulfillmentStatus\./);
     assert.doesNotMatch(widget, /applicationId/);
   });
 
@@ -163,8 +166,8 @@ describe("Pack 25B — Member Badge Application web foundation", () => {
     assert.match(modal, /trapTabKey/);
     assert.match(modal, /onClick=\{onClose\}/);
     assert.match(modal, /stopPropagation/);
-    assert.match(modal, /Save for Later/);
-    assert.match(modal, /Continue to Payment/);
+    assert.match(modal, /badgeApplication\.saveForLater/);
+    assert.match(modal, /badgeApplication\.continueToPayment/);
     assert.match(modal, /setError\(formatAuthFormError/);
     assert.doesNotMatch(modal, /catch[\s\S]{0,120}onClose\(\)/);
   });

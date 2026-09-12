@@ -5394,6 +5394,70 @@
       "saved": "已儲存會籍可見度偏好。",
       "saveError": "無法儲存可見度設定。"
     },
+    "publicPreview": {
+      "captionActiveWithNumber": "公開個人資料：會員狀態會自動顯示，包含您的會員編號。",
+      "captionActivePrivateNumber": "公開個人資料：會員狀態會自動顯示。在您啟用之前，會員編號會保持私密。",
+      "captionPreview": "公開個人資料預覽（未來的會員狀態）",
+      "statusLabel": "狀態",
+      "ariaLabel": "公開會籍狀態預覽"
+    },
+    "badgeProduct": {
+      "title": "展現你的承諾",
+      "body": "申請您的正式 {siteName} 會員徽章。CA$28 貢獻已含配送。",
+      "subtitle": "團結、責任與全球合一的象徵。",
+      "productName": "正式 {siteName} 會員徽章",
+      "features": {
+        "securePin": "安全別針背扣",
+        "deliveryIncluded": "已含配送",
+        "optionalContribution": "可選會員貢獻"
+      },
+      "deliveryIncluded": "已含配送",
+      "ctaLabel": "會員徽章申請",
+      "applicationIntro": "確認您的正式 {siteName} 會員徽章應送達何處。",
+      "membersOnly": "正式會員徽章僅供活躍的 {siteName} 會員申請。",
+      "unavailable": "會員徽章申請暫時無法使用。"
+    },
+    "badgeApplication": {
+      "title": "會員徽章申請",
+      "widgetTitle": "我的會員徽章申請",
+      "recipient": "收件人",
+      "deliveryAddress": "配送地址",
+      "contribution": "貢獻",
+      "payment": "付款",
+      "fulfillment": "履行",
+      "updated": "已更新",
+      "edit": "編輯申請",
+      "contributionAria": "徽章貢獻",
+      "productNameShort": "正式會員徽章",
+      "fields": {
+        "recipientName": "收件人姓名 *",
+        "addressLine1": "地址第 1 行 *",
+        "addressLine2": "地址第 2 行",
+        "city": "城市 *",
+        "provinceStateRegion": "省 / 州 / 地區 *",
+        "postalCode": "郵遞區號 *",
+        "country": "國家 *",
+        "phone": "電話（選填）"
+      },
+      "saveForLater": "稍後儲存",
+      "saving": "儲存中…",
+      "continueToPayment": "繼續付款",
+      "continuing": "繼續中…",
+      "paymentStatus": {
+        "paid": "已付款",
+        "refunded": "已退款",
+        "unpaid": "未付款"
+      },
+      "fulfillmentStatus": {
+        "awaitingPayment": "等待付款",
+        "paymentRefunded": "付款已退款",
+        "awaiting_fulfillment": "等待履行",
+        "preparing": "準備中",
+        "shipped": "已出貨",
+        "completed": "已送達",
+        "notReady": "尚未就緒"
+      }
+    },
     "statistics": {
       "defaultTitle": "會員參與",
       "loading": "正在載入參與統計…",
@@ -5403,6 +5467,121 @@
       "participants": "參與者",
       "lastUpdated": "最後更新 {when}",
       "votingExplanation": "會員身分不會改變投票權重。此結果為公民支持度的統計指標。"
+    },
+    "successPage": {
+      "title": "會員資格成功",
+      "subtitle": "感謝您支持 {siteName}",
+      "loading": "正在載入會員資格成功資訊...",
+      "signInRequired": "請登入以查看您的會員確認。",
+      "unavailable": "無法取得會員確認。",
+      "activationUnavailable": "尚未確認會員資格啟用。",
+      "previewBanner": "已啟用開發預覽模式。會員確認詳情僅在後端確認啟用後顯示。",
+      "returnToMembership": "返回會員資格",
+      "viewMembership": "查看會員資格",
+      "returnToWorkspace": "返回工作區",
+      "eyebrow": "會員資格已確認",
+      "heading": "謝謝您！",
+      "subheading": "您的信任與支持意義重大。",
+      "body": "您的象徵性貢獻協助 {siteName} 持續建立透明且負責任的全球公民平台。",
+      "confirmationTitle": "您現在是會員了！",
+      "confirmationContributionLabel": "會員貢獻",
+      "memberSince": "會員自",
+      "memberNumber": "會員編號",
+      "valueUnavailable": "無法取得",
+      "publicMemberNote": "您的會員徽章會自動顯示在公開個人資料上。您可在會員設定中選擇是否公開顯示會員編號。",
+      "confirmationTemporarilyUnavailable": "會員確認詳情暫時無法取得。",
+      "permanentTitle": "會員資格為永久。",
+      "permanentBody": "感謝您成為更美好未來的一部分。",
+      "meaningTitle": "會員資格的意義",
+      "meaningPoints": {
+        "support": "您支持 {siteName} 及其使命。",
+        "equal": "您與所有其他參與者平等參與。",
+        "vote": "會員資格不會增加投票權重。",
+        "profile": "您的會員身分會自動顯示在公開個人資料上。",
+        "community": "您協助建立責任與團結的全球社群。"
+      }
+    },
+    "badgePages": {
+      "officialTitle": "正式會員徽章",
+      "officialSubtitle": "可選的額外會員貢獻",
+      "loadingInfo": "正在載入會員徽章資訊...",
+      "successTitle": "會員徽章成功",
+      "successSubtitle": "貢獻確認",
+      "loadingStatus": "正在載入徽章申請狀態...",
+      "missingCheckout": "缺少 Checkout 工作階段參照。",
+      "requestsTitle": "會員徽章申請",
+      "requestsSubtitle": "私人申請紀錄",
+      "loadingRequests": "正在載入徽章申請...",
+      "detailTitle": "徽章申請詳情",
+      "detailSubtitle": "私人申請資訊",
+      "loadingDetail": "正在載入徽章申請...",
+      "notFound": "找不到徽章申請。",
+      "iconAlt": "{siteName} 會員徽章",
+      "heroTitle": "正式 {siteName} 會員徽章",
+      "heroSubtitle": "徽章是團結、責任與對 {siteName} 社群承諾的可選象徵。",
+      "meaningTitle": "徽章的意義",
+      "meaningBody": "實體會員徽章是象徵性的會員物品。它不是身分證明、政府證件、投票憑證，也不是更大公民權力的來源。",
+      "contributionTitle": "額外會員貢獻",
+      "contributionAmountFallback": "20 CAD",
+      "contributionNote": "運費依可用目的地與配送方式另行計算。",
+      "optionalClarification": "申請實體徽章為可選，不影響會員狀態、投票或公民參與。",
+      "shippingTitle": "運送資訊",
+      "shippingBody": "運送為額外費用且視目的地而定。可用目的地僅限已設定的地區。",
+      "configuredDestinations": "已設定目的地：{countries}",
+      "eligibilityTitle": "資格",
+      "eligibilityBody": "正式會員徽章僅供活躍的 {siteName} 會員申請。會員公開顯示與否不影響資格。",
+      "disabledMessage": "目前未開放會員徽章貢獻。",
+      "comingSoon": "即將推出",
+      "logIn": "登入",
+      "becomeMember": "成為會員",
+      "requestCta": "申請會員徽章",
+      "checkoutHint": "您將透過安全 Checkout 流程完成運送與付款。",
+      "cancelMessage": "您的會員徽章貢獻未完成。您的會員資格與公民參與未受影響。",
+      "emptyRequests": "您尚未申請實體會員徽章。",
+      "historyTitle": "您的徽章申請",
+      "viewAll": "查看全部",
+      "viewDetails": "查看詳情",
+      "faqTitle": "常見問題",
+      "faqRegionLabel": "會員徽章常見問題",
+      "backToMembership": "返回會員資格",
+      "returnToWorkspace": "返回工作區",
+      "faq": {
+        "required": {
+          "question": "實體會員徽章是會員資格的必要條件嗎？",
+          "answer": "否。實體徽章是活躍會員可選擇申請的額外會員貢獻。"
+        },
+        "membershipImpact": {
+          "question": "申請徽章會改變我的會員資格嗎？",
+          "answer": "否。申請、取消、退款或不申請徽章都不會改變會員狀態、會員編號、投票或公民參與。"
+        },
+        "amount": {
+          "question": "會員徽章貢獻金額是多少？",
+          "answer": "額外會員貢獻為 20 CAD。運費依已設定目的地與配送方式另行計算。"
+        },
+        "shipping": {
+          "question": "徽章可寄送至哪些地方？",
+          "answer": "運送目的地僅限營運已設定的地區。日後可能新增更多目的地。"
+        }
+      },
+      "contributionStatus": {
+        "not_started": "尚未開始",
+        "checkout_created": "已建立 Checkout",
+        "payment_pending": "待付款",
+        "contribution_confirmed": "貢獻已確認",
+        "payment_failed": "付款失敗",
+        "cancelled": "已取消",
+        "refunded": "已退款",
+        "disputed": "有爭議",
+        "technical_error": "技術錯誤"
+      },
+      "requestFulfillmentStatus": {
+        "not_ready": "尚未就緒",
+        "pending": "處理中",
+        "preparing": "準備中",
+        "shipped": "已出貨",
+        "delivered": "已送達",
+        "cancelled": "已取消"
+      }
     }
   },
   "supportPublic": {

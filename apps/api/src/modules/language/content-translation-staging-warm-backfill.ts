@@ -151,9 +151,15 @@ export interface StagingWarmDiscoveryDeps {
   readonly listPetitions?: typeof listPetitions;
   /** Published blog posts only (no drafts). Injectable for unit fixtures. */
   readonly listPublishedBlogPostsForSearch?: () => Promise<ReadonlyArray<{ postId: string }>>;
-  readonly listPublicInitiativeImprovementProposals?: (
-    initiativeId: string,
-  ) => Promise<ReadonlyArray<{ proposalId: string }>>;
+  /** Paged published Improvement Proposal IDs (no initiative corpus). */
+  readonly listPublishedImprovementProposalIdsPage?: (input: {
+    readonly limit: number;
+    readonly offset: number;
+  }) => Promise<{
+    readonly proposalIds: readonly string[];
+    readonly collectionsReturned: number;
+    readonly hasMore: boolean;
+  }>;
   readonly listRevisionsByInitiative?: (
     initiativeId: string,
   ) => ReadonlyArray<{ revisionId: string }>;
@@ -238,31 +244,14 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     const mod = await import("../blog/persistence/blog.repository.js");
     return mod.listPublishedBlogPostsForSearch;
   };
-  const resolveListPublicInitiativeImprovementProposals = async () => {
-    if (input?.deps?.listPublicInitiativeImprovementProposals) {
-      return input.deps.listPublicInitiativeImprovementProposals;
+  const resolveListPublishedImprovementProposalIdsPage = async () => {
+    if (input?.deps?.listPublishedImprovementProposalIdsPage) {
+      return input.deps.listPublishedImprovementProposalIdsPage;
     }
-    // Implementation 01 — discover Part D published structured proposals.
-    const { listPublishedCollectionsByInitiative } = await import(
+    const { listPublishedImprovementProposalIdsPage } = await import(
       "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
     );
-    return async (initiativeId: string) => {
-      const collections = await listPublishedCollectionsByInitiative(initiativeId);
-      const proposals: { proposalId: string }[] = [];
-      for (const collection of collections) {
-        for (const proposal of collection.proposals) {
-          if (
-            proposal.status === "published" ||
-            proposal.status === "included_in_revision" ||
-            proposal.status === "keep_for_later" ||
-            proposal.status === "not_applicable"
-          ) {
-            proposals.push({ proposalId: proposal.proposalId });
-          }
-        }
-      }
-      return proposals;
-    };
+    return listPublishedImprovementProposalIdsPage;
   };
   const resolveListRevisionsByInitiative = async () => {
     if (input?.deps?.listRevisionsByInitiative) {
@@ -370,9 +359,12 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     out.push({ sourceKind, sourceRecordId: id });
   };
 
-  const allInitiatives = listInitiativesFn();
   const initiativeScopedKinds = STAGING_WARM_INITIATIVE_SCOPED_KINDS;
-  if (initiativeScopedKinds.some((kind) => allowed.has(kind))) {
+  const needsInitiativeWalk = initiativeScopedKinds.some((kind) => allowed.has(kind));
+  // Memory-bound: do not materialize the full initiative corpus when --kinds is
+  // only blog_post / civic_media / public_news (or empty intersection).
+  const allInitiatives = needsInitiativeWalk ? listInitiativesFn() : [];
+  if (needsInitiativeWalk) {
     bumpField("initiative", "sourceRecordsDiscovered", allInitiatives.length);
   }
 
@@ -399,9 +391,6 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     }
   }
 
-  const listPublicInitiativeImprovementProposalsFn = allowed.has("improvement_proposal")
-    ? await resolveListPublicInitiativeImprovementProposals()
-    : null;
   const listRevisionsByInitiativeFn = allowed.has("initiative_revision")
     ? await resolveListRevisionsByInitiative()
     : null;
@@ -472,20 +461,6 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     if (allowed.has("petition")) {
       for (const petitionId of petitionsByInitiative.get(initiative.initiativeId) ?? []) {
         pushCandidate("petition", petitionId);
-      }
-    }
-
-    if (allowed.has("improvement_proposal") && listPublicInitiativeImprovementProposalsFn) {
-      try {
-        const proposals = await listPublicInitiativeImprovementProposalsFn(
-          initiative.initiativeId,
-        );
-        bumpField("improvement_proposal", "sourceRecordsDiscovered", proposals.length);
-        for (const proposal of proposals) {
-          pushCandidate("improvement_proposal", proposal.proposalId);
-        }
-      } catch {
-        bumpField("improvement_proposal", "sourceRecordsDiscovered", 0);
       }
     }
 
@@ -588,6 +563,37 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
       for (const archive of archives) {
         pushCandidate("civic_archive", archive.archiveRecordId);
       }
+    }
+  }
+
+  if (allowed.has("improvement_proposal")) {
+    try {
+      const listPublishedImprovementProposalIdsPageFn =
+        await resolveListPublishedImprovementProposalIdsPage();
+      const { IMPROVEMENT_PROPOSAL_WARM_COLLECTION_PAGE_SIZE } = await import(
+        "../initiative-improvement-proposals-stage/extract-public-improvement-proposal-ids.js"
+      );
+      let offset = 0;
+      for (;;) {
+        const page = await listPublishedImprovementProposalIdsPageFn({
+          limit: IMPROVEMENT_PROPOSAL_WARM_COLLECTION_PAGE_SIZE,
+          offset,
+        });
+        bumpField(
+          "improvement_proposal",
+          "sourceRecordsDiscovered",
+          page.proposalIds.length,
+        );
+        for (const proposalId of page.proposalIds) {
+          pushCandidate("improvement_proposal", proposalId);
+        }
+        if (!page.hasMore || page.collectionsReturned === 0) {
+          break;
+        }
+        offset += page.collectionsReturned;
+      }
+    } catch {
+      bumpField("improvement_proposal", "sourceRecordsDiscovered", 0);
     }
   }
 

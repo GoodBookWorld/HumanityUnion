@@ -1,6 +1,10 @@
+"use client";
+
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { MEMBER_BADGE_IMAGE_PATH } from "../membership.constants";
 
 import "./member-badge-icon.css";
@@ -24,6 +28,9 @@ export function MemberBadgeIcon({
   decorative = false,
   className,
 }: MemberBadgeIconProps) {
+  const t = useTranslations("membershipPublic.badgePages");
+  const brand = useLocalizedBrand();
+  const alt = decorative ? "" : t("iconAlt", { siteName: brand.siteName });
   const [failed, setFailed] = useState(false);
 
   if (failed) {
@@ -35,7 +42,7 @@ export function MemberBadgeIcon({
             : "member-badge-icon member-badge-icon--fallback"
         }
         role={decorative ? undefined : "img"}
-        aria-label={decorative ? undefined : "Humanity Union Member Badge"}
+        aria-label={decorative ? undefined : alt}
         aria-hidden={decorative ? true : undefined}
       >
         HU
@@ -54,7 +61,7 @@ export function MemberBadgeIcon({
       >
         <Image
           src={MEMBER_BADGE_IMAGE_PATH}
-          alt={decorative ? "" : "Humanity Union Member Badge"}
+          alt={alt}
           width={240}
           height={240}
           className="member-badge-icon__image"
@@ -70,7 +77,7 @@ export function MemberBadgeIcon({
   return (
     <Image
       src={MEMBER_BADGE_IMAGE_PATH}
-      alt={decorative ? "" : "Humanity Union Member Badge"}
+      alt={alt}
       width={dimension}
       height={dimension}
       className={

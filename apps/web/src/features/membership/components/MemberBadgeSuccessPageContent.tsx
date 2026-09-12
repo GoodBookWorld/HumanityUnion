@@ -1,6 +1,7 @@
 "use client";
 
 import type { MemberBadgeContributionDetail } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -24,6 +25,7 @@ import { MemberBadgeIcon } from "./MemberBadgeIcon";
 import "./member-badge-page.css";
 
 function MemberBadgeSuccessBody() {
+  const t = useTranslations("membershipPublic.badgePages");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [detail, setDetail] = useState<MemberBadgeContributionDetail | null>(null);
@@ -33,7 +35,7 @@ function MemberBadgeSuccessBody() {
   useEffect(() => {
     if (!sessionId) {
       setLoading(false);
-      setError("Missing Checkout session reference.");
+      setError(t("missingCheckout"));
       return;
     }
 
@@ -63,7 +65,7 @@ function MemberBadgeSuccessBody() {
   }, [sessionId]);
 
   if (loading) {
-    return <LoadingState message="Loading Badge request status..." />;
+    return <LoadingState message={t("loadingStatus")} />;
   }
 
   if (!detail || error) {
@@ -150,10 +152,11 @@ function MemberBadgeSuccessBody() {
 }
 
 export function MemberBadgeSuccessPageContent() {
+  const t = useTranslations("membershipPublic.badgePages");
   const authStatus = useClientAuthStatus();
 
   if (authStatus === "pending") {
-    return <LoadingState message="Loading..." />;
+    return <LoadingState message={t("loadingStatus")} />;
   }
 
   if (authStatus === "unauthenticated") {
@@ -172,8 +175,8 @@ export function MemberBadgeSuccessPageContent() {
 
   return (
     <MemberWorkspace
-      title="Member Badge Success"
-      subtitle="Contribution confirmation"
+      title={t("successTitle")}
+      subtitle={t("successSubtitle")}
       workspaceNavigation={<WorkspaceNavigation />}
     >
       <MemberBadgeSuccessBody />

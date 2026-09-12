@@ -1,6 +1,7 @@
 "use client";
 
 import type { MemberBadgeContributionDetail } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -23,6 +24,7 @@ import { formatMemberSince } from "../membership-formatters";
 import "./member-badge-page.css";
 
 export function MemberBadgeRequestDetailPageContent() {
+  const t = useTranslations("membershipPublic.badgePages");
   const params = useParams<{ badgeContributionId: string }>();
   const badgeContributionId = params.badgeContributionId;
   const [detail, setDetail] = useState<MemberBadgeContributionDetail | null>(null);
@@ -32,7 +34,7 @@ export function MemberBadgeRequestDetailPageContent() {
   useEffect(() => {
     if (!badgeContributionId) {
       setLoading(false);
-      setError("Badge request not found.");
+      setError(t("notFound"));
       return;
     }
 
@@ -40,15 +42,15 @@ export function MemberBadgeRequestDetailPageContent() {
       .then(setDetail)
       .catch((loadError) => setError(formatAuthFormError(loadError)))
       .finally(() => setLoading(false));
-  }, [badgeContributionId]);
+  }, [badgeContributionId, t]);
 
   return (
     <MemberWorkspace
-      title="Badge Request Details"
-      subtitle="Private request information"
+      title={t("detailTitle")}
+      subtitle={t("detailSubtitle")}
       workspaceNavigation={<WorkspaceNavigation />}
     >
-      {loading ? <LoadingState message="Loading Badge request..." /> : null}
+      {loading ? <LoadingState message={t("loadingDetail")} /> : null}
       {error ? (
         <Card>
           <p role="alert">{error}</p>

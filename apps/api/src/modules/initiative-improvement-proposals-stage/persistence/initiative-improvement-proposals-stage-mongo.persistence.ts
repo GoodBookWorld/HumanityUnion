@@ -5,6 +5,7 @@ import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collect
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
+import { extractPublicImprovementProposalIds } from "../extract-public-improvement-proposal-ids.js";
 import type { InitiativeImprovementProposalsStagePersistenceAdapter } from "./initiative-improvement-proposals-stage.types.js";
 
 interface InitiativeImprovementProposalsCollectionDocument extends InitiativeImprovementProposalsCollection {
@@ -93,6 +94,51 @@ export class MongoInitiativeImprovementProposalsStagePersistenceAdapter
     const documents = await collection.find({ initiativeId }).toArray();
 
     return documents.map(stripDocument);
+  }
+
+  async listPublishedProposalIdsPage(input: {
+    readonly limit: number;
+    readonly offset: number;
+  }): Promise<{
+    readonly proposalIds: readonly string[];
+    readonly collectionsReturned: number;
+    readonly hasMore: boolean;
+  }> {
+    await ensureMongoReady();
+    const limit = Math.max(1, Math.floor(input.limit));
+    const offset = Math.max(0, Math.floor(input.offset));
+    const collection = getMongoCollection<InitiativeImprovementProposalsCollectionDocument>(
+      MONGO_COLLECTIONS.initiativeImprovementProposalsCollections,
+    );
+    // Lean projection: proposalId + status only (no title/summary/description bodies).
+    const documents = await collection
+      .find(
+        { status: "published" },
+        {
+          projection: {
+            _id: 0,
+            "proposals.proposalId": 1,
+            "proposals.status": 1,
+          },
+        },
+      )
+      .sort({ collectionId: 1 })
+      .skip(offset)
+      .limit(limit + 1)
+      .toArray();
+
+    const hasMore = documents.length > limit;
+    const page = hasMore ? documents.slice(0, limit) : documents;
+    const proposalIds: string[] = [];
+    for (const document of page) {
+      const proposals = Array.isArray(document.proposals) ? document.proposals : [];
+      proposalIds.push(...extractPublicImprovementProposalIds(proposals));
+    }
+    return {
+      proposalIds,
+      collectionsReturned: page.length,
+      hasMore,
+    };
   }
 
   async insert(record: InitiativeImprovementProposalsCollection): Promise<void> {

@@ -2,9 +2,17 @@
  * RESET 05B.1 — parse diagnose/materialize Initiative PLP args.
  */
 
-import { normalizeLanguageCode, type LanguageCode } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 
 import { INITIATIVE_PLP_PUBLIC_CHOICE_DISCOVERY_DEFAULT_LIMIT } from "./constants.js";
+
+/**
+ * Preserve Registry locale identity (`zh-Hant`). Do not use
+ * `normalizeLanguageCode` — it collapses script tags.
+ */
+function coerceRegistryLocale(value: string): LanguageCode {
+  return value.trim() as LanguageCode;
+}
 
 export type InitiativePlpIdentityArgs = {
   readonly mode: "identity";
@@ -150,7 +158,7 @@ export function parseInitiativePlpOperatorArgs(
       mongo: true,
       execute: operation === "materialize" && argv.includes("--execute"),
       initiativeId,
-      locale: normalizeLanguageCode(localeRaw, "en"),
+      locale: coerceRegistryLocale(localeRaw),
     },
   };
 }

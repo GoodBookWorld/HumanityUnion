@@ -5394,6 +5394,70 @@
       "saved": "تم حفظ تفضيل رؤية العضوية.",
       "saveError": "تعذّر حفظ إعداد الرؤية."
     },
+    "publicPreview": {
+      "captionActiveWithNumber": "الملف العام: تظهر حالة العضو تلقائيًا، بما في ذلك رقم العضو.",
+      "captionActivePrivateNumber": "الملف العام: تظهر حالة العضو تلقائيًا. يبقى رقم العضو خاصًا حتى تفعّله.",
+      "captionPreview": "معاينة الملف العام (حالة العضو المستقبلية)",
+      "statusLabel": "الحالة",
+      "ariaLabel": "معاينة حالة العضوية العامة"
+    },
+    "badgeProduct": {
+      "title": "أظهر التزامك",
+      "body": "قدّم طلبًا للحصول على شارة عضو {siteName} الرسمية. مساهمة CA$28 تشمل التوصيل.",
+      "subtitle": "رمز للتضامن والمسؤولية والوحدة العالمية.",
+      "productName": "شارة عضو {siteName} الرسمية",
+      "features": {
+        "securePin": "تثبيت دبوس آمن",
+        "deliveryIncluded": "التوصيل مشمول",
+        "optionalContribution": "مساهمة عضو اختيارية"
+      },
+      "deliveryIncluded": "التوصيل مشمول",
+      "ctaLabel": "طلب شارة العضو",
+      "applicationIntro": "أكّد مكان تسليم شارة عضو {siteName} الرسمية.",
+      "membersOnly": "شارة العضو الرسمية متاحة فقط لأعضاء {siteName} النشطين.",
+      "unavailable": "طلب شارة العضو غير متاح مؤقتًا."
+    },
+    "badgeApplication": {
+      "title": "طلب شارة العضو",
+      "widgetTitle": "طلب شارة العضو الخاص بي",
+      "recipient": "المستلم",
+      "deliveryAddress": "عنوان التوصيل",
+      "contribution": "المساهمة",
+      "payment": "الدفع",
+      "fulfillment": "التنفيذ",
+      "updated": "تم التحديث",
+      "edit": "تعديل الطلب",
+      "contributionAria": "مساهمة الشارة",
+      "productNameShort": "شارة العضو الرسمية",
+      "fields": {
+        "recipientName": "اسم المستلم *",
+        "addressLine1": "سطر العنوان 1 *",
+        "addressLine2": "سطر العنوان 2",
+        "city": "المدينة *",
+        "provinceStateRegion": "المحافظة / الولاية / المنطقة *",
+        "postalCode": "الرمز البريدي *",
+        "country": "البلد *",
+        "phone": "الهاتف (اختياري)"
+      },
+      "saveForLater": "حفظ لوقت لاحق",
+      "saving": "جارٍ الحفظ…",
+      "continueToPayment": "المتابعة إلى الدفع",
+      "continuing": "جارٍ المتابعة…",
+      "paymentStatus": {
+        "paid": "مدفوع",
+        "refunded": "مسترد",
+        "unpaid": "غير مدفوع"
+      },
+      "fulfillmentStatus": {
+        "awaitingPayment": "بانتظار الدفع",
+        "paymentRefunded": "تم استرداد الدفع",
+        "awaiting_fulfillment": "بانتظار التنفيذ",
+        "preparing": "قيد التحضير",
+        "shipped": "تم الشحن",
+        "completed": "تم التسليم",
+        "notReady": "غير جاهز"
+      }
+    },
     "statistics": {
       "defaultTitle": "المشاركة في العضوية",
       "loading": "جارٍ تحميل إحصاءات المشاركة...",
@@ -5403,6 +5467,121 @@
       "participants": "المشاركون",
       "lastUpdated": "آخر تحديث {when}",
       "votingExplanation": "حالة العضوية لا تغيّر وزن التصويت. هذه النتيجة مؤشر إحصائي على الدعم المدني."
+    },
+    "successPage": {
+      "title": "نجاح العضوية",
+      "subtitle": "شكرًا لدعمك لـ {siteName}",
+      "loading": "جارٍ تحميل تأكيد العضوية...",
+      "signInRequired": "سجّل الدخول لعرض تأكيد عضويتك.",
+      "unavailable": "تأكيد العضوية غير متاح.",
+      "activationUnavailable": "لم يُؤكد تفعيل العضوية.",
+      "previewBanner": "وضع معاينة التطوير مفعّل. تظهر تفاصيل تأكيد العضو فقط بعد تفعيل مؤكد من الخادم.",
+      "returnToMembership": "العودة إلى العضوية",
+      "viewMembership": "عرض العضوية",
+      "returnToWorkspace": "العودة إلى مساحة العمل",
+      "eyebrow": "تم تأكيد العضوية",
+      "heading": "شكرًا لك!",
+      "subheading": "ثقتك ودعمك يعنيان الكثير.",
+      "body": "تساعد مساهمتك الرمزية {siteName} على مواصلة بناء منصة مدنية عالمية شفافة ومسؤولة.",
+      "confirmationTitle": "أصبحت عضوًا الآن!",
+      "confirmationContributionLabel": "مساهمة العضوية",
+      "memberSince": "عضو منذ",
+      "memberNumber": "رقم العضو",
+      "valueUnavailable": "غير متاح",
+      "publicMemberNote": "تظهر شارة عضوك تلقائيًا في ملفك العام. يمكنك اختيار عرض رقم العضو علنًا من إعدادات العضوية.",
+      "confirmationTemporarilyUnavailable": "تفاصيل تأكيد العضوية غير متاحة مؤقتًا.",
+      "permanentTitle": "العضوية دائمة.",
+      "permanentBody": "شكرًا لكونك جزءًا من مستقبل أفضل للجميع.",
+      "meaningTitle": "معنى العضوية",
+      "meaningPoints": {
+        "support": "أنت تدعم {siteName} ورسالتها.",
+        "equal": "تشارك على قدم المساواة مع جميع المشاركين الآخرين.",
+        "vote": "العضوية لا تزيد وزن التصويت.",
+        "profile": "تظهر حالة عضوك تلقائيًا في ملفك العام.",
+        "community": "تساعد في بناء مجتمع عالمي من المسؤولية والتضامن."
+      }
+    },
+    "badgePages": {
+      "officialTitle": "شارة العضو الرسمية",
+      "officialSubtitle": "مساهمة عضوية إضافية اختيارية",
+      "loadingInfo": "جارٍ تحميل معلومات شارة العضو...",
+      "successTitle": "نجاح شارة العضو",
+      "successSubtitle": "تأكيد المساهمة",
+      "loadingStatus": "جارٍ تحميل حالة طلب الشارة...",
+      "missingCheckout": "مرجع جلسة الدفع مفقود.",
+      "requestsTitle": "طلبات شارة العضو",
+      "requestsSubtitle": "سجل الطلبات الخاص",
+      "loadingRequests": "جارٍ تحميل طلبات الشارة...",
+      "detailTitle": "تفاصيل طلب الشارة",
+      "detailSubtitle": "معلومات الطلب الخاصة",
+      "loadingDetail": "جارٍ تحميل طلب الشارة...",
+      "notFound": "طلب الشارة غير موجود.",
+      "iconAlt": "شارة عضو {siteName}",
+      "heroTitle": "شارة عضو {siteName} الرسمية",
+      "heroSubtitle": "الشارة رمز اختياري للتضامن والمسؤولية والالتزام بمجتمع {siteName}.",
+      "meaningTitle": "معنى الشارة",
+      "meaningBody": "شارة العضو المادية عنصر عضوية رمزي. ليست إثبات هوية ولا وثيقة حكومية ولا اعتماد تصويت ولا مصدرًا لسلطة مدنية أكبر.",
+      "contributionTitle": "مساهمة عضوية إضافية",
+      "contributionAmountFallback": "20 CAD",
+      "contributionNote": "تُحسب تكلفة الشحن بشكل منفصل وفق الوجهة المتاحة وطريقة التسليم.",
+      "optionalClarification": "طلب الشارة المادية اختياري ولا يؤثر على حالة العضوية أو التصويت أو المشاركة المدنية.",
+      "shippingTitle": "معلومات الشحن",
+      "shippingBody": "الشحن إضافي ويعتمد على الوجهة. الوجهات المتاحة محدودة بالمناطق المُعدّة.",
+      "configuredDestinations": "الوجهات المُعدّة: {countries}",
+      "eligibilityTitle": "الأهلية",
+      "eligibilityBody": "شارة العضو الرسمية متاحة لأعضاء {siteName} النشطين. الظهور العام للعضوية لا يؤثر على الأهلية.",
+      "disabledMessage": "مساهمات شارة العضو غير مفتوحة حاليًا.",
+      "comingSoon": "قريبًا",
+      "logIn": "تسجيل الدخول",
+      "becomeMember": "كن عضوًا",
+      "requestCta": "اطلب شارة العضو",
+      "checkoutHint": "ستكمل الشحن والدفع عبر تدفق Checkout آمن.",
+      "cancelMessage": "لم تُكمل مساهمة شارة العضو. لم تتأثر عضويتك ومشاركتك المدنية.",
+      "emptyRequests": "لم تطلب شارة عضو مادية.",
+      "historyTitle": "طلبات الشارة الخاصة بك",
+      "viewAll": "عرض الكل",
+      "viewDetails": "عرض التفاصيل",
+      "faqTitle": "الأسئلة الشائعة",
+      "faqRegionLabel": "أسئلة شائعة عن شارة العضو",
+      "backToMembership": "العودة إلى العضوية",
+      "returnToWorkspace": "العودة إلى مساحة العمل",
+      "faq": {
+        "required": {
+          "question": "هل شارة العضو المادية مطلوبة للعضوية؟",
+          "answer": "لا. الشارة المادية مساهمة عضوية إضافية اختيارية للأعضاء النشطين الذين يختارون طلبها."
+        },
+        "membershipImpact": {
+          "question": "هل يغيّر طلب الشارة عضويتي؟",
+          "answer": "لا. طلب الشارة أو إلغاؤها أو استردادها أو عدم طلبها لا يغيّر حالة العضوية أو رقم العضو أو التصويت أو المشاركة المدنية."
+        },
+        "amount": {
+          "question": "ما مبلغ مساهمة شارة العضو؟",
+          "answer": "المساهمة العضوية الإضافية هي 20 CAD. يُحسب الشحن بشكل منفصل حسب الوجهة وطريقة التسليم المُعدّة."
+        },
+        "shipping": {
+          "question": "إلى أين يمكن شحن الشارات؟",
+          "answer": "وجهات الشحن محدودة بالمناطق المُعدّة تشغيليًا. قد تتوفر وجهات إضافية لاحقًا."
+        }
+      },
+      "contributionStatus": {
+        "not_started": "لم يبدأ",
+        "checkout_created": "أُنشئ Checkout",
+        "payment_pending": "الدفع معلّق",
+        "contribution_confirmed": "تأكدت المساهمة",
+        "payment_failed": "فشل الدفع",
+        "cancelled": "أُلغي",
+        "refunded": "استُرد",
+        "disputed": "متنازع عليه",
+        "technical_error": "خطأ تقني"
+      },
+      "requestFulfillmentStatus": {
+        "not_ready": "غير جاهز",
+        "pending": "قيد الانتظار",
+        "preparing": "قيد التجهيز",
+        "shipped": "شُحن",
+        "delivered": "وُصّل",
+        "cancelled": "أُلغي"
+      }
     }
   },
   "supportPublic": {

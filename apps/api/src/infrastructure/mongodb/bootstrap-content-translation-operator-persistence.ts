@@ -19,11 +19,13 @@
  *   initiative-scoped kinds → Initiative store
  *   collaborative_analysis → CA store (+ Initiative when scoped)
  *   collective_decision → CD store (+ Initiative when scoped)
- *   blog_post / civic_media / public_news alone → no Initiative/CA/CD hydrate
+ *   blog_post / civic_media / public_news / improvement_proposal alone → no Initiative/CA/CD hydrate
  *
  * Comments/petitions already use repository queries (no full-app hydrate), but
  * discovery still walks public initiatives first — so Initiative sync is required
  * for comment/petition public candidacy as well.
+ * Improvement Proposal discovery pages Part D published collections directly
+ * (no Initiative store walk / hydrate).
  *
  * Does not bypass eligibility/privacy — loaders still enforce published/public.
  */
@@ -32,7 +34,7 @@ import { shouldBootstrapMongoPersistence } from "../../config/production-persist
 import { hydrateInitiativeCollaborativeAnalysisMongoPersistence } from "../../modules/initiative-collaborative-analysis/persistence/initiative-collaborative-analysis-mongo.persistence.js";
 import { hydrateInitiativeCollectiveDecisionMongoPersistence } from "../../modules/initiative-collective-decision/persistence/initiative-collective-decision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
-import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
+import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/language-registry.repository.js";
 import {
   resolveContentTranslationOperatorHydrateScopes,
   type ContentTranslationOperatorHydrateScopes,

@@ -103,10 +103,12 @@ describe("Member public profile preview + honorary Member indicator", () => {
     assert.match(surfaceCss, /--public-member-indicator-badge-size:\s*calc\(var\(--public-member-avatar-size\)\s*\*\s*0\.375\)/);
   });
 
-  it("9 — label exactly Member", () => {
+  it("9 — Member cohort label via membershipPublic WEB_UI", () => {
     assert.equal(MEMBER_STATUS_INDICATOR_LABEL, "Member");
     const indicator = read("features/member-profile/components/MemberStatusIndicator.tsx");
-    assert.match(indicator, />\{MEMBER_STATUS_INDICATOR_LABEL\}</);
+    assert.match(indicator, /useTranslations\("membershipPublic"\)/);
+    assert.match(indicator, /status\.memberCohort/);
+    assert.doesNotMatch(indicator, />\{MEMBER_STATUS_INDICATOR_LABEL\}</);
   });
 
   it("10 — preview may show future Member state without mutating domain status", () => {
@@ -122,12 +124,13 @@ describe("Member public profile preview + honorary Member indicator", () => {
 
   it("10b — Pack 25A.1 preview copy: badge automatic; number privacy separate", () => {
     const preview = read("features/membership/components/MembershipPublicDisplayPreview.tsx");
-    assert.match(preview, /Member status appears automatically/);
-    assert.match(preview, /Member Number stays private/);
-    assert.match(preview, /future Member status/);
-    const constants = read("features/membership/membership.constants.ts");
-    assert.match(constants, /Show my Member Number publicly/);
-    assert.doesNotMatch(constants, /Publicly display my Member status/);
+    assert.match(preview, /publicPreview\.captionActiveWithNumber/);
+    assert.match(preview, /publicPreview\.captionActivePrivateNumber/);
+    assert.match(preview, /publicPreview\.captionPreview/);
+    const en = read("features/i18n/messages/en.json");
+    assert.match(en, /Member status appears automatically/);
+    assert.match(en, /Member Number stays private/);
+    assert.match(en, /future Member status/);
   });
 
   it("11 — non-Member public profile does NOT render indicator", () => {
@@ -160,13 +163,13 @@ describe("Member public profile preview + honorary Member indicator", () => {
   });
 
   it("12c — Pack 25A.1 success copy confirms automatic public Member badge", () => {
-    const constants = read("features/membership/membership.constants.ts");
     const confirmation = read(
       "features/membership/components/MembershipSuccessConfirmationCard.tsx",
     );
-    assert.match(constants, /publicMemberNote/);
-    assert.match(constants, /Member badge appears automatically on your public profile/);
-    assert.match(confirmation, /MEMBERSHIP_SUCCESS_COPY\.publicMemberNote/);
+    const en = read("features/i18n/messages/en.json");
+    assert.match(confirmation, /membershipPublic\.successPage/);
+    assert.match(confirmation, /publicMemberNote/);
+    assert.match(en, /Member badge appears automatically on your public profile/);
     assert.doesNotMatch(confirmation, /enable the Member badge/i);
   });
 

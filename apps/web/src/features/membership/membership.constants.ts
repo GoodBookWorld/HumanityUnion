@@ -165,6 +165,16 @@ export const MEMBERSHIP_FAQ = [
 
 export const MEMBERSHIP_CONTRIBUTION_AMOUNT = "1 CAD";
 
+/** Structural feature IDs — display copy in membershipPublic.badgeProduct.features.* */
+export const MEMBER_BADGE_FEATURE_IDS = [
+  "securePin",
+  "deliveryIncluded",
+  "optionalContribution",
+] as const;
+
+export type MemberBadgeFeatureId = (typeof MEMBER_BADGE_FEATURE_IDS)[number];
+
+/** @deprecated Prefer membershipPublic.badgeProduct catalogs; kept for structure/tests. */
 export const MEMBER_BADGE_PRODUCT = {
   title: "Wear Your Commitment",
   body: "Apply for your official Humanity Union Member Badge. The CA$28 contribution includes delivery.",

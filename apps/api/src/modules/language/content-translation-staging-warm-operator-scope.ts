@@ -44,7 +44,7 @@ export const STAGING_WARM_INITIATIVE_SCOPED_KINDS = [
   "discussion_comment",
   "collaborative_analysis",
   "petition",
-  "improvement_proposal",
+  // improvement_proposal uses paged Part D collection discovery — not initiative walk.
   "initiative_revision",
   "decision_session",
   "collective_decision",

@@ -14,7 +14,6 @@ import {
 } from "@hu/types";
 
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
-import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
 import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
@@ -94,6 +93,14 @@ function toEligibilitySource(
     isPublished: source.isPublished,
     safetyCleared: true,
   };
+}
+
+/** Dynamic import keeps warm/operator graphs free of static global-search. */
+async function invalidateGlobalSearchIndexLazy(): Promise<void> {
+  const { invalidateGlobalSearchIndex } = await import(
+    "../global-search/global-search.index.js"
+  );
+  invalidateGlobalSearchIndex();
 }
 
 export async function loadTranslatableSource(input: {
@@ -312,7 +319,7 @@ export async function getOrCreateContentTranslation(input: {
     liveSourceVersion: source.sourceVersion,
   });
   // Pack 02H — stale rows must stop contributing as current searchable text on next rebuild.
-  invalidateGlobalSearchIndex();
+  await invalidateGlobalSearchIndexLazy();
 
   const targetLanguage =
     intent === "automatic_warm"
@@ -491,7 +498,7 @@ export async function getOrCreateContentTranslation(input: {
 
   await upsertContentTranslation(record);
   // Pack 02H — translation upsert invalidates search index; rebuild on next query.
-  invalidateGlobalSearchIndex();
+  await invalidateGlobalSearchIndexLazy();
   return { source, translation: record, generated: true };
 }
 

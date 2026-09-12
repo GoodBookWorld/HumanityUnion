@@ -2,6 +2,8 @@
  * Membership section — public profile header preview with future Member indicator.
  * Reuses public-member-page identity geometry; presentation-only (no domain mutation).
  */
+import { useTranslations } from "next-intl";
+
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { Card } from "../../../design-system/components/Card";
 import { MemberStatusIndicator } from "../../member-profile/components/MemberStatusIndicator";
@@ -29,19 +31,6 @@ interface MembershipPublicDisplayPreviewProps {
   previewMemberStatus?: boolean;
 }
 
-function resolvePreviewCaption(input: {
-  isActiveMember: boolean;
-  membershipPubliclyVisible: boolean;
-}): string {
-  if (input.isActiveMember) {
-    return input.membershipPubliclyVisible
-      ? "Public profile: Member status appears automatically, including your Member Number."
-      : "Public profile: Member status appears automatically. Your Member Number stays private until you enable it.";
-  }
-
-  return "Public profile preview (future Member status)";
-}
-
 export function MembershipPublicDisplayPreview({
   displayName,
   publicName,
@@ -51,24 +40,27 @@ export function MembershipPublicDisplayPreview({
   memberNumber,
   previewMemberStatus = true,
 }: MembershipPublicDisplayPreviewProps) {
+  const t = useTranslations("membershipPublic");
   const showMemberIndicator = isActiveMember || previewMemberStatus;
-  const caption = resolvePreviewCaption({
-    isActiveMember,
-    membershipPubliclyVisible,
-  });
+
+  const caption = isActiveMember
+    ? membershipPubliclyVisible
+      ? t("publicPreview.captionActiveWithNumber")
+      : t("publicPreview.captionActivePrivateNumber")
+    : t("publicPreview.captionPreview");
 
   const previewTiles: MembershipFactTile[] = [];
   if (showMemberIndicator) {
     previewTiles.push({
       id: "status",
-      label: "Status",
-      value: "Member",
+      label: t("publicPreview.statusLabel"),
+      value: t("status.memberCohort"),
       tone: "pale-blue",
     });
     if (isActiveMember && membershipPubliclyVisible && memberNumber) {
       previewTiles.push({
         id: "member-number",
-        label: "Member Number",
+        label: t("status.memberNumber"),
         value: memberNumber,
         tone: "pale-green",
       });
@@ -112,7 +104,7 @@ export function MembershipPublicDisplayPreview({
           <div className="public-member-page__membership-facts">
             <MembershipFactsTiles
               tiles={previewTiles}
-              ariaLabel="Public Membership status preview"
+              ariaLabel={t("publicPreview.ariaLabel")}
             />
           </div>
         ) : null}

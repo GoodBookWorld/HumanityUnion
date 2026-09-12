@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 
-import type { ContentTranslationSourceKind } from "@hu/types";
+import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import { normalizeLanguageCode } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
@@ -18,6 +18,20 @@ import { translationProviderPublicErrorMessage } from "./resolve-translation-pro
 import { TranslationProviderError } from "./translation.config.js";
 import { translateDraft } from "./translate-draft.js";
 import { translationRateLimiter } from "./translation-rate-limit.js";
+
+/**
+ * Preserve Registry locale identity for CT resolve (`zh-Hant` must not become `zh`).
+ * `normalizeLanguageCode` collapses script tags and breaks CURRENT matching.
+ */
+function coercePreferredReadingLanguageQuery(
+  value: unknown,
+): LanguageCode | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? (trimmed as LanguageCode) : undefined;
+}
 
 const languageRouter = Router();
 
@@ -101,13 +115,14 @@ languageRouter.get(
     }
 
     try {
-      const preferredReadingLanguage = req.query.language
-        ? normalizeLanguageCode(String(req.query.language))
-        : undefined;
+      const preferredReadingLanguage = coercePreferredReadingLanguageQuery(
+        req.query.language,
+      );
       // Pack 08I.13 — explicit public `?language=` requests warm translation DISPLAY.
       // Member `translationPreference: none` must not hide current content_translations
       // for public surfaces (Live: Initiative/Blog/Media stayed English despite warm rows).
       // Pack 1.1 — cache-only resolve; never generate on read.
+      // Registry locale identity preserved (zh-Hant ≠ zh) for CURRENT matching.
       const resolved = await resolvePublicTranslatedContent({
         sourceKind,
         sourceRecordId,

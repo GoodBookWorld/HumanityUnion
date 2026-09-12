@@ -116,7 +116,7 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
     assert.match(script, /execute,\s*kinds,/);
   });
 
-  it("blog_post / civic_media alone skip Initiative+CA+CD hydrate", () => {
+  it("blog_post / civic_media / improvement_proposal alone skip Initiative+CA+CD hydrate", () => {
     assert.deepEqual(resolveContentTranslationOperatorHydrateScopes(["blog_post"]), {
       initiative: false,
       collaborativeAnalysis: false,
@@ -124,6 +124,14 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
     });
     assert.deepEqual(
       resolveContentTranslationOperatorHydrateScopes(["civic_media", "public_news"]),
+      {
+        initiative: false,
+        collaborativeAnalysis: false,
+        collectiveDecision: false,
+      },
+    );
+    assert.deepEqual(
+      resolveContentTranslationOperatorHydrateScopes(["improvement_proposal"]),
       {
         initiative: false,
         collaborativeAnalysis: false,

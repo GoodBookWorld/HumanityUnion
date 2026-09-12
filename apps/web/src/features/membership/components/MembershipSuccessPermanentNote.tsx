@@ -1,7 +1,12 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Card } from "../../../design-system/components/Card";
-import { MEMBERSHIP_SUCCESS_COPY } from "../membership.constants";
 
 export function MembershipSuccessPermanentNote() {
+  const t = useTranslations("membershipPublic.successPage");
+
   return (
     <section
       className="membership-success-section"
@@ -9,9 +14,9 @@ export function MembershipSuccessPermanentNote() {
     >
       <Card className="membership-success-permanent">
         <h2 id="membership-success-permanent-title" className="membership-success-permanent__title">
-          {MEMBERSHIP_SUCCESS_COPY.permanentTitle}
+          {t("permanentTitle")}
         </h2>
-        <p>{MEMBERSHIP_SUCCESS_COPY.permanentBody}</p>
+        <p>{t("permanentBody")}</p>
       </Card>
     </section>
   );
