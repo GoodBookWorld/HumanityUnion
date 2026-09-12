@@ -28,7 +28,7 @@ describe("participant_public PLP production wiring", () => {
     assert.match(adapter, /members_only/);
   });
 
-  it("profile mutations enqueue PLP builds; reads overlay CURRENT only", () => {
+  it("profile mutations enqueue PLP builds; reads overlay CURRENT via adapter contract", () => {
     const service = read("src/modules/member-profile/member-profile.service.ts");
     const apply = read(
       "src/modules/language/published-localized-presentation/universal/adapters/apply-participant-public-plp.ts",
@@ -36,6 +36,7 @@ describe("participant_public PLP production wiring", () => {
     assert.match(service, /enqueueParticipantPublicPlpBuilds/);
     assert.match(service, /applyParticipantPublicPlpToProjection/);
     assert.match(apply, /mode !== "PUBLISHED_LOCALIZED"/);
+    assert.match(apply, /resolveCanonicalEntity/);
     assert.doesNotMatch(apply, /gemini|provider-on-read/i);
   });
 });

@@ -2,16 +2,35 @@
  * Apply CURRENT participant_public PLP onto a public profile projection.
  * Provider-free read: usable CURRENT → localized fields; otherwise keep canonical.
  * Whole-presentation only — never mix partial localized fields with canonical.
+ *
+ * Live canonicalVersion MUST match the PLP adapter / materializer contract
+ * (full MemberProfile fields), not a privacy-filtered PublicMemberProfile
+ * fingerprint — otherwise CURRENT stays usable for materialize but `/profile`
+ * falls back to English.
  */
 
-import type { PublicMemberProfile, PublicPresentationNode } from "@hu/types";
-import { PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION } from "@hu/types";
+import type { LanguageCode, PublicMemberProfile, PublicPresentationNode } from "@hu/types";
+import { isPublicProtectedValue } from "@hu/types";
 
 import { resolvePublishedPresentation } from "../../resolve-published-presentation.js";
 import {
-  buildParticipantPublicCanonicalPresentation,
+  getPlpDomainAdapter,
+  registerPlpDomainAdapter,
+} from "../domain-adapter-registry.js";
+import {
   PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+  participantPublicPlpDomainAdapter,
 } from "./participant-public-adapter.js";
+
+function ensureParticipantPublicAdapterRegistered(): void {
+  if (!getPlpDomainAdapter(PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE)) {
+    try {
+      registerPlpDomainAdapter(participantPublicPlpDomainAdapter);
+    } catch {
+      // already registered
+    }
+  }
+}
 
 function readStringField(
   presentation: PublicPresentationNode,
@@ -21,7 +40,13 @@ function readStringField(
     return undefined;
   }
   const value = (presentation as Record<string, PublicPresentationNode>)[key];
-  return typeof value === "string" ? value : undefined;
+  if (typeof value === "string") {
+    return value;
+  }
+  if (isPublicProtectedValue(value) && typeof value.value === "string") {
+    return value.value;
+  }
+  return undefined;
 }
 
 function readSkillsField(presentation: PublicPresentationNode): string[] | undefined {
@@ -45,21 +70,24 @@ export async function applyParticipantPublicPlpToProjection(input: {
     return input.projection;
   }
 
-  const canonical = buildParticipantPublicCanonicalPresentation({
-    profileId: input.projection.profileId,
-    displayName: input.projection.displayName ?? "",
-    biography: input.projection.biography,
-    organization: input.projection.organization,
-    skills: input.projection.skills,
+  ensureParticipantPublicAdapterRegistered();
+
+  const contract = await participantPublicPlpDomainAdapter.resolveCanonicalEntity({
+    entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+    entityId: input.projection.profileId,
+    locale: locale as LanguageCode,
   });
+  if (!contract) {
+    return input.projection;
+  }
 
   const resolved = await resolvePublishedPresentation({
     entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
     entityId: input.projection.profileId,
     locale,
-    liveCanonicalVersion: canonical.canonicalVersion,
-    liveLocalizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-    canonicalPresentation: canonical.presentation,
+    liveCanonicalVersion: contract.canonicalVersion,
+    liveLocalizationSchemaVersion: contract.localizationSchemaVersion,
+    canonicalPresentation: contract.canonicalPresentation,
   });
 
   if (resolved.mode !== "PUBLISHED_LOCALIZED") {
