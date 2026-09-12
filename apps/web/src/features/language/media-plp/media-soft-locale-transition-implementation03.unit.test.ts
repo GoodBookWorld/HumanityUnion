@@ -30,6 +30,7 @@ describe("Implementation 03 — Media soft locale transition", () => {
     const href = resolveLocaleSwitchNavigationHref({
       pathname: "/uk/media",
       nextLocale: "ar",
+      seoIndexingEnabled: true,
     });
     assert.equal(href, "/ar/media");
 
@@ -42,10 +43,11 @@ describe("Implementation 03 — Media soft locale transition", () => {
     assert.equal(result.didRefresh, true);
     assert.deepEqual(calls, ["replace:/ar/media", "refresh"]);
 
-    // Future Registry locale — same mechanism, no per-language branch.
+    // Future Registry locale — same mechanism when SEO-indexable; no per-language branch.
     const deHref = resolveLocaleSwitchNavigationHref({
       pathname: "/uk/media",
       nextLocale: "de",
+      seoIndexingEnabled: true,
     });
     assert.equal(deHref, "/de/media");
     calls.length = 0;
@@ -56,6 +58,16 @@ describe("Implementation 03 — Media soft locale transition", () => {
     });
     assert.equal(deResult.didReplace, true);
     assert.deepEqual(calls, ["replace:/de/media", "refresh"]);
+
+    // Enabled non-SEO future locale must not mint a prefixed URL.
+    assert.equal(
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/uk/media",
+        nextLocale: "ka",
+        seoIndexingEnabled: false,
+      }),
+      "/media",
+    );
 
     const selector = readFileSync(
       join(webSrc, "features/language/components/LanguageSelector.tsx"),

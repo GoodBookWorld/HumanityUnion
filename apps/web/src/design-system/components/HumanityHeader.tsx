@@ -135,7 +135,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             </ul>
           </nav>
           <div className="humanity-header__end">
-            <LanguageSelector className="humanity-header__language" />
+            <LanguageSelector className="humanity-header__language hu-language-selector--header" />
             <BrowserWorkspaceHeaderControls />
             <div className="humanity-header__utility humanity-header__utility--desktop">
               <HeaderAuthUtility />

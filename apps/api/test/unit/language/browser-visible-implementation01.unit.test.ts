@@ -100,15 +100,27 @@ describe("Implementation 01 — locale isolation + Improvement Proposals", () =>
       "../../../../web/src/features/language/resolve-locale-switch-navigation-href.js"
     );
     assert.equal(
-      resolveLocaleSwitchNavigationHref({ pathname: "/uk/media", nextLocale: "ar" }),
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/uk/media",
+        nextLocale: "ar",
+        seoIndexingEnabled: true,
+      }),
       "/ar/media",
     );
     assert.equal(
-      resolveLocaleSwitchNavigationHref({ pathname: "/uk/media", nextLocale: "en" }),
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/uk/media",
+        nextLocale: "en",
+        seoIndexingEnabled: true,
+      }),
       "/media",
     );
     assert.equal(
-      resolveLocaleSwitchNavigationHref({ pathname: "/workspace", nextLocale: "ar" }),
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/workspace",
+        nextLocale: "ar",
+        seoIndexingEnabled: true,
+      }),
       null,
     );
 
@@ -273,15 +285,28 @@ describe("Implementation 01A — future-language genericity", () => {
     );
 
     assert.equal(
-      resolveLocaleSwitchNavigationHref({ pathname: "/uk/media", nextLocale: "de" }),
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/uk/media",
+        nextLocale: "de",
+        seoIndexingEnabled: true,
+      }),
       "/de/media",
     );
     assert.equal(
       resolveLocaleSwitchNavigationHref({
         pathname: "/ar/initiatives/public/abc",
         nextLocale: "fr",
+        seoIndexingEnabled: true,
       }),
       "/fr/initiatives/public/abc",
+    );
+    assert.equal(
+      resolveLocaleSwitchNavigationHref({
+        pathname: "/uk/media",
+        nextLocale: "ka",
+        seoIndexingEnabled: false,
+      }),
+      "/media",
     );
     assert.equal(
       mayApplyPersistedLocalizedPresentation({

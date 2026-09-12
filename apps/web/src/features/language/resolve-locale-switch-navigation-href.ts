@@ -2,9 +2,10 @@
  * Locale-switch navigation for SEO-prefixed public routes.
  * Pure helper — no React / next-intl dependency.
  *
- * Registry-driven: any future locale string becomes `/{normalizedSegment}{path}`.
- * No finite current-locale route map. English/default platform language uses the
- * locale-free public path (existing canonical routing convention).
+ * Registry-driven: SEO-indexable locales may use `/{normalizedSegment}{path}`.
+ * Enabled but non-SEO locales stay on the locale-free public path (cookie + refresh).
+ * English/default platform language uses the locale-free public path.
+ * No finite current-locale route map.
  */
 
 import {
@@ -18,13 +19,20 @@ import {
 /**
  * Build the navigation target after a language switch so SEO-prefixed routes
  * cannot keep the old URL locale while the selector claims a different locale.
- * Default platform language uses the locale-free public path (/media).
- * Any other Registry locale uses /{segment}{path} (e.g. /de/media).
- * Non-SEO routes (workspace, etc.) return null — cookie + refresh only.
+ *
+ * - Default platform language → locale-free public path (/media).
+ * - Enabled + SEO-indexable → /{segment}{path} (e.g. /uk/media).
+ * - Enabled + non-SEO → locale-free path (never /{locale}/…); cookie carries interface locale.
+ * - Non-SEO routes (workspace, etc.) → null (cookie + refresh only).
  */
 export function resolveLocaleSwitchNavigationHref(input: {
   readonly pathname: string;
   readonly nextLocale: string;
+  /**
+   * Registry `seoIndexingEnabled` for `nextLocale` (selectable rows are already enabled).
+   * Prefix navigation is allowed only when this is strictly true.
+   */
+  readonly seoIndexingEnabled: boolean;
 }): string | null {
   const next = input.nextLocale.trim();
   const nextKey = normalizeLanguageRegistryLocaleKey(next);
@@ -37,6 +45,10 @@ export function resolveLocaleSwitchNavigationHref(input: {
     return null;
   }
   if (!next || nextKey === defaultKey) {
+    return localeFreePath || "/";
+  }
+  // Fail closed: missing/false SEO flag must never mint a locale-prefixed URL.
+  if (input.seoIndexingEnabled !== true) {
     return localeFreePath || "/";
   }
   const segment = toPublicSeoLocaleUrlSegment(next);

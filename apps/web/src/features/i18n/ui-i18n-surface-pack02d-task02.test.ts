@@ -138,6 +138,7 @@ describe("Production Completion Pack 02D Task 02 — first UI translation surfac
         englishName: "Ukrainian",
         nativeName: "Українська",
         textDirection: "ltr",
+        seoIndexingEnabled: true,
       }),
       "Українська (Ukrainian)",
     );

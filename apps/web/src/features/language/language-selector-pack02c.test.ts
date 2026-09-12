@@ -134,9 +134,43 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
     assert.match(header, /LanguageSelector/);
+    assert.match(header, /hu-language-selector--header/);
     assert.match(mobile, /LanguageSelector/);
     assert.match(mobile, /variant="icon"/);
     assert.match(layout, /InterfaceLanguageCookieSync/);
+  });
+
+  it("standard mobile-web header uses viewport-safe panel (not desktop absolute dropdown)", () => {
+    const header = readWeb("design-system/components/HumanityHeader.tsx");
+    const css = readWeb("features/language/components/language-selector.css");
+    const globalMenu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
+
+    assert.match(header, /hu-language-selector--header/);
+    // Desktop list geometry remains absolute + inset-inline-start for default selector.
+    assert.match(
+      css,
+      /\.hu-language-selector__list\s*\{[^}]*position:\s*absolute[^}]*inset-inline-start:\s*0/s,
+    );
+    // Mobile-web header override is distinct and viewport-anchored.
+    assert.match(
+      css,
+      /@media\s*\(max-width:\s*768px\)[\s\S]*\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*position:\s*fixed/,
+    );
+    assert.match(
+      css,
+      /\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*inset-inline:\s*4vw/,
+    );
+    assert.match(
+      css,
+      /\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*max-height:\s*min\(65dvh/,
+    );
+    assert.match(
+      css,
+      /\.hu-language-selector--header\s+\.hu-language-selector__option[\s\S]*overflow-wrap:\s*anywhere/,
+    );
+    // PWA path stays on --mobile / icon variant, not --header.
+    assert.match(globalMenu, /hu-language-selector--mobile/);
+    assert.doesNotMatch(globalMenu, /hu-language-selector--header/);
   });
 
   it("PWA standalone burger uses PwaGlobalMenu with icon LanguageSelector", () => {
@@ -182,6 +216,7 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
         englishName: "Ukrainian",
         nativeName: "Українська",
         textDirection: "ltr",
+        seoIndexingEnabled: true,
       }),
       "Українська (Ukrainian)",
     );
@@ -192,8 +227,20 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
         englishName: "English",
         nativeName: "English",
         textDirection: "ltr",
+        seoIndexingEnabled: true,
       }),
       "English",
     );
+  });
+
+  it("LanguageSelector passes Registry seoIndexingEnabled into href resolver", () => {
+    const selector = readWeb("features/language/components/LanguageSelector.tsx");
+    const api = readWeb("features/language/public-languages-api.ts");
+    const href = readWeb("features/language/resolve-locale-switch-navigation-href.ts");
+    assert.match(api, /seoIndexingEnabled:\s*row\.seoIndexingEnabled\s*===\s*true/);
+    assert.match(selector, /seoIndexingEnabled:\s*selected\?\.seoIndexingEnabled\s*===\s*true/);
+    assert.match(href, /seoIndexingEnabled\s*!==\s*true/);
+    assert.doesNotMatch(href, /\bka\b/);
+    assert.doesNotMatch(selector, /\bka\.json\b/);
   });
 });

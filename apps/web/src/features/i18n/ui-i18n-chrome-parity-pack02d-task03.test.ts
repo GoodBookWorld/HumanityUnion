@@ -114,6 +114,7 @@ describe("Production Completion Pack 02D Task 03 — foundation chrome + parity"
         englishName: "Arabic",
         nativeName: "العربية",
         textDirection: "rtl",
+        seoIndexingEnabled: true,
       }),
       "العربية (Arabic)",
     );

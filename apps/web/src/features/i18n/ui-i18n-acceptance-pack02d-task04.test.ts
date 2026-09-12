@@ -167,6 +167,7 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
         englishName: "Ukrainian",
         nativeName: "Українська",
         textDirection: "ltr",
+        seoIndexingEnabled: true,
       }),
       "Українська (Ukrainian)",
     );

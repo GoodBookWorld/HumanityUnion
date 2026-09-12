@@ -27,6 +27,8 @@ export interface SelectablePublicLanguage {
   readonly englishName: string;
   readonly nativeName: string;
   readonly textDirection: "ltr" | "rtl";
+  /** Registry flag — drives whether locale-switch may mint `/{locale}/…` SEO URLs. */
+  readonly seoIndexingEnabled: boolean;
 }
 
 /** Client selector session window — Task 04 duplicate-fetch reduction. */
@@ -42,6 +44,7 @@ function toSelectable(row: LanguageRegistryPublic): SelectablePublicLanguage {
     englishName: row.englishName,
     nativeName: row.nativeName,
     textDirection: row.textDirection,
+    seoIndexingEnabled: row.seoIndexingEnabled === true,
   };
 }
 

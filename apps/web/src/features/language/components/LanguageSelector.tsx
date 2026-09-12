@@ -218,9 +218,11 @@ export function LanguageSelector({
       // Reset 03C.2 — locale switch ownership starts here; Media PLP completes after refresh.
       recordLocaleSwitchStarted(written.locale);
       markMediaLocaleSwitchPerfPhase("T2_NAVIGATION_START");
+      const selected = options.find((row) => row.locale === written.locale);
       const href = resolveLocaleSwitchNavigationHref({
         pathname,
         nextLocale: written.locale,
+        seoIndexingEnabled: selected?.seoIndexingEnabled === true,
       });
       // Implementation 03 — replace updates the SEO URL; refresh re-fetches
       // locale-scoped Server Component payloads (Media PLP maps). Soft nav
@@ -233,7 +235,7 @@ export function LanguageSelector({
         });
       });
     },
-    [authStatus, pathname, router],
+    [authStatus, options, pathname, router],
   );
 
   const currentLocale = options.some((row) => row.locale === value)
