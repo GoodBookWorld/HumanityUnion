@@ -72,7 +72,13 @@ const PROFILE_PROJECTION = {
 export type ParticipantPublicPlpLocaleOutcome = {
   readonly locale: string;
   readonly CURRENT_USABLE: boolean;
-  readonly ACTION: "SKIP_CURRENT" | "WOULD_BUILD" | "BUILT" | "FAILED" | "SKIP_SOURCE";
+  readonly ACTION:
+    | "SKIP_CURRENT"
+    | "WOULD_BUILD"
+    | "BUILT"
+    | "FAILED"
+    | "SKIP_SOURCE"
+    | "SKIP_NO_TRANSLATABLE";
   readonly reason: string | null;
 };
 
@@ -83,6 +89,8 @@ export type ParticipantPublicPlpProfileReport = {
   readonly ELIGIBLE: boolean;
   readonly CANONICAL_VERSION: string | null;
   readonly locales: readonly ParticipantPublicPlpLocaleOutcome[];
+  /** False when operator budget stopped before all target locales were attempted. */
+  readonly COMPLETE: boolean;
 };
 
 export type ParticipantPublicPlpActionTotals = {
@@ -91,6 +99,7 @@ export type ParticipantPublicPlpActionTotals = {
   readonly BUILT: number;
   readonly FAILED: number;
   readonly SKIP_SOURCE: number;
+  readonly SKIP_NO_TRANSLATABLE: number;
   readonly ineligible: number;
 };
 
@@ -106,9 +115,15 @@ export type ParticipantPublicPlpMaterializeReport = {
   readonly pageSize: number | null;
   readonly pagesProcessed: number;
   readonly profilesProcessed: number;
-  /** Exclusive resume cursor for the next invocation (`--after-profile-id`). */
+  /**
+   * Exclusive resume cursor for `--after-profile-id`.
+   * When abortReason is PROVIDER_CALL_BUDGET_REACHED mid-profile, this is the
+   * last *fully completed* profileId (or the page start cursor), so resume
+   * re-enters the unfinished profile; SKIP_CURRENT covers already-built locales.
+   */
   readonly resumeAfterProfileId: string | null;
   readonly hasMore: boolean;
+  readonly maxProviderCalls: number;
   readonly totals: ParticipantPublicPlpActionTotals;
   /** Identity/limit: all rows. Historical: last page only (memory bound). */
   readonly profiles: readonly ParticipantPublicPlpProfileReport[];
@@ -237,6 +252,7 @@ function emptyActionTotals(): ParticipantPublicPlpActionTotals {
     BUILT: 0,
     FAILED: 0,
     SKIP_SOURCE: 0,
+    SKIP_NO_TRANSLATABLE: 0,
     ineligible: 0,
   };
 }
@@ -265,6 +281,9 @@ function accumulateProfileTotals(
         break;
       case "SKIP_SOURCE":
         next = { ...next, SKIP_SOURCE: next.SKIP_SOURCE + 1 };
+        break;
+      case "SKIP_NO_TRANSLATABLE":
+        next = { ...next, SKIP_NO_TRANSLATABLE: next.SKIP_NO_TRANSLATABLE + 1 };
         break;
       default:
         break;
@@ -376,6 +395,14 @@ async function defaultRunProvider(input: {
     importMediaPlpMaterializerProvider,
     callMediaPlpMaterializerProviderOnce,
   } = await import("../../media-plp-materializer/provider-boundary.js");
+  // RESET 05C pattern: per-build budget. Without this, process-global
+  // PROVIDER_CALL_COUNT leaks across locales and trips PROVIDER_CALL_CAP
+  // (batchCount*2, often 2) after the first couple of builds.
+  const { resetMediaPlpMaterializerProviderCallBudget } = await import(
+    "../../media-plp-materializer/counters.js"
+  );
+  resetMediaPlpMaterializerProviderCallBudget();
+
   const imported = await importMediaPlpMaterializerProvider();
   const result = await callMediaPlpMaterializerProviderOnce({
     provider: imported.provider,
@@ -399,11 +426,13 @@ async function inspectLocale(input: {
   readonly profile: MemberProfile;
   readonly locale: string;
   readonly execute: boolean;
+  readonly remainingProviderBudget: number;
   readonly runProvider: NonNullable<ParticipantPublicPlpMaterializeDeps["runProvider"]>;
   readonly publishBuild: typeof runUniversalPlpBuild;
 }): Promise<{
-  readonly outcome: ParticipantPublicPlpLocaleOutcome;
+  readonly outcome: ParticipantPublicPlpLocaleOutcome | null;
   readonly providerCalls: number;
+  readonly stoppedForBudget: boolean;
 }> {
   if (input.locale.toLowerCase() === "en") {
     return {
@@ -414,6 +443,7 @@ async function inspectLocale(input: {
         reason: "SOURCE_LOCALE",
       },
       providerCalls: 0,
+      stoppedForBudget: false,
     };
   }
 
@@ -440,6 +470,7 @@ async function inspectLocale(input: {
         reason: usability.resolveReasonCode ?? "CURRENT_USABLE",
       },
       providerCalls: 0,
+      stoppedForBudget: false,
     };
   }
 
@@ -452,19 +483,26 @@ async function inspectLocale(input: {
         reason: usability.resolveReasonCode ?? "NO_PUBLISHED_SNAPSHOT",
       },
       providerCalls: 0,
+      stoppedForBudget: false,
     };
   }
 
   if (Object.keys(autoValues).length === 0) {
+    // Nothing MACHINE_CONTENT to send — canonical/protected fields remain on read.
     return {
       outcome: {
         locale: input.locale,
         CURRENT_USABLE: false,
-        ACTION: "FAILED",
+        ACTION: "SKIP_NO_TRANSLATABLE",
         reason: "NO_MACHINE_AUTO_PATHS",
       },
       providerCalls: 0,
+      stoppedForBudget: false,
     };
+  }
+
+  if (input.remainingProviderBudget <= 0) {
+    return { outcome: null, providerCalls: 0, stoppedForBudget: true };
   }
 
   const providerResult = await input.runProvider({
@@ -482,6 +520,7 @@ async function inspectLocale(input: {
         reason: providerResult.reason,
       },
       providerCalls: 1,
+      stoppedForBudget: false,
     };
   }
 
@@ -505,6 +544,7 @@ async function inspectLocale(input: {
         reason: built.status,
       },
       providerCalls: 1,
+      stoppedForBudget: false,
     };
   }
   return {
@@ -515,6 +555,7 @@ async function inspectLocale(input: {
       reason: built.reasonCodes.join(",") || built.status,
     },
     providerCalls: 1,
+    stoppedForBudget: false,
   };
 }
 
@@ -522,11 +563,14 @@ async function materializeProfile(input: {
   readonly profile: MemberProfile | null;
   readonly locales: readonly string[];
   readonly execute: boolean;
+  readonly remainingProviderBudget: number;
   readonly runProvider: NonNullable<ParticipantPublicPlpMaterializeDeps["runProvider"]>;
   readonly publishBuild: typeof runUniversalPlpBuild;
 }): Promise<{
   readonly report: ParticipantPublicPlpProfileReport;
   readonly providerCalls: number;
+  readonly stoppedForBudget: boolean;
+  readonly profileFullyCompleted: boolean;
 }> {
   if (!input.profile) {
     return {
@@ -537,8 +581,11 @@ async function materializeProfile(input: {
         ELIGIBLE: false,
         CANONICAL_VERSION: null,
         locales: [],
+        COMPLETE: true,
       },
       providerCalls: 0,
+      stoppedForBudget: false,
+      profileFullyCompleted: true,
     };
   }
   if (!isEligible(input.profile)) {
@@ -550,8 +597,11 @@ async function materializeProfile(input: {
         ELIGIBLE: false,
         CANONICAL_VERSION: null,
         locales: [],
+        COMPLETE: true,
       },
       providerCalls: 0,
+      stoppedForBudget: false,
+      profileFullyCompleted: true,
     };
   }
 
@@ -565,18 +615,30 @@ async function materializeProfile(input: {
 
   const locales: ParticipantPublicPlpLocaleOutcome[] = [];
   let providerCalls = 0;
+  let remaining = input.remainingProviderBudget;
+  let stoppedForBudget = false;
+
   for (const locale of input.locales) {
-    const { outcome, providerCalls: calls } = await inspectLocale({
+    const result = await inspectLocale({
       profile: input.profile,
       locale,
       execute: input.execute,
+      remainingProviderBudget: remaining,
       runProvider: input.runProvider,
       publishBuild: input.publishBuild,
     });
-    locales.push(outcome);
-    providerCalls += calls;
+    if (result.stoppedForBudget) {
+      stoppedForBudget = true;
+      break;
+    }
+    if (result.outcome) {
+      locales.push(result.outcome);
+    }
+    providerCalls += result.providerCalls;
+    remaining -= result.providerCalls;
   }
 
+  const profileFullyCompleted = !stoppedForBudget;
   return {
     report: {
       profileId: input.profile.profileId,
@@ -585,8 +647,11 @@ async function materializeProfile(input: {
       ELIGIBLE: true,
       CANONICAL_VERSION: canonical.canonicalVersion,
       locales,
+      COMPLETE: profileFullyCompleted,
     },
     providerCalls,
+    stoppedForBudget,
+    profileFullyCompleted,
   };
 }
 
@@ -669,10 +734,14 @@ export async function runParticipantPublicPlpMaterialize(
     let profilesProcessed = 0;
     let providerCalls = 0;
     let totals = emptyActionTotals();
+    /** Exclusive cursor: last profile whose *all* locales finished. */
+    let lastFullyCompletedProfileId: string | null = args.afterProfileId;
     let resumeAfterProfileId: string | null = args.afterProfileId;
     let hasMore = false;
     let lastPageReports: ParticipantPublicPlpProfileReport[] = [];
     let sourceNotFound = false;
+    let abortReason: string | null = null;
+    const providerBudget = args.execute ? args.maxProviderCalls : Number.POSITIVE_INFINITY;
 
     if (args.profileId || args.publicName) {
       traversal = "identity";
@@ -689,6 +758,7 @@ export async function runParticipantPublicPlpMaterialize(
             ELIGIBLE: false,
             CANONICAL_VERSION: null,
             locales: [],
+            COMPLETE: true,
           },
         ];
       } else {
@@ -696,6 +766,7 @@ export async function runParticipantPublicPlpMaterialize(
           profile,
           locales,
           execute: args.execute,
+          remainingProviderBudget: Math.max(0, providerBudget - providerCalls),
           runProvider,
           publishBuild,
         });
@@ -704,14 +775,22 @@ export async function runParticipantPublicPlpMaterialize(
         pagesProcessed = 1;
         providerCalls += result.providerCalls;
         totals = accumulateProfileTotals(totals, result.report);
-        resumeAfterProfileId = profile.profileId;
+        if (result.stoppedForBudget) {
+          abortReason = "PROVIDER_CALL_BUDGET_REACHED";
+          hasMore = true;
+          // Do not advance past this profile — resume re-enters it.
+          resumeAfterProfileId = lastFullyCompletedProfileId;
+        } else {
+          resumeAfterProfileId = profile.profileId;
+          lastFullyCompletedProfileId = profile.profileId;
+        }
       }
     } else {
       traversal = args.historical ? "historical" : "page";
       let afterProfileId = args.afterProfileId;
       const maxPages = args.historical ? args.maxPages : 1;
 
-      for (;;) {
+      pageLoop: for (;;) {
         if (maxPages != null && pagesProcessed >= maxPages) {
           hasMore = true;
           break;
@@ -733,6 +812,7 @@ export async function runParticipantPublicPlpMaterialize(
                 ELIGIBLE: false,
                 CANONICAL_VERSION: null,
                 locales: [],
+                COMPLETE: true,
               },
             ];
           }
@@ -746,6 +826,7 @@ export async function runParticipantPublicPlpMaterialize(
             profile,
             locales,
             execute: args.execute,
+            remainingProviderBudget: Math.max(0, providerBudget - providerCalls),
             runProvider,
             publishBuild,
           });
@@ -753,10 +834,22 @@ export async function runParticipantPublicPlpMaterialize(
           providerCalls += result.providerCalls;
           totals = accumulateProfileTotals(totals, result.report);
           profilesProcessed += 1;
-          afterProfileId = profile.profileId;
+
+          if (result.stoppedForBudget) {
+            abortReason = "PROVIDER_CALL_BUDGET_REACHED";
+            hasMore = true;
+            resumeAfterProfileId = lastFullyCompletedProfileId;
+            lastPageReports = pageReports;
+            break pageLoop;
+          }
+
+          if (result.profileFullyCompleted) {
+            lastFullyCompletedProfileId = profile.profileId;
+            afterProfileId = profile.profileId;
+            resumeAfterProfileId = profile.profileId;
+          }
         }
         lastPageReports = pageReports;
-        resumeAfterProfileId = afterProfileId;
 
         // Release page before next Mongo read (do not retain prior pages).
         if (page.length < args.pageSize) {
@@ -764,7 +857,6 @@ export async function runParticipantPublicPlpMaterialize(
           break;
         }
         if (!args.historical) {
-          // Probe one more id to set hasMore for single-page --limit ops.
           const probe = await listPage({
             pageSize: 1,
             afterProfileId,
@@ -774,6 +866,10 @@ export async function runParticipantPublicPlpMaterialize(
         }
         hasMore = true;
       }
+    }
+
+    if (sourceNotFound) {
+      abortReason = "SOURCE_NOT_FOUND";
     }
 
     const report: ParticipantPublicPlpMaterializeReport = {
@@ -795,11 +891,12 @@ export async function runParticipantPublicPlpMaterialize(
       profilesProcessed,
       resumeAfterProfileId,
       hasMore,
+      maxProviderCalls: args.maxProviderCalls,
       totals,
       profiles: lastPageReports,
       PROVIDER_CALLS: providerCalls,
       PROVIDER_CONCURRENCY: 1,
-      abortReason: sourceNotFound ? "SOURCE_NOT_FOUND" : null,
+      abortReason,
     };
 
     return {

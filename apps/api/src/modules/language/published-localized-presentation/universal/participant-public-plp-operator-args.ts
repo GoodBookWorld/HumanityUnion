@@ -16,6 +16,12 @@ export const PARTICIPANT_PUBLIC_PLP_MAX_BATCH_LIMIT = 25;
 /** Default Mongo page size for `--historical` (Render Starter safe). */
 export const PARTICIPANT_PUBLIC_PLP_HISTORICAL_DEFAULT_PAGE_SIZE = 10;
 export const PARTICIPANT_PUBLIC_PLP_HISTORICAL_MAX_PAGE_SIZE = 25;
+/**
+ * Default operator-level Gemini budget per invocation (historical/page/identity).
+ * Distinct from Media PLP per-request batch cap (batchCount*2); reset between builds.
+ */
+export const PARTICIPANT_PUBLIC_PLP_DEFAULT_MAX_PROVIDER_CALLS = 50;
+export const PARTICIPANT_PUBLIC_PLP_MAX_PROVIDER_CALLS_CEILING = 500;
 
 export type ParticipantPublicPlpMaterializeArgs = {
   readonly mongo: true;
@@ -30,6 +36,8 @@ export type ParticipantPublicPlpMaterializeArgs = {
   readonly pageSize: number;
   /** Optional safety cap on pages per invocation (`--historical` only). */
   readonly maxPages: number | null;
+  /** Operator Gemini call budget for this process (execute only). */
+  readonly maxProviderCalls: number;
   readonly locale: string | null;
 };
 
@@ -82,6 +90,7 @@ export function parseParticipantPublicPlpMaterializeArgs(
   const afterProfileId = flagValue(argv, "--after-profile-id");
   const pageSizeRaw = flagValue(argv, "--page-size");
   const maxPagesRaw = flagValue(argv, "--max-pages");
+  const maxProviderCallsRaw = flagValue(argv, "--max-provider-calls");
   const locale = flagValue(argv, "--locale");
   const execute = argv.includes("--execute");
 
@@ -156,6 +165,21 @@ export function parseParticipantPublicPlpMaterializeArgs(
     maxPages = parsed;
   }
 
+  let maxProviderCalls = PARTICIPANT_PUBLIC_PLP_DEFAULT_MAX_PROVIDER_CALLS;
+  if (maxProviderCallsRaw) {
+    const parsed = parsePositiveInt(maxProviderCallsRaw, {
+      min: 1,
+      max: PARTICIPANT_PUBLIC_PLP_MAX_PROVIDER_CALLS_CEILING,
+    });
+    if (parsed == null) {
+      return {
+        ok: false,
+        errorMessage: `materialize:participant-public-plp --max-provider-calls must be 1..${PARTICIPANT_PUBLIC_PLP_MAX_PROVIDER_CALLS_CEILING}`,
+      };
+    }
+    maxProviderCalls = parsed;
+  }
+
   return {
     ok: true,
     args: {
@@ -168,6 +192,7 @@ export function parseParticipantPublicPlpMaterializeArgs(
       afterProfileId,
       pageSize,
       maxPages,
+      maxProviderCalls,
       locale,
     },
   };

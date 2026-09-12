@@ -61,6 +61,7 @@ describe("materialize:participant-public-plp operator", () => {
     if (historical.ok) {
       assert.equal(historical.args.historical, true);
       assert.equal(historical.args.pageSize, 10);
+      assert.equal(historical.args.maxProviderCalls, 50);
     }
   });
 
@@ -104,6 +105,9 @@ describe("materialize:participant-public-plp operator", () => {
     assert.match(operator, /listParticipantPublicPlpEligibleProfilesPage/);
     assert.match(operator, /excludeSourceLanguage:\s*"en"/);
     assert.match(operator, /SKIP_CURRENT/);
+    assert.match(operator, /SKIP_NO_TRANSLATABLE/);
+    assert.match(operator, /PROVIDER_CALL_BUDGET_REACHED/);
+    assert.match(operator, /resetMediaPlpMaterializerProviderCallBudget/);
     assert.match(operator, /PROVIDER_CONCURRENCY:\s*1/);
     assert.doesNotMatch(operator, /from ["'].*process-plp-build-request/);
     assert.doesNotMatch(operator, /ensureAllDefaultPlpAdaptersRegistered/);

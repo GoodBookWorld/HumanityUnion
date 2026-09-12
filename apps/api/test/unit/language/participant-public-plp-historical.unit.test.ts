@@ -77,7 +77,7 @@ describe("materialize:participant-public-plp historical bounds", () => {
     resetPublishedLocalizationPersistenceForTests();
   });
 
-  it("parses --historical with page-size / after-profile-id / max-pages; refuses --all", () => {
+  it("parses --historical with page-size / after-profile-id / max-pages / max-provider-calls; refuses --all", () => {
     assert.equal(parseParticipantPublicPlpMaterializeArgs(["--mongo", "--all"]).ok, false);
     const hist = parseParticipantPublicPlpMaterializeArgs([
       "--mongo",
@@ -88,6 +88,8 @@ describe("materialize:participant-public-plp historical bounds", () => {
       "profile-a",
       "--max-pages",
       "2",
+      "--max-provider-calls",
+      "40",
     ]);
     assert.equal(hist.ok, true);
     if (hist.ok) {
@@ -95,6 +97,15 @@ describe("materialize:participant-public-plp historical bounds", () => {
       assert.equal(hist.args.pageSize, 5);
       assert.equal(hist.args.afterProfileId, "profile-a");
       assert.equal(hist.args.maxPages, 2);
+      assert.equal(hist.args.maxProviderCalls, 40);
+    }
+    const defaults = parseParticipantPublicPlpMaterializeArgs([
+      "--mongo",
+      "--historical",
+    ]);
+    assert.equal(defaults.ok, true);
+    if (defaults.ok) {
+      assert.equal(defaults.args.maxProviderCalls, 50);
     }
   });
 
@@ -248,6 +259,285 @@ describe("materialize:participant-public-plp historical bounds", () => {
     const locales = result.report?.profiles[0]?.locales ?? [];
     assert.equal(locales.find((row) => row.locale === "xx-Present")?.ACTION, "SKIP_CURRENT");
     assert.equal(locales.find((row) => row.locale === "yy-Future")?.ACTION, "BUILT");
+  });
+
+  it("provider budget mid-profile stops cleanly; resume re-enters profile; CURRENT skipped", async () => {
+    const corpus = [
+      sampleProfile({
+        profileId: "p-munia",
+        publicName: "munia",
+        biography: "Munia biography.",
+        skills: ["Facilitation"],
+      }),
+      sampleProfile({
+        profileId: "p-next",
+        publicName: "next-one",
+        biography: "Next biography.",
+      }),
+    ];
+    const builtLocales: string[] = [];
+    let providerCalls = 0;
+
+    const first = await runParticipantPublicPlpMaterialize(
+      [
+        "--mongo",
+        "--historical",
+        "--page-size",
+        "10",
+        "--max-provider-calls",
+        "2",
+        "--execute",
+      ],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        resolveLocales: async () => ["aa", "bb", "cc"],
+        listEligibleProfilesPage: async ({ afterProfileId, pageSize }) => {
+          const start = afterProfileId
+            ? corpus.findIndex((row) => row.profileId > afterProfileId)
+            : 0;
+          const from = start < 0 ? corpus.length : start;
+          return corpus.slice(from, from + pageSize);
+        },
+        runProvider: async (input) => {
+          providerCalls += 1;
+          builtLocales.push(`${input.sourceRecordId}:${input.locale}`);
+          const values: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.autoValues)) {
+            values[k] = `[${input.locale}] ${v}`;
+          }
+          return { ok: true, values };
+        },
+        publishBuild: async ({ contract }) => {
+          // Persist so resume can SKIP_CURRENT for aa/bb.
+          const locale = String(contract.targetLocale);
+          const full = buildParticipantPublicCanonicalPresentation({
+            profileId: corpus[0]!.profileId,
+            displayName: corpus[0]!.displayName,
+            biography: corpus[0]!.biography,
+            organization: corpus[0]!.organization,
+            skills: corpus[0]!.skills,
+          });
+          const merged = mergeLocalizedLayersByProvenance({
+            canonicalPresentation: full.presentation,
+            fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
+              PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+            ),
+            layers: [
+              {
+                source: "MACHINE",
+                values: {
+                  biography: `[${locale}] bio`,
+                  "skills[0]": `[${locale}] skill`,
+                },
+              },
+            ],
+          });
+          await publishPublishedLocalizedPresentation({
+            entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+            entityId: corpus[0]!.profileId,
+            locale,
+            canonicalVersion: full.canonicalVersion,
+            contentRevision: 1,
+            localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+            canonicalPresentation: full.presentation,
+            localizedCandidate: merged.presentation,
+            provenance: merged.provenance,
+            fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
+              PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+            ),
+          });
+          return {
+            status: "COMPLETED",
+            reasonCodes: [],
+            snapshotId: `snap-${locale}`,
+          };
+        },
+      },
+    );
+
+    assert.equal(first.exitCode, 0);
+    assert.equal(first.report?.abortReason, "PROVIDER_CALL_BUDGET_REACHED");
+    assert.equal(first.report?.PROVIDER_CALLS, 2);
+    assert.ok(first.report!.PROVIDER_CALLS <= first.report!.maxProviderCalls);
+    assert.equal(first.report?.hasMore, true);
+    // Budget hit on Munia cc — resume cursor must NOT advance past Munia.
+    assert.equal(first.report?.resumeAfterProfileId, null);
+    assert.equal(first.report?.profiles[0]?.COMPLETE, false);
+    assert.equal(first.report?.totals.BUILT, 2);
+    assert.equal(first.report?.totals.FAILED, 0);
+    assert.equal(providerCalls, 2);
+
+    const resumeLocales: string[] = [];
+    let pageStarts: Array<string | null> = [];
+    const second = await runParticipantPublicPlpMaterialize(
+      [
+        "--mongo",
+        "--historical",
+        "--page-size",
+        "10",
+        "--max-provider-calls",
+        "10",
+        "--execute",
+        // resumeAfterProfileId was null → omit --after-profile-id (re-enter Munia).
+      ],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        resolveLocales: async () => ["aa", "bb", "cc"],
+        listEligibleProfilesPage: async ({ afterProfileId, pageSize }) => {
+          pageStarts.push(afterProfileId);
+          const start = afterProfileId
+            ? corpus.findIndex((row) => row.profileId > afterProfileId)
+            : 0;
+          const from = start < 0 ? corpus.length : start;
+          return corpus.slice(from, from + pageSize);
+        },
+        runProvider: async (input) => {
+          resumeLocales.push(`${input.sourceRecordId.split(":")[1]}:${input.locale}`);
+          const values: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.autoValues)) {
+            values[k] = `[${input.locale}] ${v}`;
+          }
+          return { ok: true, values };
+        },
+        publishBuild: async () => ({
+          status: "COMPLETED",
+          reasonCodes: [],
+          snapshotId: "snap-resume",
+        }),
+      },
+    );
+
+    assert.equal(second.exitCode, 0);
+    assert.equal(second.report?.abortReason, null);
+    assert.equal(pageStarts[0], null);
+    // Unfinished Munia locale must be built; aa/bb must not re-call provider.
+    assert.ok(resumeLocales.includes("p-munia:cc"));
+    assert.equal(resumeLocales.includes("p-munia:aa"), false);
+    assert.equal(resumeLocales.includes("p-munia:bb"), false);
+    assert.ok((second.report?.totals.SKIP_CURRENT ?? 0) >= 2);
+    assert.ok(second.report!.PROVIDER_CALLS <= second.report!.maxProviderCalls);
+  });
+
+  it("budget mid second profile resumes with --after-profile-id of last fully completed profile", async () => {
+    const corpus = [
+      sampleProfile({
+        profileId: "p-a",
+        publicName: "a-one",
+        biography: "Bio A",
+      }),
+      sampleProfile({
+        profileId: "p-b",
+        publicName: "b-one",
+        biography: "Bio B",
+      }),
+    ];
+    let providerCalls = 0;
+    const result = await runParticipantPublicPlpMaterialize(
+      [
+        "--mongo",
+        "--historical",
+        "--page-size",
+        "10",
+        "--max-provider-calls",
+        "3",
+        "--execute",
+      ],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        resolveLocales: async () => ["l1", "l2", "l3"],
+        listEligibleProfilesPage: async ({ afterProfileId, pageSize }) => {
+          const start = afterProfileId
+            ? corpus.findIndex((row) => row.profileId > afterProfileId)
+            : 0;
+          const from = start < 0 ? corpus.length : start;
+          return corpus.slice(from, from + pageSize);
+        },
+        runProvider: async (input) => {
+          providerCalls += 1;
+          const values: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.autoValues)) {
+            values[k] = `[${input.locale}] ${v}`;
+          }
+          return { ok: true, values };
+        },
+        publishBuild: async () => ({
+          status: "COMPLETED",
+          reasonCodes: [],
+          snapshotId: "snap",
+        }),
+      },
+    );
+
+    // 3 calls: all of p-a, then stop before/at first unfinished p-b locale.
+    assert.equal(result.report?.abortReason, "PROVIDER_CALL_BUDGET_REACHED");
+    assert.equal(result.report?.PROVIDER_CALLS, 3);
+    assert.equal(providerCalls, 3);
+    assert.equal(result.report?.resumeAfterProfileId, "p-a");
+    assert.equal(result.report?.hasMore, true);
+    assert.equal(result.report?.totals.FAILED, 0);
+    const unfinished = result.report?.profiles.find((row) => row.profileId === "p-b");
+    assert.equal(unfinished?.COMPLETE, false);
+    assert.ok((unfinished?.locales.length ?? 0) < 3);
+  });
+
+  it("NO_MACHINE_AUTO_PATHS is SKIP_NO_TRANSLATABLE, not FAILED; no provider call", async () => {
+    const empty = sampleProfile({
+      profileId: "p-empty",
+      publicName: "leonardo-empty",
+      biography: undefined,
+      skills: [],
+      organization: undefined,
+    });
+    let providerCalls = 0;
+    const result = await runParticipantPublicPlpMaterialize(
+      ["--mongo", "--historical", "--execute"],
+      {
+        skipPersistenceRequire: true,
+        skipProductionRefusal: true,
+        skipExecuteGuards: true,
+        isMongoConfigured: () => true,
+        connect: async () => undefined,
+        disconnect: async () => undefined,
+        resolveLocales: async () => ["uk", "ar"],
+        listEligibleProfilesPage: async ({ afterProfileId }) =>
+          afterProfileId ? [] : [empty],
+        runProvider: async () => {
+          providerCalls += 1;
+          return { ok: false, reason: "SHOULD_NOT_RUN", message: "no" };
+        },
+        publishBuild: async () => ({
+          status: "FAILED",
+          reasonCodes: ["SHOULD_NOT_RUN"],
+          snapshotId: null,
+        }),
+      },
+    );
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(providerCalls, 0);
+    assert.equal(result.report?.totals.FAILED, 0);
+    assert.equal(result.report?.totals.SKIP_NO_TRANSLATABLE, 2);
+    assert.equal(
+      result.report?.profiles[0]?.locales.every(
+        (row) => row.ACTION === "SKIP_NO_TRANSLATABLE",
+      ),
+      true,
+    );
   });
 
   it("operator + enqueue remain Registry-driven (no hardcoded locale triple)", () => {

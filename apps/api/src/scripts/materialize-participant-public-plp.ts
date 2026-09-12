@@ -16,6 +16,7 @@
  * Optional: --locale <code> (otherwise Registry targets excluding source en)
  * Optional: --page-size <1..25> (historical default 10)
  * Optional: --max-pages <n> (historical safety cap per invocation)
+ * Optional: --max-provider-calls <n> (default 50; clean stop + resume when reached)
  */
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
