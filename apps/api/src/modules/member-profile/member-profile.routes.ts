@@ -24,10 +24,24 @@ import {
 
 const memberProfileRouter = Router();
 
+function readPresentationLocaleQuery(req: Request): string {
+  const raw = req.query.locale;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim() : "";
+}
+
 async function resolveRequestPresentationLocale(req: Request): Promise<string> {
-  const queryLocale = typeof req.query.locale === "string" ? req.query.locale.trim() : "";
+  // Prefer explicit presentation locale from the Web UI (Registry identity).
+  // Do not fall through to Participant interfaceLanguage when the query is present —
+  // `/profile` chrome follows `hu_lang` while prefs may still be `en`.
+  const queryLocale = readPresentationLocaleQuery(req);
   if (queryLocale) {
     return queryLocale;
+  }
+  const headerRaw = req.headers["x-hu-presentation-locale"];
+  const headerLocale = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw;
+  if (typeof headerLocale === "string" && headerLocale.trim()) {
+    return headerLocale.trim();
   }
   const runtime = await attachRuntimeLocale(req);
   return runtime.locale;

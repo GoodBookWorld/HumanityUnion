@@ -38,12 +38,25 @@ function resolvePublicMemberProfileErrorStatus(error: unknown): number {
   return 500;
 }
 
+function readPresentationLocaleQuery(
+  req: Parameters<typeof attachRuntimeLocale>[0],
+): string {
+  const raw = req.query.locale;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim() : "";
+}
+
 async function resolveRequestPresentationLocale(
   req: Parameters<typeof attachRuntimeLocale>[0],
 ): Promise<string> {
-  const queryLocale = typeof req.query.locale === "string" ? req.query.locale.trim() : "";
+  const queryLocale = readPresentationLocaleQuery(req);
   if (queryLocale) {
     return queryLocale;
+  }
+  const headerRaw = req.headers["x-hu-presentation-locale"];
+  const headerLocale = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw;
+  if (typeof headerLocale === "string" && headerLocale.trim()) {
+    return headerLocale.trim();
   }
   const runtime = await attachRuntimeLocale(req);
   return runtime.locale;

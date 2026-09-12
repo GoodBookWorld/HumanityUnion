@@ -64,13 +64,25 @@ export async function getWorkspaceMemberIdentity(): Promise<WorkspaceMemberIdent
  * plus which sections Privacy currently hides. See
  * `getMyPublicMemberProfilePreview` (API) for why this never duplicates
  * Privacy logic.
+ *
+ * Presentation locale is sent as both `?locale=` and `X-HU-Presentation-Locale`
+ * so authenticated preview cannot fall through to Participant interfaceLanguage
+ * when the Web UI locale (hu_lang / next-intl) differs from prefs.
  */
 export async function getMyPublicMemberProfilePreview(
   locale?: string,
 ): Promise<MemberProfilePublicPreview> {
-  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
+  const trimmed = typeof locale === "string" ? locale.trim() : "";
+  const query = trimmed ? `?locale=${encodeURIComponent(trimmed)}` : "";
   return apiRequest<MemberProfilePublicPreview>(
     `/api/v1/member-profile/me/public-preview${query}`,
+    trimmed
+      ? {
+          headers: {
+            "X-HU-Presentation-Locale": trimmed,
+          },
+        }
+      : undefined,
   );
 }
 
@@ -78,9 +90,17 @@ export async function getPublicMemberProfile(
   profileId: string,
   locale?: string,
 ): Promise<PublicMemberProfile> {
-  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
+  const trimmed = typeof locale === "string" ? locale.trim() : "";
+  const query = trimmed ? `?locale=${encodeURIComponent(trimmed)}` : "";
   return apiRequest<PublicMemberProfile>(
     `/api/v1/public/member-profiles/${encodeURIComponent(profileId)}${query}`,
+    trimmed
+      ? {
+          headers: {
+            "X-HU-Presentation-Locale": trimmed,
+          },
+        }
+      : undefined,
   );
 }
 
@@ -89,13 +109,26 @@ export async function getPublicMemberProfile(
  * every comment-author / Initiative-author link points to
  * (`/member/{publicName}`), keyed by the human-readable `publicName`
  * rather than the opaque `profileId`.
+ *
+ * Pass `credentials: "omit"` when the caller must match anonymous `/member`
+ * SSR (owner-preview PLP field merge) and must not elevate to viewerIsOwner.
  */
 export async function getPublicMemberProfileByPublicName(
   publicName: string,
   locale?: string,
+  init?: RequestInit,
 ): Promise<PublicMemberProfile> {
-  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
+  const trimmed = typeof locale === "string" ? locale.trim() : "";
+  const query = trimmed ? `?locale=${encodeURIComponent(trimmed)}` : "";
+  const headers = new Headers(init?.headers);
+  if (trimmed && !headers.has("X-HU-Presentation-Locale")) {
+    headers.set("X-HU-Presentation-Locale", trimmed);
+  }
   return apiRequest<PublicMemberProfile>(
     `/api/v1/public/member-profiles/by-name/${encodeURIComponent(publicName)}${query}`,
+    {
+      ...init,
+      headers,
+    },
   );
 }

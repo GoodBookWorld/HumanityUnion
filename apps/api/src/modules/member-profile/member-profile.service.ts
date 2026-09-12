@@ -206,8 +206,13 @@ async function enrichPublicMemberProfileProjection(
 ): Promise<PublicMemberProfile> {
   const authUser = await findAuthUserById(profile.userId);
 
+  // participant_public overlay must run even when auth enrichment cannot —
+  // Biography/Skills localization must not depend on statistics/messaging.
   if (!authUser) {
-    return projection;
+    return applyParticipantPublicPlpToProjection({
+      projection,
+      locale,
+    });
   }
 
   const statistics = await getParticipantStatistics(authUser.memberId);
