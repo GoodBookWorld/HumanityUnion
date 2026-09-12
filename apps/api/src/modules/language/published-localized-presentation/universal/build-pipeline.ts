@@ -20,13 +20,15 @@ import {
   validatePublishedBuildResult,
 } from "../validate-build-result.js";
 import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
-import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
+import { isPlpBuildStaleAgainstLive } from "./build-request-stale.js";
 import { notifyPlpSearchSeoInvalidation } from "./search-seo-hooks.js";
 import { isCollectedPathMachineEligible } from "./field-authority.js";
 import {
   encodePlpStructuredStaleReasonCodes,
   PLP_STALE_ORIGIN,
 } from "./plp-stale-result.js";
+
+export { isPlpBuildStaleAgainstLive } from "./build-request-stale.js";
 
 export type PlpLocalizationLayerInput = {
   readonly source: PublishedLocalizationProvenanceSource;

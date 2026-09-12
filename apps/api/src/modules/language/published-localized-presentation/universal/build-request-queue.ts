@@ -49,6 +49,8 @@ import {
 } from "./plp-auto-build-work.repository.js";
 import { resolvePlpProviderConcurrency } from "./safety.js";
 
+export { isPlpBuildStaleAgainstLive } from "./build-request-stale.js";
+
 type ProcessorFn = (
   request: PlpBuildRequest,
 ) => Promise<ProcessPlpBuildRequestResult | PlpBuildRequestStatus>;
@@ -492,13 +494,6 @@ async function processClaimedWork(
  * Stale-work guard: a build targeting an older canonicalVersion must not
  * overwrite a newer published/current version.
  */
-export function isPlpBuildStaleAgainstLive(input: {
-  readonly buildTargetCanonicalVersion: string;
-  readonly liveCanonicalVersion: string;
-}): boolean {
-  return input.buildTargetCanonicalVersion !== input.liveCanonicalVersion;
-}
-
 /** Test/helper: record a provider call against runtime counters. */
 export function notePlpAutoBuildProviderCallForTests(): void {
   recordPlpAutoBuildProviderCall();

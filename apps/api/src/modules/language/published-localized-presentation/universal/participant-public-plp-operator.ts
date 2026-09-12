@@ -1,13 +1,14 @@
 /**
- * Bounded participant_public PLP materialize operator.
+ * Bounded participant_public PLP materialize operator (Render Starter safe).
+ *
  * Dry-run default; --execute is staging-only.
+ * Thin path: runUniversalPlpBuild + dynamic provider import only.
+ * Does not pull the durable queue, Registry service barrel, or all-adapter
+ * registration graph (those inflate RSS past Render Starter 512 MB).
  */
 
-import type { LanguageCode, MemberProfile, PlpBuildRequest } from "@hu/types";
-import {
-  PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-  plpBuildWorkKey,
-} from "@hu/types";
+import type { LanguageCode, MemberProfile, PlpLocalizableEntityContract } from "@hu/types";
+import { PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION } from "@hu/types";
 
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
 import {
@@ -20,29 +21,30 @@ import {
 } from "../../../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
-  findMemberProfileByProfileId,
-  findMemberProfileByPublicName,
-} from "../../../member-profile/member-profile.repository.js";
-import {
   assertPublishedLocalizationMongoPersistenceActive,
   findCurrentPublishedPresentation,
   getPublishedLocalizationPersistenceMode,
   requirePublishedLocalizationMongoPersistence,
 } from "../persistence/repository.js";
+import { collectAutoPaths } from "../presentation-paths.js";
 import { classifyUsableLocalizedPresentation } from "../usability.js";
 import {
   buildParticipantPublicCanonicalPresentation,
   PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+  participantPublicPlpDomainAdapter,
 } from "./adapters/participant-public-adapter.js";
+import { runUniversalPlpBuild } from "./build-pipeline.js";
+import {
+  getPlpDomainAdapter,
+  registerPlpDomainAdapter,
+} from "./domain-adapter-registry.js";
+import { isCollectedPathMachineEligible } from "./field-authority.js";
 import {
   evaluateParticipantPublicPlpExecuteGuards,
   evaluateParticipantPublicPlpProductionRefusal,
   parseParticipantPublicPlpMaterializeArgs,
   type ParticipantPublicPlpMaterializeArgs,
 } from "./participant-public-plp-operator-args.js";
-import { processPlpBuildRequest } from "./process-plp-build-request.js";
-import { resolvePlpAutoBuildLocales } from "./public-source-mutation-bridge.js";
-import { ensureAllDefaultPlpAdaptersRegistered } from "./register-defaults.js";
 
 export type { ParticipantPublicPlpMaterializeArgs } from "./participant-public-plp-operator-args.js";
 export {
@@ -50,6 +52,18 @@ export {
   evaluateParticipantPublicPlpProductionRefusal,
   parseParticipantPublicPlpMaterializeArgs,
 } from "./participant-public-plp-operator-args.js";
+
+const PROFILE_PROJECTION = {
+  _id: 0,
+  profileId: 1,
+  publicName: 1,
+  displayName: 1,
+  biography: 1,
+  organization: 1,
+  skills: 1,
+  profileVisibility: 1,
+  status: 1,
+} as const;
 
 export type ParticipantPublicPlpLocaleOutcome = {
   readonly locale: string;
@@ -79,6 +93,33 @@ export type ParticipantPublicPlpMaterializeReport = {
   readonly abortReason: string | null;
 };
 
+export type ParticipantPublicPlpMaterializeDeps = {
+  readonly loadProfileById?: (profileId: string) => Promise<MemberProfile | null>;
+  readonly loadProfileByPublicName?: (
+    publicName: string,
+  ) => Promise<MemberProfile | null>;
+  readonly listEligibleProfiles?: (limit: number) => Promise<MemberProfile[]>;
+  readonly resolveLocales?: (
+    localeFilter: string | null,
+  ) => Promise<readonly string[]>;
+  readonly runProvider?: (input: {
+    readonly locale: LanguageCode;
+    readonly autoValues: Readonly<Record<string, string>>;
+    readonly sourceRecordId: string;
+    readonly sourceVersion: string;
+  }) => Promise<
+    | { readonly ok: true; readonly values: Readonly<Record<string, string>> }
+    | { readonly ok: false; readonly reason: string; readonly message: string }
+  >;
+  readonly publishBuild?: typeof runUniversalPlpBuild;
+  readonly skipPersistenceRequire?: boolean;
+  readonly skipProductionRefusal?: boolean;
+  readonly skipExecuteGuards?: boolean;
+  readonly connect?: () => Promise<void>;
+  readonly disconnect?: () => Promise<void>;
+  readonly isMongoConfigured?: () => boolean;
+};
+
 function isEligible(profile: MemberProfile): boolean {
   if (profile.status === "suspended") {
     return false;
@@ -86,43 +127,184 @@ function isEligible(profile: MemberProfile): boolean {
   return profile.profileVisibility === "public" || profile.profileVisibility === "members_only";
 }
 
-async function listEligibleProfiles(limit: number): Promise<MemberProfile[]> {
+function asProfile(doc: Record<string, unknown> | null): MemberProfile | null {
+  if (!doc || typeof doc.profileId !== "string") {
+    return null;
+  }
+  return {
+    ...(doc as unknown as MemberProfile),
+    skills: Array.isArray(doc.skills) ? (doc.skills as string[]) : [],
+  };
+}
+
+export async function loadParticipantPublicPlpProfileById(
+  profileId: string,
+): Promise<MemberProfile | null> {
+  const collection = getMongoCollection(MONGO_COLLECTIONS.memberProfiles);
+  const doc = await collection.findOne(
+    { profileId },
+    { projection: PROFILE_PROJECTION },
+  );
+  return asProfile(doc as Record<string, unknown> | null);
+}
+
+export async function loadParticipantPublicPlpProfileByPublicName(
+  publicName: string,
+): Promise<MemberProfile | null> {
+  const collection = getMongoCollection(MONGO_COLLECTIONS.memberProfiles);
+  const doc = await collection.findOne(
+    { publicName },
+    { projection: PROFILE_PROJECTION },
+  );
+  return asProfile(doc as Record<string, unknown> | null);
+}
+
+export async function listParticipantPublicPlpEligibleProfiles(
+  limit: number,
+): Promise<MemberProfile[]> {
   const collection = getMongoCollection(MONGO_COLLECTIONS.memberProfiles);
   const docs = await collection
     .find({
       status: { $ne: "suspended" },
       profileVisibility: { $in: ["public", "members_only"] },
     })
-    .project({
-      _id: 0,
-      profileId: 1,
-      publicName: 1,
-      displayName: 1,
-      biography: 1,
-      organization: 1,
-      skills: 1,
-      profileVisibility: 1,
-      status: 1,
-    })
+    .project(PROFILE_PROJECTION)
     .sort({ updatedAt: -1 })
     .limit(limit)
     .toArray();
-  return docs as unknown as MemberProfile[];
+  return docs
+    .map((doc) => asProfile(doc as Record<string, unknown>))
+    .filter((row): row is MemberProfile => row != null);
 }
 
-async function resolveTargetLocales(localeFilter: string | null): Promise<readonly string[]> {
+/** Thin Registry read — never import language-registry barrel / service. */
+export async function listParticipantPublicPlpRegistryLocales(input?: {
+  readonly excludeSourceLanguage?: string | null;
+}): Promise<readonly string[]> {
+  const exclude = (input?.excludeSourceLanguage ?? "en")?.toLowerCase() ?? null;
+  const collection = getMongoCollection<{
+    locale: string;
+    enabled?: boolean;
+    contentTranslationEnabled?: boolean;
+  }>(MONGO_COLLECTIONS.languageRegistry);
+  const docs = await collection
+    .find(
+      {
+        enabled: true,
+        contentTranslationEnabled: true,
+      },
+      { projection: { _id: 0, locale: 1 } },
+    )
+    .toArray();
+  const locales: string[] = [];
+  for (const doc of docs) {
+    const locale = typeof doc.locale === "string" ? doc.locale.trim() : "";
+    if (!locale) {
+      continue;
+    }
+    if (exclude && locale.toLowerCase() === exclude) {
+      continue;
+    }
+    locales.push(locale);
+  }
+  return locales;
+}
+
+export async function resolveParticipantPublicPlpTargetLocales(
+  localeFilter: string | null,
+): Promise<readonly string[]> {
   if (localeFilter) {
     return [localeFilter];
   }
-  return resolvePlpAutoBuildLocales({ excludeSourceLanguage: "en" });
+  return listParticipantPublicPlpRegistryLocales({ excludeSourceLanguage: "en" });
+}
+
+function ensureParticipantPublicAdapterOnly(): void {
+  if (!getPlpDomainAdapter(PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE)) {
+    try {
+      registerPlpDomainAdapter(participantPublicPlpDomainAdapter);
+    } catch {
+      // already registered
+    }
+  }
+}
+
+function buildContract(
+  profile: MemberProfile,
+  locale: string,
+): {
+  readonly contract: PlpLocalizableEntityContract;
+  readonly autoValues: Record<string, string>;
+} {
+  const canonical = buildParticipantPublicCanonicalPresentation({
+    profileId: profile.profileId,
+    displayName: profile.displayName,
+    biography: profile.biography,
+    organization: profile.organization,
+    skills: profile.skills,
+  });
+  const fieldPolicy = participantPublicPlpDomainAdapter.fieldPolicyFor(
+    PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+  );
+  const autoValues: Record<string, string> = {};
+  for (const node of collectAutoPaths(canonical.presentation)) {
+    if (isCollectedPathMachineEligible(node.path, fieldPolicy)) {
+      autoValues[node.path] = node.value;
+    }
+  }
+  return {
+    contract: {
+      entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
+      entityId: profile.profileId,
+      canonicalVersion: canonical.canonicalVersion,
+      localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+      canonicalPresentation: canonical.presentation,
+      fieldPolicy,
+      targetLocale: locale as LanguageCode,
+      contentRevision: 1,
+    },
+    autoValues,
+  };
+}
+
+async function defaultRunProvider(input: {
+  readonly locale: LanguageCode;
+  readonly autoValues: Readonly<Record<string, string>>;
+  readonly sourceRecordId: string;
+  readonly sourceVersion: string;
+}): Promise<
+  | { readonly ok: true; readonly values: Readonly<Record<string, string>> }
+  | { readonly ok: false; readonly reason: string; readonly message: string }
+> {
+  const {
+    importMediaPlpMaterializerProvider,
+    callMediaPlpMaterializerProviderOnce,
+  } = await import("../../media-plp-materializer/provider-boundary.js");
+  const imported = await importMediaPlpMaterializerProvider();
+  const result = await callMediaPlpMaterializerProviderOnce({
+    provider: imported.provider,
+    locale: input.locale,
+    autoValues: input.autoValues,
+    sourceRecordId: input.sourceRecordId,
+    sourceVersion: input.sourceVersion,
+    PROVIDER_TRANSPORT: imported.PROVIDER_TRANSPORT,
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.reason,
+      message: result.message,
+    };
+  }
+  return { ok: true, values: result.values };
 }
 
 async function inspectLocale(input: {
   readonly profile: MemberProfile;
   readonly locale: string;
-  readonly canonicalVersion: string;
-  readonly presentation: ReturnType<typeof buildParticipantPublicCanonicalPresentation>["presentation"];
   readonly execute: boolean;
+  readonly runProvider: NonNullable<ParticipantPublicPlpMaterializeDeps["runProvider"]>;
+  readonly publishBuild: typeof runUniversalPlpBuild;
 }): Promise<{
   readonly outcome: ParticipantPublicPlpLocaleOutcome;
   readonly providerCalls: number;
@@ -139,6 +321,7 @@ async function inspectLocale(input: {
     };
   }
 
+  const { contract, autoValues } = buildContract(input.profile, input.locale);
   const current = await findCurrentPublishedPresentation({
     entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
     entityId: input.profile.profileId,
@@ -146,9 +329,9 @@ async function inspectLocale(input: {
   });
   const usability = classifyUsableLocalizedPresentation({
     locale: input.locale,
-    liveCanonicalVersion: input.canonicalVersion,
-    liveLocalizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-    canonicalPresentation: input.presentation,
+    liveCanonicalVersion: contract.canonicalVersion,
+    liveLocalizationSchemaVersion: contract.localizationSchemaVersion,
+    canonicalPresentation: contract.canonicalPresentation,
     snapshot: current,
   });
 
@@ -176,43 +359,56 @@ async function inspectLocale(input: {
     };
   }
 
-  const now = new Date().toISOString();
-  const request: PlpBuildRequest = {
-    workKey: plpBuildWorkKey({
-      entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-      entityId: input.profile.profileId,
-      locale: input.locale,
-    }),
-    entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-    entityId: input.profile.profileId,
+  if (Object.keys(autoValues).length === 0) {
+    return {
+      outcome: {
+        locale: input.locale,
+        CURRENT_USABLE: false,
+        ACTION: "FAILED",
+        reason: "NO_MACHINE_AUTO_PATHS",
+      },
+      providerCalls: 0,
+    };
+  }
+
+  const providerResult = await input.runProvider({
     locale: input.locale as LanguageCode,
-    canonicalVersion: input.canonicalVersion,
-    contentRevision: 1,
-    trigger: "ADMIN_REBUILD",
-    enqueuedAt: now,
-    status: "QUEUED",
-  };
-  const result = await processPlpBuildRequest(request);
-  if (result.status === "COMPLETED") {
+    autoValues,
+    sourceRecordId: `${PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE}:${input.profile.profileId}`,
+    sourceVersion: contract.canonicalVersion,
+  });
+  if (!providerResult.ok) {
+    return {
+      outcome: {
+        locale: input.locale,
+        CURRENT_USABLE: false,
+        ACTION: "FAILED",
+        reason: providerResult.reason,
+      },
+      providerCalls: 1,
+    };
+  }
+
+  const built = await input.publishBuild({
+    contract,
+    liveCanonicalVersion: contract.canonicalVersion,
+    layers: [
+      {
+        source: "MACHINE",
+        values: providerResult.values,
+        provider: "thin_gemini",
+      },
+    ],
+  });
+  if (built.status === "COMPLETED") {
     return {
       outcome: {
         locale: input.locale,
         CURRENT_USABLE: true,
         ACTION: "BUILT",
-        reason: result.status,
+        reason: built.status,
       },
       providerCalls: 1,
-    };
-  }
-  if (result.status === "SKIPPED_USABLE") {
-    return {
-      outcome: {
-        locale: input.locale,
-        CURRENT_USABLE: true,
-        ACTION: "SKIP_CURRENT",
-        reason: result.status,
-      },
-      providerCalls: 0,
     };
   }
   return {
@@ -220,12 +416,9 @@ async function inspectLocale(input: {
       locale: input.locale,
       CURRENT_USABLE: false,
       ACTION: "FAILED",
-      reason:
-        result.status === "FAILED"
-          ? (result.failure?.safeReason ?? result.status)
-          : result.status,
+      reason: built.reasonCodes.join(",") || built.status,
     },
-    providerCalls: result.status === "FAILED" ? 1 : 0,
+    providerCalls: 1,
   };
 }
 
@@ -233,6 +426,8 @@ async function materializeProfile(input: {
   readonly profile: MemberProfile | null;
   readonly locales: readonly string[];
   readonly execute: boolean;
+  readonly runProvider: NonNullable<ParticipantPublicPlpMaterializeDeps["runProvider"]>;
+  readonly publishBuild: typeof runUniversalPlpBuild;
 }): Promise<{
   readonly report: ParticipantPublicPlpProfileReport;
   readonly providerCalls: number;
@@ -278,9 +473,9 @@ async function materializeProfile(input: {
     const { outcome, providerCalls: calls } = await inspectLocale({
       profile: input.profile,
       locale,
-      canonicalVersion: canonical.canonicalVersion,
-      presentation: canonical.presentation,
       execute: input.execute,
+      runProvider: input.runProvider,
+      publishBuild: input.publishBuild,
     });
     locales.push(outcome);
     providerCalls += calls;
@@ -301,6 +496,7 @@ async function materializeProfile(input: {
 
 export async function runParticipantPublicPlpMaterialize(
   argv: readonly string[],
+  deps: ParticipantPublicPlpMaterializeDeps = {},
 ): Promise<{
   readonly exitCode: number;
   readonly report: ParticipantPublicPlpMaterializeReport | null;
@@ -312,18 +508,21 @@ export async function runParticipantPublicPlpMaterialize(
   }
   const args: ParticipantPublicPlpMaterializeArgs = parsed.args;
 
-  const refusal = evaluateParticipantPublicPlpProductionRefusal();
+  const refusal = deps.skipProductionRefusal
+    ? { refused: false as const, reason: null }
+    : evaluateParticipantPublicPlpProductionRefusal();
   if (refusal.refused) {
     return { exitCode: 2, report: null, errorMessage: refusal.reason };
   }
-  if (args.execute) {
+  if (args.execute && !deps.skipExecuteGuards) {
     const executeGuard = evaluateParticipantPublicPlpExecuteGuards();
     if (executeGuard.refused) {
       return { exitCode: 2, report: null, errorMessage: executeGuard.reason };
     }
   }
 
-  if (!isMongoConfigured()) {
+  const isConfigured = deps.isMongoConfigured ?? isMongoConfigured;
+  if (!isConfigured() && !deps.skipPersistenceRequire) {
     return {
       exitCode: 2,
       report: null,
@@ -331,32 +530,49 @@ export async function runParticipantPublicPlpMaterialize(
     };
   }
 
-  ensureAllDefaultPlpAdaptersRegistered();
+  ensureParticipantPublicAdapterOnly();
+
+  const connect = deps.connect ?? connectMongoClient;
+  const disconnect = deps.disconnect ?? disconnectMongoClient;
 
   try {
-    await connectMongoClient();
-    requirePublishedLocalizationMongoPersistence(
-      "materialize:participant-public-plp --mongo",
-    );
-    assertPublishedLocalizationMongoPersistenceActive(
-      "materialize:participant-public-plp --mongo",
-    );
+    if (!deps.skipPersistenceRequire) {
+      await connect();
+      requirePublishedLocalizationMongoPersistence(
+        "materialize:participant-public-plp --mongo",
+      );
+      assertPublishedLocalizationMongoPersistenceActive(
+        "materialize:participant-public-plp --mongo",
+      );
+    }
 
-    const locales = await resolveTargetLocales(args.locale);
+    const resolveLocales =
+      deps.resolveLocales ?? resolveParticipantPublicPlpTargetLocales;
+    const locales = await resolveLocales(args.locale);
+
+    const loadById = deps.loadProfileById ?? loadParticipantPublicPlpProfileById;
+    const loadByName =
+      deps.loadProfileByPublicName ?? loadParticipantPublicPlpProfileByPublicName;
+    const listEligible =
+      deps.listEligibleProfiles ?? listParticipantPublicPlpEligibleProfiles;
+
     const profiles: MemberProfile[] = [];
     if (args.profileId) {
-      const profile = await findMemberProfileByProfileId(args.profileId);
+      const profile = await loadById(args.profileId);
       if (profile) {
         profiles.push(profile);
       }
     } else if (args.publicName) {
-      const profile = await findMemberProfileByPublicName(args.publicName);
+      const profile = await loadByName(args.publicName);
       if (profile) {
         profiles.push(profile);
       }
     } else if (args.limit) {
-      profiles.push(...(await listEligibleProfiles(args.limit)));
+      profiles.push(...(await listEligible(args.limit)));
     }
+
+    const runProvider = deps.runProvider ?? defaultRunProvider;
+    const publishBuild = deps.publishBuild ?? runUniversalPlpBuild;
 
     const profileReports: ParticipantPublicPlpProfileReport[] = [];
     let providerCalls = 0;
@@ -365,6 +581,8 @@ export async function runParticipantPublicPlpMaterialize(
         profile,
         locales,
         execute: args.execute,
+        runProvider,
+        publishBuild,
       });
       profileReports.push(result.report);
       providerCalls += result.providerCalls;
@@ -404,7 +622,7 @@ export async function runParticipantPublicPlpMaterialize(
       errorMessage: profiles.length === 0 ? "SOURCE_NOT_FOUND" : null,
     };
   } finally {
-    await disconnectMongoClient();
+    await disconnect();
   }
 }
 

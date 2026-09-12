@@ -17,7 +17,7 @@ import { getPublishedLocalizationPersistenceMode } from "../persistence/reposito
 import { collectAutoPaths } from "../presentation-paths.js";
 import { classifyUsableLocalizedPresentation } from "../usability.js";
 import { runUniversalPlpBuild } from "./build-pipeline.js";
-import { isPlpBuildStaleAgainstLive } from "./build-request-queue.js";
+import { isPlpBuildStaleAgainstLive } from "./build-request-stale.js";
 import { getPlpDomainAdapter } from "./domain-adapter-registry.js";
 import { isCollectedPathMachineEligible } from "./field-authority.js";
 import {

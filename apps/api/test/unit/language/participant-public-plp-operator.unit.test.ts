@@ -79,7 +79,7 @@ describe("materialize:participant-public-plp operator", () => {
     );
   });
 
-  it("wires package script and uses processPlpBuildRequest + Registry locales", () => {
+  it("wires thin build path (no processPlpBuildRequest / Registry barrel)", () => {
     const pkg = read("package.json");
     assert.match(pkg, /materialize:participant-public-plp/);
     const args = read(
@@ -89,11 +89,12 @@ describe("materialize:participant-public-plp operator", () => {
     const operator = read(
       "src/modules/language/published-localized-presentation/universal/participant-public-plp-operator.ts",
     );
-    assert.match(operator, /processPlpBuildRequest/);
-    assert.match(operator, /resolvePlpAutoBuildLocales/);
+    assert.match(operator, /runUniversalPlpBuild/);
+    assert.match(operator, /listParticipantPublicPlpRegistryLocales/);
     assert.match(operator, /excludeSourceLanguage:\s*"en"/);
     assert.match(operator, /SKIP_CURRENT/);
-    assert.match(operator, /ADMIN_REBUILD/);
+    assert.doesNotMatch(operator, /from ["'].*process-plp-build-request/);
+    assert.doesNotMatch(operator, /ensureAllDefaultPlpAdaptersRegistered/);
     assert.doesNotMatch(operator, /localization:check|warm:staging-content-translations/);
   });
 
