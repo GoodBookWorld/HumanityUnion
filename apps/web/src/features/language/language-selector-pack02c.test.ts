@@ -110,10 +110,12 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     const sync = readWeb("features/language/components/InterfaceLanguageCookieSync.tsx");
     const route = readWeb("app/api/hu-lang/route.ts");
     const prefs = readWeb("features/preferences/components/PreferencesWorkspace.tsx");
+    const nav = readWeb("features/language/run-locale-switch-navigation.ts");
 
     assert.match(selector, /writeHuLangCookieViaWebRoute/);
     assert.match(selector, /updateMyPreferences/);
-    assert.match(selector, /router\.refresh/);
+    assert.match(selector, /runLocaleSwitchNavigation/);
+    assert.match(nav, /router\.refresh/);
     assert.doesNotMatch(selector, /document\.documentElement/);
     assert.doesNotMatch(selector, /normalizeLanguageCode/);
 
@@ -133,7 +135,20 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
     assert.match(header, /LanguageSelector/);
     assert.match(mobile, /LanguageSelector/);
+    assert.match(mobile, /variant="icon"/);
     assert.match(layout, /InterfaceLanguageCookieSync/);
+  });
+
+  it("mobile icon variant reuses Registry list + existing locale switch path", () => {
+    const selector = readWeb("features/language/components/LanguageSelector.tsx");
+    const css = readWeb("features/language/components/language-selector.css");
+    const layoutCss = readWeb("design-system/layout.css");
+    assert.match(selector, /variant\?:\s*"default"\s*\|\s*"icon"/);
+    assert.match(selector, /\/icons\/messenger\/language\.png/);
+    assert.match(selector, /listSelectablePublicLanguages/);
+    assert.match(selector, /writeHuLangCookieViaWebRoute/);
+    assert.match(css, /hu-language-selector--mobile[\s\S]*overflow-y:\s*auto/);
+    assert.match(layoutCss, /humanity-header__mobile-panel[\s\S]*overflow-y:\s*auto/);
   });
 
   it("option label shows native + English when distinct", () => {

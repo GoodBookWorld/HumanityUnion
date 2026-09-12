@@ -46,7 +46,14 @@ interface LanguageSelectorProps {
    * Default follows Pack 02D `common.language` for the active Pack 02C locale.
    */
   readonly label?: string;
+  /**
+   * `icon` — compact trigger using `/icons/messenger/language.png` (PWA/mobile menu).
+   * Default remains the text/pill control used in the desktop header.
+   */
+  readonly variant?: "default" | "icon";
 }
+
+const LANGUAGE_ICON_SRC = "/icons/messenger/language.png";
 
 /**
  * Pack 02C Task 03 — reusable language selector (enabled Registry languages only).
@@ -58,6 +65,7 @@ interface LanguageSelectorProps {
 export function LanguageSelector({
   className,
   label,
+  variant = "default",
 }: LanguageSelectorProps) {
   const router = useRouter();
   const pathname = usePathname() || "/";
@@ -322,7 +330,13 @@ export function LanguageSelector({
   return (
     <div
       ref={rootRef}
-      className={["hu-language-selector", className].filter(Boolean).join(" ")}
+      className={[
+        "hu-language-selector",
+        variant === "icon" ? "hu-language-selector--icon" : null,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-pending={pending ? "true" : undefined}
       data-open={open ? "true" : undefined}
       style={
@@ -340,7 +354,11 @@ export function LanguageSelector({
         <button
           type="button"
           id={selectId}
-          className="hu-language-selector__select"
+          className={
+            variant === "icon"
+              ? "hu-language-selector__icon-trigger"
+              : "hu-language-selector__select"
+          }
           aria-label={resolvedLabel}
           aria-labelledby={`${selectId}-label`}
           aria-haspopup="listbox"
@@ -357,7 +375,23 @@ export function LanguageSelector({
           }}
           onKeyDown={onTriggerKeyDown}
         >
-          {formatLanguageOptionLabel(currentOption)}
+          {variant === "icon" ? (
+            <>
+              <img
+                src={LANGUAGE_ICON_SRC}
+                alt=""
+                width={20}
+                height={20}
+                className="hu-language-selector__icon"
+                aria-hidden="true"
+              />
+              <span className="hu-language-selector__icon-text">
+                {formatLanguageOptionLabel(currentOption)}
+              </span>
+            </>
+          ) : (
+            formatLanguageOptionLabel(currentOption)
+          )}
         </button>
       </div>
       {open ? (

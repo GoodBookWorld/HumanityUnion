@@ -79,7 +79,10 @@ export function HumanityHeaderMobileMenu({
           </ul>
         </nav>
 
-        <LanguageSelector className="hu-language-selector--mobile" />
+        <LanguageSelector
+          className="hu-language-selector--mobile"
+          variant="icon"
+        />
 
         {authStatus !== "pending" ? (
           <div className="humanity-header__mobile-auth">

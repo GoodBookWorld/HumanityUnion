@@ -545,6 +545,14 @@
   border-bottom: 1px solid var(--hu-color-border);
   background: var(--hu-color-bg);
   box-shadow: var(--hu-shadow-md);
+  /* Short viewports: scroll menu items; keep touch scrolling contained. */
+  max-height: calc(
+    100dvh - var(--hu-header-height) - var(--hu-safe-area-top, 0px) - var(--hu-safe-area-bottom, 0px)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .humanity-header__mobile-nav-list {

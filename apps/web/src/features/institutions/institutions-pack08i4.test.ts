@@ -63,6 +63,7 @@ const INSTITUTIONS_PUBLIC_KEYS = [
   "institutionsPublic.card.learnMore",
   "institutionsPublic.card.allNominations",
   "institutionsPublic.card.createInitiative",
+  "institutionsPublic.card.createNomination",
   "institutionsPublic.card.relatedKnowledge",
   "institutionsPublic.card.readKnowledge",
   "institutionsPublic.status.concept",
@@ -92,6 +93,15 @@ describe("Pack 08I.4 — Institutions full content localization", () => {
     assert.doesNotMatch(card, /\{institution\.role\}/);
     assert.doesNotMatch(card, />Purpose</);
     assert.doesNotMatch(card, />Learn More</);
+  });
+
+  it("CreateNominationButton uses institutionsPublic.card.createNomination", () => {
+    const button = readWeb(
+      "features/civic-nomination/components/CreateNominationButton.tsx",
+    );
+    assert.match(button, /useTranslations\("institutionsPublic"\)/);
+    assert.match(button, /t\("card\.createNomination"\)/);
+    assert.doesNotMatch(button, /Create Nomination/);
   });
 
   it("Institutions chrome components use institutionsPublic catalogs", () => {
