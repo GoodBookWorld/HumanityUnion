@@ -6311,6 +6311,9 @@
       "initiatives": "近期倡議已從您的公開個人資料中隱藏。",
       "managePrivacy": "管理隱私"
     },
+    "ownerEmpty": {
+      "biography": "新增簡介，向協作者介紹自己。<editLink>編輯個人檔案</editLink>"
+    },
     "empty": {
       "unavailableTitle": "個人資料無法使用",
       "unavailableBody": "此公開個人資料無法使用。",

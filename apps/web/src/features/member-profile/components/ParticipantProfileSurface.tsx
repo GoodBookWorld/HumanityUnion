@@ -425,8 +425,11 @@ export function ParticipantProfileSurface({
                 />
               ) : isOwnerPreview ? (
                 <p className="public-member-page__owner-empty-prompt">
-                  Add a biography to introduce yourself to collaborators.
-                  <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
+                  {t.rich("ownerEmpty.biography", {
+                    editLink: (chunks) => (
+                      <Link href={ownerActionLinks!.editProfileHref}>{chunks}</Link>
+                    ),
+                  })}
                 </p>
               ) : null}
             </div>
