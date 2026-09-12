@@ -1,13 +1,15 @@
 /**
  * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 / 08J.1 / Pack 1.3 — STAGING-ONLY ContentTranslationWarm.
  *
- * Defaults to DRY RUN (no outbox writes).
+ * Defaults to DRY RUN (no outbox writes / no provider calls).
  *
  * Modes:
  *   (default)           dry-run warm discovery/enqueue report
  *   --execute           enqueue warm for eligible public recovery sources
  *   --repair            dry-run repair audit (MISSING/STALE only; skip CURRENT)
  *   --repair --execute  enqueue repair warms for MISSING/STALE only
+ *   --source-record-id= + --locales= + --force-current
+ *                       exact-record force rematerialization (bypasses corpus discovery)
  *   --wait-for-materialization
  *                       after execute/repair execute, poll until CURRENT or timeout
  *   --kinds=a,b,c       bound discovery + operator hydrate (Pack 1.3)
@@ -28,6 +30,7 @@
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --kinds=initiative --execute
  *   pnpm warm:staging-content-translations -- --repair --kinds=initiative
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute --kinds=initiative
+ *   pnpm warm:staging-content-translations -- --kinds=collaborative_analysis --source-record-id=ID --locales=ar,zh-Hant --force-current
  *
  * Never prints MONGODB_URI / passwords / API keys / translated bodies.
  * Do NOT run execute/repair against production.
@@ -42,6 +45,10 @@ import {
   STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
   type StagingWarmSourceKind,
 } from "../modules/language/content-translation-staging-warm-operator-scope.js";
+import {
+  parseStagingWarmExactForceFromArgv,
+  resolveExactRecordHydrateScopes,
+} from "../modules/language/content-translation-staging-warm-exact-force.js";
 
 if (isStagingWarmHelpRequested()) {
   console.log(formatStagingWarmHelp());
@@ -49,15 +56,19 @@ if (isStagingWarmHelpRequested()) {
 }
 
 let kinds: StagingWarmSourceKind[] | undefined;
+let exactForce: ReturnType<typeof parseStagingWarmExactForceFromArgv> = null;
 try {
   kinds = parseStagingWarmKindsFromArgv();
+  exactForce = parseStagingWarmExactForceFromArgv(process.argv, kinds);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(JSON.stringify({ success: false, error: message }));
   process.exit(1);
 }
 
-const hydrateScopes = resolveContentTranslationOperatorHydrateScopes(kinds);
+const hydrateScopes = exactForce
+  ? resolveExactRecordHydrateScopes(exactForce.sourceKind)
+  : resolveContentTranslationOperatorHydrateScopes(kinds);
 
 const { loadApiEnvironment } = await import("../config/load-api-environment.js");
 loadApiEnvironment();
@@ -83,6 +94,9 @@ const {
   runStagingInitiativePathContentTranslationRepair,
   waitForStagingWarmMaterialization,
 } = await import("../modules/language/content-translation-staging-warm-repair.js");
+const {
+  runStagingExactRecordForceCurrent,
+} = await import("../modules/language/content-translation-staging-warm-exact-force.js");
 
 const STAGING_DATABASE = "humanity_union_staging";
 const ALLOW_FLAG = "ALLOW_STAGING_CONTENT_TRANSLATION_WARM";
@@ -145,7 +159,7 @@ async function main(): Promise<void> {
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
   const bootstrap = await bootstrapContentTranslationOperatorPersistence({
-    kinds,
+    kinds: exactForce ? [exactForce.sourceKind] : kinds,
     hydrateScopes,
   });
   const discoveryExpectation = resolveStagingWarmDiscoveryExpectation({
@@ -153,6 +167,46 @@ async function main(): Promise<void> {
   });
 
   try {
+    if (exactForce) {
+      const result = await runStagingExactRecordForceCurrent({
+        execute,
+        sourceKind: exactForce.sourceKind,
+        sourceRecordId: exactForce.sourceRecordId,
+        locales: exactForce.locales,
+      });
+
+      console.log(
+        JSON.stringify(
+          {
+            pack: "exact-force-current",
+            operation: "staging_content_translation_exact_force",
+            mode: result.mode,
+            database: mongo.database,
+            persistenceBootstrap: bootstrap.mode,
+            hydrateScopes: bootstrap.hydrateScopes,
+            broadDiscoveryBypassed: result.broadDiscoveryBypassed,
+            sourceKind: result.sourceKind,
+            sourceRecordId: result.sourceRecordId,
+            sourceVersion: result.sourceVersion,
+            requestedLocales: result.requestedLocales,
+            locales: result.locales,
+            providerCalls: result.providerCalls,
+            writes: result.writes,
+            note:
+              result.mode === "dry-run"
+                ? "DRY RUN — broad discovery bypassed; providerCalls=0 writes=0. CURRENT machine rows WOULD_FORCE_REBUILD. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --execute."
+                : "EXECUTE — exact-record force rematerialization only; human/author-approved protected; provider concurrency 1.",
+          },
+          null,
+          2,
+        ),
+      );
+      if (result.locales.some((row) => row.action === "FAILED")) {
+        process.exitCode = 2;
+      }
+      return;
+    }
+
     if (repair) {
       const result = await runStagingInitiativePathContentTranslationRepair({
         execute,

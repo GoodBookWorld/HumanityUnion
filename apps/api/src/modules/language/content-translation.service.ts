@@ -302,6 +302,11 @@ export async function getOrCreateContentTranslation(input: {
    * Does not change provider/persistence — only locale eligibility gates.
    */
   intent?: ContentTranslationIntent;
+  /**
+   * Exact-record force rematerialization: rebuild a usable machine CURRENT
+   * translation. Never overrides human / author-approved translations.
+   */
+  forceRegenerate?: boolean;
 }): Promise<{
   readonly source: LoadedTranslatableSource;
   readonly translation: TranslatedContentRecord | null;
@@ -342,7 +347,15 @@ export async function getOrCreateContentTranslation(input: {
     targetLanguage,
   });
   if (existing && !existing.stale) {
-    return { source, translation: existing, generated: false };
+    const protectedAuthority =
+      existing.translationKind === "human" ||
+      existing.translationKind === "author-approved";
+    if (protectedAuthority) {
+      return { source, translation: existing, generated: false };
+    }
+    if (!input.forceRegenerate) {
+      return { source, translation: existing, generated: false };
+    }
   }
 
   if (!input.generateIfMissing) {

@@ -84,6 +84,15 @@ export function formatStagingWarmHelp(): string {
     "  --timeout-ms=N              Wait timeout ms (default 300000).",
     "  --kinds=a,b,c               Bound discovery + operator hydrate to these kinds.",
     "  --allow-empty-discovery     Allow empty SOURCE_RECORDS_DISCOVERED on staging.",
+    "  --source-record-id=<id>     Exact-record mode (bypasses corpus discovery).",
+    "  --locales=a,b               Explicit locales for exact-record mode (required with --force-current).",
+    "  --force-current             Rebuild usable machine CURRENT for exact record+locales.",
+    "",
+    "Exact-record force rematerialization requires ALL of:",
+    "  --source-record-id=<id>",
+    "  exactly one --kinds= value",
+    "  --locales=a,b (max 10; Registry-validated; no automatic expansion)",
+    "  --force-current",
     "",
     "Execute requires ALL of:",
     "  ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true",
@@ -96,6 +105,7 @@ export function formatStagingWarmHelp(): string {
     "  pnpm warm:staging-content-translations -- --kinds=initiative",
     "  ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --kinds=initiative --execute",
     "  ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute --kinds=initiative",
+    "  pnpm warm:staging-content-translations -- --kinds=collaborative_analysis --source-record-id=initiative-analysis-ID --locales=ar,zh-Hant --force-current",
   ].join("\n");
 }
 

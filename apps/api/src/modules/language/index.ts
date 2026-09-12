@@ -206,6 +206,19 @@ export type {
   StagingWarmWaitTargetIdentity,
 } from "./content-translation-staging-warm-repair.js";
 export {
+  parseStagingWarmExactForceFromArgv,
+  resolveExactRecordHydrateScopes,
+  resolveExactForceTargetLocales,
+  runStagingExactRecordForceCurrent,
+  STAGING_EXACT_FORCE_MAX_LOCALES,
+} from "./content-translation-staging-warm-exact-force.js";
+export type {
+  StagingExactForceCliOptions,
+  StagingExactForceLocaleAction,
+  StagingExactForceLocaleRow,
+  StagingExactForceResult,
+} from "./content-translation-staging-warm-exact-force.js";
+export {
   auditPublicLocalizationCorpus,
   buildPublicPresentationIdentity,
   countLocalizedAutoNodes,
