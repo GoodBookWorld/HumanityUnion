@@ -498,13 +498,29 @@ export {
   assertNoHardcodedLocaleEligibilityPolicy,
   evaluateLanguageLocalizationReadiness,
   findHardcodedLocaleEligibilityPolicy,
+  getLanguageActivationAdminView,
   planLanguageHistoricalBackfill,
+  processLanguageActivationJob,
+  resetLanguageActivationJobSchedulerForTests,
+  resetLanguageActivationJobStoreForTests,
+  setLanguageActivationJobAdminAssertOverrideForTests,
+  setLanguageActivationJobForceMemoryForTests,
+  setLanguageActivationJobProcessDepsForTests,
+  startAndProcessLanguageActivationJobForTests,
+  startOrResumeLanguageActivationJob,
 } from "./language-localization-activation/index.js";
 export type {
   ActivateLanguageLocalizationInput,
   EvaluateLanguageLocalizationReadinessInput,
+  LanguageActivationJobProcessDeps,
   LanguageActivationResult,
   LanguageHistoricalBackfillPlannerDeps,
+} from "./language-localization-activation/index.js";
+export {
+  LanguageActivationJobError,
+  LanguageActivationJobNotFoundError,
+  LanguageActivationJobPersistenceError,
+  LanguageActivationJobValidationError,
 } from "./language-localization-activation/index.js";
 
 /** Localization Authority Closure 08 — bounded integrity diagnostic. */

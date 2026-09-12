@@ -326,6 +326,24 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
     assert.match(pkg, /"localization:check"/);
   });
 
+  it("5a. integrity operator binds Mongo PLP before assessment (no memory fallback)", () => {
+    const script = readApi("scripts/check-localization-integrity.ts");
+    const repo = readApi(
+      "modules/language/published-localized-presentation/persistence/repository.ts",
+    );
+    assert.match(
+      script,
+      /bootstrapContentTranslationOperatorPersistence[\s\S]*await bootstrapPublishedLocalizationPersistence\(\)[\s\S]*runLocalizationIntegrityCheck/,
+    );
+    assert.match(script, /bootstrap-published-localization-persistence/);
+    assert.doesNotMatch(script, /requirePublishedLocalizationMongoPersistence/);
+    assert.doesNotMatch(script, /TranslationProvider|GEMINI_API_KEY|generateContent/);
+    assert.match(
+      repo,
+      /PLP persistence still on memory while MONGODB_URI is configured \(bootstrap missing\)/,
+    );
+  });
+
   it("5b. collaborative_analysis hydrate scopes match warm resolver", () => {
     assert.deepEqual(
       resolveContentTranslationOperatorHydrateScopes(["collaborative_analysis"]),

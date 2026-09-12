@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type {
   AuthUserPublic,
+  LanguageActivationAdminView,
   LanguageLocalizationReadinessReport,
   LanguageRegistryAdmin,
   LanguageTextDirection,
@@ -15,7 +16,9 @@ import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
+  activateAdminLanguageLocalization,
   createAdminLanguage,
+  fetchAdminLanguageActivationStatus,
   fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
   updateAdminLanguage,
@@ -103,6 +106,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   const [readinessById, setReadinessById] = useState<
     Record<string, LanguageLocalizationReadinessReport | "loading" | "error">
   >({});
+  const [activationById, setActivationById] = useState<
+    Record<string, LanguageActivationAdminView | "loading" | "error">
+  >({});
+  const [activatingId, setActivatingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LanguageFormState>(emptyForm());
@@ -231,6 +238,48 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     }
   }
 
+  async function handleActivateLocalization(row: LanguageRegistryAdmin) {
+    setActivatingId(row.languageId);
+    setActivationById((prev) => ({ ...prev, [row.languageId]: "loading" }));
+    setError(null);
+    try {
+      const view = await activateAdminLanguageLocalization(row.languageId);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      const jobStatus = view.job?.status ?? "none";
+      setStatus(
+        `${row.locale} activation: ${jobStatus}` +
+          ` · dataReady=${view.languageDataReady}` +
+          ` · WEB_UI missing=${view.readiness.webUi.missingKeyCount}` +
+          ` · CV missing=${view.readiness.controlledVocabulary.conceptsMissingLocalizedLabel}` +
+          ` · CT remaining=${view.readiness.ct.workItemsRequired}` +
+          ` · PLP remaining=${view.readiness.plpMedia.workItemsRequired}`,
+      );
+    } catch (activationError) {
+      setActivationById((prev) => ({ ...prev, [row.languageId]: "error" }));
+      setError(formatAuthFormError(activationError));
+    } finally {
+      setActivatingId(null);
+    }
+  }
+
+  async function handleRefreshActivation(row: LanguageRegistryAdmin) {
+    setActivationById((prev) => ({ ...prev, [row.languageId]: "loading" }));
+    setError(null);
+    try {
+      const view = await fetchAdminLanguageActivationStatus(row.languageId);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      setStatus(
+        `${row.locale} activation status: ${view.job?.status ?? "none"}` +
+          ` · readiness=${view.readiness.state}`,
+      );
+    } catch (statusError) {
+      setActivationById((prev) => ({ ...prev, [row.languageId]: "error" }));
+      setError(formatAuthFormError(statusError));
+    }
+  }
+
   const editingEnglish = Boolean(editingId && isEnglishLocale(form.locale));
 
   return (
@@ -242,9 +291,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           and SEO readiness. Runtime pickers and Translate Draft use enabled languages only. Locale
           is immutable after creation. Backend policy is authoritative for conflicts and fallbacks.
           Use Readiness to inspect localization state (WEB_UI / CT / PLP) without enabling SEO.
-          Historical activation uses{" "}
-          <code>pnpm --filter @hu/api localization:activate-language -- --locale &lt;locale&gt;</code>{" "}
-          (dry-run by default).
+          Use Activate Localization to start/resume the durable async activation job (CT/PLP residual
+          enqueue). WEB_UI packs are Admin data (
+          <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
+          ), never machine-generated. Search and SEO remain separate opt-in flags.
         </p>
 
         <div className="admin-languages__toolbar">
@@ -449,8 +499,11 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
               <tbody>
                 {items.map((row) => {
                   const english = isEnglishLocale(row.locale);
-                  const busy = togglingId === row.languageId;
+                  const busy = togglingId === row.languageId || activatingId === row.languageId;
                   const readiness = readinessById[row.languageId];
+                  const activation = activationById[row.languageId];
+                  const canActivate =
+                    row.enabled && row.contentTranslationEnabled && !english;
                   return (
                     <tr key={row.languageId}>
                       <td>{row.englishName}</td>
@@ -468,11 +521,32 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>{yesNo(row.searchEnabled)}</td>
                       <td>{yesNo(row.seoIndexingEnabled)}</td>
                       <td>
-                        {readiness === "loading" ? (
+                        {activation === "loading" || readiness === "loading" ? (
                           <span className="hu-caption">Checking…</span>
-                        ) : readiness === "error" ? (
+                        ) : activation === "error" || readiness === "error" ? (
                           <span className="hu-caption">Unavailable</span>
-                        ) : readiness ? (
+                        ) : activation && typeof activation === "object" ? (
+                          <div className="hu-caption">
+                            <div>
+                              job: <code>{activation.job?.status ?? "none"}</code>
+                            </div>
+                            <div>
+                              ready: <code>{activation.readiness.state}</code>
+                            </div>
+                            <div>
+                              WEB_UI missing={activation.readiness.webUi.missingKeyCount} · CV
+                              missing=
+                              {
+                                activation.readiness.controlledVocabulary
+                                  .conceptsMissingLocalizedLabel
+                              }
+                            </div>
+                            <div>
+                              CT rem={activation.readiness.ct.workItemsRequired} · PLP rem=
+                              {activation.readiness.plpMedia.workItemsRequired}
+                            </div>
+                          </div>
+                        ) : readiness && typeof readiness === "object" ? (
                           <div className="hu-caption">
                             <code>{readiness.state}</code>
                             {readiness.gaps.length > 0 ? (
@@ -508,6 +582,33 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                           </Button>
                           <Button
                             type="button"
+                            variant="primary"
+                            disabled={saving || busy || !canActivate}
+                            aria-label={`Activate localization for ${row.locale}`}
+                            onClick={() => {
+                              void handleActivateLocalization(row);
+                            }}
+                          >
+                            {activatingId === row.languageId ? "…" : "Activate Localization"}
+                          </Button>
+                          {activation && typeof activation === "object" && activation.job ? (
+                            <Button
+                              type="button"
+                              variant="tertiary"
+                              disabled={saving || busy}
+                              onClick={() => {
+                                void handleRefreshActivation(row);
+                              }}
+                            >
+                              {activation.job.status === "waiting_for_data" ||
+                              activation.job.status === "running" ||
+                              activation.job.status === "queued"
+                                ? "Resume / Refresh"
+                                : "Refresh status"}
+                            </Button>
+                          ) : null}
+                          <Button
+                            type="button"
                             variant="tertiary"
                             disabled={saving || busy || (english && row.enabled)}
                             aria-label={
@@ -521,7 +622,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               void handleToggleEnabled(row);
                             }}
                           >
-                            {busy ? "…" : row.enabled ? "Disable" : "Enable"}
+                            {togglingId === row.languageId ? "…" : row.enabled ? "Disable" : "Enable"}
                           </Button>
                         </div>
                       </td>

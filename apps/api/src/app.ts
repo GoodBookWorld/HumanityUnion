@@ -222,6 +222,10 @@ import {
   publicLegalLocalizationRouter,
 } from "./modules/legal-localization/index.js";
 import {
+  adminWebUiMessagePackRouter,
+  publicWebUiMessagePackRouter,
+} from "./modules/web-ui-message-packs/index.js";
+import {
   adminLanguagesRouter,
   adminTerminologyGlossaryRouter,
   publicLanguagesRouter,
@@ -284,10 +288,12 @@ app.use("/api/v1/platform/support-links", publicPlatformSupportLinksRouter);
 app.use("/api/v1/languages", publicLanguagesRouter);
 app.use("/api/v1/brand-localization", publicBrandLocalizationRouter);
 app.use("/api/v1/legal-localization", publicLegalLocalizationRouter);
+app.use("/api/v1/web-ui-message-packs", publicWebUiMessagePackRouter);
 app.use("/api/v1/runtime-locale", runtimeLocaleRouter);
 app.use("/api/v1/admin/languages", adminLanguagesRouter);
 app.use("/api/v1/admin/brand-localization", adminBrandLocalizationRouter);
 app.use("/api/v1/admin/legal-localization", adminLegalLocalizationRouter);
+app.use("/api/v1/admin/web-ui-message-packs", adminWebUiMessagePackRouter);
 app.use("/api/v1/admin/terminology-glossary", adminTerminologyGlossaryRouter);
 app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);

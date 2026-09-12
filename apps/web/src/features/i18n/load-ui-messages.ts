@@ -2,7 +2,14 @@
  * Production Completion Pack 02D Task 01 — UI message catalog loading.
  *
  * Always deep-merges onto bundled English so partial verification locales
- * (uk / zh-Hant / ar) fall back safely. Locale tags are exact (`zh-Hant`).
+ * (uk / zh-Hant / ar) and remote Admin packs fall back safely.
+ * Locale tags are exact (`zh-Hant`).
+ *
+ * Resolution order for overlay:
+ * 1. bundled pack (when present)
+ * 2. published remote/Admin pack
+ * 3. optional configured fallbackLocale pack (bundled then remote)
+ * 4. English-only (merge base)
  */
 
 import type { AbstractIntlMessages } from "next-intl";
@@ -12,6 +19,7 @@ import {
   type UiMessagePack,
   type UiMessagePackSource,
 } from "./remote-pack-seam.js";
+import { remoteUiMessagePackSource } from "./remote-ui-message-pack-source.js";
 
 /** Bundled verification locales for Task 01 foundation catalogs. */
 export const BUNDLED_UI_MESSAGE_LOCALES = ["en", "uk", "zh-Hant", "ar"] as const;
@@ -77,10 +85,16 @@ export async function loadBundledUiMessagePack(
   };
 }
 
-/** Default bundled-only source — remote sources register later without redesign. */
+/** Bundled-first source — ships with the Web app. */
 export const bundledUiMessagePackSource: UiMessagePackSource = {
   load: loadBundledUiMessagePack,
 };
+
+/** Default sources: bundled then remote/Admin (no shipped-locale remote allowlist). */
+export const defaultUiMessagePackSources: readonly UiMessagePackSource[] = [
+  bundledUiMessagePackSource,
+  remoteUiMessagePackSource,
+];
 
 /**
  * Resolve UI messages for a Pack 02C-resolved locale tag.
@@ -88,7 +102,10 @@ export const bundledUiMessagePackSource: UiMessagePackSource = {
  */
 export async function loadUiMessagesForLocale(
   locale: string,
-  sources: readonly UiMessagePackSource[] = [bundledUiMessagePackSource],
+  sources: readonly UiMessagePackSource[] = defaultUiMessagePackSources,
+  options?: {
+    readonly fallbackLocale?: string | null;
+  },
 ): Promise<{
   readonly locale: string;
   readonly messages: AbstractIntlMessages;
@@ -107,10 +124,18 @@ export async function loadUiMessagesForLocale(
     };
   }
 
-  const overlay = await loadFirstAvailableMessagePack(locale, sources);
+  let overlay = await loadFirstAvailableMessagePack(locale, sources);
+  const fallback = options?.fallbackLocale?.trim() ?? "";
+  if (
+    !overlay &&
+    fallback &&
+    fallback !== locale &&
+    fallback !== UI_I18N_ENGLISH_FALLBACK_LOCALE
+  ) {
+    overlay = await loadFirstAvailableMessagePack(fallback, sources);
+  }
+
   if (!overlay) {
-    // Unsupported / no pack — Pack 02C should already have fallen back for
-    // document locale; still return English messages safely.
     return {
       locale: UI_I18N_ENGLISH_FALLBACK_LOCALE,
       messages: englishPack.messages,

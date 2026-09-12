@@ -21,6 +21,13 @@ import {
   listAdminLanguages,
   updateAdminLanguage,
 } from "./language-registry.service.js";
+import {
+  LanguageActivationJobValidationError,
+} from "../language-localization-activation/language-activation-job.errors.js";
+import {
+  getLanguageActivationAdminView,
+  startOrResumeLanguageActivationJob,
+} from "../language-localization-activation/language-activation-job.service.js";
 
 const adminLanguagesRouter = Router();
 
@@ -49,7 +56,8 @@ function resolveErrorStatus(error: unknown): number {
   }
   if (
     error instanceof LanguageRegistryValidationError ||
-    error instanceof AdministrationValidationError
+    error instanceof AdministrationValidationError ||
+    error instanceof LanguageActivationJobValidationError
   ) {
     return 400;
   }
@@ -149,6 +157,58 @@ adminLanguagesRouter.get(
       });
       res.json(
         createSuccessResponse(readiness, "Language localization readiness loaded."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/**
+ * Explicit Admin activate-localization — queues durable async job (no provider in request).
+ * Rejects disabled / contentTranslationEnabled=false. Does not mutate Search/SEO.
+ */
+adminLanguagesRouter.post(
+  "/:languageId/activate-localization",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const languageId = Array.isArray(req.params.languageId)
+        ? req.params.languageId[0]
+        : req.params.languageId;
+      const view = await startOrResumeLanguageActivationJob({
+        actorUserId: req.auth!.id,
+        languageId: languageId ?? "",
+      });
+      res.status(202).json(
+        createSuccessResponse(view, "Language localization activation accepted."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/**
+ * Activation job + authoritative readiness snapshot (provider-free refresh).
+ */
+adminLanguagesRouter.get(
+  "/:languageId/activation-status",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const languageId = Array.isArray(req.params.languageId)
+        ? req.params.languageId[0]
+        : req.params.languageId;
+      const view = await getLanguageActivationAdminView({
+        actorUserId: req.auth!.id,
+        languageId: languageId ?? "",
+        refreshJob: true,
+      });
+      res.json(
+        createSuccessResponse(view, "Language localization activation status loaded."),
       );
     } catch (error) {
       handleError(res, error);

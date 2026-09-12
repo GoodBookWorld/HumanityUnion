@@ -86,6 +86,9 @@ loadApiEnvironment();
 const { bootstrapContentTranslationOperatorPersistence } = await import(
   "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js"
 );
+const { bootstrapPublishedLocalizationPersistence } = await import(
+  "../infrastructure/mongodb/bootstrap-published-localization-persistence.js"
+);
 const { resolveContentTranslationOperatorHydrateScopes } = await import(
   "../modules/language/content-translation-staging-warm-operator-scope.js"
 );
@@ -107,6 +110,9 @@ try {
   await bootstrapContentTranslationOperatorPersistence({
     hydrateScopes,
   });
+  // Same Mongo PLP bind as API HTTP resolve — integrity PLP assessment must
+  // not hit empty memory while MONGODB_URI is configured.
+  await bootstrapPublishedLocalizationPersistence();
 
   const report = await runLocalizationIntegrityCheck({
     locale,

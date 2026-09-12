@@ -1,4 +1,5 @@
 import type {
+  LanguageActivationAdminView,
   LanguageLocalizationReadinessReport,
   LanguageRegistryAdmin,
   LanguageRegistryAdminListResponse,
@@ -48,6 +49,25 @@ export async function fetchAdminLanguageLocalizationReadiness(
 ): Promise<LanguageLocalizationReadinessReport> {
   return apiRequest<LanguageLocalizationReadinessReport>(
     `${ADMIN_LANGUAGES_PATH}/${encodeURIComponent(languageId)}/localization-readiness`,
+  );
+}
+
+/** Explicit async activation — returns job + readiness; no Search/SEO mutation. */
+export async function activateAdminLanguageLocalization(
+  languageId: string,
+): Promise<LanguageActivationAdminView> {
+  return apiRequest<LanguageActivationAdminView>(
+    `${ADMIN_LANGUAGES_PATH}/${encodeURIComponent(languageId)}/activate-localization`,
+    { method: "POST" },
+  );
+}
+
+/** Refresh durable activation job + measured readiness. */
+export async function fetchAdminLanguageActivationStatus(
+  languageId: string,
+): Promise<LanguageActivationAdminView> {
+  return apiRequest<LanguageActivationAdminView>(
+    `${ADMIN_LANGUAGES_PATH}/${encodeURIComponent(languageId)}/activation-status`,
   );
 }
 

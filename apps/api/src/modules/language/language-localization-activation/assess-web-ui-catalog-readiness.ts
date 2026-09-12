@@ -1,21 +1,16 @@
 /**
  * Closure 07 — WEB_UI catalog readiness for one Registry locale (API-side).
- * Mirrors Closure 06 readiness semantics against bundled message packs.
+ * Uses the same effective pack source as runtime (bundled FS → published remote).
  * Registry/fixture-driven locales — no hardcoded production allowlist.
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import type { LanguageWebUiReadinessSlice } from "@hu/types";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-// apps/api/src/modules/language/language-localization-activation → apps/web/.../messages
-const MESSAGES_DIR = path.resolve(
-  here,
-  "../../../../../web/src/features/i18n/messages",
-);
+import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
+import {
+  collectStringPaths,
+  loadBundledEnglishWebUiMessagePack,
+} from "../../web-ui-message-packs/web-ui-message-pack.validate.js";
 
 type MessagePack = Record<string, unknown>;
 
@@ -35,31 +30,6 @@ const PUBLIC_CHROME_PREFIXES = [
   "initiativeExperience.",
 ] as const;
 
-function loadMessagePack(locale: string): MessagePack | null {
-  try {
-    return JSON.parse(
-      readFileSync(path.join(MESSAGES_DIR, `${locale}.json`), "utf8"),
-    ) as MessagePack;
-  } catch {
-    return null;
-  }
-}
-
-function collectStringPaths(messages: MessagePack, prefix = ""): string[] {
-  const paths: string[] = [];
-  for (const [key, value] of Object.entries(messages)) {
-    const pathKey = prefix ? `${prefix}.${key}` : key;
-    if (typeof value === "string") {
-      paths.push(pathKey);
-      continue;
-    }
-    if (value != null && typeof value === "object" && !Array.isArray(value)) {
-      paths.push(...collectStringPaths(value as MessagePack, pathKey));
-    }
-  }
-  return paths;
-}
-
 function readPathValue(messages: MessagePack, dottedPath: string): unknown {
   let current: unknown = messages;
   for (const segment of dottedPath.split(".")) {
@@ -73,17 +43,24 @@ function readPathValue(messages: MessagePack, dottedPath: string): unknown {
 
 /**
  * Assess required public WEB_UI chrome for a target locale.
- * Missing bundled catalog ⇒ not data-ready (honest).
+ * Missing effective pack ⇒ not data-ready (honest).
+ * Manual Registry `uiTranslationStatus` does not override measured readiness.
  */
-export function assessWebUiCatalogReadinessForLocale(input: {
+export async function assessWebUiCatalogReadinessForLocale(input: {
   readonly locale: string;
   readonly englishLocale?: string;
   readonly requiredPaths?: readonly string[];
   readonly flagEnglishIdenticalAsFallback?: boolean;
-}): LanguageWebUiReadinessSlice {
+}): Promise<LanguageWebUiReadinessSlice> {
   const englishLocale = input.englishLocale ?? "en";
-  const english = loadMessagePack(englishLocale);
-  if (!english) {
+  let english: MessagePack;
+  try {
+    english =
+      englishLocale === "en"
+        ? loadBundledEnglishWebUiMessagePack()
+        : ((await resolveEffectiveWebUiMessagePack(englishLocale))?.messages as MessagePack) ??
+          loadBundledEnglishWebUiMessagePack();
+  } catch {
     return {
       engineReady: true,
       dataReady: false,
@@ -95,7 +72,7 @@ export function assessWebUiCatalogReadinessForLocale(input: {
     };
   }
 
-  const target = loadMessagePack(input.locale);
+  const effective = await resolveEffectiveWebUiMessagePack(input.locale);
   const requiredPaths =
     input.requiredPaths ??
     collectStringPaths(english).filter((pathKey) =>
@@ -105,7 +82,7 @@ export function assessWebUiCatalogReadinessForLocale(input: {
       ),
     );
 
-  if (!target) {
+  if (!effective) {
     return {
       engineReady: true,
       dataReady: false,
@@ -117,6 +94,7 @@ export function assessWebUiCatalogReadinessForLocale(input: {
     };
   }
 
+  const target = effective.messages as MessagePack;
   const flagIdentical = input.flagEnglishIdenticalAsFallback ?? false;
   let missingKeyCount = 0;
   let emptyKeyCount = 0;

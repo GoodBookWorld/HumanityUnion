@@ -131,6 +131,10 @@ export const MONGO_COLLECTIONS = {
   brandLocalization: "brand_localization",
   /** Pack 08I.5 — Admin-managed Legal Localization (counsel-approved). */
   legalLocalization: "legal_localization",
+  /** Admin/persisted WEB_UI message packs for arbitrary Registry locales. */
+  webUiMessagePacks: "web_ui_message_packs",
+  /** Durable Admin language localization activation jobs (one active generation per locale). */
+  languageActivationJobs: "language_activation_jobs",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

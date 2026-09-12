@@ -109,7 +109,7 @@ export async function evaluateLanguageLocalizationReadiness(
   const assessControlledVocabulary =
     input.assessControlledVocabulary ?? assessControlledVocabularyReadinessForLocale;
 
-  const webUi = assessWebUi({ locale });
+  const webUi = await assessWebUi({ locale });
   const controlledVocabulary = await assessControlledVocabulary({ locale });
   const higherAuthority = await assessHigherAuthority(locale);
 

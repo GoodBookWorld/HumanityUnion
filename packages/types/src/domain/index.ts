@@ -138,6 +138,22 @@ export {
   isLocalizationReadyForSeo,
 } from "./language-localization-readiness.js";
 export type {
+  LanguageActivationAdminView,
+  LanguageActivationControlledVocabularyDomainProgress,
+  LanguageActivationDomainStatus,
+  LanguageActivationHistoricalDomainProgress,
+  LanguageActivationJobDomains,
+  LanguageActivationJobRecord,
+  LanguageActivationJobStatus,
+  LanguageActivationWebUiDomainProgress,
+} from "./language-activation-job.js";
+export {
+  LANGUAGE_ACTIVATION_DOMAIN_STATUSES,
+  LANGUAGE_ACTIVATION_JOB_STATUSES,
+  isLanguageActivationDomainStatus,
+  isLanguageActivationJobStatus,
+} from "./language-activation-job.js";
+export type {
   LocalizationIntegrityArtifactRow,
   LocalizationIntegrityArtifactState,
   LocalizationIntegrityReport,
@@ -182,6 +198,19 @@ export {
   isBrandLocalizationStatus,
   visualHeroUnityQuoteLines,
 } from "./brand-localization.js";
+export type {
+  WebUiMessagePackAdminListResponse,
+  WebUiMessagePackPublicPayload,
+  WebUiMessagePackRecord,
+  WebUiMessagePackStatus,
+  WebUiMessagePackUpsertInput,
+  WebUiMessagePackValidationReport,
+  WebUiMessageTree,
+} from "./web-ui-message-pack.js";
+export {
+  WEB_UI_MESSAGE_PACK_STATUSES,
+  isWebUiMessagePackStatus,
+} from "./web-ui-message-pack.js";
 export type {
   BrandTokenPart,
   BrandTokenValues,

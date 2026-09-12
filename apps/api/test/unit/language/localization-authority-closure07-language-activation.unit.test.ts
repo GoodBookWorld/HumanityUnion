@@ -31,6 +31,10 @@ import {
   setLanguageRegistryForceMemoryForTests,
   updateLanguageRegistryRecord,
 } from "../../../src/modules/language/index.js";
+import {
+  resetWebUiMessagePackStoreForTests,
+  setWebUiMessagePackForceMemoryForTests,
+} from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../../../..");
@@ -96,11 +100,15 @@ describe("Localization Authority Closure 07 — language activation", () => {
     setLanguageRegistryForceMemoryForTests(true);
     resetLanguageRegistryStoreForTests();
     await ensureLanguageRegistrySeeded();
+    setWebUiMessagePackForceMemoryForTests(true);
+    resetWebUiMessagePackStoreForTests();
   });
 
   afterEach(() => {
     resetLanguageRegistryStoreForTests();
     setLanguageRegistryForceMemoryForTests(false);
+    resetWebUiMessagePackStoreForTests();
+    setWebUiMessagePackForceMemoryForTests(false);
   });
 
   it("disabled locale → DISABLED; CT disabled stays DISABLED", async () => {
@@ -665,14 +673,51 @@ describe("Localization Authority Closure 07 — language activation", () => {
     assert.match(pkg.scripts["localization:activate-language"] ?? "", /activate-language-localization/);
   });
 
-  it("Admin readiness route exists and does not enqueue in GET", () => {
+  it("activation operator binds Mongo PLP before planning (no memory fallback)", () => {
+    const script = readFileSync(
+      path.join(apiSrc, "scripts/activate-language-localization.ts"),
+      "utf8",
+    );
+    const repo = readFileSync(
+      path.join(
+        apiSrc,
+        "modules/language/published-localized-presentation/persistence/repository.ts",
+      ),
+      "utf8",
+    );
+    assert.match(
+      script,
+      /bootstrapContentTranslationOperatorPersistence[\s\S]*await bootstrapPublishedLocalizationPersistence\(\)[\s\S]*activateLanguageLocalization/,
+    );
+    assert.match(
+      script,
+      /bootstrap-published-localization-persistence/,
+    );
+    assert.doesNotMatch(script, /requirePublishedLocalizationMongoPersistence/);
+    assert.doesNotMatch(script, /TranslationProvider|GEMINI_API_KEY|generateContent/);
+    // Fail-closed guard unchanged — scripts must bind, not weaken.
+    assert.match(
+      repo,
+      /PLP persistence still on memory while MONGODB_URI is configured \(bootstrap missing\)/,
+    );
+  });
+
+  it("Admin readiness GET does not enqueue; activate-localization route exists", () => {
     const routes = readFileSync(
       path.join(apiSrc, "modules/language/language-registry/admin-languages.routes.ts"),
       "utf8",
     );
     assert.match(routes, /localization-readiness/);
     assert.match(routes, /evaluateLanguageLocalizationReadiness/);
-    assert.doesNotMatch(routes, /activateLanguageLocalization/);
+    assert.match(routes, /activate-localization/);
+    assert.match(routes, /startOrResumeLanguageActivationJob/);
+    assert.match(routes, /activation-status/);
+    const readinessBlock = routes.slice(
+      routes.indexOf("/:languageId/localization-readiness"),
+      routes.indexOf("/:languageId/activate-localization"),
+    );
+    assert.doesNotMatch(readinessBlock, /startOrResumeLanguageActivationJob/);
+    assert.doesNotMatch(readinessBlock, /activateLanguageLocalization/);
   });
 
   it("Closure 01–06 test files remain present", () => {

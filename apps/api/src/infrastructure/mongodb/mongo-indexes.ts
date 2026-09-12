@@ -1209,6 +1209,45 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Admin/persisted WEB_UI message packs (one record per canonical locale).
+    collectionName: MONGO_COLLECTIONS.webUiMessagePacks,
+    indexes: [
+      {
+        key: { localeKey: 1 },
+        unique: true,
+        name: "web_ui_message_packs_locale_unique",
+      },
+      {
+        key: { packId: 1 },
+        unique: true,
+        name: "web_ui_message_packs_pack_id_unique",
+      },
+      {
+        key: { status: 1, localeKey: 1 },
+        name: "web_ui_message_packs_status_locale",
+      },
+    ],
+  },
+  {
+    // Durable Admin language localization activation jobs.
+    collectionName: MONGO_COLLECTIONS.languageActivationJobs,
+    indexes: [
+      {
+        key: { jobId: 1 },
+        unique: true,
+        name: "language_activation_jobs_job_id_unique",
+      },
+      {
+        key: { localeKey: 1, generation: -1 },
+        name: "language_activation_jobs_locale_generation",
+      },
+      {
+        key: { localeKey: 1, status: 1 },
+        name: "language_activation_jobs_locale_status",
+      },
+    ],
+  },
+  {
     // Pack 08I.5 — Admin-managed Legal Localization (one record per documentType+locale).
     collectionName: MONGO_COLLECTIONS.legalLocalization,
     indexes: [

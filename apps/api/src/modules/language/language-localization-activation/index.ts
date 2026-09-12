@@ -17,3 +17,24 @@ export {
   assertNoHardcodedLocaleEligibilityPolicy,
   findHardcodedLocaleEligibilityPolicy,
 } from "./assert-no-hardcoded-locale-eligibility.js";
+export {
+  getLanguageActivationAdminView,
+  processLanguageActivationJob,
+  resetLanguageActivationJobSchedulerForTests,
+  scheduleLanguageActivationJobProcess,
+  setLanguageActivationJobAdminAssertOverrideForTests,
+  setLanguageActivationJobProcessDepsForTests,
+  startAndProcessLanguageActivationJobForTests,
+  startOrResumeLanguageActivationJob,
+} from "./language-activation-job.service.js";
+export type { LanguageActivationJobProcessDeps } from "./language-activation-job.service.js";
+export {
+  resetLanguageActivationJobStoreForTests,
+  setLanguageActivationJobForceMemoryForTests,
+} from "./language-activation-job.repository.js";
+export {
+  LanguageActivationJobError,
+  LanguageActivationJobNotFoundError,
+  LanguageActivationJobPersistenceError,
+  LanguageActivationJobValidationError,
+} from "./language-activation-job.errors.js";

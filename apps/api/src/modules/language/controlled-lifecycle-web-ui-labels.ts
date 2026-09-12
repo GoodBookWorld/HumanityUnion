@@ -1,9 +1,8 @@
 /**
- * Localization Authority Closure 03 — load WEB_UI controlled lifecycle labels
- * from the existing next-intl message catalogs (source of truth).
+ * Localization Authority Closure 03 — load WEB_UI controlled lifecycle labels.
  *
- * Used by Pack 03C.5 CT reassembly on the API so Terminology → WEB_UI → Registry
- * can run without a duplicate dictionary.
+ * Sync path for CT reassembly: bundled FS + in-memory published packs (tests).
+ * Readiness/CV assessment uses `resolveEffectiveWebUiMessagePack` (async, Mongo).
  */
 
 import { readFileSync } from "node:fs";
@@ -11,9 +10,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { InitiativeLifecycleStageId } from "@hu/types";
+import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
+
+import { getWebUiMessagePackByLocaleMemory } from "../web-ui-message-packs/web-ui-message-pack.memory.store.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-// apps/api/src/modules/language → apps/web/src/features/i18n/messages
 const MESSAGES_DIR = path.resolve(
   here,
   "../../../../web/src/features/i18n/messages",
@@ -43,12 +44,11 @@ type MessagePack = {
   };
 };
 
-const packCache = new Map<string, MessagePack>();
+const packCache = new Map<string, MessagePack | null>();
 
 function loadMessagePack(locale: string): MessagePack | null {
-  const cached = packCache.get(locale);
-  if (cached) {
-    return cached;
+  if (packCache.has(locale)) {
+    return packCache.get(locale) ?? null;
   }
   try {
     const raw = readFileSync(path.join(MESSAGES_DIR, `${locale}.json`), "utf8");
@@ -56,11 +56,23 @@ function loadMessagePack(locale: string): MessagePack | null {
     packCache.set(locale, pack);
     return pack;
   } catch {
+    const key = normalizeLanguageRegistryLocaleKey(locale);
+    const remote = key ? getWebUiMessagePackByLocaleMemory(key) : null;
+    if (remote?.status === "published") {
+      const pack = remote.messages as MessagePack;
+      packCache.set(locale, pack);
+      return pack;
+    }
+    packCache.set(locale, null);
     return null;
   }
 }
 
-/** WEB_UI `initiativeExperience.stages.<stageId>` for a locale, if present. */
+/** Test-only — clear locale pack cache after fixture mutation. */
+export function resetWebUiControlledLabelCacheForTests(): void {
+  packCache.clear();
+}
+
 export function loadWebUiControlledLifecycleStageLabel(input: {
   readonly stageId: InitiativeLifecycleStageId | string;
   readonly locale: string;
@@ -73,7 +85,6 @@ export function loadWebUiControlledLifecycleStageLabel(input: {
   return label.trim();
 }
 
-/** WEB_UI ready-to-collaborate chrome label for a locale, if present. */
 export function loadWebUiReadyToCollaborateLabel(locale: string): string | null {
   const pack = loadMessagePack(locale);
   const label =
@@ -84,7 +95,6 @@ export function loadWebUiReadyToCollaborateLabel(locale: string): string | null 
   return label.trim();
 }
 
-/** WEB_UI discussion chrome / CA source-snapshot labels for domain controlled concepts. */
 export function loadWebUiControlledDomainLabel(input: {
   readonly conceptId: string;
   readonly locale: string;

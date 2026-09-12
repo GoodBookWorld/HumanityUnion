@@ -78,6 +78,9 @@ loadApiEnvironment();
 const { bootstrapContentTranslationOperatorPersistence } = await import(
   "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js"
 );
+const { bootstrapPublishedLocalizationPersistence } = await import(
+  "../infrastructure/mongodb/bootstrap-published-localization-persistence.js"
+);
 const { disconnectMongoClient } = await import(
   "../infrastructure/mongodb/mongo-connection.js"
 );
@@ -94,6 +97,9 @@ try {
       collectiveDecision: true,
     },
   });
+  // Same Mongo PLP bind as API HTTP resolve — planner/integrity PLP reads must
+  // not hit empty memory while MONGODB_URI is configured.
+  await bootstrapPublishedLocalizationPersistence();
 
   const result = await activateLanguageLocalization({
     locale,

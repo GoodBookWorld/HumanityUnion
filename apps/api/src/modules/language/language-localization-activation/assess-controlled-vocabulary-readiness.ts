@@ -1,19 +1,17 @@
 /**
  * Closure 07 — controlled vocabulary readiness for one locale.
  * Terminology preferredTerm OR WEB_UI controlled fallback ⇒ presentation-ready.
+ * WEB_UI labels come from the same effective pack source as readiness (bundled → remote).
  */
 
 import {
   CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
   type LanguageControlledVocabularyReadinessSlice,
   type TerminologyConcept,
+  type WebUiMessageTree,
 } from "@hu/types";
 
-import {
-  loadWebUiControlledDomainLabel,
-  loadWebUiControlledLifecycleStageLabel,
-  loadWebUiReadyToCollaborateLabel,
-} from "../controlled-lifecycle-web-ui-labels.js";
+import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
 import { listTerminologyConcepts } from "../terminology-glossary/terminology-glossary.repository.js";
 
 function terminologyPreferredTermForConcept(input: {
@@ -27,8 +25,7 @@ function terminologyPreferredTermForConcept(input: {
     }
     const linkedStage = concept.linkedRefs?.stageId ?? "";
     const matches =
-      concept.conceptId === input.conceptId ||
-      linkedStage === input.conceptId;
+      concept.conceptId === input.conceptId || linkedStage === input.conceptId;
     if (!matches) {
       continue;
     }
@@ -41,23 +38,64 @@ function terminologyPreferredTermForConcept(input: {
   return null;
 }
 
-function webUiLabelForConcept(conceptId: string, locale: string): string | null {
+function readNestedString(messages: WebUiMessageTree, dottedPath: string): string | null {
+  let current: unknown = messages;
+  for (const segment of dottedPath.split(".")) {
+    if (current == null || typeof current !== "object" || Array.isArray(current)) {
+      return null;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  if (typeof current !== "string" || !current.trim()) {
+    return null;
+  }
+  return current.trim();
+}
+
+function webUiLabelFromPack(conceptId: string, messages: WebUiMessageTree): string | null {
   if (conceptId === "ready_to_collaborate") {
-    return loadWebUiReadyToCollaborateLabel(locale);
+    return readNestedString(
+      messages,
+      "initiativeExperience.collaboration.discussion.chrome.readyToCollaborate",
+    );
   }
-  if (
-    conceptId === "helpful" ||
-    conceptId === "not_helpful" ||
-    conceptId === "active_allies"
-  ) {
-    return loadWebUiControlledDomainLabel({ conceptId, locale });
+  if (conceptId === "helpful") {
+    return (
+      readNestedString(
+        messages,
+        "initiativeExperience.collaboration.discussion.chrome.helpful",
+      ) ??
+      readNestedString(
+        messages,
+        "initiativeExperience.author.analysis.sourceSnapshot.helpful",
+      )
+    );
   }
-  return loadWebUiControlledLifecycleStageLabel({ stageId: conceptId, locale });
+  if (conceptId === "not_helpful") {
+    return (
+      readNestedString(
+        messages,
+        "initiativeExperience.collaboration.discussion.chrome.notHelpful",
+      ) ??
+      readNestedString(
+        messages,
+        "initiativeExperience.author.analysis.sourceSnapshot.notHelpful",
+      )
+    );
+  }
+  if (conceptId === "active_allies") {
+    return readNestedString(
+      messages,
+      "initiativeExperience.author.analysis.sourceSnapshot.activeAllies",
+    );
+  }
+  return readNestedString(messages, `initiativeExperience.stages.${conceptId}`);
 }
 
 /**
  * Assess controlled public vocabulary readiness for a locale.
  * Missing preferredTerm with WEB_UI fallback is OK for presentation readiness.
+ * Terminology preferredTerm retains higher authority than WEB_UI.
  */
 export async function assessControlledVocabularyReadinessForLocale(input: {
   readonly locale: string;
@@ -71,6 +109,9 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
     concepts = [];
   }
 
+  const effective = await resolveEffectiveWebUiMessagePack(input.locale);
+  const messages = effective?.messages ?? null;
+
   let withTerm = 0;
   let withWebUiOnly = 0;
   let missing = 0;
@@ -82,7 +123,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
       locale: input.locale,
       concepts,
     });
-    const webUi = webUiLabelForConcept(entry.conceptId, input.locale);
+    const webUi = messages ? webUiLabelFromPack(entry.conceptId, messages) : null;
     if (preferred) {
       withTerm += 1;
       continue;
