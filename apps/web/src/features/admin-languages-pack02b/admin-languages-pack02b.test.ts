@@ -39,7 +39,21 @@ describe("Production Completion Pack 02B Task 05 — Admin Languages UI", () => 
     assert.match(section, /Add Language/);
     assert.match(section, /immutable/);
     assert.match(section, /English cannot be disabled/);
+    assert.match(section, /admin-languages__table-wrap/);
+    assert.match(section, /admin-initiatives-table admin-languages-table/);
     assert.doesNotMatch(section, /PRIORITY_LANGUAGE_CATALOG|PRIORITY_LANGUAGE_CODES/);
     assert.doesNotMatch(section, /providerMappings/);
+  });
+
+  it("Languages table header is sticky within the scroll container", () => {
+    const css = read("features/administration/components/admin-languages.css");
+    assert.match(css, /\.admin-languages__table-wrap\s*\{[^}]*overflow-y:\s*auto/s);
+    assert.match(css, /\.admin-languages__table-wrap\s*\{[^}]*max-height:/s);
+    assert.match(css, /\.admin-languages-table thead th\s*\{[^}]*position:\s*sticky/s);
+    assert.match(css, /\.admin-languages-table thead th\s*\{[^}]*top:\s*0/s);
+    assert.match(css, /\.admin-languages-table thead th\s*\{[^}]*z-index:/s);
+    assert.match(css, /\.admin-languages-table thead th\s*\{[^}]*background:/s);
+    assert.match(css, /text-align:\s*start/);
+    assert.doesNotMatch(css, /position:\s*fixed/);
   });
 });
