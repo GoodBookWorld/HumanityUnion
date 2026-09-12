@@ -59,8 +59,8 @@ describe("Final visible localization fix", () => {
     assert.match(service, /enqueueParticipantPublicPlpBuilds/);
     assert.match(enqueue, /resolvePlpAutoBuildLocales/);
     assert.match(preview, /getMyPublicMemberProfilePreview\(locale\)/);
-    assert.match(preview, /getPublicMemberProfileByPublicName/);
-    assert.match(preview, /credentials:\s*"omit"/);
+    assert.doesNotMatch(preview, /getPublicMemberProfileByPublicName/);
+    assert.doesNotMatch(preview, /credentials:\s*"omit"/);
     assert.doesNotMatch(service, /locale\s*===\s*["'](?:uk|ar|zh-Hant)["']/);
   });
 

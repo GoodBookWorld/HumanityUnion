@@ -13,11 +13,7 @@ import {
   isAuthenticationRequiredError,
 } from "../../../lib/api-client";
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
-import {
-  getMyPublicMemberProfilePreview,
-  getPublicMemberProfileByPublicName,
-} from "../member-profile-api";
-import { mergeOwnerPreviewLocalizedFields } from "../merge-owner-preview-localized-fields";
+import { getMyPublicMemberProfilePreview } from "../member-profile-api";
 import { MembershipProfileSection } from "../../membership/components/MembershipProfileSection";
 import { ParticipantProfileSurface } from "./ParticipantProfileSurface";
 import { OwnerProfilePreviewBanner } from "./OwnerProfilePreviewBanner";
@@ -35,11 +31,12 @@ type OwnerProfilePreviewState =
 
 /**
  * Profile UX Pack 03.3 — `/profile` route body. Loads the owner's "what
- * will other Participants see" preview with privacy from
- * `getMyPublicMemberProfilePreview`, then aligns Biography/Skills with the
- * same public by-name projection `/member/{publicName}` uses (credentials
- * omitted so the owner is never elevated to viewerIsOwner). Renders the
- * shared `ParticipantProfileSurface` in `owner_preview` mode.
+ * will other Participants see" preview from authenticated
+ * `getMyPublicMemberProfilePreview(locale)` only. That endpoint applies
+ * privacy projection then participant_public CURRENT for the selected
+ * presentation locale — including `members_only` profiles where anonymous
+ * by-name cannot. Renders shared `ParticipantProfileSurface` in
+ * `owner_preview` mode.
  */
 export function OwnerProfilePreview() {
   const locale = useLocale();
@@ -55,37 +52,13 @@ export function OwnerProfilePreview() {
     let cancelled = false;
     setState({ status: "loading" });
 
-    void (async () => {
-      try {
-        const preview = await getMyPublicMemberProfilePreview(locale);
-        const publicName = preview.profile.publicName?.trim();
-
-        let nextPreview = preview;
-        if (publicName) {
-          try {
-            // Same read path as `/member/{publicName}` SSR: anonymous + locale.
-            // Keeps privacy shape from preview; overlays participant_public fields.
-            const localizedPublic = await getPublicMemberProfileByPublicName(
-              publicName,
-              locale,
-              { credentials: "omit" },
-            );
-            nextPreview = {
-              ...preview,
-              profile: mergeOwnerPreviewLocalizedFields({
-                privacyFiltered: preview.profile,
-                localizedPublic,
-              }),
-            };
-          } catch {
-            // members_only / network: keep privacy preview (API overlay still applied).
-          }
-        }
-
+    void getMyPublicMemberProfilePreview(locale)
+      .then((preview) => {
         if (!cancelled) {
-          setState({ status: "ready", preview: nextPreview });
+          setState({ status: "ready", preview });
         }
-      } catch (error: unknown) {
+      })
+      .catch((error: unknown) => {
         if (cancelled) {
           return;
         }
@@ -106,8 +79,7 @@ export function OwnerProfilePreview() {
         }
 
         setState({ status: "unavailable" });
-      }
-    })();
+      });
 
     return () => {
       cancelled = true;
