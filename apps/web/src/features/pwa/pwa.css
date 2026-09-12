@@ -229,12 +229,16 @@
 .hu-pwa-global-menu__panel {
   position: absolute;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   bottom: 0;
   width: min(18rem, 86vw);
+  max-width: 100%;
   padding: calc(var(--hu-safe-area-top) + var(--hu-space-3)) var(--hu-space-4)
     calc(var(--hu-safe-area-bottom) + var(--hu-space-3));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: var(--hu-color-bg);
   box-shadow: var(--hu-shadow-md, 0 8px 24px rgb(0 0 0 / 0.12));
 }
@@ -266,6 +270,13 @@
 .hu-pwa-global-menu__list a[aria-current="page"] {
   background: var(--hu-color-bg-subtle);
   font-weight: 600;
+}
+
+.hu-pwa-global-menu__language {
+  margin-block-start: var(--hu-space-3);
+  padding-block-start: var(--hu-space-3);
+  border-block-start: 1px solid var(--hu-color-border);
+  min-width: 0;
 }
 
 .hu-pwa-ios-help {

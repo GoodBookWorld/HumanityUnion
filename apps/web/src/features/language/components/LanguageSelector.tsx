@@ -310,6 +310,41 @@ export function LanguageSelector({
   }
 
   if (loading && options.length === 0) {
+    if (variant === "icon") {
+      return (
+        <div
+          className={[
+            "hu-language-selector",
+            "hu-language-selector--icon",
+            "hu-language-selector--pending",
+            className,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          role="status"
+          aria-label={loadingLabel}
+          data-pending="true"
+        >
+          <button
+            type="button"
+            className="hu-language-selector__icon-trigger"
+            disabled
+            aria-label={loadingLabel}
+          >
+            <img
+              src={LANGUAGE_ICON_SRC}
+              alt=""
+              width={24}
+              height={24}
+              className="hu-language-selector__icon"
+              aria-hidden="true"
+            />
+            <span className="hu-language-selector__icon-text">{loadingLabel}</span>
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div
         className={["hu-language-selector", "hu-language-selector--pending", className]

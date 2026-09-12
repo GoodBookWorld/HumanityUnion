@@ -124,6 +124,8 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     ]) {
       assert.match(menu, new RegExp(`labelKey: "${labelKey}"`));
     }
+    assert.match(menu, /LanguageSelector/);
+    assert.match(menu, /variant="icon"/);
   });
 
   it("17–21 — Bottom Navigation routes and Assistant reuse", () => {

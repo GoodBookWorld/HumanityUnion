@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef } from "react";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
+import { LanguageSelector } from "../../language/components/LanguageSelector";
 
 const GLOBAL_LINKS = [
   { href: "/", labelKey: "home" },
@@ -100,6 +101,12 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
             );
           })}
         </ul>
+        <div className="hu-pwa-global-menu__language">
+          <LanguageSelector
+            className="hu-language-selector--mobile"
+            variant="icon"
+          />
+        </div>
       </div>
     </div>
   );

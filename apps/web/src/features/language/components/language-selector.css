@@ -143,10 +143,13 @@
   max-width: 11rem;
 }
 
+/* Mobile / PWA burger: in-flow expandable panel (not a desktop edge dropdown). */
 .hu-language-selector--mobile {
+  position: relative;
   max-width: none;
   width: 100%;
-  margin-block: var(--hu-space-3);
+  margin-block: var(--hu-space-2);
+  margin-inline: 0;
 }
 
 .hu-language-selector--mobile .hu-language-selector__select {
@@ -154,23 +157,37 @@
 }
 
 .hu-language-selector--mobile .hu-language-selector__list {
+  /* Expand inside the burger panel — avoid absolute/right-edge desktop popup. */
   position: static;
-  min-width: 100%;
-  width: 100%;
-  margin-top: 0.35rem;
-  max-height: min(
-    40vh,
-    calc(
-      var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size)
-    )
-  );
+  inset: auto;
+  z-index: auto;
+  box-sizing: border-box;
+  width: min(100%, 92vw);
+  min-width: 0;
+  max-width: 100%;
+  margin-block-start: 0.5rem;
+  margin-inline: 0;
+  max-height: min(65dvh, 22rem);
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 
+.hu-language-selector--mobile .hu-language-selector__option {
+  min-height: var(--hu-touch-target, 2.75rem);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.hu-language-selector--mobile .hu-language-selector__error {
+  max-width: none;
+}
+
 .hu-language-selector--icon {
   max-width: none;
+  width: 100%;
 }
 
 .hu-language-selector__icon-trigger {
@@ -179,10 +196,12 @@
   align-items: center;
   gap: 0.65rem;
   width: 100%;
+  min-height: var(--hu-touch-target, 2.75rem);
   margin: 0;
-  padding: 0.55rem 0.35rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.5rem;
   border: 0;
-  border-radius: var(--hu-radius-sm, 0.35rem);
+  border-radius: var(--hu-radius-md, 0.5rem);
   background: transparent;
   color: var(--hu-color-text);
   font: inherit;
@@ -209,8 +228,8 @@
 
 .hu-language-selector__icon {
   flex: 0 0 auto;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   object-fit: contain;
 }
 
@@ -225,6 +244,7 @@
 .hu-language-selector--icon[data-open="true"] .hu-language-selector__icon-trigger {
   color: var(--hu-color-primary);
   font-weight: 600;
+  background: var(--hu-color-bg-subtle, color-mix(in srgb, var(--hu-color-primary) 8%, transparent));
 }
 
 @media (max-width: 430px) {

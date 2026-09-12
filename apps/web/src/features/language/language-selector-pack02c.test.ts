@@ -139,6 +139,29 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(layout, /InterfaceLanguageCookieSync/);
   });
 
+  it("PWA standalone burger uses PwaGlobalMenu with icon LanguageSelector", () => {
+    const safeArea = readWeb("features/pwa/pwa-safe-area.css");
+    const pwaHeader = readWeb("features/pwa/components/PwaAppHeader.tsx");
+    const globalMenu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
+    const css = readWeb("features/language/components/language-selector.css");
+    const pwaCss = readWeb("features/pwa/pwa.css");
+
+    // Standalone hides HumanityHeader — language must live in PWA Global Menu.
+    assert.match(
+      safeArea,
+      /\.humanity-app--pwa-standalone\s+\.humanity-header[\s\S]*display:\s*none/,
+    );
+    assert.match(pwaHeader, /PwaGlobalMenu/);
+    assert.match(globalMenu, /LanguageSelector/);
+    assert.match(globalMenu, /variant="icon"/);
+    assert.match(globalMenu, /hu-language-selector--mobile/);
+    assert.match(globalMenu, /hu-pwa-global-menu__language/);
+    assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
+    assert.match(css, /hu-language-selector--mobile[\s\S]*max-height:\s*min\(65dvh/);
+    assert.match(css, /hu-language-selector__icon-trigger[\s\S]*min-height:\s*var\(--hu-touch-target/);
+    assert.match(pwaCss, /hu-pwa-global-menu__panel[\s\S]*inset-inline-end:\s*0/);
+  });
+
   it("mobile icon variant reuses Registry list + existing locale switch path", () => {
     const selector = readWeb("features/language/components/LanguageSelector.tsx");
     const css = readWeb("features/language/components/language-selector.css");
