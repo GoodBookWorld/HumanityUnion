@@ -1,5 +1,6 @@
 /**
- * Pack 02I — Hreflang deferred; no invented locale-prefixed alternates.
+ * Pack 02I / Step 07C.2 — hreflang policy is ACTIVE for Pack 2.1 SEO perimeter.
+ * Sitemap remains locale-free until a later multilingual sitemap step.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -9,7 +10,6 @@ import { fileURLToPath } from "node:url";
 
 import { buildPublicPageMetadata } from "../../lib/seo/build-public-page-metadata";
 import {
-  HREFLANG_DEFERRED_REASON,
   HREFLANG_STATUS,
   shouldEmitHreflangAlternates,
   shouldEmitXDefault,
@@ -28,15 +28,16 @@ function readWeb(relativePath: string): string {
   return readFileSync(path.join(webSrc, relativePath), "utf8");
 }
 
-describe("SEO Pack 02I — hreflang deferred", () => {
-  it("shouldEmitHreflangAlternates() === false and status is DEFERRED", () => {
-    assert.equal(shouldEmitHreflangAlternates(), false);
-    assert.equal(shouldEmitXDefault(), false);
-    assert.equal(HREFLANG_STATUS, "DEFERRED");
-    assert.match(HREFLANG_DEFERRED_REASON, /locale-addressable|misleading|cookie/i);
+describe("SEO Pack 02I / Step 07C.2 — hreflang ACTIVE for SEO perimeter", () => {
+  it("shouldEmitHreflangAlternates is perimeter-gated; status is ACTIVE", () => {
+    assert.equal(HREFLANG_STATUS, "ACTIVE");
+    assert.equal(shouldEmitHreflangAlternates("/media"), true);
+    assert.equal(shouldEmitXDefault("/media"), true);
+    assert.equal(shouldEmitHreflangAlternates("/countries/CA"), false);
+    assert.equal(shouldEmitXDefault("/search"), false);
   });
 
-  it("buildPublicPageMetadata does not set alternates.languages", () => {
+  it("buildPublicPageMetadata omits languages unless provided (backward compatible)", () => {
     const prevMode = process.env.NEXT_PUBLIC_PLATFORM_MODE;
     const prevOrigin = process.env.NEXT_PUBLIC_SITE_URL;
     process.env.NEXT_PUBLIC_PLATFORM_MODE = "production";
@@ -52,8 +53,6 @@ describe("SEO Pack 02I — hreflang deferred", () => {
         (meta.alternates as { languages?: unknown } | undefined)?.languages,
         undefined,
       );
-      assert.doesNotMatch(JSON.stringify(meta), /"uk"\s*:/);
-      assert.doesNotMatch(JSON.stringify(meta), /\/uk\//);
     } finally {
       if (prevMode === undefined) {
         delete process.env.NEXT_PUBLIC_PLATFORM_MODE;
@@ -68,16 +67,44 @@ describe("SEO Pack 02I — hreflang deferred", () => {
     }
   });
 
-  it("metadata builder source does not invent /uk/ paths or hreflang maps", () => {
+  it("buildPublicPageMetadata emits languages when the adapter supplies them", () => {
+    const prevOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.org";
+    try {
+      const meta = buildPublicPageMetadata({
+        title: "Climate Action",
+        canonicalPath: "/uk/initiatives/public/init-1",
+        languageAlternates: {
+          en: "/initiatives/public/init-1",
+          uk: "/uk/initiatives/public/init-1",
+          "x-default": "/initiatives/public/init-1",
+        },
+      });
+      const languages = (meta.alternates as { languages?: Record<string, string> })
+        .languages;
+      assert.equal(languages?.en, "https://example.org/initiatives/public/init-1");
+      assert.equal(languages?.uk, "https://example.org/uk/initiatives/public/init-1");
+      assert.equal(languages?.["x-default"], "https://example.org/initiatives/public/init-1");
+      assert.equal(meta.openGraph?.url, "https://example.org/uk/initiatives/public/init-1");
+      assert.doesNotMatch(JSON.stringify(languages), /\/en\//);
+    } finally {
+      if (prevOrigin === undefined) {
+        delete process.env.NEXT_PUBLIC_SITE_URL;
+      } else {
+        process.env.NEXT_PUBLIC_SITE_URL = prevOrigin;
+      }
+    }
+  });
+
+  it("metadata builder remains sync and does not hardcode production locales", () => {
     const builder = readWeb("lib/seo/build-public-page-metadata.ts");
     assert.doesNotMatch(builder, /\/uk\//);
-    assert.doesNotMatch(builder, /hreflang|alternates\.languages|languages:\s*\{/);
-    assert.doesNotMatch(builder, /x-default|xDefault/);
+    assert.doesNotMatch(builder, /fetch\(|listLanguageRegistry|TranslationProvider/);
+    assert.match(builder, /languageAlternates/);
 
     const policy = readWeb("lib/seo/hreflang-policy.ts");
-    assert.match(policy, /HREFLANG_DEFERRED|HREFLANG_STATUS/);
-    assert.match(policy, /shouldEmitHreflangAlternates\(\):\s*false/);
-    assert.match(policy, /shouldEmitXDefault\(\):\s*false/);
+    assert.match(policy, /HREFLANG_STATUS\s*=\s*"ACTIVE"/);
+    assert.match(policy, /shouldEmitHreflangAlternates/);
   });
 
   it("html lang still resolved separately in layout (not via hreflang)", () => {
@@ -106,17 +133,16 @@ describe("SEO Pack 02I — hreflang deferred", () => {
     assert.match(builder, /NEVER calls Gemini/i);
   });
 
-  it("Initiative generateMetadata uses cache-only translation helper", () => {
+  it("Initiative generateMetadata still uses cache-only translation helper (07C.3 migrates canonical)", () => {
     const page = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
     assert.match(page, /resolveLocalizedPublicMetadataCopy/);
     assert.match(page, /loadInitiativeMetadataTranslationFields/);
     assert.doesNotMatch(page, /generateContentTranslation/);
-    assert.doesNotMatch(page, /\/uk\//);
     assert.match(page, /canonicalPath\s*=\s*`\/initiatives\/public\//);
   });
 });
 
-describe("SEO Pack 02I — canonical / sitemap remain locale-free", () => {
+describe("SEO Pack 02I — sitemap remains locale-free until multilingual sitemap step", () => {
   it("static sitemap entries are one URL per entity without locale prefixes", () => {
     const entries = listStaticPublicSitemapEntries();
     assert.ok(entries.length > 0);

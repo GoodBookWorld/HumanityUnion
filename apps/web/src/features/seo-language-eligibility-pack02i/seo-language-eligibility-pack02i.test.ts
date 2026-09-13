@@ -31,15 +31,17 @@ describe("SEO Pack 02I — language eligibility", () => {
     assert.equal(webIsSeoIndexableLanguage({ enabled: true, seoIndexingEnabled: false }), false);
   });
 
-  it("documents three distinct concepts and does not emit language alternates", () => {
+  it("documents three distinct concepts; hreflang gated by perimeter policy", () => {
     const eligibility = readWeb("lib/seo/seo-language-eligibility.ts");
     assert.match(eligibility, /searchEnabled/);
     assert.match(eligibility, /seoIndexingEnabled/);
     assert.match(eligibility, /enabled/);
     assert.match(eligibility, /contentTranslationEnabled|translation availability/i);
-    assert.match(eligibility, /hreflang-policy|HREFLANG_DEFERRED|language alternates/i);
+    assert.match(eligibility, /hreflang-policy|HREFLANG_STATUS|language alternates/i);
 
     const builder = readWeb("lib/seo/build-public-page-metadata.ts");
-    assert.doesNotMatch(builder, /isSeoIndexableLanguage|alternates\.languages/);
+    // Sync builder accepts optional languageAlternates; does not call Registry.
+    assert.doesNotMatch(builder, /isSeoIndexableLanguage|listLanguageRegistry|fetch\(/);
+    assert.match(builder, /languageAlternates/);
   });
 });

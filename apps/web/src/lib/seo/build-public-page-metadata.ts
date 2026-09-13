@@ -14,7 +14,7 @@ export interface BuildPublicPageMetadataInput {
   /** Primary page title (entity name / SEO title), without requiring a brand suffix. */
   title: string;
   description?: string | null;
-  /** Public path beginning with `/`, e.g. `/blog/my-post`. */
+  /** Public path beginning with `/`, e.g. `/blog/my-post` (self-canonical when resolved). */
   canonicalPath: string;
   imageUrl?: string | null;
   imageAlt?: string | null;
@@ -38,11 +38,18 @@ export interface BuildPublicPageMetadataInput {
    */
   indexable?: boolean;
   descriptionMaxLength?: number;
+  /**
+   * Step 07C.2 — optional hreflang map (language code → absolute or path URL),
+   * including `x-default` when emitted by the request-aware adapter.
+   * Omitted → current Pack 01 behavior (canonical only).
+   */
+  languageAlternates?: Readonly<Record<string, string>> | null;
 }
 
 /**
- * Shared public-page Next.js Metadata builder (SEO Pack 01).
+ * Shared public-page Next.js Metadata builder (SEO Pack 01 / Step 07C.2).
  * Entity routes supply content; this helper owns title/canonical/OG/robots shape.
+ * Sync only — no Registry fetches or request-header reads.
  */
 export function buildPublicPageMetadata(input: BuildPublicPageMetadataInput): Metadata {
   const origin = resolvePublicSiteOrigin();
@@ -78,11 +85,17 @@ export function buildPublicPageMetadata(input: BuildPublicPageMetadataInput): Me
   const canonicalForMetadata = origin ? canonicalUrl : canonicalPath;
   const openGraphSiteName = input.openGraphSiteName?.trim() || undefined;
 
+  const languageAlternates = normalizeLanguageAlternates(
+    input.languageAlternates,
+    origin,
+  );
+
   return {
     title: documentTitle,
     ...(description ? { description } : {}),
     alternates: {
       canonical: canonicalForMetadata,
+      ...(languageAlternates ? { languages: languageAlternates } : {}),
     },
     robots: disallowIndexing
       ? { index: false, follow: false, nocache: true }
@@ -111,6 +124,26 @@ export function buildPublicPageMetadata(input: BuildPublicPageMetadataInput): Me
       ...(absoluteImage ? { images: [absoluteImage] } : {}),
     },
   };
+}
+
+function normalizeLanguageAlternates(
+  languageAlternates: Readonly<Record<string, string>> | null | undefined,
+  origin: string,
+): Record<string, string> | undefined {
+  if (!languageAlternates) {
+    return undefined;
+  }
+  const entries = Object.entries(languageAlternates).filter(
+    ([code, path]) => Boolean(code.trim()) && Boolean(path?.trim()),
+  );
+  if (entries.length === 0) {
+    return undefined;
+  }
+  const out: Record<string, string> = {};
+  for (const [code, pathOrUrl] of entries) {
+    out[code.trim()] = toAbsolutePublicUrl(pathOrUrl.trim(), origin);
+  }
+  return out;
 }
 
 function stripToSingleLine(value: string): string {

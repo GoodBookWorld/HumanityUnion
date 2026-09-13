@@ -4,6 +4,14 @@ export type {
   PublicPageOpenGraphType,
 } from "./build-public-page-metadata";
 export {
+  buildPublicPageMetadataForRequest,
+  resolvePublicSeoMetadataDocumentPaths,
+} from "./build-public-page-metadata-for-request";
+export type {
+  ResolvePublicSeoMetadataDocumentPathsInput,
+  ResolvedPublicSeoMetadataDocumentPaths,
+} from "./build-public-page-metadata-for-request";
+export {
   applyPageSeoOverrideToMetadataInput,
   mergePageSeoOverrideIntoAutomatic,
   resolveSeoModeFromOverrideFields,
@@ -12,8 +20,15 @@ export { fetchPublicSeoPageOverride } from "./fetch-public-seo-page-override";
 export {
   HREFLANG_DEFERRED_REASON,
   HREFLANG_STATUS,
+  resolvePublicSeoHreflangPaths,
+  resolvePublicSeoSelfCanonicalPath,
   shouldEmitHreflangAlternates,
   shouldEmitXDefault,
+  toNextMetadataLanguageAlternates,
+} from "./hreflang-policy";
+export type {
+  ResolvePublicSeoHreflangPathsInput,
+  ResolvePublicSeoSelfCanonicalPathInput,
 } from "./hreflang-policy";
 export {
   formatPublicPageTitle,

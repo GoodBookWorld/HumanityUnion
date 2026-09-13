@@ -12,8 +12,8 @@
  * alone decide SEO indexability.
  *
  * A locale is SEO-indexable only when Registry `enabled` AND `seoIndexingEnabled`.
- * This helper does **not** authorize emitting hreflang language alternates
- * (see `hreflang-policy.ts` — HREFLANG_DEFERRED).
+ * Hreflang language alternates are authorized only for paths inside the Pack 2.1
+ * public SEO perimeter (see `hreflang-policy.ts` — HREFLANG_STATUS ACTIVE).
  */
 
 export { isSeoIndexableLanguage } from "@hu/types";

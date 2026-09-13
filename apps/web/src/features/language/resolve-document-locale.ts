@@ -103,6 +103,17 @@ async function fetchEnabledLocaleCatalogUncached(): Promise<
 const fetchEnabledLocaleCatalog = cache(fetchEnabledLocaleCatalogUncached);
 
 /**
+ * Step 07C.2 — request-cached public SEO routing catalog (enabled languages +
+ * seoIndexingEnabled). Same fetch as document-locale / layout — no extra network
+ * path when called in the same React request after locale resolution.
+ */
+export async function listPublicSeoRoutingCatalogForRequest(): Promise<
+  readonly PublicSeoLocaleRoutingCatalogEntry[]
+> {
+  return fetchEnabledLocaleCatalog();
+}
+
+/**
  * Pack 2.1A — recover URL locale for root SSR without child `[locale]` params.
  * Pathname (via shared SEO parser) wins over the explicit segment header.
  */

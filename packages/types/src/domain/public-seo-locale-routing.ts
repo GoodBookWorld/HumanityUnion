@@ -5,6 +5,7 @@
  * Does not invoke machine translation. Does not invent routes outside the SEO perimeter.
  */
 
+import { DEFAULT_PLATFORM_LANGUAGE } from "./language.js";
 import { isSeoIndexableLanguage } from "./language-registry.js";
 import {
   normalizeLanguageRegistryLocaleKey,
@@ -304,4 +305,139 @@ export function resolvePublicSeoLocaleDocument(input: {
 /** URL path segment for a Registry locale (`zh-Hant` → `zh-hant`). */
 export function toPublicSeoLocaleUrlSegment(locale: string): string {
   return normalizeLanguageRegistryLocaleKey(locale);
+}
+
+function normalizeLocaleFreePublicPath(pathname: string): string {
+  if (!pathname || pathname === "") {
+    return "/";
+  }
+  const withSlash = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  if (withSlash.length > 1 && withSlash.endsWith("/")) {
+    return withSlash.slice(0, -1) || "/";
+  }
+  return withSlash;
+}
+
+/**
+ * Prefixed public path for a non-default SEO locale (`/media` + `uk` → `/uk/media`).
+ * Default/English must never be passed here — callers keep locale-free URLs for `en`.
+ */
+export function buildPublicSeoLocalePrefixedPath(
+  localeFreePath: string,
+  locale: string,
+): string {
+  const free = normalizeLocaleFreePublicPath(localeFreePath);
+  const segment = toPublicSeoLocaleUrlSegment(locale);
+  if (!segment) {
+    return free;
+  }
+  if (free === "/") {
+    return `/${segment}`;
+  }
+  return `/${segment}${free}`;
+}
+
+export type PublicSeoLocaleAlternatePaths = {
+  /** Locale-free path used for `x-default` and English/default. */
+  readonly xDefaultPath: string;
+  /**
+   * hreflang language → public path.
+   * Includes default locale → locale-free path.
+   * Does **not** include `x-default` (returned separately).
+   * Never includes `/en/...` prefixed paths.
+   */
+  readonly languagePaths: Readonly<Record<string, string>>;
+  /** False when path is outside the Pack 2.1 SEO perimeter — do not emit languages. */
+  readonly emitLanguageAlternates: boolean;
+};
+
+/**
+ * Step 07C.2 — pure locale-free path + SEO-indexable Registry locales → hreflang paths.
+ *
+ * Route availability only (no CT). Outside `PUBLIC_SEO_LOCALE_PATH_PATTERNS` → no alternates.
+ * Default platform language is always locale-free (never `/en/...`).
+ */
+export function buildPublicSeoLocaleAlternatePaths(input: {
+  readonly localeFreePath: string;
+  /** Registry locales already filtered to enabled && seoIndexingEnabled. */
+  readonly seoIndexableLocales: readonly string[];
+  /** Defaults to platform English (`en`). */
+  readonly defaultLocale?: string;
+}): PublicSeoLocaleAlternatePaths {
+  const localeFreePath = normalizeLocaleFreePublicPath(input.localeFreePath);
+  const defaultLocale = normalizeLanguageRegistryLocaleKey(
+    input.defaultLocale?.trim() || DEFAULT_PLATFORM_LANGUAGE,
+  );
+
+  if (!isPublicSeoLocalePath(localeFreePath)) {
+    return {
+      xDefaultPath: localeFreePath,
+      languagePaths: {},
+      emitLanguageAlternates: false,
+    };
+  }
+
+  const languagePaths: Record<string, string> = {
+    [defaultLocale]: localeFreePath,
+  };
+
+  for (const raw of input.seoIndexableLocales) {
+    const locale = typeof raw === "string" ? raw.trim() : "";
+    if (!locale) {
+      continue;
+    }
+    const key = normalizeLanguageRegistryLocaleKey(locale);
+    if (!key || key === defaultLocale) {
+      continue;
+    }
+    // Never advertise a default-locale URL segment (e.g. `/en/...`).
+    if (toPublicSeoLocaleUrlSegment(locale) === defaultLocale) {
+      continue;
+    }
+    languagePaths[locale.trim()] = buildPublicSeoLocalePrefixedPath(localeFreePath, locale);
+  }
+
+  return {
+    xDefaultPath: localeFreePath,
+    languagePaths,
+    emitLanguageAlternates: true,
+  };
+}
+
+/**
+ * Step 07C.2 — self-canonical path for the current SEO document.
+ * Prefixed only when the request is a valid SEO-indexable locale document
+ * and the entity path is inside the public SEO perimeter.
+ */
+export function resolvePublicSeoDocumentSelfCanonicalPath(input: {
+  readonly localeFreePath: string;
+  readonly isLocalePrefixedDocument: boolean;
+  readonly documentLocale: string | null | undefined;
+  readonly defaultLocale?: string;
+}): string {
+  const localeFreePath = normalizeLocaleFreePublicPath(input.localeFreePath);
+  const defaultKey = normalizeLanguageRegistryLocaleKey(
+    input.defaultLocale?.trim() || DEFAULT_PLATFORM_LANGUAGE,
+  );
+
+  if (!isPublicSeoLocalePath(localeFreePath)) {
+    return localeFreePath;
+  }
+
+  if (!input.isLocalePrefixedDocument) {
+    return localeFreePath;
+  }
+
+  const documentLocale =
+    typeof input.documentLocale === "string" ? input.documentLocale.trim() : "";
+  if (!documentLocale) {
+    return localeFreePath;
+  }
+
+  const documentKey = normalizeLanguageRegistryLocaleKey(documentLocale);
+  if (!documentKey || documentKey === defaultKey) {
+    return localeFreePath;
+  }
+
+  return buildPublicSeoLocalePrefixedPath(localeFreePath, documentLocale);
 }

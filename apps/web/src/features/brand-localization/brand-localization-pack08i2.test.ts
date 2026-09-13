@@ -63,9 +63,9 @@ describe("Pack 08I.2 — Brand Localization web", () => {
     assert.doesNotMatch(manifest, /resolveBrandForMetadata|useLocalizedBrand/);
   });
 
-  it("hreflang remains deferred", () => {
-    assert.equal(HREFLANG_STATUS, "DEFERRED");
-    assert.match(HREFLANG_DEFERRED_REASON, /locale-addressable|misleading|cookie/i);
+  it("hreflang policy is ACTIVE for Pack 2.1 SEO perimeter (Step 07C.2)", () => {
+    assert.equal(HREFLANG_STATUS, "ACTIVE");
+    assert.match(HREFLANG_DEFERRED_REASON, /ACTIVE|Pack 2\.1|Obsolete/i);
   });
 
   it("brand strings do not require UI message catalog", () => {

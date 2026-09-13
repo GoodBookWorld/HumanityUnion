@@ -302,6 +302,7 @@ export {
   resolveRuntimeLocaleFromCatalog,
 } from "./runtime-locale.js";
 export type {
+  PublicSeoLocaleAlternatePaths,
   PublicSeoLocaleDocumentResolution,
   PublicSeoLocaleRoutingCatalogEntry,
 } from "./public-seo-locale-routing.js";
@@ -310,9 +311,12 @@ export {
   PUBLIC_SEO_LOCALE_RESERVED_BLOG_SLUGS,
   PUBLIC_SEO_LOCALE_RESERVED_KNOWLEDGE_SLUGS,
   PUBLIC_SEO_LOCALE_RESERVED_TOP_SEGMENTS,
+  buildPublicSeoLocaleAlternatePaths,
+  buildPublicSeoLocalePrefixedPath,
   isPublicSeoLocalePath,
   matchPublicSeoLocaleCatalogEntry,
   parsePublicSeoLocalePrefixedPath,
+  resolvePublicSeoDocumentSelfCanonicalPath,
   resolvePublicSeoLocaleDocument,
   toPublicSeoLocaleUrlSegment,
 } from "./public-seo-locale-routing.js";
