@@ -576,7 +576,8 @@ describe("Localization Simplification Step 06C.1 — Initiative Search discovery
       "utf8",
     );
     assert.match(admin, /becameSearchDiscoveryEligible/);
-    assert.match(admin, /enqueueInitiativeSearchDiscoveryForLocale/);
+    // 06C.2B: multi-kind enqueue (Initiative-era alias still exported).
+    assert.match(admin, /enqueueSearchDiscoveryForLocale/);
 
     const automatic = readFileSync(
       path.join(

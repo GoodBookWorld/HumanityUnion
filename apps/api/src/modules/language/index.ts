@@ -179,9 +179,17 @@ export {
 } from "./content-translation-search-discovery-targets.js";
 export {
   enqueueInitiativeSearchDiscoveryForLocale,
+  enqueueSearchDiscoveryForLocale,
   listSearchableInitiativeIdsForDiscovery,
   scheduleInitiativeSearchDiscoveryAfterSearchEnabled,
+  scheduleSearchDiscoveryAfterSearchEnabled,
 } from "./content-translation-search-discovery-enqueue.js";
+export {
+  assertCivicMediaExcludedFromSearchDiscoveryWarm,
+  listSearchDiscoveryMappedSourceKinds,
+  listSearchDiscoveryWarmTargets,
+} from "./content-translation-search-discovery-enumerate.js";
+export type { SearchDiscoveryWarmTarget } from "./content-translation-search-discovery-enumerate.js";
 export {
   CONTENT_TRANSLATION_SEARCH_DISCOVERY_FIELDS,
   isSearchDiscoveryMappedSourceKind,

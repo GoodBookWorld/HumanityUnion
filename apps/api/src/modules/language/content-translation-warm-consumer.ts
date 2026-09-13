@@ -1,10 +1,10 @@
 /**
- * Pack 02G Task 04 / Step 06C.1 — ContentTranslationWarmRequested consumer.
+ * Pack 02G Task 04 / Step 06C.1 / 06C.2B — ContentTranslationWarmRequested consumer.
  *
  * Reloads authoritative public source + Registry targets at execution.
  * Reuses getOrCreateContentTranslation:
  *   - automatic_warm for enabled + contentTranslationEnabled locales
- *   - search_discovery for Initiative enabled + searchEnabled locales
+ *   - search_discovery for discovery-mapped kinds with enabled + searchEnabled
  *     (union with automatic; automatic preferred when both qualify)
  */
 
@@ -27,6 +27,7 @@ import {
   isRedundantTargetLanguage,
 } from "./content-translation-eligibility.js";
 import { resolveSearchDiscoveryContentTranslationWarmTargets } from "./content-translation-search-discovery-targets.js";
+import { isSearchDiscoveryMappedSourceKind } from "./content-translation-search-discovery-fields.js";
 import {
   mapWithConcurrency,
   resolveContentTranslationWarmLocaleConcurrency,
@@ -239,9 +240,9 @@ export async function processContentTranslationWarmRequested(
     });
   const automaticTargetSet = new Set(automaticTargets);
 
-  // Step 06C.1 — Initiative warm also fans out enabled+searchEnabled discovery locales.
+  // Step 06C.2B — discovery-mapped kinds also fan out enabled+searchEnabled locales.
   let registryTargets = automaticTargets;
-  if (source.sourceKind === "initiative") {
+  if (isSearchDiscoveryMappedSourceKind(source.sourceKind)) {
     const discovery = await resolveSearchDiscoveryContentTranslationWarmTargets({
       excludeSourceLanguage: source.sourceLanguage,
     });
@@ -258,7 +259,7 @@ export async function processContentTranslationWarmRequested(
     if (targets.length === 0) {
       throw new TranslationProviderError(
         "bad_request",
-        source.sourceKind === "initiative"
+        isSearchDiscoveryMappedSourceKind(source.sourceKind)
           ? "Residual retry targetLocales empty after Registry warm-target intersection."
           : "Residual retry targetLocales empty after Registry automatic-target intersection.",
       );
@@ -304,10 +305,9 @@ export async function processContentTranslationWarmRequested(
     }
 
     // Prefer automatic_warm when locale qualifies for both Search + Extended Localization.
-    const intent: ContentTranslationIntent =
-      automaticTargetSet.has(targetLanguage) || source.sourceKind !== "initiative"
-        ? "automatic_warm"
-        : "search_discovery";
+    const intent: ContentTranslationIntent = automaticTargetSet.has(targetLanguage)
+      ? "automatic_warm"
+      : "search_discovery";
 
     try {
       const result = await withWorkIdentityLock(workIdentityKey, () =>

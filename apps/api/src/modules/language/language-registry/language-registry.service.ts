@@ -373,8 +373,8 @@ export async function updateAdminLanguage(input: {
     invalidateGlobalSearchIndex();
   }
 
-  // Step 06C.1 — Admin searchEnabled false→true enqueues Initiative discovery CT
-  // via durable outbox only (no provider work in the Admin request).
+  // Step 06C.2B — Admin searchEnabled false→true enqueues discovery CT for all
+  // Search-mapped kinds via durable outbox only (no provider work in Admin request).
   const becameSearchDiscoveryEligible =
     updated.enabled === true &&
     updated.searchEnabled === true &&
@@ -385,10 +385,10 @@ export async function updateAdminLanguage(input: {
       normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
   ) {
     try {
-      const { enqueueInitiativeSearchDiscoveryForLocale } = await import(
+      const { enqueueSearchDiscoveryForLocale } = await import(
         "../content-translation-search-discovery-enqueue.js"
       );
-      await enqueueInitiativeSearchDiscoveryForLocale({
+      await enqueueSearchDiscoveryForLocale({
         targetLanguage: updated.locale,
         reason: "search_discovery_enable",
       });
