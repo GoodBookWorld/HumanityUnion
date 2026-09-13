@@ -127,6 +127,12 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(route, /canonicalizeEnabledLocale/);
     assert.match(route, /buildWebHuLangCookieAttributes/);
     assert.match(prefs, /writeHuLangCookieViaWebRoute/);
+    // Step 04E — Preferences save applies document locale via controlled refresh (no path replace).
+    assert.match(prefs, /router\.refresh\(\)/);
+    assert.doesNotMatch(
+      prefs.slice(prefs.indexOf("async function handleSubmit")),
+      /router\.replace|runLocaleSwitchNavigation/,
+    );
   });
 
   it("public Desktop/Mobile navigation no longer mounts LanguageSelector", () => {

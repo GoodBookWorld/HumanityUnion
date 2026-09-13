@@ -8,6 +8,8 @@ import type {
 } from "@hu/types";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
@@ -21,8 +23,6 @@ import {
 import { writeHuLangCookieViaWebRoute } from "../../language/write-hu-lang-cookie";
 import { markInterfaceLanguageCookieSynced } from "../../language/components/InterfaceLanguageCookieSync";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
-
-import { useTranslations } from "next-intl";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 
@@ -85,6 +85,7 @@ export function PreferencesWorkspace() {
   const t = useTranslations("preferences");
   const tAuth = useTranslations("auth");
   const tExperience = useTranslations("initiativeExperience");
+  const router = useRouter();
   const brand = useLocalizedBrand();
   const siteName = brand.siteName;
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
@@ -156,10 +157,13 @@ export function PreferencesWorkspace() {
         setPreferences(updated);
         // Simplification Step 01 — Preferred Reading Language syncs interfaceLanguage
         // server-side; keep Web-origin hu_lang aligned for normal (non-SEO) navigation.
+        // Step 04E — one controlled refresh so SSR picks up the new document locale
+        // (html lang/dir, next-intl, Brand/Terminology) without path navigation.
         await writeHuLangCookieViaWebRoute(
           updated.experiencePreferences.interfaceLanguage,
         );
         markInterfaceLanguageCookieSynced(updated.experiencePreferences.interfaceLanguage);
+        router.refresh();
       });
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {

@@ -52,6 +52,8 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
       src,
       /writeHuLangCookieViaWebRoute\(\s*updated\.experiencePreferences\.interfaceLanguage/,
     );
+    assert.match(src, /markInterfaceLanguageCookieSynced/);
+    assert.match(src, /router\.refresh\(\)/);
   });
 
   it("Writing Languages remains visible with associated help", () => {
