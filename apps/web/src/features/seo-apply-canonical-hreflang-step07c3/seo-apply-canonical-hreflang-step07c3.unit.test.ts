@@ -148,11 +148,12 @@ describe("Step 07C.3 — apply multilingual canonical/hreflang to public metadat
     assert.equal(prefixed.openGraph?.url, `/uk${path}`);
   });
 
-  it("7. Blog detail canonical/hreflang without CT metadata wiring", async () => {
+  it("7. Blog detail canonical/hreflang; Step 07D adds compact CT overlay", async () => {
     const page = readWeb("app/blog/[slug]/page.tsx");
     assert.match(page, /buildPublicPageMetadataForRequest/);
-    assert.doesNotMatch(page, /loadInitiativeMetadataTranslationFields|blog_post|resolveTranslatedContent/);
+    assert.match(page, /loadBlogMetadataTranslationFields/);
     assert.match(page, /seo\?\.title|post\.title/);
+    assert.doesNotMatch(page, /generateContentTranslation/);
 
     const path = "/blog/hello-07c3";
     const meta = await buildPublicPageMetadataForRequest({

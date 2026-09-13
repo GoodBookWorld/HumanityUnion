@@ -53,6 +53,8 @@ export type {
   LocalizedPublicMetadataCopy,
   ResolveLocalizedPublicMetadataCopyInput,
 } from "./resolve-localized-public-metadata-copy";
+export { loadInitiativeMetadataTranslationFields } from "./load-initiative-metadata-translation-fields";
+export { loadBlogMetadataTranslationFields } from "./load-blog-metadata-translation-fields";
 export { isSeoIndexableLanguage } from "./seo-language-eligibility";
 export type { SeoIndexableLanguageRecord } from "./seo-language-eligibility";
 export {

@@ -4,15 +4,21 @@ import { fetchPublicBlogPostBySlugOptional } from "../../../features/blog/api";
 import { BlogArticlePageContent } from "../../../features/blog/components/BlogArticlePageContent";
 import { loadBlogArticlePresentationSeed } from "../../../features/blog/load-blog-article-presentation-seed";
 import { resolveBlogServerSeedReadingPolicy } from "../../../features/blog/resolve-blog-server-seed-reading-policy";
+import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../features/media-upload/media-url";
 import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
+import { loadBlogMetadataTranslationFields } from "../../../lib/seo/load-blog-metadata-translation-fields";
+import { resolveLocalizedPublicMetadataCopy } from "../../../lib/seo/resolve-localized-public-metadata-copy";
 import { JsonLdScript, buildBlogPostingJsonLd } from "../../../lib/seo/structured-data";
 
 interface BlogArticlePageProps {
   params: Promise<{ slug: string }>;
 }
 
-/** Step 07C.3 — request-aware canonical/hreflang; title/desc remain English post SEO fields. */
+/**
+ * Step 07C.3 — request-aware canonical/hreflang.
+ * Step 07D — optional compact blog_post CT overlay for title/excerpt (GET resolve only).
+ */
 export async function generateMetadata({ params }: BlogArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -34,15 +40,30 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const imageUrl = resolveMediaUrl(seo?.socialImage?.mediaUrl ?? post.coverImage?.mediaUrl);
     const pageTitle = seo?.title || post.title;
     const description = seo?.description || post.excerpt || post.title;
-    const socialTitle = seo?.socialTitle || pageTitle;
-    const socialDescription = seo?.socialDescription || description;
     const localeFreeCanonicalPath =
       seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
 
-    return buildPublicPageMetadataForRequest({
+    const documentLocale = await resolveDocumentHtmlLocale();
+    const translationFields = await loadBlogMetadataTranslationFields({
+      postId: post.postId,
+      language: documentLocale.locale,
+    });
+    const localized = resolveLocalizedPublicMetadataCopy({
       title: pageTitle,
-      titleBrandSuffix: "Blog | Humanity Union",
       description,
+      locale: documentLocale.locale,
+      translatedTitle: translationFields.translatedTitle,
+      translatedDescription: translationFields.translatedDescription,
+    });
+
+    // Explicit Admin/Blog SEO social fields stay authoritative when set.
+    const socialTitle = seo?.socialTitle || localized.title;
+    const socialDescription = seo?.socialDescription || localized.description;
+
+    return buildPublicPageMetadataForRequest({
+      title: localized.title,
+      titleBrandSuffix: "Blog | Humanity Union",
+      description: localized.description,
       canonicalPath: localeFreeCanonicalPath,
       localeFreeCanonicalPath,
       socialTitle,
