@@ -10,6 +10,7 @@ import {
   resolveCollectiveParticipationStatusDisplay,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 
 interface YourParticipationPanelProps {
   readonly journey: CollectiveParticipationJourney;
@@ -66,7 +67,10 @@ export function YourParticipationPanel({
               </Link>
               <span className="pie-participation__meta">
                 {" "}
-                · {resolveLifecycleStageDisplayLabel(action.stageId, t)}
+                ·{" "}
+                <ProtectedAuthoritativeText>
+                  {resolveLifecycleStageDisplayLabel(action.stageId, t)}
+                </ProtectedAuthoritativeText>
               </span>
             </li>
           ))}

@@ -33,8 +33,6 @@ import { PreferredGeographyFields } from "./PreferredGeographyFields";
 
 import "./preferences-workspace.css";
 
-const TRANSLATION_PREFERENCE_CODES = ["none", "preferred", "ask"] as const;
-
 const CONTRIBUTION_OPTIONS: ContributionWillingness[] = [
   "analysis",
   "proposals",
@@ -156,7 +154,8 @@ export function PreferencesWorkspace() {
           visibilityPreferences: preferences.visibilityPreferences,
         });
         setPreferences(updated);
-        // Pack 02C Task 03 — keep Web-origin hu_lang aligned with interfaceLanguage.
+        // Simplification Step 01 — Preferred Reading Language syncs interfaceLanguage
+        // server-side; keep Web-origin hu_lang aligned for normal (non-SEO) navigation.
         await writeHuLangCookieViaWebRoute(
           updated.experiencePreferences.interfaceLanguage,
         );
@@ -217,61 +216,51 @@ export function PreferencesWorkspace() {
 
       <ProfileSection title={t("sections.language")} id="language">
         <p className="preferences-workspace__help">{t("language.help")}</p>
-        <label className="preferences-workspace__field">
-          <span>{t("language.interfaceLanguage")}</span>
-          <select
-            value={
-              languageOptions.some(
-                (option) => option.code === preferences.experiencePreferences.interfaceLanguage,
-              )
-                ? preferences.experiencePreferences.interfaceLanguage
-                : (languageOptions[0]?.code ?? "en")
-            }
-            onChange={(event) =>
-              setPreferences({
-                ...preferences,
-                experiencePreferences: {
-                  ...preferences.experiencePreferences,
-                  interfaceLanguage: event.target.value,
-                },
-              })
-            }
-          >
-            {languageOptions.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.nativeName} ({option.code})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="preferences-workspace__field">
-          <span>{t("language.preferredReadingLanguage")}</span>
+        <div className="preferences-workspace__language-fields">
           {(() => {
             const persistedReading =
               preferences.experiencePreferences.readingLanguages[0]?.trim() || "";
+            const interfaceLocale =
+              preferences.experiencePreferences.interfaceLanguage?.trim() || "";
+            // Continuity when readingLanguages[0] is empty but interfaceLanguage exists.
+            const displayReading = persistedReading || interfaceLocale;
             const readingInOptions =
-              persistedReading.length > 0 &&
-              languageOptions.some((option) => option.code === persistedReading);
+              displayReading.length > 0 &&
+              languageOptions.some((option) => option.code === displayReading);
+            const showUnavailable =
+              Boolean(persistedReading) &&
+              !languageOptions.some((option) => option.code === persistedReading);
             return (
-              <>
+              <label
+                className="preferences-workspace__field preferences-workspace__field--primary"
+                htmlFor="pref-preferred-reading-language"
+              >
+                <span className="preferences-workspace__field-label">
+                  {t("language.preferredReadingLanguage")}
+                </span>
                 <select
-                  value={readingInOptions ? persistedReading : persistedReading || ""}
-                  onChange={(event) =>
+                  id="pref-preferred-reading-language"
+                  aria-describedby="pref-preferred-reading-language-help"
+                  value={readingInOptions ? displayReading : displayReading || ""}
+                  onChange={(event) => {
+                    const locale = event.target.value;
                     setPreferences({
                       ...preferences,
                       experiencePreferences: {
                         ...preferences.experiencePreferences,
-                        readingLanguages: [event.target.value],
+                        readingLanguages: [locale],
+                        // Keep client draft aligned with API sync contract until save.
+                        interfaceLanguage: locale,
                       },
-                    })
-                  }
+                    });
+                  }}
                 >
-                  {!readingInOptions && persistedReading ? (
+                  {showUnavailable ? (
                     <option value={persistedReading}>
                       {t("language.savedUnavailable", { code: persistedReading })}
                     </option>
                   ) : null}
-                  {!persistedReading ? (
+                  {!displayReading ? (
                     <option value="" disabled>
                       {t("language.noReadingLanguage")}
                     </option>
@@ -282,52 +271,55 @@ export function PreferencesWorkspace() {
                     </option>
                   ))}
                 </select>
-                {!readingInOptions && persistedReading ? (
+                <p
+                  id="pref-preferred-reading-language-help"
+                  className="preferences-workspace__help"
+                >
+                  {t("language.preferredReadingHelp")}
+                </p>
+                {showUnavailable ? (
                   <p className="preferences-workspace__help">
                     {t("language.savedReadingHelp", { code: persistedReading })}
                   </p>
                 ) : null}
-              </>
+              </label>
             );
           })()}
-        </label>
-        <label className="preferences-workspace__field">
-          <span>{t("language.writingLanguages")}</span>
-          <input
-            value={formatCommaList(preferences.experiencePreferences.writingLanguages)}
-            onChange={(event) =>
-              setPreferences({
-                ...preferences,
-                experiencePreferences: {
-                  ...preferences.experiencePreferences,
-                  writingLanguages: parseCommaList(event.target.value),
-                },
-              })
-            }
-            placeholder={t("language.writingLanguagesPlaceholder")}
-          />
-        </label>
-        <label className="preferences-workspace__field">
-          <span>{t("language.translationPreference")}</span>
-          <select
-            value={preferences.experiencePreferences.translationPreference || "none"}
-            onChange={(event) =>
-              setPreferences({
-                ...preferences,
-                experiencePreferences: {
-                  ...preferences.experiencePreferences,
-                  translationPreference: event.target.value,
-                },
-              })
-            }
+
+          <label
+            className="preferences-workspace__field"
+            htmlFor="pref-writing-languages"
           >
-            {TRANSLATION_PREFERENCE_CODES.map((code) => (
-              <option key={code} value={code}>
-                {t(`translationPreferences.${code}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+            <span className="preferences-workspace__field-label">
+              {t("language.writingLanguages")}
+            </span>
+            <input
+              id="pref-writing-languages"
+              aria-describedby="pref-writing-languages-help"
+              value={formatCommaList(preferences.experiencePreferences.writingLanguages)}
+              onChange={(event) =>
+                setPreferences({
+                  ...preferences,
+                  experiencePreferences: {
+                    ...preferences.experiencePreferences,
+                    writingLanguages: parseCommaList(event.target.value),
+                  },
+                })
+              }
+              placeholder={t("language.writingLanguagesPlaceholder")}
+            />
+            <p id="pref-writing-languages-help" className="preferences-workspace__help">
+              {t("language.writingLanguagesHelp")}
+            </p>
+          </label>
+        </div>
+        {/*
+          Interface Language and Translation Preference remain in the persisted model
+          and are submitted with Save. Interface Language is synchronized from Preferred
+          Reading Language (API + client draft). Translation Preference is hidden from
+          the participant-facing form under the browser-first model without changing
+          its stored semantics.
+        */}
       </ProfileSection>
 
       <ProfileSection title={t("sections.experience")} id="experience">

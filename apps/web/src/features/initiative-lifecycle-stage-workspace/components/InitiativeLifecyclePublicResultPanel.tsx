@@ -8,6 +8,7 @@ import type { InitiativeLifecycleStageProjection } from "@hu/types";
 import {
   resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 
 /**
  * Initiative Lifecycle — Part A Completion Part 8: the public-result and
@@ -53,7 +54,9 @@ export function InitiativeLifecyclePublicResultPanel({
   if (hasDraftToPreview) {
     return (
       <div className="lsw-result" translate="yes">
-        <h3 className="lsw-result__title">{stageLabel}</h3>
+        <h3 className="lsw-result__title">
+          <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+        </h3>
         <p className="lsw-result__meta">{t("author.shared.draftPreviewMeta")}</p>
         {publicResultSlot ?? (
           <p className="lsw-result__placeholder">{t("author.shared.draftPreviewPlaceholder")}</p>
@@ -92,7 +95,9 @@ export function InitiativeLifecyclePublicResultPanel({
 
   return (
     <div className="lsw-result" translate="yes">
-      <h3 className="lsw-result__title">{stageLabel}</h3>
+      <h3 className="lsw-result__title">
+        <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+      </h3>
       {meta ? <p className="lsw-result__meta">{meta}</p> : null}
       {publicResultSlot ?? (
         <p className="lsw-result__placeholder">{t("author.shared.publishedResultPlaceholder")}</p>

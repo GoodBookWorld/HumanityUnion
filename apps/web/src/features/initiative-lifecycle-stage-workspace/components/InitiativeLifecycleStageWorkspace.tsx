@@ -19,6 +19,7 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { getInitiativeLifecycleStageProjection } from "../api";
 import { InitiativeLifecycleSourceSnapshotPanel } from "./InitiativeLifecycleSourceSnapshotPanel";
 import { InitiativeLifecyclePublicResultPanel } from "./InitiativeLifecyclePublicResultPanel";
@@ -131,7 +132,7 @@ function StageHeader({
           </p>
         ) : null}
         <h2 id={`lsw-stage-title-${projection.stageId}`} className="lsw-header__title">
-          {stageLabel}
+          <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
         </h2>
         <div className="lsw-header__badges">
           <WorkspaceStatusBadge

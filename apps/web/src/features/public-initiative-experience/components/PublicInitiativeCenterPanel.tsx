@@ -25,6 +25,7 @@ import {
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
@@ -761,12 +762,14 @@ export function PublicInitiativeCenterPanel({
             aria-labelledby={`pie-stage-${activeStage.stageId}`}
           >
             <h2 id={`pie-stage-${activeStage.stageId}`}>
-              {resolveLifecycleStageDisplayLabel(
-                activeStage.stageId,
-                t,
-                experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
-                  ?.label,
-              )}
+              <ProtectedAuthoritativeText>
+                {resolveLifecycleStageDisplayLabel(
+                  activeStage.stageId,
+                  t,
+                  experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
+                    ?.label,
+                )}
+              </ProtectedAuthoritativeText>
             </h2>
             <LifecycleStagePanel stage={activeStage} />
           </section>

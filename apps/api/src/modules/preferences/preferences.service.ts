@@ -19,6 +19,11 @@ import {
 /**
  * Canonicalize interface / reading / writing languages against enabled Registry locales.
  * Preserves the three distinct preference fields; aliases normalize to canonical locale.
+ *
+ * Simplification Step 01 — Preferred Reading Language (`readingLanguages[0]`) is the
+ * participant-facing preferred language. When it is patched with a non-empty first
+ * entry, `interfaceLanguage` is synchronized to the same canonical locale so UI chrome
+ * / cookie consumers stay aligned without two independently selectable presentation languages.
  */
 async function canonicalizeExperienceLanguageFields(
   patch: ValidatedPreferencesPatch,
@@ -43,6 +48,10 @@ async function canonicalizeExperienceLanguageFields(
       canonical.push(await assertEnabledPreferenceLocale(entry, "readingLanguages"));
     }
     nextExperience.readingLanguages = canonical;
+    const preferredReading = canonical[0]?.trim();
+    if (preferredReading) {
+      nextExperience.interfaceLanguage = preferredReading;
+    }
   }
 
   if (experience.writingLanguages !== undefined) {

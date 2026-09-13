@@ -11,6 +11,7 @@ import {
 } from "../../features/public-experience/constants";
 import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 import { useLocalizedBrand } from "../../features/brand-localization/useLocalizedBrand";
+import { ProtectedAuthoritativeText } from "../../features/language/components/ProtectedAuthoritativeText";
 import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
@@ -102,10 +103,12 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
               />
             </Link>
             <div className="humanity-header__brand-text">
-              <Link href="/" className="humanity-header__brand-name">
+              <Link href="/" className="humanity-header__brand-name" translate="no">
                 {brand.siteName}
               </Link>
-              <span className="humanity-header__tagline">{brand.slogan}</span>
+              <ProtectedAuthoritativeText className="humanity-header__tagline">
+                {brand.slogan}
+              </ProtectedAuthoritativeText>
             </div>
           </div>
           <nav

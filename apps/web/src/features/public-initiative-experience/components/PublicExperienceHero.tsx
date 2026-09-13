@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/types";
@@ -10,6 +10,7 @@ import {
   TranslatedContentSharedChrome,
   TranslatedContentView,
 } from "../../language";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import type { TranslatedContentViewMode } from "../../language/translated-content-view-mode";
 import { translatedContentHasDistinctTranslation } from "../../language/translated-content-view-mode";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
@@ -24,7 +25,7 @@ import type { InitiativePublicPresentation } from "../initiative-public-presenta
 
 export interface PublicExperienceHeroMetaItem {
   label: string;
-  value: string;
+  value: ReactNode;
   column: "a" | "b";
 }
 
@@ -239,7 +240,11 @@ export function buildInitiativeHeroProps(
       { label: t("hero.geography"), value: geographyLabel, column: "b" },
       {
         label: t("hero.currentStage"),
-        value: resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel),
+        value: (
+          <ProtectedAuthoritativeText>
+            {resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel)}
+          </ProtectedAuthoritativeText>
+        ),
         column: "b",
       },
       {

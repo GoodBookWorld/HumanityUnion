@@ -13,6 +13,7 @@ import {
 import {
   findPreferencesByMemberId,
   resetPreferencesMemoryStoreForTests,
+  setPreferencesForceMemoryForTests,
 } from "../../../src/modules/preferences/preferences.repository.js";
 import { updateMemberPreferencesForAuthUser } from "../../../src/modules/preferences/preferences.service.js";
 import {
@@ -28,6 +29,7 @@ const MEMBER_D = "member-pack02g-t07b-atomic-d";
 describe("Production Completion Pack 02G Task 07B — atomic preferences update", () => {
   beforeEach(async () => {
     setLanguageRegistryForceMemoryForTests(true);
+    setPreferencesForceMemoryForTests(true);
     resetLanguageRegistryStoreForTests();
     resetPreferencesMemoryStoreForTests();
     await ensureLanguageRegistrySeeded();
@@ -37,6 +39,7 @@ describe("Production Completion Pack 02G Task 07B — atomic preferences update"
   afterEach(() => {
     resetPreferencesMemoryStoreForTests();
     resetLanguageRegistryStoreForTests();
+    setPreferencesForceMemoryForTests(false);
     setLanguageRegistryForceMemoryForTests(false);
   });
 
@@ -59,7 +62,7 @@ describe("Production Completion Pack 02G Task 07B — atomic preferences update"
     assert.equal(afterInterface.experiencePreferences.interfaceLanguage, "uk");
   });
 
-  it("B. independent reading/interface updates do not clobber each other by write order", async () => {
+  it("B. readingLanguages PATCH synchronizes interfaceLanguage; interface-only does not clobber reading", async () => {
     await updateMemberPreferencesForAuthUser(MEMBER_B, {
       experiencePreferences: {
         interfaceLanguage: "en",
@@ -71,22 +74,20 @@ describe("Production Completion Pack 02G Task 07B — atomic preferences update"
     await updateMemberPreferencesForAuthUser(MEMBER_B, {
       experiencePreferences: { readingLanguages: ["uk"] },
     });
-    await updateMemberPreferencesForAuthUser(MEMBER_B, {
-      experiencePreferences: { interfaceLanguage: "uk" },
-    });
 
     let prefs = await findPreferencesByMemberId(MEMBER_B);
     assert.ok(prefs);
     assert.deepEqual(prefs.experiencePreferences.readingLanguages, ["uk"]);
-    assert.equal(prefs.experiencePreferences.interfaceLanguage, "uk");
+    assert.equal(
+      prefs.experiencePreferences.interfaceLanguage,
+      "uk",
+      "Preferred Reading Language patch must sync interfaceLanguage",
+    );
     assert.equal(prefs.experiencePreferences.translationPreference, "preferred");
 
-    // Reverse order on a fresh member path via sequential independent writes.
+    // interfaceLanguage-only PATCH (e.g. header LanguageSelector) must not clobber reading.
     await updateMemberPreferencesForAuthUser(MEMBER_B, {
       experiencePreferences: { interfaceLanguage: "en" },
-    });
-    await updateMemberPreferencesForAuthUser(MEMBER_B, {
-      experiencePreferences: { readingLanguages: ["uk"] },
     });
 
     prefs = await findPreferencesByMemberId(MEMBER_B);

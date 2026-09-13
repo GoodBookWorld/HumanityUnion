@@ -10,6 +10,23 @@
   min-width: 0;
 }
 
+.preferences-workspace__language-fields {
+  display: grid;
+  gap: var(--hu-space-5);
+  min-width: 0;
+}
+
+.preferences-workspace__field--primary {
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-border-default);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted, transparent);
+}
+
+.preferences-workspace__field--primary .preferences-workspace__field-label {
+  font-size: var(--hu-font-size-base, 1rem);
+}
+
 .preferences-workspace__field-label {
   font-weight: var(--hu-font-weight-semibold, 600);
   color: var(--hu-color-text);

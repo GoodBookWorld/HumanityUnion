@@ -25,6 +25,16 @@ const memoryStore = new Map<string, MemberPreferences>([
   [samplePreferences.memberId, structuredClone(samplePreferences)],
 ]);
 
+let forceMemoryForTests = false;
+
+export function setPreferencesForceMemoryForTests(enabled: boolean): void {
+  forceMemoryForTests = enabled;
+}
+
+function shouldUseMemoryAdapter(): boolean {
+  return forceMemoryForTests || !isMongoConfigured();
+}
+
 async function ensureMongoReady(): Promise<void> {
   if (!isMongoConfigured()) {
     throw new PreferencesPersistenceUnavailableError();
@@ -92,7 +102,7 @@ function assignDottedPath(
 export async function findPreferencesByMemberId(
   memberId: string,
 ): Promise<MemberPreferences | null> {
-  if (isMongoConfigured()) {
+  if (!shouldUseMemoryAdapter()) {
     await ensureMongoReady();
     const collection = getMongoCollection<MemberPreferencesDocument>(
       MONGO_COLLECTIONS.memberPreferences,
@@ -110,7 +120,7 @@ export async function insertPreferences(
 ): Promise<MemberPreferences> {
   const record = migrateLegacyPreferences(preferences);
 
-  if (isMongoConfigured()) {
+  if (!shouldUseMemoryAdapter()) {
     await ensureMongoReady();
     const collection = getMongoCollection<MemberPreferencesDocument>(
       MONGO_COLLECTIONS.memberPreferences,
@@ -129,7 +139,7 @@ export async function updatePreferencesRecord(
 ): Promise<MemberPreferences | null> {
   const record = migrateLegacyPreferences(preferences);
 
-  if (isMongoConfigured()) {
+  if (!shouldUseMemoryAdapter()) {
     await ensureMongoReady();
     const collection = getMongoCollection<MemberPreferencesDocument>(
       MONGO_COLLECTIONS.memberPreferences,
@@ -178,7 +188,7 @@ export async function applyPreferencesPatchAtomically(
 
   setFields.updatedAt = updatedAt;
 
-  if (isMongoConfigured()) {
+  if (!shouldUseMemoryAdapter()) {
     await ensureMongoReady();
     const collection = getMongoCollection<MemberPreferencesDocument>(
       MONGO_COLLECTIONS.memberPreferences,
@@ -209,7 +219,7 @@ export async function applyPreferencesPatchAtomically(
 }
 
 export async function listAllPreferencesRecords(): Promise<MemberPreferences[]> {
-  if (isMongoConfigured()) {
+  if (!shouldUseMemoryAdapter()) {
     await ensureMongoReady();
     const collection = getMongoCollection<MemberPreferencesDocument>(
       MONGO_COLLECTIONS.memberPreferences,

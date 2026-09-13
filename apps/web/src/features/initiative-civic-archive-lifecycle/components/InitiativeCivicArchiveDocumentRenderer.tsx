@@ -10,6 +10,7 @@ import {
   resolveCivicArchiveTimelineStatusDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 
 /**
  * Initiative Lifecycle — Part M, Section 22. Shared Archive Document
@@ -60,7 +61,9 @@ export function InitiativeCivicArchiveDocumentRenderer({
           {document.timeline.map((entry) => (
             <li className="ica-source-panel__item" key={entry.stageId}>
               <span className="ica-source-panel__label">
-                {resolveLifecycleStageDisplayLabel(entry.stageId, t) || entry.label}
+                <ProtectedAuthoritativeText>
+                  {resolveLifecycleStageDisplayLabel(entry.stageId, t) || entry.label}
+                </ProtectedAuthoritativeText>
               </span>
               <p className="ica-source-panel__summary">
                 {resolveCivicArchiveTimelineStatusDisplayLabel(entry.status, t)}

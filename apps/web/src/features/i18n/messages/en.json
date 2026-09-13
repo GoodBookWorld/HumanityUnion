@@ -887,10 +887,12 @@
       "visibility": "Visibility"
     },
     "language": {
-      "help": "Interface Language controls platform navigation. Preferred Reading Language is used for translated public content. Writing Languages are languages you commonly write in. Translation Preference controls whether translations are shown automatically.",
+      "help": "Set your preferred language for Humanity Union. Writing Languages are separate and do not change how the site is presented.",
       "interfaceLanguage": "Interface Language",
       "preferredReadingLanguage": "Preferred Reading Language",
-      "writingLanguages": "Writing Languages (comma-separated codes)",
+      "preferredReadingHelp": "Your preferred language for Humanity Union. If you have not chosen one, the platform uses your browser language when supported.",
+      "writingLanguages": "Writing Languages",
+      "writingLanguagesHelp": "Languages you commonly write in. Enter locale codes separated by commas (for example: en, uk).",
       "writingLanguagesPlaceholder": "en, uk",
       "translationPreference": "Translation Preference",
       "savedUnavailable": "{code} (saved — temporarily unavailable in catalog)",

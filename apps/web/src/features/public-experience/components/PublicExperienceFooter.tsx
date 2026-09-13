@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { resolveBrandForMetadata } from "../../brand-localization/resolve-brand-for-metadata";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { FOOTER_COPYRIGHT_YEAR } from "../constants";
 import {
   FOOTER_LEGAL_LINKS,
@@ -76,8 +77,18 @@ export async function PublicExperienceFooter() {
                 />
               </Link>
               <div className="public-experience-footer__brand-text">
-                <p className="public-experience-footer__identity">{brand.siteName}</p>
-                <p className="public-experience-footer__tagline">{brand.slogan}</p>
+                <ProtectedAuthoritativeText
+                  as="p"
+                  className="public-experience-footer__identity"
+                >
+                  {brand.siteName}
+                </ProtectedAuthoritativeText>
+                <ProtectedAuthoritativeText
+                  as="p"
+                  className="public-experience-footer__tagline"
+                >
+                  {brand.slogan}
+                </ProtectedAuthoritativeText>
               </div>
             </div>
             <p className="public-experience-footer__mission">{tNav("footerMission")}</p>

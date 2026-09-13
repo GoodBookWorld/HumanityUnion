@@ -10,6 +10,8 @@ export {
 export type { LanguageCode, PriorityLanguageCode } from "./language";
 export { TranslatedContentView, TranslatedContentSharedChrome } from "./components/TranslatedContentView";
 export type { TranslatedContentViewProps } from "./components/TranslatedContentView";
+export { ProtectedAuthoritativeText } from "./components/ProtectedAuthoritativeText";
+export type { ProtectedAuthoritativeTextProps } from "./components/ProtectedAuthoritativeText";
 export { PublicTranslatedFields } from "./components/PublicTranslatedFields";
 export type { PublicTranslatedFieldsProps } from "./components/PublicTranslatedFields";
 export { CivicPublicTranslatedSection } from "./components/CivicPublicTranslatedSection";

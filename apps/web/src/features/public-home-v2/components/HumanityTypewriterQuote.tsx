@@ -14,6 +14,7 @@ import {
 } from "@hu/types";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 
 export function HumanityTypewriterQuote() {
   const brand = useLocalizedBrand();
@@ -22,7 +23,7 @@ export function HumanityTypewriterQuote() {
   const lines = visualHeroUnityQuoteLines(quote);
 
   return (
-    <div className="hero-unity-quote" data-hero-quote-stable="true">
+    <div className="hero-unity-quote" data-hero-quote-stable="true" translate="no">
       <p className="hero-unity-quote__sr-only">{accessible}</p>
       <div className="hero-unity-quote__visual" aria-hidden="true">
         {lines.map((line, index) => {
@@ -32,7 +33,9 @@ export function HumanityTypewriterQuote() {
               : "hero-unity-quote__line hero-unity-quote__line--wrap";
           return (
             <div key={`quote-line-${index + 1}`} className={lineClass}>
-              <span className="hero-unity-quote__line-text">{line}</span>
+              <ProtectedAuthoritativeText className="hero-unity-quote__line-text">
+                {line}
+              </ProtectedAuthoritativeText>
             </div>
           );
         })}

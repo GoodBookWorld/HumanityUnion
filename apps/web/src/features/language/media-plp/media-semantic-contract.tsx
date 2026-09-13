@@ -109,11 +109,15 @@ export function MediaSemanticNode<T extends ElementType = "span">(
     ...rest
   } = props;
 
+  const protectFromBrowserTranslation =
+    owner === "BRAND" || owner === "TERMINOLOGY" || owner === "PROTECTED_CANONICAL";
+
   return createElement(
     as ?? "span",
     {
       ...rest,
       className,
+      ...(protectFromBrowserTranslation ? { translate: "no" as const } : {}),
       "data-hu-semantic-node": "1",
       "data-hu-semantic-owner": owner,
       "data-hu-semantic-result": result,
