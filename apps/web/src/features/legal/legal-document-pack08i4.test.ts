@@ -87,5 +87,6 @@ describe("Pack 08I.4 — legal document localization fallback", () => {
     assert.match(shell, /chrome\.termsLabel/);
     assert.match(shell, /chrome\.counselNote/);
     assert.match(shell, /data-legal-body-source=\{EXPECTED_LEGAL_FALLBACK\}/);
+    assert.match(shell, /ProtectedAuthoritativeText[\s\S]*legal-page__body/);
   });
 });

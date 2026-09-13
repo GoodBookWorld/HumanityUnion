@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import type { LegalDocumentId, LegalDocumentPresentation } from "../resolve-legal-document-presentation";
 import { EXPECTED_LEGAL_FALLBACK } from "../resolve-legal-document-presentation";
 
@@ -12,6 +13,11 @@ interface LegalPageShellProps {
   children: ReactNode;
 }
 
+/**
+ * Legal chrome (nav, titles, counsel notes) stays browser-translatable.
+ * Authoritative Legal document body — published localized or canonical English
+ * fallback — is protected from browser machine translation.
+ */
 export function LegalPageShell({
   presentation,
   activeDocument,
@@ -61,7 +67,9 @@ export function LegalPageShell({
           </p>
         ) : null}
       </header>
-      <div className="legal-page__body">{children}</div>
+      <ProtectedAuthoritativeText as="div" className="legal-page__body">
+        {children}
+      </ProtectedAuthoritativeText>
     </article>
   );
 }

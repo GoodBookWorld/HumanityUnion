@@ -2,9 +2,10 @@
  * Localization Simplification Step 02 — protect authoritative Brand / Terminology
  * strings from browser machine translation.
  *
- * Use only for values that are already resolved as platform-owned Brand or
- * controlled terminology (localized preferred term or canonical English fallback).
- * Do not wrap ordinary long-form content.
+ * Use only for values that are already resolved as platform-owned Brand,
+ * controlled terminology, or authoritative Legal document bodies (localized
+ * preferred term / published Legal / canonical English Legal fallback).
+ * Do not wrap ordinary long-form civic or explanatory UI content.
  */
 import {
   createElement,

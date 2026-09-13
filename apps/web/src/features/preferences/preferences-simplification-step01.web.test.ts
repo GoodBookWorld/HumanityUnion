@@ -96,8 +96,13 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     }
 
     const enHelp = languageKeys("en").preferredReadingHelp ?? "";
-    assert.match(enHelp, /preferred language for Humanity Union/i);
-    assert.match(enHelp, /browser language/i);
+    assert.match(enHelp, /language you prefer to use when reading Humanity Union/i);
+    assert.match(enHelp, /approved names, key terms/i);
+    assert.match(enHelp, /browser to translate pages/i);
+
+    const enWriting = languageKeys("en").writingLanguagesHelp ?? "";
+    assert.match(enWriting, /writing and collaboration/i);
+    assert.match(enWriting, /do not control your browser/i);
   });
 
   it("Header / PWA LanguageSelector mounts removed; cookie sync remains", () => {
