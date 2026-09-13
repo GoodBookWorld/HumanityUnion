@@ -98,13 +98,15 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     assert.match(enHelp, /browser language/i);
   });
 
-  it("Header / PWA LanguageSelector mounts remain present (out of scope)", () => {
+  it("Header / PWA LanguageSelector mounts removed; cookie sync remains", () => {
     const layout = readWeb("src/design-system/components/HumanityLayout.tsx");
     const header = readWeb("src/design-system/components/HumanityHeader.tsx");
+    const mobile = readWeb("src/design-system/components/HumanityHeaderMobileMenu.tsx");
     const pwaMenu = readWeb("src/features/pwa/components/PwaGlobalMenu.tsx");
     assert.match(layout, /InterfaceLanguageCookieSync/);
-    assert.match(header, /LanguageSelector/);
-    assert.match(pwaMenu, /LanguageSelector/);
+    assert.doesNotMatch(header, /LanguageSelector/);
+    assert.doesNotMatch(mobile, /LanguageSelector/);
+    assert.doesNotMatch(pwaMenu, /LanguageSelector/);
   });
 
   it("SEO cookie sync suppression path remains intact", () => {

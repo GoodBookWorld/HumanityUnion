@@ -129,29 +129,25 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(prefs, /writeHuLangCookieViaWebRoute/);
   });
 
-  it("selector placed in global header + mobile menu", () => {
+  it("public Desktop/Mobile navigation no longer mounts LanguageSelector", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
-    assert.match(header, /LanguageSelector/);
-    assert.match(header, /hu-language-selector--header/);
-    assert.match(mobile, /LanguageSelector/);
-    assert.match(mobile, /variant="icon"/);
+    assert.doesNotMatch(header, /LanguageSelector/);
+    assert.doesNotMatch(mobile, /LanguageSelector/);
+    // Locale cookie sync infrastructure remains (Preferences / guest paths).
     assert.match(layout, /InterfaceLanguageCookieSync/);
   });
 
-  it("standard mobile-web header uses viewport-safe panel (not desktop absolute dropdown)", () => {
-    const header = readWeb("design-system/components/HumanityHeader.tsx");
+  it("LanguageSelector viewport-safe CSS remains for non-header consumers", () => {
     const css = readWeb("features/language/components/language-selector.css");
-    const globalMenu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
 
-    assert.match(header, /hu-language-selector--header/);
     // Desktop list geometry remains absolute + inset-inline-start for default selector.
     assert.match(
       css,
       /\.hu-language-selector__list\s*\{[^}]*position:\s*absolute[^}]*inset-inline-start:\s*0/s,
     );
-    // Mobile-web header override is distinct and viewport-anchored.
+    // Header/mobile viewport overrides remain in stylesheet for any future non-nav mounts.
     assert.match(
       css,
       /@media\s*\(max-width:\s*768px\)[\s\S]*\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*position:\s*fixed/,
@@ -168,28 +164,24 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
       css,
       /\.hu-language-selector--header\s+\.hu-language-selector__option[\s\S]*overflow-wrap:\s*anywhere/,
     );
-    // PWA path stays on --mobile / icon variant, not --header.
-    assert.match(globalMenu, /hu-language-selector--mobile/);
-    assert.doesNotMatch(globalMenu, /hu-language-selector--header/);
+    assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
   });
 
-  it("PWA standalone burger uses PwaGlobalMenu with icon LanguageSelector", () => {
+  it("PWA standalone burger Global Menu has no LanguageSelector mount", () => {
     const safeArea = readWeb("features/pwa/pwa-safe-area.css");
     const pwaHeader = readWeb("features/pwa/components/PwaAppHeader.tsx");
     const globalMenu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
     const css = readWeb("features/language/components/language-selector.css");
     const pwaCss = readWeb("features/pwa/pwa.css");
 
-    // Standalone hides HumanityHeader — language must live in PWA Global Menu.
+    // Standalone hides HumanityHeader — language control is Preferences, not nav.
     assert.match(
       safeArea,
       /\.humanity-app--pwa-standalone\s+\.humanity-header[\s\S]*display:\s*none/,
     );
     assert.match(pwaHeader, /PwaGlobalMenu/);
-    assert.match(globalMenu, /LanguageSelector/);
-    assert.match(globalMenu, /variant="icon"/);
-    assert.match(globalMenu, /hu-language-selector--mobile/);
-    assert.match(globalMenu, /hu-pwa-global-menu__language/);
+    assert.doesNotMatch(globalMenu, /LanguageSelector/);
+    assert.doesNotMatch(globalMenu, /hu-pwa-global-menu__language/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*max-height:\s*min\(65dvh/);
     assert.match(css, /hu-language-selector__icon-trigger[\s\S]*min-height:\s*var\(--hu-touch-target/);

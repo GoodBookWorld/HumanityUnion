@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { forwardRef, useCallback } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
-import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
 import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 
@@ -78,11 +77,6 @@ export function HumanityHeaderMobileMenu({
             })}
           </ul>
         </nav>
-
-        <LanguageSelector
-          className="hu-language-selector--mobile"
-          variant="icon"
-        />
 
         {authStatus !== "pending" ? (
           <div className="humanity-header__mobile-auth">

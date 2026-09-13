@@ -12,7 +12,6 @@ import {
 import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 import { useLocalizedBrand } from "../../features/brand-localization/useLocalizedBrand";
 import { ProtectedAuthoritativeText } from "../../features/language/components/ProtectedAuthoritativeText";
-import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
 import { HeaderAuthUtility } from "./HeaderAuthUtility";
@@ -138,7 +137,6 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             </ul>
           </nav>
           <div className="humanity-header__end">
-            <LanguageSelector className="humanity-header__language hu-language-selector--header" />
             <BrowserWorkspaceHeaderControls />
             <div className="humanity-header__utility humanity-header__utility--desktop">
               <HeaderAuthUtility />
