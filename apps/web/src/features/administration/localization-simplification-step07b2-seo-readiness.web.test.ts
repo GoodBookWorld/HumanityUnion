@@ -1,5 +1,5 @@
 /**
- * Localization Simplification Step 06A — Admin Languages wording for Search vs Extended.
+ * Step 07B.2 — Admin Languages wording: SEO indexable ≠ Extended Localization.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -13,18 +13,17 @@ function readWeb(rel: string): string {
   return readFileSync(path.join(webRoot, rel), "utf8");
 }
 
-describe("Localization Simplification Step 06A — Admin Search vs Extended wording", () => {
-  it("Admin Languages distinguishes Enabled, Search, SEO, and Extended Localization", () => {
+describe("Step 07B.2 — Admin SEO indexable vs Extended Localization wording", () => {
+  it("14. Admin distinguishes SEO indexable from Extended Localization", () => {
     const src = readWeb(
       "src/features/administration/components/AdminLanguagesSection.tsx",
     );
-    assert.match(src, /Basic language\s+availability \(Enabled\)/);
-    assert.match(src, /Search capability/);
-    assert.match(src, /Extended Localization/);
-    assert.match(src, /does not block Search readiness or SEO/);
-    assert.match(src, /Search-ready=/);
     assert.match(src, /SEO indexable=/);
     assert.doesNotMatch(src, /SEO-ready=/);
+    assert.match(src, /Extended Localization/);
+    assert.match(src, /does not block Search readiness or SEO\s+indexability/);
+    assert.match(src, /SEO indexing/);
+    assert.doesNotMatch(src, /SEO requires full|full localization is required for SEO/i);
     assert.doesNotMatch(src, /\b(?:ka|he)\b/);
   });
 });

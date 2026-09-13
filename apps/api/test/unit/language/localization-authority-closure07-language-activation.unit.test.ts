@@ -167,7 +167,9 @@ describe("Localization Authority Closure 07 — language activation", () => {
     });
     assert.equal(ctOff.state, "DISABLED");
     assert.equal(ctOff.registry.seoIndexingEnabled, true);
-    assert.equal(ctOff.seoReady, false);
+    // Step 07B.2 — SEO indexable follows Registry flag; Extended Localization stays DISABLED.
+    assert.equal(ctOff.seoReady, true);
+    assert.equal(isLocalizationReadyForSeo(ctOff), true);
   });
 
   it("configured CT-enabled locale needing backfill → BACKFILL_REQUIRED", async () => {
@@ -402,7 +404,9 @@ describe("Localization Authority Closure 07 — language activation", () => {
       }),
     });
     assert.equal(ready.state, "READY");
-    assert.equal(ready.seoReady, true);
+    assert.equal(ready.registry.seoIndexingEnabled, false);
+    // Step 07B.2 — Extended Localization READY ≠ SEO indexable without Registry flag.
+    assert.equal(ready.seoReady, false);
     assert.equal(ready.PROVIDER_CALLS, 0);
     assert.equal(ready.WRITES_PERFORMED, 0);
   });

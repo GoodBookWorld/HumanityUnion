@@ -175,12 +175,7 @@ export function buildLocalizationIntegrityReport(input: {
     controlledEnglishLeakCount: input.controlledEnglishLeakCount ?? 0,
     canonicalFallbackTruthful: input.canonicalFallbackTruthful ?? true,
     historicalBackfillRequired,
-    seoReady: isLocalizationReadyForSeo({
-      ...readiness,
-      state: overallStatus,
-      languageDataReady:
-        input.corpusDiscoveryBlocked ? false : readiness.languageDataReady,
-    }),
+    seoReady: isLocalizationReadyForSeo(readiness),
     searchReady: isLocalizationReadyForSearch(readiness),
     safety: {
       providerCalls: 0,

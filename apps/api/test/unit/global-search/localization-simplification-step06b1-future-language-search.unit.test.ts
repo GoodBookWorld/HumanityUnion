@@ -17,6 +17,7 @@ import type { CivicSearchMetadata, TranslatedContentRecord } from "@hu/types";
 import {
   emptyLanguageLocalizationCountBucket,
   isLocalizationReadyForSearch,
+  isLocalizationReadyForSeo,
   type LanguageLocalizationReadinessReport,
 } from "@hu/types";
 
@@ -232,7 +233,9 @@ describe("Localization Simplification Step 06B.1 — future-language Search acce
     assert.equal(readiness.webUi.dataReady, false);
     assert.equal(readiness.controlledVocabulary.presentationReady, false);
     assert.equal(readiness.registry.seoIndexingEnabled, false);
+    // SEO indexable is false because Registry flag is off — independent of EL incompleteness.
     assert.equal(readiness.seoReady, false);
+    assert.equal(isLocalizationReadyForSeo(readiness), false);
 
     const withCt = initiativeEntry(
       "initiative-06b1-localized",

@@ -90,7 +90,9 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
     });
 
     assert.equal(isLocalizationReadyForSearch(report), true);
+    // SEO indexable requires seoIndexingEnabled (flag off here), not EL completeness.
     assert.equal(isLocalizationReadyForSeo(report), false);
+    assert.equal(report.state, "DATA_NOT_READY");
   });
 
   it("disabled locale is not Search-ready", () => {
@@ -108,7 +110,7 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
     assert.equal(isLocalizationReadyForSeo(report), false);
   });
 
-  it("Search readiness remains separate from SEO readiness", () => {
+  it("Search readiness remains separate from SEO indexability", () => {
     const incomplete = baseReport({
       registry: {
         enabled: true,
@@ -121,14 +123,17 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
       state: "BACKFILL_REQUIRED",
     });
     assert.equal(isLocalizationReadyForSearch(incomplete), true);
-    assert.equal(isLocalizationReadyForSeo(incomplete), false);
+    // Step 07B.2 — incomplete Extended Localization does not block SEO indexability.
+    assert.equal(isLocalizationReadyForSeo(incomplete), true);
+    assert.equal(incomplete.languageDataReady, false);
+    assert.notEqual(incomplete.state, "READY");
 
-    const extendedReady = baseReport({
+    const extendedReadySeoOff = baseReport({
       registry: {
         enabled: true,
         contentTranslationEnabled: true,
         searchEnabled: false,
-        seoIndexingEnabled: true,
+        seoIndexingEnabled: false,
       },
       engineReady: true,
       languageDataReady: true,
@@ -154,8 +159,9 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
       plpMedia: { ...emptyLanguageLocalizationCountBucket(), current: 1 },
       gaps: [],
     });
-    assert.equal(isLocalizationReadyForSearch(extendedReady), true);
-    assert.equal(isLocalizationReadyForSeo(extendedReady), true);
+    assert.equal(isLocalizationReadyForSearch(extendedReadySeoOff), true);
+    assert.equal(extendedReadySeoOff.state, "READY");
+    assert.equal(isLocalizationReadyForSeo(extendedReadySeoOff), false);
   });
 
   it("Search readiness does not require searchEnabled (flag remains separate)", () => {
@@ -191,17 +197,18 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
     assert.doesNotMatch(admin, /\b(?:ka|he)\b/);
   });
 
-  it("SEO predicate still requires full Extended Localization", () => {
+  it("SEO predicate uses Registry SEO eligibility (not Extended Localization)", () => {
     const seoSrc = readRepo(
       "packages/types/src/domain/language-localization-readiness.ts",
     );
-    const seoFn = seoSrc.slice(
-      seoSrc.indexOf("export function isLocalizationReadyForSeo"),
-      seoSrc.indexOf("export function isLocalizationReadyForSearch"),
-    );
-    assert.match(seoFn, /languageDataReady/);
-    assert.match(seoFn, /engineReady/);
-    assert.match(seoFn, /state === "READY"/);
+    const start = seoSrc.indexOf("export function isLocalizationReadyForSeo");
+    const end = seoSrc.indexOf("export function isLocalizationReadyForSearch", start);
+    const seoFn = seoSrc.slice(start, end);
+    const seoBody = seoFn.slice(0, seoFn.indexOf("\n/**") === -1 ? seoFn.length : seoFn.indexOf("\n/**"));
+    assert.match(seoBody, /isSeoIndexableLanguage/);
+    assert.doesNotMatch(seoBody, /languageDataReady/);
+    assert.doesNotMatch(seoBody, /engineReady/);
+    assert.doesNotMatch(seoBody, /state === "READY"/);
   });
 
   it("Search runtime enrichment path is untouched by this readiness change", () => {

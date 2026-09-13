@@ -9,7 +9,10 @@
  */
 
 import type { LanguageCode } from "./language.js";
-import type { LanguageRegistryLocale } from "./language-registry.js";
+import {
+  isSeoIndexableLanguage,
+  type LanguageRegistryLocale,
+} from "./language-registry.js";
 import type { ContentTranslationSourceKind } from "./content-translation.js";
 
 /**
@@ -189,23 +192,23 @@ export type LanguageLocalizationReadinessReport = {
 };
 
 /**
- * Pack 3 gate (predicate only — does not mutate seoIndexingEnabled).
- * TRUE only when localization data required for the public SEO perimeter is ready.
+ * Step 07B.2 — SEO readiness means Registry SEO eligibility (predicate only).
+ * Does not mutate `seoIndexingEnabled`.
  *
- * Unchanged by Simplification Step 06A — SEO still requires full Extended
- * Localization readiness (WEB_UI + controlled vocabulary + owned CT/PLP READY).
+ * Aligns with public runtime Pack 02I / 07C–07F via `isSeoIndexableLanguage`:
+ * `enabled === true && seoIndexingEnabled === true`.
+ *
+ * Does NOT require: engineReady, languageDataReady, state READY, WEB_UI / CT /
+ * PLP completeness, provider completion, or searchEnabled.
+ * Extended Localization readiness remains a separate Admin/inspection concern.
  */
 export function isLocalizationReadyForSeo(
-  report: Pick<
-    LanguageLocalizationReadinessReport,
-    "state" | "languageDataReady" | "engineReady"
-  >,
+  report: Pick<LanguageLocalizationReadinessReport, "registry">,
 ): boolean {
-  return (
-    report.engineReady === true &&
-    report.languageDataReady === true &&
-    report.state === "READY"
-  );
+  return isSeoIndexableLanguage({
+    enabled: report.registry.enabled === true,
+    seoIndexingEnabled: report.registry.seoIndexingEnabled === true,
+  });
 }
 
 /**

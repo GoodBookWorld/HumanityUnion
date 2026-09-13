@@ -606,7 +606,9 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
     assert.equal(report.locale, "fr");
     assert.equal(report.engineReady, true);
     assert.equal(report.state, "READY");
-    assert.equal(isLocalizationReadyForSeo(report), true);
+    assert.equal(report.registry.seoIndexingEnabled, false);
+    // Step 07B.2 — EL READY with seoIndexingEnabled=false → not SEO indexable.
+    assert.equal(isLocalizationReadyForSeo(report), false);
 
     const integrity = buildLocalizationIntegrityReport({
       readiness: report,

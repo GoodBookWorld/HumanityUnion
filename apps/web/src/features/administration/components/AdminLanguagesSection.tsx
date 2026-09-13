@@ -233,7 +233,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
           `; Search-ready=${report.searchLocalizationReady ? "yes" : "no"}` +
           `; Extended Localization=${report.state}` +
-          `; SEO-ready=${report.seoReady ? "yes" : "no"}`,
+          `; SEO indexable=${report.seoReady ? "yes" : "no"}`,
       );
     } catch (readinessError) {
       setReadinessById((prev) => ({ ...prev, [row.languageId]: "error" }));
@@ -291,13 +291,14 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       <ProfileSection title="Languages">
         <p className="hu-caption admin-languages__lede">
           Canonical Language Registry — Admin-managed locales for platform selection, translation,
-          and SEO readiness. Runtime pickers use enabled languages only. Locale is immutable after
+          and SEO indexing. Runtime pickers use enabled languages only. Locale is immutable after
           creation. Backend policy is authoritative for conflicts and fallbacks. Basic language
-          availability (Enabled), Search capability (`searchEnabled`), SEO indexing, and Extended
-          Localization (WEB_UI / CT / PLP) are separate concepts — incomplete Extended Localization
-          does not block Search readiness. Use Readiness to inspect Extended Localization state
-          without enabling SEO. Use Activate Localization to start/resume the durable async
-          activation job (CT/PLP residual enqueue). WEB_UI packs are Admin data (
+          availability (Enabled), Search capability (`searchEnabled`), SEO indexing
+          (`seoIndexingEnabled`), and Extended Localization (WEB_UI / CT / PLP) are separate
+          concepts — incomplete Extended Localization does not block Search readiness or SEO
+          indexability. Use Readiness to inspect Extended Localization state without enabling SEO.
+          Use Activate Localization to start/resume the durable async activation job (CT/PLP residual
+          enqueue). WEB_UI packs are Admin data (
           <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
           ), never machine-generated. Search and SEO remain separate opt-in flags.
         </p>
@@ -541,7 +542,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             <div>
                               Search-ready=
                               {activation.readiness.searchLocalizationReady ? "yes" : "no"} ·
-                              SEO-ready=
+                              SEO indexable=
                               {activation.readiness.seoReady ? "yes" : "no"}
                             </div>
                             <div>
@@ -564,7 +565,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             </div>
                             <div>
                               Search-ready=
-                              {readiness.searchLocalizationReady ? "yes" : "no"} · SEO-ready=
+                              {readiness.searchLocalizationReady ? "yes" : "no"} · SEO indexable=
                               {readiness.seoReady ? "yes" : "no"}
                             </div>
                             {readiness.gaps.length > 0 ? (
