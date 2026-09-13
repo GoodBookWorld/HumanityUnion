@@ -45,6 +45,11 @@ import {
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
+import {
+  isSearchDiscoveryMappedSourceKind,
+  projectFieldsToSearchDiscoveryAllowlist,
+} from "./content-translation-search-discovery-fields.js";
 import {
   presentCollaborativeAnalysisCanonicalFields,
   translateCollaborativeAnalysisFieldsWithLifecycleSlots,
@@ -288,11 +293,15 @@ function parseStructuredTranslation(text: string): Record<string, string> {
 
 /**
  * Idempotent: same sourceKind + sourceRecordId + sourceVersion + targetLanguage
- * returns the existing record without a second provider call.
+ * returns the existing record without a second provider call when coverage is met.
  *
  * `intent` defaults to `on_demand` (enabled locale gate — preserves Pack 02 UX).
  * `automatic_warm` additionally requires contentTranslationEnabled.
- * `search_discovery` requires enabled + searchEnabled (Step 06C.1).
+ * `search_discovery` requires enabled + searchEnabled (Step 06C.1 / 06C.2A).
+ *
+ * Step 06C.2A — coverage-aware skip:
+ * - search_discovery skips when discovery fields are already covered (never downgrade full CT)
+ * - automatic_warm skips only when full eligible coverage is complete (compact → full upgrade)
  */
 export async function getOrCreateContentTranslation(input: {
   sourceKind: ContentTranslationSourceKind;
@@ -300,8 +309,8 @@ export async function getOrCreateContentTranslation(input: {
   targetLanguage: LanguageCode;
   generateIfMissing?: boolean;
   /**
-   * Pack 02G / Step 06C.1: on_demand | automatic_warm | search_discovery.
-   * Does not change provider/persistence — only locale eligibility gates.
+   * Pack 02G / Step 06C.1 / 06C.2A: on_demand | automatic_warm | search_discovery.
+   * Locale gates differ; provider/persistence identity unchanged.
    */
   intent?: ContentTranslationIntent;
   /**
@@ -315,6 +324,15 @@ export async function getOrCreateContentTranslation(input: {
   readonly generated: boolean;
 }> {
   const intent: ContentTranslationIntent = input.intent ?? "on_demand";
+
+  // Unsupported Search discovery kinds: never silently full-translate (check before load).
+  if (intent === "search_discovery" && !isSearchDiscoveryMappedSourceKind(input.sourceKind)) {
+    throw new TranslationProviderError(
+      "bad_request",
+      `Search discovery content translation is not supported for sourceKind: ${input.sourceKind}.`,
+    );
+  }
+
   const source = await loadTranslatableSource(input);
   if (!source) {
     throw new TranslationProviderError("bad_request", "Source content was not found.");
@@ -344,6 +362,30 @@ export async function getOrCreateContentTranslation(input: {
     return { source, translation: null, generated: false };
   }
 
+  const fullProviderFields = sanitizeFieldsForAutomaticTranslation({
+    sourceKind: source.sourceKind,
+    fields: source.fields,
+  });
+
+  let providerFields = fullProviderFields;
+  if (intent === "search_discovery") {
+    const projected = projectFieldsToSearchDiscoveryAllowlist({
+      sourceKind: source.sourceKind,
+      fields: fullProviderFields,
+    });
+    if (!projected || Object.keys(projected).length === 0) {
+      return { source, translation: null, generated: false };
+    }
+    // Re-sanitize projected bag so NON_TRANSLATABLE / allowlist rules still apply.
+    providerFields = sanitizeFieldsForAutomaticTranslation({
+      sourceKind: source.sourceKind,
+      fields: projected,
+    });
+    if (Object.keys(providerFields).length === 0) {
+      return { source, translation: null, generated: false };
+    }
+  }
+
   const existing = await findContentTranslation({
     sourceKind: source.sourceKind,
     sourceRecordId: source.sourceRecordId,
@@ -358,7 +400,32 @@ export async function getOrCreateContentTranslation(input: {
       return { source, translation: existing, generated: false };
     }
     if (!input.forceRegenerate) {
-      return { source, translation: existing, generated: false };
+      if (intent === "search_discovery") {
+        if (
+          contentTranslationCoversRequiredSourceFields({
+            sourceKind: source.sourceKind,
+            sourceFields: providerFields,
+            translatedContent: existing.translatedContent,
+          })
+        ) {
+          return { source, translation: existing, generated: false };
+        }
+        // Discovery incomplete — regenerate compact (must not run when full already covers).
+      } else if (intent === "automatic_warm") {
+        if (
+          contentTranslationCoversRequiredSourceFields({
+            sourceKind: source.sourceKind,
+            sourceFields: fullProviderFields,
+            translatedContent: existing.translatedContent,
+          })
+        ) {
+          return { source, translation: existing, generated: false };
+        }
+        // Compact or incomplete — fall through to full regenerate/replace.
+      } else {
+        // on_demand: preserve prior "any current row skips" contract.
+        return { source, translation: existing, generated: false };
+      }
     }
   }
 
@@ -369,11 +436,6 @@ export async function getOrCreateContentTranslation(input: {
   assertCanonicalSourceEligibleForTranslation({
     source: toEligibilitySource(source),
     intent,
-  });
-
-  const providerFields = sanitizeFieldsForAutomaticTranslation({
-    sourceKind: source.sourceKind,
-    fields: source.fields,
   });
 
   const provider = resolveTranslationProvider();
@@ -390,7 +452,12 @@ export async function getOrCreateContentTranslation(input: {
   let translatedFields: Record<string, string>;
   let translationProviderId: string;
 
-  if (source.sourceKind === "collaborative_analysis") {
+  // Discovery uses the generic structured path even for CA — Search fields are
+  // title/summary only and must not pull the full lifecycle-slot hop.
+  const useCaLifecycleHop =
+    source.sourceKind === "collaborative_analysis" && intent !== "search_discovery";
+
+  if (useCaLifecycleHop) {
     // 03C.5 / 03C.5C — extract lifecycle slots; validate machine prose before
     // glossary reassembly so preferredTerm cannot fake translation quality.
     translationProviderId = provider.providerId;

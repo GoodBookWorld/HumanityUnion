@@ -183,6 +183,13 @@ export {
   scheduleInitiativeSearchDiscoveryAfterSearchEnabled,
 } from "./content-translation-search-discovery-enqueue.js";
 export {
+  CONTENT_TRANSLATION_SEARCH_DISCOVERY_FIELDS,
+  isSearchDiscoveryMappedSourceKind,
+  listSearchDiscoveryFieldKeys,
+  projectFieldsToSearchDiscoveryAllowlist,
+} from "./content-translation-search-discovery-fields.js";
+export { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
+export {
   runMediaHuOwnedLocalizationIntegrityCheck,
   classifyMediaEditorialLocalizationForLocale,
 } from "./media-hu-localization-integrity.js";

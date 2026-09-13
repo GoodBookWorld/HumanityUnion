@@ -314,13 +314,7 @@ export function assertCanonicalSourceEligibleForTranslation(input: {
   });
 
   if (intent === "search_discovery") {
-    // Step 06C.1 — Initiative-only Search discovery vertical slice.
-    if (source.sourceKind !== "initiative") {
-      throw new TranslationProviderError(
-        "forbidden",
-        "Search discovery content translation is limited to initiative sources.",
-      );
-    }
+    // Step 06C.2A — mapped Search discovery kinds; civic_media intentionally unsupported.
     if (!source.isPublished) {
       throw new TranslationProviderError(
         "forbidden",
