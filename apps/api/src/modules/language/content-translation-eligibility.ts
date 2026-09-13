@@ -313,6 +313,22 @@ export function assertCanonicalSourceEligibleForTranslation(input: {
     fields: source.fields,
   });
 
+  if (intent === "search_discovery") {
+    // Step 06C.1 — Initiative-only Search discovery vertical slice.
+    if (source.sourceKind !== "initiative") {
+      throw new TranslationProviderError(
+        "forbidden",
+        "Search discovery content translation is limited to initiative sources.",
+      );
+    }
+    if (!source.isPublished) {
+      throw new TranslationProviderError(
+        "forbidden",
+        "Only published content can receive Search discovery translation.",
+      );
+    }
+  }
+
   if (intent === "automatic_warm") {
     if (source.sourceKind === "lifecycle_stage") {
       throw new TranslationProviderError(

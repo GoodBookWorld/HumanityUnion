@@ -114,13 +114,20 @@ export interface TranslateDraftResult {
 }
 
 /**
- * Pack 02G — how translation generation was requested.
+ * Pack 02G / Step 06C.1 — how translation generation was requested.
  * Same engine/loader/provider/persistence; different locale eligibility gates.
  *
  * - `on_demand`: explicit/manual/user-triggered (enabled locale sufficient)
- * - `automatic_warm`: background warming (requires contentTranslationEnabled)
+ * - `automatic_warm`: background Extended Localization warming
+ *   (requires contentTranslationEnabled; unchanged contract)
+ * - `search_discovery`: Search discovery compact CT warm
+ *   (requires enabled + searchEnabled; independent of contentTranslationEnabled /
+ *   WEB_UI / PLP / SEO / languageDataReady)
  */
-export type ContentTranslationIntent = "on_demand" | "automatic_warm";
+export type ContentTranslationIntent =
+  | "on_demand"
+  | "automatic_warm"
+  | "search_discovery";
 
 /**
  * Canonical work identity for persistence uniqueness + future warm-job dedupe.
@@ -152,7 +159,9 @@ export type ContentTranslationWarmReason =
   | "operator_manual"
   | "operator_backfill"
   /** Pack 08K.2.2 — gated residual retry of ready identities only. */
-  | "operator_residual_retry";
+  | "operator_residual_retry"
+  /** Step 06C.1 — Admin searchEnabled false→true Initiative discovery enqueue. */
+  | "search_discovery_enable";
 
 export interface ContentTranslationWarmRequestedCommand {
   readonly commandName: ContentTranslationWarmRequestedCommandName;

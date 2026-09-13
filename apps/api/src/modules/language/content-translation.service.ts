@@ -50,6 +50,7 @@ import {
   translateCollaborativeAnalysisFieldsWithLifecycleSlots,
 } from "./content-translation-lifecycle-slots.js";
 import { buildContentTranslationSourceVersion } from "./content-translation-version.js";
+import { assertSearchDiscoveryTargetLocale } from "./content-translation-search-discovery-targets.js";
 import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
 import {
   assertEnabledSelectableLocale,
@@ -291,6 +292,7 @@ function parseStructuredTranslation(text: string): Record<string, string> {
  *
  * `intent` defaults to `on_demand` (enabled locale gate — preserves Pack 02 UX).
  * `automatic_warm` additionally requires contentTranslationEnabled.
+ * `search_discovery` requires enabled + searchEnabled (Step 06C.1).
  */
 export async function getOrCreateContentTranslation(input: {
   sourceKind: ContentTranslationSourceKind;
@@ -298,7 +300,7 @@ export async function getOrCreateContentTranslation(input: {
   targetLanguage: LanguageCode;
   generateIfMissing?: boolean;
   /**
-   * Pack 02G: on_demand (default) vs automatic_warm.
+   * Pack 02G / Step 06C.1: on_demand | automatic_warm | search_discovery.
    * Does not change provider/persistence — only locale eligibility gates.
    */
   intent?: ContentTranslationIntent;
@@ -329,7 +331,9 @@ export async function getOrCreateContentTranslation(input: {
   const targetLanguage =
     intent === "automatic_warm"
       ? await assertAutomaticContentTranslationTargetLocale(input.targetLanguage)
-      : await assertEnabledSelectableLocale(input.targetLanguage);
+      : intent === "search_discovery"
+        ? await assertSearchDiscoveryTargetLocale(input.targetLanguage)
+        : await assertEnabledSelectableLocale(input.targetLanguage);
 
   if (
     isRedundantTargetLanguage({

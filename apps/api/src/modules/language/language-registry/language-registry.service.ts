@@ -373,6 +373,30 @@ export async function updateAdminLanguage(input: {
     invalidateGlobalSearchIndex();
   }
 
+  // Step 06C.1 — Admin searchEnabled false→true enqueues Initiative discovery CT
+  // via durable outbox only (no provider work in the Admin request).
+  const becameSearchDiscoveryEligible =
+    updated.enabled === true &&
+    updated.searchEnabled === true &&
+    !(before.enabled === true && before.searchEnabled === true);
+  if (
+    becameSearchDiscoveryEligible &&
+    normalizeLanguageRegistryLocaleKey(updated.locale) !==
+      normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
+  ) {
+    try {
+      const { enqueueInitiativeSearchDiscoveryForLocale } = await import(
+        "../content-translation-search-discovery-enqueue.js"
+      );
+      await enqueueInitiativeSearchDiscoveryForLocale({
+        targetLanguage: updated.locale,
+        reason: "search_discovery_enable",
+      });
+    } catch {
+      // Best-effort; Admin update must not fail because of enqueue.
+    }
+  }
+
   // Closure 05 / activation auto-materialization — Admin enabling content
   // translation schedules bounded Media PLP for all consumer-visible families
   // (editorial + principles/trusted/fact/propaganda + bounded news).

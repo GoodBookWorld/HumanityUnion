@@ -173,6 +173,16 @@ export {
   resolveAutomaticContentTranslationWarmTargets,
 } from "./content-translation-warm-targets.js";
 export {
+  assertSearchDiscoveryTargetLocale,
+  listSearchDiscoveryContentTranslationTargetLocales,
+  resolveSearchDiscoveryContentTranslationWarmTargets,
+} from "./content-translation-search-discovery-targets.js";
+export {
+  enqueueInitiativeSearchDiscoveryForLocale,
+  listSearchableInitiativeIdsForDiscovery,
+  scheduleInitiativeSearchDiscoveryAfterSearchEnabled,
+} from "./content-translation-search-discovery-enqueue.js";
+export {
   runMediaHuOwnedLocalizationIntegrityCheck,
   classifyMediaEditorialLocalizationForLocale,
 } from "./media-hu-localization-integrity.js";

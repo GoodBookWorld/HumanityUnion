@@ -1,11 +1,15 @@
 /**
- * Pack 02G Task 04 — ContentTranslationWarmRequested consumer.
+ * Pack 02G Task 04 / Step 06C.1 — ContentTranslationWarmRequested consumer.
  *
  * Reloads authoritative public source + Registry targets at execution.
- * Reuses getOrCreateContentTranslation(intent=automatic_warm).
+ * Reuses getOrCreateContentTranslation:
+ *   - automatic_warm for enabled + contentTranslationEnabled locales
+ *   - search_discovery for Initiative enabled + searchEnabled locales
+ *     (union with automatic; automatic preferred when both qualify)
  */
 
 import type {
+  ContentTranslationIntent,
   ContentTranslationSourceKind,
   ContentTranslationWarmReason,
   ContentTranslationWarmRequestedCommand,
@@ -22,6 +26,7 @@ import {
   assertCanonicalSourceEligibleForTranslation,
   isRedundantTargetLanguage,
 } from "./content-translation-eligibility.js";
+import { resolveSearchDiscoveryContentTranslationWarmTargets } from "./content-translation-search-discovery-targets.js";
 import {
   mapWithConcurrency,
   resolveContentTranslationWarmLocaleConcurrency,
@@ -228,10 +233,22 @@ export async function processContentTranslationWarmRequested(
     };
   }
 
-  const { registryCandidates, warmTargetLocales: registryTargets } =
+  const { registryCandidates, warmTargetLocales: automaticTargets } =
     await resolveAutomaticContentTranslationWarmTargets({
       excludeSourceLanguage: source.sourceLanguage,
     });
+  const automaticTargetSet = new Set(automaticTargets);
+
+  // Step 06C.1 — Initiative warm also fans out enabled+searchEnabled discovery locales.
+  let registryTargets = automaticTargets;
+  if (source.sourceKind === "initiative") {
+    const discovery = await resolveSearchDiscoveryContentTranslationWarmTargets({
+      excludeSourceLanguage: source.sourceLanguage,
+    });
+    registryTargets = [
+      ...new Set([...automaticTargets, ...discovery.warmTargetLocales]),
+    ].sort((a, b) => a.localeCompare(b)) as LanguageCode[];
+  }
 
   // Pack 08K.2.2 — residual retry may constrain fan-out to ready locales only.
   let targets = registryTargets;
@@ -241,7 +258,9 @@ export async function processContentTranslationWarmRequested(
     if (targets.length === 0) {
       throw new TranslationProviderError(
         "bad_request",
-        "Residual retry targetLocales empty after Registry automatic-target intersection.",
+        source.sourceKind === "initiative"
+          ? "Residual retry targetLocales empty after Registry warm-target intersection."
+          : "Residual retry targetLocales empty after Registry automatic-target intersection.",
       );
     }
   }
@@ -284,6 +303,12 @@ export async function processContentTranslationWarmRequested(
       };
     }
 
+    // Prefer automatic_warm when locale qualifies for both Search + Extended Localization.
+    const intent: ContentTranslationIntent =
+      automaticTargetSet.has(targetLanguage) || source.sourceKind !== "initiative"
+        ? "automatic_warm"
+        : "search_discovery";
+
     try {
       const result = await withWorkIdentityLock(workIdentityKey, () =>
         getOrCreateContentTranslation({
@@ -291,7 +316,7 @@ export async function processContentTranslationWarmRequested(
           sourceRecordId: source.sourceRecordId,
           targetLanguage,
           generateIfMissing: true,
-          intent: "automatic_warm",
+          intent,
         }),
       );
 
