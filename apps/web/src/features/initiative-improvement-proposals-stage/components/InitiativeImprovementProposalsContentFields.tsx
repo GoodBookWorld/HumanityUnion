@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import {
   composeImprovementProposalHuSystemFields,
@@ -11,6 +11,8 @@ import {
 } from "@hu/types";
 
 import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
+import { getControlledVocabularyPreferredTermsMap } from "../../language/controlled-lifecycle-preferred-terms";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { buildInitiativeControlledVocabularyLabelLookup } from "../../public-initiative-experience/build-initiative-controlled-vocabulary-label-lookup";
 
 /**
@@ -43,14 +45,16 @@ export function InitiativeImprovementProposalsContentFields({
   readonly huSystemGeneration?: ImprovementProposalHuSystemGeneration | null;
 }) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const terminologyPreferredTerms = getControlledVocabularyPreferredTermsMap(locale);
   const labelLookup = useMemo(
     () =>
       buildInitiativeControlledVocabularyLabelLookup({
         tInitiativeExperience: t,
+        terminologyPreferredTerms,
       }),
-    [t],
+    [t, terminologyPreferredTerms],
   );
 
   const presented = useMemo(() => {

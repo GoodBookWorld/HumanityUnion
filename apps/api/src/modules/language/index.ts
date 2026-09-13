@@ -483,8 +483,11 @@ export {
   TerminologyGlossaryPersistenceError,
   TerminologyGlossaryValidationError,
   adminTerminologyGlossaryRouter,
+  publicTerminologyGlossaryRouter,
+  resolveControlledLifecyclePreferredTermsForLocale,
 } from "./terminology-glossary/index.js";
 export type {
+  ControlledLifecyclePreferredTermsResolution,
   ProviderTerminologyConceptLine,
   TerminologyGlossarySeedResult,
 } from "./terminology-glossary/index.js";

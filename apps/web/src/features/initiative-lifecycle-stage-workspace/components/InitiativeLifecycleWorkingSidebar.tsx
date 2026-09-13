@@ -38,6 +38,10 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  wrapAuthoritativeTermInMessage,
+} from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { getInitiativeAnalysisSourceSnapshot } from "../../initiative-collaborative-analysis/api";
 import { deriveAiAssistantInsights } from "../../initiative-collaborative-analysis/derive-ai-assistant-insights";
 import "../../initiative-collaborative-analysis/components/initiative-collaborative-analysis-workspace.css";
@@ -1746,6 +1750,7 @@ export function InitiativeLifecycleWorkingSidebar({
   supportBusy = false,
 }: InitiativeLifecycleWorkingSidebarProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -2003,13 +2008,18 @@ export function InitiativeLifecycleWorkingSidebar({
           >
             {isPublicImpactStage && projection.nextStage.stageId === "archive"
               ? t("author.sidebar.openCivicArchive")
-              : t("author.sidebar.nextStage", {
-                  stage: resolveLifecycleStageDisplayLabel(
-                    projection.nextStage.stageId,
+              : (() => {
+                  const nextStageLabel = resolveLifecycleStageDisplayLabel(
+                    projection.nextStage!.stageId,
                     t,
-                    projection.nextStage.label,
-                  ),
-                })}
+                    projection.nextStage!.label,
+                    { locale },
+                  );
+                  return wrapAuthoritativeTermInMessage(
+                    t("author.sidebar.nextStage", { stage: nextStageLabel }),
+                    nextStageLabel,
+                  );
+                })()}
           </WorkspaceButton>
         ) : null}
       </section>

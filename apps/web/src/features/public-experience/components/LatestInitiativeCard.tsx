@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import type { LatestInitiativeCardProjection } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 import {
   resolveInitiativeCardBadgeLabel,
@@ -31,6 +33,7 @@ function isActivePublicRoute(
 export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) {
   const t = useTranslations("publicGeo.shared");
   const tExperience = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const hasActivePublicRoute = isActivePublicRoute(initiative);
   const displayTitle = useInitiativeCardTitlePresentation({
     initiativeId: initiative.initiativeId,
@@ -38,13 +41,16 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
     canonicalSummary: initiative.summary,
   });
 
+  // Status badge: ordinary WEB_UI (not Terminology).
   const statusLabel = resolveInitiativeCardBadgeLabel({
     publicStatus: initiative.publicStatus,
     messagesOrT: tExperience,
   });
+  // Participation stage: controlled Terminology authority path.
   const stageLabel =
-    resolveInitiativeCardStageLabel(initiative.participationStage, tExperience) ||
-    initiative.participationStage;
+    resolveInitiativeCardStageLabel(initiative.participationStage, tExperience, {
+      locale,
+    }) || initiative.participationStage;
 
   return (
     <article
@@ -89,7 +95,9 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
         </div>
         <div className="latest-initiative-card__meta-item">
           <dt>{t("initiativeCard.participationStage")}</dt>
-          <dd>{stageLabel}</dd>
+          <dd>
+            <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+          </dd>
         </div>
         {!hasActivePublicRoute ? (
           <div className="latest-initiative-card__meta-item">

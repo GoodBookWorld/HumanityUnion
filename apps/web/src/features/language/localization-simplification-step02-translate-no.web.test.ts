@@ -96,14 +96,15 @@ describe("Localization Simplification Step 02 — Brand/Terminology translate=no
     const i18n = readWeb(
       "features/public-initiative-experience/initiative-experience-i18n.ts",
     );
-    // Resolver still falls through to registry English when preferredTerm/WEB_UI missing.
+    // Resolver uses preferredTerm when available, else WEB_UI, else registry English.
     assert.match(i18n, /resolveControlledLifecycleLabel|resolvePublicPresentationField/);
-    assert.match(i18n, /terminologyPreferredTerm:\s*null/);
+    assert.match(i18n, /getControlledLifecyclePreferredTerm/);
+    assert.doesNotMatch(i18n, /terminologyPreferredTerm:\s*null/);
     // Protection is applied at DOM wrappers, not only when preferredTerm is present.
     const banner = readWeb(
       "features/public-initiative-experience/components/CurrentLifecycleStageBanner.tsx",
     );
-    assert.doesNotMatch(banner, /preferredTerm[\s\S]{0,80}ProtectedAuthoritativeText/);
+    assert.match(banner, /ProtectedAuthoritativeText/);
   });
 
   it("ordinary long-form content is not globally marked translate=\"no\"", () => {

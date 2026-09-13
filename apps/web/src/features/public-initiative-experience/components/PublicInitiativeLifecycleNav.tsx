@@ -12,6 +12,7 @@ import {
   resolveLifecycleStateDisplayLabel,
 } from "../initiative-experience-i18n";
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 interface PublicInitiativeLifecycleNavProps {
   stages: PublicInitiativeLifecycleStageNavItem[];
@@ -38,13 +39,19 @@ export function PublicInitiativeLifecycleNav({
   activeRecordId,
 }: PublicInitiativeLifecycleNavProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const isPublicChoice = resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
   return (
     <nav className="pie-lifecycle" aria-label={t("lifecycle.navAria")}>
       <h2 className="pie-lifecycle__title">{t("lifecycle.title")}</h2>
       <ul className="pie-lifecycle__list">
         {stages.map((stage) => {
-          const stageLabel = resolveLifecycleStageDisplayLabel(stage.stageId, t, stage.label);
+          const stageLabel = resolveLifecycleStageDisplayLabel(
+            stage.stageId,
+            t,
+            stage.label,
+            { locale },
+          );
           const stateLabel = resolveLifecycleStateDisplayLabel(stage.state, t, stage.stateLabel);
           const isSelected = stage.stageId === selectedStageId;
           const isCurrent = stage.stageId === currentStageId;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleStageProjection } from "@hu/types";
 
@@ -9,6 +9,7 @@ import {
   resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 /**
  * Initiative Lifecycle — Part A Completion Part 8: the public-result and
@@ -29,11 +30,12 @@ export function InitiativeLifecyclePublicResultPanel({
   isPreview?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const stageLabel = resolveLifecycleStageDisplayLabel(
     projection.stageId,
     t,
     projection.stageLabel,
+    { locale },
   );
   const hasPublicResult = projection.metadata.canViewPublicResult;
   const hasDraftToPreview = isPreview && !hasPublicResult && projection.metadata.hasUnpublishedChanges;

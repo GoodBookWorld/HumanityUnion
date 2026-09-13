@@ -242,7 +242,9 @@ export function buildInitiativeHeroProps(
         label: t("hero.currentStage"),
         value: (
           <ProtectedAuthoritativeText>
-            {resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel)}
+            {resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel, {
+              locale,
+            })}
           </ProtectedAuthoritativeText>
         ),
         column: "b",

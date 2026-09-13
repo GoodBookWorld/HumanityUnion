@@ -3,7 +3,7 @@
 import type { RefObject, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import type {
   InitiativeLifecycleProfile,
   PublicInitiativeExperienceProjection,
@@ -26,6 +26,7 @@ import {
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
@@ -167,7 +168,7 @@ function PublicInitiativeOverview({
   presentationDescription?: string;
 }) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const metadata = initiative.metadata;
   const activityAreaRaw =
     metadata.activityArea === "Other" && metadata.activityAreaOther
@@ -187,6 +188,7 @@ function PublicInitiativeOverview({
     currentStageId,
     t,
     currentStageLabel,
+    { locale },
   );
   const geographicScope = formatInitiativePublicGeography({
     locale,
@@ -263,7 +265,12 @@ function PublicInitiativeOverview({
                     : undefined
                 }
               />
-              <OverviewMetadataItem label={t("overview.status")} value={localizedStageLabel} />
+              <OverviewMetadataItem
+                label={t("overview.status")}
+                value={
+                  <ProtectedAuthoritativeText>{localizedStageLabel}</ProtectedAuthoritativeText>
+                }
+              />
               <OverviewMetadataItem
                 label={t("overview.tags")}
                 value={formatList(metadata.tags) ?? undefined}
@@ -450,6 +457,7 @@ export function PublicInitiativeCenterPanel({
   presentationDescription,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
   const activeStage = experience.stageContent.find((stage) => stage.stageId === activeStageId);
@@ -563,7 +571,12 @@ export function PublicInitiativeCenterPanel({
           <section
             className="pie-center__panel"
             aria-label={t("common.lifecycleStageAria", {
-              stage: resolveLifecycleStageDisplayLabel(activeStage.stageId, t, activeStage.stageId),
+              stage: resolveLifecycleStageDisplayLabel(
+                activeStage.stageId,
+                t,
+                activeStage.stageId,
+                { locale },
+              ),
             })}
           >            <InitiativeLifecycleStageWorkspace
               initiativeId={experience.initiativeId}
@@ -768,6 +781,7 @@ export function PublicInitiativeCenterPanel({
                   t,
                   experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
                     ?.label,
+                  { locale },
                 )}
               </ProtectedAuthoritativeText>
             </h2>
@@ -803,6 +817,7 @@ export function PublicInitiativeCenterPanel({
                 t,
                 experience.lifecycleStages.find((stage) => stage.stageId === facingStageId)
                   ?.label,
+                { locale },
               );
               return (
                 <PublicInitiativeOverview

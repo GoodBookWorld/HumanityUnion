@@ -6,7 +6,7 @@ import {
   resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
 import { InitiativeExperienceRefreshProvider } from "../initiative-experience-refresh-context";
@@ -17,6 +17,7 @@ import {
   selectLifecycleNavStagesForDisplay,
 } from "../initiative-lifecycle-shell";
 import { resolveLifecycleStageDisplayLabel } from "../initiative-experience-i18n";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { parseCollaborationParticipantIdFromSearch } from "../discussion-comment-deep-link";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
@@ -52,7 +53,7 @@ export function PublicInitiativeExperiencePage({
   initialPresentation,
 }: PublicInitiativeExperiencePageProps) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const [experience, setExperience] = useState(initialExperience);
   const [showManageTab, setShowManageTab] = useState(false);
   const [activeTab, setActiveTab] = useState<CenterTab>("overview");
@@ -97,9 +98,11 @@ export function PublicInitiativeExperiencePage({
         experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
           ?.label ??
         experience.hero.currentStageLabel,
+      { locale },
     );
   }, [
     t,
+    locale,
     navStages,
     presentationCurrentStageId,
     experience.lifecycleStages,

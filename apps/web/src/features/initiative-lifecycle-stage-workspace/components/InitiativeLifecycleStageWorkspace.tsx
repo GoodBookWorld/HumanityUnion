@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleProfile, InitiativeLifecycleStageProjection } from "@hu/types";
 import {
@@ -19,7 +19,8 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { ProtectedAuthoritativeText, wrapAuthoritativeTermInMessage } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { getInitiativeLifecycleStageProjection } from "../api";
 import { InitiativeLifecycleSourceSnapshotPanel } from "./InitiativeLifecycleSourceSnapshotPanel";
 import { InitiativeLifecyclePublicResultPanel } from "./InitiativeLifecyclePublicResultPanel";
@@ -107,11 +108,12 @@ function StageHeader({
   showStageOrdinal: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const stageLabel = resolveLifecycleStageDisplayLabel(
     projection.stageId,
     t,
     projection.stageLabel,
+    { locale },
   );
   const statusLabel = resolvePresentationStatusDisplayLabel(
     projection.metadata.presentationStatus,
@@ -173,13 +175,17 @@ function StageHeader({
 
 function AuthorDraftEmptyState({ stageId, fallbackLabel }: { stageId: string; fallbackLabel: string }) {
   const t = useTranslations("initiativeExperience");
-  const stageLabel = resolveLifecycleStageDisplayLabel(stageId, t, fallbackLabel);
+  const locale = useControlledLifecyclePreferredTermsLocale();
+  const stageLabel = resolveLifecycleStageDisplayLabel(stageId, t, fallbackLabel, { locale });
 
   return (
     <div className="lsw-empty">
       <h3 className="lsw-empty__title">{t("author.shared.noDraftYet")}</h3>
       <p className="lsw-empty__explanation">
-        {t("author.shared.noDraftYetExplanation", { stage: stageLabel })}
+        {wrapAuthoritativeTermInMessage(
+          t("author.shared.noDraftYetExplanation", { stage: stageLabel }),
+          stageLabel,
+        )}
       </p>
     </div>
   );
@@ -235,11 +241,13 @@ function StageFooterNav({
   onTogglePreview: () => void;
 }) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const previousLabel = projection.previousStage
     ? resolveLifecycleStageDisplayLabel(
         projection.previousStage.stageId,
         t,
         projection.previousStage.label,
+        { locale },
       )
     : null;
   const nextLabel = projection.nextStage
@@ -247,6 +255,7 @@ function StageFooterNav({
         projection.nextStage.stageId,
         t,
         projection.nextStage.label,
+        { locale },
       )
     : null;
 
@@ -260,7 +269,10 @@ function StageFooterNav({
               onNavigateStage(projection.previousStage!.stageId, projection.previousStage!.hash)
             }
           >
-            {t("author.shared.previousStage", { stage: previousLabel })}
+            {wrapAuthoritativeTermInMessage(
+              t("author.shared.previousStage", { stage: previousLabel }),
+              previousLabel,
+            )}
           </WorkspaceButton>
         ) : null}
         <Link href={returnToInitiativeHref} className="lsw-footer__return">
@@ -281,7 +293,10 @@ function StageFooterNav({
             }
             onClick={() => onNavigateStage(projection.nextStage!.stageId, projection.nextStage!.hash)}
           >
-            {t("author.shared.nextStage", { stage: nextLabel })}
+            {wrapAuthoritativeTermInMessage(
+              t("author.shared.nextStage", { stage: nextLabel }),
+              nextLabel,
+            )}
           </WorkspaceButton>
         ) : null}
       </div>

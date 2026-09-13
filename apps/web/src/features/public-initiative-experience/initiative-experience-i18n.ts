@@ -16,6 +16,7 @@ import {
 } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../language/format-language-display-name";
+import { getControlledLifecyclePreferredTerm } from "../language/controlled-lifecycle-preferred-terms";
 import { normalizeInitiativeStageCode } from "./normalize-initiative-stage-code";
 import {
   looksLikeRawI18nKey,
@@ -182,10 +183,24 @@ export function formatInitiativeExperienceLanguageName(
   return formatLanguageDisplayName(interfaceLocale, languageCode);
 }
 
+export type ResolveLifecycleStageDisplayLabelOptions = {
+  /**
+   * Presentation/document locale used to look up Terminology preferredTerm
+   * from the shared controlled-lifecycle preferred-terms cache.
+   */
+  readonly locale?: string;
+  /**
+   * Explicit preferredTerm override. When provided (including null), skips
+   * the locale cache lookup for this call.
+   */
+  readonly terminologyPreferredTerm?: string | null;
+};
+
 export function resolveLifecycleStageDisplayLabel(
   stageId: string,
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
   fallbackLabel?: string,
+  options?: ResolveLifecycleStageDisplayLabelOptions,
 ): string {
   const code = normalizeInitiativeStageCode(stageId);
   const webUi = resolveLabel(messagesOrT, `stages.${code}`, "");
@@ -195,10 +210,19 @@ export function resolveLifecycleStageDisplayLabel(
     PUBLIC_INITIATIVE_EXPERIENCE_STAGES.find((stage) => stage.stageId === code)
       ?.label ?? fallbackLabel ?? humanizeFallback(code);
 
+  const terminologyPreferredTerm =
+    options && Object.prototype.hasOwnProperty.call(options, "terminologyPreferredTerm")
+      ? (typeof options.terminologyPreferredTerm === "string"
+          ? options.terminologyPreferredTerm.trim() || null
+          : null)
+      : options?.locale
+        ? getControlledLifecyclePreferredTerm(options.locale, code)
+        : null;
+
   return resolvePublicPresentationField({
     fieldClass: "controlled_vocabulary",
     controlledLifecycle: {
-      terminologyPreferredTerm: null,
+      terminologyPreferredTerm,
       webUiControlledLabel,
       registryCanonicalEnglishLabel,
       stageId: code,
@@ -213,11 +237,14 @@ export function resolveLifecycleStageDisplayLabel(
 export function formatLifecycleStageDisplayList(
   stageIds: readonly string[],
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+  options?: ResolveLifecycleStageDisplayLabelOptions,
 ): string {
   return stageIds
     .map((stageId) => stageId.trim())
     .filter(Boolean)
-    .map((stageId) => resolveLifecycleStageDisplayLabel(stageId, messagesOrT))
+    .map((stageId) =>
+      resolveLifecycleStageDisplayLabel(stageId, messagesOrT, undefined, options),
+    )
     .join(", ");
 }
 

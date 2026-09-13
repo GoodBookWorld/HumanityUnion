@@ -38,9 +38,14 @@ export {
 } from "./terminology-glossary.provider-context.js";
 export type { ProviderTerminologyConceptLine } from "./terminology-glossary.provider-context.js";
 export {
+  resolveControlledLifecyclePreferredTermsForLocale,
+} from "./terminology-glossary.public.js";
+export type { ControlledLifecyclePreferredTermsResolution } from "./terminology-glossary.public.js";
+export {
   getAdminTerminologyConcept,
   listAdminTerminologyConcepts,
   setTerminologyGlossaryAdminAssertOverrideForTests,
   updateAdminTerminologyConcept,
 } from "./admin-terminology-glossary.service.js";
 export { default as adminTerminologyGlossaryRouter } from "./admin-terminology-glossary.routes.js";
+export { default as publicTerminologyGlossaryRouter } from "./public-terminology-glossary.routes.js";

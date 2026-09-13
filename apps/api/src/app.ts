@@ -229,6 +229,7 @@ import {
   adminLanguagesRouter,
   adminTerminologyGlossaryRouter,
   publicLanguagesRouter,
+  publicTerminologyGlossaryRouter,
   runtimeLocaleRouter,
 } from "./modules/language/index.js";
 import {
@@ -289,6 +290,7 @@ app.use("/api/v1/languages", publicLanguagesRouter);
 app.use("/api/v1/brand-localization", publicBrandLocalizationRouter);
 app.use("/api/v1/legal-localization", publicLegalLocalizationRouter);
 app.use("/api/v1/web-ui-message-packs", publicWebUiMessagePackRouter);
+app.use("/api/v1/terminology-glossary", publicTerminologyGlossaryRouter);
 app.use("/api/v1/runtime-locale", runtimeLocaleRouter);
 app.use("/api/v1/admin/languages", adminLanguagesRouter);
 app.use("/api/v1/admin/brand-localization", adminBrandLocalizationRouter);

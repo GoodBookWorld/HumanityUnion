@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleStageMetadata } from "@hu/types";
 
@@ -12,6 +12,7 @@ import {
   resolvePresentationStatusDisplayLabel,
 } from "../initiative-experience-i18n";
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 import "./current-lifecycle-stage-banner.css";
 
@@ -29,7 +30,7 @@ export function CurrentLifecycleStageBanner({
   stageLabel: string;
 }) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const [metadata, setMetadata] = useState<InitiativeLifecycleStageMetadata | null>(null);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function CurrentLifecycleStageBanner({
     stageId,
     t,
     stageLabel,
+    { locale },
   );
 
   return (

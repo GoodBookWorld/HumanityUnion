@@ -4,11 +4,15 @@
  * World / latest projections Title-Case Initiative **status** into publicStatus
  * and often reuse that string as currentStageLabel — that is NOT a lifecycle
  * stage id. Cards must resolve status via statuses.* catalogs.
+ *
+ * Simplification Step 04C — lifecycle **stage** labels reuse Terminology
+ * preferredTerm via `{ locale }` (status badges remain ordinary WEB_UI).
  */
 
 import type {
   InitiativeExperienceMessages,
   InitiativeExperienceTranslator,
+  ResolveLifecycleStageDisplayLabelOptions,
 } from "../public-initiative-experience/initiative-experience-i18n";
 import {
   resolveInitiativeStatusDisplayLabel,
@@ -63,6 +67,7 @@ type MessagesOrT = InitiativeExperienceMessages | InitiativeExperienceTranslator
 /**
  * Resolve Initiative **status** for public cards (proposal / discussion / …).
  * Accepts Title-Case API transport (`Proposal`) and raw codes.
+ * Ordinary WEB_UI — not Terminology controlled vocabulary.
  */
 export function resolveInitiativeCardStatusLabel(
   status: string | undefined | null,
@@ -98,6 +103,7 @@ export function resolveInitiativeCardStatusLabel(
 export function resolveInitiativeCardStageLabel(
   stageIdOrLabel: string | undefined | null,
   messagesOrT: MessagesOrT,
+  options?: ResolveLifecycleStageDisplayLabelOptions,
 ): string {
   const raw = typeof stageIdOrLabel === "string" ? stageIdOrLabel.trim() : "";
   if (!raw) {
@@ -110,7 +116,7 @@ export function resolveInitiativeCardStageLabel(
       return humanizeInitiativeSemanticCode(code);
     }
     return sanitizeInitiativeCardLabel(
-      resolveLifecycleStageDisplayLabel(code, messagesOrT),
+      resolveLifecycleStageDisplayLabel(code, messagesOrT, undefined, options),
       humanizeInitiativeSemanticCode(code),
     );
   }
@@ -122,7 +128,7 @@ export function resolveInitiativeCardStageLabel(
     // Allow multi-word English stage labels ("Collaborative Analysis", "Improvement Proposals").
     if (raw.includes(" ") && isKnownInitiativeStageCode(multiWordStage)) {
       return sanitizeInitiativeCardLabel(
-        resolveLifecycleStageDisplayLabel(multiWordStage, messagesOrT),
+        resolveLifecycleStageDisplayLabel(multiWordStage, messagesOrT, undefined, options),
         humanizeInitiativeSemanticCode(multiWordStage),
       );
     }
@@ -140,7 +146,7 @@ export function resolveInitiativeCardStageLabel(
   if (!isKnownInitiativeStageCode(code)) {
     return "";
   }
-  const localized = resolveLifecycleStageDisplayLabel(code, messagesOrT);
+  const localized = resolveLifecycleStageDisplayLabel(code, messagesOrT, undefined, options);
   return sanitizeInitiativeCardLabel(localized, humanizeInitiativeSemanticCode(code));
 }
 
@@ -149,6 +155,9 @@ export function resolveInitiativeCardStageLabel(
  * World projections Title-Case Initiative status into publicStatus / currentStageLabel —
  * never treat those as lifecycle stage ids (avoids stages.Proposal key leak and
  * stages.proposal → "Improvement Proposals" false positive).
+ *
+ * When an explicit snake_case stage id is present, stage resolution may use
+ * Terminology preferredTerm via `options.locale`.
  */
 export function resolveInitiativeCardBadgeLabel(input: {
   readonly publicStatus?: string | null;
@@ -156,12 +165,13 @@ export function resolveInitiativeCardBadgeLabel(input: {
   readonly currentStageId?: string | null;
   readonly participationStage?: string | null;
   readonly messagesOrT: MessagesOrT;
+  readonly options?: ResolveLifecycleStageDisplayLabelOptions;
 }): string {
-  const { messagesOrT } = input;
+  const { messagesOrT, options } = input;
 
   // Explicit lifecycle stage id only (snake_case from experience, not Title-Case status).
   if (input.currentStageId?.trim() && /^[a-z][a-z0-9_]*$/.test(input.currentStageId.trim())) {
-    const stage = resolveInitiativeCardStageLabel(input.currentStageId, messagesOrT);
+    const stage = resolveInitiativeCardStageLabel(input.currentStageId, messagesOrT, options);
     if (stage) {
       return stage;
     }
@@ -176,7 +186,11 @@ export function resolveInitiativeCardBadgeLabel(input: {
   }
 
   if (input.participationStage?.trim()) {
-    const stage = resolveInitiativeCardStageLabel(input.participationStage, messagesOrT);
+    const stage = resolveInitiativeCardStageLabel(
+      input.participationStage,
+      messagesOrT,
+      options,
+    );
     if (stage) {
       return stage;
     }

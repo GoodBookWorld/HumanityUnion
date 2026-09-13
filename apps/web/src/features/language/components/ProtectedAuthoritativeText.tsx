@@ -8,6 +8,7 @@
  */
 import {
   createElement,
+  Fragment,
   type ComponentPropsWithoutRef,
   type ElementType,
   type ReactElement,
@@ -36,5 +37,31 @@ export function ProtectedAuthoritativeText<T extends ElementType = "span">(
       translate: "no",
     },
     children,
+  );
+}
+
+/**
+ * Wrap a resolved controlled term inside an already-localized ICU message
+ * without changing catalog tag shapes. Ordinary message chrome stays
+ * browser-translatable; only the authoritative term is `translate="no"`.
+ */
+export function wrapAuthoritativeTermInMessage(
+  message: string,
+  authoritativeTerm: string,
+): ReactNode {
+  const term = authoritativeTerm.trim();
+  if (!term) {
+    return message;
+  }
+  const index = message.indexOf(term);
+  if (index < 0) {
+    return message;
+  }
+  return createElement(
+    Fragment,
+    null,
+    message.slice(0, index),
+    createElement(ProtectedAuthoritativeText, null, term),
+    message.slice(index + term.length),
   );
 }

@@ -11,6 +11,7 @@ import {
   resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 /**
  * Initiative Lifecycle — Part M, Section 22. Shared Archive Document
@@ -24,6 +25,7 @@ export function InitiativeCivicArchiveDocumentRenderer({
   readonly metaLabel?: string;
 }) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
 
   return (
     <article className="ica-public" aria-label={t("author.archive.document.aria")}>
@@ -62,7 +64,8 @@ export function InitiativeCivicArchiveDocumentRenderer({
             <li className="ica-source-panel__item" key={entry.stageId}>
               <span className="ica-source-panel__label">
                 <ProtectedAuthoritativeText>
-                  {resolveLifecycleStageDisplayLabel(entry.stageId, t) || entry.label}
+                  {resolveLifecycleStageDisplayLabel(entry.stageId, t, undefined, { locale }) ||
+                    entry.label}
                 </ProtectedAuthoritativeText>
               </span>
               <p className="ica-source-panel__summary">

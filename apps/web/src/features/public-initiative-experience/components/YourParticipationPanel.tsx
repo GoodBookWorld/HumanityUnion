@@ -10,7 +10,11 @@ import {
   resolveCollectiveParticipationStatusDisplay,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import {
+  ProtectedAuthoritativeText,
+  wrapAuthoritativeTermInMessage,
+} from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 interface YourParticipationPanelProps {
   readonly journey: CollectiveParticipationJourney;
@@ -27,11 +31,13 @@ export function YourParticipationPanel({
   isAuthorPrimary,
 }: YourParticipationPanelProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const signedOut = journey.participantId === null;
   const stageLabel = resolveLifecycleStageDisplayLabel(
     journey.currentStageId,
     t,
     journey.currentStageLabel,
+    { locale },
   );
 
   return (
@@ -45,7 +51,10 @@ export function YourParticipationPanel({
       ) : null}
 
       <p className="pie-participation__stage">
-        {t("sidebar.participation.currentStage", { stage: stageLabel })}
+        {wrapAuthoritativeTermInMessage(
+          t("sidebar.participation.currentStage", { stage: stageLabel }),
+          stageLabel,
+        )}
         {journey.activeAlly ? t("sidebar.participation.activeAllySuffix") : null}
       </p>
 
@@ -69,7 +78,7 @@ export function YourParticipationPanel({
                 {" "}
                 ·{" "}
                 <ProtectedAuthoritativeText>
-                  {resolveLifecycleStageDisplayLabel(action.stageId, t)}
+                  {resolveLifecycleStageDisplayLabel(action.stageId, t, undefined, { locale })}
                 </ProtectedAuthoritativeText>
               </span>
             </li>
