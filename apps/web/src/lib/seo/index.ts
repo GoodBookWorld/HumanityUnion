@@ -62,6 +62,7 @@ export {
   collectPublicSitemapPathEntries,
   toMetadataRouteSitemap,
 } from "./sitemap/build-public-sitemap";
+export { expandPublicSitemapEntriesForSeoLocales } from "./sitemap/expand-public-sitemap-for-seo-locales";
 export { STATIC_PUBLIC_SITEMAP_PATHS } from "./sitemap/providers/static-public-pages";
 export {
   JsonLdScript,

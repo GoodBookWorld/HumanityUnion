@@ -143,8 +143,8 @@ describe("SEO Pack 02I / Step 07C.2 — hreflang ACTIVE for SEO perimeter", () =
   });
 });
 
-describe("SEO Pack 02I — sitemap remains locale-free until multilingual sitemap step", () => {
-  it("static sitemap entries are one URL per entity without locale prefixes", () => {
+describe("SEO Pack 02I / Step 07E — static inventory locale-free; expansion is Registry-driven", () => {
+  it("static sitemap provider entries are locale-free (expansion applied later)", () => {
     const entries = listStaticPublicSitemapEntries();
     assert.ok(entries.length > 0);
     for (const entry of entries) {
@@ -154,13 +154,16 @@ describe("SEO Pack 02I — sitemap remains locale-free until multilingual sitema
     }
   });
 
-  it("toMetadataRouteSitemap does not invent locale query/path prefixes", async () => {
+  it("canonical-only collect (empty SEO locales) does not invent locale prefixes", async () => {
     const prevMode = process.env.NEXT_PUBLIC_PLATFORM_MODE;
     const prevOrigin = process.env.NEXT_PUBLIC_SITE_URL;
     process.env.NEXT_PUBLIC_PLATFORM_MODE = "production";
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.org";
     try {
-      const paths = await collectPublicSitemapPathEntries({ includeDynamicProviders: false });
+      const paths = await collectPublicSitemapPathEntries({
+        includeDynamicProviders: false,
+        seoIndexableLocales: [],
+      });
       const sitemap = toMetadataRouteSitemap(paths, "https://example.org");
       assert.ok(sitemap.length > 0);
       for (const row of sitemap) {
