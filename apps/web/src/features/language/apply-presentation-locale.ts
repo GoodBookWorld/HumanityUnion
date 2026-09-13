@@ -1,24 +1,27 @@
 /**
- * Shared presentation-locale apply path (Pack 02C / Simplification Step 06A.3).
+ * Shared presentation-locale apply path (Pack 02C / Simplification Steps 06A.3–06A.5).
  *
  * Same sequence formerly inlined in LanguageSelector:
- * write Web-origin `hu_lang` → latch → Registry-driven locale navigation.
+ * claim sync generation → write Web-origin `hu_lang` → latch → Registry-driven navigation.
  *
  * Does not persist participant preferences (callers that need prefs write first).
  * Does not set document lang/dir client-side — SSR recomposes via navigation/refresh.
  */
 
-import { markInterfaceLanguageCookieSynced } from "./components/InterfaceLanguageCookieSync";
-import { recordLocaleSwitchStarted } from "./media-plp/media-plp-locale-switch-machine";
-import { resolveLocaleSwitchNavigationHref } from "./resolve-locale-switch-navigation-href";
+import {
+  claimAuthoritativePresentationLocale,
+  markInterfaceLanguageCookieSynced,
+} from "./presentation-locale-cookie-sync.js";
+import { recordLocaleSwitchStarted } from "./media-plp/media-plp-locale-switch-machine.js";
+import { resolveLocaleSwitchNavigationHref } from "./resolve-locale-switch-navigation-href.js";
 import {
   runLocaleSwitchNavigation,
   type LocaleSwitchRouter,
-} from "./run-locale-switch-navigation";
+} from "./run-locale-switch-navigation.js";
 import {
   writeHuLangCookieViaWebRoute,
   type WriteHuLangCookieResult,
-} from "./write-hu-lang-cookie";
+} from "./write-hu-lang-cookie.js";
 
 export type ApplyPresentationLocaleInput = {
   /** Requested locale or alias; cookie write canonicalizes via Registry. */
@@ -31,8 +34,8 @@ export type ApplyPresentationLocaleInput = {
   readonly seoIndexingEnabled: boolean;
   readonly router: LocaleSwitchRouter;
   /**
-   * When true, mark InterfaceLanguageCookieSync latch after a successful cookie write
-   * (authenticated Preference / selector flows).
+   * When true, claim Cookie Sync generation before write and latch after success
+   * so stale InterfaceLanguageCookieSync attempts cannot overwrite this locale.
    */
   readonly markAuthenticatedSync?: boolean;
   /**
@@ -62,9 +65,18 @@ export type ApplyPresentationLocaleResult = {
 export async function applyPresentationLocale(
   input: ApplyPresentationLocaleInput,
 ): Promise<ApplyPresentationLocaleResult> {
-  const written = await writeHuLangCookieViaWebRoute(input.locale);
+  const requested = input.locale.trim();
+
+  // Invalidate in-flight Cookie Sync *before* writing so a stale prefs fetch
+  // cannot overwrite this apply after our Set-Cookie lands.
+  if (input.markAuthenticatedSync === true && requested) {
+    claimAuthoritativePresentationLocale(requested);
+  }
+
+  const written = await writeHuLangCookieViaWebRoute(requested);
 
   if (input.markAuthenticatedSync === true) {
+    // Latch canonical Registry locale from the write response (may differ from alias).
     markInterfaceLanguageCookieSynced(written.locale);
   }
 

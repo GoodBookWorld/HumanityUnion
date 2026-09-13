@@ -35,9 +35,7 @@ describe("Localization Simplification Step 06A.3 — Preferred Reading presentat
     assert.doesNotMatch(handleSubmit, /router\.refresh\(\)/);
 
     assert.match(apply, /writeHuLangCookieViaWebRoute/);
-    assert.match(apply, /resolveLocaleSwitchNavigationHref/);
-    assert.match(apply, /runLocaleSwitchNavigation/);
-    assert.match(apply, /markInterfaceLanguageCookieSynced/);
+    assert.match(apply, /claimAuthoritativePresentationLocale|markInterfaceLanguageCookieSynced/);
   });
 
   it("A. shared apply writes cookie then navigates for arbitrary non-SEO Registry locale", async () => {

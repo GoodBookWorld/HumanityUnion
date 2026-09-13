@@ -17,6 +17,7 @@ import { ApiUnavailableState } from "../../../design-system/components/ApiUnavai
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { applyPresentationLocale } from "../../language/apply-presentation-locale";
+import { resolvePreferredPresentationLocale } from "../../language/presentation-locale-cookie-sync";
 import {
   listSelectablePublicLanguages,
   type SelectablePublicLanguage,
@@ -155,11 +156,11 @@ export function PreferencesWorkspace() {
           visibilityPreferences: preferences.visibilityPreferences,
         });
         setPreferences(updated);
-        // Simplification Step 01 — Preferred Reading Language syncs interfaceLanguage
-        // server-side. Step 06A.3 — apply presentation locale via the shared
-        // LanguageSelector path (hu_lang write + runLocaleSwitchNavigation).
-        const presentationLocale =
-          updated.experiencePreferences.interfaceLanguage?.trim() || "";
+        // Step 06A.5 — Preferred Reading (`readingLanguages[0]`) is presentation
+        // authority; interfaceLanguage is the aligned server-synced fallback.
+        // applyPresentationLocale claims Cookie Sync generation so stale syncs
+        // cannot overwrite hu_lang after this write.
+        const presentationLocale = resolvePreferredPresentationLocale(updated);
         if (presentationLocale) {
           const selected = languageOptions.find(
             (row) => row.locale === presentationLocale,

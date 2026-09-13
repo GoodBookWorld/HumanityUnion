@@ -90,6 +90,12 @@ export { DocumentLanguageAttributes } from "./components/DocumentLanguageAttribu
 export { InterfaceLanguageCookieSync } from "./components/InterfaceLanguageCookieSync";
 export { LanguageSelector } from "./components/LanguageSelector";
 export {
+  claimAuthoritativePresentationLocale,
+  markInterfaceLanguageCookieSynced,
+  resolvePreferredPresentationLocale,
+  resetInterfaceLanguageCookieSyncForTests,
+} from "./presentation-locale-cookie-sync";
+export {
   listPriorityLanguages,
   resolveTranslatedContent,
   generateContentTranslation,

@@ -5,38 +5,39 @@ import { useEffect } from "react";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences } from "../../preferences/preferences-api";
-import { readHuLangCookieFromDocument } from "../hu-lang-cookie.web";
 import { shouldSuppressInterfaceLanguageCookieSyncForPath } from "../public-seo-locale-request";
-import { writeHuLangCookieViaWebRoute } from "../write-hu-lang-cookie";
+import {
+  clearPresentationLocaleCookieSyncSession,
+  createBrowserPresentationLocaleCookieSyncDeps,
+  runPresentationLocaleCookieSyncAttempt,
+  schedulePresentationLocaleCookieSync,
+} from "../presentation-locale-cookie-sync";
+
+export {
+  claimAuthoritativePresentationLocale,
+  clearPresentationLocaleCookieSyncSession,
+  markInterfaceLanguageCookieSynced,
+  resetInterfaceLanguageCookieSyncForTests,
+  resolvePreferredPresentationLocale,
+  runPresentationLocaleCookieSyncAttempt,
+  getPresentationLocaleSyncGenerationForTests,
+  getLastSyncedPresentationLocaleForTests,
+} from "../presentation-locale-cookie-sync";
 
 /**
- * Module-level latch — survives soft remounts after `router.refresh()` so we
- * do not re-write the same cookie or refresh in a loop.
- */
-let lastSyncedInterfaceLocale: string | null = null;
-let syncInFlight: Promise<void> | null = null;
-
-export function markInterfaceLanguageCookieSynced(locale: string): void {
-  lastSyncedInterfaceLocale = locale.trim();
-}
-
-/** Test-only. */
-export function resetInterfaceLanguageCookieSyncForTests(): void {
-  lastSyncedInterfaceLocale = null;
-  syncInFlight = null;
-}
-
-/**
- * Pack 02C Task 03/04 — after authenticated session resolution/login, sync
- * Participant `interfaceLanguage` → Web-origin `hu_lang` when they differ.
+ * Pack 02C Task 03/04 / Simplification Step 06A.5 — after authenticated session
+ * resolution/login, sync Preferred Reading / interfaceLanguage → Web-origin `hu_lang`
+ * when they differ from the actual cookie.
  *
  * Pack 2.1A — on a valid locale-prefixed SEO public document URL, do not write
  * a conflicting cookie or `router.refresh()` (URL locale remains authoritative).
- * Locale-free pages keep the existing preference → cookie sync behavior.
  *
  * Does not read API host-only auth cookies from the server. Uses the existing
  * credentialed Preferences API from the browser after auth status is known.
  * Does not mutate documentElement.lang/dir (SSR refresh applies attributes).
+ *
+ * Step 06A.5 — generation tokens invalidate stale in-flight syncs so they cannot
+ * overwrite a newer Preferences presentation apply. Latch alone is never cookie proof.
  */
 export function InterfaceLanguageCookieSync() {
   const authStatus = useClientAuthStatus();
@@ -46,7 +47,7 @@ export function InterfaceLanguageCookieSync() {
   useEffect(() => {
     if (authStatus !== "authenticated") {
       if (authStatus === "unauthenticated") {
-        lastSyncedInterfaceLocale = null;
+        clearPresentationLocaleCookieSyncSession();
       }
       return;
     }
@@ -55,47 +56,22 @@ export function InterfaceLanguageCookieSync() {
       return;
     }
 
-    if (syncInFlight) {
-      return;
-    }
-
     let cancelled = false;
 
-    syncInFlight = (async () => {
-      try {
-        const preferences = await getMyPreferences();
-        if (cancelled) {
-          return;
-        }
-
-        const interfaceLanguage = preferences.experiencePreferences.interfaceLanguage?.trim();
-        if (!interfaceLanguage) {
-          return;
-        }
-
-        if (lastSyncedInterfaceLocale === interfaceLanguage) {
-          return;
-        }
-
-        const currentCookie = readHuLangCookieFromDocument();
-        if (currentCookie === interfaceLanguage) {
-          lastSyncedInterfaceLocale = interfaceLanguage;
-          return;
-        }
-
-        await writeHuLangCookieViaWebRoute(interfaceLanguage);
-        if (cancelled) {
-          return;
-        }
-
-        lastSyncedInterfaceLocale = interfaceLanguage;
-        router.refresh();
-      } catch {
-        // Best-effort sync — preference remains authoritative on API requests.
-      } finally {
-        syncInFlight = null;
-      }
-    })();
+    schedulePresentationLocaleCookieSync({
+      run: async (generation) => {
+        await runPresentationLocaleCookieSyncAttempt(
+          createBrowserPresentationLocaleCookieSyncDeps({
+            generation,
+            isCancelled: () => cancelled,
+            refresh: () => {
+              router.refresh();
+            },
+            getPreferences: getMyPreferences,
+          }),
+        );
+      },
+    });
 
     return () => {
       cancelled = true;

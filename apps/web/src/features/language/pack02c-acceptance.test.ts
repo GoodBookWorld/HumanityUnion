@@ -121,9 +121,10 @@ describe("Production Completion Pack 02C Task 04 — local acceptance", () => {
 
   it("F — Login sync: no documentElement mutation; latch + skip when cookie matches", () => {
     const sync = readWeb("features/language/components/InterfaceLanguageCookieSync.tsx");
-    assert.match(sync, /lastSyncedInterfaceLocale/);
-    assert.match(sync, /currentCookie === interfaceLanguage/);
-    assert.match(sync, /writeHuLangCookieViaWebRoute/);
+    const syncCore = readWeb("features/language/presentation-locale-cookie-sync.ts");
+    assert.match(syncCore, /lastSyncedPresentationLocale/);
+    assert.match(syncCore, /currentCookie === target/);
+    assert.match(syncCore, /writeHuLangCookieViaWebRoute/);
     assert.match(sync, /router\.refresh/);
     assert.doesNotMatch(sync, /document\.documentElement/);
     assert.match(sync, /authStatus === "unauthenticated"/);

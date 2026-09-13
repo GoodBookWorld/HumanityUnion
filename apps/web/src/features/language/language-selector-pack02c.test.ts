@@ -122,9 +122,12 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.doesNotMatch(selector, /normalizeLanguageCode/);
 
     assert.match(sync, /getMyPreferences/);
-    assert.match(sync, /writeHuLangCookieViaWebRoute/);
+    assert.match(sync, /runPresentationLocaleCookieSyncAttempt/);
     assert.match(sync, /router\.refresh/);
     assert.doesNotMatch(sync, /document\.documentElement\.lang/);
+    const syncCore = readWeb("features/language/presentation-locale-cookie-sync.ts");
+    assert.match(syncCore, /writeHuLangCookieViaWebRoute/);
+    assert.match(syncCore, /currentCookie === target/);
 
     assert.match(route, /canonicalizeEnabledLocale/);
     assert.match(route, /buildWebHuLangCookieAttributes/);

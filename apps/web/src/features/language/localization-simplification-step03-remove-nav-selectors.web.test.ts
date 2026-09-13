@@ -44,8 +44,10 @@ describe("Localization Simplification Step 03 — remove public LanguageSelector
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
     assert.match(layout, /InterfaceLanguageCookieSync/);
     const sync = readWeb("features/language/components/InterfaceLanguageCookieSync.tsx");
-    assert.match(sync, /writeHuLangCookieViaWebRoute/);
+    const syncCore = readWeb("features/language/presentation-locale-cookie-sync.ts");
+    assert.match(sync, /runPresentationLocaleCookieSyncAttempt/);
     assert.match(sync, /shouldSuppressInterfaceLanguageCookieSyncForPath/);
+    assert.match(syncCore, /writeHuLangCookieViaWebRoute/);
   });
 
   it("Preferences remains the participant-facing language control", () => {
