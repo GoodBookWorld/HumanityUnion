@@ -229,8 +229,11 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       const report = await fetchAdminLanguageLocalizationReadiness(row.languageId);
       setReadinessById((prev) => ({ ...prev, [row.languageId]: report }));
       setStatus(
-        `${row.locale} localization readiness: ${report.state}` +
-          (report.seoReady ? " (SEO-ready)" : " (SEO not ready)"),
+        `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
+          `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
+          `; Search-ready=${report.searchLocalizationReady ? "yes" : "no"}` +
+          `; Extended Localization=${report.state}` +
+          `; SEO-ready=${report.seoReady ? "yes" : "no"}`,
       );
     } catch (readinessError) {
       setReadinessById((prev) => ({ ...prev, [row.languageId]: "error" }));
@@ -288,11 +291,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       <ProfileSection title="Languages">
         <p className="hu-caption admin-languages__lede">
           Canonical Language Registry — Admin-managed locales for platform selection, translation,
-          and SEO readiness. Runtime pickers and Translate Draft use enabled languages only. Locale
-          is immutable after creation. Backend policy is authoritative for conflicts and fallbacks.
-          Use Readiness to inspect localization state (WEB_UI / CT / PLP) without enabling SEO.
-          Use Activate Localization to start/resume the durable async activation job (CT/PLP residual
-          enqueue). WEB_UI packs are Admin data (
+          and SEO readiness. Runtime pickers use enabled languages only. Locale is immutable after
+          creation. Backend policy is authoritative for conflicts and fallbacks. Basic language
+          availability (Enabled), Search capability (`searchEnabled`), SEO indexing, and Extended
+          Localization (WEB_UI / CT / PLP) are separate concepts — incomplete Extended Localization
+          does not block Search readiness. Use Readiness to inspect Extended Localization state
+          without enabling SEO. Use Activate Localization to start/resume the durable async
+          activation job (CT/PLP residual enqueue). WEB_UI packs are Admin data (
           <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
           ), never machine-generated. Search and SEO remain separate opt-in flags.
         </p>
@@ -531,7 +536,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               job: <code>{activation.job?.status ?? "none"}</code>
                             </div>
                             <div>
-                              ready: <code>{activation.readiness.state}</code>
+                              Extended: <code>{activation.readiness.state}</code>
+                            </div>
+                            <div>
+                              Search-ready=
+                              {activation.readiness.searchLocalizationReady ? "yes" : "no"} ·
+                              SEO-ready=
+                              {activation.readiness.seoReady ? "yes" : "no"}
                             </div>
                             <div>
                               WEB_UI missing={activation.readiness.webUi.missingKeyCount} · CV
@@ -548,7 +559,14 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                           </div>
                         ) : readiness && typeof readiness === "object" ? (
                           <div className="hu-caption">
-                            <code>{readiness.state}</code>
+                            <div>
+                              Extended: <code>{readiness.state}</code>
+                            </div>
+                            <div>
+                              Search-ready=
+                              {readiness.searchLocalizationReady ? "yes" : "no"} · SEO-ready=
+                              {readiness.seoReady ? "yes" : "no"}
+                            </div>
                             {readiness.gaps.length > 0 ? (
                               <div>{readiness.gaps.slice(0, 2).join(" · ")}</div>
                             ) : null}

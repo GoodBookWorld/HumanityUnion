@@ -191,6 +191,9 @@ export type LanguageLocalizationReadinessReport = {
 /**
  * Pack 3 gate (predicate only — does not mutate seoIndexingEnabled).
  * TRUE only when localization data required for the public SEO perimeter is ready.
+ *
+ * Unchanged by Simplification Step 06A — SEO still requires full Extended
+ * Localization readiness (WEB_UI + controlled vocabulary + owned CT/PLP READY).
  */
 export function isLocalizationReadyForSeo(
   report: Pick<
@@ -206,16 +209,22 @@ export function isLocalizationReadyForSeo(
 }
 
 /**
- * Future Pack 4 search gate — localization ready enough that search should not
- * treat English fallback as localized content for this locale.
+ * Simplification Step 06A — Search localization readiness (predicate only).
+ * Does not mutate `searchEnabled`.
+ *
+ * TRUE when the Registry locale is enabled for participant presentation.
+ * Actual multilingual Search participation still requires Admin `searchEnabled`
+ * (separate Registry flag). Runtime Search uses current non-stale CT enrichments
+ * when present and always keeps canonical English fallback.
+ *
+ * Does NOT require: full WEB_UI completion, Controlled Vocabulary readiness,
+ * full lifecycle CT/PLP completion, legacy `languageDataReady`, readiness
+ * state `READY`, or SEO readiness.
  */
 export function isLocalizationReadyForSearch(
-  report: Pick<
-    LanguageLocalizationReadinessReport,
-    "state" | "languageDataReady" | "engineReady"
-  >,
+  report: Pick<LanguageLocalizationReadinessReport, "registry">,
 ): boolean {
-  return isLocalizationReadyForSeo(report);
+  return report.registry.enabled === true;
 }
 
 export function emptyLanguageLocalizationCountBucket(): LanguageLocalizationCountBucket {

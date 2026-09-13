@@ -181,12 +181,7 @@ export function buildLocalizationIntegrityReport(input: {
       languageDataReady:
         input.corpusDiscoveryBlocked ? false : readiness.languageDataReady,
     }),
-    searchReady: isLocalizationReadyForSearch({
-      ...readiness,
-      state: overallStatus,
-      languageDataReady:
-        input.corpusDiscoveryBlocked ? false : readiness.languageDataReady,
-    }),
+    searchReady: isLocalizationReadyForSearch(readiness),
     safety: {
       providerCalls: 0,
       writesPerformed: 0,

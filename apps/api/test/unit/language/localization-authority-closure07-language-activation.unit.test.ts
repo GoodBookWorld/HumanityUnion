@@ -361,10 +361,14 @@ describe("Localization Authority Closure 07 — language activation", () => {
     });
     assert.equal(readiness.state, "DATA_NOT_READY");
     assert.equal(readiness.engineReady, true);
+    assert.equal(readiness.registry.enabled, true);
     assert.equal(readiness.registry.searchEnabled, false);
     assert.equal(readiness.registry.seoIndexingEnabled, false);
     assert.equal(readiness.seoReady, false);
-    assert.equal(isLocalizationReadyForSearch(readiness), false);
+    // Step 06A — Search readiness is not blocked by incomplete Extended Localization.
+    assert.equal(readiness.searchLocalizationReady, true);
+    assert.equal(isLocalizationReadyForSearch(readiness), true);
+    assert.notEqual(readiness.searchLocalizationReady, readiness.seoReady);
     assert.ok(
       readiness.kindRows.some(
         (row) =>
