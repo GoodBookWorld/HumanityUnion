@@ -1,2 +1,2 @@
 /** Pack 2.1 — locale-prefixed SEO public surface; delegates to canonical page. */
-export { default } from "../../initiatives/page";
+export { default, generateMetadata } from "../../initiatives/page";

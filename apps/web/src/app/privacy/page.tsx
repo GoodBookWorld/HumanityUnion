@@ -1,5 +1,7 @@
-import { getLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 
+import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 import { LegalPageShell } from "../../features/legal/components/LegalPageShell";
 import {
   EXPECTED_LEGAL_FALLBACK,
@@ -12,8 +14,27 @@ import {
   ORGANIZATION_WEBSITE,
   mailtoContactLink,
 } from "../../features/public-experience/footer-links";
+import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 
 import "../../features/legal/legal-page.css";
+
+/**
+ * Step 07F.2 — Privacy SEO title from WEB_UI legalPublic chrome; description from
+ * Brand defaultMetaDescription. Legal body remains Legal Localization / English
+ * canonical — never used as SEO description. No dedicated Privacy SEO desc field exists.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const t = await getTranslations("legalPublic");
+  return buildPublicPageMetadataForRequest({
+    title: t("privacy.title"),
+    description: brand.defaultMetaDescription,
+    canonicalPath: "/privacy",
+    localeFreeCanonicalPath: "/privacy",
+    openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
+  });
+}
 
 /** English canonical Privacy Policy body — authoritative source until counsel-approved localized copies exist. */
 function EnglishPrivacyBody() {

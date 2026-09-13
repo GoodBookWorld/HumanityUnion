@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
+import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 
 import {
   CONTACT_EMAIL,
@@ -12,6 +14,24 @@ import {
 import { CONTACT_SUBJECT_IDS } from "../../features/public-experience/contact.constants";
 
 import "../../features/legal/legal-page.css";
+
+/**
+ * Step 07F.2 — Contact SEO from WEB_UI contactPublic chrome.
+ * Canonical/hreflang via shared request-aware builder.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const t = await getTranslations("contactPublic");
+  const siteName = { siteName: brand.siteName };
+  return buildPublicPageMetadataForRequest({
+    title: t("pageTitle"),
+    description: t("intro", siteName),
+    canonicalPath: "/contact",
+    localeFreeCanonicalPath: "/contact",
+    openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
+  });
+}
 
 export default async function ContactPage() {
   const locale = await getLocale();

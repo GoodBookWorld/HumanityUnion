@@ -27,7 +27,10 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
   it("1/2 — /blog page and canonical heading exist", () => {
     const page = read("app/blog/page.tsx");
     assert.match(page, /BlogIndexPageContent/);
-    assert.match(page, /title:\s*"Blog \| Humanity Union"/);
+    assert.match(page, /generateMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
+    assert.match(page, /getTranslations\(["']blogPublic["']\)/);
+    assert.match(page, /t\(["']pageTitle["']\)/);
 
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
     assert.match(index, /<h1[^>]*>Blog<\/h1>/);
