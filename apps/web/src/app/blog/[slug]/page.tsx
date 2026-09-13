@@ -5,13 +5,14 @@ import { BlogArticlePageContent } from "../../../features/blog/components/BlogAr
 import { loadBlogArticlePresentationSeed } from "../../../features/blog/load-blog-article-presentation-seed";
 import { resolveBlogServerSeedReadingPolicy } from "../../../features/blog/resolve-blog-server-seed-reading-policy";
 import { resolveMediaUrl } from "../../../features/media-upload/media-url";
-import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
+import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
 import { JsonLdScript, buildBlogPostingJsonLd } from "../../../lib/seo/structured-data";
 
 interface BlogArticlePageProps {
   params: Promise<{ slug: string }>;
 }
 
+/** Step 07C.3 — request-aware canonical/hreflang; title/desc remain English post SEO fields. */
 export async function generateMetadata({ params }: BlogArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -19,10 +20,12 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const post = await fetchPublicBlogPostBySlugOptional(slug);
 
     if (!post) {
-      return buildPublicPageMetadata({
+      const localeFreeCanonicalPath = `/blog/${encodeURIComponent(slug)}`;
+      return buildPublicPageMetadataForRequest({
         title: "Publication not found",
         titleBrandSuffix: "Blog | Humanity Union",
-        canonicalPath: `/blog/${encodeURIComponent(slug)}`,
+        canonicalPath: localeFreeCanonicalPath,
+        localeFreeCanonicalPath,
         indexable: false,
       });
     }
@@ -33,23 +36,26 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const description = seo?.description || post.excerpt || post.title;
     const socialTitle = seo?.socialTitle || pageTitle;
     const socialDescription = seo?.socialDescription || description;
-    const canonical = seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
+    const localeFreeCanonicalPath =
+      seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
 
-    return buildPublicPageMetadata({
+    return buildPublicPageMetadataForRequest({
       title: pageTitle,
       titleBrandSuffix: "Blog | Humanity Union",
       description,
-      canonicalPath: canonical,
+      canonicalPath: localeFreeCanonicalPath,
+      localeFreeCanonicalPath,
       socialTitle,
       socialDescription,
       imageUrl,
       openGraphType: "article",
     });
   } catch {
-    return buildPublicPageMetadata({
+    return buildPublicPageMetadataForRequest({
       title: "Blog",
       titleBrandSuffix: "Humanity Union",
       canonicalPath: "/blog",
+      localeFreeCanonicalPath: "/blog",
       indexable: false,
     });
   }

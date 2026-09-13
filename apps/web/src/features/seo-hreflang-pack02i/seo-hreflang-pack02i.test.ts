@@ -133,12 +133,13 @@ describe("SEO Pack 02I / Step 07C.2 — hreflang ACTIVE for SEO perimeter", () =
     assert.match(builder, /NEVER calls Gemini/i);
   });
 
-  it("Initiative generateMetadata still uses cache-only translation helper (07C.3 migrates canonical)", () => {
+  it("Initiative generateMetadata uses cache-only CT + request-aware canonical/hreflang", () => {
     const page = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
     assert.match(page, /resolveLocalizedPublicMetadataCopy/);
     assert.match(page, /loadInitiativeMetadataTranslationFields/);
     assert.doesNotMatch(page, /generateContentTranslation/);
-    assert.match(page, /canonicalPath\s*=\s*`\/initiatives\/public\//);
+    assert.match(page, /localeFreeCanonicalPath\s*=\s*`\/initiatives\/public\//);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
   });
 });
 

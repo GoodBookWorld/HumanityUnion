@@ -7,7 +7,7 @@ import { resolveBrandForMetadata } from "../../../../features/brand-localization
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { resolveDocumentHtmlLocale } from "../../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
-import { buildPublicPageMetadata } from "../../../../lib/seo/build-public-page-metadata";
+import { buildPublicPageMetadataForRequest } from "../../../../lib/seo/build-public-page-metadata-for-request";
 import { applyPageSeoOverrideToMetadataInput } from "../../../../lib/seo/apply-page-seo-override";
 import { fetchPublicSeoPageOverride } from "../../../../lib/seo/fetch-public-seo-page-override";
 import { loadInitiativeMetadataTranslationFields } from "../../../../lib/seo/load-initiative-metadata-translation-fields";
@@ -23,19 +23,19 @@ interface PublicInitiativePageProps {
 }
 
 /**
- * Social preview metadata for the canonical public Initiative URL.
+ * Social preview metadata for the public Initiative URL.
  * Petition deep-links (`#petition`) share this page's Open Graph tags.
  *
  * Pack 02I — when a current cached civic translation exists for the document
- * locale, title/description may use that copy. Canonical path stays locale-free.
- * Never calls Gemini / translation generate from metadata.
+ * locale, title/description may use that copy. Never calls Gemini / generate.
+ * Step 07C.3 — canonical/hreflang are request-aware (locale-free or SEO-prefixed).
  * Pack 08I.2 — brand title suffix from Admin Brand Localization.
  */
 export async function generateMetadata({
   params,
 }: PublicInitiativePageProps): Promise<Metadata> {
   const { initiativeId } = await params;
-  const canonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
+  const localeFreeCanonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
   const requestLocale = await getLocale();
   const brand = await resolveBrandForMetadata(requestLocale);
 
@@ -68,12 +68,12 @@ export async function generateMetadata({
       entityKey: initiativeId,
     });
 
-    return buildPublicPageMetadata(
-      applyPageSeoOverrideToMetadataInput(
+    return buildPublicPageMetadataForRequest({
+      ...applyPageSeoOverrideToMetadataInput(
         {
           title: localized.title,
           description: localized.description,
-          canonicalPath,
+          canonicalPath: localeFreeCanonicalPath,
           socialTitle: localized.title,
           socialDescription: localized.description,
           imageUrl: resolvedImage,
@@ -85,12 +85,14 @@ export async function generateMetadata({
         },
         override?.fields,
       ),
-    );
+      localeFreeCanonicalPath,
+    });
   } catch {
-    return buildPublicPageMetadata({
+    return buildPublicPageMetadataForRequest({
       title: "Initiative",
       description: `Public Initiative on ${brand.seoSiteName}`,
-      canonicalPath,
+      canonicalPath: localeFreeCanonicalPath,
+      localeFreeCanonicalPath,
       openGraphType: "website",
       indexable: false,
       titleBrandSuffix: brand.seoTitleSuffix,

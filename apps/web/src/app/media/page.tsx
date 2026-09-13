@@ -19,21 +19,27 @@ import {
 import { markMediaLocaleSwitchPerfPhase } from "../../features/language/media-plp/media-plp-locale-switch-perf";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
 import { fetchPublicNewsArticles } from "../../features/public-news/api";
+import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Step 07C.3 — WEB_UI civicMediaPublic meta strings preserved; canonical/hreflang
+ * via shared request-aware builder (no civic_media CT/Search work).
+ */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("civicMediaPublic");
   const siteName = { siteName: brand.siteName };
-  return {
+  return buildPublicPageMetadataForRequest({
     title: t("metaTitle", siteName),
     description: t("metaDescription"),
-    alternates: {
-      canonical: "/media",
-    },
-  };
+    canonicalPath: "/media",
+    localeFreeCanonicalPath: "/media",
+    openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
+    titleBrandSuffix: "",
+  });
 }
 
 /**

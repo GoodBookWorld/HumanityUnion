@@ -97,7 +97,8 @@ describe("Pack 08I.2 — Brand Localization web", () => {
     assert.match(page, /openGraphSiteName:\s*brand\.openGraphBrandName/);
     assert.doesNotMatch(page, /getTranslations\(["']seo\.home["']\)/);
     assert.doesNotMatch(page, /resolveLocalizedPublicMetadataCopy/);
-    assert.match(page, /canonicalPath:\s*["']\/["']/);
+    assert.match(page, /localeFreeCanonicalPath:\s*["']\/["']/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
   });
 
   it("search/initiative SEO pass openGraphSiteName; canonical paths unchanged", () => {
