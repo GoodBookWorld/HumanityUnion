@@ -106,6 +106,16 @@ export type { SelectablePublicLanguage } from "./public-languages-api";
 export { resolvePublicContentDisplayLanguage } from "./resolve-public-content-display-language";
 export { canonicalizeEnabledLocale } from "./canonicalize-locale";
 export { writeHuLangCookieViaWebRoute } from "./write-hu-lang-cookie";
+export { applyPresentationLocale } from "./apply-presentation-locale";
+export type {
+  ApplyPresentationLocaleInput,
+  ApplyPresentationLocaleResult,
+} from "./apply-presentation-locale";
+export { resolveLocaleSwitchNavigationHref } from "./resolve-locale-switch-navigation-href";
+export {
+  runLocaleSwitchNavigation,
+  type LocaleSwitchRouter,
+} from "./run-locale-switch-navigation";
 export {
   HU_LANG_COOKIE_MAX_AGE_SECONDS,
   HU_LANG_COOKIE_NAME,

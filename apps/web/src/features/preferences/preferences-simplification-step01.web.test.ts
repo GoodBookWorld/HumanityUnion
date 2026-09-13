@@ -48,12 +48,12 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     assert.doesNotMatch(src, /language\.translationPreference/);
     assert.doesNotMatch(src, /TRANSLATION_PREFERENCE_CODES/);
     assert.match(src, /experiencePreferences:\s*preferences\.experiencePreferences/);
-    assert.match(
-      src,
-      /writeHuLangCookieViaWebRoute\(\s*updated\.experiencePreferences\.interfaceLanguage/,
+    assert.match(src, /applyPresentationLocale/);
+    assert.match(src, /forceSamePathRecompose:\s*true/);
+    assert.doesNotMatch(
+      src.slice(src.indexOf("async function handleSubmit")),
+      /writeHuLangCookieViaWebRoute\(/,
     );
-    assert.match(src, /markInterfaceLanguageCookieSynced/);
-    assert.match(src, /router\.refresh\(\)/);
   });
 
   it("Writing Languages remains visible with associated help", () => {
@@ -69,6 +69,10 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
 
     assert.match(src, /language\.savedUnavailable|savedUnavailable/);
     assert.match(src, /language\.savedReadingHelp|savedReadingHelp/);
+    assert.doesNotMatch(
+      src,
+      /readingLanguages\[0\] \?\? "en"[\s\S]{0,120}languageOptions\[0\]\?\.locale \?\? "en"/,
+    );
     assert.doesNotMatch(
       src,
       /readingLanguages\[0\] \?\? "en"[\s\S]{0,120}languageOptions\[0\]\?\.code \?\? "en"/,

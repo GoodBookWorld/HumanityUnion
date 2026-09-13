@@ -51,6 +51,6 @@ describe("Localization Simplification Step 03 — remove public LanguageSelector
   it("Preferences remains the participant-facing language control", () => {
     const prefs = readWeb("features/preferences/components/PreferencesWorkspace.tsx");
     assert.match(prefs, /preferredReadingLanguage|preferred-reading-language/);
-    assert.match(prefs, /writeHuLangCookieViaWebRoute/);
+    assert.match(prefs, /applyPresentationLocale/);
   });
 });

@@ -110,11 +110,13 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     const sync = readWeb("features/language/components/InterfaceLanguageCookieSync.tsx");
     const route = readWeb("app/api/hu-lang/route.ts");
     const prefs = readWeb("features/preferences/components/PreferencesWorkspace.tsx");
+    const apply = readWeb("features/language/apply-presentation-locale.ts");
     const nav = readWeb("features/language/run-locale-switch-navigation.ts");
 
-    assert.match(selector, /writeHuLangCookieViaWebRoute/);
+    assert.match(selector, /applyPresentationLocale/);
     assert.match(selector, /updateMyPreferences/);
-    assert.match(selector, /runLocaleSwitchNavigation/);
+    assert.match(apply, /writeHuLangCookieViaWebRoute/);
+    assert.match(apply, /runLocaleSwitchNavigation/);
     assert.match(nav, /router\.refresh/);
     assert.doesNotMatch(selector, /document\.documentElement/);
     assert.doesNotMatch(selector, /normalizeLanguageCode/);
@@ -126,12 +128,12 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
 
     assert.match(route, /canonicalizeEnabledLocale/);
     assert.match(route, /buildWebHuLangCookieAttributes/);
-    assert.match(prefs, /writeHuLangCookieViaWebRoute/);
-    // Step 04E — Preferences save applies document locale via controlled refresh (no path replace).
-    assert.match(prefs, /router\.refresh\(\)/);
+    // Step 06A.3 — Preferences uses shared applyPresentationLocale (cookie + navigation).
+    assert.match(prefs, /applyPresentationLocale/);
+    assert.match(prefs, /forceSamePathRecompose:\s*true/);
     assert.doesNotMatch(
       prefs.slice(prefs.indexOf("async function handleSubmit")),
-      /router\.replace|runLocaleSwitchNavigation/,
+      /writeHuLangCookieViaWebRoute\(/,
     );
   });
 
@@ -201,7 +203,7 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(selector, /variant\?:\s*"default"\s*\|\s*"icon"/);
     assert.match(selector, /\/icons\/messenger\/language\.png/);
     assert.match(selector, /listSelectablePublicLanguages/);
-    assert.match(selector, /writeHuLangCookieViaWebRoute/);
+    assert.match(selector, /applyPresentationLocale/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*overflow-y:\s*auto/);
     assert.match(layoutCss, /humanity-header__mobile-panel[\s\S]*overflow-y:\s*auto/);
   });

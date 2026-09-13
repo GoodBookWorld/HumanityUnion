@@ -8,7 +8,7 @@ import type {
 } from "@hu/types";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -16,12 +16,11 @@ import { Button } from "../../../design-system/components/Button";
 import { ApiUnavailableState } from "../../../design-system/components/ApiUnavailableState";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { applyPresentationLocale } from "../../language/apply-presentation-locale";
 import {
-  listPriorityLanguages,
-  type PriorityLanguageOption,
-} from "../../language/translation-api";
-import { writeHuLangCookieViaWebRoute } from "../../language/write-hu-lang-cookie";
-import { markInterfaceLanguageCookieSynced } from "../../language/components/InterfaceLanguageCookieSync";
+  listSelectablePublicLanguages,
+  type SelectablePublicLanguage,
+} from "../../language/public-languages-api";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
@@ -86,10 +85,11 @@ export function PreferencesWorkspace() {
   const tAuth = useTranslations("auth");
   const tExperience = useTranslations("initiativeExperience");
   const router = useRouter();
+  const pathname = usePathname() || "/";
   const brand = useLocalizedBrand();
   const siteName = brand.siteName;
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
-  const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
+  const [languageOptions, setLanguageOptions] = useState<readonly SelectablePublicLanguage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
@@ -101,7 +101,7 @@ export function PreferencesWorkspace() {
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.all([getMyPreferences(), listPriorityLanguages()])
+    void Promise.all([getMyPreferences(), listSelectablePublicLanguages()])
       .then(([loaded, languages]) => {
         if (!cancelled) {
           setPreferences(loaded);
@@ -156,14 +156,25 @@ export function PreferencesWorkspace() {
         });
         setPreferences(updated);
         // Simplification Step 01 — Preferred Reading Language syncs interfaceLanguage
-        // server-side; keep Web-origin hu_lang aligned for normal (non-SEO) navigation.
-        // Step 04E — one controlled refresh so SSR picks up the new document locale
-        // (html lang/dir, next-intl, Brand/Terminology) without path navigation.
-        await writeHuLangCookieViaWebRoute(
-          updated.experiencePreferences.interfaceLanguage,
-        );
-        markInterfaceLanguageCookieSynced(updated.experiencePreferences.interfaceLanguage);
-        router.refresh();
+        // server-side. Step 06A.3 — apply presentation locale via the shared
+        // LanguageSelector path (hu_lang write + runLocaleSwitchNavigation).
+        const presentationLocale =
+          updated.experiencePreferences.interfaceLanguage?.trim() || "";
+        if (presentationLocale) {
+          const selected = languageOptions.find(
+            (row) => row.locale === presentationLocale,
+          );
+          await applyPresentationLocale({
+            locale: presentationLocale,
+            pathname,
+            seoIndexingEnabled: selected?.seoIndexingEnabled === true,
+            router,
+            markAuthenticatedSync: true,
+            // Workspace `/preferences` is not an SEO document — force same-path
+            // replace + refresh so root html lang/dir + Brand recompose.
+            forceSamePathRecompose: true,
+          });
+        }
       });
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {
@@ -230,10 +241,10 @@ export function PreferencesWorkspace() {
             const displayReading = persistedReading || interfaceLocale;
             const readingInOptions =
               displayReading.length > 0 &&
-              languageOptions.some((option) => option.code === displayReading);
+              languageOptions.some((option) => option.locale === displayReading);
             const showUnavailable =
               Boolean(persistedReading) &&
-              !languageOptions.some((option) => option.code === persistedReading);
+              !languageOptions.some((option) => option.locale === persistedReading);
             return (
               <label
                 className="preferences-workspace__field preferences-workspace__field--primary"
@@ -270,8 +281,8 @@ export function PreferencesWorkspace() {
                     </option>
                   ) : null}
                   {languageOptions.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.nativeName} ({option.code})
+                    <option key={option.locale} value={option.locale}>
+                      {option.nativeName} ({option.locale})
                     </option>
                   ))}
                 </select>

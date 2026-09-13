@@ -73,7 +73,7 @@ describe("Implementation 03 — Media soft locale transition", () => {
       join(webSrc, "features/language/components/LanguageSelector.tsx"),
       "utf8",
     );
-    assert.match(selector, /runLocaleSwitchNavigation/);
+    assert.match(selector, /applyPresentationLocale/);
     assert.doesNotMatch(
       selector,
       /if\s*\(\s*href\s*&&\s*href\s*!==\s*pathname\s*\)\s*\{\s*router\.replace\(href\);\s*\}/,

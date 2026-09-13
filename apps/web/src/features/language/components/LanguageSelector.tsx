@@ -22,19 +22,16 @@ import {
   listSelectablePublicLanguages,
   type SelectablePublicLanguage,
 } from "../public-languages-api";
-import { markInterfaceLanguageCookieSynced } from "./InterfaceLanguageCookieSync";
-import { writeHuLangCookieViaWebRoute } from "../write-hu-lang-cookie";
-import { recordLocaleSwitchStarted } from "../media-plp/media-plp-locale-switch-machine";
+import { applyPresentationLocale } from "../apply-presentation-locale";
 import {
   markMediaLocaleSwitchPerfPhase,
 } from "../media-plp/media-plp-locale-switch-perf";
-import { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
-import { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
 
 import "./language-selector.css";
 
 export { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
 export { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
+export { applyPresentationLocale } from "../apply-presentation-locale";
 
 /** Visible language rows before the list scrolls (does not cap total languages). */
 const LANGUAGE_SELECTOR_VISIBLE_ROWS = 10;
@@ -205,35 +202,26 @@ export function LanguageSelector({
             })
           : Promise.resolve();
 
-      const [written] = await Promise.all([
-        writeHuLangCookieViaWebRoute(locale),
+      // Cookie + Registry-driven navigation share applyPresentationLocale with Preferences.
+      // Preference persist stays parallel (selector path); Preferences persists before calling apply.
+      const selected = options.find((row) => row.locale === locale);
+      const [applied] = await Promise.all([
+        applyPresentationLocale({
+          locale,
+          pathname,
+          seoIndexingEnabled: selected?.seoIndexingEnabled === true,
+          router,
+          markAuthenticatedSync: authStatus === "authenticated",
+          recordMediaLocaleSwitch: true,
+          scheduleNavigation: (run) => {
+            markMediaLocaleSwitchPerfPhase("T2_NAVIGATION_START");
+            startTransition(run);
+          },
+        }),
         preferenceWrite,
       ]);
-
       markMediaLocaleSwitchPerfPhase("T1_PREFERENCE_COOKIE");
-      setValue(written.locale);
-      if (authStatus === "authenticated") {
-        markInterfaceLanguageCookieSynced(written.locale);
-      }
-      // Reset 03C.2 — locale switch ownership starts here; Media PLP completes after refresh.
-      recordLocaleSwitchStarted(written.locale);
-      markMediaLocaleSwitchPerfPhase("T2_NAVIGATION_START");
-      const selected = options.find((row) => row.locale === written.locale);
-      const href = resolveLocaleSwitchNavigationHref({
-        pathname,
-        nextLocale: written.locale,
-        seoIndexingEnabled: selected?.seoIndexingEnabled === true,
-      });
-      // Implementation 03 — replace updates the SEO URL; refresh re-fetches
-      // locale-scoped Server Component payloads (Media PLP maps). Soft nav
-      // without refresh left previous-locale SSR props authoritative.
-      startTransition(() => {
-        runLocaleSwitchNavigation({
-          router,
-          pathname,
-          href,
-        });
-      });
+      setValue(applied.written.locale);
     },
     [authStatus, options, pathname, router],
   );

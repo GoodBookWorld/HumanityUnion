@@ -285,8 +285,7 @@ describe("Reset 03C.2 — locale-switch contract + bounding", () => {
       join(webSrc, "features/language/components/LanguageSelector.tsx"),
       "utf8",
     );
-    assert.match(selector, /writeHuLangCookieViaWebRoute/);
-    assert.match(selector, /router\.refresh\(\)/);
+    assert.match(selector, /applyPresentationLocale/);
     assert.match(selector, /startTransition/);
   });
 
