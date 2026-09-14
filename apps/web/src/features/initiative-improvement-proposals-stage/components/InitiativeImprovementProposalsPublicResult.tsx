@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import {
   IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS,
-  buildImprovementProposalCtFields,
   type PublicInitiativeImprovementProposalsCollectionProjection,
 } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux";
+import { getControlledVocabularyPreferredTermsMap } from "../../language/controlled-lifecycle-preferred-terms";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { PublicTranslatedFields } from "../../language";
+import { buildInitiativeControlledVocabularyLabelLookup } from "../../public-initiative-experience/build-initiative-controlled-vocabulary-label-lookup";
 import {
   resolveProposalCurationDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
 import { getPublicImprovementProposalsCollection } from "../api";
+import { buildImprovementProposalPublicPresentationFields } from "../build-improvement-proposal-public-presentation-fields";
 import { InitiativeProposalReactionWidget } from "./InitiativeProposalReactionWidget";
 
 import "./initiative-improvement-proposals-stage-workspace.css";
@@ -34,16 +37,28 @@ interface InitiativeImprovementProposalsPublicResultProps {
 /**
  * Initiative Lifecycle — Part D Public Result.
  *
- * Implementation 01 — browser-visible proposal prose is PERSISTED_LOCALIZED_CONTENT
- * via Content Translation (sourceKind improvement_proposal, Part D field bag).
- * Complete CT bag or coherent canonical — never field hybrid.
- * Labels/status remain WEB_UI. Identities remain protected.
+ * Browser-visible proposal prose uses CT when a complete localized bag exists.
+ * When CT is missing/incomplete, HU system frames compose via WEB_UI from
+ * `huSystemGeneration` (same path as author/preview) — never English
+ * composeEnglishSystemFrames glue under a non-English presentation locale.
+ * Participant excerpts remain canonical. Labels/status remain WEB_UI.
  */
 export function InitiativeImprovementProposalsPublicResult({
   collectionId,
   isPreview = false,
 }: InitiativeImprovementProposalsPublicResultProps) {
   const t = useTranslations("initiativeExperience");
+  const preferredTermsLocale = useControlledLifecyclePreferredTermsLocale();
+  const terminologyPreferredTerms =
+    getControlledVocabularyPreferredTermsMap(preferredTermsLocale);
+  const labelLookup = useMemo(
+    () =>
+      buildInitiativeControlledVocabularyLabelLookup({
+        tInitiativeExperience: t,
+        terminologyPreferredTerms,
+      }),
+    [t, terminologyPreferredTerms],
+  );
   const [projection, setProjection] = useState<PublicInitiativeImprovementProposalsCollectionProjection | null>(
     null,
   );
@@ -96,7 +111,11 @@ export function InitiativeImprovementProposalsPublicResult({
       </div>
 
       {projection.proposals.map((proposal) => {
-        const fallbackFields = buildImprovementProposalCtFields(proposal);
+        const fallbackFields = buildImprovementProposalPublicPresentationFields({
+          proposal,
+          t: (key, values) => t(key, values),
+          labelLookup,
+        });
         return (
           <article
             key={proposal.proposalId}

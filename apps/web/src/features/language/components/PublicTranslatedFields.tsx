@@ -118,9 +118,16 @@ export function PublicTranslatedFields({
           });
 
         if (!complete) {
-          setFields(original);
+          // Improvement Proposals: prefer caller presentation fallback (WEB_UI
+          // system frames) over English CT original when the localized bag is
+          // incomplete. Other kinds keep coherent canonical original.
+          const incompleteDisplay =
+            sourceKind === "improvement_proposal" ? fallback : original;
+          setFields(incompleteDisplay);
           setOriginalFields(original);
-          setActiveLanguage(resolved.originalLanguage);
+          setActiveLanguage(
+            sourceKind === "improvement_proposal" ? displayLanguage : resolved.originalLanguage,
+          );
           setOriginalLanguage(resolved.originalLanguage);
           setCanViewOriginal(false);
           setCanViewTranslation(false);
