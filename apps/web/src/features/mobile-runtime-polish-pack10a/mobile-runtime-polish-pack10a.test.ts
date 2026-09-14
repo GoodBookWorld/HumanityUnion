@@ -30,7 +30,7 @@ describe("Mobile Runtime Polish Pack 10A — header + Knowledge overlay", () => 
     assert.doesNotMatch(brandBlock, /BrowserWorkspaceHeaderControls/);
     assert.match(endZone, /BrowserWorkspaceHeaderControls/);
 
-    assert.match(controls, /Open Workspace menu/);
+    assert.match(controls, /tWorkspace\("openMenu"\)/);
     assert.doesNotMatch(controls, /humanity-header__workspace-trigger/);
     assert.doesNotMatch(controls, /☰/);
     assert.doesNotMatch(controls, /href="\/workspace"/);
@@ -92,7 +92,7 @@ describe("Mobile Runtime Polish Pack 10A — header + Knowledge overlay", () => 
 
     assert.match(header, /humanity-header__nav--desktop/);
     assert.match(layoutCss, /humanity-header__nav--desktop/);
-    assert.match(pwaHeader, /Open Workspace menu/);
+    assert.match(pwaHeader, /tWorkspace\("openMenu"\)/);
     assert.match(pwaHeader, /PwaWorkspaceDrawer/);
     assert.match(pwaHeader, /hu-pwa-app-header__avatar/);
   });

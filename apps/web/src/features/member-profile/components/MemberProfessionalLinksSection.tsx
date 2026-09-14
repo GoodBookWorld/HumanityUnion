@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Button } from "../../../design-system/components/Button";
 import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 import { resolveSaveButtonLabel, type SaveButtonPhase } from "../use-save-button-phase";
@@ -18,43 +20,43 @@ export interface MemberProfessionalLinksValues {
 
 const PROFESSIONAL_LINK_FIELDS: readonly {
   key: keyof MemberProfessionalLinksValues;
-  label: string;
+  labelKey: "website" | "linkedin" | "facebook" | "youtube" | "instagram" | "x";
   iconSrc: string;
   placeholder: string;
 }[] = [
   {
     key: "website",
-    label: "Website",
+    labelKey: "website",
     iconSrc: "/icons/civic/website.svg",
     placeholder: "https://example.com",
   },
   {
     key: "linkedinUrl",
-    label: "LinkedIn",
+    labelKey: "linkedin",
     iconSrc: "/icons/civic/icons8-linkedin.svg",
     placeholder: "https://www.linkedin.com/in/your-profile",
   },
   {
     key: "facebookUrl",
-    label: "Facebook",
+    labelKey: "facebook",
     iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.facebook,
     placeholder: "https://www.facebook.com/your-profile",
   },
   {
     key: "youtubeUrl",
-    label: "YouTube",
+    labelKey: "youtube",
     iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.youtube,
     placeholder: "https://www.youtube.com/@your-channel",
   },
   {
     key: "instagramUrl",
-    label: "Instagram",
+    labelKey: "instagram",
     iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.instagram,
     placeholder: "https://www.instagram.com/your-profile",
   },
   {
     key: "xUrl",
-    label: "X",
+    labelKey: "x",
     iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.x,
     placeholder: "https://x.com/your-handle",
   },
@@ -80,6 +82,7 @@ export function MemberProfessionalLinksSection({
   onChange,
   onSubmit,
 }: MemberProfessionalLinksSectionProps) {
+  const t = useTranslations("memberProfile.links");
   const busy = phase !== "idle";
   const values: MemberProfessionalLinksValues = {
     website,
@@ -92,16 +95,13 @@ export function MemberProfessionalLinksSection({
 
   return (
     <form className="member-professional-links" onSubmit={onSubmit}>
-      <p className="hu-caption member-professional-links__lede">
-        Personal links on your Participant profile. These are not Humanity Union publication
-        distribution destinations.
-      </p>
+      <p className="hu-caption member-professional-links__lede">{t("lede")}</p>
       {PROFESSIONAL_LINK_FIELDS.map((field) => (
         <label
           key={field.key}
           className="member-professional-links__field member-professional-links__field--with-icon"
         >
-          <span>{field.label}</span>
+          <span>{t(field.labelKey)}</span>
           <span className="member-professional-links__input-row">
             <img
               className="member-professional-links__field-icon"
@@ -125,7 +125,7 @@ export function MemberProfessionalLinksSection({
       ))}
 
       <Button type="submit" variant="primary" disabled={disabled || busy} ariaLive="polite">
-        {resolveSaveButtonLabel(phase, "Save professional links")}
+        {resolveSaveButtonLabel(phase, t("save"))}
       </Button>
     </form>
   );
@@ -156,6 +156,7 @@ export function MemberProfessionalLinksDisplay({
   className,
   variant = "labeled",
 }: MemberProfessionalLinksDisplayProps) {
+  const t = useTranslations("memberProfile.links");
   const values: MemberProfessionalLinksValues = {
     website,
     linkedinUrl,
@@ -184,6 +185,7 @@ export function MemberProfessionalLinksDisplay({
         if (!href) {
           return null;
         }
+        const label = t(field.labelKey);
         return (
           <a
             key={field.key}
@@ -191,11 +193,11 @@ export function MemberProfessionalLinksDisplay({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={field.label}
-            title={field.label}
+            aria-label={label}
+            title={label}
           >
             <img src={field.iconSrc} alt="" aria-hidden="true" width={30} height={30} />
-            {variant === "icons" ? null : <span>{field.label}</span>}
+            {variant === "icons" ? null : <span>{label}</span>}
           </a>
         );
       })}
@@ -209,6 +211,8 @@ interface MemberSkillTagsProps {
 }
 
 export function MemberSkillTags({ skills, className }: MemberSkillTagsProps) {
+  const t = useTranslations("memberProfile.sections");
+
   if (skills.length === 0) {
     return null;
   }
@@ -216,7 +220,7 @@ export function MemberSkillTags({ skills, className }: MemberSkillTagsProps) {
   return (
     <ul
       className={["member-skills-editor__tags", className].filter(Boolean).join(" ")}
-      aria-label="Skills"
+      aria-label={t("skills")}
     >
       {skills.map((skill) => (
         <li key={skill} className="member-skills-editor__tag">

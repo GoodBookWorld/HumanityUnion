@@ -23,7 +23,11 @@
 
 .country-experience-dynamic__breadcrumb li:not(:last-child)::after {
   content: "→";
-  margin-left: 0.5rem;
+  margin-inline-start: 0.5rem;
+}
+
+[dir="rtl"] .country-experience-dynamic__breadcrumb li:not(:last-child)::after {
+  content: "←";
 }
 
 .country-experience-dynamic__hero {
@@ -37,6 +41,7 @@
 .country-experience-dynamic__flag-wrap {
   display: flex;
   justify-content: flex-end;
+  justify-content: end;
   width: auto;
 }
 

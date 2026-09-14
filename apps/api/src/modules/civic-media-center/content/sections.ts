@@ -33,6 +33,7 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
     title: "Editorial transparency",
     description:
       "Sources publish editorial standards, ownership structure, and funding information.",
+    whyItMatters: "Readers can evaluate possible bias before trusting a report.",
     sortOrder: 1,
   },
   {
@@ -40,40 +41,52 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
     title: "Correction policy",
     description:
       "Sources document how errors are corrected and how readers can report inaccuracies.",
+    whyItMatters: "Mistakes can be identified and corrected with public accountability.",
     sortOrder: 2,
   },
   {
     id: "professional-standards",
     title: "Professional standards",
     description: "Sources follow recognized journalistic or academic review practices.",
+    whyItMatters: "Reporting follows recognized journalistic or academic review practices.",
     sortOrder: 3,
   },
   {
     id: "evidence-based",
     title: "Evidence-based reporting",
     description: "Claims are supported by verifiable documentation, data, or primary sources.",
+    whyItMatters: "Claims can be traced to verifiable documentation or primary sources.",
     sortOrder: 4,
   },
   {
     id: "international-recognition",
     title: "International recognition",
     description: "Organizations are known for consistent standards across regions and languages.",
+    whyItMatters: "Standards remain consistent across regions and languages.",
     sortOrder: 5,
   },
   {
     id: "fact-checking-practice",
     title: "Fact-checking practice",
     description: "Sources participate in or support independent verification workflows.",
+    whyItMatters: "Verification workflows support independent claim review.",
     sortOrder: 6,
   },
 ] as const;
 
+/**
+ * RESET 05C / 05D — organization identity uses structural `{siteName}` tokens.
+ * Brand Localization resolves display names at compose/render (English Brand
+ * fallback remains "Humanity Union"). FAQ machine prose is PLP-owned and must
+ * be rebuilt via automatic editorial enqueue (RESET 05D bootstrap) — Brand
+ * substitution alone never counts as FAQ localization.
+ */
 export const CIVIC_MEDIA_FAQ: readonly CivicMediaFaqItem[] = [
   {
     id: "why-not-every-media",
     question: "Why isn't every media outlet listed?",
     answer:
-      "Humanity Union curates sources that meet published selection principles. Listing every outlet would imply endorsement through volume rather than standards.",
+      "{siteName} curates sources that meet published selection principles. Listing every outlet would imply endorsement through volume rather than standards.",
     sortOrder: 1,
   },
   {
@@ -85,16 +98,16 @@ export const CIVIC_MEDIA_FAQ: readonly CivicMediaFaqItem[] = [
   },
   {
     id: "recommend-new",
-    question: "Can Humanity Union recommend new sources?",
+    question: "Can {siteName} recommend new sources?",
     answer:
       "Participants may suggest sources through civic initiatives or support channels. Suggestions are evaluated against selection principles, not vote counts.",
     sortOrder: 3,
   },
   {
     id: "verify-every-article",
-    question: "Does Humanity Union verify every article?",
+    question: "Does {siteName} verify every article?",
     answer:
-      "No. Humanity Union recommends organizations with strong standards. Readers should still verify individual claims using fact-checking resources.",
+      "No. {siteName} recommends organizations with strong standards. Readers should still verify individual claims using fact-checking resources.",
     sortOrder: 4,
   },
   {

@@ -24,12 +24,15 @@ function buildConsistencyChecks(input: {
           label: "Published Implementation Tracking Package",
           status: "ok",
           detail: `Implementation Tracking "${input.trackingPackageReference.title}" is available as the Official Response source.`,
+          params: {},
+          civic: { title: input.trackingPackageReference.title },
         }
       : {
           checkId: "tracking-package-available",
           label: "Published Implementation Tracking Package",
           status: "warning",
           detail: "No published Implementation Tracking Package yet — Official Responses can still be authored from Initiative context, including No official response received.",
+          params: {},
         },
   );
 
@@ -40,12 +43,14 @@ function buildConsistencyChecks(input: {
           label: "Tracking Records",
           status: "ok",
           detail: `${input.trackingRecords.length} Tracking Record(s) are available from the Tracking Package.`,
+          params: { count: input.trackingRecords.length },
         }
       : {
           checkId: "tracking-records-available",
           label: "Tracking Records",
           status: "warning",
           detail: "No Tracking Record is available yet.",
+          params: { count: 0 },
         },
   );
 
@@ -57,29 +62,35 @@ function buildConsistencyChecks(input: {
           label: "Evidence Visibility",
           status: "ok",
           detail: `${withEvidence.length} Tracking Record(s) carry an Evidence Reference.`,
+          params: { count: withEvidence.length },
         }
       : {
           checkId: "evidence-visible",
           label: "Evidence Visibility",
           status: "warning",
           detail: "No Tracking Record carries an Evidence Reference yet.",
+          params: { count: 0 },
         },
   );
 
   const withApprovedAction = input.trackingRecords.filter((tracking) => Boolean(tracking.approvedAction));
+  const allTraceable =
+    withApprovedAction.length === input.trackingRecords.length && input.trackingRecords.length > 0;
   checks.push(
-    withApprovedAction.length === input.trackingRecords.length && input.trackingRecords.length > 0
+    allTraceable
       ? {
           checkId: "approved-actions-traceable",
           label: "Approved Action Traceability",
           status: "ok",
           detail: "Every Tracking Record cites its Approved Action.",
+          params: { allTraceable: true },
         }
       : {
           checkId: "approved-actions-traceable",
           label: "Approved Action Traceability",
           status: "warning",
           detail: "One or more Tracking Records are missing an Approved Action reference.",
+          params: { allTraceable: false },
         },
   );
 

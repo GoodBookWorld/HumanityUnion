@@ -1,7 +1,10 @@
 /**
  * Shared honorary Member status indicator for public profile hero and Membership preview.
  * Presentation-only — callers decide visibility (real projection vs previewMemberStatus).
+ * Label chrome: WEB_UI `membershipPublic.status.memberCohort` (Registry locales).
  */
+import { useTranslations } from "next-intl";
+
 import {
   MEMBER_STATUS_INDICATOR_BADGE_SRC,
   MEMBER_STATUS_INDICATOR_LABEL,
@@ -19,13 +22,15 @@ export interface MemberStatusIndicatorProps {
 }
 
 export function MemberStatusIndicator({ className }: MemberStatusIndicatorProps) {
+  const t = useTranslations("membershipPublic");
+  const label = t("status.memberCohort");
   const classes = className
     ? `member-status-indicator ${className}`
     : "member-status-indicator";
 
   return (
     <div className={classes} data-member-status-indicator="true">
-      {/* Visible "Member" label carries the accessible name; badge is decorative. */}
+      {/* Visible Member cohort label carries the accessible name; badge is decorative. */}
       <img
         className="member-status-indicator__badge"
         src={MEMBER_STATUS_INDICATOR_BADGE_SRC}
@@ -35,7 +40,7 @@ export function MemberStatusIndicator({ className }: MemberStatusIndicatorProps)
         height={48}
         decoding="async"
       />
-      <span className="member-status-indicator__label">{MEMBER_STATUS_INDICATOR_LABEL}</span>
+      <span className="member-status-indicator__label">{label}</span>
     </div>
   );
 }

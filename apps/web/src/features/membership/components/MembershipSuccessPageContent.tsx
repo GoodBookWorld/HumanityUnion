@@ -1,6 +1,7 @@
 "use client";
 
 import type { MembershipMePayload } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -10,9 +11,9 @@ import { Card } from "../../../design-system/components/Card";
 import { LoadingState } from "../../../design-system";
 import { formatAuthFormError, isAuthenticationRequiredError } from "../../../lib/api-client";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { WorkspaceNavigation } from "../../initiatives/components/WorkspaceNavigation";
 import { getMembershipMe } from "../membership-api";
-import { MEMBERSHIP_ACTIVATION_UNAVAILABLE } from "../membership.constants";
 import { isActiveMembershipStatus } from "../membership-formatters";
 import { isMembershipSuccessPreviewEnabled } from "../membership-success.config";
 
@@ -31,14 +32,14 @@ function MembershipSuccessContent({
   payload: MembershipMePayload;
   previewWithoutActivation?: boolean;
 }) {
+  const t = useTranslations("membershipPublic.successPage");
   const showConfirmation = isActiveMembershipStatus(payload.membership.status);
 
   return (
     <div className="membership-success-page">
       {previewWithoutActivation ? (
         <div className="membership-success-preview-banner hu-card" role="status">
-          Development preview mode is enabled. Member confirmation details appear only after
-          backend-confirmed Membership activation.
+          {t("previewBanner")}
         </div>
       ) : null}
       <MembershipSuccessHero />
@@ -54,10 +55,10 @@ function MembershipSuccessContent({
       <MembershipVotingExplanation className="membership-success-page__voting-note" />
       <div className="membership-success-page__actions">
         <Button href="/membership" variant="secondary">
-          View Membership
+          {t("viewMembership")}
         </Button>
         <Button href="/workspace" variant="primary">
-          Return to Workspace
+          {t("returnToWorkspace")}
         </Button>
       </div>
     </div>
@@ -65,13 +66,14 @@ function MembershipSuccessContent({
 }
 
 function MembershipSuccessUnavailable({ message }: { message: string }) {
+  const t = useTranslations("membershipPublic.successPage");
   return (
     <div className="membership-success-page membership-success-page--unavailable">
       <Card>
-        <h1>Membership Success</h1>
+        <h1>{t("title")}</h1>
         <p role="status">{message}</p>
         <Button href="/membership" variant="primary">
-          Return to Membership
+          {t("returnToMembership")}
         </Button>
       </Card>
     </div>
@@ -79,6 +81,7 @@ function MembershipSuccessUnavailable({ message }: { message: string }) {
 }
 
 function MembershipSuccessBody() {
+  const t = useTranslations("membershipPublic.successPage");
   const router = useRouter();
   const authStatus = useClientAuthStatus();
   const [payload, setPayload] = useState<MembershipMePayload | null>(null);
@@ -133,11 +136,11 @@ function MembershipSuccessBody() {
   }, [authStatus, router]);
 
   if (authStatus === "pending" || loading) {
-    return <LoadingState message="Loading Membership success..." />;
+    return <LoadingState message={t("loading")} />;
   }
 
   if (authStatus === "unauthenticated") {
-    return <MembershipSuccessUnavailable message="Sign in to view your Membership confirmation." />;
+    return <MembershipSuccessUnavailable message={t("signInRequired")} />;
   }
 
   if (error) {
@@ -145,14 +148,14 @@ function MembershipSuccessBody() {
   }
 
   if (!payload) {
-    return <MembershipSuccessUnavailable message="Membership confirmation is unavailable." />;
+    return <MembershipSuccessUnavailable message={t("unavailable")} />;
   }
 
   const previewEnabled = isMembershipSuccessPreviewEnabled();
   const isActive = isActiveMembershipStatus(payload.membership.status);
 
   if (!isActive && !previewEnabled) {
-    return <MembershipSuccessUnavailable message={MEMBERSHIP_ACTIVATION_UNAVAILABLE} />;
+    return <MembershipSuccessUnavailable message={t("activationUnavailable")} />;
   }
 
   return (
@@ -164,13 +167,15 @@ function MembershipSuccessBody() {
 }
 
 export function MembershipSuccessPageContent() {
+  const t = useTranslations("membershipPublic.successPage");
+  const brand = useLocalizedBrand();
   const authStatus = useClientAuthStatus();
 
   if (authStatus === "authenticated") {
     return (
       <MemberWorkspace
-        title="Membership Success"
-        subtitle="Thank you for supporting Humanity Union"
+        title={t("title")}
+        subtitle={t("subtitle", { siteName: brand.siteName })}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <MembershipSuccessBody />

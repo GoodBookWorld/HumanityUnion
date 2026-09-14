@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicInitiativeCollaborativeAnalysisProjection } from "@hu/types";
 
 import { PublicTranslatedFields } from "../../language";
 import { getPublicInitiativeAnalysis } from "../api";
 import { InitiativeAnalysisReactionWidget } from "./InitiativeAnalysisReactionWidget";
+import { COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS } from "@hu/types";
 
 import "./initiative-collaborative-analysis-workspace.css";
 
@@ -24,13 +26,15 @@ interface InitiativeCollaborativeAnalysisPublicResultProps {
 
 /**
  * Initiative Lifecycle — Part B, Section 8/9 (Public Result / Reaction
- * Model). Pack 02: published body fields resolve through provider-backed
- * translation when available.
+ * Model). Reset 01 — visible CA prose is the localization boundary via
+ * persisted CT (complete bag or coherent original). WEB_UI owns field
+ * labels / loading chrome only.
  */
 export function InitiativeCollaborativeAnalysisPublicResult({
   analysisId,
   isPreview = false,
 }: InitiativeCollaborativeAnalysisPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicInitiativeCollaborativeAnalysisProjection | null>(
     null,
   );
@@ -59,11 +63,11 @@ export function InitiativeCollaborativeAnalysisPublicResult({
   }, [analysisId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">This Analysis could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.analysis.public.loadFailed")}</p>;
   }
 
   if (!projection) {
-    return <p className="lsw-result__placeholder">Loading Analysis…</p>;
+    return <p className="lsw-result__placeholder">{t("author.analysis.public.loading")}</p>;
   }
 
   return (
@@ -71,23 +75,15 @@ export function InitiativeCollaborativeAnalysisPublicResult({
       <PublicTranslatedFields
         sourceKind="collaborative_analysis"
         sourceRecordId={analysisId}
-        fieldOrder={[
-          "title",
-          "summary",
-          "supportingEvidence",
-          "risks",
-          "openQuestions",
-          "suggestedImprovements",
-          "references",
-        ]}
+        fieldOrder={[...COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS]}
         fieldLabels={{
-          title: "Title",
-          summary: "Executive Summary",
-          supportingEvidence: "Supporting Arguments",
-          risks: "Concerns",
-          openQuestions: "Open Questions",
-          suggestedImprovements: "Recommendations",
-          references: "References",
+          title: t("author.analysis.fields.title"),
+          summary: t("author.analysis.fields.summary"),
+          supportingEvidence: t("author.analysis.fields.supportingEvidence"),
+          risks: t("author.analysis.fields.risks"),
+          openQuestions: t("author.analysis.fields.openQuestions"),
+          suggestedImprovements: t("author.analysis.fields.suggestedImprovements"),
+          references: t("author.analysis.fields.references"),
         }}
         fallbackFields={{
           title: projection.title,
@@ -101,16 +97,18 @@ export function InitiativeCollaborativeAnalysisPublicResult({
       />
 
       <div className="ica-public-result__field">
-        <h4>Author</h4>
+        <h4>{t("author.analysis.fields.author")}</h4>
         <p>{projection.authorDisplayName}</p>
       </div>
 
       {isPreview ? (
-        <section className="ica-reaction" aria-label="Analysis reaction preview">
-          <p className="ica-reaction__title">Reaction</p>
+        <section className="ica-reaction" aria-label={t("author.analysis.preview.reactionAria")}>
+          <p className="ica-reaction__title">{t("author.analysis.preview.reactionTitle")}</p>
           <p className="ica-reaction__note">
-            {projection.reactionSummary.support} Support · {projection.reactionSummary.doNotSupport}{" "}
-            Do Not Support — the Reaction widget is disabled while previewing.
+            {t("author.analysis.preview.reactionNotePublished", {
+              support: projection.reactionSummary.support,
+              doNotSupport: projection.reactionSummary.doNotSupport,
+            })}
           </p>
         </section>
       ) : (

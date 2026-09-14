@@ -86,7 +86,253 @@ export {
   normalizeLanguageCode,
 } from "./language.js";
 export type {
+  LanguageProviderMappings,
+  LanguageRegistryAdmin,
+  LanguageRegistryAdminListResponse,
+  LanguageRegistryCreateInput,
+  LanguageRegistryId,
+  LanguageRegistryLocale,
+  LanguageRegistryPublic,
+  LanguageRegistryPublicListResponse,
+  LanguageRegistryRecord,
+  LanguageRegistryUpdateInput,
+  LanguageTextDirection,
+  LanguageUiTranslationStatus,
+  SeoIndexableLanguageRecord,
+} from "./language-registry.js";
+export {
+  LANGUAGE_REGISTRY_DEFAULT_FALLBACK_LOCALE,
+  LANGUAGE_UI_TRANSLATION_STATUSES,
+  deriveLanguageCodeFromLocale,
+  isLanguageTextDirection,
+  isLanguageUiTranslationStatus,
+  isSeoIndexableLanguage,
+  normalizeLanguageRegistryLocaleKey,
+} from "./language-registry.js";
+export type {
+  LanguageActivationCtOwnedKind,
+  LanguageActivationNoOwnerKindId,
+  LanguageActivationPlpOwnedMediaEntityType,
+  LanguageControlledVocabularyReadinessSlice,
+  LanguageHistoricalBackfillPlan,
+  LanguageHistoricalBackfillPlanItem,
+  LanguageHigherAuthorityReadinessSlice,
+  LanguageLocalizationCountBucket,
+  LanguageLocalizationKindStatusRow,
+  LanguageLocalizationOwnershipClass,
+  LanguageLocalizationReadinessReport,
+  LanguageLocalizationReadinessState,
+  LanguageWebUiReadinessSlice,
+} from "./language-localization-readiness.js";
+export {
+  LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
+  LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS,
+  LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
+  LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
+  LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
+  LANGUAGE_LOCALIZATION_READINESS_STATES,
+  deriveLanguageLocalizationReadinessState,
+  emptyLanguageLocalizationCountBucket,
+  isLanguageLocalizationReadinessState,
+  isLocalizationReadyForSearch,
+  isLocalizationReadyForSeo,
+} from "./language-localization-readiness.js";
+export type {
+  LanguageActivationAdminView,
+  LanguageActivationControlledVocabularyDomainProgress,
+  LanguageActivationDomainStatus,
+  LanguageActivationHistoricalDomainProgress,
+  LanguageActivationJobDomains,
+  LanguageActivationJobRecord,
+  LanguageActivationJobStatus,
+  LanguageActivationWebUiDomainProgress,
+} from "./language-activation-job.js";
+export {
+  LANGUAGE_ACTIVATION_DOMAIN_STATUSES,
+  LANGUAGE_ACTIVATION_JOB_STATUSES,
+  isLanguageActivationDomainStatus,
+  isLanguageActivationJobStatus,
+} from "./language-activation-job.js";
+export type {
+  LocalizationIntegrityArtifactRow,
+  LocalizationIntegrityArtifactState,
+  LocalizationIntegrityReport,
+  LocalizationIntegritySafetyFlags,
+} from "./localization-integrity-contract.js";
+export {
+  LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY,
+  buildLocalizationIntegrityReport,
+} from "./localization-integrity-contract.js";
+export type {
+  TerminologyConcept,
+  TerminologyConceptCategory,
+  TerminologyConceptId,
+  TerminologyConceptLinkedRefs,
+  TerminologyConceptStatus,
+  TerminologyConceptUpdateInput,
+  TerminologyGlossaryAdminListResponse,
+  TerminologyLocaleTranslation,
+} from "./terminology-glossary.js";
+export {
+  TERMINOLOGY_CONCEPT_CATEGORIES,
+  TERMINOLOGY_CONCEPT_STATUSES,
+  isTerminologyConceptCategory,
+  isTerminologyConceptStatus,
+} from "./terminology-glossary.js";
+export type {
+  BrandLocalizationAdminListResponse,
+  BrandLocalizationPublicSummary,
+  BrandLocalizationRecord,
+  BrandLocalizationStatus,
+  BrandLocalizationUpdateInput,
+  BrandLocalizationUpsertInput,
+  ResolvedLocalizedBrand,
+} from "./brand-localization.js";
+export {
+  BRAND_LOCALIZATION_STATUSES,
+  CANONICAL_ENGLISH_BRAND_FALLBACK,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE_LINES,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE_MULTILINE,
+  accessibleHeroUnityQuote,
+  isBrandLocalizationStatus,
+  visualHeroUnityQuoteLines,
+} from "./brand-localization.js";
+export type {
+  WebUiMessagePackAdminListResponse,
+  WebUiMessagePackPublicPayload,
+  WebUiMessagePackRecord,
+  WebUiMessagePackStatus,
+  WebUiMessagePackUpsertInput,
+  WebUiMessagePackValidationReport,
+  WebUiMessageTree,
+} from "./web-ui-message-pack.js";
+export {
+  WEB_UI_MESSAGE_PACK_STATUSES,
+  isWebUiMessagePackStatus,
+} from "./web-ui-message-pack.js";
+export type {
+  BrandTokenPart,
+  BrandTokenValues,
+  BrandTokenTransportState,
+  BrandTokenPathTransportReport,
+  BrandSlotPlanPart,
+  BrandSlotExtraction,
+} from "./brand-token-composition.js";
+export {
+  BRAND_SITE_NAME_MACHINE_SENTINEL,
+  BRAND_SITE_NAME_MACHINE_SENTINEL_LEGACY,
+  BRAND_SITE_NAME_TOKEN,
+  composeBrandTokens,
+  protectBrandTokensForMachineTranslation,
+  restoreBrandTokensAfterMachineTranslation,
+  countBrandSiteNameTokens,
+  classifyBrandTokenPathTransport,
+  splitBrandTokenParts,
+  templateHasBrandSiteNameToken,
+  withPreservedBrandTokens,
+  classifyFaqMachineProseLocalization,
+  machineSegmentProviderKey,
+  isMachineSegmentProviderKey,
+  extractBrandSlotsForProvider,
+  buildProviderOwnedMachinePayload,
+  reassembleBrandSlotPlans,
+  textContainsBrandTransportArtifact,
+  assertProviderPayloadHasNoBrandArtifacts,
+  stripBrandSlotsForMachineCompare,
+} from "./brand-token-composition.js";
+export type {
+  LifecycleStageTokenPart,
+  LifecycleStageSlotPlanPart,
+  LifecycleStageSlotExtraction,
+  LifecycleStageComposeResult,
+} from "./lifecycle-stage-token-composition.js";
+export {
+  LIFECYCLE_STAGE_TOKEN_PREFIX,
+  LIFECYCLE_STAGE_TOKEN_SUFFIX,
+  lifecycleStageToken,
+  isLifecycleStageTokenShape,
+  parseLifecycleStageToken,
+  templateHasLifecycleStageToken,
+  textContainsLifecycleStageToken,
+  countLifecycleStageTokens,
+  splitLifecycleStageTokenParts,
+  trySplitLifecycleStageTokenParts,
+  extractLifecycleStageSlotsForProvider,
+  buildProviderOwnedLifecycleMachinePayload,
+  reassembleLifecycleStageSlotPlans,
+  composeLifecycleStageTokens,
+  composeLifecycleStageTokensToEnglishRegistry,
+  presentLifecycleStageTokensAsEnglish,
+  presentLifecycleStageTokenFieldsAsEnglish,
+  preserveLifecycleStageTokensWhenPresentationUnchanged,
+  mergeLifecycleStageTokensFromAuthorPresentation,
+  mergeCollaborativeAnalysisAuthorSaveFields,
+  assertProviderPayloadHasNoLifecycleStageTokens,
+} from "./lifecycle-stage-token-composition.js";
+export type {
+  LegalDocumentType,
+  LegalLocalizationAdminListItem,
+  LegalLocalizationAdminListResponse,
+  LegalLocalizationRecord,
+  LegalLocalizationStatus,
+  LegalLocalizationUpdateInput,
+  LegalLocalizationUpsertInput,
+  ResolvedLocalizedLegalDocument,
+} from "./legal-localization.js";
+export {
+  CANONICAL_LEGAL_SOURCE_VERSIONS,
+  LEGAL_DOCUMENT_TYPES,
+  LEGAL_LOCALIZATION_STATUSES,
+  isLegalDocumentType,
+  isLegalLocalizationStatus,
+} from "./legal-localization.js";
+export type {
+  ResolvedRuntimeLocale,
+  ResolveRuntimeLocaleInput,
+  RuntimeLocaleCatalogEntry,
+  RuntimeLocaleResolutionSource,
+} from "./runtime-locale.js";
+export {
+  ENGLISH_RUNTIME_LOCALE_FALLBACK,
+  HU_LANG_COOKIE_MAX_AGE_SECONDS,
+  HU_LANG_COOKIE_NAME,
+  buildRuntimeLocaleCatalogIndex,
+  resolveEnabledCatalogEntryForCandidate,
+  resolveRuntimeLocaleFromCatalog,
+} from "./runtime-locale.js";
+export type {
+  PublicSeoLocaleAlternatePaths,
+  PublicSeoLocaleDocumentResolution,
+  PublicSeoLocaleRoutingCatalogEntry,
+} from "./public-seo-locale-routing.js";
+export {
+  PUBLIC_SEO_LOCALE_PATH_PATTERNS,
+  PUBLIC_SEO_LOCALE_RESERVED_BLOG_SLUGS,
+  PUBLIC_SEO_LOCALE_RESERVED_KNOWLEDGE_SLUGS,
+  PUBLIC_SEO_LOCALE_RESERVED_TOP_SEGMENTS,
+  buildPublicSeoLocaleAlternatePaths,
+  buildPublicSeoLocalePrefixedPath,
+  isPublicSeoLocalePath,
+  matchPublicSeoLocaleCatalogEntry,
+  parsePublicSeoLocalePrefixedPath,
+  resolvePublicSeoDocumentSelfCanonicalPath,
+  resolvePublicSeoLocaleDocument,
+  toPublicSeoLocaleUrlSegment,
+} from "./public-seo-locale-routing.js";
+export type { AcceptLanguagePreference } from "./accept-language.js";
+export {
+  expandLocaleLookupCandidates,
+  listAcceptLanguageLookupTags,
+  parseAcceptLanguageHeader,
+} from "./accept-language.js";
+export type {
+  ContentTranslationIntent,
   ContentTranslationSourceKind,
+  ContentTranslationWarmReason,
+  ContentTranslationWarmRequestedCommand,
+  ContentTranslationWarmRequestedCommandName,
+  ContentTranslationWorkIdentity,
   ResolvedContentPresentationMode,
   ResolvedTranslatedDisplay,
   TranslateDraftRequest,
@@ -96,6 +342,192 @@ export type {
   TranslationKind,
   TranslationProviderId,
 } from "./content-translation.js";
+export { CONTENT_TRANSLATION_WARM_REQUESTED } from "./content-translation.js";
+export type {
+  PublicLocalizationCoverageStatus,
+  PublicLocalizationProtectionCategory,
+  PublicLocalizedPresentation,
+  PublicLocalizedPresentationCoverage,
+  PublicPresentationIdentity,
+  PublicPresentationNode,
+  PublicProtectedValue,
+} from "./public-localized-presentation.js";
+export {
+  PUBLIC_LOCALIZATION_PROTECTED_BRAND,
+  PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+  controlledTerminologyValue,
+  isPublicProtectedValue,
+  manualLocalizedValue,
+  protectedIdentity,
+  protectedPrivate,
+  protectedTechnical,
+  uiDictionaryValue,
+  unwrapPublicPresentationValue,
+} from "./public-localized-presentation.js";
+export type {
+  BuildValidationReasonCode,
+  BuildValidationResult,
+  BuildValidationPathDiagnostics,
+  LocalizationContentIntegrityReport,
+  LocalizationContentIntegrityStatus,
+  LocalizationContentIntegritySubreason,
+  LocalizationStructuralIntegrityReport,
+  LocalizationStructuralIntegrityStatus,
+  LocalizationStructuralIntegritySubreason,
+  LocalizedNodeProvenance,
+  LocalizedPresentationUsability,
+  LocalizedPresentationUsabilityReason,
+  PublishAtomicResult,
+  PublishedLocalizationProvenanceSource,
+  PublishedLocalizationSchemaVersion,
+  PublishedLocalizedPresentationIdentity,
+  PublishedLocalizedPresentationRecord,
+  PublishedLocalizedPresentationSeo,
+  PublishedLocalizedPresentationState,
+  ResolvePublishedPresentationInput,
+  ResolvePublishedPresentationMode,
+  ResolvePublishedPresentationResult,
+} from "./published-localized-presentation.js";
+export {
+  PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY,
+  PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+} from "./published-localized-presentation.js";
+export type {
+  PlpFieldOwnershipClass,
+} from "./plp-field-ownership.js";
+export {
+  PLP_FIELD_OWNERSHIP_CLASSES,
+  isPlpFieldOwnershipClass,
+  plpFieldMayEnterMachineLayer,
+} from "./plp-field-ownership.js";
+export type {
+  PlpBuildRequest,
+  PlpBuildRequestStatus,
+  PlpBuildWorkKey,
+  PlpFieldPolicyMap,
+  PlpLocalizableEntityContract,
+  PlpPublicationTrigger,
+  PlpPublicationTriggerKind,
+  PlpSearchSeoInvalidationHookInput,
+  PlpWorkerSafetyDefaults,
+} from "./plp-publication-contract.js";
+export {
+  PLP_FIELD_AUTHORITY_ORDER,
+  PLP_OWNERSHIP_TO_PROVENANCE,
+  PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
+  plpBuildWorkKey,
+} from "./plp-publication-contract.js";
+export type { MediaPlpEntityType } from "./media-plp-identities.js";
+export {
+  MEDIA_PLP_ENTITY_TYPE,
+  MEDIA_PLP_ENTITY_TYPES,
+  MEDIA_PLP_EDITORIAL_ENTITY_ID,
+  isMediaPlpEntityType,
+  mediaPlpEditorialEntityId,
+  mediaPlpFactCheckEntityId,
+  mediaPlpPrincipleEntityId,
+  mediaPlpPropagandaEntityId,
+  mediaPlpPublicNewsEntityId,
+  mediaPlpTrustedEntityId,
+} from "./media-plp-identities.js";
+export type { InitiativePlpEntityType } from "./initiative-plp-identities.js";
+export {
+  INITIATIVE_PLP_ENTITY_TYPE,
+  INITIATIVE_PLP_ENTITY_TYPES,
+  initiativePlpEntityId,
+  isInitiativePlpEntityType,
+} from "./initiative-plp-identities.js";
+export {
+  INITIATIVE_CARD_FIELD_OWNERSHIP,
+  INITIATIVE_CARD_MACHINE_CONTENT_PATHS,
+} from "./initiative-card-field-policy.js";
+export type { InitiativeCardMachineContentPath } from "./initiative-card-field-policy.js";
+export {
+  INITIATIVE_LIFECYCLE_PLP_INVENTORY,
+  INITIATIVE_LIFECYCLE_REQUIRED_STAGE_IDS,
+  listInitiativeLifecycleInventoryStages,
+  evaluateInitiativeLifecycleSemanticClosure,
+} from "./initiative-lifecycle-plp-inventory.js";
+export {
+  COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS,
+  isCompleteCollaborativeAnalysisLocalizedBag,
+  isCompleteLocalizedProseBag,
+} from "./collaborative-analysis-localization-boundary.js";
+export type { CollaborativeAnalysisBrowserVisibleProseField } from "./collaborative-analysis-localization-boundary.js";
+export { IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS } from "./improvement-proposal-localization-boundary.js";
+export type { ImprovementProposalBrowserVisibleProseField } from "./improvement-proposal-localization-boundary.js";
+export { buildImprovementProposalCtFields } from "./build-improvement-proposal-ct-fields.js";
+export {
+  mayApplyPersistedLocalizedPresentation,
+  persistedPresentationLocaleMatchesRequested,
+} from "./persisted-presentation-locale-isolation.js";
+export type {
+  InitiativeLifecyclePlpInventoryRow,
+  InitiativeLifecyclePlpMigrationStatus,
+} from "./initiative-lifecycle-plp-inventory.js";
+export type {
+  LocalizationOwnershipClass,
+  LocalizationResolutionPriorityStep,
+} from "./localization-ownership.js";
+export {
+  DEFAULT_LOCALIZABLE_RULE,
+  LOCALIZATION_OWNERSHIP_SYNONYMS,
+  LOCALIZATION_RESOLUTION_PRIORITY,
+  LEGACY_PACK08I15_LOCALIZATION_RESOLUTION_PRIORITY,
+} from "./localization-ownership.js";
+export type {
+  ControlledLifecycleLabelCandidates,
+  ControlledLifecycleLabelResolution,
+  ControlledLifecycleLabelSource,
+  PersistedTranslationMechanism,
+  PublicPresentationAuthority,
+  PublicPresentationAuthorityCandidate,
+  PublicPresentationFieldClass,
+  PublicPresentationLocalizationPresence,
+} from "./public-presentation-authority.js";
+export {
+  PUBLIC_NEWS_PROTECTED_ORIGINAL_RULE,
+  PUBLIC_PRESENTATION_AUTHORITY,
+  PUBLIC_PRESENTATION_AUTHORITY_INVARIANTS,
+  PUBLIC_PRESENTATION_FIELD_CLASS_ELIGIBLE_AUTHORITIES,
+  PERSISTED_TRANSLATION_MECHANISM_RULE,
+  classifyPublicPresentationLocalizationPresence,
+  comparePublicPresentationAuthority,
+  isHigherPublicPresentationAuthority,
+  publicPresentationAuthorityRank,
+  publicPresentationFieldClassAllowsAuthority,
+  registryCanonicalLifecycleStageLabel,
+  resolveControlledLifecycleLabel,
+  selectWinningPublicPresentationCandidate,
+} from "./public-presentation-authority.js";
+export type {
+  ResolvePublicPresentationFieldInput,
+  ResolvePublicPresentationFieldResult,
+} from "./resolve-public-presentation-field.js";
+export {
+  resolveProtectedPublicNewsField,
+  resolvePublicPresentationField,
+} from "./resolve-public-presentation-field.js";
+export type {
+  ApplyControlledPublicVocabularyResult,
+  ControlledPublicDomainConceptId,
+  ControlledPublicVocabularyConceptId,
+  ControlledPublicVocabularyEntry,
+  ControlledPublicVocabularySubstitution,
+  ControlledVocabularyLabelLookup,
+} from "./controlled-public-vocabulary.js";
+export {
+  COLLABORATIVE_ANALYSIS_CONTROLLED_CONCEPT_IDS,
+  CONTROLLED_PUBLIC_DOMAIN_CONCEPT_IDS,
+  CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
+  applyControlledPublicVocabularyToProse,
+  getControlledPublicVocabularyEntry,
+} from "./controlled-public-vocabulary.js";
+export { presentCollaborativeAnalysisFieldsWithControlledVocabulary } from "./present-controlled-collaborative-analysis.js";
+export {
+  composeImprovementProposalHuSystemFields,
+  presentImprovementProposalFieldsWithControlledVocabulary,
+} from "./present-controlled-improvement-proposals.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,
@@ -225,6 +657,7 @@ export type {
   InitiativeImprovementProposalStatus,
 } from "./initiative-improvement-proposal.js";
 export type {
+  ImprovementProposalHuSystemGeneration,
   InitiativeImprovementProposalsCollection,
   InitiativeImprovementProposalsCollectionStatus,
   InitiativeStructuredProposal,
@@ -260,8 +693,15 @@ export type {
   InitiativeRevisionAnalysisReference,
   InitiativeRevisionConflictWarning,
   InitiativeRevisionConsistencyCheck,
+  InitiativeRevisionConsistencyCheckId,
   InitiativeRevisionIntelligenceSnapshot,
 } from "./initiative-revision-intelligence-snapshot.js";
+export type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+  InitiativeRevisionConflictWarningCode,
+} from "./initiative-lifecycle-consistency.js";
 export type {
   InitiativeRevisionReaction,
   InitiativeRevisionReactionKind,
@@ -270,6 +710,7 @@ export type {
 export type {
   InitiativePetitionAnalysisReference,
   InitiativePetitionConsistencyCheck,
+  InitiativePetitionConsistencyCheckId,
   InitiativePetitionDraft,
   InitiativePetitionDraftContext,
   InitiativePetitionIntelligenceSnapshot,
@@ -282,6 +723,7 @@ export type {
   DecisionSessionTraceability,
   InitiativeDecisionSessionAnalysisReference,
   InitiativeDecisionSessionConsistencyCheck,
+  InitiativeDecisionSessionConsistencyCheckId,
   InitiativeDecisionSessionDraft,
   InitiativeDecisionSessionDraftContext,
   InitiativeDecisionSessionIntelligenceSnapshot,
@@ -297,6 +739,7 @@ export type {
   CollectiveDecisionTraceability,
   InitiativeCollectiveDecisionAnalysisReference,
   InitiativeCollectiveDecisionConsistencyCheck,
+  InitiativeCollectiveDecisionConsistencyCheckId,
   InitiativeCollectiveDecisionIntelligenceSnapshot,
   InitiativeCollectiveDecisionLifecycleDraft,
   InitiativeCollectiveDecisionLifecycleDraftContext,
@@ -363,6 +806,7 @@ export type {
   InitiativeImplementationCommitmentCandidate,
   InitiativeImplementationCommitmentCandidateDraftStatus,
   InitiativeImplementationCommitmentConsistencyCheck,
+  InitiativeImplementationCommitmentConsistencyCheckId,
   InitiativeImplementationCommitmentDecisionReference,
   InitiativeImplementationCommitmentIntelligenceSnapshot,
   InitiativeImplementationCommitmentLifecycleDraft,
@@ -380,7 +824,10 @@ export type {
 } from "./initiative-implementation-tracking.js";
 export {
   canTransitionInitiativeImplementationTracking,
+  IMPLEMENTATION_TRACKING_CANDIDATE_STAGE,
   INITIATIVE_IMPLEMENTATION_TRACKING_TRANSITIONS,
+  isImplementationTrackingCandidateCompleted,
+  isImplementationTrackingCandidatePreparation,
   isInitiativeImplementationTrackingTerminal,
   SUGGESTED_IMPLEMENTATION_TRACKING_STAGES,
 } from "./initiative-implementation-tracking.js";
@@ -389,6 +836,7 @@ export type {
   InitiativeImplementationTrackingCandidate,
   InitiativeImplementationTrackingCommitmentReference,
   InitiativeImplementationTrackingConsistencyCheck,
+  InitiativeImplementationTrackingConsistencyCheckId,
   InitiativeImplementationTrackingIntelligenceSnapshot,
   InitiativeImplementationTrackingLifecycleDraft,
   InitiativeImplementationTrackingLifecycleDraftContext,
@@ -398,6 +846,7 @@ export type {
 export type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseConsistencyCheck,
+  InitiativeOfficialResponseConsistencyCheckId,
   InitiativeOfficialResponseIntelligenceSnapshot,
   InitiativeOfficialResponseLifecycleDraft,
   InitiativeOfficialResponseLifecycleDraftContext,
@@ -413,6 +862,7 @@ export type {
   InitiativePublicImpactAnalysisReference,
   InitiativePublicImpactCommitmentPackageReference,
   InitiativePublicImpactConsistencyCheck,
+  InitiativePublicImpactConsistencyCheckId,
   InitiativePublicImpactDecisionReference,
   InitiativePublicImpactDecisionSessionReference,
   InitiativePublicImpactIntelligenceSnapshot,
@@ -434,7 +884,10 @@ export { INITIATIVE_PUBLIC_IMPACT_REPORT_SECTION_IDS } from "./initiative-public
 export type {
   CivicArchiveTraceability,
   InitiativeCivicArchiveCompleteness,
+  InitiativeCivicArchiveCompletenessSummaryCode,
+  InitiativeCivicArchiveCompletenessSummaryDescriptor,
   InitiativeCivicArchiveConsistencyCheck,
+  InitiativeCivicArchiveConsistencyCheckId,
   InitiativeCivicArchiveIntelligenceSnapshot,
   InitiativeCivicArchiveLifecycleDraft,
   InitiativeCivicArchiveLifecycleDraftContext,
@@ -682,7 +1135,12 @@ export type {
   InitiativeAuthorWorkflowStageContract,
   InitiativeAuthorWorkflowStep,
 } from "./initiative-author-workflow.js";
-export { COLLECTIVE_PARTICIPATION_ACTION_TYPES } from "./collective-participation-journey.js";
+export {
+  COLLECTIVE_PARTICIPATION_ACTION_TYPES,
+  COLLECTIVE_PARTICIPATION_LABEL_CODES,
+  COLLECTIVE_PARTICIPATION_REASON_CODES,
+  COLLECTIVE_PARTICIPATION_STATUS_CODES,
+} from "./collective-participation-journey.js";
 export type {
   CollectiveParticipationActionSource,
   CollectiveParticipationActionType,
@@ -690,8 +1148,12 @@ export type {
   CollectiveParticipationEligibility,
   CollectiveParticipationJourney,
   CollectiveParticipationJourneySummary,
+  CollectiveParticipationLabelCode,
+  CollectiveParticipationMessageParams,
   CollectiveParticipationNextAction,
   CollectiveParticipationPastAction,
+  CollectiveParticipationReasonCode,
+  CollectiveParticipationStatusCode,
 } from "./collective-participation-journey.js";
 export type {
   InitiativeLifecyclePresentationMode,
@@ -985,6 +1447,8 @@ export type {
   CivicPipelineStatus,
   CivicRelationshipType,
   CivicSearchMetadata,
+  CivicSearchTerminologyAlias,
+  CivicSearchTranslatedField,
   RelatedRecord,
 } from "./capability02-integration.js";
 export { CIVIC_NOTIFICATION_EVENT_REGISTRY } from "./capability02-integration.js";
@@ -1509,6 +1973,20 @@ export type {
   MediaRegistryRegionTag,
   MediaRegistryRssFeed,
 } from "./media-registry.js";
+export type {
+  PublicNewsFieldOwnershipClass,
+  PublicNewsMachineContentPath,
+} from "./public-news-field-policy.js";
+export {
+  MEDIA_REGISTRY_CATEGORY_MESSAGE_KEYS,
+  MEDIA_REGISTRY_CATEGORY_VALUES,
+  PUBLIC_NEWS_FIELD_OWNERSHIP,
+  PUBLIC_NEWS_MACHINE_CONTENT_PATHS,
+  isMediaRegistryCategory,
+  isPublicNewsMachineContentPath,
+  mediaRegistryCategoryMessageKey,
+  publicNewsFieldOwnership,
+} from "./public-news-field-policy.js";
 export type {
   MediaResource,
   MediaResourceScopeType,

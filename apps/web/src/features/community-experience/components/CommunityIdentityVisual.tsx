@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { CommunityRepresentativeVisual } from "@hu/types";
 
 interface CommunityIdentityVisualProps {
@@ -11,13 +15,15 @@ export function CommunityIdentityVisual({
   activityArea,
   visual,
 }: CommunityIdentityVisualProps) {
+  const t = useTranslations("publicGeo.shared");
+
   if (visual.kind === "image" && visual.imageHref) {
     return (
       <figure className="community-identity__visual">
         <img
           className="community-identity__visual-image"
           src={visual.imageHref}
-          alt={`Representative visual for ${communityName}`}
+          alt={t("representativeVisualAlt", { name: communityName })}
         />
         <figcaption className="community-identity__visual-caption">{visual.caption}</figcaption>
       </figure>

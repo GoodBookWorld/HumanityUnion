@@ -122,7 +122,7 @@ describe("PWA UX Correction Pack 03 — Profile, Knowledge drawer, Map zoom", ()
 
     assert.match(drawer, /WorkspaceNavigation onNavigate=\{handleNavigate\}/);
     assert.match(drawer, /skipFocusRestoreRef/);
-    assert.match(drawer, /Close Workspace menu/);
+    assert.match(drawer, /tWorkspace\("closeMenu"\)/);
     assert.match(drawer, /hu-pwa-drawer__backdrop/);
     assert.match(drawer, /Escape/);
     assert.match(drawer, /\/icons\/workspace\/cross\.svg/);

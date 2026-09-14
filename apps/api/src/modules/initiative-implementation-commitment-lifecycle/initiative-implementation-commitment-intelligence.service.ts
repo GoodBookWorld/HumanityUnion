@@ -89,12 +89,15 @@ function buildConsistencyChecks(
           label: "Published Collective Decision",
           status: "ok",
           detail: `Collective Decision "${decisionReference.title}" is available as the Implementation Commitment source.`,
+          params: {},
+          civic: { title: decisionReference.title },
         }
       : {
           checkId: "collective-decision-available",
           label: "Published Collective Decision",
           status: "warning",
           detail: "No published (closed) Collective Decision yet — Implementation Commitments can still be authored manually.",
+          params: {},
         },
   );
 
@@ -105,12 +108,14 @@ function buildConsistencyChecks(
           label: "Approved Actions",
           status: "ok",
           detail: `${decisionReference.approvedActions.length} Approved Action(s) are available from the Collective Decision.`,
+          params: { count: decisionReference.approvedActions.length },
         }
       : {
           checkId: "approved-actions-available",
           label: "Approved Actions",
           status: "warning",
           detail: "The Collective Decision has no Approved Actions recorded.",
+          params: { count: decisionReference?.approvedActions.length ?? 0 },
         },
   );
 
@@ -121,12 +126,14 @@ function buildConsistencyChecks(
           label: "Responsible Roles",
           status: "ok",
           detail: `${decisionReference.responsibleRoles.length} suggested role(s) carried over from the Collective Decision.`,
+          params: { count: decisionReference.responsibleRoles.length },
         }
       : {
           checkId: "roles-available",
           label: "Responsible Roles",
           status: "warning",
           detail: "The Collective Decision has no Responsible Roles recorded.",
+          params: { count: decisionReference?.responsibleRoles.length ?? 0 },
         },
   );
 
@@ -137,12 +144,14 @@ function buildConsistencyChecks(
           label: "Implementation Timeline",
           status: "ok",
           detail: "An Implementation Timeline is available from the Collective Decision.",
+          params: { present: true },
         }
       : {
           checkId: "timeline-available",
           label: "Implementation Timeline",
           status: "warning",
           detail: "The Collective Decision has no Implementation Timeline recorded.",
+          params: { present: false },
         },
   );
 
@@ -153,12 +162,14 @@ function buildConsistencyChecks(
           label: "Decision Risks",
           status: "ok",
           detail: `${decisionReference.decisionRisks.length} risk(s) carried over from the Collective Decision.`,
+          params: { count: decisionReference.decisionRisks.length },
         }
       : {
           checkId: "risks-available",
           label: "Decision Risks",
           status: "warning",
           detail: "The Collective Decision has no Decision Risks recorded.",
+          params: { count: decisionReference?.decisionRisks.length ?? 0 },
         },
   );
 
@@ -169,12 +180,14 @@ function buildConsistencyChecks(
           label: "Success Criteria",
           status: "ok",
           detail: `${decisionReference.successCriteria.length} Success Criterion(s) carried over from the Collective Decision.`,
+          params: { count: decisionReference.successCriteria.length },
         }
       : {
           checkId: "success-criteria-available",
           label: "Success Criteria",
           status: "warning",
           detail: "The Collective Decision has no Success Criteria recorded.",
+          params: { count: decisionReference?.successCriteria.length ?? 0 },
         },
   );
 

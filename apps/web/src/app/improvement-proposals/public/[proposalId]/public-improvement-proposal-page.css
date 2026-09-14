@@ -14,6 +14,10 @@
 
 .public-improvement-proposal-page__title {
   margin: 0 0 0.35rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
 }
 
 .public-improvement-proposal-page__subtitle {

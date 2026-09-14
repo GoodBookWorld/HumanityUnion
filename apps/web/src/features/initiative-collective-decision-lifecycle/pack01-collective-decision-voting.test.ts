@@ -68,7 +68,7 @@ describe("Lifecycle UX Pack 01 — Collective Decision voting helpers", () => {
 
   it("labels canonical vote choices without inventing values", () => {
     assert.equal(labelInitiativeDecisionVoteChoice("support"), "Support");
-    assert.equal(labelInitiativeDecisionVoteChoice("do_not_support"), "Do Not Support");
+    assert.equal(labelInitiativeDecisionVoteChoice("do_not_support"), "Do not support");
     assert.equal(labelInitiativeDecisionVoteChoice("abstain"), "Abstain");
   });
 });
@@ -87,7 +87,8 @@ describe("Lifecycle UX Pack 01 — shell ballot integration contract", () => {
     assert.match(ballot, /castOrUpdateInitiativeDecisionVote/);
     assert.match(ballot, /getMyInitiativeDecisionVote/);
     assert.match(ballot, /useClientAuthStatus/);
-    assert.match(ballot, /Sign in to vote/);
+    assert.match(ballot, /collaboration\.vote\.signInToVote/);
+    assert.match(ballot, /INITIATIVE_DECISION_VOTE_CHOICES/);
     assert.match(ballot, /aria-pressed/);
     assert.match(ballot, /disabled=\{busy\}/);
     assert.doesNotMatch(ballot, /participantId/);
@@ -98,7 +99,7 @@ describe("Lifecycle UX Pack 01 — shell ballot integration contract", () => {
     assert.match(api, /castOrUpdateInitiativeDecisionVote/);
     assert.match(api, /\/vote/);
     assert.match(api, /method: "POST"/);
-    assert.match(api, /JSON\.stringify\(\{ choice \}\)/);
+    assert.match(api, /JSON\.stringify\(body\)/);
   });
 
   it("does not introduce Stage or Activity voting paths in this feature", () => {

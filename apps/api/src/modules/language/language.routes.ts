@@ -1,21 +1,37 @@
 import { Router, type Response } from "express";
 
-import type { ContentTranslationSourceKind } from "@hu/types";
-import { isPriorityLanguageCode, normalizeLanguageCode } from "@hu/types";
+import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
+import { normalizeLanguageCode } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import {
-  getOrCreateContentTranslation,
   loadTranslatableSource,
   resolvePublicTranslatedContent,
 } from "./content-translation.service.js";
-import { PRIORITY_LANGUAGE_CATALOG } from "./language-catalog.js";
+import {
+  assertEnabledSelectableLocale,
+  listEnabledSelectableLanguages,
+} from "./language-registry-runtime.js";
 import { translationProviderPublicErrorMessage } from "./resolve-translation-provider.js";
 import { TranslationProviderError } from "./translation.config.js";
 import { translateDraft } from "./translate-draft.js";
 import { translationRateLimiter } from "./translation-rate-limit.js";
+
+/**
+ * Preserve Registry locale identity for CT resolve (`zh-Hant` must not become `zh`).
+ * `normalizeLanguageCode` collapses script tags and breaks CURRENT matching.
+ */
+function coercePreferredReadingLanguageQuery(
+  value: unknown,
+): LanguageCode | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? (trimmed as LanguageCode) : undefined;
+}
 
 const languageRouter = Router();
 
@@ -25,6 +41,18 @@ const SOURCE_KINDS: readonly ContentTranslationSourceKind[] = [
   "petition",
   "lifecycle_stage",
   "blog_post",
+  "discussion_comment",
+  "improvement_proposal",
+  "initiative_revision",
+  "decision_session",
+  "collective_decision",
+  "implementation_commitment",
+  "implementation_tracking",
+  "official_response",
+  "public_impact",
+  "civic_archive",
+  "civic_media",
+  "public_news",
 ];
 
 function failure(message: string) {
@@ -62,8 +90,13 @@ function parseSourceKind(value: unknown): ContentTranslationSourceKind | null {
     : null;
 }
 
-languageRouter.get("/languages", (_req, res) => {
-  res.json(createSuccessResponse(PRIORITY_LANGUAGE_CATALOG, "Priority languages loaded."));
+languageRouter.get("/languages", async (_req, res) => {
+  try {
+    const languages = await listEnabledSelectableLanguages();
+    res.json(createSuccessResponse(languages, "Priority languages loaded."));
+  } catch (error) {
+    handleTranslationError(res, error);
+  }
 });
 
 /**
@@ -82,14 +115,20 @@ languageRouter.get(
     }
 
     try {
-      const preferredReadingLanguage = req.query.language
-        ? normalizeLanguageCode(String(req.query.language))
-        : undefined;
+      const preferredReadingLanguage = coercePreferredReadingLanguageQuery(
+        req.query.language,
+      );
+      // Pack 08I.13 — explicit public `?language=` requests warm translation DISPLAY.
+      // Member `translationPreference: none` must not hide current content_translations
+      // for public surfaces (Live: Initiative/Blog/Media stayed English despite warm rows).
+      // Pack 1.1 — cache-only resolve; never generate on read.
+      // Registry locale identity preserved (zh-Hant ≠ zh) for CURRENT matching.
       const resolved = await resolvePublicTranslatedContent({
         sourceKind,
         sourceRecordId,
         participantId: req.auth?.memberId,
         preferredReadingLanguage,
+        translationPreference: preferredReadingLanguage ? "preferred" : undefined,
         generateIfMissing: false,
       });
       res.json(createSuccessResponse(resolved, "Translated display resolved."));
@@ -100,55 +139,22 @@ languageRouter.get(
 );
 
 /**
- * Generate missing translation for a published record (rate limited).
+ * Pack 1.1 — participant on-demand generation retired.
+ *
+ * Translations are built only via automatic_warm / authorized rebuild operators.
+ * Author draft assist remains at POST /draft. Route kept as 410 so old Web
+ * clients fail closed instead of invoking TranslationProvider.
  */
 languageRouter.post(
   "/generate",
   optionalAuthenticationMiddleware,
   translationRateLimiter,
-  async (req, res) => {
-    const sourceKind = parseSourceKind(req.body?.sourceKind);
-    const sourceRecordId =
-      typeof req.body?.sourceRecordId === "string" ? req.body.sourceRecordId.trim() : "";
-    const targetLanguage = normalizeLanguageCode(req.body?.targetLanguage);
-
-    if (!sourceKind || sourceKind === "lifecycle_stage" || !sourceRecordId) {
-      res.status(400).json(failure("sourceKind and sourceRecordId are required."));
-      return;
-    }
-
-    if (!isPriorityLanguageCode(targetLanguage)) {
-      res.status(400).json(failure("Unsupported target language."));
-      return;
-    }
-
-    try {
-      const result = await getOrCreateContentTranslation({
-        sourceKind,
-        sourceRecordId,
-        targetLanguage,
-        generateIfMissing: true,
-      });
-      const resolved = await resolvePublicTranslatedContent({
-        sourceKind,
-        sourceRecordId,
-        participantId: req.auth?.memberId,
-        preferredReadingLanguage: targetLanguage,
-        generateIfMissing: false,
-      });
-      res.json(
-        createSuccessResponse(
-          {
-            generated: result.generated,
-            translation: result.translation,
-            display: resolved,
-          },
-          result.generated ? "Translation generated." : "Existing translation reused.",
-        ),
-      );
-    } catch (error) {
-      handleTranslationError(res, error);
-    }
+  async (_req, res) => {
+    res.status(410).json(
+      failure(
+        "On-demand content translation is retired. Translations are built asynchronously; use cache resolve or wait for warm CURRENT.",
+      ),
+    );
   },
 );
 
@@ -171,7 +177,6 @@ languageRouter.post(
     const sourceVersion =
       typeof req.body?.sourceVersion === "string" ? req.body.sourceVersion.trim() : "draft";
     const sourceLanguage = normalizeLanguageCode(req.body?.sourceLanguage);
-    const targetLanguage = normalizeLanguageCode(req.body?.targetLanguage);
     const draftContent = req.body?.draftContent;
     const initiativeId =
       typeof req.body?.initiativeId === "string" ? req.body.initiativeId.trim() : undefined;
@@ -181,8 +186,11 @@ languageRouter.post(
       return;
     }
 
-    if (!isPriorityLanguageCode(targetLanguage)) {
-      res.status(400).json(failure("Unsupported target language."));
+    let targetLanguage: string;
+    try {
+      targetLanguage = await assertEnabledSelectableLocale(req.body?.targetLanguage);
+    } catch (error) {
+      handleTranslationError(res, error);
       return;
     }
 

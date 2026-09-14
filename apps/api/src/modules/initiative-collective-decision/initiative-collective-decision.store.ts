@@ -39,6 +39,23 @@ function persistDecisionsMap(decisions: Map<string, InitiativeCollectiveDecision
 
 const decisions = loadDecisionsMap();
 
+/**
+ * Pack 08K.2 — re-bind the in-memory map after Mongo snapshot hydrate.
+ * Without this (mirrors Initiative / Collaborative Analysis), warm consumers
+ * load null sources, ack outbox success, and leave target identities MISSING.
+ */
+export function syncInitiativeCollectiveDecisionStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const reloaded = loadDecisionsMap();
+  decisions.clear();
+  for (const [decisionId, decision] of reloaded) {
+    decisions.set(decisionId, decision);
+  }
+}
+
 export function getDecisionById(decisionId: string): InitiativeCollectiveDecision | null {
   const decision = decisions.get(decisionId);
 

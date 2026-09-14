@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { listPublicCivicArchiveIndex } from "../api";
 import {
   buildCivicArchiveQueryKey,
   buildCivicArchiveSearchParams,
-  CIVIC_ARCHIVE_EMPTY_SEARCH_MESSAGE,
   deriveCivicArchiveResultsStatus,
   draftFiltersFromApplied,
   EMPTY_CIVIC_ARCHIVE_DRAFT_FILTERS,
@@ -22,6 +22,7 @@ import { CivicArchiveResultsFocus } from "./CivicArchiveResultsFocus";
 import { CivicArchiveResultsPanel } from "./CivicArchiveResultsPanel";
 
 export function CivicArchiveSearchExperience() {
+  const t = useTranslations("initiativeExperience.civicArchivePublic");
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestVersionRef = useRef(0);
@@ -116,7 +117,7 @@ export function CivicArchiveSearchExperience() {
 
   function handleSearch(): void {
     if (!hasDraftSearchCriteria(draftFilters)) {
-      setEmptySearchFeedback(CIVIC_ARCHIVE_EMPTY_SEARCH_MESSAGE);
+      setEmptySearchFeedback(t("emptySearchFeedback"));
       return;
     }
 

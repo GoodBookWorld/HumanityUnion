@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { useOpenDirectConversation } from "../../direct-messaging/use-open-direct-conversation";
@@ -14,36 +15,13 @@ export interface AllyCard {
   participantId: string;
   displayName: string;
   avatarUrl?: string | null;
-  /**
-   * Profile UX Pack 01 — already-projected public profile URL (or
-   * `undefined` when the Ally has no public profile to link to). Sourced
-   * from the same privacy-respecting projection used for Discussion
-   * comment authors; never hardcode `/member/...` from a raw identifier
-   * here (Part 16).
-   */
   profileUrl?: string;
-  /** Number of the signed-in Participant's own Initiatives this Ally is active on. */
   sharedInitiativeCount?: number;
-  /**
-   * Communication UX Pack 03.2 Part 4/5 — derived server-side from the
-   * durable Direct Messaging read state (never from Notification read
-   * status). `undefined`/omitted is treated as "no unread messages".
-   */
   hasUnreadMessages?: boolean;
 }
 
-/**
- * Communication UX Pack 03.2 Part 3 — the compact Message control on the
- * right side of each Ally card. Uses the shared
- * `useOpenDirectConversation` action (Part 2) via `participantId`, since an
- * Ally is not required to have a public profile (`profileUrl` may be
- * absent). Deliberately never rendered as a disabled/greyed-out button when
- * messaging turns out to be blocked (Part 3: "no fake disabled button") —
- * instead the click is attempted and a blocked attempt (Privacy `nobody`)
- * surfaces as a plain inline error message, exactly like the public-profile
- * Message action does.
- */
 function AllyMessageButton({ ally }: { ally: AllyCard }) {
+  const t = useTranslations("workspace");
   const { isOpening, errorMessage, openConversation } = useOpenDirectConversation();
 
   return (
@@ -57,16 +35,18 @@ function AllyMessageButton({ ally }: { ally: AllyCard }) {
           openConversation({ participantId: ally.participantId });
         }}
         disabled={isOpening}
-        aria-label={`Message ${ally.displayName}`}
+        aria-label={t("home.alliesMessageAria", { name: ally.displayName })}
         aria-live="polite"
       >
         <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
-        <span className="allies-widget__message-label">{isOpening ? "Opening…" : "Message"}</span>
+        <span className="allies-widget__message-label">
+          {isOpening ? t("home.alliesOpening") : t("home.alliesMessage")}
+        </span>
         {ally.hasUnreadMessages ? (
           <>
             <span className="allies-widget__unread-dot" aria-hidden="true" />
             <span className="allies-widget__visually-hidden">
-              Unread messages from {ally.displayName}
+              {t("home.alliesUnreadAria", { name: ally.displayName })}
             </span>
           </>
         ) : null}
@@ -80,27 +60,15 @@ interface AlliesWidgetProps {
   allies?: AllyCard[];
 }
 
-/**
- * Recovery Task 33 — Workspace UX Evolution, Part 11.
- * Profile UX Pack 01 Part 9/10 — wired to the real Workspace Allies data
- * source (`GET /api/v1/workspace/home` -> `allies.items`): active
- * Initiative Ally relationships only, deduplicated by `participantId`. The
- * empty state below only ever renders when there really are none — no
- * fake Allies.
- *
- * Participant UX Pack 01 — render every Ally from the Workspace response
- * (no client-side truncation). The list scrolls independently at 320px.
- */
 export function AlliesWidget({ allies = [] }: AlliesWidgetProps) {
+  const t = useTranslations("workspace");
+
   return (
     <div className="allies-widget">
       {allies.length === 0 ? (
-        <p className="allies-widget__empty">
-          Your active Initiative Allies will appear here after collaboration requests are
-          accepted.
-        </p>
+        <p className="allies-widget__empty">{t("home.alliesEmpty")}</p>
       ) : (
-        <ul className="allies-widget__list" aria-label="Allies">
+        <ul className="allies-widget__list" aria-label={t("home.alliesListAria")}>
           {allies.map((ally) => {
             const identityContent = (
               <>
@@ -114,7 +82,9 @@ export function AlliesWidget({ allies = [] }: AlliesWidgetProps) {
                   <p className="allies-widget__name">{ally.displayName}</p>
                   {ally.sharedInitiativeCount && ally.sharedInitiativeCount > 1 ? (
                     <p className="allies-widget__shared-count">
-                      {ally.sharedInitiativeCount} shared initiatives
+                      {t("home.alliesSharedInitiatives", {
+                        count: ally.sharedInitiativeCount,
+                      })}
                     </p>
                   ) : null}
                 </span>

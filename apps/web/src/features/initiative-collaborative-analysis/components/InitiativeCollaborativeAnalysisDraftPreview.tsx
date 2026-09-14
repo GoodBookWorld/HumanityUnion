@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCollaborativeAnalysis } from "@hu/types";
 
 import { getMyCurrentInitiativeAnalysis } from "../api";
+import { presentCollaborativeAnalysisForAuthorEditor } from "../collaborative-analysis-author-presentation";
 import { InitiativeCollaborativeAnalysisContentFields } from "./InitiativeCollaborativeAnalysisContentFields";
 
 import "./initiative-collaborative-analysis-workspace.css";
@@ -28,8 +30,13 @@ import "./initiative-collaborative-analysis-workspace.css";
  * `PublicInitiativeCenterPanel`) — this component only covers the
  * "nothing published yet" gap that the shell's generic Upcoming
  * boundary otherwise leaves empty.
+ *
+ * Pack 02G 08D.4 — preview chrome via author.analysis.preview.*;
+ * draft body values remain canonical English presentation (03C.5A —
+ * lifecycle tokens composed before render; never raw `{lifecycleStage:...}`).
  */
 export function InitiativeCollaborativeAnalysisDraftPreview({ initiativeId }: { readonly initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [analysis, setAnalysis] = useState<InitiativeCollaborativeAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -62,43 +69,38 @@ export function InitiativeCollaborativeAnalysisDraftPreview({ initiativeId }: { 
   }, [initiativeId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">This draft could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.analysis.preview.loadFailed")}</p>;
   }
 
   if (loading) {
-    return <p className="lsw-result__placeholder">Loading draft…</p>;
+    return <p className="lsw-result__placeholder">{t("author.analysis.preview.loading")}</p>;
   }
 
   if (!analysis) {
-    return (
-      <p className="lsw-result__placeholder">
-        There is no draft yet — generate or create one, then Preview again.
-      </p>
-    );
+    return <p className="lsw-result__placeholder">{t("author.analysis.preview.empty")}</p>;
   }
+
+  const presented = presentCollaborativeAnalysisForAuthorEditor(analysis);
 
   return (
     <div className="ica-public-result">
       <InitiativeCollaborativeAnalysisContentFields
-        title={analysis.title}
-        summary={analysis.summary}
-        supportingEvidence={analysis.supportingEvidence}
-        risks={analysis.risks}
-        openQuestions={analysis.openQuestions}
-        suggestedImprovements={analysis.suggestedImprovements}
-        references={analysis.references}
+        title={presented.title}
+        summary={presented.summary}
+        supportingEvidence={presented.supportingEvidence}
+        risks={presented.risks}
+        openQuestions={presented.openQuestions}
+        suggestedImprovements={presented.suggestedImprovements}
+        references={presented.references}
       />
       <div className="ica-public-result__field">
-        <h4>Author</h4>
-        <p>You</p>
+        <h4>{t("author.analysis.fields.author")}</h4>
+        <p>{t("author.analysis.preview.authorYou")}</p>
       </div>
 
-      <section className="ica-reaction" aria-label="Analysis reaction preview">
-        <p className="ica-reaction__title">Reaction</p>
-        <p className="ica-reaction__note">
-          0 Support · 0 Do Not Support — the Reaction widget unlocks for visitors once this Analysis is
-          published.
-        </p>
+      <section className="ica-reaction" aria-label={t("author.analysis.preview.reactionAria")}>
+        <p className="ica-reaction__title">{t("author.analysis.preview.reactionTitle")}</p>
+        <p className="ica-reaction__note">{t("author.analysis.preview.reactionNoteDraft")}</p>
       </section>
     </div>
   );

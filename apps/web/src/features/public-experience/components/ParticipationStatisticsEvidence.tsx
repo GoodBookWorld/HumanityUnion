@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
 interface ParticipationStatisticsEvidenceProps {
@@ -7,28 +11,47 @@ interface ParticipationStatisticsEvidenceProps {
 export function ParticipationStatisticsEvidence({
   projection,
 }: ParticipationStatisticsEvidenceProps) {
+  const locale = useLocale();
+  const t = useTranslations("publicStatistics");
+
+  function localizeIndicatorLabel(id: string, fallback: string): string {
+    const key = `geoIndicators.${id}.label` as const;
+    if (t.has(key)) {
+      return t(key);
+    }
+    return fallback;
+  }
+
   return (
     <div className="global-statistics">
       <p className="global-statistics__scope">
-        Scope: {projection.scopeLabel}
+        {t("shared.scopePrefix", { scope: projection.scopeLabel })}
         {projection.source === "bootstrap" ? (
-          <span className="global-statistics__source"> · Bootstrap demonstration data</span>
+          <span className="global-statistics__source">
+            {" "}
+            · {t("shared.bootstrapSource")}
+          </span>
         ) : null}
       </p>
 
       <dl
         className="global-statistics__list"
-        aria-label={`Participation indicators at ${projection.scopeLabel} scope`}
+        aria-label={t("shared.indicatorsAria", { scope: projection.scopeLabel })}
       >
         {projection.indicators.map((indicator) => (
           <div key={indicator.id} className="global-statistics__item">
             <dt className="global-statistics__label">
-              {indicator.label}
+              {localizeIndicatorLabel(indicator.id, indicator.label)}
               {indicator.derived ? (
-                <span className="global-statistics__derived"> derived</span>
+                <span className="global-statistics__derived">
+                  {" "}
+                  {t("shared.derivedSuffix")}
+                </span>
               ) : null}
             </dt>
-            <dd className="global-statistics__value">{indicator.value.toLocaleString()}</dd>
+            <dd className="global-statistics__value">
+              {indicator.value.toLocaleString(locale)}
+            </dd>
           </div>
         ))}
       </dl>

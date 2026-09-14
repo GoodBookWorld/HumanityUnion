@@ -1,4 +1,9 @@
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { MemberId } from "./member.js";
 
 /**
@@ -34,15 +39,34 @@ export interface InitiativePetitionProposalReference {
   readonly status: "accepted" | "partially_accepted";
 }
 
+/** Finite Petition consistency check IDs (08E.9b). */
+export type InitiativePetitionConsistencyCheckId =
+  | "revision-available"
+  | "analysis-available"
+  | "proposal-references-resolved";
+
 /**
  * Initiative Lifecycle — Part F, Section 4 (Petition Assistant).
  * Deterministic, read-only advisory check — never an automatic edit.
  */
 export interface InitiativePetitionConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativePetitionConsistencyCheckId;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English chrome.
+   * Prefer Web localization of `checkId`. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English body.
+   * Prefer `params` + Web presentation. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly detail: string;
+  /** Structural params (always present on new API — semantic mode signal). */
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /**

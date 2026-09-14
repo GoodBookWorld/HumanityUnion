@@ -126,6 +126,7 @@ function buildSnapshot(
       officialResponseCount: 2,
       publicImpactAvailable: true,
       traceabilityComplete: true,
+      summaryDescriptors: [],
       summary: "11 Lifecycle stage(s) have published records. Outstanding work remains.",
     },
     timeline: [

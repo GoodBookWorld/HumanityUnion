@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
 
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
+import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogArticleBody } from "./BlogArticleBody";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
@@ -29,26 +34,29 @@ interface BlogArticlePageContentProps {
    * `null` for not-found), the client skips a duplicate detail fetch.
    */
   initialPost?: PublicBlogPostDetail | null;
-}
-
-function commentsLabel(count: number): string {
-  if (count <= 0) {
-    return "No Comments";
-  }
-  if (count === 1) {
-    return "1 Comment";
-  }
-  return `${count} Comments`;
+  /** Pack 08I.8 — optional SSR-localized title/body seed from warm translations. */
+  initialPresentation?: {
+    readonly title: string;
+    readonly excerpt: string;
+    readonly contentHtml: string;
+  };
 }
 
 /**
- * Previous/Next neighbour navigation is deferred: the public Blog API does not
- * yet expose neighbouring posts. Do not fetch the full corpus client-side.
- *
- * Pack 14E — same Blog environment shell as `/blog` (left / center / right).
+ * Pack 08I.5 — Blog title + sanitized HTML body resolve through content_translations.
+ * Canonical post.content is never overwritten; missing/stale → English/original HTML.
  */
-export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageContentProps) {
+export function BlogArticlePageContent({
+  slug,
+  initialPost,
+  initialPresentation,
+}: BlogArticlePageContentProps) {
+  const t = useTranslations("blogPublic");
+  const locale = useLocale();
   const discovery = usePublicBlogDiscovery();
+  const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const requestGenerationRef = useRef(0);
   const seeded = initialPost !== undefined;
   const [post, setPost] = useState<PublicBlogPostDetail | null>(() =>
     initialPost && initialPost.slug === slug ? initialPost : null,
@@ -56,11 +64,24 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   const [error, setError] = useState<"not_found" | "unavailable" | "generic" | null>(() =>
     seeded && initialPost === null ? "not_found" : null,
   );
+  const [displayTitle, setDisplayTitle] = useState(() => {
+    if (initialPost && initialPost.slug === slug) {
+      return initialPresentation?.title || initialPost.title;
+    }
+    return "";
+  });
+  const [displayContentHtml, setDisplayContentHtml] = useState(() => {
+    if (initialPost && initialPost.slug === slug) {
+      return initialPresentation?.contentHtml || initialPost.content;
+    }
+    return "";
+  });
 
   useEffect(() => {
     if (seeded) {
       if (initialPost && initialPost.slug === slug) {
         setPost(initialPost);
+        // Pack 08I.8 — do not force canonical HTML here; presentation effect owns display.
         setError(null);
         return;
       }
@@ -103,14 +124,77 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     };
   }, [slug, seeded, initialPost]);
 
+  useEffect(() => {
+    if (!post) {
+      return;
+    }
+
+    // Canonical until reading context is ready — keep SSR seed when present.
+    if (!readingContext.ready) {
+      if (!initialPresentation) {
+        setDisplayTitle(post.title);
+        setDisplayContentHtml(post.content);
+      }
+      return;
+    }
+
+    let cancelled = false;
+    const requestGeneration = ++requestGenerationRef.current;
+
+    void resolveBlogPostPresentation({
+      postId: post.postId,
+      canonical: {
+        title: post.title,
+        excerpt: post.excerpt,
+        contentHtml: post.content,
+      },
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
+      requestGeneration,
+    }).then((presentation) => {
+      if (cancelled || requestGeneration !== requestGenerationRef.current) {
+        return;
+      }
+      if (
+        presentation.presentationMode === "translated" &&
+        presentation.activeLanguage !== displayLanguage
+      ) {
+        return;
+      }
+      setDisplayTitle(presentation.title);
+      setDisplayContentHtml(presentation.contentHtml);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    post,
+    readingContext.ready,
+    displayLanguage,
+    readingContext.translationPreference,
+    initialPresentation,
+  ]);
+
+  function commentsLabel(count: number): string {
+    if (count <= 0) {
+      return t("noComments");
+    }
+    if (count === 1) {
+      return t("oneComment");
+    }
+    return t("commentsCount", { count });
+  }
+
   if (error === "not_found") {
     return (
       <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
-          This publication could not be found.
+          {t("notFound")}
         </p>
         <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-          Back to Blog
+          {t("backToBlog")}
         </Link>
       </main>
     );
@@ -120,12 +204,10 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     return (
       <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
-          {error === "unavailable"
-            ? "The Blog is temporarily unavailable. Please try again shortly."
-            : "Unable to load this publication."}
+          {error === "unavailable" ? t("unavailable") : t("articleLoadError")}
         </p>
         <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-          Back to Blog
+          {t("backToBlog")}
         </Link>
       </main>
     );
@@ -141,7 +223,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             categoryCounts={discovery.categoryCounts}
           />
           <section className="blog-layout__center" aria-busy="true" tabIndex={0}>
-            <p className="blog-page__status">Loading publication…</p>
+            <p className="blog-page__status">{t("loadingPublication")}</p>
           </section>
           <BlogDiscoveryRightRail
             blogIndexViews={discovery.blogIndexViews}
@@ -159,6 +241,18 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     Date.parse(post.updatedAt) - Date.parse(post.publishedAt) > 60_000;
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
+  const categoryDisplayName = resolveBlogCategoryDisplayName(
+    post.category.categoryId,
+    t,
+    post.category.name,
+  );
+  // Pack 08I.10 — presentation owns title/body; canonical only when presentation empty.
+  const titleForDisplay =
+    displayTitle.trim() || initialPresentation?.title || post.title;
+  const bodyHtml =
+    displayContentHtml.trim() ||
+    initialPresentation?.contentHtml ||
+    post.content;
 
   return (
     <main className="blog-page blog-article hu-page-container blog-page--pack15c">
@@ -178,37 +272,53 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
           aria-labelledby="blog-article-title"
           tabIndex={0}
         >
-          <nav className="blog-article__crumb" aria-label="Breadcrumb">
-            <Link href="/blog">Blog</Link>
+          <nav className="blog-article__crumb" aria-label={t("breadcrumbAria")}>
+            <Link href="/blog">{t("pageTitle")}</Link>
             <span aria-hidden="true"> / </span>
-            <Link href={categoryHref}>{post.category.name}</Link>
+            <Link href={categoryHref}>{categoryDisplayName}</Link>
           </nav>
 
-          <p className="hu-caption blog-article__category">
-            <Link href={categoryHref}>{post.category.name}</Link>
-          </p>
           <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
-            {post.title}
+            {titleForDisplay}
           </h1>
 
-          <div className="blog-article__meta" aria-label="Publication details">
-            <BlogAuthorInline author={post.author} />
-            <time className="hu-caption" dateTime={post.publishedAt}>
-              {formatBlogPublishedDate(post.publishedAt)}
-            </time>
-            {showUpdated ? (
-              <time className="hu-caption" dateTime={post.updatedAt}>
-                Updated {formatBlogPublishedDate(post.updatedAt)}
+          <div className="blog-article__meta" aria-label={t("publicationDetailsAria")}>
+            <span className="blog-article__meta-item">
+              <BlogAuthorInline author={post.author} />
+            </span>
+            <span className="blog-article__meta-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="blog-article__meta-item">
+              <time className="hu-caption" dateTime={post.publishedAt}>
+                {formatBlogPublishedDate(post.publishedAt, locale)}
               </time>
+            </span>
+            {showUpdated ? (
+              <>
+                <span className="blog-article__meta-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="blog-article__meta-item">
+                  <time className="hu-caption" dateTime={post.updatedAt}>
+                    {t("updated", { date: formatBlogPublishedDate(post.updatedAt, locale) })}
+                  </time>
+                </span>
+              </>
             ) : null}
-            <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
-              {commentsLabel(post.commentCount)}
-            </Link>
+            <span className="blog-article__meta-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="blog-article__meta-item">
+              <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
+                {commentsLabel(post.commentCount)}
+              </Link>
+            </span>
           </div>
 
           <div className="blog-article__cover">
             <BlogCoverImage
-              title={post.title}
+              title={titleForDisplay}
               imageUrl={post.coverImage?.mediaUrl}
               altText={post.coverImage?.altText}
               className="blog-article__cover-image"
@@ -216,14 +326,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             />
           </div>
 
-          <BlogArticleBody html={post.content} />
-
-          {/*
-            Translation: Blog body is sanitized HTML. Existing TranslatedContentView
-            targets plain text fields. Until HTML-aware presentation exists, the
-            canonical original article is shown. Language Architecture already
-            registers sourceKind blog_post for future packs.
-          */}
+          <BlogArticleBody html={bodyHtml} />
 
           <BlogReactionControls
             slug={post.slug}
@@ -240,7 +343,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
           <p className="blog-article__back">
             <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-              Back to Blog
+              {t("backToBlog")}
             </Link>
           </p>
         </article>

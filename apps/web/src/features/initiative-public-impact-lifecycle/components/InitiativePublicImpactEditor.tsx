@@ -9,6 +9,8 @@ import type {
 } from "@hu/types";
 
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { resolvePublicImpactSectionDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
@@ -21,6 +23,10 @@ import {
   publishInitiativePublicImpactStage,
   saveInitiativePublicImpactDraft,
 } from "../api";
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
 
 interface InitiativePublicImpactEditorProps {
   readonly initiativeId: string;
@@ -40,6 +46,8 @@ export function InitiativePublicImpactEditor({
   onTogglePreview,
   onNavigate,
 }: InitiativePublicImpactEditorProps) {
+  const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [sections, setSections] = useState<InitiativePublicImpactReportSection[]>(
     draft.sections.map((section) => structuredClone(section)),
@@ -86,9 +94,7 @@ export function InitiativePublicImpactEditor({
 
       setTitle(result.title);
       setSections(result.sections);
-      setApplyNotice(
-        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
-      );
+      setApplyNotice(t("author.publicImpact.messages.aiApplied"));
       setError(null);
     }
 
@@ -96,7 +102,7 @@ export function InitiativePublicImpactEditor({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [initiativeId, sections, title]);
+  }, [initiativeId, sections, t, title]);
 
   function updateSection(sectionId: string, patch: Partial<InitiativePublicImpactReportSection>) {
     setSections((current) =>
@@ -132,7 +138,11 @@ export function InitiativePublicImpactEditor({
       setSections(generated.sections.map((section) => structuredClone(section)));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.publicImpact.messages.generateFailed", {
+          detail: detailFromError(err, t("author.publicImpact.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -144,7 +154,11 @@ export function InitiativePublicImpactEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.publicImpact.messages.saveFailed", {
+          detail: detailFromError(err, t("author.publicImpact.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -158,30 +172,39 @@ export function InitiativePublicImpactEditor({
       setPublished(true);
       onPublished(report);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.publicImpact.messages.publishFailed", {
+          detail: detailFromError(err, t("author.publicImpact.messages.unknownError")),
+        }),
+      );
     }
   }
 
   return (
     <div className="ipi-editor">
       <div className="ipi-editor__field">
-        <label htmlFor="ipi-title">Title</label>
+        <label htmlFor="ipi-title">{t("author.publicImpact.fields.title")}</label>
         <input id="ipi-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
 
       {sections.length === 0 ? (
-        <p className="ipi-source-panel__empty">
-          No Report sections yet. Generate a draft from available Initiative Lifecycle sources.
-        </p>
+        <p className="ipi-source-panel__empty">{t("author.publicImpact.noSectionsYet")}</p>
       ) : (
         sections.map((section) => (
           <div className="ipi-section" key={section.sectionId}>
             <div className="ipi-section__header">
-              <h4 className="ipi-section__title">{section.title || section.sectionId}</h4>
-              <span className="ipi-section__status">{section.sectionId}</span>
+              <h4 className="ipi-section__title">
+                {section.title ||
+                  resolvePublicImpactSectionDisplayLabel(section.sectionId, t)}
+              </h4>
+              <span className="ipi-section__status">
+                {resolvePublicImpactSectionDisplayLabel(section.sectionId, t)}
+              </span>
             </div>
             <div className="ipi-editor__field">
-              <label htmlFor={`ipi-body-${section.sectionId}`}>Body</label>
+              <label htmlFor={`ipi-body-${section.sectionId}`}>
+                {t("author.publicImpact.fields.body")}
+              </label>
               <textarea
                 id={`ipi-body-${section.sectionId}`}
                 rows={4}
@@ -191,7 +214,7 @@ export function InitiativePublicImpactEditor({
             </div>
             <div className="ipi-editor__field">
               <label htmlFor={`ipi-evidence-${section.sectionId}`}>
-                Evidence References (one per line)
+                {t("author.publicImpact.fields.evidenceReferences")}
               </label>
               <textarea
                 id={`ipi-evidence-${section.sectionId}`}
@@ -216,23 +239,25 @@ export function InitiativePublicImpactEditor({
 
       <div className="ipi-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, t("author.publicImpact.generateImpactDraft"))}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Civic Archive")}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            t("author.publicImpact.publishAndContinue"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton
             variant="secondary"
             onClick={() => onNavigate("archive", "civic-archive")}
           >
-            Open Civic Archive
+            {t("author.publicImpact.openCivicArchive")}
           </WorkspaceButton>
         ) : null}
       </div>

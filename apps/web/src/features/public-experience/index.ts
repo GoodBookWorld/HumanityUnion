@@ -8,6 +8,21 @@ export { PublicExperienceHeader } from "./components/PublicExperienceHeader";
 export { RegistrationGatewayEvidence } from "./components/RegistrationGatewayEvidence";
 export { RegistrationGatewaySection } from "./components/RegistrationGatewaySection";
 export { PRIMARY_NAVIGATION } from "./constants";
+export {
+  PRIMARY_NAV_FOUNDATION_MESSAGE_KEYS,
+  primaryNavFoundationMessageKey,
+  resolvePrimaryNavDisplayLabel,
+  resolvePrimaryNavDisplayLabelFromMessages,
+  type PrimaryNavFoundationMessageKey,
+  type PrimaryNavFoundationStableLabel,
+} from "./primary-nav-i18n";
+export {
+  FOOTER_FOUNDATION_MESSAGE_KEYS,
+  footerFoundationMessageKey,
+  resolveFooterNavDisplayLabel,
+  type FooterFoundationMessageKey,
+  type FooterFoundationStableLabel,
+} from "./footer-nav-i18n";
 export { FOOTER_CONTENT, REGISTRATION_GATEWAY_CONTENT } from "./content";
 export {
   CONTACT_EMAIL,

@@ -2,10 +2,12 @@
 
 import { useId } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import type { BlogCategory, PublicBlogCategoryCount } from "@hu/types";
 
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 
 interface BlogCategoriesSidebarProps {
   categories: readonly BlogCategory[];
@@ -35,6 +37,7 @@ function formatOptionLabel(name: string, count: number | undefined): string {
 /**
  * Pack 16E — accessible category dropdown (replaces permanently expanded list).
  * Preserves `?category=` deep links via client navigation.
+ * Pack 08I.7 — category display names via blogPublic.categories catalogs.
  */
 export function BlogCategoriesSidebar({
   categories,
@@ -42,6 +45,8 @@ export function BlogCategoriesSidebar({
   q,
   categoryCounts,
 }: BlogCategoriesSidebarProps) {
+  const t = useTranslations("blogPublic");
+  const tDiscovery = useTranslations("blogPublic.discovery");
   const router = useRouter();
   const selectId = useId();
   const headingId = useId();
@@ -54,13 +59,29 @@ export function BlogCategoriesSidebar({
       ? categoryCounts.reduce((sum, row) => sum + row.count, 0)
       : undefined;
 
+  const allLabel = formatOptionLabel(tDiscovery("allCategories"), allCount);
+  const selectedCategory = categories.find((category) => category.slug === selected);
+  const selectedLabel =
+    selected === "all"
+      ? allLabel
+      : formatOptionLabel(
+          selectedCategory
+            ? resolveBlogCategoryDisplayName(
+                selectedCategory.categoryId,
+                t,
+                selectedCategory.name,
+              )
+            : resolveBlogCategoryDisplayName(selected, t),
+          countForSlug(categoryCounts, selected),
+        );
+
   return (
     <nav className="blog-rail-widget blog-categories" aria-labelledby={headingId}>
       <h2 id={headingId} className="hu-heading-4 blog-rail-widget__title">
-        Categories
+        {tDiscovery("categoriesHeading")}
       </h2>
       <label className="hu-label blog-categories__label" htmlFor={selectId}>
-        Category
+        {tDiscovery("categoryLabel")}
       </label>
       <select
         id={selectId}
@@ -72,21 +93,18 @@ export function BlogCategoriesSidebar({
           router.push(buildBlogIndexHref({ q, categorySlug, page: 1 }));
         }}
       >
-        <option value="all">{formatOptionLabel("All Categories", allCount)}</option>
+        <option value="all">{allLabel}</option>
         {categories.map((category) => (
           <option key={category.categoryId} value={category.slug}>
-            {formatOptionLabel(category.name, countForSlug(categoryCounts, category.slug))}
+            {formatOptionLabel(
+              resolveBlogCategoryDisplayName(category.categoryId, t, category.name),
+              countForSlug(categoryCounts, category.slug),
+            )}
           </option>
         ))}
       </select>
       <p className="hu-caption blog-categories__current" aria-live="polite">
-        Selected:{" "}
-        {selected === "all"
-          ? formatOptionLabel("All Categories", allCount)
-          : formatOptionLabel(
-              categories.find((category) => category.slug === selected)?.name ?? selected,
-              countForSlug(categoryCounts, selected),
-            )}
+        {tDiscovery("selected", { label: selectedLabel })}
       </p>
     </nav>
   );

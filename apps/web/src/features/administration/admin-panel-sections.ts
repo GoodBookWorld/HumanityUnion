@@ -12,6 +12,10 @@ export type AdminPanelSectionId =
   | "diagnostics"
   | "beta-access"
   | "platform"
+  | "languages"
+  | "brand-localization"
+  | "legal-localization"
+  | "terminology-glossary"
   | "audit";
 
 export interface AdminPanelSection {
@@ -35,6 +39,22 @@ export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "diagnostics", label: "Diagnostics", href: "/admin/diagnostics" },
   { id: "beta-access", label: "Beta Access", href: "/admin/beta-access" },
   { id: "platform", label: "Platform", href: "/admin/platform" },
+  { id: "languages", label: "Languages", href: "/admin/languages" },
+  {
+    id: "brand-localization",
+    label: "Brand Localization",
+    href: "/admin/brand-localization",
+  },
+  {
+    id: "legal-localization",
+    label: "Legal Localization",
+    href: "/admin/legal-localization",
+  },
+  {
+    id: "terminology-glossary",
+    label: "Terminology Glossary",
+    href: "/admin/terminology-glossary",
+  },
   { id: "audit", label: "Audit", href: "/admin/audit" },
 ] as const;
 

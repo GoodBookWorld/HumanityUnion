@@ -1,15 +1,19 @@
 import {
-  getCountryLabel,
-  getRegionLabel,
   normalizeCountryInput,
   normalizeRegionInput,
 } from "./geography.helpers.js";
 import { getCommunityLabel } from "./geography.communities.js";
+import {
+  getLocalizedAdminRegionDisplayName,
+  getLocalizedCountryDisplayName,
+} from "./geographic-display-names.js";
 
 export interface PublicGeographyInput {
   countryCode?: string;
   regionCode?: string;
   communitySlug?: string;
+  /** Interface / document locale for participant-facing geography labels (Pack 08K.3). */
+  locale?: string;
   /** Legacy free-text region label from initiative metadata. */
   regionLabel?: string;
   /** Descriptive community association entered by steward. */
@@ -32,12 +36,16 @@ export interface ResolvedPublicGeography {
   label: string;
 }
 
-function resolveCountryLabel(countryCode?: string, fallback?: string): string | undefined {
+function resolveCountryLabel(
+  countryCode: string | undefined,
+  fallback: string | undefined,
+  locale: string,
+): string | undefined {
   if (countryCode) {
     const normalized = normalizeCountryInput(countryCode);
 
     if (normalized) {
-      return getCountryLabel(normalized) ?? fallback;
+      return getLocalizedCountryDisplayName(normalized, locale, fallback);
     }
   }
 
@@ -47,11 +55,16 @@ function resolveCountryLabel(countryCode?: string, fallback?: string): string | 
 function resolveRegionLabel(
   countryCode: string | undefined,
   regionCode: string | undefined,
-  fallback?: string,
+  fallback: string | undefined,
+  locale: string,
 ): string | undefined {
   if (countryCode && regionCode) {
-    const label = getRegionLabel(countryCode, regionCode);
-
+    const label = getLocalizedAdminRegionDisplayName(
+      countryCode,
+      regionCode,
+      locale,
+      fallback,
+    );
     if (label) {
       return label;
     }
@@ -85,6 +98,7 @@ function resolveCityLabel(
 }
 
 export function resolvePublicGeography(input: PublicGeographyInput): ResolvedPublicGeography {
+  const locale = input.locale?.trim() || "en";
   const countryCode =
     normalizeCountryInput(input.countryCode ?? input.knownCommunityCountrySlug) ?? undefined;
 
@@ -93,11 +107,12 @@ export function resolvePublicGeography(input: PublicGeographyInput): ResolvedPub
       ? normalizeRegionInput(countryCode, input.regionCode ?? input.knownCommunityRegionSlug)
       : undefined;
 
-  const country = resolveCountryLabel(countryCode, input.knownCommunityCountryLabel);
+  const country = resolveCountryLabel(countryCode, input.knownCommunityCountryLabel, locale);
   const region = resolveRegionLabel(
     countryCode,
     regionCode,
     input.knownCommunityRegionLabel ?? input.regionLabel,
+    locale,
   );
   const city = resolveCityLabel(input, countryCode, regionCode);
 

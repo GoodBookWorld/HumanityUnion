@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { CANONICAL_ENGLISH_BRAND_FALLBACK } from "@hu/types";
+
 import {
   clearObsoleteInstallPreferenceKeys,
   dismissInstallPromotion,
@@ -29,15 +31,17 @@ function readPublic(relativeFromPublic: string): string {
 describe("PWA UX Correction Pack 02", () => {
   it("1–4 — guest language does not call preferences/me or refresh", () => {
     const lang = readWeb("features/language/components/DocumentLanguageAttributes.tsx");
-    assert.match(lang, /useClientAuthStatus/);
-    assert.match(lang, /authStatus !== "authenticated"/);
-    assert.match(lang, /DEFAULT_PLATFORM_LANGUAGE/);
-    assert.match(lang, /applyDocumentLanguage\(DEFAULT_PLATFORM_LANGUAGE\)/);
-    const effectBody = lang.slice(lang.indexOf("useEffect"));
-    const guestGuard = effectBody.indexOf('authStatus !== "authenticated"');
-    const prefsCall = effectBody.indexOf("void getMyPreferences");
-    assert.ok(guestGuard >= 0, "guest auth guard present in effect");
-    assert.ok(prefsCall > guestGuard, "getMyPreferences only after guest guard");
+    const layout = readWeb("app/layout.tsx");
+    const resolve = readWeb("features/language/resolve-document-locale.ts");
+    // Pack 02C Task 02 — lang/dir resolved server-side; client component is a no-op.
+    assert.doesNotMatch(lang, /getMyPreferences/);
+    assert.doesNotMatch(lang, /from \"react\"/);
+    assert.doesNotMatch(lang, /normalizeLanguageCode/);
+    assert.match(layout, /resolveDocumentHtmlLocale/);
+    assert.match(layout, /lang=\{documentLocale\.locale\}/);
+    assert.match(layout, /dir=\{documentLocale\.textDirection\}/);
+    assert.match(resolve, /resolveRuntimeLocaleFromCatalog/);
+    assert.doesNotMatch(resolve, /normalizeLanguageCode/);
   });
 
   it("guest/pending do not fetch workspace/home or unread-count; authenticated may", () => {
@@ -108,7 +112,7 @@ describe("PWA UX Correction Pack 02", () => {
   it("9–10 — App Header Back uses arrow asset with safe fallback", () => {
     const header = readWeb("features/pwa/components/PwaAppHeader.tsx");
     assert.match(header, /\/icons\/workspace\/arrow\.png/);
-    assert.match(header, /Go back/);
+    assert.match(header, /goBack/);
     assert.match(header, /router\.back/);
     assert.match(header, /\/workspace/);
     assert.ok(existsSync(path.join(webRoot, "public/icons/workspace/arrow.png")));
@@ -117,7 +121,7 @@ describe("PWA UX Correction Pack 02", () => {
   it("11–12 — Workspace Drawer explicit close restores focus", () => {
     const drawer = readWeb("features/pwa/components/PwaWorkspaceDrawer.tsx");
     assert.match(drawer, /\/icons\/workspace\/cross\.svg/);
-    assert.match(drawer, /Close Workspace menu/);
+    assert.match(drawer, /tWorkspace\("closeMenu"\)/);
     assert.match(drawer, /returnFocusRef/);
     assert.match(drawer, /Escape/);
     assert.ok(existsSync(path.join(webRoot, "public/icons/workspace/cross.svg")));
@@ -148,10 +152,14 @@ describe("PWA UX Correction Pack 02", () => {
     assert.match(media, /isSameOriginStaticAssetPath|same-origin/);
   });
 
-  it("18–19 — manifest name Humanity Union; short_name Humanity", () => {
+  it("18–19 — manifest uses static PWA_BRAND (canonical English fallback)", () => {
     const manifest = readWeb("app/manifest.ts");
-    assert.match(manifest, /name:\s*"Humanity Union"/);
-    assert.match(manifest, /short_name:\s*"Humanity"/);
+    assert.match(manifest, /PWA_BRAND/);
+    assert.match(manifest, /CANONICAL_ENGLISH_BRAND_FALLBACK/);
+    assert.match(manifest, /name:\s*PWA_BRAND\.siteName/);
+    assert.match(manifest, /short_name:\s*PWA_BRAND\.shortName/);
+    assert.equal(CANONICAL_ENGLISH_BRAND_FALLBACK.siteName, "Humanity Union");
+    assert.equal(CANONICAL_ENGLISH_BRAND_FALLBACK.shortName, "Humanity");
   });
 
   it("install promotion never actionless; Later ≠ installed; SW ≠ installed", () => {
@@ -161,17 +169,17 @@ describe("PWA UX Correction Pack 02", () => {
     const installState = readWeb("features/pwa/install-state.ts");
     const sw = readPublic("sw.js");
 
-    assert.match(promo, /Humanity Union App/);
+    assert.match(promo, /install\.appTitle/);
     assert.doesNotMatch(promo, /if \(uxState === "already_installed"\) \{\s*return null/);
-    assert.match(promo, /Installed/);
-    assert.match(promo, /Show install options/);
-    assert.match(promo, /Install Humanity Union|Install App/);
-    assert.match(promo, /Add to Home Screen/);
-    assert.match(promo, /Installation guide/);
-    assert.match(promo, /handleDismiss[\s\S]*Later/);
+    assert.match(promo, /install\.alreadyInstalled/);
+    assert.match(promo, /install\.showOptions/);
+    assert.match(promo, /install\.installCta|install\.installing/);
+    assert.match(promo, /install\.addToHomeScreen/);
+    assert.match(promo, /install\.installationGuide/);
+    assert.match(promo, /handleDismiss[\s\S]*install\.later/);
     assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
-    assert.match(guidance, /Install Humanity Union App|How to install Humanity|Add to Home Screen/);
-    assert.match(guidance, /Share button|Share menu/);
+    assert.match(guidance, /install\.guideTitle|install\.addToHomeScreen/);
+    assert.match(guidance, /install\.iosStep2/);
     assert.match(preference, /dismissal ≠ installed|not OS install proof/i);
     assert.match(preference, /OBSOLETE_KEYS|pwaInstalled/);
     assert.doesNotMatch(preference, /localStorage\.setItem/);

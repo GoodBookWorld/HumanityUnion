@@ -1,6 +1,11 @@
 "use client";
 
-import type { MemberBadgeContributionAvailability } from "@hu/types";
+import type {
+  MemberBadgeContributionAvailability,
+  MemberBadgeContributionStatus,
+  MemberBadgeFulfillmentStatus,
+} from "@hu/types";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -11,50 +16,51 @@ import { Card } from "../../../design-system/components/Card";
 import { LoadingState } from "../../../design-system";
 import { formatAuthFormError } from "../../../lib/api-client";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { WorkspaceNavigation } from "../../initiatives/components/WorkspaceNavigation";
 import {
   getMemberBadgeAvailability,
   listMemberBadgeRequests,
   startMemberBadgeContribution,
 } from "../member-badge-api";
-import { MEMBER_BADGE_FAQ, MEMBER_BADGE_PAGE_COPY } from "../member-badge.constants";
-import {
-  formatMemberBadgeContributionStatus,
-  formatMemberBadgeFulfillmentStatus,
-} from "../member-badge-formatters";
 
 import { MemberBadgeIcon } from "./MemberBadgeIcon";
 import "./member-badge-page.css";
+
+const BADGE_FAQ_IDS = ["required", "membershipImpact", "amount", "shipping"] as const;
 
 function MemberBadgeCta({
   availability,
   loading,
   onRequest,
+  authStatus,
 }: {
   availability: MemberBadgeContributionAvailability | null;
   loading: boolean;
   onRequest: () => void;
+  authStatus: "pending" | "authenticated" | "unauthenticated";
 }) {
+  const t = useTranslations("membershipPublic.badgePages");
+  const brand = useLocalizedBrand();
+
   if (!availability?.enabled) {
     return (
       <>
         <Button variant="secondary" disabled aria-disabled="true">
-          Coming Soon
+          {t("comingSoon")}
         </Button>
         <p className="member-badge-page__cta-note" role="status">
-          {MEMBER_BADGE_PAGE_COPY.disabledMessage}
+          {t("disabledMessage")}
         </p>
       </>
     );
   }
 
   if (!availability.eligible) {
-    const reason = availability.reason ?? MEMBER_BADGE_PAGE_COPY.eligibilityBody;
-
-    if (reason.toLowerCase().includes("sign in")) {
+    if (authStatus !== "authenticated") {
       return (
         <Button href="/login?returnTo=/membership/member-badge" variant="primary">
-          Log In
+          {t("logIn")}
         </Button>
       );
     }
@@ -62,10 +68,10 @@ function MemberBadgeCta({
     return (
       <>
         <Button href="/membership" variant="primary">
-          Become a Member
+          {t("becomeMember")}
         </Button>
         <p className="member-badge-page__cta-note" role="status">
-          {reason}
+          {t("eligibilityBody", { siteName: brand.siteName })}
         </p>
       </>
     );
@@ -74,16 +80,17 @@ function MemberBadgeCta({
   return (
     <>
       <Button variant="primary" disabled={loading} onClick={onRequest}>
-        Request Member Badge
+        {t("requestCta")}
       </Button>
-      <p className="member-badge-page__cta-note">
-        You will complete shipping and payment through a secure Checkout flow.
-      </p>
+      <p className="member-badge-page__cta-note">{t("checkoutHint")}</p>
     </>
   );
 }
 
 function MemberBadgePageBody() {
+  const t = useTranslations("membershipPublic.badgePages");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const searchParams = useSearchParams();
   const authStatus = useClientAuthStatus();
   const [availability, setAvailability] = useState<MemberBadgeContributionAvailability | null>(
@@ -135,15 +142,20 @@ function MemberBadgePageBody() {
     }
   };
 
+  const contributionStatusLabel = (status: MemberBadgeContributionStatus) =>
+    t(`contributionStatus.${status}`);
+  const fulfillmentStatusLabel = (status: MemberBadgeFulfillmentStatus) =>
+    t(`requestFulfillmentStatus.${status}`);
+
   if (loading) {
-    return <LoadingState message="Loading Member Badge information..." />;
+    return <LoadingState message={t("loadingInfo")} />;
   }
 
   return (
     <div className="member-badge-page">
       {contributionCancelled ? (
         <div className="member-badge-page__banner hu-card" role="status">
-          {MEMBER_BADGE_PAGE_COPY.cancelMessage}
+          {t("cancelMessage")}
         </div>
       ) : null}
 
@@ -154,8 +166,8 @@ function MemberBadgePageBody() {
       ) : null}
 
       <section className="member-badge-page__hero" aria-labelledby="member-badge-hero-title">
-        <h1 id="member-badge-hero-title">{MEMBER_BADGE_PAGE_COPY.heroTitle}</h1>
-        <p>{MEMBER_BADGE_PAGE_COPY.heroSubtitle}</p>
+        <h1 id="member-badge-hero-title">{t("heroTitle", siteName)}</h1>
+        <p>{t("heroSubtitle", siteName)}</p>
       </section>
 
       <Card className="member-badge-page__artwork-card">
@@ -163,34 +175,39 @@ function MemberBadgePageBody() {
       </Card>
 
       <section aria-labelledby="member-badge-meaning-title">
-        <h2 id="member-badge-meaning-title">{MEMBER_BADGE_PAGE_COPY.meaningTitle}</h2>
-        <p>{MEMBER_BADGE_PAGE_COPY.meaningBody}</p>
+        <h2 id="member-badge-meaning-title">{t("meaningTitle")}</h2>
+        <p>{t("meaningBody")}</p>
       </section>
 
       <section aria-labelledby="member-badge-contribution-title">
-        <h2 id="member-badge-contribution-title">{MEMBER_BADGE_PAGE_COPY.contributionTitle}</h2>
+        <h2 id="member-badge-contribution-title">{t("contributionTitle")}</h2>
         <p className="member-badge-page__amount">
-          {availability?.contributionAmountCad ?? MEMBER_BADGE_PAGE_COPY.contributionAmount}
+          {availability?.contributionAmountCad ?? t("contributionAmountFallback")}
         </p>
-        <p>{MEMBER_BADGE_PAGE_COPY.contributionNote}</p>
-        <p>{MEMBER_BADGE_PAGE_COPY.optionalClarification}</p>
+        <p>{t("contributionNote")}</p>
+        <p>{t("optionalClarification")}</p>
       </section>
 
       <section aria-labelledby="member-badge-shipping-title">
-        <h2 id="member-badge-shipping-title">{MEMBER_BADGE_PAGE_COPY.shippingTitle}</h2>
-        <p>{MEMBER_BADGE_PAGE_COPY.shippingBody}</p>
+        <h2 id="member-badge-shipping-title">{t("shippingTitle")}</h2>
+        <p>{t("shippingBody")}</p>
         {availability?.shippingCountries?.length ? (
-          <p>Configured destinations: {availability.shippingCountries.join(", ")}</p>
+          <p>
+            {t("configuredDestinations", {
+              countries: availability.shippingCountries.join(", "),
+            })}
+          </p>
         ) : null}
       </section>
 
       <section aria-labelledby="member-badge-eligibility-title">
-        <h2 id="member-badge-eligibility-title">{MEMBER_BADGE_PAGE_COPY.eligibilityTitle}</h2>
-        <p>{MEMBER_BADGE_PAGE_COPY.eligibilityBody}</p>
+        <h2 id="member-badge-eligibility-title">{t("eligibilityTitle")}</h2>
+        <p>{t("eligibilityBody", siteName)}</p>
         <div className="member-badge-page__cta">
           <MemberBadgeCta
             availability={availability}
             loading={checkoutLoading}
+            authStatus={authStatus}
             onRequest={() => void handleRequest()}
           />
         </div>
@@ -199,8 +216,8 @@ function MemberBadgePageBody() {
       {authStatus === "authenticated" ? (
         <section aria-labelledby="member-badge-history-title">
           <div className="member-badge-page__history-header">
-            <h2 id="member-badge-history-title">Your Badge Requests</h2>
-            <Link href="/membership/member-badge/requests">View all</Link>
+            <h2 id="member-badge-history-title">{t("historyTitle")}</h2>
+            <Link href="/membership/member-badge/requests">{t("viewAll")}</Link>
           </div>
           {requests && requests.length > 0 ? (
             <ul className="member-badge-page__history-list">
@@ -210,32 +227,34 @@ function MemberBadgePageBody() {
                     <p>
                       <strong>{request.badgeRequestNumber}</strong>
                     </p>
-                    <p>{formatMemberBadgeContributionStatus(request.contributionStatus)}</p>
-                    <p>{formatMemberBadgeFulfillmentStatus(request.fulfillmentStatus)}</p>
+                    <p>{contributionStatusLabel(request.contributionStatus)}</p>
+                    <p>{fulfillmentStatusLabel(request.fulfillmentStatus)}</p>
                     <Button
                       href={`/membership/member-badge/requests/${request.badgeContributionId}`}
                       variant="secondary"
                     >
-                      View Details
+                      {t("viewDetails")}
                     </Button>
                   </Card>
                 </li>
               ))}
             </ul>
           ) : (
-            <p role="status">{MEMBER_BADGE_PAGE_COPY.emptyRequests}</p>
+            <p role="status">{t("emptyRequests")}</p>
           )}
         </section>
       ) : null}
 
       <section aria-labelledby="member-badge-faq-title">
-        <h2 id="member-badge-faq-title">Frequently Asked Questions</h2>
-        <div className="membership-faq-accordion" role="region" aria-label="Member Badge FAQ">
-          {MEMBER_BADGE_FAQ.map((entry) => (
-            <details key={entry.id} className="membership-faq-accordion__item">
-              <summary className="membership-faq-accordion__summary">{entry.question}</summary>
+        <h2 id="member-badge-faq-title">{t("faqTitle")}</h2>
+        <div className="membership-faq-accordion" role="region" aria-label={t("faqRegionLabel")}>
+          {BADGE_FAQ_IDS.map((id) => (
+            <details key={id} className="membership-faq-accordion__item">
+              <summary className="membership-faq-accordion__summary">
+                {t(`faq.${id}.question`)}
+              </summary>
               <div className="membership-faq-accordion__body">
-                <p>{entry.answer}</p>
+                <p>{t(`faq.${id}.answer`)}</p>
               </div>
             </details>
           ))}
@@ -244,11 +263,11 @@ function MemberBadgePageBody() {
 
       <div className="member-badge-page__actions">
         <Button href="/membership" variant="secondary">
-          Back to Membership
+          {t("backToMembership")}
         </Button>
         {authStatus === "authenticated" ? (
           <Button href="/workspace" variant="primary">
-            Return to Workspace
+            {t("returnToWorkspace")}
           </Button>
         ) : null}
       </div>
@@ -257,13 +276,14 @@ function MemberBadgePageBody() {
 }
 
 export function MemberBadgePageContent() {
+  const t = useTranslations("membershipPublic.badgePages");
   const authStatus = useClientAuthStatus();
 
   if (authStatus === "authenticated") {
     return (
       <MemberWorkspace
-        title="Official Member Badge"
-        subtitle="Optional additional Membership Contribution"
+        title={t("officialTitle")}
+        subtitle={t("officialSubtitle")}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <MemberBadgePageBody />

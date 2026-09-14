@@ -291,7 +291,7 @@ export async function handleInitiativeLifecycleStagePublishedNotification(
         continue;
       }
 
-      const language = resolveParticipantLanguageContext(participantId);
+      const language = await resolveParticipantLanguageContext(participantId);
       const copy = buildInitiativeLifecycleStageNotificationCopy({
         stageId: payload.stageId,
         stageLabel: payload.stageLabel,

@@ -80,6 +80,62 @@ export function isCollectiveDecisionVotingWindowOpen(
   return true;
 }
 
+export type CollectiveDecisionVotingUnavailableCode =
+  | "cancelled"
+  | "closed"
+  | "not_opened"
+  | "window_not_open"
+  | "window_closed";
+
+const COLLECTIVE_DECISION_VOTING_UNAVAILABLE_ENGLISH: Record<
+  CollectiveDecisionVotingUnavailableCode,
+  string
+> = {
+  cancelled: "This Collective Decision was cancelled. Voting is not available.",
+  closed: "This Collective Decision is closed. Voting is no longer available.",
+  not_opened: "Voting is not available for this Collective Decision.",
+  window_not_open: "The voting window is not open yet.",
+  window_closed: "The voting window has closed.",
+};
+
+/**
+ * Semantic reason why Collective Decision voting is unavailable.
+ * Prefer catalog key `collaboration.vote.unavailableReasons.<code>` over English prose.
+ */
+export function resolveCollectiveDecisionVotingUnavailableCode(
+  projection: Pick<
+    PublicInitiativeCollectiveDecisionProjection,
+    "status" | "openedAt" | "closesAt" | "closedAt" | "cancelledAt"
+  >,
+  nowMs: number = Date.now(),
+): CollectiveDecisionVotingUnavailableCode | null {
+  if (projection.status === "cancelled") {
+    return "cancelled";
+  }
+
+  if (projection.status === "closed") {
+    return "closed";
+  }
+
+  if (projection.status !== "opened") {
+    return "not_opened";
+  }
+
+  if (!projection.openedAt || Date.parse(projection.openedAt) > nowMs) {
+    return "window_not_open";
+  }
+
+  if (Date.parse(projection.closesAt) < nowMs) {
+    return "window_closed";
+  }
+
+  return null;
+}
+
+/**
+ * @deprecated Prefer `resolveCollectiveDecisionVotingUnavailableCode` + catalog.
+ * English fallback kept for existing unit tests / quarantined mounts.
+ */
 export function describeCollectiveDecisionVotingUnavailable(
   projection: Pick<
     PublicInitiativeCollectiveDecisionProjection,
@@ -87,25 +143,6 @@ export function describeCollectiveDecisionVotingUnavailable(
   >,
   nowMs: number = Date.now(),
 ): string | null {
-  if (projection.status === "cancelled") {
-    return "This Collective Decision was cancelled. Voting is not available.";
-  }
-
-  if (projection.status === "closed") {
-    return "This Collective Decision is closed. Voting is no longer available.";
-  }
-
-  if (projection.status !== "opened") {
-    return "Voting is not available for this Collective Decision.";
-  }
-
-  if (!projection.openedAt || Date.parse(projection.openedAt) > nowMs) {
-    return "The voting window is not open yet.";
-  }
-
-  if (Date.parse(projection.closesAt) < nowMs) {
-    return "The voting window has closed.";
-  }
-
-  return null;
+  const code = resolveCollectiveDecisionVotingUnavailableCode(projection, nowMs);
+  return code ? COLLECTIVE_DECISION_VOTING_UNAVAILABLE_ENGLISH[code] : null;
 }

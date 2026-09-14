@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { RegionRepresentativeVisual } from "@hu/types";
 
 interface RegionIdentityVisualProps {
@@ -6,13 +10,15 @@ interface RegionIdentityVisualProps {
 }
 
 export function RegionIdentityVisual({ regionName, visual }: RegionIdentityVisualProps) {
+  const t = useTranslations("publicGeo.shared");
+
   if (visual.kind === "image" && visual.imageHref) {
     return (
       <figure className="region-identity__visual">
         <img
           className="region-identity__visual-image"
           src={visual.imageHref}
-          alt={`Representative visual for ${regionName}`}
+          alt={t("representativeVisualAlt", { name: regionName })}
         />
         <figcaption className="region-identity__visual-caption">{visual.caption}</figcaption>
       </figure>

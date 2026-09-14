@@ -50,7 +50,13 @@ export function isPublicChoiceCandidateElectionBallot(
   return resolvePublicChoiceBallotMode(value) === "SELECT_ONE_CANDIDATE";
 }
 
-/** Community voting disclaimer — never official/government/polling claims. */
+/**
+ * Community voting disclaimer — never official/government/polling claims.
+ *
+ * @deprecated 08G — English DOMAIN skew fallback for PDF/API transport.
+ * Prefer Web catalog `publicChoice.results.disclaimerBody` and API
+ * locale maps for presentation.
+ */
 export const PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER =
   "These are Humanity Union community voting results. They are not official election results, statistically representative polling, or government-certified results.";
 

@@ -2,14 +2,23 @@ import type { Metadata } from "next";
 
 import { fetchPublicBlogPostBySlugOptional } from "../../../features/blog/api";
 import { BlogArticlePageContent } from "../../../features/blog/components/BlogArticlePageContent";
+import { loadBlogArticlePresentationSeed } from "../../../features/blog/load-blog-article-presentation-seed";
+import { resolveBlogServerSeedReadingPolicy } from "../../../features/blog/resolve-blog-server-seed-reading-policy";
+import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../features/media-upload/media-url";
-import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
+import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
+import { loadBlogMetadataTranslationFields } from "../../../lib/seo/load-blog-metadata-translation-fields";
+import { resolveLocalizedPublicMetadataCopy } from "../../../lib/seo/resolve-localized-public-metadata-copy";
 import { JsonLdScript, buildBlogPostingJsonLd } from "../../../lib/seo/structured-data";
 
 interface BlogArticlePageProps {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * Step 07C.3 — request-aware canonical/hreflang.
+ * Step 07D — optional compact blog_post CT overlay for title/excerpt (GET resolve only).
+ */
 export async function generateMetadata({ params }: BlogArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -17,10 +26,12 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const post = await fetchPublicBlogPostBySlugOptional(slug);
 
     if (!post) {
-      return buildPublicPageMetadata({
+      const localeFreeCanonicalPath = `/blog/${encodeURIComponent(slug)}`;
+      return buildPublicPageMetadataForRequest({
         title: "Publication not found",
         titleBrandSuffix: "Blog | Humanity Union",
-        canonicalPath: `/blog/${encodeURIComponent(slug)}`,
+        canonicalPath: localeFreeCanonicalPath,
+        localeFreeCanonicalPath,
         indexable: false,
       });
     }
@@ -29,25 +40,43 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const imageUrl = resolveMediaUrl(seo?.socialImage?.mediaUrl ?? post.coverImage?.mediaUrl);
     const pageTitle = seo?.title || post.title;
     const description = seo?.description || post.excerpt || post.title;
-    const socialTitle = seo?.socialTitle || pageTitle;
-    const socialDescription = seo?.socialDescription || description;
-    const canonical = seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
+    const localeFreeCanonicalPath =
+      seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
 
-    return buildPublicPageMetadata({
+    const documentLocale = await resolveDocumentHtmlLocale();
+    const translationFields = await loadBlogMetadataTranslationFields({
+      postId: post.postId,
+      language: documentLocale.locale,
+    });
+    const localized = resolveLocalizedPublicMetadataCopy({
       title: pageTitle,
-      titleBrandSuffix: "Blog | Humanity Union",
       description,
-      canonicalPath: canonical,
+      locale: documentLocale.locale,
+      translatedTitle: translationFields.translatedTitle,
+      translatedDescription: translationFields.translatedDescription,
+    });
+
+    // Explicit Admin/Blog SEO social fields stay authoritative when set.
+    const socialTitle = seo?.socialTitle || localized.title;
+    const socialDescription = seo?.socialDescription || localized.description;
+
+    return buildPublicPageMetadataForRequest({
+      title: localized.title,
+      titleBrandSuffix: "Blog | Humanity Union",
+      description: localized.description,
+      canonicalPath: localeFreeCanonicalPath,
+      localeFreeCanonicalPath,
       socialTitle,
       socialDescription,
       imageUrl,
       openGraphType: "article",
     });
   } catch {
-    return buildPublicPageMetadata({
+    return buildPublicPageMetadataForRequest({
       title: "Blog",
       titleBrandSuffix: "Humanity Union",
       canonicalPath: "/blog",
+      localeFreeCanonicalPath: "/blog",
       indexable: false,
     });
   }
@@ -60,12 +89,35 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
   // additional client-side refetch that previously always ran after hydration.
   const initialPost = await fetchPublicBlogPostBySlugOptional(slug);
 
+  // Pack 08I.8 / 08I.10 — SSR seed from warm content_translations (GET only).
+  // Authenticated explicit `none` → canonical seed (no warm overlay).
+  let initialPresentation:
+    | { title: string; excerpt: string; contentHtml: string }
+    | undefined;
+  if (initialPost) {
+    const readingPolicy = await resolveBlogServerSeedReadingPolicy();
+    initialPresentation = await loadBlogArticlePresentationSeed({
+      postId: initialPost.postId,
+      language: readingPolicy.language,
+      preferTranslation: readingPolicy.preferTranslation,
+      canonical: {
+        title: initialPost.title,
+        excerpt: initialPost.excerpt,
+        contentHtml: initialPost.content,
+      },
+    });
+  }
+
   const structuredData =
     initialPost == null
       ? null
       : buildBlogPostingJsonLd({
-          headline: initialPost.seo?.title || initialPost.title,
-          description: initialPost.seo?.description || initialPost.excerpt || initialPost.title,
+          headline: initialPresentation?.title || initialPost.seo?.title || initialPost.title,
+          description:
+            initialPresentation?.excerpt ||
+            initialPost.seo?.description ||
+            initialPost.excerpt ||
+            initialPost.title,
           canonicalPath:
             initialPost.seo?.canonicalPath || `/blog/${encodeURIComponent(initialPost.slug)}`,
           imageUrl: resolveMediaUrl(
@@ -83,7 +135,11 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
   return (
     <>
       <JsonLdScript data={structuredData} />
-      <BlogArticlePageContent slug={slug} initialPost={initialPost} />
+      <BlogArticlePageContent
+        slug={slug}
+        initialPost={initialPost}
+        initialPresentation={initialPresentation}
+      />
     </>
   );
 }

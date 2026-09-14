@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { BlogAuthoringAccessState, BlogAuthorWorkspacePost } from "@hu/types";
@@ -43,6 +44,7 @@ function canBypassManualReviewOnDraft(state: BlogAuthoringAccessState): boolean 
 }
 
 export function BlogEditorPageContent(props: { postId?: string; mode: "create" | "edit" }) {
+  const t = useTranslations("workspace.publishingPage");
   const [access, setAccess] = useState<BlogAuthoringAccessState | null>(null);
   const [post, setPost] = useState<BlogAuthorWorkspacePost | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function BlogEditorPageContent(props: { postId?: string; mode: "create" |
         setAccess(accessState);
 
         if (!isAuthorCapable(accessState)) {
-          setError("Author access required.");
+          setError(t("editor.gate.authorRequired"));
           return;
         }
 
@@ -77,9 +79,9 @@ export function BlogEditorPageContent(props: { postId?: string; mode: "create" |
           return;
         }
         if (isAuthenticationRequiredError(loadError)) {
-          setError("Sign in to open the Publishing editor.");
+          setError(t("editor.gate.signIn"));
         } else if (isNotFoundError(loadError)) {
-          setError("This publication could not be found, or you do not have access.");
+          setError(t("editor.gate.notFoundBody"));
         } else {
           setError(formatAuthFormError(loadError));
         }
@@ -94,22 +96,22 @@ export function BlogEditorPageContent(props: { postId?: string; mode: "create" |
     return () => {
       cancelled = true;
     };
-  }, [props.mode, props.postId]);
+  }, [props.mode, props.postId, t]);
 
   if (loading) {
-    return <p className="hu-body">Loading editor…</p>;
+    return <p className="hu-body">{t("editor.gate.loading")}</p>;
   }
 
   if (error || !access || !isAuthorCapable(access)) {
     return (
       <div className="publishing-page__gate">
         <StatusBanner
-          title="Editor unavailable"
-          message={error ?? "Author access is required to edit publications."}
+          title={t("editor.gate.unavailableTitle")}
+          message={error ?? t("editor.gate.authorRequiredEdit")}
         />
         <p className="hu-body">
           <Link href="/workspace/authoring" className="hu-button hu-button--primary">
-            Open Authoring
+            {t("editor.gate.openAuthoring")}
           </Link>
         </p>
       </div>
@@ -117,7 +119,12 @@ export function BlogEditorPageContent(props: { postId?: string; mode: "create" |
   }
 
   if (props.mode === "edit" && !post) {
-    return <StatusBanner title="Not found" message="This publication could not be loaded." />;
+    return (
+      <StatusBanner
+        title={t("editor.gate.notFoundTitle")}
+        message={t("editor.gate.loadFailed")}
+      />
+    );
   }
 
   return (

@@ -1,6 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useRef, useState } from "react";
 
 import { useOptionalHumanityUnionAssistant } from "../assistant-context";
@@ -12,6 +15,9 @@ import "../humanity-union-assistant.css";
  * Global floating launcher for pages without the Workspace Assistant Widget.
  */
 export function HumanityUnionAssistantFloatingButton() {
+  const t = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const assistant = useOptionalHumanityUnionAssistant();
   const pathname = usePathname() ?? "/";
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -33,6 +39,9 @@ export function HumanityUnionAssistantFloatingButton() {
 
   const launch = resolveAssistantLaunchContext(pathname, hash);
   const open = assistant.isOpen;
+  const site = { siteName };
+  const title = t("assistant.entry.title", site);
+  const openAria = t("assistant.entry.openAria", site);
 
   return (
     <button
@@ -44,8 +53,8 @@ export function HumanityUnionAssistantFloatingButton() {
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="Open Humanity Union Assistant"
-      title="Humanity Union Assistant"
+      aria-label={openAria}
+      title={title}
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={() =>

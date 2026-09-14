@@ -20,17 +20,19 @@ export interface InitiativeCollaborationChannelMessageMongoDocument extends Docu
   type: InitiativeCollaborationChannelMessageType;
   senderParticipantId?: string;
   systemEventKind?: InitiativeCollaborationSystemEventKind;
+  systemEventSubjectDisplayName?: string;
   text: string;
   createdAt: string;
 }
 
 /**
- * `senderParticipantId`/`systemEventKind` must be OMITTED entirely when
- * absent, never set to `undefined` — this driver's default
- * `ignoreUndefined: false` would otherwise serialize `undefined` as BSON
- * `null`, which would make every `system_event` message appear to have a
- * (null) sender. Mirrors `toDirectMessageMongoDocument`'s documented
- * reasoning in the Direct Messaging persistence layer.
+ * `senderParticipantId`/`systemEventKind`/`systemEventSubjectDisplayName`
+ * must be OMITTED entirely when absent, never set to `undefined` — this
+ * driver's default `ignoreUndefined: false` would otherwise serialize
+ * `undefined` as BSON `null`, which would make every `system_event`
+ * message appear to have a (null) sender. Mirrors
+ * `toDirectMessageMongoDocument`'s documented reasoning in the Direct
+ * Messaging persistence layer.
  */
 export function toInitiativeCollaborationChannelMessageMongoDocument(
   record: InitiativeCollaborationChannelMessage,
@@ -45,6 +47,9 @@ export function toInitiativeCollaborationChannelMessageMongoDocument(
       ? { senderParticipantId: record.senderParticipantId }
       : {}),
     ...(record.systemEventKind !== undefined ? { systemEventKind: record.systemEventKind } : {}),
+    ...(record.systemEventSubjectDisplayName !== undefined
+      ? { systemEventSubjectDisplayName: record.systemEventSubjectDisplayName }
+      : {}),
   };
 }
 
@@ -75,6 +80,7 @@ export function fromInitiativeCollaborationChannelMessageMongoDocument(
     type: document.type,
     senderParticipantId: document.senderParticipantId,
     systemEventKind: document.systemEventKind,
+    systemEventSubjectDisplayName: document.systemEventSubjectDisplayName,
     text: document.text,
     createdAt: document.createdAt,
   };

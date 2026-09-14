@@ -8,7 +8,8 @@ import type {
   InitiativePublicImpactLifecycleDraftContext,
 } from "@hu/types";
 
-import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import { generateInitiativePublicImpactDraft, getInitiativePublicImpactWorkspace } from "../api";
 import { InitiativePublicImpactEditor } from "./InitiativePublicImpactEditor";
@@ -28,6 +29,8 @@ export function InitiativePublicImpactAuthorWorkspace({
   onTogglePreview,
   onNavigate,
 }: InitiativePublicImpactAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativePublicImpactLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -72,24 +75,21 @@ export function InitiativePublicImpactAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Public Impact workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.publicImpact.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
   }
 
   if (loading || !context) {
-    return <p className="ipi-source-panel__empty">Loading Public Impact workspace…</p>;
+    return <p className="ipi-source-panel__empty">{t("author.publicImpact.loading")}</p>;
   }
 
   if (context.publishedReportId) {
     return (
-      <p className="ipi-source-panel__empty">
-        Public Impact has already been published for this Initiative. Use Public Preview to review
-        the Report, or continue to Civic Archive.
-      </p>
+      <p className="ipi-source-panel__empty">{t("author.publicImpact.alreadyPublished")}</p>
     );
   }
 
@@ -102,7 +102,7 @@ export function InitiativePublicImpactAuthorWorkspace({
     <div className="lsw-main">
       <div className="ipi-editor__actions" style={{ marginBottom: "1rem" }}>
         <WorkspaceButton variant="secondary" onClick={() => setShowSourcePanel((value) => !value)}>
-          {showSourcePanel ? "Hide Sources" : "Sources"}
+          {showSourcePanel ? actions.hideSources : actions.sources}
         </WorkspaceButton>
       </div>
 
@@ -112,14 +112,9 @@ export function InitiativePublicImpactAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="ipi-editor">
-          <p className="ipi-source-panel__empty">
-            Generate a Public Impact Report from Initiative, Collective Decision, Tracking, Official
-            Responses (including No official response received), and linked evidence. The Assistant is
-            advisory only — it cannot invent results, publish, or advance Lifecycle. Zero measurable
-            impact is a valid publishable conclusion.
-          </p>
+          <p className="ipi-source-panel__empty">{t("author.publicImpact.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+            {actions.saveLabel(generatePhase.phase, t("author.publicImpact.generateImpactDraft"))}
           </WorkspaceButton>
         </div>
       ) : (

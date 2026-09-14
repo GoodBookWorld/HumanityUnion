@@ -55,6 +55,7 @@ function emptyCompleteness() {
     officialResponseCount: 0,
     publicImpactAvailable: false,
     traceabilityComplete: false,
+    summaryDescriptors: [] as const,
     summary: "",
   };
 }
@@ -485,6 +486,7 @@ export async function getDraftArchiveDocument(
 export async function downloadPublishedArchivePdf(input: {
   initiativeId?: string;
   archiveVersionId?: string;
+  locale?: string | null;
 }): Promise<{ buffer: Buffer; filename: string; document: InitiativeLifecycleArchiveDocument }> {
   let packed:
     | {
@@ -503,7 +505,9 @@ export async function downloadPublishedArchivePdf(input: {
     throw new Error("Published Civic Archive not found.");
   }
 
-  const buffer = await generateCivicArchivePdfBuffer(packed.document);
+  const buffer = await generateCivicArchivePdfBuffer(packed.document, {
+    locale: input.locale,
+  });
   const filename = `civic-archive-${packed.version.initiativeId}-v${packed.version.archiveVersion}.pdf`;
 
   return { buffer, filename, document: packed.document };
@@ -512,9 +516,13 @@ export async function downloadPublishedArchivePdf(input: {
 export async function downloadDraftArchivePdf(
   identity: RequestIdentity,
   initiativeId: string,
+  options: { readonly locale?: string | null } = {},
 ): Promise<{ buffer: Buffer; filename: string; document: InitiativeLifecycleArchiveDocument }> {
   const document = await getDraftArchiveDocument(identity, initiativeId);
-  const buffer = await generateCivicArchivePdfBuffer(document, { draftWatermark: true });
+  const buffer = await generateCivicArchivePdfBuffer(document, {
+    draftWatermark: true,
+    locale: options.locale,
+  });
 
   return {
     buffer,

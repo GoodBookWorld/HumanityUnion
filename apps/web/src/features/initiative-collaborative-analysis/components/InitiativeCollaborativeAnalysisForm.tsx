@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCollaborativeAnalysis } from "@hu/types";
 
 import { TranslateDraftControl } from "../../language";
-import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolvePresentationStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
@@ -17,18 +20,14 @@ import {
   generateInitiativeAnalysisDraft,
   publishInitiativeAnalysis,
   saveInitiativeAnalysisDraft,
-  type SaveInitiativeCollaborativeAnalysisDraftInput,
 } from "../api";
+import {
+  buildCollaborativeAnalysisAuthorSaveInput,
+  presentCollaborativeAnalysisForAuthorEditor,
+  type CollaborativeAnalysisAuthorPresentedFields,
+} from "../collaborative-analysis-author-presentation";
 
-interface AnalysisFormState {
-  title: string;
-  summary: string;
-  supportingEvidence: string;
-  risks: string;
-  openQuestions: string;
-  suggestedImprovements: string;
-  references: string;
-}
+type AnalysisFormState = CollaborativeAnalysisAuthorPresentedFields;
 
 const ANALYSIS_FORM_SECTION_KEYS = [
   "title",
@@ -48,15 +47,12 @@ interface InitiativeCollaborativeAnalysisFormProps {
 }
 
 function buildFormState(analysis: InitiativeCollaborativeAnalysis): AnalysisFormState {
-  return {
-    title: analysis.title,
-    summary: analysis.summary,
-    supportingEvidence: analysis.supportingEvidence,
-    risks: analysis.risks,
-    openQuestions: analysis.openQuestions ?? "",
-    suggestedImprovements: analysis.suggestedImprovements,
-    references: analysis.references,
-  };
+  // 03C.5A — Author Mode never binds raw `{lifecycleStage:...}` tokens into inputs.
+  return presentCollaborativeAnalysisForAuthorEditor(analysis);
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 /**
@@ -69,6 +65,10 @@ function buildFormState(analysis: InitiativeCollaborativeAnalysis): AnalysisForm
  * animation (`useSaveButtonPhase`), matching every other profile/save
  * button in this codebase. "Preview" is instantaneous (a local mode
  * toggle owned by the shell), so it gets no save-phase animation.
+ *
+ * Pack 02G 08D.4 — field/message chrome via author.analysis.*; shared
+ * Save/Preview/Publish verbs via useAuthorActionLabels. Canonical form
+ * values remain bound to AnalysisFormState.
  */
 export function InitiativeCollaborativeAnalysisForm({
   initiativeId,
@@ -76,6 +76,8 @@ export function InitiativeCollaborativeAnalysisForm({
   onUpdated,
   onTogglePreview,
 }: InitiativeCollaborativeAnalysisFormProps) {
+  const t = useTranslations("initiativeExperience");
+  const actions = useAuthorActionLabels();
   const [form, setForm] = useState<AnalysisFormState>(() => buildFormState(analysis));
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const generatePhase = useSaveButtonPhase();
@@ -108,7 +110,7 @@ export function InitiativeCollaborativeAnalysisForm({
       if (analysis.status !== "draft") {
         setMessage({
           tone: "error",
-          text: "AI suggestions can only be applied to an in-progress draft.",
+          text: t("author.analysis.messages.aiApplyDraftOnly"),
         });
         return;
       }
@@ -125,7 +127,7 @@ export function InitiativeCollaborativeAnalysisForm({
 
       setMessage({
         tone: "success",
-        text: "AI suggestion applied locally. Edit as needed, then Save. Nothing was published.",
+        text: t("author.analysis.messages.aiApplied"),
       });
     }
 
@@ -133,18 +135,17 @@ export function InitiativeCollaborativeAnalysisForm({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [analysis.status, initiativeId]);
+  }, [analysis.status, initiativeId, t]);
 
   const isDraft = analysis.status === "draft";
   const isBusy = generatePhase.isBusy || savePhase.isBusy || publishPhase.isBusy;
+  const statusLabel =
+    analysis.status === "archived"
+      ? t("phases.archived")
+      : resolvePresentationStatusDisplayLabel(analysis.status, t);
 
   async function handleGenerate() {
-    if (
-      isDraft &&
-      !window.confirm(
-        "Generating a new draft will overwrite the current Title, Summary, and all other fields below with a fresh derivation from Discussion. Continue?",
-      )
-    ) {
+    if (isDraft && !window.confirm(t("author.analysis.confirm.generateOverwrite"))) {
       return;
     }
 
@@ -153,34 +154,41 @@ export function InitiativeCollaborativeAnalysisForm({
     try {
       const updated = await generatePhase.runSave(() => generateInitiativeAnalysisDraft(initiativeId));
       onUpdated(updated);
-      setMessage({ tone: "success", text: "Draft generated from the current Source Snapshot." });
+      setMessage({ tone: "success", text: t("author.analysis.messages.draftGenerated") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Generate failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.analysis.messages.generateFailed", {
+          detail: detailFromError(error, t("author.analysis.messages.unknownError")),
+        }),
+      });
     }
   }
 
   async function handleSaveDraft() {
     setMessage(null);
 
-    const input: SaveInitiativeCollaborativeAnalysisDraftInput = { ...form };
+    const input = buildCollaborativeAnalysisAuthorSaveInput({
+      analysis,
+      presented: form,
+    });
 
     try {
       const updated = await savePhase.runSave(() => saveInitiativeAnalysisDraft(analysis.analysisId, input));
       onUpdated(updated);
-      setMessage({ tone: "success", text: "Draft saved." });
+      setMessage({ tone: "success", text: t("author.analysis.messages.draftSaved") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.analysis.messages.saveFailed", {
+          detail: detailFromError(error, t("author.analysis.messages.unknownError")),
+        }),
+      });
     }
   }
 
   async function handlePublish() {
-    if (
-      !window.confirm(
-        "Publishing makes this Analysis visible to the public and notifies every Active Ally. Continue?",
-      )
-    ) {
+    if (!window.confirm(t("author.analysis.confirm.publish"))) {
       return;
     }
 
@@ -188,14 +196,24 @@ export function InitiativeCollaborativeAnalysisForm({
 
     try {
       const updated = await publishPhase.runSave(async () => {
-        await saveInitiativeAnalysisDraft(analysis.analysisId, { ...form });
+        await saveInitiativeAnalysisDraft(
+          analysis.analysisId,
+          buildCollaborativeAnalysisAuthorSaveInput({
+            analysis,
+            presented: form,
+          }),
+        );
         return publishInitiativeAnalysis(analysis.analysisId);
       });
       onUpdated(updated);
-      setMessage({ tone: "success", text: "Analysis published. Active Allies have been notified." });
+      setMessage({ tone: "success", text: t("author.analysis.messages.published") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Publish failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.analysis.messages.publishFailed", {
+          detail: detailFromError(error, t("author.analysis.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -203,17 +221,17 @@ export function InitiativeCollaborativeAnalysisForm({
     return (
       <div className="ica-editor" aria-labelledby="ica-editor-title">
         <div className="ica-editor__status-row">
-          <h3 id="ica-editor-title">Analysis</h3>
-          <WorkspaceStatusBadge status={analysis.status} />
+          <h3 id="ica-editor-title">{t("author.analysis.heading")}</h3>
+          <WorkspaceStatusBadge status={analysis.status} label={statusLabel} />
         </div>
         <p className="ica-editor__readonly">
           {analysis.status === "published"
-            ? "This Analysis has been published and can no longer be edited. Generate a new draft to prepare an updated Analysis."
-            : "This Analysis is archived and can no longer be edited."}
+            ? t("author.analysis.readonly.published")
+            : t("author.analysis.readonly.archived")}
         </p>
         <div className="ica-editor__actions">
           <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handleGenerate()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate New Draft")}
+            {actions.saveLabel(generatePhase.phase, actions.generateNewDraft)}
           </WorkspaceButton>
         </div>
         {message ? (
@@ -235,12 +253,12 @@ export function InitiativeCollaborativeAnalysisForm({
       }}
     >
       <div className="ica-editor__status-row">
-        <h3 id="ica-editor-title">Analysis Editor</h3>
-        <WorkspaceStatusBadge status={analysis.status} />
+        <h3 id="ica-editor-title">{t("author.analysis.editorTitle")}</h3>
+        <WorkspaceStatusBadge status={analysis.status} label={statusLabel} />
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-title-${analysis.analysisId}`}>Title</label>
+        <label htmlFor={`analysis-title-${analysis.analysisId}`}>{t("author.analysis.fields.title")}</label>
         <input
           id={`analysis-title-${analysis.analysisId}`}
           value={form.title}
@@ -250,7 +268,9 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-summary-${analysis.analysisId}`}>Executive Summary</label>
+        <label htmlFor={`analysis-summary-${analysis.analysisId}`}>
+          {t("author.analysis.fields.summary")}
+        </label>
         <textarea
           id={`analysis-summary-${analysis.analysisId}`}
           value={form.summary}
@@ -260,7 +280,9 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-evidence-${analysis.analysisId}`}>Supporting Arguments</label>
+        <label htmlFor={`analysis-evidence-${analysis.analysisId}`}>
+          {t("author.analysis.fields.supportingEvidence")}
+        </label>
         <textarea
           id={`analysis-evidence-${analysis.analysisId}`}
           value={form.supportingEvidence}
@@ -272,7 +294,7 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-risks-${analysis.analysisId}`}>Concerns</label>
+        <label htmlFor={`analysis-risks-${analysis.analysisId}`}>{t("author.analysis.fields.risks")}</label>
         <textarea
           id={`analysis-risks-${analysis.analysisId}`}
           value={form.risks}
@@ -282,7 +304,9 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-questions-${analysis.analysisId}`}>Open Questions</label>
+        <label htmlFor={`analysis-questions-${analysis.analysisId}`}>
+          {t("author.analysis.fields.openQuestions")}
+        </label>
         <textarea
           id={`analysis-questions-${analysis.analysisId}`}
           value={form.openQuestions}
@@ -292,7 +316,9 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-improvements-${analysis.analysisId}`}>Recommendations</label>
+        <label htmlFor={`analysis-improvements-${analysis.analysisId}`}>
+          {t("author.analysis.fields.suggestedImprovements")}
+        </label>
         <textarea
           id={`analysis-improvements-${analysis.analysisId}`}
           value={form.suggestedImprovements}
@@ -304,7 +330,9 @@ export function InitiativeCollaborativeAnalysisForm({
       </div>
 
       <div className="ica-editor__field">
-        <label htmlFor={`analysis-references-${analysis.analysisId}`}>References</label>
+        <label htmlFor={`analysis-references-${analysis.analysisId}`}>
+          {t("author.analysis.fields.references")}
+        </label>
         <textarea
           id={`analysis-references-${analysis.analysisId}`}
           value={form.references}
@@ -312,20 +340,20 @@ export function InitiativeCollaborativeAnalysisForm({
           onChange={(event) => setForm((current) => ({ ...current, references: event.target.value }))}
         />
       </div>
-      <p className="ica-editor__hint">Autosave is not enabled — use Save Draft to keep your changes.</p>
+      <p className="ica-editor__hint">{actions.autosaveHint}</p>
 
       <div className="ica-editor__actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate Draft")}
+          {actions.saveLabel(generatePhase.phase, t("author.analysis.generateAnalysisDraft"))}
         </WorkspaceButton>
         <WorkspaceButton type="submit" variant="primary" disabled={isBusy}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
-          Preview
+          {actions.preview}
         </WorkspaceButton>
         <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {actions.saveLabel(publishPhase.phase, actions.publish)}
         </WorkspaceButton>
       </div>
 

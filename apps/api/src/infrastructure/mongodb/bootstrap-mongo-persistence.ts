@@ -30,6 +30,10 @@ import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../
 import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence, flushInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
+import { ensureBrandLocalizationSeeded } from "../../modules/brand-localization/index.js";
+import { ensureLegalLocalizationReady } from "../../modules/legal-localization/index.js";
+import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
+import { ensureTerminologyGlossarySeeded } from "../../modules/language/terminology-glossary/index.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
 import { hydrateParticipationAreaMongoPersistence } from "../../modules/participation-area/persistence/participation-area-mongo.persistence.js";
 import { hydratePublicCivicArchiveMongoPersistence } from "../../modules/public-civic-archive/persistence/public-civic-archive-mongo.persistence.js";
@@ -57,6 +61,15 @@ export async function bootstrapMongoPersistence(): Promise<void> {
   assertMongoConfigured();
   await connectMongoClient();
   await ensureMongoIndexes();
+
+  // Pack 02B — idempotent Language Registry seed (never overwrites Admin-modified rows).
+  await ensureLanguageRegistrySeeded();
+  // Pack 02F — idempotent Terminology Glossary seed (preserves Admin translations/status).
+  await ensureTerminologyGlossarySeeded();
+  // Pack 08I.2 — English published brand seed (never overwrites Admin-managed rows).
+  await ensureBrandLocalizationSeeded();
+  // Pack 08I.5 — Legal Localization readiness (no seed; counsel-approved copies only).
+  await ensureLegalLocalizationReady();
 
   await Promise.all([
     hydrateInitiativeMongoPersistence(),
@@ -105,5 +118,9 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     "../../modules/initiative-collaborative-analysis/initiative-collaborative-analysis.store.js"
   );
   syncInitiativeCollaborativeAnalysisStoreAfterMongoHydrate();
+  const { syncInitiativeCollectiveDecisionStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-collective-decision/initiative-collective-decision.store.js"
+  );
+  syncInitiativeCollectiveDecisionStoreAfterMongoHydrate();
   await flushInitiativeMongoPersistence();
 }

@@ -65,6 +65,7 @@ function buildDraft(): InitiativeCivicArchiveLifecycleDraft {
       officialResponseCount: 1,
       publicImpactAvailable: true,
       traceabilityComplete: true,
+      summaryDescriptors: [],
       summary: "Ready.",
     },
     participationStatistics: {

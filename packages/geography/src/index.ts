@@ -72,3 +72,17 @@ export {
   resolvePublicGeography,
 } from "./format-public-geography.js";
 export type { PublicGeographyInput, ResolvedPublicGeography } from "./format-public-geography.js";
+
+export {
+  getLocalizedAdminRegionDisplayName,
+  getLocalizedCountryDisplayName,
+  normalizeGeographicDisplayLocale,
+  resolveAdminRegionDisplayName,
+  resolveCountryDisplayName,
+  resolveUnRegionDisplayName,
+  resolveUnSubregionDisplayName,
+} from "./geographic-display-names.js";
+export type {
+  GeographicDisplayKind,
+  GeographicDisplayNameResult,
+} from "./geographic-display-names.js";

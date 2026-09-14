@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
 import {
@@ -18,6 +19,7 @@ import { AuthCodeVerificationFields } from "./AuthCodeVerificationFields";
 import "./auth-form.css";
 
 function LoginVerifyFormFields() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"), "/workspace");
@@ -72,19 +74,16 @@ function LoginVerifyFormFields() {
     <Card>
       <AuthCodeVerificationFields
         copy={{
-          title: "Check your email",
-          introPrefix: "Enter the six-digit code sent to",
-          codeLabel: "Email code",
-          submitLabel: "Complete Login",
-          submittingLabel: "Completing...",
-          resendSuccessMessage: "A new login code has been sent.",
-          resendSuccessWithInvalidationMessage:
-            "A new login code has been sent. The previous code is no longer valid.",
-          deliveryFailureMessage:
-            "We could not send the confirmation code. Please try again shortly.",
-          resendDeliveryFailureMessage:
-            "We could not send a new login code. Your previous valid code remains available.",
-          cancelLabel: "Cancel and return to Login",
+          title: t("checkYourEmail"),
+          introPrefix: t("enterLoginCodeIntro"),
+          codeLabel: t("emailCode"),
+          submitLabel: t("completeLogin"),
+          submittingLabel: t("completing"),
+          resendSuccessMessage: t("newLoginCodeSent"),
+          resendSuccessWithInvalidationMessage: t("newLoginCodeSentInvalidated"),
+          deliveryFailureMessage: t("couldNotSendLoginCode"),
+          resendDeliveryFailureMessage: t("couldNotSendNewLoginCode"),
+          cancelLabel: t("cancelReturnToLogin"),
         }}
         maskedEmail={maskedEmail}
         emailSent={emailSent}
@@ -99,9 +98,14 @@ function LoginVerifyFormFields() {
   );
 }
 
+function LoginVerifyFormFallback() {
+  const t = useTranslations("auth");
+  return <Card>{t("loadingLoginVerification")}</Card>;
+}
+
 export function LoginVerifyForm() {
   return (
-    <Suspense fallback={<Card>Loading login verification...</Card>}>
+    <Suspense fallback={<LoginVerifyFormFallback />}>
       <LoginVerifyFormFields />
     </Suspense>
   );

@@ -21,6 +21,7 @@
 
 .ics-panel__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--hu-space-2);
@@ -44,7 +45,8 @@
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   background: var(--hu-color-bg-muted);
   color: var(--hu-color-text-muted);
 }
@@ -119,6 +121,7 @@
 
 .ics-session-card__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--hu-space-2);
   margin-top: 0.15rem;
@@ -139,6 +142,7 @@
 
 .ics-detail__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--hu-space-2);

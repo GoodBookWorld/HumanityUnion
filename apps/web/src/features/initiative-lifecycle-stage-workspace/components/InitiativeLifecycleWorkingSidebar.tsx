@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeAnalysisSourceSnapshot,
@@ -33,6 +34,14 @@ import {
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
 import { PublicInitiativeSupportStatistics } from "../../public-initiative-experience/components/PublicInitiativeSupportStatistics";
 import { PublicChoiceElectionSidebarWidget } from "../../public-initiative-experience/components/PublicChoiceElectionSidebarWidget";
+import {
+  resolveLifecycleStageDisplayLabel,
+  resolvePresentationStatusDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  wrapAuthoritativeTermInMessage,
+} from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { getInitiativeAnalysisSourceSnapshot } from "../../initiative-collaborative-analysis/api";
 import { deriveAiAssistantInsights } from "../../initiative-collaborative-analysis/derive-ai-assistant-insights";
 import "../../initiative-collaborative-analysis/components/initiative-collaborative-analysis-workspace.css";
@@ -74,6 +83,15 @@ import { deriveCivicArchiveAiAssistantInsights } from "../../initiative-civic-ar
 import { WorkspaceButton, WorkspaceDeferredActions, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import { HumanityUnionAssistantOpenButton } from "../../humanity-union-assistant";
 import { getInitiativeLifecycleStageProjection } from "../api";
+import {
+  formatProposalSidebarFieldLabels,
+  resolveProposalTreatmentSuggestionDisplayLabel,
+  resolveSidebarAdvisoryDisplay,
+} from "../resolve-sidebar-advisory-display";
+import {
+  resolveApiConflictWarningDisplay,
+  resolveApiConsistencyCheckDisplay,
+} from "../resolve-api-consistency-display";
 
 import "../initiative-lifecycle-stage-workspace.css";
 
@@ -114,6 +132,51 @@ export interface InitiativeLifecycleWorkingSidebarProps {
   readonly supportBusy?: boolean;
 }
 
+
+function WorkingSidebarAssistantChrome({
+  initiativeId,
+  surfaceId,
+  stageId,
+  children,
+  loadFailed = false,
+  loading = false,
+  hint = false,
+}: {
+  initiativeId: string;
+  surfaceId: ComponentProps<typeof HumanityUnionAssistantOpenButton>["surfaceId"];
+  stageId: ComponentProps<typeof HumanityUnionAssistantOpenButton>["stageId"];
+  children?: ReactNode;
+  loadFailed?: boolean;
+  loading?: boolean;
+  hint?: boolean;
+}) {
+  const t = useTranslations("initiativeExperience");
+
+  return (
+    <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
+      <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
+        {t("author.sidebar.assistantTitle")}
+      </h3>
+      <HumanityUnionAssistantOpenButton
+        surfaceId={surfaceId}
+        initiativeId={initiativeId}
+        stageId={stageId}
+        label={t("author.sidebar.askAssistant")}
+        className="lifecycle-ai-modal__open-button"
+      />
+      {loadFailed ? (
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
+      ) : loading ? (
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
+      ) : hint ? (
+        <p className="lsw-sidebar__placeholder">{t("author.sidebar.assistantGenericHint")}</p>
+      ) : (
+        children
+      )}
+    </section>
+  );
+}
+
 function AiAssistantSlot({
   initiativeId,
   surfaceId,
@@ -148,21 +211,12 @@ function AiAssistantSlot({
     | "archive";
 }) {
   return (
-    <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
-      <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
-      </h3>
-      <HumanityUnionAssistantOpenButton
-        surfaceId={surfaceId}
-        initiativeId={initiativeId}
-        stageId={stageId}
-        label="Ask Assistant"
-        className="lifecycle-ai-modal__open-button"
-      />
-      <p className="lsw-sidebar__placeholder">
-        Ask about this stage or Humanity Union. Suggestions are advisory only.
-      </p>
-    </section>
+    <WorkingSidebarAssistantChrome
+      initiativeId={initiativeId}
+      surfaceId={surfaceId}
+      stageId={stageId}
+      hint
+    />
   );
 }
 
@@ -172,6 +226,7 @@ function AiAssistantSlot({
  * via `deriveAiAssistantInsights` — no AI chat, no external call.
  */
 function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeAnalysisSourceSnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -200,19 +255,19 @@ function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="analysis"
         initiativeId={initiativeId}
         stageId="analysis"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <AnalysisAiAssistantContent snapshot={snapshot} />
       )}
@@ -221,58 +276,61 @@ function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
 }
 
 function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysisSourceSnapshot }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveAiAssistantInsights(snapshot);
 
   return (
     <div className="ica-ai-assistant">
       <div className="ica-ai-assistant__group">
-        <h4>Sources Used</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Missing Evidence</h4>
+        <h4>{t("author.sidebar.insights.missingEvidence")}</h4>
         {insights.missingEvidence.length > 0 ? (
           <ul>
             {insights.missingEvidence.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.code}>{resolveSidebarAdvisoryDisplay(item, t).text}</li>
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">No evidence gaps identified.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.insights.emptyNoEvidenceGaps")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Repeated Arguments</h4>
+        <h4>{t("author.sidebar.insights.repeatedArguments")}</h4>
         {insights.repeatedArguments.length > 0 ? (
           <ul>
             {insights.repeatedArguments.map((item) => (
               <li key={item.commentId}>
-                &ldquo;{item.excerpt}&rdquo; ({item.helpfulCount} Helpful)
+                &ldquo;{item.excerpt}&rdquo; {t("author.sidebar.insights.helpfulCount", { count: item.helpfulCount })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Possible Contradictions</h4>
+        <h4>{t("author.sidebar.insights.possibleContradictions")}</h4>
         {insights.possibleContradictions.length > 0 ? (
           <ul>
             {insights.possibleContradictions.map((item) => (
-              <li key={item.topic}>&ldquo;{item.topic}&rdquo; — supported and disputed in different comments</li>
+              <li key={item.advisory.civic?.subject ?? item.advisory.code}>
+                {resolveSidebarAdvisoryDisplay(item.advisory, t).text}
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Unanswered Questions</h4>
+        <h4>{t("author.sidebar.insights.unansweredQuestions")}</h4>
         {insights.unansweredQuestions.length > 0 ? (
           <ul>
             {insights.unansweredQuestions.map((item) => (
@@ -280,15 +338,18 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Proposal Coverage</h4>
+        <h4>{t("author.sidebar.insights.proposalCoverage")}</h4>
         <p>
-          {insights.proposalCoverage.proposalCount} of {insights.proposalCoverage.commentCount} comments (
-          {insights.proposalCoverage.percentage}%) are proposal-marked.
+          {t("author.sidebar.insights.proposalCoverageSummary", {
+            proposalCount: insights.proposalCoverage.proposalCount,
+            commentCount: insights.proposalCoverage.commentCount,
+            percentage: insights.proposalCoverage.percentage,
+          })}
         </p>
       </div>
     </div>
@@ -304,6 +365,7 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
  * Exclude/Priority stay exclusively in the main Proposal Editor).
  */
 function ProposalAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeProposalIntelligenceSnapshot | null>(null);
   const [draftProposals, setDraftProposals] = useState<readonly InitiativeStructuredProposal[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -337,19 +399,19 @@ function ProposalAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="proposal"
         initiativeId={initiativeId}
         stageId="proposal"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <ProposalAiAssistantContent snapshot={snapshot} draftProposals={draftProposals} />
       )}
@@ -364,80 +426,95 @@ function ProposalAiAssistantContent({
   snapshot: InitiativeProposalIntelligenceSnapshot;
   draftProposals: readonly InitiativeStructuredProposal[];
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveProposalAiAssistantInsights(snapshot, draftProposals);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Possible Duplicates to Merge</h4>
+        <h4>{t("author.sidebar.insights.possibleDuplicates")}</h4>
         {insights.duplicateGroups.length > 0 ? (
           <ul>
             {insights.duplicateGroups.map((group) => (
               <li key={group.groupId}>
-                &ldquo;{group.representativeExcerpt}&rdquo; ({group.memberCount} similar mentions)
+                &ldquo;{group.representativeExcerpt}&rdquo;{" "}
+                {t("author.sidebar.insights.similarMentions", { count: group.memberCount })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No likely duplicates identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoDuplicates")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Ungrouped Candidates</h4>
+        <h4>{t("author.sidebar.insights.ungroupedCandidates")}</h4>
         {insights.ungroupedCandidateGroups.length > 0 ? (
           <ul>
             {insights.ungroupedCandidateGroups.map((group) => (
-              <li key={group.groupId}>&ldquo;{group.representativeExcerpt}&rdquo; — not yet drafted</li>
+              <li key={group.groupId}>
+                &ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.notYetDrafted")}
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every detected group has a draft proposal.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryGroupDrafted")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Incomplete Proposals</h4>
+        <h4>{t("author.sidebar.insights.incompleteProposals")}</h4>
         {insights.incompleteProposals.length > 0 ? (
           <ul>
             {insights.incompleteProposals.map(({ proposal, missingFields }) => (
               <li key={proposal.proposalId}>
-                &ldquo;{proposal.title || "Untitled Proposal"}&rdquo; — missing {missingFields.join(", ")}
+                &ldquo;{proposal.title || t("author.sidebar.insights.untitledProposal")}&rdquo;{" "}
+                {t("author.sidebar.insights.missingFieldsSuffix", {
+                  fields: formatProposalSidebarFieldLabels(missingFields, t),
+                })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No incomplete proposals identified.</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoIncompleteProposals")}
+          </p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Open Proposal Questions</h4>
-        <p>{insights.openProposalQuestionCount} unresolved question(s) in Discussion.</p>
+        <h4>{t("author.sidebar.insights.openProposalQuestions")}</h4>
+        <p>
+          {t("author.sidebar.insights.openProposalQuestionsCount", {
+            count: insights.openProposalQuestionCount,
+          })}
+        </p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Suggested Treatment (advisory)</h4>
+        <h4>{t("author.sidebar.insights.suggestedTreatment")}</h4>
         {insights.suggestedTreatments.length > 0 ? (
           <ul>
             {insights.suggestedTreatments.map((entry) => (
               <li key={entry.proposalId}>
-                &ldquo;{entry.title || "Untitled"}&rdquo; — {entry.suggestion.replace(/_/g, " ")}:{" "}
-                {entry.rationale}
+                &ldquo;{entry.title || t("author.sidebar.insights.untitled")}&rdquo; —{" "}
+                {resolveProposalTreatmentSuggestionDisplayLabel(entry.suggestion, t)}:{" "}
+                {resolveSidebarAdvisoryDisplay(entry.rationale, t).text}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No undecided proposals to review.</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoUndecidedProposals")}
+          </p>
         )}
         <p className="iip-ai-assistant__empty">
-          Assistant never publishes automatically. Author confirms Accept / Partial / Decline and
-          commits the Initiative version.
+          {t("author.sidebar.insights.neverPublishesAutomatically")}
         </p>
       </div>
     </div>
@@ -454,6 +531,7 @@ function ProposalAiAssistantContent({
  * exclusively in the main Revision Editor).
  */
 function RevisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeRevisionIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeRevisionDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -484,19 +562,19 @@ function RevisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="revision"
         initiativeId={initiativeId}
         stageId="revision"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <RevisionAiAssistantContent snapshot={snapshot} draftChanges={draft?.changes ?? []} />
       )}
@@ -511,66 +589,78 @@ function RevisionAiAssistantContent({
   snapshot: InitiativeRevisionIntelligenceSnapshot;
   draftChanges: InitiativeRevisionDraft["changes"];
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveRevisionAiAssistantInsights(snapshot, draftChanges);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Alignment with Analysis</h4>
-        <p>{insights.analysisAlignmentSummary}</p>
+        <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.analysisAlignment, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Unresolved Proposals</h4>
-        <p>{insights.unresolvedProposalCount} proposal(s) not yet included or explicitly skipped.</p>
+        <h4>{t("author.sidebar.insights.unresolvedProposals")}</h4>
+        <p>
+          {t("author.sidebar.insights.unresolvedProposalsCount", {
+            count: insights.unresolvedProposalCount,
+          })}
+        </p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Missing References</h4>
+        <h4>{t("author.sidebar.insights.missingReferences")}</h4>
         {insights.missingReferenceProposalIds.length > 0 ? (
           <ul>
             {insights.missingReferenceProposalIds.map((proposalId) => (
               <li key={proposalId}>
-                Proposal {proposalId} marked &ldquo;Included in Revision&rdquo; has no change yet.
+                {t("author.sidebar.insights.missingReferenceProposal", { proposalId })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every included Proposal has a backing change.</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyEveryIncludedHasChange")}
+          </p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Conflict Warnings</h4>
+        <h4>{t("author.sidebar.insights.conflictWarnings")}</h4>
         {insights.conflictWarnings.length > 0 ? (
           <ul>
             {insights.conflictWarnings.map((warning) => (
-              <li key={warning.section}>{warning.message}</li>
+              <li key={warning.section}>
+                {resolveApiConflictWarningDisplay(warning, t).text}
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No conflicting changes detected.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoConflicts")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Untraced Changes</h4>
+        <h4>{t("author.sidebar.insights.untracedChanges")}</h4>
         {insights.untracedChanges.length > 0 ? (
           <ul>
             {insights.untracedChanges.map((change) => (
               <li key={change.changeId}>
-                &ldquo;{change.sectionLabel}&rdquo; is missing a Proposal reference or Author-originated
-                reason.
+                {t("author.sidebar.insights.untracedChangeNote", {
+                  sectionLabel: change.sectionLabel,
+                })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every drafted change is fully traceable.</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyEveryChangeTraceable")}
+          </p>
         )}
       </div>
     </div>
@@ -586,6 +676,7 @@ function RevisionAiAssistantContent({
  * (Generate/Edit/Publish stay exclusively in the main Petition Editor).
  */
 function PetitionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativePetitionIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeLifecycleWorkingSidebarPetitionDraft>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -616,19 +707,19 @@ function PetitionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="petition"
         initiativeId={initiativeId}
         stageId="petition"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <PetitionAiAssistantContent snapshot={snapshot} draft={draft} />
       )}
@@ -647,56 +738,61 @@ function PetitionAiAssistantContent({
   snapshot: InitiativePetitionIntelligenceSnapshot;
   draft: InitiativeLifecycleWorkingSidebarPetitionDraft;
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = derivePetitionAiAssistantInsights(snapshot, draft);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Alignment with Analysis</h4>
-        <p>{insights.analysisAlignmentSummary}</p>
+        <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
+        <p>{resolveSidebarAdvisoryDisplay(insights.analysisAlignment, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Clarity</h4>
+        <h4>{t("author.sidebar.insights.clarity")}</h4>
         {insights.clarityWarnings.length > 0 ? (
           <ul>
             {insights.clarityWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No clarity issues identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClarity")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Missing Context</h4>
+        <h4>{t("author.sidebar.insights.missingContext")}</h4>
         {insights.missingContextWarnings.length > 0 ? (
           <ul>
             {insights.missingContextWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No missing context identified.</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoMissingContext")}
+          </p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Consistency Checks</h4>
+        <h4>{t("author.sidebar.insights.consistencyChecks")}</h4>
         {insights.consistencyWarnings.length > 0 ? (
           <ul>
             {insights.consistencyWarnings.map((check) => (
-              <li key={check.checkId}>{check.detail}</li>
+              <li key={check.checkId}>
+                {resolveApiConsistencyCheckDisplay("petition", check, t).text}
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No consistency warnings identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoConsistency")}</p>
         )}
       </div>
     </div>
@@ -708,6 +804,7 @@ function PetitionAiAssistantContent({
  * Advisory-only derived insights — never chooses an option, votes, or publishes.
  */
 function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeDecisionSessionIntelligenceSnapshot | null>(
     null,
   );
@@ -743,66 +840,76 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="decision_session"
         initiativeId={initiativeId}
         stageId="decision_session"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Missing / Duplicated Options</h4>
+            <h4>{t("author.sidebar.insights.missingDuplicatedOptions")}</h4>
             {[...insights.missingOptionsWarnings, ...insights.duplicatedOptionsWarnings].length >
             0 ? (
               <ul>
                 {[...insights.missingOptionsWarnings, ...insights.duplicatedOptionsWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No option issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoOptionIssues")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Risks & Feasibility</h4>
+            <h4>{t("author.sidebar.insights.risksFeasibility")}</h4>
             {[...insights.riskVisibilityWarnings, ...insights.feasibilityWarnings].length > 0 ? (
               <ul>
                 {[...insights.riskVisibilityWarnings, ...insights.feasibilityWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No risk or feasibility gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRiskFeasibility")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Clarity & Evidence</h4>
-            {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].length > 0 ? (
+            <h4>{t("author.sidebar.insights.clarityEvidence")}</h4>
+            {[
+              ...insights.clarityWarnings,
+              ...insights.consistencyWarnings,
+              ...insights.unsupportedArgumentWarnings,
+            ].length > 0 ? (
               <ul>
-                {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
-                  ),
-                )}
+                {insights.clarityWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("decisionSession", check, t).text}
+                  </li>
+                ))}
+                {insights.unsupportedArgumentWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No clarity or evidence issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClarityEvidence")}</p>
             )}
           </div>
         </div>
@@ -822,6 +929,7 @@ function CollectiveDecisionAiAssistantSlot({
   initiativeId: string;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeCollectiveDecisionIntelligenceSnapshot | null>(
     null,
   );
@@ -859,57 +967,57 @@ function CollectiveDecisionAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="collective_decision"
         initiativeId={initiativeId}
         stageId="collective_decision"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Missing / Duplicated Actions</h4>
+            <h4>{t("author.sidebar.insights.missingDuplicatedActions")}</h4>
             {[...insights.missingActionsWarnings, ...insights.duplicatedActionsWarnings].length >
             0 ? (
               <ul>
                 {[...insights.missingActionsWarnings, ...insights.duplicatedActionsWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No action issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoActionIssues")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Roles & Timeline</h4>
+            <h4>{t("author.sidebar.insights.rolesTimeline")}</h4>
             {[...insights.missingRolesWarnings, ...insights.unrealisticTimelineWarnings].length >
             0 ? (
               <ul>
                 {[...insights.missingRolesWarnings, ...insights.unrealisticTimelineWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No role or timeline gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRoleTimeline")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Risks & Success Criteria</h4>
+            <h4>{t("author.sidebar.insights.risksSuccessCriteria")}</h4>
             {[...insights.unresolvedRisksWarnings, ...insights.missingSuccessCriteriaWarnings]
               .length > 0 ? (
               <ul>
@@ -917,26 +1025,35 @@ function CollectiveDecisionAiAssistantSlot({
                   ...insights.unresolvedRisksWarnings,
                   ...insights.missingSuccessCriteriaWarnings,
                 ].map((warning) => (
-                  <li key={warning}>{warning}</li>
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                 ))}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No risk or success-criteria gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRiskSuccess")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Clarity & Support</h4>
-            {[...insights.clarityWarnings, ...insights.unsupportedConclusionsWarnings].length >
-            0 ? (
+            <h4>{t("author.sidebar.insights.claritySupport")}</h4>
+            {[
+              ...insights.clarityWarnings,
+              ...insights.consistencyWarnings,
+              ...insights.unsupportedConclusionsWarnings,
+            ].length > 0 ? (
               <ul>
-                {[...insights.clarityWarnings, ...insights.unsupportedConclusionsWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
-                  ),
-                )}
+                {insights.clarityWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("collectiveDecision", check, t).text}
+                  </li>
+                ))}
+                {insights.unsupportedConclusionsWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No clarity or support issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClaritySupport")}</p>
             )}
           </div>
         </div>
@@ -951,6 +1068,7 @@ function CollectiveDecisionAiAssistantSlot({
  * Candidate, or publishes.
  */
 function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeImplementationCommitmentIntelligenceSnapshot | null>(
     null,
   );
@@ -986,75 +1104,88 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="commitment"
         initiativeId={initiativeId}
         stageId="commitment"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iic-assistant-block">
           <div className="iic-assistant-block">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iic-assistant-block">
-            <h4>Unassigned Actions</h4>
+            <h4>{t("author.sidebar.insights.unassignedActions")}</h4>
             {insights.unassignedActionsWarnings.length > 0 ? (
               <ul>
-                {insights.unassignedActionsWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.unassignedActionsWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>Every Candidate has a proposed Participant.</p>
+              <p>{t("author.sidebar.insights.emptyEveryCandidateAssigned")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Role Balance & Resources</h4>
+            <h4>{t("author.sidebar.insights.roleBalanceResources")}</h4>
             {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].length > 0 ? (
               <ul>
                 {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${warning.civic?.role ?? ""}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No role or resource gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoRoleResource")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Timeline & Risks</h4>
+            <h4>{t("author.sidebar.insights.timelineRisks")}</h4>
             {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].length > 0 ? (
               <ul>
                 {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No timeline or risk gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoTimelineRisk")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Clarity</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("implementationCommitment", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
         </div>
@@ -1069,6 +1200,7 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
  * status, or dates.
  */
 function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeImplementationTrackingIntelligenceSnapshot | null>(
     null,
   );
@@ -1104,71 +1236,86 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="tracking"
         initiativeId={initiativeId}
         stageId="tracking"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iit-assistant-block">
           <div className="iit-assistant-block">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iit-assistant-block">
-            <h4>Overdue & Blocked</h4>
+            <h4>{t("author.sidebar.insights.overdueBlocked")}</h4>
             {[...insights.overdueWarnings, ...insights.blockedWarnings].length > 0 ? (
               <ul>
-                {[...insights.overdueWarnings, ...insights.blockedWarnings].map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {[...insights.overdueWarnings, ...insights.blockedWarnings].map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No overdue or blocked Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoOverdueBlocked")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Missing Evidence & Stalled</h4>
+            <h4>{t("author.sidebar.insights.missingEvidenceStalled")}</h4>
             {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].length > 0 ? (
               <ul>
-                {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
+                {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].map(
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
+                  ),
+                )}
               </ul>
             ) : (
-              <p>No missing evidence or stalled Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoMissingEvidenceStalled")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Timeline Conflicts</h4>
+            <h4>{t("author.sidebar.insights.timelineConflicts")}</h4>
             {insights.timelineConflictWarnings.length > 0 ? (
               <ul>
-                {insights.timelineConflictWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.timelineConflictWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No timeline conflicts identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoTimelineConflicts")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Clarity</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("implementationTracking", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
         </div>
@@ -1184,6 +1331,7 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
  * itself edits a Candidate or publishes.
  */
 function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeOfficialResponseIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeOfficialResponseLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1216,85 +1364,100 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="official_response"
         initiativeId={initiativeId}
         stageId="official_response"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ior-assistant-block">
           <div className="ior-assistant-block">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="ior-assistant-block">
-            <h4>Incomplete & Duplicate Candidates</h4>
+            <h4>{t("author.sidebar.insights.incompleteDuplicateCandidates")}</h4>
             {[...insights.incompleteCandidateWarnings, ...insights.duplicateCandidateWarnings].length >
             0 ? (
               <ul>
                 {[...insights.incompleteCandidateWarnings, ...insights.duplicateCandidateWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No incomplete or duplicate Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoIncompleteDuplicateCandidates")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Missing Institutions & References</h4>
+            <h4>{t("author.sidebar.insights.missingInstitutionsReferences")}</h4>
             {[...insights.missingInstitutionWarnings, ...insights.missingReferenceWarnings].length > 0 ? (
               <ul>
                 {[...insights.missingInstitutionWarnings, ...insights.missingReferenceWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>Every Candidate names an institution or organization and cites a source.</p>
+              <p>{t("author.sidebar.insights.emptyEveryCandidateCitesSource")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Unsupported Summaries & Dates</h4>
+            <h4>{t("author.sidebar.insights.unsupportedSummariesDates")}</h4>
             {[...insights.unsupportedSummaryWarnings, ...insights.inconsistentDateWarnings].length > 0 ? (
               <ul>
                 {[...insights.unsupportedSummaryWarnings, ...insights.inconsistentDateWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No unsupported summaries or inconsistent dates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoUnsupportedSummariesDates")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Clarity</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("officialResponse", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Advisory (AI cannot publish)</h4>
+            <h4>{t("author.sidebar.insights.advisoryCannotPublish")}</h4>
             <ul>
-              {insights.advisoryNotes.map((note) => (
-                <li key={note}>{note}</li>
+              {insights.advisoryNotes.map((note, index) => (
+                <li key={`${note.code}:${index}`}>
+                  {resolveSidebarAdvisoryDisplay(note, t).text}
+                </li>
               ))}
             </ul>
           </div>
@@ -1310,6 +1473,7 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
  * success/failure, and never itself edits a section or publishes.
  */
 function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativePublicImpactIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativePublicImpactLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1342,83 +1506,98 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="public_impact"
         initiativeId={initiativeId}
         stageId="public_impact"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ipi-assistant-block">
           <div className="ipi-assistant-block">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="ipi-assistant-block">
-            <h4>Missing Evidence & Unsupported Conclusions</h4>
+            <h4>{t("author.sidebar.insights.missingEvidenceUnsupportedConclusions")}</h4>
             {[...insights.missingEvidenceWarnings, ...insights.unsupportedConclusionWarnings].length >
             0 ? (
               <ul>
                 {[...insights.missingEvidenceWarnings, ...insights.unsupportedConclusionWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No missing evidence or unsupported conclusions identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoMissingEvidenceConclusions")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Inconsistent Stats & Duplicated Claims</h4>
+            <h4>{t("author.sidebar.insights.inconsistentStatsDuplicatedClaims")}</h4>
             {[...insights.inconsistentStatsWarnings, ...insights.duplicatedClaimWarnings].length > 0 ? (
               <ul>
                 {[...insights.inconsistentStatsWarnings, ...insights.duplicatedClaimWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>No inconsistent statistics or duplicated claims identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoInconsistentStats")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Missing Institutions & Outcomes</h4>
+            <h4>{t("author.sidebar.insights.missingInstitutionsOutcomes")}</h4>
             {insights.missingInstitutionOutcomeWarnings.length > 0 ? (
               <ul>
-                {insights.missingInstitutionOutcomeWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.missingInstitutionOutcomeWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>Official Response institutions and outcome summaries look complete.</p>
+              <p>{t("author.sidebar.insights.emptyInstitutionsOutcomesReady")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Clarity & Neutrality</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            <h4>{t("author.sidebar.insights.clarityNeutrality")}</h4>
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("publicImpact", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No clarity or neutrality issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarityNeutrality")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Advisory (AI cannot publish)</h4>
+            <h4>{t("author.sidebar.insights.advisoryCannotPublish")}</h4>
             <ul>
-              {insights.advisoryNotes.map((note) => (
-                <li key={note}>{note}</li>
+              {insights.advisoryNotes.map((note, index) => (
+                <li key={`${note.code}:${index}`}>
+                  {resolveSidebarAdvisoryDisplay(note, t).text}
+                </li>
               ))}
             </ul>
           </div>
@@ -1439,6 +1618,7 @@ function CivicArchiveAiAssistantSlot({
   initiativeId: string;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeCivicArchiveIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeCivicArchiveLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1474,61 +1654,81 @@ function CivicArchiveAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="archive"
         initiativeId={initiativeId}
         stageId="archive"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ica-assistant-block">
           <div className="ica-assistant-block">
-            <h4>Sources Used</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="ica-assistant-block">
-            <h4>Completeness & Final Fields</h4>
+            <h4>{t("author.sidebar.insights.completenessFinalFields")}</h4>
             {[...insights.completenessWarnings, ...insights.missingFinalFieldWarnings].length > 0 ? (
               <ul>
                 {[...insights.completenessWarnings, ...insights.missingFinalFieldWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
             ) : (
-              <p>Sources and final contribution fields look ready.</p>
+              <p>{t("author.sidebar.insights.emptyFieldsLookReady")}</p>
             )}
           </div>
           <div className="ica-assistant-block">
-            <h4>Outstanding Work</h4>
+            <h4>{t("author.sidebar.insights.outstandingWork")}</h4>
             {insights.outstandingWorkWarnings.length > 0 ? (
               <ul>
-                {insights.outstandingWorkWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.outstandingWorkWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No outstanding Tracking or Commitment gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoOutstandingWork")}</p>
             )}
           </div>
           <div className="ica-assistant-block">
-            <h4>Neutrality & Clarity</h4>
-            {[...insights.neutralityWarnings, ...insights.clarityWarnings].length > 0 ? (
+            <h4>{t("author.sidebar.insights.neutralityClarity")}</h4>
+            {[
+              ...insights.neutralityWarnings,
+              ...insights.clarityWarnings,
+              ...insights.consistencyWarnings,
+            ].length > 0 ? (
               <ul>
-                {[...insights.neutralityWarnings, ...insights.clarityWarnings].map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.neutralityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:n:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:c:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("civicArchive", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No neutrality or clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoNeutralityClarity")}</p>
             )}
           </div>
         </div>
@@ -1549,6 +1749,8 @@ export function InitiativeLifecycleWorkingSidebar({
   onSupportBookmarkToggle,
   supportBusy = false,
 }: InitiativeLifecycleWorkingSidebarProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -1598,8 +1800,57 @@ export function InitiativeLifecycleWorkingSidebar({
     isPublicImpactStage ||
     isArchiveStage;
 
+
+  function resolveDraftCompletenessCopy(): string {
+    if (loadFailed) {
+      return t("author.sidebar.draftStatusLoadFailed");
+    }
+    if (!projection) {
+      return t("author.sidebar.loading");
+    }
+    if (projection.metadata.hasUnpublishedChanges) {
+      return projection.metadata.draftUpdatedAt
+        ? t("author.sidebar.completeness.draftInProgressSaveHint")
+        : t("author.sidebar.completeness.draftInProgress");
+    }
+
+    const completenessStageId = (
+      [
+        "analysis",
+        "proposal",
+        "revision",
+        "petition",
+        "decision_session",
+        "collective_decision",
+        "commitment",
+        "tracking",
+        "official_response",
+        "public_impact",
+        "archive",
+      ] as const
+    ).includes(stageId as never)
+      ? (stageId as
+          | "analysis"
+          | "proposal"
+          | "revision"
+          | "petition"
+          | "decision_session"
+          | "collective_decision"
+          | "commitment"
+          | "tracking"
+          | "official_response"
+          | "public_impact"
+          | "archive")
+      : "analysis";
+
+    if (projection.metadata.publishedAt) {
+      return t(`author.sidebar.completeness.published.${completenessStageId}`);
+    }
+    return t(`author.sidebar.completeness.empty.${completenessStageId}`);
+  }
+
   return (
-    <div className="lsw-sidebar" aria-label="Stage working tools">
+    <div className="lsw-sidebar" aria-label={t("author.sidebar.aria")}>
       {supportStatistics &&
       onSupportSignalChange &&
       onSupportBookmarkToggle &&
@@ -1653,14 +1904,17 @@ export function InitiativeLifecycleWorkingSidebar({
 
       <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-status-title">
         <h3 id="lsw-sidebar-status-title" className="lsw-sidebar__section-title">
-          Stage Status
+          {t("author.sidebar.stageStatus")}
         </h3>
         {loadFailed ? (
-          <p className="lsw-sidebar__error">Could not load stage status.</p>
+          <p className="lsw-sidebar__error">{t("author.sidebar.stageStatusLoadFailed")}</p>
         ) : projection ? (
-          <WorkspaceStatusBadge status={projection.metadata.presentationStatus} />
+          <WorkspaceStatusBadge
+            status={projection.metadata.presentationStatus}
+            label={resolvePresentationStatusDisplayLabel(projection.metadata.presentationStatus, t)}
+          />
         ) : (
-          <p className="lsw-sidebar__loading">Loading…</p>
+          <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
         )}
       </section>
 
@@ -1668,38 +1922,40 @@ export function InitiativeLifecycleWorkingSidebar({
         <>
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-sources-title">
             <h3 id="lsw-sidebar-sources-title" className="lsw-sidebar__section-title">
-              Sources Used
+              {t("author.sidebar.sourcesUsed")}
             </h3>
             <p className="lsw-sidebar__placeholder">
               {projection?.sourceSnapshot.isEmpty ?? true
-                ? "No sources collected yet."
-                : `${projection?.sourceSnapshot.items.length ?? 0} source(s) collected.`}
+                ? t("author.sidebar.sourcesNone")
+                : t("author.sidebar.sourcesCollectedCount", {
+                    count: projection?.sourceSnapshot.items.length ?? 0,
+                  })}
             </p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-questions-title">
             <h3 id="lsw-sidebar-questions-title" className="lsw-sidebar__section-title">
-              Unresolved Questions
+              {t("author.sidebar.unresolvedQuestions")}
             </h3>
-            <p className="lsw-sidebar__placeholder">None identified yet.</p>
+            <p className="lsw-sidebar__placeholder">{t("author.sidebar.noneIdentified")}</p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-completeness-title">
             <h3 id="lsw-sidebar-completeness-title" className="lsw-sidebar__section-title">
-              Draft Completeness
+              {t("author.sidebar.draftCompleteness")}
             </h3>
-            <p className="lsw-sidebar__placeholder">Not started.</p>
+            <p className="lsw-sidebar__placeholder">{t("author.sidebar.notStarted")}</p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-primary-action-title">
             <h3 id="lsw-sidebar-primary-action-title" className="lsw-sidebar__section-title">
-              Primary Action
+              {t("author.sidebar.primaryAction")}
             </h3>
             <WorkspaceDeferredActions
-              title="Drafting tools coming soon"
-              note="This stage's drafting workspace is not implemented yet."
-              actions={["Generate Draft"]}
-              tooltip="Available once this stage's workspace is implemented."
+              title={t("author.sidebar.draftingComingSoonTitle")}
+              note={t("author.sidebar.draftingComingSoonNote")}
+              actions={[t("author.sidebar.generateDraft")]}
+              tooltip={t("author.sidebar.draftingComingSoonTooltip")}
               authorWorkflow
             />
           </section>
@@ -1707,66 +1963,16 @@ export function InitiativeLifecycleWorkingSidebar({
       ) : (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-completeness-title">
           <h3 id="lsw-sidebar-completeness-title" className="lsw-sidebar__section-title">
-            Draft Completeness
+            {t("author.sidebar.draftCompleteness")}
           </h3>
-          <p className="lsw-sidebar__placeholder">
-            {loadFailed
-              ? "Could not load draft status."
-              : !projection
-                ? "Loading…"
-                : projection.metadata.hasUnpublishedChanges
-                  ? `Draft in progress${projection.metadata.draftUpdatedAt ? " — use Save Draft in the main workspace to keep your changes" : ""}.`
-                  : projection.metadata.publishedAt
-                    ? isProposalStage
-                      ? "Published — generate a new draft to prepare an updated round of proposals."
-                      : isRevisionStage
-                        ? "Published — start a new Revision draft to prepare the next update."
-                        : isPetitionStage
-                          ? "Published — this Initiative's Petition has been published and opened for signatures."
-                          : isDecisionSessionStage
-                            ? "Published — Collective Decision is now unlocked."
-                    : isCollectiveDecisionStage
-                      ? "Published — Implementation Commitments are now unlocked."
-                    : isCommitmentStage
-                      ? "Published — Implementation Tracking is now unlocked."
-                      : isTrackingStage
-                        ? "Published — Official Responses is now unlocked."
-                        : isOfficialResponseStage
-                          ? "Published — Public Impact is now unlocked."
-                          : isPublicImpactStage
-                            ? "Published — Civic Archive is now unlocked."
-                            : isArchiveStage
-                              ? "Published — generate again to prepare the next immutable Archive version."
-                          : "Published — generate a new draft to prepare an update."
-                : isProposalStage
-                  ? "No draft yet — use Generate Improvement Proposals Draft in the main workspace to begin."
-                  : isRevisionStage
-                    ? "No draft yet — use Start Revision Draft in the main workspace to begin."
-                    : isPetitionStage
-                      ? "No draft yet — use Generate Petition Draft in the main workspace to begin."
-                      : isDecisionSessionStage
-                        ? "No draft yet — use Generate Decision Draft in the main workspace to begin."
-                        : isCollectiveDecisionStage
-                          ? "No draft yet — use Generate Collective Decision Draft in the main workspace to begin."
-                          : isCommitmentStage
-                            ? "No draft yet — use Generate Implementation Commitments Draft in the main workspace to begin."
-                            : isTrackingStage
-                              ? "No draft yet — use Generate Implementation Tracking Draft in the main workspace to begin."
-                              : isOfficialResponseStage
-                                ? "No draft yet — use Generate Official Responses Draft in the main workspace to begin."
-                                : isPublicImpactStage
-                                  ? "No draft yet — use Generate Public Impact Draft in the main workspace to begin."
-                                  : isArchiveStage
-                                    ? "No draft yet — use Generate Civic Archive Draft in the main workspace to begin."
-                                : "No draft yet — use Generate Analysis Draft in the main workspace to begin."}
-          </p>
+          <p className="lsw-sidebar__placeholder">{resolveDraftCompletenessCopy()}</p>
         </section>
       )}
 
       {isCommitmentStage ? (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-proposal-inbox-title">
           <h3 id="lsw-sidebar-proposal-inbox-title" className="lsw-sidebar__section-title">
-            My Proposed Commitments
+            {t("author.sidebar.myProposedCommitments")}
           </h3>
           <InitiativeImplementationCommitmentProposalInbox initiativeId={initiativeId} />
         </section>
@@ -1775,15 +1981,18 @@ export function InitiativeLifecycleWorkingSidebar({
       {isTrackingStage ? (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-progress-inbox-title">
           <h3 id="lsw-sidebar-progress-inbox-title" className="lsw-sidebar__section-title">
-            My Implementation Tracking
+            {t("author.sidebar.myImplementationTracking")}
           </h3>
           <InitiativeImplementationTrackingProgressInbox initiativeId={initiativeId} />
         </section>
       ) : null}
 
-      <section className="lsw-sidebar__section lsw-sidebar__actions" aria-label="Stage actions">
+      <section
+        className="lsw-sidebar__section lsw-sidebar__actions"
+        aria-label={t("author.sidebar.actionsAria")}
+      >
         <WorkspaceButton variant="secondary" onClick={onOpenPublicPreview}>
-          Public Preview
+          {t("author.sidebar.publicPreview")}
         </WorkspaceButton>
         {projection?.nextStage ? (
           <WorkspaceButton
@@ -1793,11 +2002,24 @@ export function InitiativeLifecycleWorkingSidebar({
               !projection.metadata.canViewPublicResult &&
               projection.metadata.presentationStatus !== "published"
             }
-            onClick={() => onNavigateNextStage(projection.nextStage!.stageId, projection.nextStage!.hash)}
+            onClick={() =>
+              onNavigateNextStage(projection.nextStage!.stageId, projection.nextStage!.hash)
+            }
           >
             {isPublicImpactStage && projection.nextStage.stageId === "archive"
-              ? "Open Civic Archive"
-              : `Next Stage: ${projection.nextStage.label}`}
+              ? t("author.sidebar.openCivicArchive")
+              : (() => {
+                  const nextStageLabel = resolveLifecycleStageDisplayLabel(
+                    projection.nextStage!.stageId,
+                    t,
+                    projection.nextStage!.label,
+                    { locale },
+                  );
+                  return wrapAuthoritativeTermInMessage(
+                    t("author.sidebar.nextStage", { stage: nextStageLabel }),
+                    nextStageLabel,
+                  );
+                })()}
           </WorkspaceButton>
         ) : null}
       </section>

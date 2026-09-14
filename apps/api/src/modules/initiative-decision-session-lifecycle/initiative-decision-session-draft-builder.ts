@@ -1,5 +1,7 @@
 import type { InitiativeDecisionSessionIntelligenceSnapshot } from "@hu/types";
 
+import { formatDecisionSessionUnresolvedQuestionFromCheck } from "./initiative-decision-session-unresolved-question.js";
+
 /**
  * Initiative Lifecycle — Part G, Section 3 (Decision Intelligence Builder).
  * Deterministic generation of structured Decision Session draft fields from
@@ -63,7 +65,7 @@ function generateDeterministicDecisionSessionDraftContent(
       ? `Published Petition: ${snapshot.petitionReference.summary || snapshot.petitionReference.title}`
       : null,
     snapshot.revisionReference
-      ? `Based on Revision v${snapshot.revisionReference.version}: ${snapshot.revisionReference.revisionSummary}`
+      ? `Based on published version ${snapshot.revisionReference.version}: ${snapshot.revisionReference.revisionSummary}`
       : null,
     snapshot.analysisReference
       ? `Collaborative Analysis: ${snapshot.analysisReference.summary}`
@@ -75,7 +77,7 @@ function generateDeterministicDecisionSessionDraftContent(
       ? `Respond to the public request in "${snapshot.petitionReference.title}".`
       : "",
     snapshot.revisionReference
-      ? `Evaluate adoption of Revision v${snapshot.revisionReference.version}.`
+      ? `Evaluate adoption of published version ${snapshot.revisionReference.version}.`
       : "",
     "Prepare a clear, implementable Collective Decision.",
   ]);
@@ -114,7 +116,7 @@ function generateDeterministicDecisionSessionDraftContent(
   const dependencies = uniqueNonEmpty([
     snapshot.petitionReference ? `Published Petition ${snapshot.petitionReference.petitionId}` : "",
     snapshot.revisionReference
-      ? `Published Revision v${snapshot.revisionReference.version}`
+      ? `Published version ${snapshot.revisionReference.version}`
       : "",
     ...snapshot.proposalReferences.map((proposal) => `Proposal ${proposal.proposalId}`),
   ]);
@@ -149,10 +151,13 @@ function generateDeterministicDecisionSessionDraftContent(
     ...roleRecommendations.map((recommendation) => recommendation.title),
   ]);
 
+  // 08E.9c: draft unresolvedQuestions from semantic checkId/params via an
+  // API-owned canonical English adapter — not compatibility `detail`, and
+  // not Web localization catalogs.
   const unresolvedQuestions = uniqueNonEmpty([
     ...snapshot.consistencyChecks
-      .filter((check) => check.status === "warning")
-      .map((check) => check.detail),
+      .map((check) => formatDecisionSessionUnresolvedQuestionFromCheck(check) ?? "")
+      .filter((question) => question.length > 0),
     snapshot.openComments.length > 0
       ? `${snapshot.openComments.length} open collaboration comment(s) may still contain unresolved concerns.`
       : "",

@@ -154,7 +154,6 @@ export function validateInitiativeStructuredProposalForPublication(proposal: Ini
     ["title", "Title"],
     ["summary", "Summary"],
     ["description", "Description"],
-    ["reason", "Reason"],
     ["expectedImprovement", "Expected Improvement"],
   ];
 
@@ -164,5 +163,15 @@ export function validateInitiativeStructuredProposalForPublication(proposal: Ini
     if (typeof value !== "string" || value.trim().length === 0) {
       throw new Error(`${label} is required to publish "${proposal.title || proposal.proposalId}".`);
     }
+  }
+
+  // HU system frames compose reason via WEB_UI at presentation; author-edited
+  // reason remains required when no huSystemGeneration provenance exists.
+  const hasSystemReason = Boolean(proposal.huSystemGeneration);
+  if (
+    !hasSystemReason &&
+    (typeof proposal.reason !== "string" || proposal.reason.trim().length === 0)
+  ) {
+    throw new Error(`Reason is required to publish "${proposal.title || proposal.proposalId}".`);
   }
 }

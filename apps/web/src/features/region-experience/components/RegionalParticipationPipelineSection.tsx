@@ -1,9 +1,11 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { ParticipationPipelinePublicProjection } from "@hu/types";
 
-import {
-  REGIONAL_PIPELINE_VISITOR_CONCLUSION,
-  regionalPipelineContextIntroduction,
-} from "../content";
 import { ExperienceBlockShell, ParticipationPipelineEvidence } from "../../public-experience";
 
 interface RegionalParticipationPipelineSectionProps {
@@ -15,14 +17,18 @@ export function RegionalParticipationPipelineSection({
   projection,
   regionName,
 }: RegionalParticipationPipelineSectionProps) {
+  const t = useTranslations("publicGeo.region.pipeline");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
+
   return (
     <ExperienceBlockShell
       id="regional-participation-pipeline"
-      title="Regional Participation Pipeline"
-      architecturalName="Initiative Levels"
-      stage="Evidence"
-      contextIntroduction={regionalPipelineContextIntroduction(regionName)}
-      visitorConclusion={REGIONAL_PIPELINE_VISITOR_CONCLUSION}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction", { regionName, ...siteName })}
+      visitorConclusion={t("visitorConclusion")}
     >
       <ParticipationPipelineEvidence projection={projection} />
     </ExperienceBlockShell>

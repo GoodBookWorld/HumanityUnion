@@ -50,6 +50,7 @@ async function toPublicStructuredProposal(
     createdAt: proposal.createdAt,
     updatedAt: proposal.updatedAt,
     reactionSummary,
+    huSystemGeneration: proposal.huSystemGeneration ?? null,
   };
 }
 

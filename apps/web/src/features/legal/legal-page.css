@@ -11,6 +11,36 @@
   margin-bottom: var(--hu-space-6);
 }
 
+.legal-page__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-bottom: var(--hu-space-4);
+}
+
+.legal-page__nav-link {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+  text-decoration: none;
+}
+
+.legal-page__nav-link:hover {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
+.legal-page__nav-link--active {
+  color: var(--hu-color-primary);
+  font-weight: 600;
+}
+
+.legal-page__fallback-note {
+  margin: var(--hu-space-3) 0 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+}
+
 .legal-page h1 {
   margin: 0 0 var(--hu-space-3);
 }

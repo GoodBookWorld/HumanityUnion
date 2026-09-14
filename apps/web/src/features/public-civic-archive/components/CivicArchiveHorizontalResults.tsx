@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
@@ -34,6 +35,7 @@ export function CivicArchiveHorizontalResults({
   records,
   loading = false,
 }: CivicArchiveHorizontalResultsProps) {
+  const t = useTranslations("initiativeExperience.civicArchivePublic.horizontal");
   const instructionsId = useId();
   const viewportRef = useRef<HTMLDivElement>(null);
   const [startIndex, setStartIndex] = useState(0);
@@ -117,7 +119,7 @@ export function CivicArchiveHorizontalResults({
 
   if (loading) {
     return (
-      <div className="civic-archive-results__horizontal" aria-label="Loading archive results">
+      <div className="civic-archive-results__horizontal" aria-label={t("loadingAria")}>
         <div
           className="civic-archive-results__viewport civic-archive-results__viewport--loading"
           data-visible-count={visibleCount}
@@ -142,8 +144,7 @@ export function CivicArchiveHorizontalResults({
   return (
     <div className="civic-archive-results__horizontal">
       <p id={instructionsId} className="civic-archive-page__visually-hidden">
-        Civic Archive results. Use Previous and Next archive record buttons or horizontal scrolling
-        to browse additional cards.
+        {t("instructions")}
       </p>
 
       <div
@@ -206,11 +207,11 @@ export function CivicArchiveHorizontalResults({
         <button
           type="button"
           className="civic-archive-results__control"
-          aria-label="Previous archive records"
+          aria-label={t("previousAria")}
           disabled={!canScrollPrevious}
           onClick={showPrevious}
         >
-          Previous
+          {t("previous")}
         </button>
 
         <div className="civic-archive-results__progress" aria-hidden={pageCount <= 1}>
@@ -227,18 +228,21 @@ export function CivicArchiveHorizontalResults({
         </div>
 
         <p className="civic-archive-results__status" aria-live="polite">
-          Showing {startIndex + 1}–{Math.min(startIndex + visibleCount, records.length)} of{" "}
-          {records.length}
+          {t("showingStatus", {
+            start: startIndex + 1,
+            end: Math.min(startIndex + visibleCount, records.length),
+            total: records.length,
+          })}
         </p>
 
         <button
           type="button"
           className="civic-archive-results__control"
-          aria-label="Next archive records"
+          aria-label={t("nextAria")}
           disabled={!canScrollNext}
           onClick={showNext}
         >
-          Next
+          {t("next")}
         </button>
       </div>
     </div>

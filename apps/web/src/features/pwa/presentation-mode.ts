@@ -14,7 +14,8 @@ export type HuPresentationMode = "browser" | "standalone";
 const INSTALLED_DISPLAY_MODE_QUERIES = [
   "(display-mode: standalone)",
   "(display-mode: minimal-ui)",
-  "(display-mode: fullscreen)",
+  // Intentionally omit `(display-mode: fullscreen)` — browser F11/OS fullscreen
+  // must not be treated as an installed PWA.
   "(display-mode: window-controls-overlay)",
 ] as const;
 

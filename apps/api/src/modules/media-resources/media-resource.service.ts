@@ -751,6 +751,21 @@ export async function listPublicWorldTrustedMedia(): Promise<TrustedMediaResourc
   return projectTrustedMediaResources(resources);
 }
 
+/**
+ * Pack 08K.3.3 — all active TRUSTED_MEDIA (WORLD + COUNTRY) for translation fingerprint.
+ * /media display stays world-scoped; country Recommended Media shares explanation identity.
+ */
+export async function listAllPublicTrustedMediaForTranslation(): Promise<
+  TrustedMediaResource[]
+> {
+  await ensureMediaResourcesSeededOnce();
+  const resources = await listMediaResources({
+    resourceType: "TRUSTED_MEDIA",
+    active: true,
+  });
+  return projectTrustedMediaResources(resources);
+}
+
 export async function listPublicWorldFactChecking(): Promise<FactCheckResource[]> {
   await ensureMediaResourcesSeededOnce();
   const resources = await listMediaResources({

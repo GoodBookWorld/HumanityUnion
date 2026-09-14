@@ -1,3 +1,11 @@
+/**
+ * Legacy priority catalog — seed / migration compatibility only (Pack 02B Task 03).
+ *
+ * Runtime selectable languages come from Language Registry via
+ * `listEnabledSelectableLanguages` / `language-registry-runtime.ts`.
+ * Do not wire new user-facing pickers or validators to this catalog.
+ */
+
 import {
   DEFAULT_PLATFORM_LANGUAGE,
   PRIORITY_LANGUAGE_CODES,
@@ -12,7 +20,10 @@ export interface PriorityLanguageDescriptor {
   readonly rtl: boolean;
 }
 
-/** Catalog for UI language pickers — labels are not flag-only. */
+/**
+ * Historical hardcoded catalog retained for reference / bootstrap docs.
+ * Not used by migrated runtime consumers after Pack 02B Task 03.
+ */
 export const PRIORITY_LANGUAGE_CATALOG: readonly PriorityLanguageDescriptor[] = [
   { code: "en", englishName: "English", nativeName: "English", rtl: false },
   { code: "uk", englishName: "Ukrainian", nativeName: "Українська", rtl: false },

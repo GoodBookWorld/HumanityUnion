@@ -432,9 +432,100 @@ export const TRUSTED_GLOBAL_MEDIA_REGISTRY: readonly MediaRegistryProvider[] = [
     aliases: ["New York Times", "NYT", "NY Times"],
     rssEnabled: true,
   },
+  // RESET 05D.2 — country-affiliated UA outlets (Trusted Media names are SoT).
+  {
+    id: "kyiv-independent",
+    name: "Kyiv Independent",
+    country: "Ukraine",
+    countryCode: "UA",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://kyivindependent.com/news/feed/",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/ukraine/liganet.webp",
+    logoLabel: "KI",
+    website: "https://kyivindependent.com/",
+    categories: ["peace and security", "democracy", "institutional accountability"],
+    priority: 19,
+    reliabilityScore: 90,
+    regionTags: ["europe", "international"],
+    sourceDomains: ["kyivindependent.com"],
+    rssEnabled: true,
+  },
+  {
+    id: "ukrinform",
+    name: "Ukrinform",
+    country: "Ukraine",
+    countryCode: "UA",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.ukrinform.net/rss/block-lastnews",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/ukraine/ukrinform.webp",
+    logoLabel: "UI",
+    website: "https://www.ukrinform.net/",
+    categories: ["peace and security", "democracy", "public participation"],
+    priority: 20,
+    reliabilityScore: 89,
+    regionTags: ["europe", "international"],
+    sourceDomains: ["ukrinform.net"],
+    aliases: ["Ukrinform Ukraine"],
+    rssEnabled: true,
+  },
+  {
+    id: "european-pravda",
+    name: "European Pravda",
+    country: "Ukraine",
+    countryCode: "UA",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.eurointegration.com.ua/rss/",
+        defaultCategory: "democracy",
+      },
+    ],
+    logoUrl: "/images/media/ukraine/ukraine-pravda.webp",
+    logoLabel: "EP",
+    website: "https://www.eurointegration.com.ua/en",
+    categories: ["democracy", "institutional accountability", "peace and security"],
+    priority: 21,
+    reliabilityScore: 88,
+    regionTags: ["europe", "international"],
+    sourceDomains: ["eurointegration.com.ua"],
+    rssEnabled: true,
+  },
+  {
+    id: "suspilne",
+    name: "Suspilne",
+    country: "Ukraine",
+    countryCode: "UA",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://suspilne.media/rss/",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/ukraine/hromadske.webp",
+    logoLabel: "SU",
+    website: "https://suspilne.media/",
+    categories: ["peace and security", "democracy", "public participation"],
+    priority: 22,
+    reliabilityScore: 90,
+    regionTags: ["europe", "international"],
+    sourceDomains: ["suspilne.media"],
+    aliases: ["Suspilne News"],
+    rssEnabled: true,
+  },
 ] as const;
 
-export const MEDIA_REGISTRY_UPDATED_AT = "2026-08-13T00:00:00.000Z";
+export const MEDIA_REGISTRY_UPDATED_AT = "2026-09-07T00:00:00.000Z";
 
 export function deriveApprovedNewsSources(
   providers: readonly MediaRegistryProvider[] = listEnabledMediaRegistryProviders(),

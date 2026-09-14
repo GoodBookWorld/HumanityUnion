@@ -58,7 +58,8 @@ describe("Home Visual Pack — quote honeycomb communication visual", () => {
     const quote = readFeature("components/HumanityTypewriterQuote.tsx");
     assert.match(quote, /hero-unity-quote__sr-only/);
     assert.match(quote, /aria-hidden="true"/);
-    assert.match(quote, /HUMANITY_UNITY_QUOTE_LINES\.map/);
+    assert.match(quote, /useLocalizedBrand/);
+    assert.match(quote, /visualHeroUnityQuoteLines|lines\.map/);
     assert.match(quote, /hero-unity-quote__line--/);
   });
 
@@ -71,6 +72,7 @@ describe("Home Visual Pack — quote honeycomb communication visual", () => {
     assert.match(visualCss, /\.hero-unity-quote__line--1\s*\{[^}]*text-align:\s*start/s);
     assert.match(visualCss, /\.hero-unity-quote__line--2\s*\{[^}]*text-align:\s*center/s);
     assert.match(visualCss, /\.hero-unity-quote__line--3\s*\{[^}]*text-align:\s*end/s);
+    assert.match(visualCss, /\.hero-unity-quote__line--wrap\s*\{[^}]*text-align:\s*start/s);
     assert.doesNotMatch(visualCss, /text-align:\s*right/);
     assert.doesNotMatch(visualCss, /\.hero-unity-quote__line[^{]*\{[^}]*white-space:\s*nowrap/s);
     assert.doesNotMatch(visualCss, /@keyframes\s+hero-unity-quote-line/);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import { completeInitiativeDiscussionStage } from "../../initiative-discussion-lifecycle/api";
@@ -22,6 +23,7 @@ export function DiscussionLifecycleCompletionBanner({
   canComplete,
   onCompleted,
 }: DiscussionLifecycleCompletionBannerProps) {
+  const t = useTranslations("initiativeExperience");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
@@ -33,18 +35,14 @@ export function DiscussionLifecycleCompletionBanner({
     return (
       <div className="pie-discussion-lifecycle" role="status">
         <p className="pie-discussion-lifecycle__status">
-          Discussion is marked complete for lifecycle progression. Participants may still comment.
+          {t("collaboration.complete.statusCompleted")}
         </p>
       </div>
     );
   }
 
   async function handleComplete() {
-    if (
-      !window.confirm(
-        "Mark Discussion complete? This unlocks the next applicable lifecycle stage. Visiting Discussion alone does not complete it — this action is required.",
-      )
-    ) {
+    if (!window.confirm(t("collaboration.complete.confirmDescription"))) {
       return;
     }
 
@@ -55,12 +53,16 @@ export function DiscussionLifecycleCompletionBanner({
       await completeInitiativeDiscussionStage(initiativeId);
       setMessage({
         tone: "success",
-        text: "Discussion completed. Lifecycle progress updated.",
+        text: t("collaboration.complete.success"),
       });
       onCompleted();
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Could not complete Discussion: ${detail}` });
+      const detail =
+        error instanceof Error ? error.message : t("collaboration.complete.unknownError");
+      setMessage({
+        tone: "error",
+        text: t("collaboration.complete.failed", { detail }),
+      });
     } finally {
       setBusy(false);
     }
@@ -69,11 +71,12 @@ export function DiscussionLifecycleCompletionBanner({
   return (
     <div className="pie-discussion-lifecycle">
       <p className="pie-discussion-lifecycle__guidance">
-        When discussion has produced enough civic signal, mark Discussion complete to advance the
-        Initiative lifecycle. This does not close comments.
+        {t("collaboration.complete.guidance")}
       </p>
       <WorkspaceButton variant="primary" disabled={busy} onClick={() => void handleComplete()}>
-        {busy ? "Completing…" : "Complete Discussion"}
+        {busy
+          ? t("collaboration.complete.completing")
+          : t("collaboration.complete.completeDiscussion")}
       </WorkspaceButton>
       {message ? (
         <p className="pie-discussion-lifecycle__message" data-tone={message.tone} role="status">

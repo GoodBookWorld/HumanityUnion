@@ -1,7 +1,7 @@
 "use client";
 
 import type { CommunityInitiativeRelationshipProjection, Initiative } from "@hu/types";
-import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../initiative-activity-areas";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -10,7 +10,6 @@ import { getCountryLabel } from "@hu/geography";
 import { checkInitiativeSimilarity } from "../../community-intelligence/api";
 import { InitiativeOverlapNotice } from "../../community-intelligence/components/InitiativeOverlapNotice";
 import {
-  OVERLAP_CHECK_UNAVAILABLE_MESSAGE,
   buildSimilarityDraftFingerprint,
   shouldSkipSimilarityCheck,
 } from "../../community-intelligence/overlap-ux";
@@ -18,6 +17,7 @@ import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-up
 import { fetchPublicNewsArticleById } from "../../public-news/api";
 import { createInitiativeDraft, publishInitiative, saveInitiativeDraft } from "../api";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
+import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../initiative-activity-areas";
 import {
   mapNewsCategoryToActivityArea,
   resolveInitiativeCreateNewsSourceId,
@@ -50,22 +50,6 @@ const DEFAULT_FORM_VALUES: InitiativeFormValues = {
   ballotMode: "SELECT_ONE_CANDIDATE",
 };
 
-function formatInitiativeError(error: unknown): string {
-  if (isAuthenticationRequiredError(error)) {
-    return "Sign in to create an initiative.";
-  }
-
-  if (isApiUnavailableError(error)) {
-    return "The Humanity Union service is temporarily unavailable.";
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unable to save initiative.";
-}
-
 function resolveInitialNewsSourceId(searchParams: ReturnType<typeof useSearchParams>): string | null {
   return (
     resolveInitiativeCreateNewsSourceId(searchParams) ??
@@ -74,6 +58,7 @@ function resolveInitialNewsSourceId(searchParams: ReturnType<typeof useSearchPar
 }
 
 export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButtonProps) {
+  const t = useTranslations("initiativeExperience.manage");
   const searchParams = useSearchParams();
   const initialNewsSourceId = resolveInitialNewsSourceId(searchParams);
   const [creating, setCreating] = useState(false);
@@ -98,6 +83,19 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     ReturnType<typeof fetchPublicNewsArticleById>
   > | null>(null);
   const [sourcePrefillApplied, setSourcePrefillApplied] = useState(false);
+
+  function formatInitiativeError(error: unknown): string {
+    if (isAuthenticationRequiredError(error)) {
+      return t("messages.signInToCreate");
+    }
+    if (isApiUnavailableError(error)) {
+      return t("messages.serviceUnavailable");
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return t("messages.saveUnable");
+  }
 
   useEffect(() => {
     const newsId = resolveInitialNewsSourceId(searchParams);
@@ -154,8 +152,6 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     };
   }, [activeSourceNewsId, sourcePrefillApplied, sourceRemoved]);
 
-  // Material draft changes invalidate a prior Continue acknowledgement so the
-  // next publish may re-run a bounded similarity check. Unchanged drafts do not nag.
   useEffect(() => {
     if (!overlapAcknowledged || !acknowledgedFingerprint) {
       return;
@@ -191,7 +187,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
 
   async function persistDraft(): Promise<Initiative> {
     if (lifecycleProfile === "PUBLIC_CHOICE" && !formValues.countryCode.trim()) {
-      throw new Error("Country is required for Public Choice initiatives.");
+      throw new Error(t("messages.publicChoiceCountryRequired"));
     }
 
     const saveInput = initiativeFormValuesToSaveInput(formValues, {
@@ -201,18 +197,12 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       lifecycleProfile === "PUBLIC_CHOICE"
         ? {
             ...saveInput,
-            // Do not invent an Activity area merely to satisfy STANDARD validation.
             activityArea: undefined as string | undefined,
             activityAreaOther: undefined as string | undefined,
           }
         : { ...saveInput, ballotMode: undefined };
 
     if (pendingImageFile) {
-      // The selected file has not been uploaded yet — `formValues.coverMedia`
-      // currently only holds a browser-local `blob:` preview URL (see
-      // `onImageUpload` below), which must never be sent to the API. The
-      // real, platform-hosted coverMedia is saved in a follow-up call below,
-      // once the file has actually been uploaded.
       payloadBase.coverMedia = undefined;
       payloadBase.clearCoverMedia = false;
     }
@@ -253,7 +243,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     try {
       const saved = await persistDraft();
       onCreated(saved);
-      setMessage("Draft saved successfully.");
+      setMessage(t("messages.draftSaved"));
       setIsSuccess(true);
     } catch (error) {
       setAuthRequired(isAuthenticationRequiredError(error));
@@ -279,8 +269,6 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   }
 
   function handleContinueCreating() {
-    // Acknowledge and collapse the notice. Do not publish, mutate draft text,
-    // or suppress existing Initiatives — Author continues editing.
     const fingerprint = currentSimilarityFingerprint();
     setOverlapAcknowledged(true);
     setAcknowledgedFingerprint(fingerprint);
@@ -324,13 +312,12 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
             setOverlapAcknowledged(false);
             setAcknowledgedFingerprint(null);
             setCreating(false);
-            setMessage("Related Initiatives already exist. Review them or continue creating.");
+            setMessage(t("overlap.prompt"));
             return;
           }
 
           setOverlapItems([]);
         } catch {
-          // Community Intelligence must never block Initiative creation.
           setOverlapCheckUnavailable(true);
           setOverlapItems([]);
         }
@@ -340,7 +327,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       const published = await publishInitiative(saved.initiativeId);
       onCreated(published);
       setDraftId(published.initiativeId);
-      setMessage("Initiative published successfully.");
+      setMessage(t("messages.published"));
       setIsSuccess(true);
       setTitle("");
       setDescription("");
@@ -380,13 +367,13 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   return (
     <div id="create" className="start-new-initiative-button">
       <label className="start-new-initiative-button__field">
-        <span>Start New Initiative</span>
-        <p>Title</p>
+        <span>{t("createHeading")}</span>
+        <p>{t("fields.title")}</p>
         <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} />
       </label>
 
       <label className="start-new-initiative-button__field">
-        <p>Short description</p>
+        <p>{t("fields.shortDescription")}</p>
         <textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -395,7 +382,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       </label>
 
       <fieldset className="start-new-initiative-button__profile">
-        <legend>Lifecycle route</legend>
+        <legend>{t("lifecycleRoute.legend")}</legend>
         <label className="start-new-initiative-button__profile-option">
           <input
             type="radio"
@@ -405,11 +392,8 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
             onChange={() => setLifecycleProfile("STANDARD")}
           />
           <span>
-            <strong>Standard Initiative</strong>
-            <small>
-              Full civic lifecycle for developing, deciding, implementing and documenting an
-              initiative.
-            </small>
+            <strong>{t("lifecycleRoute.standard.title")}</strong>
+            <small>{t("lifecycleRoute.standard.description")}</small>
           </span>
         </label>
         <label className="start-new-initiative-button__profile-option">
@@ -428,11 +412,8 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
             }}
           />
           <span>
-            <strong>Public Choice</strong>
-            <small>
-              For choosing a candidate/person or another public choice through discussion and
-              collective decision.
-            </small>
+            <strong>{t("lifecycleRoute.publicChoice.title")}</strong>
+            <small>{t("lifecycleRoute.publicChoice.description")}</small>
           </span>
         </label>
       </fieldset>
@@ -457,13 +438,13 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
         }}
       />
 
-      <p className="start-new-initiative-button__visibility">Visibility: Public</p>
+      <p className="start-new-initiative-button__visibility">{t("fields.visibilityPublic")}</p>
 
       <InitiativeOverlapNotice items={overlapItems} onContinue={handleContinueCreating} />
 
       {overlapCheckUnavailable ? (
         <p className="start-new-initiative-button__message" role="status">
-          {OVERLAP_CHECK_UNAVAILABLE_MESSAGE}
+          {t("overlap.unavailable")}
         </p>
       ) : null}
 
@@ -474,7 +455,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
           onClick={() => void handleSaveDraft()}
           disabled={creating}
         >
-          {creating ? "Saving…" : "Save Draft"}
+          {creating ? t("actions.saving") : t("actions.saveDraft")}
         </button>
         <button
           type="button"
@@ -482,7 +463,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
           onClick={() => void handlePublish()}
           disabled={creating}
         >
-          {creating ? "Publishing..." : "Publish Initiative"}
+          {creating ? t("actions.publishing") : t("actions.publish")}
         </button>
       </div>
 
@@ -501,8 +482,8 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
 
       {authRequired ? (
         <div className="start-new-initiative-button__auth">
-          <Link href={`/login?returnTo=${returnTo}`}>Log In</Link>
-          <Link href={`/register?returnTo=${returnTo}`}>Create Account</Link>
+          <Link href={`/login?returnTo=${returnTo}`}>{t("auth.logIn")}</Link>
+          <Link href={`/register?returnTo=${returnTo}`}>{t("auth.createAccount")}</Link>
         </div>
       ) : null}
     </div>

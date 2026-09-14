@@ -222,6 +222,22 @@ export function AdminPlatformSection({ user: _user }: AdminPlatformSectionProps)
 
             <p className="hu-caption admin-panel__note admin-platform__boundary">
               Related:{" "}
+              <Link className="admin-panel__link" href="/admin/languages">
+                Languages
+              </Link>
+              {" · "}
+              <Link className="admin-panel__link" href="/admin/brand-localization">
+                Brand Localization
+              </Link>
+              {" · "}
+              <Link className="admin-panel__link" href="/admin/legal-localization">
+                Legal Localization
+              </Link>
+              {" · "}
+              <Link className="admin-panel__link" href="/admin/terminology-glossary">
+                Terminology Glossary
+              </Link>
+              {" · "}
               <Link className="admin-panel__link" href="/admin/seo">
                 SEO
               </Link>

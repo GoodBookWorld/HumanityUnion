@@ -28,6 +28,8 @@ function hasShippingData(doc: Document | null | undefined): boolean {
   );
 }
 
+export { hasShippingData };
+
 function listPresentStripeFields(doc: Document | null | undefined): string[] {
   if (!doc) return [];
   return STRIPE_OPERATIONAL_FIELDS.filter((field) => {

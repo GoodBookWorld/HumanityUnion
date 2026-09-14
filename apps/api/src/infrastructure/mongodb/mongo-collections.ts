@@ -106,6 +106,35 @@ export const MONGO_COLLECTIONS = {
   initiativeCivicArchiveVersions: "initiative_civic_archive_versions",
   petitionVisitorSignals: "petition_visitor_signals",
   contentTranslations: "content_translations",
+  /**
+   * Reset 02 — current PUBLISHED pointer (unique entityType+entityId+locale).
+   * Normal reads use this collection only — never history scans.
+   */
+  publishedLocalizedPresentationsCurrent: "published_localized_presentations_current",
+  /** Reset 02 — BUILDING/FAILED/SUPERSEDED/history snapshots (not used by normal reads). */
+  publishedLocalizedPresentationsHistory: "published_localized_presentations_history",
+  /**
+   * RESET 05C.1 — durable PLP auto-build work (pending/running/terminal).
+   * Survives API restart; drain claims from this collection.
+   */
+  plpAutoBuildWork: "plp_auto_build_work",
+  /**
+   * RESET 05E.3 — durable thin_gemini provider cooldown / quota governor state.
+   * Singleton per providerId; survives API restart.
+   */
+  plpThinGeminiProviderState: "plp_thin_gemini_provider_state",
+  /** Pack 02B — Admin-managed Language Registry. */
+  languageRegistry: "language_registry",
+  /** Pack 02F — Canonical Terminology Glossary. */
+  terminologyGlossary: "terminology_glossary",
+  /** Pack 08I.2 — Admin-managed Brand Localization. */
+  brandLocalization: "brand_localization",
+  /** Pack 08I.5 — Admin-managed Legal Localization (counsel-approved). */
+  legalLocalization: "legal_localization",
+  /** Admin/persisted WEB_UI message packs for arbitrary Registry locales. */
+  webUiMessagePacks: "web_ui_message_packs",
+  /** Durable Admin language localization activation jobs (one active generation per locale). */
+  languageActivationJobs: "language_activation_jobs",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { HuxEducationSection } from "../../horizontal-experience";
 import { PublicHomeKnowledgeCard } from "./PublicHomeKnowledgeSection";
@@ -23,16 +24,18 @@ export function PublicHomeKnowledgeCollection({
   items: readonly PublicHomeKnowledgeCollectionItem[];
   headerAction?: ReactNode;
 }) {
+  const t = useTranslations("publicHome");
+
   return (
     <HuxEducationSection
       sectionId="public-home-knowledge"
-      eyebrow="LEARN AND PARTICIPATE"
-      title="Knowledge"
-      description="Learn how civic processes work before you participate."
-      label="knowledge resources"
+      eyebrow={t("knowledge.eyebrow")}
+      title={t("knowledge.title")}
+      description={t("knowledge.description")}
+      label={t("knowledge.ariaLabel")}
       items={[...items]}
       layout="four-three-one"
-      headerAction={headerAction ?? <Link href="/knowledge">Explore Knowledge</Link>}
+      headerAction={headerAction ?? <Link href="/knowledge">{t("knowledge.explore")}</Link>}
       getItemKey={(item) => item.id}
       renderItem={(item) => (
         <PublicHomeKnowledgeCard

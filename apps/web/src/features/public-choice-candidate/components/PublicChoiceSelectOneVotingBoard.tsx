@@ -4,6 +4,7 @@
  * @deprecated Pack 04 — Select/Recall voting lives on Overview
  * (`PublicChoiceOverviewCandidateIntake`). Collective Decision mounts
  * `PublicChoiceElectionResultsBoard` only. Do not mount from new surfaces.
+ * INTERNAL_UNUSED — quarantined; leave English describe helper; do not localize.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";

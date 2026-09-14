@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+import {
+  MediaSemanticNode,
+  type MediaSemanticOwner,
+  type MediaSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
 import type { HorizontalSectionVariant, HorizontalSurfaceStyle } from "./horizontal-section.types";
 
 import "./horizontal-section-tokens.css";
@@ -20,6 +25,9 @@ interface HorizontalSectionShellProps {
   nested?: boolean;
   className?: string;
   children: ReactNode;
+  /** Reset 03E.1 — when set, chrome text emits rendered semantic contracts. */
+  chromeSemanticOwner?: MediaSemanticOwner;
+  chromeSemanticResult?: MediaSemanticResult;
 }
 
 export function HorizontalSectionShell({
@@ -37,7 +45,29 @@ export function HorizontalSectionShell({
   nested = false,
   className,
   children,
+  chromeSemanticOwner,
+  chromeSemanticResult,
 }: HorizontalSectionShellProps) {
+  const markChrome = chromeSemanticOwner != null && chromeSemanticResult != null;
+  const wrapChrome = (tag: "p" | "h2", classNameValue: string, id: string | undefined, text: string) =>
+    markChrome ? (
+      <MediaSemanticNode
+        as={tag}
+        className={classNameValue}
+        id={id}
+        owner={chromeSemanticOwner}
+        result={chromeSemanticResult}
+      >
+        {text}
+      </MediaSemanticNode>
+    ) : tag === "h2" ? (
+      <h2 id={id} className={classNameValue}>
+        {text}
+      </h2>
+    ) : (
+      <p className={classNameValue}>{text}</p>
+    );
+
   return (
     <section
       id={nested ? undefined : sectionId}
@@ -55,11 +85,11 @@ export function HorizontalSectionShell({
       <div className="horizontal-section-shell__inner">
         <header className="horizontal-section-shell__header">
           <div className="horizontal-section-shell__heading-block">
-            {eyebrow ? <p className="horizontal-section-shell__eyebrow">{eyebrow}</p> : null}
+            {eyebrow
+              ? wrapChrome("p", "horizontal-section-shell__eyebrow", undefined, eyebrow)
+              : null}
             <div className="horizontal-section-shell__title-row">
-              <h2 id={headingId} className="horizontal-section-shell__title">
-                {heading}
-              </h2>
+              {wrapChrome("h2", "horizontal-section-shell__title", headingId, heading)}
               <div className="horizontal-section-shell__title-actions">
                 {headerAction ? (
                   <div className="horizontal-section-shell__header-action">{headerAction}</div>
@@ -69,9 +99,14 @@ export function HorizontalSectionShell({
                 ) : null}
               </div>
             </div>
-            {description ? (
-              <p className="horizontal-section-shell__description">{description}</p>
-            ) : null}
+            {description
+              ? wrapChrome(
+                  "p",
+                  "horizontal-section-shell__description",
+                  undefined,
+                  description,
+                )
+              : null}
             {metadata ? (
               <div className="horizontal-section-shell__metadata">{metadata}</div>
             ) : null}

@@ -1,9 +1,4 @@
-import { MemberWorkspace } from "../../../../components/member/MemberWorkspace";
-import { BlogEditorPageContent } from "../../../../features/blog/components/BlogEditorPageContent";
-import { HumanityUnionAssistantWidget } from "../../../../features/humanity-union-assistant/components/HumanityUnionAssistantWidget";
-import { WorkspaceNavigation } from "../../../../features/initiatives/components/WorkspaceNavigation";
-
-import "../../../../features/blog/publishing.css";
+import { PublishingEditorWorkspacePage } from "../../../../features/blog/components/PublishingEditorWorkspacePage";
 
 export const metadata = {
   title: "New Publication | Publishing | Humanity Union",
@@ -11,22 +6,5 @@ export const metadata = {
 };
 
 export default function WorkspacePublishingNewPage() {
-  return (
-    <main className="humanity-workspace-page">
-      <MemberWorkspace
-        title="New Publication"
-        subtitle="Write a draft. Save often. Preview before you submit."
-        workspaceNavigation={<WorkspaceNavigation />}
-        assistantPlacement="compact"
-        assistant={
-          <HumanityUnionAssistantWidget
-            surfaceId="blog"
-            description="Help with structure, SEO, and clarity. Suggestions require Apply / Dismiss — never overwrite or publish automatically."
-          />
-        }
-      >
-        <BlogEditorPageContent mode="create" />
-      </MemberWorkspace>
-    </main>
-  );
+  return <PublishingEditorWorkspacePage mode="create" />;
 }

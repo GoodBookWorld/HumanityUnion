@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Suspense, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
@@ -14,6 +15,7 @@ import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 import "./auth-form.css";
 
 function LoginFormFields() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"), "/workspace");
@@ -56,8 +58,8 @@ function LoginFormFields() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <label className="auth-form__field">
           <span>
-            Email <span aria-hidden="true">*</span>
-            <span className="hu-visually-hidden">(required)</span>
+            {t("email")} <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">{t("required")}</span>
           </span>
           <input
             type="email"
@@ -70,8 +72,8 @@ function LoginFormFields() {
         </label>
         <label className="auth-form__field">
           <span>
-            Password <span aria-hidden="true">*</span>
-            <span className="hu-visually-hidden">(required)</span>
+            {t("password")} <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">{t("required")}</span>
           </span>
           <PasswordInput
             autoComplete="current-password"
@@ -81,25 +83,30 @@ function LoginFormFields() {
           />
         </label>
         {error ? (
-          <AuthFeedbackMessage variant="error" title="Sign in failed">
+          <AuthFeedbackMessage variant="error" title={t("signInFailed")}>
             <p>{error}</p>
           </AuthFeedbackMessage>
         ) : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Signing in…" : "Log in"}
+            {submitting ? t("signingIn") : t("logIn")}
           </Button>
-          <Button href="/register">Create account</Button>
-          <Button href="/password-reset">Forgot password?</Button>
+          <Button href="/register">{t("createAccount")}</Button>
+          <Button href="/password-reset">{t("forgotPassword")}</Button>
         </div>
       </form>
     </Card>
   );
 }
 
+function LoginFormFallback() {
+  const t = useTranslations("auth");
+  return <Card>{t("loadingLoginForm")}</Card>;
+}
+
 export function LoginForm() {
   return (
-    <Suspense fallback={<Card>Loading login form…</Card>}>
+    <Suspense fallback={<LoginFormFallback />}>
       <LoginFormFields />
     </Suspense>
   );

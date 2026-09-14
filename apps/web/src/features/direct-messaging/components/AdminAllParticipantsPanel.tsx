@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { AdminParticipantDirectoryItem } from "@hu/types";
 
@@ -43,6 +44,8 @@ export function AdminAllParticipantsPanel({
   activeParticipantId,
   onPrepareInitiativeGroupChat,
 }: AdminAllParticipantsPanelProps) {
+  const t = useTranslations("workspace.messagesPage.admin");
+  const tMessaging = useTranslations("participantPublic.messaging");
   const searchInputId = useId();
   const selectAllId = useId();
   const selectedCountId = useId();
@@ -81,12 +84,12 @@ export function AdminAllParticipantsPanel({
       setOffset(nextOffset);
       setState("ready");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to load Participants.");
+      setErrorMessage(error instanceof Error ? error.message : t("loadError"));
       setRows([]);
       setTotal(0);
       setState("error");
     }
-  }, [selfParticipantId]);
+  }, [selfParticipantId, t]);
 
   useEffect(() => {
     void loadPage(0, appliedSearch);
@@ -146,25 +149,25 @@ export function AdminAllParticipantsPanel({
   const canNext = offset + PAGE_SIZE < total;
 
   return (
-    <aside className="active-allies-panel admin-all-participants-panel" aria-label="All Participants panel">
+    <aside className="active-allies-panel admin-all-participants-panel" aria-label={t("title")}>
       <div className="active-allies-panel__sticky">
         <div className="active-allies-panel__panel admin-all-participants-panel__panel">
           <header className="active-allies-panel__header">
-            <h2 className="active-allies-panel__title">All Participants</h2>
+            <h2 className="active-allies-panel__title">{t("title")}</h2>
             {state === "ready" && total > 0 ? (
-              <span className="active-allies-panel__count">{total} listed</span>
+              <span className="active-allies-panel__count">{t("listed", { count: total })}</span>
             ) : null}
           </header>
 
           <div className="active-allies-panel__search">
             <label htmlFor={searchInputId} className="active-allies-panel__visually-hidden">
-              Search participants
+              {t("searchLabel")}
             </label>
             <input
               id={searchInputId}
               type="search"
               className="active-allies-panel__search-input"
-              placeholder="Search participants"
+              placeholder={t("searchPlaceholder")}
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               onKeyDown={(event) => {
@@ -179,16 +182,16 @@ export function AdminAllParticipantsPanel({
               className="hu-button hu-button--secondary admin-all-participants-panel__search-button"
               onClick={applySearch}
             >
-              Search
+              {t("search")}
             </button>
           </div>
 
           <p id={selectedCountId} className="admin-all-participants-panel__selected" role="status">
             {selectedCount === 0
-              ? "No Participants selected"
+              ? t("empty")
               : selectedCount === 1
-                ? "1 Participant selected — Personal Chat"
-                : `${selectedCount} Participants selected — Initiative Group Chat`}
+                ? t("selectedOne")
+                : t("selectedMany", { count: selectedCount })}
           </p>
 
           <div className="admin-all-participants-panel__toolbar">
@@ -205,7 +208,7 @@ export function AdminAllParticipantsPanel({
                 onChange={toggleSelectAllCurrentPage}
                 disabled={pageIds.length === 0}
               />
-              <span>Select all on this page</span>
+              <span>{t("selectAllPage")}</span>
             </label>
           </div>
 
@@ -216,7 +219,7 @@ export function AdminAllParticipantsPanel({
               disabled={selectedCount !== 1 || isOpening}
               onClick={openPersonalChat}
             >
-              {isOpening ? "Opening…" : "Open Personal Chat"}
+              {isOpening ? tMessaging("opening") : t("openChat")}
             </button>
             <button
               type="button"
@@ -224,7 +227,7 @@ export function AdminAllParticipantsPanel({
               disabled={selectedCount < 2}
               onClick={onPrepareInitiativeGroupChat}
             >
-              Prepare Initiative Group Chat
+              {t("prepareGroupChat")}
             </button>
           </div>
 
@@ -236,7 +239,7 @@ export function AdminAllParticipantsPanel({
 
           {state === "loading" ? (
             <p className="active-allies-panel__status" role="status">
-              Loading Participants…
+              {t("loading")}
             </p>
           ) : null}
 
@@ -245,13 +248,13 @@ export function AdminAllParticipantsPanel({
           ) : null}
 
           {state === "ready" && rows.length === 0 ? (
-            <p className="active-allies-panel__status">No Participants match this search.</p>
+            <p className="active-allies-panel__status">{t("noMatch")}</p>
           ) : null}
 
           {state === "ready" && rows.length > 0 ? (
             <ul
               className="active-allies-panel__list admin-all-participants-panel__list"
-              aria-label="All Participants"
+              aria-label={t("title")}
               aria-describedby={selectedCountId}
             >
               {rows.map((row) => {
@@ -272,7 +275,7 @@ export function AdminAllParticipantsPanel({
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleRow(row.memberId)}
-                        aria-label={`Select ${name}`}
+                        aria-label={t("selectAria", { name })}
                       />
                       <HumanityAvatar
                         className="active-allies-panel__avatar"
@@ -291,11 +294,11 @@ export function AdminAllParticipantsPanel({
                       type="button"
                       className="active-allies-panel__message-button"
                       disabled={isOpening}
-                      aria-label={`Message ${name}`}
+                      aria-label={tMessaging("messageAria", { name })}
                       onClick={() => openConversation({ participantId: row.memberId })}
                     >
                       <span className="active-allies-panel__message-label">
-                        {isOpening ? "Opening…" : "Message"}
+                        {isOpening ? tMessaging("opening") : tMessaging("message")}
                       </span>
                     </button>
                   </li>
@@ -312,7 +315,7 @@ export function AdminAllParticipantsPanel({
                 disabled={!canPrev || state !== "ready"}
                 onClick={() => void loadPage(Math.max(0, offset - PAGE_SIZE), appliedSearch)}
               >
-                Previous
+                {t("previous")}
               </button>
               <button
                 type="button"
@@ -320,7 +323,7 @@ export function AdminAllParticipantsPanel({
                 disabled={!canNext || state !== "ready"}
                 onClick={() => void loadPage(offset + PAGE_SIZE, appliedSearch)}
               >
-                Next
+                {t("next")}
               </button>
             </div>
           ) : null}

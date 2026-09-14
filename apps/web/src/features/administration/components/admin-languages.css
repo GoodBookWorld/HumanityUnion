@@ -1,0 +1,104 @@
+.admin-languages__lede {
+  margin: 0 0 1rem;
+  max-width: 48rem;
+}
+
+.admin-languages__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-languages__table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: min(70vh, 40rem);
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-languages-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-languages-table th,
+.admin-languages-table td {
+  padding: 0.5rem 0.65rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hu-border, #d6d6d6);
+  white-space: nowrap;
+}
+
+.admin-languages-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  font-weight: 600;
+  /* Opaque so scrolling rows do not show through the sticky header. */
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 6%, #fff);
+  box-shadow: inset 0 -1px 0 var(--hu-border, #d6d6d6);
+}
+
+/* Languages list uses both table classes; keep sticky header opaque over initiative tint. */
+.admin-initiatives-table.admin-languages-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 6%, #fff);
+  box-shadow: inset 0 -1px 0 rgba(26, 77, 109, 0.1);
+}
+
+.admin-languages__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-languages__form {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  border-radius: 0.35rem;
+}
+
+.admin-languages__form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.admin-languages__form-span {
+  grid-column: 1 / -1;
+}
+
+.admin-languages__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.admin-languages__form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-languages__form-note {
+  margin: 0.75rem 0 0;
+}
+
+.admin-languages__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.admin-languages__readonly {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

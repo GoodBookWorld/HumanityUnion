@@ -2,6 +2,8 @@
   display: grid;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ids-source-panel__empty {
@@ -33,16 +35,20 @@
 .ids-source-panel__summary {
   margin: 0.2rem 0 0;
   font-size: 0.95rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ids-editor {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .ids-editor__field {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .ids-editor__field label {
@@ -70,6 +76,8 @@
 .ids-public {
   display: grid;
   gap: 1.1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ids-public__section h3 {
@@ -85,7 +93,7 @@
 
 .ids-public__section ul {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-inline-start: 1.1rem;
 }
 
 .ids-public__meta {
@@ -109,5 +117,5 @@
 
 .ids-assistant-block ul {
   margin: 0;
-  padding-left: 1rem;
+  padding-inline-start: 1rem;
 }

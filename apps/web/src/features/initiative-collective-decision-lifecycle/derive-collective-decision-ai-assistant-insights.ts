@@ -3,16 +3,27 @@ import type {
   InitiativeCollectiveDecisionLifecycleDraft,
 } from "@hu/types";
 
+import type { CollectiveDecisionSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
+/**
+ * Initiative Lifecycle — Part H Decision Assistant insights.
+ *
+ * Pack 02G Task 08E.8d: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. API consistency-check detail remains opaque
+ * pass-through data and is never converted into Web advisory codes.
+ */
 export interface CollectiveDecisionAiAssistantInsights {
-  sourcesUsedSummary: string;
-  missingActionsWarnings: string[];
-  duplicatedActionsWarnings: string[];
-  missingRolesWarnings: string[];
-  unrealisticTimelineWarnings: string[];
-  unresolvedRisksWarnings: string[];
-  missingSuccessCriteriaWarnings: string[];
-  unsupportedConclusionsWarnings: string[];
-  clarityWarnings: string[];
+  readonly sourcesSummary: CollectiveDecisionSidebarAdvisory;
+  readonly missingActionsWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly duplicatedActionsWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly missingRolesWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly unrealisticTimelineWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly unresolvedRisksWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly missingSuccessCriteriaWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly unsupportedConclusionsWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  readonly clarityWarnings: readonly CollectiveDecisionSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativeCollectiveDecisionIntelligenceSnapshot["consistencyChecks"];
 }
 
 export function deriveCollectiveDecisionAiAssistantInsights(
@@ -20,22 +31,24 @@ export function deriveCollectiveDecisionAiAssistantInsights(
   draft: InitiativeCollectiveDecisionLifecycleDraft | null,
   _lifecycleProfile?: string | null,
 ): CollectiveDecisionAiAssistantInsights {
-  const missingActionsWarnings: string[] = [];
-  const duplicatedActionsWarnings: string[] = [];
-  const missingRolesWarnings: string[] = [];
-  const unrealisticTimelineWarnings: string[] = [];
-  const unresolvedRisksWarnings: string[] = [];
-  const missingSuccessCriteriaWarnings: string[] = [];
-  const unsupportedConclusionsWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
+  const missingActionsWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const duplicatedActionsWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const missingRolesWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const unrealisticTimelineWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const unresolvedRisksWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const missingSuccessCriteriaWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const unsupportedConclusionsWarnings: CollectiveDecisionSidebarAdvisory[] = [];
+  const clarityWarnings: CollectiveDecisionSidebarAdvisory[] = [];
 
   // Decision Session is SOURCE_OPTIONAL — never hard-warn Authors to publish it first.
 
   if (draft) {
     if (draft.approvedActions.length === 0) {
-      missingActionsWarnings.push(
-        "Add at least one Approved Action so the Collective Decision has a clear outcome.",
-      );
+      missingActionsWarnings.push({
+        code: "collective_decision.actions.need_one",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["approvedActions"] },
+      });
     }
 
     const normalized = draft.approvedActions.map((action) => action.trim().toLowerCase());
@@ -43,68 +56,90 @@ export function deriveCollectiveDecisionAiAssistantInsights(
       (action, index) => action && normalized.indexOf(action) !== index,
     );
     if (duplicates.length > 0) {
-      duplicatedActionsWarnings.push(
-        "Some Approved Actions appear duplicated — consolidate before publishing.",
-      );
+      duplicatedActionsWarnings.push({
+        code: "collective_decision.actions.duplicated",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["approvedActions"] },
+      });
     }
 
     if (draft.responsibleRoles.length === 0) {
-      missingRolesWarnings.push(
-        "No Responsible Roles listed — identify who is accountable for implementation.",
-      );
+      missingRolesWarnings.push({
+        code: "collective_decision.roles.none",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["roles"] },
+      });
     }
 
     if (!draft.implementationTimeline.trim()) {
-      unrealisticTimelineWarnings.push(
-        "Implementation Timeline is empty — implementation timing will be unclear.",
-      );
+      unrealisticTimelineWarnings.push({
+        code: "collective_decision.timeline.empty",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["timeline"] },
+      });
     }
 
     if (draft.decisionRisks.length === 0) {
-      unresolvedRisksWarnings.push(
-        "No Decision Risks listed — surface implementation risks before publish.",
-      );
+      unresolvedRisksWarnings.push({
+        code: "collective_decision.risks.none",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["risks"] },
+      });
     }
 
     if (draft.successCriteria.length === 0) {
-      missingSuccessCriteriaWarnings.push(
-        "No Success Criteria listed — define what a successful outcome looks like.",
-      );
+      missingSuccessCriteriaWarnings.push({
+        code: "collective_decision.criteria.none",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["criteria"] },
+      });
     }
 
     if (!draft.decisionRationale.trim()) {
-      unsupportedConclusionsWarnings.push(
-        "Decision Rationale is empty — explain why this Collective Decision outcome follows from upstream sources.",
-      );
+      unsupportedConclusionsWarnings.push({
+        code: "collective_decision.rationale.empty",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["rationale"] },
+      });
     }
 
     if (!draft.decisionSummary.trim() || draft.decisionSummary.length < 20) {
-      clarityWarnings.push(
-        "Decision Summary should clearly state the Collective Decision outcome and purpose.",
-      );
+      clarityWarnings.push({
+        code: "collective_decision.clarity.summary_unclear",
+        severity: "warning",
+        civic: { collectiveDecisionFieldIds: ["summary"] },
+      });
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
+  const hasDecisionSession = Boolean(snapshot.decisionSessionReference);
+  const hasPetition = Boolean(snapshot.petitionReference);
+  const hasRevision = Boolean(snapshot.revisionReference);
+  const hasAnalysis = Boolean(snapshot.analysisReference);
+  const proposalCount = snapshot.proposalReferences.length;
+  const hasAnySource =
+    hasDecisionSession || hasPetition || hasRevision || hasAnalysis || proposalCount > 0;
 
-  const sourcesUsedSummary = [
-    snapshot.decisionSessionReference ? "Decision Session (optional)" : null,
-    snapshot.petitionReference ? "Published Petition" : null,
-    snapshot.revisionReference ? `Revision v${snapshot.revisionReference.version}` : null,
-    snapshot.analysisReference ? "Collaborative Analysis" : null,
-    snapshot.proposalReferences.length > 0
-      ? `${snapshot.proposalReferences.length} Proposal(s)`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const sourcesSummary: CollectiveDecisionSidebarAdvisory = hasAnySource
+    ? {
+        code: "collective_decision.sources.summary",
+        severity: "info",
+        params: {
+          hasDecisionSession: hasDecisionSession ? 1 : 0,
+          hasPetition: hasPetition ? 1 : 0,
+          hasRevision: hasRevision ? 1 : 0,
+          revisionVersion: snapshot.revisionReference?.version ?? 0,
+          hasAnalysis: hasAnalysis ? 1 : 0,
+          proposalCount,
+        },
+      }
+    : {
+        code: "collective_decision.sources.empty",
+        severity: "info",
+      };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Decision Sources available yet.",
+    sourcesSummary,
     missingActionsWarnings,
     duplicatedActionsWarnings,
     missingRolesWarnings,
@@ -113,5 +148,6 @@ export function deriveCollectiveDecisionAiAssistantInsights(
     missingSuccessCriteriaWarnings,
     unsupportedConclusionsWarnings,
     clarityWarnings,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

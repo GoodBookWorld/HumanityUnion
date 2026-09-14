@@ -18,6 +18,7 @@ import {
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { generateCivicActionPackageForDecision } from "../civic-action-package/civic-action-package.service.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
@@ -372,6 +373,12 @@ export function openInitiativeCollectiveDecision(
     actorMemberId: identity.participantId,
   });
 
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "collective_decision",
+    sourceRecordId: decisionId,
+    reason: "public_mutation",
+  });
+
   return updated;
 }
 
@@ -421,6 +428,13 @@ async function finalizeCollectiveDecisionClose(
       actorMemberId: actorParticipantId,
     });
   }
+
+  // Close may refresh public outcome/transparency presentation fields.
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "collective_decision",
+    sourceRecordId: decision.decisionId,
+    reason: "public_update",
+  });
 
   // Pack 02C — freeze temporary Final Results snapshot for PUBLIC_CHOICE retention.
   try {

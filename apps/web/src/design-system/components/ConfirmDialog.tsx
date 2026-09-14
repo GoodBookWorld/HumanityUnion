@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 
@@ -12,7 +13,7 @@ interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
   description: ReactNode;
-  /** Label for the non-destructive, always-safe option. Defaults to "Cancel". */
+  /** Label for the non-destructive, always-safe option. Defaults to `common.cancel`. */
   cancelLabel?: string;
   /** Label for the destructive/confirming action (e.g. "Delete Draft"). */
   confirmLabel: string;
@@ -29,18 +30,22 @@ interface ConfirmDialogProps {
  *
  * Launch Readiness Pack 05 — restores focus to the opener on close and shares
  * the Design System focus-trap helper with other dialogs/menus.
+ *
+ * Pack 02E Task 03 — default cancel label from `common.cancel`; caller overrides preserved.
  */
 export function ConfirmDialog({
   isOpen,
   title,
   description,
-  cancelLabel = "Cancel",
+  cancelLabel,
   confirmLabel,
   destructive = true,
   isConfirming = false,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const tCommon = useTranslations("common");
+  const resolvedCancelLabel = cancelLabel ?? tCommon("cancel");
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -112,7 +117,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             disabled={isConfirming}
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <Button
             type="button"

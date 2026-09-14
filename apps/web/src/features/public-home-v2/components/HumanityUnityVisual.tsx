@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX } from "../hero-unity-visual.constants";
@@ -23,6 +24,7 @@ const HumanityGlobe = dynamic(
 const DESKTOP_VISUAL_QUERY = `(min-width: ${HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX}px)`;
 
 export function HumanityUnityVisual() {
+  const t = useTranslations("publicHome");
   const [mountGlobe, setMountGlobe] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export function HumanityUnityVisual() {
   return (
     <aside
       className="hero-unity-visual"
-      aria-label="Humanity unity illustration"
+      aria-label={t("unityIllustrationAria")}
     >
       {/* Soft atmosphere only — no legacy unity-globe background asset. */}
       <div className="hero-unity-visual__background" aria-hidden="true" />

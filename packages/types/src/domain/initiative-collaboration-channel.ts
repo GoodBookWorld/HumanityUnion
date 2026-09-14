@@ -41,6 +41,11 @@ export interface InitiativeCollaborationChannelMessage {
   senderParticipantId?: string;
   /** Present only for `type: "system_event"`. */
   systemEventKind?: InitiativeCollaborationSystemEventKind;
+  /**
+   * Display name of the subject Participant for `system_event` localization
+   * (e.g. Ally who joined). Omitted when unknown. English `text` remains skew fallback.
+   */
+  systemEventSubjectDisplayName?: string;
   text: string;
   createdAt: string;
 }
@@ -63,6 +68,8 @@ export interface InitiativeCollaborationChannelMessageView {
   type: InitiativeCollaborationChannelMessageType;
   sender?: InitiativeCollaborationChannelMessageSender;
   systemEventKind?: InitiativeCollaborationSystemEventKind;
+  /** Present for `system_event` when a subject display name was persisted. */
+  systemEventSubjectDisplayName?: string;
   text: string;
   createdAt: string;
   /** Drives the "own message" bubble alignment; always `false` for a system event. */

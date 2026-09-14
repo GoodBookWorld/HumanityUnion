@@ -44,12 +44,17 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | Sub-pack | Status |
 |----------|--------|
 | **02A** Architecture Audit | **COMPLETED** |
-| **02B** Language Registry API / foundation | **NEXT** |
-| 02C–02J | Sequenced; not started |
+| **02B** Language Registry | **COMPLETED** + staging **PASS** |
+| **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
+| **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
+| **02E** UI Key Extraction | **COMPLETED** + staging **PASS** |
+| **02F** Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (revision `98c2817`) |
+| **02G** Civic/public translation expansion + async warming | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS) |
+| 02H–02J | Sequenced after 02G (02H = search deferred; 02I = SEO; 02J = formal Layout Resilience acceptance) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track before Pack 02: **Production Completion Pack 01 / 01.1** (diagnostics cleanup, staging bootstrap cleanup, Support/Admin/Account/Editor refinements).
+Last completed product track milestone: **Pack 02F COMPLETE + STAGING PASS** (`98c2817`). Pack **02G Tasks 01–06 COMPLETE locally**. Task 07 staging acceptance **pending** (Pack 02G **not** yet STAGING PASS). No production promotion yet.
 
 ---
 
@@ -114,7 +119,11 @@ Capability 02
 | Pack 01.1 Diagnostics Cleanup (staging bootstrap + diagnostics semantics) | **COMPLETED** |
 | Staging historical Outbox recovery operator | **COMPLETED** |
 | Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
-| Production Completion Pack 02B Language Registry | **NEXT** |
+| Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02E UI Key Extraction | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02F Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (`98c2817`) |
 
 ---
 
@@ -133,20 +142,29 @@ Still excluded unless a future architecture decision says otherwise:
 
 **Present (reusable):**
 
+- Admin-managed Language Registry (Mongo + Admin UI `/admin/languages`)
 - `content_translations` side-store (canonical source never overwritten)
 - `TranslationProvider` seam (`deterministic` / `gemini`)
 - Participant prefs: interface / reading / writing / translation display preference
-- RTL helpers (`ar`, `he`); logical CSS migration incomplete
-- Hardcoded priority language catalog (to be replaced by Admin registry in 02B+)
+- Pack 02C: canonical runtime locale resolution; SSR `lang`/`dir`; `hu_lang`; global Language Selector; auth preference ↔ cookie sync
+- Pack 02D COMPLETE + STAGING PASS: `next-intl` UI i18n foundation; Pack 02C sole locale authority; server-resolved `html` `lang`/`dir`; English canonical bundled catalog; verification catalogs `en`/`uk`/`zh-Hant`/`ar`; English deep-merge fallback; inactive remote message-pack seam; catalog parity guard
+- Pack 02D foundation chrome: Language Selector label/loading/error; primary desktop/mobile Home / Institutions / Initiatives; Footer Support
+- Pack 02D staging: en/uk/zh-Hant/ar smoke PASS; zh-TW→zh-Hant canonicalize; RTL ar; non-locale-prefixed URLs; Registry-driven option names; disabled write 400; Registry restored en-only
+- Pack 02D build hotfix: `@parcel/watcher` + `@swc/core` explicitly approved in `pnpm-workspace.yaml` `allowBuilds` (strict policy preserved)
+- RTL helpers (`ar`, `he`); logical CSS migration incomplete (Pack 02J); selector chevron padding under `dir=rtl` only
+- Pack 02E COMPLETE + STAGING PASS: public nav/footer + shared common/a11y + auth + workspace/account shell chrome keys
+- Pack 02F COMPLETE + STAGING PASS (`98c2817`): Canonical Terminology Glossary (seeded catalog; Admin API/UI; Remove translation; provider preferred-term injection; footer © 2024; Layout Resilience Gate documented)
+- Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
 
 **Not present yet:**
 
-- Admin-managed Language Registry
-- UI chrome i18n catalogs / library
-- Guest language cookie + full preference precedence runtime
-- Multilingual search
+- Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
+- Broad civic/public translation expansion + async warming (Pack **02G** — IN PROGRESS; Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS)
+- Admin-managed remote UI message packs / R2 persistence
+- Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
+- Multilingual search (Pack **02H** — deferred)
 - Locale SEO / hreflang
-- Admin → Languages control plane UI
+- Formal Multilingual Layout Resilience acceptance (Pack **02J**; progressive from 02G)
 
 ---
 
@@ -154,7 +172,13 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02B–02J | Multilingual implementation sequence; next = 02B |
+| Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
+| Pack 02F Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (`98c2817`) |
+| Pack 02G Civic/public translation expansion | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS; Layout Resilience progressive from 02G) |
+| Pack 02H Multilingual search | **Deferred** |
+| Pack 02I Multilingual SEO | **Deferred** |
+| Pack 02J Multilingual Layout Resilience | Formal acceptance gate (progressive from 02G) |
+| Pack 02B / 02C / 02D / 02E / 02F staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

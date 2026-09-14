@@ -51,6 +51,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
       "Diagnostics",
       "Beta Access",
       "Platform",
+      "Languages",
       "Audit",
     ]);
 
@@ -108,6 +109,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
       "diagnostics",
       "beta-access",
       "platform",
+      "languages",
       "audit",
     ]) {
       const page = read(`app/admin/${segment}/page.tsx`);

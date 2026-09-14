@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
 
@@ -12,23 +13,22 @@ interface BlogRelatedPostsProps {
   excludePostId: string;
 }
 
-/**
- * Bounded same-category listing (max 3). Not AI-related; uses public Blog list API.
- */
+/** Same-category related strip: desktop shows 2 cards; extras scroll horizontally. */
 export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPostsProps) {
+  const t = useTranslations("blogPublic.discovery.related");
   const [items, setItems] = useState<PublicBlogPostListItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
-    void fetchPublicBlogPosts({ categoryId, limit: 6, offset: 0, includeDiscovery: false })
+    void fetchPublicBlogPosts({ categoryId, limit: 12, offset: 0, includeDiscovery: false })
       .then((response) => {
         if (cancelled) {
           return;
         }
 
         setItems(
-          response.items.filter((item) => item.postId !== excludePostId).slice(0, 3),
+          response.items.filter((item) => item.postId !== excludePostId).slice(0, 8),
         );
       })
       .catch(() => {
@@ -49,11 +49,11 @@ export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPosts
   return (
     <section className="blog-related" aria-labelledby="blog-related-heading">
       <h2 id="blog-related-heading" className="hu-heading-2">
-        More from this category
+        {t("heading")}
       </h2>
-      <div className="blog-post-grid blog-post-grid--related">
+      <div className="blog-post-grid blog-post-grid--related" tabIndex={0}>
         {items.map((post) => (
-          <BlogPostCard key={post.postId} post={post} />
+          <BlogPostCard key={post.postId} post={post} layout="related" />
         ))}
       </div>
     </section>

@@ -1,54 +1,62 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CivicSearchResult } from "@hu/types";
 
 import { Badge, Button, Card } from "../../../design-system";
 import { HuxDiscoverySection } from "../../horizontal-experience";
 
-import { HOME_PUBLIC_IMPACT_PLACEHOLDER_MAX, PUBLIC_HOME_LATEST_PUBLIC_IMPACT } from "../constants";
+import { HOME_PUBLIC_IMPACT_PLACEHOLDER_MAX } from "../constants";
 import { fetchLatestPublicImpactRecords } from "../api";
 
 type PublicImpactCollectionItem =
   | { kind: "record"; result: CivicSearchResult }
   | { kind: "placeholder"; slotNumber: number };
 
-function formatGeography(result: CivicSearchResult): string {
+function formatGeography(
+  result: CivicSearchResult,
+  unspecifiedLabel: string,
+): string {
   const parts = [result.community, result.region, result.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Geography not specified";
+  return parts.length > 0 ? parts.join(", ") : unspecifiedLabel;
 }
 
 function PublicImpactCarouselCard({ result }: { result: CivicSearchResult }) {
+  const t = useTranslations("publicHome");
+
   return (
     <Card className="public-home-v2__record-card">
       <h3>{result.title}</h3>
       <p>{result.summary}</p>
-      <p className="public-home-v2__record-meta">{formatGeography(result)}</p>
+      <p className="public-home-v2__record-meta">
+        {formatGeography(result, t("latestPublicImpact.geographyUnspecified"))}
+      </p>
       <Badge status={result.status} />
       <Button href={result.publicUrl} variant="secondary">
-        Explore →
+        {t("latestPublicImpact.explore")}
       </Button>
     </Card>
   );
 }
 
 function PublicImpactPlaceholderCard({ slotNumber }: { slotNumber: number }) {
+  const t = useTranslations("publicHome");
+
   return (
     <Card
       className="public-home-v2__record-card public-home-v2__record-card--placeholder"
-      aria-label={`Public impact record awaiting publication ${slotNumber}`}
+      aria-label={t("latestPublicImpact.placeholderAria", { slotNumber })}
     >
-      <h3>Public impact record awaiting publication</h3>
-      <p>
-        Documented outcomes will appear here after implementation results are reviewed and
-        published.
-      </p>
+      <h3>{t("latestPublicImpact.placeholderTitle")}</h3>
+      <p>{t("latestPublicImpact.placeholderBody")}</p>
     </Card>
   );
 }
 
 export function PublicHomeLatestPublicImpactSection() {
+  const t = useTranslations("publicHome");
   const [items, setItems] = useState<CivicSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +82,7 @@ export function PublicHomeLatestPublicImpactSection() {
     return (
       <section className="public-home-v2__section" aria-labelledby="public-home-impact-heading">
         <p className="public-home-v2__loading" role="status">
-          Loading public impact records…
+          {t("latestPublicImpact.loading")}
         </p>
       </section>
     );
@@ -83,10 +91,10 @@ export function PublicHomeLatestPublicImpactSection() {
   return (
     <HuxDiscoverySection
       sectionId="public-home-impact"
-      eyebrow="PUBLIC RESULTS"
-      title={PUBLIC_HOME_LATEST_PUBLIC_IMPACT.title}
-      description={PUBLIC_HOME_LATEST_PUBLIC_IMPACT.intro}
-      label="public impact records"
+      eyebrow={t("latestPublicImpact.eyebrow")}
+      title={t("latestPublicImpact.title")}
+      description={t("latestPublicImpact.intro")}
+      label={t("latestPublicImpact.ariaLabel")}
       items={collectionItems}
       getItemKey={(item, index) =>
         item.kind === "record"

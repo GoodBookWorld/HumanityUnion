@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -14,6 +15,7 @@ import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 import "./auth-form.css";
 
 export function RegisterForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -68,8 +70,8 @@ export function RegisterForm() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <label className="auth-form__field">
           <span>
-            Email <span aria-hidden="true">*</span>
-            <span className="hu-visually-hidden">(required)</span>
+            {t("email")} <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">{t("required")}</span>
           </span>
           <input
             type="email"
@@ -82,8 +84,8 @@ export function RegisterForm() {
         </label>
         <label className="auth-form__field">
           <span>
-            Display name <span aria-hidden="true">*</span>
-            <span className="hu-visually-hidden">(required)</span>
+            {t("displayName")} <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">{t("required")}</span>
           </span>
           <input
             type="text"
@@ -97,8 +99,8 @@ export function RegisterForm() {
         {requiresInvite ? (
           <label className="auth-form__field">
             <span>
-              Beta invite code <span aria-hidden="true">*</span>
-              <span className="hu-visually-hidden">(required)</span>
+              {t("betaInviteCode")} <span aria-hidden="true">*</span>
+              <span className="hu-visually-hidden">{t("required")}</span>
             </span>
             <input
               type="text"
@@ -112,8 +114,8 @@ export function RegisterForm() {
         ) : null}
         <label className="auth-form__field">
           <span>
-            Password <span aria-hidden="true">*</span>
-            <span className="hu-visually-hidden">(required)</span>
+            {t("password")} <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">{t("required")}</span>
           </span>
           <PasswordInput
             autoComplete="new-password"
@@ -124,20 +126,20 @@ export function RegisterForm() {
           />
         </label>
         {configWarning ? (
-          <AuthFeedbackMessage variant="info" title="Registration notice">
+          <AuthFeedbackMessage variant="info" title={t("registrationNotice")}>
             <p>{configWarning}</p>
           </AuthFeedbackMessage>
         ) : null}
         {error ? (
-          <AuthFeedbackMessage variant="error" title="Registration failed">
+          <AuthFeedbackMessage variant="error" title={t("registrationFailed")}>
             <p>{error}</p>
           </AuthFeedbackMessage>
         ) : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Creating account…" : "Create account"}
+            {submitting ? t("creatingAccount") : t("createAccount")}
           </Button>
-          <Button href="/login">Already have an account?</Button>
+          <Button href="/login">{t("alreadyHaveAccount")}</Button>
         </div>
       </form>
     </Card>

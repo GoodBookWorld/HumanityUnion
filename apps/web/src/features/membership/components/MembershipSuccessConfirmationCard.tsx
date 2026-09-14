@@ -1,5 +1,9 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Card } from "../../../design-system/components/Card";
-import { MEMBERSHIP_CONTRIBUTION_AMOUNT, MEMBERSHIP_SUCCESS_COPY } from "../membership.constants";
+import { MEMBERSHIP_CONTRIBUTION_AMOUNT } from "../membership.constants";
 import { formatMemberSince } from "../membership-formatters";
 
 interface MembershipSuccessConfirmationCardProps {
@@ -11,6 +15,7 @@ export function MembershipSuccessConfirmationCard({
   memberNumber,
   memberSince,
 }: MembershipSuccessConfirmationCardProps) {
+  const t = useTranslations("membershipPublic.successPage");
   const hasMemberNumber = Boolean(memberNumber);
   const hasMemberSince = Boolean(memberSince);
 
@@ -25,30 +30,30 @@ export function MembershipSuccessConfirmationCard({
             id="membership-success-confirmation-title"
             className="membership-success-confirmation__title"
           >
-            {MEMBERSHIP_SUCCESS_COPY.confirmationTitle}
+            {t("confirmationTitle")}
           </h2>
         </div>
         <dl className="membership-success-confirmation__fields">
           <div className="membership-success-confirmation__field">
-            <dt>{MEMBERSHIP_SUCCESS_COPY.confirmationContributionLabel}</dt>
+            <dt>{t("confirmationContributionLabel")}</dt>
             <dd>{MEMBERSHIP_CONTRIBUTION_AMOUNT}</dd>
           </div>
           <div className="membership-success-confirmation__field">
-            <dt>Member Since</dt>
-            <dd>{hasMemberSince ? formatMemberSince(memberSince) : "Unavailable"}</dd>
+            <dt>{t("memberSince")}</dt>
+            <dd>{hasMemberSince ? formatMemberSince(memberSince) : t("valueUnavailable")}</dd>
           </div>
           <div className="membership-success-confirmation__field membership-success-confirmation__field--number">
-            <dt>Member Number</dt>
-            <dd>{hasMemberNumber ? memberNumber : "Unavailable"}</dd>
+            <dt>{t("memberNumber")}</dt>
+            <dd>{hasMemberNumber ? memberNumber : t("valueUnavailable")}</dd>
           </div>
         </dl>
         {hasMemberNumber && hasMemberSince ? (
           <p className="membership-success-confirmation__public-note" role="status">
-            {MEMBERSHIP_SUCCESS_COPY.publicMemberNote}
+            {t("publicMemberNote")}
           </p>
         ) : (
           <p className="membership-success-unavailable" role="status">
-            Membership confirmation details are temporarily unavailable.
+            {t("confirmationTemporarilyUnavailable")}
           </p>
         )}
       </Card>

@@ -20,15 +20,27 @@ export type TranslationProviderId =
   | (string & {});
 
 /**
- * Vertical-slice source kinds (Pack 02).
- * Later Lifecycle stages reuse the same adapter with additional kinds.
+ * Vertical-slice + Pack 02G civic/public source kinds.
+ * Task 03 adds explicit lifecycle kinds — do not overload lifecycle_stage.
  */
 export type ContentTranslationSourceKind =
   | "initiative"
   | "collaborative_analysis"
   | "petition"
   | "lifecycle_stage"
-  | "blog_post";
+  | "blog_post"
+  | "discussion_comment"
+  | "improvement_proposal"
+  | "initiative_revision"
+  | "decision_session"
+  | "collective_decision"
+  | "implementation_commitment"
+  | "implementation_tracking"
+  | "official_response"
+  | "public_impact"
+  | "civic_archive"
+  | "civic_media"
+  | "public_news";
 
 /**
  * Reusable translated-content record.
@@ -99,4 +111,74 @@ export interface TranslateDraftResult {
   /** Original draft payload unchanged. */
   readonly originalDraftContent: Record<string, unknown> | string;
   readonly originalLanguage: LanguageCode;
+}
+
+/**
+ * Pack 02G / Step 06C.1 — how translation generation was requested.
+ * Same engine/loader/provider/persistence; different locale eligibility gates.
+ *
+ * - `on_demand`: explicit/manual/user-triggered (enabled locale sufficient)
+ * - `automatic_warm`: background Extended Localization warming
+ *   (requires contentTranslationEnabled; unchanged contract)
+ * - `search_discovery`: Search discovery compact CT warm
+ *   (requires enabled + searchEnabled; independent of contentTranslationEnabled /
+ *   WEB_UI / PLP / SEO / languageDataReady)
+ */
+export type ContentTranslationIntent =
+  | "on_demand"
+  | "automatic_warm"
+  | "search_discovery";
+
+/**
+ * Canonical work identity for persistence uniqueness + future warm-job dedupe.
+ * Matches Mongo unique index: sourceKind + sourceRecordId + sourceVersion + targetLanguage.
+ */
+export interface ContentTranslationWorkIdentity {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly sourceVersion: string;
+  readonly targetLanguage: LanguageCode;
+}
+
+/**
+ * Durable warm-request command (source-level).
+ * Distinct from catalogue result events TranslationPublished / TranslationCorrected.
+ *
+ * Consumer reloads authoritative source + Registry targets at execution.
+ * Do not embed translated text, provider prompts, private fields, or locale snapshots.
+ */
+export const CONTENT_TRANSLATION_WARM_REQUESTED = "ContentTranslationWarmRequested" as const;
+
+export type ContentTranslationWarmRequestedCommandName =
+  typeof CONTENT_TRANSLATION_WARM_REQUESTED;
+
+/** Why a source-level warm was requested (observability only). */
+export type ContentTranslationWarmReason =
+  | "public_mutation"
+  | "public_update"
+  | "operator_manual"
+  | "operator_backfill"
+  /** Pack 08K.2.2 — gated residual retry of ready identities only. */
+  | "operator_residual_retry"
+  /** Step 06C.1 — Admin searchEnabled false→true Initiative discovery enqueue. */
+  | "search_discovery_enable";
+
+export interface ContentTranslationWarmRequestedCommand {
+  readonly commandName: ContentTranslationWarmRequestedCommandName;
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly requestedAt: string;
+  readonly reason: ContentTranslationWarmReason;
+  /**
+   * Optional locale constraint (Pack 08K.2.2 residual retry).
+   * When set, consumer intersects with Registry automatic targets and processes
+   * ONLY these locales — never unrelated CURRENT/blocked identities.
+   * Omit for normal mutation/backfill full Registry fan-out.
+   */
+  readonly targetLocales?: readonly LanguageCode[];
+  /**
+   * Pack 08K.2.6 — optional architecture retry basis recorded on the attempt
+   * (e.g. EXACT_FAILURE_REASON_PROPAGATION_08K25). Observability / idempotency only.
+   */
+  readonly architectureRetryBasis?: string;
 }

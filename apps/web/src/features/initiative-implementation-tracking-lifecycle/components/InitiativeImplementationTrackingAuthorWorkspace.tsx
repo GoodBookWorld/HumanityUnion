@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   generateInitiativeImplementationTrackingDraft,
@@ -31,6 +32,8 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
   onTogglePreview,
   onNavigate,
 }: InitiativeImplementationTrackingAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativeImplementationTrackingLifecycleDraftContext | null>(
     null,
   );
@@ -77,24 +80,21 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Implementation Tracking workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.tracking.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
   }
 
   if (loading || !context) {
-    return <p className="iit-source-panel__empty">Loading Implementation Tracking workspace…</p>;
+    return <p className="iit-source-panel__empty">{t("author.tracking.loading")}</p>;
   }
 
   if (context.publishedPackageId) {
     return (
-      <p className="iit-source-panel__empty">
-        Implementation Tracking has already been published for this Initiative. Use Public Preview to
-        review it, or continue to Official Responses.
-      </p>
+      <p className="iit-source-panel__empty">{t("author.tracking.alreadyPublished")}</p>
     );
   }
 
@@ -109,7 +109,7 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
     <div className="lsw-main">
       <div className="iit-editor__actions" style={{ marginBottom: "1rem" }}>
         <WorkspaceButton variant="secondary" onClick={() => setShowSourcePanel((value) => !value)}>
-          {showSourcePanel ? "Hide Sources" : "Sources"}
+          {showSourcePanel ? actions.hideSources : actions.sources}
         </WorkspaceButton>
       </div>
 
@@ -121,19 +121,16 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="iit-editor">
-          <p className="iit-source-panel__empty">
-            Generate an initial implementation plan from Collective Decision results, Implementation
-            Commitments (when accepted), and Initiative scope. With zero accepted commitments,
-            milestones are created as Unassigned / To be determined — Lifecycle does not block.
-            The Assistant remains advisory and never publishes.
-          </p>
+          <p className="iit-source-panel__empty">{t("author.tracking.noDraftExplanation")}</p>
           {zeroCommitmentHint ? (
-            <p className="iit-source-panel__empty">
-              No Accepted Commitments yet — Generate will still produce an editable plan.
-            </p>
+            <p className="iit-source-panel__empty">{t("author.tracking.zeroCommitmentHint")}</p>
           ) : null}
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Implementation Tracking Draft")}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.tracking.generateTrackingDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

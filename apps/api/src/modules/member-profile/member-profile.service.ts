@@ -37,6 +37,23 @@ import {
   validateMemberProfilePatch,
   validateMemberProfilePrivacyPatch,
 } from "./member-profile.validators.js";
+import { applyParticipantPublicPlpToProjection } from "../language/published-localized-presentation/universal/adapters/apply-participant-public-plp.js";
+import { enqueueParticipantPublicPlpBuilds } from "../language/published-localized-presentation/universal/adapters/enqueue-participant-public-plp.js";
+
+function profileProseChanged(
+  before: MemberProfile,
+  after: MemberProfile,
+): boolean {
+  return (
+    before.biography !== after.biography ||
+    before.organization !== after.organization ||
+    JSON.stringify(before.skills) !== JSON.stringify(after.skills) ||
+    before.profileVisibility !== after.profileVisibility ||
+    before.skillsVisibility !== after.skillsVisibility ||
+    before.showOrganization !== after.showOrganization ||
+    before.displayName !== after.displayName
+  );
+}
 
 export async function createMemberProfileForUser(input: {
   userId: string;
@@ -96,10 +113,15 @@ export async function updateMemberProfileForUser(
   const patch = validateMemberProfilePatch(body);
 
   try {
+    const before = await findMemberProfileByUserId(userId);
     const updated = await updateMemberProfileRecord(userId, patch);
 
     if (!updated) {
       throw new MemberProfileNotFoundError();
+    }
+
+    if (!before || profileProseChanged(before, updated)) {
+      void enqueueParticipantPublicPlpBuilds(updated);
     }
 
     return updated;
@@ -125,10 +147,15 @@ export async function updateMemberProfilePrivacyForUser(
   }
 
   try {
+    const before = await findMemberProfileByUserId(userId);
     const updated = await updateMemberProfileRecord(userId, patch);
 
     if (!updated) {
       throw new MemberProfileNotFoundError();
+    }
+
+    if (!before || profileProseChanged(before, updated)) {
+      void enqueueParticipantPublicPlpBuilds(updated);
     }
 
     return toMemberProfilePrivacySettings(updated);
@@ -175,11 +202,17 @@ async function enrichPublicMemberProfileProjection(
   profile: MemberProfile,
   viewerIsOwner: boolean,
   viewerParticipantId: string | undefined,
+  locale?: string | null,
 ): Promise<PublicMemberProfile> {
   const authUser = await findAuthUserById(profile.userId);
 
+  // participant_public overlay must run even when auth enrichment cannot —
+  // Biography/Skills localization must not depend on statistics/messaging.
   if (!authUser) {
-    return projection;
+    return applyParticipantPublicPlpToProjection({
+      projection,
+      locale,
+    });
   }
 
   const statistics = await getParticipantStatistics(authUser.memberId);
@@ -242,7 +275,10 @@ async function enrichPublicMemberProfileProjection(
     projection.messagingAvailability = "unavailable";
   }
 
-  return projection;
+  return applyParticipantPublicPlpToProjection({
+    projection,
+    locale,
+  });
 }
 
 async function resolvePublicMemberProfileProjection(
@@ -251,6 +287,7 @@ async function resolvePublicMemberProfileProjection(
     viewerIsAuthenticated: boolean;
     viewerUserId?: string;
     viewerParticipantId?: string;
+    locale?: string | null;
   },
 ): Promise<PublicMemberProfile> {
   if (!profile) {
@@ -275,6 +312,7 @@ async function resolvePublicMemberProfileProjection(
     profile,
     viewerIsOwner,
     options.viewerParticipantId,
+    options.locale,
   );
 }
 
@@ -284,6 +322,7 @@ export async function getPublicMemberProfileById(
     viewerIsAuthenticated: boolean;
     viewerUserId?: string;
     viewerParticipantId?: string;
+    locale?: string | null;
   },
 ): Promise<PublicMemberProfile> {
   try {
@@ -314,6 +353,7 @@ export async function getPublicMemberProfileByPublicName(
     viewerIsAuthenticated: boolean;
     viewerUserId?: string;
     viewerParticipantId?: string;
+    locale?: string | null;
   },
 ): Promise<PublicMemberProfile> {
   try {
@@ -353,6 +393,7 @@ export async function getPublicMemberProfileByPublicName(
  */
 export async function getMyPublicMemberProfilePreview(
   userId: string,
+  options?: { locale?: string | null },
 ): Promise<MemberProfilePublicPreview> {
   const profile = await getMemberProfileForAuthUser(userId);
 
@@ -360,6 +401,7 @@ export async function getMyPublicMemberProfilePreview(
     viewerIsAuthenticated: true,
     viewerUserId: undefined,
     viewerParticipantId: undefined,
+    locale: options?.locale,
   });
 
   return {

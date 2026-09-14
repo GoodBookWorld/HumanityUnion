@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   WorkspaceEmptyState,
@@ -12,12 +13,17 @@ import { getPetitionByCollectiveDecisionId, getPetitionByInitiativeId } from "..
 interface ViewPetitionLinkProps {
   collectiveDecisionId?: string | null;
   initiativeId?: string | null;
+  /** Localized link label; defaults to catalog English for callers outside Manage. */
+  label?: string;
 }
 
 export function ViewPetitionLink({
   collectiveDecisionId = null,
   initiativeId = null,
+  label,
 }: ViewPetitionLinkProps) {
+  const t = useTranslations("initiativeExperience");
+  const resolvedLabel = label ?? t("manage.links.viewPetition");
   const [petitionId, setPetitionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -63,23 +69,23 @@ export function ViewPetitionLink({
   if (!collectiveDecisionId && !initiativeId) {
     return (
       <WorkspaceEmptyState
-        title="No petition reference is available"
-        explanation="A petition link appears when a collective decision or initiative petition exists."
-        nextStep="Continue civic participation stages that create a petition record."
+        title={t("manage.links.petitionUnavailableTitle")}
+        explanation={t("manage.links.petitionUnavailableExplanation")}
+        nextStep={t("manage.links.petitionUnavailableNext")}
       />
     );
   }
 
   if (loading) {
-    return <WorkspaceLoadingState message="Loading petition..." />;
+    return <WorkspaceLoadingState message={t("manage.links.petitionLoading")} />;
   }
 
   if (!petitionId) {
     return (
       <WorkspaceEmptyState
-        title="No related petition exists."
-        explanation="Petitions remain available for legacy participation flows. Capability 02 collective decisions may not create a petition record."
-        nextStep="Open or close a collective decision to create petition participation."
+        title={t("manage.links.petitionEmptyTitle")}
+        explanation={t("manage.links.petitionEmptyExplanation")}
+        nextStep={t("manage.links.petitionEmptyNext")}
       />
     );
   }
@@ -87,7 +93,7 @@ export function ViewPetitionLink({
   return (
     <WorkspacePublicLink
       href={`/petitions/${encodeURIComponent(petitionId)}`}
-      label="View Petition"
+      label={resolvedLabel}
     />
   );
 }

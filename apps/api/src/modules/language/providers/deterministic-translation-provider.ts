@@ -8,11 +8,24 @@ import { TranslationProviderError } from "../translation.config.js";
 /**
  * Offline / test provider. Does not call external networks.
  * Marks output clearly so tests can assert originals were not overwritten.
+ * Pack 02F Task 05: records last terminologyContext for assertions.
  */
 export class DeterministicTranslationProvider implements TranslationProvider {
   readonly providerId = "deterministic" as const;
 
+  private lastRequest: TranslationProviderRequest | null = null;
+
+  getLastRequestForTests(): TranslationProviderRequest | null {
+    return this.lastRequest;
+  }
+
+  clearLastRequestForTests(): void {
+    this.lastRequest = null;
+  }
+
   async translate(request: TranslationProviderRequest): Promise<TranslationProviderResult> {
+    this.lastRequest = request;
+
     if (!request.safetyCleared) {
       throw new TranslationProviderError(
         "safety_rejected",
@@ -31,10 +44,48 @@ export class DeterministicTranslationProvider implements TranslationProvider {
     if (request.contentType === "structured_json") {
       try {
         const parsed = JSON.parse(request.text) as Record<string, unknown>;
+        const translateString = (value: string): string => {
+          // Pack 08I.5 — for HTML-looking strings, translate text nodes only; keep tags/attrs.
+          if (/<[a-z][\s\S]*>/i.test(value)) {
+            return value.replace(
+              /(^|>)([^<]+)(?=<|$)/g,
+              (_match, boundary: string, text: string) => {
+                if (!text.trim()) {
+                  return `${boundary}${text}`;
+                }
+                return `${boundary}[${request.targetLanguage}] ${text}`;
+              },
+            );
+          }
+          return `[${request.targetLanguage}] ${value}`;
+        };
+
+        // RESET 05E — PLP translations-array contract.
+        if (Array.isArray(parsed.translations)) {
+          const translations = parsed.translations.map((entry) => {
+            if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+              return entry;
+            }
+            const row = entry as Record<string, unknown>;
+            if (typeof row.key !== "string" || typeof row.value !== "string") {
+              return entry;
+            }
+            return { key: row.key, value: translateString(row.value) };
+          });
+          return {
+            translatedText: JSON.stringify({ translations }),
+            providerId: this.providerId,
+            isPlaceholder: false,
+          };
+        }
+
         const translated: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(parsed)) {
-          translated[key] =
-            typeof value === "string" ? `[${request.targetLanguage}] ${value}` : value;
+          if (typeof value !== "string") {
+            translated[key] = value;
+            continue;
+          }
+          translated[key] = translateString(value);
         }
         return {
           translatedText: JSON.stringify(translated),

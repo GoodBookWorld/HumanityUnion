@@ -53,13 +53,9 @@ export function selectLifecycleNavStagesForDisplay(
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   return stages
     .filter((stage) => stage.state !== "not_applicable")
-    .filter((stage) => !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"))
-    .map((stage) => {
-      if (profile === "PUBLIC_CHOICE" && stage.stageId === "collective_decision") {
-        return { ...stage, label: "Collective Decision" };
-      }
-      return stage;
-    });
+    .filter((stage) => !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"));
+    // RESET 05A — do not hardcode English "Collective Decision"; consumers
+    // resolve labels via UI_DICTIONARY (resolveLifecycleStageDisplayLabel).
 }
 
 export function resolveLifecycleStageFromHash(hash: string): string | null {
@@ -258,15 +254,18 @@ export function resolveShellAuthorModeEligible(input: {
   return input.isAuthorWorkspaceStage(input.selectedStageId);
 }
 
+/**
+ * When an optional stage diagnostic is `unavailable`, returns the section id
+ * so the shell can resolve a deterministic public-safe next-intl message.
+ * Does not surface API/domain reason prose.
+ */
 export function publicSafeOptionalSectionMessage(
   diagnostics: PublicInitiativeOptionalStageDiagnostics | undefined,
   section: "petition" | "civicArchive",
-): string | null {
+): "petition" | "civicArchive" | null {
   const entry = diagnostics?.[section];
   if (!entry || entry.health !== "unavailable") {
     return null;
   }
-  return section === "petition"
-    ? "Petition information is temporarily unavailable."
-    : "Civic Archive information is temporarily unavailable.";
+  return section;
 }

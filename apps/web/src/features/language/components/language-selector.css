@@ -1,0 +1,317 @@
+/* Production Completion Pack 02C Task 03 — compact header language selector */
+
+.hu-language-selector {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  max-width: 11rem;
+  --hu-language-selector-visible-rows: 10;
+  --hu-language-selector-option-block-size: 2.25rem;
+}
+
+.hu-language-selector--pending {
+  min-width: 5.5rem;
+  min-height: 1.75rem;
+}
+
+.hu-language-selector__label {
+  display: block;
+  margin: 0;
+}
+
+.hu-language-selector__select {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  text-align: start;
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text);
+  background-color: color-mix(in srgb, var(--hu-color-primary) 6%, #ffffff);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-pill);
+  /* Pack 08I.14B — subtle inset/pressed treatment (not raised outward). */
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--hu-color-text) 12%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #ffffff 50%, transparent);
+  /* Logical padding so chevron gutter flips under Pack 02C dir=rtl (Task 02). */
+  padding-block: 0.35rem;
+  padding-inline-start: 0.75rem;
+  padding-inline-end: 1.75rem;
+  max-width: 100%;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) 55%,
+    calc(100% - 0.55rem) 55%;
+  background-size:
+    0.3rem 0.3rem,
+    0.3rem 0.3rem;
+  background-repeat: no-repeat;
+}
+
+[dir="rtl"] .hu-language-selector__select {
+  background-position:
+    0.55rem 55%,
+    0.85rem 55%;
+}
+
+.hu-language-selector__select:hover,
+.hu-language-selector__select:focus-visible {
+  border-color: color-mix(in srgb, var(--hu-color-primary) 45%, var(--hu-color-border));
+  background-color: color-mix(in srgb, var(--hu-color-primary) 10%, #ffffff);
+}
+
+.hu-language-selector__select:active {
+  box-shadow:
+    inset 0 2px 3px color-mix(in srgb, var(--hu-color-text) 16%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #ffffff 40%, transparent);
+}
+
+.hu-language-selector__select:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.hu-language-selector__select:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.hu-language-selector__list {
+  position: absolute;
+  z-index: 60;
+  inset-inline-start: 0;
+  top: calc(100% + 0.25rem);
+  min-width: max(100%, 11rem);
+  max-height: calc(
+    var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md, 0.5rem);
+  box-shadow: var(--hu-shadow-sm, 0 4px 16px rgba(16, 24, 40, 0.12));
+}
+
+.hu-language-selector__option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--hu-language-selector-option-block-size);
+  padding-block: 0.35rem;
+  padding-inline: 0.75rem;
+  border: 0;
+  border-radius: var(--hu-radius-sm, 0.35rem);
+  background: transparent;
+  color: var(--hu-color-text);
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hu-language-selector__option:hover,
+.hu-language-selector__option--active {
+  background: color-mix(in srgb, var(--hu-color-primary) 10%, #ffffff);
+}
+
+.hu-language-selector__option--selected {
+  color: var(--hu-color-primary);
+}
+
+.hu-language-selector__option:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.hu-language-selector__error {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--hu-color-danger, #b42318);
+  max-width: 11rem;
+}
+
+/* Mobile / PWA burger: in-flow expandable panel (not a desktop edge dropdown). */
+.hu-language-selector--mobile {
+  position: relative;
+  max-width: none;
+  width: 100%;
+  margin-block: var(--hu-space-2);
+  margin-inline: 0;
+}
+
+.hu-language-selector--mobile .hu-language-selector__select {
+  width: 100%;
+}
+
+.hu-language-selector--mobile .hu-language-selector__list {
+  /* Expand inside the burger panel — avoid absolute/right-edge desktop popup. */
+  position: static;
+  inset: auto;
+  z-index: auto;
+  box-sizing: border-box;
+  width: min(100%, 92vw);
+  min-width: 0;
+  max-width: 100%;
+  margin-block-start: 0.5rem;
+  margin-inline: 0;
+  max-height: min(65dvh, 22rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.hu-language-selector--mobile .hu-language-selector__option {
+  min-height: var(--hu-touch-target, 2.75rem);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.hu-language-selector--mobile .hu-language-selector__error {
+  max-width: none;
+}
+
+.hu-language-selector--icon {
+  max-width: none;
+  width: 100%;
+}
+
+.hu-language-selector__icon-trigger {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: var(--hu-touch-target, 2.75rem);
+  margin: 0;
+  padding-block: 0.5rem;
+  padding-inline: 0.5rem;
+  border: 0;
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: transparent;
+  color: var(--hu-color-text);
+  font: inherit;
+  font-size: var(--hu-font-size-base);
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hu-language-selector__icon-trigger:hover,
+.hu-language-selector__icon-trigger:focus-visible {
+  background: color-mix(in srgb, var(--hu-color-primary) 8%, transparent);
+}
+
+.hu-language-selector__icon-trigger:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.hu-language-selector__icon-trigger:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.hu-language-selector__icon {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.hu-language-selector__icon-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hu-language-selector--icon[data-open="true"] .hu-language-selector__icon-trigger {
+  color: var(--hu-color-primary);
+  font-weight: 600;
+  background: var(--hu-color-bg-subtle, color-mix(in srgb, var(--hu-color-primary) 8%, transparent));
+}
+
+/*
+ * Standard mobile-web header selector (HumanityHeader end zone).
+ * Desktop keeps the compact absolute dropdown; PWA burger uses --mobile (unchanged).
+ * Root cause of overflow: absolute list with inset-inline-start:0 near the physical
+ * end of the header pushed min-width:11rem content past the viewport edge.
+ */
+@media (max-width: 768px) {
+  .hu-language-selector--header {
+    /* Keep the visible trigger compact; list is viewport-anchored below. */
+    position: relative;
+  }
+
+  .hu-language-selector--header .hu-language-selector__list {
+    position: fixed;
+    z-index: calc(var(--hu-z-header, 40) + 40);
+    /* Logical safe margins — ~92vw usable width, centered in the viewport. */
+    inset-inline: 4vw;
+    top: calc(var(--hu-header-height, 4.5rem) + 0.35rem);
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+    max-height: min(65dvh, 22rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .hu-language-selector--header .hu-language-selector__option {
+    min-height: var(--hu-touch-target, 2.75rem);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .hu-language-selector--header .hu-language-selector__error {
+    position: fixed;
+    z-index: calc(var(--hu-z-header, 40) + 41);
+    inset-inline: 4vw;
+    top: calc(var(--hu-header-height, 4.5rem) + 0.35rem);
+    max-width: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .hu-language-selector:not(.hu-language-selector--mobile):not(.hu-language-selector--header) {
+    max-width: 7.5rem;
+  }
+
+  .hu-language-selector:not(.hu-language-selector--mobile):not(.hu-language-selector--header)
+    .hu-language-selector__select {
+    font-size: 0.75rem;
+    padding-inline-start: 0.55rem;
+    padding-inline-end: 1.5rem;
+  }
+
+  /* Header trigger stays compact on narrow phones without changing desktop. */
+  .hu-language-selector--header {
+    max-width: 7.5rem;
+  }
+
+  .hu-language-selector--header .hu-language-selector__select {
+    font-size: 0.75rem;
+    padding-inline-start: 0.55rem;
+    padding-inline-end: 1.5rem;
+  }
+}

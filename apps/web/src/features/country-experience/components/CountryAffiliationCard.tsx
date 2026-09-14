@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { CountryAffiliationPublic } from "@hu/types";
 
 import { resolveMediaUrl } from "../../media-upload/media-url";
@@ -16,6 +18,7 @@ interface CountryAffiliationCardProps {
  * Missing image uses a clean neutral media plate (no visible initials fallback block).
  */
 export function CountryAffiliationCard({ entry, toneIndex = 0 }: CountryAffiliationCardProps) {
+  const t = useTranslations("publicGeo.shared");
   const imageSrc = resolveMediaUrl(entry.imageUrl) ?? entry.imageUrl;
   const isPartner = entry.entryType === "PARTNER";
   const toneClass = `country-affiliation-card--tone-${toneIndex % 5}`;
@@ -48,7 +51,7 @@ export function CountryAffiliationCard({ entry, toneIndex = 0 }: CountryAffiliat
         <div className="country-affiliation-card__actions">
           {entry.email ? (
             <a className="country-affiliation-card__link" href={`mailto:${entry.email}`}>
-              Email
+              {t("email")}
             </a>
           ) : null}
           {entry.websiteUrl ? (
@@ -58,7 +61,7 @@ export function CountryAffiliationCard({ entry, toneIndex = 0 }: CountryAffiliat
               target="_blank"
               rel="noopener noreferrer"
             >
-              Website
+              {t("website")}
             </a>
           ) : null}
         </div>

@@ -23,6 +23,7 @@ import {
   updateResponse,
 } from "./official-response.store.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 
 export interface CreateOfficialResponseDraftInput {
   capId: string;
@@ -211,6 +212,12 @@ export function publishOfficialResponse(
     entityId: responseId,
     initiativeId: updated.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "official_response",
+    sourceRecordId: responseId,
+    reason: "public_mutation",
   });
 
   return updated;

@@ -40,7 +40,7 @@ export function resolveProviderPresentation(sourceName: string) {
   };
 }
 
-export function formatNewsRelativeTime(isoDate: string): string {
+export function formatNewsRelativeTime(isoDate: string, locale = "en"): string {
   const parsed = Date.parse(isoDate);
 
   if (Number.isNaN(parsed)) {
@@ -49,28 +49,29 @@ export function formatNewsRelativeTime(isoDate: string): string {
 
   const diffMs = Date.now() - parsed;
   const diffMinutes = Math.round(diffMs / 60_000);
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
-  if (diffMinutes < 1) {
-    return "Just now";
+  if (Math.abs(diffMinutes) < 1) {
+    return formatter.format(0, "minute");
   }
 
-  if (diffMinutes < 60) {
-    return `${diffMinutes}m ago`;
+  if (Math.abs(diffMinutes) < 60) {
+    return formatter.format(-diffMinutes, "minute");
   }
 
   const diffHours = Math.round(diffMinutes / 60);
 
-  if (diffHours < 24) {
-    return `${diffHours}h ago`;
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(-diffHours, "hour");
   }
 
   const diffDays = Math.round(diffHours / 24);
 
-  if (diffDays < 7) {
-    return `${diffDays}d ago`;
+  if (Math.abs(diffDays) < 7) {
+    return formatter.format(-diffDays, "day");
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
   }).format(new Date(parsed));

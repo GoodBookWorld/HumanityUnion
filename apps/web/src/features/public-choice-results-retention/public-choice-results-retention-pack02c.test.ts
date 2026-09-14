@@ -27,7 +27,7 @@ describe("Public Choice Pack 02C — web contracts", () => {
     );
     assert.doesNotMatch(page, /\+ Add candidate|buildPublicChoiceCandidateSubmitHref/);
     assert.doesNotMatch(page, /placeholderCount/);
-    assert.match(page, /Vote on Overview|Overview/);
+    assert.match(page, /Vote on Overview|publicChoice\.results\.voteOnOverview|Overview/);
     assert.match(overview, /Add candidate/);
     assert.match(overview, /Select|Recall/);
     assert.match(board, /tally\.percentage/);
@@ -46,9 +46,9 @@ describe("Public Choice Pack 02C — web contracts", () => {
     const page = read(
       "features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
-    assert.match(page, /Download results/);
+    assert.match(page, /publicChoice\.results\.download|publicChoice\.results\.preparing/);
     assert.match(page, /downloadPublicChoiceResultsPdf/);
-    assert.match(page, /Results no longer available/);
+    assert.match(page, /publicChoice\.election\.resultsExpiredTitle/);
   });
 
   it("PUBLIC_CHOICE hides Initiative Support; Candidates widget remains", () => {

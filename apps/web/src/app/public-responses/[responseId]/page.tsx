@@ -6,6 +6,7 @@ import { CivicIntegrationPanel } from "../../../features/capability02-integratio
 import { getPublicOfficialResponse } from "../../../features/official-response/api";
 import { listPublicCivicAccountabilitiesForResponse } from "../../../features/civic-accountability/api";
 import { CivicAccountabilityPublicSection } from "../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
+import { CivicPublicTranslatedSection } from "../../../features/language";
 
 interface PublicOfficialResponsePageProps {
   params: Promise<{
@@ -58,7 +59,6 @@ export default async function PublicOfficialResponsePage({
 
       <ProfileSection title="Official Response">
         <ProfileField label="Response number" value={response.responseNumber} />
-        <ProfileField label="Organization" value={response.organizationName} />
         <ProfileField label="Response type" value={formatType(response.responseType)} />
         <ProfileField label="Received" value={formatDate(response.receivedAt)} />
         <ProfileField label="Published" value={formatDate(response.publishedAt)} />
@@ -67,9 +67,16 @@ export default async function PublicOfficialResponsePage({
           value={response.verificationState.replace(/_/g, " ")}
         />
         <ProfileField label="Publication status" value={response.publicationStatus} />
-        <ProfileField label="Subject" value={response.subject} />
-        <ProfileField label="Summary" value={response.summary} />
-        <ProfileField label="Reference" value={response.responseReference} />
+        <CivicPublicTranslatedSection
+          sourceKind="official_response"
+          sourceRecordId={response.responseId}
+          fallbackFields={{
+            subject: response.subject,
+            summary: response.summary,
+            responseReference: response.responseReference,
+            organizationName: response.organizationName,
+          }}
+        />
       </ProfileSection>
 
       <ProfileSection title="Related Civic Records">

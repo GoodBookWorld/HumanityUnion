@@ -14,10 +14,9 @@
 }
 
 .preference-option__label {
+  min-width: 0;
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .preference-option-grid {
@@ -33,9 +32,5 @@
 @media (max-width: 768px) {
   .preference-option-grid--two-column {
     grid-template-columns: 1fr;
-  }
-
-  .preference-option__label {
-    white-space: normal;
   }
 }

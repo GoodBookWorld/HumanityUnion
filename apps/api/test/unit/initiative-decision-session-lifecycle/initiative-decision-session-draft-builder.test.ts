@@ -115,4 +115,80 @@ describe("generateDecisionSessionDraftContent (Decision Intelligence Builder)", 
       false,
     );
   });
+
+  it("builds unresolvedQuestions from semantic checkIds without reading detail", async () => {
+    const content = await generateDecisionSessionDraftContent(
+      buildSnapshot({
+        petitionReference: null,
+        isPetitionAvailable: false,
+        consistencyChecks: [
+          {
+            checkId: "petition-available",
+            label: "Published Petition",
+            status: "warning",
+            detail: "SHOULD NOT APPEAR IN DRAFT",
+            params: {},
+          },
+          {
+            checkId: "revision-available",
+            label: "Published Revision",
+            status: "ok",
+            detail: "ok detail unused",
+            params: { version: 2 },
+          },
+          {
+            checkId: "proposal-references",
+            label: "Improvement Proposals",
+            status: "warning",
+            detail: "ALSO SHOULD NOT APPEAR",
+            params: { count: 0 },
+          },
+        ],
+      }),
+    );
+
+    assert.equal(content.unresolvedQuestions.includes("SHOULD NOT APPEAR IN DRAFT"), false);
+    assert.equal(content.unresolvedQuestions.includes("ALSO SHOULD NOT APPEAR"), false);
+    assert.ok(
+      content.unresolvedQuestions.includes(
+        "No published Petition yet — Decision Session can use Initiative / Analysis / Proposal context instead.",
+      ),
+    );
+    assert.ok(
+      content.unresolvedQuestions.includes(
+        "No accepted Improvement Proposals are referenced yet.",
+      ),
+    );
+    assert.equal(
+      content.unresolvedQuestions.some((question) => question.includes("Revision v2")),
+      false,
+    );
+  });
+
+  it("preserves unresolvedQuestions ordering: consistency warnings then open comments", async () => {
+    const content = await generateDecisionSessionDraftContent(
+      buildSnapshot({
+        openComments: [
+          {
+            commentId: "c1",
+            authorDisplayName: "Ally",
+            excerpt: "Need more compost bins.",
+            createdAt: "2026-08-03T00:00:00.000Z",
+          },
+        ],
+        consistencyChecks: [
+          {
+            checkId: "analysis-available",
+            label: "Collaborative Analysis",
+            status: "warning",
+            detail: "ignored",
+            params: {},
+          },
+        ],
+      }),
+    );
+
+    assert.equal(content.unresolvedQuestions[0], "No published Collaborative Analysis is available.");
+    assert.match(content.unresolvedQuestions[1] ?? "", /1 open collaboration comment/);
+  });
 });

@@ -119,6 +119,13 @@ export interface PublicPetitionSupportBreakdown {
 export const PETITION_PARTICIPATION_TRANSPARENCY_NOTE =
   "Signing this Petition is a form of civic participation on Humanity Union. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation.";
 
+/**
+ * @deprecated Localization repair — public presentation must use WEB_UI
+ * `initiativeExperience.author.petition.public.participationTransparencyNote`.
+ * Do not render this English constant on non-English public surfaces.
+ */
+export const PETITION_PARTICIPATION_TRANSPARENCY_NOTE_OWNER = "WEB_UI" as const;
+
 export interface PublicPetitionProjection {
   petitionIdentity: PublicPetitionIdentity;
   petitionSummary: PublicPetitionSummary;
@@ -140,7 +147,12 @@ export interface PublicPetitionProjection {
    * viewers (never inferred from a body-supplied id).
    */
   viewerHasSigned: boolean;
-  participationTransparencyNote: string;
+  /**
+   * Deprecated as public copy source — WEB_UI
+   * `author.petition.public.participationTransparencyNote` owns presentation.
+   * Projection may send null; clients must not fall back to English constants.
+   */
+  participationTransparencyNote: string | null;
   petitionOutcome: PublicPetitionOutcomeProjection | null;
   shareReference: PublicShareReference;
   participationEntryGuidance: PublicParticipationEntryGuidance;

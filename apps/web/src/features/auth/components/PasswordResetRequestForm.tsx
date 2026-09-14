@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -9,6 +10,7 @@ import { requestPasswordReset } from "../auth-api";
 import "./auth-form.css";
 
 export function PasswordResetRequestForm() {
+  const t = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +24,10 @@ export function PasswordResetRequestForm() {
 
     try {
       await requestPasswordReset(email);
-      setMessage("If an account exists, a reset email has been sent.");
+      setMessage(t("resetEmailSent"));
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Unable to request password reset.",
+        submitError instanceof Error ? submitError.message : t("unableToRequestReset"),
       );
     } finally {
       setSubmitting(false);
@@ -36,7 +38,7 @@ export function PasswordResetRequestForm() {
     <Card>
       <form className="auth-form" onSubmit={(event) => void handleSubmit(event)}>
         <label className="auth-form__field">
-          <span>Email</span>
+          <span>{t("email")}</span>
           <input
             type="email"
             autoComplete="email"
@@ -49,9 +51,9 @@ export function PasswordResetRequestForm() {
         {error ? <p className="auth-form__error">{error}</p> : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting}>
-            Send reset link
+            {t("sendResetLink")}
           </Button>
-          <Button href="/login">Back to login</Button>
+          <Button href="/login">{t("backToLogin")}</Button>
         </div>
       </form>
     </Card>

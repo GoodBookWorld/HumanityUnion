@@ -17,6 +17,7 @@ import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancest
 import type { InitiativeImplementationCommitmentEligibility } from "./initiative-implementation-commitment-eligibility.js";
 import { assessInitiativeImplementationCommitmentEligibilityForResolved } from "./initiative-implementation-commitment-eligibility.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { assertAcceptedImplementationResponsibility } from "./initiative-implementation-commitment-responsibility.js";
 import {
   createCommitment,
@@ -368,6 +369,12 @@ export function publishInitiativeImplementationCommitment(
     entityId: commitmentId,
     initiativeId: updated.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "implementation_commitment",
+    sourceRecordId: commitmentId,
+    reason: "public_mutation",
   });
 
   return updated;

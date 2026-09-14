@@ -1,18 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionSelectOneAggregates,
   PublicChoiceCandidatePublicProjection,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
-import {
-  publicChoiceElectionVotingStatusLabel,
-  resolvePublicChoiceElectionVotingStatus,
-} from "@hu/types";
+import { resolvePublicChoiceElectionVotingStatus } from "@hu/types";
 
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import { resolvePublicChoiceElectionVotingStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 import {
   createZeroSelectOneAggregates,
@@ -35,13 +34,14 @@ interface PublicChoiceCollectiveDecisionStageProps {
 export function PublicChoiceCollectiveDecisionStage({
   initiativeId,
 }: PublicChoiceCollectiveDecisionStageProps) {
+  const t = useTranslations("initiativeExperience");
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
     null,
   );
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
   const [selectOneAggregates, setSelectOneAggregates] =
     useState<InitiativeDecisionSelectOneAggregates>(() => createZeroSelectOneAggregates([]));
-  const [electionName, setElectionName] = useState("Election");
+  const [electionName, setElectionName] = useState("");
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [downloadBusy, setDownloadBusy] = useState(false);
   const loadGenerationRef = useRef(0);
@@ -57,7 +57,7 @@ export function PublicChoiceCollectiveDecisionStage({
       setElectionName(
         surface.initiative?.metadata.communityAssociation?.trim() ||
           surface.initiative?.title ||
-          "Election",
+          "",
       );
       setCandidates(surface.candidates);
       setDecision(surface.decision);
@@ -90,17 +90,18 @@ export function PublicChoiceCollectiveDecisionStage({
   }
 
   if (loadState === "loading") {
-    return <p className="pie-election-results__status">Loading election results…</p>;
+    return <p className="pie-election-results__status">{t("publicChoice.stage.loading")}</p>;
   }
 
   if (loadState === "error") {
     return (
       <p className="pie-overview-candidates__error" role="alert">
-        Election results could not be loaded.
+        {t("publicChoice.stage.loadFailed")}
       </p>
     );
   }
 
+  const displayElectionName = electionName.trim() || t("sidebar.election.election");
   const votingStatus = resolvePublicChoiceElectionVotingStatus({
     decisionStatus: decision?.status,
     openedAt: decision?.openedAt,
@@ -111,14 +112,18 @@ export function PublicChoiceCollectiveDecisionStage({
   });
   const votingOpen = votingStatus === "OPEN";
   const resultsExpired = votingStatus === "EXPIRED";
+  const electionStatusLabel = resolvePublicChoiceElectionVotingStatusDisplayLabel(
+    votingStatus,
+    t,
+  );
   const resultsLabel = votingOpen
-    ? "CURRENT RESULTS"
+    ? t("author.collectiveDecision.public.resultsCurrent")
     : resultsExpired
-      ? "RESULTS"
+      ? t("author.collectiveDecision.public.results")
       : decision?.status === "closed" ||
           decision?.resultsRetention?.status === "results_available"
-        ? "FINAL RESULTS"
-        : "RESULTS";
+        ? t("author.collectiveDecision.public.resultsFinal")
+        : t("author.collectiveDecision.public.results");
   const downloadAvailable =
     Boolean(decision?.resultsRetention?.downloadAvailable) && !resultsExpired;
   const overviewHref = buildInitiativeExperienceHref(initiativeId);
@@ -126,17 +131,17 @@ export function PublicChoiceCollectiveDecisionStage({
   return (
     <section className="pie-pc-cd-stage" aria-labelledby="pie-pc-cd-title">
       <header className="pie-pc-cd-stage__header">
-        <h2 id="pie-pc-cd-title">Election Results</h2>
-        <p className="pie-pc-cd-stage__subtitle">Collective Decision · {electionName}</p>
+        <h2 id="pie-pc-cd-title">{t("publicChoice.stage.title")}</h2>
+        <p className="pie-pc-cd-stage__subtitle">
+          {t("publicChoice.stage.subtitle", { electionName: displayElectionName })}
+        </p>
         <p className="pie-election-results__status" role="status">
-          Election status: {publicChoiceElectionVotingStatusLabel(votingStatus)}
+          {t("publicChoice.results.electionStatus", { status: electionStatusLabel })}
         </p>
       </header>
 
       {!decision && candidates.length === 0 ? (
-        <p className="pie-election-results__status">
-          Results appear when the election ballot is published.
-        </p>
+        <p className="pie-election-results__status">{t("publicChoice.stage.emptyPending")}</p>
       ) : (
         <PublicChoiceElectionResultsBoard
           initiativeId={initiativeId}
@@ -144,7 +149,7 @@ export function PublicChoiceCollectiveDecisionStage({
           aggregates={selectOneAggregates}
           resultsLabel={resultsLabel}
           votingOpen={votingOpen}
-          electionStatus={publicChoiceElectionVotingStatusLabel(votingStatus)}
+          electionStatus={electionStatusLabel}
           downloadAvailable={downloadAvailable}
           onDownload={() => {
             void handleDownload();
@@ -156,8 +161,9 @@ export function PublicChoiceCollectiveDecisionStage({
 
       {votingOpen ? (
         <p className="pie-election-results__status">
-          Select or recall your candidate on{" "}
-          <a href={`${overviewHref}#overview`}>Overview</a>.
+          {t.rich("author.collectiveDecision.public.selectCandidateOnOverview", {
+            overviewLink: (chunks) => <a href={`${overviewHref}#overview`}>{chunks}</a>,
+          })}
         </p>
       ) : null}
     </section>

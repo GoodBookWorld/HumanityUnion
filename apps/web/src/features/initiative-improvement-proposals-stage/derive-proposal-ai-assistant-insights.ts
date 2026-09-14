@@ -4,6 +4,13 @@ import type {
   InitiativeStructuredProposal,
 } from "@hu/types";
 
+import type {
+  ProposalSidebarAdvisory,
+  ProposalSidebarFieldId,
+  ProposalTreatmentSuggestionCode,
+} from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+import { PROPOSAL_SIDEBAR_FIELD_IDS } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 /**
  * Initiative Lifecycle — Part D, Section 3/4 (Proposal Intelligence / AI
  * Assistant).
@@ -18,67 +25,79 @@ import type {
  * decides Accepted/Rejected/Included/Excluded/Priority (Part 4: those
  * remain Author decisions, enforced entirely server-side by the status
  * validators, not merely hidden here).
+ *
+ * Pack 02G Task 08E.8b: user-visible advisory meaning is encoded as
+ * language-neutral descriptors. Missing fields are canonical IDs.
+ * Treatment suggestions remain stable codes. Civic titles remain data.
  */
 export interface ProposalAiAssistantInsights {
-  readonly sourcesUsedSummary: string;
+  readonly sourcesSummary: ProposalSidebarAdvisory;
   readonly duplicateGroups: readonly InitiativeProposalGroup[];
   readonly ungroupedCandidateGroups: readonly InitiativeProposalGroup[];
-  readonly incompleteProposals: readonly { readonly proposal: InitiativeStructuredProposal; readonly missingFields: readonly string[] }[];
+  readonly incompleteProposals: readonly {
+    readonly proposal: InitiativeStructuredProposal;
+    readonly missingFields: readonly ProposalSidebarFieldId[];
+  }[];
   readonly openProposalQuestionCount: number;
   /** Advisory treatment hints — never applied automatically. */
   readonly suggestedTreatments: readonly {
     readonly proposalId: string;
     readonly title: string;
-    readonly suggestion: "accept" | "partially_accept" | "decline" | "review";
-    readonly rationale: string;
+    readonly suggestion: ProposalTreatmentSuggestionCode;
+    readonly rationale: ProposalSidebarAdvisory;
   }[];
   readonly neverPublishesAutomatically: true;
 }
 
-const REQUIRED_FIELDS: Array<[keyof InitiativeStructuredProposal, string]> = [
-  ["title", "Title"],
-  ["summary", "Summary"],
-  ["description", "Description"],
-  ["reason", "Reason"],
-  ["expectedImprovement", "Expected Improvement"],
-];
-
-function findMissingFields(proposal: InitiativeStructuredProposal): string[] {
-  return REQUIRED_FIELDS.filter(([field]) => {
+function findMissingFields(proposal: InitiativeStructuredProposal): ProposalSidebarFieldId[] {
+  return PROPOSAL_SIDEBAR_FIELD_IDS.filter((field) => {
     const value = proposal[field];
     return typeof value !== "string" || value.trim().length === 0;
-  }).map(([, label]) => label);
+  });
 }
 
 function suggestTreatment(proposal: InitiativeStructuredProposal): {
-  suggestion: "accept" | "partially_accept" | "decline" | "review";
-  rationale: string;
+  suggestion: ProposalTreatmentSuggestionCode;
+  rationale: ProposalSidebarAdvisory;
 } {
   const missing = findMissingFields(proposal);
   if (missing.length > 0) {
     return {
       suggestion: "review",
-      rationale: `Complete missing fields before deciding: ${missing.join(", ")}.`,
+      rationale: {
+        code: "proposal.treatment.rationale.review_incomplete",
+        severity: "warning",
+        civic: { fieldIds: missing },
+      },
     };
   }
 
   if (proposal.expectedImprovement.trim().length > 40 && proposal.reason.trim().length > 20) {
     return {
       suggestion: "accept",
-      rationale: "Clear reason and expected improvement — consider Accept and generate revised Initiative text.",
+      rationale: {
+        code: "proposal.treatment.rationale.accept_clear",
+        severity: "info",
+      },
     };
   }
 
   if (proposal.summary.trim().length > 0 && proposal.reason.trim().length > 0) {
     return {
       suggestion: "partially_accept",
-      rationale: "Useful direction with limited detail — consider Partially accept and edit Initiative text manually.",
+      rationale: {
+        code: "proposal.treatment.rationale.partially_accept_limited",
+        severity: "info",
+      },
     };
   }
 
   return {
     suggestion: "decline",
-    rationale: "Limited actionable detail — consider Decline unless Discussion context supports it.",
+    rationale: {
+      code: "proposal.treatment.rationale.decline_limited",
+      severity: "info",
+    },
   };
 }
 
@@ -100,11 +119,24 @@ export function deriveProposalAiAssistantInsights(
     (proposal) => proposal.status === "draft" || proposal.status === "ready" || proposal.status === "published",
   );
 
+  const sourcesSummary: ProposalSidebarAdvisory =
+    snapshot.totalCandidateCount > 0
+      ? {
+          code: "proposal.sources.summary",
+          severity: "info",
+          params: {
+            candidateCount: snapshot.totalCandidateCount,
+            groupCount: snapshot.groups.length,
+            duplicateGroupCount: snapshot.duplicateGroupCount,
+          },
+        }
+      : {
+          code: "proposal.sources.empty",
+          severity: "info",
+        };
+
   return {
-    sourcesUsedSummary:
-      snapshot.totalCandidateCount > 0
-        ? `${snapshot.totalCandidateCount} proposal-marked comment(s) across ${snapshot.groups.length} group(s), ${snapshot.duplicateGroupCount} likely duplicate.`
-        : "No proposal-marked comments collected yet. You can still confirm the Initiative version with zero proposals.",
+    sourcesSummary,
     duplicateGroups,
     ungroupedCandidateGroups,
     incompleteProposals,

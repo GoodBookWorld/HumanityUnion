@@ -35,9 +35,9 @@ describe("Public Choice Pack 04 — creation + defaults", () => {
     assert.doesNotMatch(form, /Choose one candidate/);
     assert.doesNotMatch(form, /Ballot type/);
     assert.doesNotMatch(form, /Support \/ Oppose/);
-    assert.match(form, /PUBLIC_CHOICE_ELECTION_CREATE_HELPER|Create the election first/);
-    assert.match(form, /Start of Voting/);
-    assert.match(form, /End of Voting/);
+    assert.match(form, /manage\.fields\.electionCreateHelper|PUBLIC_CHOICE_ELECTION_CREATE_HELPER/);
+    assert.match(form, /manage\.fields\.startOfVoting|Start of Voting/);
+    assert.match(form, /manage\.fields\.endOfVoting|End of Voting/);
   });
 
   it("PUBLIC_CHOICE presentation hides Discussion ballot", () => {
@@ -104,9 +104,9 @@ describe("Public Choice Pack 04 — CD results + sidebar + election", () => {
       "features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
     assert.match(page, /pie-election-page__intro|40%|minmax\(0, 2fr\).*minmax\(0, 3fr\)/);
-    assert.match(page, /Start of Voting/);
-    assert.match(page, /End of Voting/);
-    assert.match(page, /Download results/);
+    assert.match(page, /publicChoice\.election\.startOfVoting|Start of Voting/);
+    assert.match(page, /publicChoice\.election\.endOfVoting|End of Voting/);
+    assert.match(page, /publicChoice\.results\.download|Download results/);
     assert.match(page, /CivicShareButton/);
     assert.doesNotMatch(page, /PublicChoiceCandidateSubmitPanel/);
     assert.doesNotMatch(page, /\+ Add candidate/);
@@ -142,9 +142,9 @@ describe("Public Choice Pack 04 — CD results + sidebar + election", () => {
 
   it("Manage offers Close election for PUBLIC_CHOICE", () => {
     const editor = read("features/initiatives/components/InitiativePublishedEditor.tsx");
-    assert.match(editor, /Close election/);
+    assert.match(editor, /manage\.actions\.closeElection|Close election/);
     assert.match(editor, /closePublicChoiceElection/);
-    assert.match(editor, /72 hours/);
+    assert.match(editor, /manage\.election\.confirmBody|72 hours/);
   });
 
   it("recall client uses DELETE vote", () => {

@@ -84,9 +84,12 @@ describe("buildConflictWarnings", () => {
     ]);
 
     assert.equal(warnings.length, 1);
+    assert.equal(warnings[0]!.code, "multiple_changes_same_section");
     assert.equal(warnings[0]!.section, "description");
+    assert.equal(warnings[0]!.params.changeCount, 2);
     assert.deepEqual(warnings[0]!.changeIds.sort(), ["change-1", "change-2"]);
     assert.deepEqual(warnings[0]!.proposalIds.sort(), ["proposal-1", "proposal-2"]);
+    assert.match(warnings[0]!.message, /2 changes target the Description section/);
   });
 
   it("deduplicates proposalIds shared by the conflicting changes", () => {
@@ -110,7 +113,9 @@ describe("buildConsistencyChecks", () => {
 
     const byId = new Map(checks.map((check) => [check.checkId, check]));
     assert.equal(byId.get("accepted-proposals-traced")!.status, "ok");
+    assert.equal(byId.get("accepted-proposals-traced")!.params.count, 0);
     assert.equal(byId.get("changes-have-origin")!.status, "ok");
+    assert.equal(byId.get("changes-have-origin")!.params.count, 0);
   });
 
   it("reports 'warning' on 'accepted-proposals-traced' when a curated proposal has no backing change", () => {
@@ -118,6 +123,7 @@ describe("buildConsistencyChecks", () => {
     const check = checks.find((entry) => entry.checkId === "accepted-proposals-traced")!;
 
     assert.equal(check.status, "warning");
+    assert.equal(check.params.count, 1);
     assert.match(check.detail, /1 proposal\(s\)/);
   });
 
@@ -134,6 +140,7 @@ describe("buildConsistencyChecks", () => {
     const check = checks.find((entry) => entry.checkId === "changes-have-origin")!;
 
     assert.equal(check.status, "warning");
+    assert.equal(check.params.count, 1);
     assert.match(check.detail, /1 change\(s\)/);
   });
 });

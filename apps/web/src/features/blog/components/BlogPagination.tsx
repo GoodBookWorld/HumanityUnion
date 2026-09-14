@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { buildBlogIndexHref } from "../blog-url";
 
@@ -51,6 +54,8 @@ export function BlogPagination({
   q,
   categorySlug,
 }: BlogPaginationProps) {
+  const t = useTranslations("blogPublic.pagination");
+
   if (totalItems === 0) {
     return null;
   }
@@ -61,7 +66,7 @@ export function BlogPagination({
   if (totalPages <= 1) {
     return (
       <p className="blog-pagination__info">
-        Showing {totalItems} publication{totalItems === 1 ? "" : "s"}
+        {t(totalItems === 1 ? "showingCount" : "showingCountPlural", { count: totalItems })}
       </p>
     );
   }
@@ -69,9 +74,9 @@ export function BlogPagination({
   const visiblePages = buildVisiblePagesWithEllipsis(page, totalPages);
 
   return (
-    <nav className="blog-pagination" aria-label="Blog pagination">
+    <nav className="blog-pagination" aria-label={t("ariaLabel")}>
       <p className="blog-pagination__info">
-        Showing {start}–{end} of {totalItems} publications
+        {t("showingRange", { start, end, total: totalItems })}
       </p>
       <div className="blog-pagination__controls">
         {page > 1 ? (
@@ -79,13 +84,13 @@ export function BlogPagination({
             href={buildBlogIndexHref({ q, categorySlug, page: page - 1 })}
             className="hu-button hu-button--secondary hu-button--sm"
             rel="prev"
-            aria-label="Previous page"
+            aria-label={t("previousAria")}
           >
-            Previous
+            {t("previous")}
           </Link>
         ) : (
           <span className="hu-button hu-button--secondary hu-button--sm" aria-disabled="true">
-            Previous
+            {t("previous")}
           </span>
         )}
         {visiblePages.map((entry, index) =>
@@ -106,7 +111,7 @@ export function BlogPagination({
                   ? "blog-pagination__page blog-pagination__page--current"
                   : "blog-pagination__page"
               }
-              aria-label={`Page ${entry}`}
+              aria-label={t("pageAria", { page: entry })}
               aria-current={entry === page ? "page" : undefined}
             >
               {entry}
@@ -118,13 +123,13 @@ export function BlogPagination({
             href={buildBlogIndexHref({ q, categorySlug, page: page + 1 })}
             className="hu-button hu-button--secondary hu-button--sm"
             rel="next"
-            aria-label="Next page"
+            aria-label={t("nextAria")}
           >
-            Next ≫
+            {t("next")}
           </Link>
         ) : (
           <span className="hu-button hu-button--secondary hu-button--sm" aria-disabled="true">
-            Next ≫
+            {t("next")}
           </span>
         )}
       </div>

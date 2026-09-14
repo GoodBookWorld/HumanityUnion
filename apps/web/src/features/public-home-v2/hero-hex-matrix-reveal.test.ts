@@ -97,8 +97,8 @@ describe("Home Hero quote honeycomb communication visual", () => {
   it("5 — hero-unity-quote remains real DOM text", () => {
     const quote = readFeature("components/HumanityTypewriterQuote.tsx");
     assert.match(quote, /hero-unity-quote__sr-only/);
-    assert.match(quote, /HUMANITY_UNITY_QUOTE/);
-    assert.match(quote, /HUMANITY_UNITY_QUOTE_LINES\.map/);
+    assert.match(quote, /useLocalizedBrand|accessibleHeroUnityQuote/);
+    assert.match(quote, /visualHeroUnityQuoteLines|lines\.map/);
     assert.equal(
       HUMANITY_UNITY_QUOTE,
       "Over time, love and responsibility forge humanity",

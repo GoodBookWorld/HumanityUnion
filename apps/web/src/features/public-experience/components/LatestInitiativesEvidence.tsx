@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { LatestInitiativesPublicProjection } from "@hu/types";
 
 import { LatestInitiativeCard } from "./LatestInitiativeCard";
@@ -11,12 +15,14 @@ export function LatestInitiativesEvidence({
   projection,
   emptyMessage,
 }: LatestInitiativesEvidenceProps) {
+  const t = useTranslations("publicGeo.shared");
+
   return (
     <div className="latest-global-initiatives">
       <p className="latest-global-initiatives__scope">
-        Scope: {projection.scopeLabel}
+        {t("scopePrefix", { scope: projection.scopeLabel })}
         {projection.source === "bootstrap" ? (
-          <span className="latest-global-initiatives__source"> · Bootstrap demonstration data</span>
+          <span className="latest-global-initiatives__source"> · {t("bootstrapSource")}</span>
         ) : null}
       </p>
 

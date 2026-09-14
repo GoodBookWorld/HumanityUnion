@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { CivicBreadcrumbItem, CivicPipelineStatus, RelatedRecord } from "@hu/types";
 
+import { buildCiRailPresentation } from "../../language/adapters/ci-rail-presentation";
+
 import "./capability02-integration.css";
 
 export function CivicBreadcrumb({ items }: { items: CivicBreadcrumbItem[] }) {
@@ -55,14 +57,21 @@ export function RelatedCivicRecordsPanel({ records }: { records: RelatedRecord[]
     <div className="capability02-integration__panel">
       <h3 className="capability02-integration__heading">Related Civic Records</h3>
       <ul className="capability02-integration__list">
-        {records.map((record) => (
-          <li key={`${record.entityType}-${record.entityId}`}>
-            <Link href={record.publicUrl}>{record.title}</Link>
-            <p className="capability02-integration__meta">
-              {record.relationshipType.replace(/_/g, " ")} · {record.summary}
-            </p>
-          </li>
-        ))}
+        {records.map((record) => {
+          const presentation = buildCiRailPresentation({
+            recordId: record.entityId,
+            title: record.title,
+            summary: record.summary,
+          });
+          return (
+            <li key={`${record.entityType}-${record.entityId}`}>
+              <Link href={record.publicUrl}>{presentation.title}</Link>
+              <p className="capability02-integration__meta">
+                {record.relationshipType.replace(/_/g, " ")} · {presentation.summary}
+              </p>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -91,11 +100,18 @@ export function CivicContextPanel({
         <div key={section.id} className="capability02-integration__section">
           <p className="capability02-integration__section-title">{section.title}</p>
           <ul className="capability02-integration__list">
-            {section.records.map((record) => (
-              <li key={`${section.id}-${record.entityId}`}>
-                <Link href={record.publicUrl}>{record.title}</Link>
-              </li>
-            ))}
+            {section.records.map((record) => {
+              const presentation = buildCiRailPresentation({
+                recordId: record.entityId,
+                title: record.title,
+                summary: record.summary,
+              });
+              return (
+                <li key={`${section.id}-${record.entityId}`}>
+                  <Link href={record.publicUrl}>{presentation.title}</Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}

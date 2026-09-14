@@ -15,8 +15,21 @@ export {
   getOutboxDispatchStats,
   markOutboxRecordFailed,
   markOutboxRecordPublished,
+  requeueFailedOutboxRecordById,
   setForceEnqueueFailureForTests,
 } from "./outbox.repository.js";
+export {
+  assertOutboxRecordEligibleForFailedRetry,
+  assertSingleOutboxId,
+  OutboxRecoveryNotFailedError,
+  OutboxRecoveryNotFoundError,
+  OutboxRecoveryValidationError,
+} from "./outbox-recovery.errors.js";
+export {
+  formatRetryFailedOutboxSummary,
+  retryFailedOutboxRecordById,
+  type RetryFailedOutboxRecordResult,
+} from "./outbox-recovery.service.js";
 export {
   claimEventForProcessing,
   deleteProcessedEventsByConsumerIdPrefix,

@@ -25,6 +25,7 @@ import {
 } from "../initiatives/initiative-projection.store.js";
 import { validateInitiativeForPublication } from "../initiatives/initiative.validators.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { buildInitiativeRevisionIntelligenceSnapshot } from "./initiative-revision-intelligence.service.js";
 import { generateRevisionChanges, toRevisionChange } from "./initiative-revision-draft-builder.js";
 import {
@@ -567,6 +568,17 @@ export function publishInitiativeRevision(
 
   deleteRevisionDraft(initiativeId);
   syncProjectedInitiativeCard(updatedInitiative, previousCommunitySlug);
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "initiative_revision",
+    sourceRecordId: createdRevision.revisionId,
+    reason: "public_mutation",
+  });
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "initiative",
+    sourceRecordId: initiativeId,
+    reason: "public_update",
+  });
 
   return {
     revision: createdRevision,

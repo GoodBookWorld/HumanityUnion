@@ -1,0 +1,173 @@
+/**
+ * Pack 08I.8 / 08I.13 — shared Initiative detail presentation (title + description).
+ * Used by PIE hero and Overview so neither invents a private translation path.
+ *
+ * Pack 08I.13 — warm GET is not skipped for translationPreference "none".
+ */
+
+import type { LanguageCode, ResolvedTranslatedDisplay } from "@hu/types";
+
+import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
+import { isPartialTranslatedFieldBag } from "../language/resolve-localized-presentation";
+import {
+  generateContentTranslation,
+  resolveTranslatedContent,
+} from "../language/translation-api";
+import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
+
+export interface InitiativeDetailPresentationFields {
+  readonly title: string;
+  readonly description: string;
+}
+
+export interface ResolvedInitiativeDetailPresentation extends InitiativeDetailPresentationFields {
+  readonly presentationMode: "translated" | "original";
+  readonly isStale: boolean;
+  readonly activeLanguage: LanguageCode;
+  readonly originalLanguage: LanguageCode;
+  readonly originalTitle: string;
+  readonly originalDescription: string;
+  readonly isMachineTranslated: boolean;
+  readonly canViewOriginal: boolean;
+  readonly canViewTranslation: boolean;
+}
+
+export interface InitiativeDetailPresentationDeps {
+  readonly resolveTranslatedContent: typeof resolveTranslatedContent;
+  readonly generateContentTranslation: typeof generateContentTranslation;
+}
+
+const defaultDeps: InitiativeDetailPresentationDeps = {
+  resolveTranslatedContent,
+  generateContentTranslation,
+};
+
+function pickOriginalField(
+  resolved: ResolvedTranslatedDisplay<Record<string, string>>,
+  key: string,
+  fallback: string,
+): string {
+  const value = resolved.originalContent?.[key];
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  return fallback;
+}
+
+/**
+ * Resolve Initiative title + description for preferred reading language.
+ * `deps` injectable for fixtures proving EXISTING translations reach presentation.
+ */
+export async function resolveInitiativeDetailPresentation(
+  input: {
+    readonly initiativeId: string;
+    readonly canonical: InitiativeDetailPresentationFields;
+    readonly readingContext: Pick<
+      PublicContentReadingContext,
+      "ready" | "readingLanguage" | "translationPreference"
+    >;
+  },
+  deps: InitiativeDetailPresentationDeps = defaultDeps,
+): Promise<ResolvedInitiativeDetailPresentation> {
+  const { canonical, readingContext } = input;
+
+  const originalFallback: ResolvedInitiativeDetailPresentation = {
+    title: canonical.title,
+    description: canonical.description,
+    presentationMode: "original",
+    isStale: false,
+    activeLanguage: readingContext.readingLanguage as LanguageCode,
+    originalLanguage: "en",
+    originalTitle: canonical.title,
+    originalDescription: canonical.description,
+    isMachineTranslated: false,
+    canViewOriginal: false,
+    canViewTranslation: false,
+  };
+
+  if (!readingContext.ready) {
+    return originalFallback;
+  }
+
+  const resolved = await resolvePublicContentTranslationDisplay({
+    sourceKind: "initiative",
+    sourceRecordId: input.initiativeId,
+    readingContext,
+    deps,
+  });
+
+  if (!resolved) {
+    return originalFallback;
+  }
+
+  const originalTitle = pickOriginalField(resolved, "title", canonical.title);
+  const originalDescription = pickOriginalField(
+    resolved,
+    "description",
+    canonical.description,
+  );
+
+  if (resolved.presentationMode === "original") {
+    return {
+      ...originalFallback,
+      isStale: Boolean(resolved.isStale),
+      activeLanguage: resolved.activeLanguage,
+      originalLanguage: resolved.originalLanguage,
+      originalTitle,
+      originalDescription,
+      canViewOriginal: resolved.canViewOriginal,
+      canViewTranslation: resolved.canViewTranslation,
+    };
+  }
+
+  const translatedTitle =
+    typeof resolved.content.title === "string" ? resolved.content.title.trim() : "";
+  const translatedDescription =
+    typeof resolved.content.description === "string"
+      ? resolved.content.description.trim()
+      : "";
+  const translatedBag = {
+    title: translatedTitle,
+    description: translatedDescription,
+  };
+
+  // Whole-representation: usable only when BOTH required fields are non-empty.
+  // Partial bags (isPartialTranslatedFieldBag) and fully empty bags both fall back.
+  const completeTranslatedBag =
+    translatedTitle.length > 0 && translatedDescription.length > 0;
+  if (
+    !completeTranslatedBag ||
+    isPartialTranslatedFieldBag({
+      canonicalFields: {
+        title: canonical.title,
+        description: canonical.description,
+      },
+      translatedFields: translatedBag,
+    })
+  ) {
+    return {
+      ...originalFallback,
+      isStale: Boolean(resolved.isStale),
+      activeLanguage: resolved.activeLanguage,
+      originalLanguage: resolved.originalLanguage,
+      originalTitle,
+      originalDescription,
+      canViewOriginal: resolved.canViewOriginal,
+      canViewTranslation: resolved.canViewTranslation,
+    };
+  }
+
+  return {
+    title: translatedTitle,
+    description: translatedDescription,
+    presentationMode: "translated",
+    isStale: Boolean(resolved.isStale),
+    activeLanguage: resolved.activeLanguage,
+    originalLanguage: resolved.originalLanguage,
+    originalTitle,
+    originalDescription,
+    isMachineTranslated: resolved.isMachineTranslated,
+    canViewOriginal: resolved.canViewOriginal,
+    canViewTranslation: resolved.canViewTranslation,
+  };
+}

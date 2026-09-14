@@ -1,11 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
+import { useTranslations } from "next-intl";
+
+import { OTHER_COMMUNITY_SLUG } from "@hu/geography";
+
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
-import {
-  formatCityListHelper,
-  GEOGRAPHY_EMPTY_COPY,
-  isCanonicalOtherRegion,
-} from "./geography-cascade-contract";
+import { isCanonicalOtherRegion } from "./geography-cascade-contract";
 import { useGeographyCommunityOptions } from "./useGeographyCommunityOptions";
 
 export interface CitySelectProps {
@@ -36,51 +37,69 @@ export function CitySelect({
   includeOther = true,
   disabled = false,
   required = false,
-  placeholder = GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder,
+  placeholder,
   helperText,
-  label = "City / Community",
+  label,
   error,
 }: CitySelectProps) {
-  const { options, loading, hasStructuredData, structuredCount, deliveryFailed } =
+  const t = useTranslations("initiativeExperience");
+  const resolvedLabel = label ?? t("manage.fields.cityCommunity");
+  const resolvedPlaceholder = placeholder ?? t("manage.geography.citySearchPlaceholder");
+  const otherLabel = t("manage.geography.otherNotListed");
+
+  const { options: rawOptions, loading, hasStructuredData, structuredCount, deliveryFailed } =
     useGeographyCommunityOptions(countryCode, regionCode, includeOther);
+
+  const options = useMemo(
+    () =>
+      rawOptions.map((option) =>
+        option.slug === OTHER_COMMUNITY_SLUG ? { ...option, label: otherLabel } : option,
+      ),
+    [otherLabel, rawOptions],
+  );
 
   const regionReady = Boolean(countryCode && regionCode && !isCanonicalOtherRegion(regionCode));
 
   const resolvedHelper =
     helperText ??
     (!countryCode || !regionCode
-      ? GEOGRAPHY_EMPTY_COPY.selectRegionFirst
+      ? t("manage.geography.selectRegionFirst")
       : isCanonicalOtherRegion(regionCode)
-        ? GEOGRAPHY_EMPTY_COPY.selectRegionFirst
+        ? t("manage.geography.selectRegionFirst")
         : loading
-          ? GEOGRAPHY_EMPTY_COPY.loadingCities
+          ? t("manage.geography.loadingCities")
           : deliveryFailed
             ? undefined
             : !hasStructuredData
               ? includeOther
-                ? GEOGRAPHY_EMPTY_COPY.noCitiesUseOther
-                : GEOGRAPHY_EMPTY_COPY.noCities
-              : formatCityListHelper(structuredCount));
+                ? t("manage.geography.noCitiesUseOther")
+                : t("manage.geography.noCities")
+              : t("manage.geography.citiesAvailable", { count: structuredCount }));
 
-  const resolvedError = error ?? (deliveryFailed ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure : undefined);
+  const resolvedError =
+    error ?? (deliveryFailed ? t("manage.geography.cityDeliveryFailure") : undefined);
 
   return (
     <GeographySearchSelect
       key={`${countryCode}::${regionCode}`}
       id={id}
-      label={label}
+      label={resolvedLabel}
       value={value}
       options={options}
       onChange={onChange}
       disabled={disabled || !regionReady || deliveryFailed}
       required={required}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       helperText={resolvedHelper}
       error={resolvedError}
       loading={loading}
       emptyMessage={undefined}
-      noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
-      emptyOptionLabel={includeOther ? "Select…" : "All communities"}
+      noMatchMessage={t("manage.geography.noCityMatches")}
+      emptyOptionLabel={
+        includeOther ? t("manage.geography.selectEllipsis") : t("manage.geography.allCommunities")
+      }
+      loadingPlaceholder={t("manage.geography.loading")}
+      filterAriaLabel={t("manage.geography.filterAria", { label: resolvedLabel })}
     />
   );
 }

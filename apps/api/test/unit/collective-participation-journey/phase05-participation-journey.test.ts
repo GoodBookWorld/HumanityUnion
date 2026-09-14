@@ -47,11 +47,14 @@ describe("Lifecycle Finalization Phase 05 — Collective Participation Journey",
           actionType: "petition_signature",
           stageId: "petition",
           label: "Sign the Petition",
+          labelCode: "sign_petition",
         }),
       ],
       activeAlly: false,
     });
     assert.equal(next?.actionType, "petition_signature");
+    assert.equal(next?.labelCode, "sign_petition");
+    assert.equal(next?.reasonCode, "petition_open_unsigned");
   });
 
   it("STANDARD: already signed Petition does not re-prompt Sign", () => {
@@ -97,6 +100,8 @@ describe("Lifecycle Finalization Phase 05 — Collective Participation Journey",
           stageId: "collective_decision",
           occurredAt: "2026-08-01T00:00:00.000Z",
           statusLabel: "Voted (support)",
+          statusCode: "voted",
+          statusParams: { choice: "support" },
           deepLink: "/initiatives/public/initiative-1#collective-decision",
           source: "participant_action_ledger",
           updateable: true,
@@ -107,11 +112,14 @@ describe("Lifecycle Finalization Phase 05 — Collective Participation Journey",
           actionType: "decision_vote",
           stageId: "collective_decision",
           label: "Review or update your vote",
+          labelCode: "review_or_update_vote",
         }),
       ],
       activeAlly: false,
     });
     assert.equal(next?.actionType, "decision_vote");
+    assert.equal(next?.labelCode, "review_or_update_vote");
+    assert.equal(next?.reasonCode, "vote_open_may_update");
     assert.match(next?.reason ?? "", /update|review/i);
   });
 
@@ -182,5 +190,25 @@ describe("Lifecycle Finalization Phase 05 — Collective Participation Journey",
       activeAlly: false,
     });
     assert.equal(next, null);
+  });
+
+  it("emits reasonCode for discussion soft fallback", () => {
+    const next = resolveNextMeaningfulParticipationAction({
+      lifecycleProfile: "STANDARD",
+      currentStageId: "archive",
+      pastActions: [],
+      availableActions: [
+        available({
+          actionType: "discussion_comment",
+          stageId: "discussion",
+          label: "Join the Discussion",
+          labelCode: "join_discussion",
+        }),
+      ],
+      activeAlly: false,
+    });
+    assert.equal(next?.actionType, "discussion_comment");
+    assert.equal(next?.labelCode, "join_discussion");
+    assert.equal(next?.reasonCode, "still_contribute_discussion");
   });
 });

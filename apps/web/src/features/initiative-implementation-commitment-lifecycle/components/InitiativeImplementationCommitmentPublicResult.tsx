@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicInitiativeImplementationCommitmentListItem } from "@hu/types";
 
@@ -9,6 +10,8 @@ import { fetchAuthSession } from "../../auth/auth-api";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { listPublicInitiativeImplementationCommitments } from "../../initiative-implementation-commitment/api";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
+import { CivicPublicTranslatedSection } from "../../language";
+import { resolveCommitmentViewStateDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import {
   initiateImplementationCommitmentTransfer,
   reproposeInitiativeImplementationCommitment,
@@ -57,27 +60,8 @@ function resolveCommitmentViewState(
   }
 }
 
-function formatStatusLabel(state: CommitmentViewState): string {
-  switch (state) {
-    case "available":
-      return "Available";
-    case "awaiting_you":
-      return "Awaiting your response";
-    case "awaiting_response":
-      return "Awaiting response";
-    case "accepted":
-      return "Accepted";
-    case "transfer_pending":
-      return "Transfer pending";
-    case "completed":
-      return "Completed";
-    case "withdrawn":
-      return "Withdrawn";
-    case "declined":
-      return "Declined";
-    case "legacy":
-      return "";
-  }
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 type AuthorActionMode = "repropose" | "transfer" | null;
@@ -98,6 +82,7 @@ export function InitiativeImplementationCommitmentPublicResult({
   isPreview = false,
   viewerIsSteward = false,
 }: InitiativeImplementationCommitmentPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const [viewerParticipantId, setViewerParticipantId] = useState<string | null>(null);
   const [commitments, setCommitments] = useState<
@@ -131,7 +116,7 @@ export function InitiativeImplementationCommitmentPublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Implementation Commitments could not be loaded.");
+          setError(t("author.commitment.public.loadFailed"));
         }
       }
     })();
@@ -139,7 +124,7 @@ export function InitiativeImplementationCommitmentPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [loadCommitments]);
+  }, [loadCommitments, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,10 +175,14 @@ export function InitiativeImplementationCommitmentPublicResult({
     try {
       await takeInitiativeImplementationCommitment(confirmCommitmentId);
       await loadCommitments();
-      setSuccessMessage("Commitment accepted. You are now responsible for this action.");
+      setSuccessMessage(t("author.commitment.messages.acceptedSuccess"));
       setConfirmCommitmentId(null);
     } catch (err) {
-      setTakeError(err instanceof Error ? err.message : "Take Commitment failed.");
+      setTakeError(
+        t("author.commitment.messages.takeFailed", {
+          detail: detailFromError(err, t("author.commitment.messages.unknownError")),
+        }),
+      );
     } finally {
       setIsTaking(false);
       setPendingCommitmentId(null);
@@ -208,7 +197,7 @@ export function InitiativeImplementationCommitmentPublicResult({
     const trimmed = nextParticipantId.trim();
 
     if (!trimmed) {
-      setAuthorError("Enter a Participant ID.");
+      setAuthorError(t("author.commitment.messages.enterParticipantId"));
       return;
     }
 
@@ -218,12 +207,10 @@ export function InitiativeImplementationCommitmentPublicResult({
     try {
       if (authorActionMode === "repropose") {
         await reproposeInitiativeImplementationCommitment(authorActionCommitmentId, trimmed);
-        setSuccessMessage("Proposed another Participant. They will receive an Accept/Decline notification.");
+        setSuccessMessage(t("author.commitment.messages.reproposeSuccess"));
       } else {
         await initiateImplementationCommitmentTransfer(authorActionCommitmentId, trimmed);
-        setSuccessMessage(
-          "Transfer proposed. The current responsible Participant stays responsible until the replacement Accepts.",
-        );
+        setSuccessMessage(t("author.commitment.messages.transferSuccess"));
       }
 
       await loadCommitments();
@@ -231,7 +218,11 @@ export function InitiativeImplementationCommitmentPublicResult({
       setAuthorActionCommitmentId(null);
       setNextParticipantId("");
     } catch (err) {
-      setAuthorError(err instanceof Error ? err.message : "Request failed.");
+      setAuthorError(
+        t("author.commitment.messages.requestFailed", {
+          detail: detailFromError(err, t("author.commitment.messages.unknownError")),
+        }),
+      );
     } finally {
       setIsAuthorSubmitting(false);
     }
@@ -242,11 +233,11 @@ export function InitiativeImplementationCommitmentPublicResult({
   }
 
   if (!commitments) {
-    return <p className="iic-source-panel__empty">Loading published Implementation Commitments…</p>;
+    return <p className="iic-source-panel__empty">{t("author.commitment.public.loading")}</p>;
   }
 
   if (commitments.length === 0) {
-    return <p className="iic-source-panel__empty">No Implementation Commitments published yet.</p>;
+    return <p className="iic-source-panel__empty">{t("author.commitment.public.empty")}</p>;
   }
 
   const confirmCommitment = commitments.find(
@@ -258,13 +249,15 @@ export function InitiativeImplementationCommitmentPublicResult({
   const showAuthorControls = !isPreview && viewerIsSteward && authStatus === "authenticated";
 
   return (
-    <article className="iic-public" aria-label="Published Implementation Commitments">
+    <article className="iic-public" aria-label={t("author.commitment.public.aria")}>
       {isPreview ? (
-        <p className="iic-public__meta">Author Preview of published Implementation Commitments</p>
+        <p className="iic-public__meta">{t("author.commitment.public.previewMeta")}</p>
       ) : null}
       <section className="iic-public__section">
-        <h3>Implementation Commitments</h3>
-        <p className="iic-public__meta">{commitments.length} Commitment(s) published</p>
+        <h3>{t("author.commitment.public.heading")}</h3>
+        <p className="iic-public__meta">
+          {t("author.commitment.public.publishedCount", { count: commitments.length })}
+        </p>
       </section>
 
       {successMessage ? (
@@ -276,7 +269,8 @@ export function InitiativeImplementationCommitmentPublicResult({
 
       {commitments.map((commitment) => {
         const viewState = resolveCommitmentViewState(commitment, viewerParticipantId);
-        const statusLabel = formatStatusLabel(viewState);
+        const statusLabel = resolveCommitmentViewStateDisplayLabel(viewState, t);
+        const commitmentTitle = commitment.approvedAction ?? commitment.title;
         const showTake =
           !isPreview &&
           authStatus === "authenticated" &&
@@ -293,15 +287,38 @@ export function InitiativeImplementationCommitmentPublicResult({
 
         return (
           <div className="iic-public__commitment" key={commitment.commitmentId}>
-            <h3>{commitment.approvedAction ?? commitment.title}</h3>
-            <p>{commitment.summary}</p>
+            <CivicPublicTranslatedSection
+              sourceKind="implementation_commitment"
+              sourceRecordId={commitment.commitmentId}
+              fallbackFields={{
+                title: commitment.title,
+                summary: commitment.summary ?? "",
+                approvedAction: commitment.approvedAction ?? "",
+                priority: commitment.priority ?? "",
+                organization: "",
+                commitmentScope: "",
+                suggestedResponsibleRole: "",
+                requiredResources: "",
+                relatedRisks: "",
+                references: "",
+              }}
+              fieldOrder={["title", "summary", "approvedAction", "priority"]}
+            />
             {showResponsible && commitment.authorDisplayName !== "Unassigned" ? (
               <p className="iic-public__meta">
-                Responsible: {commitment.authorDisplayName}
-                {commitment.priority ? ` · Priority ${commitment.priority}` : ""}
+                {commitment.priority
+                  ? t("author.commitment.public.responsibleWithPriority", {
+                      name: commitment.authorDisplayName,
+                      priority: commitment.priority,
+                    })
+                  : t("author.commitment.public.responsible", {
+                      name: commitment.authorDisplayName,
+                    })}
               </p>
             ) : commitment.priority ? (
-              <p className="iic-public__meta">Priority {commitment.priority}</p>
+              <p className="iic-public__meta">
+                {t("author.commitment.public.priority", { priority: commitment.priority })}
+              </p>
             ) : null}
             {statusLabel ? (
               <span className="iic-public__commitment-status">{statusLabel}</span>
@@ -310,14 +327,14 @@ export function InitiativeImplementationCommitmentPublicResult({
               <div className="iic-public__take-action">
                 <WorkspaceButton
                   variant="primary"
-                  aria-label={`Take Commitment for ${commitment.approvedAction ?? commitment.title}`}
+                  aria-label={t("author.commitment.public.takeAria", { title: commitmentTitle })}
                   disabled={pendingCommitmentId === commitment.commitmentId}
                   onClick={() => {
                     setTakeError(null);
                     setConfirmCommitmentId(commitment.commitmentId);
                   }}
                 >
-                  Take Commitment
+                  {t("author.commitment.public.takeCommitment")}
                 </WorkspaceButton>
               </div>
             ) : null}
@@ -325,7 +342,7 @@ export function InitiativeImplementationCommitmentPublicResult({
               <div className="iic-public__take-action">
                 <WorkspaceButton
                   variant="secondary"
-                  aria-label={`Propose another Participant for ${commitment.approvedAction ?? commitment.title}`}
+                  aria-label={t("author.commitment.public.proposeAnotherAria", { title: commitmentTitle })}
                   onClick={() => {
                     setAuthorError(null);
                     setNextParticipantId("");
@@ -333,7 +350,7 @@ export function InitiativeImplementationCommitmentPublicResult({
                     setAuthorActionCommitmentId(commitment.commitmentId);
                   }}
                 >
-                  Propose Another Participant
+                  {t("author.commitment.public.proposeAnother")}
                 </WorkspaceButton>
               </div>
             ) : null}
@@ -341,7 +358,7 @@ export function InitiativeImplementationCommitmentPublicResult({
               <div className="iic-public__take-action">
                 <WorkspaceButton
                   variant="secondary"
-                  aria-label={`Transfer responsibility for ${commitment.approvedAction ?? commitment.title}`}
+                  aria-label={t("author.commitment.public.transferAria", { title: commitmentTitle })}
                   onClick={() => {
                     setAuthorError(null);
                     setNextParticipantId("");
@@ -349,7 +366,7 @@ export function InitiativeImplementationCommitmentPublicResult({
                     setAuthorActionCommitmentId(commitment.commitmentId);
                   }}
                 >
-                  Transfer Responsibility
+                  {t("author.commitment.public.transfer")}
                 </WorkspaceButton>
               </div>
             ) : null}
@@ -359,21 +376,21 @@ export function InitiativeImplementationCommitmentPublicResult({
 
       <ConfirmDialog
         isOpen={confirmCommitmentId !== null}
-        title="Take responsibility?"
+        title={t("author.commitment.public.takeConfirmTitle")}
         description={
           confirmCommitment ? (
             <>
-              <p>Take responsibility for this implementation commitment?</p>
+              <p>{t("author.commitment.public.takeConfirmDescription")}</p>
               <p>
                 <strong>{confirmCommitment.approvedAction ?? confirmCommitment.title}</strong>
               </p>
             </>
           ) : (
-            "Take responsibility for this implementation commitment?"
+            t("author.commitment.public.takeConfirmDescription")
           )
         }
-        confirmLabel="Take Commitment"
-        cancelLabel="Cancel"
+        confirmLabel={t("author.commitment.public.takeCommitment")}
+        cancelLabel={t("author.commitment.public.cancel")}
         destructive={false}
         isConfirming={isTaking}
         onCancel={() => {
@@ -388,8 +405,8 @@ export function InitiativeImplementationCommitmentPublicResult({
         isOpen={authorActionMode !== null}
         title={
           authorActionMode === "transfer"
-            ? "Transfer responsibility?"
-            : "Propose another Participant?"
+            ? t("author.commitment.public.transferConfirmTitle")
+            : t("author.commitment.public.reproposeConfirmTitle")
         }
         description={
           <>
@@ -402,11 +419,11 @@ export function InitiativeImplementationCommitmentPublicResult({
             ) : null}
             <p>
               {authorActionMode === "transfer"
-                ? "This reassigns responsibility. The current responsible Participant stays responsible until the replacement Accepts."
-                : "The previous Decline remains in history. The new Participant receives a normal Accept/Decline proposal."}
+                ? t("author.commitment.public.transferConfirmBody")
+                : t("author.commitment.public.reproposeConfirmBody")}
             </p>
             <label className="iic-public__participant-field">
-              Participant ID
+              {t("author.commitment.public.participantId")}
               <input
                 type="text"
                 value={nextParticipantId}
@@ -418,8 +435,12 @@ export function InitiativeImplementationCommitmentPublicResult({
             {authorError ? <p className="iic-public__error">{authorError}</p> : null}
           </>
         }
-        confirmLabel={authorActionMode === "transfer" ? "Propose Transfer" : "Propose"}
-        cancelLabel="Cancel"
+        confirmLabel={
+          authorActionMode === "transfer"
+            ? t("author.commitment.public.proposeTransfer")
+            : t("author.commitment.public.propose")
+        }
+        cancelLabel={t("author.commitment.public.cancel")}
         destructive={false}
         isConfirming={isAuthorSubmitting}
         onCancel={closeAuthorAction}

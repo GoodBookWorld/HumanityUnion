@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 
 import type {
   BlogCategory,
@@ -30,6 +33,9 @@ import { BlogSubscriptionForm } from "./BlogSubscriptionForm";
 import "../blog.css";
 
 export function BlogIndexPageContent() {
+  const t = useTranslations("blogPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const searchParams = useSearchParams();
 
   const q = searchParams.get("q") ?? "";
@@ -118,18 +124,14 @@ export function BlogIndexPageContent() {
         setBlogIndexViews(0);
         setLoading(false);
         setError(
-          isApiUnavailableError(fetchError)
-            ? "The Blog is temporarily unavailable. Please try again shortly."
-            : fetchError instanceof Error
-              ? fetchError.message
-              : "Unable to load Blog publications.",
+          isApiUnavailableError(fetchError) ? t("unavailable") : t("loadError"),
         );
       });
 
     return () => {
       controller.abort();
     };
-  }, [q, categoryId, page, categories.length]);
+  }, [q, categoryId, page, categories.length, t]);
 
   const filtersActive = Boolean(q.trim()) || (categorySlug !== "all" && Boolean(categorySlug));
 
@@ -137,10 +139,8 @@ export function BlogIndexPageContent() {
     <main className="blog-page hu-page-container blog-page--pack15c">
       <header className="blog-page__header">
         <div className="blog-page__header-copy">
-          <h1 className="hu-heading-1">Blog</h1>
-          <p className="hu-body blog-page__subtitle">
-            Ideas, reflections and perspectives from Humanity Union authors.
-          </p>
+          <h1 className="hu-heading-1">{t("pageTitle")}</h1>
+          <p className="hu-body blog-page__subtitle">{t("pageSubtitle", siteName)}</p>
         </div>
         <BlogSubscriptionForm />
       </header>
@@ -161,7 +161,7 @@ export function BlogIndexPageContent() {
 
         <section className="blog-layout__center" aria-labelledby="blog-feed-heading" tabIndex={0}>
           <h2 id="blog-feed-heading" className="hu-heading-2">
-            Publications
+            {t("publicationsHeading")}
           </h2>
 
           {error ? (
@@ -170,16 +170,14 @@ export function BlogIndexPageContent() {
             </p>
           ) : null}
 
-          {loading ? <p className="blog-page__status">Loading publications…</p> : null}
+          {loading ? <p className="blog-page__status">{t("loadingPublications")}</p> : null}
 
           {!loading && !error && items.length === 0 ? (
             <div className="blog-empty">
-              <p className="hu-body">
-                {filtersActive ? "No publications match this search." : "No publications found."}
-              </p>
+              <p className="hu-body">{filtersActive ? t("emptyFiltered") : t("empty")}</p>
               {filtersActive ? (
                 <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-                  Clear filters
+                  {t("clearFilters")}
                 </Link>
               ) : null}
             </div>

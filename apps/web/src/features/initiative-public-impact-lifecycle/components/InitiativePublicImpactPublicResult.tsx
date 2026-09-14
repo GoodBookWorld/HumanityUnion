@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativePublicImpactReport } from "@hu/types";
 
@@ -24,6 +25,7 @@ export function InitiativePublicImpactPublicResult({
   initiativeId,
   isPreview = false,
 }: InitiativePublicImpactPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [report, setReport] = useState<InitiativePublicImpactReport | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +40,7 @@ export function InitiativePublicImpactPublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Public Impact Report could not be loaded.");
+          setError(t("author.publicImpact.public.loadFailed"));
         }
       }
     })();
@@ -46,18 +48,18 @@ export function InitiativePublicImpactPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ipi-source-panel__empty">{error}</p>;
   }
 
   if (report === undefined) {
-    return <p className="ipi-source-panel__empty">Loading published Public Impact Report…</p>;
+    return <p className="ipi-source-panel__empty">{t("author.publicImpact.public.loading")}</p>;
   }
 
   if (!report) {
-    return <p className="ipi-source-panel__empty">No Public Impact Report published yet.</p>;
+    return <p className="ipi-source-panel__empty">{t("author.publicImpact.public.empty")}</p>;
   }
 
   return (
@@ -65,7 +67,7 @@ export function InitiativePublicImpactPublicResult({
       title={report.title}
       sections={report.sections}
       participationStatistics={report.participationStatistics}
-      metaLabel={isPreview ? "Author Preview of published Public Impact Report" : undefined}
+      metaLabel={isPreview ? t("author.publicImpact.public.previewMeta") : undefined}
     />
   );
 }

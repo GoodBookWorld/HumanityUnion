@@ -36,6 +36,7 @@ import {
   updateImpact,
 } from "./initiative-public-impact.store.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 
 export interface CreateInitiativePublicImpactDraftInput {
   trackingId: string;
@@ -404,6 +405,12 @@ export function publishInitiativePublicImpact(
     throw new Error("Public impact record not found.");
   }
 
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "public_impact",
+    sourceRecordId: impactId,
+    reason: "public_mutation",
+  });
+
   return updated;
 }
 
@@ -498,6 +505,14 @@ export function addPublicImpactEvidence(
   };
 
   appendPublicImpactEvidence(item);
+
+  if (impact.status === "published" || impact.status === "verified") {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "public_impact",
+      sourceRecordId: impactId,
+      reason: "public_update",
+    });
+  }
 
   return item;
 }

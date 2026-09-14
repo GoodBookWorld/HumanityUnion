@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleArchiveDocument } from "@hu/types";
 
@@ -24,6 +25,7 @@ export function InitiativeCivicArchivePublicResult({
   initiativeId,
   isPreview = false,
 }: InitiativeCivicArchivePublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [document, setDocument] = useState<InitiativeLifecycleArchiveDocument | null | undefined>(
     undefined,
   );
@@ -40,7 +42,7 @@ export function InitiativeCivicArchivePublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Civic Archive could not be loaded.");
+          setError(t("author.archive.public.loadFailed"));
         }
       }
     })();
@@ -48,18 +50,18 @@ export function InitiativeCivicArchivePublicResult({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ica-source-panel__empty">{error}</p>;
   }
 
   if (document === undefined) {
-    return <p className="ica-source-panel__empty">Loading published Civic Archive…</p>;
+    return <p className="ica-source-panel__empty">{t("author.archive.public.loading")}</p>;
   }
 
   if (!document) {
-    return <p className="ica-source-panel__empty">No Civic Archive published yet.</p>;
+    return <p className="ica-source-panel__empty">{t("author.archive.public.empty")}</p>;
   }
 
   return (
@@ -67,7 +69,7 @@ export function InitiativeCivicArchivePublicResult({
       <InitiativeCivicArchiveShareToolbar initiativeId={initiativeId} mode="published" />
       <InitiativeCivicArchiveDocumentRenderer
         document={document}
-        metaLabel={isPreview ? "Author Preview of published Civic Archive" : undefined}
+        metaLabel={isPreview ? t("author.archive.public.previewMeta") : undefined}
       />
     </>
   );

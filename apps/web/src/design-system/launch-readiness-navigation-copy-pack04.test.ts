@@ -16,7 +16,7 @@ import { REGISTRATION_GATEWAY_CONTENT } from "../features/public-experience/cont
 import { WORKSPACE_ROUTE } from "../features/community-experience/constants.js";
 import { ENTITY_TYPE_OPTIONS } from "../features/global-search/api.js";
 import { resolveSaveButtonLabel } from "../features/member-profile/use-save-button-phase.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(here, "..");
@@ -85,21 +85,27 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.doesNotMatch(communityContent, /remain future capabilities/i);
 
     const registerPage = read("app/register/page.tsx");
-    assert.match(registerPage, /Create account/);
+    assert.match(registerPage, /t\("registerTitle"\)/);
+    assert.match(registerPage, /getTranslations\("auth"\)/);
     assert.doesNotMatch(registerPage, /coming soon/i);
   });
 
   it("6 — Participant/Member visible terminology follows canonical distinction", () => {
     const memberPage = read("app/member/page.tsx");
-    assert.match(memberPage, /title="Profile"/);
-    assert.match(memberPage, /Participant profile/);
+    assert.match(memberPage, /MemberProfilePageShell/);
+    assert.doesNotMatch(memberPage, /title="Member Profile"/);
+
+    const shell = read("features/member-profile/components/MemberProfilePageShell.tsx");
+    assert.match(shell, /useTranslations\("memberProfile"\)/);
+    assert.match(shell, /t\("title"\)/);
+    assert.match(shell, /t\("subtitle"\)/);
 
     const publicProfile = read("app/member/[uniqueName]/page.tsx");
     assert.match(publicProfile, /Public Profile/);
     assert.doesNotMatch(publicProfile, /Public Member Profile/);
 
     const workspace = read("features/member-profile/components/MemberProfileWorkspace.tsx");
-    assert.match(workspace, /title="Profile"/);
+    assert.match(workspace, /title=\{t\("title"\)\}/);
     assert.doesNotMatch(workspace, /title="Member Profile"/);
 
     const landing = read("features/initiatives/components/PublicInitiativesLanding.tsx");
@@ -114,13 +120,18 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     const widget = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantWidget.tsx",
     );
-    assert.match(widget, /Humanity Union Assistant/);
+    assert.match(widget, /assistant\.entry\.title/);
+    assert.match(widget, /assistant\.entry\.askAssistant/);
+    assert.doesNotMatch(widget, />\s*Humanity Union Assistant\s*</);
+    assert.doesNotMatch(widget, />\s*Ask Assistant\s*</);
 
     const fab = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
     );
-    assert.match(fab, /Open Humanity Union Assistant/);
-    assert.match(fab, /title="Humanity Union Assistant"/);
+    assert.match(fab, /assistant\.entry\.openAria/);
+    assert.match(fab, /assistant\.entry\.title/);
+    assert.doesNotMatch(fab, /aria-label="Open Humanity Union Assistant"/);
+    assert.doesNotMatch(fab, /title="Humanity Union Assistant"/);
 
     const implementation = read("features/implementation/components/ImplementationWorkspace.tsx");
     assert.match(implementation, /Humanity Union Assistant/);
@@ -132,13 +143,18 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.match(nav, /Become an Author/);
     assert.match(nav, /state\.navLabel/);
     assert.match(nav, /publishingWorkspaceHref/);
-    assert.match(nav, /label: "Profile"/);
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
+
+    const groups = read("features/initiatives/components/build-workspace-nav-groups.ts");
+    assert.match(groups, /label: "Profile"/);
+    assert.match(groups, /href: "\/member"/);
   });
 
   it("9 — Editor navigation label remains Editorial Review", () => {
     const nav = read("features/initiatives/components/WorkspaceNavigation.tsx");
     assert.match(nav, /label: "Editorial Review"/);
     assert.match(nav, /editorialReviewHref/);
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
 
     const authoring = read("features/blog/components/AuthoringPageContent.tsx");
     assert.match(authoring, /Editorial Review/);
@@ -178,10 +194,14 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.match(notifications, /No unread messages/);
     assert.match(notifications, /No reminders yet/);
 
-    const messagesNav = read("features/initiatives/components/WorkspaceNavigation.tsx");
-    assert.match(messagesNav, /label: "Messages"/);
-    assert.match(messagesNav, /href: "\/notifications"/);
-    assert.match(messagesNav, /label: "Notifications"/);
+    const groups = read("features/initiatives/components/build-workspace-nav-groups.ts");
+    assert.match(groups, /label: "Messages"/);
+    assert.match(groups, /href: "\/workspace\/messages"/);
+    assert.match(groups, /label: "Notifications"/);
+    assert.match(groups, /href: "\/notifications"/);
+
+    const nav = read("features/initiatives/components/WorkspaceNavigation.tsx");
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
   });
 
   it("12 — destructive labels map to distinct conceptual actions in presentation helpers", () => {
@@ -212,7 +232,8 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     );
     assert.doesNotMatch(fab, /Civic Assistant/);
     assert.doesNotMatch(modal, /Civic Assistant/);
-    assert.match(modal, /Humanity Union Assistant/);
+    assert.match(modal, /assistant\.modal\.title/);
+    assert.doesNotMatch(modal, />\s*Humanity Union Assistant\s*</);
   });
 
   it("15 — mobile navigation retains required routes", () => {
@@ -228,10 +249,13 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     const mobile = read("design-system/components/HumanityHeaderMobileMenu.tsx");
     assert.match(mobile, /PRIMARY_NAVIGATION\.map/);
     assert.match(mobile, /href="\/register"/);
-    assert.match(mobile, /Create account/);
+    assert.match(mobile, /tAuth\("createAccount"\)/);
     assert.match(mobile, /href="\/workspace"/);
-    assert.match(mobile, /Notifications/);
-    assert.match(mobile, />\s*Profile\s*</);
+    assert.match(mobile, /tNav\("workspace"\)/);
+    assert.match(mobile, /tWorkspace\("notifications"\)/);
+    assert.match(mobile, /tWorkspace\("profile"\)/);
+    assert.match(mobile, /href="\/notifications"/);
+    assert.match(mobile, /href="\/member"/);
     assert.doesNotMatch(mobile, /Member profile/);
 
     // Blog remains intentionally outside the mobile primary list; reachable via Footer + Knowledge.

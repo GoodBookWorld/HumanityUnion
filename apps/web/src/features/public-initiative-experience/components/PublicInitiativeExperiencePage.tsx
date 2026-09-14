@@ -6,6 +6,7 @@ import {
   resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
 import { InitiativeExperienceRefreshProvider } from "../initiative-experience-refresh-context";
@@ -15,6 +16,8 @@ import {
   resolveLifecycleShellHash,
   selectLifecycleNavStagesForDisplay,
 } from "../initiative-lifecycle-shell";
+import { resolveLifecycleStageDisplayLabel } from "../initiative-experience-i18n";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { parseCollaborationParticipantIdFromSearch } from "../discussion-comment-deep-link";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
@@ -24,6 +27,7 @@ import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeC
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
 
 import "../public-initiative-experience.css";
 
@@ -34,6 +38,11 @@ interface PublicInitiativeExperiencePageProps {
   onManageInitiativeUpdated?: (initiative: Initiative) => void;
   /** Refetch canonical experience (lifecycleStages, viewerIsSteward, sidebar). */
   onExperienceRefetch?: () => Promise<void>;
+  /** Pack 08I.9 — SSR-localized title/description seed. */
+  initialPresentation?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 export function PublicInitiativeExperiencePage({
@@ -41,7 +50,10 @@ export function PublicInitiativeExperiencePage({
   manageInitiative = null,
   onManageInitiativeUpdated,
   onExperienceRefetch,
+  initialPresentation,
 }: PublicInitiativeExperiencePageProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const [experience, setExperience] = useState(initialExperience);
   const [showManageTab, setShowManageTab] = useState(false);
   const [activeTab, setActiveTab] = useState<CenterTab>("overview");
@@ -79,23 +91,30 @@ export function PublicInitiativeExperiencePage({
     [experience.currentStageId, experience.lifecycleProfile],
   );
   const presentationCurrentStageLabel = useMemo(() => {
-    const fromNav = navStages.find((stage) => stage.stageId === presentationCurrentStageId)?.label;
-    if (fromNav) {
-      return fromNav;
-    }
-    return (
-      experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
-        ?.label ?? experience.hero.currentStageLabel
+    return resolveLifecycleStageDisplayLabel(
+      presentationCurrentStageId,
+      t,
+      navStages.find((stage) => stage.stageId === presentationCurrentStageId)?.label ??
+        experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
+          ?.label ??
+        experience.hero.currentStageLabel,
+      { locale },
     );
   }, [
+    t,
+    locale,
     navStages,
     presentationCurrentStageId,
     experience.lifecycleStages,
     experience.hero.currentStageLabel,
   ]);
-  const petitionDegradedMessage = publicSafeOptionalSectionMessage(
+  const petitionDegradedSection = publicSafeOptionalSectionMessage(
     experience.optionalStageDiagnostics,
     "petition",
+  );
+  const civicArchiveDegradedSection = publicSafeOptionalSectionMessage(
+    experience.optionalStageDiagnostics,
+    "civicArchive",
   );
   const returnToInitiativeHref = buildInitiativeExperienceHref(experience.initiativeId);
 
@@ -321,16 +340,33 @@ export function PublicInitiativeExperiencePage({
     [refreshExperience],
   );
 
+  const initiativePresentation = useInitiativePublicPresentation({
+    initiativeId: experience.initiativeId,
+    canonical: {
+      title: experience.hero.title,
+      description: experience.hero.summary || experience.initiative.description,
+    },
+    initialPresentation,
+  });
+
   return (
     <InitiativeExperienceRefreshProvider value={refreshApi}>
       <PublicCivicRecordExperienceLayout
         hero={
           <PublicExperienceHero
-            {...buildInitiativeHeroProps({
-              ...experience.hero,
-              currentStageLabel: presentationCurrentStageLabel,
-            })}
-            initiativeId={experience.initiativeId}
+            {...buildInitiativeHeroProps(
+              {
+                ...experience.hero,
+                currentStageLabel: presentationCurrentStageLabel,
+              },
+              {
+                t,
+                locale,
+                currentStageId: presentationCurrentStageId,
+                lifecycleProfile: experience.lifecycleProfile,
+              },
+            )}
+            presentation={initiativePresentation}
           />
         }
         lifecycle={
@@ -345,11 +381,18 @@ export function PublicInitiativeExperiencePage({
         }
         center={
           <>
-            {petitionDegradedMessage &&
+            {petitionDegradedSection &&
             showLifecyclePanel &&
             selectedStageId === "petition" ? (
               <p className="pie-optional-degraded" role="status">
-                {petitionDegradedMessage}
+                {t(`common.optionalStageUnavailable.${petitionDegradedSection}`)}
+              </p>
+            ) : null}
+            {civicArchiveDegradedSection &&
+            showLifecyclePanel &&
+            selectedStageId === "archive" ? (
+              <p className="pie-optional-degraded" role="status">
+                {t(`common.optionalStageUnavailable.${civicArchiveDegradedSection}`)}
               </p>
             ) : null}
             <PublicInitiativeCenterPanel
@@ -363,6 +406,8 @@ export function PublicInitiativeExperiencePage({
               initialDiscussionFilter={initialDiscussionFilter}
               focusDiscussionCommentId={focusDiscussionCommentId}
               focusCollaborationParticipantId={focusCollaborationParticipantId}
+              presentationTitle={initiativePresentation.title}
+              presentationDescription={initiativePresentation.description}
               managePanel={
                 canShowManage && manageInitiative ? (
                   <InitiativeOwnerManagePanel

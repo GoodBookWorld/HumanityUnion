@@ -20,6 +20,26 @@ export const SUGGESTED_IMPLEMENTATION_TRACKING_STAGES = [
 export type SuggestedImplementationTrackingStage =
   (typeof SUGGESTED_IMPLEMENTATION_TRACKING_STAGES)[number];
 
+/**
+ * Domain-invariant candidate stage tokens (English storage values).
+ * Prefer predicates over inline string comparisons at call sites.
+ */
+export const IMPLEMENTATION_TRACKING_CANDIDATE_STAGE = {
+  PREPARATION: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[0],
+  STARTED: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[1],
+  IN_PROGRESS: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[2],
+  VERIFICATION: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[3],
+  COMPLETED: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[4],
+} as const;
+
+export function isImplementationTrackingCandidatePreparation(status: string): boolean {
+  return status === IMPLEMENTATION_TRACKING_CANDIDATE_STAGE.PREPARATION;
+}
+
+export function isImplementationTrackingCandidateCompleted(status: string): boolean {
+  return status === IMPLEMENTATION_TRACKING_CANDIDATE_STAGE.COMPLETED;
+}
+
 export const INITIATIVE_IMPLEMENTATION_TRACKING_TRANSITIONS: Record<
   InitiativeImplementationTrackingStatus,
   readonly InitiativeImplementationTrackingStatus[]

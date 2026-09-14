@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { DESKTOP_CAPSULE_NAVIGATION } from "../features/public-experience/constants.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(here, "..");
@@ -18,7 +18,10 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
   it("1 — Skip link targets main content and accepts focus", () => {
     const layout = read("design-system/components/HumanityLayout.tsx");
     assert.match(layout, /href="#main-content"/);
-    assert.match(layout, /Skip to main content/);
+    assert.match(layout, /getTranslations\("a11y"\)/);
+    assert.match(layout, /tA11y\("skipToMainContent"\)/);
+    assert.match(layout, /hu-skip-link/);
+    assert.match(layout, /#main-content/);
     assert.match(layout, /id="main-content"/);
     assert.match(layout, /tabIndex=\{-1\}/);
 
@@ -38,14 +41,20 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
 
   it("3 — Icon-only buttons have accessible names", () => {
     const authTools = read("design-system/components/AuthenticatedHeaderTools.tsx");
-    assert.match(authTools, /aria-label="Workspace"/);
+    assert.match(authTools, /useTranslations\("navigation"\)/);
+    assert.match(authTools, /aria-label=\{workspaceLabel\}/);
+    assert.match(authTools, /tNav\("workspace"\)/);
+    assert.match(authTools, /useTranslations\("workspace"\)/);
     assert.match(authTools, /aria-label=\{resolveNotificationsAriaLabel/);
+    assert.match(authTools, /tWorkspace\("notificationsAria"\)/);
 
     const fab = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
     );
-    assert.match(fab, /aria-label="Open Humanity Union Assistant"/);
+    assert.match(fab, /aria-label=\{openAria\}/);
+    assert.match(fab, /assistant\.entry\.openAria/);
     assert.doesNotMatch(fab, /hu-assistant-fab__sr/);
+    assert.doesNotMatch(fab, /aria-label="Open Humanity Union Assistant"/);
 
     const menu = read("design-system/components/HumanityHeaderMobileMenu.tsx");
     assert.match(menu, /aria-label=\{isOpen \? "Close navigation menu" : "Open navigation menu"\}/);
@@ -58,7 +67,9 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
     assert.match(modal, /role="dialog"/);
     assert.match(modal, /aria-modal="true"/);
     assert.match(modal, /aria-labelledby=\{titleId\}/);
-    assert.match(modal, /Humanity Union Assistant/);
+    assert.match(modal, /assistant\.modal\.title/);
+    assert.match(modal, /assistant\.modal\.closeAria/);
+    assert.doesNotMatch(modal, />\s*Humanity Union Assistant\s*</);
   });
 
   it("5 — Assistant restores focus on close", () => {
@@ -80,21 +91,21 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
 
   it("7 — Login/Register fields labelled and required communicated", () => {
     const login = read("features/auth/components/LoginForm.tsx");
-    assert.match(login, /<span>\s*Email/);
-    assert.match(login, /hu-visually-hidden">\(required\)/);
+    assert.match(login, /t\("email"\)/);
+    assert.match(login, /t\("required"\)/);
     assert.match(login, /required/);
     assert.match(login, /aria-required="true"/);
 
     const register = read("features/auth/components/RegisterForm.tsx");
-    assert.match(register, /Display name/);
-    assert.match(register, /hu-visually-hidden">\(required\)/);
-    assert.match(register, /Create account/);
+    assert.match(register, /t\("displayName"\)/);
+    assert.match(register, /t\("required"\)/);
+    assert.match(register, /t\("createAccount"\)/);
   });
 
   it("8 — Preferences controls labelled", () => {
     const prefs = read("features/preferences/components/PreferencesWorkspace.tsx");
     assert.match(prefs, /preferences-workspace__field/);
-    assert.match(prefs, /Who can see my public profile/);
+    assert.match(prefs, /visibility\.\$\{field\}|VISIBILITY_FIELDS/);
     assert.match(prefs, /<label/);
   });
 
@@ -115,7 +126,8 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
     const surface = read("features/member-profile/components/ParticipantProfileSurface.tsx");
     assert.match(surface, /MemberStatusIndicator/);
     const indicator = read("features/member-profile/components/MemberStatusIndicator.tsx");
-    assert.match(indicator, /MEMBER_STATUS_INDICATOR_LABEL/);
+    assert.match(indicator, /useTranslations\("membershipPublic"\)/);
+    assert.match(indicator, /status\.memberCohort/);
     assert.match(indicator, /alt=""/);
     assert.match(indicator, />Member</);
   });

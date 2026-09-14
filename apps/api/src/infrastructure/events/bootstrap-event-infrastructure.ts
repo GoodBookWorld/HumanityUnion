@@ -7,12 +7,16 @@ import { registerInitiativeLifecycleStageHandlers } from "../../shared/initiativ
 import { registerBlogPublicationDeliveryHandlers } from "../../modules/blog/blog-publication-delivery.index.js";
 import { registerBlogAdminSubscriberMessageHandlers } from "../../modules/blog/blog-subscription-admin-message.index.js";
 import { registerAdminNotificationHandlers } from "../../modules/admin-notifications/index.js";
+import { registerContentTranslationWarmHandlers } from "../../modules/language/content-translation-warm-consumer.js";
 import { startOutboxDispatcher } from "../outbox/outbox.dispatcher.js";
 import { logger } from "../../shared/observability/logger.js";
 
 /**
  * Ensures event infrastructure indexes exist and starts the outbox dispatcher when enabled.
  * Safe to call on every API boot; no-op when MongoDB is not configured.
+ *
+ * RESET 05C.1 — PLP auto-build processor is bootstrapped from index.ts AFTER
+ * published-localization persistence (not fire-and-forget here).
  */
 export async function bootstrapEventInfrastructure(): Promise<void> {
   if (!isMongoConfigured()) {
@@ -31,6 +35,7 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   registerBlogPublicationDeliveryHandlers();
   registerBlogAdminSubscriberMessageHandlers();
   registerAdminNotificationHandlers();
+  registerContentTranslationWarmHandlers();
   startOutboxDispatcher();
 
   logger.info("event_infrastructure.ready", { component: "event-infrastructure" });

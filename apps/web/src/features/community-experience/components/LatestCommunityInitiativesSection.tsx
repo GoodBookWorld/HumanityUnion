@@ -1,10 +1,11 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { LatestInitiativesPublicProjection } from "@hu/types";
 
-import {
-  COMMUNITY_INITIATIVES_EMPTY_MESSAGE,
-  COMMUNITY_INITIATIVES_VISITOR_CONCLUSION,
-  communityInitiativesContextIntroduction,
-} from "../content";
 import { ExperienceBlockShell, LatestInitiativesEvidence } from "../../public-experience";
 
 interface LatestCommunityInitiativesSectionProps {
@@ -16,19 +17,20 @@ export function LatestCommunityInitiativesSection({
   projection,
   communityName,
 }: LatestCommunityInitiativesSectionProps) {
+  const t = useTranslations("publicGeo.community.initiatives");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
+
   return (
     <ExperienceBlockShell
       id="latest-community-initiatives"
-      title="Latest Community Initiatives"
-      architecturalName="Latest Initiatives"
-      stage="Evidence"
-      contextIntroduction={communityInitiativesContextIntroduction(communityName)}
-      visitorConclusion={COMMUNITY_INITIATIVES_VISITOR_CONCLUSION}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction", { communityName, ...siteName })}
+      visitorConclusion={t("visitorConclusion")}
     >
-      <LatestInitiativesEvidence
-        projection={projection}
-        emptyMessage={COMMUNITY_INITIATIVES_EMPTY_MESSAGE}
-      />
+      <LatestInitiativesEvidence projection={projection} emptyMessage={t("emptyMessage")} />
     </ExperienceBlockShell>
   );
 }

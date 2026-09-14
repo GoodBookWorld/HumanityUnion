@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { MAX_MEMBER_SKILL_LABEL_LENGTH, MAX_MEMBER_SKILLS } from "../member-profile-limits";
@@ -49,6 +50,8 @@ export function MemberSkillsEditor({
   onChange,
   onSave,
 }: MemberSkillsEditorProps) {
+  const t = useTranslations("memberProfile.skills");
+  const tSections = useTranslations("memberProfile.sections");
   const [draft, setDraft] = useState("");
   const { phase, isBusy, runSave } = useSaveButtonPhase();
   const [error, setError] = useState<string | null>(null);
@@ -61,18 +64,18 @@ export function MemberSkillsEditor({
     }
 
     if (trimmed.length > MAX_MEMBER_SKILL_LABEL_LENGTH) {
-      setError(`Each skill must be at most ${MAX_MEMBER_SKILL_LABEL_LENGTH} characters.`);
+      setError(t("maxLength", { max: MAX_MEMBER_SKILL_LABEL_LENGTH }));
       return;
     }
 
     if (skills.some((skill) => skill.toLowerCase() === trimmed.toLowerCase())) {
-      setError("That skill is already listed.");
+      setError(t("duplicate"));
       setDraft("");
       return;
     }
 
     if (skills.length >= MAX_MEMBER_SKILLS) {
-      setError(`You can add up to ${MAX_MEMBER_SKILLS} skills.`);
+      setError(t("maxCount", { max: MAX_MEMBER_SKILLS }));
       return;
     }
 
@@ -97,7 +100,7 @@ export function MemberSkillsEditor({
         await onSave(normalized);
       });
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save skills.");
+      setError(saveError instanceof Error ? saveError.message : t("saveError"));
     }
   }
 
@@ -105,12 +108,12 @@ export function MemberSkillsEditor({
     <form className="member-skills-editor" onSubmit={handleSubmit}>
       <div className="member-skills-editor__add-row">
         <label className="member-skills-editor__field">
-          <span className="hu-visually-hidden">Add skill</span>
+          <span className="hu-visually-hidden">{t("add")}</span>
           <input
             value={draft}
             disabled={disabled || isBusy}
             maxLength={MAX_MEMBER_SKILL_LABEL_LENGTH}
-            placeholder="Add a skill"
+            placeholder={t("placeholder")}
             onChange={(event) => {
               setDraft(event.target.value);
               setError(null);
@@ -129,7 +132,7 @@ export function MemberSkillsEditor({
           disabled={disabled || isBusy || draft.trim().length === 0}
           onClick={handleAddSkill}
         >
-          Add
+          {t("add")}
         </Button>
       </div>
 
@@ -139,7 +142,7 @@ export function MemberSkillsEditor({
       </p>
 
       {skills.length > 0 ? (
-        <ul className="member-skills-editor__tags" aria-label="Skills">
+        <ul className="member-skills-editor__tags" aria-label={tSections("skills")}>
           {skills.map((skill) => (
             <li key={skill} className="member-skills-editor__tag">
               <span>{skill}</span>
@@ -147,16 +150,16 @@ export function MemberSkillsEditor({
                 type="button"
                 className="member-skills-editor__remove"
                 disabled={disabled || isBusy}
-                aria-label={`Remove ${skill}`}
+                aria-label={`${t("remove")} ${skill}`}
                 onClick={() => handleRemoveSkill(skill)}
               >
-                Remove
+                {t("remove")}
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="member-skills-editor__empty">No skills added yet.</p>
+        <p className="member-skills-editor__empty">{t("empty")}</p>
       )}
 
       {error ? (
@@ -166,7 +169,7 @@ export function MemberSkillsEditor({
       ) : null}
 
       <Button type="submit" variant="primary" disabled={disabled || isBusy} ariaLive="polite">
-        {resolveSaveButtonLabel(phase, "Save skills")}
+        {resolveSaveButtonLabel(phase, t("save"))}
       </Button>
     </form>
   );

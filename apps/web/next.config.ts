@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // Performance Recovery Task — Turbopack walks up the filesystem looking for
 // a lockfile to infer the workspace root, and can land on an unrelated
@@ -58,4 +59,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Pack 02D Task 01 — next-intl without locale-prefixed routing / middleware.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

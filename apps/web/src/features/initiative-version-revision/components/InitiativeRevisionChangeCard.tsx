@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { InitiativeRevisionChange, InitiativeRevisionDraft } from "@hu/types";
 
@@ -15,6 +16,10 @@ interface InitiativeRevisionChangeCardProps {
   readonly initiativeId: string;
   readonly change: InitiativeRevisionChange;
   readonly onChanged: (draft: InitiativeRevisionDraft) => void;
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 /**
@@ -32,6 +37,8 @@ export function InitiativeRevisionChangeCard({
   change,
   onChanged,
 }: InitiativeRevisionChangeCardProps) {
+  const locale = useLocale();
+  const t = useTranslations("initiativeExperience");
   const [editing, setEditing] = useState(false);
   const [after, setAfter] = useState(change.after);
   const [explanation, setExplanation] = useState(change.explanation);
@@ -50,7 +57,7 @@ export function InitiativeRevisionChangeCard({
       onChanged(updated);
       setEditing(false);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "This change could not be saved.");
+      setError(detailFromError(saveError, t("author.revision.change.saveFailed")));
     } finally {
       setBusy(false);
     }
@@ -64,7 +71,7 @@ export function InitiativeRevisionChangeCard({
       const updated = await removeInitiativeRevisionChange(initiativeId, change.changeId);
       onChanged(updated);
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : "This change could not be removed.");
+      setError(detailFromError(removeError, t("author.revision.change.removeFailed")));
       setBusy(false);
     }
   }
@@ -77,7 +84,7 @@ export function InitiativeRevisionChangeCard({
       const updated = await applyInitiativeRevisionChange(initiativeId, change.changeId);
       onChanged(updated);
     } catch (applyError) {
-      setError(applyError instanceof Error ? applyError.message : "This change could not be applied.");
+      setError(detailFromError(applyError, t("author.revision.change.applyFailed")));
     } finally {
       setBusy(false);
     }
@@ -88,17 +95,19 @@ export function InitiativeRevisionChangeCard({
       <div className="irv-change-card__header">
         <h4>{change.sectionLabel}</h4>
         <span className="irv-change-card__origin" data-origin={change.origin}>
-          {change.origin === "proposal" ? "From Proposal" : "Author-originated"}
+          {change.origin === "proposal"
+            ? t("author.revision.change.fromProposal")
+            : t("author.revision.change.authorOriginated")}
         </span>
       </div>
 
       <div className="irv-change-card__before-after">
         <div className="irv-change-card__field">
-          <label>Before</label>
-          <p>{change.before || "(empty)"}</p>
+          <label>{t("author.revision.fields.before")}</label>
+          <p>{change.before || t("author.revision.change.emptyValue")}</p>
         </div>
         <div className="irv-change-card__field">
-          <label>After</label>
+          <label>{t("author.revision.fields.after")}</label>
           {editing ? (
             <textarea
               value={after}
@@ -106,13 +115,13 @@ export function InitiativeRevisionChangeCard({
               rows={4}
             />
           ) : (
-            <p>{change.after || "(empty)"}</p>
+            <p>{change.after || t("author.revision.change.emptyValue")}</p>
           )}
         </div>
       </div>
 
       <div className="irv-change-card__field">
-        <label>Author explanation</label>
+        <label>{t("author.revision.fields.authorExplanation")}</label>
         {editing ? (
           <textarea
             value={explanation}
@@ -126,18 +135,30 @@ export function InitiativeRevisionChangeCard({
 
       <div className="irv-change-card__meta">
         {change.origin === "proposal" ? (
-          <span>Proposal reference(s): {change.proposalIds.join(", ") || "none"}</span>
+          <span>
+            {t("author.revision.change.proposalReferences", {
+              ids: change.proposalIds.join(", ") || t("author.revision.change.proposalReferencesNone"),
+            })}
+          </span>
         ) : (
-          <span>Reason: {change.authorOriginatedReason}</span>
+          <span>
+            {t("author.revision.change.reasonMeta", {
+              reason: change.authorOriginatedReason || "",
+            })}
+          </span>
         )}
-        <span>Updated {new Date(change.updatedAt).toLocaleString()}</span>
+        <span>
+          {t("author.revision.change.updated", {
+            date: new Date(change.updatedAt).toLocaleString(locale),
+          })}
+        </span>
       </div>
 
       <div className="irv-change-card__actions">
         {editing ? (
           <>
             <WorkspaceButton variant="primary" disabled={busy} onClick={() => void handleSave()}>
-              Save Change
+              {t("author.revision.change.saveChange")}
             </WorkspaceButton>
             <WorkspaceButton
               variant="secondary"
@@ -148,21 +169,21 @@ export function InitiativeRevisionChangeCard({
                 setEditing(false);
               }}
             >
-              Cancel
+              {t("author.revision.change.cancel")}
             </WorkspaceButton>
           </>
         ) : (
           <>
             <WorkspaceButton variant="secondary" disabled={busy} onClick={() => setEditing(true)}>
-              Edit
+              {t("author.revision.change.edit")}
             </WorkspaceButton>
             {change.section === "title" || change.section === "description" ? (
               <WorkspaceButton variant="primary" disabled={busy} onClick={() => void handleApply()}>
-                Apply to Draft
+                {t("author.revision.change.applyToDraft")}
               </WorkspaceButton>
             ) : null}
             <WorkspaceButton variant="danger" disabled={busy} onClick={() => void handleRemove()}>
-              Remove
+              {t("author.revision.change.remove")}
             </WorkspaceButton>
           </>
         )}

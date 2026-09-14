@@ -2,6 +2,7 @@
 
 import type { ParticipationPreferences } from "@hu/types";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   buildPreferredCityCommunityLabel,
@@ -23,10 +24,6 @@ import {
 } from "../../../design-system/components/GeographySearchSelect";
 import { GeographyMultiSelect } from "../../../design-system/components/GeographyMultiSelect";
 import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
-import {
-  formatCityListHelper,
-  GEOGRAPHY_EMPTY_COPY,
-} from "../../geography-integrity/geography-cascade-contract";
 
 interface PreferredGeographyFieldsProps {
   participationPreferences: ParticipationPreferences;
@@ -45,6 +42,8 @@ export function PreferredGeographyFields({
   participationPreferences,
   onChange,
 }: PreferredGeographyFieldsProps) {
+  const t = useTranslations("preferences");
+  const tGeo = useTranslations("initiativeExperience");
   const [regionCountryCode, setRegionCountryCode] = useState("");
   const [regionCode, setRegionCode] = useState("");
   const [communityOptions, setCommunityOptions] = useState<{ slug: string; label: string }[]>([]);
@@ -222,9 +221,7 @@ export function PreferredGeographyFields({
     const removedCount = sanitized.removedCityCount + sanitized.removedRegionCount;
 
     if (showCleanup && removedCount > 0) {
-      setCleanupMessage(
-        "Some cities were removed because their country or region is no longer selected.",
-      );
+      setCleanupMessage(t("geography.cleanupMessage"));
     }
 
     onChange(sanitized.participationPreferences);
@@ -273,34 +270,34 @@ export function PreferredGeographyFields({
 
   const citiesDisabled = preferredRegions.length === 0;
   const citiesHelperText = citiesDisabled
-    ? "Select at least one preferred region to choose Cities / Communities."
+    ? t("geography.selectRegionFirst")
     : communitiesLoading
-      ? GEOGRAPHY_EMPTY_COPY.loadingCities
+      ? tGeo("manage.geography.loadingCities")
       : communitiesDeliveryFailed
-        ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure
+        ? tGeo("manage.geography.cityDeliveryFailure")
         : communityStructuredCount === 0
-          ? GEOGRAPHY_EMPTY_COPY.noCities
-          : `${formatCityListHelper(communityStructuredCount)} You can add preferred cities or communities from multiple regions.`;
+          ? tGeo("manage.geography.noCities")
+          : t("geography.citiesMultiRegionHelp", { count: communityStructuredCount });
 
   return (
     <>
       <div className="preferences-workspace__field">
         <GeographyMultiSelect
           id="preferences-preferred-countries"
-          label="Preferred Countries"
-          helperText="Select countries where you want civic activity recommendations and notifications."
+          label={t("geography.preferredCountries")}
+          helperText={t("geography.preferredCountriesHelp")}
           values={preferredCountryIds}
           options={GEOGRAPHY_COUNTRIES}
           onChange={handlePreferredCountriesChange}
-          placeholder="Search countries…"
+          placeholder={t("geography.searchCountries")}
         />
       </div>
 
       <div className="preferences-workspace__field">
-        <span className="preferences-workspace__field-label">Preferred regions</span>
+        <span className="preferences-workspace__field-label">{t("geography.preferredRegions")}</span>
         <GeographySearchSelect
           id="preferences-preferred-region-country"
-          label="Country"
+          label={t("geography.country")}
           value={regionCountryCode}
           options={countryOptions}
           onChange={(nextCountry) => {
@@ -310,7 +307,7 @@ export function PreferredGeographyFields({
         />
         <GeographySearchSelect
           id="preferences-preferred-region"
-          label="Administrative region"
+          label={t("geography.administrativeRegion")}
           value={regionCode}
           options={regionPickerOptions}
           onChange={setRegionCode}
@@ -322,7 +319,7 @@ export function PreferredGeographyFields({
           disabled={!regionCode || regionCode === OTHER_REGION_SLUG}
           onClick={handleAddPreferredRegion}
         >
-          Add preferred cities
+          {t("geography.addPreferredRegion")}
         </Button>
         {selectedRegionEntries.length > 0 ? (
           <ul className="preferences-workspace__region-list">
@@ -330,20 +327,20 @@ export function PreferredGeographyFields({
               <li key={region.id}>
                 {region.label}
                 <button type="button" onClick={() => handleRemovePreferredRegion(region.id)}>
-                  Remove
+                  {t("geography.remove")}
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="preferences-workspace__helper">No preferred regions selected yet.</p>
+          <p className="preferences-workspace__helper">{t("geography.noRegionsSelected")}</p>
         )}
       </div>
 
       <div className="preferences-workspace__field">
         <GeographyMultiSelect
           id="preferences-preferred-cities"
-          label="Preferred Cities / Communities"
+          label={t("geography.preferredCities")}
           helperText={citiesHelperText}
           values={preferredCityCommunityIds}
           options={communityOptions}
@@ -354,13 +351,13 @@ export function PreferredGeographyFields({
             communitiesDeliveryFailed ||
             (communityStructuredCount === 0 && !communitiesLoading)
           }
-          placeholder={GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder}
-          noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
+          placeholder={tGeo("manage.geography.citySearchPlaceholder")}
+          noMatchMessage={tGeo("manage.geography.noCityMatches")}
         />
       </div>
 
       {cleanupMessage ? (
-        <HuFeedbackMessage variant="warning" title="Geography preferences updated">
+        <HuFeedbackMessage variant="warning" title={t("geography.cleanupTitle")}>
           {cleanupMessage}
         </HuFeedbackMessage>
       ) : null}

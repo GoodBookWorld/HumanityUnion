@@ -1,4 +1,7 @@
-import type { InitiativeStructuredProposalStatus } from "./initiative-improvement-proposals-stage.js";
+import type {
+  ImprovementProposalHuSystemGeneration,
+  InitiativeStructuredProposalStatus,
+} from "./initiative-improvement-proposals-stage.js";
 import type { InitiativeProposalReactionSummary } from "./initiative-proposal-reaction.js";
 
 /**
@@ -26,6 +29,8 @@ export interface PublicInitiativeStructuredProposal {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly reactionSummary: InitiativeProposalReactionSummary;
+  /** HU system frame facts — WEB_UI composition; null when Author-owned free text. */
+  readonly huSystemGeneration: ImprovementProposalHuSystemGeneration | null;
 }
 
 export interface PublicInitiativeImprovementProposalsCollectionProjection {

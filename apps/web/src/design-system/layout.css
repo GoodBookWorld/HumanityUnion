@@ -102,9 +102,10 @@
   font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Pack 08I.2 — allow wrap for long localized brand names (no ellipsis concealment). */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .humanity-header__brand-name:hover,
@@ -120,9 +121,10 @@
   letter-spacing: 0.10em;
   line-height: 1.2;
   text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Pack 08I.2 — wrap long slogans within brand column. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .humanity-header__logo-link {
@@ -250,6 +252,9 @@
   }
 
   .humanity-header__end {
+    display: flex;
+    align-items: center;
+    gap: var(--hu-space-3);
     grid-column: 3;
     justify-self: end;
   }
@@ -540,6 +545,14 @@
   border-bottom: 1px solid var(--hu-color-border);
   background: var(--hu-color-bg);
   box-shadow: var(--hu-shadow-md);
+  /* Short viewports: scroll menu items; keep touch scrolling contained. */
+  max-height: calc(
+    100dvh - var(--hu-header-height) - var(--hu-safe-area-top, 0px) - var(--hu-safe-area-bottom, 0px)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .humanity-header__mobile-nav-list {

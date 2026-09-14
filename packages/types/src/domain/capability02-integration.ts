@@ -47,7 +47,23 @@ export interface RelatedRecord {
   relationshipType: CivicRelationshipType;
 }
 
-/** Search metadata contract for future global search — no search engine in TASK-038. */
+/** Pack 02H — current/stale translated title/summary for multilingual search indexing. */
+export interface CivicSearchTranslatedField {
+  readonly language: string;
+  readonly title?: string;
+  readonly summary?: string;
+  readonly freshness: "current" | "stale";
+  readonly sourceVersion?: string;
+}
+
+/** Pack 02H — glossary preferred term / aliases indexed for locale-aware matching. */
+export interface CivicSearchTerminologyAlias {
+  readonly language: string;
+  readonly term: string;
+  readonly conceptId?: string;
+}
+
+/** Search metadata contract for global search (Pack 02H multilingual fields additive). */
 export interface CivicSearchMetadata {
   entityType: CivicEntityType;
   entityId: string;
@@ -67,6 +83,16 @@ export interface CivicSearchMetadata {
   imageUrl?: string;
   /** Parent initiative when this record belongs to an initiative lifecycle. */
   initiativeId?: string;
+  /** Canonical source language of the indexed entity (defaults to en when unknown). */
+  sourceLanguage?: string;
+  /** Eligible current translations indexed for multilingual matching. */
+  translatedFields?: readonly CivicSearchTranslatedField[];
+  /** Non-locale free-text aliases when present. */
+  aliases?: readonly string[];
+  /** Terminology glossary preferred terms / aliases for search-enabled locales. */
+  terminologyAliases?: readonly CivicSearchTerminologyAlias[];
+  /** Unique language codes searchable on this document (source + current translations). */
+  searchableLanguageCodes?: readonly string[];
 }
 
 export type CivicPipelineStageId =

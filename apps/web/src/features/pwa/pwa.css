@@ -100,6 +100,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
+  min-width: 0;
   min-height: var(--hu-pwa-bottom-nav-content-height);
   padding: 0.4rem 0.15rem 0.35rem;
   border: 0;
@@ -109,6 +110,13 @@
   font-size: 0.65rem;
   line-height: 1.1;
   cursor: pointer;
+}
+
+.hu-pwa-bottom-nav__label {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .hu-pwa-bottom-nav__item[aria-current="page"],
@@ -221,12 +229,16 @@
 .hu-pwa-global-menu__panel {
   position: absolute;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   bottom: 0;
   width: min(18rem, 86vw);
+  max-width: 100%;
   padding: calc(var(--hu-safe-area-top) + var(--hu-space-3)) var(--hu-space-4)
     calc(var(--hu-safe-area-bottom) + var(--hu-space-3));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: var(--hu-color-bg);
   box-shadow: var(--hu-shadow-md, 0 8px 24px rgb(0 0 0 / 0.12));
 }
@@ -258,6 +270,13 @@
 .hu-pwa-global-menu__list a[aria-current="page"] {
   background: var(--hu-color-bg-subtle);
   font-weight: 600;
+}
+
+.hu-pwa-global-menu__language {
+  margin-block-start: var(--hu-space-3);
+  padding-block-start: var(--hu-space-3);
+  border-block-start: 1px solid var(--hu-color-border);
+  min-width: 0;
 }
 
 .hu-pwa-ios-help {
@@ -298,6 +317,21 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* Historical focused iOS A2HS — compact Safari-only steps. */
+.hu-pwa-ios-help__dialog--compact {
+  width: min(26rem, calc(100vw - 2rem));
+}
+
+.hu-pwa-ios-help__a2hs-steps {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: var(--hu-space-3);
+  font-size: var(--hu-font-size-base);
+  line-height: 1.45;
+  color: var(--hu-color-text);
 }
 
 .hu-pwa-ios-help__header {

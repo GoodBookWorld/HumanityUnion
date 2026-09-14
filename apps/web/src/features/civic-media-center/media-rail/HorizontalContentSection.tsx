@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type { HuxExperienceVariant } from "../../horizontal-experience/hux.types";
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
 
 import { HorizontalSectionShell } from "./CivicMediaSectionShell";
 import { HorizontalRailControls } from "./MediaRailControls";
@@ -40,6 +42,9 @@ export interface HorizontalContentSectionProps<T> {
   categoryIcon?: ReactNode;
   experience?: HuxExperienceVariant;
   viewportClassName?: string;
+  /** Reset 03E.1 — Media chrome ownership at the section shell. */
+  chromeSemanticOwner?: "UI_DICTIONARY";
+  chromeSemanticResult?: "LOCALIZED_DICTIONARY";
 }
 
 export function HorizontalContentSection<T>({
@@ -69,7 +74,10 @@ export function HorizontalContentSection<T>({
   categoryIcon,
   experience,
   viewportClassName,
+  chromeSemanticOwner,
+  chromeSemanticResult,
 }: HorizontalContentSectionProps<T>) {
+  const t = useTranslations("civicMediaPublic");
   const resolvedTitle = title ?? heading ?? "";
   const headingId = `${sectionId}-heading`;
   const rail = useHorizontalRail({
@@ -79,7 +87,9 @@ export function HorizontalContentSection<T>({
   });
 
   const sourceCountLabel =
-    items.length > 0 ? `${items.length} source${items.length === 1 ? "" : "s"}` : undefined;
+    items.length > 0
+      ? t("trustedCategorySourceCount", { count: items.length })
+      : undefined;
 
   const controls =
     items.length > 0 && !rail.allItemsVisible ? (
@@ -96,7 +106,14 @@ export function HorizontalContentSection<T>({
   const resolvedMetadata =
     metadata ??
     (nested && sourceCountLabel ? (
-      <span className="horizontal-section-chip">{sourceCountLabel}</span>
+      <MediaSemanticNode
+        as="span"
+        className="horizontal-section-chip"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {sourceCountLabel}
+      </MediaSemanticNode>
     ) : null);
 
   return (
@@ -108,6 +125,8 @@ export function HorizontalContentSection<T>({
       eyebrow={eyebrow}
       heading={resolvedTitle}
       description={description}
+      chromeSemanticOwner={chromeSemanticOwner}
+      chromeSemanticResult={chromeSemanticResult}
       metadata={
         categoryIcon || resolvedMetadata ? (
           <div className="horizontal-section-shell__category-meta">

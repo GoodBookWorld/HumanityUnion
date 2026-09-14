@@ -124,15 +124,15 @@ describe("Pack 10F — geography runtime delivery recovery", () => {
     assert.match(contract, /cityDeliveryFailure/);
     assert.match(hook, /deliveryFailed/);
     assert.match(city, /deliveryFailed/);
-    assert.match(city, /GEOGRAPHY_EMPTY_COPY\.cityDeliveryFailure/);
-    assert.match(city, /GEOGRAPHY_EMPTY_COPY\.noCities/);
+    assert.match(city, /manage\.geography\.cityDeliveryFailure/);
+    assert.match(city, /manage\.geography\.noCities/);
   });
 
   it("Preferences Preferred Cities distinguishes delivery failure", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
     assert.match(preferred, /fetchCommunitiesByRegion/);
     assert.match(preferred, /communitiesDeliveryFailed/);
-    assert.match(preferred, /GEOGRAPHY_EMPTY_COPY\.cityDeliveryFailure/);
+    assert.match(preferred, /manage\.geography\.cityDeliveryFailure/);
   });
 
   it("verify:staging reports webGeographyAssets", () => {

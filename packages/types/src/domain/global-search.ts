@@ -21,6 +21,8 @@ export interface CivicSearchQuery {
    * `STANDARD` | `PUBLIC_CHOICE`. Omit / empty = All.
    */
   lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
+  /** Pack 02H — preferred reading/search language (Registry locale or alias, e.g. zh-TW). */
+  locale?: string;
 }
 
 export interface CivicSearchResult {
@@ -43,6 +45,10 @@ export interface CivicSearchResult {
   regionCode?: string;
   imageUrl?: string;
   initiativeId?: string;
+  /** Pack 02H — language of displayed title/summary when localized. */
+  displayLanguage?: string;
+  /** Pack 02H — preferred_translation when title/summary swapped for query.locale. */
+  presentationMode?: "preferred_translation" | "original";
 }
 
 export interface InitiativeLifecycleSearchStage {

@@ -60,8 +60,8 @@ describe("SEO Pack 08 — Home metadata", () => {
     }
 
     const page = readWeb("app/page.tsx");
-    assert.match(page, /buildPublicPageMetadata/);
-    assert.match(page, /canonicalPath:\s*"\/"/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
+    assert.match(page, /localeFreeCanonicalPath:\s*"\/"/);
     assert.match(page, /HUMANITY_UNION_LOGO_PATH|logo-512/);
   });
 
@@ -91,7 +91,7 @@ describe("SEO Pack 08 — Home metadata", () => {
 describe("SEO Pack 08 — Knowledge coverage", () => {
   it("wires Knowledge metadata, canonical, override merge, and WebPage JSON-LD", () => {
     const page = readWeb("app/knowledge/[slug]/page.tsx");
-    assert.match(page, /buildPublicPageMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
     assert.match(page, /applyPageSeoOverrideToMetadataInput/);
     assert.match(page, /fetchPublicSeoPageOverride/);
     assert.match(page, /buildWebPageJsonLd/);

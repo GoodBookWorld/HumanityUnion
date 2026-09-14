@@ -1,16 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { MyInitiativeGroupSummary } from "@hu/types";
 
-import { INITIATIVE_LIFECYCLE_PHASE_LABELS } from "../../initiatives/initiative-lifecycle-labels";
+import { resolveLifecyclePhaseDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { filterInitiativeGroupsByTitle } from "../initiative-group-chat-format";
-
-const ROLE_LABELS: Record<MyInitiativeGroupSummary["role"], string> = {
-  author: "Author",
-  active_ally: "Active Ally",
-};
 
 interface InitiativeGroupListProps {
   groups: MyInitiativeGroupSummary[];
@@ -25,30 +21,34 @@ interface InitiativeGroupListProps {
  * a large enough result set to justify a server-side search round trip).
  */
 export function InitiativeGroupList({ groups, selectedInitiativeId, onSelect }: InitiativeGroupListProps) {
+  const t = useTranslations("workspace.messagesPage.group");
+  const tExperience = useTranslations("initiativeExperience");
   const [query, setQuery] = useState("");
 
   const filteredGroups = useMemo(() => filterInitiativeGroupsByTitle(groups, query), [groups, query]);
 
+  const roleLabel = (role: MyInitiativeGroupSummary["role"]) =>
+    role === "author" ? t("author") : t("activeAlly");
+
   return (
     <div className="igc-group-list">
+      <h3 className="igc-group-list__title">{t("myGroups")}</h3>
       <label htmlFor="igc-group-search" className="igc-group-list__search-label">
-        Search your Initiatives
+        {t("searchLabel")}
       </label>
       <input
         id="igc-group-search"
         type="search"
         className="hu-form-control igc-group-list__search-input"
-        placeholder="Search by title…"
+        placeholder={t("searchPlaceholder")}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
 
       {groups.length === 0 ? (
-        <p className="igc-group-list__empty">
-          You are not the Author or an active Ally on any Initiative yet.
-        </p>
+        <p className="igc-group-list__empty">{t("emptyNoRole")}</p>
       ) : filteredGroups.length === 0 ? (
-        <p className="igc-group-list__empty">No Initiative matches “{query}”.</p>
+        <p className="igc-group-list__empty">{t("noMatch", { query })}</p>
       ) : (
         <ul className="igc-group-list__items">
           {filteredGroups.map((group) => (
@@ -63,9 +63,9 @@ export function InitiativeGroupList({ groups, selectedInitiativeId, onSelect }: 
               >
                 <span className="igc-group-list__item-title">{group.title}</span>
                 <span className="igc-group-list__item-meta">
-                  <span className="igc-group-list__item-role">{ROLE_LABELS[group.role]}</span>
+                  <span className="igc-group-list__item-role">{roleLabel(group.role)}</span>
                   <span className="igc-group-list__item-phase">
-                    {INITIATIVE_LIFECYCLE_PHASE_LABELS[group.lifecyclePhase]}
+                    {resolveLifecyclePhaseDisplayLabel(group.lifecyclePhase, tExperience)}
                   </span>
                 </span>
               </button>

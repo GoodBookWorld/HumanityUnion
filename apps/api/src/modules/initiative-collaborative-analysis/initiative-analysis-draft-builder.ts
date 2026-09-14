@@ -1,4 +1,14 @@
-import type { InitiativeAnalysisSourceSnapshot } from "@hu/types";
+import {
+  lifecycleStageToken,
+  type InitiativeAnalysisSourceSnapshot,
+} from "@hu/types";
+
+/** HU-owned controlled vocabulary refs — never free-text stage labels. */
+const DISCUSSION_STAGE = lifecycleStageToken("discussion");
+const ANALYSIS_STAGE = lifecycleStageToken("analysis");
+const INITIATIVE_STAGE = lifecycleStageToken("initiative");
+/** Canonical English form recognized by Closure 02 controlled vocabulary registry. */
+const READY_TO_COLLABORATE = "ready to collaborate";
 
 /**
  * Initiative Lifecycle — Part B, Section 4: AI Draft Pipeline.
@@ -55,18 +65,18 @@ function buildSummary(input: AnalysisDraftProviderInput): string {
 
   if (discussionStatistics.commentCount === 0) {
     return (
-      `No Discussion activity has been collected for "${input.initiativeTitle}" yet. ` +
+      `No ${DISCUSSION_STAGE} activity has been collected for "${input.initiativeTitle}" yet. ` +
       "This summary will update automatically once participants begin commenting."
     );
   }
 
   return (
-    `This analysis is based on ${discussionStatistics.commentCount} discussion comment` +
+    `This analysis is based on ${discussionStatistics.commentCount} ${DISCUSSION_STAGE} comment` +
     `${discussionStatistics.commentCount === 1 ? "" : "s"} for "${input.initiativeTitle}" ` +
     `(${discussionStatistics.helpfulCount} marked Helpful, ${discussionStatistics.notHelpfulCount} marked Not Helpful), ` +
     `${proposalCandidates.length} proposal-marked contribution${proposalCandidates.length === 1 ? "" : "s"}, ` +
     `${activeAlliesCount} Active ${activeAlliesCount === 1 ? "Ally" : "Allies"}, and ` +
-    `${readyToCollaborateCount} participant${readyToCollaborateCount === 1 ? "" : "s"} ready to collaborate.`
+    `${readyToCollaborateCount} participant${readyToCollaborateCount === 1 ? "" : "s"} ${READY_TO_COLLABORATE}.`
   );
 }
 
@@ -75,7 +85,7 @@ function buildSupportingEvidence(input: AnalysisDraftProviderInput): string {
     input.snapshot.repeatedArguments.map(
       (item) => `"${item.excerpt}" — ${item.authorDisplayName} (${item.helpfulCount} Helpful)`,
     ),
-    "No discussion comments have received Helpful reactions yet.",
+    `No ${DISCUSSION_STAGE} contributions have received Helpful reactions yet.`,
   );
 }
 
@@ -84,14 +94,14 @@ function buildRisks(input: AnalysisDraftProviderInput): string {
     input.snapshot.repeatedConcerns.map(
       (item) => `"${item.excerpt}" — ${item.authorDisplayName} (${item.notHelpfulCount} Not Helpful)`,
     ),
-    "No discussion comments have been identified as concerns yet.",
+    `No ${DISCUSSION_STAGE} contributions have been identified as concerns yet.`,
   );
 }
 
 function buildOpenQuestions(input: AnalysisDraftProviderInput): string {
   return bulletList(
     input.snapshot.openQuestions.map((item) => `"${item.excerpt}" — ${item.authorDisplayName}`),
-    "No open questions identified in the discussion yet.",
+    `No open questions identified in the ${DISCUSSION_STAGE} yet.`,
   );
 }
 
@@ -105,7 +115,7 @@ function buildAreasRequiringClarification(input: AnalysisDraftProviderInput): st
   return bulletList(
     topics
       .slice(0, 5)
-      .map((topic) => `Consider clarifying the Initiative's position on "${topic.topic}" (mentioned ${topic.mentionCount} times).`),
+      .map((topic) => `Consider clarifying the ${INITIATIVE_STAGE}'s position on "${topic.topic}" (mentioned ${topic.mentionCount} times).`),
     "No repeated discussion themes have emerged yet to recommend clarification on.",
   );
 }
@@ -113,7 +123,7 @@ function buildAreasRequiringClarification(input: AnalysisDraftProviderInput): st
 function buildProposalReferences(input: AnalysisDraftProviderInput): string {
   return bulletList(
     input.snapshot.proposalCandidates.map(
-      (item) => `"${item.excerpt}" — ${item.authorDisplayName} (see Discussion)`,
+      (item) => `"${item.excerpt}" — ${item.authorDisplayName} (see ${DISCUSSION_STAGE})`,
     ),
     "No proposal-marked discussion contributions exist yet.",
   );
@@ -121,7 +131,7 @@ function buildProposalReferences(input: AnalysisDraftProviderInput): string {
 
 async function generateDeterministicDraft(input: AnalysisDraftProviderInput): Promise<AnalysisDraftContent> {
   return {
-    title: `Collaborative Analysis: ${input.initiativeTitle}`,
+    title: `${ANALYSIS_STAGE}: ${input.initiativeTitle}`,
     summary: buildSummary(input),
     supportingEvidence: buildSupportingEvidence(input),
     risks: buildRisks(input),

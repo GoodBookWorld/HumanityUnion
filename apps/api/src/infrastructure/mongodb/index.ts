@@ -2,6 +2,13 @@ export {
   bootstrapMongoPersistence,
   isAnyMongoPersistenceSelected,
 } from "./bootstrap-mongo-persistence.js";
+export {
+  bootstrapContentTranslationOperatorPersistence,
+} from "./bootstrap-content-translation-operator-persistence.js";
+export type {
+  ContentTranslationOperatorBootstrapMode,
+  ContentTranslationOperatorBootstrapResult,
+} from "./bootstrap-content-translation-operator-persistence.js";
 export { createMongoSnapshotPersistence } from "./create-mongo-snapshot-persistence.js";
 export type { MongoSnapshotPersistenceHandles } from "./create-mongo-snapshot-persistence.js";
 export { assertMongoConfigured, isMongoConfigured, resolveMongoConfig } from "./mongo-config.js";

@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 01 diagnostics verified on staging; multilingual Pack 02 in progress)
+Project Health: **Healthy code tip** — Pack 02B–02I on `staging` (`97c0e1d`); **08I Live NOT_READY** until Registry enablement (zh-Hant/ar + search flags)
 
 ---
 
@@ -48,12 +48,17 @@ Project Health: **Healthy** (Pack 01 diagnostics verified on staging; multilingu
 | Step | Status |
 |------|--------|
 | 02A Architecture Audit | COMPLETED |
-| **02B Language Registry API** | **NEXT** |
-| 02C–02J | Queued |
+| **02B Language Registry** | **COMPLETED** + staging **PASS** |
+| **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
+| **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
+| **02E UI Key Extraction** | **COMPLETED** + staging **PASS** |
+| **02F Canonical Terminology Glossary** | **COMPLETE + STAGING PASS** (`98c2817`) |
+| **02G** Civic/public translation expansion + async warming | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS) |
+| 02H–02J | Queued (02H search deferred; 02I SEO; 02J formal Layout Resilience acceptance) |
 
-Live next task: see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02G Task 07** — staging acceptance after Render revision (**pending**; not STAGING PASS) — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack track: Production Completion **Pack 01 / 01.1**.
+Last closed product Pack with staging PASS: **02F** (revision `98c2817`). Pack 02G Tasks 01–06 COMPLETE locally. No production promotion yet.
 
 ---
 
@@ -65,6 +70,11 @@ Last closed product Pack track: Production Completion **Pack 01 / 01.1**.
 - Production identity / blog / initiative migration tracks — COMPLETED
 - Production Completion Pack 01 / 01.1 — COMPLETED
 - Production Completion Pack 02A — COMPLETED
+- Production Completion Pack 02B — COMPLETED + staging PASS
+- Production Completion Pack 02C — COMPLETED + staging PASS
+- Production Completion Pack 02D — COMPLETED + staging PASS
+- Production Completion Pack 02E — COMPLETED + staging PASS
+- Production Completion Pack 02F — COMPLETE + STAGING PASS (`98c2817`)
 
 ---
 
@@ -81,7 +91,11 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02B–02J multilingual implementation
+- Pack 02G — Civic/public translation expansion (**IN PROGRESS**; Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS)
+- Pack 02H multilingual search — deferred
+- Pack 02I multilingual SEO — deferred
+- Pack 02J — formal Multilingual Layout Resilience acceptance
+- Pack 02B/02C/02D/02E/02F staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit

@@ -24,7 +24,7 @@ interface MembershipFactsTilesProps {
  */
 export function MembershipFactsTiles({
   tiles,
-  ariaLabel = "Membership facts",
+  ariaLabel,
   className,
 }: MembershipFactsTilesProps) {
   if (tiles.length === 0) {

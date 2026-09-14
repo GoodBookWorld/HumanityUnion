@@ -1,11 +1,20 @@
-import { WorkspaceSectionNav } from "./WorkspaceSectionNav";
+import {
+  WorkspaceSectionNav,
+  type WorkspaceNavSection,
+} from "./WorkspaceSectionNav";
 
 import "./member-workspace.css";
 
 interface MemberWorkspaceProps {
   title: string;
   subtitle?: string;
-  navItems?: readonly string[];
+  navItems?: readonly WorkspaceNavSection[];
+  /** Localized "Sections" label for WorkspaceSectionNav. */
+  sectionsLabel?: string;
+  /** Localized aria-label for WorkspaceSectionNav. */
+  sectionsAriaLabel?: string;
+  /** Localized aria-label for the workspace aside navigation landmark. */
+  navAriaLabel?: string;
   workspaceNavigation?: React.ReactNode;
   headerBar?: React.ReactNode;
   assistant?: React.ReactNode;
@@ -21,6 +30,9 @@ export function MemberWorkspace({
   title,
   subtitle,
   navItems,
+  sectionsLabel,
+  sectionsAriaLabel,
+  navAriaLabel = "Workspace navigation",
   workspaceNavigation,
   headerBar,
   assistant,
@@ -34,9 +46,15 @@ export function MemberWorkspace({
     <div
       className={`member-workspace${withAssistantRail ? " member-workspace--with-assistant" : ""}`}
     >
-      <aside className="member-workspace__nav" aria-label="Workspace navigation">
+      <aside className="member-workspace__nav" aria-label={navAriaLabel}>
         {workspaceNavigation}
-        {navItems ? <WorkspaceSectionNav sections={navItems} /> : null}
+        {navItems ? (
+          <WorkspaceSectionNav
+            sections={navItems}
+            sectionsLabel={sectionsLabel}
+            sectionsAriaLabel={sectionsAriaLabel}
+          />
+        ) : null}
       </aside>
       <div className="member-workspace__main">
         {headerBar ? (

@@ -28,4 +28,7 @@ export {
   formatKnownSectionIdsForPrompt,
   PUBLIC_CHOICE_AI_APPLY_STAGE_IDS,
 } from "./lifecycle-ai-stage-apply-contract";
-export { useLifecycleAiFormApply } from "./use-lifecycle-ai-form-apply";
+export {
+  useLifecycleAiFormApply,
+  type LifecycleAiFormApplyNotice,
+} from "./use-lifecycle-ai-form-apply";

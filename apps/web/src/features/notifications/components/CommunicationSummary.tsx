@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import "./communication-summary.css";
 
 export interface CommunicationSummaryProps {
@@ -17,18 +21,20 @@ export function CommunicationSummary({
   unreadMessages,
   pendingReminders,
 }: CommunicationSummaryProps) {
+  const t = useTranslations("notifications");
+
   return (
-    <dl className="communication-summary" aria-label="Communication summary">
+    <dl className="communication-summary" aria-label={t("summaryBar.aria")}>
       <div className="communication-summary__item">
-        <dt className="communication-summary__label">Unread Notifications</dt>
+        <dt className="communication-summary__label">{t("summaryBar.unreadNotifications")}</dt>
         <dd className="communication-summary__value">{unreadNotifications}</dd>
       </div>
       <div className="communication-summary__item">
-        <dt className="communication-summary__label">Unread Messages</dt>
+        <dt className="communication-summary__label">{t("summaryBar.unreadMessages")}</dt>
         <dd className="communication-summary__value">{unreadMessages}</dd>
       </div>
       <div className="communication-summary__item">
-        <dt className="communication-summary__label">Pending Reminders</dt>
+        <dt className="communication-summary__label">{t("summaryBar.pendingReminders")}</dt>
         <dd className="communication-summary__value">{pendingReminders}</dd>
       </div>
     </dl>

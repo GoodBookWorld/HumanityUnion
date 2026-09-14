@@ -16,6 +16,15 @@ export function getCollectionById(
   return resolveInitiativeImprovementProposalsStagePersistenceAdapter().findById(collectionId);
 }
 
+export function findPublishedStructuredProposalById(proposalId: string): Promise<{
+  readonly collection: InitiativeImprovementProposalsCollection;
+  readonly proposal: InitiativeStructuredProposal;
+} | null> {
+  return resolveInitiativeImprovementProposalsStagePersistenceAdapter().findPublishedProposalById(
+    proposalId,
+  );
+}
+
 export function listCollectionsByInitiativeAndAuthor(
   initiativeId: string,
   authorId: string,
@@ -40,6 +49,23 @@ export async function listPublishedCollectionsByInitiative(
   return collections
     .filter((collection) => collection.status === "published")
     .sort((left, right) => (right.publishedAt ?? "").localeCompare(left.publishedAt ?? ""));
+}
+
+/**
+ * Memory-bounded published proposal ID page for staging CT warm discovery.
+ * Does not load Initiative corpus; projections exclude prose bodies on Mongo.
+ */
+export function listPublishedImprovementProposalIdsPage(input: {
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<{
+  readonly proposalIds: readonly string[];
+  readonly collectionsReturned: number;
+  readonly hasMore: boolean;
+}> {
+  return resolveInitiativeImprovementProposalsStagePersistenceAdapter().listPublishedProposalIdsPage(
+    input,
+  );
 }
 
 export async function createCollection(

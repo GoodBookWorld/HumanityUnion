@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { BlogAuthorWorkspacePostSummary, BlogPostStatus } from "@hu/types";
 
@@ -12,32 +13,12 @@ import { PublicationListItem } from "./PublicationListItem";
 
 type PublishingTab = "draft" | "submitted_for_review" | "scheduled" | "published" | "archived";
 
-const TABS: readonly { id: PublishingTab; label: string; empty: string }[] = [
-  {
-    id: "draft",
-    label: "Drafts",
-    empty: "No draft publications yet.",
-  },
-  {
-    id: "submitted_for_review",
-    label: "Under Review",
-    empty: "No publications are currently under review.",
-  },
-  {
-    id: "scheduled",
-    label: "Scheduled",
-    empty: "No scheduled publications.",
-  },
-  {
-    id: "published",
-    label: "Published",
-    empty: "No published Blog articles yet.",
-  },
-  {
-    id: "archived",
-    label: "Archived",
-    empty: "No archived publications.",
-  },
+const TAB_IDS: readonly PublishingTab[] = [
+  "draft",
+  "submitted_for_review",
+  "scheduled",
+  "published",
+  "archived",
 ];
 
 export interface PublishingDashboardProps {
@@ -50,71 +31,70 @@ export function PublishingDashboard({
   canDirectPublish,
   mutationsDisabled = false,
 }: PublishingDashboardProps) {
+  const t = useTranslations("workspace.publishingPage");
   const [tab, setTab] = useState<PublishingTab>("draft");
   const [items, setItems] = useState<BlogAuthorWorkspacePostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (status: BlogPostStatus) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await listOwnBlogPosts({ status, limit: 50 });
-      setItems([...response.items]);
-    } catch (loadError) {
-      if (isAuthenticationRequiredError(loadError)) {
-        setError("Sign in to manage your publications.");
-      } else {
-        setError(formatAuthFormError(loadError));
+  const load = useCallback(
+    async (status: BlogPostStatus) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await listOwnBlogPosts({ status, limit: 50 });
+        setItems([...response.items]);
+      } catch (loadError) {
+        if (isAuthenticationRequiredError(loadError)) {
+          setError(t("signInManage"));
+        } else {
+          setError(formatAuthFormError(loadError));
+        }
+        setItems([]);
+      } finally {
+        setLoading(false);
       }
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [t],
+  );
 
   useEffect(() => {
     void load(tab);
   }, [load, tab]);
 
-  const activeTab = TABS.find((entry) => entry.id === tab) ?? TABS[0]!;
-
   return (
     <div className="publishing-dashboard">
       <div className="publishing-dashboard__header">
         <Button href="/workspace/publishing/new" variant="primary" disabled={mutationsDisabled}>
-          New Publication
+          {t("newPublication")}
         </Button>
       </div>
 
       {mutationsDisabled ? (
-        <StatusBanner
-          title="Publishing actions unavailable"
-          message="Your Author access has been blocked. Edit, Correct, and Delete are unavailable."
-        />
+        <StatusBanner title={t("actionsUnavailableTitle")} message={t("actionsUnavailableBody")} />
       ) : null}
 
-      <div className="publishing-dashboard__tabs" role="tablist" aria-label="Publication status">
-        {TABS.map((entry) => (
+      <div className="publishing-dashboard__tabs" role="tablist" aria-label={t("tabsAria")}>
+        {TAB_IDS.map((id) => (
           <button
-            key={entry.id}
+            key={id}
             type="button"
             role="tab"
-            aria-selected={tab === entry.id}
-            className={`hu-tab-control publishing-dashboard__tab${tab === entry.id ? " is-active" : ""}`}
-            onClick={() => setTab(entry.id)}
+            aria-selected={tab === id}
+            className={`hu-tab-control publishing-dashboard__tab${tab === id ? " is-active" : ""}`}
+            onClick={() => setTab(id)}
           >
-            {entry.label}
+            {t(`tabs.${id}`)}
           </button>
         ))}
       </div>
 
-      {error ? <StatusBanner title="Unable to load publications" message={error} /> : null}
+      {error ? <StatusBanner title={t("loadErrorTitle")} message={error} /> : null}
 
-      {loading ? <p className="hu-body">Loading publications…</p> : null}
+      {loading ? <p className="hu-body">{t("loading")}</p> : null}
 
       {!loading && !error && items.length === 0 ? (
-        <p className="hu-body publishing-dashboard__empty">{activeTab.empty}</p>
+        <p className="hu-body publishing-dashboard__empty">{t(`empty.${tab}`)}</p>
       ) : null}
 
       <ul className="publishing-dashboard__list">

@@ -1,7 +1,13 @@
-import { FIND_YOUR_COMMUNITY_CONTENT, FIND_YOUR_COMMUNITY_VISITOR_CONCLUSION } from "../content";
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
+import type { CommunityCatalogPublicProjection } from "@hu/types";
+
 import { ExperienceBlockShell } from "../../public-experience";
 import { FindYourCommunityEvidence } from "./FindYourCommunityEvidence";
-import type { CommunityCatalogPublicProjection } from "@hu/types";
 
 interface FindYourCommunitySectionProps {
   catalog: CommunityCatalogPublicProjection;
@@ -12,14 +18,18 @@ export function FindYourCommunitySection({
   catalog,
   currentCommunitySlug,
 }: FindYourCommunitySectionProps) {
+  const t = useTranslations("publicGeo.community.find");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
+
   return (
     <ExperienceBlockShell
       id="find-your-community"
-      title={FIND_YOUR_COMMUNITY_CONTENT.title}
-      architecturalName="Exploration"
-      stage="Exploration"
-      contextIntroduction={FIND_YOUR_COMMUNITY_CONTENT.contextIntroduction}
-      visitorConclusion={FIND_YOUR_COMMUNITY_VISITOR_CONCLUSION}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction", siteName)}
+      visitorConclusion={t("visitorConclusion")}
     >
       <FindYourCommunityEvidence catalog={catalog} currentCommunitySlug={currentCommunitySlug} />
     </ExperienceBlockShell>

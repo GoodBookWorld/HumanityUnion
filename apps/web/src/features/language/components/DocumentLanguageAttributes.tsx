@@ -1,58 +1,10 @@
-"use client";
-
-import { useEffect } from "react";
-
-import { DEFAULT_PLATFORM_LANGUAGE, normalizeLanguageCode } from "@hu/types";
-
-import { useClientAuthStatus } from "../../auth/use-client-auth-status";
-import { getMyPreferences } from "../../preferences/preferences-api";
-import { documentDirectionForLanguage } from "../language";
-
-function applyDocumentLanguage(language: string): void {
-  const normalized = normalizeLanguageCode(language, DEFAULT_PLATFORM_LANGUAGE);
-  document.documentElement.lang = normalized;
-  document.documentElement.dir = documentDirectionForLanguage(normalized);
-}
-
 /**
- * Pack 02 / PWA UX Correction Pack 02 — drive root document lang/dir from
- * Interface Language preference only after canonical auth reports authenticated.
- * Guests keep the platform default without calling private `/preferences/me`.
+ * Production Completion Pack 02C Task 02 — document lang/dir is set on the
+ * server-rendered `<html>` in `app/layout.tsx` via `resolveDocumentHtmlLocale`.
+ *
+ * This client component is intentionally a no-op so we do not re-derive lang/dir
+ * after hydration (no English-then-switch flicker, no duplicate client locale state).
  */
 export function DocumentLanguageAttributes() {
-  const authStatus = useClientAuthStatus();
-
-  useEffect(() => {
-    if (authStatus === "pending") {
-      // Keep server-rendered / previous lang until auth settles.
-      return;
-    }
-
-    if (authStatus !== "authenticated") {
-      applyDocumentLanguage(DEFAULT_PLATFORM_LANGUAGE);
-      return;
-    }
-
-    let cancelled = false;
-
-    void getMyPreferences()
-      .then((preferences) => {
-        if (cancelled) {
-          return;
-        }
-
-        applyDocumentLanguage(preferences.experiencePreferences.interfaceLanguage);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          applyDocumentLanguage(DEFAULT_PLATFORM_LANGUAGE);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authStatus]);
-
   return null;
 }

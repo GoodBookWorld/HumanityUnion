@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import {
   MemberProfileAccessDeniedError,
   MemberProfileNotFoundError,
@@ -37,6 +38,30 @@ function resolvePublicMemberProfileErrorStatus(error: unknown): number {
   return 500;
 }
 
+function readPresentationLocaleQuery(
+  req: Parameters<typeof attachRuntimeLocale>[0],
+): string {
+  const raw = req.query.locale;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function resolveRequestPresentationLocale(
+  req: Parameters<typeof attachRuntimeLocale>[0],
+): Promise<string> {
+  const queryLocale = readPresentationLocaleQuery(req);
+  if (queryLocale) {
+    return queryLocale;
+  }
+  const headerRaw = req.headers["x-hu-presentation-locale"];
+  const headerLocale = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw;
+  if (typeof headerLocale === "string" && headerLocale.trim()) {
+    return headerLocale.trim();
+  }
+  const runtime = await attachRuntimeLocale(req);
+  return runtime.locale;
+}
+
 /**
  * UX Evolution Pack 02.4 Part 6 — the actual public-facing route:
  * `/member/{publicName}` (comment author links, Initiative steward links)
@@ -58,10 +83,12 @@ publicMemberProfileRouter.get(
     const viewerParticipantId = req.auth?.memberId;
 
     try {
+      const locale = await resolveRequestPresentationLocale(req);
       const profile = await getPublicMemberProfileByPublicName(publicName, {
         viewerIsAuthenticated,
         viewerUserId,
         viewerParticipantId,
+        locale,
       });
 
       res.json(createSuccessResponse(profile, "Public member profile loaded."));
@@ -83,10 +110,12 @@ publicMemberProfileRouter.get("/:profileId", optionalAuthenticationMiddleware, a
   const viewerParticipantId = req.auth?.memberId;
 
   try {
+    const locale = await resolveRequestPresentationLocale(req);
     const profile = await getPublicMemberProfileById(profileId, {
       viewerIsAuthenticated,
       viewerUserId,
       viewerParticipantId,
+      locale,
     });
 
     res.json(createSuccessResponse(profile, "Public member profile loaded."));

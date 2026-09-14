@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   InitiativeCollaborationSessionAttendanceResponse,
@@ -21,17 +22,11 @@ import { SharedDocumentsPanel } from "../../shared-documents/components/SharedDo
 
 import "./initiative-collaboration-sessions.css";
 
-const STATUS_LABEL: Record<InitiativeCollaborationSessionStatus, string> = {
-  upcoming: "Upcoming",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
-const ATTENDANCE_LABEL: Record<InitiativeCollaborationSessionAttendanceResponse, string> = {
-  accepted: "Accept",
-  maybe: "Maybe",
-  declined: "Decline",
-};
+const ATTENDANCE_OPTIONS: InitiativeCollaborationSessionAttendanceResponse[] = [
+  "accepted",
+  "maybe",
+  "declined",
+];
 
 const COMMON_TIMEZONES = [
   "UTC",
@@ -63,11 +58,13 @@ function resolveTimezoneOptions(): string[] {
   return COMMON_TIMEZONES;
 }
 
+type SessionsT = ReturnType<typeof useTranslations>;
+
 /** Part 4/11 — a single readable line, formatted in the Session's own `timezone` (never the viewer's local zone, so every participant sees the same wall-clock time the Author scheduled). */
-function formatSessionSchedule(session: InitiativeCollaborationSessionView): string {
+function formatSessionSchedule(session: InitiativeCollaborationSessionView, locale: string): string {
   const date = new Date(session.scheduledAtUtc);
 
-  const formatted = new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: session.timezone,
     weekday: "short",
     month: "short",
@@ -77,40 +74,68 @@ function formatSessionSchedule(session: InitiativeCollaborationSessionView): str
     minute: "2-digit",
     timeZoneName: "short",
   }).format(date);
-
-  return formatted;
 }
 
-function formatDuration(minutes: number): string {
+function formatDuration(minutes: number, t: SessionsT): string {
   if (minutes < 60) {
-    return `${minutes} min`;
+    return t("collaboration.sessions.durationMin", { minutes });
   }
 
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
 
-  return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`;
+  return remainder === 0
+    ? t("collaboration.sessions.durationHr", { hours })
+    : t("collaboration.sessions.durationHrMin", { hours, minutes: remainder });
+}
+
+function statusLabel(status: InitiativeCollaborationSessionStatus, t: SessionsT): string {
+  switch (status) {
+    case "upcoming":
+      return t("collaboration.sessions.upcoming");
+    case "completed":
+      return t("collaboration.sessions.completed");
+    case "cancelled":
+      return t("collaboration.sessions.cancelled");
+  }
+}
+
+function attendanceLabel(
+  response: InitiativeCollaborationSessionAttendanceResponse,
+  t: SessionsT,
+): string {
+  switch (response) {
+    case "accepted":
+      return t("collaboration.sessions.accept");
+    case "maybe":
+      return t("collaboration.sessions.maybe");
+    case "declined":
+      return t("collaboration.sessions.decline");
+  }
 }
 
 /** Part 12/13 — never a bare colored dot; always paired with the status text. */
 function SessionStatusBadge({ status }: { status: InitiativeCollaborationSessionStatus }) {
+  const t = useTranslations("initiativeExperience");
+
   return (
     <span className={`ics-badge ics-badge--${status}`}>
       <span className="ics-badge__dot" aria-hidden="true" />
-      {STATUS_LABEL[status]}
+      {statusLabel(status, t)}
     </span>
   );
 }
 
 function AttendanceTotalsSummary({ session }: { session: InitiativeCollaborationSessionView }) {
+  const t = useTranslations("initiativeExperience");
   const { accepted, maybe, declined, noResponse } = session.attendanceTotals;
 
   return (
     <p className="ics-attendance-summary">
-      <span>{accepted} accepted</span>
-      <span>{maybe} maybe</span>
-      <span>{declined} declined</span>
-      <span>{noResponse} no response</span>
+      <span>{t("collaboration.sessions.acceptedCount", { count: accepted })}</span>
+      <span>{t("collaboration.sessions.maybeCount", { count: maybe })}</span>
+      <span>{t("collaboration.sessions.declinedCount", { count: declined })}</span>
+      <span>{t("collaboration.sessions.noResponseCount", { count: noResponse })}</span>
     </p>
   );
 }
@@ -124,6 +149,9 @@ function SessionListCard({
   isSelected: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   return (
     <li>
       <button
@@ -133,10 +161,12 @@ function SessionListCard({
         aria-pressed={isSelected}
       >
         <span className="ics-session-card__title">{session.title}</span>
-        <span className="ics-session-card__schedule">{formatSessionSchedule(session)}</span>
+        <span className="ics-session-card__schedule">{formatSessionSchedule(session, locale)}</span>
         <span className="ics-session-card__meta">
           <SessionStatusBadge status={session.status} />
-          <span className="ics-session-card__duration">{formatDuration(session.estimatedDurationMinutes)}</span>
+          <span className="ics-session-card__duration">
+            {formatDuration(session.estimatedDurationMinutes, t)}
+          </span>
         </span>
       </button>
     </li>
@@ -152,6 +182,7 @@ interface SessionEditorFormProps {
 }
 
 function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: SessionEditorFormProps) {
+  const t = useTranslations("initiativeExperience");
   const formId = useId();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [agenda, setAgenda] = useState(initial?.agenda ?? "");
@@ -180,9 +211,17 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
   }
 
   return (
-    <form className="ics-editor" onSubmit={handleSubmit} aria-label={initial ? "Edit Collaboration Session" : "New Collaboration Session"}>
+    <form
+      className="ics-editor"
+      onSubmit={handleSubmit}
+      aria-label={
+        initial
+          ? t("collaboration.sessions.editorEditAria")
+          : t("collaboration.sessions.editorNewAria")
+      }
+    >
       <div className="ics-editor__field">
-        <label htmlFor={`${formId}-title`}>Title</label>
+        <label htmlFor={`${formId}-title`}>{t("collaboration.sessions.title")}</label>
         <input
           id={`${formId}-title`}
           type="text"
@@ -195,7 +234,7 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
 
       <div className="ics-editor__grid">
         <div className="ics-editor__field">
-          <label htmlFor={`${formId}-date`}>Meeting date</label>
+          <label htmlFor={`${formId}-date`}>{t("collaboration.sessions.meetingDate")}</label>
           <input
             id={`${formId}-date`}
             type="date"
@@ -205,7 +244,7 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
           />
         </div>
         <div className="ics-editor__field">
-          <label htmlFor={`${formId}-time`}>Meeting time</label>
+          <label htmlFor={`${formId}-time`}>{t("collaboration.sessions.meetingTime")}</label>
           <input
             id={`${formId}-time`}
             type="time"
@@ -215,7 +254,7 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
           />
         </div>
         <div className="ics-editor__field">
-          <label htmlFor={`${formId}-timezone`}>Timezone</label>
+          <label htmlFor={`${formId}-timezone`}>{t("collaboration.sessions.timezone")}</label>
           <select
             id={`${formId}-timezone`}
             value={timezone}
@@ -230,7 +269,7 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
           </select>
         </div>
         <div className="ics-editor__field">
-          <label htmlFor={`${formId}-duration`}>Estimated duration (minutes)</label>
+          <label htmlFor={`${formId}-duration`}>{t("collaboration.sessions.durationMinutes")}</label>
           <input
             id={`${formId}-duration`}
             type="number"
@@ -245,12 +284,18 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
       </div>
 
       <div className="ics-editor__field">
-        <label htmlFor={`${formId}-agenda`}>Agenda</label>
-        <textarea id={`${formId}-agenda`} rows={2} maxLength={2000} value={agenda} onChange={(event) => setAgenda(event.target.value)} />
+        <label htmlFor={`${formId}-agenda`}>{t("collaboration.sessions.agenda")}</label>
+        <textarea
+          id={`${formId}-agenda`}
+          rows={2}
+          maxLength={2000}
+          value={agenda}
+          onChange={(event) => setAgenda(event.target.value)}
+        />
       </div>
 
       <div className="ics-editor__field">
-        <label htmlFor={`${formId}-description`}>Description</label>
+        <label htmlFor={`${formId}-description`}>{t("collaboration.sessions.description")}</label>
         <textarea
           id={`${formId}-description`}
           rows={3}
@@ -261,15 +306,15 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
       </div>
 
       <div className="ics-editor__field">
-        <label htmlFor={`${formId}-link`}>External meeting link</label>
+        <label htmlFor={`${formId}-link`}>{t("collaboration.sessions.externalLink")}</label>
         <input
           id={`${formId}-link`}
           type="url"
-          placeholder="https://meet.google.com/..."
+          placeholder={t("collaboration.sessions.linkPlaceholder")}
           value={externalMeetingLink}
           onChange={(event) => setExternalMeetingLink(event.target.value)}
         />
-        <p className="ics-editor__hint">Google Meet, Microsoft Teams, Zoom, Jitsi, BigBlueButton — any link works.</p>
+        <p className="ics-editor__hint">{t("collaboration.sessions.linkHint")}</p>
       </div>
 
       {error ? (
@@ -280,10 +325,14 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
 
       <div className="ics-editor__actions">
         <button type="button" className="hu-button hu-button--secondary" onClick={onCancel} disabled={submitting}>
-          Cancel
+          {t("collaboration.sessions.cancel")}
         </button>
         <button type="submit" className="hu-button hu-button--primary" disabled={submitting}>
-          {submitting ? "Saving…" : initial ? "Save changes" : "Schedule Session"}
+          {submitting
+            ? t("collaboration.sessions.saving")
+            : initial
+              ? t("collaboration.sessions.saveChanges")
+              : t("collaboration.sessions.scheduleSession")}
         </button>
       </div>
     </form>
@@ -307,27 +356,33 @@ function SessionDetail({
   onCancelSession: () => void;
   onRespond: (response: InitiativeCollaborationSessionAttendanceResponse) => void;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   return (
-    <article className="ics-detail" aria-label={`Collaboration Session: ${session.title}`}>
+    <article
+      className="ics-detail"
+      aria-label={t("collaboration.sessions.detailAria", { title: session.title })}
+    >
       <header className="ics-detail__header">
         <h4 className="ics-detail__title">{session.title}</h4>
         <SessionStatusBadge status={session.status} />
       </header>
 
       <p className="ics-detail__schedule">
-        {formatSessionSchedule(session)} · {formatDuration(session.estimatedDurationMinutes)}
+        {formatSessionSchedule(session, locale)} · {formatDuration(session.estimatedDurationMinutes, t)}
       </p>
 
       {session.agenda ? (
         <div className="ics-detail__block">
-          <h5>Agenda</h5>
+          <h5>{t("collaboration.sessions.agenda")}</h5>
           <p>{session.agenda}</p>
         </div>
       ) : null}
 
       {session.description ? (
         <div className="ics-detail__block">
-          <h5>Description</h5>
+          <h5>{t("collaboration.sessions.description")}</h5>
           <p>{session.description}</p>
         </div>
       ) : null}
@@ -339,7 +394,7 @@ function SessionDetail({
           target="_blank"
           rel="noreferrer noopener"
         >
-          Open meeting
+          {t("collaboration.sessions.openMeeting")}
         </a>
       ) : null}
 
@@ -348,12 +403,16 @@ function SessionDetail({
       />
 
       <div className="ics-detail__block">
-        <h5>Attendance</h5>
+        <h5>{t("collaboration.sessions.attendanceAria")}</h5>
         <AttendanceTotalsSummary session={session} />
 
         {session.canRespond && session.status !== "cancelled" ? (
-          <div role="group" aria-label="Your attendance" className="ics-attendance-buttons">
-            {(Object.keys(ATTENDANCE_LABEL) as InitiativeCollaborationSessionAttendanceResponse[]).map((option) => (
+          <div
+            role="group"
+            aria-label={t("collaboration.sessions.yourAttendanceAria")}
+            className="ics-attendance-buttons"
+          >
+            {ATTENDANCE_OPTIONS.map((option) => (
               <button
                 key={option}
                 type="button"
@@ -365,7 +424,7 @@ function SessionDetail({
                 onClick={() => onRespond(option)}
               >
                 {session.viewerResponse === option ? "✓ " : ""}
-                {ATTENDANCE_LABEL[option]}
+                {attendanceLabel(option, t)}
               </button>
             ))}
           </div>
@@ -377,7 +436,9 @@ function SessionDetail({
               <li key={entry.participantId} className="ics-roster__row">
                 <span className="ics-roster__name">{entry.displayName}</span>
                 <span className={`ics-roster__response ics-roster__response--${entry.response ?? "none"}`}>
-                  {entry.response ? ATTENDANCE_LABEL[entry.response] : "No response yet"}
+                  {entry.response
+                    ? attendanceLabel(entry.response, t)
+                    : t("collaboration.sessions.noResponse")}
                 </span>
               </li>
             ))}
@@ -394,10 +455,10 @@ function SessionDetail({
       {session.canEdit && session.status !== "cancelled" ? (
         <div className="ics-detail__author-actions">
           <button type="button" className="hu-button hu-button--secondary" onClick={onEdit} disabled={busy}>
-            Edit / Reschedule
+            {t("collaboration.sessions.editReschedule")}
           </button>
           <button type="button" className="ics-cancel-button" onClick={onCancelSession} disabled={busy}>
-            Cancel Session
+            {t("collaboration.sessions.cancelSession")}
           </button>
         </div>
       ) : null}
@@ -420,6 +481,7 @@ type EditorState = "closed" | "create" | "edit";
  * ever needed).
  */
 export function InitiativeCollaborationSessionsPanel({ initiativeId }: InitiativeCollaborationSessionsPanelProps) {
+  const t = useTranslations("initiativeExperience");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<InitiativeCollaborationSessionListResult | null>(null);
@@ -447,10 +509,12 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
     } catch (error) {
       setLoadState("error");
       setErrorMessage(
-        error instanceof ApiRequestError ? error.message : "Unable to load Collaboration Sessions. Please try again.",
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.sessions.loadFailed"),
       );
     }
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   useEffect(() => {
     void load();
@@ -468,7 +532,11 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
       await load();
       setSelectedSessionId(created.sessionId);
     } catch (error) {
-      setEditorError(error instanceof ApiRequestError ? error.message : "Unable to schedule this Session. Please try again.");
+      setEditorError(
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.sessions.scheduleFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -487,7 +555,11 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
       setEditorState("closed");
       await load();
     } catch (error) {
-      setEditorError(error instanceof ApiRequestError ? error.message : "Unable to update this Session. Please try again.");
+      setEditorError(
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.sessions.updateFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -505,7 +577,11 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
       await cancelInitiativeCollaborationSession(initiativeId, selectedSession.sessionId);
       await load();
     } catch (error) {
-      setActionError(error instanceof ApiRequestError ? error.message : "Unable to cancel this Session. Please try again.");
+      setActionError(
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.sessions.cancelFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -523,7 +599,11 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
       await setInitiativeCollaborationSessionAttendance(initiativeId, selectedSession.sessionId, response);
       await load();
     } catch (error) {
-      setActionError(error instanceof ApiRequestError ? error.message : "Unable to record attendance. Please try again.");
+      setActionError(
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.sessions.attendanceFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -531,9 +611,9 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
 
   if (loadState === "loading" && !result) {
     return (
-      <section className="ics-panel" aria-label="Collaboration Sessions">
+      <section className="ics-panel" aria-label={t("collaboration.sessions.aria")}>
         <p className="ics-status" role="status">
-          Loading Collaboration Sessions…
+          {t("collaboration.sessions.loading")}
         </p>
       </section>
     );
@@ -541,7 +621,7 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
 
   if (loadState === "error" && !result) {
     return (
-      <section className="ics-panel" aria-label="Collaboration Sessions">
+      <section className="ics-panel" aria-label={t("collaboration.sessions.aria")}>
         <p className="ics-status ics-status--error" role="alert">
           {errorMessage}
         </p>
@@ -554,16 +634,16 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
   }
 
   return (
-    <section className="ics-panel" aria-label="Collaboration Sessions">
+    <section className="ics-panel" aria-label={t("collaboration.sessions.aria")}>
       <header className="ics-panel__header">
-        <h3 className="ics-panel__title">Collaboration Sessions</h3>
+        <h3 className="ics-panel__title">{t("collaboration.sessions.aria")}</h3>
         {result.canCreate && editorState === "closed" ? (
           <button
             type="button"
             className="hu-button hu-button--primary ics-panel__new-button"
             onClick={() => setEditorState("create")}
           >
-            New Session
+            {t("collaboration.sessions.newSession")}
           </button>
         ) : null}
       </header>
@@ -597,8 +677,10 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
         <>
           {result.sessions.length === 0 ? (
             <p className="ics-status">
-              No Collaboration Sessions yet.{" "}
-              {result.canCreate ? "Schedule one to start coordinating with your Active Allies." : ""}
+              {t("collaboration.sessions.empty")}{" "}
+              {result.canCreate
+                ? t("collaboration.sessions.emptyHintCreate")
+                : t("collaboration.sessions.emptyHintReadonly")}
             </p>
           ) : (
             <ul className="ics-session-list">
