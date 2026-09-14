@@ -103,14 +103,12 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     assert.match(register, /beforeinstallprompt/);
   });
 
-  it("10 — fallback manual instructions work; iOS hides duplicate guide CTA", () => {
+  it("10 — fallback manual instructions work; guide available when not installed", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /install\.installationGuide/);
     assert.match(promo, /openGuidance\("browser"\)|openGuidance\("android"\)|openGuidance\("ios"\)/);
-    assert.match(
-      promo,
-      /showInstallationGuide[\s\S]*=[\s\S]*!runningStandalone[\s\S]*!dismissed[\s\S]*ios_add_to_home/s,
-    );
+    assert.match(promo, /showInstallationGuide = !runningStandalone/);
+    assert.match(promo, /showIosAction = isIos/);
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /hu-pwa-ios-help__platforms/);
   });
@@ -160,7 +158,9 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
   it("15 — existing PWA install regressions remain green", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /resolvePwaInstallUxState/);
-    assert.match(promo, /install\.later/);
+    assert.match(promo, /install\.installCta/);
+    assert.match(promo, /install\.installationGuide/);
+    assert.doesNotMatch(promo, /install\.later/);
     assert.match(promo, /PwaInstallGuidance/);
     assert.match(promo, /hu-pwa-install-column/);
   });
