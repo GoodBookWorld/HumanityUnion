@@ -5,11 +5,6 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system";
 import {
-  clearObsoleteInstallPreferenceKeys,
-  dismissInstallPromotion,
-  wasInstallPromotionDismissedRecently,
-} from "../install-preference";
-import {
   getDeferredInstallPrompt,
   resolvePwaInstallUxState,
   subscribeInstallPrompt,
@@ -19,23 +14,20 @@ import { subscribePresentationMode } from "../presentation-mode";
 import { PwaInstallGuidance, type PwaInstallGuidanceKind } from "./PwaInstallGuidance";
 
 /**
- * Home App column install UX — promotion block stays discoverable.
- * Pack 23D.1 — manual "Installation guide" is always available when not installed,
- * even when `beforeinstallprompt` is absent (Incognito / unsupported auto-install).
- * Automatic Install CTA only when a deferred prompt exists.
+ * Home App column install UX — persistently discoverable.
+ * When not installed: primary Install CTA + secondary Installation guide
+ * (except iOS, which keeps Add to Home Screen as the primary action).
+ * Native `beforeinstallprompt` is used when available; otherwise Install
+ * opens the existing installation guidance. No temporary dismiss / Later.
  */
 export function PwaInstallPromotion() {
   const t = useTranslations("pwa");
   const [uxState, setUxState] = useState<PwaInstallUxState>("browser_mode");
-  const [dismissed, setDismissed] = useState(false);
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const [guidanceKind, setGuidanceKind] = useState<PwaInstallGuidanceKind>("browser");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    clearObsoleteInstallPreferenceKeys();
-    setDismissed(wasInstallPromotionDismissedRecently());
-
     const sync = () => {
       setUxState(
         resolvePwaInstallUxState({
@@ -52,31 +44,6 @@ export function PwaInstallPromotion() {
       unsubMode();
     };
   }, []);
-
-  async function handleInstall() {
-    const prompt = getDeferredInstallPrompt();
-    if (!prompt) {
-      return;
-    }
-
-    setBusy(true);
-    try {
-      await prompt.prompt();
-      await prompt.userChoice;
-    } finally {
-      setBusy(false);
-      setUxState(resolvePwaInstallUxState({ deferredPrompt: getDeferredInstallPrompt() }));
-    }
-  }
-
-  function handleDismiss() {
-    dismissInstallPromotion();
-    setDismissed(true);
-  }
-
-  function handleShowAgain() {
-    setDismissed(false);
-  }
 
   function openGuidance(kind: PwaInstallGuidanceKind) {
     setGuidanceKind(kind);
@@ -95,17 +62,31 @@ export function PwaInstallPromotion() {
     openGuidance("browser");
   }
 
+  async function handlePrimaryInstallCta() {
+    const prompt = getDeferredInstallPrompt();
+    if (prompt) {
+      setBusy(true);
+      try {
+        await prompt.prompt();
+        await prompt.userChoice;
+      } finally {
+        setBusy(false);
+        setUxState(resolvePwaInstallUxState({ deferredPrompt: getDeferredInstallPrompt() }));
+      }
+      return;
+    }
+
+    openDefaultGuide();
+  }
+
   const runningStandalone = uxState === "already_installed";
-  /** Automatic install only when beforeinstallprompt deferred prompt exists. */
-  const showInstallAction = uxState === "install_available" && !dismissed;
-  const showIosAction = uxState === "ios_add_to_home" && !dismissed;
-  /**
-   * Pack 23D.1 — manual guide must not depend on beforeinstallprompt.
-   * Visible when not installed / not dismissed, except iOS where the primary
-   * "Add to Home Screen" CTA opens the compact Safari A2HS modal instead.
-   */
-  const showInstallationGuide =
-    !runningStandalone && !dismissed && uxState !== "ios_add_to_home";
+  const isIos = uxState === "ios_add_to_home";
+  /** Primary Install CTA when not installed and not on the iOS A2HS path. */
+  const showInstallAction = !runningStandalone && !isIos;
+  /** iOS keeps Add to Home Screen as the primary install action. */
+  const showIosAction = isIos;
+  /** Installation guide always available when not installed (independent of BIP). */
+  const showInstallationGuide = !runningStandalone;
   const automaticInstallAvailable = uxState === "install_available";
 
   return (
@@ -122,26 +103,13 @@ export function PwaInstallPromotion() {
             {t("install.openWorkspace")}
           </Button>
         </div>
-      ) : null}
-
-      {!runningStandalone && dismissed ? (
-        <div className="hu-pwa-install-actions">
-          <p className="hu-pwa-install-status" role="status">
-            {t("install.hiddenStatus")}
-          </p>
-          <Button type="button" variant="secondary" onClick={handleShowAgain}>
-            {t("install.showOptions")}
-          </Button>
-        </div>
-      ) : null}
-
-      {!runningStandalone && !dismissed ? (
+      ) : (
         <div className="hu-pwa-install-actions">
           {showInstallAction ? (
             <Button
               type="button"
               variant="primary"
-              onClick={() => void handleInstall()}
+              onClick={() => void handlePrimaryInstallCta()}
               disabled={busy}
             >
               {busy ? t("install.installing") : t("install.installCta")}
@@ -159,12 +127,8 @@ export function PwaInstallPromotion() {
               {t("install.installationGuide")}
             </Button>
           ) : null}
-
-          <Button type="button" variant="secondary" onClick={handleDismiss}>
-            {t("install.later")}
-          </Button>
         </div>
-      ) : null}
+      )}
 
       <PwaInstallGuidance
         open={guidanceOpen}

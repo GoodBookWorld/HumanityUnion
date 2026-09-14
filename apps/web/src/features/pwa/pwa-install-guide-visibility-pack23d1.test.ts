@@ -22,9 +22,9 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
   it("1–3 — guide visible without beforeinstallprompt (Incognito / unsupported)", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /showInstallationGuide/);
-    assert.match(promo, /!runningStandalone && !dismissed/);
+    assert.match(promo, /showInstallationGuide = !runningStandalone/);
     assert.match(promo, /install\.installationGuide/);
-    assert.match(promo, /beforeinstallprompt is absent|does not depend on beforeinstallprompt|must not depend on beforeinstallprompt/i);
+    assert.match(promo, /must not depend on beforeinstallprompt|independent of BIP|opens the existing installation guidance/i);
 
     const noPrompt = resolvePwaInstallUxState({ standalone: false, deferredPrompt: null });
     assert.ok(
@@ -35,13 +35,10 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     assert.notEqual(noPrompt, "already_installed");
   });
 
-  it("4–5 — Install button only when prompt exists; guide independent of prompt", () => {
+  it("4–5 — primary Install CTA without BIP; guide independent of prompt", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(promo, /showInstallAction = uxState === "install_available"/);
-    assert.match(
-      promo,
-      /showInstallationGuide[\s\S]*=[\s\S]*!runningStandalone[\s\S]*!dismissed[\s\S]*ios_add_to_home/s,
-    );
+    assert.match(promo, /showInstallAction = !runningStandalone && !isIos/);
+    assert.match(promo, /showInstallationGuide = !runningStandalone/);
     assert.doesNotMatch(
       promo,
       /showInstallationGuide\s*=\s*[^\n]*install_available/,
@@ -49,6 +46,8 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     assert.match(promo, /ios_add_to_home/);
     assert.match(promo, /openGuidance\("ios"\)/);
     assert.match(promo, /prompt\.prompt\(\)/);
+    assert.match(promo, /openDefaultGuide\(\)/);
+    assert.doesNotMatch(promo, /install\.later|handleDismiss/);
 
     const prompt = { prompt: async () => undefined } as BeforeInstallPromptLike;
     assert.equal(
@@ -103,7 +102,8 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /getDeferredInstallPrompt/);
     assert.match(promo, /install\.installCta/);
-    assert.match(promo, /install\.later/);
+    assert.match(promo, /install\.installationGuide/);
+    assert.doesNotMatch(promo, /install\.later/);
     assert.match(promo, /PwaInstallGuidance/);
     const preference = read("features/pwa/install-preference.ts");
     assert.match(preference, /catch \{/);
