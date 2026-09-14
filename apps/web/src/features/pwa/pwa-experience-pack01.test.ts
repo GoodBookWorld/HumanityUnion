@@ -73,9 +73,9 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(promo, /runningStandalone/);
     assert.match(promo, /install\.alreadyInstalled/);
     assert.match(promo, /install\.openWorkspace/);
-    assert.match(promo, /showInstallAction = uxState === "install_available" && !dismissed/);
+    assert.match(promo, /showInstallAction = !runningStandalone && !isIos/);
     assert.match(promo, /install\.installationGuide/);
-    assert.match(promo, /handleDismiss[\s\S]*install\.later/);
+    assert.doesNotMatch(promo, /install\.later|handleDismiss/);
   });
 
   it("10 — no automatic install prompt", () => {
