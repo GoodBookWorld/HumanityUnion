@@ -162,7 +162,7 @@ describe("PWA UX Correction Pack 02", () => {
     assert.equal(CANONICAL_ENGLISH_BRAND_FALLBACK.shortName, "Humanity");
   });
 
-  it("install promotion never actionless; Later ≠ installed; SW ≠ installed", () => {
+  it("install promotion never actionless; no Later dismiss; SW ≠ installed", () => {
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
     const preference = readWeb("features/pwa/install-preference.ts");
     const guidance = readWeb("features/pwa/components/PwaInstallGuidance.tsx");
@@ -172,12 +172,11 @@ describe("PWA UX Correction Pack 02", () => {
     assert.match(promo, /install\.appTitle/);
     assert.doesNotMatch(promo, /if \(uxState === "already_installed"\) \{\s*return null/);
     assert.match(promo, /install\.alreadyInstalled/);
-    assert.match(promo, /install\.showOptions/);
     assert.match(promo, /install\.installCta|install\.installing/);
     assert.match(promo, /install\.addToHomeScreen/);
     assert.match(promo, /install\.installationGuide/);
-    assert.match(promo, /handleDismiss[\s\S]*install\.later/);
-    assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
+    assert.doesNotMatch(promo, /install\.later|install\.showOptions|handleDismiss/);
+    assert.doesNotMatch(promo, /install-preference|dismissInstallPromotion/);
     assert.match(guidance, /install\.guideTitle|install\.addToHomeScreen/);
     assert.match(guidance, /install\.iosStep2/);
     assert.match(preference, /dismissal ≠ installed|not OS install proof/i);
