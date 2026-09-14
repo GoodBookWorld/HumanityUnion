@@ -27,6 +27,21 @@ export interface TranslationProviderResult {
   readonly translatedText: string;
   readonly providerId: TranslationProviderId;
   readonly isPlaceholder: boolean;
+  /** RESET 05E — optional Gemini envelope forensics (no content). */
+  readonly envelope?: {
+    readonly httpStatus?: number | null;
+    readonly finishReason?: string | null;
+    readonly candidateCount?: number;
+    readonly textPartCount?: number;
+    readonly extractedLength?: number;
+    readonly failureSubtype?: string | null;
+    /** RESET 05E.2 */
+    readonly errorClass?: string | null;
+    readonly errorCode?: string | null;
+    readonly retryAfterSeconds?: number | null;
+    readonly geminiErrorStatus?: string | null;
+    readonly geminiErrorReason?: string | null;
+  };
 }
 
 export interface TranslationProvider {

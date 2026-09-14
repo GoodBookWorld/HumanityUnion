@@ -1,7 +1,9 @@
 export const FOOTER_CONTENT = {
   identity: "Humanity Union",
   tagline: "WORLD SOLIDARITY",
+  /** English seed only — PublicExperienceFooter displays navigation.footerPlatformHeading. */
   platformHeading: "Platform",
+  /** English seed only — PublicExperienceFooter displays navigation.footerLegalHeading. */
   legalHeading: "Legal and transparency",
 } as const;
 

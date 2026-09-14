@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -11,6 +12,7 @@ import { confirmPasswordReset, validatePasswordResetToken } from "../auth-api";
 import "./auth-form.css";
 
 export function PasswordResetConfirmForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -39,9 +41,9 @@ export function PasswordResetConfirmForm() {
 
     try {
       await confirmPasswordReset(token, password);
-      setMessage("Your password has been reset. You can log in with your new password.");
+      setMessage(t("passwordResetSuccess"));
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to reset password.");
+      setError(submitError instanceof Error ? submitError.message : t("unableToResetPassword"));
     } finally {
       setSubmitting(false);
     }
@@ -51,9 +53,9 @@ export function PasswordResetConfirmForm() {
     return (
       <Card>
         <div className="auth-form">
-          <p className="auth-form__error">Invalid or expired reset token.</p>
+          <p className="auth-form__error">{t("invalidResetToken")}</p>
           <Button href="/password-reset" variant="primary">
-            Request a new reset link
+            {t("requestNewResetLink")}
           </Button>
         </div>
       </Card>
@@ -64,7 +66,7 @@ export function PasswordResetConfirmForm() {
     <Card>
       <form className="auth-form" onSubmit={(event) => void handleSubmit(event)}>
         <label className="auth-form__field">
-          <span>New password</span>
+          <span>{t("newPassword")}</span>
           <PasswordInput
             autoComplete="new-password"
             required
@@ -77,11 +79,11 @@ export function PasswordResetConfirmForm() {
         {error ? <p className="auth-form__error">{error}</p> : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting || tokenValid === null}>
-            Reset password
+            {t("resetPassword")}
           </Button>
           {message ? (
             <Button variant="secondary" onClick={() => router.push("/login")}>
-              Log in
+              {t("logIn")}
             </Button>
           ) : null}
         </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
+import { mayApplyPersistedLocalizedPresentation } from "@hu/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   MediaRailControls,
@@ -11,7 +13,10 @@ import {
 } from "../../civic-media-center/media-rail";
 import { HuxDiscoveryShell } from "../../horizontal-experience";
 import { isApiUnavailableError } from "../../../lib/api-client";
+import { isMediaPlpWebEnabled } from "../../language/media-plp/feature-flag";
+import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 import { fetchPublicNewsArticles } from "../api";
+import { fetchCountryPublicNewsPlpById } from "../fetch-country-public-news-plp";
 import {
   collectFilterOptions,
   DEFAULT_PUBLIC_NEWS_FILTERS,
@@ -21,7 +26,8 @@ import {
   type PublicNewsFilters,
 } from "../public-news-discovery.utils";
 import {
-  filterPublicNewsForCountry,
+  selectCountryPublicNewsRail,
+  COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
   type CountryPublicNewsMediaRef,
 } from "../public-news-country.utils";
 import { PublicNewsPlaceholder } from "./PublicNewsPlaceholder";
@@ -45,6 +51,25 @@ export interface PublicNewsSectionProps {
   heading?: string;
   description?: string;
   className?: string;
+  /**
+   * Reset 03E — on Media PLP path, never generate-on-read for news cards.
+   * Missing published localization → coherent canonical item.
+   */
+  disableOnDemandTranslation?: boolean;
+  /** SSR/static seed — skip initial fetch when provided. */
+  initialArticles?: PublicNewsArticleItem[];
+  /** Reset 03E.5 — Media PLP presentations keyed by article id (include locale). */
+  plpNewsById?: Readonly<
+    Record<
+      string,
+      {
+        readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+        readonly presentation: unknown;
+        readonly locale?: string;
+        readonly reasonCode?: string;
+      }
+    >
+  >;
 }
 
 function hasActiveDiscoveryFilters(filters: PublicNewsFilters): boolean {
@@ -70,35 +95,90 @@ export function PublicNewsSection({
   heading,
   description,
   className,
+  disableOnDemandTranslation = false,
+  initialArticles,
+  plpNewsById,
 }: PublicNewsSectionProps = {}) {
-  const [articles, setArticles] = useState<PublicNewsArticleItem[]>([]);
+  const locale = useLocale();
+  const tDiscovery = useTranslations("publicNews.discovery");
+  const tCountry = useTranslations("publicNews.country");
+  const tErrors = useTranslations("publicNews.errors");
+  const [articles, setArticles] = useState<PublicNewsArticleItem[]>(
+    () => initialArticles ?? [],
+  );
   const [activeProviders, setActiveProviders] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => initialArticles == null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PublicNewsFilters>(DEFAULT_PUBLIC_NEWS_FILTERS);
   const [countryProvider, setCountryProvider] = useState("all");
+  const [clientPlpNewsById, setClientPlpNewsById] = useState<
+    Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined
+  >(undefined);
+  const hasInitialArticles = initialArticles != null;
 
   const resolvedShowToolbar = showToolbar ?? variant === "discovery";
   const resolvedEyebrow =
-    eyebrow ?? (variant === "country" ? "COUNTRY NEWS" : "SEARCH EVENTS");
+    eyebrow ?? (variant === "country" ? tCountry("eyebrow") : tDiscovery("eyebrow"));
   const resolvedHeading =
-    heading ??
-    (variant === "country" && countryName
-      ? `Latest Trusted News`
-      : "Turn trusted news into civic action");
+    heading ?? (variant === "country" ? tCountry("heading") : tDiscovery("heading"));
   const resolvedDescription =
     description ??
     (variant === "country" && countryName
-      ? `Recent verified reporting relevant to ${countryName}.`
-      : "Filter live public news, read original sources, and create initiatives from verified stories.");
+      ? tCountry("description", { countryName })
+      : tDiscovery("description"));
+
+  const countryPlpEnabled = variant === "country" && isMediaPlpWebEnabled();
+  // Implementation 01 — reject SSR/client PLP maps whose locale ≠ selected locale
+  // so stale Ukrainian discovery cannot stay authoritative under Arabic.
+  const localeMatchedSsrPlp = useMemo(() => {
+    if (!plpNewsById) {
+      return undefined;
+    }
+    const entries = Object.values(plpNewsById);
+    if (entries.length === 0) {
+      return plpNewsById;
+    }
+    for (const entry of entries) {
+      if (entry.mode !== "PUBLISHED_LOCALIZED") {
+        continue;
+      }
+      if (
+        !mayApplyPersistedLocalizedPresentation({
+          presentationLocale: entry.locale,
+          requestedLocale: locale,
+          mode: entry.mode,
+        })
+      ) {
+        return undefined;
+      }
+    }
+    return plpNewsById;
+  }, [plpNewsById, locale]);
+
+  useEffect(() => {
+    setClientPlpNewsById(undefined);
+  }, [locale]);
+
+  const effectivePlpNewsById = localeMatchedSsrPlp ?? clientPlpNewsById;
+  const effectiveDisableOnDemandTranslation =
+    disableOnDemandTranslation ||
+    effectivePlpNewsById != null ||
+    countryPlpEnabled;
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
+      // Pack 08K.3 / RESET 05D — English source corpus.
+      // Country rails fetch a larger candidate pool then apply shared
+      // country-first selection (never truncate-to-24 before relevance).
+      void locale;
       const response = await fetchPublicNewsArticles({
-        limit: PUBLIC_NEWS_RAIL_LIMIT,
+        limit:
+          variant === "country"
+            ? COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT
+            : PUBLIC_NEWS_RAIL_LIMIT,
         language: "en",
       });
       setArticles(response.items);
@@ -108,19 +188,20 @@ export function PublicNewsSection({
       setActiveProviders([]);
       setError(
         fetchError instanceof Error && isApiUnavailableError(fetchError)
-          ? "News is temporarily unavailable."
-          : fetchError instanceof Error
-            ? fetchError.message
-            : "News is temporarily unavailable.",
+          ? tErrors("temporarilyUnavailable")
+          : tErrors("temporarilyUnavailable"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tErrors, locale, variant]);
 
   useEffect(() => {
+    if (hasInitialArticles) {
+      return;
+    }
     void loadArticles();
-  }, [loadArticles]);
+  }, [hasInitialArticles, loadArticles]);
 
   const filterOptions = useMemo(
     () => collectFilterOptions(articles, activeProviders),
@@ -129,28 +210,27 @@ export function PublicNewsSection({
 
   const { processedArticles, usedGlobalFallback, countryScopedArticles } = useMemo(() => {
     if (variant === "country" && countryCode && countryName) {
-      const countryResult = filterPublicNewsForCountry(articles, {
-        countryCode,
-        countryName,
-        regionName,
-        recommendedMedia,
-        language: "en",
-      });
-
-      const sorted = sortPublicNewsArticles(countryResult.articles, "newest", "").slice(
-        0,
+      const selected = selectCountryPublicNewsRail(
+        articles,
+        {
+          countryCode,
+          countryName,
+          regionName,
+          recommendedMedia,
+          language: "en",
+        },
         PUBLIC_NEWS_RAIL_LIMIT,
       );
 
       const providerFiltered =
         countryProvider === "all"
-          ? sorted
-          : sorted.filter((article) => article.sourceName === countryProvider);
+          ? selected.articles
+          : selected.articles.filter((article) => article.sourceName === countryProvider);
 
       return {
-        processedArticles: providerFiltered,
-        usedGlobalFallback: countryResult.usedFallback,
-        countryScopedArticles: sorted,
+        processedArticles: [...providerFiltered],
+        usedGlobalFallback: selected.usedFallback,
+        countryScopedArticles: [...selected.articles],
       };
     }
 
@@ -175,6 +255,30 @@ export function PublicNewsSection({
     variant,
   ]);
 
+  // RESET 05C — country rail shares PLP identity with /media (read-only resolve).
+  useEffect(() => {
+    if (!countryPlpEnabled || localeMatchedSsrPlp != null) {
+      return;
+    }
+    if (processedArticles.length === 0) {
+      setClientPlpNewsById(undefined);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const map = await fetchCountryPublicNewsPlpById({
+        articles: processedArticles,
+        locale,
+      });
+      if (!cancelled) {
+        setClientPlpNewsById(map);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [countryPlpEnabled, localeMatchedSsrPlp, processedArticles, locale]);
+
   const countryProviders = useMemo(() => {
     const names = new Set(countryScopedArticles.map((article) => article.sourceName));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
@@ -185,7 +289,7 @@ export function PublicNewsSection({
   }
 
   const railLabel =
-    variant === "country" ? "trusted news articles" : "trusted news discovery results";
+    variant === "country" ? tCountry("railLabel") : tDiscovery("railLabel");
 
   const rail = useMediaHorizontalRail({
     itemCount: processedArticles.length,
@@ -208,23 +312,27 @@ export function PublicNewsSection({
     variant === "country" && countryName ? (
       <>
         <span className="civic-media-chip civic-media-chip--active">
-          {processedArticles.length} trusted news event
-          {processedArticles.length === 1 ? "" : "s"} for {countryName}
+          {tCountry(
+            processedArticles.length === 1 ? "eventsForCountry" : "eventsForCountryPlural",
+            { count: processedArticles.length, countryName },
+          )}
         </span>
         {countryProvider !== "all" ? (
           <span className="civic-media-chip civic-media-chip--active">{countryProvider}</span>
         ) : null}
         {usedGlobalFallback ? (
           <span className="civic-media-chip">
-            Global sources covering {countryName}
+            {tCountry("globalSources", { countryName })}
           </span>
         ) : null}
       </>
     ) : (
       <>
         <span className="civic-media-chip civic-media-chip--active">
-          {processedArticles.length} trusted event
-          {processedArticles.length === 1 ? "" : "s"} found
+          {tDiscovery(
+            processedArticles.length === 1 ? "eventsFound" : "eventsFoundPlural",
+            { count: processedArticles.length },
+          )}
         </span>
         {filters.provider !== "all" ? (
           <span className="civic-media-chip civic-media-chip--active">{filters.provider}</span>
@@ -243,14 +351,16 @@ export function PublicNewsSection({
       sectionId={sectionId}
       surfaceStyle={variant === "country" ? "grouped" : "elevated"}
       eyebrow={showIntro ? resolvedEyebrow : undefined}
-      title={showIntro ? resolvedHeading : "Trusted news"}
+      title={showIntro ? resolvedHeading : tDiscovery("titleCollapsed")}
       description={showIntro ? resolvedDescription : undefined}
       metadata={!loading && !error ? resultSummary : null}
       controls={!loading && !error && processedArticles.length > 0 ? controls : null}
       className={className}
+      chromeSemanticOwner="UI_DICTIONARY"
+      chromeSemanticResult="LOCALIZED_DICTIONARY"
       footer={
         variant === "discovery" ? (
-          <Link href="/initiatives/create">Create initiative from news</Link>
+          <Link href="/initiatives/create">{tDiscovery("footerCreate")}</Link>
         ) : undefined
       }
     >
@@ -259,13 +369,13 @@ export function PublicNewsSection({
           {variant === "country" && countryName ? (
             <div className="public-news-toolbar public-news-toolbar--country">
               <div className="public-news-toolbar__field">
-                <label htmlFor={`${sectionId}-country-provider`}>Provider</label>
+                <label htmlFor={`${sectionId}-country-provider`}>{tCountry("providerLabel")}</label>
                 <select
                   id={`${sectionId}-country-provider`}
                   value={countryProvider}
                   onChange={(event) => setCountryProvider(event.target.value)}
                 >
-                  <option value="all">All trusted media for {countryName}</option>
+                  <option value="all">{tCountry("allTrustedMedia", { countryName })}</option>
                   {countryProviders.map((provider) => (
                     <option key={provider} value={provider}>
                       {provider}
@@ -279,7 +389,7 @@ export function PublicNewsSection({
                   className="public-news-toolbar__clear"
                   onClick={() => setCountryProvider("all")}
                 >
-                  Clear filter
+                  {tCountry("clearFilter")}
                 </button>
               ) : null}
             </div>
@@ -315,7 +425,7 @@ export function PublicNewsSection({
           variant="no-results"
           message={
             variant === "country" && countryName
-              ? `No current trusted news is available for ${countryName}.`
+              ? tCountry("noResults", { countryName })
               : undefined
           }
         />
@@ -327,7 +437,13 @@ export function PublicNewsSection({
           layout="three-two-one"
           items={processedArticles}
           getItemKey={(article) => article.id}
-          renderItem={(article) => <PublicNewsCard article={article} />}
+          renderItem={(article) => (
+            <PublicNewsCard
+              article={article}
+              disableOnDemandTranslation={effectiveDisableOnDemandTranslation}
+              plpPresentation={effectivePlpNewsById?.[article.id]}
+            />
+          )}
           rail={rail}
           hideSummary
           showCount={false}

@@ -1,6 +1,7 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import type {
+  ContentTranslationIntent,
   ContentTranslationSourceKind,
   LanguageCode,
   ResolvedTranslatedDisplay,
@@ -13,23 +14,68 @@ import {
 } from "@hu/types";
 
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
+import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
-import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
-import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "./hu-terminology-glossary.js";
+import { sanitizeBlogHtml } from "../blog/blog-content-sanitize.js";
+import {
+  loadCivicArchiveTranslationSource,
+  loadCivicMediaTranslationSource,
+  loadCollectiveDecisionTranslationSource,
+  loadDecisionSessionTranslationSource,
+  loadImplementationCommitmentTranslationSource,
+  loadImplementationTrackingTranslationSource,
+  loadImprovementProposalTranslationSource,
+  loadInitiativeRevisionTranslationSource,
+  loadOfficialResponseTranslationSource,
+  loadPublicImpactTranslationSource,
+  loadPublicNewsTranslationSource,
+} from "./content-translation-civic-loaders.js";
+import {
+  assertCanonicalSourceEligibleForTranslation,
+  isRedundantTargetLanguage,
+  sanitizeFieldsForAutomaticTranslation,
+  type CanonicalTranslatableSourceEligibility,
+} from "./content-translation-eligibility.js";
+import {
+  assertCivicTitleFieldsTranslatedFromSource,
+  assertEligibleSourceFieldsFullyTranslated,
+  assertTranslatedProseChangedFromSource,
+  filterTranslatedFieldsToSourceAllowlist,
+} from "./content-translation-output-validation.js";
+import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
+import {
+  isSearchDiscoveryMappedSourceKind,
+  projectFieldsToSearchDiscoveryAllowlist,
+} from "./content-translation-search-discovery-fields.js";
+import {
+  presentCollaborativeAnalysisCanonicalFields,
+  translateCollaborativeAnalysisFieldsWithLifecycleSlots,
+} from "./content-translation-lifecycle-slots.js";
+import { buildContentTranslationSourceVersion } from "./content-translation-version.js";
+import { assertSearchDiscoveryTargetLocale } from "./content-translation-search-discovery-targets.js";
+import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
+import {
+  assertEnabledSelectableLocale,
+  resolveLocaleWithEnglishFallback,
+} from "./language-registry-runtime.js";
+import { resolveParticipantLanguageContext } from "./participant-language-context.js";
 import {
   findContentTranslation,
   listContentTranslationsForSource,
   markStaleTranslationsForSource,
   upsertContentTranslation,
 } from "./persistence/content-translation.repository.js";
-import { resolveParticipantLanguageContext } from "./participant-language-context.js";
 import {
   resolveStructuredTranslatedDisplay,
 } from "./resolve-translated-display.js";
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
+import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
+import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
 import { TranslationProviderError } from "./translation.config.js";
+import { withContentTranslationWorkerSlot } from "./content-translation-worker-concurrency.js";
 
 export interface LoadedTranslatableSource {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -41,13 +87,26 @@ export interface LoadedTranslatableSource {
   readonly isPublished: boolean;
 }
 
-function versionFromFields(fields: Record<string, string>, stamp: string): string {
-  const hash = createHash("sha256")
-    .update(JSON.stringify(fields))
-    .update(stamp)
-    .digest("hex")
-    .slice(0, 16);
-  return `v-${hash}`;
+function toEligibilitySource(
+  source: LoadedTranslatableSource,
+): CanonicalTranslatableSourceEligibility {
+  return {
+    sourceKind: source.sourceKind,
+    sourceRecordId: source.sourceRecordId,
+    sourceLanguage: source.sourceLanguage,
+    fields: source.fields,
+    sourceVersion: source.sourceVersion,
+    isPublished: source.isPublished,
+    safetyCleared: true,
+  };
+}
+
+/** Dynamic import keeps warm/operator graphs free of static global-search. */
+async function invalidateGlobalSearchIndexLazy(): Promise<void> {
+  const { invalidateGlobalSearchIndex } = await import(
+    "../global-search/global-search.index.js"
+  );
+  invalidateGlobalSearchIndex();
 }
 
 export async function loadTranslatableSource(input: {
@@ -66,7 +125,10 @@ export async function loadTranslatableSource(input: {
     return {
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
-      sourceVersion: versionFromFields(fields, initiative.updatedAt),
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: initiative.updatedAt,
+      }),
       sourceLanguage: normalizeLanguageCode(
         initiative.metadata?.language,
         DEFAULT_PLATFORM_LANGUAGE,
@@ -94,7 +156,10 @@ export async function loadTranslatableSource(input: {
     return {
       sourceKind: "collaborative_analysis",
       sourceRecordId: analysis.analysisId,
-      sourceVersion: versionFromFields(fields, analysis.updatedAt),
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: analysis.updatedAt,
+      }),
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: analysis.authorId,
@@ -118,7 +183,10 @@ export async function loadTranslatableSource(input: {
     return {
       sourceKind: "petition",
       sourceRecordId: petition.petitionId,
-      sourceVersion: versionFromFields(fields, petition.updatedAt),
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: petition.updatedAt,
+      }),
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: null,
@@ -131,21 +199,82 @@ export async function loadTranslatableSource(input: {
     if (!post) {
       return null;
     }
-    // Original remains canonical — translation never overwrites these fields.
+    // Pack 08I.5 — content remains sanitized HTML for translation + presentation.
+    // Canonical blog_posts.content is never overwritten by translation persistence.
     const fields = {
       title: post.title,
       excerpt: post.excerpt,
-      content: blogHtmlToPlainText(post.content),
+      content: sanitizeBlogHtml(post.content),
     };
     return {
       sourceKind: "blog_post",
       sourceRecordId: post.postId,
-      sourceVersion: `v-${post.publishedVersion}-${versionFromFields(fields, post.updatedAt)}`,
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: post.updatedAt,
+        publishedVersion: post.publishedVersion,
+      }),
       sourceLanguage: normalizeLanguageCode(post.originalLanguage, DEFAULT_PLATFORM_LANGUAGE),
       fields,
       authorParticipantId: post.authorParticipantId,
       isPublished: post.status === "published",
     };
+  }
+
+  if (input.sourceKind === "discussion_comment") {
+    // Pack 08I.13 — public/approved Discussion comments only; body field only.
+    // Private messages, moderation-only content, and removed/hidden comments never load.
+    const comment = await getInitiativeCommentById(input.sourceRecordId);
+    if (!comment || comment.status !== "approved" || comment.deletedAt) {
+      return null;
+    }
+    const fields = { body: comment.body };
+    return {
+      sourceKind: "discussion_comment",
+      sourceRecordId: comment.commentId,
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: comment.updatedAt,
+      }),
+      sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
+      fields,
+      authorParticipantId: comment.authorUserId,
+      isPublished: true,
+    };
+  }
+
+  if (input.sourceKind === "improvement_proposal") {
+    return loadImprovementProposalTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "initiative_revision") {
+    return loadInitiativeRevisionTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "decision_session") {
+    return loadDecisionSessionTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "collective_decision") {
+    return loadCollectiveDecisionTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "implementation_commitment") {
+    return loadImplementationCommitmentTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "implementation_tracking") {
+    return loadImplementationTrackingTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "official_response") {
+    return loadOfficialResponseTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "public_impact") {
+    return loadPublicImpactTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "civic_archive") {
+    return loadCivicArchiveTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "civic_media") {
+    return loadCivicMediaTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "public_news") {
+    return loadPublicNewsTranslationSource(input.sourceRecordId);
   }
 
   return null;
@@ -164,18 +293,46 @@ function parseStructuredTranslation(text: string): Record<string, string> {
 
 /**
  * Idempotent: same sourceKind + sourceRecordId + sourceVersion + targetLanguage
- * returns the existing record without a second provider call.
+ * returns the existing record without a second provider call when coverage is met.
+ *
+ * `intent` defaults to `on_demand` (enabled locale gate — preserves Pack 02 UX).
+ * `automatic_warm` additionally requires contentTranslationEnabled.
+ * `search_discovery` requires enabled + searchEnabled (Step 06C.1 / 06C.2A).
+ *
+ * Step 06C.2A — coverage-aware skip:
+ * - search_discovery skips when discovery fields are already covered (never downgrade full CT)
+ * - automatic_warm skips only when full eligible coverage is complete (compact → full upgrade)
  */
 export async function getOrCreateContentTranslation(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;
   targetLanguage: LanguageCode;
   generateIfMissing?: boolean;
+  /**
+   * Pack 02G / Step 06C.1 / 06C.2A: on_demand | automatic_warm | search_discovery.
+   * Locale gates differ; provider/persistence identity unchanged.
+   */
+  intent?: ContentTranslationIntent;
+  /**
+   * Exact-record force rematerialization: rebuild a usable machine CURRENT
+   * translation. Never overrides human / author-approved translations.
+   */
+  forceRegenerate?: boolean;
 }): Promise<{
   readonly source: LoadedTranslatableSource;
   readonly translation: TranslatedContentRecord | null;
   readonly generated: boolean;
 }> {
+  const intent: ContentTranslationIntent = input.intent ?? "on_demand";
+
+  // Unsupported Search discovery kinds: never silently full-translate (check before load).
+  if (intent === "search_discovery" && !isSearchDiscoveryMappedSourceKind(input.sourceKind)) {
+    throw new TranslationProviderError(
+      "bad_request",
+      `Search discovery content translation is not supported for sourceKind: ${input.sourceKind}.`,
+    );
+  }
+
   const source = await loadTranslatableSource(input);
   if (!source) {
     throw new TranslationProviderError("bad_request", "Source content was not found.");
@@ -186,10 +343,47 @@ export async function getOrCreateContentTranslation(input: {
     sourceRecordId: source.sourceRecordId,
     liveSourceVersion: source.sourceVersion,
   });
+  // Pack 02H — stale rows must stop contributing as current searchable text on next rebuild.
+  await invalidateGlobalSearchIndexLazy();
 
-  const targetLanguage = normalizeLanguageCode(input.targetLanguage);
-  if (targetLanguage === source.sourceLanguage) {
+  const targetLanguage =
+    intent === "automatic_warm"
+      ? await assertAutomaticContentTranslationTargetLocale(input.targetLanguage)
+      : intent === "search_discovery"
+        ? await assertSearchDiscoveryTargetLocale(input.targetLanguage)
+        : await assertEnabledSelectableLocale(input.targetLanguage);
+
+  if (
+    isRedundantTargetLanguage({
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+    })
+  ) {
     return { source, translation: null, generated: false };
+  }
+
+  const fullProviderFields = sanitizeFieldsForAutomaticTranslation({
+    sourceKind: source.sourceKind,
+    fields: source.fields,
+  });
+
+  let providerFields = fullProviderFields;
+  if (intent === "search_discovery") {
+    const projected = projectFieldsToSearchDiscoveryAllowlist({
+      sourceKind: source.sourceKind,
+      fields: fullProviderFields,
+    });
+    if (!projected || Object.keys(projected).length === 0) {
+      return { source, translation: null, generated: false };
+    }
+    // Re-sanitize projected bag so NON_TRANSLATABLE / allowlist rules still apply.
+    providerFields = sanitizeFieldsForAutomaticTranslation({
+      sourceKind: source.sourceKind,
+      fields: projected,
+    });
+    if (Object.keys(providerFields).length === 0) {
+      return { source, translation: null, generated: false };
+    }
   }
 
   const existing = await findContentTranslation({
@@ -199,45 +393,175 @@ export async function getOrCreateContentTranslation(input: {
     targetLanguage,
   });
   if (existing && !existing.stale) {
-    return { source, translation: existing, generated: false };
+    const protectedAuthority =
+      existing.translationKind === "human" ||
+      existing.translationKind === "author-approved";
+    if (protectedAuthority) {
+      return { source, translation: existing, generated: false };
+    }
+    if (!input.forceRegenerate) {
+      if (intent === "search_discovery") {
+        if (
+          contentTranslationCoversRequiredSourceFields({
+            sourceKind: source.sourceKind,
+            sourceFields: providerFields,
+            translatedContent: existing.translatedContent,
+          })
+        ) {
+          return { source, translation: existing, generated: false };
+        }
+        // Discovery incomplete — regenerate compact (must not run when full already covers).
+      } else if (intent === "automatic_warm") {
+        if (
+          contentTranslationCoversRequiredSourceFields({
+            sourceKind: source.sourceKind,
+            sourceFields: fullProviderFields,
+            translatedContent: existing.translatedContent,
+          })
+        ) {
+          return { source, translation: existing, generated: false };
+        }
+        // Compact or incomplete — fall through to full regenerate/replace.
+      } else {
+        // on_demand: preserve prior "any current row skips" contract.
+        return { source, translation: existing, generated: false };
+      }
+    }
   }
 
   if (!input.generateIfMissing) {
     return { source, translation: existing, generated: false };
   }
 
-  if (!source.isPublished && source.sourceKind !== "lifecycle_stage") {
-    // Public generate path only for published records.
-    if (source.sourceKind === "initiative" || source.sourceKind === "collaborative_analysis" || source.sourceKind === "petition") {
-      if (!source.isPublished) {
-        throw new TranslationProviderError(
-          "forbidden",
-          "Only published content can generate public translations.",
-        );
-      }
-    }
-  }
-
-  const provider = resolveTranslationProvider();
-  const result = await provider.translate({
-    sourceLanguage: source.sourceLanguage,
-    targetLanguage,
-    text: JSON.stringify(source.fields),
-    contentType: "structured_json",
-    sourceRecordId: source.sourceRecordId,
-    sourceVersion: source.sourceVersion,
-    terminologyContext: HUMANITY_UNION_TRANSLATION_TERMINOLOGY,
-    safetyCleared: true,
+  assertCanonicalSourceEligibleForTranslation({
+    source: toEligibilitySource(source),
+    intent,
   });
 
-  let translatedFields: Record<string, string>;
+  const provider = resolveTranslationProvider();
+  let terminologyContext: string;
   try {
-    translatedFields = parseStructuredTranslation(result.translatedText);
-  } catch {
-    throw new TranslationProviderError(
-      "malformed_response",
-      "Translation provider returned malformed structured content.",
+    terminologyContext = await resolveProviderTerminologyContext(targetLanguage);
+  } catch (error) {
+    if (error instanceof TerminologyGlossaryValidationError) {
+      throw new TranslationProviderError("unsupported_language", error.message);
+    }
+    throw error;
+  }
+
+  let translatedFields: Record<string, string>;
+  let translationProviderId: string;
+
+  // Discovery uses the generic structured path even for CA — Search fields are
+  // title/summary only and must not pull the full lifecycle-slot hop.
+  const useCaLifecycleHop =
+    source.sourceKind === "collaborative_analysis" && intent !== "search_discovery";
+
+  if (useCaLifecycleHop) {
+    // 03C.5 / 03C.5C — extract lifecycle slots; validate machine prose before
+    // glossary reassembly so preferredTerm cannot fake translation quality.
+    translationProviderId = provider.providerId;
+    translatedFields = await translateCollaborativeAnalysisFieldsWithLifecycleSlots({
+      sanitizedFields: providerFields,
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      translatePayload: async (payload) => {
+        const result = await withContentTranslationWorkerSlot(() =>
+          provider.translate({
+            sourceLanguage: source.sourceLanguage,
+            targetLanguage,
+            text: JSON.stringify(payload),
+            contentType: "structured_json",
+            sourceRecordId: source.sourceRecordId,
+            sourceVersion: source.sourceVersion,
+            terminologyContext,
+            safetyCleared: true,
+          }),
+        );
+        translationProviderId = result.providerId;
+        try {
+          return parseStructuredTranslation(result.translatedText);
+        } catch {
+          throw new ContentTranslationValidationError(
+            "INVALID_PROVIDER_PAYLOAD",
+            "Translation provider returned malformed structured content.",
+            "malformed_response",
+          );
+        }
+      },
+    });
+
+    // Final bag: allowlist / key shape only. Machine prose + civic title already
+    // validated against the provider machine payload inside the CA lifecycle hop.
+    // Pack 1.2 — require all eligible non-empty source fields before CURRENT upsert.
+    translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertEligibleSourceFieldsFullyTranslated({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+  } else {
+    const result = await withContentTranslationWorkerSlot(() =>
+      provider.translate({
+        sourceLanguage: source.sourceLanguage,
+        targetLanguage,
+        text: JSON.stringify(providerFields),
+        contentType: "structured_json",
+        sourceRecordId: source.sourceRecordId,
+        sourceVersion: source.sourceVersion,
+        terminologyContext,
+        safetyCleared: true,
+      }),
     );
+    translationProviderId = result.providerId;
+
+    try {
+      translatedFields = parseStructuredTranslation(result.translatedText);
+    } catch {
+      throw new ContentTranslationValidationError(
+        "INVALID_PROVIDER_PAYLOAD",
+        "Translation provider returned malformed structured content.",
+        "malformed_response",
+      );
+    }
+
+    // Pack 02G Task 07C / 07E.1 / 08J / Pack 1.2 — keep AUTO_TRANSLATABLE projection
+    // keys; require full eligible coverage; reject all-unchanged prose; require civic titles.
+    translatedFields = filterTranslatedFieldsToSourceAllowlist({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertEligibleSourceFieldsFullyTranslated({
+      sourceKind: source.sourceKind,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertTranslatedProseChangedFromSource({
+      sourceKind: source.sourceKind,
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+    assertCivicTitleFieldsTranslatedFromSource({
+      sourceKind: source.sourceKind,
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      sourceFields: providerFields,
+      translatedFields,
+    });
+  }
+  // Pack 08I.5 — Blog HTML body: re-sanitize after provider so markup stays structurally safe.
+  if (source.sourceKind === "blog_post" && typeof translatedFields.content === "string") {
+    translatedFields = {
+      ...translatedFields,
+      content: sanitizeBlogHtml(translatedFields.content),
+    };
   }
 
   const record: TranslatedContentRecord = {
@@ -248,7 +572,7 @@ export async function getOrCreateContentTranslation(input: {
     sourceLanguage: source.sourceLanguage,
     targetLanguage,
     translatedContent: translatedFields,
-    translationProvider: result.providerId,
+    translationProvider: translationProviderId,
     translationKind: "machine",
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -257,6 +581,8 @@ export async function getOrCreateContentTranslation(input: {
   };
 
   await upsertContentTranslation(record);
+  // Pack 02H — translation upsert invalidates search index; rebuild on next query.
+  await invalidateGlobalSearchIndexLazy();
   return { source, translation: record, generated: true };
 }
 
@@ -268,8 +594,8 @@ export async function resolvePublicTranslatedContent(input: {
   translationPreference?: TranslationDisplayPreference;
   generateIfMissing?: boolean;
 }): Promise<ResolvedTranslatedDisplay<Record<string, string>>> {
-  const language = resolveParticipantLanguageContext(input.participantId);
-  const preferredReadingLanguage = normalizeLanguageCode(
+  const language = await resolveParticipantLanguageContext(input.participantId);
+  const preferredReadingLanguage = await resolveLocaleWithEnglishFallback(
     input.preferredReadingLanguage ?? language.preferredReadingLanguage,
   );
   const translationPreference =
@@ -282,11 +608,13 @@ export async function resolvePublicTranslatedContent(input: {
 
   if (input.generateIfMissing) {
     try {
+      // Public Web generate remains on_demand — enabled locale is sufficient.
       const created = await getOrCreateContentTranslation({
         sourceKind: input.sourceKind,
         sourceRecordId: input.sourceRecordId,
         targetLanguage: preferredReadingLanguage,
         generateIfMissing: true,
+        intent: "on_demand",
       });
       if (created.translation) {
         translations = await listContentTranslationsForSource({
@@ -295,7 +623,10 @@ export async function resolvePublicTranslatedContent(input: {
         });
       }
       return resolveStructuredTranslatedDisplay({
-        originalFields: created.source.fields,
+        originalFields:
+          created.source.sourceKind === "collaborative_analysis"
+            ? presentCollaborativeAnalysisCanonicalFields(created.source.fields)
+            : created.source.fields,
         originalLanguage: created.source.sourceLanguage,
         preferredReadingLanguage,
         translationPreference,
@@ -313,7 +644,10 @@ export async function resolvePublicTranslatedContent(input: {
           throw error;
         }
         return resolveStructuredTranslatedDisplay({
-          originalFields: source.fields,
+          originalFields:
+            source.sourceKind === "collaborative_analysis"
+              ? presentCollaborativeAnalysisCanonicalFields(source.fields)
+              : source.fields,
           originalLanguage: source.sourceLanguage,
           preferredReadingLanguage,
           translationPreference,
@@ -336,7 +670,10 @@ export async function resolvePublicTranslatedContent(input: {
   );
 
   return resolveStructuredTranslatedDisplay({
-    originalFields: source.fields,
+    originalFields:
+      source.sourceKind === "collaborative_analysis"
+        ? presentCollaborativeAnalysisCanonicalFields(source.fields)
+        : source.fields,
     originalLanguage: source.sourceLanguage,
     preferredReadingLanguage,
     translationPreference,

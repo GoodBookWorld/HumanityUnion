@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImplementationTrackingLifecycleDraft } from "@hu/types";
 
@@ -30,6 +31,7 @@ export function InitiativeImplementationTrackingDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativeImplementationTrackingLifecycleDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export function InitiativeImplementationTrackingDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.tracking.preview.loadFailed"));
         }
       }
     })();
@@ -52,35 +54,47 @@ export function InitiativeImplementationTrackingDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="iit-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="iit-source-panel__empty">Loading Implementation Tracking draft preview…</p>;
+    return <p className="iit-source-panel__empty">{t("author.tracking.preview.loading")}</p>;
   }
 
   return (
-    <article className="iit-public" aria-label="Implementation Tracking draft preview">
-      <p className="iit-public__meta">Preview — unpublished draft (same renderer as Public)</p>
+    <article className="iit-public" aria-label={t("author.tracking.preview.aria")}>
+      <p className="iit-public__meta">{t("author.tracking.preview.meta")}</p>
       <section className="iit-public__section">
-        <h3>{draft.title || "Untitled Implementation Tracking"}</h3>
+        <h3>{draft.title || t("author.tracking.preview.untitled")}</h3>
         <p>{draft.summary}</p>
       </section>
       {draft.candidates.map((candidate, index) => (
         <section className="iit-public__section" key={candidate.candidateId}>
           <h3>
-            Action {index + 1}: {candidate.approvedAction}
+            {t("author.tracking.preview.actionHeading", {
+              number: index + 1,
+              action: candidate.approvedAction,
+            })}
           </h3>
           <p className="iit-public__meta">
-            Status {candidate.currentStatus} · Progress {candidate.progress}% · Target Date{" "}
-            {candidate.targetDate ?? "Not set"}
+            {t("author.tracking.preview.statusProgressTarget", {
+              status: candidate.currentStatus,
+              progress: candidate.progress,
+              target: candidate.targetDate ?? t("author.tracking.preview.notSet"),
+            })}
           </p>
-          <ListSection title="Dependencies" items={candidate.dependencies} />
-          <ListSection title="Obstacles" items={candidate.obstacles} />
-          <ListSection title="Evidence References" items={candidate.evidenceReferences} />
+          <ListSection
+            title={t("author.tracking.sections.dependencies")}
+            items={candidate.dependencies}
+          />
+          <ListSection title={t("author.tracking.sections.obstacles")} items={candidate.obstacles} />
+          <ListSection
+            title={t("author.tracking.sections.evidenceReferences")}
+            items={candidate.evidenceReferences}
+          />
         </section>
       ))}
     </article>

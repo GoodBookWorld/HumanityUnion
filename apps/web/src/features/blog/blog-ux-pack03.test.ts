@@ -27,7 +27,10 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
   it("1/2 — /blog page and canonical heading exist", () => {
     const page = read("app/blog/page.tsx");
     assert.match(page, /BlogIndexPageContent/);
-    assert.match(page, /title:\s*"Blog \| Humanity Union"/);
+    assert.match(page, /generateMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
+    assert.match(page, /getTranslations\(["']blogPublic["']\)/);
+    assert.match(page, /t\(["']pageTitle["']\)/);
 
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
     assert.match(index, /<h1[^>]*>Blog<\/h1>/);
@@ -173,11 +176,20 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
 
   it("documents Previous/Next deferral and related same-category bound", () => {
     const article = read("features/blog/components/BlogArticlePageContent.tsx");
-    assert.match(article, /Previous\/Next neighbour navigation is deferred/);
     assert.match(article, /BlogRelatedPosts/);
+    assert.doesNotMatch(article, /previousPost|nextPost/);
 
     const related = read("features/blog/components/BlogRelatedPosts.tsx");
-    assert.match(related, /More from this category/);
-    assert.match(related, /slice\(0, 3\)/);
+    assert.match(related, /blogPublic\.discovery\.related/);
+    assert.match(related, /slice\(0, 8\)/);
+    assert.match(related, /layout="related"/);
+    const css = read("features/blog/blog.css");
+    assert.match(css, /blog-post-grid--related/);
+    assert.match(css, /overflow-x:\s*auto/);
+    assert.match(css, /flex-basis:\s*calc\(\(100% - var\(--hu-card-gap\)\) \/ 2\)/);
+    assert.match(css, /\.blog-article__cover[\s\S]*min-width:\s*0/);
+    assert.match(css, /\.blog-article__cover[\s\S]*aspect-ratio:\s*16\s*\/\s*9/);
+    assert.match(css, /\.blog-post-grid--related[\s\S]*min-width:\s*0/);
+    assert.match(read("features/blog/components/BlogPostCard.tsx"), /&nbsp;/);
   });
 });

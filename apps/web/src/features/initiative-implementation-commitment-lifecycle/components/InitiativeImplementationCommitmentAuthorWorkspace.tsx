@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   generateInitiativeImplementationCommitmentDraft,
@@ -31,6 +32,8 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   onTogglePreview,
   onNavigate,
 }: InitiativeImplementationCommitmentAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativeImplementationCommitmentLifecycleDraftContext | null>(
     null,
   );
@@ -77,24 +80,21 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Implementation Commitments workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.commitment.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
   }
 
   if (loading || !context) {
-    return <p className="iic-source-panel__empty">Loading Implementation Commitments workspace…</p>;
+    return <p className="iic-source-panel__empty">{t("author.commitment.loading")}</p>;
   }
 
   if (context.publishedPackageId) {
     return (
-      <p className="iic-source-panel__empty">
-        Implementation Commitments have already been published for this Initiative. Use Public
-        Preview to review them, or continue to Implementation Tracking.
-      </p>
+      <p className="iic-source-panel__empty">{t("author.commitment.alreadyPublished")}</p>
     );
   }
 
@@ -107,7 +107,7 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
     <div className="lsw-main">
       <div className="iic-editor__actions" style={{ marginBottom: "1rem" }}>
         <WorkspaceButton variant="secondary" onClick={() => setShowSourcePanel((value) => !value)}>
-          {showSourcePanel ? "Hide Sources" : "Sources"}
+          {showSourcePanel ? actions.hideSources : actions.sources}
         </WorkspaceButton>
       </div>
 
@@ -119,13 +119,13 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="iic-editor">
-          <p className="iic-source-panel__empty">
-            Generate Commitment Candidates from the published Collective Decision&rsquo;s Approved
-            Actions. The Implementation Assistant remains advisory — nothing publishes
-            automatically.
-          </p>
+          <p className="iic-source-panel__empty">{t("author.commitment.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Implementation Commitments Draft")}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.commitment.generateCommitmentsDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

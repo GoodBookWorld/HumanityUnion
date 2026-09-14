@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionBallotAggregates,
@@ -11,6 +12,7 @@ import type {
   PublicInitiativeCollectiveDecisionProjection,
   PublicInitiativeProjection,
 } from "@hu/types";
+import { INITIATIVE_PLP_ENTITY_TYPE } from "@hu/types";
 import {
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceBallotMode,
@@ -20,6 +22,9 @@ import {
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { loadPublicChoiceElectionResultSurface } from "../../public-choice-candidate/public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
+import {
+  MediaSemanticNode,
+} from "../../language/media-plp/media-semantic-contract";
 
 interface PublicChoiceElectionSidebarWidgetProps {
   initiativeId: string;
@@ -56,6 +61,7 @@ export function PublicChoiceElectionSidebarWidget({
   initiativeId,
   lifecycleProfile,
 }: PublicChoiceElectionSidebarWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const isPublicChoice =
     resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
 
@@ -111,7 +117,9 @@ export function PublicChoiceElectionSidebarWidget({
   );
 
   const electionName =
-    initiative?.metadata.communityAssociation?.trim() || initiative?.title || "Election";
+    initiative?.metadata.communityAssociation?.trim() ||
+    initiative?.title ||
+    t("sidebar.election.election");
   const electionHref = `/initiatives/public/${encodeURIComponent(initiativeId)}/election`;
   const votingStatus = resolvePublicChoiceElectionVotingStatus({
     decisionStatus: decision?.status,
@@ -137,12 +145,25 @@ export function PublicChoiceElectionSidebarWidget({
   return (
     <section className="pie-election" aria-labelledby="pie-election-title">
       <h2 id="pie-election-title" className="pie-election__title">
-        {ballotMode === "SELECT_ONE_CANDIDATE" ? "Candidates" : "Election"}
+        {ballotMode === "SELECT_ONE_CANDIDATE"
+          ? t("sidebar.election.candidates")
+          : t("sidebar.election.election")}
       </h2>
-      <p className="pie-election__name">{electionName}</p>
+      <MediaSemanticNode
+        as="p"
+        className="pie-election__name"
+        owner="PLP_ENTITY"
+        result="CANONICAL_FALLBACK"
+        entityType={INITIATIVE_PLP_ENTITY_TYPE.INITIATIVE}
+        entityId={initiativeId}
+        semanticPath="electionName"
+        fallbackReason="NO_PUBLISHED_SNAPSHOT"
+      >
+        {electionName}
+      </MediaSemanticNode>
       <p className="pie-election__link">
         <Link className="hu-button hu-button--primary pie-election__cta" href={electionHref}>
-          View election
+          {t("sidebar.election.viewElection")}
         </Link>
       </p>
 
@@ -150,15 +171,15 @@ export function PublicChoiceElectionSidebarWidget({
         <>
           {votingOpen ? (
             <p className="pie-election__status" role="status">
-              CURRENT RESULTS
+              {t("sidebar.election.currentResults")}
             </p>
           ) : decision?.status === "closed" ? (
             <p className="pie-election__status" role="status">
-              FINAL RESULTS
+              {t("sidebar.election.finalResults")}
             </p>
           ) : null}
           {ranked.length === 0 ? (
-            <p className="pie-election__empty">No candidates listed yet.</p>
+            <p className="pie-election__empty">{t("sidebar.election.noCandidates")}</p>
           ) : (
             <ol className="pie-election__ranking">
               {ranked.map((candidate) => {
@@ -170,7 +191,7 @@ export function PublicChoiceElectionSidebarWidget({
                     ) : null}
                     <span>
                       {candidate.name}
-                      {candidate.isBlocked ? " (Blocked)" : ""}
+                      {candidate.isBlocked ? t("sidebar.election.blockedSuffix") : ""}
                     </span>
                     <strong>{candidate.votes}</strong>
                   </li>
@@ -180,9 +201,12 @@ export function PublicChoiceElectionSidebarWidget({
           )}
         </>
       ) : (
-        <ul className="pie-election__ternary" aria-label="Support / Oppose results">
+        <ul
+          className="pie-election__ternary"
+          aria-label={t("sidebar.election.resultsAria")}
+        >
           <li>
-            <span>Support</span>
+            <span>{t("sidebar.election.support")}</span>
             <strong>
               {aggregates?.ballotMode === "SUPPORT_OPPOSE"
                 ? aggregates.total.support
@@ -190,7 +214,7 @@ export function PublicChoiceElectionSidebarWidget({
             </strong>
           </li>
           <li>
-            <span>Do not support</span>
+            <span>{t("sidebar.election.doNotSupport")}</span>
             <strong>
               {aggregates?.ballotMode === "SUPPORT_OPPOSE"
                 ? aggregates.total.doNotSupport
@@ -198,7 +222,7 @@ export function PublicChoiceElectionSidebarWidget({
             </strong>
           </li>
           <li>
-            <span>Abstain</span>
+            <span>{t("sidebar.election.abstain")}</span>
             <strong>
               {aggregates?.ballotMode === "SUPPORT_OPPOSE"
                 ? aggregates.total.abstain

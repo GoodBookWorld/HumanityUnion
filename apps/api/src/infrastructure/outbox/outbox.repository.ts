@@ -10,6 +10,11 @@ import { MONGO_COLLECTIONS } from "../mongodb/mongo-collections.js";
 import { getMongoCollection } from "../mongodb/mongo-database.js";
 import { isMongoConfigured } from "../mongodb/mongo-config.js";
 import type { EnqueueOutboxOptions, OutboxDispatchStats, OutboxRecord } from "./outbox.types.js";
+import {
+  assertOutboxRecordEligibleForFailedRetry,
+  assertSingleOutboxId,
+  OutboxRecoveryNotFoundError,
+} from "./outbox-recovery.errors.js";
 
 interface OutboxMongoDocument extends Document {
   _id: string;
@@ -202,6 +207,74 @@ export async function findOutboxRecordById(outboxId: string): Promise<OutboxReco
   const document = await collection.findOne({ _id: outboxId });
 
   return document ? mapDocument(document as OutboxMongoDocument) : null;
+}
+
+/**
+ * Staging Historical Outbox Recovery — requeue exactly one failed record to pending.
+ *
+ * - Fail closed unless status is currently `failed`
+ * - Preserves lastError until a successful publish clears it
+ * - Resets attempts so the canonical dispatcher has a fresh retry budget
+ * - Never marks published and never deletes the row
+ */
+export async function requeueFailedOutboxRecordById(
+  outboxIdInput: string,
+): Promise<OutboxRecord> {
+  assertMongoAvailable();
+
+  const outboxId = assertSingleOutboxId(outboxIdInput);
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const existing = await collection.findOne({ _id: outboxId });
+
+  if (!existing) {
+    throw new OutboxRecoveryNotFoundError(outboxId);
+  }
+
+  assertOutboxRecordEligibleForFailedRetry({
+    outboxId,
+    status: existing.status,
+  });
+
+  const result = await collection.updateOne(
+    { _id: outboxId, status: "failed" },
+    {
+      $set: {
+        status: "pending",
+        attempts: 0,
+        publishedAt: null,
+        // lastError retained intentionally until successful publish clears it.
+      },
+    },
+  );
+
+  if (result.matchedCount !== 1) {
+    const latest = await collection.findOne({ _id: outboxId });
+    if (!latest) {
+      throw new OutboxRecoveryNotFoundError(outboxId);
+    }
+    assertOutboxRecordEligibleForFailedRetry({
+      outboxId,
+      status: latest.status,
+    });
+    throw new OutboxRecoveryNotFoundError(outboxId);
+  }
+
+  const updated = await collection.findOne({ _id: outboxId });
+  if (!updated) {
+    throw new OutboxRecoveryNotFoundError(outboxId);
+  }
+
+  logDomainEvent("enqueued", {
+    outboxId,
+    eventId: updated.eventId,
+    eventName: updated.eventName,
+    correlationId: updated.correlationId,
+    causationId: updated.causationId,
+    priorAttemptsPreservedInLog: existing.attempts,
+    recovery: "requeued_failed",
+  });
+
+  return mapDocument(updated as OutboxMongoDocument);
 }
 
 export async function deleteOutboxRecordsByEventIdPrefix(prefix: string): Promise<number> {

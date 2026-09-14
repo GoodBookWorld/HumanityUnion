@@ -105,7 +105,7 @@ describe("Share Fix 01 — Latest Civic Initiatives mini-card share", () => {
 
   it("Share click stops card navigation; normal link remains for View Initiative", () => {
     assert.match(miniCard, /stopPropagation/);
-    assert.match(miniCard, /View Initiative/);
+    assert.match(miniCard, /t\("viewInitiative"\)/);
     assert.match(button, /stopCardNavigation|stopCardBubble/);
   });
 

@@ -3,13 +3,10 @@ import type {
   ParticipantLanguageContext,
   TranslationDisplayPreference,
 } from "@hu/types";
-import {
-  DEFAULT_PLATFORM_LANGUAGE,
-  isTranslationDisplayPreference,
-  normalizeLanguageCode,
-} from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE, isTranslationDisplayPreference } from "@hu/types";
 
-import { getPreferencesByMemberId } from "../preferences/preferences.store.js";
+import { findPreferencesByMemberId } from "../preferences/preferences.repository.js";
+import { resolveLocaleWithEnglishFallback } from "./language-registry-runtime.js";
 
 function resolveDisplayPreference(value: string | undefined): TranslationDisplayPreference {
   if (isTranslationDisplayPreference(value)) {
@@ -18,20 +15,22 @@ function resolveDisplayPreference(value: string | undefined): TranslationDisplay
   return "none";
 }
 
-export function buildParticipantLanguageContextFromExperience(
+/**
+ * Build language roles from experience preferences.
+ * Disabled or unknown stored codes fall back to English — they are not treated as selectable.
+ * Interface / reading / writing remain distinct fields.
+ */
+export async function buildParticipantLanguageContextFromExperience(
   experience: ExperiencePreferences | null | undefined,
-): ParticipantLanguageContext {
-  const interfaceLanguage = normalizeLanguageCode(
-    experience?.interfaceLanguage,
-    DEFAULT_PLATFORM_LANGUAGE,
+): Promise<ParticipantLanguageContext> {
+  const interfaceLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.interfaceLanguage ?? DEFAULT_PLATFORM_LANGUAGE,
   );
-  const preferredReadingLanguage = normalizeLanguageCode(
-    experience?.readingLanguages?.[0],
-    interfaceLanguage,
+  const preferredReadingLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.readingLanguages?.[0] ?? interfaceLanguage,
   );
-  const writingLanguage = normalizeLanguageCode(
-    experience?.writingLanguages?.[0],
-    interfaceLanguage,
+  const writingLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.writingLanguages?.[0] ?? interfaceLanguage,
   );
 
   return {
@@ -43,13 +42,25 @@ export function buildParticipantLanguageContextFromExperience(
   };
 }
 
-export function resolveParticipantLanguageContext(
+/**
+ * Load language roles for a participant from the canonical Preferences repository
+ * (same Mongo/memory path as Preferences Save / getMyPreferences).
+ *
+ * Pack 08I.7 — unauthenticated public callers default to `preferred` so a warm
+ * `content_translations` row for the requested `?language=` is displayed.
+ * Authenticated missing prefs remain English + `none` (explicit opt-in).
+ */
+export async function resolveParticipantLanguageContext(
   participantId: string | undefined,
-): ParticipantLanguageContext {
+): Promise<ParticipantLanguageContext> {
   if (!participantId) {
-    return buildParticipantLanguageContextFromExperience(null);
+    const guest = await buildParticipantLanguageContextFromExperience(null);
+    return {
+      ...guest,
+      translationDisplayPreference: "preferred",
+    };
   }
 
-  const preferences = getPreferencesByMemberId(participantId);
+  const preferences = await findPreferencesByMemberId(participantId);
   return buildParticipantLanguageContextFromExperience(preferences?.experiencePreferences);
 }

@@ -1,9 +1,47 @@
-import type { IndexDescription } from "mongodb";
+import type { Document, IndexDescription } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
 import { withMongoStartupIndexRetry } from "./mongo-startup-index-retry.js";
+
+/** Pack 02B Hotfix 01 — Language Registry alias uniqueness index name. */
+export const LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME =
+  "language_registry_alias_keys_unique";
+
+/**
+ * Only index documents that have at least one alias key element.
+ * Empty arrays and omitted/null aliasKeys are excluded (avoids E11000 on
+ * `{ aliasKeys: undefined }` when multiple languages have no aliases).
+ */
+export const LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_PARTIAL_FILTER = {
+  "aliasKeys.0": { $exists: true },
+} as const;
+
+/**
+ * True when the named Language Registry alias index already matches the
+ * current partial-unique contract (safe to leave in place).
+ */
+export function isLanguageRegistryAliasKeysUniqueIndexCurrent(
+  index: Document | IndexDescription,
+): boolean {
+  if (index.name !== LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME) {
+    return false;
+  }
+  if (index.unique !== true) {
+    return false;
+  }
+  const key = index.key as Document | undefined;
+  if (!key || key.aliasKeys !== 1) {
+    return false;
+  }
+  const partial = index.partialFilterExpression as Document | undefined;
+  if (!partial || typeof partial !== "object") {
+    return false;
+  }
+  const elementExists = partial["aliasKeys.0"] as Document | undefined;
+  return elementExists != null && elementExists.$exists === true;
+}
 
 const MODULE_INDEXES: ReadonlyArray<{
   collectionName: string;
@@ -1064,6 +1102,168 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // TRANSLATION DELIVERY RESET 02 — current PUBLISHED pointer (indexed read).
+    collectionName: MONGO_COLLECTIONS.publishedLocalizedPresentationsCurrent,
+    indexes: [
+      {
+        key: { entityType: 1, entityId: 1, locale: 1 },
+        unique: true,
+        name: "published_localized_presentations_current_entity_locale_unique",
+      },
+      {
+        key: { entityType: 1, entityId: 1, locale: 1, state: 1 },
+        name: "published_localized_presentations_current_state",
+      },
+    ],
+  },
+  {
+    // TRANSLATION DELIVERY RESET 02 — history / BUILDING / FAILED (not normal read path).
+    collectionName: MONGO_COLLECTIONS.publishedLocalizedPresentationsHistory,
+    indexes: [
+      {
+        key: { snapshotId: 1 },
+        unique: true,
+        name: "published_localized_presentations_history_snapshot_unique",
+      },
+      {
+        key: { "identity.entityType": 1, "identity.entityId": 1, "identity.locale": 1 },
+        name: "published_localized_presentations_history_entity_locale",
+      },
+    ],
+  },
+  {
+    // RESET 05C.1 — durable PLP auto-build work claim/drain.
+    collectionName: MONGO_COLLECTIONS.plpAutoBuildWork,
+    indexes: [
+      {
+        key: { workKey: 1 },
+        unique: true,
+        name: "plp_auto_build_work_workKey_unique",
+      },
+      {
+        key: { status: 1, enqueuedAt: 1 },
+        name: "plp_auto_build_work_status_enqueuedAt",
+      },
+    ],
+  },
+  {
+    // RESET 05E.3 — durable thin_gemini quota cooldown (singleton per providerId).
+    collectionName: MONGO_COLLECTIONS.plpThinGeminiProviderState,
+    indexes: [
+      {
+        key: { providerId: 1 },
+        unique: true,
+        name: "plp_thin_gemini_provider_state_providerId_unique",
+      },
+    ],
+  },
+  {
+    // Production Completion Pack 02B — Language Registry.
+    collectionName: MONGO_COLLECTIONS.languageRegistry,
+    indexes: [
+      {
+        key: { languageId: 1 },
+        unique: true,
+        name: "language_registry_language_id_unique",
+      },
+      {
+        key: { localeKey: 1 },
+        unique: true,
+        name: "language_registry_locale_key_unique",
+      },
+      {
+        // Multikey unique on normalized alias keys. Partial so documents with
+        // no aliases (missing/empty aliasKeys) do not collide on undefined.
+        key: { aliasKeys: 1 },
+        unique: true,
+        name: LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME,
+        partialFilterExpression: LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_PARTIAL_FILTER,
+      },
+    ],
+  },
+  {
+    // Production Completion Pack 02F — Canonical Terminology Glossary.
+    collectionName: MONGO_COLLECTIONS.terminologyGlossary,
+    indexes: [
+      {
+        key: { conceptId: 1 },
+        unique: true,
+        name: "terminology_glossary_concept_id_unique",
+      },
+    ],
+  },
+  {
+    // Pack 08I.2 — Admin-managed Brand Localization (one record per canonical locale).
+    collectionName: MONGO_COLLECTIONS.brandLocalization,
+    indexes: [
+      {
+        key: { locale: 1 },
+        unique: true,
+        name: "brand_localization_locale_unique",
+      },
+      {
+        key: { brandId: 1 },
+        unique: true,
+        name: "brand_localization_brand_id_unique",
+      },
+    ],
+  },
+  {
+    // Admin/persisted WEB_UI message packs (one record per canonical locale).
+    collectionName: MONGO_COLLECTIONS.webUiMessagePacks,
+    indexes: [
+      {
+        key: { localeKey: 1 },
+        unique: true,
+        name: "web_ui_message_packs_locale_unique",
+      },
+      {
+        key: { packId: 1 },
+        unique: true,
+        name: "web_ui_message_packs_pack_id_unique",
+      },
+      {
+        key: { status: 1, localeKey: 1 },
+        name: "web_ui_message_packs_status_locale",
+      },
+    ],
+  },
+  {
+    // Durable Admin language localization activation jobs.
+    collectionName: MONGO_COLLECTIONS.languageActivationJobs,
+    indexes: [
+      {
+        key: { jobId: 1 },
+        unique: true,
+        name: "language_activation_jobs_job_id_unique",
+      },
+      {
+        key: { localeKey: 1, generation: -1 },
+        name: "language_activation_jobs_locale_generation",
+      },
+      {
+        key: { localeKey: 1, status: 1 },
+        name: "language_activation_jobs_locale_status",
+      },
+    ],
+  },
+  {
+    // Pack 08I.5 — Admin-managed Legal Localization (one record per documentType+locale).
+    collectionName: MONGO_COLLECTIONS.legalLocalization,
+    indexes: [
+      {
+        key: { documentType: 1, locale: 1 },
+        unique: true,
+        name: "legal_localization_document_type_locale_unique",
+      },
+      {
+        key: { legalId: 1 },
+        unique: true,
+        name: "legal_localization_legal_id_unique",
+      },
+    ],
+  },
+  {
     // Blog Implementation Pack 02 — publishing domain.
     collectionName: MONGO_COLLECTIONS.blogPosts,
     indexes: [
@@ -1369,6 +1569,42 @@ async function dropDeadInitiativeDecisionVoteStatusIndex(): Promise<void> {
 }
 
 /**
+ * Pack 02B Hotfix 01 — drop obsolete non-partial
+ * `language_registry_alias_keys_unique` so ensureCollectionIndexes can recreate
+ * it with the partial filter. Does nothing when the index is already current
+ * or missing. Does not touch unrelated indexes.
+ */
+export async function reconcileLanguageRegistryAliasKeysUniqueIndex(): Promise<void> {
+  try {
+    const collection = getMongoCollection(MONGO_COLLECTIONS.languageRegistry);
+    const indexes = await collection.indexes();
+    const existing = indexes.find(
+      (idx) => idx.name === LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME,
+    );
+    if (!existing) {
+      return;
+    }
+    if (isLanguageRegistryAliasKeysUniqueIndexCurrent(existing)) {
+      return;
+    }
+    await collection.dropIndex(LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME);
+  } catch (error) {
+    const mongoError = error as { code?: number; codeName?: string };
+
+    if (
+      mongoError.code === 27 ||
+      mongoError.codeName === "IndexNotFound" ||
+      mongoError.code === 26 ||
+      mongoError.codeName === "NamespaceNotFound"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+/**
  * Pack 02B — replace non-partial unique(decisionId, participantId) so visitor
  * rows without participantId do not collide on null. Safe if already dropped.
  */
@@ -1403,6 +1639,10 @@ export async function ensureMongoIndexes(): Promise<void> {
   await withMongoStartupIndexRetry(
     "dropLegacyDecisionParticipantUniqueIndex",
     dropLegacyDecisionParticipantUniqueIndex,
+  );
+  await withMongoStartupIndexRetry(
+    "reconcileLanguageRegistryAliasKeysUniqueIndex",
+    reconcileLanguageRegistryAliasKeysUniqueIndex,
   );
 
   for (const entry of MODULE_INDEXES) {

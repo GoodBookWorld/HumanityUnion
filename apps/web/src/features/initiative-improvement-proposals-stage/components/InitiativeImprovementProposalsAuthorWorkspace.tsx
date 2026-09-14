@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
@@ -11,6 +12,7 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   createInitiativeRevisionDraft,
@@ -45,6 +47,8 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   onTogglePreview,
   onNavigate,
 }: InitiativeImprovementProposalsAuthorWorkspaceProps) {
+  const t = useTranslations("initiativeExperience");
+  const actions = useAuthorActionLabels();
   const [collection, setCollection] = useState<InitiativeImprovementProposalsCollection | null>(null);
   const [revisionContext, setRevisionContext] = useState<InitiativeRevisionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,16 +128,16 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="Improvement Proposals could not be loaded." />
+        <WorkspaceErrorState message={t("author.proposal.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
   }
 
   if (loading) {
-    return <p className="lsw-sources__missing">Loading Improvement Proposals…</p>;
+    return <p className="lsw-sources__missing">{t("author.proposal.loading")}</p>;
   }
 
   const canEditVersion = Boolean(revisionContext && revisionContext.currentVersion > 0);
@@ -147,7 +151,9 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
           aria-expanded={showSourcePanel}
           onClick={() => setShowSourcePanel((current) => !current)}
         >
-          {showSourcePanel ? "Hide Proposal Sources" : "Show Proposal Sources"}
+          {showSourcePanel
+            ? t("author.proposal.hideSources")
+            : t("author.proposal.showSources")}
         </button>
       ) : null}
 
@@ -166,40 +172,41 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
         />
       ) : (
         <div className="iip-editor">
-          <h3>No proposals yet</h3>
-          <p>
-            Generate structured proposals from proposal-marked Discussion comments, or continue with
-            zero proposals by confirming the Initiative version and advancing to Petition.
-          </p>
+          <h3>{t("author.proposal.noProposalsYet")}</h3>
+          <p>{t("author.proposal.noProposalsExplanation")}</p>
           <div className="iip-editor__header-actions">
             <WorkspaceButton
               variant="primary"
               disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Improvement Proposals Draft")}
+              {resolveSaveButtonLabel(
+                generatePhase.phase,
+                t("author.proposal.generateDraft"),
+                actions.phaseLabels,
+              )}
             </WorkspaceButton>
             <WorkspaceButton
               variant="secondary"
               disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
               onClick={() => void handleStartWithoutProposals()}
             >
-              {resolveSaveButtonLabel(emptyDraftPhase.phase, "Continue without proposals")}
+              {resolveSaveButtonLabel(
+                emptyDraftPhase.phase,
+                t("author.proposal.continueWithoutProposals"),
+                actions.phaseLabels,
+              )}
             </WorkspaceButton>
           </div>
         </div>
       )}
 
       {canEditVersion ? (
-        <section className="iip-editor" aria-label="Updated Initiative version">
+        <section className="iip-editor" aria-label={t("author.proposal.versionSectionAria")}>
           <div className="iip-editor__header">
-            <h3>Updated Initiative Version</h3>
+            <h3>{t("author.proposal.versionSectionTitle")}</h3>
           </div>
-          <p>
-            Review accepted proposals, edit the Initiative text, Preview or Save Draft without advancing
-            lifecycle, then Commit the progress version. Publish &amp; Continue to Petition completes this
-            stage.
-          </p>
+          <p>{t("author.proposal.versionSectionHelp")}</p>
 
           {revisionContext?.draft ? (
             <button
@@ -208,7 +215,9 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
               aria-expanded={showVersionSources}
               onClick={() => setShowVersionSources((current) => !current)}
             >
-              {showVersionSources ? "Hide Version Sources" : "Show Version Sources"}
+              {showVersionSources
+                ? t("author.proposal.hideVersionSources")
+                : t("author.proposal.showVersionSources")}
             </button>
           ) : null}
 
@@ -233,7 +242,11 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
                 disabled={revisionCreatePhase.isBusy}
                 onClick={() => void handleCreateRevisionDraft()}
               >
-                {resolveSaveButtonLabel(revisionCreatePhase.phase, "Start Initiative Version Draft")}
+                {resolveSaveButtonLabel(
+                  revisionCreatePhase.phase,
+                  t("author.proposal.startVersionDraft"),
+                  actions.phaseLabels,
+                )}
               </WorkspaceButton>
             </div>
           )}
@@ -244,6 +257,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
 }
 
 function ProposalIntelligenceSnapshotSection({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeProposalIntelligenceSnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -270,11 +284,11 @@ function ProposalIntelligenceSnapshotSection({ initiativeId }: { initiativeId: s
   }, [initiativeId]);
 
   if (loadFailed) {
-    return <p className="iip-source-panel__empty">The Proposal Intelligence Snapshot could not be loaded.</p>;
+    return <p className="iip-source-panel__empty">{t("author.proposal.sourceSnapshot.loadFailed")}</p>;
   }
 
   if (!snapshot) {
-    return <p className="iip-source-panel__empty">Loading Proposal Sources…</p>;
+    return <p className="iip-source-panel__empty">{t("author.proposal.sourceSnapshot.loading")}</p>;
   }
 
   return <InitiativeProposalIntelligenceSnapshotPanel snapshot={snapshot} />;

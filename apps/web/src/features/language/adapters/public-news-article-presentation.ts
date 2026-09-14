@@ -1,0 +1,181 @@
+/**
+ * Pack 08K.3 — Public news article → PublicPresentationNode adapter.
+ *
+ * Reset 01 — RSS card title/summary are MACHINE_CONTENT (persisted PLP).
+ * Category is CONTROLLED_VOCABULARY. Outlet identity / URLs remain protected.
+ */
+
+import type { PublicNewsArticleItem } from "@hu/types";
+import {
+  PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+  controlledTerminologyValue,
+  protectedIdentity,
+  protectedTechnical,
+  unwrapPublicPresentationValue,
+  type PublicLocalizedPresentation,
+  type PublicPresentationNode,
+  type PublicProtectedValue,
+} from "@hu/types";
+
+import {
+  collectAutoTranslatableNodes,
+  localizePublicPresentation,
+} from "../public-localized-presentation.js";
+
+export type PublicNewsArticlePresentationTree = {
+  readonly id: PublicProtectedValue;
+  readonly articleUrl: PublicProtectedValue;
+  readonly imageUrl: PublicProtectedValue | null;
+  readonly publishedAt: PublicProtectedValue;
+  readonly sourceName: PublicProtectedValue;
+  readonly verificationStatus: PublicProtectedValue;
+  /** RSS card title — MACHINE_CONTENT / PLP AUTO. */
+  readonly title: string;
+  /** RSS card summary — MACHINE_CONTENT / PLP AUTO. */
+  readonly summary: string;
+  /** MediaRegistryCategory key — CONTROLLED_VOCABULARY (not AUTO / Gemini). */
+  readonly category: PublicProtectedValue;
+  readonly geographicScope: PublicProtectedValue;
+  /**
+   * Extension bag for future nested semantic fields.
+   * Plain strings auto-localize without allowlist edits.
+   */
+  readonly extensions?: Record<string, PublicPresentationNode>;
+};
+
+export function buildPublicNewsArticlePresentation(
+  article: PublicNewsArticleItem & {
+    readonly extensions?: Record<string, PublicPresentationNode>;
+  },
+): PublicNewsArticlePresentationTree {
+  return {
+    id: protectedTechnical(article.id),
+    articleUrl: protectedTechnical(article.articleUrl),
+    imageUrl: article.imageUrl ? protectedTechnical(article.imageUrl) : null,
+    publishedAt: protectedTechnical(article.publishedAt),
+    sourceName: protectedIdentity(article.sourceName),
+    verificationStatus: protectedTechnical(article.verificationStatus),
+    title: article.title,
+    summary: article.summary,
+    category: controlledTerminologyValue(article.category ?? ""),
+    geographicScope: protectedTechnical(article.geographicScope ?? ""),
+    ...(article.extensions ? { extensions: article.extensions } : {}),
+  };
+}
+
+export function asPublicNewsPresentationNode(
+  presentation: PublicNewsArticlePresentationTree,
+): PublicPresentationNode {
+  return presentation as unknown as PublicPresentationNode;
+}
+
+export function readPublicNewsPresentationTitle(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  if (typeof tree.title === "string") {
+    return tree.title;
+  }
+  return unwrapPublicPresentationValue(tree.title) ?? "";
+}
+
+export function readPublicNewsPresentationSummary(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  if (typeof tree.summary === "string") {
+    return tree.summary;
+  }
+  return unwrapPublicPresentationValue(tree.summary) ?? "";
+}
+
+export function readPublicNewsPresentationCategory(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  if (typeof tree.category === "string") {
+    return tree.category;
+  }
+  return unwrapPublicPresentationValue(tree.category) ?? "";
+}
+
+export function readPublicNewsProtectedSourceName(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  return unwrapPublicPresentationValue(tree.sourceName) ?? "";
+}
+
+export function readPublicNewsProtectedArticleUrl(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  return unwrapPublicPresentationValue(tree.articleUrl) ?? "";
+}
+
+export function readPublicNewsProtectedImageUrl(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string | undefined {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  if (!tree.imageUrl) {
+    return undefined;
+  }
+  return unwrapPublicPresentationValue(tree.imageUrl) ?? undefined;
+}
+
+export function readPublicNewsProtectedId(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  return unwrapPublicPresentationValue(tree.id) ?? "";
+}
+
+export function readPublicNewsProtectedPublishedAt(
+  presentation: PublicNewsArticlePresentationTree | PublicPresentationNode,
+): string {
+  const tree = presentation as PublicNewsArticlePresentationTree;
+  return unwrapPublicPresentationValue(tree.publishedAt) ?? "";
+}
+
+/**
+ * Build complete localized presentation for a news article.
+ * Provide `translations` path→string for non-source locales (fixtures / warm).
+ */
+export function localizePublicNewsArticlePresentation(input: {
+  readonly article: PublicNewsArticleItem & {
+    readonly extensions?: Record<string, PublicPresentationNode>;
+  };
+  readonly targetLanguage: string;
+  readonly translations?: Readonly<Record<string, string>>;
+}): PublicLocalizedPresentation {
+  const presentation = asPublicNewsPresentationNode(
+    buildPublicNewsArticlePresentation(input.article),
+  );
+  const sourceLanguage = input.article.language?.trim() || "en";
+  return localizePublicPresentation({
+    identity: {
+      sourceKind: "public_news",
+      sourceRecordId: input.article.id,
+      presentationSchemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+    },
+    sourceLanguage,
+    targetLanguage: input.targetLanguage,
+    presentation,
+    translations: input.translations,
+  });
+}
+
+/** Deterministic fixture helper: prefix every auto node with [locale]. */
+export function buildCompletePublicNewsFixtureTranslations(
+  article: PublicNewsArticleItem & {
+    readonly extensions?: Record<string, PublicPresentationNode>;
+  },
+  targetLanguage: string,
+): Record<string, string> {
+  const tree = asPublicNewsPresentationNode(buildPublicNewsArticlePresentation(article));
+  const translations: Record<string, string> = {};
+  for (const node of collectAutoTranslatableNodes(tree)) {
+    translations[node.path] = `[${targetLanguage}] ${node.value}`;
+  }
+  return translations;
+}

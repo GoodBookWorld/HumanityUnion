@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system";
 import {
@@ -24,6 +25,7 @@ import { PwaInstallGuidance, type PwaInstallGuidanceKind } from "./PwaInstallGui
  * Automatic Install CTA only when a deferred prompt exists.
  */
 export function PwaInstallPromotion() {
+  const t = useTranslations("pwa");
   const [uxState, setUxState] = useState<PwaInstallUxState>("browser_mode");
   const [dismissed, setDismissed] = useState(false);
   const [guidanceOpen, setGuidanceOpen] = useState(false);
@@ -99,26 +101,25 @@ export function PwaInstallPromotion() {
   const showIosAction = uxState === "ios_add_to_home" && !dismissed;
   /**
    * Pack 23D.1 — manual guide must not depend on beforeinstallprompt.
-   * Visible whenever not installed (and not temporarily dismissed).
+   * Visible when not installed / not dismissed, except iOS where the primary
+   * "Add to Home Screen" CTA opens the compact Safari A2HS modal instead.
    */
-  const showInstallationGuide = !runningStandalone && !dismissed;
+  const showInstallationGuide =
+    !runningStandalone && !dismissed && uxState !== "ios_add_to_home";
   const automaticInstallAvailable = uxState === "install_available";
 
   return (
     <div className="hu-pwa-install-column">
-      <h3>Humanity Union App</h3>
-      <p>
-        Take Humanity with you. Install the app for direct access to your Workspace, Initiatives,
-        Notifications and Humanity Union Assistant.
-      </p>
+      <h3>{t("install.appTitle")}</h3>
+      <p>{t("install.lead")}</p>
 
       {runningStandalone ? (
         <div className="hu-pwa-install-actions">
           <p className="hu-pwa-install-status" role="status">
-            Humanity Union is already installed on this device.
+            {t("install.alreadyInstalled")}
           </p>
           <Button type="button" variant="primary" href="/workspace">
-            Open Workspace
+            {t("install.openWorkspace")}
           </Button>
         </div>
       ) : null}
@@ -126,10 +127,10 @@ export function PwaInstallPromotion() {
       {!runningStandalone && dismissed ? (
         <div className="hu-pwa-install-actions">
           <p className="hu-pwa-install-status" role="status">
-            Install guidance is hidden for this session.
+            {t("install.hiddenStatus")}
           </p>
           <Button type="button" variant="secondary" onClick={handleShowAgain}>
-            Show install options
+            {t("install.showOptions")}
           </Button>
         </div>
       ) : null}
@@ -143,24 +144,24 @@ export function PwaInstallPromotion() {
               onClick={() => void handleInstall()}
               disabled={busy}
             >
-              {busy ? "Installing…" : "Install Humanity Union"}
+              {busy ? t("install.installing") : t("install.installCta")}
             </Button>
           ) : null}
 
           {showIosAction ? (
             <Button type="button" variant="primary" onClick={() => openGuidance("ios")}>
-              Add to Home Screen
+              {t("install.addToHomeScreen")}
             </Button>
           ) : null}
 
           {showInstallationGuide ? (
             <Button type="button" variant="secondary" onClick={openDefaultGuide}>
-              Installation guide
+              {t("install.installationGuide")}
             </Button>
           ) : null}
 
           <Button type="button" variant="secondary" onClick={handleDismiss}>
-            Later
+            {t("install.later")}
           </Button>
         </div>
       ) : null}

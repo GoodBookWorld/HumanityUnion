@@ -28,6 +28,23 @@ export type InitiativeStructuredProposalStatus =
   | "not_applicable";
 
 /**
+ * Structured facts for HU deterministic draft frames.
+ * Public presentation composes WEB_UI — never English glue + CV word-swap.
+ * Cleared / ignored when the Author edits the corresponding free-text field.
+ */
+export type ImprovementProposalHuSystemGeneration = {
+  readonly descriptionKind: "raised_times" | "single_excerpt";
+  readonly raisedCount: number;
+  readonly reasonKind: "raised_independently" | "raised_by";
+  readonly participantCount: number;
+  readonly category: string;
+  readonly discussionStageToken: string;
+  readonly helpfulCount: number;
+  readonly memberCount: number;
+  readonly supportingSourcesKind: "helpful_reactions" | "related_comments";
+};
+
+/**
  * One concrete, structured improvement suggestion — Part 6's Proposal
  * Editor field set exactly. `proposalId` is assigned once, at creation,
  * and is NEVER reassigned or reused — this is Part 7's "stable Proposal
@@ -53,6 +70,12 @@ export interface InitiativeStructuredProposal {
   status: InitiativeStructuredProposalStatus;
   readonly createdAt: string;
   updatedAt: string;
+  /**
+   * When set, reason/supportingSources (and multi-raised description chrome)
+   * are HU system frames composed via WEB_UI. Participant excerpts in
+   * summary/description remain MANUAL_AUTHOR.
+   */
+  huSystemGeneration?: ImprovementProposalHuSystemGeneration | null;
 }
 
 export type InitiativeImprovementProposalsCollectionStatus = "draft" | "published" | "archived";

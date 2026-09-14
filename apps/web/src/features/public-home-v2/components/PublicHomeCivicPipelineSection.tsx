@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   HuxWorkflowSection,
   HuxWorkflowStage,
@@ -7,20 +9,22 @@ import {
 import { PUBLIC_HOME_CIVIC_PIPELINE } from "../constants";
 
 export function PublicHomeCivicPipelineSection() {
+  const t = useTranslations("publicHome");
+
   const stages = PUBLIC_HOME_CIVIC_PIPELINE.map((step) => ({
     id: step.id,
-    title: step.label,
-    description: step.explanation,
+    title: t(`pipeline.${step.id}.label`),
+    description: t(`pipeline.${step.id}.explanation`),
     highlighted: step.id === "initiative",
   }));
 
   return (
     <HuxWorkflowSection
       sectionId="public-home-pipeline"
-      eyebrow="CIVIC WORKFLOW"
-      title="How civic action works"
-      description="A structured path from shared problems to documented public results."
-      label="civic workflow stages"
+      eyebrow={t("pipeline.eyebrow")}
+      title={t("pipeline.title")}
+      description={t("pipeline.description")}
+      label={t("pipeline.ariaLabel")}
       items={stages}
       getItemKey={(stage) => stage.id}
       viewportClassName="hux-workflow-rail"

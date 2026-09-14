@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import type { AuthUserPublic } from "@hu/types";
@@ -53,6 +54,7 @@ type PageState = "loading" | "unauthenticated" | "ready";
  *   Personal Chat's Active Allies sidebar never appears in Group mode.
  */
 export function DirectMessagesWorkspace({ activeConversationId }: DirectMessagesWorkspaceProps) {
+  const t = useTranslations("workspace.messagesPage");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -117,12 +119,12 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
       }
 
       setAlliesErrorMessage(
-        error instanceof Error ? error.message : "Unable to load your Active Allies.",
+        error instanceof Error ? error.message : t("allies.loadError"),
       );
       setAlliesState("error");
       setPageState("ready");
     }
-  }, []);
+  }, [t]);
 
   /**
    * Communication UX Pack 03.9 Part 2 — Personal Chat's Active Allies load
@@ -196,14 +198,18 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
 
   const body = (() => {
     if (pageState === "loading") {
-      return <p className="direct-messaging__conversation-status" role="status">Loading Messenger…</p>;
+      return (
+        <p className="direct-messaging__conversation-status" role="status">
+          {t("loadingMessenger")}
+        </p>
+      );
     }
 
     if (pageState === "unauthenticated") {
       return (
         <div className="direct-messaging__empty-state">
-          <p className="direct-messaging__empty-title">Sign in to view your conversations.</p>
-          <Link href="/login">Sign in</Link>
+          <p className="direct-messaging__empty-title">{t("signInTitle")}</p>
+          <Link href="/login">{t("signIn")}</Link>
         </div>
       );
     }
@@ -221,12 +227,10 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
           ) : (
             <div className="direct-messaging-page__empty-state">
               <p className="direct-messaging-page__empty-title">
-                {isAdminViewer ? "Select a Participant" : "Select an Ally"}
+                {isAdminViewer ? t("selectParticipantTitle") : t("selectAllyTitle")}
               </p>
               <p className="direct-messaging-page__empty-text">
-                {isAdminViewer
-                  ? "Choose a Participant from All Participants to open a Direct Conversation."
-                  : "Choose an Active Ally to open your Direct Collaboration conversation."}
+                {isAdminViewer ? t("selectParticipantBody") : t("selectAllyBody")}
               </p>
             </div>
           )}
@@ -237,11 +241,9 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
 
   const headerBar = (
     <header className="member-workspace__header">
-      <h1 className="member-workspace__title">Messages</h1>
+      <h1 className="member-workspace__title">{t("title")}</h1>
       <p className="member-workspace__subtitle">
-        {mode === "initiative"
-          ? "Group communication with your Initiative's Author and Active Allies."
-          : "Direct Collaboration conversations with other Participants."}
+        {mode === "initiative" ? t("subtitleInitiative") : t("subtitlePersonal")}
       </p>
       <CommunicationModeSwitch mode={mode} onChange={handleModeChange} />
     </header>
@@ -250,7 +252,7 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
   if (mode === "initiative") {
     return (
       <MemberWorkspace
-        title="Messages"
+        title={t("title")}
         headerBar={headerBar}
         workspaceNavigation={<WorkspaceNavigation />}
       >
@@ -268,7 +270,7 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
 
   return (
     <MemberWorkspace
-      title="Messages"
+      title={t("title")}
       headerBar={headerBar}
       workspaceNavigation={<WorkspaceNavigation />}
       assistant={

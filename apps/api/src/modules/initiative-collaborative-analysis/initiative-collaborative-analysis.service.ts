@@ -19,6 +19,7 @@ import {
 import { resolveInitiativeVersionForNewAnalysis } from "../initiative-version-revision/initiative-version-revision.service.js";
 import { invalidateCommunityIntelligenceCache } from "../community-intelligence/community-intelligence-cache.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancestry/index.js";
 import { buildInitiativeAnalysisSourceSnapshot } from "./initiative-analysis-source-snapshot.service.js";
 import { generateAnalysisDraft } from "./initiative-analysis-draft-builder.js";
@@ -361,6 +362,12 @@ export async function publishInitiativeCollaborativeAnalysis(
     entityId: analysisId,
     initiativeId: published.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "collaborative_analysis",
+    sourceRecordId: analysisId,
+    reason: "public_mutation",
   });
 
   await notifyLifecycleStageAnalysisPublished(published, identity.participantId);

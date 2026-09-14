@@ -24,11 +24,10 @@ describe("Pack 17E — participant professional social links UI", () => {
     assert.match(section, /youtubeUrl/);
     assert.match(section, /instagramUrl/);
     assert.match(section, /xUrl/);
-    assert.match(section, /PLATFORM_SOCIAL_NETWORK_ICON_PATHS/);
-    assert.match(section, /platform-social-network-icons/);
-    assert.match(section, /not Humanity Union publication/);
+    assert.match(section, /useTranslations\("memberProfile\.links"\)/);
+    assert.match(section, /t\("lede"\)/);
     assert.match(section, /rel="noopener noreferrer"/);
-    assert.match(section, /aria-label=\{field\.label\}/);
+    assert.match(section, /aria-label=\{label\}/);
     assert.match(section, /linkedinUrl/);
     assert.match(section, /website/);
   });

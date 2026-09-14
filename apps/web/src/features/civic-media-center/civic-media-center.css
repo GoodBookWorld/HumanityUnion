@@ -1,6 +1,9 @@
 .civic-media-page {
   width: 100%;
+  min-width: 0;
   overflow-x: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   --civic-media-section-gap: 3rem;
 }
 
@@ -34,6 +37,10 @@
 .civic-media-page__hero h1 {
   margin: 0 0 var(--hu-space-3);
   color: var(--hu-color-primary, #0174b0);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
 }
 
 .civic-media-page__lead {
@@ -42,12 +49,55 @@
   font-size: 1.125rem;
   line-height: 1.6;
   color: var(--hu-color-text, #1f2933);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
+/* Pack 08I — structured editorial overview (no JSON dump). */
+.civic-media-page__editorial {
+  display: grid;
+  gap: var(--hu-space-4);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-page__overview-title {
+  margin: 0;
+  color: var(--hu-color-text, #1f2933);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Pack 08I.4 — restore equal three-column hero cards (stack on mobile, RTL-safe). */
 .civic-media-page__hero-grid {
   display: grid;
   gap: var(--hu-space-4);
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.civic-media-page__hero-grid > .civic-media-resource-card--hero {
+  min-width: 0;
+  max-width: 100%;
+  text-align: start;
+}
+
+.civic-media-page__hero-grid > .civic-media-resource-card--hero p {
+  margin: 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-page__trusted-category {
@@ -66,6 +116,15 @@
 .civic-media-page__faq-list {
   display: grid;
   gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.civic-media-page__faq-list details,
+.civic-media-page__faq-list summary,
+.civic-media-page__faq-list p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-page__knowledge-link {
@@ -105,5 +164,9 @@
 @media (max-width: 767px) {
   .civic-media-page__container {
     padding-inline: var(--hu-space-3);
+  }
+
+  .civic-media-page__hero-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

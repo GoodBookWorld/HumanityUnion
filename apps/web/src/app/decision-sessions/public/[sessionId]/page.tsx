@@ -4,6 +4,10 @@ import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicDecisionSession } from "../../../../features/decision-session/api";
+import {
+  CivicPublicTranslatedSection,
+  stableJsonForDisplay,
+} from "../../../../features/language";
 
 import "./public-decision-session-page.css";
 
@@ -53,8 +57,30 @@ export default async function PublicDecisionSessionPage({
       </header>
 
       <ProfileSection title="Session">
-        <ProfileField label="Purpose" value={session.purpose} />
-        <ProfileField label="Decision question" value={session.decisionQuestion} />
+        <CivicPublicTranslatedSection
+          sourceKind="decision_session"
+          sourceRecordId={session.sessionId}
+          fallbackFields={{
+            title: session.title,
+            purpose: session.purpose,
+            decisionQuestion: session.decisionQuestion,
+            structuredContent: session.structuredContent
+              ? stableJsonForDisplay({
+                  decisionContext: session.structuredContent.decisionContext,
+                  objectives: session.structuredContent.objectives,
+                  options: session.structuredContent.options,
+                  supportingArguments: session.structuredContent.supportingArguments,
+                  risks: session.structuredContent.risks,
+                  dependencies: session.structuredContent.dependencies,
+                  requiredResources: session.structuredContent.requiredResources,
+                  suggestedTimeline: session.structuredContent.suggestedTimeline,
+                  suggestedParticipants: session.structuredContent.suggestedParticipants,
+                  suggestedResponsibleRoles: session.structuredContent.suggestedResponsibleRoles,
+                  unresolvedQuestions: session.structuredContent.unresolvedQuestions,
+                })
+              : "",
+          }}
+        />
         <ProfileField label="Status" value={session.status} />
         <ProfileField label="Steward" value={session.stewardDisplayName} />
         <ProfileField

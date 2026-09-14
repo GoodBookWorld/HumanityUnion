@@ -38,11 +38,30 @@ export class TranslationProviderError extends Error {
       | "forbidden"
       | "bad_request",
     message: string,
+    readonly providerFailureSubtype?: string,
+    /** RESET 05E.2 — safe transport forensics only (no secrets/content). */
+    readonly transport?: TranslationProviderTransportMeta,
   ) {
     super(message);
     this.name = "TranslationProviderError";
   }
 }
+
+/** Safe Gemini/HTTP transport metadata — never keys, URLs with keys, or bodies. */
+export type TranslationProviderTransportMeta = {
+  readonly httpStatus?: number | null;
+  readonly httpClass?: string | null;
+  readonly errorClass?: string | null;
+  readonly errorCode?: string | null;
+  readonly retryAfterSeconds?: number | null;
+  readonly geminiErrorStatus?: string | null;
+  readonly geminiErrorReason?: string | null;
+  /** RESET 05E.3 — safe quota forensics (no project identity / prose). */
+  readonly quotaClass?: string | null;
+  readonly quotaMetric?: string | null;
+  readonly quotaLimitId?: string | null;
+  readonly quotaRetryDelaySeconds?: number | null;
+};
 
 export function assertGeminiTranslationConfigured(
   config: TranslationConfig = resolveTranslationConfig(),

@@ -8,7 +8,7 @@ import {
   DESKTOP_CAPSULE_NAVIGATION,
   PRIMARY_NAVIGATION,
 } from "../features/public-experience/constants.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -67,7 +67,9 @@ describe("Public Header UX Pack 01 / Refinement 02 — floating navigation heade
     const auth = read("components/HeaderAuthUtility.tsx");
     assert.match(auth, /\/icons\/workspace\/login\.png/);
     assert.match(auth, /humanity-header__login-link/);
-    assert.match(auth, />\s*Log in\s*</);
+    assert.match(auth, /useTranslations\("auth"\)/);
+    assert.match(auth, /tAuth\("logIn"\)/);
+    assert.match(auth, /href="\/login"/);
     assert.match(auth, /aria-hidden="true"/);
     assert.match(auth, /AuthenticatedHeaderTools/);
   });

@@ -8,3 +8,5 @@ allowBuilds:
   bcrypt: true
   esbuild: true
   sharp: true
+  '@parcel/watcher': true
+  '@swc/core': true

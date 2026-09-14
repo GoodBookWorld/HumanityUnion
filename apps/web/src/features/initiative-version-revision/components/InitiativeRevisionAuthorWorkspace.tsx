@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { InitiativeRevisionDraft, InitiativeRevisionDraftContext } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import { createInitiativeRevisionDraft, getInitiativeRevisionWorkspace } from "../api";
 import { InitiativeRevisionEditor } from "./InitiativeRevisionEditor";
@@ -33,6 +34,7 @@ export function InitiativeRevisionAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativeRevisionAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const [context, setContext] = useState<InitiativeRevisionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -77,7 +79,7 @@ export function InitiativeRevisionAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="The Revision workspace could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -134,7 +136,7 @@ export function InitiativeRevisionAuthorWorkspace({
               disabled={createPhase.isBusy}
               onClick={() => void handleCreateDraft()}
             >
-              {resolveSaveButtonLabel(createPhase.phase, "Start Revision Draft")}
+              {resolveSaveButtonLabel(createPhase.phase, "Start Revision Draft", actions.phaseLabels)}
             </WorkspaceButton>
           </div>
         </div>

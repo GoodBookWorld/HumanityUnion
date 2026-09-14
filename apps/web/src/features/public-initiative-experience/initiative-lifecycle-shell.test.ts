@@ -181,7 +181,14 @@ describe("Phase 03 — lifecycle shell helpers", () => {
         { petition: { health: "unavailable", reasonCode: "infrastructure_failure" } },
         "petition",
       ),
-      "Petition information is temporarily unavailable.",
+      "petition",
+    );
+    assert.equal(
+      publicSafeOptionalSectionMessage(
+        { civicArchive: { health: "unavailable", reasonCode: "infrastructure_failure" } },
+        "civicArchive",
+      ),
+      "civicArchive",
     );
     assert.equal(
       publicSafeOptionalSectionMessage({ petition: { health: "absent", reasonCode: "not_created_yet" } }, "petition"),

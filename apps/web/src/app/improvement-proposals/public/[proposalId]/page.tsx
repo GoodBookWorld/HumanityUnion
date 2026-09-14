@@ -4,6 +4,7 @@ import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicImprovementProposal } from "../../../../features/initiative-improvement-proposal/api";
+import { CivicPublicTranslatedSection } from "../../../../features/language";
 
 import "./public-improvement-proposal-page.css";
 
@@ -54,18 +55,23 @@ export default async function PublicImprovementProposalPage({
 
       <ProfileSection title="Proposal">
         <ProfileField label="Status" value={proposal.status.replace("_", " ")} />
-        <ProfileField label="Current issue" value={proposal.currentIssue} />
-        <ProfileField label="Proposed change" value={proposal.proposedChange} />
-        <ProfileField label="Rationale" value={proposal.rationale} />
-        <ProfileField label="Expected improvement" value={proposal.expectedImprovement} />
-        <ProfileField label="References" value={proposal.references} />
+        <CivicPublicTranslatedSection
+          sourceKind="improvement_proposal"
+          sourceRecordId={proposal.proposalId}
+          fallbackFields={{
+            targetSection: proposal.targetSection,
+            currentIssue: proposal.currentIssue,
+            proposedChange: proposal.proposedChange,
+            rationale: proposal.rationale,
+            expectedImprovement: proposal.expectedImprovement,
+            references: proposal.references,
+            decisionNote: proposal.decisionNote ?? "",
+          }}
+        />
         <ProfileField label="Author" value={proposal.authorDisplayName} />
         <ProfileField label="Submitted" value={formatDate(proposal.updatedAt)} />
         {proposal.decidedAt ? (
           <ProfileField label="Decided" value={formatDate(proposal.decidedAt)} />
-        ) : null}
-        {proposal.decisionNote ? (
-          <ProfileField label="Steward decision note" value={proposal.decisionNote} />
         ) : null}
         <ProfileField
           label="Implementation"

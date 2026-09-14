@@ -1,8 +1,15 @@
 import type { MetadataRoute } from "next";
+import {
+  DEFAULT_PLATFORM_LANGUAGE,
+  isSeoIndexableLanguage,
+  normalizeLanguageRegistryLocaleKey,
+  type PublicSeoLocaleRoutingCatalogEntry,
+} from "@hu/types";
 
 import { shouldDisallowSearchIndexing } from "../../platform-indexing";
 import { resolvePublicSiteOrigin, toAbsolutePublicUrl } from "../public-site-url";
 import { dedupeSitemapPathEntries } from "./dedupe-sitemap-entries";
+import { expandPublicSitemapEntriesForSeoLocales } from "./expand-public-sitemap-for-seo-locales";
 import { listBlogPostSitemapEntries } from "./providers/blog-posts";
 import { listCivicArchiveSitemapEntries } from "./providers/civic-archive";
 import { listCountrySitemapEntries } from "./providers/countries";
@@ -44,8 +51,56 @@ async function collectProviderEntries(
   }
 }
 
+function listSeoIndexableLocalesFromCatalog(
+  catalog: readonly PublicSeoLocaleRoutingCatalogEntry[],
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const row of catalog) {
+    if (
+      !isSeoIndexableLanguage({
+        enabled: row.enabled === true,
+        seoIndexingEnabled: row.seoIndexingEnabled === true,
+      })
+    ) {
+      continue;
+    }
+    const locale = row.locale.trim();
+    const key = normalizeLanguageRegistryLocaleKey(locale);
+    if (!locale || !key || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(locale);
+  }
+  return out.sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Step 07E — one Registry catalog read per sitemap build (request-cached when
+ * available). Failures yield [] so expansion is skipped (canonical-only).
+ */
+async function resolveSeoIndexableLocalesForSitemap(): Promise<readonly string[]> {
+  try {
+    const { listPublicSeoRoutingCatalogForRequest } = await import(
+      "../../../features/language/resolve-document-locale"
+    );
+    const catalog = await listPublicSeoRoutingCatalogForRequest();
+    return listSeoIndexableLocalesFromCatalog(catalog);
+  } catch {
+    return [];
+  }
+}
+
 export async function collectPublicSitemapPathEntries(options?: {
   includeDynamicProviders?: boolean;
+  /**
+   * Step 07E — SEO-indexable Registry locales for expansion.
+   * - omitted / undefined → fetch public Registry once (fail → no expansion)
+   * - [] → canonical locale-free only
+   * - provided list → use as-is (tests / overrides)
+   */
+  readonly seoIndexableLocales?: readonly string[];
 }): Promise<SitemapPathEntry[]> {
   const includeDynamic = options?.includeDynamicProviders !== false;
 
@@ -54,19 +109,30 @@ export async function collectPublicSitemapPathEntries(options?: {
     ...listCountrySitemapEntries(),
   ];
 
+  let canonical: SitemapPathEntry[];
   if (!includeDynamic) {
-    return dedupeSitemapPathEntries(localEntries);
+    canonical = dedupeSitemapPathEntries(localEntries);
+  } else {
+    const dynamicBatches = await Promise.all([
+      collectProviderEntries("blog-posts", listBlogPostSitemapEntries),
+      collectProviderEntries("initiatives", listInitiativeSitemapEntries),
+      collectProviderEntries("knowledge-articles", listKnowledgeArticleSitemapEntries),
+      collectProviderEntries("civic-archive", listCivicArchiveSitemapEntries),
+      collectProviderEntries("participant-profiles", listParticipantProfileSitemapEntries),
+    ]);
+    canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
   }
 
-  const dynamicBatches = await Promise.all([
-    collectProviderEntries("blog-posts", listBlogPostSitemapEntries),
-    collectProviderEntries("initiatives", listInitiativeSitemapEntries),
-    collectProviderEntries("knowledge-articles", listKnowledgeArticleSitemapEntries),
-    collectProviderEntries("civic-archive", listCivicArchiveSitemapEntries),
-    collectProviderEntries("participant-profiles", listParticipantProfileSitemapEntries),
-  ]);
+  const seoLocales =
+    options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales")
+      ? (options.seoIndexableLocales ?? [])
+      : await resolveSeoIndexableLocalesForSitemap();
 
-  return dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
+  return expandPublicSitemapEntriesForSeoLocales({
+    entries: canonical,
+    seoIndexableLocales: seoLocales,
+    defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
+  });
 }
 
 export function toMetadataRouteSitemap(
@@ -94,8 +160,13 @@ export function toMetadataRouteSitemap(
  * When indexing is disallowed, returns [] so staging/dev never advertise a
  * crawl inventory. When NEXT_PUBLIC_SITE_URL is unset, returns [] so Next.js
  * cannot absolutize paths against an arbitrary request Host.
+ *
+ * Step 07E — after canonical collection, expands PUBLIC_SEO_LOCALE_PATH_PATTERNS
+ * entries for Registry enabled+seoIndexingEnabled locales (never `/en/...`).
  */
-export async function buildPublicSitemap(): Promise<MetadataRoute.Sitemap> {
+export async function buildPublicSitemap(options?: {
+  readonly seoIndexableLocales?: readonly string[];
+}): Promise<MetadataRoute.Sitemap> {
   if (shouldDisallowSearchIndexing()) {
     return [];
   }
@@ -105,6 +176,10 @@ export async function buildPublicSitemap(): Promise<MetadataRoute.Sitemap> {
     return [];
   }
 
-  const entries = await collectPublicSitemapPathEntries();
+  const entries = await collectPublicSitemapPathEntries({
+    ...(options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales")
+      ? { seoIndexableLocales: options.seoIndexableLocales }
+      : {}),
+  });
   return toMetadataRouteSitemap(entries, origin);
 }

@@ -3,17 +3,25 @@ import type {
   InitiativeOfficialResponseLifecycleDraft,
 } from "@hu/types";
 
+import type { OfficialResponseSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 export interface OfficialResponseAiAssistantInsights {
-  sourcesUsedSummary: string;
-  missingTrackingPackageWarnings: string[];
-  incompleteCandidateWarnings: string[];
-  duplicateCandidateWarnings: string[];
-  missingInstitutionWarnings: string[];
-  missingReferenceWarnings: string[];
-  unsupportedSummaryWarnings: string[];
-  inconsistentDateWarnings: string[];
-  clarityWarnings: string[];
-  advisoryNotes: string[];
+  readonly sourcesSummary: OfficialResponseSidebarAdvisory;
+  /**
+   * Unused/unmounted tracking-package bank (INTERNAL_UNUSED presentation debt).
+   * Kept as legacy English strings — do not migrate/localize until mounted.
+   */
+  readonly missingTrackingPackageWarnings: readonly string[];
+  readonly incompleteCandidateWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly duplicateCandidateWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly missingInstitutionWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly missingReferenceWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly unsupportedSummaryWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly inconsistentDateWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly clarityWarnings: readonly OfficialResponseSidebarAdvisory[];
+  readonly advisoryNotes: readonly OfficialResponseSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativeOfficialResponseIntelligenceSnapshot["consistencyChecks"];
 }
 
 const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
@@ -25,20 +33,25 @@ const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
  * organization name or a response that was not entered by the Author.
  * Every field it inspects mirrors what the Author can already see and
  * edit directly in the Editor. AI cannot publish or advance Lifecycle.
+ *
+ * Pack 02G Task 08E.8f: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. Date comparisons remain derive-owned.
+ * API consistency-check detail remains opaque.
+ * missingTrackingPackageWarnings remains an unmounted legacy English bank.
  */
 export function deriveOfficialResponseAiAssistantInsights(
   snapshot: InitiativeOfficialResponseIntelligenceSnapshot,
   draft: InitiativeOfficialResponseLifecycleDraft | null,
 ): OfficialResponseAiAssistantInsights {
   const missingTrackingPackageWarnings: string[] = [];
-  const incompleteCandidateWarnings: string[] = [];
-  const duplicateCandidateWarnings: string[] = [];
-  const missingInstitutionWarnings: string[] = [];
-  const missingReferenceWarnings: string[] = [];
-  const unsupportedSummaryWarnings: string[] = [];
-  const inconsistentDateWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
-  const advisoryNotes: string[] = [];
+  const incompleteCandidateWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const duplicateCandidateWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const missingInstitutionWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const missingReferenceWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const unsupportedSummaryWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const inconsistentDateWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const clarityWarnings: OfficialResponseSidebarAdvisory[] = [];
+  const advisoryNotes: OfficialResponseSidebarAdvisory[] = [];
 
   if (!snapshot.trackingPackageReference) {
     missingTrackingPackageWarnings.push(
@@ -50,52 +63,124 @@ export function deriveOfficialResponseAiAssistantInsights(
     const isNoResponse = draft.outcomeKind === "no_official_response_received";
 
     if (isNoResponse) {
-      advisoryNotes.push(
-        "Author is documenting No official response received — a legitimate stage outcome. AI must not invent statements or invent response records.",
-      );
+      advisoryNotes.push({
+        code: "official_response.note.no_response_outcome",
+        severity: "info",
+      });
       if (!draft.noResponseDetail?.note?.trim()) {
-        clarityWarnings.push(
-          "Optional: add a short factual note explaining outreach or why no reply was received.",
-        );
+        clarityWarnings.push({
+          code: "official_response.clarity.no_response_note",
+          severity: "warning",
+        });
       }
     } else if (draft.candidates.length === 0) {
-      incompleteCandidateWarnings.push(
-        "No Response Candidates yet — generate a draft, add received responses, or record No official response received.",
-      );
+      incompleteCandidateWarnings.push({
+        code: "official_response.incomplete.no_candidates",
+        severity: "warning",
+      });
     }
 
     const today = TODAY_ISO();
 
     if (!isNoResponse) {
       draft.candidates.forEach((candidate, index) => {
-        const label = candidate.subject.trim() || `Candidate ${index + 1}`;
+        const subject = candidate.subject.trim();
+        const candidateIndex = index + 1;
 
         if (!candidate.institution.trim() && !candidate.organization.trim()) {
-          missingInstitutionWarnings.push(`"${label}" has no institution or organization filled in yet.`);
+          missingInstitutionWarnings.push(
+            subject
+              ? {
+                  code: "official_response.institution.missing",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.institution.missing_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
+          );
         }
 
         if (!candidate.summary.trim()) {
-          incompleteCandidateWarnings.push(`"${label}" has no summary yet.`);
+          incompleteCandidateWarnings.push(
+            subject
+              ? {
+                  code: "official_response.incomplete.summary_empty",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.incomplete.summary_empty_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
+          );
         }
 
         if (candidate.relatedActions.length === 0 && candidate.relatedTrackingIds.length === 0) {
-          missingReferenceWarnings.push(`"${label}" is not linked to any Tracking Record or Approved Action.`);
+          missingReferenceWarnings.push(
+            subject
+              ? {
+                  code: "official_response.reference.unlinked",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.reference.unlinked_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
+          );
         }
 
         if (candidate.summary.trim() && candidate.relatedTrackingIds.length === 0) {
           unsupportedSummaryWarnings.push(
-            `"${label}" has a summary but no Tracking Record reference to support it.`,
+            subject
+              ? {
+                  code: "official_response.summary.unsupported",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.summary.unsupported_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
           );
         }
 
         if (candidate.documentIds.length === 0 && candidate.links.length === 0) {
           missingReferenceWarnings.push(
-            `"${label}" has no document ID or external URL — consider attaching evidence if available.`,
+            subject
+              ? {
+                  code: "official_response.reference.no_evidence",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.reference.no_evidence_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
           );
         }
 
         if (candidate.receivedAt && candidate.receivedAt > today) {
-          inconsistentDateWarnings.push(`"${label}" has a received date in the future.`);
+          inconsistentDateWarnings.push(
+            subject
+              ? {
+                  code: "official_response.date.future_received",
+                  severity: "warning",
+                  civic: { subject },
+                }
+              : {
+                  code: "official_response.date.future_received_untitled",
+                  severity: "warning",
+                  params: { index: candidateIndex },
+                },
+          );
         }
       });
 
@@ -109,40 +194,60 @@ export function deriveOfficialResponseAiAssistantInsights(
       }
       for (const [subject, count] of seenSubjects) {
         if (count > 1) {
-          duplicateCandidateWarnings.push(`${count} Candidates share the subject "${subject}".`);
+          duplicateCandidateWarnings.push({
+            code: "official_response.duplicate.subject",
+            severity: "warning",
+            params: { count },
+            civic: { subject },
+          });
         }
       }
     }
 
     if (!draft.title.trim()) {
-      clarityWarnings.push("Title is empty — Official Responses should be clearly labeled.");
+      clarityWarnings.push({
+        code: "official_response.clarity.title_empty",
+        severity: "warning",
+        civic: { officialResponseFieldIds: ["title"] },
+      });
     }
 
     if (!draft.summary.trim() && !isNoResponse) {
-      clarityWarnings.push("Summary is empty — restate the Tracking Package's outcome.");
+      clarityWarnings.push({
+        code: "official_response.clarity.summary_empty",
+        severity: "warning",
+        civic: { officialResponseFieldIds: ["summary"] },
+      });
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
+  advisoryNotes.push({
+    code: "official_response.note.advisory_only",
+    severity: "info",
+  });
 
-  advisoryNotes.push(
-    "AI suggestions are advisory only — distinguish source facts from Author interpretation. AI cannot publish or advance Lifecycle.",
-  );
-
-  const sourcesUsedSummary = [
-    snapshot.trackingPackageReference ? `Tracking Package "${snapshot.trackingPackageReference.title}"` : null,
-    `${snapshot.trackingRecords.length} Tracking Record(s)`,
-    `${snapshot.activeAllyCount} Active Ally(ies)`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasTracking = Boolean(snapshot.trackingPackageReference);
+  const sourcesSummary: OfficialResponseSidebarAdvisory =
+    hasTracking || snapshot.trackingRecords.length >= 0
+      ? {
+          code: "official_response.sources.summary",
+          severity: "info",
+          params: {
+            hasTracking: hasTracking ? 1 : 0,
+            trackingRecordCount: snapshot.trackingRecords.length,
+            activeAllyCount: snapshot.activeAllyCount,
+          },
+          civic: snapshot.trackingPackageReference
+            ? { title: snapshot.trackingPackageReference.title }
+            : undefined,
+        }
+      : {
+          code: "official_response.sources.empty",
+          severity: "info",
+        };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Official Response Sources available yet.",
+    sourcesSummary,
     missingTrackingPackageWarnings,
     incompleteCandidateWarnings,
     duplicateCandidateWarnings,
@@ -152,5 +257,6 @@ export function deriveOfficialResponseAiAssistantInsights(
     inconsistentDateWarnings,
     clarityWarnings,
     advisoryNotes,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

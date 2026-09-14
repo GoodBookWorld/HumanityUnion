@@ -1,6 +1,7 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
@@ -17,22 +18,17 @@ import "../../initiative-workspace-ux/initiative-workspace-ux.css";
 /**
  * Initiative UX Pack 01.1 Part 7 — reads the `draftDeleted` query param set
  * by `InitiativeDraftEditor` after a successful delete-and-redirect, and
- * shows the required "Draft Initiative deleted." confirmation once. Kept
- * as its own component (rather than inline in `InitiativeWorkspace`)
- * purely so `useSearchParams()` can sit behind its own `<Suspense>`
- * boundary, matching the convention already used for
- * `StartNewInitiativeButton` just below it.
+ * shows confirmation once. Kept behind its own `<Suspense>` for `useSearchParams()`.
  */
 function DraftDeletedNotice() {
+  const t = useTranslations("workspace.initiativesPage");
   const searchParams = useSearchParams();
 
   if (searchParams.get("draftDeleted") !== "1") {
     return null;
   }
 
-  return (
-    <HuFeedbackMessage variant="success">Draft Initiative deleted.</HuFeedbackMessage>
-  );
+  return <HuFeedbackMessage variant="success">{t("draftDeleted")}</HuFeedbackMessage>;
 }
 
 interface InitiativeWorkspaceProps {
@@ -40,6 +36,7 @@ interface InitiativeWorkspaceProps {
 }
 
 export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceProps) {
+  const t = useTranslations("workspace.initiativesPage");
   const router = useRouter();
 
   useEffect(() => {
@@ -82,12 +79,12 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
           <DraftDeletedNotice />
         </Suspense>
 
-        <ProfileSection title="My Initiatives">
+        <ProfileSection title={t("myInitiatives")} id="my-initiatives">
           <MyInitiativesDashboard initiatives={initialInitiatives} />
         </ProfileSection>
 
-        <ProfileSection title="Start New Initiative">
-          <Suspense fallback={<p role="status">Loading initiative form…</p>}>
+        <ProfileSection title={t("startNew")} id="start-new-initiative">
+          <Suspense fallback={<p role="status">{t("loadingForm")}</p>}>
             <StartNewInitiativeButton onCreated={handleCreated} />
           </Suspense>
         </ProfileSection>
@@ -95,7 +92,7 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
 
       <HumanityUnionAssistantWidget
         surfaceId="initiatives"
-        description="I can help you create, review and advance your Initiatives."
+        description={t("assistantDescription")}
       />
     </div>
   );

@@ -6,8 +6,7 @@
   padding-block: var(--hu-section-gap);
   padding-inline: var(--hu-page-padding-inline);
   box-sizing: border-box;
-  text-align: left;
-  text-align: left;
+  text-align: start;
 }
 
 .public-petition-page__header {
@@ -18,6 +17,9 @@
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .public-petition-page__subtitle {

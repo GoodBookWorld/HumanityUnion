@@ -32,6 +32,7 @@
 .icc-channel__header-meta {
   margin: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--hu-space-2);
   font-size: 0.75rem;
@@ -47,7 +48,8 @@
   background: var(--hu-color-primary, #1a56db);
   color: #fff;
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .icc-channel__history {
@@ -187,6 +189,7 @@
 
 .icc-channel__participant-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--hu-space-2);
   padding: 0.35rem;
@@ -220,7 +223,7 @@ a.icc-channel__participant-identity:focus-visible {
   flex-shrink: 0;
   font-size: 0.7rem;
   color: var(--hu-color-text-muted);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 /* Part 8/12 — "Current status"; never a bare dot, always paired with the "Active" text label. */
@@ -231,7 +234,7 @@ a.icc-channel__participant-identity:focus-visible {
   gap: 0.25rem;
   font-size: 0.7rem;
   color: var(--hu-color-text-muted);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .icc-channel__participant-status-dot {

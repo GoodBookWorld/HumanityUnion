@@ -1,13 +1,12 @@
 /**
- * RTL architecture blockers / preparation notes (Language Packs 01–02).
+ * RTL architecture blockers / preparation notes (Language Packs 01–02 / Pack 02C).
  *
  * Priority RTL languages: Arabic (ar), Hebrew (he).
  *
- * Ready (Pack 02):
- * - `isRtlLanguageCode` / `documentDirectionForLanguage` helpers
- * - TranslatedContentView sets `lang` on active content
- * - Root document `lang` / `dir` driven from Interface Language via
- *   `DocumentLanguageAttributes` (guests keep en/ltr)
+ * Ready (Pack 02C Task 02):
+ * - Root document `lang` / `dir` from Registry-backed `resolveDocumentHtmlLocale`
+ *   on the server (`app/layout.tsx`) before paint — no client useEffect flicker
+ * - `ResolvedRuntimeLocale.textDirection` from Language Registry (e.g. `ar` → rtl)
  * - Preferences Language & Translation controls use text labels (not flags)
  *
  * Remaining blockers before full RTL rollout (do not redesign entire platform here):
@@ -19,7 +18,7 @@
  *   mirrored grids, breadcrumbs, or action clusters
  * - Translate Draft / Preferences selects inherit platform LTR form chrome
  *
- * Pack 03+ should migrate high-traffic shells to logical CSS incrementally.
+ * Pack 03+ / 02J should migrate high-traffic shells to logical CSS incrementally.
  */
 
 export const RTL_ARCHITECTURE_STATUS = {

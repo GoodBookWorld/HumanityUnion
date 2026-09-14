@@ -28,6 +28,6 @@ export async function fetchMembershipStatistics(): Promise<MembershipStatisticsP
   return body.data;
 }
 
-export function formatMembershipStatisticValue(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
+export function formatMembershipStatisticValue(value: number, locale = "en"): string {
+  return new Intl.NumberFormat(locale).format(value);
 }

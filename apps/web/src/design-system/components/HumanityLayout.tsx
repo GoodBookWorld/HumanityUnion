@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { getTranslations } from "next-intl/server";
 
 import { BetaBanner } from "../../features/closed-beta/components/BetaBanner";
 import { HumanityUnionAssistantShell } from "../../features/humanity-union-assistant";
-import { DocumentLanguageAttributes } from "../../features/language";
+import { DocumentLanguageAttributes } from "../../features/language/components/DocumentLanguageAttributes";
+import { InterfaceLanguageCookieSync } from "../../features/language/components/InterfaceLanguageCookieSync";
 import { PwaShell } from "../../features/pwa/components/PwaShell";
 import { TrafficPageviewCollector } from "../../features/traffic-analytics/TrafficPageviewCollector";
 import { HumanityFooter } from "./HumanityFooter";
@@ -15,15 +17,21 @@ interface HumanityLayoutProps {
   children: ReactNode;
 }
 
-export function HumanityLayout({ children }: HumanityLayoutProps) {
+/**
+ * Pack 02E Task 03 — skip-link label from `a11y.skipToMainContent`.
+ */
+export async function HumanityLayout({ children }: HumanityLayoutProps) {
+  const tA11y = await getTranslations("a11y");
+
   return (
     <HumanityUnionAssistantShell>
       <DocumentLanguageAttributes />
+      <InterfaceLanguageCookieSync />
       <TrafficPageviewCollector />
       <PwaShell>
         <div className="humanity-layout">
           <a href="#main-content" className="hu-skip-link">
-            Skip to main content
+            {tA11y("skipToMainContent")}
           </a>
           <BetaBanner />
           <HumanityHeader />

@@ -2,6 +2,7 @@
 
 import type { PublicNewsArticleItem } from "@hu/types";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { buildNewsSharePayload } from "../public-news-initiative-discovery.utils";
 
@@ -10,6 +11,7 @@ interface PublicNewsShareButtonProps {
 }
 
 export function PublicNewsShareButton({ article }: PublicNewsShareButtonProps) {
+  const t = useTranslations("publicNews.card");
   const [status, setStatus] = useState<string | null>(null);
 
   async function handleShare() {
@@ -18,17 +20,17 @@ export function PublicNewsShareButton({ article }: PublicNewsShareButtonProps) {
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share(payload);
-        setStatus("Shared");
+        setStatus(t("shared"));
         return;
       }
 
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(payload.url);
-        setStatus("Link copied");
+        setStatus(t("linkCopied"));
         return;
       }
 
-      setStatus("Copy unavailable");
+      setStatus(t("copyUnavailable"));
     } catch {
       setStatus(null);
     }
@@ -38,10 +40,10 @@ export function PublicNewsShareButton({ article }: PublicNewsShareButtonProps) {
     <button
       type="button"
       className="public-news-card__button public-news-card__button--secondary"
-      aria-label={`Share article: ${article.title}`}
+      aria-label={t("shareAria", { title: article.title })}
       onClick={() => void handleShare()}
     >
-      Share
+      {t("share")}
       {status ? <span className="public-news-card__button-status">{status}</span> : null}
     </button>
   );

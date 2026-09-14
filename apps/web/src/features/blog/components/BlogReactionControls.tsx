@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { BlogReactionKind, PublicBlogPostDetail } from "@hu/types";
 
@@ -23,6 +25,7 @@ export function BlogReactionControls({
   initialNotHelpful: number;
   initialCurrent?: PublicBlogPostDetail["currentUserReaction"];
 }) {
+  const t = useTranslations("blogPublic.reactions");
   const [helpful, setHelpful] = useState(initialHelpful);
   const [notHelpful, setNotHelpful] = useState(initialNotHelpful);
   const [current, setCurrent] = useState<BlogReactionKind | "none">(
@@ -53,8 +56,9 @@ export function BlogReactionControls({
     } catch (reactError: unknown) {
       if (isAuthenticationRequiredError(reactError) || isForbiddenError(reactError)) {
         setNeedsSignIn(true);
-        setError("Sign in to react to this publication.");
+        setError(t("signIn"));
       } else {
+        // API_OPAQUE — surface formatted API/auth error copy as-is.
         setError(formatAuthFormError(reactError));
       }
     } finally {
@@ -65,36 +69,42 @@ export function BlogReactionControls({
   return (
     <section className="blog-reactions" aria-labelledby="blog-reactions-heading">
       <h2 id="blog-reactions-heading" className="hu-heading-2">
-        Was this publication helpful?
+        {t("heading")}
       </h2>
-      <p className="hu-caption">
-        Reactions describe the publication — not Author quality or reputation.
-      </p>
+      <p className="hu-caption">{t("caption")}</p>
       <div className="blog-reactions__actions hu-form-actions">
         <Button
           type="button"
           variant={current === "helpful" ? "primary" : "secondary"}
           disabled={busy}
           aria-pressed={current === "helpful"}
-          aria-label={`Helpful. ${helpful} ${helpful === 1 ? "reaction" : "reactions"}.`}
+          aria-label={
+            helpful === 1 ? t("helpfulAriaOne") : t("helpfulAria", { count: helpful })
+          }
           onClick={() => void react("helpful")}
         >
-          Helpful {helpful}
+          {t("helpful", { count: helpful })}
         </Button>
         <Button
           type="button"
           variant={current === "not_helpful" ? "primary" : "secondary"}
           disabled={busy}
           aria-pressed={current === "not_helpful"}
-          aria-label={`Not Helpful. ${notHelpful} ${notHelpful === 1 ? "reaction" : "reactions"}.`}
+          aria-label={
+            notHelpful === 1
+              ? t("notHelpfulAriaOne")
+              : t("notHelpfulAria", { count: notHelpful })
+          }
           onClick={() => void react("not_helpful")}
         >
-          Not Helpful {notHelpful}
+          {t("notHelpful", { count: notHelpful })}
         </Button>
       </div>
       {needsSignIn ? (
         <p className="hu-body">
-          <a href="/login">Sign in</a> to react.
+          {t.rich("signInPrompt", {
+            link: (chunks) => <Link href="/login">{chunks}</Link>,
+          })}
         </p>
       ) : null}
       {error && !needsSignIn ? (

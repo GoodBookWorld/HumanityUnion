@@ -1,4 +1,5 @@
 import type { MembershipStatisticsPayload } from "@hu/types";
+import { useTranslations } from "next-intl";
 
 import { formatMembershipStatisticValue } from "../../membership-statistics/membership-statistics-api";
 import { MembershipVotingExplanation } from "./MembershipVotingExplanation";
@@ -18,10 +19,12 @@ export function MembershipParticipationStatisticsPanel({
   statistics,
   loading = false,
   error = false,
-  title = "Membership participation",
+  title,
   className,
   showUpdatedAt = false,
 }: MembershipParticipationStatisticsPanelProps) {
+  const t = useTranslations("membershipPublic");
+  const resolvedTitle = title ?? t("statistics.defaultTitle");
   const rootClassName = className
     ? `membership-participation-statistics ${className}`
     : "membership-participation-statistics";
@@ -36,18 +39,18 @@ export function MembershipParticipationStatisticsPanel({
         id="membership-participation-statistics-title"
         className="membership-participation-statistics__title"
       >
-        {title}
+        {resolvedTitle}
       </h3>
 
       {loading ? (
         <p className="membership-participation-statistics__status">
-          Loading participation statistics...
+          {t("statistics.loading")}
         </p>
       ) : null}
 
       {error ? (
         <p className="membership-participation-statistics__status" role="status">
-          Participation statistics are temporarily unavailable.
+          {t("statistics.unavailable")}
         </p>
       ) : null}
 
@@ -55,24 +58,25 @@ export function MembershipParticipationStatisticsPanel({
         <>
           <dl className="membership-participation-statistics__grid">
             <div className="membership-participation-statistics__item">
-              <dt>Total participation</dt>
+              <dt>{t("statistics.totalParticipation")}</dt>
               <dd>{formatMembershipStatisticValue(statistics.totalParticipation)}</dd>
             </div>
             <div className="membership-participation-statistics__item">
-              <dt>Members</dt>
+              <dt>{t("statistics.members")}</dt>
               <dd>{formatMembershipStatisticValue(statistics.members)}</dd>
             </div>
             <div className="membership-participation-statistics__item">
-              <dt>Participants</dt>
+              <dt>{t("statistics.participants")}</dt>
               <dd>{formatMembershipStatisticValue(statistics.participants)}</dd>
             </div>
           </dl>
           {showUpdatedAt ? (
             <p className="membership-participation-statistics__updated">
-              Last updated{" "}
-              {new Date(statistics.updatedAt).toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
+              {t("statistics.lastUpdated", {
+                when: new Date(statistics.updatedAt).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
               })}
             </p>
           ) : null}

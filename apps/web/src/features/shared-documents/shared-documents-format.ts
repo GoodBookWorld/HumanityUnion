@@ -5,8 +5,8 @@
  * `formatDirectMessageTimestamp` convention already used across the
  * Communication packs.
  */
-export function formatSharedDocumentTimestamp(isoDate: string): string {
-  return new Date(isoDate).toLocaleString(undefined, {
+export function formatSharedDocumentTimestamp(locale: string, isoDate: string): string {
+  return new Date(isoDate).toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",

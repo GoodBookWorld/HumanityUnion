@@ -97,7 +97,32 @@ export interface PublicInitiativeLifecycleRecordItem {
   recordId: string;
   title: string;
   summary?: string;
+  /** Compatibility English / display string — prefer statusCode for localization. */
   status?: string;
+  /**
+   * Pack 08I.9 — canonical status/state code for semantic localization.
+   * When set, Web must not prefer raw `status` English.
+   */
+  statusCode?: string;
+  /**
+   * Pack 08I.9 — content_translations sourceKind when recordId is a real artifact id.
+   * Omit for synthetic / catalog-only cards.
+   */
+  sourceKind?: string;
+  /**
+   * Pack 08I.9 — catalog key under initiativeExperience.lifecycleRecordTitles.*
+   * for synthetic titles that are not civic content_translations.
+   */
+  titleCode?: string;
+  /** When titleCode needs a version number (e.g. common.versionN). */
+  titleVersion?: number;
+  /** Catalog key under initiativeExperience.lifecycleRecordSummaries.* */
+  summaryCode?: string;
+  /** Count interpolation for summaryCode (e.g. published proposals). */
+  summaryCount?: number;
+  /** Catalog key under initiativeExperience.lifecycleRecordDetails.* */
+  detailCode?: string;
+  detailVersion?: number;
   updatedAt: string;
   publicHref?: string;
   authorDisplayName?: string;
@@ -107,7 +132,10 @@ export interface PublicInitiativeLifecycleRecordItem {
 export interface PublicInitiativeLifecycleStageContent {
   stageId: string;
   records: PublicInitiativeLifecycleRecordItem[];
+  /** Deprecated compatibility English — Web prefers emptyStateCode when present. */
   emptyStateMessage: string;
+  /** Pack 08I.8 — semantic empty-state code resolved via initiativeExperience.lifecycleEmpty.* */
+  emptyStateCode?: string;
 }
 
 export interface InitiativeSupportAudienceBreakdown {
@@ -179,6 +207,10 @@ export interface PublicInitiativeExperienceGeography {
   activityArea: string;
   /** Canonical formatted label: City · Region · Country, etc. */
   label: string;
+  /** RESET 05A — codes for locale-aware GEOGRAPHY reformat on the client. */
+  countryCode?: string;
+  regionCode?: string;
+  communitySlug?: string;
 }
 
 export interface PublicInitiativeExperienceHero {

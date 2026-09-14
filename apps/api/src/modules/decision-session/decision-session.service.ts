@@ -24,6 +24,7 @@ import {
   validateDecisionSessionForPublication,
 } from "./decision-session.validators.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 
 /**
  * Initiative Ancestry — Recovery Task 08.
@@ -281,6 +282,12 @@ export async function publishDecisionSession(
   if (!updated) {
     throw new Error("Decision session not found.");
   }
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "decision_session",
+    sourceRecordId: sessionId,
+    reason: "public_mutation",
+  });
 
   return updated;
 }

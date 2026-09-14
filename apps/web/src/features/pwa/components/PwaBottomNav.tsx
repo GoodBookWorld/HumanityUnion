@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { useRef } from "react";
 
 import { useOptionalHumanityUnionAssistant } from "../../humanity-union-assistant/assistant-context";
@@ -17,6 +20,12 @@ function formatBadge(count: number): string {
 
 export function PwaBottomNav() {
   const pathname = usePathname() ?? "/";
+  const tNav = useTranslations("navigation");
+  const tWorkspace = useTranslations("workspace");
+  const tPwa = useTranslations("pwa");
+  const tAssistant = useTranslations("initiativeExperience");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
   const assistant = useOptionalHumanityUnionAssistant();
   const assistantButtonRef = useRef<HTMLButtonElement>(null);
   const { unreadCount: unreadCountRaw } = useUnreadNotificationCount();
@@ -29,7 +38,7 @@ export function PwaBottomNav() {
     pathname === "/notifications" || pathname.startsWith("/notifications/");
 
   return (
-    <nav className="hu-pwa-bottom-nav" aria-label="App">
+    <nav className="hu-pwa-bottom-nav" aria-label={tPwa("appNavAria")}>
       <Link
         href="/workspace"
         className="hu-pwa-bottom-nav__item"
@@ -43,7 +52,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Workspace
+        {tNav("workspace")}
       </Link>
 
       <Link
@@ -59,13 +68,13 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Initiatives
+        {tNav("initiatives")}
       </Link>
 
       <Link
         href="/initiatives/create"
         className="hu-pwa-bottom-nav__item"
-        aria-label="Create Initiative"
+        aria-label={tPwa("createInitiativeAria")}
       >
         <img
           className="hu-pwa-bottom-nav__icon"
@@ -75,7 +84,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Create
+        <span className="hu-pwa-bottom-nav__label">{tPwa("create")}</span>
       </Link>
 
       <Link
@@ -84,8 +93,8 @@ export function PwaBottomNav() {
         aria-current={notificationsCurrent ? "page" : undefined}
         aria-label={
           unreadCount > 0
-            ? `Notifications, ${unreadCount} unread`
-            : "Notifications"
+            ? tWorkspace("notificationsUnreadAria", { count: formatBadge(unreadCount) })
+            : tWorkspace("notificationsAria")
         }
       >
         <img
@@ -101,14 +110,14 @@ export function PwaBottomNav() {
             {formatBadge(unreadCount)}
           </span>
         ) : null}
-        Notifications
+        {tWorkspace("notifications")}
       </Link>
 
       <button
         ref={assistantButtonRef}
         type="button"
         className="hu-pwa-bottom-nav__item"
-        aria-label="Open Humanity Union Assistant"
+        aria-label={tAssistant("assistant.entry.openAria", { siteName })}
         aria-haspopup="dialog"
         aria-expanded={assistant?.isOpen ?? false}
         onClick={() => {
@@ -130,7 +139,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Assistant
+        {tAssistant("assistant.entry.shortLabel")}
       </button>
     </nav>
   );

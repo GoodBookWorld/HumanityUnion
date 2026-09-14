@@ -1,3 +1,8 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import { MediaSemanticNode } from "../language/media-plp/media-semantic-contract";
 import type { HuxWorkflowStageItem } from "./hux.types";
 
 interface HuxWorkflowStageProps {
@@ -7,6 +12,7 @@ interface HuxWorkflowStageProps {
 }
 
 export function HuxWorkflowStage({ stage, index, totalStages }: HuxWorkflowStageProps) {
+  const t = useTranslations("civicMediaPublic.pipeline");
   return (
     <article
       className={`hux-workflow-stage${
@@ -17,13 +23,31 @@ export function HuxWorkflowStage({ stage, index, totalStages }: HuxWorkflowStage
       <p className="hux-workflow-stage__number" aria-hidden="true">
         {index + 1}
       </p>
-      <p className="hux-workflow-stage__progress">
-        Stage {index + 1} of {totalStages}
-      </p>
-      <h3 id={`hux-workflow-stage-${stage.id}-title`} className="hux-workflow-stage__title">
+      <MediaSemanticNode
+        as="p"
+        className="hux-workflow-stage__progress"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {t("stageOf", { current: index + 1, total: totalStages })}
+      </MediaSemanticNode>
+      <MediaSemanticNode
+        as="h3"
+        id={`hux-workflow-stage-${stage.id}-title`}
+        className="hux-workflow-stage__title"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
         {stage.title}
-      </h3>
-      <p className="hux-workflow-stage__description">{stage.description}</p>
+      </MediaSemanticNode>
+      <MediaSemanticNode
+        as="p"
+        className="hux-workflow-stage__description"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {stage.description}
+      </MediaSemanticNode>
     </article>
   );
 }

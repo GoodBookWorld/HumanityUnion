@@ -1,12 +1,9 @@
 "use client";
 
 import type { MemberProfilePrivacySettings } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import {
-  MEMBERSHIP_VISIBILITY_DESCRIPTION,
-  MEMBERSHIP_VISIBILITY_LABEL,
-} from "../membership.constants";
 import { updateMyMemberProfilePrivacy } from "../../member-profile/member-profile-api";
 import { MEMBER_PROFILE_UPDATED_EVENT } from "../../member-profile/member-profile-events";
 
@@ -21,6 +18,7 @@ export function MembershipPublicVisibilityControl({
   isActiveMember,
   onUpdated,
 }: MembershipPublicVisibilityControlProps) {
+  const t = useTranslations("membershipPublic.publicVisibility");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +37,10 @@ export function MembershipPublicVisibilityControl({
         membershipPubliclyVisible: checked,
       });
       onUpdated(updated);
-      setMessage("Membership visibility preference saved.");
+      setMessage(t("saved"));
       window.dispatchEvent(new Event(MEMBER_PROFILE_UPDATED_EVENT));
     } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : "Unable to save visibility setting.",
-      );
+      setError(saveError instanceof Error ? saveError.message : t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -60,18 +56,17 @@ export function MembershipPublicVisibilityControl({
           onChange={(event) => void handleToggle(event.target.checked)}
           aria-describedby="membership-public-visibility-description"
         />
-        <span>{MEMBERSHIP_VISIBILITY_LABEL}</span>
+        <span>{t("label")}</span>
       </label>
       <p
         id="membership-public-visibility-description"
         className="membership-public-visibility__description"
       >
-        {MEMBERSHIP_VISIBILITY_DESCRIPTION}
+        {t("description")}
       </p>
       {!isActiveMember ? (
         <p className="membership-public-visibility__description" role="note">
-          Public Member Number visibility becomes available after Membership activation. Member
-          status appears automatically once you are a Member.
+          {t("inactiveNote")}
         </p>
       ) : null}
       {message ? (

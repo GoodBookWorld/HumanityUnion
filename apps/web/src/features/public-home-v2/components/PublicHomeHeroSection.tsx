@@ -1,9 +1,15 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Button } from "../../../design-system";
 import { PUBLIC_HOME_HERO } from "../constants";
 import { PublicHomeCreateInitiativeCta } from "./PublicHomeCreateInitiativeCta";
 import { HumanityUnityVisual } from "./HumanityUnityVisual";
 
 export function PublicHomeHeroSection() {
+  const t = useTranslations("publicHome");
+
   return (
     <section
       className="public-home-v2__section public-home-v2__hero"
@@ -12,13 +18,13 @@ export function PublicHomeHeroSection() {
       <div className="public-home-v2__hero-layout">
         <div className="public-home-v2__hero-content">
           <h1 id="public-home-hero-title" className="public-home-v2__hero-title">
-            {PUBLIC_HOME_HERO.headline}
+            {t("headline")}
           </h1>
-          <p className="public-home-v2__hero-subtitle">{PUBLIC_HOME_HERO.subheadline}</p>
+          <p className="public-home-v2__hero-subtitle">{t("subheadline")}</p>
           <div className="public-home-v2__hero-actions">
-            <PublicHomeCreateInitiativeCta label={PUBLIC_HOME_HERO.primaryCta.label} />
+            <PublicHomeCreateInitiativeCta label={t("primaryCta")} />
             <Button href={PUBLIC_HOME_HERO.secondaryCta.href} variant="secondary">
-              {PUBLIC_HOME_HERO.secondaryCta.label}
+              {t("secondaryCta")}
             </Button>
           </div>
         </div>

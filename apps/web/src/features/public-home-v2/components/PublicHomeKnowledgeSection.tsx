@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system";
 import {
@@ -10,17 +13,22 @@ import {
 import { PublicHomeKnowledgeCollection } from "./PublicHomeKnowledgeCollection";
 
 export function PublicHomeKnowledgeSection() {
+  const t = useTranslations("publicHome");
   const entries = PUBLIC_HOME_KNOWLEDGE_ENTRIES.slice(0, HOME_KNOWLEDGE_COLLECTION_MAX);
 
   return (
     <PublicHomeKnowledgeCollection
       items={entries.map((entry, index) => ({
-        ...entry,
+        id: entry.id,
+        href: entry.href,
+        title: t(`knowledge.entries.${entry.id}.title`),
+        description: t(`knowledge.entries.${entry.id}.description`),
+        actionLabel: t(`knowledge.entries.${entry.id}.actionLabel`),
         tone:
           PUBLIC_HOME_KNOWLEDGE_MUTED_TONES[index % PUBLIC_HOME_KNOWLEDGE_MUTED_TONES.length] ??
           "pale-blue",
       }))}
-      headerAction={<Link href="/knowledge">Explore Knowledge</Link>}
+      headerAction={<Link href="/knowledge">{t("knowledge.explore")}</Link>}
     />
   );
 }

@@ -9,7 +9,11 @@ import { normalizeCountryInput } from "@hu/geography";
 import { buildSearchFacets, buildGroupedSearchFacets } from "./global-search.facets.js";
 import { buildGroupedSearchPage } from "./global-search.grouping.js";
 import { getGlobalSearchIndex } from "./global-search.index.js";
-import { matchGlobalSearchIndex, toSearchResult } from "./global-search.matching.js";
+import {
+  matchGlobalSearchIndex,
+  resolvePreferredSearchLocale,
+  toSearchResult,
+} from "./global-search.matching.js";
 import {
   GLOBAL_SEARCH_DEFAULT_LIMIT,
   GLOBAL_SEARCH_MAX_LIMIT,
@@ -27,6 +31,7 @@ function parseEntityTypes(value: string | string[] | undefined): CivicEntityType
     "analysis",
     "improvement_proposal",
     "initiative_revision",
+    "petition",
     "decision_session",
     "collective_decision",
     "civic_action_package",
@@ -38,6 +43,7 @@ function parseEntityTypes(value: string | string[] | undefined): CivicEntityType
     "civic_archive",
     "knowledge_article",
     "knowledge_media",
+    "civic_nomination",
     "blog_post",
   ]);
 
@@ -107,6 +113,7 @@ export function parseCivicSearchQuery(
     offset: parseOffset(typeof input.offset === "string" ? input.offset : undefined),
     view: parseView(typeof input.view === "string" ? input.view : undefined),
     lifecycleProfile,
+    locale: typeof input.locale === "string" ? input.locale.trim() || undefined : undefined,
   };
 }
 
@@ -128,8 +135,9 @@ export async function searchPublicCivicRecords(
   const view = query.view ?? "flat";
   const normalizedQuery: CivicSearchQuery = { ...query, view };
   const index = await getGlobalSearchIndex();
-  const matched = matchGlobalSearchIndex(normalizedQuery, index);
-  const allResults = matched.map(toSearchResult);
+  const preferredLocale = await resolvePreferredSearchLocale(normalizedQuery.locale);
+  const matched = await matchGlobalSearchIndex(normalizedQuery, index);
+  const allResults = matched.map((match) => toSearchResult(match, preferredLocale));
   const facets = buildSearchFacets(allResults);
 
   if (view === "flat") {
@@ -152,11 +160,17 @@ export async function searchPublicCivicRecords(
     });
   }
 
-  const groupedPage = buildGroupedSearchPage(normalizedQuery, matched, index);
+  const groupedPage = buildGroupedSearchPage(
+    normalizedQuery,
+    matched,
+    index,
+    preferredLocale,
+  );
   const allGroupedResults = buildGroupedSearchPage(
     { ...normalizedQuery, offset: 0, limit: Number.MAX_SAFE_INTEGER },
     matched,
     index,
+    preferredLocale,
   ).displayResults;
 
   return sanitizeCivicSearchResponse({

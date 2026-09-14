@@ -208,6 +208,7 @@
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .pie-participation__past {
@@ -292,6 +293,8 @@
   background: var(--hu-color-surface);
   color: var(--hu-color-text-muted, inherit);
   font-size: 0.9rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Lifecycle UX Completion Pack 02 Part 2 — markers track completion state. */
@@ -469,6 +472,7 @@
   display: grid;
   gap: var(--hu-space-4);
   align-content: start;
+  min-width: 0;
 }
 
 .pie-overview__item h3 {
@@ -484,6 +488,8 @@
   margin: 0;
   line-height: 1.5;
   font-size: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* UX Evolution Pack 02.4 Part 3 — real Initiative author link, only rendered when a public profile exists. */
@@ -597,6 +603,8 @@
   cursor: pointer;
   font-size: 0.95rem;
   min-height: 2.75rem;
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 .pie-support__signal img {
@@ -646,9 +654,16 @@
 
 .pie-revisions__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  max-inline-size: 100%;
+}
+
+.pie-revisions__header h2 {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
 }
 
 .pie-revisions__view-all {
@@ -657,6 +672,8 @@
   color: var(--hu-color-primary);
   cursor: pointer;
   font-size: 0.85rem;
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 .pie-revisions__list {
@@ -1428,6 +1445,11 @@
   margin: 0;
   padding-left: 1.1rem;
   color: var(--hu-color-text-muted);
+  min-width: 0;
+}
+
+.pie-election-page__meta li {
+  overflow-wrap: anywhere;
 }
 
 .pie-election-page__ranking {
@@ -1509,9 +1531,10 @@
 
 .pie-election-results__row {
   display: grid;
-  grid-template-columns: 3rem 1fr;
+  grid-template-columns: 3rem minmax(0, 1fr);
   gap: 0.85rem 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .pie-election-results__rank {
@@ -1523,10 +1546,16 @@
 
 .pie-election-results__identity {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 0.75rem;
   align-items: center;
   grid-column: 2;
+  min-width: 0;
+}
+
+.pie-election-results__identity > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__photo,
@@ -1548,16 +1577,19 @@
   grid-column: 2;
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .pie-election-results__percent {
   font-weight: 700;
   font-size: 1.1rem;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__count {
   color: var(--hu-color-text-muted);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__bar {
@@ -1638,6 +1670,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+.pie-election-results__heading h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__download {
@@ -2193,6 +2231,7 @@
   flex-wrap: wrap;
   gap: var(--hu-space-2);
   align-items: center;
+  min-width: 0;
 }
 
 .pie-election-results__status {

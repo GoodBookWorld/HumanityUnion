@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
@@ -38,6 +39,8 @@ export function PwaAppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const authStatus = useClientAuthStatus();
+  const tWorkspace = useTranslations("workspace");
+  const tPwa = useTranslations("pwa");
   const avatarButtonRef = useRef<HTMLButtonElement>(null);
   const [identity, setIdentity] = useState<WorkspaceMemberIdentity | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -108,7 +111,7 @@ export function PwaAppHeader() {
           ref={avatarButtonRef}
           type="button"
           className="hu-pwa-app-header__avatar"
-          aria-label={drawerOpen ? "Close Workspace menu" : "Open Workspace menu"}
+          aria-label={drawerOpen ? tWorkspace("closeMenu") : tWorkspace("openMenu")}
           aria-expanded={drawerOpen}
           onClick={() => {
             setMenuOpen(false);
@@ -120,14 +123,14 @@ export function PwaAppHeader() {
 
         <form className="hu-pwa-app-header__search" role="search" onSubmit={handleSearch}>
           <label className="hu-visually-hidden" htmlFor="hu-pwa-app-search">
-            Search Humanity Union
+            {tPwa("searchLabel")}
           </label>
           <input
             id="hu-pwa-app-search"
             className="hu-pwa-app-header__search-input"
             type="search"
             name="q"
-            placeholder="Search Humanity Union"
+            placeholder={tPwa("searchPlaceholder")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             autoComplete="off"
@@ -139,7 +142,7 @@ export function PwaAppHeader() {
             <button
               type="button"
               className="hu-pwa-app-header__back"
-              aria-label="Go back"
+              aria-label={tPwa("goBack")}
               onClick={handleBack}
             >
               <Image
@@ -156,7 +159,7 @@ export function PwaAppHeader() {
           <button
             type="button"
             className="hu-pwa-app-header__menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-label={menuOpen ? tPwa("closeMenu") : tPwa("openMenu")}
             aria-expanded={menuOpen}
             onClick={() => {
               setDrawerOpen(false);

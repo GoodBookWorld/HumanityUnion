@@ -1,20 +1,18 @@
 "use client";
 
 import type { MemberBadgeApplicationShippingAddress } from "@hu/types";
-import {
-  MEMBER_BADGE_APPLICATION_DELIVERY_LABEL,
-  MEMBER_BADGE_APPLICATION_PRICE_LABEL,
-} from "@hu/types";
+import { MEMBER_BADGE_APPLICATION_PRICE_LABEL } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { formatAuthFormError } from "../../../lib/api-client";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import {
   continueMyMemberBadgeApplicationPayment,
   saveMyMemberBadgeApplication,
 } from "../member-badge-application-api";
-import { MEMBER_BADGE_PRODUCT } from "../membership.constants";
 
 import { MemberBadgeIcon } from "./MemberBadgeIcon";
 
@@ -45,6 +43,9 @@ export function MemberBadgeApplicationModal({
   onClose,
   onSaved,
 }: MemberBadgeApplicationModalProps) {
+  const t = useTranslations("membershipPublic");
+  const brand = useLocalizedBrand();
+  const siteNameValues = { siteName: brand.siteName };
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -181,21 +182,26 @@ export function MemberBadgeApplicationModal({
             <MemberBadgeIcon size="medium" decorative />
             <div>
               <h2 id={titleId} className="member-badge-application-modal__title">
-                Member Badge Application
+                {t("badgeApplication.title")}
               </h2>
               <p id={descriptionId} className="member-badge-application-modal__intro">
-                {MEMBER_BADGE_PRODUCT.applicationIntro}
+                {t("badgeProduct.applicationIntro", siteNameValues)}
               </p>
             </div>
           </header>
 
-          <div className="member-badge-application-modal__price" aria-label="Badge contribution">
-            <p className="member-badge-application-modal__product">Official Member Badge</p>
+          <div
+            className="member-badge-application-modal__price"
+            aria-label={t("badgeApplication.contributionAria")}
+          >
+            <p className="member-badge-application-modal__product">
+              {t("badgeApplication.productNameShort")}
+            </p>
             <p className="member-badge-application-modal__amount">
               {MEMBER_BADGE_APPLICATION_PRICE_LABEL}
             </p>
             <p className="member-badge-application-modal__delivery">
-              {MEMBER_BADGE_APPLICATION_DELIVERY_LABEL}
+              {t("badgeProduct.deliveryIncluded")}
             </p>
           </div>
 
@@ -207,7 +213,7 @@ export function MemberBadgeApplicationModal({
             }}
           >
             <label className="member-badge-application-modal__field">
-              <span>Recipient name *</span>
+              <span>{t("badgeApplication.fields.recipientName")}</span>
               <input
                 name="recipientName"
                 autoComplete="name"
@@ -217,7 +223,7 @@ export function MemberBadgeApplicationModal({
               />
             </label>
             <label className="member-badge-application-modal__field">
-              <span>Address line 1 *</span>
+              <span>{t("badgeApplication.fields.addressLine1")}</span>
               <input
                 name="addressLine1"
                 autoComplete="address-line1"
@@ -227,7 +233,7 @@ export function MemberBadgeApplicationModal({
               />
             </label>
             <label className="member-badge-application-modal__field">
-              <span>Address line 2</span>
+              <span>{t("badgeApplication.fields.addressLine2")}</span>
               <input
                 name="addressLine2"
                 autoComplete="address-line2"
@@ -237,7 +243,7 @@ export function MemberBadgeApplicationModal({
             </label>
             <div className="member-badge-application-modal__row">
               <label className="member-badge-application-modal__field">
-                <span>City *</span>
+                <span>{t("badgeApplication.fields.city")}</span>
                 <input
                   name="city"
                   autoComplete="address-level2"
@@ -247,7 +253,7 @@ export function MemberBadgeApplicationModal({
                 />
               </label>
               <label className="member-badge-application-modal__field">
-                <span>Province / State / Region *</span>
+                <span>{t("badgeApplication.fields.provinceStateRegion")}</span>
                 <input
                   name="provinceStateRegion"
                   autoComplete="address-level1"
@@ -259,7 +265,7 @@ export function MemberBadgeApplicationModal({
             </div>
             <div className="member-badge-application-modal__row">
               <label className="member-badge-application-modal__field">
-                <span>Postal / ZIP code *</span>
+                <span>{t("badgeApplication.fields.postalCode")}</span>
                 <input
                   name="postalCode"
                   autoComplete="postal-code"
@@ -269,7 +275,7 @@ export function MemberBadgeApplicationModal({
                 />
               </label>
               <label className="member-badge-application-modal__field">
-                <span>Country *</span>
+                <span>{t("badgeApplication.fields.country")}</span>
                 <input
                   name="country"
                   autoComplete="country-name"
@@ -280,7 +286,7 @@ export function MemberBadgeApplicationModal({
               </label>
             </div>
             <label className="member-badge-application-modal__field">
-              <span>Phone (optional)</span>
+              <span>{t("badgeApplication.fields.phone")}</span>
               <input
                 name="phone"
                 type="tel"
@@ -310,7 +316,7 @@ export function MemberBadgeApplicationModal({
             disabled={busy !== null}
             onClick={() => void handleSaveForLater()}
           >
-            {busy === "save" ? "Saving…" : "Save for Later"}
+            {busy === "save" ? t("badgeApplication.saving") : t("badgeApplication.saveForLater")}
           </Button>
           <Button
             type="button"
@@ -318,7 +324,9 @@ export function MemberBadgeApplicationModal({
             disabled={busy !== null}
             onClick={() => void handleContinueToPayment()}
           >
-            {busy === "payment" ? "Continuing…" : "Continue to Payment"}
+            {busy === "payment"
+              ? t("badgeApplication.continuing")
+              : t("badgeApplication.continueToPayment")}
           </Button>
         </footer>
       </div>

@@ -25,23 +25,23 @@
 }
 
 .hu-feedback--neutral {
-  background: #fff9ef;
-  border-color: #df9815;
+  background: var(--hu-color-warning-soft);
+  border-color: var(--hu-color-accent, #df9815);
   color: #5c4a1f;
 }
 
 .hu-feedback--neutral .hu-feedback__label {
-  color: #df9815;
+  color: var(--hu-color-accent, #df9815);
 }
 
 .hu-feedback--warning {
-  background: #fff9ef;
-  border-color: #df9815;
+  background: var(--hu-color-warning-soft);
+  border-color: var(--hu-color-accent, #df9815);
   color: #5c4a1f;
 }
 
 .hu-feedback--warning .hu-feedback__label {
-  color: #df9815;
+  color: var(--hu-color-accent, #df9815);
 }
 
 .hu-feedback--error {

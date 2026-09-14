@@ -1,4 +1,5 @@
 import type { NewsArticleRecord } from "@hu/types";
+import { createHash } from "node:crypto";
 
 import {
   resolveNewsProviderId,
@@ -118,7 +119,15 @@ export function buildSummary(title: string, summary: string | undefined, maxLeng
   return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-export function createNewsArticleId(): string {
+export function createNewsArticleId(normalizedArticleUrl?: string): string {
+  if (typeof normalizedArticleUrl === "string" && normalizedArticleUrl.trim()) {
+    // Pack 08K.3.2 — deterministic identity from canonical URL (no index/order/time).
+    const digest = createHash("sha256")
+      .update(normalizedArticleUrl.trim().toLowerCase())
+      .digest("hex")
+      .slice(0, 20);
+    return `news-${digest}`;
+  }
   return `news-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -141,7 +150,7 @@ export function normalizeExternalNewsArticle(
   const now = fetchedAt;
 
   return {
-    id: createNewsArticleId(),
+    id: createNewsArticleId(normalizedArticleUrl),
     externalId: normalizeOptionalPlainText(article.externalId),
     provider: normalizePlainText(article.provider, "Provider"),
     sourceName,

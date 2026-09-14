@@ -56,6 +56,813 @@ Next Objective:
 
 # Entries
 
+## 2026-09-02 (Task 08I — final multilingual staging acceptance)
+
+Completed:
+
+- Local gates PASS for Packs **02B–02I** tip `97c0e1d`; pushed `staging` (no main/production).
+- Staging Web+API redeployed tip; uk Search UI + `locale` query evidenced Live.
+- Catalog parity en/uk/zh-Hant/ar; hreflang remains **DEFERRED**; deprecated transport gate **READY_TO_REMOVE_AFTER_PRODUCTION_ROLLOUT**.
+
+Architecture:
+
+- One Global Search engine; Registry remains sole language authority; SEO eligibility ≠ searchEnabled.
+- Empty staging sitemap is intentional (staging noindex policy).
+
+Engineering Notes:
+
+- **NOT_READY — BLOCKERS REMAIN:** staging Registry public languages are **en+uk only**; zh-Hant/ar not selectable; Ukrainian glossary search returns 0 until `searchEnabled` enabled via Admin.
+- Formal multi-viewport Layout Resilience remains Pack **02J**.
+
+Next Objective:
+
+- Staging Admin enable zh-Hant/ar + search/content flags; finish four-language Live matrix; then Pack 02J.
+
+---
+
+## 2026-08-31 (Pack 02G Task 07A — pre-deploy local acceptance + staging push)
+
+Completed:
+
+- Pack **02G** Tasks **01–06 COMPLETE locally**; Task **07** staging acceptance **IN PROGRESS / pending**.
+- Final local gates + single Pack 02G implementation commit + `git push origin staging`.
+- Pack **02G is NOT yet STAGING PASS** (awaits Render revision verification + staging matrix).
+
+Architecture:
+
+- No architecture change in 07A; records durable warming, civic translated-read, progressive layout resilience already shipped in Tasks 02–06.
+- Deferred unchanged: Blog UI; Discussion; Pack 02H search; Pack 02I SEO; Pack 02J formal layout gate; SSR canonical→client resolve residual.
+
+Next Objective:
+
+- User verifies Render services on Pack 02G revision, then Task 07 staging smoke (no production).
+
+---
+
+## 2026-08-31 (Pack 02G Task 06 — multilingual layout resilience)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 06 COMPLETE**.
+- Hardened shared `TranslatedContentView` / `PublicTranslatedFields` / `CivicPublicTranslatedSection` (min-width:0, overflow-wrap, wrapable toggles, no narrative max-height clip).
+- Civic Archive cards/detail + Civic Media editorial + Pack 02G public shells; logical CSS (`text-align:start`, `padding-inline-*`, fade `inset-inline-*`).
+- Deterministic en/uk/zh-Hant/ar + pathological/URL stress fixtures; Web CSS/source contracts (no provider; no DOM scrollWidth harness).
+- Task 07 staging matrix prepared in NEXT_SESSION. No Blog/Discussion/search/SEO; no commit/push/deploy.
+
+Architecture:
+
+- No translation architecture / provider / outbox changes.
+- Progressive Pack 02G layout resilience only; formal gate remains Pack **02J**.
+- `scrollWidth <= clientWidth` recorded for Task 07 staging / Pack 02J (Web unit stack lacks viewport DOM).
+
+Next Objective:
+
+- **Pack 02G Task 07** — acceptance / staging.
+
+---
+
+## 2026-08-31 (Pack 02G Task 05 — civic/public translated read + runtime)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 05 COMPLETE**.
+- Cache-first civic display via `CivicPublicTranslatedSection` (`enableOnDemandGenerate=false`); shared `PublicTranslatedFields` extended with generate opt-out.
+- Wired public routes for Task 03 kinds; civic-archive narrative + list cards; `/media` editorial only.
+- Initiative/Analysis/Petition keep optional POST `/generate` compatibility.
+- No Blog/Discussion/search/SEO; no broad layout remediation; no commit/push/deploy.
+
+Architecture:
+
+- Page read uses GET `/translations/resolve` only for new civic kinds; Task 04 warm remains generation path.
+- Client hydrate after SSR canonical fallback (existing pattern; full SSR resolve deferred as larger refactor).
+
+Next Objective:
+
+- **Pack 02G Task 06** — Multilingual Layout Resilience hardening.
+
+---
+
+## 2026-08-31 (Pack 02G Task 04 — durable content translation warming + outbox)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 04 COMPLETE**.
+- Durable `ContentTranslationWarmRequested` through existing Mongo outbox (source-level payload; pending dedupe; consumer reloads source + Registry).
+- Bounded locale concurrency; retryable/non-retryable failure classification; partial locale success survives retry via content_translations identity.
+- Wired mutation hooks: Initiative, Collaborative Analysis, Petition, and Task 03 civic publish/update paths including dual commitment/tracking lifecycle creates.
+- Deferred: civic_media (static), blog_post auto-warm, Discussion comments, Registry enable auto-backfill, transactional shared session on most civic file stores.
+- No Web/search/SEO/layout; no startup bulk scan; no commit/push/deploy.
+
+Architecture:
+
+- Warming is derived-content work — not civic notification durability; not TranslationPublished/Corrected.
+- Preferred future: shared Mongo transaction where domain write already uses sessions; today = post-persistence best-effort enqueue with pending dedupe.
+
+Next Objective:
+
+- **Pack 02G Task 05** — public read/runtime integration.
+
+---
+
+## 2026-08-31 (Pack 02G Task 03 — civic/public translation source expansion)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 03 COMPLETE**.
+- Added explicit civic `sourceKind`s + public-projection loaders + field allowlists for: improvement_proposal, initiative_revision, decision_session, collective_decision, implementation_commitment, implementation_tracking, official_response, public_impact, civic_archive, civic_media.
+- Official Response / Civic Archive / Civic Media privacy boundaries enforced (no raw headers/provider metadata; no verification metadata; editorial copy only for civic_media).
+- Deferred: Discussion comments; Blog UI expansion; lifecycle_stage as generic civic discriminator.
+- Task 04 mutation/event seams inventoried; Task 06 Web surfaces inventoried. No warm/outbox wiring; no Web/search/SEO; no commit/push/deploy.
+
+Architecture:
+
+- Extend existing `loadTranslatableSource` + Task 02 sourceVersion/eligibility contract; do not use lifecycle_stage as translation discriminator.
+- Public eligibility = non-null public projection (or civic-media singleton); unpublished never eligible for on_demand or automatic_warm.
+
+Next Objective:
+
+- **Pack 02G Task 04** — durable translation warming / outbox.
+
+---
+
+## 2026-08-31 (Pack 02G Task 02 — eligibility + sourceVersion contract)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 02 COMPLETE**.
+- Introduced `ContentTranslationIntent`: `on_demand` (enabled locale) vs `automatic_warm` (`enabled` + `contentTranslationEnabled`).
+- Shared helpers: sourceVersion, work identity, warm-target list/assert, canonical source eligibility + field allowlists, privacy exclusion sentinels.
+- Typed `ContentTranslationWarmRequested` seam for Task 04 (no outbox publish; distinct from TranslationPublished/Corrected).
+- Existing Initiative / Analysis / Petition on-demand generate preserved when contentTranslationEnabled=false.
+- Blog deferred; no new sourceKinds; no Web/CSS; no search/SEO.
+
+Architecture:
+
+- Automatic warming gates on Registry `contentTranslationEnabled`; on-demand remains enabled-only.
+- Canonical source never overwritten; stale never served as current.
+
+Next Objective:
+
+- **Pack 02G Task 03** — civic/public entity expansion (explicit sourceKinds).
+
+---
+
+## 2026-08-31 (Pack 02G Task 01 — civic/public translation expansion audit)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 01 COMPLETE** (read-only audit + documentation only).
+- Traced existing pipeline: published source → `loadTranslatableSource` → version-keyed `content_translations` → TranslationProvider + terminologyContext → resolve display → Web.
+- Coverage: Initiative / Collaborative Analysis / Petition already eligible+wired; Blog half-wired; remaining lifecycle public entities are safe Pack 02G candidates; Discussion comments stay deferred.
+- Confirmed gaps: no async warm/outbox consumer; `contentTranslationEnabled` unused on generate; request-facing rate limit only; no provider retries.
+- Multilingual Layout Resilience Gate remains progressive from 02G / formal in 02J.
+- Pack **02F** remains COMPLETE + STAGING PASS (`98c2817`). No application code.
+
+Architecture:
+
+- Extend `content_translations` / TranslationProvider / Registry / outbox — do not replace.
+- Automatic warming must gate on `contentTranslationEnabled` (not merely `enabled`).
+- Canonical source never overwritten; stale = version mismatch → original fallback.
+
+Next Objective:
+
+- **Pack 02G Task 02** — eligibility / source-version / Registry content-translation gate contract.
+
+---
+
+## 2026-08-31 (Pack 02F — COMPLETE + STAGING PASS)
+
+Completed:
+
+- Pack **02F COMPLETE + STAGING PASS** at revision **`98c2817`**.
+- Staging verified: Admin Glossary loads seeded concepts; Participant / Member / Membership distinct; locale translations persist; explicit Remove translation works and survives reload; blank preferredTerm remains invalid; Draft / Published persistence OK.
+- Language Registry enable/disable updates public selector immediately (stale disabled-locale bug fixed); Arabic RTL OK; footer **© 2024 Humanity Union. All rights reserved.**
+- Multilingual Layout Resilience Gate permanently recorded (progressive from Pack 02G; formal acceptance in Pack 02J).
+- Provider terminology covered by Task 05 automated acceptance; no unnecessary staging data created.
+- Temporary Ukrainian Participant translation removed; Ukrainian Registry restored disabled; staging returned to clean baseline.
+- No production promotion.
+
+Architecture:
+
+- Glossary removal = explicit `removeTranslationLocales` only; preferredTerm invariant unchanged.
+- Pack 02H multilingual search remains deferred; Pack 02J owns formal Layout Resilience acceptance.
+
+Next Objective:
+
+- **Pack 02G** — civic/public translation expansion + async warming.
+
+---
+
+## 2026-08-31 (Pack 02F staging-smoke final hotfix — locale remove + footer + layout gate)
+
+Completed:
+
+- Glossary PATCH `removeTranslationLocales` deletes an entire locale translation; preferredTerm still required when a locale entry exists; blank preferredTerm remains rejected.
+- Admin UI **Remove translation** with confirm + pending/success/error; enables removing staging Participant/uk “Учасник”.
+- Public footer copyright founding year set to **© 2024** (not dynamic current year).
+- Documented permanent **Multilingual Layout Resilience Gate** (progressive from Pack 02G; formal acceptance in Pack 02J). No Pack 02G implementation.
+- Pack 02F staging smoke still PENDING until hotfix re-smoke.
+
+Next Objective:
+
+- Pack 02F staging re-smoke (locale remove + Languages freshness + footer year); on PASS → **Pack 02G**.
+
+---
+
+## 2026-08-31 (Pack 02F staging-smoke — Languages cache + glossary clear UX)
+
+Completed:
+
+- Root cause (Languages): short-lived public languages client TTL cache + LanguageSelector mount-only fetch — Admin disable left stale options until hard refresh; selecting disabled locale failed hu_lang write.
+- Fix: `invalidatePublicLanguagesClientCache()` after Admin create/update; selector listens for `hu:public-languages-changed` and refetches.
+- Root cause (Glossary): clearing preferredTerm is not a valid contract delete; UI early-returned before Saving state with weak feedback.
+- Fix: explicit reject message + inline editor alert; `saving` guard; no invented locale deletion. English fallback unchanged.
+- Staging smoke still PENDING — do not claim PASS.
+
+Next Objective:
+
+- Pack 02F staging re-smoke (Languages enable/disable without hard refresh; glossary clear reject + valid save); on PASS → **Pack 02G**.
+
+---
+
+## 2026-08-31 (Pack 02F staging-smoke UX — glossary editor scroll)
+
+Completed:
+
+- Admin Terminology Glossary: selecting a table row scrolls the opened editor into view.
+- Honors `prefers-reduced-motion` (auto vs smooth). Save / filter / refresh do not re-trigger scroll.
+- UI-only; no API / persistence / provider change. Staging smoke still PENDING.
+
+Next Objective:
+
+- Pack 02F staging smoke; on PASS → **Pack 02G**.
+
+---
+
+## 2026-08-31 (Pack 02F Task 06 — acceptance + regression close-out)
+
+Completed:
+
+- Pack **02F COMPLETE locally**; Tasks **01–06 COMPLETE**.
+- Architecture / persistence / Admin API / Admin UI / provider injection / privacy gates accepted.
+- Regression: Pack 02F Tasks 02–05 + Language Registry + content translation/provider suites green; `@hu/types` typecheck+build, `@hu/api` typecheck, `@hu/web` typecheck+build green; `git diff --check` clean.
+- Staging smoke **PENDING** (minimal 10-point checklist in NEXT_SESSION). No staging PASS claimed.
+- Search seam remains Pack 02H.
+
+Architecture:
+
+- Glossary is presentation vocabulary only; does not replace Language Registry, UI catalogs, lifecycle registry, content_translations, TranslationProvider, or search.
+- No new ADR.
+
+Next Objective:
+
+- Pack 02F staging smoke; on PASS → **Pack 02G**.
+
+---
+
+## 2026-08-31 (Pack 02F Task 05 — provider terminology injection)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 05 COMPLETE**.
+- Locale-aware published-glossary `terminologyContext` via canonical `resolveProviderTerminologyContext`.
+- Gemini prompt uses preferred target terms; protects machine identifiers; English seed list is persistence/empty-set fallback only.
+- Wired into `content-translation.service` + `translate-draft`; deterministic provider records context; privacy/`safetyCleared` unchanged.
+- Focused Task 05 + Tasks 02–03 + affected translation/Language Registry tests green; `@hu/api` typecheck green.
+- Exact next: **Task 06 — acceptance + docs**. Search remains Pack 02H. No staging PASS.
+
+Architecture:
+
+- No new ADR; existing TranslationProvider + terminologyContext seam retained.
+- Locale resolution reuses Language Registry (aliases canonicalized; unknown rejected; disabled not silently enabled).
+
+Next Objective:
+
+- Pack 02F Task 06 — acceptance + documentation close-out (Pack still IN PROGRESS until Task 06).
+
+---
+
+## 2026-08-31 (Pack 02F Task 04 — terminology glossary Admin UI)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 04 COMPLETE**.
+- Admin UI `/admin/terminology-glossary` + nav entry (separate from Languages).
+- List/filter seeded concepts; editor for status + Registry-locale preferredTerm/aliases/guidance; identity/linkedRefs read-only.
+- Disabled Registry languages editable/visible; PATCH merges one locale; no create/delete; no provider/search side effects.
+- Exact next: **Task 05 — provider terminology injection**.
+
+Architecture:
+
+- Language Registry remains locale authority; glossary remains presentation vocabulary only.
+
+Next Objective:
+
+- Pack 02F Task 05 — locale-aware TranslationProvider terminology injection.
+
+---
+
+## 2026-08-31 (Pack 02F Task 03 — terminology glossary Admin API)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 03 COMPLETE**.
+- Admin endpoints: `GET/PATCH /api/v1/admin/terminology-glossary` (+ get by conceptId); Admin-only; no create/delete.
+- Locale merge PATCH; zh-TW→zh-Hant; disabled locales storable; Task 02 validation reused; audit `terminology_glossary.update`.
+- Provider/search/Language Registry untouched by mutations.
+- Exact next: **Task 04 — Admin UI**.
+
+Architecture:
+
+- Presentation vocabulary only; immutable concept identity; Admin cannot invent concepts.
+
+Next Objective:
+
+- Pack 02F Task 04 — Terminology Glossary Admin UI.
+
+---
+
+## 2026-08-31 (Pack 02F Task 02 — glossary contract + seed + repository)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 02 COMPLETE**.
+- Added `@hu/types` TerminologyConcept contract; code-seeded catalog (22 concepts); Mongo `terminology_glossary` + memory repository; Language Registry locale canonicalization; alias integrity.
+- `HUMANITY_UNION_TRANSLATION_TERMINOLOGY` now derived from seed catalog; Gemini still preserves English terms (Task 05 deferred).
+- Focused Pack 02F tests + language Pack 01/02 suites green; types/API typecheck green.
+- Exact next: **Task 03 — Admin API**.
+
+Architecture:
+
+- Glossary is presentation vocabulary only — no domain/lifecycle fork; Admin cannot invent conceptIds.
+- Disabled Registry locales may store translations; runtime authority unchanged.
+- Revision links via `civicEntityType` only (not public stage registry route).
+
+Next Objective:
+
+- Pack 02F Task 03 — Terminology Glossary Admin API.
+
+---
+
+## 2026-08-31 (Pack 02F Task 01 — Canonical Terminology Glossary read-only audit)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 01 COMPLETE** (audit/design only — no application code).
+- Mapped existing terminology surface: flat `HUMANITY_UNION_TRANSLATION_TERMINOLOGY` provider preserve-list; Pack 02B Language Registry (locale aliases ≠ term aliases); Pack 02D/02E UI catalogs; `content_translations` + `TranslationProvider.terminologyContext`; global search entity labels; Assistant platform-knowledge keywords; `engineering/00_UBIQUITOUS_LANGUAGE.md` + lifecycle stage registry.
+- Classified audit concepts (domain / UI / workflow-stage / brand / auth); recommended code-seeded glossary records + Admin edit of preferred translations/aliases/guidance only.
+- Provider seam: replace English preserve-list with locale-aware preferred-term injection at existing Gemini/draft/content-translation call sites.
+- Search seam: Pack 02H must extend the same `global-search` matcher/index — not a second vocabulary index.
+- Exact next: **Task 02 — Glossary contract / seed / repository**.
+
+Architecture:
+
+- Glossary is presentation/search/provider vocabulary only — must not rename domain IDs, enums, routes, payloads, or events.
+- Language Registry remains language authority; UI catalogs remain chrome authority; content translation seam extended, not replaced.
+- Current Gemini prompt preserves English terms — Pack 02F must evolve injection to preferred target-locale terms without sending private content.
+
+Next Objective:
+
+- Pack 02F Task 02 — glossary record contract, code-seeded concepts, repository replacing the flat string list.
+
+---
+
+## 2026-08-31 (Pack 02E — staging acceptance + documentation close-out)
+
+Completed:
+
+- Pack **02E COMPLETE + STAGING PASS** (UI key extraction).
+- Staging smoke en / uk / zh-Hant / ar: public/shared/auth/workspace chrome localized; Role/Status raw; Registry-driven selector; non-locale-prefixed hrefs; RTL under ar OK.
+- Residual Edit Profile fixed by commit `2e27b27` (`workspace.editProfile`); re-smoke under uk/zh-Hant/ar PASS (`href=/member` unchanged).
+- Registry restored to **en only**; `hu_lang=en`; `<html lang="en" dir="ltr">`.
+
+Architecture:
+
+- Presentation-only next-intl extraction; Pack 02C locale authority preserved; no route/permission/contract change.
+
+Next Objective:
+
+- **Pack 02F — Canonical Terminology Glossary.**
+
+---
+
+## 2026-08-31 (Pack 02E residual — header Edit Profile i18n)
+
+Completed:
+
+- Staging smoke residual: workspace member-identity “Edit Profile” stayed English under uk/zh-Hant/ar.
+- Presentation-only fix: reuse existing `workspace.editProfile` in `WorkspaceMemberIdentity` (href `/member` unchanged).
+- Pack 02E Task 05/06 tests cover catalog values + component wiring.
+- Commit `2e27b27`; staging re-smoke recorded in subsequent close-out entry.
+
+Architecture:
+
+- No new catalog key; no route/permission/contract change; Pack 02E scope not broadened.
+
+Next Objective:
+
+- Pack 02E re-smoke (Edit Profile under uk/zh-Hant/ar); on full PASS start Pack 02F.
+
+---
+
+## 2026-08-31 (Pack 02E Task 06 — acceptance + regression close-out)
+
+Completed:
+
+- Pack **02E COMPLETE locally**; Tasks **01–06 COMPLETE**; staging smoke **PENDING** (do not claim staging PASS).
+- Verified Pack 02C locale authority + Pack 02D foundation; presentation extraction only across public/shared/auth/workspace chrome.
+- Catalog parity + fallback fixtures green; Pack 02D/02E i18n suites green; Pack 02E-caused Pack 05 icon aria regression fixed.
+- Deferred: Pack 02F glossary; lifecycle stages; civic body; Notification Center empty states; Blog navLabel API redesign; role/status enum maps.
+- Exact next: **Pack 02E staging smoke**, then **Pack 02F — Canonical Terminology Glossary**.
+
+Architecture:
+
+- No locale middleware / `[locale]` routes; English fallback intact; stable English identities preserved.
+
+Next Objective:
+
+- Pack 02E staging smoke checklist; on PASS start Pack 02F.
+
+---
+
+## 2026-08-31 (Pack 02E Task 05 — workspace/account shell extraction)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 05 COMPLETE**.
+- Added `workspace.*` catalogs; Workspace nav presentation via stable-English identity + display helper; authenticated header/mobile/PWA drawer chrome; Account shell tiles/forms; Workspace home title/subtitle.
+- Blog `navLabel` contract unchanged; lifecycle registry untouched; role/status API values unchanged.
+- Exact next: **Task 06 — Pack 02E acceptance + catalog parity + regression close-out**.
+
+Architecture:
+
+- Presentation-only next-intl for workspace/account shell; no Pack 02F glossary; no lifecycle/domain translation.
+
+Next Objective:
+
+- Pack 02E Task 06 — acceptance + catalog parity + regression close-out.
+
+---
+
+## 2026-08-31 (Pack 02E Task 04 — auth chrome extraction)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 04 COMPLETE**.
+- Added `auth.*` catalogs (en/uk/zh-Hant/ar); wired login/register/reset/verify/2FA Account Security + header/mobile Log in / Create account.
+- Reused `common.cancel` and PasswordInput `common.*`; backend error passthrough preserved; incorrect-code mapped presentation via `auth.incorrectCode`.
+- Exact next: **Task 05 — Workspace / Account shell extraction (`workspace.*`)**.
+
+Architecture:
+
+- Presentation-only next-intl for auth surfaces; no Pack 02F glossary; workspace shell deferred.
+
+Next Objective:
+
+- Pack 02E Task 05 — workspace/account shell (`workspace.*`).
+
+---
+
+## 2026-08-31 (Pack 02E Task 03 — shared common.* + reusable a11y chrome)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 03 COMPLETE**.
+- ConfirmDialog default cancel → `common.cancel`; ApiUnavailableState defaults → `common.retry` / `common.backToHome`; PasswordInput Show/Hide → `common.show|hide|showPassword|hidePassword`.
+- Global skip-link → `a11y.skipToMainContent`.
+- Caller overrides preserved; HuFeedbackMessage variant titles deferred (`common.error` ≠ short “Error” label).
+- Exact next: **Task 04 — Auth chrome extraction (`auth.*`)**.
+
+Architecture:
+
+- Presentation-only next-intl at shared component boundaries; no auth/workspace shell migration in this slice.
+
+Next Objective:
+
+- Pack 02E Task 04 — auth chrome (`auth.*`).
+
+---
+
+## 2026-08-31 (Pack 02E Task 02 — remaining public chrome navigation)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 02 COMPLETE**.
+- Primary nav presentation keys: Civic Media / Knowledge / Membership / Search.
+- Footer presentation keys: Blog / Civic Archive / Membership / Search / Privacy / Terms / Contact (+ Institutions / Initiatives reuse).
+- Stable English labels/hrefs/active-route matching preserved; en/uk/zh-Hant/ar catalogs + English-derived parity updated.
+- Exact next: **Task 03 — Shared common.* + reusable UI/a11y chrome extraction**.
+
+Architecture:
+
+- Continued Pack 02D display-helper pattern; no second translation mechanism; no locale-prefixed routes.
+
+Next Objective:
+
+- Pack 02E Task 03 — shared common.* + reusable UI/a11y chrome.
+
+---
+
+## 2026-08-31 (Pack 02E Task 01 — UI Key Extraction Scope Audit)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 01 COMPLETE** (read-only scope audit).
+- Inventoried remaining hard-coded Web UI chrome: public header/footer destinations, auth flows, account/workspace shell, shared design-system chrome.
+- Confirmed Pack 02D pattern: stable English labels remain identity; presentation via `navigation.*` / `common.*`.
+- Proposed minimal namespaces: reuse `common.*` / `navigation.*`; add `auth.*`, `workspace.*`, `a11y.*` only when justified.
+- Flagged terminology for Pack 02F glossary alignment (Workspace, Participant, Member/Membership, Initiative, Civic Media, Two-Step Login, etc.).
+- Exact next: **Task 02 — Remaining public chrome navigation keys**.
+
+Architecture:
+
+- Do not replace route/active-match/test identity strings with translations.
+- Blog authoring API `navLabel` English union is a high-risk label-as-identifier — remap via stable keys before translating display.
+- No provider/search/SEO work in Pack 02E.
+
+Next Objective:
+
+- Pack 02E Task 02 — remaining public chrome navigation keys.
+
+---
+
+## 2026-08-31 (Pack 02D — staging acceptance + documentation close-out)
+
+Completed:
+
+- Pack **02D COMPLETE + STAGING PASS** (UI i18n Foundation).
+- Staging smoke: en PASS (LTR); uk PASS (LTR); zh-TW→zh-Hant PASS (LTR); ar PASS (RTL).
+- Canonical URLs remained non-locale-prefixed; Registry option names Registry-driven; disabled locale write rejected with 400.
+- Registry restored to en-only; final guest `hu_lang=en`, `html lang=en dir=ltr`; no residual Pack 02D issue.
+- Staging build hotfix: `@parcel/watcher` + `@swc/core` explicitly approved in `pnpm-workspace.yaml` `allowBuilds` (strict lifecycle policy preserved, not weakened).
+
+Architecture:
+
+- Pack 02C remains sole locale authority; `next-intl` consumes that locale only.
+- Foundation chrome only (Language Selector label/loading/error; primary Home / Institutions / Initiatives; Footer Support).
+- Civic Media / Knowledge / Membership / Search / broader auth-account-workspace UI deferred to Pack 02E.
+
+Next Objective:
+
+- **Production Completion Pack 02E — UI Key Extraction.**
+
+---
+
+## 2026-08-30 (Pack 02D Task 04 — local acceptance close-out)
+
+Completed:
+
+- Pack **02D COMPLETE locally** (Tasks 01–04 accepted as one coherent UI i18n foundation).
+- Architecture / foundation surfaces / catalog parity / scope audit verified.
+- Staging smoke **still required** — do **not** claim Pack 02D staging PASS.
+- Pack **02B/02C** staging **PASS** preserved.
+- Exact next Pack after 02D staging acceptance: **Pack 02E — UI Key Extraction**.
+- Changes remain local / uncommitted / not pushed.
+
+Architecture:
+
+- Pack 02C remains sole locale authority; next-intl consumes that locale only.
+- Foundation chrome only; Civic Media / Knowledge / Membership / Search / auth-workspace deferred to 02E+.
+
+Next Objective:
+
+- Pack 02D staging smoke checklist, then Pack 02E.
+
+---
+
+## 2026-08-30 (Pack 02D Task 03 — foundation chrome + catalog parity)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 03 complete** (local, uncommitted).
+- Footer Support → `navigation.support`; Language Selector loading/error → `common.loading` / `common.error`.
+- Bundled verification catalog parity guard derived from English foundation keys (`uk` / `zh-Hant` / `ar`).
+- English deep-merge fallback preserved for partial fixtures.
+
+Architecture:
+
+- Foundation chrome consumption complete for existing Pack 02D keys on live global surfaces.
+- Remote/Admin packs remain out of parity scope.
+
+Next Objective:
+
+- Pack 02D **Task 04** — acceptance + close-out (do not mark Pack 02D COMPLETE until Task 04).
+
+---
+
+## 2026-08-30 (Pack 02D Task 02 — first real UI translation surface)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 02 complete** (local, uncommitted).
+- Language Selector label via `common.language`; Registry option names unchanged.
+- Desktop + mobile primary nav translate Home / Institutions / Initiatives; English-stable identities preserve hrefs and active matching.
+- Verification catalogs completed for foundation keys; English fallback proven with partial loader fixture.
+- Arabic selector chevron/padding logical fix under existing `dir=rtl` only.
+
+Architecture:
+
+- Presentation-boundary translation; no second locale authority; no locale-prefixed routes.
+- Unmapped destinations (Civic Media, Knowledge, Membership, Search) remain English until Pack 02E.
+
+Next Objective:
+
+- Pack 02D **Task 03** — remaining foundation-key chrome + catalog parity (do not close Pack 02D yet).
+
+---
+
+## 2026-08-30 (Pack 02D Task 01 — UI i18n Runtime Foundation)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 01 complete** (local, uncommitted).
+- `next-intl` on `@hu/web` only; Pack 02C `resolveDocumentHtmlLocale` remains sole locale authority for `<html lang/dir>` + provider.
+- Bundled catalogs `en` / `uk` / `zh-Hant` / `ar` with English deep-merge fallback; foundation `common` + `navigation` namespaces only.
+- Remote-pack seam designed; no Admin upload UI / no R2.
+- Focused i18n tests, typecheck, and `@hu/web` build green.
+- Pack **02B/02C staging PASS** recorded; `main` still local / not pushed.
+
+Architecture:
+
+- No locale-prefixed routing; no next-intl middleware locale detection.
+- English bundled fallback always exists; adding Registry languages must not force redesign.
+
+Next Objective:
+
+- Pack 02D **Task 02** — minimal UI chrome consumption of the foundation (not whole-UI migration).
+
+---
+
+## 2026-08-30 (Pack 02C Hotfix 02 — language catalog freshness)
+
+Completed:
+
+- Staging smoke found process-lifetime Web `publicLanguagesCache` blocking `POST /api/hu-lang` after Admin enable.
+- Hotfix 02: write validation always fetches Registry; client selector keeps short TTL + in-flight only.
+- Pack **02B** staging acceptance **PASS**. Pack **02C** staging acceptance **not PASS** until re-smoke.
+
+Architecture:
+
+- Registry/API remains authority; no second locale catalog.
+- SSR already used no-store fetch; hu-lang write path aligned.
+
+Next Objective:
+
+- Promote Hotfix 02; minimal staging re-smoke of enable/disable → `hu_lang` without Web restart.
+- Then Pack 02D.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C — COMPLETE locally)
+
+Completed:
+
+- Task 04 local acceptance: flows A–F verified; one shared `resolveRuntimeLocaleFromCatalog` path.
+- Hardening: language-list client cache; login sync latch (no refresh loop); auth select no longer rolls back UI after prefs save.
+- Pack 02C marked **COMPLETE** locally. Staging smoke still required after commit/promotion.
+
+Architecture:
+
+- Interface locale: Registry → resolver → API request / Web SSR / `hu_lang` / selector / Participant `interfaceLanguage` sync.
+- No next-intl yet (Pack 02D).
+
+Next Objective:
+
+- Production Completion Pack 02D — UI i18n Foundation.
+- Staging smoke checklist for 02C after promotion.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 03 — language selector + hu_lang sync)
+
+Completed:
+
+- Header/mobile language selector from enabled public Registry languages.
+- Web-origin `POST /api/hu-lang` with Registry validate/canonicalize before cookie write.
+- Guest cookie → SSR refresh; authenticated Preferences `interfaceLanguage` + cookie sync; login-time preference → cookie sync via client Preferences handoff.
+- Pack 02C **IN PROGRESS**.
+
+Architecture:
+
+- Participant `interfaceLanguage` remains authoritative when authenticated; `hu_lang` mirrors for Web SSR without sharing API auth cookies.
+
+Next Objective:
+
+- Pack 02C Task 04 — acceptance verification & pack close-out → then Pack 02D.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 02 — request locale + HTML lang/dir)
+
+Completed:
+
+- API request-scoped runtime locale (`resolveRuntimeLocaleForRequest`, middleware, `GET /api/v1/runtime-locale`).
+- Shared `@hu/types` catalog resolver; Web root layout sets `<html lang>` / `dir` server-side before paint.
+- Removed client useEffect language flicker path. Pack 02C **IN PROGRESS**.
+
+Architecture:
+
+- Web SSR cannot read API host-only auth cookies; Participant preference applies on API requests; HTML uses cookie + Accept-Language until Task 03 cookie write/sync.
+
+Next Objective:
+
+- Pack 02C Task 03 — language selector + `hu_lang` write/sync (no next-intl yet).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 01 — Locale resolution foundation)
+
+Completed:
+
+- Canonical `resolveRuntimeLocale` (anonymous + authenticated precedence; enabled Registry only).
+- Deterministic Accept-Language parser; guest `hu_lang` cookie helpers; `ResolvedRuntimeLocale` contract.
+- Platform default remains `DEFAULT_PLATFORM_LANGUAGE` (`en`) — no competing Admin settings subsystem.
+- Focused unit tests + typechecks. Pack 02C **IN PROGRESS** (not complete).
+
+Architecture:
+
+- Interface language resolution stays separate from reading/writing languages.
+- `zh-Hant` never collapsed to `zh`; `*` cannot bypass Registry.
+
+Next Objective:
+
+- Pack 02C Task 02 — apply resolved runtime locale to `html lang`/`dir` / request wiring (no next-intl / selector UI yet).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B — Language Registry COMPLETE)
+
+Completed:
+
+- Admin → Languages UI (`/admin/languages`) for create/edit/enable/disable via Task 04 APIs.
+- Integration path verified: enable `uk` → public + `/translations/languages` → prefs + Translate Draft.
+- Removed obsolete web re-export of `PRIORITY_LANGUAGE_CODES` from picker barrels.
+- Pack 02B acceptance criteria met; next Pack = **02C Locale Preference & Runtime**.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 04 — Admin write control plane)
+
+Completed:
+
+- Admin `POST /api/v1/admin/languages` and `PATCH /api/v1/admin/languages/:languageId` (no DELETE; no providerMappings).
+- Safety invariants: English cannot be disabled; fallback must be enabled existing locale; self-fallback only for `en`; disable blocked when enabled dependents use locale as fallback; feature flags require `enabled=true`; canonical locale immutable.
+- Admin audit events for create / update / enable / disable (no secrets).
+- Focused unit tests. No Admin Languages UI.
+
+Next Objective:
+
+Pack 02B Task 05 — Admin Languages UI / final 02B integration (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 03 — Registry consumer cutover)
+
+Completed:
+
+- Canonical `language-registry-runtime` resolver (enabled-only selectable languages; alias→canonical; English fallback for runtime context).
+- Migrated `/translations/languages`, preference language validation (interface/reading/writing), Translate Draft + content-translation generate targets.
+- Web Preferences + Translate Draft pickers load via registry-backed `listPriorityLanguages()`.
+- `PRIORITY_LANGUAGE_CATALOG` retained as legacy reference only; not used by migrated runtime consumers.
+- Disabled seed locales (`uk`, `zh-Hant`, `ar`) remain non-selectable until Admin enablement (Task 04).
+
+Next Objective:
+
+Pack 02B Task 04 — Admin Language Registry write/control-plane (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 02 — Bootstrap + read APIs)
+
+Completed:
+
+- Wired `ensureLanguageRegistrySeeded` into `bootstrapMongoPersistence` (after indexes; idempotent; no overwrite).
+- Strengthened locale↔alias integrity across create/update (cross-collisions, own-locale alias, unique normalized aliases).
+- Public `GET /api/v1/languages` — enabled only; public-safe fields; deterministic order.
+- Admin `GET /api/v1/admin/languages` — all records; canonical Admin auth; no `providerMappings`; deterministic order.
+- Focused unit tests. No consumer migration; no POST/PATCH.
+
+Next Objective:
+
+Pack 02B Task 03 — controlled migration off `PRIORITY_LANGUAGE_CATALOG` / `/translations/languages` (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 01 — Language Registry foundation)
+
+Completed:
+
+- Canonical `LanguageRegistryRecord` types in `@hu/types`.
+- Mongo collection `language_registry` + unique indexes; repository list/get/resolve/create/update; memory adapter for tests.
+- Idempotent seeds for `en`, `uk`, `zh-Hant` (aliases `zh-TW`/`zh-HK`), `ar` (RTL). Does not overwrite existing rows.
+- Focused unit tests passing. No Admin/public routes; runtime catalog unchanged.
+
+Next Objective:
+
+Pack 02B Task 02 — Admin/public Language Registry APIs (still do not mark Pack 02B CLOSED).
+
+---
+
 ## 2026-08-30 (Documentation Recovery & Canonical Handoff Update)
 
 Completed:

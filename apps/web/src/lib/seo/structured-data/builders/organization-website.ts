@@ -2,6 +2,11 @@ import { absoluteStructuredDataUrl, resolveStructuredDataOrigin } from "../absol
 import { assertRequiredJsonLdFields } from "../serialize-json-ld";
 import type { JsonLdNode } from "../types";
 
+/**
+ * Sync default Organization name (builtin English).
+ * Prefer passing `brandName` from async `resolveBrandForMetadata(locale)` when
+ * available (layout / page server paths). Sync-only callers keep this fallback.
+ */
 export const HUMANITY_UNION_ORG_NAME = "Humanity Union";
 export const HUMANITY_UNION_LOGO_PATH = "/brand/logo-512.png";
 
@@ -15,6 +20,7 @@ export function websiteId(origin: string): string {
 
 export function buildOrganizationJsonLd(
   origin: string = resolveStructuredDataOrigin(),
+  brandName: string = HUMANITY_UNION_ORG_NAME,
 ): JsonLdNode | null {
   if (!origin) {
     return null;
@@ -29,7 +35,7 @@ export function buildOrganizationJsonLd(
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": organizationId(origin),
-    name: HUMANITY_UNION_ORG_NAME,
+    name: brandName,
     url: origin,
     logo,
   };
@@ -40,6 +46,7 @@ export function buildOrganizationJsonLd(
 
 export function buildWebSiteJsonLd(
   origin: string = resolveStructuredDataOrigin(),
+  brandName: string = HUMANITY_UNION_ORG_NAME,
 ): JsonLdNode | null {
   if (!origin) {
     return null;
@@ -49,7 +56,7 @@ export function buildWebSiteJsonLd(
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": websiteId(origin),
-    name: HUMANITY_UNION_ORG_NAME,
+    name: brandName,
     url: origin,
     publisher: { "@id": organizationId(origin) },
   };
@@ -61,9 +68,10 @@ export function buildWebSiteJsonLd(
 /** Root structured data graph: Organization + WebSite, or null when origin missing. */
 export function buildRootStructuredData(
   origin: string = resolveStructuredDataOrigin(),
+  brandName: string = HUMANITY_UNION_ORG_NAME,
 ): JsonLdNode[] | null {
-  const organization = buildOrganizationJsonLd(origin);
-  const website = buildWebSiteJsonLd(origin);
+  const organization = buildOrganizationJsonLd(origin, brandName);
+  const website = buildWebSiteJsonLd(origin, brandName);
   if (!organization || !website) {
     return null;
   }
@@ -72,6 +80,7 @@ export function buildRootStructuredData(
 
 export function buildPublisherReference(
   origin: string = resolveStructuredDataOrigin(),
+  brandName: string = HUMANITY_UNION_ORG_NAME,
 ): JsonLdNode | null {
   if (!origin) {
     return null;
@@ -82,7 +91,7 @@ export function buildPublisherReference(
   }
   return {
     "@type": "Organization",
-    name: HUMANITY_UNION_ORG_NAME,
+    name: brandName,
     url: origin,
     logo: {
       "@type": "ImageObject",

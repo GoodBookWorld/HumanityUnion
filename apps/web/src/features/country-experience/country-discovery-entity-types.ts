@@ -13,6 +13,7 @@ export type CountryDiscoveryEntityTypeValue =
 
 export interface CountryDiscoveryEntityTypeOption {
   value: CountryDiscoveryEntityTypeValue;
+  /** English seed label — Country page localizes via `publicGeo.country.search` / globalSearch. */
   label: string;
 }
 
@@ -25,6 +26,10 @@ export const COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS: readonly CountryDiscoveryEnt
     (option) => option.value !== "" && option.value !== "initiative",
   ).map((option) => ({ value: option.value, label: option.label })),
 ];
+
+/** Stable option values for localized Country search selects (Pack 08I.6). */
+export const COUNTRY_DISCOVERY_ENTITY_TYPE_OPTION_VALUES: readonly CountryDiscoveryEntityTypeValue[] =
+  COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS.map((option) => option.value);
 
 export interface CountrySearchFilterParams {
   entityType?: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleArchiveDocument } from "@hu/types";
 import { INITIATIVE_LIFECYCLE_ARCHIVE_DISCLAIMER } from "@hu/types";
@@ -16,6 +17,7 @@ export function InitiativeCivicArchiveDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [document, setDocument] = useState<InitiativeLifecycleArchiveDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +31,7 @@ export function InitiativeCivicArchiveDraftPreview({
 
         if (!draft) {
           if (!cancelled) {
-            setError("No Civic Archive draft available to preview.");
+            setError(t("author.archive.preview.empty"));
           }
           return;
         }
@@ -72,7 +74,7 @@ export function InitiativeCivicArchiveDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.archive.preview.loadFailed"));
         }
       }
     })();
@@ -80,14 +82,14 @@ export function InitiativeCivicArchiveDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ica-source-panel__empty">{error}</p>;
   }
 
   if (!document) {
-    return <p className="ica-source-panel__empty">Loading Civic Archive draft preview…</p>;
+    return <p className="ica-source-panel__empty">{t("author.archive.preview.loading")}</p>;
   }
 
   return (
@@ -95,7 +97,7 @@ export function InitiativeCivicArchiveDraftPreview({
       <InitiativeCivicArchiveShareToolbar initiativeId={initiativeId} mode="preview" />
       <InitiativeCivicArchiveDocumentRenderer
         document={document}
-        metaLabel="Preview — unpublished draft (same renderer as Public)"
+        metaLabel={t("author.archive.preview.meta")}
       />
     </>
   );

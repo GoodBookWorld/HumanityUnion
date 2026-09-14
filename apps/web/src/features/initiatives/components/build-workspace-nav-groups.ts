@@ -4,6 +4,8 @@ export type WorkspaceNavGroup = {
   id: string;
   label: string;
   collapsible: boolean;
+  /** Sidebar section heading icon under `/public/icons/workspace/`. */
+  iconSrc: string;
   routes: readonly WorkspaceNavRoute[];
 };
 
@@ -39,6 +41,7 @@ export function buildWorkspaceNavGroups(
       id: "workspace",
       label: "Workspace",
       collapsible: false,
+      iconSrc: "/icons/workspace/workspace.png",
       routes: workspaceRoutes,
     },
   ];
@@ -48,6 +51,7 @@ export function buildWorkspaceNavGroups(
       id: "administration",
       label: "Administration",
       collapsible: false,
+      iconSrc: "/icons/workspace/control-panel.png",
       routes: [{ href: "/admin", label: "Admin Panel" }],
     });
   }
@@ -57,12 +61,14 @@ export function buildWorkspaceNavGroups(
       id: "civic",
       label: "Civic Work",
       collapsible: true,
+      iconSrc: "/icons/workspace/work.png",
       routes: civicRoutes,
     },
     {
       id: "settings",
       label: "Settings",
-      collapsible: false,
+      collapsible: true,
+      iconSrc: "/icons/workspace/configuration.png",
       routes: [
         { href: "/account", label: "Account Security" },
         { href: "/member", label: "Profile" },
@@ -75,6 +81,7 @@ export function buildWorkspaceNavGroups(
       id: "public-profile",
       label: "Public Profile",
       collapsible: false,
+      iconSrc: "/icons/workspace/public.png",
       routes: [{ href: "/profile", label: "View Public Profile" }],
     },
   );

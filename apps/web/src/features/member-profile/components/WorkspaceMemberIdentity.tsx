@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
@@ -11,6 +12,7 @@ import { MEMBER_PROFILE_UPDATED_EVENT } from "../member-profile-events";
 import "./workspace-member-identity.css";
 
 export function WorkspaceMemberIdentity() {
+  const tWorkspace = useTranslations("workspace");
   const [identity, setIdentity] = useState<WorkspaceMemberIdentity | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
 
@@ -50,10 +52,12 @@ export function WorkspaceMemberIdentity() {
   if (requiresLogin) {
     return (
       <div className="workspace-member-identity workspace-member-identity--prompt">
-        <p className="workspace-member-identity__label">Sign in required</p>
+        <p className="workspace-member-identity__label">{tWorkspace("signInRequired")}</p>
         <p className="workspace-member-identity__copy">
-          <a href="/login">Log in</a> or <a href="/register">create an account</a> to use workspace
-          features.
+          {tWorkspace.rich("signInRequiredCopy", {
+            login: (chunks) => <a href="/login">{chunks}</a>,
+            register: (chunks) => <a href="/register">{chunks}</a>,
+          })}
         </p>
       </div>
     );
@@ -81,7 +85,7 @@ export function WorkspaceMemberIdentity() {
         </div>
       </div>
       <Link className="workspace-member-identity__edit-link" href="/member">
-        Edit Profile
+        {tWorkspace("editProfile")}
       </Link>
     </div>
   );

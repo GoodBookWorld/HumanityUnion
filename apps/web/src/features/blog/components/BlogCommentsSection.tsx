@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogComment } from "@hu/types";
 
@@ -28,9 +29,15 @@ function formatDate(value: string): string {
   }
 }
 
-function CommentBody({ comment }: { comment: PublicBlogComment }) {
+function CommentBody({
+  comment,
+  removedLabel,
+}: {
+  comment: PublicBlogComment;
+  removedLabel: string;
+}) {
   if (comment.removed) {
-    return <p className="hu-caption blog-comments__removed">Comment removed</p>;
+    return <p className="hu-caption blog-comments__removed">{removedLabel}</p>;
   }
   return <p className="hu-body blog-comments__content">{comment.content}</p>;
 }
@@ -42,6 +49,7 @@ export function BlogCommentsSection({
   slug: string;
   initialCount: number;
 }) {
+  const t = useTranslations("blogPublic.comments");
   const authStatus = useClientAuthStatus();
   const composerId = useId();
   const composerHelpId = useId();
@@ -76,6 +84,7 @@ export function BlogCommentsSection({
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
+          // API_OPAQUE — surface formatted API/auth error copy as-is.
           setError(formatAuthFormError(loadError));
           setLoading(false);
         }
@@ -103,10 +112,12 @@ export function BlogCommentsSection({
       setPostedFlash(true);
       setOwnedIds((current) => new Set([...current, result.commentId]));
       if (result.message) {
+        // API_OPAQUE — pending-review copy comes from the API response.
         setPendingMessage(result.message);
       }
       await reload();
     } catch (postError: unknown) {
+      // API_OPAQUE — surface formatted API/auth error copy as-is.
       setError(formatAuthFormError(postError));
     } finally {
       setPosting(false);
@@ -128,10 +139,12 @@ export function BlogCommentsSection({
       setPostedFlash(true);
       setOwnedIds((current) => new Set([...current, result.commentId]));
       if (result.message) {
+        // API_OPAQUE — pending-review copy comes from the API response.
         setPendingMessage(result.message);
       }
       await reload();
     } catch (postError: unknown) {
+      // API_OPAQUE — surface formatted API/auth error copy as-is.
       setError(formatAuthFormError(postError));
     } finally {
       setPosting(false);
@@ -144,6 +157,7 @@ export function BlogCommentsSection({
       await deletePublicBlogComment({ slug, commentId });
       await reload();
     } catch (deleteError: unknown) {
+      // API_OPAQUE — surface formatted API/auth error copy as-is.
       setError(formatAuthFormError(deleteError));
     }
   }
@@ -151,28 +165,30 @@ export function BlogCommentsSection({
   return (
     <section className="blog-comments" id="comments" aria-labelledby="blog-comments-heading">
       <h2 id="blog-comments-heading" className="hu-heading-2">
-        Comments {total > 0 ? `(${total})` : ""}
+        {total > 0 ? t("headingWithCount", { count: total }) : t("heading")}
       </h2>
 
       {pendingMessage ? (
-        <StatusBanner title="This comment is awaiting review." message={pendingMessage} />
+        <StatusBanner title={t("awaitingReviewTitle")} message={pendingMessage} />
       ) : null}
-      {error ? <StatusBanner title="Comment action unavailable" message={error} /> : null}
+      {error ? <StatusBanner title={t("actionUnavailableTitle")} message={error} /> : null}
       {postedFlash ? (
         <p className="hu-caption" aria-live="polite">
-          Posted
+          {t("posted")}
         </p>
       ) : null}
 
       <div className="blog-comments__composer">
         {authStatus === "unauthenticated" ? (
           <p className="hu-body">
-            <Link href="/login">Sign in</Link> to post a comment.
+            {t.rich("signInPrompt", {
+              link: (chunks) => <Link href="/login">{chunks}</Link>,
+            })}
           </p>
         ) : (
           <>
             <label className="hu-label" htmlFor={composerId}>
-              Add a comment
+              {t("composerLabel")}
             </label>
             <textarea
               id={composerId}
@@ -182,9 +198,10 @@ export function BlogCommentsSection({
               value={content}
               disabled={posting || authStatus !== "authenticated"}
               aria-describedby={composerHelpId}
+              placeholder={t("composerPlaceholder")}
               onChange={(event) => setContent(event.target.value)}
             />
-            <HelperText id={composerHelpId}>Plain text only. Replies are one level deep.</HelperText>
+            <HelperText id={composerHelpId}>{t("composerHelp")}</HelperText>
             <div className="hu-form-actions">
               <Button
                 type="button"
@@ -194,17 +211,17 @@ export function BlogCommentsSection({
                 }
                 onClick={() => void submitTopLevel()}
               >
-                {posting ? "Posting…" : "Post Comment"}
+                {posting ? t("posting") : t("postComment")}
               </Button>
             </div>
           </>
         )}
       </div>
 
-      {loading ? <p className="hu-body">Loading comments…</p> : null}
+      {loading ? <p className="hu-body">{t("loading")}</p> : null}
 
       {!loading && comments.length === 0 ? (
-        <p className="hu-body">No comments yet.</p>
+        <p className="hu-body">{t("empty")}</p>
       ) : null}
 
       <ol className="blog-comments__list">
@@ -220,21 +237,21 @@ export function BlogCommentsSection({
                 <time className="hu-caption" dateTime={comment.createdAt}>
                   {formatDate(comment.createdAt)}
                 </time>
-                {comment.editedAt ? <span className="hu-caption">Edited</span> : null}
+                {comment.editedAt ? <span className="hu-caption">{t("edited")}</span> : null}
               </div>
-              <CommentBody comment={comment} />
+              <CommentBody comment={comment} removedLabel={t("removed")} />
               {!comment.removed && authStatus === "authenticated" ? (
                 <div className="blog-comments__item-actions hu-form-actions">
                   <Button
                     type="button"
                     variant="tertiary"
-                    aria-label={`Reply to comment by ${comment.author.displayName}`}
+                    aria-label={t("replyAria", { name: comment.author.displayName })}
                     onClick={() => {
                       setReplyToId(comment.commentId);
                       setReplyContent("");
                     }}
                   >
-                    Reply
+                    {t("reply")}
                   </Button>
                   {ownedIds.has(comment.commentId) ? (
                     <Button
@@ -242,7 +259,7 @@ export function BlogCommentsSection({
                       variant="tertiary"
                       onClick={() => void removeOwn(comment.commentId)}
                     >
-                      Remove
+                      {t("remove")}
                     </Button>
                   ) : null}
                 </div>
@@ -251,7 +268,7 @@ export function BlogCommentsSection({
               {replyToId === comment.commentId ? (
                 <div className="blog-comments__reply-composer">
                   <label className="hu-label" htmlFor={`reply-${comment.commentId}`}>
-                    Reply
+                    {t("reply")}
                   </label>
                   <textarea
                     id={`reply-${comment.commentId}`}
@@ -260,6 +277,7 @@ export function BlogCommentsSection({
                     maxLength={2000}
                     value={replyContent}
                     disabled={posting}
+                    placeholder={t("replyPlaceholder")}
                     onChange={(event) => setReplyContent(event.target.value)}
                   />
                   <div className="hu-form-actions">
@@ -269,7 +287,7 @@ export function BlogCommentsSection({
                       disabled={posting || replyContent.trim().length === 0}
                       onClick={() => void submitReply(comment.commentId)}
                     >
-                      {posting ? "Posting…" : "Post Reply"}
+                      {posting ? t("posting") : t("postReply")}
                     </Button>
                     <Button
                       type="button"
@@ -277,7 +295,7 @@ export function BlogCommentsSection({
                       disabled={posting}
                       onClick={() => setReplyToId(null)}
                     >
-                      Cancel
+                      {t("cancel")}
                     </Button>
                   </div>
                 </div>
@@ -296,9 +314,9 @@ export function BlogCommentsSection({
                         <time className="hu-caption" dateTime={reply.createdAt}>
                           {formatDate(reply.createdAt)}
                         </time>
-                        {reply.editedAt ? <span className="hu-caption">Edited</span> : null}
+                        {reply.editedAt ? <span className="hu-caption">{t("edited")}</span> : null}
                       </div>
-                      <CommentBody comment={reply} />
+                      <CommentBody comment={reply} removedLabel={t("removed")} />
                       {!reply.removed &&
                       authStatus === "authenticated" &&
                       ownedIds.has(reply.commentId) ? (
@@ -308,7 +326,7 @@ export function BlogCommentsSection({
                             variant="tertiary"
                             onClick={() => void removeOwn(reply.commentId)}
                           >
-                            Remove
+                            {t("remove")}
                           </Button>
                         </div>
                       ) : null}

@@ -340,7 +340,7 @@ async function verifyOnboardingAndWorkspaceReadiness(): Promise<void> {
 
   assert(onboarding.length === 4, "Onboarding checklist must include four items");
   assert(
-    onboarding.some((item) => item.label === "Complete Member Profile"),
+    onboarding.some((item) => item.id === "member-profile"),
     "Onboarding must include member profile",
   );
   const firstInitiativeItem = onboarding.find((item) => item.label === "Create first Initiative");

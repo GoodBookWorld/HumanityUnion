@@ -11,7 +11,6 @@ import type {
 import {
   DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
   getInitiativeLifecycleProfilePresentation,
-  PUBLIC_CHOICE_ELECTION_CREATE_HELPER,
   resolveInitiativeCoverMedia,
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
@@ -26,6 +25,7 @@ import {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,
   INITIATIVE_ACTIVITY_AREA_OTHER,
 } from "../initiative-activity-areas";
+import { useTranslations } from "next-intl";
 
 import {
   CitySelect,
@@ -35,6 +35,7 @@ import {
   patchAfterRegionChange,
   RegionSelect,
 } from "../../geography-integrity";
+import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { InitiativeCoverMediaField } from "../../media-upload/components/InitiativeCoverMediaField";
 import { InitiativeNewsSourcePanel } from "./InitiativeNewsSourcePanel";
 
@@ -84,6 +85,7 @@ export function InitiativeFormFields({
   sourceArticle,
   onSourceRemove,
 }: InitiativeFormFieldsProps) {
+  const t = useTranslations("initiativeExperience");
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
 
   const showGeography =
@@ -92,30 +94,34 @@ export function InitiativeFormFields({
     values.participationScope === "region" ||
     values.participationScope === "country";
 
+  const associationLabel = presentation.isPublicChoice
+    ? t("manage.fields.electionName")
+    : t("manage.fields.communityAssociation");
+  const associationHelper = presentation.isPublicChoice
+    ? t("manage.fields.electionNameHelper")
+    : t("manage.fields.communityAssociationHelper");
+
   return (
     <div className="initiative-form-fields">
       <label className="initiative-form-fields__field">
-        <span>{presentation.communityAssociationLabel}</span>
+        <span>{associationLabel}</span>
         <input
           type="text"
           className="hu-form-control"
           value={values.communityAssociation}
           onChange={(event) => onChange({ communityAssociation: event.target.value })}
         />
-        <span className="initiative-form-fields__helper">
-          {presentation.communityAssociationHelper ??
-            "Optional descriptive association with a community or organization. This does not replace your Participation Area eligibility scope."}
-        </span>
+        <span className="initiative-form-fields__helper">{associationHelper}</span>
       </label>
 
       {presentation.isPublicChoice ? (
         <p className="initiative-form-fields__helper" role="status">
-          {PUBLIC_CHOICE_ELECTION_CREATE_HELPER}
+          {t("manage.fields.electionCreateHelper")}
         </p>
       ) : null}
 
       <label className="initiative-form-fields__field">
-        <span>Participation scope</span>
+        <span>{t("manage.fields.participationScope")}</span>
         <select
           className="hu-form-control"
           value={values.participationScope}
@@ -123,10 +129,12 @@ export function InitiativeFormFields({
             onChange({ participationScope: event.target.value as ParticipationScope })
           }
         >
-          <option value="community">Community</option>
-          <option value="region">Region</option>
-          <option value="country">Country</option>
-          {presentation.requireCountry ? null : <option value="world">World</option>}
+          <option value="community">{t("manage.scopes.community")}</option>
+          <option value="region">{t("manage.scopes.region")}</option>
+          <option value="country">{t("manage.scopes.country")}</option>
+          {presentation.requireCountry ? null : (
+            <option value="world">{t("manage.scopes.world")}</option>
+          )}
         </select>
       </label>
 
@@ -134,6 +142,8 @@ export function InitiativeFormFields({
         <>
           <CountrySelect
             id="initiative-country"
+            label={t("manage.fields.country")}
+            placeholder={t("manage.fields.searchCountries")}
             value={values.countryCode}
             onChange={(nextCountry) => {
               onChange(
@@ -147,6 +157,8 @@ export function InitiativeFormFields({
             <>
               <RegionSelect
                 id="initiative-region"
+                label={t("manage.fields.region")}
+                placeholder={t("manage.fields.searchRegions")}
                 countryCode={values.countryCode}
                 value={values.regionCode}
                 includeOther
@@ -164,7 +176,7 @@ export function InitiativeFormFields({
               />
               {isCanonicalOtherRegion(values.regionCode) ? (
                 <label className="initiative-form-fields__field">
-                  <span>Region name</span>
+                  <span>{t("manage.fields.regionName")}</span>
                   <input
                     type="text"
                     className="hu-form-control"
@@ -173,7 +185,7 @@ export function InitiativeFormFields({
                     required
                   />
                   <span className="initiative-form-fields__helper">
-                    Free-text fallback — not a canonical region identifier.
+                    {t("manage.fields.regionNameHelper")}
                   </span>
                 </label>
               ) : null}
@@ -182,6 +194,8 @@ export function InitiativeFormFields({
           {values.participationScope === "community" ? (
             <CitySelect
               id="initiative-community"
+              label={t("manage.fields.cityCommunity")}
+              placeholder={t("manage.fields.searchCities")}
               countryCode={values.countryCode}
               regionCode={values.regionCode}
               value={values.communityCode}
@@ -191,7 +205,7 @@ export function InitiativeFormFields({
                   communityCode: nextCommunity,
                   communityLabel:
                     nextCommunity === OTHER_COMMUNITY_SLUG
-                      ? "Other / Not listed"
+                      ? t("manage.geography.otherNotListed")
                       : nextCommunity,
                 });
               }}
@@ -204,7 +218,7 @@ export function InitiativeFormFields({
       {presentation.showActivityArea ? (
         <>
           <label className="initiative-form-fields__field">
-            <span>Activity area</span>
+            <span>{t("manage.fields.activityArea")}</span>
             <select
               className="hu-form-control"
               value={values.activityArea}
@@ -212,7 +226,7 @@ export function InitiativeFormFields({
             >
               {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {resolveActivityAreaDisplayLabel(option, t)}
                 </option>
               ))}
             </select>
@@ -220,7 +234,7 @@ export function InitiativeFormFields({
 
           {values.activityArea === INITIATIVE_ACTIVITY_AREA_OTHER ? (
             <label className="initiative-form-fields__field">
-              <span>Activity area (Other)</span>
+              <span>{t("manage.fields.activityAreaOther")}</span>
               <input
                 type="text"
                 className="hu-form-control"
@@ -233,7 +247,11 @@ export function InitiativeFormFields({
       ) : null}
 
       <label className="initiative-form-fields__field">
-        <span>{presentation.isPublicChoice ? "Start of Voting" : "Start date"}</span>
+        <span>
+          {presentation.isPublicChoice
+            ? t("manage.fields.startOfVoting")
+            : t("manage.fields.startDate")}
+        </span>
         <input
           type="date"
           className="hu-form-control"
@@ -245,7 +263,11 @@ export function InitiativeFormFields({
       </label>
 
       <label className="initiative-form-fields__field">
-        <span>{presentation.isPublicChoice ? "End of Voting" : "Completion date"}</span>
+        <span>
+          {presentation.isPublicChoice
+            ? t("manage.fields.endOfVoting")
+            : t("manage.fields.completionDate")}
+        </span>
         <input
           type="date"
           className="hu-form-control"

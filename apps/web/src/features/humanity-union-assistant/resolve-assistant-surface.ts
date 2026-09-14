@@ -183,6 +183,36 @@ export function resolveAssistantLaunchContext(
   return { surfaceId: "initiatives" };
 }
 
+/** Catalog key under `initiativeExperience` for Workspace widget blurbs. */
+export function assistantWidgetCopyKey(
+  surfaceId: HumanityUnionAssistantSurfaceId,
+): string {
+  switch (surfaceId) {
+    case "workspace":
+      return "assistant.entry.widgetCopy.workspace";
+    case "initiatives":
+      return "assistant.entry.widgetCopy.initiatives";
+    case "commitment":
+      return "assistant.entry.widgetCopy.commitment";
+    case "notifications":
+      return "assistant.entry.widgetCopy.notifications";
+    case "messages":
+      return "assistant.entry.widgetCopy.messages";
+    case "preferences":
+      return "assistant.entry.widgetCopy.preferences";
+    case "profile":
+      return "assistant.entry.widgetCopy.profile";
+    case "blog":
+      return "assistant.entry.widgetCopy.blog";
+    default:
+      return "assistant.entry.widgetCopy.default";
+  }
+}
+
+/**
+ * English fallback blurbs for non-UI callers / legacy unit tests.
+ * Mounted UI resolves `assistantWidgetCopyKey` via next-intl.
+ */
 export function assistantWidgetCopy(
   surfaceId: HumanityUnionAssistantSurfaceId,
 ): string {

@@ -411,6 +411,33 @@ function buildCompleteness(input: {
     (stageId) => !stagesFound.includes(stageId),
   );
 
+  const summaryDescriptors: InitiativeCivicArchiveCompleteness["summaryDescriptors"] = [
+    {
+      code: "stages_published",
+      params: { count: stagesPublished.length },
+    },
+    input.requirePublicImpact
+      ? input.publicImpactAvailable
+        ? { code: "public_impact_available" }
+        : { code: "public_impact_missing" }
+      : input.publicImpactAvailable
+        ? { code: "public_impact_available_optional" }
+        : { code: "public_impact_not_required_public_choice" },
+    input.unresolvedTrackingCount > 0
+      ? {
+          code: "tracking_unresolved",
+          params: { count: input.unresolvedTrackingCount },
+        }
+      : { code: "tracking_resolved" },
+    input.unfinishedCommitmentCount > 0
+      ? {
+          code: "commitments_unfinished",
+          params: { count: input.unfinishedCommitmentCount },
+        }
+      : { code: "commitments_finished" },
+  ];
+
+  // English join kept identical for skew + Archive overview DOCUMENT_CONTENT.
   const summaryParts = [
     `${stagesPublished.length} Lifecycle stage(s) have published records.`,
     input.requirePublicImpact
@@ -440,9 +467,13 @@ function buildCompleteness(input: {
     traceabilityComplete: input.requirePublicImpact
       ? input.hasTraceabilityAnchors && input.publicImpactAvailable
       : input.hasTraceabilityAnchors,
+    summaryDescriptors,
     summary: summaryParts.join(" "),
   };
 }
+
+/** Pack 02G 08G — exported for unit smoke of descriptor emission. */
+export { buildCompleteness as buildInitiativeCivicArchiveCompleteness };
 
 function buildConsistencyChecks(input: {
   publicImpactAvailable: boolean;
@@ -461,12 +492,14 @@ function buildConsistencyChecks(input: {
             label: "Published Public Impact Report",
             status: "ok",
             detail: "A published Public Impact Report is available as the Archive source.",
+            params: { required: true },
           }
         : {
             checkId: "public-impact-available",
             label: "Published Public Impact Report",
             status: "warning",
             detail: "No published Public Impact Report yet — Archive can still finalize from available Lifecycle history.",
+            params: { required: true },
           },
     );
   } else if (input.publicImpactAvailable) {
@@ -475,6 +508,7 @@ function buildConsistencyChecks(input: {
       label: "Published Public Impact Report",
       status: "ok",
       detail: "A published Public Impact Report is available as an optional Archive source.",
+      params: { required: false },
     });
   }
 
@@ -485,12 +519,14 @@ function buildConsistencyChecks(input: {
           label: "Implementation Tracking Completeness",
           status: "ok",
           detail: "No unresolved Tracking Records are visible.",
+          params: { unresolvedTrackingCount: 0 },
         }
       : {
           checkId: "tracking-resolved",
           label: "Implementation Tracking Completeness",
           status: "warning",
           detail: `${input.unresolvedTrackingCount} Tracking Record(s) remain unresolved — Archive will record outstanding work honestly.`,
+          params: { unresolvedTrackingCount: input.unresolvedTrackingCount },
         },
   );
 
@@ -501,12 +537,14 @@ function buildConsistencyChecks(input: {
           label: "Evidence Visibility",
           status: "ok",
           detail: "Tracking evidence references are present where Tracking Records exist.",
+          params: { missingEvidenceCount: 0 },
         }
       : {
           checkId: "evidence-visible",
           label: "Evidence Visibility",
           status: "warning",
           detail: `${input.missingEvidenceCount} Tracking Record(s) lack evidence references.`,
+          params: { missingEvidenceCount: input.missingEvidenceCount },
         },
   );
 
@@ -516,6 +554,9 @@ function buildConsistencyChecks(input: {
       label: "Optional Stages",
       status: "warning",
       detail: `Optional stage(s) without published records: ${input.missingOptionalStages.join(", ")}.`,
+      params: {
+        stageIds: [...input.missingOptionalStages] as InitiativeLifecycleStageId[],
+      },
     });
   }
 

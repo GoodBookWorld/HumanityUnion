@@ -5,6 +5,10 @@ import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativeImplementationCommitment } from "../../../../features/initiative-implementation-commitment/api";
 import { listPublicInitiativeImplementationTrackingsForCommitment } from "../../../../features/initiative-implementation-tracking/api";
+import {
+  CivicPublicTranslatedSection,
+  joinLinesForDisplay,
+} from "../../../../features/language";
 
 interface PublicInitiativeImplementationCommitmentPageProps {
   params: Promise<{
@@ -61,12 +65,23 @@ export default async function PublicInitiativeImplementationCommitmentPage({
       </header>
 
       <ProfileSection title="Commitment">
-        <ProfileField label="Summary" value={commitment.summary} />
-        <ProfileField label="Scope" value={commitment.commitmentScope} />
+        <CivicPublicTranslatedSection
+          sourceKind="implementation_commitment"
+          sourceRecordId={commitment.commitmentId}
+          fallbackFields={{
+            title: commitment.title,
+            summary: commitment.summary,
+            organization: commitment.organization ?? "",
+            commitmentScope: commitment.commitmentScope,
+            approvedAction: commitment.approvedAction ?? "",
+            suggestedResponsibleRole: commitment.suggestedResponsibleRole ?? "",
+            priority: commitment.priority ?? "",
+            requiredResources: joinLinesForDisplay(commitment.requiredResources),
+            relatedRisks: joinLinesForDisplay(commitment.relatedRisks),
+            references: joinLinesForDisplay(commitment.references),
+          }}
+        />
         <ProfileField label="Status" value={commitment.status} />
-        {commitment.organization ? (
-          <ProfileField label="Organization" value={commitment.organization} />
-        ) : null}
         <ProfileField label="Author" value={commitment.authorDisplayName} />
         <ProfileField label="Expected start" value={formatDate(commitment.expectedStartDate)} />
         <ProfileField

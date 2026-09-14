@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import {
   PublicHomeResourceActions,
   PublicHomeResourcePrimaryButton,
@@ -5,20 +9,20 @@ import {
 } from "./PublicHomeResourceSection";
 
 export function PublicHomeCivicArchiveSection() {
+  const t = useTranslations("publicHome");
+
   return (
     <PublicHomeResourceSection
       id="public-home-archive-title"
-      title="Civic Archive"
-      intro="Preserve civic knowledge, achievements, and lessons for future generations."
+      title={t("civicArchive.title")}
+      intro={t("civicArchive.intro")}
       backgroundImage="/images/media/all-archives.webp"
       toneClass="archive"
     >
-      <p className="public-home-v2__resource-copy">
-        Preserving civic knowledge, achievements, and lessons for future generations.
-      </p>
+      <p className="public-home-v2__resource-copy">{t("civicArchive.copy")}</p>
       <PublicHomeResourceActions>
         <PublicHomeResourcePrimaryButton href="/civic-archive">
-          Explore Civic Archive
+          {t("civicArchive.explore")}
         </PublicHomeResourcePrimaryButton>
       </PublicHomeResourceActions>
     </PublicHomeResourceSection>

@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import type { CommunityCatalogPublicProjection } from "@hu/types";
-
-import { FIND_YOUR_COMMUNITY_CONTENT } from "../content";
 
 interface FindYourCommunityEvidenceProps {
   catalog: CommunityCatalogPublicProjection;
@@ -26,6 +25,7 @@ export function FindYourCommunityEvidence({
   catalog,
   currentCommunitySlug,
 }: FindYourCommunityEvidenceProps) {
+  const t = useTranslations("publicGeo");
   const [query, setQuery] = useState("");
 
   const availableCommunities = useMemo(
@@ -49,14 +49,12 @@ export function FindYourCommunityEvidence({
 
   return (
     <div className="find-your-community">
-      <p className="find-your-community__note">
-        {FIND_YOUR_COMMUNITY_CONTENT.currentCommunityNote}
-      </p>
+      <p className="find-your-community__note">{t("community.find.currentCommunityNote")}</p>
 
-      <p className="find-your-community__browse-label">{FIND_YOUR_COMMUNITY_CONTENT.browseLabel}</p>
+      <p className="find-your-community__browse-label">{t("community.find.browseLabel")}</p>
 
       <label className="find-your-community__search" htmlFor="find-your-community-query">
-        {FIND_YOUR_COMMUNITY_CONTENT.searchLabel}
+        {t("community.find.searchLabel")}
       </label>
       <input
         id="find-your-community-query"
@@ -64,7 +62,7 @@ export function FindYourCommunityEvidence({
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder={FIND_YOUR_COMMUNITY_CONTENT.searchPlaceholder}
+        placeholder={t("community.find.searchPlaceholder")}
         autoComplete="off"
       />
 
@@ -78,7 +76,9 @@ export function FindYourCommunityEvidence({
                   id={`community-result-${community.slug}`}
                 >
                   {community.slug === currentCommunitySlug ? (
-                    <span>{community.name} (current)</span>
+                    <span>
+                      {community.name} {t("shared.currentSuffix")}
+                    </span>
                   ) : (
                     <Link href={community.communityHref}>{community.name}</Link>
                   )}
@@ -86,23 +86,23 @@ export function FindYourCommunityEvidence({
                 <p className="find-your-community__result-description">{community.description}</p>
                 <dl className="find-your-community__result-meta">
                   <div>
-                    <dt>Activity Area</dt>
+                    <dt>{t("shared.activityArea")}</dt>
                     <dd>{community.activityArea}</dd>
                   </div>
                   <div>
-                    <dt>Geographic context</dt>
+                    <dt>{t("shared.geographicContext")}</dt>
                     <dd>
                       {community.regionLabel}, {community.countryLabel}
                     </dd>
                   </div>
                   <div>
-                    <dt>Public initiatives</dt>
+                    <dt>{t("shared.publicInitiatives")}</dt>
                     <dd>{community.initiativeCount}</dd>
                   </div>
                 </dl>
                 {community.slug !== currentCommunitySlug ? (
                   <p className="find-your-community__result-link">
-                    <Link href={community.communityHref}>Observe this community</Link>
+                    <Link href={community.communityHref}>{t("shared.observeCommunity")}</Link>
                   </p>
                 ) : null}
               </article>
@@ -111,14 +111,13 @@ export function FindYourCommunityEvidence({
         </ul>
       ) : (
         <p className="find-your-community__empty" role="status">
-          {FIND_YOUR_COMMUNITY_CONTENT.emptyResults}
+          {t("community.find.emptyResults")}
         </p>
       )}
 
       {catalog.source === "bootstrap" ? (
         <p className="find-your-community__source" role="note">
-          Bootstrap demonstration data — {availableCommunities.length} participant-created communit
-          {availableCommunities.length === 1 ? "y" : "ies"} available to observe.
+          {t("shared.bootstrapCommunitiesObserve", { count: availableCommunities.length })}
         </p>
       ) : null}
     </div>

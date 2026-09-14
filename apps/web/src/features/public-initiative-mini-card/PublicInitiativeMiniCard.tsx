@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -9,23 +10,19 @@ import {
   CivicShareButton,
 } from "../civic-share";
 import { InitiativeImage } from "../initiatives/components/InitiativeImage";
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+} from "../public-initiative-experience/initiative-experience-i18n";
+import { useInitiativeCardTitlePresentation } from "../public-initiative-experience/use-initiative-public-presentation";
+import { WorkspaceStatusBadge } from "../initiative-workspace-ux/components/WorkspaceStatusBadge";
+
+import { resolveInitiativeCardBadgeLabel } from "./resolve-initiative-card-semantic-labels";
 
 import "./public-initiative-mini-card.css";
 
 export const PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
   "/images/initiatives/initiative-default.webp";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function buildAccessibleName(initiative: WorldInitiativeCardProjection): string {
-  return `View initiative: ${initiative.title}`;
-}
 
 export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProjection): string {
   return (
@@ -37,13 +34,33 @@ export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProje
 /**
  * Share Fix 01 — Share lives outside the navigation Link so the civic
  * popover never competes with card navigation or nested-interactive quirks.
+ * Pack 08I.11 — status badge via shared semantic labels (never stages.Proposal).
+ * Pack 08I.14A — title from shared Initiative presentation owner (interface locale).
  */
 export function PublicInitiativeMiniCard({
   initiative,
 }: {
   initiative: WorldInitiativeCardProjection;
 }) {
+  const t = useTranslations("publicInitiativeMiniCard");
+  const tExperience = useTranslations("initiativeExperience");
+  const locale = useLocale();
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
+
   const href = resolvePublicInitiativeHref(initiative);
+  const activityAreaLabel = resolveActivityAreaDisplayLabel(initiative.activityArea, tExperience);
+  const statusLabel = resolveInitiativeCardBadgeLabel({
+    publicStatus: initiative.publicStatus,
+    currentStageLabel: initiative.currentStageLabel,
+    messagesOrT: tExperience,
+  });
+  const updatedDate = formatInitiativeExperienceDate(locale, initiative.publishedAt, {
+    month: "short",
+  });
 
   return (
     <article className="public-initiative-mini-card">
@@ -53,43 +70,64 @@ export function PublicInitiativeMiniCard({
           stopPropagation
           payload={buildPublicInitiativeSharePayload({
             initiativeId: initiative.initiativeId,
-            title: initiative.title,
+            title: displayTitle,
             image: initiative.imageUrl,
-            optionalText: initiative.summary,
           })}
-          ariaLabel={`Share initiative: ${initiative.title}`}
+          ariaLabel={t("shareAria", { title: displayTitle })}
         />
       </div>
       <Link
         href={href}
         className="public-initiative-mini-card__link"
-        aria-label={buildAccessibleName(initiative)}
+        aria-label={t("viewAria", { title: displayTitle })}
       >
         <div className="public-initiative-mini-card__media" aria-hidden="true">
-          <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
+          <MiniCardImage title={displayTitle} imageUrl={initiative.imageUrl} />
         </div>
         <div className="public-initiative-mini-card__body">
-          <h3 className="public-initiative-mini-card__title">{initiative.title}</h3>
-          <p className="public-initiative-mini-card__summary">{initiative.summary}</p>
-          <p className="public-initiative-mini-card__meta">
-            {initiative.activityArea} · {initiative.geographyLabel}
-          </p>
+          <h3 className="public-initiative-mini-card__title">{displayTitle}</h3>
+          {statusLabel ? (
+            <div className="public-initiative-mini-card__badge-row">
+              <WorkspaceStatusBadge
+                status={initiative.publicStatus || "neutral"}
+                variant="neutral"
+                label={statusLabel}
+              />
+            </div>
+          ) : null}
+          <dl className="public-initiative-mini-card__meta">
+            <div className="public-initiative-mini-card__meta-field">
+              <dt className="public-initiative-mini-card__meta-label">
+                {tExperience("hero.activityArea")}
+              </dt>
+              <dd className="public-initiative-mini-card__meta-value">{activityAreaLabel}</dd>
+            </div>
+            {initiative.geographyLabel ? (
+              <div className="public-initiative-mini-card__meta-field">
+                <dt className="public-initiative-mini-card__meta-label">
+                  {tExperience("hero.geography")}
+                </dt>
+                <dd className="public-initiative-mini-card__meta-value">
+                  {initiative.geographyLabel}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
           <div className="public-initiative-mini-card__footer">
-            <span className="public-initiative-mini-card__status">
-              {initiative.currentStageLabel ?? initiative.publicStatus}
-            </span>
             <span className="public-initiative-mini-card__date">
-              Updated {formatDate(initiative.publishedAt)}
+              {t("updated", { date: updatedDate })}
             </span>
             {initiative.supportSummary ? (
               <span className="public-initiative-mini-card__support">
-                {initiative.supportSummary.likes} likes · {initiative.supportSummary.dislikes}{" "}
-                dislikes
+                {t("likesDislikes", {
+                  likes: initiative.supportSummary.likes,
+                  dislikes: initiative.supportSummary.dislikes,
+                })}
               </span>
             ) : null}
           </div>
           <span className="public-initiative-mini-card__cta" aria-hidden="true">
-            View Initiative →
+            {t("viewInitiative")}
           </span>
         </div>
       </Link>
@@ -119,20 +157,17 @@ function MiniCardImage({ title, imageUrl }: { title: string; imageUrl?: string }
 }
 
 export function PublicInitiativeMiniCardPlaceholder({ slotNumber }: { slotNumber: number }) {
+  const t = useTranslations("publicInitiativeMiniCard");
+
   return (
     <article
       className="public-initiative-mini-card public-initiative-mini-card--placeholder"
-      aria-label={`Initiative slot awaiting publication ${slotNumber}`}
+      aria-label={t("placeholder.ariaLabel", { slotNumber })}
     >
       <div className="public-initiative-mini-card__media" aria-hidden="true" />
       <div className="public-initiative-mini-card__body">
-        <h3 className="public-initiative-mini-card__title">Initiative slot awaiting publication</h3>
-        <p className="public-initiative-mini-card__summary">
-          A future public initiative will appear here when published.
-        </p>
-        <p className="public-initiative-mini-card__meta">
-          Capacity reserved for upcoming civic work
-        </p>
+        <h3 className="public-initiative-mini-card__title">{t("placeholder.title")}</h3>
+        <p className="public-initiative-mini-card__meta">{t("placeholder.meta")}</p>
       </div>
     </article>
   );

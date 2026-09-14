@@ -1,5 +1,7 @@
 import type { InitiativePetitionDraft, InitiativePetitionIntelligenceSnapshot } from "@hu/types";
 
+import type { PetitionSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 /**
  * Initiative Lifecycle — Part F, Section 3/4 (Petition Intelligence /
  * Petition Assistant).
@@ -13,13 +15,18 @@ import type { InitiativePetitionDraft, InitiativePetitionIntelligenceSnapshot } 
  * observable from persisted data, and NEVER edits automatically (Section
  * 4 — the Author always confirms changes, enforced server-side, not
  * merely hidden here).
+ *
+ * Pack 02G Task 08E.8c: Web-owned deterministic advisory meaning is encoded
+ * as language-neutral descriptors. API consistency-check detail remains
+ * opaque pass-through data and is never converted into Web advisory codes.
  */
 export interface PetitionAiAssistantInsights {
-  readonly sourcesUsedSummary: string;
+  readonly sourcesSummary: PetitionSidebarAdvisory;
+  /** API opaque consistency warnings — detail/label stay raw. */
   readonly consistencyWarnings: InitiativePetitionIntelligenceSnapshot["consistencyChecks"];
-  readonly clarityWarnings: readonly string[];
-  readonly missingContextWarnings: readonly string[];
-  readonly analysisAlignmentSummary: string;
+  readonly clarityWarnings: readonly PetitionSidebarAdvisory[];
+  readonly missingContextWarnings: readonly PetitionSidebarAdvisory[];
+  readonly analysisAlignment: PetitionSidebarAdvisory;
 }
 
 function countWords(value: string): number {
@@ -30,44 +37,81 @@ export function derivePetitionAiAssistantInsights(
   snapshot: InitiativePetitionIntelligenceSnapshot,
   draft: InitiativePetitionDraft | null,
 ): PetitionAiAssistantInsights {
-  const clarityWarnings: string[] = [];
-  const missingContextWarnings: string[] = [];
+  const clarityWarnings: PetitionSidebarAdvisory[] = [];
+  const missingContextWarnings: PetitionSidebarAdvisory[] = [];
 
   if (draft) {
     if (!draft.title.trim()) {
-      clarityWarnings.push("Petition Title is empty.");
+      clarityWarnings.push({
+        code: "petition.clarity.title_empty",
+        severity: "warning",
+        civic: { petitionFieldIds: ["title"] },
+      });
     }
 
     if (countWords(draft.requestStatement) < 8) {
-      clarityWarnings.push(
-        "Request Statement is very short — it may be too vague for visitors to understand what is being asked.",
-      );
+      clarityWarnings.push({
+        code: "petition.clarity.request_statement_short",
+        severity: "warning",
+        civic: { petitionFieldIds: ["requestStatement"] },
+      });
     }
 
     if (!draft.expectedOutcome.trim()) {
-      clarityWarnings.push("Expected Outcome is empty.");
+      clarityWarnings.push({
+        code: "petition.clarity.expected_outcome_empty",
+        severity: "warning",
+        civic: { petitionFieldIds: ["expectedOutcome"] },
+      });
     }
 
     if (!draft.supportingContext.trim()) {
-      missingContextWarnings.push(
-        "Supporting Context is empty — visitors will see no background information.",
-      );
+      missingContextWarnings.push({
+        code: "petition.context.supporting_context_empty",
+        severity: "warning",
+        civic: { petitionFieldIds: ["supportingContext"] },
+      });
     }
 
     if (draft.keyArguments.filter((argument) => argument.trim().length > 0).length === 0) {
-      missingContextWarnings.push("No Key Arguments provided yet.");
+      missingContextWarnings.push({
+        code: "petition.context.key_arguments_empty",
+        severity: "warning",
+        civic: { petitionFieldIds: ["keyArguments"] },
+      });
     }
   }
 
+  const sourcesSummary: PetitionSidebarAdvisory = snapshot.revisionReference
+    ? {
+        code: "petition.sources.summary",
+        severity: "info",
+        params: {
+          version: snapshot.revisionReference.version,
+          proposalCount: snapshot.proposalReferences.length,
+        },
+      }
+    : {
+        code: "petition.sources.empty",
+        severity: "info",
+      };
+
+  const analysisAlignment: PetitionSidebarAdvisory = snapshot.analysisReference
+    ? {
+        code: "petition.alignment.with_analysis",
+        severity: "info",
+        civic: { title: snapshot.analysisReference.title },
+      }
+    : {
+        code: "petition.alignment.no_analysis",
+        severity: "info",
+      };
+
   return {
-    sourcesUsedSummary: snapshot.revisionReference
-      ? `Built from Version ${snapshot.revisionReference.version} of the Revision, ${snapshot.proposalReferences.length} accepted Proposal(s).`
-      : "No published Revision collected yet.",
+    sourcesSummary,
     consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
     clarityWarnings,
     missingContextWarnings,
-    analysisAlignmentSummary: snapshot.analysisReference
-      ? `Aligned with published Collaborative Analysis: "${snapshot.analysisReference.title}".`
-      : "No published Collaborative Analysis to align with yet.",
+    analysisAlignment,
   };
 }

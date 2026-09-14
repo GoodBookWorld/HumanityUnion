@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
-import type { PublicInitiativeImprovementProposalsCollectionProjection } from "@hu/types";
+import {
+  IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS,
+  buildImprovementProposalCtFields,
+  type PublicInitiativeImprovementProposalsCollectionProjection,
+} from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux";
+import { PublicTranslatedFields } from "../../language";
+import {
+  resolveProposalCurationDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import { getPublicImprovementProposalsCollection } from "../api";
-import { InitiativeImprovementProposalsContentFields } from "./InitiativeImprovementProposalsContentFields";
 import { InitiativeProposalReactionWidget } from "./InitiativeProposalReactionWidget";
 
 import "./initiative-improvement-proposals-stage-workspace.css";
@@ -24,18 +32,18 @@ interface InitiativeImprovementProposalsPublicResultProps {
 }
 
 /**
- * Initiative Lifecycle — Part D, Section 8/9 (Public Result / Community
- * Reactions). Renders inside the shared shell's
- * `InitiativeLifecyclePublicResultPanel` boundary as its
- * `publicResultSlot` — that boundary already renders the stage title,
- * Publication Date, and Version generically; this adds the list of
- * published structured proposals, each with its own body, Author(s), and
- * Support / Do Not Support reaction, all fetched in a single request.
+ * Initiative Lifecycle — Part D Public Result.
+ *
+ * Implementation 01 — browser-visible proposal prose is PERSISTED_LOCALIZED_CONTENT
+ * via Content Translation (sourceKind improvement_proposal, Part D field bag).
+ * Complete CT bag or coherent canonical — never field hybrid.
+ * Labels/status remain WEB_UI. Identities remain protected.
  */
 export function InitiativeImprovementProposalsPublicResult({
   collectionId,
   isPreview = false,
 }: InitiativeImprovementProposalsPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicInitiativeImprovementProposalsCollectionProjection | null>(
     null,
   );
@@ -64,72 +72,109 @@ export function InitiativeImprovementProposalsPublicResult({
   }, [collectionId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">These Improvement Proposals could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.public.loadFailed")}</p>;
   }
 
   if (!projection) {
-    return <p className="lsw-result__placeholder">Loading Improvement Proposals…</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.public.loading")}</p>;
   }
 
   if (projection.proposals.length === 0) {
-    return <p className="iip-public-result__empty">No Improvement Proposals have been published yet.</p>;
+    return <p className="iip-public-result__empty">{t("author.proposal.public.empty")}</p>;
   }
 
   return (
-    <div className="iip-public-result">
+    <div
+      className="iip-public-result"
+      data-hu-localization-domain="initiative"
+      data-hu-presentation-authority="persisted_localized_content"
+      data-hu-structured-proposal="true"
+    >
       <div className="iip-public-result__field">
-        <h4>Author</h4>
+        <h4>{t("author.proposal.fields.author")}</h4>
         <p>{projection.authorDisplayName}</p>
       </div>
 
-      {projection.proposals.map((proposal) => (
-        <article key={proposal.proposalId} className="iip-public-result__proposal">
-          <div className="iip-proposal-card__header">
-            <h3>{proposal.title}</h3>
-            <WorkspaceStatusBadge status={proposal.status} />
-          </div>
+      {projection.proposals.map((proposal) => {
+        const fallbackFields = buildImprovementProposalCtFields(proposal);
+        return (
+          <article
+            key={proposal.proposalId}
+            className="iip-public-result__proposal"
+            data-proposal-id={proposal.proposalId}
+            data-hu-content-class="persisted_localized_content"
+          >
+            <div className="iip-proposal-card__header">
+              <WorkspaceStatusBadge
+                status={proposal.status}
+                label={resolveProposalCurationDisplayLabel(proposal.status, t)}
+              />
+            </div>
 
-          <InitiativeImprovementProposalsContentFields
-            summary={proposal.summary}
-            description={proposal.description}
-            reason={proposal.reason}
-            expectedImprovement={proposal.expectedImprovement}
-            supportingSources={proposal.supportingSources}
-            relatedDiscussionReferences={proposal.relatedDiscussionReferences}
-            originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
-          />
-
-          {isPreview ? (
-            <section className="iip-reaction" aria-label="Proposal reaction preview">
-              <p className="iip-reaction__title">Reaction</p>
-              <p className="iip-reaction__note">
-                {proposal.reactionSummary.support} Support · {proposal.reactionSummary.doNotSupport} Do Not
-                Support — the Reaction widget is disabled while previewing.
-              </p>
-            </section>
-          ) : (
-            <InitiativeProposalReactionWidget
-              collectionId={collectionId}
-              proposalId={proposal.proposalId}
-              reactionSummary={proposal.reactionSummary}
-              onReactionSummaryChange={(summary) =>
-                setProjection((current) =>
-                  current
-                    ? {
-                        ...current,
-                        proposals: current.proposals.map((entry) =>
-                          entry.proposalId === proposal.proposalId
-                            ? { ...entry, reactionSummary: summary }
-                            : entry,
-                        ),
-                      }
-                    : current,
-                )
-              }
+            <PublicTranslatedFields
+              sourceKind="improvement_proposal"
+              sourceRecordId={proposal.proposalId}
+              fieldOrder={[...IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS]}
+              fieldLabels={{
+                title: t("author.proposal.fields.title"),
+                summary: t("author.proposal.fields.summary"),
+                description: t("author.proposal.fields.description"),
+                reason: t("author.proposal.fields.reason"),
+                expectedImprovement: t("author.proposal.fields.expectedImprovement"),
+                supportingSources: t("author.proposal.fields.supportingSources"),
+                relatedDiscussionReferences: t(
+                  "author.proposal.fields.relatedDiscussionReferences",
+                ),
+              }}
+              fallbackFields={fallbackFields}
             />
-          )}
-        </article>
-      ))}
+
+            {proposal.originalAuthorDisplayNames.length > 0 ? (
+              <div className="iip-content-fields__field" data-hu-field-ownership="protected">
+                <h4>{t("author.proposal.fields.originalAuthors")}</h4>
+                <p>{proposal.originalAuthorDisplayNames.join(", ")}</p>
+              </div>
+            ) : null}
+
+            {isPreview ? (
+              <section
+                className="iip-reaction"
+                aria-label={t("author.proposal.preview.reactionAria")}
+              >
+                <p className="iip-reaction__title">
+                  {t("author.proposal.preview.reactionTitle")}
+                </p>
+                <p className="iip-reaction__note">
+                  {t("author.proposal.preview.reactionNotePublished", {
+                    support: proposal.reactionSummary.support,
+                    doNotSupport: proposal.reactionSummary.doNotSupport,
+                  })}
+                </p>
+              </section>
+            ) : (
+              <InitiativeProposalReactionWidget
+                collectionId={collectionId}
+                proposalId={proposal.proposalId}
+                reactionSummary={proposal.reactionSummary}
+                onReactionSummaryChange={(summary) =>
+                  setProjection((current) =>
+                    current
+                      ? {
+                          ...current,
+                          proposals: current.proposals.map((entry) =>
+                            entry.proposalId === proposal.proposalId
+                              ? { ...entry, reactionSummary: summary }
+                              : entry,
+                          ),
+                        }
+                      : current,
+                  )
+                }
+              />
+            )}
+          </article>
+        );
+      })}
     </div>
   );
 }

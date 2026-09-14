@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
 import {
@@ -19,6 +20,7 @@ import { AuthCodeVerificationFields } from "./AuthCodeVerificationFields";
 import "./auth-form.css";
 
 export function ConfirmEmailForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
@@ -80,19 +82,16 @@ export function ConfirmEmailForm() {
     <Card>
       <AuthCodeVerificationFields
         copy={{
-          title: "Confirm your email",
-          introPrefix: "We sent a six-digit confirmation code to",
-          codeLabel: "Confirmation code",
-          submitLabel: "Confirm Email",
-          submittingLabel: "Confirming...",
-          resendSuccessMessage: "A new confirmation code has been sent.",
-          resendSuccessWithInvalidationMessage:
-            "A new confirmation code has been sent. The previous code is no longer valid.",
-          deliveryFailureMessage:
-            "We could not send the confirmation code. Please try again shortly.",
-          resendDeliveryFailureMessage:
-            "We could not send a new confirmation code. Your previous valid code remains available.",
-          cancelLabel: "Return to Registration",
+          title: t("confirmYourEmail"),
+          introPrefix: t("confirmEmailIntro"),
+          codeLabel: t("confirmationCode"),
+          submitLabel: t("confirmEmail"),
+          submittingLabel: t("confirming"),
+          resendSuccessMessage: t("newConfirmationCodeSent"),
+          resendSuccessWithInvalidationMessage: t("newConfirmationCodeSentInvalidated"),
+          deliveryFailureMessage: t("couldNotSendConfirmationCode"),
+          resendDeliveryFailureMessage: t("couldNotSendNewConfirmationCode"),
+          cancelLabel: t("returnToRegistration"),
         }}
         maskedEmail={maskedEmail}
         emailSent={emailSent}

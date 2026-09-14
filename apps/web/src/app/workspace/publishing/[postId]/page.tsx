@@ -1,9 +1,4 @@
-import { MemberWorkspace } from "../../../../components/member/MemberWorkspace";
-import { BlogEditorPageContent } from "../../../../features/blog/components/BlogEditorPageContent";
-import { HumanityUnionAssistantWidget } from "../../../../features/humanity-union-assistant/components/HumanityUnionAssistantWidget";
-import { WorkspaceNavigation } from "../../../../features/initiatives/components/WorkspaceNavigation";
-
-import "../../../../features/blog/publishing.css";
+import { PublishingEditorWorkspacePage } from "../../../../features/blog/components/PublishingEditorWorkspacePage";
 
 export const metadata = {
   title: "Edit Publication | Publishing | Humanity Union",
@@ -17,22 +12,5 @@ export default async function WorkspacePublishingEditPage({
 }) {
   const { postId } = await params;
 
-  return (
-    <main className="humanity-workspace-page">
-      <MemberWorkspace
-        title="Edit Publication"
-        subtitle="Update your draft or published article according to your Author permissions."
-        workspaceNavigation={<WorkspaceNavigation />}
-        assistantPlacement="compact"
-        assistant={
-          <HumanityUnionAssistantWidget
-            surfaceId="blog"
-            description="Help with clarity, SEO, and review. Suggestions require Apply / Dismiss — the Assistant never saves, submits, or publishes."
-          />
-        }
-      >
-        <BlogEditorPageContent mode="edit" postId={postId} />
-      </MemberWorkspace>
-    </main>
-  );
+  return <PublishingEditorWorkspacePage mode="edit" postId={postId} />;
 }

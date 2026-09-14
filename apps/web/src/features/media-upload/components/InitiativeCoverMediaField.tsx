@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCoverMedia } from "@hu/types";
 
@@ -58,6 +59,7 @@ export function InitiativeCoverMediaField({
   onVideoLinkSubmit,
   onRemove,
 }: InitiativeCoverMediaFieldProps) {
+  const t = useTranslations("initiativeExperience");
   const inputRef = useRef<HTMLInputElement>(null);
   const groupName = useId();
   const [selectedOption, setSelectedOption] = useState<CoverMediaOption>(
@@ -97,7 +99,12 @@ export function InitiativeCoverMediaField({
       const source = await loadInitiativeCoverCropSource(file);
       setCropSource(source);
     } catch (validationError) {
-      setError(validationError instanceof Error ? validationError.message : "Image upload failed.");
+      // Client validation / upload errors without stable codes: preserve message when present.
+      setError(
+        validationError instanceof Error && validationError.message.trim()
+          ? validationError.message
+          : t("manage.cover.imageUploadFailed"),
+      );
     } finally {
       event.target.value = "";
     }
@@ -112,7 +119,11 @@ export function InitiativeCoverMediaField({
       closeCropEditor();
       setShowPlayer(false);
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
+      setError(
+        uploadError instanceof Error && uploadError.message.trim()
+          ? uploadError.message
+          : t("manage.cover.imageUploadFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -133,7 +144,11 @@ export function InitiativeCoverMediaField({
       setVideoUrlDraft("");
       setShowPlayer(false);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Video link could not be verified.");
+      setError(
+        submitError instanceof Error && submitError.message.trim()
+          ? submitError.message
+          : t("manage.cover.videoLinkFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -147,7 +162,11 @@ export function InitiativeCoverMediaField({
       await onRemove();
       setShowPlayer(false);
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : "Media removal failed.");
+      setError(
+        removeError instanceof Error && removeError.message.trim()
+          ? removeError.message
+          : t("manage.cover.mediaRemovalFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -155,10 +174,8 @@ export function InitiativeCoverMediaField({
 
   return (
     <div className="initiative-cover-media-field">
-      <span className="initiative-cover-media-field__label">Initiative cover media</span>
-      <p className="initiative-cover-media-field__helper">
-        Add an image, or an approved video link (YouTube or Vimeo), to represent this Initiative.
-      </p>
+      <span className="initiative-cover-media-field__label">{t("manage.cover.label")}</span>
+      <p className="initiative-cover-media-field__helper">{t("manage.cover.helper")}</p>
 
       <div className="initiative-cover-media-field__preview">
         {coverMedia?.type === "image" ? (
@@ -172,7 +189,7 @@ export function InitiativeCoverMediaField({
             <ExternalVideoEmbed
               provider={coverMedia.provider}
               providerVideoId={coverMedia.providerVideoId}
-              title="Initiative cover video preview"
+              title={t("manage.cover.videoPreviewTitle")}
               className="initiative-cover-media-field__video"
             />
           ) : (
@@ -189,14 +206,15 @@ export function InitiativeCoverMediaField({
                 type="button"
                 className="initiative-cover-media-field__play"
                 onClick={() => setShowPlayer(true)}
+                aria-label={t("manage.cover.playPreview")}
               >
-                <span aria-hidden="true">▶</span> Play video preview
+                <span aria-hidden="true">▶</span> {t("manage.cover.playPreview")}
               </button>
             </div>
           )
         ) : (
           <p className="initiative-cover-media-field__placeholder" role="status">
-            No media selected
+            {t("manage.cover.noMedia")}
           </p>
         )}
       </div>
@@ -206,10 +224,13 @@ export function InitiativeCoverMediaField({
           source={cropSource}
           frame={INITIATIVE_COVER_CROP_FRAME}
           mask="rect"
-          ariaLabel="Initiative cover crop editor"
-          instructions="Drag the image to position it. Use Zoom to adjust framing — left zooms out, center is the default crop, right zooms in. The 16:9 frame matches the public Initiative cover."
-          saveLabel="Save Cover"
-          savingLabel="Saving Cover…"
+          ariaLabel={t("manage.cover.cropAria")}
+          instructions={t("manage.cover.cropInstructions")}
+          saveLabel={t("manage.cover.saveCover")}
+          savingLabel={t("manage.cover.savingCover")}
+          cancelLabel={t("manage.cover.cancelCrop")}
+          resetLabel={t("manage.cover.resetCrop")}
+          zoomHint={t("manage.cover.zoomHint")}
           outputWidth={INITIATIVE_COVER_OUTPUT_WIDTH}
           outputHeight={INITIATIVE_COVER_OUTPUT_HEIGHT}
           onCancel={closeCropEditor}
@@ -218,7 +239,7 @@ export function InitiativeCoverMediaField({
       ) : null}
 
       <fieldset className="initiative-cover-media-field__options">
-        <legend>Cover media type</legend>
+        <legend>{t("manage.cover.typeLegend")}</legend>
         <label>
           <input
             type="radio"
@@ -226,7 +247,7 @@ export function InitiativeCoverMediaField({
             checked={selectedOption === "image"}
             onChange={() => setSelectedOption("image")}
           />
-          Upload image
+          {t("manage.cover.uploadImage")}
         </label>
         <label>
           <input
@@ -235,7 +256,7 @@ export function InitiativeCoverMediaField({
             checked={selectedOption === "video_upload"}
             onChange={() => setSelectedOption("video_upload")}
           />
-          Upload video
+          {t("manage.cover.uploadVideo")}
         </label>
         <label>
           <input
@@ -244,7 +265,7 @@ export function InitiativeCoverMediaField({
             checked={selectedOption === "video_external"}
             onChange={() => setSelectedOption("video_external")}
           />
-          Add video link
+          {t("manage.cover.addVideoLink")}
         </label>
       </fieldset>
 
@@ -254,7 +275,7 @@ export function InitiativeCoverMediaField({
             ref={inputRef}
             type="file"
             accept={ACCEPTED_IMAGE_TYPES}
-            aria-label="Choose an image file"
+            aria-label={t("manage.cover.chooseImageFileAria")}
             className="initiative-cover-media-field__input"
             onChange={(event) => void handleFileSelected(event)}
           />
@@ -265,12 +286,14 @@ export function InitiativeCoverMediaField({
               disabled={busy || Boolean(cropSource)}
               onClick={() => inputRef.current?.click()}
             >
-              {coverMedia?.type === "image" ? "Replace Media" : "Choose Image"}
+              {coverMedia?.type === "image"
+                ? t("manage.cover.replaceMedia")
+                : t("manage.cover.chooseImage")}
             </button>
           </div>
           {onAltTextChange ? (
             <label className="initiative-cover-media-field__alt">
-              <span>Image alt text</span>
+              <span>{t("manage.cover.imageAltText")}</span>
               <input value={altText ?? ""} onChange={(event) => onAltTextChange(event.target.value)} />
             </label>
           ) : null}
@@ -279,21 +302,19 @@ export function InitiativeCoverMediaField({
 
       {selectedOption === "video_upload" ? (
         <p className="initiative-cover-media-field__notice" role="status">
-          Video upload is not available yet: automated safety scanning and processing for uploaded
-          video files has not been built. Please use <strong>Add video link</strong> with an approved
-          YouTube or Vimeo URL instead.
+          {t("manage.cover.videoUploadUnavailable")}
         </p>
       ) : null}
 
       {selectedOption === "video_external" ? (
         <div className="initiative-cover-media-field__panel">
           <label className="initiative-cover-media-field__video-link-field">
-            <span>Video link (YouTube or Vimeo, HTTPS only)</span>
+            <span>{t("manage.cover.videoLinkLabel")}</span>
             <input
               type="url"
               inputMode="url"
               value={videoUrlDraft}
-              placeholder="https://www.youtube.com/watch?v=…"
+              placeholder={t("manage.cover.videoLinkPlaceholder")}
               onChange={(event) => setVideoUrlDraft(event.target.value)}
             />
           </label>
@@ -304,7 +325,9 @@ export function InitiativeCoverMediaField({
               disabled={busy || !videoUrlDraft.trim()}
               onClick={() => void handleVideoLinkSubmit()}
             >
-              {coverMedia?.type === "video_external" ? "Replace Media" : "Add Video Link"}
+              {coverMedia?.type === "video_external"
+                ? t("manage.cover.replaceMedia")
+                : t("manage.cover.addVideoLinkAction")}
             </button>
           </div>
         </div>
@@ -318,12 +341,12 @@ export function InitiativeCoverMediaField({
             disabled={busy || Boolean(cropSource)}
             onClick={() => void handleRemove()}
           >
-            Remove Media
+            {t("manage.cover.removeMedia")}
           </button>
         </div>
       ) : null}
 
-      {busy ? <p className="initiative-cover-media-field__status">Working…</p> : null}
+      {busy ? <p className="initiative-cover-media-field__status">{t("manage.cover.working")}</p> : null}
       {error ? (
         <p className="initiative-cover-media-field__error" role="alert">
           {error}

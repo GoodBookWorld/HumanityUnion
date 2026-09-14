@@ -20,7 +20,7 @@ describe("Public Choice UX Pack 03 → Pack 04 migration", () => {
     const form = read("features/initiatives/components/InitiativeFormFields.tsx");
     assert.doesNotMatch(form, /Choose one candidate/);
     assert.doesNotMatch(form, /Ballot type/);
-    assert.match(form, /Create the election first|PUBLIC_CHOICE_ELECTION_CREATE_HELPER/);
+    assert.match(form, /manage\.fields\.electionCreateHelper|PUBLIC_CHOICE_ELECTION_CREATE_HELPER/);
   });
 
   it("Overview hosts candidate Select/Recall intake", () => {

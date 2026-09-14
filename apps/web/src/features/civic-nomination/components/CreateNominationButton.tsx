@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import type { CivicNominationInstitutionRole } from "@hu/types";
 
@@ -14,6 +15,7 @@ interface CreateNominationButtonProps {
 
 export function CreateNominationButton({ role }: CreateNominationButtonProps) {
   const router = useRouter();
+  const t = useTranslations("institutionsPublic");
   const authStatus = useClientAuthStatus();
   const formPath = civicNominationFormPath(role);
 
@@ -28,7 +30,7 @@ export function CreateNominationButton({ role }: CreateNominationButtonProps) {
 
   return (
     <Button type="button" variant="primary" onClick={handleClick}>
-      Create Nomination
+      {t("card.createNomination")}
     </Button>
   );
 }

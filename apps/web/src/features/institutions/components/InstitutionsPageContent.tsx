@@ -1,8 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system";
 import { PublicHomeCreateInitiativeCta } from "../../public-home-v2/components/PublicHomeCreateInitiativeCta";
-import { INSTITUTIONS_FOOTER, INSTITUTIONS_HERO } from "../constants";
+import { INSTITUTIONS_FOOTER } from "../constants";
 import { STANDARD_INSTITUTION_CARDS } from "../content";
 import { HpcWpcHierarchySection } from "./HpcWpcHierarchySection";
 import { InstitutionCard } from "./InstitutionCard";
@@ -31,6 +35,10 @@ const GRID_AFTER_WPC = STANDARD_INSTITUTION_CARDS.filter((record) =>
 );
 
 export function InstitutionsPageContent() {
+  const t = useTranslations("institutionsPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
+
   return (
     <main className="institutions-page">
       <section
@@ -38,13 +46,13 @@ export function InstitutionsPageContent() {
         aria-labelledby="institutions-hero-title"
       >
         <div className="institutions-section__inner">
-          <h1 id="institutions-hero-title">{INSTITUTIONS_HERO.headline}</h1>
-          <p className="institutions-hero__subheadline">{INSTITUTIONS_HERO.subheadline}</p>
+          <h1 id="institutions-hero-title">{t("headline")}</h1>
+          <p className="institutions-hero__subheadline">{t("subheadline")}</p>
           <div className="institutions-hero__banner" role="note">
-            <p>{INSTITUTIONS_HERO.banner}</p>
+            <p>{t("banner", siteName)}</p>
           </div>
           <div className="institutions-hero__actions">
-            <PublicHomeCreateInitiativeCta label={INSTITUTIONS_HERO.primaryCta.label} />
+            <PublicHomeCreateInitiativeCta label={t("primaryCta")} />
           </div>
         </div>
       </section>
@@ -58,12 +66,8 @@ export function InstitutionsPageContent() {
         aria-labelledby="institutions-grid-title"
       >
         <div className="institutions-section__inner">
-          <h2 id="institutions-grid-title">Proposed Institutions</h2>
-          <p className="institutions-grid-section__intro">
-            Each institution is presented as part of Humanity Union&apos;s proposed constitutional
-            model. Status badges indicate whether a body remains conceptual, under development, or
-            planned as a future institution.
-          </p>
+          <h2 id="institutions-grid-title">{t("gridTitle")}</h2>
+          <p className="institutions-grid-section__intro">{t("gridIntro", siteName)}</p>
 
           <div className="institutions-grid">
             {GRID_BEFORE_WPC.map((institution) => (
@@ -85,7 +89,7 @@ export function InstitutionsPageContent() {
         aria-labelledby="institutions-regional-title"
       >
         <div className="institutions-section__inner">
-          <h2 id="institutions-regional-title">Regional Offices</h2>
+          <h2 id="institutions-regional-title">{t("regionalTitle")}</h2>
           <div className="institutions-grid institutions-grid--after-wpc">
             {GRID_AFTER_WPC.map((institution) => (
               <InstitutionCard key={institution.id} institution={institution} />
@@ -102,19 +106,16 @@ export function InstitutionsPageContent() {
       >
         <div className="institutions-section__inner">
           <h2 id="institutions-footer-title" className="institutions-footer-statement__sr-only">
-            Closing statement
+            {t("footerClosingAria")}
           </h2>
-          {INSTITUTIONS_FOOTER.statement.split("\n").map((line) => (
-            <p key={line} className="institutions-footer-statement__line">
-              {line}
-            </p>
-          ))}
+          <p className="institutions-footer-statement__line">{t("footerStatementLine1")}</p>
+          <p className="institutions-footer-statement__line">{t("footerStatementLine2")}</p>
           <div className="institutions-footer-statement__actions">
             <Button href={INSTITUTIONS_FOOTER.primaryCta.href} variant="primary">
-              {INSTITUTIONS_FOOTER.primaryCta.label}
+              {t("footerPrimaryCta")}
             </Button>
             <Button href={INSTITUTIONS_FOOTER.secondaryCta.href} variant="secondary">
-              {INSTITUTIONS_FOOTER.secondaryCta.label}
+              {t("footerSecondaryCta")}
             </Button>
           </div>
         </div>

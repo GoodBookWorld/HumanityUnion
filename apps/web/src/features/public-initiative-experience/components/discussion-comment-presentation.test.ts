@@ -34,10 +34,12 @@ import {
   resolveCollaborationInvitationAcceptState,
   resolveCollaborationReviewActionState,
   resolveCollaborationStatusLabel,
+  resolveDiscussionChromeLabel,
   resolveFilterHeading,
   resolveInviteToAlliesActionState,
   resolveProposalActionState,
   resolveReadyToCollaborateActionState,
+  resolveStatusIndicatorKeys,
   resolveStatusIndicators,
 } from "./discussion-comment-presentation.js";
 
@@ -129,13 +131,14 @@ describe("Proposal action state (Parts 1, 6, 7)", () => {
     const state = resolveProposalActionState(buildCollaboration({ canMarkProposal: true }), false);
     assert.equal(state.visible, true);
     assert.equal(state.disabled, false);
-    assert.equal(state.label, "Proposal");
+    assert.equal(state.labelKey, "proposal");
+    assert.equal(resolveDiscussionChromeLabel(state.labelKey), "Proposal");
   });
 
   it("shows a busy label while the action is in flight", () => {
     const state = resolveProposalActionState(buildCollaboration({ canMarkProposal: true }), true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "Marking…");
+    assert.equal(state.labelKey, "marking");
   });
 
   it("stays visible but muted/disabled once already a candidate, using the 'Proposal Added' user-facing wording (never hidden, never the internal 'Proposal Candidate' label)", () => {
@@ -145,7 +148,8 @@ describe("Proposal action state (Parts 1, 6, 7)", () => {
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "✓ Proposal Added");
+    assert.equal(state.labelKey, "proposalAddedChecked");
+    assert.equal(resolveDiscussionChromeLabel(state.labelKey), "✓ Proposal Added");
   });
 
   it("is hidden when the viewer is not permitted to mark a Proposal at all", () => {
@@ -183,7 +187,7 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, false);
-    assert.equal(state.label, "Ready to Collaborate");
+    assert.equal(state.labelKey, "readyToCollaborate");
   });
 
   it("shows a disabled 'Ready to Collaborate' label once interest was already expressed", () => {
@@ -196,7 +200,7 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "Ready to Collaborate");
+    assert.equal(state.labelKey, "readyToCollaborate");
   });
 
   it("does not render Ready to Collaborate for invitation_pending (Accept/Decline instead)", () => {
@@ -217,7 +221,7 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "Ally");
+    assert.equal(state.labelKey, "ally");
   });
 
   it("is hidden for an unauthenticated / not-permitted viewer", () => {
@@ -314,7 +318,7 @@ describe("Invite to Allies action state (Parts 1, 6, 7, 10 — steward only)", (
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, false);
-    assert.equal(state.label, "Invite to Allies");
+    assert.equal(state.labelKey, "inviteToAllies");
   });
 
   it("shows a disabled 'Invitation Sent' label once invited (never hidden — duplicates impossible)", () => {
@@ -324,7 +328,7 @@ describe("Invite to Allies action state (Parts 1, 6, 7, 10 — steward only)", (
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "Invitation Sent");
+    assert.equal(state.labelKey, "invitationSent");
   });
 
   it("shows a disabled 'Ally' label once the author is an Ally", () => {
@@ -334,7 +338,7 @@ describe("Invite to Allies action state (Parts 1, 6, 7, 10 — steward only)", (
     );
     assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
-    assert.equal(state.label, "Ally");
+    assert.equal(state.labelKey, "ally");
   });
 });
 
@@ -552,7 +556,8 @@ describe("Action row order and icons (Part 6)", () => {
   it("every action has both an icon and a label (no icon-only buttons)", () => {
     for (const definition of DISCUSSION_ACTION_DEFINITIONS) {
       assert.ok(definition.icon.length > 0);
-      assert.ok(definition.label.length > 0);
+      assert.ok(definition.labelKey.length > 0);
+      assert.ok(resolveDiscussionChromeLabel(definition.labelKey).length > 0);
     }
   });
 });

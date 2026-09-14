@@ -122,6 +122,9 @@ function buildMessageView(
       messageId: message.messageId,
       type: "system_event",
       systemEventKind: message.systemEventKind,
+      ...(message.systemEventSubjectDisplayName !== undefined
+        ? { systemEventSubjectDisplayName: message.systemEventSubjectDisplayName }
+        : {}),
       text: message.text,
       createdAt: message.createdAt,
       isOwnMessage: false,
@@ -349,6 +352,9 @@ export async function postInitiativeCollaborationSystemEvent(
     initiativeId: input.initiativeId,
     type: "system_event",
     systemEventKind: input.kind,
+    ...(subjectIdentity?.displayName !== undefined
+      ? { systemEventSubjectDisplayName: subjectIdentity.displayName }
+      : {}),
     text: SYSTEM_EVENT_TEXT_BUILDERS[input.kind](subjectIdentity?.displayName),
     createdAt: nowIso(),
   };

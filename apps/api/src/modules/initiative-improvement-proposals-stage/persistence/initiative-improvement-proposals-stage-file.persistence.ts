@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import type { InitiativeImprovementProposalsCollection } from "@hu/types";
 
+import { extractPublicImprovementProposalIds } from "../extract-public-improvement-proposal-ids.js";
 import type { InitiativeImprovementProposalsStagePersistenceAdapter } from "./initiative-improvement-proposals-stage.types.js";
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -69,6 +70,33 @@ export class FileInitiativeImprovementProposalsStagePersistenceAdapter
     return Promise.resolve(collection ? structuredClone(collection) : null);
   }
 
+  findPublishedProposalById(
+    proposalId: string,
+  ): Promise<{
+    readonly collection: InitiativeImprovementProposalsCollection;
+    readonly proposal: InitiativeImprovementProposalsCollection["proposals"][number];
+  } | null> {
+    for (const collection of Object.values(this.load().collections)) {
+      if (collection.status !== "published") {
+        continue;
+      }
+      const proposal = collection.proposals.find((row) => row.proposalId === proposalId);
+      if (
+        proposal &&
+        (proposal.status === "published" ||
+          proposal.status === "included_in_revision" ||
+          proposal.status === "keep_for_later" ||
+          proposal.status === "not_applicable")
+      ) {
+        return Promise.resolve({
+          collection: structuredClone(collection),
+          proposal: structuredClone(proposal),
+        });
+      }
+    }
+    return Promise.resolve(null);
+  }
+
   listByInitiativeAndAuthor(
     initiativeId: string,
     authorId: string,
@@ -89,6 +117,30 @@ export class FileInitiativeImprovementProposalsStagePersistenceAdapter
         .filter((collection) => collection.initiativeId === initiativeId)
         .map((collection) => structuredClone(collection)),
     );
+  }
+
+  listPublishedProposalIdsPage(input: {
+    readonly limit: number;
+    readonly offset: number;
+  }): Promise<{
+    readonly proposalIds: readonly string[];
+    readonly collectionsReturned: number;
+    readonly hasMore: boolean;
+  }> {
+    const limit = Math.max(1, Math.floor(input.limit));
+    const offset = Math.max(0, Math.floor(input.offset));
+    const published = Object.values(this.load().collections)
+      .filter((collection) => collection.status === "published")
+      .sort((left, right) => left.collectionId.localeCompare(right.collectionId));
+    const page = published.slice(offset, offset + limit);
+    const proposalIds = page.flatMap((collection) =>
+      extractPublicImprovementProposalIds(collection.proposals),
+    );
+    return Promise.resolve({
+      proposalIds,
+      collectionsReturned: page.length,
+      hasMore: offset + page.length < published.length,
+    });
   }
 
   insert(collection: InitiativeImprovementProposalsCollection): Promise<void> {

@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { SharedDocumentContextRef, SharedDocumentVerificationStatus, SharedDocumentView } from "@hu/types";
 
@@ -40,12 +41,20 @@ const ALLOWED_EXTENSIONS = [
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const ACCEPT_ATTRIBUTE = ALLOWED_EXTENSIONS.join(",");
 
-const VERIFICATION_BADGE_LABEL: Record<SharedDocumentVerificationStatus, string> = {
-  approved: "Verified",
-  review_required: "Could not be automatically verified",
-  rejected: "Rejected",
-  malware_detected: "Blocked",
-};
+type DocumentsT = ReturnType<typeof useTranslations>;
+
+function verificationBadgeLabel(status: SharedDocumentVerificationStatus, t: DocumentsT): string {
+  switch (status) {
+    case "approved":
+      return t("documents.verified");
+    case "review_required":
+      return t("documents.reviewRequired");
+    case "rejected":
+      return t("documents.rejected");
+    case "malware_detected":
+      return t("documents.blocked");
+  }
+}
 
 /**
  * Part 4/14 — never a bare colored dot: every badge always pairs a
@@ -53,10 +62,12 @@ const VERIFICATION_BADGE_LABEL: Record<SharedDocumentVerificationStatus, string>
  * viewers get the same information as everyone else.
  */
 function SharedDocumentVerificationBadge({ status }: { status: SharedDocumentVerificationStatus }) {
+  const t = useTranslations("initiativeExperience");
+
   return (
     <span className={`sd-badge sd-badge--${status}`}>
       <span className="sd-badge__dot" aria-hidden="true" />
-      {VERIFICATION_BADGE_LABEL[status]}
+      {verificationBadgeLabel(status, t)}
     </span>
   );
 }
@@ -69,15 +80,15 @@ function SharedDocumentFileIcon({ extension }: { extension: string }) {
   );
 }
 
-function validateFileBeforeUpload(file: File): string | null {
+function validateFileBeforeUpload(file: File, t: DocumentsT): string | null {
   const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
 
   if (!ALLOWED_EXTENSIONS.includes(extension)) {
-    return "This file type is not supported. Allowed types: PDF, PNG, JPG, JPEG, WEBP, TXT, DOCX, XLSX, PPTX, ODT, ODS, ODP.";
+    return t("documents.unsupportedType");
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return "File exceeds the 20 MB size limit.";
+    return t("documents.sizeLimit");
   }
 
   return null;
@@ -109,7 +120,10 @@ type LoadState = "loading" | "ready" | "error";
  * per-surface reimplementation).
  */
 export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, SharedDocumentsPanelProps>(
-  function SharedDocumentsPanel({ context, title = "Shared Documents" }, forwardedRef) {
+  function SharedDocumentsPanel({ context, title }, forwardedRef) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+  const panelTitle = title ?? t("documents.title");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [documents, setDocuments] = useState<SharedDocumentView[]>([]);
@@ -143,11 +157,11 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
     } catch (error) {
       setLoadState("error");
       setErrorMessage(
-        error instanceof ApiRequestError ? error.message : "Unable to load Shared Documents. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("documents.loadFailed"),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextKey]);
+  }, [contextKey, t]);
 
   useEffect(() => {
     void load();
@@ -161,7 +175,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
       return;
     }
 
-    const clientError = validateFileBeforeUpload(file);
+    const clientError = validateFileBeforeUpload(file, t);
 
     if (clientError) {
       setUploadError(clientError);
@@ -174,10 +188,10 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
     try {
       const uploaded = await uploadSharedDocument(context, file);
       setDocuments((current) => [uploaded, ...current]);
-      setStatusMessage(`${uploaded.fileName} uploaded.`);
+      setStatusMessage(t("documents.uploaded", { fileName: uploaded.fileName }));
     } catch (error) {
       setUploadError(
-        error instanceof ApiRequestError ? error.message : "Unable to upload this file. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("documents.uploadFailed"),
       );
     } finally {
       setUploading(false);
@@ -194,7 +208,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
       return;
     }
 
-    const clientError = validateFileBeforeUpload(file);
+    const clientError = validateFileBeforeUpload(file, t);
 
     if (clientError) {
       setUploadError(clientError);
@@ -207,10 +221,10 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
     try {
       const replaced = await replaceSharedDocument(context, documentId, file);
       setDocuments((current) => current.map((doc) => (doc.documentId === documentId ? replaced : doc)));
-      setStatusMessage(`${replaced.fileName} replaced with a new version.`);
+      setStatusMessage(t("documents.replaced", { fileName: replaced.fileName }));
     } catch (error) {
       setUploadError(
-        error instanceof ApiRequestError ? error.message : "Unable to replace this document. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("documents.replaceFailed"),
       );
     } finally {
       setBusyDocumentId(null);
@@ -234,7 +248,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
   );
 
   async function handleRemove(document: SharedDocumentView) {
-    if (!window.confirm(`Remove "${document.fileName}"? This cannot be undone.`)) {
+    if (!window.confirm(t("documents.confirmRemove", { fileName: document.fileName }))) {
       return;
     }
 
@@ -244,10 +258,10 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
     try {
       await removeSharedDocument(context, document.documentId);
       setDocuments((current) => current.filter((doc) => doc.documentId !== document.documentId));
-      setStatusMessage(`${document.fileName} removed.`);
+      setStatusMessage(t("documents.removed", { fileName: document.fileName }));
     } catch (error) {
       setUploadError(
-        error instanceof ApiRequestError ? error.message : "Unable to remove this document. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("documents.removeFailed"),
       );
     } finally {
       setBusyDocumentId(null);
@@ -262,7 +276,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
       await downloadSharedDocument(context, document.documentId, document.fileName);
     } catch (error) {
       setUploadError(
-        error instanceof ApiRequestError ? error.message : "Unable to download this document. Please try again.",
+        error instanceof ApiRequestError ? error.message : t("documents.downloadFailed"),
       );
     } finally {
       setBusyDocumentId(null);
@@ -279,7 +293,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
         onClick={() => setExpanded((current) => !current)}
       >
         <span id={`${inputId}-title`} className="sd-panel__title">
-          {title}
+          {panelTitle}
           {documents.length > 0 ? <span className="sd-panel__count">{documents.length}</span> : null}
         </span>
         <span className="sd-panel__toggle-icon" aria-hidden="true">
@@ -290,7 +304,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
       <div id={`${inputId}-body`} className="sd-panel__body" hidden={!expanded}>
         <div className="sd-panel__actions">
           <label htmlFor={`${inputId}-upload`} className="hu-button hu-button--secondary sd-panel__upload-label">
-            {uploading ? "Uploading…" : "Upload document"}
+            {uploading ? t("documents.uploading") : t("documents.upload")}
           </label>
           <input
             id={`${inputId}-upload`}
@@ -301,7 +315,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
             disabled={uploading}
             onChange={(event) => void handleUploadInputChange(event)}
           />
-          <p className="sd-panel__hint">PDF, images, or office documents up to 20 MB.</p>
+          <p className="sd-panel__hint">{t("documents.hint")}</p>
         </div>
 
         <input
@@ -326,7 +340,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
 
         {loadState === "loading" && documents.length === 0 ? (
           <p className="sd-panel__status" role="status">
-            Loading Shared Documents…
+            {t("documents.loading")}
           </p>
         ) : null}
 
@@ -338,7 +352,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
 
         {loadState !== "loading" || documents.length > 0 ? (
           documents.length === 0 ? (
-            <p className="sd-panel__status">No documents shared yet.</p>
+            <p className="sd-panel__status">{t("documents.empty")}</p>
           ) : (
             <ul className="sd-list">
               {documents.map((document) => (
@@ -351,7 +365,7 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
                       <span aria-hidden="true">·</span>
                       <span>{document.uploadedBy.displayName}</span>
                       <span aria-hidden="true">·</span>
-                      <span>{formatSharedDocumentTimestamp(document.uploadedAt)}</span>
+                      <span>{formatSharedDocumentTimestamp(locale, document.uploadedAt)}</span>
                     </span>
                     <SharedDocumentVerificationBadge status={document.verificationStatus} />
                   </div>
@@ -362,9 +376,9 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
                         className="sd-list__action-button"
                         disabled={busyDocumentId === document.documentId}
                         onClick={() => void handleDownload(document)}
-                        aria-label={`Download ${document.fileName}`}
+                        aria-label={t("documents.downloadAria", { fileName: document.fileName })}
                       >
-                        Download
+                        {t("documents.download")}
                       </button>
                     ) : null}
                     {document.canManage ? (
@@ -374,18 +388,18 @@ export const SharedDocumentsPanel = forwardRef<SharedDocumentsPanelHandle, Share
                           className="sd-list__action-button"
                           disabled={busyDocumentId === document.documentId}
                           onClick={() => requestReplace(document.documentId)}
-                          aria-label={`Replace ${document.fileName} with a new version`}
+                          aria-label={t("documents.replaceAria", { fileName: document.fileName })}
                         >
-                          Replace
+                          {t("documents.replace")}
                         </button>
                         <button
                           type="button"
                           className="sd-list__action-button sd-list__action-button--danger"
                           disabled={busyDocumentId === document.documentId}
                           onClick={() => void handleRemove(document)}
-                          aria-label={`Remove ${document.fileName}`}
+                          aria-label={t("documents.removeAria", { fileName: document.fileName })}
                         >
-                          Remove
+                          {t("documents.remove")}
                         </button>
                       </>
                     ) : null}

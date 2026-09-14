@@ -96,13 +96,20 @@ export function toCountryInitiativeCardProjection(
     title: initiative.title,
     summary: summarizeText(initiative.description),
     activityArea,
+    // GEOGRAPHY authority: codes only. For PUBLIC_CHOICE, communityAssociation is
+    // election name (MACHINE_CONTENT), not a city — never mix into geographyLabel.
     geographyLabel: formatPublicGeography({
       countryCode: initiative.metadata.countrySlug,
       regionCode: initiative.metadata.regionSlug,
       communitySlug: initiative.metadata.communitySlug,
       regionLabel: initiative.metadata.region,
-      communityAssociation: initiative.metadata.communityAssociation,
+      ...(isPublicChoice
+        ? {}
+        : { communityAssociation: initiative.metadata.communityAssociation }),
     }),
+    countryCode: initiative.metadata.countrySlug,
+    regionCode: initiative.metadata.regionSlug,
+    communitySlug: initiative.metadata.communitySlug,
     imageUrl: initiative.metadata.imageUrl,
     coverMedia: resolveInitiativeCoverMedia(initiative.metadata),
     startDate: initiative.metadata.startDate,
@@ -115,7 +122,13 @@ export function toCountryInitiativeCardProjection(
     administrativelyBlocked: isPublicChoice
       ? isInitiativeAdministrativelyBlocked(initiative)
       : undefined,
-    ...(isPublicChoice ? resolveElectionVotingFields(initiative) : {}),
+    ...(isPublicChoice
+      ? {
+          ...resolveElectionVotingFields(initiative),
+          electionName:
+            initiative.metadata.communityAssociation?.trim() || undefined,
+        }
+      : {}),
   };
 }
 

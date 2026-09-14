@@ -121,6 +121,11 @@ export interface StripeSanitizationFieldPlan {
 export interface MediaPlanItem {
   sourceStorageKey: string | null;
   publicPrivate: "public" | "private" | "unknown";
+  /**
+   * Only `canonical_media_record` may authoritatively resolve unknown visibility
+   * during storageKey collapse. Initiative URL refs and path heuristics are `none`.
+   */
+  visibilityAuthority: "canonical_media_record" | "none";
   owningInitiativeId: string | null;
   mediaUploadRecordPresent: boolean;
   sourceUrlHost: string | null;
@@ -130,6 +135,24 @@ export interface MediaPlanItem {
   sourceCollection: string;
   recordId: string | null;
   ownerIsSystemMediaRecovery: boolean;
+  /** Sanitized purpose from media_upload_records when present (never PII). */
+  mediaPurpose: string | null;
+}
+
+export interface PlannedMediaCopy {
+  storageKey: string;
+  destinationUrl: string;
+  publicPrivate: "public" | "private" | "unknown";
+  owningInitiativeId: string | null;
+  sourceCollections: string[];
+  destinationAction: MediaDestinationAction;
+}
+
+export interface ObjectIntegrityFingerprint {
+  contentLength: number;
+  etag: string | null;
+  contentType: string | null;
+  checksumSHA256: string | null;
 }
 
 export interface ProjectionPlanRow {

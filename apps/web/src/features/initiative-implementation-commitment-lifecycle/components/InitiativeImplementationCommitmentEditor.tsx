@@ -15,7 +15,9 @@ import {
   setLifecycleAiDraftExcerpt,
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
-import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolveCommitmentCandidateStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeImplementationCommitmentDraft,
@@ -32,6 +34,10 @@ function linesToList(value: string): string[] {
 
 function listToLines(values: readonly string[]): string {
   return values.join("\n");
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 interface CandidateFormState {
@@ -96,6 +102,8 @@ export function InitiativeImplementationCommitmentEditor({
   onTogglePreview,
   onNavigate,
 }: InitiativeImplementationCommitmentEditorProps) {
+  const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [summary, setSummary] = useState(draft.summary);
   const [candidates, setCandidates] = useState<CandidateFormState[]>(
@@ -160,9 +168,7 @@ export function InitiativeImplementationCommitmentEditor({
       setTitle(result.packageFields.title);
       setSummary(result.packageFields.summary);
       setCandidates(result.candidates);
-      setApplyNotice(
-        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
-      );
+      setApplyNotice(t("author.commitment.messages.aiApplied"));
       setError(null);
     }
 
@@ -170,7 +176,7 @@ export function InitiativeImplementationCommitmentEditor({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [initiativeId, title, summary, candidates]);
+  }, [initiativeId, title, summary, candidates, t]);
 
   function updateCandidate(candidateId: string, patch: Partial<CandidateFormState>) {
     setCandidates((current) =>
@@ -200,7 +206,11 @@ export function InitiativeImplementationCommitmentEditor({
       setCandidates(generated.candidates.map((candidate) => toFormState(candidate)));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.commitment.messages.generateFailed", {
+          detail: detailFromError(err, t("author.commitment.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -212,7 +222,11 @@ export function InitiativeImplementationCommitmentEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.commitment.messages.saveFailed", {
+          detail: detailFromError(err, t("author.commitment.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -226,18 +240,22 @@ export function InitiativeImplementationCommitmentEditor({
       setPublished(true);
       onPublished(pkg);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.commitment.messages.publishFailed", {
+          detail: detailFromError(err, t("author.commitment.messages.unknownError")),
+        }),
+      );
     }
   }
 
   return (
     <div className="iic-editor">
       <div className="iic-editor__field">
-        <label htmlFor="iic-title">Title</label>
+        <label htmlFor="iic-title">{t("author.commitment.fields.title")}</label>
         <input id="iic-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
       <div className="iic-editor__field">
-        <label htmlFor="iic-summary">Summary</label>
+        <label htmlFor="iic-summary">{t("author.commitment.fields.summary")}</label>
         <textarea
           id="iic-summary"
           rows={3}
@@ -247,21 +265,25 @@ export function InitiativeImplementationCommitmentEditor({
       </div>
 
       {candidates.length === 0 ? (
-        <p className="iic-source-panel__empty">
-          No Commitment Candidates yet. Generate a draft from the published Collective Decision&rsquo;s
-          Approved Actions.
-        </p>
+        <p className="iic-source-panel__empty">{t("author.commitment.noCandidatesYet")}</p>
       ) : (
         candidates.map((candidate, index) => (
           <div className="iic-candidate" key={candidate.candidateId}>
             <div className="iic-candidate__header">
               <h4 className="iic-candidate__title">
-                Action {index + 1}: {candidate.approvedAction}
+                {t("author.commitment.actionHeading", {
+                  number: index + 1,
+                  action: candidate.approvedAction,
+                })}
               </h4>
-              <span className="iic-candidate__status">draft</span>
+              <span className="iic-candidate__status">
+                {resolveCommitmentCandidateStatusDisplayLabel("draft", t)}
+              </span>
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-description-${candidate.candidateId}`}>Description</label>
+              <label htmlFor={`iic-description-${candidate.candidateId}`}>
+                {t("author.commitment.fields.description")}
+              </label>
               <textarea
                 id={`iic-description-${candidate.candidateId}`}
                 rows={2}
@@ -272,7 +294,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-role-${candidate.candidateId}`}>Suggested Responsible Role</label>
+              <label htmlFor={`iic-role-${candidate.candidateId}`}>
+                {t("author.commitment.fields.suggestedResponsibleRole")}
+              </label>
               <input
                 id={`iic-role-${candidate.candidateId}`}
                 value={candidate.suggestedResponsibleRole}
@@ -282,7 +306,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-timeline-${candidate.candidateId}`}>Suggested Timeline</label>
+              <label htmlFor={`iic-timeline-${candidate.candidateId}`}>
+                {t("author.commitment.fields.suggestedTimeline")}
+              </label>
               <input
                 id={`iic-timeline-${candidate.candidateId}`}
                 value={candidate.suggestedTimeline}
@@ -292,7 +318,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-priority-${candidate.candidateId}`}>Priority</label>
+              <label htmlFor={`iic-priority-${candidate.candidateId}`}>
+                {t("author.commitment.fields.priority")}
+              </label>
               <input
                 id={`iic-priority-${candidate.candidateId}`}
                 value={candidate.priority}
@@ -300,7 +328,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-resources-${candidate.candidateId}`}>Required Resources (one per line)</label>
+              <label htmlFor={`iic-resources-${candidate.candidateId}`}>
+                {t("author.commitment.fields.requiredResources")}
+              </label>
               <textarea
                 id={`iic-resources-${candidate.candidateId}`}
                 rows={2}
@@ -311,7 +341,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-risks-${candidate.candidateId}`}>Related Risks (one per line)</label>
+              <label htmlFor={`iic-risks-${candidate.candidateId}`}>
+                {t("author.commitment.fields.relatedRisks")}
+              </label>
               <textarea
                 id={`iic-risks-${candidate.candidateId}`}
                 rows={2}
@@ -322,7 +354,9 @@ export function InitiativeImplementationCommitmentEditor({
               />
             </div>
             <div className="iic-editor__field">
-              <label htmlFor={`iic-references-${candidate.candidateId}`}>References (one per line)</label>
+              <label htmlFor={`iic-references-${candidate.candidateId}`}>
+                {t("author.commitment.fields.references")}
+              </label>
               <textarea
                 id={`iic-references-${candidate.candidateId}`}
                 rows={2}
@@ -334,12 +368,12 @@ export function InitiativeImplementationCommitmentEditor({
             </div>
             <div className="iic-editor__field">
               <label htmlFor={`iic-participant-${candidate.candidateId}`}>
-                Proposed Participant ID (optional)
+                {t("author.commitment.fields.proposedParticipantId")}
               </label>
               <input
                 id={`iic-participant-${candidate.candidateId}`}
                 value={candidate.proposedParticipantId}
-                placeholder="Leave empty to publish unassigned"
+                placeholder={t("author.commitment.fields.proposedParticipantPlaceholder")}
                 onChange={(event) =>
                   updateCandidate(candidate.candidateId, { proposedParticipantId: event.target.value })
                 }
@@ -354,23 +388,21 @@ export function InitiativeImplementationCommitmentEditor({
 
       <div className="iic-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, t("author.commitment.generateCommitmentsDraft"))}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {actions.saveLabel(publishPhase.phase, actions.publish)}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton
             variant="secondary"
             onClick={() => onNavigate("tracking", "implementation-tracking")}
           >
-            Open Implementation Tracking
+            {t("author.commitment.openImplementationTracking")}
           </WorkspaceButton>
         ) : null}
       </div>

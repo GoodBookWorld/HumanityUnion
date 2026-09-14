@@ -1,17 +1,53 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import {
+  MediaSemanticNode,
+  type MediaSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
+
 interface PublicNewsAiSummaryProps {
   bullets: string[];
+  entityResult?: MediaSemanticResult;
+  entityId?: string;
+  /** Reset 03E.11 — PLP fallback reason for summary leaves. */
+  fallbackReason?: string;
 }
 
-export function PublicNewsAiSummary({ bullets }: PublicNewsAiSummaryProps) {
+export function PublicNewsAiSummary({
+  bullets,
+  entityResult,
+  entityId,
+  fallbackReason,
+}: PublicNewsAiSummaryProps) {
+  const t = useTranslations("publicNews.card");
+
   if (bullets.length === 0) {
     return null;
   }
 
   return (
-    <section className="public-news-card__ai-summary" aria-label="AI summary">
+    <section className="public-news-card__ai-summary" aria-label={t("aiSummaryAria")}>
       <ul className="public-news-card__ai-summary-list">
         {bullets.map((bullet) => (
-          <li key={bullet}>{bullet}</li>
+          <li key={bullet}>
+            {entityResult && entityId ? (
+              <MediaSemanticNode
+                as="span"
+                owner="PLP_ENTITY"
+                result={entityResult}
+                entityType="public_news"
+                entityId={entityId}
+                semanticPath="summary"
+                fallbackReason={fallbackReason}
+              >
+                {bullet}
+              </MediaSemanticNode>
+            ) : (
+              bullet
+            )}
+          </li>
         ))}
       </ul>
     </section>

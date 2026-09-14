@@ -14,7 +14,7 @@ export function buildDefaultMemberPreferences(input: {
       interfaceLanguage: "en",
       readingLanguages: ["en"],
       writingLanguages: ["en"],
-      translationPreference: "none",
+      translationPreference: "preferred",
       timeZone: "UTC",
       dateFormat: "YYYY-MM-DD",
       timeFormat: "24h",

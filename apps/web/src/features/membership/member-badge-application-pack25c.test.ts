@@ -24,8 +24,9 @@ describe("Pack 25C — Member Badge Application Checkout web", () => {
 
   it("14 — widget can show Paid / Awaiting fulfillment", () => {
     const widget = read("features/membership/components/MemberBadgeApplicationWidget.tsx");
-    assert.match(widget, /Paid/);
-    assert.match(widget, /Awaiting fulfillment/);
+    assert.match(widget, /badgeApplication\.paymentStatus\./);
+    assert.match(widget, /badgeApplication\.fulfillmentStatus\./);
+    assert.match(widget, /awaiting_fulfillment/);
     assert.match(widget, /paymentStatus === "unpaid"/);
   });
 

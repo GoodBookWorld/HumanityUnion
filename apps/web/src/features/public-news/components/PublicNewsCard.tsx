@@ -1,9 +1,19 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
+import {
+  isMediaRegistryCategory,
+  mediaRegistryCategoryMessageKey,
+} from "@hu/types";
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { MediaLogo } from "../../civic-media-center/components/MediaLogo";
+import {
+  MediaSemanticNode,
+  type MediaSemanticOwner,
+  type MediaSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   buildCreateInitiativeFromNewsHref,
@@ -11,16 +21,27 @@ import {
 } from "../api";
 import { buildNewsAiSummaryBullets } from "../public-news-initiative-discovery.utils";
 import { formatNewsRelativeTime, resolveProviderPresentation } from "../public-news-discovery.utils";
+import { useLocalizedPublicNewsCard } from "../use-localized-public-news-card";
 import { PublicNewsAiSummary } from "./PublicNewsAiSummary";
 import { PublicNewsCardImage } from "./PublicNewsCardImage";
 import { PublicNewsRelatedInitiatives } from "./PublicNewsRelatedInitiatives";
 
 interface PublicNewsCardProps {
   article: PublicNewsArticleItem;
+  /** Reset 03E — Media PLP path: never generate-on-read. */
+  disableOnDemandTranslation?: boolean;
+  /** Reset 03E.5 — resolved Media PLP presentation for this article (must include locale). */
+  plpPresentation?: {
+    readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+    readonly presentation: unknown;
+    readonly locale?: string;
+    readonly reasonCode?: string;
+  };
 }
 
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
   const authStatus = useClientAuthStatus();
+  const t = useTranslations("publicNews.card");
   const href =
     authStatus === "authenticated"
       ? buildCreateInitiativeFromNewsHref(newsId)
@@ -29,35 +50,88 @@ function CreateInitiativeLink({ newsId }: { newsId: string }) {
   if (authStatus === "pending") {
     return (
       <span className="public-news-card__button public-news-card__button--primary" aria-hidden="true">
-        Loading…
+        <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("loading")}
+        </MediaSemanticNode>
       </span>
     );
   }
 
   return (
     <a className="public-news-card__button public-news-card__button--primary" href={href}>
-      Create Initiative
+      <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        {t("createInitiative")}
+      </MediaSemanticNode>
     </a>
   );
 }
 
-export function PublicNewsCard({ article }: PublicNewsCardProps) {
-  const provider = resolveProviderPresentation(article.sourceName);
-  const publishedLabel = formatNewsRelativeTime(article.publishedAt);
+/**
+ * Pack 08K.3 — shared public-news-card.
+ * Semantic fields render from PublicLocalizedPresentation only.
+ */
+export function PublicNewsCard({
+  article,
+  disableOnDemandTranslation = false,
+  plpPresentation,
+}: PublicNewsCardProps) {
+  const locale = useLocale();
+  const t = useTranslations("publicNews.card");
+  const tCategories = useTranslations("publicNews.categories");
+  const view = useLocalizedPublicNewsCard(article, {
+    skipClientTranslation: disableOnDemandTranslation || plpPresentation != null,
+    plpPresentation,
+  });
+  const provider = resolveProviderPresentation(view.sourceName);
+  const publishedLabel = formatNewsRelativeTime(view.publishedAt, locale);
   const aiSummaryBullets = useMemo(
-    () => buildNewsAiSummaryBullets(article.title, article.summary).slice(0, 3),
-    [article.summary, article.title],
+    () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),
+    [view.summary, view.title],
   );
+  const proseOwner: MediaSemanticOwner = "PLP_ENTITY";
+  const proseResult: MediaSemanticResult =
+    view.plpResult === "PUBLISHED_LOCALIZED" ? "PUBLISHED_LOCALIZED" : "CANONICAL_FALLBACK";
+  const proseFallbackReason =
+    view.plpResult === "CANONICAL_FALLBACK"
+      ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
+      : undefined;
+
+  const categoryKey = view.category.trim();
+  let categoryLabel = categoryKey;
+  let categoryOwner: MediaSemanticOwner = "PROTECTED_CANONICAL";
+  let categoryResult: MediaSemanticResult = "PROTECTED_CANONICAL";
+  let categoryMessageKey: string | undefined;
+  if (categoryKey && isMediaRegistryCategory(categoryKey)) {
+    const messageKey = mediaRegistryCategoryMessageKey(categoryKey);
+    categoryLabel = tCategories(messageKey);
+    categoryOwner = "UI_DICTIONARY";
+    categoryResult = "LOCALIZED_DICTIONARY";
+    categoryMessageKey = `publicNews.categories.${messageKey}`;
+  }
 
   return (
-    <article className="public-news-card" aria-labelledby={`public-news-title-${article.id}`}>
+    <article
+      className="public-news-card"
+      aria-labelledby={`public-news-title-${view.id}`}
+      data-hu-surface="public-news-card"
+      data-hu-coverage={view.coverage.status}
+      data-hu-fallback-nodes={String(view.coverage.canonicalFallbackNodeCount)}
+    >
       <div className="public-news-card__header">
-        {article.category ? (
-          <span className="public-news-card__badge">{article.category}</span>
+        {categoryKey ? (
+          <MediaSemanticNode
+            as="span"
+            className="public-news-card__badge"
+            owner={categoryOwner}
+            result={categoryResult}
+            messageKey={categoryMessageKey}
+          >
+            {categoryLabel}
+          </MediaSemanticNode>
         ) : null}
         <div className="public-news-card__provider">
           <MediaLogo
-            name={article.sourceName}
+            name={view.sourceName}
             logoUrl={provider.logoUrl}
             logoLabel={provider.logoLabel}
             className="public-news-card__logo-fallback"
@@ -66,36 +140,67 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
             height={28}
           />
           <div className="public-news-card__provider-copy">
-            <p className="public-news-card__provider-name">{article.sourceName}</p>
+            <MediaSemanticNode
+              as="p"
+              className="public-news-card__provider-name"
+              owner="PROTECTED_CANONICAL"
+              result="PROTECTED_CANONICAL"
+            >
+              {view.sourceName}
+            </MediaSemanticNode>
             <p className="public-news-card__published">
-              <time dateTime={article.publishedAt}>{publishedLabel}</time>
+              <MediaSemanticNode
+                as="time"
+                dateTime={view.publishedAt}
+                owner="PROTECTED_CANONICAL"
+                result="PROTECTED_CANONICAL"
+              >
+                {publishedLabel}
+              </MediaSemanticNode>
             </p>
           </div>
         </div>
       </div>
 
       <div className="public-news-card__media">
-        <PublicNewsCardImage title={article.title} imageUrl={article.imageUrl} />
+        <PublicNewsCardImage title={view.title} imageUrl={view.imageUrl} />
       </div>
 
       <div className="public-news-card__body">
-        <h3 id={`public-news-title-${article.id}`} className="public-news-card__headline">
-          {article.title}
-        </h3>
+        <MediaSemanticNode
+          as="h3"
+          id={`public-news-title-${view.id}`}
+          className="public-news-card__headline"
+          owner={proseOwner}
+          result={proseResult}
+          entityType="public_news"
+          entityId={view.id}
+          semanticPath="title"
+          fallbackReason={proseFallbackReason}
+        >
+          {view.title}
+        </MediaSemanticNode>
 
-        <PublicNewsAiSummary bullets={aiSummaryBullets} />
+        <PublicNewsAiSummary
+          bullets={aiSummaryBullets}
+          entityResult={proseResult}
+          entityId={view.id}
+          fallbackReason={proseFallbackReason}
+        />
 
         <div className="public-news-card__actions">
           <a
-            href={article.articleUrl}
+            href={view.articleUrl}
             className="public-news-card__button public-news-card__button--secondary"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Read original article: ${article.title} (opens in new tab)`}
+            aria-label={t("readOriginalAria", { title: view.title })}
           >
-            Read Original
+            <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("readOriginal")}
+            </MediaSemanticNode>
           </a>
-          <CreateInitiativeLink newsId={article.id} />
+          <CreateInitiativeLink newsId={view.id} />
         </div>
 
         <PublicNewsRelatedInitiatives article={article} />

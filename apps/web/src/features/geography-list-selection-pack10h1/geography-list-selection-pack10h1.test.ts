@@ -41,9 +41,9 @@ describe("Pack 10H1 — city list browseable selection", () => {
     const city = readWeb("features/geography-integrity/CitySelect.tsx");
     assert.doesNotMatch(city, /requireSearch/);
     assert.doesNotMatch(city, /CITY_REQUIRE_SEARCH_ABOVE/);
-    assert.match(city, /formatCityListHelper/);
+    assert.match(city, /manage\.geography\.citiesAvailable/);
     assert.match(city, /emptyOptionLabel/);
-    assert.match(city, /All communities/);
+    assert.match(city, /manage\.geography\.allCommunities/);
   });
 
   it("GeographySearchSelect opens a browseable listbox with optional filter", () => {
@@ -73,9 +73,9 @@ describe("Pack 10H1 — city list browseable selection", () => {
 
   it("Preferences keeps multi-select with browseable cities and clearer copy", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
-    assert.match(preferred, /Add preferred cities/);
-    assert.doesNotMatch(preferred, /Add preferred region/);
-    assert.match(preferred, /from multiple regions/);
+    assert.match(preferred, /geography\.addPreferredRegion|addPreferredRegion/);
+    assert.doesNotMatch(preferred, /"Add preferred region"/);
+    assert.match(preferred, /citiesMultiRegionHelp/);
     assert.match(preferred, /GeographyMultiSelect/);
     assert.doesNotMatch(preferred, /requireSearch/);
   });

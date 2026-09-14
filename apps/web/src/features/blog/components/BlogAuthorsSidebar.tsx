@@ -2,13 +2,70 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { fetchPublicBlogAuthors } from "../api";
+import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+
+function AuthorLatestPublicationTitle({
+  postId,
+  canonicalTitle,
+}: {
+  postId: string;
+  canonicalTitle: string;
+}) {
+  const locale = useLocale();
+  const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const [displayTitle, setDisplayTitle] = useState(canonicalTitle);
+
+  useEffect(() => {
+    setDisplayTitle(canonicalTitle);
+  }, [postId, canonicalTitle]);
+
+  useEffect(() => {
+    if (!readingContext.ready) {
+      return;
+    }
+
+    let cancelled = false;
+    void resolveBlogPostPresentation({
+      postId,
+      canonical: {
+        title: canonicalTitle,
+        excerpt: "",
+        contentHtml: "",
+      },
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
+    }).then((presentation) => {
+      if (!cancelled) {
+        setDisplayTitle(presentation.title);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    postId,
+    canonicalTitle,
+    readingContext.ready,
+    displayLanguage,
+    readingContext.translationPreference,
+  ]);
+
+  return <>{displayTitle || canonicalTitle}</>;
+}
 
 export function BlogAuthorsSidebar() {
+  const t = useTranslations("blogPublic.discovery.authors");
   const [authors, setAuthors] = useState<readonly PublicBlogAuthorDirectoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,12 +94,10 @@ export function BlogAuthorsSidebar() {
   return (
     <section className="blog-rail-widget" aria-labelledby="blog-authors-heading">
       <h2 id="blog-authors-heading" className="hu-heading-4 blog-rail-widget__title">
-        Authors
+        {t("heading")}
       </h2>
-      {loading ? <p className="hu-caption">Loading authors…</p> : null}
-      {!loading && authors.length === 0 ? (
-        <p className="hu-caption">No published authors yet.</p>
-      ) : null}
+      {loading ? <p className="hu-caption">{t("loading")}</p> : null}
+      {!loading && authors.length === 0 ? <p className="hu-caption">{t("empty")}</p> : null}
       {!loading && authors.length > 0 ? (
         <ul className="blog-authors-list">
           {authors.map((entry) => {
@@ -63,8 +118,12 @@ export function BlogAuthorsSidebar() {
                     </div>
                   )}
                 </div>
+                <p className="blog-authors-list__latest-label hu-caption">{t("latestLabel")}</p>
                 <Link href={publicationHref} className="blog-authors-list__latest">
-                  {entry.latestPublication.title}
+                  <AuthorLatestPublicationTitle
+                    postId={entry.latestPublication.postId}
+                    canonicalTitle={entry.latestPublication.title}
+                  />
                 </Link>
               </li>
             );

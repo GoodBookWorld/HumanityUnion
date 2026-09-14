@@ -22,7 +22,9 @@ export type { OpenHumanityUnionAssistantInput } from "./assistant-context";
 export {
   resolveAssistantLaunchContext,
   assistantWidgetCopy,
+  assistantWidgetCopyKey,
 } from "./resolve-assistant-surface";
+export { resolveAssistantPresentation } from "./resolve-assistant-presentation";
 export {
   loadAssistantBrowserSession,
   startNewAssistantConversation,

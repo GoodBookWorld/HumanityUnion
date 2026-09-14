@@ -3,16 +3,25 @@
  *
  * Quote underlay + honeycomb mask + foreground signal points (no WebGL).
  * Quote lines stay visually stable; the 12s cycle coordinates mask phases only.
+ *
+ * Pack 08I.3 — English quote ownership lives in Brand Localization canonical fallback.
+ * These exports remain for visual tests / English composition fixtures only — the mounted
+ * hero resolves via useLocalizedBrand().heroUnityQuote (no second active UI source).
  */
 
-export const HUMANITY_UNITY_QUOTE_LINES = [
-  "Over time,",
-  "love and responsibility",
-  "forge humanity",
-] as const;
+import {
+  CANONICAL_ENGLISH_BRAND_FALLBACK,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE_LINES,
+  accessibleHeroUnityQuote,
+} from "@hu/types";
 
-/** Full accessible phrase (single string for screen readers / translations). */
-export const HUMANITY_UNITY_QUOTE = HUMANITY_UNITY_QUOTE_LINES.join(" ");
+export const HUMANITY_UNITY_QUOTE_LINES = CANONICAL_ENGLISH_HERO_UNITY_QUOTE_LINES;
+
+/** Full accessible phrase (single string for screen readers / fixtures). */
+export const HUMANITY_UNITY_QUOTE =
+  accessibleHeroUnityQuote(CANONICAL_ENGLISH_BRAND_FALLBACK.heroUnityQuote) ||
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE;
 
 /** Platform primary — matches `--hu-color-primary`. */
 export const HUMANITY_UNITY_BLUE = "#0174b0";

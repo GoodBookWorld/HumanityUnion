@@ -251,18 +251,20 @@ describe("SEO Pack 01 — buildPublicPageMetadata", () => {
 });
 
 describe("SEO Pack 01 — route migration and Country readiness", () => {
-  it("Blog generateMetadata uses shared builder and preserves Blog brand suffix", () => {
+  it("Blog generateMetadata uses shared request-aware builder and preserves Blog brand suffix", () => {
     const page = readWeb("app/blog/[slug]/page.tsx");
-    assert.match(page, /buildPublicPageMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
+    assert.match(page, /loadBlogMetadataTranslationFields/);
     assert.match(page, /titleBrandSuffix:\s*"Blog \| Humanity Union"/);
     assert.match(page, /seo\?\.title|seo\?\.description|seo\?\.socialTitle|seo\?\.canonicalPath/);
     assert.match(page, /openGraphType:\s*"article"/);
     assert.doesNotMatch(page, /resolveSiteOrigin/);
+    assert.doesNotMatch(page, /generateContentTranslation/);
   });
 
-  it("Initiative generateMetadata uses shared builder", () => {
+  it("Initiative generateMetadata uses shared request-aware builder", () => {
     const page = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
-    assert.match(page, /buildPublicPageMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
     assert.match(page, /\/initiatives\/public\/\$\{encodeURIComponent\(initiativeId\)\}/);
     assert.match(page, /resolveMediaUrl/);
     assert.doesNotMatch(page, /function resolveSiteOrigin/);

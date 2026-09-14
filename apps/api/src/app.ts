@@ -33,6 +33,7 @@ import { platformStatisticsRouter } from "./modules/platform-statistics/index.js
 import { countryStatisticsRouter } from "./modules/country-statistics/index.js";
 import { membershipStatisticsRouter } from "./modules/membership-statistics/index.js";
 import { knowledgeCenterRouter } from "./modules/knowledge-center/index.js";
+import { publicMediaPlpRouter } from "./modules/language/published-localized-presentation/media/index.js";
 import { ipGeographyRouter } from "./modules/ip-geography/index.js";
 import { notificationRouter } from "./modules/notifications/index.js";
 import { reminderRouter } from "./modules/reminders/index.js";
@@ -213,6 +214,25 @@ import {
   publicPlatformSocialAccountsRouter,
 } from "./modules/platform-social-accounts/index.js";
 import {
+  adminBrandLocalizationRouter,
+  publicBrandLocalizationRouter,
+} from "./modules/brand-localization/index.js";
+import {
+  adminLegalLocalizationRouter,
+  publicLegalLocalizationRouter,
+} from "./modules/legal-localization/index.js";
+import {
+  adminWebUiMessagePackRouter,
+  publicWebUiMessagePackRouter,
+} from "./modules/web-ui-message-packs/index.js";
+import {
+  adminLanguagesRouter,
+  adminTerminologyGlossaryRouter,
+  publicLanguagesRouter,
+  publicTerminologyGlossaryRouter,
+  runtimeLocaleRouter,
+} from "./modules/language/index.js";
+import {
   adminSeoPageOverridesRouter,
   publicSeoPageOverridesRouter,
 } from "./modules/seo-page-overrides/index.js";
@@ -266,6 +286,17 @@ app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
 app.use("/api/v1/platform/support-links", publicPlatformSupportLinksRouter);
+app.use("/api/v1/languages", publicLanguagesRouter);
+app.use("/api/v1/brand-localization", publicBrandLocalizationRouter);
+app.use("/api/v1/legal-localization", publicLegalLocalizationRouter);
+app.use("/api/v1/web-ui-message-packs", publicWebUiMessagePackRouter);
+app.use("/api/v1/terminology-glossary", publicTerminologyGlossaryRouter);
+app.use("/api/v1/runtime-locale", runtimeLocaleRouter);
+app.use("/api/v1/admin/languages", adminLanguagesRouter);
+app.use("/api/v1/admin/brand-localization", adminBrandLocalizationRouter);
+app.use("/api/v1/admin/legal-localization", adminLegalLocalizationRouter);
+app.use("/api/v1/admin/web-ui-message-packs", adminWebUiMessagePackRouter);
+app.use("/api/v1/admin/terminology-glossary", adminTerminologyGlossaryRouter);
 app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/platform/support-links", adminPlatformSupportLinksRouter);
@@ -368,6 +399,7 @@ app.use(
 app.use("/api/v1/implementation-commitments", implementationCommitmentRouter);
 app.use("/api/v1/implementations", implementationRouter);
 app.use("/api/v1/public/knowledge", knowledgeCenterRouter);
+app.use("/api/v1/public/media-plp", publicMediaPlpRouter);
 app.use("/api/v1/public/ip-geography", ipGeographyRouter);
 app.use("/api/v1/statistics", membershipStatisticsRouter);
 app.use("/api/v1/public", globalSearchRouter);

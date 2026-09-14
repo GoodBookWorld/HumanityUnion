@@ -75,6 +75,11 @@ export interface CivicMediaSelectionPrinciple {
   id: string;
   title: string;
   description: string;
+  /**
+   * Reset 03E.3 — substantive “why it matters” copy belongs on the principle
+   * entity (PLP), not in UI dictionary catalogs.
+   */
+  whyItMatters?: string;
   sortOrder: number;
 }
 

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
 
 interface MediaLogoProps {
   name: string;
@@ -21,18 +24,31 @@ export function MediaLogo({
   width = 48,
   height = 48,
 }: MediaLogoProps) {
+  const t = useTranslations("civicMediaPublic");
   const [imageFailed, setImageFailed] = useState(false);
+  const logoAlt = t("logoAlt", { name });
 
   if (logoUrl && !imageFailed) {
     return (
-      <img
-        src={logoUrl}
-        alt={`${name} logo`}
-        className={imageClassName}
-        width={width}
-        height={height}
-        onError={() => setImageFailed(true)}
-      />
+      <>
+        <img
+          src={logoUrl}
+          alt={logoAlt}
+          className={imageClassName}
+          width={width}
+          height={height}
+          onError={() => setImageFailed(true)}
+        />
+        <MediaSemanticNode
+          as="span"
+          className="hu-visually-hidden"
+          owner="UI_DICTIONARY"
+          result="LOCALIZED_DICTIONARY"
+          aria-hidden="true"
+        >
+          {logoAlt}
+        </MediaSemanticNode>
+      </>
     );
   }
 

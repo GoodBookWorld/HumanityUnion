@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 
 import type {
@@ -32,10 +33,6 @@ export interface BlogPublicationOptimizationPanelProps {
   onChange: (next: BlogPublicationOptimization) => void;
 }
 
-function charHint(length: number, guide: number, max: number): string {
-  return `${length} / ${guide} recommended · max ${max}`;
-}
-
 function channelFor(
   channels: readonly BlogHuPlatformDistributionChannel[],
   networkId: PlatformSocialNetworkId,
@@ -60,6 +57,7 @@ export function BlogPublicationOptimizationPanel({
   disabled,
   onChange,
 }: BlogPublicationOptimizationPanelProps) {
+  const t = useTranslations("workspace.publishingPage");
   const seoTitleId = useId();
   const seoDescriptionId = useId();
   const socialTitleId = useId();
@@ -103,9 +101,9 @@ export function BlogPublicationOptimizationPanel({
 
   const configuredIds = new Set(configuredAccounts.map((account) => account.networkId));
 
-  const previewTitle = seoTitle.trim() || title.trim() || "Untitled publication";
+  const previewTitle = seoTitle.trim() || title.trim() || t("editor.seo.untitled");
   const previewDescription =
-    seoDescription.trim() || excerpt.trim() || "Add a meta description for search results.";
+    seoDescription.trim() || excerpt.trim() || t("editor.seo.addMetaDescription");
   const previewSocialTitle = socialTitle.trim() || previewTitle;
   const previewSocialDescription = socialDescription.trim() || previewDescription;
   const previewSocialImage = socialImage?.mediaUrl || coverMedia?.mediaUrl || null;
@@ -148,13 +146,9 @@ export function BlogPublicationOptimizationPanel({
       aria-labelledby="blog-publication-optimization-heading"
     >
       <h2 className="hu-heading-3" id="blog-publication-optimization-heading">
-        Publication Optimization
+        {t("editor.seo.heading")}
       </h2>
-      <p className="hu-caption blog-publication-optimization__lede">
-        SEO and social metadata stay on this publication. Distribution permissions queue through the
-        platform outbox for official Humanity Union channels — they never invent external credentials
-        or claim a successful send.
-      </p>
+      <p className="hu-caption blog-publication-optimization__lede">{t("editor.seo.lede")}</p>
 
       <div className="blog-publication-optimization__grid">
         <section
@@ -162,15 +156,14 @@ export function BlogPublicationOptimizationPanel({
           aria-labelledby="blog-seo-heading"
         >
           <h3 className="hu-heading-4" id="blog-seo-heading">
-            Search Optimization
+            {t("editor.seo.searchHeading")}
           </h3>
           <p className="hu-caption blog-publication-optimization__section-copy">
-            Optional search title and description. Leave blank to fall back to the publication title
-            and excerpt on the public page.
+            {t("editor.seo.searchCopy")}
           </p>
 
           <label className="hu-label" htmlFor={seoTitleId}>
-            SEO title
+            {t("editor.seo.seoTitle")}
           </label>
           <input
             id={seoTitleId}
@@ -178,15 +171,21 @@ export function BlogPublicationOptimizationPanel({
             value={seoTitle}
             maxLength={SEO_TITLE_MAX}
             disabled={disabled}
-            placeholder={title.trim() || "Defaults to publication title"}
+            placeholder={title.trim() || t("editor.seo.defaultsToTitle")}
             onChange={(event) => {
               patch({ seoTitle: event.target.value });
             }}
           />
-          <HelperText>{charHint(seoTitle.length, SEO_TITLE_GUIDE, SEO_TITLE_MAX)}</HelperText>
+          <HelperText>
+            {t("editor.seo.charHint", {
+              length: seoTitle.length,
+              guide: SEO_TITLE_GUIDE,
+              max: SEO_TITLE_MAX,
+            })}
+          </HelperText>
 
           <label className="hu-label" htmlFor={seoDescriptionId}>
-            Meta description
+            {t("editor.seo.metaDescription")}
           </label>
           <textarea
             id={seoDescriptionId}
@@ -195,22 +194,26 @@ export function BlogPublicationOptimizationPanel({
             maxLength={SEO_DESCRIPTION_MAX}
             value={seoDescription}
             disabled={disabled}
-            placeholder={excerpt.trim() || "Defaults to excerpt"}
+            placeholder={excerpt.trim() || t("editor.seo.defaultsToExcerpt")}
             onChange={(event) => {
               patch({ seoDescription: event.target.value });
             }}
           />
           <HelperText>
-            {charHint(seoDescription.length, SEO_DESCRIPTION_GUIDE, SEO_DESCRIPTION_MAX)}
+            {t("editor.seo.charHint", {
+              length: seoDescription.length,
+              guide: SEO_DESCRIPTION_GUIDE,
+              max: SEO_DESCRIPTION_MAX,
+            })}
           </HelperText>
 
           <p className="hu-caption blog-publication-optimization__canonical">
-            Slug / canonical URL preview: {canonicalPath}
+            {t("editor.seo.canonicalPreview", { path: canonicalPath })}
           </p>
 
           <div
             className="blog-publication-optimization__serp"
-            aria-label="Search result preview"
+            aria-label={t("editor.seo.serpAria")}
           >
             <p className="blog-publication-optimization__serp-url">
               humanityunion.org{canonicalPath}
@@ -225,15 +228,14 @@ export function BlogPublicationOptimizationPanel({
           aria-labelledby="blog-social-heading"
         >
           <h3 className="hu-heading-4" id="blog-social-heading">
-            Social Preview
+            {t("editor.seo.socialHeading")}
           </h3>
           <p className="hu-caption blog-publication-optimization__section-copy">
-            How this publication may appear when shared. Image defaults to the cover when a social
-            image is not set.
+            {t("editor.seo.socialCopy")}
           </p>
 
           <label className="hu-label" htmlFor={socialTitleId}>
-            Social title
+            {t("editor.seo.socialTitle")}
           </label>
           <input
             id={socialTitleId}
@@ -248,7 +250,7 @@ export function BlogPublicationOptimizationPanel({
           />
 
           <label className="hu-label" htmlFor={socialDescriptionId}>
-            Social description
+            {t("editor.seo.socialDescription")}
           </label>
           <textarea
             id={socialDescriptionId}
@@ -264,10 +266,8 @@ export function BlogPublicationOptimizationPanel({
           />
 
           <fieldset className="blog-publication-optimization__social-image" disabled={disabled}>
-            <legend className="hu-label">Social image</legend>
-            <HelperText>
-              Optional. When empty, the cover image is used for social previews.
-            </HelperText>
+            <legend className="hu-label">{t("editor.seo.socialImage")}</legend>
+            <HelperText>{t("editor.seo.socialImageHelper")}</HelperText>
             <BlogCoverField
               coverMedia={socialImage}
               title={previewSocialTitle}
@@ -280,7 +280,7 @@ export function BlogPublicationOptimizationPanel({
 
           <div
             className="blog-publication-optimization__og-card"
-            aria-label="Social share preview card"
+            aria-label={t("editor.seo.socialPreviewAria")}
           >
             {previewSocialImage ? (
               <img
@@ -290,7 +290,7 @@ export function BlogPublicationOptimizationPanel({
               />
             ) : (
               <div className="blog-publication-optimization__og-image-empty">
-                <span className="hu-caption">No social image yet</span>
+                <span className="hu-caption">{t("editor.seo.noSocialImage")}</span>
               </div>
             )}
             <div className="blog-publication-optimization__og-body">
@@ -306,11 +306,10 @@ export function BlogPublicationOptimizationPanel({
           aria-labelledby="blog-distribution-heading"
         >
           <h3 className="hu-heading-4" id="blog-distribution-heading">
-            Distribution
+            {t("editor.seo.distributionHeading")}
           </h3>
           <p className="hu-caption blog-publication-optimization__section-copy">
-            Choose the Humanity Union social channels where this publication may be distributed.
-            This is not access to your personal social accounts.
+            {t("editor.seo.distributionCopy")}
           </p>
 
           <fieldset
@@ -319,23 +318,20 @@ export function BlogPublicationOptimizationPanel({
             aria-describedby={`${distributionLegendId}-help`}
           >
             <legend className="hu-label" id={distributionLegendId}>
-              Humanity Union social distribution
+              {t("editor.seo.huShareLegend")}
             </legend>
             <HelperText id={`${distributionLegendId}-help`}>
-              Selecting a channel permits Humanity Union to distribute this publication through the
-              official configured channel. A profile URL alone does not auto-post — delivery waits
-              for a real provider integration. Preferences never bypass review, scheduling, or
-              blocks.
+              {t("editor.seo.huShareHelper")}
             </HelperText>
             <ul className="blog-publication-optimization__account-list">
               {PLATFORM_SOCIAL_NETWORKS.map(({ networkId, label }) => {
                 const configured = configuredIds.has(networkId);
                 const channel = channelFor(huPlatformChannels, networkId);
                 const unavailableReason = !accountsLoaded
-                  ? "Loading…"
+                  ? t("editor.seo.channelLoading")
                   : configured
-                    ? "External API not connected — permission only"
-                    : "Official channel not configured";
+                    ? t("editor.seo.channelApiOnly")
+                    : t("editor.seo.channelNotConfigured");
                 return (
                   <li key={networkId} className="blog-publication-optimization__account">
                     <label className="blog-publication-optimization__account-toggle">

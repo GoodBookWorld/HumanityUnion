@@ -1,6 +1,7 @@
 "use client";
 
 import type { MemberBadgeContributionSummary } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
@@ -20,6 +21,7 @@ import {
 import "./member-badge-page.css";
 
 export function MemberBadgeRequestsPageContent() {
+  const t = useTranslations("membershipPublic.badgePages");
   const [requests, setRequests] = useState<MemberBadgeContributionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +35,11 @@ export function MemberBadgeRequestsPageContent() {
 
   return (
     <MemberWorkspace
-      title="Member Badge Requests"
-      subtitle="Private request history"
+      title={t("requestsTitle")}
+      subtitle={t("requestsSubtitle")}
       workspaceNavigation={<WorkspaceNavigation />}
     >
-      {loading ? <LoadingState message="Loading Badge requests..." /> : null}
+      {loading ? <LoadingState message={t("loadingRequests")} /> : null}
       {error ? (
         <Card>
           <p role="alert">{error}</p>

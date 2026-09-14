@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
 import {
   PublicHomeResourceActions,
@@ -7,23 +11,23 @@ import {
 } from "./PublicHomeResourceSection";
 
 export function PublicHomeCivicMediaSection() {
+  const t = useTranslations("publicHome");
+
   return (
     <PublicHomeResourceSection
       id="public-home-civic-media-title"
-      title="Civic Media"
-      intro="Navigate trustworthy information and turn verified concerns into civic action."
+      title={t("civicMedia.title")}
+      intro={t("civicMedia.intro")}
       backgroundImage="/images/media/all-media.webp"
       toneClass="media"
     >
-      <p className="public-home-v2__resource-copy">
-        Understand the news. Verify the facts. Turn public issues into civic action.
-      </p>
+      <p className="public-home-v2__resource-copy">{t("civicMedia.copy")}</p>
       <PublicHomeResourceActions>
         <PublicHomeResourcePrimaryButton href={CIVIC_MEDIA_ROUTE}>
-          Explore Civic Media
+          {t("civicMedia.explore")}
         </PublicHomeResourcePrimaryButton>
         <PublicHomeResourceSecondaryButton href="/initiatives">
-          Create Initiative from a public concern
+          {t("civicMedia.createFromConcern")}
         </PublicHomeResourceSecondaryButton>
       </PublicHomeResourceActions>
     </PublicHomeResourceSection>

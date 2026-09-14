@@ -1,15 +1,21 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { PUBLIC_HOME_CORE_VALUES } from "../constants";
 
 import "./public-home-geographic-navigation.css";
 
 export function PublicHomeCoreValuesSection() {
+  const t = useTranslations("publicHome");
+
   return (
     <section
       className="public-home-v2__section public-home-v2__core-values"
       aria-labelledby="public-home-core-values-title"
     >
       <h2 id="public-home-core-values-title" className="public-home-v2__visually-hidden">
-        Core values
+        {t("coreValues.sectionTitle")}
       </h2>
       <ul className="public-home-v2__values-grid">
         {PUBLIC_HOME_CORE_VALUES.map((value) => (
@@ -22,8 +28,8 @@ export function PublicHomeCoreValuesSection() {
               width={64}
               height={64}
             />
-            <p className="public-home-v2__value-word">{value.word}</p>
-            <p className="public-home-v2__value-hint">{value.hint}</p>
+            <p className="public-home-v2__value-word">{t(`coreValues.${value.id}.word`)}</p>
+            <p className="public-home-v2__value-hint">{t(`coreValues.${value.id}.hint`)}</p>
           </li>
         ))}
       </ul>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-upload/media-upload-api";
@@ -40,10 +41,15 @@ function buildFormState(initiative: Initiative): PublishedFormState {
   };
 }
 
+function detailFromError(error: unknown, unknownFallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : unknownFallback;
+}
+
 export function InitiativePublishedEditor({
   initiative,
   onUpdated,
 }: InitiativePublishedEditorProps) {
+  const t = useTranslations("initiativeExperience");
   const [form, setForm] = useState<PublishedFormState>(() => buildFormState(initiative));
   const [saving, setSaving] = useState(false);
   const [republishing, setRepublishing] = useState(false);
@@ -77,10 +83,13 @@ export function InitiativePublishedEditor({
     try {
       const updated = await updatePublishedInitiative(initiative.initiativeId, buildInput());
       onUpdated(updated);
-      setMessage("Initiative updated.");
+      setMessage(t("manage.messages.updated"));
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Update failed: ${detail}`);
+      setMessage(
+        t("manage.messages.updateFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      );
     } finally {
       setSaving(false);
     }
@@ -93,10 +102,13 @@ export function InitiativePublishedEditor({
     try {
       const republished = await republishInitiative(initiative.initiativeId, buildInput());
       onUpdated(republished);
-      setMessage("Initiative republished. Public projection refreshed.");
+      setMessage(t("manage.messages.republished"));
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Republish failed: ${detail}`);
+      setMessage(
+        t("manage.messages.republishFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      );
     } finally {
       setRepublishing(false);
     }
@@ -109,10 +121,13 @@ export function InitiativePublishedEditor({
     try {
       const archived = await archiveInitiative(initiative.initiativeId);
       onUpdated(archived);
-      setMessage("Initiative archived. Public projection removed.");
+      setMessage(t("manage.messages.archivedProjected"));
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Archive failed: ${detail}`);
+      setMessage(
+        t("manage.messages.archiveFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      );
     } finally {
       setArchiving(false);
     }
@@ -124,10 +139,13 @@ export function InitiativePublishedEditor({
     try {
       await closePublicChoiceElection(initiative.initiativeId);
       setConfirmClose(false);
-      setMessage("Election closed. Voting stopped; Final Results are available for 72 hours.");
+      setMessage(t("manage.messages.electionClosed"));
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Close election failed: ${detail}`);
+      setMessage(
+        t("manage.messages.closeElectionFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      );
     } finally {
       setClosingElection(false);
     }
@@ -136,9 +154,7 @@ export function InitiativePublishedEditor({
   if (isArchived) {
     return (
       <div className="initiative-draft-editor">
-        <p className="initiative-draft-editor__readonly">
-          This initiative is archived and no longer appears in Public Experience.
-        </p>
+        <p className="initiative-draft-editor__readonly">{t("manage.status.archivedReadonly")}</p>
       </div>
     );
   }
@@ -148,17 +164,19 @@ export function InitiativePublishedEditor({
   return (
     <div className="initiative-draft-editor">
       <label className="initiative-draft-editor__field">
-        <span>Title</span>
+        <span>{t("manage.fields.title")}</span>
         <input
           type="text"
+          className="hu-form-control"
           value={form.title}
           onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
         />
       </label>
 
       <label className="initiative-draft-editor__field">
-        <span>Short description</span>
+        <span>{t("manage.fields.shortDescription")}</span>
         <textarea
+          className="hu-form-control"
           value={form.description}
           onChange={(event) =>
             setForm((current) => ({ ...current, description: event.target.value }))
@@ -186,18 +204,18 @@ export function InitiativePublishedEditor({
 
       <div className="initiative-draft-editor__actions">
         <button type="button" onClick={() => void handleUpdate()} disabled={busy}>
-          {saving ? "Updating..." : "Update"}
+          {saving ? t("manage.actions.updating") : t("manage.actions.update")}
         </button>
         <button type="button" onClick={() => void handleRepublish()} disabled={busy}>
-          {republishing ? "Republishing..." : "Republish"}
+          {republishing ? t("manage.actions.republishing") : t("manage.actions.republish")}
         </button>
         {isPublicChoice ? (
           <button type="button" onClick={() => setConfirmClose(true)} disabled={busy}>
-            {closingElection ? "Closing…" : "Close election"}
+            {closingElection ? t("manage.actions.closing") : t("manage.actions.closeElection")}
           </button>
         ) : (
           <button type="button" onClick={() => void handleArchive()} disabled={busy}>
-            {archiving ? "Archiving..." : "Archive"}
+            {archiving ? t("manage.actions.archiving") : t("manage.actions.archive")}
           </button>
         )}
       </div>
@@ -208,17 +226,14 @@ export function InitiativePublishedEditor({
           role="dialog"
           aria-labelledby="close-election-title"
         >
-          <h3 id="close-election-title">Close election?</h3>
-          <p>
-            This will stop voting and finalize the current results. Temporary election results will
-            remain available for 72 hours.
-          </p>
+          <h3 id="close-election-title">{t("manage.election.confirmTitle")}</h3>
+          <p>{t("manage.election.confirmBody")}</p>
           <div className="initiative-draft-editor__actions">
             <button type="button" onClick={() => setConfirmClose(false)} disabled={busy}>
-              Cancel
+              {t("manage.actions.cancel")}
             </button>
             <button type="button" onClick={() => void handleCloseElection()} disabled={busy}>
-              {closingElection ? "Closing…" : "Close election"}
+              {closingElection ? t("manage.actions.closing") : t("manage.actions.closeElection")}
             </button>
           </div>
         </div>

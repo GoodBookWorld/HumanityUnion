@@ -1,10 +1,23 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { MemberId } from "./member.js";
 import type {
   InitiativeOfficialResponseNoResponseDetail,
   InitiativeOfficialResponseOutcomeKind,
 } from "./initiative-official-response-lifecycle.js";
+
+/** Finite Public Impact consistency check IDs (08E.9b). */
+export type InitiativePublicImpactConsistencyCheckId =
+  | "official-response-package-available"
+  | "official-response-outcome"
+  | "tracking-package-available"
+  | "implementation-complete"
+  | "evidence-visible";
 
 /**
  * Initiative Lifecycle — Part L. Canonical section ids for the one
@@ -70,10 +83,24 @@ export interface InitiativePublicImpactParticipationStatistics {
  * itself edits the Report or invents outcomes.
  */
 export interface InitiativePublicImpactConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativePublicImpactConsistencyCheckId;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English chrome.
+   * Prefer Web localization of `checkId`. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English body.
+   * Prefer `params` + Web presentation. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams & {
+    readonly outcomeKind?: InitiativeOfficialResponseOutcomeKind;
+  };
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /** Read-only published Analysis summary for Impact Sources. */

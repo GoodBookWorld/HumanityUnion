@@ -27,6 +27,7 @@ import {
 } from "../shared-documents/persistence/shared-documents.repository.js";
 import { LocalSecureDocumentStorageProvider } from "../shared-documents/secure-document-storage.provider.js";
 import { MediaUploadService, listMediaRecordsByInitiativeId } from "../media-upload/media-upload.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import {
   deleteNotificationsByRelatedEntity,
   emitCivicNotificationEvent,
@@ -439,6 +440,14 @@ export function updatePublishedInitiativeContent(
   invalidateGlobalSearchIndex();
   invalidateCommunityIntelligenceCache(initiative.initiativeId);
 
+  if (updated.title !== initiative.title || updated.description !== initiative.description) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "initiative",
+      sourceRecordId: initiative.initiativeId,
+      reason: "public_update",
+    });
+  }
+
   return updated;
 }
 
@@ -526,6 +535,12 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
     entityId: initiativeId,
     initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "initiative",
+    sourceRecordId: initiativeId,
+    reason: "public_mutation",
   });
 
   void notifyInterestedParticipantsOfPublishedInitiative(
@@ -656,6 +671,18 @@ export function republishInitiativeContent(
   syncProjectedInitiativeCard(republished, previousCommunitySlug);
   invalidateGlobalSearchIndex();
   invalidateCommunityIntelligenceCache(initiativeId);
+
+  // Pack 1.2 — republish can change CT-eligible title/description; warm via existing outbox.
+  if (
+    republished.title !== initiative.title ||
+    republished.description !== initiative.description
+  ) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "initiative",
+      sourceRecordId: initiativeId,
+      reason: "public_update",
+    });
+  }
 
   return republished;
 }

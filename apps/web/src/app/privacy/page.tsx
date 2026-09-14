@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+
+import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 import { LegalPageShell } from "../../features/legal/components/LegalPageShell";
+import {
+  EXPECTED_LEGAL_FALLBACK,
+  resolveLegalDocumentPresentation,
+} from "../../features/legal/resolve-legal-document-presentation";
 import {
   CONTACT_EMAIL,
   ORGANIZATION_ADDRESS,
@@ -6,15 +14,32 @@ import {
   ORGANIZATION_WEBSITE,
   mailtoContactLink,
 } from "../../features/public-experience/footer-links";
+import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 
 import "../../features/legal/legal-page.css";
 
-export default function PrivacyPage() {
+/**
+ * Step 07F.2 — Privacy SEO title from WEB_UI legalPublic chrome; description from
+ * Brand defaultMetaDescription. Legal body remains Legal Localization / English
+ * canonical — never used as SEO description. No dedicated Privacy SEO desc field exists.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const t = await getTranslations("legalPublic");
+  return buildPublicPageMetadataForRequest({
+    title: t("privacy.title"),
+    description: brand.defaultMetaDescription,
+    canonicalPath: "/privacy",
+    localeFreeCanonicalPath: "/privacy",
+    openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
+  });
+}
+
+/** English canonical Privacy Policy body — authoritative source until counsel-approved localized copies exist. */
+function EnglishPrivacyBody() {
   return (
-    <LegalPageShell
-      title="Privacy Policy"
-      counselNote="This Privacy Policy is an informational platform policy and should be reviewed by legal counsel before public launch."
-    >
+    <>
       <section>
         <h2>Who we are</h2>
         <p>
@@ -165,6 +190,23 @@ export default function PrivacyPage() {
           Mailing address: {ORGANIZATION_ADDRESS}
         </p>
       </section>
+    </>
+  );
+}
+
+export default async function PrivacyPage() {
+  const locale = await getLocale();
+  const presentation = await resolveLegalDocumentPresentation(locale, "privacy");
+
+  return (
+    <LegalPageShell presentation={presentation} activeDocument="privacy">
+      {presentation.body.source === "approved_localized" && presentation.body.localizedBodyHtml ? (
+        <div dangerouslySetInnerHTML={{ __html: presentation.body.localizedBodyHtml }} />
+      ) : (
+        <div data-legal-body-source={EXPECTED_LEGAL_FALLBACK}>
+          <EnglishPrivacyBody />
+        </div>
+      )}
     </LegalPageShell>
   );
 }

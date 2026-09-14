@@ -1,44 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import type { BlogAuthorWorkspacePostSummary, BlogCategoryId } from "@hu/types";
-import { BLOG_CATEGORIES } from "@hu/types";
+import type { BlogAuthorWorkspacePostSummary } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { formatAuthFormError } from "../../../lib/api-client";
+import { resolvePublishingListStatusLabel } from "../blog-workspace-i18n";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { archiveBlogPost, startPublishedCorrection } from "../publishing-api";
 import { BlogCoverImage } from "./BlogCoverImage";
-
-function categoryName(categoryId: BlogCategoryId): string {
-  return BLOG_CATEGORIES.find((category) => category.categoryId === categoryId)?.name ?? categoryId;
-}
-
-function statusLabel(post: BlogAuthorWorkspacePostSummary): string {
-  if (post.status === "draft" && post.review.reviewStatus === "changes_requested") {
-    return "Changes Requested";
-  }
-  if (post.status === "draft" && post.review.reviewStatus === "declined") {
-    return "Declined";
-  }
-  switch (post.status) {
-    case "draft":
-      return "Draft";
-    case "submitted_for_review":
-      return "Under Review";
-    case "scheduled":
-      return "Scheduled";
-    case "published":
-      return "Published";
-    case "archived":
-      return "Archived";
-    default:
-      return post.status;
-  }
-}
 
 function formatDate(value?: string): string {
   if (!value) {
@@ -65,6 +40,8 @@ export function PublicationListItem({
   mutationsDisabled = false,
   onMutated,
 }: PublicationListItemProps) {
+  const t = useTranslations("workspace.publishingPage");
+  const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -76,6 +53,8 @@ export function PublicationListItem({
   const editableDraftOrScheduled =
     canMutate && (post.status === "draft" || post.status === "scheduled");
   const publishedManageable = canMutate && post.status === "published";
+  const categoryLabel = resolveBlogCategoryDisplayName(post.categoryId, tBlog);
+  const statusLabel = resolvePublishingListStatusLabel(post, t);
 
   async function runDelete() {
     setBusy("delete");
@@ -118,19 +97,19 @@ export function PublicationListItem({
       <div className="publication-list-item__body">
         <h3 className="hu-heading-3 publication-list-item__title">{post.title}</h3>
         <p className="hu-caption">
-          {categoryName(post.categoryId)} · {statusLabel(post)}
+          {categoryLabel} · {statusLabel}
         </p>
-        {blocked ? <p className="hu-caption">Blocked by administrator</p> : null}
-        {mutationsDisabled ? (
-          <p className="hu-caption">Author publishing is blocked — Edit/Delete unavailable.</p>
-        ) : null}
+        {blocked ? <p className="hu-caption">{t("blockedByAdmin")}</p> : null}
+        {mutationsDisabled ? <p className="hu-caption">{t("authorBlockedNote")}</p> : null}
         {post.review.reviewStatus === "changes_requested" && post.review.reviewNote ? (
-          <p className="hu-body">Editor note: {post.review.reviewNote}</p>
+          <p className="hu-body">{t("editorNote", { note: post.review.reviewNote })}</p>
         ) : null}
-        <p className="hu-caption">Updated {formatDate(post.updatedAt)}</p>
+        <p className="hu-caption">{t("updated", { date: formatDate(post.updatedAt) })}</p>
         {post.publishedAt ? (
           <p className="hu-caption">
-            {post.status === "scheduled" ? "Scheduled" : "Published"} {formatDate(post.publishedAt)}
+            {post.status === "scheduled"
+              ? t("scheduledOn", { date: formatDate(post.publishedAt) })
+              : t("publishedOn", { date: formatDate(post.publishedAt) })}
           </p>
         ) : null}
         {actionError ? (
@@ -141,12 +120,12 @@ export function PublicationListItem({
         <div className="publication-list-item__actions hu-form-actions">
           {editableDraftOrScheduled ? (
             <Button href={`/workspace/publishing/${post.postId}`} variant="primary">
-              Edit
+              {t("actions.edit")}
             </Button>
           ) : null}
           {publishedManageable && canDirectPublish ? (
             <Button href={`/workspace/publishing/${post.postId}`} variant="primary">
-              Edit / Correct
+              {t("actions.editCorrect")}
             </Button>
           ) : null}
           {publishedManageable && !canDirectPublish ? (
@@ -156,7 +135,7 @@ export function PublicationListItem({
               disabled={busy !== null}
               onClick={() => setCorrectionOpen(true)}
             >
-              Edit / Correct
+              {t("actions.editCorrect")}
             </Button>
           ) : null}
           {publishedManageable ? (
@@ -166,24 +145,24 @@ export function PublicationListItem({
               disabled={busy !== null}
               onClick={() => setDeleteOpen(true)}
             >
-              Delete
+              {t("actions.delete")}
             </Button>
           ) : null}
           {post.status === "draft" ||
           post.status === "submitted_for_review" ||
           post.status === "scheduled" ? (
             <Button href={`/workspace/publishing/${post.postId}/preview`} variant="secondary">
-              Preview
+              {t("actions.preview")}
             </Button>
           ) : null}
           {post.status === "published" && !blocked ? (
             <Button href={`/blog/${post.slug}`} variant="secondary">
-              View Public
+              {t("actions.viewPublic")}
             </Button>
           ) : null}
           {post.status === "archived" ? (
             <Button href={`/workspace/publishing/${post.postId}/preview`} variant="secondary">
-              View
+              {t("actions.view")}
             </Button>
           ) : null}
         </div>
@@ -191,9 +170,9 @@ export function PublicationListItem({
 
       <ConfirmDialog
         isOpen={correctionOpen}
-        title="Start correction?"
-        description="This removes the publication from the public Blog while you edit. Changes must be submitted for review before the article is public again. The same publication identity (post id and slug) is preserved."
-        confirmLabel={busy === "correct" ? "Starting…" : "Start correction"}
+        title={t("correctionTitle")}
+        description={t("correctionBody")}
+        confirmLabel={busy === "correct" ? t("correctionStarting") : t("correctionConfirm")}
         destructive={false}
         isConfirming={busy === "correct"}
         onCancel={() => setCorrectionOpen(false)}
@@ -202,9 +181,9 @@ export function PublicationListItem({
 
       <ConfirmDialog
         isOpen={deleteOpen}
-        title="Delete this publication?"
-        description="The publication is archived and removed from the public Blog. The record is preserved for accountability — this is not a hard delete."
-        confirmLabel={busy === "delete" ? "Deleting…" : "Delete"}
+        title={t("deleteTitle")}
+        description={t("deleteBody")}
+        confirmLabel={busy === "delete" ? t("deleting") : t("deleteConfirm")}
         destructive
         isConfirming={busy === "delete"}
         onCancel={() => setDeleteOpen(false)}

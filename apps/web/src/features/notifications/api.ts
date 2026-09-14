@@ -89,18 +89,3 @@ export async function clearArchivedNotifications(): Promise<{ deletedCount: numb
     method: "DELETE",
   });
 }
-
-export function priorityLabel(priority: NotificationPriority): string {
-  switch (priority) {
-    case "critical":
-      return "Critical";
-    case "important":
-      return "Important";
-    case "normal":
-      return "Normal";
-    case "informational":
-      return "Informational";
-    default:
-      return priority;
-  }
-}

@@ -1,4 +1,7 @@
+"use client";
+
 import type { PublicNewsArticleItem } from "@hu/types";
+import { useTranslations } from "next-intl";
 
 import {
   buildNewsCreatePetitionHref,
@@ -16,33 +19,35 @@ export function PublicNewsSuggestedActions({
   article,
   relatedInitiativeId,
 }: PublicNewsSuggestedActionsProps) {
+  const t = useTranslations("publicNews.card");
+
   return (
-    <section className="public-news-card__suggested" aria-label="Suggested civic actions">
-      <h4 className="public-news-card__section-title">Suggested Actions</h4>
+    <section className="public-news-card__suggested" aria-label={t("suggestedAria")}>
+      <h4 className="public-news-card__section-title">{t("suggestedTitle")}</h4>
       <div className="public-news-card__suggested-grid">
         <a
           href={buildNewsSupportHref(article, relatedInitiativeId)}
           className="public-news-card__button public-news-card__button--accent"
         >
-          Support
+          {t("support")}
         </a>
         <a
           href={buildNewsVolunteerHref(article)}
           className="public-news-card__button public-news-card__button--accent"
         >
-          Volunteer
+          {t("volunteer")}
         </a>
         <a
           href={buildNewsCreateProposalHref(article)}
           className="public-news-card__button public-news-card__button--accent"
         >
-          Create Proposal
+          {t("createProposal")}
         </a>
         <a
           href={buildNewsCreatePetitionHref(article)}
           className="public-news-card__button public-news-card__button--accent"
         >
-          Create Petition
+          {t("createPetition")}
         </a>
       </div>
     </section>

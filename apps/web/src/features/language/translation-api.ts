@@ -35,6 +35,11 @@ export async function resolveTranslatedContent(input: {
   );
 }
 
+/**
+ * @deprecated Pack 1.1 — participant on-demand generation is retired (API returns 410).
+ * Public surfaces must use `resolveTranslatedContent` (cache-only) only.
+ * Retained so injectable test deps / dead call sites fail closed at the API.
+ */
 export async function generateContentTranslation(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;

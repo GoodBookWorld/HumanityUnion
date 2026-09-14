@@ -1,6 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { LatestInitiativeCardProjection } from "@hu/types";
+
+import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
+import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
+import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
+import {
+  resolveInitiativeCardBadgeLabel,
+  resolveInitiativeCardStageLabel,
+} from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 
 interface LatestInitiativeCardProps {
   initiative: LatestInitiativeCardProjection;
@@ -19,7 +31,26 @@ function isActivePublicRoute(
 }
 
 export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) {
+  const t = useTranslations("publicGeo.shared");
+  const tExperience = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
   const hasActivePublicRoute = isActivePublicRoute(initiative);
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
+
+  // Status badge: ordinary WEB_UI (not Terminology).
+  const statusLabel = resolveInitiativeCardBadgeLabel({
+    publicStatus: initiative.publicStatus,
+    messagesOrT: tExperience,
+  });
+  // Participation stage: controlled Terminology authority path.
+  const stageLabel =
+    resolveInitiativeCardStageLabel(initiative.participationStage, tExperience, {
+      locale,
+    }) || initiative.participationStage;
 
   return (
     <article
@@ -34,39 +65,44 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
           id={`initiative-${initiative.initiativeId}-title`}
         >
           {hasActivePublicRoute ? (
-            <Link href={initiative.publicInitiativeHref}>{initiative.title}</Link>
+            <Link href={initiative.publicInitiativeHref}>{displayTitle}</Link>
           ) : (
-            initiative.title
+            displayTitle
           )}
         </h3>
       </header>
 
-      <p className="latest-initiative-card__summary">{initiative.summary}</p>
+      {statusLabel ? (
+        <div className="latest-initiative-card__badge-row">
+          <WorkspaceStatusBadge
+            status={initiative.publicStatus || "neutral"}
+            variant="neutral"
+            label={statusLabel}
+          />
+        </div>
+      ) : null}
 
       {!hasActivePublicRoute ? (
         <p className="latest-initiative-card__unavailable" role="note">
-          {initiative.publicUnavailableNotice ??
-            "Public initiative record not yet available — demonstration card only."}
+          {initiative.publicUnavailableNotice ?? t("initiativeCard.unavailableNotice")}
         </p>
       ) : null}
 
       <dl className="latest-initiative-card__meta">
         <div className="latest-initiative-card__meta-item">
-          <dt>Geographic scope</dt>
+          <dt>{t("initiativeCard.geographicScope")}</dt>
           <dd>{initiative.geographicScope}</dd>
         </div>
         <div className="latest-initiative-card__meta-item">
-          <dt>Participation stage</dt>
-          <dd>{initiative.participationStage}</dd>
-        </div>
-        <div className="latest-initiative-card__meta-item">
-          <dt>Public status</dt>
-          <dd>{initiative.publicStatus}</dd>
+          <dt>{t("initiativeCard.participationStage")}</dt>
+          <dd>
+            <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+          </dd>
         </div>
         {!hasActivePublicRoute ? (
           <div className="latest-initiative-card__meta-item">
-            <dt>Public record</dt>
-            <dd>Not yet available</dd>
+            <dt>{t("initiativeCard.publicRecord")}</dt>
+            <dd>{t("initiativeCard.notYetAvailable")}</dd>
           </div>
         ) : null}
       </dl>
@@ -74,21 +110,23 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
       {hasActivePublicRoute ? (
         <p className="latest-initiative-card__primary-link">
           <Link href={initiative.publicInitiativeHref}>
-            View public initiative: {initiative.title}
+            {t("initiativeCard.viewPublicInitiative", { title: displayTitle })}
           </Link>
         </p>
       ) : (
         <p className="latest-initiative-card__primary-link latest-initiative-card__primary-link--placeholder">
-          <span aria-disabled="true">View public initiative (coming soon)</span>
+          <span aria-disabled="true">{t("initiativeCard.viewPublicInitiativeComingSoon")}</span>
         </p>
       )}
 
       {initiative.relatedPublicLinks.length > 0 ? (
         <nav
           className="latest-initiative-card__related"
-          aria-label={`Related public records for ${initiative.title}`}
+          aria-label={t("initiativeCard.relatedAria", { title: displayTitle })}
         >
-          <p className="latest-initiative-card__related-label">Related public links</p>
+          <p className="latest-initiative-card__related-label">
+            {t("initiativeCard.relatedLabel")}
+          </p>
           <ul className="latest-initiative-card__related-list">
             {initiative.relatedPublicLinks.map((link) => (
               <li key={link.href}>
@@ -98,10 +136,13 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
                   <span
                     className="latest-initiative-card__related-placeholder"
                     aria-disabled="true"
-                    title={`${link.label} — coming soon`}
+                    title={t("comingSoonTitle", { label: link.label })}
                   >
                     {link.label}
-                    <span className="latest-initiative-card__related-note"> (coming soon)</span>
+                    <span className="latest-initiative-card__related-note">
+                      {" "}
+                      {t("comingSoon")}
+                    </span>
                   </span>
                 )}
               </li>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -10,6 +11,7 @@ import { verifyEmail } from "../auth-api";
 import "./auth-form.css";
 
 export function VerifyEmailPanel() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -19,40 +21,40 @@ export function VerifyEmailPanel() {
 
   useEffect(() => {
     if (!token) {
-      setError("Verification token is missing.");
+      setError(t("verificationTokenMissing"));
       setLoading(false);
       return;
     }
 
     void verifyEmail(token)
       .then(() => {
-        setMessage("Your email address has been verified.");
+        setMessage(t("emailVerified"));
         setError(null);
       })
       .catch((verifyError) => {
         setError(
-          verifyError instanceof Error
-            ? verifyError.message
-            : "Invalid or expired verification token.",
+          verifyError instanceof Error ? verifyError.message : t("invalidVerificationToken"),
         );
       })
       .finally(() => {
         setLoading(false);
       });
+    // Intentionally token-only: avoid re-running verification when translator identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- auth verify once per token
   }, [token]);
 
   return (
     <Card>
       <div className="auth-form">
-        {loading ? <p>Verifying your email...</p> : null}
+        {loading ? <p>{t("verifyingEmail")}</p> : null}
         {message ? <p>{message}</p> : null}
         {error ? <p className="auth-form__error">{error}</p> : null}
         <div className="auth-form__actions">
           <Button href="/account" variant="primary">
-            Go to account
+            {t("goToAccount")}
           </Button>
           <Button variant="secondary" onClick={() => router.push("/login")}>
-            Log in
+            {t("logIn")}
           </Button>
         </div>
       </div>

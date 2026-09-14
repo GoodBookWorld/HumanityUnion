@@ -58,11 +58,33 @@
   flex-wrap: wrap;
   gap: var(--hu-space-3);
   margin-top: var(--hu-space-2);
+  max-inline-size: 100%;
+}
+
+.initiative-draft-editor__actions > button,
+.initiative-draft-editor__actions .hu-button {
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 /* Part 6 — pushes the tertiary Archive action to the far end of the row, away from the two primary content actions. */
 .initiative-draft-editor__archive-action {
-  margin-left: auto;
+  margin-inline-start: auto;
+}
+
+.initiative-draft-editor__danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-4);
+  margin-top: var(--hu-space-4);
+  padding-top: var(--hu-space-5);
+  border-top: 1px solid var(--hu-color-border);
+}
+
+.initiative-draft-editor__danger-zone .hu-button {
+  white-space: normal;
 }
 
 .initiative-draft-editor__message,
@@ -81,17 +103,6 @@
  * Draft/Archive action row above, so it is never adjacent to (and never
  * mistaken for) those far more frequent actions.
  */
-.initiative-draft-editor__danger-zone {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--hu-space-4);
-  margin-top: var(--hu-space-4);
-  padding-top: var(--hu-space-5);
-  border-top: 1px solid var(--hu-color-border);
-}
-
 .initiative-draft-editor__danger-zone-title {
   margin: 0 0 var(--hu-space-1);
   font-weight: 600;

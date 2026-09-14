@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicParticipationEntryGuidance } from "@hu/types";
 
@@ -17,18 +18,25 @@ interface InitiativePetitionSignatureWidgetProps {
   readonly onSignatureChange: (viewerHasSigned: boolean) => void;
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /**
  * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures /
  * Petition Reactions).
  *
- * "Sign Petition" and "Withdraw Signature" — one signature per Participant.
- * Mirrors the Part D/E reaction-widget identity pattern exactly
+ * Sign / Withdraw — one signature per Participant. Mirrors the Part D/E
+ * reaction-widget identity pattern exactly
  * (`InitiativeRevisionReactionWidget`): gates on `useClientAuthStatus()`
  * only, never reads or sends its own participant id — the server resolves
  * the real signed-in actor from the request itself. Visitors (not signed
  * in) use the separate, anonymous Visitor Signal instead (recorded
  * automatically when this stage's public result is viewed — see
  * `InitiativePetitionPublicResult`), never a duplicate signature.
+ *
+ * `participationEntryGuidance.registrationGatewayMessage` is API/domain
+ * prose and is rendered as-is (not localized via next-intl).
  */
 export function InitiativePetitionSignatureWidget({
   petitionId,
@@ -37,6 +45,7 @@ export function InitiativePetitionSignatureWidget({
   participationEntryGuidance,
   onSignatureChange,
 }: InitiativePetitionSignatureWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +62,7 @@ export function InitiativePetitionSignatureWidget({
       await signPetitionAsCurrentParticipant(petitionId);
       onSignatureChange(true);
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Could not record signature.");
+      setError(detailFromError(submissionError, t("petitionSignature.recordFailed")));
     } finally {
       setBusy(false);
     }
@@ -71,9 +80,7 @@ export function InitiativePetitionSignatureWidget({
       await withdrawPetitionSignature(petitionId);
       onSignatureChange(false);
     } catch (submissionError) {
-      setError(
-        submissionError instanceof Error ? submissionError.message : "Could not withdraw signature.",
-      );
+      setError(detailFromError(submissionError, t("petitionSignature.withdrawFailed")));
     } finally {
       setBusy(false);
     }
@@ -81,7 +88,7 @@ export function InitiativePetitionSignatureWidget({
 
   if (!signingAvailable) {
     return (
-      <div className="ipl-signature">
+      <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
         <p className="ipl-signature__prompt">{participationEntryGuidance.registrationGatewayMessage}</p>
       </div>
     );
@@ -89,7 +96,7 @@ export function InitiativePetitionSignatureWidget({
 
   if (authStatus !== "authenticated") {
     return (
-      <div className="ipl-signature">
+      <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
         <p className="ipl-signature__prompt">{participationEntryGuidance.registrationGatewayMessage}</p>
       </div>
     );
@@ -97,40 +104,47 @@ export function InitiativePetitionSignatureWidget({
 
   if (viewerHasSigned) {
     return (
-      <div className="ipl-signature">
-        <p className="ipl-signature__status">You have signed this Petition.</p>
+      <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
+        <p className="ipl-signature__status">{t("petitionSignature.signedStatus")}</p>
         <div className="ipl-signature__actions">
           <button
             type="button"
             className="workspace-button workspace-button--secondary"
             disabled={busy}
+            aria-busy={busy}
             onClick={() => void handleWithdraw()}
           >
-            {busy ? "Withdrawing…" : "Withdraw Signature"}
+            {busy ? t("petitionSignature.withdrawing") : t("petitionSignature.withdraw")}
           </button>
         </div>
-        {error ? <p className="ipl-signature__error">{error}</p> : null}
+        {error ? (
+          <p className="ipl-signature__error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="ipl-signature">
-      <p className="ipl-signature__prompt">
-        Signing records your civic participation in support of this Petition. It is not a legally binding
-        petition and does not assign implementation responsibility to you.
-      </p>
+    <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
+      <p className="ipl-signature__prompt">{t("petitionSignature.disclaimer")}</p>
       <div className="ipl-signature__actions">
         <button
           type="button"
           className="workspace-button workspace-button--primary"
           disabled={busy}
+          aria-busy={busy}
           onClick={() => void handleSign()}
         >
-          {busy ? "Recording…" : "Sign this Petition"}
+          {busy ? t("petitionSignature.recording") : t("petitionSignature.sign")}
         </button>
       </div>
-      {error ? <p className="ipl-signature__error">{error}</p> : null}
+      {error ? (
+        <p className="ipl-signature__error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -38,7 +38,7 @@ describe("generatePetitionDraftContent (Petition Draft Builder)", () => {
     const content = await generatePetitionDraftContent(snapshot);
 
     assert.equal(content.publicSummary, snapshot.initiativeDescription);
-    assert.match(content.expectedOutcome, /once a Revision has been published/);
+    assert.match(content.expectedOutcome, /once a published version is available/);
   });
 
   it("titles the Petition from the Initiative title", async () => {
@@ -46,7 +46,7 @@ describe("generatePetitionDraftContent (Petition Draft Builder)", () => {
 
     const content = await generatePetitionDraftContent(snapshot);
 
-    assert.equal(content.title, "Petition: Community Composting Initiative");
+    assert.match(content.title, /\{lifecycleStage:petition\}: Community Composting Initiative/);
   });
 
   it("builds the Public Summary and Expected Outcome from the published Revision, never invented text", async () => {
@@ -66,7 +66,8 @@ describe("generatePetitionDraftContent (Petition Draft Builder)", () => {
     const content = await generatePetitionDraftContent(snapshot);
 
     assert.equal(content.publicSummary, snapshot.revisionReference!.revisionSummary);
-    assert.match(content.expectedOutcome, /Revision v2/);
+    assert.match(content.expectedOutcome, /version 2/);
+    assert.doesNotMatch(content.expectedOutcome, /\bRevision\s+v2\b/);
     assert.match(content.expectedOutcome, /Added a dedicated composting station near the entrance/);
     assert.match(content.requestStatement, /Community Composting Initiative/);
   });

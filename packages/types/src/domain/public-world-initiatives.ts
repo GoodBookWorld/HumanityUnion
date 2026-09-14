@@ -8,6 +8,10 @@ export interface WorldInitiativeCardProjection {
   summary: string;
   activityArea: string;
   geographyLabel: string;
+  /** RESET 05 — codes for locale-aware GEOGRAPHY display (not machine-translated labels). */
+  countryCode?: string;
+  regionCode?: string;
+  communitySlug?: string;
   imageUrl?: string;
   /** UX Evolution Pack 03 — public-safe (verificationReasonCode always stripped); approved media only. */
   coverMedia?: InitiativeCoverMedia;
@@ -17,6 +21,11 @@ export interface WorldInitiativeCardProjection {
   currentStageLabel?: string;
   publicInitiativeHref: string;
   publishedAt: string;
+  /**
+   * RESET 05B — PUBLIC_CHOICE election display name (from metadata.communityAssociation).
+   * MACHINE_CONTENT / PLP — not geography.
+   */
+  electionName?: string;
   supportSummary?: {
     likes: number;
     dislikes: number;

@@ -72,6 +72,7 @@ describe("Pack 22I.2 — first paint + interactive logo audio + emoji", () => {
 
   it("browser tab does not receive the launch cover bootstrap class without standalone", () => {
     assert.match(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /display-mode: standalone/);
+    assert.doesNotMatch(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /display-mode: fullscreen/);
     assert.match(PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP, /if \(!standalone\) return/);
     const shell = readWeb("features/pwa/components/PwaShell.tsx");
     assert.match(shell, /standalone \? <PwaLaunchSequence/);
@@ -112,7 +113,7 @@ describe("Pack 22I.2 — first paint + interactive logo audio + emoji", () => {
     assert.equal(getPwaLaunchAudioStatus(), "playing");
     const overlay = readWeb("features/pwa/components/PwaLaunchSequence.tsx");
     assert.match(overlay, /gesture_required/);
-    assert.match(overlay, /Play intro sound/);
+    assert.match(overlay, /playIntroSound/);
   });
 
   it("autoplay rejection → gesture_required status for interactive logo", async () => {
@@ -124,7 +125,7 @@ describe("Pack 22I.2 — first paint + interactive logo audio + emoji", () => {
   it("interactive logo has accessible Sound semantics in overlay", () => {
     const overlay = readWeb("features/pwa/components/PwaLaunchSequence.tsx");
     const css = readWeb("features/pwa/pwa.css");
-    assert.match(overlay, /aria-label="Play intro sound"/);
+    assert.match(overlay, /playIntroSound/);
     assert.match(overlay, /hu-pwa-launch__logo-sound/);
     assert.match(overlay, /type="button"/);
     assert.match(css, /hu-pwa-launch__logo-sound:focus-visible/);
@@ -188,7 +189,7 @@ describe("Pack 22I.2 — first paint + interactive logo audio + emoji", () => {
     const overlay = readWeb("features/pwa/components/PwaLaunchSequence.tsx");
     const shell = readWeb("features/pwa/components/PwaShell.tsx");
     assert.match(overlay, /if \(!launch\.active\) \{\s*return null;/);
-    assert.doesNotMatch(shell, /Play intro sound|hu-pwa-launch__logo-sound/);
+    assert.doesNotMatch(shell, /playIntroSound|hu-pwa-launch__logo-sound/);
   });
 
   it("logout cleanup remains wired", () => {

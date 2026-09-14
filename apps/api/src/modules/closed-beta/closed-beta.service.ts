@@ -44,7 +44,7 @@ function buildReadinessMissing(input: {
   const missing: string[] = [];
 
   if (!input.emailVerified) {
-    missing.push("email verification");
+    missing.push("email_verification");
   }
 
   if (!input.profileComplete) {
@@ -52,7 +52,7 @@ function buildReadinessMissing(input: {
   }
 
   if (!input.participationConfigured) {
-    missing.push("participation area");
+    missing.push("participation_area");
   }
 
   return missing;
@@ -108,25 +108,25 @@ export async function resolveBetaOnboardingForUser(input: {
   return [
     {
       id: "member-profile",
-      label: "Complete Member Profile",
+      label: "member-profile",
       completed: isProfileComplete(profile),
       href: "/member",
     },
     {
       id: "participation-area",
-      label: "Configure Participation Area",
+      label: "participation-area",
       completed: participation.activeArea !== null,
       href: "/member#participation-area",
     },
     {
       id: "verify-email",
-      label: "Verify Email",
+      label: "verify-email",
       completed: user?.emailVerificationStatus === "verified",
       href: "/verify-email",
     },
     {
       id: "first-initiative",
-      label: "Create first Initiative",
+      label: "first-initiative",
       completed: initiatives.length > 0,
       // UX Evolution Pack 02.4 Part 1 — link directly to the "Start New
       // Initiative" ProfileSection on the Workspace Initiatives page. The

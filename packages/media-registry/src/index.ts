@@ -21,3 +21,21 @@ export {
   sortMediaRegistryProviders,
 } from "./media-registry.filters.js";
 export { resolveMediaRegistryConfig, type MediaRegistryRuntimeConfig } from "./media-registry.config.js";
+export {
+  COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
+  COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
+  articleMatchesPreferredSourceName,
+  buildCountryPreferredSourceNames,
+  filterPublicNewsForCountry,
+  isCountryAffiliatedSourceArticle,
+  isCountryRelevantArticle,
+  mapGeographyRegionToRegistryTag,
+  normalizeMediaSourceIdentity,
+  selectCountryPublicNewsRail,
+} from "./country-public-news-selection.js";
+export type {
+  CountryNewsSelectableArticle,
+  CountryPublicNewsContext,
+  CountryPublicNewsMediaRef,
+  CountryPublicNewsSelectionResult,
+} from "./country-public-news-selection.js";

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { TrustedMediaResource } from "@hu/types";
 
 import { PublicNewsSection } from "./PublicNewsSection";
@@ -17,6 +19,8 @@ export function CountryPublicNewsWidget({
   regionName,
   recommendedMedia,
 }: CountryPublicNewsWidgetProps) {
+  const t = useTranslations("publicNews.country");
+
   return (
     <PublicNewsSection
       variant="country"
@@ -29,9 +33,9 @@ export function CountryPublicNewsWidget({
       }))}
       showToolbar={false}
       sectionId={`country-news-${countryCode.toLowerCase()}`}
-      eyebrow="COUNTRY NEWS"
-      heading="Latest Trusted News"
-      description={`Recent verified reporting relevant to ${countryName}.`}
+      eyebrow={t("eyebrow")}
+      heading={t("heading")}
+      description={t("description", { countryName })}
       className="public-news-discovery--country"
     />
   );

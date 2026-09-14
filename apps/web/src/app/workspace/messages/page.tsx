@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { DirectMessagesWorkspace } from "../../../features/direct-messaging/components/DirectMessagesWorkspace";
+import { MessagesLoadingFallback } from "../../../features/direct-messaging/components/MessagesLoadingFallback";
 
 /**
  * Communication UX Pack 03.3.1 Part 1 — `humanity-workspace-page` is the
@@ -15,7 +16,7 @@ import { DirectMessagesWorkspace } from "../../../features/direct-messaging/comp
 export default function WorkspaceMessagesPage() {
   return (
     <main className="workspace-messages-page humanity-workspace-page">
-      <Suspense fallback={<p>Loading Messages…</p>}>
+      <Suspense fallback={<MessagesLoadingFallback />}>
         <DirectMessagesWorkspace />
       </Suspense>
     </main>

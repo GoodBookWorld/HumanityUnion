@@ -13,7 +13,6 @@ export const PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP = `(function(){
     var queries = [
       "(display-mode: standalone)",
       "(display-mode: minimal-ui)",
-      "(display-mode: fullscreen)",
       "(display-mode: window-controls-overlay)"
     ];
     var standalone = false;

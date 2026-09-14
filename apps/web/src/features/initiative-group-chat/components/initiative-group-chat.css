@@ -70,6 +70,11 @@
   gap: var(--hu-space-3);
 }
 
+.igc-group-list__title {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+}
+
 .igc-group-list__search-label {
   font-size: 0.75rem;
   font-weight: 600;

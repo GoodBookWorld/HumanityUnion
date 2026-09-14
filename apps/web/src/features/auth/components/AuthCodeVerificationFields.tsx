@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import {
-  formatAuthCodeRateLimitMessage,
   formatCountdownLabel,
   getAuthCodeRateLimitDetails,
+  type AuthCodeRateLimitDetails,
 } from "../lib/auth-code-rate-limit";
 import {
+  AUTH_INCORRECT_CODE_MESSAGE,
   isCooldownMessage,
   isIncorrectCodeMessage,
   normalizeIncorrectCodeMessage,
@@ -59,6 +61,33 @@ function resolveCooldownUntilMs(
   return Math.max(...candidates);
 }
 
+function formatRateLimitTimeLabel(
+  retryAfterSeconds: number,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  if (retryAfterSeconds >= 60) {
+    const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
+    return minutes === 1 ? t("oneMinute") : t("nMinutes", { count: minutes });
+  }
+
+  return t("nSeconds", { count: Math.max(1, retryAfterSeconds) });
+}
+
+function formatTranslatedRateLimitMessage(
+  details: AuthCodeRateLimitDetails,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  if (details.limitType === "cooldown") {
+    return t("requestAnotherCodeIn", {
+      time: formatCountdownLabel(details.retryAfterSeconds),
+    });
+  }
+
+  return t("tooManyCodesTryAgainIn", {
+    time: formatRateLimitTimeLabel(details.retryAfterSeconds, t),
+  });
+}
+
 export function AuthCodeVerificationFields({
   copy,
   maskedEmail,
@@ -70,6 +99,7 @@ export function AuthCodeVerificationFields({
   onCancel,
   showDevOutboxNote = false,
 }: AuthCodeVerificationFieldsProps) {
+  const t = useTranslations("auth");
   const [code, setCode] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -109,6 +139,13 @@ export function AuthCodeVerificationFields({
       window.clearInterval(timer);
     };
   }, [cooldownUntilMs]);
+
+  function displayFieldError(message: string): string {
+    if (message === AUTH_INCORRECT_CODE_MESSAGE || isIncorrectCodeMessage(message)) {
+      return t("incorrectCode");
+    }
+    return message;
+  }
 
   function handleCodeChange(value: string) {
     const digitsOnly = value.replace(/\D/g, "").slice(0, 6);
@@ -151,11 +188,11 @@ export function AuthCodeVerificationFields({
       setRateLimitUntilMs(status.resendAvailableAt ? Date.parse(status.resendAvailableAt) : null);
 
       if (status.emailSent) {
-        setSuccessMessage("A new code has been sent. Use the most recent email.");
-        setSuccessDetail("The previous code is no longer valid.");
+        setSuccessMessage(t("newCodeSentUseRecent"));
+        setSuccessDetail(t("previousCodeInvalid"));
       } else {
-        setFieldError("We could not send a new code. Please try again shortly.");
-        setDeliveryFailureDetail("Your previous valid code can still be used.");
+        setFieldError(t("couldNotSendNewCode"));
+        setDeliveryFailureDetail(t("previousCodeStillUsable"));
       }
     } catch (resendError) {
       const rateLimit = getAuthCodeRateLimitDetails(resendError);
@@ -163,7 +200,7 @@ export function AuthCodeVerificationFields({
 
       if (rateLimit) {
         setRateLimitUntilMs(Date.now() + rateLimit.retryAfterSeconds * 1000);
-        setCooldownDetail(formatAuthCodeRateLimitMessage(rateLimit));
+        setCooldownDetail(formatTranslatedRateLimitMessage(rateLimit, t));
       } else if (isCooldownMessage(message)) {
         setCooldownDetail(null);
       } else if (isIncorrectCodeMessage(message)) {
@@ -177,7 +214,7 @@ export function AuthCodeVerificationFields({
   }
 
   if (loadingStatus && !maskedEmail) {
-    return <p>Loading verification...</p>;
+    return <p>{t("loadingVerification")}</p>;
   }
 
   const resendDisabled = cooldownActive || resending || submitting;
@@ -186,19 +223,17 @@ export function AuthCodeVerificationFields({
     <form className="auth-form" onSubmit={(event) => void handleSubmit(event)}>
       <p>{copy.title}</p>
       <p className="auth-form__intro">
-        {emailSent ? copy.introPrefix : "Enter the six-digit code for"}{" "}
-        <strong>{maskedEmail ?? "your email address"}</strong>.
+        {emailSent ? copy.introPrefix : t("enterCodeFor")}{" "}
+        <strong>{maskedEmail ?? t("yourEmailAddress")}</strong>.
       </p>
       {showDevOutboxNote && !emailSent ? (
-        <AuthFeedbackMessage variant="info" title="Development mode">
-          <p>
-            Development email provider is active. Check the local email outbox in API server logs.
-          </p>
+        <AuthFeedbackMessage variant="info" title={t("developmentMode")}>
+          <p>{t("developmentOutboxNote")}</p>
         </AuthFeedbackMessage>
       ) : null}
 
       {!loadingStatus && !emailSent && !showDevOutboxNote ? (
-        <AuthFeedbackMessage variant="warning" title="Email not delivered">
+        <AuthFeedbackMessage variant="warning" title={t("emailNotDelivered")}>
           <p>{copy.deliveryFailureMessage}</p>
         </AuthFeedbackMessage>
       ) : null}
@@ -224,34 +259,31 @@ export function AuthCodeVerificationFields({
 
       <div className="auth-form__feedback-stack">
         {fieldError ? (
-          <AuthFeedbackMessage id="auth-code-error" variant="error" title="Verification failed">
-            <p>{fieldError}</p>
+          <AuthFeedbackMessage id="auth-code-error" variant="error" title={t("verificationFailed")}>
+            <p>{displayFieldError(fieldError)}</p>
           </AuthFeedbackMessage>
         ) : null}
 
         {successMessage ? (
-          <AuthFeedbackMessage variant="success" title="Code sent">
+          <AuthFeedbackMessage variant="success" title={t("codeSent")}>
             <p>{successMessage}</p>
             {successDetail ? <p>{successDetail}</p> : null}
           </AuthFeedbackMessage>
         ) : null}
 
         {fieldError && deliveryFailureDetail ? (
-          <AuthFeedbackMessage variant="info" title="Previous code still valid">
+          <AuthFeedbackMessage variant="info" title={t("previousCodeStillValid")}>
             <p>{deliveryFailureDetail}</p>
           </AuthFeedbackMessage>
         ) : null}
 
         {cooldownActive ? (
-          <AuthFeedbackMessage
-            variant="warning"
-            title="Please wait before requesting another code."
-          >
-            {countdownLabel ? <p>You can request another code in {countdownLabel}.</p> : null}
-            {cooldownDetail ? <p>{cooldownDetail}</p> : null}
-            {!countdownLabel && !cooldownDetail ? (
-              <p>Please wait before requesting another code.</p>
+          <AuthFeedbackMessage variant="warning" title={t("waitBeforeAnotherCode")}>
+            {countdownLabel ? (
+              <p>{t("requestAnotherCodeIn", { time: countdownLabel })}</p>
             ) : null}
+            {cooldownDetail ? <p>{cooldownDetail}</p> : null}
+            {!countdownLabel && !cooldownDetail ? <p>{t("waitBeforeAnotherCode")}</p> : null}
           </AuthFeedbackMessage>
         ) : null}
       </div>
@@ -266,7 +298,7 @@ export function AuthCodeVerificationFields({
           disabled={resendDisabled}
           onClick={() => void handleResend()}
         >
-          {resending ? "Sending..." : "Resend Code"}
+          {resending ? t("sending") : t("resendCode")}
         </Button>
         <Button type="button" variant="secondary" onClick={() => void onCancel()}>
           {copy.cancelLabel}

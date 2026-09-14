@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
-import { toGeographyCountryOptions } from "@hu/geography";
+import {
+  getLocalizedCountryDisplayName,
+  toGeographyCountryOptions,
+} from "@hu/geography";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
 
@@ -18,32 +22,45 @@ export interface CountrySelectProps {
   error?: string;
 }
 
-/** Canonical Country control — single source via @hu/geography. */
+/** Canonical Country control — single source via @hu/geography (Pack 08K.3 localized labels). */
 export function CountrySelect({
   id,
   value,
   onChange,
   disabled = false,
   required = false,
-  placeholder = "Search countries…",
+  placeholder,
   helperText,
-  label = "Country",
+  label,
   error,
 }: CountrySelectProps) {
-  const options = useMemo(() => toGeographyCountryOptions(), []);
+  const locale = useLocale();
+  const t = useTranslations("initiativeExperience");
+  const options = useMemo(
+    () =>
+      toGeographyCountryOptions().map((option) => ({
+        ...option,
+        label: getLocalizedCountryDisplayName(option.code, locale, option.label),
+      })),
+    [locale],
+  );
+  const resolvedLabel = label ?? t("manage.fields.country");
+  const resolvedPlaceholder = placeholder ?? t("manage.fields.searchCountries");
 
   return (
     <GeographySearchSelect
       id={id}
-      label={label}
+      label={resolvedLabel}
       value={value}
       options={options}
       onChange={onChange}
       disabled={disabled}
       required={required}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       helperText={helperText}
       error={error}
+      loadingPlaceholder={t("manage.geography.loading")}
+      filterAriaLabel={t("manage.geography.filterAria", { label: resolvedLabel })}
     />
   );
 }

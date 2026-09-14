@@ -1,8 +1,8 @@
 "use client";
 
-import { INITIATIVE_LIFECYCLE_PHASE_LABELS } from "../initiative-lifecycle-labels";
 import type { Initiative } from "@hu/types";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
 import { ApiRequestError, isAuthenticationRequiredError, isNotFoundError } from "../../../lib/api-client";
 import { buildWorkspaceInitiativesHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import { resolveLifecyclePhaseDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import {
   archiveInitiative,
@@ -52,7 +53,12 @@ function buildFormState(initiative: Initiative): DraftFormState {
   };
 }
 
+function detailFromError(error: unknown, unknownFallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : unknownFallback;
+}
+
 export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraftEditorProps) {
+  const t = useTranslations("initiativeExperience");
   const router = useRouter();
   const [form, setForm] = useState<DraftFormState>(() => buildFormState(initiative));
   const [saving, setSaving] = useState(false);
@@ -86,13 +92,17 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
     try {
       const updated = await saveInitiativeDraft(initiative.initiativeId, buildSaveInput());
       onUpdated(updated);
-      setMessage({ variant: "success", text: "Draft saved successfully." });
+      setMessage({ variant: "success", text: t("manage.messages.draftSaved") });
     } catch (error) {
       if (error instanceof Error && error.message.toLowerCase().includes("authentication")) {
-        setMessage({ variant: "error", text: "Sign in to create an initiative." });
+        setMessage({ variant: "error", text: t("manage.messages.signInToCreate") });
       } else {
-        const detail = error instanceof Error ? error.message : "Unknown error";
-        setMessage({ variant: "error", text: `Save failed: ${detail}` });
+        setMessage({
+          variant: "error",
+          text: t("manage.messages.saveFailed", {
+            detail: detailFromError(error, t("manage.messages.unknownError")),
+          }),
+        });
       }
     } finally {
       setSaving(false);
@@ -107,13 +117,17 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
       await saveInitiativeDraft(initiative.initiativeId, buildSaveInput());
       const published = await publishInitiative(initiative.initiativeId);
       onUpdated(published);
-      setMessage({ variant: "success", text: "Initiative published successfully." });
+      setMessage({ variant: "success", text: t("manage.messages.published") });
     } catch (error) {
       if (error instanceof Error && error.message.toLowerCase().includes("authentication")) {
-        setMessage({ variant: "error", text: "Sign in to create an initiative." });
+        setMessage({ variant: "error", text: t("manage.messages.signInToCreate") });
       } else {
-        const detail = error instanceof Error ? error.message : "Unknown error";
-        setMessage({ variant: "error", text: `Publish failed: ${detail}` });
+        setMessage({
+          variant: "error",
+          text: t("manage.messages.publishFailed", {
+            detail: detailFromError(error, t("manage.messages.unknownError")),
+          }),
+        });
       }
     } finally {
       setPublishing(false);
@@ -127,10 +141,14 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
     try {
       const archived = await archiveInitiative(initiative.initiativeId);
       onUpdated(archived);
-      setMessage({ variant: "success", text: "Initiative archived." });
+      setMessage({ variant: "success", text: t("manage.messages.archived") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ variant: "error", text: `Archive failed: ${detail}` });
+      setMessage({
+        variant: "error",
+        text: t("manage.messages.archiveFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      });
     } finally {
       setArchiving(false);
     }
@@ -156,14 +174,14 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
       setDeleting(false);
 
       if (isAuthenticationRequiredError(error)) {
-        setMessage({ variant: "error", text: "Sign in to delete this draft." });
+        setMessage({ variant: "error", text: t("manage.messages.signInToDelete") });
         return;
       }
 
       if (isNotFoundError(error)) {
         setMessage({
           variant: "error",
-          text: "This Draft Initiative was already deleted or no longer exists.",
+          text: t("manage.messages.draftAlreadyDeleted"),
         });
         return;
       }
@@ -171,7 +189,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
       if (error instanceof ApiRequestError && error.status === 403) {
         setMessage({
           variant: "error",
-          text: "You do not have permission to delete this Draft Initiative.",
+          text: t("manage.messages.deleteForbidden"),
         });
         return;
       }
@@ -179,13 +197,17 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
       if (error instanceof ApiRequestError && error.status === 409) {
         setMessage({
           variant: "error",
-          text: "This Initiative can no longer be deleted as a draft (it may already be published, archived, or was just changed elsewhere).",
+          text: t("manage.messages.deleteConflict"),
         });
         return;
       }
 
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ variant: "error", text: `Delete failed: ${detail}` });
+      setMessage({
+        variant: "error",
+        text: t("manage.messages.deleteFailed", {
+          detail: detailFromError(error, t("manage.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -193,12 +215,12 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
     return (
       <div className="initiative-draft-editor">
         <p className="initiative-draft-editor__readonly">
-          Lifecycle phase: {INITIATIVE_LIFECYCLE_PHASE_LABELS[initiative.lifecyclePhase]}
+          {t("manage.status.lifecyclePhase", {
+            phase: resolveLifecyclePhaseDisplayLabel(initiative.lifecyclePhase, t),
+          })}
         </p>
         {initiative.lifecyclePhase === "projected" ? (
-          <p className="initiative-draft-editor__readonly">
-            Public projection is available on the associated community experience page.
-          </p>
+          <p className="initiative-draft-editor__readonly">{t("manage.status.projectedHint")}</p>
         ) : null}
       </div>
     );
@@ -207,7 +229,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
   return (
     <div className="initiative-draft-editor">
       <label className="initiative-draft-editor__field">
-        <span>Title</span>
+        <span>{t("manage.fields.title")}</span>
         <input
           type="text"
           className="hu-form-control"
@@ -217,7 +239,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
       </label>
 
       <label className="initiative-draft-editor__field">
-        <span>Short description</span>
+        <span>{t("manage.fields.shortDescription")}</span>
         <textarea
           className="hu-form-control"
           value={form.description}
@@ -245,7 +267,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
         onVideoLinkSubmit={(url) => submitInitiativeVideoLink(initiative.initiativeId, url)}
       />
 
-      <p className="initiative-draft-editor__visibility">Visibility: Public</p>
+      <p className="initiative-draft-editor__visibility">{t("manage.fields.visibilityPublic")}</p>
 
       {/*
        * UX Completion Pack 04 Part 6 — clear button hierarchy: Publish
@@ -261,7 +283,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
           onClick={() => void handlePublish()}
           disabled={saving || publishing || archiving || deleting}
         >
-          {publishing ? "Publishing..." : "Publish Initiative"}
+          {publishing ? t("manage.actions.publishing") : t("manage.actions.publish")}
         </Button>
         <Button
           type="button"
@@ -269,7 +291,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
           onClick={() => void handleSaveDraft()}
           disabled={saving || publishing || archiving || deleting}
         >
-          {saving ? "Saving…" : "Save Draft"}
+          {saving ? t("manage.actions.saving") : t("manage.actions.saveDraft")}
         </Button>
         <span className="initiative-draft-editor__archive-action">
           <Button
@@ -278,7 +300,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
             onClick={() => void handleArchive()}
             disabled={saving || publishing || archiving || deleting}
           >
-            {archiving ? "Archiving..." : "Archive"}
+            {archiving ? t("manage.actions.archiving") : t("manage.actions.archive")}
           </Button>
         </span>
       </div>
@@ -294,9 +316,11 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
        */}
       <div className="initiative-draft-editor__danger-zone">
         <div>
-          <p className="initiative-draft-editor__danger-zone-title">Delete this Draft</p>
+          <p className="initiative-draft-editor__danger-zone-title">
+            {t("manage.actions.deleteThisDraft")}
+          </p>
           <p className="initiative-draft-editor__danger-zone-description">
-            Permanently remove this unpublished Draft Initiative. This cannot be undone.
+            {t("manage.danger.deleteDescription")}
           </p>
         </div>
         <Button
@@ -305,20 +329,20 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
           onClick={() => setDeleteDialogOpen(true)}
           disabled={saving || publishing || archiving || deleting}
         >
-          Delete Draft
+          {t("manage.actions.deleteDraft")}
         </Button>
       </div>
 
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
-        title="Delete Draft Initiative?"
+        title={t("manage.danger.deleteConfirmTitle")}
         description={
           <>
-            <p>This Draft Initiative will be permanently removed.</p>
-            <p>This action cannot be undone.</p>
+            <p>{t("manage.danger.deleteConfirmBody1")}</p>
+            <p>{t("manage.danger.deleteConfirmBody2")}</p>
           </>
         }
-        confirmLabel={deleting ? "Deleting..." : "Delete Draft"}
+        confirmLabel={deleting ? t("manage.actions.deleting") : t("manage.actions.deleteDraft")}
         isConfirming={deleting}
         onCancel={() => setDeleteDialogOpen(false)}
         onConfirm={() => void handleConfirmDelete()}

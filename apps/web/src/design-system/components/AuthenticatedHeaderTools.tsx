@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { useUnreadNotificationCount } from "../../features/notifications/use-unread-notification-count";
 
@@ -13,20 +14,10 @@ function formatUnreadBadgeCount(unreadCount: number): string {
   return unreadCount > 99 ? "99+" : String(unreadCount);
 }
 
-function resolveNotificationsAriaLabel(unreadCount: number | null, hasError: boolean): string {
-  if (unreadCount === null || hasError) {
-    return "Notifications";
-  }
-
-  if (unreadCount === 0) {
-    return "Notifications, no unread notifications";
-  }
-
-  return `Notifications, ${formatUnreadBadgeCount(unreadCount)} unread`;
-}
-
 export function HeaderWorkspaceLink() {
   const pathname = usePathname();
+  const tNav = useTranslations("navigation");
+  const workspaceLabel = tNav("workspace");
   const isActive = pathname === "/workspace" || pathname.startsWith("/workspace/");
 
   return (
@@ -38,8 +29,8 @@ export function HeaderWorkspaceLink() {
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label="Workspace"
-      title="Workspace"
+      aria-label={workspaceLabel}
+      title={workspaceLabel}
       aria-current={isActive ? "page" : undefined}
     >
       <Image
@@ -56,10 +47,25 @@ export function HeaderWorkspaceLink() {
 
 export function HeaderNotificationsLink() {
   const pathname = usePathname();
+  const tWorkspace = useTranslations("workspace");
   const { unreadCount, hasError } = useUnreadNotificationCount();
   const isActive = pathname === "/notifications" || pathname.startsWith("/notifications/");
   const showZeroState = unreadCount === 0 && !hasError;
   const showUnreadBadge = unreadCount !== null && unreadCount > 0 && !hasError;
+
+  function resolveNotificationsAriaLabel(): string {
+    if (unreadCount === null || hasError) {
+      return tWorkspace("notificationsAria");
+    }
+
+    if (unreadCount === 0) {
+      return tWorkspace("notificationsNoneAria");
+    }
+
+    return tWorkspace("notificationsUnreadAria", {
+      count: formatUnreadBadgeCount(unreadCount),
+    });
+  }
 
   return (
     <Link
@@ -71,8 +77,8 @@ export function HeaderNotificationsLink() {
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label={resolveNotificationsAriaLabel(unreadCount, hasError)}
-      title="Notifications"
+      aria-label={resolveNotificationsAriaLabel()}
+      title={tWorkspace("notifications")}
       aria-current={isActive ? "page" : undefined}
     >
       <Image
@@ -85,7 +91,9 @@ export function HeaderNotificationsLink() {
       />
       {showZeroState ? (
         <span className="humanity-header__notification-status-dot" aria-hidden="true">
-          <span className="humanity-header__visually-hidden">No unread notifications</span>
+          <span className="humanity-header__visually-hidden">
+            {tWorkspace("noUnreadNotifications")}
+          </span>
         </span>
       ) : null}
       {showUnreadBadge ? (

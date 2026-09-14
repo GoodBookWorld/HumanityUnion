@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCollectiveDecisionLifecycleDraft } from "@hu/types";
 
@@ -30,6 +31,7 @@ export function InitiativeCollectiveDecisionDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativeCollectiveDecisionLifecycleDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export function InitiativeCollectiveDecisionDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.collectiveDecision.preview.loadFailed"));
         }
       }
     })();
@@ -52,38 +54,53 @@ export function InitiativeCollectiveDecisionDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="icd-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="icd-source-panel__empty">Loading Collective Decision draft preview…</p>;
+    return <p className="icd-source-panel__empty">{t("author.collectiveDecision.preview.loading")}</p>;
   }
 
   return (
-    <article className="icd-public" aria-label="Collective Decision draft preview">
-      <p className="icd-public__meta">Preview — unpublished draft (same renderer as Public)</p>
+    <article className="icd-public" aria-label={t("author.collectiveDecision.preview.aria")}>
+      <p className="icd-public__meta">{t("author.collectiveDecision.preview.meta")}</p>
       <section className="icd-public__section">
-        <h3>{draft.title || "Untitled Collective Decision"}</h3>
+        <h3>{draft.title || t("author.collectiveDecision.preview.untitled")}</h3>
         <p>{draft.decisionSummary}</p>
       </section>
-      <ListSection title="Approved Actions" items={draft.approvedActions} />
-      <ListSection title="Rejected Alternatives" items={draft.rejectedAlternatives} />
-      <ListSection title="Responsible Roles" items={draft.responsibleRoles} />
-      <ListSection title="Implementation Priorities" items={draft.implementationPriorities} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.approvedActions")}
+        items={draft.approvedActions}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.rejectedAlternatives")}
+        items={draft.rejectedAlternatives}
+      />
+      <ListSection title={t("author.collectiveDecision.sections.roles")} items={draft.responsibleRoles} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.priorities")}
+        items={draft.implementationPriorities}
+      />
       <section className="icd-public__section">
-        <h3>Implementation Timeline</h3>
-        <p>{draft.implementationTimeline || "Not set."}</p>
+        <h3>{t("author.collectiveDecision.sections.timeline")}</h3>
+        <p>{draft.implementationTimeline || t("author.collectiveDecision.preview.notSet")}</p>
       </section>
       <section className="icd-public__section">
-        <h3>Decision Rationale</h3>
-        <p>{draft.decisionRationale || "No rationale yet."}</p>
+        <h3>{t("author.collectiveDecision.sections.rationale")}</h3>
+        <p>{draft.decisionRationale || t("author.collectiveDecision.preview.noRationale")}</p>
       </section>
-      <ListSection title="Decision Risks" items={draft.decisionRisks} />
-      <ListSection title="Success Criteria" items={draft.successCriteria} />
-      <ListSection title="Required Resources" items={draft.requiredResources} />
+      <ListSection title={t("author.collectiveDecision.sections.risks")} items={draft.decisionRisks} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.criteria")}
+        items={draft.successCriteria}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.requiredResources")}
+        items={draft.requiredResources}
+      />
     </article>
   );
 }

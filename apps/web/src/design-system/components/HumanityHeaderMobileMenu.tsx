@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { forwardRef, useCallback } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
 import { PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
+import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 
 const WORKSPACE_ICON = "/icons/workspace/work.svg";
 const NOTIFICATIONS_ICON = "/icons/workspace/icons8-notification.svg";
@@ -24,6 +26,9 @@ export function HumanityHeaderMobileMenu({
   onClose,
 }: HumanityHeaderMobileMenuProps) {
   const authStatus = useClientAuthStatus();
+  const tNav = useTranslations("navigation");
+  const tAuth = useTranslations("auth");
+  const tWorkspace = useTranslations("workspace");
 
   const handleLinkClick = useCallback(() => {
     onClose();
@@ -38,7 +43,7 @@ export function HumanityHeaderMobileMenu({
       <button
         type="button"
         className="humanity-header__mobile-backdrop"
-        aria-label="Close navigation menu"
+        aria-label={tNav("closeNavMenuAria")}
         onClick={onClose}
       />
       <div
@@ -46,9 +51,9 @@ export function HumanityHeaderMobileMenu({
         className="humanity-header__mobile-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Mobile navigation"
+        aria-label={tNav("mobileNavAria")}
       >
-        <nav aria-label="Primary navigation">
+        <nav aria-label={tNav("primaryNavAria")}>
           <ul className="humanity-header__mobile-nav-list">
             {PRIMARY_NAVIGATION.map((item) => {
               if (!item.href) {
@@ -65,7 +70,7 @@ export function HumanityHeaderMobileMenu({
                     aria-current={isCurrent ? "page" : undefined}
                     onClick={handleLinkClick}
                   >
-                    {item.label}
+                    {resolvePrimaryNavDisplayLabel(item.label, tNav)}
                   </Link>
                 </li>
               );
@@ -82,14 +87,14 @@ export function HumanityHeaderMobileMenu({
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Log in
+                  {tAuth("logIn")}
                 </Link>
                 <Link
                   href="/register"
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Create account
+                  {tAuth("createAccount")}
                 </Link>
               </>
             ) : (
@@ -107,7 +112,7 @@ export function HumanityHeaderMobileMenu({
                     className="humanity-header__mobile-nav-icon"
                     aria-hidden="true"
                   />
-                  Workspace
+                  {tNav("workspace")}
                 </Link>
                 <Link
                   href="/notifications"
@@ -122,14 +127,14 @@ export function HumanityHeaderMobileMenu({
                     className="humanity-header__mobile-nav-icon"
                     aria-hidden="true"
                   />
-                  Notifications
+                  {tWorkspace("notifications")}
                 </Link>
                 <Link
                   href="/member"
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Profile
+                  {tWorkspace("profile")}
                 </Link>
               </>
             )}
@@ -148,12 +153,13 @@ export const HumanityHeaderMenuButton = forwardRef<
     onToggle: () => void;
   }
 >(function HumanityHeaderMenuButton({ isOpen, menuId, onToggle }, ref) {
+  const tNav = useTranslations("navigation");
   return (
     <button
       ref={ref}
       type="button"
       className="humanity-header__menu-button"
-      aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+      aria-label={isOpen ? tNav("closeNavMenuAria") : tNav("openNavMenuAria")}
       aria-expanded={isOpen}
       aria-controls={menuId}
       onClick={onToggle}

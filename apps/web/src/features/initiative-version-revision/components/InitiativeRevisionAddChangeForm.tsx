@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeRevisionChangeSection, InitiativeRevisionDraft } from "@hu/types";
 
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import { addAuthorOriginatedRevisionChange } from "../api";
 
-const SECTION_OPTIONS: Array<{ value: InitiativeRevisionChangeSection; label: string }> = [
-  { value: "title", label: "Title" },
-  { value: "description", label: "Description" },
-  { value: "custom", label: "Custom" },
-];
+const SECTION_OPTIONS: InitiativeRevisionChangeSection[] = ["title", "description", "custom"];
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
 
 /**
  * Initiative Lifecycle — Part E, Section 8 (Author-originated Changes).
@@ -32,6 +33,7 @@ export function InitiativeRevisionAddChangeForm({
   readonly currentDescription: string;
   readonly onChanged: (draft: InitiativeRevisionDraft) => void;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [section, setSection] = useState<InitiativeRevisionChangeSection>("description");
   const [after, setAfter] = useState("");
   const [reason, setReason] = useState("");
@@ -53,7 +55,7 @@ export function InitiativeRevisionAddChangeForm({
 
   async function handleAdd() {
     if (!after.trim() || !reason.trim() || !explanation.trim()) {
-      setError("After text, reason, and explanation are required.");
+      setError(t("author.revision.change.validationRequired"));
       return;
     }
 
@@ -73,7 +75,7 @@ export function InitiativeRevisionAddChangeForm({
       setReason("");
       setExplanation("");
     } catch (addError) {
-      setError(addError instanceof Error ? addError.message : "This change could not be added.");
+      setError(detailFromError(addError, t("author.revision.change.addFailed")));
     } finally {
       setBusy(false);
     }
@@ -81,23 +83,23 @@ export function InitiativeRevisionAddChangeForm({
 
   return (
     <div className="irv-add-change">
-      <h4>Add Author-originated Change</h4>
+      <h4>{t("author.revision.change.addTitle")}</h4>
       <div className="irv-editor__field">
-        <label htmlFor="irv-add-change-section">Section</label>
+        <label htmlFor="irv-add-change-section">{t("author.revision.fields.section")}</label>
         <select
           id="irv-add-change-section"
           value={section}
           onChange={(event) => setSection(event.target.value as InitiativeRevisionChangeSection)}
         >
           {SECTION_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+            <option key={option} value={option}>
+              {t(`author.revision.sectionOptions.${option}`)}
             </option>
           ))}
         </select>
       </div>
       <div className="irv-editor__field">
-        <label htmlFor="irv-add-change-after">Proposed text (After)</label>
+        <label htmlFor="irv-add-change-after">{t("author.revision.fields.proposedAfter")}</label>
         <textarea
           id="irv-add-change-after"
           value={after}
@@ -106,7 +108,7 @@ export function InitiativeRevisionAddChangeForm({
         />
       </div>
       <div className="irv-editor__field">
-        <label htmlFor="irv-add-change-reason">Reason (why this change is needed)</label>
+        <label htmlFor="irv-add-change-reason">{t("author.revision.fields.reason")}</label>
         <input
           id="irv-add-change-reason"
           value={reason}
@@ -114,7 +116,7 @@ export function InitiativeRevisionAddChangeForm({
         />
       </div>
       <div className="irv-editor__field">
-        <label htmlFor="irv-add-change-explanation">Explanation (what changed)</label>
+        <label htmlFor="irv-add-change-explanation">{t("author.revision.fields.explanation")}</label>
         <textarea
           id="irv-add-change-explanation"
           value={explanation}
@@ -123,7 +125,7 @@ export function InitiativeRevisionAddChangeForm({
         />
       </div>
       <WorkspaceButton variant="primary" disabled={busy} onClick={() => void handleAdd()}>
-        {busy ? "Adding..." : "Add Change"}
+        {busy ? t("author.revision.change.adding") : t("author.revision.change.addChange")}
       </WorkspaceButton>
       {error ? (
         <p className="irv-editor__message" data-tone="error" role="alert">

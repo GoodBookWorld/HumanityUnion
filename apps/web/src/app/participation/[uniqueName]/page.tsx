@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -12,11 +13,8 @@ interface PublicParticipationPageProps {
   }>;
 }
 
-function formatList(values: string[] | undefined): string {
-  return values && values.length > 0 ? values.join(", ") : "Not specified";
-}
-
 export default async function PublicParticipationPage({ params }: PublicParticipationPageProps) {
+  const t = await getTranslations("participantPublic.participation");
   const { uniqueName } = await params;
   let profile = null;
 
@@ -26,13 +24,17 @@ export default async function PublicParticipationPage({ params }: PublicParticip
     profile = null;
   }
 
+  const formatList = (values: string[] | undefined): string => {
+    return values && values.length > 0 ? values.join(", ") : t("notSpecified");
+  };
+
   if (!profile) {
     return (
       <main className="participation-page">
-        <h1>Public Participation Profile</h1>
-        <p>Public participation profile is not available.</p>
+        <h1>{t("title")}</h1>
+        <p>{t("unavailable")}</p>
         <p className="participation-page__back">
-          <Link href="/">Back to Home</Link>
+          <Link href="/">{t("backHome")}</Link>
         </p>
       </main>
     );
@@ -41,38 +43,36 @@ export default async function PublicParticipationPage({ params }: PublicParticip
   return (
     <main className="participation-page">
       <header className="participation-page__header">
-        <h1 className="participation-page__title">
-          {profile.displayName ?? "Public Participation Profile"}
-        </h1>
-        <p className="participation-page__subtitle">Public participation interests</p>
+        <h1 className="participation-page__title">{profile.displayName ?? t("title")}</h1>
+        <p className="participation-page__subtitle">{t("subtitle")}</p>
       </header>
 
-      <ProfileSection title="Public Participation">
+      <ProfileSection title={t("sectionTitle")}>
         {profile.displayName ? (
-          <ProfileField label="Display Name" value={profile.displayName} />
+          <ProfileField label={t("displayName")} value={profile.displayName} />
         ) : null}
         {profile.languages ? (
-          <ProfileField label="Languages" value={formatList(profile.languages)} />
+          <ProfileField label={t("languages")} value={formatList(profile.languages)} />
         ) : null}
         {profile.interestedTopics ? (
-          <ProfileField label="Interested Topics" value={formatList(profile.interestedTopics)} />
+          <ProfileField label={t("interestedTopics")} value={formatList(profile.interestedTopics)} />
         ) : null}
         {profile.volunteerInterests ? (
           <ProfileField
-            label="Volunteer Interests"
+            label={t("volunteerInterests")}
             value={formatList(profile.volunteerInterests)}
           />
         ) : null}
         {profile.preferredParticipationRegions ? (
           <ProfileField
-            label="Preferred Participation Regions"
+            label={t("preferredRegions")}
             value={formatList(profile.preferredParticipationRegions)}
           />
         ) : null}
       </ProfileSection>
 
       <p className="participation-page__back">
-        <Link href="/">Back to Home</Link>
+        <Link href="/">{t("backHome")}</Link>
       </p>
     </main>
   );

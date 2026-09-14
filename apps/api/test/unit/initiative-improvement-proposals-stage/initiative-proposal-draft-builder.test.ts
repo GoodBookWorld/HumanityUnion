@@ -118,12 +118,13 @@ describe("generateImprovementProposalDrafts (Deterministic Draft Builder)", () =
     assert.match(drafts[0]!.title, /Add a dedicated composting station near the entrance/);
   });
 
-  it("labels a duplicate group's reason honestly, citing 'repetition suggests shared concern'", async () => {
+  it("stores HU system reason/supportingSources as structured generation, not English glue", async () => {
     const group = buildGroup({
       isDuplicateGroup: true,
       memberCount: 3,
       memberCandidateIds: ["candidate-1", "candidate-2", "candidate-3"],
       authorDisplayNames: ["Ally One", "Ally Two", "Ally Three"],
+      totalHelpfulCount: 7,
     });
 
     const drafts = await generateImprovementProposalDrafts({
@@ -131,22 +132,16 @@ describe("generateImprovementProposalDrafts (Deterministic Draft Builder)", () =
       existingGroupIds: new Set(),
     });
 
-    assert.match(drafts[0]!.reason, /repetition suggests shared concern/);
-    assert.match(drafts[0]!.reason, /3 participants/);
+    assert.equal(drafts[0]!.reason, "");
+    assert.equal(drafts[0]!.supportingSources, "");
+    assert.ok(drafts[0]!.huSystemGeneration);
+    assert.equal(drafts[0]!.huSystemGeneration.reasonKind, "raised_independently");
+    assert.equal(drafts[0]!.huSystemGeneration.participantCount, 3);
+    assert.equal(drafts[0]!.huSystemGeneration.helpfulCount, 7);
+    assert.equal(drafts[0]!.huSystemGeneration.supportingSourcesKind, "helpful_reactions");
   });
 
-  it("cites the real Helpful-count evidence verbatim in supportingSources", async () => {
-    const group = buildGroup({ totalHelpfulCount: 7, memberCount: 2, memberCandidateIds: ["candidate-1", "candidate-2"] });
-
-    const drafts = await generateImprovementProposalDrafts({
-      snapshot: buildSnapshot([group]),
-      existingGroupIds: new Set(),
-    });
-
-    assert.match(drafts[0]!.supportingSources, /7 Helpful reaction/);
-  });
-
-  it("never invents an accepted/rejected/priority field — only advisory drafting fields exist", async () => {
+  it("keeps participant summary MANUAL_AUTHOR and never invents accepted/rejected fields", async () => {
     const group = buildGroup({});
 
     const drafts = await generateImprovementProposalDrafts({
@@ -154,6 +149,7 @@ describe("generateImprovementProposalDrafts (Deterministic Draft Builder)", () =
       existingGroupIds: new Set(),
     });
 
+    assert.equal(drafts[0]!.summary, group.representativeExcerpt);
     const draftKeys = Object.keys(drafts[0]!);
     for (const forbiddenKey of ["accepted", "rejected", "priority", "importance", "status"]) {
       assert.equal(draftKeys.includes(forbiddenKey), false, `draft must never include '${forbiddenKey}'`);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { AuthUserPublic } from "@hu/types";
 
@@ -16,7 +17,11 @@ import {
   startDisableLoginTwoStep,
   startEnableLoginTwoStep,
 } from "../auth-api";
-import { normalizeIncorrectCodeMessage } from "../lib/auth-feedback-messages";
+import {
+  AUTH_INCORRECT_CODE_MESSAGE,
+  isIncorrectCodeMessage,
+  normalizeIncorrectCodeMessage,
+} from "../lib/auth-feedback-messages";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 
 import "./account-panel.css";
@@ -34,6 +39,8 @@ export function AccountSecuritySection({
   onMessage,
   onError,
 }: AccountSecuritySectionProps) {
+  const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const [submitting, setSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<"enable" | "disable" | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -43,6 +50,13 @@ export function AccountSecuritySection({
 
   const emailConfirmed = user.emailVerificationStatus === "verified";
   const twoStepEnabled = user.loginEmailTwoStepEnabled === true;
+
+  function displayError(message: string): string {
+    if (message === AUTH_INCORRECT_CODE_MESSAGE || isIncorrectCodeMessage(message)) {
+      return t("incorrectCode");
+    }
+    return message;
+  }
 
   function resetFlow() {
     setPendingAction(null);
@@ -67,7 +81,7 @@ export function AccountSecuritySection({
       }
 
       setPendingAction(action);
-      const message = "We sent a six-digit code to your confirmed email address.";
+      const message = t("twoStepCodeSent");
       setLocalMessage(message);
       onMessage(message);
     } catch (startError) {
@@ -99,9 +113,7 @@ export function AccountSecuritySection({
       onUserUpdated(updated);
       resetFlow();
       const message =
-        pendingAction === "enable"
-          ? "Two-Step Login enabled successfully."
-          : "Two-Step Login disabled successfully.";
+        pendingAction === "enable" ? t("twoStepEnabledSuccess") : t("twoStepDisabledSuccess");
       setLocalMessage(message);
       onMessage(message);
     } catch (confirmError) {
@@ -124,7 +136,7 @@ export function AccountSecuritySection({
 
     try {
       await resendLoginTwoStepSettingCode(pendingAction);
-      const message = "A new verification code has been sent.";
+      const message = t("newVerificationCodeSent");
       setLocalMessage(message);
       onMessage(message);
     } catch (resendError) {
@@ -137,23 +149,23 @@ export function AccountSecuritySection({
   }
 
   return (
-    <ProfileSection title="Account Security">
-      <ProfileField label="Email confirmed" value={emailConfirmed ? "Yes" : "No"} />
+    <ProfileSection title={t("accountSecurity")}>
       <ProfileField
-        label="Two-Step Login by Email"
-        value={twoStepEnabled ? "Enabled" : "Disabled"}
+        label={t("emailConfirmed")}
+        value={emailConfirmed ? t("yes") : t("no")}
       />
-      <p className="account-panel__help">
-        Two-Step Login adds an email code after your password when you sign in. It confirms access
-        to your email account. It is not identity verification or Humanity Union membership.
-      </p>
+      <ProfileField
+        label={t("twoStepLoginByEmail")}
+        value={twoStepEnabled ? t("enabled") : t("disabled")}
+      />
+      <p className="account-panel__help">{t("twoStepLoginHelp")}</p>
 
       {!emailConfirmed ? (
-        <p className="account-panel__help">Confirm your email before enabling Two-Step Login.</p>
+        <p className="account-panel__help">{t("confirmEmailBeforeTwoStep")}</p>
       ) : pendingAction ? (
         <div className="account-panel__form">
           <label className="account-panel__field" htmlFor="two-step-setting-code">
-            <span>Verification code</span>
+            <span>{t("verificationCode")}</span>
             <input
               id="two-step-setting-code"
               className="auth-form__code-input"
@@ -172,12 +184,12 @@ export function AccountSecuritySection({
           </label>
           <div className="auth-form__feedback-stack">
             {localError ? (
-              <AuthFeedbackMessage variant="error" title="Security action failed">
-                <p>{localError}</p>
+              <AuthFeedbackMessage variant="error" title={t("securityActionFailed")}>
+                <p>{displayError(localError)}</p>
               </AuthFeedbackMessage>
             ) : null}
             {localMessage ? (
-              <AuthFeedbackMessage variant="success" title="Verification code sent">
+              <AuthFeedbackMessage variant="success" title={t("verificationCodeSent")}>
                 <p>{localMessage}</p>
               </AuthFeedbackMessage>
             ) : null}
@@ -188,20 +200,20 @@ export function AccountSecuritySection({
               disabled={submitting || verificationCode.length !== 6}
               onClick={() => void handleConfirm()}
             >
-              {pendingAction === "enable" ? "Confirm Enable" : "Confirm Disable"}
+              {pendingAction === "enable" ? t("confirmEnable") : t("confirmDisable")}
             </Button>
             <Button variant="secondary" disabled={submitting} onClick={() => void handleResend()}>
-              Resend Code
+              {t("resendCode")}
             </Button>
             <Button variant="secondary" disabled={submitting} onClick={resetFlow}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
           </div>
         </div>
       ) : (
         <div className="account-panel__form">
           <label className="account-panel__field" htmlFor="two-step-current-password">
-            <span>Current password</span>
+            <span>{t("currentPassword")}</span>
             <PasswordInput
               id="two-step-current-password"
               autoComplete="current-password"
@@ -216,7 +228,7 @@ export function AccountSecuritySection({
                 disabled={submitting || !currentPassword}
                 onClick={() => void handleStart("enable")}
               >
-                Enable Two-Step Login
+                {t("enableTwoStepLogin")}
               </Button>
             ) : (
               <Button
@@ -224,7 +236,7 @@ export function AccountSecuritySection({
                 disabled={submitting || !currentPassword}
                 onClick={() => void handleStart("disable")}
               >
-                Disable Two-Step Login
+                {t("disableTwoStepLogin")}
               </Button>
             )}
           </div>

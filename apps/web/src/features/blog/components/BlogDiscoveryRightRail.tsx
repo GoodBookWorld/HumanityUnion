@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { PublicBlogCategoryCount, PublicBlogPostListItem } from "@hu/types";
 
 import { BlogCategoryChart } from "./BlogCategoryChart";
@@ -25,8 +27,10 @@ export function BlogDiscoveryRightRail({
   activeCategorySlug = "all",
   q = "",
 }: BlogDiscoveryRightRailProps) {
+  const t = useTranslations("blogPublic.discovery");
+
   return (
-    <aside className="blog-layout__right" aria-label="Blog discovery" tabIndex={0}>
+    <aside className="blog-layout__right" aria-label={t("rightAria")} tabIndex={0}>
       <div className="blog-layout__views">
         <BlogViewsWidget views={blogIndexViews} />
       </div>

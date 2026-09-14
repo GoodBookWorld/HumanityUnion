@@ -3,6 +3,7 @@ import { Router, type Request, type Response } from "express";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import { getMemberById } from "../member/member-access.js";
 import { loadParticipationAreaWorkspaceForParticipant } from "../participation-area/participation-area.service.js";
 import {
@@ -22,6 +23,29 @@ import {
 } from "./member-profile.service.js";
 
 const memberProfileRouter = Router();
+
+function readPresentationLocaleQuery(req: Request): string {
+  const raw = req.query.locale;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function resolveRequestPresentationLocale(req: Request): Promise<string> {
+  // Prefer explicit presentation locale from the Web UI (Registry identity).
+  // Do not fall through to Participant interfaceLanguage when the query is present —
+  // `/profile` chrome follows `hu_lang` while prefs may still be `en`.
+  const queryLocale = readPresentationLocaleQuery(req);
+  if (queryLocale) {
+    return queryLocale;
+  }
+  const headerRaw = req.headers["x-hu-presentation-locale"];
+  const headerLocale = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw;
+  if (typeof headerLocale === "string" && headerLocale.trim()) {
+    return headerLocale.trim();
+  }
+  const runtime = await attachRuntimeLocale(req);
+  return runtime.locale;
+}
 
 function createFailureResponse(message: string) {
   return {
@@ -216,7 +240,8 @@ memberProfileRouter.get(
         displayName: await resolveDisplayName(req),
       });
 
-      const preview = await getMyPublicMemberProfilePreview(userId);
+      const locale = await resolveRequestPresentationLocale(req);
+      const preview = await getMyPublicMemberProfilePreview(userId, { locale });
       res.json(createSuccessResponse(preview, "Public profile preview loaded."));
     } catch (error) {
       handleMemberProfileError(res, error);

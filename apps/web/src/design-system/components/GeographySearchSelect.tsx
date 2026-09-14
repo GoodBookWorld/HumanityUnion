@@ -32,6 +32,10 @@ interface GeographySearchSelectProps {
   noMatchMessage?: string;
   /** Label for the empty value that clears the selection. */
   emptyOptionLabel?: string;
+  /** Placeholder shown in the filter input while options are loading. */
+  loadingPlaceholder?: string;
+  /** Accessible name for the filter input. */
+  filterAriaLabel?: string;
 }
 
 /**
@@ -53,6 +57,8 @@ export function GeographySearchSelect({
   emptyMessage,
   noMatchMessage = "No matching cities or communities found.",
   emptyOptionLabel = "Select…",
+  loadingPlaceholder = "Loading…",
+  filterAriaLabel,
 }: GeographySearchSelectProps) {
   const listboxId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -269,10 +275,10 @@ export function GeographySearchSelect({
                 }
               }}
               onKeyDown={handleSearchKeyDown}
-              placeholder={loading ? "Loading…" : placeholder}
+              placeholder={loading ? loadingPlaceholder : placeholder}
               disabled={controlDisabled}
               autoComplete="off"
-              aria-label={`Filter ${label}`}
+              aria-label={filterAriaLabel ?? `Filter ${label}`}
               aria-controls={listboxId}
               aria-autocomplete="list"
               aria-describedby={describedBy || undefined}

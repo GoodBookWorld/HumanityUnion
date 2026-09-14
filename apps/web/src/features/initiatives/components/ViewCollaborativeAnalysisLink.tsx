@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   WorkspaceEmptyState,
@@ -13,6 +14,8 @@ import "./view-collaborative-analysis-link.css";
 
 interface ViewCollaborativeAnalysisLinkProps {
   initiativeId: string | null;
+  /** Localized link label; defaults to catalog English for callers outside Manage. */
+  label?: string;
 }
 
 /**
@@ -21,7 +24,10 @@ interface ViewCollaborativeAnalysisLinkProps {
  */
 export function ViewCollaborativeAnalysisLink({
   initiativeId,
+  label,
 }: ViewCollaborativeAnalysisLinkProps) {
+  const t = useTranslations("initiativeExperience");
+  const resolvedLabel = label ?? t("manage.links.viewCollaborativeAnalysis");
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -68,23 +74,25 @@ export function ViewCollaborativeAnalysisLink({
   if (!initiativeId) {
     return (
       <WorkspaceEmptyState
-        title="No initiative selected"
-        explanation="Select an initiative to open its collaborative analysis workspace."
-        nextStep="Choose an initiative from My Initiatives."
+        title={t("manage.links.collaborativeAnalysisNoInitiativeTitle")}
+        explanation={t("manage.links.collaborativeAnalysisNoInitiativeExplanation")}
+        nextStep={t("manage.links.collaborativeAnalysisNoInitiativeNext")}
       />
     );
   }
 
   if (loading) {
-    return <WorkspaceLoadingState message="Loading collaborative analysis..." />;
+    return (
+      <WorkspaceLoadingState message={t("manage.links.collaborativeAnalysisLoading")} />
+    );
   }
 
   if (!hasAnalysis) {
     return (
       <WorkspaceEmptyState
-        title="No collaborative analysis has been created yet."
-        explanation="This initiative does not have a linked collaborative analysis workspace."
-        nextStep="Create or publish collaborative analysis from the Collaborative Analysis section."
+        title={t("manage.links.collaborativeAnalysisEmptyTitle")}
+        explanation={t("manage.links.collaborativeAnalysisEmptyExplanation")}
+        nextStep={t("manage.links.collaborativeAnalysisEmptyNext")}
       />
     );
   }
@@ -92,7 +100,7 @@ export function ViewCollaborativeAnalysisLink({
   return (
     <WorkspacePublicLink
       href={`/initiatives/public/${encodeURIComponent(initiativeId)}#collaborative-analysis`}
-      label="View Collaborative Analysis"
+      label={resolvedLabel}
     />
   );
 }
