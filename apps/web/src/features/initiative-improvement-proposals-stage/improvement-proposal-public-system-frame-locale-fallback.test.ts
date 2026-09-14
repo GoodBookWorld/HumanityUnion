@@ -144,6 +144,8 @@ describe("Improvement Proposals public system-frame locale fallback", () => {
       /sourceKind === "improvement_proposal" \? fallback : original/,
     );
     assert.match(fields, /incompleteDisplay/);
+    // Visible bag is `fields` (WEB_UI fallback), not English originalFields.
+    assert.match(fields, /const displayBag = fields/);
   });
 
   it("English CT source helper remains for warm/discovery (unchanged English frames)", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
@@ -42,6 +42,11 @@ export interface PublicTranslatedFieldsProps {
  * - cache-only resolve (never provider-on-read)
  * - complete localized bag or coherent original — never per-field hybrid merge
  * - Controlled Vocabulary is not a post-render substitute for ordinary prose
+ *
+ * Reactivity — do not put unstable `fieldOrder` array identity in effect deps;
+ * guard in-flight resolve with a generation counter; skip destructive English
+ * reset while reading context is not ready; `fields` is always the browser-
+ * visible bag (including IP WEB_UI presentation fallback when CT is incomplete).
  */
 export function PublicTranslatedFields({
   sourceKind,
@@ -55,6 +60,7 @@ export function PublicTranslatedFields({
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const requestGeneration = useRef(0);
   const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
   const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
@@ -70,22 +76,29 @@ export function PublicTranslatedFields({
   );
 
   const fallbackSignature = JSON.stringify(fallbackFields);
+  /** Content-stable deps key — avoids re-resolve when parents pass a new array ref. */
+  const fieldOrderSignature = fieldOrder.join("\u0001");
 
   useEffect(() => {
+    // Wait for reading context; do not wipe an in-progress or prior presentation
+    // to English merely because ready has not settled (e.g. guest locale probe).
+    if (!readingContext.ready) {
+      return;
+    }
+
+    const generation = ++requestGeneration.current;
     const fallback = JSON.parse(fallbackSignature) as Record<string, string>;
+    const orderedKeys = fieldOrderSignature.length > 0 ? fieldOrderSignature.split("\u0001") : [];
+
     setFields(fallback);
     setOriginalFields(fallback);
     setPresentationMode("original");
     setActiveLanguage(DEFAULT_PLATFORM_LANGUAGE);
     setIsMachineTranslated(false);
     setCanViewOriginal(false);
-
-    if (!readingContext.ready) {
-      return;
-    }
+    setPreferredLanguage(displayLanguage);
 
     let cancelled = false;
-    setPreferredLanguage(displayLanguage);
 
     void (async () => {
       try {
@@ -95,7 +108,7 @@ export function PublicTranslatedFields({
           language: displayLanguage,
         });
 
-        if (cancelled) {
+        if (cancelled || generation !== requestGeneration.current) {
           return;
         }
 
@@ -106,7 +119,7 @@ export function PublicTranslatedFields({
             ? COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS
             : sourceKind === "improvement_proposal"
               ? IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS
-              : fieldOrder;
+              : orderedKeys;
 
         const complete =
           resolved.presentationMode !== "original" &&
@@ -121,6 +134,7 @@ export function PublicTranslatedFields({
           // Improvement Proposals: prefer caller presentation fallback (WEB_UI
           // system frames) over English CT original when the localized bag is
           // incomplete. Other kinds keep coherent canonical original.
+          // `fields` is the browser-visible bag (see displayBag below).
           const incompleteDisplay =
             sourceKind === "improvement_proposal" ? fallback : original;
           setFields(incompleteDisplay);
@@ -147,7 +161,7 @@ export function PublicTranslatedFields({
         setIsStale(resolved.isStale);
         setPresentationMode("localized");
       } catch {
-        if (!cancelled) {
+        if (!cancelled && generation === requestGeneration.current) {
           setFields(fallback);
           setOriginalFields(fallback);
           setPresentationMode("original");
@@ -163,12 +177,14 @@ export function PublicTranslatedFields({
     sourceKind,
     sourceRecordId,
     fallbackSignature,
+    fieldOrderSignature,
     readingContext.ready,
     displayLanguage,
-    fieldOrder,
   ]);
 
-  const displayBag = presentationMode === "localized" ? fields : originalFields;
+  // Always render `fields` — including IP WEB_UI presentation fallback when CT
+  // is incomplete. `originalFields` remains available for view-original chrome.
+  const displayBag = fields;
 
   return (
     <div

@@ -133,7 +133,7 @@ export function InitiativeImprovementProposalsPublicResult({
             <PublicTranslatedFields
               sourceKind="improvement_proposal"
               sourceRecordId={proposal.proposalId}
-              fieldOrder={[...IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS]}
+              fieldOrder={IMPROVEMENT_PROPOSAL_BROWSER_VISIBLE_PROSE_FIELDS}
               fieldLabels={{
                 title: t("author.proposal.fields.title"),
                 summary: t("author.proposal.fields.summary"),

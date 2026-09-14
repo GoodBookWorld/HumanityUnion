@@ -75,7 +75,7 @@ export function InitiativeCollaborativeAnalysisPublicResult({
       <PublicTranslatedFields
         sourceKind="collaborative_analysis"
         sourceRecordId={analysisId}
-        fieldOrder={[...COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS]}
+        fieldOrder={COLLABORATIVE_ANALYSIS_BROWSER_VISIBLE_PROSE_FIELDS}
         fieldLabels={{
           title: t("author.analysis.fields.title"),
           summary: t("author.analysis.fields.summary"),
