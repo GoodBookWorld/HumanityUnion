@@ -139,7 +139,8 @@ describe("Localization Authority Closure 04 — Improvement Proposals", () => {
     );
     assert.match(src, /data-hu-presentation-authority=["']persisted_localized_content["']/);
     assert.match(src, /PublicTranslatedFields/);
-    assert.match(src, /buildImprovementProposalCtFields/);
+    assert.match(src, /buildImprovementProposalPublicPresentationFields/);
+    assert.doesNotMatch(src, /buildImprovementProposalCtFields/);
     assert.doesNotMatch(src, /mixed_manual_author_and_web_ui/);
     assert.doesNotMatch(src, /proposedChange|currentIssue|rationale/);
   });
