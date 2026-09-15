@@ -87,7 +87,9 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
   it("Pack 1.1 — public surfaces are cache-only (no participant on-demand generate)", () => {
     const fields = readWeb("src/features/language/components/PublicTranslatedFields.tsx");
     assert.doesNotMatch(fields, /generateContentTranslation/);
-    assert.match(fields, /resolveTranslatedContent/);
+    // Pack 1 — ordinary public reading uses stable fallback DOM (no CT apply).
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
+    assert.match(fields, /fallbackFields/);
 
     const civic = readWeb("src/features/language/components/CivicPublicTranslatedSection.tsx");
     assert.match(civic, /enableOnDemandGenerate=\{false\}/);

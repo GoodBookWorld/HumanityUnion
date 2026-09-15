@@ -137,15 +137,11 @@ describe("Improvement Proposals public system-frame locale fallback", () => {
     assert.match(publicResult, /huSystemGeneration|labelLookup/);
   });
 
-  it("PublicTranslatedFields prefers presentation fallback for incomplete improvement_proposal CT", () => {
+  it("PublicTranslatedFields ordinary reading uses caller fallbackFields without CT apply", () => {
     const fields = read("features/language/components/PublicTranslatedFields.tsx");
-    assert.match(
-      fields,
-      /sourceKind === "improvement_proposal" \? fallback : original/,
-    );
-    assert.match(fields, /incompleteDisplay/);
-    // Visible bag is `fields` (WEB_UI fallback), not English originalFields.
-    assert.match(fields, /const displayBag = fields/);
+    assert.match(fields, /const fields = fallbackFields/);
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
+    assert.doesNotMatch(fields, /incompleteDisplay/);
   });
 
   it("English CT source helper remains for warm/discovery (unchanged English frames)", () => {

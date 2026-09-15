@@ -230,7 +230,9 @@ describe("Pack 1.1 — retire participant generate-on-read", () => {
     assert.doesNotMatch(legal, /generateContentTranslation/);
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
     assert.doesNotMatch(fields, /generateContentTranslation/);
-    assert.match(fields, /resolveTranslatedContent/);
+    // Pack 1 — ordinary public reading no longer applies CT post-mount.
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
+    assert.match(fields, /fallbackFields/);
   });
 
   it("shared public paths no longer call generateContentTranslation", () => {

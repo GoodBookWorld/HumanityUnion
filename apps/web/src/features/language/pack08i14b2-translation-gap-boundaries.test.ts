@@ -102,8 +102,10 @@ describe("Pack 08I.14B.2 — Collaborative Analysis / Petition presentation wiri
 
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
     assert.match(fields, /resolvePublicContentDisplayLanguage/);
-    assert.match(fields, /language:\s*displayLanguage/);
+    // Pack 1 — ordinary reading no longer passes language= to CT resolve.
+    assert.doesNotMatch(fields, /language:\s*displayLanguage/);
     assert.doesNotMatch(fields, /readingContext\.readingLanguage/);
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
   });
 
   it("Petition PublicResult mounts PublicTranslatedFields for civic prose fields", () => {
@@ -116,13 +118,12 @@ describe("Pack 08I.14B.2 — Collaborative Analysis / Petition presentation wiri
     assert.match(petition, /fallbackFields/);
   });
 
-  it("documents Live DATA_COMPLETION: CA/Petition resolve miss leaves original mode", () => {
-    // Live audit (08I.14B.2): CA CURRENT_UK=2 MISSING_UK=3; Petition CURRENT=1 MISSING=2.
-    // PublicTranslatedFields starts from fallbackFields (canonical) until resolve returns
-    // preferred_translation — so MISSING_UK surfaces as English civic prose.
+  it("documents Live DATA_COMPLETION: CA/Petition ordinary reading stays on canonical fallback", () => {
+    // Pack 1 — PublicTranslatedFields no longer applies CT after mount; missing
+    // warm bags surface as stable canonical/fallback DOM for browser translation.
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
-    assert.match(fields, /setFields\(fallback\)/);
-    assert.match(fields, /resolveTranslatedContent/);
+    assert.match(fields, /const fields = fallbackFields/);
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
   });
 });
 

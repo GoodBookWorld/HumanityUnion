@@ -84,8 +84,10 @@ describe("Pack 08I.14B — single display-language contract", () => {
 
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
     assert.match(fields, /resolvePublicContentDisplayLanguage/);
-    assert.match(fields, /language:\s*displayLanguage/);
+    // Pack 1 — no CT resolve language=displayLanguage on ordinary reading path.
+    assert.doesNotMatch(fields, /language:\s*displayLanguage/);
     assert.doesNotMatch(fields, /readingContext\.readingLanguage/);
+    assert.doesNotMatch(fields, /resolveTranslatedContent/);
   });
 });
 
