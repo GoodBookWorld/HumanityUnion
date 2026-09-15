@@ -111,11 +111,11 @@ describe("Localization Simplification Step 04A — Terminology preferredTerm wir
     assert.match(apiPublic, /INITIATIVE_LIFECYCLE_STAGE_REGISTRY/);
   });
 
-  it("protected terminology render points remain translate=\"no\"", () => {
+  it("ordinary lifecycle stage banner labels remain browser-translation eligible", () => {
     const banner = readWeb(
       "features/public-initiative-experience/components/CurrentLifecycleStageBanner.tsx",
     );
-    assert.match(banner, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(banner, /ProtectedAuthoritativeText/);
     assert.match(banner, /useControlledLifecyclePreferredTermsLocale/);
     assert.match(banner, /resolveLifecycleStageDisplayLabel\([\s\S]*\{\s*locale\s*\}/);
   });

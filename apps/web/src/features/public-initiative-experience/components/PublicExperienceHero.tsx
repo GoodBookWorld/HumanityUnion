@@ -10,7 +10,6 @@ import {
   TranslatedContentSharedChrome,
   TranslatedContentView,
 } from "../../language";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import type { TranslatedContentViewMode } from "../../language/translated-content-view-mode";
 import { translatedContentHasDistinctTranslation } from "../../language/translated-content-view-mode";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
@@ -240,13 +239,9 @@ export function buildInitiativeHeroProps(
       { label: t("hero.geography"), value: geographyLabel, column: "b" },
       {
         label: t("hero.currentStage"),
-        value: (
-          <ProtectedAuthoritativeText>
-            {resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel, {
-              locale,
-            })}
-          </ProtectedAuthoritativeText>
-        ),
+        value: resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel, {
+          locale,
+        }),
         column: "b",
       },
       {

@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import type { LatestInitiativeCardProjection } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 import {
@@ -95,9 +94,7 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
         </div>
         <div className="latest-initiative-card__meta-item">
           <dt>{t("initiativeCard.participationStage")}</dt>
-          <dd>
-            <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
-          </dd>
+          <dd>{stageLabel}</dd>
         </div>
         {!hasActivePublicRoute ? (
           <div className="latest-initiative-card__meta-item">

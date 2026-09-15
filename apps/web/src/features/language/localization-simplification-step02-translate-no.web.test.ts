@@ -67,32 +67,32 @@ describe("Localization Simplification Step 02 — Brand/Terminology translate=no
     assert.match(brandToken, /owner="PLP_ENTITY"/);
   });
 
-  it("controlled Terminology lifecycle labels are marked translate=\"no\"", () => {
+  it("ordinary lifecycle stage labels are browser-translation eligible (not blanket translate=\"no\")", () => {
     const banner = readWeb(
       "features/public-initiative-experience/components/CurrentLifecycleStageBanner.tsx",
     );
-    assert.match(banner, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(banner, /ProtectedAuthoritativeText/);
     assert.match(banner, /resolveLifecycleStageDisplayLabel/);
 
     const nav = readWeb(
       "features/public-initiative-experience/components/PublicInitiativeLifecycleNav.tsx",
     );
-    assert.match(nav, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(nav, /ProtectedAuthoritativeText/);
     assert.match(nav, /resolveLifecycleStageDisplayLabel/);
 
     const hero = readWeb(
       "features/public-initiative-experience/components/PublicExperienceHero.tsx",
     );
-    assert.match(hero, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(hero, /ProtectedAuthoritativeText/);
     assert.match(hero, /resolveLifecycleStageDisplayLabel/);
 
     const result = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecyclePublicResultPanel.tsx",
     );
-    assert.match(result, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(result, /ProtectedAuthoritativeText/);
   });
 
-  it("English controlled-term fallback uses the same protected render path", () => {
+  it("English controlled-term fallback uses the same ordinary stage-label render path", () => {
     const i18n = readWeb(
       "features/public-initiative-experience/initiative-experience-i18n.ts",
     );
@@ -100,11 +100,11 @@ describe("Localization Simplification Step 02 — Brand/Terminology translate=no
     assert.match(i18n, /resolveControlledLifecycleLabel|resolvePublicPresentationField/);
     assert.match(i18n, /getControlledLifecyclePreferredTerm/);
     assert.doesNotMatch(i18n, /terminologyPreferredTerm:\s*null/);
-    // Protection is applied at DOM wrappers, not only when preferredTerm is present.
+    // Ordinary stage labels are no longer blanket-wrapped in ProtectedAuthoritativeText.
     const banner = readWeb(
       "features/public-initiative-experience/components/CurrentLifecycleStageBanner.tsx",
     );
-    assert.match(banner, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(banner, /ProtectedAuthoritativeText/);
   });
 
   it("ordinary long-form content is not globally marked translate=\"no\"", () => {

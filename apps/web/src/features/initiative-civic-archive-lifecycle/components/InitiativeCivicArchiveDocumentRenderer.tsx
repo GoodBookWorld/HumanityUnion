@@ -10,7 +10,6 @@ import {
   resolveCivicArchiveTimelineStatusDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 /**
@@ -63,10 +62,8 @@ export function InitiativeCivicArchiveDocumentRenderer({
           {document.timeline.map((entry) => (
             <li className="ica-source-panel__item" key={entry.stageId}>
               <span className="ica-source-panel__label">
-                <ProtectedAuthoritativeText>
-                  {resolveLifecycleStageDisplayLabel(entry.stageId, t, undefined, { locale }) ||
-                    entry.label}
-                </ProtectedAuthoritativeText>
+                {resolveLifecycleStageDisplayLabel(entry.stageId, t, undefined, { locale }) ||
+                  entry.label}
               </span>
               <p className="ica-source-panel__summary">
                 {resolveCivicArchiveTimelineStatusDisplayLabel(entry.status, t)}

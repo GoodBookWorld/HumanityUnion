@@ -215,7 +215,7 @@ describe("Localization Simplification Step 04C — residual controlled Terminolo
     );
   });
 
-  it("residual controlled surfaces wire locale / preferredTerm / translate=no", () => {
+  it("residual controlled surfaces keep preferredTerm wiring; ordinary stage labels stay browser-eligible", () => {
     const latest = readWeb("features/public-experience/components/LatestInitiativeCard.tsx");
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
@@ -235,11 +235,12 @@ describe("Localization Simplification Step 04C — residual controlled Terminolo
 
     assert.match(latest, /useControlledLifecyclePreferredTermsLocale/);
     assert.match(latest, /resolveInitiativeCardStageLabel\([\s\S]*\{\s*locale\s*,?\s*\}/);
-    assert.match(latest, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(latest, /ProtectedAuthoritativeText/);
     assert.match(sidebar, /resolveLifecycleStageDisplayLabel\([\s\S]*\{\s*locale\s*\}/);
     assert.match(sidebar, /wrapAuthoritativeTermInMessage/);
-    assert.match(participation, /wrapAuthoritativeTermInMessage/);
-    assert.match(overview, /overview\.status[\s\S]*ProtectedAuthoritativeText/);
+    assert.doesNotMatch(participation, /wrapAuthoritativeTermInMessage/);
+    assert.doesNotMatch(participation, /ProtectedAuthoritativeText/);
+    assert.doesNotMatch(overview, /overview\.status[\s\S]*ProtectedAuthoritativeText/);
     assert.match(ipFields, /terminologyPreferredTerms/);
     assert.match(ipFields, /getControlledVocabularyPreferredTermsMap/);
     assert.match(protectedText, /translate:\s*"no"/);

@@ -25,7 +25,6 @@ import {
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { formatInitiativePublicGeography } from "../format-initiative-public-geography";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
@@ -267,9 +266,7 @@ function PublicInitiativeOverview({
               />
               <OverviewMetadataItem
                 label={t("overview.status")}
-                value={
-                  <ProtectedAuthoritativeText>{localizedStageLabel}</ProtectedAuthoritativeText>
-                }
+                value={localizedStageLabel}
               />
               <OverviewMetadataItem
                 label={t("overview.tags")}
@@ -775,15 +772,13 @@ export function PublicInitiativeCenterPanel({
             aria-labelledby={`pie-stage-${activeStage.stageId}`}
           >
             <h2 id={`pie-stage-${activeStage.stageId}`}>
-              <ProtectedAuthoritativeText>
-                {resolveLifecycleStageDisplayLabel(
-                  activeStage.stageId,
-                  t,
-                  experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
-                    ?.label,
-                  { locale },
-                )}
-              </ProtectedAuthoritativeText>
+              {resolveLifecycleStageDisplayLabel(
+                activeStage.stageId,
+                t,
+                experience.lifecycleStages.find((stage) => stage.stageId === activeStage.stageId)
+                  ?.label,
+                { locale },
+              )}
             </h2>
             <LifecycleStagePanel stage={activeStage} />
           </section>

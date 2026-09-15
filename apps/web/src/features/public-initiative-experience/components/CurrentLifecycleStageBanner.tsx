@@ -11,7 +11,6 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 import "./current-lifecycle-stage-banner.css";
@@ -82,9 +81,7 @@ export function CurrentLifecycleStageBanner({
       data-hu-stage-id={stageId}
     >
       <h3 className="pie-current-stage__label">{t("overview.currentLifecycleStage")}</h3>
-      <p className="pie-current-stage__value">
-        <ProtectedAuthoritativeText>{localizedStageLabel}</ProtectedAuthoritativeText>
-      </p>
+      <p className="pie-current-stage__value">{localizedStageLabel}</p>
       {publicationLine ? <p className="pie-current-stage__meta">{publicationLine}</p> : null}
     </section>
   );

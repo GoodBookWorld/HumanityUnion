@@ -19,7 +19,6 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolvePresentationStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
-import { ProtectedAuthoritativeText, wrapAuthoritativeTermInMessage } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 import { getInitiativeLifecycleStageProjection } from "../api";
 import { InitiativeLifecycleSourceSnapshotPanel } from "./InitiativeLifecycleSourceSnapshotPanel";
@@ -134,7 +133,7 @@ function StageHeader({
           </p>
         ) : null}
         <h2 id={`lsw-stage-title-${projection.stageId}`} className="lsw-header__title">
-          <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+          {stageLabel}
         </h2>
         <div className="lsw-header__badges">
           <WorkspaceStatusBadge
@@ -182,10 +181,7 @@ function AuthorDraftEmptyState({ stageId, fallbackLabel }: { stageId: string; fa
     <div className="lsw-empty">
       <h3 className="lsw-empty__title">{t("author.shared.noDraftYet")}</h3>
       <p className="lsw-empty__explanation">
-        {wrapAuthoritativeTermInMessage(
-          t("author.shared.noDraftYetExplanation", { stage: stageLabel }),
-          stageLabel,
-        )}
+        {t("author.shared.noDraftYetExplanation", { stage: stageLabel })}
       </p>
     </div>
   );
@@ -269,10 +265,7 @@ function StageFooterNav({
               onNavigateStage(projection.previousStage!.stageId, projection.previousStage!.hash)
             }
           >
-            {wrapAuthoritativeTermInMessage(
-              t("author.shared.previousStage", { stage: previousLabel }),
-              previousLabel,
-            )}
+            {t("author.shared.previousStage", { stage: previousLabel })}
           </WorkspaceButton>
         ) : null}
         <Link href={returnToInitiativeHref} className="lsw-footer__return">
@@ -293,10 +286,7 @@ function StageFooterNav({
             }
             onClick={() => onNavigateStage(projection.nextStage!.stageId, projection.nextStage!.hash)}
           >
-            {wrapAuthoritativeTermInMessage(
-              t("author.shared.nextStage", { stage: nextLabel }),
-              nextLabel,
-            )}
+            {t("author.shared.nextStage", { stage: nextLabel })}
           </WorkspaceButton>
         ) : null}
       </div>

@@ -10,10 +10,6 @@ import {
   resolveCollectiveParticipationStatusDisplay,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
-import {
-  ProtectedAuthoritativeText,
-  wrapAuthoritativeTermInMessage,
-} from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 interface YourParticipationPanelProps {
@@ -51,10 +47,7 @@ export function YourParticipationPanel({
       ) : null}
 
       <p className="pie-participation__stage">
-        {wrapAuthoritativeTermInMessage(
-          t("sidebar.participation.currentStage", { stage: stageLabel }),
-          stageLabel,
-        )}
+        {t("sidebar.participation.currentStage", { stage: stageLabel })}
         {journey.activeAlly ? t("sidebar.participation.activeAllySuffix") : null}
       </p>
 
@@ -77,9 +70,7 @@ export function YourParticipationPanel({
               <span className="pie-participation__meta">
                 {" "}
                 ·{" "}
-                <ProtectedAuthoritativeText>
-                  {resolveLifecycleStageDisplayLabel(action.stageId, t, undefined, { locale })}
-                </ProtectedAuthoritativeText>
+                {resolveLifecycleStageDisplayLabel(action.stageId, t, undefined, { locale })}
               </span>
             </li>
           ))}

@@ -11,7 +11,6 @@ import {
   resolveLifecycleStageDisplayLabel,
   resolveLifecycleStateDisplayLabel,
 } from "../initiative-experience-i18n";
-import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import { useControlledLifecyclePreferredTermsLocale } from "../../language/components/useControlledLifecyclePreferredTermsLocale";
 
 interface PublicInitiativeLifecycleNavProps {
@@ -85,7 +84,7 @@ export function PublicInitiativeLifecycleNav({
                 aria-hidden="true"
               />
               <span className="pie-lifecycle__label">
-                <ProtectedAuthoritativeText>{stageLabel}</ProtectedAuthoritativeText>
+                {stageLabel}
                 {stage.recordCount > 0 ? ` (${stage.recordCount})` : null}
               </span>
               {showElectionResultsSubtitle ? (
