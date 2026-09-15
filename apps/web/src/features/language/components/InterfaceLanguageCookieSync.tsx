@@ -1,17 +1,21 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { useEffect } from "react";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences } from "../../preferences/preferences-api";
+import { readHuLangCookieFromDocument } from "../hu-lang-cookie.web";
 import { shouldSuppressInterfaceLanguageCookieSyncForPath } from "../public-seo-locale-request";
 import {
   clearPresentationLocaleCookieSyncSession,
   createBrowserPresentationLocaleCookieSyncDeps,
+  runGuestPresentationLocaleNextIntlRecompose,
   runPresentationLocaleCookieSyncAttempt,
   schedulePresentationLocaleCookieSync,
 } from "../presentation-locale-cookie-sync";
+import { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
 
 export {
   claimAuthoritativePresentationLocale,
@@ -29,6 +33,10 @@ export {
  * resolution/login, sync Preferred Reading / interfaceLanguage → Web-origin `hu_lang`
  * when they differ from the actual cookie.
  *
+ * Also reconciles stale next-intl: when cookie already equals Preferred Reading but
+ * `useLocale()` still differs, runs the shared same-path locale-switch recompose
+ * (replace + refresh) — cookie-only "aligned" is not presentation-aligned.
+ *
  * Pack 2.1A — on a valid locale-prefixed SEO public document URL, do not write
  * a conflicting cookie or `router.refresh()` (URL locale remains authoritative).
  *
@@ -43,16 +51,39 @@ export function InterfaceLanguageCookieSync() {
   const authStatus = useClientAuthStatus();
   const router = useRouter();
   const pathname = usePathname();
+  const presentationLocale = useLocale();
 
   useEffect(() => {
-    if (authStatus !== "authenticated") {
-      if (authStatus === "unauthenticated") {
-        clearPresentationLocaleCookieSyncSession();
-      }
+    const path = pathname || "/";
+
+    const recomposePresentation = () => {
+      runLocaleSwitchNavigation({
+        router,
+        pathname: path,
+        href: null,
+        forceSamePathRecompose: true,
+      });
+    };
+
+    if (authStatus === "pending") {
       return;
     }
 
     if (shouldSuppressInterfaceLanguageCookieSyncForPath(pathname)) {
+      return;
+    }
+
+    if (authStatus === "unauthenticated") {
+      clearPresentationLocaleCookieSyncSession();
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: readHuLangCookieFromDocument(),
+        currentPresentationLocale: presentationLocale,
+        refresh: recomposePresentation,
+      });
+      return;
+    }
+
+    if (authStatus !== "authenticated") {
       return;
     }
 
@@ -64,10 +95,9 @@ export function InterfaceLanguageCookieSync() {
           createBrowserPresentationLocaleCookieSyncDeps({
             generation,
             isCancelled: () => cancelled,
-            refresh: () => {
-              router.refresh();
-            },
+            refresh: recomposePresentation,
             getPreferences: getMyPreferences,
+            currentPresentationLocale: presentationLocale,
           }),
         );
       },
@@ -76,7 +106,7 @@ export function InterfaceLanguageCookieSync() {
     return () => {
       cancelled = true;
     };
-  }, [authStatus, router, pathname]);
+  }, [authStatus, router, pathname, presentationLocale]);
 
   return null;
 }

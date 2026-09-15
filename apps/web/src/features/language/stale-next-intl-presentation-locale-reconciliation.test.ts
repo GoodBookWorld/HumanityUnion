@@ -1,0 +1,440 @@
+/**
+ * Stale next-intl presentation locale reconciliation with Preferred Reading / hu_lang.
+ *
+ * Cookie === preferred is not sufficient alignment when useLocale() still differs.
+ */
+import assert from "node:assert/strict";
+import { afterEach, describe, it } from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import type { MemberPreferences } from "@hu/types";
+
+import {
+  claimAuthoritativePresentationLocale,
+  getLastStaleNextIntlRecomposeForLocaleForTests,
+  getPresentationLocaleSyncGenerationForTests,
+  resetInterfaceLanguageCookieSyncForTests,
+  runGuestPresentationLocaleNextIntlRecompose,
+  runPresentationLocaleCookieSyncAttempt,
+  shouldRecomposeStaleNextIntlPresentation,
+} from "./presentation-locale-cookie-sync.js";
+import { shouldSuppressInterfaceLanguageCookieSyncForPath } from "./public-seo-locale-request.js";
+import { runLocaleSwitchNavigation } from "./run-locale-switch-navigation.js";
+
+const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+
+function readWeb(rel: string): string {
+  return readFileSync(path.join(webRoot, rel), "utf8");
+}
+
+function prefsFor(locale: string): MemberPreferences {
+  return {
+    memberId: "member-test",
+    experiencePreferences: {
+      interfaceLanguage: locale,
+      readingLanguages: [locale],
+      writingLanguages: [],
+      translationPreference: "none",
+      timeZone: "UTC",
+      dateFormat: "YYYY-MM-DD",
+      timeFormat: "24h",
+      expertiseAreas: [],
+      skills: [],
+    },
+    participationPreferences: {} as MemberPreferences["participationPreferences"],
+    communicationPreferences: {} as MemberPreferences["communicationPreferences"],
+    accessibilityPreferences: {} as MemberPreferences["accessibilityPreferences"],
+    workspacePreferences: {} as MemberPreferences["workspacePreferences"],
+    visibilityPreferences: {} as MemberPreferences["visibilityPreferences"],
+    updatedAt: new Date().toISOString(),
+  } as MemberPreferences;
+}
+
+afterEach(() => {
+  resetInterfaceLanguageCookieSyncForTests();
+});
+
+describe("Stale next-intl presentation locale reconciliation", () => {
+  it("A. cookie == preferred == current next-intl locale → no refresh (aligned)", async () => {
+    let refreshCount = 0;
+    const outcome = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        refreshCount += 1;
+      },
+      currentPresentationLocale: "xx-READ",
+    });
+    assert.equal(outcome, "aligned");
+    assert.equal(refreshCount, 0);
+  });
+
+  it("B. cookie == preferred != current next-intl locale → one same-path recompose", async () => {
+    let refreshCount = 0;
+    const outcome = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        refreshCount += 1;
+      },
+      currentPresentationLocale: "en",
+    });
+    assert.equal(outcome, "recomposed");
+    assert.equal(refreshCount, 1);
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), "xx-READ");
+  });
+
+  it("C. cookie != preferred → existing write + refresh flow remains", async () => {
+    const writes: string[] = [];
+    let cookie: string | null = "en";
+    const outcome = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => cookie,
+      writeCookie: async (locale) => {
+        writes.push(locale);
+        cookie = locale;
+        return { locale };
+      },
+      refresh: () => {
+        writes.push("refresh");
+      },
+      currentPresentationLocale: "en",
+    });
+    assert.equal(outcome, "written");
+    assert.deepEqual(writes, ["xx-READ", "refresh"]);
+  });
+
+  it("D. after reconciliation succeeds → no refresh loop; latch clears on alignment", async () => {
+    let refreshCount = 0;
+    const refresh = () => {
+      refreshCount += 1;
+    };
+    const first = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh,
+      currentPresentationLocale: "en",
+    });
+    assert.equal(first, "recomposed");
+    assert.equal(refreshCount, 1);
+
+    // Effect re-runs before useLocale catches up — latch prevents a second refresh.
+    const second = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh,
+      currentPresentationLocale: "en",
+    });
+    assert.equal(second, "aligned");
+    assert.equal(refreshCount, 1);
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), "xx-READ");
+
+    // Once next-intl matches, cycle completes and latch clears.
+    const third = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh,
+      currentPresentationLocale: "xx-READ",
+    });
+    assert.equal(third, "aligned");
+    assert.equal(refreshCount, 1);
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), null);
+  });
+
+  it("same-locale re-stale cycle: A–E authenticated", async () => {
+    let refreshCount = 0;
+    const refresh = () => {
+      refreshCount += 1;
+    };
+    const depsBase = {
+      getPreferences: async () => prefsFor("xx-L"),
+      readCookie: () => "xx-L",
+      writeCookie: async (locale: string) => ({ locale }),
+      refresh,
+    };
+
+    // A. mismatch L -> first recompose
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        ...depsBase,
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        currentPresentationLocale: "en",
+      }),
+      "recomposed",
+    );
+    assert.equal(refreshCount, 1);
+
+    // B. same mismatch before useLocale catches up -> no second recompose
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        ...depsBase,
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        currentPresentationLocale: "en",
+      }),
+      "aligned",
+    );
+    assert.equal(refreshCount, 1);
+
+    // C. useLocale becomes L -> reconciliation cycle completed
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        ...depsBase,
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        currentPresentationLocale: "xx-L",
+      }),
+      "aligned",
+    );
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), null);
+    assert.equal(refreshCount, 1);
+
+    // D. later same-L mismatch -> exactly one new recompose
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        ...depsBase,
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        currentPresentationLocale: "en",
+      }),
+      "recomposed",
+    );
+    assert.equal(refreshCount, 2);
+
+    // E. repeat D before catch-up -> no loop
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        ...depsBase,
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        currentPresentationLocale: "en",
+      }),
+      "aligned",
+    );
+    assert.equal(refreshCount, 2);
+  });
+
+  it("F. equivalent guest same-locale re-stale cycle", () => {
+    let refreshCount = 0;
+    const refresh = () => {
+      refreshCount += 1;
+    };
+
+    assert.equal(
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: "xx-GUEST",
+        currentPresentationLocale: "en",
+        refresh,
+      }),
+      "recomposed",
+    );
+    assert.equal(refreshCount, 1);
+
+    assert.equal(
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: "xx-GUEST",
+        currentPresentationLocale: "en",
+        refresh,
+      }),
+      "aligned",
+    );
+    assert.equal(refreshCount, 1);
+
+    assert.equal(
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: "xx-GUEST",
+        currentPresentationLocale: "xx-GUEST",
+        refresh,
+      }),
+      "aligned",
+    );
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), null);
+
+    assert.equal(
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: "xx-GUEST",
+        currentPresentationLocale: "en",
+        refresh,
+      }),
+      "recomposed",
+    );
+    assert.equal(refreshCount, 2);
+
+    assert.equal(
+      runGuestPresentationLocaleNextIntlRecompose({
+        cookieLocale: "xx-GUEST",
+        currentPresentationLocale: "en",
+        refresh,
+      }),
+      "aligned",
+    );
+    assert.equal(refreshCount, 2);
+  });
+
+  it("G. authoritative apply: no duplicate immediate recompose; future same-locale re-stale allowed after alignment", async () => {
+    const generation = claimAuthoritativePresentationLocale("xx-READ");
+    let refreshCount = 0;
+    const refresh = () => {
+      refreshCount += 1;
+    };
+
+    // Immediate post-apply mismatch suppressed (apply already recomposed).
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        generation,
+        getPreferences: async () => prefsFor("xx-READ"),
+        readCookie: () => "xx-READ",
+        writeCookie: async (locale) => ({ locale }),
+        refresh,
+        currentPresentationLocale: "en",
+      }),
+      "aligned",
+    );
+    assert.equal(refreshCount, 0);
+
+    // Alignment observed — cycle complete, latch cleared.
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        getPreferences: async () => prefsFor("xx-READ"),
+        readCookie: () => "xx-READ",
+        writeCookie: async (locale) => ({ locale }),
+        refresh,
+        currentPresentationLocale: "xx-READ",
+      }),
+      "aligned",
+    );
+    assert.equal(getLastStaleNextIntlRecomposeForLocaleForTests(), null);
+
+    // Later same-locale re-stale eligible again.
+    assert.equal(
+      await runPresentationLocaleCookieSyncAttempt({
+        generation: getPresentationLocaleSyncGenerationForTests(),
+        getPreferences: async () => prefsFor("xx-READ"),
+        readCookie: () => "xx-READ",
+        writeCookie: async (locale) => ({ locale }),
+        refresh,
+        currentPresentationLocale: "en",
+      }),
+      "recomposed",
+    );
+    assert.equal(refreshCount, 1);
+  });
+
+  it("E. English/default locale remains correct", async () => {
+    let refreshCount = 0;
+    const aligned = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("en"),
+      readCookie: () => "en",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        refreshCount += 1;
+      },
+      currentPresentationLocale: "en",
+    });
+    assert.equal(aligned, "aligned");
+    assert.equal(refreshCount, 0);
+
+    const healToEnglish = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("en"),
+      readCookie: () => "en",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        refreshCount += 1;
+      },
+      currentPresentationLocale: "xx-OTHER",
+    });
+    assert.equal(healToEnglish, "recomposed");
+    assert.equal(refreshCount, 1);
+  });
+
+  it("no hardcoded locale lists in reconciliation sources", () => {
+    assert.equal(
+      shouldRecomposeStaleNextIntlPresentation({
+        targetLocale: "xx-FUTURE",
+        currentPresentationLocale: "en",
+        alreadyRecomposedForLocale: null,
+      }),
+      true,
+    );
+    assert.equal(
+      shouldRecomposeStaleNextIntlPresentation({
+        targetLocale: "xx-FUTURE",
+        currentPresentationLocale: "xx-FUTURE",
+        alreadyRecomposedForLocale: null,
+      }),
+      false,
+    );
+
+    const sync = readWeb("src/features/language/presentation-locale-cookie-sync.ts");
+    const component = readWeb(
+      "src/features/language/components/InterfaceLanguageCookieSync.tsx",
+    );
+    for (const src of [sync, component]) {
+      assert.doesNotMatch(src, /Ukrainian|Arabic|Georgian|Hebrew|["']ka["']|["']he["']/);
+    }
+  });
+
+  it("locale-prefixed SEO route suppression remains unchanged", () => {
+    assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/uk/media"), true);
+    assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/zh-hant/blog"), true);
+    assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/initiatives"), false);
+
+    const component = readWeb(
+      "src/features/language/components/InterfaceLanguageCookieSync.tsx",
+    );
+    assert.match(component, /shouldSuppressInterfaceLanguageCookieSyncForPath/);
+    assert.match(component, /runLocaleSwitchNavigation/);
+    assert.match(component, /forceSamePathRecompose:\s*true/);
+    assert.match(component, /currentPresentationLocale:\s*presentationLocale/);
+    assert.match(component, /runGuestPresentationLocaleNextIntlRecompose/);
+  });
+
+  it("omitting currentPresentationLocale preserves cookie-only aligned behavior", async () => {
+    let refreshCount = 0;
+    const outcome = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("xx-READ"),
+      readCookie: () => "xx-READ",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        refreshCount += 1;
+      },
+    });
+    assert.equal(outcome, "aligned");
+    assert.equal(refreshCount, 0);
+  });
+
+  it("same-path recompose uses shared runLocaleSwitchNavigation (not a second mechanism)", () => {
+    const replaces: string[] = [];
+    const refreshes: number[] = [];
+    const result = runLocaleSwitchNavigation({
+      router: {
+        replace: (href) => {
+          replaces.push(href);
+        },
+        refresh: () => {
+          refreshes.push(1);
+        },
+      },
+      pathname: "/initiatives/public/demo",
+      href: null,
+      forceSamePathRecompose: true,
+    });
+    assert.equal(result.didReplace, true);
+    assert.equal(result.didRefresh, true);
+    assert.deepEqual(replaces, ["/initiatives/public/demo"]);
+    assert.equal(refreshes.length, 1);
+  });
+});

@@ -7,6 +7,10 @@
  *
  * Generation token: authoritative presentation applies bump the generation so a
  * stale in-flight prefs→cookie sync cannot overwrite a newer locale.
+ *
+ * Alignment requires cookie AND client next-intl (`useLocale`) to match Preferred
+ * Reading. Cookie-only equality is not sufficient — stale NextIntlClientProvider
+ * must recompose via the shared locale-switch navigation path.
  */
 
 import type { MemberPreferences } from "@hu/types";
@@ -25,6 +29,14 @@ let presentationLocaleSyncGeneration = 0;
 let syncInFlightId: number | null = null;
 /** Monotonic id allocator for in-flight ownership (survives session reset). */
 let syncInFlightSeq = 0;
+/**
+ * Cycle-aware one-shot latch: locale for which we already triggered same-path
+ * recompose while waiting for useLocale to catch up. Cleared only when actual
+ * client presentation alignment is observed (`currentPresentationLocale ===
+ * target`), so a later same-locale re-stale can recompose again. Not cleared on
+ * every render/effect/session clear.
+ */
+let lastStaleNextIntlRecomposeForLocale: string | null = null;
 
 export function getPresentationLocaleSyncGenerationForTests(): number {
   return presentationLocaleSyncGeneration;
@@ -36,6 +48,10 @@ export function getLastSyncedPresentationLocaleForTests(): string | null {
 
 export function getPresentationLocaleSyncInFlightIdForTests(): number | null {
   return syncInFlightId;
+}
+
+export function getLastStaleNextIntlRecomposeForLocaleForTests(): string | null {
+  return lastStaleNextIntlRecomposeForLocale;
 }
 
 /**
@@ -65,6 +81,8 @@ export function claimAuthoritativePresentationLocale(locale: string): number {
   presentationLocaleSyncGeneration += 1;
   if (normalized) {
     lastSyncedPresentationLocale = normalized;
+    // Authoritative apply already runs locale-switch navigation / recompose.
+    lastStaleNextIntlRecomposeForLocale = normalized;
   }
   return presentationLocaleSyncGeneration;
 }
@@ -87,25 +105,40 @@ export function clearPresentationLocaleCookieSyncSession(): void {
   lastSyncedPresentationLocale = null;
   presentationLocaleSyncGeneration += 1;
   syncInFlightId = null;
+  // Keep stale-next-intl recompose latch: clearing it on every guest effect
+  // would re-trigger refresh loops when useLocale is still catching up.
 }
 
 /** Test-only — invalidate session state without pretending generation rewound. */
 export function resetInterfaceLanguageCookieSyncForTests(): void {
-  clearPresentationLocaleCookieSyncSession();
+  lastSyncedPresentationLocale = null;
+  presentationLocaleSyncGeneration += 1;
+  syncInFlightId = null;
+  lastStaleNextIntlRecomposeForLocale = null;
 }
 
 export type PresentationLocaleCookieSyncDeps = {
   readonly getPreferences: () => Promise<MemberPreferences>;
   readonly readCookie: () => string | null;
   readonly writeCookie: (locale: string) => Promise<{ locale: string }>;
+  /**
+   * Shared locale-switch recompose (prefer same-path replace + refresh).
+   * Used when cookie is written or when cookie/preferred match but next-intl is stale.
+   */
   readonly refresh: () => void;
   readonly isCancelled?: () => boolean;
   /** Generation captured when this sync attempt started. */
   readonly generation: number;
+  /**
+   * Current client next-intl locale (`useLocale()`). When omitted, cookie-only
+   * equality remains sufficient (legacy callers / unit tests).
+   */
+  readonly currentPresentationLocale?: string | null;
 };
 
 export type PresentationLocaleCookieSyncOutcome =
   | "aligned"
+  | "recomposed"
   | "written"
   | "skipped_stale"
   | "skipped_cancelled"
@@ -115,10 +148,110 @@ function isStaleGeneration(generation: number): boolean {
   return generation !== presentationLocaleSyncGeneration;
 }
 
+function localesEqual(a: string, b: string): boolean {
+  return a.trim() === b.trim();
+}
+
+/**
+ * Cookie/preferred already match, but mounted next-intl may still be stale.
+ * Returns true when a one-shot same-path recompose should run.
+ */
+export function shouldRecomposeStaleNextIntlPresentation(input: {
+  readonly targetLocale: string;
+  readonly currentPresentationLocale: string | null | undefined;
+  readonly alreadyRecomposedForLocale: string | null;
+}): boolean {
+  const target = input.targetLocale.trim();
+  if (!target) {
+    return false;
+  }
+  // Legacy / optional: without a client locale signal, do not refresh.
+  if (
+    input.currentPresentationLocale === undefined ||
+    input.currentPresentationLocale === null
+  ) {
+    return false;
+  }
+  const client = input.currentPresentationLocale.trim();
+  if (!client || localesEqual(client, target)) {
+    return false;
+  }
+  if (
+    input.alreadyRecomposedForLocale !== null &&
+    localesEqual(input.alreadyRecomposedForLocale, target)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * When mounted next-intl matches the presentation target, the pending
+ * recompose cycle is complete — clear the latch so a future same-locale
+ * mismatch remains eligible for one new recompose.
+ */
+function completeStaleNextIntlReconciliationCycleIfAligned(input: {
+  readonly targetLocale: string;
+  readonly currentPresentationLocale: string | null | undefined;
+}): boolean {
+  if (
+    input.currentPresentationLocale === undefined ||
+    input.currentPresentationLocale === null
+  ) {
+    return false;
+  }
+  const client = input.currentPresentationLocale.trim();
+  const target = input.targetLocale.trim();
+  if (!client || !target || !localesEqual(client, target)) {
+    return false;
+  }
+  lastStaleNextIntlRecomposeForLocale = null;
+  return true;
+}
+
+/**
+ * Guest / cookie-only: when `hu_lang` is set but next-intl still shows another
+ * locale, trigger one same-path recompose (SEO-suppressed callers must not invoke).
+ */
+export function runGuestPresentationLocaleNextIntlRecompose(input: {
+  readonly cookieLocale: string | null;
+  readonly currentPresentationLocale: string | null | undefined;
+  readonly refresh: () => void;
+}): PresentationLocaleCookieSyncOutcome {
+  const target = input.cookieLocale?.trim() || "";
+  if (!target) {
+    return "noop";
+  }
+  lastSyncedPresentationLocale = target;
+  if (
+    completeStaleNextIntlReconciliationCycleIfAligned({
+      targetLocale: target,
+      currentPresentationLocale: input.currentPresentationLocale,
+    })
+  ) {
+    return "aligned";
+  }
+  if (
+    !shouldRecomposeStaleNextIntlPresentation({
+      targetLocale: target,
+      currentPresentationLocale: input.currentPresentationLocale,
+      alreadyRecomposedForLocale: lastStaleNextIntlRecomposeForLocale,
+    })
+  ) {
+    return "aligned";
+  }
+  lastStaleNextIntlRecomposeForLocale = target;
+  input.refresh();
+  return "recomposed";
+}
+
 /**
  * Align `hu_lang` with Preferred Reading / interfaceLanguage.
  * Latch is never sufficient alone — cookie truth is always inspected.
  * Stale generations (superseded by an authoritative apply) never write.
+ *
+ * When cookie already equals preferred but client next-intl does not, recompose
+ * via the shared refresh callback (same path as cookie-write repair).
  */
 export async function runPresentationLocaleCookieSyncAttempt(
   deps: PresentationLocaleCookieSyncDeps,
@@ -146,6 +279,28 @@ export async function runPresentationLocaleCookieSyncAttempt(
       return "skipped_stale";
     }
     lastSyncedPresentationLocale = target;
+
+    if (
+      completeStaleNextIntlReconciliationCycleIfAligned({
+        targetLocale: target,
+        currentPresentationLocale: deps.currentPresentationLocale,
+      })
+    ) {
+      return "aligned";
+    }
+
+    if (
+      shouldRecomposeStaleNextIntlPresentation({
+        targetLocale: target,
+        currentPresentationLocale: deps.currentPresentationLocale,
+        alreadyRecomposedForLocale: lastStaleNextIntlRecomposeForLocale,
+      })
+    ) {
+      lastStaleNextIntlRecomposeForLocale = target;
+      deps.refresh();
+      return "recomposed";
+    }
+
     return "aligned";
   }
 
@@ -170,6 +325,7 @@ export async function runPresentationLocaleCookieSyncAttempt(
   }
 
   lastSyncedPresentationLocale = written.locale;
+  lastStaleNextIntlRecomposeForLocale = written.locale;
   deps.refresh();
   return "written";
 }
@@ -210,6 +366,7 @@ export function createBrowserPresentationLocaleCookieSyncDeps(input: {
   readonly isCancelled: () => boolean;
   readonly refresh: () => void;
   readonly getPreferences: () => Promise<MemberPreferences>;
+  readonly currentPresentationLocale?: string | null;
 }): PresentationLocaleCookieSyncDeps {
   return {
     generation: input.generation,
@@ -218,5 +375,6 @@ export function createBrowserPresentationLocaleCookieSyncDeps(input: {
     getPreferences: input.getPreferences,
     readCookie: readHuLangCookieFromDocument,
     writeCookie: writeHuLangCookieViaWebRoute,
+    currentPresentationLocale: input.currentPresentationLocale,
   };
 }
