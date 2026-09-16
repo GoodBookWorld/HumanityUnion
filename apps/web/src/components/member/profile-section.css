@@ -6,6 +6,10 @@
   padding: var(--hu-space-5);
   margin-bottom: var(--hu-space-4);
   scroll-margin-top: var(--humanity-header-offset, var(--hu-scroll-margin-top));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 
 .profile-section__title {
@@ -13,6 +17,8 @@
   font-weight: 600;
   margin-bottom: var(--hu-space-4);
   color: var(--hu-color-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .profile-section__placeholder {

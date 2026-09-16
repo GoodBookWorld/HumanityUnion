@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
@@ -217,10 +218,6 @@ export function BlogArticlePageContent({
             <Link href={categoryHref}>{categoryDisplayName}</Link>
           </nav>
 
-          <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
-            {titleForDisplay}
-          </h1>
-
           <div className="blog-article__meta" aria-label={t("publicationDetailsAria")}>
             <span className="blog-article__meta-item">
               <BlogAuthorInline author={post.author} />
@@ -255,17 +252,32 @@ export function BlogArticlePageContent({
             </span>
           </div>
 
-          <div className="blog-article__cover">
-            <BlogCoverImage
-              title={titleForDisplay}
-              imageUrl={post.coverImage?.mediaUrl}
-              altText={post.coverImage?.altText}
-              className="blog-article__cover-image"
-              priority
-            />
-          </div>
+          {/*
+            Canonical Blog source prose is English. Declare that on the reading
+            surface so non-English Preferred Reading (<html lang>) does not make
+            browser MT skip the English article body.
+          */}
+          <div
+            className="blog-article__canonical-reading"
+            lang={DEFAULT_PLATFORM_LANGUAGE}
+            data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+          >
+            <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
+              {titleForDisplay}
+            </h1>
 
-          <BlogArticleBody html={bodyHtml} />
+            <div className="blog-article__cover">
+              <BlogCoverImage
+                title={titleForDisplay}
+                imageUrl={post.coverImage?.mediaUrl}
+                altText={post.coverImage?.altText}
+                className="blog-article__cover-image"
+                priority
+              />
+            </div>
+
+            <BlogArticleBody html={bodyHtml} />
+          </div>
 
           <BlogReactionControls
             slug={post.slug}

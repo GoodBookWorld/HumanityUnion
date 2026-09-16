@@ -34,11 +34,27 @@ describe("Stable Browser Translation — Blog ordinary reading", () => {
     assert.match(body, /dangerouslySetInnerHTML/);
   });
 
+  it("canonical English reading declares an explicit content-language boundary", () => {
+    assert.match(article, /DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(
+      article,
+      /className="blog-article__canonical-reading"[\s\S]*lang=\{DEFAULT_PLATFORM_LANGUAGE\}/,
+    );
+    assert.match(article, /data-hu-content-lang=\{DEFAULT_PLATFORM_LANGUAGE\}/);
+    // Document presentation locale remains independent (useLocale still used for dates/chrome).
+    assert.match(article, /useLocale\(\)/);
+  });
+
   it("browser translation eligibility is not blocked by translate=no on the article body", () => {
     assert.doesNotMatch(article, /translate=["']no["']/);
     assert.doesNotMatch(body, /translate=["']no["']/);
     assert.doesNotMatch(article, /ProtectedAuthoritativeText/);
     assert.doesNotMatch(body, /ProtectedAuthoritativeText/);
+  });
+
+  it("Blog feed cards still use shared presentation helper (unchanged)", () => {
+    const card = readFeatures("blog/components/BlogPostCard.tsx");
+    assert.match(card, /resolveBlogPostPresentation/);
   });
 
   it("CT presentation infrastructure remains available outside ordinary article reading", () => {
