@@ -20,8 +20,9 @@ export function HeaderWorkspaceLink() {
   const workspaceLabel = tNav("workspace");
   const isActive = pathname === "/workspace" || pathname.startsWith("/workspace/");
 
+  // Document navigation — public shell → Workspace (Chrome-Translate-safe).
   return (
-    <Link
+    <a
       href="/workspace"
       className={[
         "humanity-header__icon-link",
@@ -32,6 +33,7 @@ export function HeaderWorkspaceLink() {
       aria-label={workspaceLabel}
       title={workspaceLabel}
       aria-current={isActive ? "page" : undefined}
+      translate="no"
     >
       <Image
         src={WORKSPACE_ICON}
@@ -41,7 +43,7 @@ export function HeaderWorkspaceLink() {
         className="humanity-header__icon-link-image"
         aria-hidden="true"
       />
-    </Link>
+    </a>
   );
 }
 

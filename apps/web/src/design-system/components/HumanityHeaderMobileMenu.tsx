@@ -99,10 +99,11 @@ export function HumanityHeaderMobileMenu({
               </>
             ) : (
               <>
-                <Link
+                {/* Document navigation — no onClick so menu close cannot block navigation. */}
+                <a
                   href="/workspace"
                   className="humanity-header__mobile-nav-link"
-                  onClick={handleLinkClick}
+                  translate="no"
                 >
                   <Image
                     src={WORKSPACE_ICON}
@@ -113,7 +114,7 @@ export function HumanityHeaderMobileMenu({
                     aria-hidden="true"
                   />
                   {tNav("workspace")}
-                </Link>
+                </a>
                 <Link
                   href="/notifications"
                   className="humanity-header__mobile-nav-link"

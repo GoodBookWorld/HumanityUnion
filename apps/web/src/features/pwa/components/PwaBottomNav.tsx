@@ -39,10 +39,12 @@ export function PwaBottomNav() {
 
   return (
     <nav className="hu-pwa-bottom-nav" aria-label={tPwa("appNavAria")}>
-      <Link
+      {/* Document navigation — Workspace entry matches public-header contract. */}
+      <a
         href="/workspace"
         className="hu-pwa-bottom-nav__item"
         aria-current={workspaceCurrent ? "page" : undefined}
+        translate="no"
       >
         <img
           className="hu-pwa-bottom-nav__icon"
@@ -53,7 +55,7 @@ export function PwaBottomNav() {
           aria-hidden="true"
         />
         {tNav("workspace")}
-      </Link>
+      </a>
 
       <Link
         href="/initiatives"
