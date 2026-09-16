@@ -31,11 +31,11 @@ let syncInFlightId: number | null = null;
 /** Monotonic id allocator for in-flight ownership (survives session reset). */
 let syncInFlightSeq = 0;
 /**
- * Cycle-aware one-shot latch: locale for which we already triggered same-path
- * recompose while waiting for useLocale to catch up. Cleared only when actual
- * client presentation alignment is observed (`currentPresentationLocale ===
- * target`), so a later same-locale re-stale can recompose again. Not cleared on
- * every render/effect/session clear.
+ * Cycle-aware one-shot latch: locale for which CookieSync/guest reconciliation
+ * has already *requested* a refresh while waiting for useLocale to catch up.
+ * Represents actual refresh ownership — not "apply asked for recompose".
+ * Cleared when client presentation alignment is observed, or when a new
+ * authoritative cookie claim starts (requested ≠ completed).
  */
 let lastStaleNextIntlRecomposeForLocale: string | null = null;
 
@@ -73,17 +73,20 @@ export function resolvePreferredPresentationLocale(
 }
 
 /**
- * Claim authoritative ownership of the presentation locale.
+ * Claim authoritative ownership of the presentation-locale *cookie* target.
  * Invalidates in-flight Cookie Sync attempts so they cannot overwrite this locale.
  * Call before/after a successful `/api/hu-lang` write from Preferences / LanguageSelector.
+ *
+ * Does NOT mark stale-NextIntl recompose as completed. Requested recompose from
+ * applyPresentationLocale is not observed alignment — clear any prior latch so
+ * CookieSync may still refresh once while useLocale lags behind hu_lang.
  */
 export function claimAuthoritativePresentationLocale(locale: string): number {
   const normalized = locale.trim();
   presentationLocaleSyncGeneration += 1;
   if (normalized) {
     lastSyncedPresentationLocale = normalized;
-    // Authoritative apply already runs locale-switch navigation / recompose.
-    lastStaleNextIntlRecomposeForLocale = normalized;
+    lastStaleNextIntlRecomposeForLocale = null;
   }
   return presentationLocaleSyncGeneration;
 }

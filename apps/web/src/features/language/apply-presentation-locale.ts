@@ -1,11 +1,15 @@
 /**
  * Shared presentation-locale apply path (Pack 02C / Simplification Steps 06A.3–06A.5).
  *
- * Same sequence formerly inlined in LanguageSelector:
- * claim sync generation → write Web-origin `hu_lang` → latch → Registry-driven navigation.
+ * Sequence: claim cookie-sync generation → write Web-origin `hu_lang` →
+ * Registry-driven navigation / optional same-path recompose request.
+ *
+ * Claiming generation owns the cookie target only. It does not record stale-NextIntl
+ * recompose as completed — CookieSync may still refresh once if useLocale lags.
  *
  * Does not persist participant preferences (callers that need prefs write first).
  * Does not set document lang/dir client-side — SSR recomposes via navigation/refresh.
+ * Does not await NextIntl provider alignment (no fake Promise/timeout).
  */
 
 import {
@@ -34,8 +38,9 @@ export type ApplyPresentationLocaleInput = {
   readonly seoIndexingEnabled: boolean;
   readonly router: LocaleSwitchRouter;
   /**
-   * When true, claim Cookie Sync generation before write and latch after success
-   * so stale InterfaceLanguageCookieSync attempts cannot overwrite this locale.
+   * When true, claim Cookie Sync generation before/after write so stale
+   * InterfaceLanguageCookieSync cookie writes cannot overwrite this locale.
+   * Does not suppress stale-NextIntl recovery while useLocale is still OLD.
    */
   readonly markAuthenticatedSync?: boolean;
   /**
@@ -76,7 +81,8 @@ export async function applyPresentationLocale(
   const written = await writeHuLangCookieViaWebRoute(requested);
 
   if (input.markAuthenticatedSync === true) {
-    // Latch canonical Registry locale from the write response (may differ from alias).
+    // Cookie target authority from Registry canonicalize (may differ from alias).
+    // Does not mark NextIntl recompose complete — see claimAuthoritativePresentationLocale.
     markInterfaceLanguageCookieSynced(written.locale);
   }
 

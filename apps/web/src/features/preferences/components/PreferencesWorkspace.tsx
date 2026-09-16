@@ -159,7 +159,8 @@ export function PreferencesWorkspace() {
         // Step 06A.5 — Preferred Reading (`readingLanguages[0]`) is presentation
         // authority; interfaceLanguage is the aligned server-synced fallback.
         // applyPresentationLocale claims Cookie Sync generation so stale syncs
-        // cannot overwrite hu_lang after this write.
+        // cannot overwrite hu_lang after this write. It does not mark NextIntl
+        // recompose complete — CookieSync may still refresh once if useLocale lags.
         const presentationLocale = resolvePreferredPresentationLocale(updated);
         if (presentationLocale) {
           const selected = languageOptions.find(
