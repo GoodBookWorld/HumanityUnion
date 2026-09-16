@@ -236,7 +236,8 @@ describe("Pack 08I.12 — Blog author identity + surfaces", () => {
     assert.match(authors, /resolveBlogPostPresentation/);
     assert.match(card, /resolveBlogPostPresentation/);
     assert.match(latest, /resolveBlogPostPresentation/);
-    assert.match(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
+    assert.match(article, /data-hu-reading-owner="browser-native"/);
     assert.match(article, /initialPresentation/);
   });
 });

@@ -151,9 +151,12 @@ describe("Pack 08I.10 — Category / article meta / body", () => {
 
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const body = readWeb("features/blog/components/BlogArticleBody.tsx");
+    // Ordinary reading uses stable canonical post.content — not post-mount CT HTML.
     assert.match(article, /BlogArticleBody html=\{bodyHtml\}/);
-    assert.match(article, /displayContentHtml/);
-    assert.match(article, /initialPresentation\?\.contentHtml/);
+    assert.match(article, /const bodyHtml = post\.content/);
+    assert.match(article, /data-hu-reading-owner="browser-native"/);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /setDisplayContentHtml/);
     assert.match(body, /blog-article-body hu-prose/);
     assert.match(body, /dangerouslySetInnerHTML/);
     // Body is presentation-owned; does not fetch post.content itself.
@@ -197,7 +200,9 @@ describe("Pack 08I.10 — SSR seed + locale + raw keys", () => {
     assert.match(policy, /translationPreference/);
     assert.match(policy, /preferTranslation: false/);
     assert.match(article, /initialPresentation/);
-    assert.match(article, /keep SSR seed|!initialPresentation/);
+    assert.match(article, /data-hu-reading-owner="browser-native"/);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /setDisplayContentHtml/);
     assert.match(index, /getTranslations\("blogPublic"\)/);
     assert.doesNotMatch(index, /Loading Blog…/);
   });

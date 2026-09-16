@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
@@ -10,9 +10,6 @@ import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client"
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
-import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogArticleBody } from "./BlogArticleBody";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
@@ -34,7 +31,12 @@ interface BlogArticlePageContentProps {
    * `null` for not-found), the client skips a duplicate detail fetch.
    */
   initialPost?: PublicBlogPostDetail | null;
-  /** Pack 08I.8 — optional SSR-localized title/body seed from warm translations. */
+  /**
+   * Optional SSR CT seed used by the server page for Search/SEO/metadata.
+   * Ordinary visible reading ignores this bag — browser-native translation owns
+   * reading; post-mount content-translation must not replace the article DOM
+   * (Pack 1 principle).
+   */
   initialPresentation?: {
     readonly title: string;
     readonly excerpt: string;
@@ -43,20 +45,24 @@ interface BlogArticlePageContentProps {
 }
 
 /**
- * Pack 08I.5 — Blog title + sanitized HTML body resolve through content_translations.
- * Canonical post.content is never overwritten; missing/stale → English/original HTML.
+ * Ordinary public Blog article reading.
+ *
+ * Stable Browser Translation — Blog reading:
+ * - Visible title/body are the canonical published post only.
+ * - Do not asynchronously resolve or apply content-translation into visible
+ *   React HTML after mount (that races and overwrites browser-native translation).
+ * - Shared blog presentation helpers remain for cards, seeds, Search/SEO outside
+ *   this ordinary reading path.
  */
 export function BlogArticlePageContent({
   slug,
   initialPost,
-  initialPresentation,
+  initialPresentation: _initialPresentation,
 }: BlogArticlePageContentProps) {
+  void _initialPresentation;
   const t = useTranslations("blogPublic");
   const locale = useLocale();
   const discovery = usePublicBlogDiscovery();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const requestGenerationRef = useRef(0);
   const seeded = initialPost !== undefined;
   const [post, setPost] = useState<PublicBlogPostDetail | null>(() =>
     initialPost && initialPost.slug === slug ? initialPost : null,
@@ -64,24 +70,11 @@ export function BlogArticlePageContent({
   const [error, setError] = useState<"not_found" | "unavailable" | "generic" | null>(() =>
     seeded && initialPost === null ? "not_found" : null,
   );
-  const [displayTitle, setDisplayTitle] = useState(() => {
-    if (initialPost && initialPost.slug === slug) {
-      return initialPresentation?.title || initialPost.title;
-    }
-    return "";
-  });
-  const [displayContentHtml, setDisplayContentHtml] = useState(() => {
-    if (initialPost && initialPost.slug === slug) {
-      return initialPresentation?.contentHtml || initialPost.content;
-    }
-    return "";
-  });
 
   useEffect(() => {
     if (seeded) {
       if (initialPost && initialPost.slug === slug) {
         setPost(initialPost);
-        // Pack 08I.8 — do not force canonical HTML here; presentation effect owns display.
         setError(null);
         return;
       }
@@ -123,59 +116,6 @@ export function BlogArticlePageContent({
       cancelled = true;
     };
   }, [slug, seeded, initialPost]);
-
-  useEffect(() => {
-    if (!post) {
-      return;
-    }
-
-    // Canonical until reading context is ready — keep SSR seed when present.
-    if (!readingContext.ready) {
-      if (!initialPresentation) {
-        setDisplayTitle(post.title);
-        setDisplayContentHtml(post.content);
-      }
-      return;
-    }
-
-    let cancelled = false;
-    const requestGeneration = ++requestGenerationRef.current;
-
-    void resolveBlogPostPresentation({
-      postId: post.postId,
-      canonical: {
-        title: post.title,
-        excerpt: post.excerpt,
-        contentHtml: post.content,
-      },
-      displayLanguage,
-      ready: readingContext.ready,
-      translationPreference: readingContext.translationPreference,
-      requestGeneration,
-    }).then((presentation) => {
-      if (cancelled || requestGeneration !== requestGenerationRef.current) {
-        return;
-      }
-      if (
-        presentation.presentationMode === "translated" &&
-        presentation.activeLanguage !== displayLanguage
-      ) {
-        return;
-      }
-      setDisplayTitle(presentation.title);
-      setDisplayContentHtml(presentation.contentHtml);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    post,
-    readingContext.ready,
-    displayLanguage,
-    readingContext.translationPreference,
-    initialPresentation,
-  ]);
 
   function commentsLabel(count: number): string {
     if (count <= 0) {
@@ -246,16 +186,15 @@ export function BlogArticlePageContent({
     t,
     post.category.name,
   );
-  // Pack 08I.10 — presentation owns title/body; canonical only when presentation empty.
-  const titleForDisplay =
-    displayTitle.trim() || initialPresentation?.title || post.title;
-  const bodyHtml =
-    displayContentHtml.trim() ||
-    initialPresentation?.contentHtml ||
-    post.content;
+  // Stable canonical reading DOM — no post-mount CT title/body replacement.
+  const titleForDisplay = post.title;
+  const bodyHtml = post.content;
 
   return (
-    <main className="blog-page blog-article hu-page-container blog-page--pack15c">
+    <main
+      className="blog-page blog-article hu-page-container blog-page--pack15c"
+      data-hu-reading-owner="browser-native"
+    >
       <div className="blog-layout">
         <BlogDiscoverySearch
           activeCategorySlug={post.category.slug}

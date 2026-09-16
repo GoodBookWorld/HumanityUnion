@@ -22,13 +22,15 @@ function readApi(relative: string): string {
 }
 
 describe("Pack 08I.5 — Blog body translation presentation", () => {
-  it("detail and list use shared Blog presentation resolver", () => {
+  it("detail uses stable canonical article reading; list cards keep shared presentation resolver", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
     const resolver = readWeb("features/blog/resolve-blog-post-presentation.ts");
 
-    assert.match(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /setDisplayContentHtml/);
     assert.match(article, /BlogArticleBody html=\{bodyHtml\}/);
+    assert.match(article, /const bodyHtml = post\.content/);
     assert.doesNotMatch(article, /EXPECTED_FALLBACK/);
     assert.match(card, /resolveBlogPostPresentation/);
     assert.match(card, /displayExcerpt/);
@@ -85,7 +87,8 @@ describe("Pack 08I.5 — Blog body translation presentation", () => {
 
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     assert.match(article, /BlogArticleBody html=\{bodyHtml\}/);
-    assert.match(article, /setDisplayContentHtml\(presentation\.contentHtml\)/);
+    assert.doesNotMatch(article, /setDisplayContentHtml\(presentation\.contentHtml\)/);
+    assert.match(article, /const bodyHtml = post\.content/);
   });
 
   it("API loads sanitized HTML content for blog_post and re-sanitizes after provider", () => {

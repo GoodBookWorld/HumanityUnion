@@ -129,7 +129,7 @@ describe("Pack 08I.4 — membership/support/contact/blog chrome catalogs", () =>
     assert.match(constants, /CONTACT_SUBJECT_IDS/);
   });
 
-  it("Blog index/article chrome use blogPublic; title/body resolve via shared presentation helper", () => {
+  it("Blog index/article chrome use blogPublic; ordinary article reading stays canonical for browser MT", () => {
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
@@ -139,8 +139,10 @@ describe("Pack 08I.4 — membership/support/contact/blog chrome catalogs", () =>
     assert.match(index, /t\("pageTitle"\)/);
     assert.match(index, /t\("publicationsHeading"\)/);
     assert.match(article, /useTranslations\("blogPublic"\)/);
-    assert.match(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
     assert.match(article, /BlogArticleBody html=\{bodyHtml\}/);
+    assert.match(article, /const bodyHtml = post\.content/);
+    assert.match(article, /data-hu-reading-owner="browser-native"/);
     assert.match(card, /resolveBlogPostPresentation/);
     assert.match(resolver, /sourceKind:\s*"blog_post"/);
     assert.doesNotMatch(article, /import\s*\{[^}]*TranslatedContentView/);

@@ -172,16 +172,17 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     assert.equal(presented.contentHtml, ukHtml);
   });
 
-  it("Blog article owns display via presentation effect; authors/meta catalogs wired", () => {
+  it("Blog article ordinary reading is stable canonical DOM; cards keep presentation helper", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const authors = readWeb("features/blog/components/BlogAuthorsSidebar.tsx");
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
     const latest = readWeb("features/blog/components/BlogLatestMiniCards.tsx");
 
-    assert.match(article, /resolveBlogPostPresentation/);
-    assert.match(article, /setDisplayContentHtml\(presentation\.contentHtml\)/);
-    assert.match(article, /do not force canonical HTML|presentation effect owns display/i);
-    assert.match(article, /initialPresentation|SSR-localized|presentation seed/i);
+    assert.doesNotMatch(article, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(article, /setDisplayContentHtml/);
+    assert.match(article, /data-hu-reading-owner="browser-native"/);
+    assert.match(article, /const bodyHtml = post\.content/);
+    assert.match(article, /initialPresentation/);
     assert.match(
       readWeb("app/blog/[slug]/page.tsx"),
       /loadBlogArticlePresentationSeed/,
