@@ -1,6 +1,10 @@
 .preferences-workspace {
   display: grid;
   gap: var(--hu-space-6);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .preferences-workspace__field {
@@ -138,4 +142,37 @@
     width: 100%;
     max-width: 100%;
   }
+
+  /* Narrow / PWA: keep selectors readable and tappable without global page scaling. */
+  .preferences-workspace__field input,
+  .preferences-workspace__field select {
+    min-height: var(--hu-touch-target, 2.75rem);
+    font-size: 1rem;
+    line-height: 1.35;
+    padding-block: 0.65rem;
+    padding-inline: 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .preferences-workspace__field--primary {
+    padding: var(--hu-space-4);
+  }
+
+  .preferences-workspace__help,
+  .preferences-workspace__helper {
+    font-size: var(--hu-font-size-sm, 0.875rem);
+  }
+}
+
+/* Standalone PWA: contain width under fixed header/footer chrome. */
+.humanity-app--pwa-standalone .preferences-page,
+.humanity-app--pwa-standalone .preferences-workspace {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+.humanity-app--pwa-standalone .preferences-workspace__field,
+.humanity-app--pwa-standalone .preferences-workspace__fieldset,
+.humanity-app--pwa-standalone .preferences-workspace__language-fields {
+  max-width: 100%;
 }

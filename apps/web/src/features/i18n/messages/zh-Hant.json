@@ -890,7 +890,7 @@
       "help": "設定您在 Humanity Union 的偏好語言。書寫語言為獨立設定，不會改變網站呈現方式。",
       "interfaceLanguage": "介面語言",
       "preferredReadingLanguage": "偏好閱讀語言",
-      "preferredReadingHelp": "選擇您閱讀 Humanity Union 時偏好使用的語言。Humanity Union 會依此偏好套用核准名稱、關鍵術語與其他平台專用術語。一般內容請將瀏覽器設定為翻譯成相同語言。如此可保留 Humanity Union 的核准術語，同時讓瀏覽器翻譯其餘內容。",
+      "preferredReadingHelp": "選擇您偏好用來閱讀本平台的語言。為獲得最佳體驗，請將其與瀏覽器的翻譯語言保持一致。",
       "writingLanguages": "書寫語言",
       "writingLanguagesHelp": "新增您用於書寫與協作的語言。這些偏好協助 Humanity Union 了解您的溝通方式，不會控制瀏覽器的翻譯語言。",
       "writingLanguagesPlaceholder": "en, uk",

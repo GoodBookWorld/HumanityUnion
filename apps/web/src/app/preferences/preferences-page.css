@@ -1,5 +1,10 @@
 .preferences-page {
   text-align: left;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 .preferences-page__back {

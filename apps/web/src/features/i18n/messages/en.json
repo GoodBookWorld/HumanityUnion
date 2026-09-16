@@ -890,7 +890,7 @@
       "help": "Set your preferred language for Humanity Union. Writing Languages are separate and do not change how the site is presented.",
       "interfaceLanguage": "Interface Language",
       "preferredReadingLanguage": "Preferred Reading Language",
-      "preferredReadingHelp": "Choose the language you prefer to use when reading Humanity Union. Humanity Union uses this preference for approved names, key terms, and other platform-specific terminology. For general content, set your browser to translate pages into the same language. This preserves Humanity Union's approved terminology while allowing your browser to translate the rest of the content.",
+      "preferredReadingHelp": "Select the language you prefer to read the platform in. For the best experience, match it with your browser’s translation language.",
       "writingLanguages": "Writing Languages",
       "writingLanguagesHelp": "Add the languages you use for writing and collaboration. These preferences help Humanity Union understand how you communicate and do not control your browser's translation language.",
       "writingLanguagesPlaceholder": "en, uk",

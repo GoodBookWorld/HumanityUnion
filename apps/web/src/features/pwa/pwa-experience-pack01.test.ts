@@ -127,6 +127,24 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.doesNotMatch(menu, /LanguageSelector/);
   });
 
+  it("16b — hamburger Global Menu shows burger icons left of labels", () => {
+    const menu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
+    const css = readWeb("features/pwa/pwa.css");
+    for (const icon of [
+      "/icons/burger/home.svg",
+      "/icons/burger/government.png",
+      "/icons/burger/bookshelf.png",
+      "/icons/burger/blog.png",
+      "/icons/burger/press-kit.png",
+      "/icons/burger/support.png",
+      "/icons/burger/search.png",
+    ]) {
+      assert.match(menu, new RegExp(icon.replace(/\./g, "\\.")));
+    }
+    assert.match(menu, /hu-pwa-global-menu__icon/);
+    assert.match(css, /\.hu-pwa-global-menu__icon/);
+  });
+
   it("17–21 — Bottom Navigation routes and Assistant reuse", () => {
     const nav = readWeb("features/pwa/components/PwaBottomNav.tsx");
     assert.match(nav, /href="\/workspace"/);
@@ -162,6 +180,8 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(css, /\.hu-pwa-app-header|app-header-height/);
     assert.match(css, /direct-messaging__composer/);
     assert.match(css, /hu-assistant-modal__composer/);
+    assert.match(css, /\.humanity-app--pwa-standalone \.actuc-modal/);
+    assert.match(css, /padding-bottom:\s*calc\(var\(--hu-pwa-bottom-nav-height\)/);
     assert.doesNotMatch(css, /home-indicator|Home Indicator/i);
     const allCss = readWeb("features/pwa/pwa.css") + css;
     assert.doesNotMatch(allCss, /fake-home|ios-home-bar/i);

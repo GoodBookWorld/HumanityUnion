@@ -8,13 +8,13 @@ import { useEffect, useId, useRef } from "react";
 import { trapTabKey } from "../../../design-system/focus-trap";
 
 const GLOBAL_LINKS = [
-  { href: "/", labelKey: "home" },
-  { href: "/institutions", labelKey: "institutions" },
-  { href: "/knowledge", labelKey: "knowledge" },
-  { href: "/blog", labelKey: "blog" },
-  { href: "/media", labelKey: "civicMedia" },
-  { href: "/support", labelKey: "support" },
-  { href: "/search", labelKey: "search" },
+  { href: "/", labelKey: "home", iconSrc: "/icons/burger/home.svg" },
+  { href: "/institutions", labelKey: "institutions", iconSrc: "/icons/burger/government.png" },
+  { href: "/knowledge", labelKey: "knowledge", iconSrc: "/icons/burger/bookshelf.png" },
+  { href: "/blog", labelKey: "blog", iconSrc: "/icons/burger/blog.png" },
+  { href: "/media", labelKey: "civicMedia", iconSrc: "/icons/burger/press-kit.png" },
+  { href: "/support", labelKey: "support", iconSrc: "/icons/burger/support.png" },
+  { href: "/search", labelKey: "search", iconSrc: "/icons/burger/search.png" },
 ] as const;
 
 interface PwaGlobalMenuProps {
@@ -94,7 +94,15 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
                   aria-current={current ? "page" : undefined}
                   onClick={onClose}
                 >
-                  {tNav(link.labelKey)}
+                  <img
+                    className="hu-pwa-global-menu__icon"
+                    src={link.iconSrc}
+                    alt=""
+                    width={24}
+                    height={24}
+                    aria-hidden="true"
+                  />
+                  <span>{tNav(link.labelKey)}</span>
                 </Link>
               </li>
             );

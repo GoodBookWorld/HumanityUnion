@@ -66,3 +66,24 @@
     border-radius: 0;
   }
 }
+
+/*
+ * ACTUC modal — keep Join The Vanguard CTA above fixed PWA bottom nav.
+ * Uses existing bottom-nav + safe-area tokens (not device-specific heights).
+ */
+.humanity-app--pwa-standalone .actuc-modal {
+  box-sizing: border-box;
+  padding-top: max(1rem, var(--hu-safe-area-top));
+  padding-right: max(1rem, var(--hu-safe-area-right));
+  padding-bottom: calc(var(--hu-pwa-bottom-nav-height) + var(--hu-space-3));
+  padding-left: max(1rem, var(--hu-safe-area-left));
+  align-items: center;
+}
+
+.humanity-app--pwa-standalone .actuc-modal__dialog {
+  max-height: min(
+    88vh,
+    44rem,
+    calc(100dvh - var(--hu-pwa-bottom-nav-height) - var(--hu-safe-area-top) - 2.5rem)
+  );
+}

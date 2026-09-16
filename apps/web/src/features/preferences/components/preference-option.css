@@ -33,4 +33,16 @@
   .preference-option-grid--two-column {
     grid-template-columns: 1fr;
   }
+
+  .preference-option {
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    min-height: var(--hu-touch-target, 2.75rem);
+    column-gap: var(--hu-space-3);
+    font-size: var(--hu-font-size-base, 1rem);
+  }
+
+  .preference-option__input {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
 }
