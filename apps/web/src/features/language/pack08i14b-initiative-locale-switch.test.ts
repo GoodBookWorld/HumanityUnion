@@ -65,22 +65,21 @@ describe("Pack 08I.14B — single display-language contract", () => {
     );
   });
 
-  it("Discussion + Lifecycle + PublicTranslatedFields request interface locale", () => {
+  it("Discussion ordinary reading uses canonical body; PublicTranslatedFields stays Pack 1", () => {
     const discussion = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
-    assert.match(discussion, /resolvePublicContentDisplayLanguage/);
-    assert.match(discussion, /readingLanguage:\s*displayLanguage/);
-    assert.doesNotMatch(
-      discussion,
-      /resolveDiscussionCommentPresentation\(\{[\s\S]*readingContext,\s*\}\)/,
-    );
+    assert.doesNotMatch(discussion, /resolveDiscussionCommentPresentation/);
+    assert.match(discussion, /comment\.body/);
+    assert.match(discussion, /DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(discussion, /data-hu-reading-owner="browser-native"/);
 
     const lifecycle = readWeb(
       "features/public-initiative-experience/components/LifecycleTranslatedRecordCard.tsx",
     );
-    assert.match(lifecycle, /resolveInitiativePublicDisplayLanguage/);
-    assert.match(lifecycle, /readingLanguage:\s*displayLanguage/);
+    assert.doesNotMatch(lifecycle, /resolveInitiativeDetailPresentation/);
+    assert.doesNotMatch(lifecycle, /resolveTranslatedContent/);
+    assert.match(lifecycle, /data-hu-reading-owner="browser-native"/);
 
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
     assert.match(fields, /resolvePublicContentDisplayLanguage/);
@@ -128,22 +127,20 @@ describe("Pack 08I.14B — locale switch without reload", () => {
     // Simulate: EN applied, then late UK resolve arrives with activeLanguage=uk.
     const previous = enOriginalPresentation();
     const lateUk = ukPresentation();
-    // Hook rejects when resolved.activeLanguage !== displayLanguage.
-    // Merge also requires activeLanguage change to apply — if caller wrongly merges
-    // without guard, we still want language change to be explicit.
     assert.notEqual(previous.activeLanguage, lateUk.activeLanguage);
     const wronglyMerged = mergeInitiativePublicPresentationUpdate({
       previous,
       next: lateUk,
     });
-    // Language-change wins when intentionally applied; race protection lives in the hook
-    // generation/cancel + activeLanguage !== displayLanguage check.
+    // Language-change wins when intentionally applied.
     assert.equal(wronglyMerged.activeLanguage, "uk");
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    assert.match(hook, /generation !== requestGeneration\.current/);
-    assert.match(hook, /resolved\.activeLanguage !== displayLanguage/);
+    // Ordinary reading no longer races CT async apply — presentation is canonical-only.
+    assert.match(hook, /presentationMode:\s*"original"/);
+    assert.doesNotMatch(hook, /resolveTranslatedContent/);
+    assert.doesNotMatch(hook, /requestGeneration/);
   });
 
   it("final DOM tracks locale presentation: UK then EN then UK", () => {
@@ -244,12 +241,12 @@ describe("Pack 08I.14B — View Original + control visuals", () => {
 });
 
 describe("Pack 08I.14B — wiring regressions", () => {
-  it("presentation hook reacts to displayLanguage without remount contract", () => {
+  it("presentation hook ordinary reading stays canonical without CT apply", () => {
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    assert.match(hook, /displayLanguage/);
-    assert.match(hook, /setPresentation\(\(previous\) =>/);
-    assert.match(hook, /previous\.activeLanguage === displayLanguage/);
+    assert.match(hook, /presentationMode:\s*"original"/);
+    assert.doesNotMatch(hook, /resolveTranslatedContent/);
+    assert.doesNotMatch(hook, /setPresentation\(\(previous\) =>/);
   });
 });

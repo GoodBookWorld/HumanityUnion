@@ -2,68 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { fetchPublicBlogAuthors } from "../api";
-import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
 
-function AuthorLatestPublicationTitle({
-  postId,
-  canonicalTitle,
-}: {
-  postId: string;
-  canonicalTitle: string;
-}) {
-  const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const [displayTitle, setDisplayTitle] = useState(canonicalTitle);
-
-  useEffect(() => {
-    setDisplayTitle(canonicalTitle);
-  }, [postId, canonicalTitle]);
-
-  useEffect(() => {
-    if (!readingContext.ready) {
-      return;
-    }
-
-    let cancelled = false;
-    void resolveBlogPostPresentation({
-      postId,
-      canonical: {
-        title: canonicalTitle,
-        excerpt: "",
-        contentHtml: "",
-      },
-      displayLanguage,
-      ready: readingContext.ready,
-      translationPreference: readingContext.translationPreference,
-    }).then((presentation) => {
-      if (!cancelled) {
-        setDisplayTitle(presentation.title);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    postId,
-    canonicalTitle,
-    readingContext.ready,
-    displayLanguage,
-    readingContext.translationPreference,
-  ]);
-
-  return <>{displayTitle || canonicalTitle}</>;
-}
-
+/**
+ * Ordinary public Blog authors rail — canonical latest titles only.
+ * No post-mount CT apply (unified browser-native reading).
+ */
 export function BlogAuthorsSidebar() {
   const t = useTranslations("blogPublic.discovery.authors");
   const [authors, setAuthors] = useState<readonly PublicBlogAuthorDirectoryItem[]>([]);
@@ -119,11 +69,12 @@ export function BlogAuthorsSidebar() {
                   )}
                 </div>
                 <p className="blog-authors-list__latest-label hu-caption">{t("latestLabel")}</p>
-                <Link href={publicationHref} className="blog-authors-list__latest">
-                  <AuthorLatestPublicationTitle
-                    postId={entry.latestPublication.postId}
-                    canonicalTitle={entry.latestPublication.title}
-                  />
+                <Link
+                  href={publicationHref}
+                  className="blog-authors-list__latest"
+                  lang={DEFAULT_PLATFORM_LANGUAGE}
+                >
+                  {entry.latestPublication.title}
                 </Link>
               </li>
             );

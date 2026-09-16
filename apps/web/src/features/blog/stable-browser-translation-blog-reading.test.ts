@@ -52,18 +52,16 @@ describe("Stable Browser Translation — Blog ordinary reading", () => {
     assert.doesNotMatch(body, /ProtectedAuthoritativeText/);
   });
 
-  it("Blog feed cards still use shared presentation helper (unchanged)", () => {
+  it("Blog feed cards also use ordinary canonical reading", () => {
     const card = readFeatures("blog/components/BlogPostCard.tsx");
-    assert.match(card, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(card, /resolveBlogPostPresentation/);
+    assert.match(card, /DEFAULT_PLATFORM_LANGUAGE|data-hu-reading-owner="browser-native"/);
   });
 
   it("CT presentation infrastructure remains available outside ordinary article reading", () => {
     const resolver = readFeatures("blog/resolve-blog-post-presentation.ts");
     assert.match(resolver, /export async function resolveBlogPostPresentation/);
     assert.match(resolver, /sourceKind:\s*"blog_post"/);
-
-    const card = readFeatures("blog/components/BlogPostCard.tsx");
-    assert.match(card, /resolveBlogPostPresentation/);
 
     const seed = readFeatures("blog/load-blog-article-presentation-seed.ts");
     assert.match(seed, /resolveTranslatedContent/);

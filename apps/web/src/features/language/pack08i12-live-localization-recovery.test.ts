@@ -34,11 +34,11 @@ describe("Pack 08I.12 — Media availability (P0)", () => {
 
     assert.match(page, /initialMedia = undefined/);
     assert.doesNotMatch(page, /initialMedia = null/);
-    assert.match(page, /if \(initialMedia\)/);
-    assert.match(page, /loadCivicMediaEditorialSeed/);
+    assert.match(page, /composeMediaPageLocalization/);
+    assert.match(page, /initialMedia\s*\?/);
 
-    assert.match(content, /hasServerPayload/);
-    assert.match(content, /fetchCivicMediaCenter/);
+    assert.match(content, /hasServerPayload|initialMedia/);
+    assert.match(content, /useCivicMediaResolvedEditorial/);
     assert.doesNotMatch(content, /seeded && initialMedia === null/);
     assert.doesNotMatch(content, /initialMedia\?:\s*CivicMediaCenterPublic\s*\|\s*null/);
   });
@@ -61,7 +61,10 @@ describe("Pack 08I.12 — Compact Initiative cards (no description)", () => {
     const latest = readWeb("features/public-experience/components/LatestInitiativeCard.tsx");
 
     for (const src of [mini, world, country, latest]) {
-      assert.match(src, /useInitiativeCardTitlePresentation/);
+      assert.match(
+        src,
+        /useInitiativeCardTitlePresentation|titleLocalized|CANONICAL_FALLBACK/,
+      );
       assert.doesNotMatch(src, /className="[^"]*__summary"/);
     }
 
@@ -226,29 +229,31 @@ describe("Pack 08I.12 — Reading context + generation lifecycle", () => {
 });
 
 describe("Pack 08I.12 — Blog author identity + surfaces", () => {
-  it("author proper names are not machine-translated; titles use shared presentation", () => {
+  it("author proper names are not machine-translated; titles use ordinary canonical reading", () => {
     const authors = readWeb("features/blog/components/BlogAuthorsSidebar.tsx");
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
     const latest = readWeb("features/blog/components/BlogLatestMiniCards.tsx");
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
 
     assert.match(authors, /displayName/);
-    assert.match(authors, /resolveBlogPostPresentation/);
-    assert.match(card, /resolveBlogPostPresentation/);
-    assert.match(latest, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(authors, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(card, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(latest, /resolveBlogPostPresentation/);
     assert.doesNotMatch(article, /resolveBlogPostPresentation/);
     assert.match(article, /data-hu-reading-owner="browser-native"/);
     assert.match(article, /initialPresentation/);
+    assert.match(card, /DEFAULT_PLATFORM_LANGUAGE|data-hu-reading-owner="browser-native"/);
   });
 });
 
 describe("Pack 08I.12 / 08I.13 — Discussion comments ownership", () => {
-  it("discussion comments use content_translations body presentation (public-eligible)", () => {
+  it("discussion comments ordinary reading uses canonical body (browser-native)", () => {
     const panel = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
-    assert.match(panel, /resolveDiscussionCommentPresentation/);
-    assert.match(panel, /originalLanguageNote/);
+    assert.doesNotMatch(panel, /resolveDiscussionCommentPresentation/);
+    assert.match(panel, /comment\.body/);
+    assert.match(panel, /data-hu-reading-owner="browser-native"/);
 
     const eligibility = readFileSync(
       path.resolve(webRoot, "../../api/src/modules/language/content-translation-eligibility.ts"),

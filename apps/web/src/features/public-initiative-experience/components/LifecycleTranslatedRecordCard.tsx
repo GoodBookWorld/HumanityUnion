@@ -1,11 +1,10 @@
 /**
- * Pack 08I.9 — Lifecycle record card presentation boundary.
+ * Pack 08I.9 / Unify Ordinary Public Reading — Lifecycle record card.
  *
- * Prefer:
- * 1. Civic warm content_translations (CivicPublicTranslatedSection) when sourceKind eligible
- * 2. Initiative detail presentation for sourceKind=initiative
- * 3. Catalog titleCode for synthetic titles
- * 4. Canonical title/summary fallback
+ * Ordinary visible reading uses canonical/fallback fields only.
+ * Do not asynchronously resolve or apply CT into visible DOM.
+ * PublicTranslatedFields / CivicPublicTranslatedSection already own
+ * stable canonical presentation (Pack 1).
  *
  * Status: statusCode → semantic label; never raw i18n keys or Title-Case enums as keys.
  */
@@ -13,10 +12,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, PublicInitiativeLifecycleRecordItem } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { CivicPublicTranslatedSection, PublicTranslatedFields } from "../../language";
 import { CIVIC_TRANSLATION_FIELD_META } from "../../language/civic-translation-field-meta";
@@ -27,9 +27,6 @@ import {
   resolvePresentationStatusDisplayLabel,
 } from "../initiative-experience-i18n";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
-import { resolveInitiativeDetailPresentation } from "../resolve-initiative-detail-presentation";
-import { resolveInitiativePublicDisplayLanguage } from "../initiative-public-presentation";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { lifecycleRecordUsesWarmTranslation } from "../lifecycle-record-warm-matrix";
 
 type CivicWarmKind = keyof typeof CIVIC_TRANSLATION_FIELD_META;
@@ -91,58 +88,18 @@ function InitiativeRecordBody({
 }: {
   record: PublicInitiativeLifecycleRecordItem;
 }) {
-  const interfaceLocale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolveInitiativePublicDisplayLanguage(interfaceLocale);
-  const [title, setTitle] = useState(record.title);
-  const [summary, setSummary] = useState(record.summary ?? "");
-
-  useEffect(() => {
-    setTitle(record.title);
-    setSummary(record.summary ?? "");
-    if (!readingContext.ready) {
-      return;
-    }
-    let cancelled = false;
-    void resolveInitiativeDetailPresentation({
-      initiativeId: record.recordId,
-      canonical: {
-        title: record.title,
-        description: record.summary ?? "",
-      },
-      readingContext: {
-        ready: readingContext.ready,
-        // Pack 08I.14B — Lifecycle initiative records follow UI locale.
-        readingLanguage: displayLanguage,
-        translationPreference: readingContext.translationPreference,
-      },
-    }).then((presentation) => {
-      if (cancelled) {
-        return;
-      }
-      if (presentation.activeLanguage !== displayLanguage) {
-        return;
-      }
-      setTitle(presentation.title);
-      setSummary(presentation.description);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    record.recordId,
-    record.title,
-    record.summary,
-    readingContext.ready,
-    displayLanguage,
-    readingContext.translationPreference,
-  ]);
-
+  const titleForDisplay = record.title;
+  const summaryForDisplay = record.summary ?? "";
   return (
-    <>
-      <h3>{title}</h3>
-      {summary ? <p>{summary}</p> : null}
-    </>
+    <div
+      className="pie-record__canonical-reading"
+      lang={DEFAULT_PLATFORM_LANGUAGE}
+      data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+      data-hu-reading-owner="browser-native"
+    >
+      <h3>{titleForDisplay}</h3>
+      {summaryForDisplay ? <p>{summaryForDisplay}</p> : null}
+    </div>
   );
 }
 

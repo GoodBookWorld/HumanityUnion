@@ -62,21 +62,27 @@ describe("Production Completion Pack 02G Task 07B — auth-aware content resolve
     assert.match(prefsApi, /dispatchEvent/);
 
     for (const surface of [
-      "src/features/public-initiative-experience/use-initiative-public-presentation.ts",
       "src/features/language/components/PublicTranslatedFields.tsx",
-      "src/features/public-civic-archive/components/CivicArchiveCardTranslatedText.tsx",
     ]) {
       const src = readWeb(surface);
-      assert.match(src, /usePublicContentReadingContext/);
-      assert.match(src, /readingContext\.(ready|translationPreference)/);
-      // Must not permanently stick on initial en without auth readiness.
+      // Pack 1 — ordinary reading keeps displayLanguage for SR chrome only; no CT apply.
+      assert.match(src, /resolvePublicContentDisplayLanguage|fallbackFields/);
       assert.doesNotMatch(src, /setReadingLanguage\("en"\)/);
+      assert.doesNotMatch(src, /resolveTranslatedContent/);
     }
+    const archiveCard = readWeb(
+      "src/features/public-civic-archive/components/CivicArchiveCardTranslatedText.tsx",
+    );
+    assert.doesNotMatch(archiveCard, /resolveTranslatedContent/);
+    assert.doesNotMatch(archiveCard, /usePublicContentReadingContext/);
+    assert.match(archiveCard, /data-hu-reading-owner="browser-native"/);
+
     const initiativeHook = readWeb(
       "src/features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    assert.match(initiativeHook, /resolveInitiativePublicDisplayLanguage\(interfaceLocale\)/);
-    assert.match(initiativeHook, /readingLanguage:\s*displayLanguage/);
+    assert.doesNotMatch(initiativeHook, /resolveTranslatedContent/);
+    assert.doesNotMatch(initiativeHook, /usePublicContentReadingContext/);
+    assert.match(initiativeHook, /presentationMode:\s*"original"/);
   });
 
   it("D. guest path settles with preferred + interface/default locale (08I.7)", () => {

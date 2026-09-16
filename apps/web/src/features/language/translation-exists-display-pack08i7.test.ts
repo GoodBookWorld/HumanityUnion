@@ -30,18 +30,21 @@ describe("Pack 08I.7 — translation exists vs expected fallback wiring", () => 
     assert.match(apiGuest, /unauthenticated public callers|Pack 08I\.7/);
   });
 
-  it("initiative / blog / media resolvers call resolveTranslatedContent with reading language", () => {
+  it("initiative / blog resolvers keep resolveTranslatedContent; media ordinary reading is canonical", () => {
     const initiative = readWeb(
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
     const blog = readWeb("features/blog/resolve-blog-post-presentation.ts");
     const media = readWeb("features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx");
+    const mediaSeed = readWeb("features/civic-media-center/load-civic-media-editorial-seed.ts");
     assert.match(initiative, /resolveTranslatedContent/);
     assert.match(initiative, /sourceKind:\s*"initiative"/);
     assert.match(blog, /resolveTranslatedContent/);
     assert.match(blog, /sourceKind:\s*"blog_post"/);
-    assert.match(media, /resolveTranslatedContent/);
-    assert.match(media, /sourceKind:\s*"civic_media"/);
+    assert.doesNotMatch(media, /resolveTranslatedContent/);
+    assert.match(media, /buildCanonicalCivicMediaEditorial/);
+    assert.match(mediaSeed, /resolveTranslatedContent/);
+    assert.match(mediaSeed, /sourceKind:\s*"civic_media"/);
     assert.doesNotMatch(media, /generateContentTranslation\s*\(/);
   });
 

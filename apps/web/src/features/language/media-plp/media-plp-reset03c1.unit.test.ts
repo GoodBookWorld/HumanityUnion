@@ -247,13 +247,14 @@ describe("Reset 03C.1 Media structural parity", () => {
     assert.equal(isMediaPlpWebEnabled(), true);
   });
 
-  it("H: flag ON path skips legacy generate-on-miss", () => {
+  it("H: ordinary Media reading skips CT apply; PLP apply infra remains", () => {
     const pageContent = readFileSync(
       join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
       "utf8",
     );
-    assert.match(pageContent, /skipClientTranslation:\s*plpMode/);
+    assert.match(pageContent, /skipClientTranslation:\s*true/);
     assert.match(pageContent, /applyMediaPlpPresentationsToEditorial/);
+    assert.match(pageContent, /data-hu-reading-owner="browser-native"/);
     const hook = readFileSync(
       join(
         webSrc,
@@ -262,6 +263,7 @@ describe("Reset 03C.1 Media structural parity", () => {
       "utf8",
     );
     assert.match(hook, /skipClientTranslation/);
+    assert.doesNotMatch(hook, /resolveTranslatedContent/);
   });
 
   it("O/P/Q: read-path isolation remains thin", () => {

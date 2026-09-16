@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { formatBlogPublishedDate } from "../api";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
-import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogCoverImage } from "./BlogCoverImage";
 
 interface BlogLatestMiniCardsProps {
@@ -20,50 +17,8 @@ interface BlogLatestMiniCardsProps {
 function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const [displayTitle, setDisplayTitle] = useState(post.title);
-
-  useEffect(() => {
-    setDisplayTitle(post.title);
-  }, [post.postId, post.title]);
-
-  useEffect(() => {
-    if (!readingContext.ready) {
-      return;
-    }
-
-    let cancelled = false;
-    void resolveBlogPostPresentation({
-      postId: post.postId,
-      canonical: {
-        title: post.title,
-        excerpt: post.excerpt ?? "",
-        contentHtml: "",
-      },
-      displayLanguage,
-      ready: readingContext.ready,
-      translationPreference: readingContext.translationPreference,
-    }).then((presentation) => {
-      if (!cancelled) {
-        setDisplayTitle(presentation.title);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    post.postId,
-    post.title,
-    post.excerpt,
-    readingContext.ready,
-    displayLanguage,
-    readingContext.translationPreference,
-  ]);
-
   const href = `/blog/${encodeURIComponent(post.slug)}`;
-  const titleForDisplay = displayTitle || post.title;
+  const titleForDisplay = post.title;
   const categoryLabel = resolveBlogCategoryDisplayName(
     post.category.categoryId,
     t,
@@ -83,7 +38,9 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
           />
         </span>
         <span className="blog-latest-mini__body">
-          <span className="blog-latest-mini__title">{titleForDisplay}</span>
+          <span className="blog-latest-mini__title" lang={DEFAULT_PLATFORM_LANGUAGE}>
+            {titleForDisplay}
+          </span>
           <span className="blog-latest-mini__category">{categoryLabel}</span>
           <time className="blog-latest-mini__date" dateTime={post.publishedAt}>
             {formatBlogPublishedDate(post.publishedAt, locale)}
@@ -97,8 +54,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
 
 /**
  * Pack 14D — Latest 4 mini-cards for the right discovery rail.
- * Pack 08I.7 / 08I.10 — title via shared Blog presentation resolver; locale-aware dates;
- * category via shared taxonomy presenter.
+ * Ordinary reading: canonical titles only (no CT visible apply).
  */
 export function BlogLatestMiniCards({ posts }: BlogLatestMiniCardsProps) {
   const t = useTranslations("blogPublic.discovery.latest");

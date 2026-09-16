@@ -9,7 +9,10 @@ import type {
   PublicInitiativeCollaborationParticipantsResult,
   PublicInitiativeDiscussionComment,
 } from "@hu/types";
-import { getInitiativeLifecycleProfilePresentation } from "@hu/types";
+import {
+  DEFAULT_PLATFORM_LANGUAGE,
+  getInitiativeLifecycleProfilePresentation,
+} from "@hu/types";
 
 import { Button, HuFeedbackMessage } from "../../../design-system";
 import { getMe } from "../../auth/auth-api";
@@ -35,11 +38,8 @@ import {
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
-import { resolveDiscussionCommentPresentation } from "../resolve-discussion-comment-presentation";
 import {
   DISCUSSION_ACTION_DEFINITIONS,
   DISCUSSION_FILTER_IDS,
@@ -509,37 +509,9 @@ function DiscussionCommentCard({
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const [displayBody, setDisplayBody] = useState(comment.body);
   const authorLink = resolveAuthorLinkPresentation(comment.author);
   const badges = resolveAuthorBadges(comment.collaboration);
   const indicatorKeys = resolveStatusIndicatorKeys(comment.collaboration);
-
-  useEffect(() => {
-    setDisplayBody(comment.body);
-    let cancelled = false;
-    void resolveDiscussionCommentPresentation({
-      commentId: comment.commentId,
-      canonicalBody: comment.body,
-      displayLanguage,
-      ready: readingContext.ready,
-      translationPreference: readingContext.translationPreference,
-    }).then((resolved) => {
-      if (!cancelled) {
-        setDisplayBody(resolved.body);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    comment.commentId,
-    comment.body,
-    readingContext.ready,
-    displayLanguage,
-    readingContext.translationPreference,
-  ]);
 
   return (
     <li
@@ -582,7 +554,14 @@ function DiscussionCommentCard({
           {formatInitiativeExperienceDate(locale, comment.createdAt, { month: "short" })}
         </span>
       </p>
-      <p className="pie-discussion__body">{displayBody}</p>
+      <p
+        className="pie-discussion__body"
+        lang={DEFAULT_PLATFORM_LANGUAGE}
+        data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+        data-hu-reading-owner="browser-native"
+      >
+        {comment.body}
+      </p>
       {indicatorKeys.length > 0 ? (
         <p className="pie-discussion__collab-indicators">
           {indicatorKeys.map((key) => (

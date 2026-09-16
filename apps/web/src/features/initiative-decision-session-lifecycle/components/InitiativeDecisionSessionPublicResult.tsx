@@ -1,33 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import type {
   DecisionSessionStructuredContent,
-  LanguageCode,
   PublicDecisionSessionProjection,
 } from "@hu/types";
-import { DEFAULT_PLATFORM_LANGUAGE, isCompleteLocalizedProseBag } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { getPublicDecisionSession } from "../../decision-session/api";
-import { stableJsonForDisplay } from "../../language/civic-translation-field-meta";
-import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
-import { resolveTranslatedContent } from "../../language/translation-api";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
-import { TranslatedContentView } from "../../language/components/TranslatedContentView";
-import {
-  selectDecisionSessionStructuredForDisplay,
-} from "../decision-session-structured-display";
 
 import "./initiative-decision-session-stage-workspace.css";
-
-const DS_CT_FIELDS = [
-  "title",
-  "purpose",
-  "decisionQuestion",
-  "structuredContent",
-] as const;
 
 function ListSection({ title, items }: { title: string; items: readonly string[] | undefined }) {
   if (!items || items.length === 0) {
@@ -46,64 +30,23 @@ function ListSection({ title, items }: { title: string; items: readonly string[]
   );
 }
 
-function buildCanonicalFallbackFields(
-  projection: PublicDecisionSessionProjection,
-): Record<string, string> {
-  const structured = projection.structuredContent;
-  return {
-    title: projection.title,
-    purpose: structured?.decisionContext || projection.purpose,
-    decisionQuestion: projection.decisionQuestion,
-    structuredContent: structured
-      ? stableJsonForDisplay({
-          decisionContext: structured.decisionContext,
-          objectives: structured.objectives,
-          options: structured.options,
-          supportingArguments: structured.supportingArguments,
-          risks: structured.risks,
-          dependencies: structured.dependencies,
-          requiredResources: structured.requiredResources,
-          suggestedTimeline: structured.suggestedTimeline,
-          suggestedParticipants: structured.suggestedParticipants,
-          suggestedResponsibleRoles: structured.suggestedResponsibleRoles,
-          unresolvedQuestions: structured.unresolvedQuestions,
-        })
-      : "",
-  };
-}
-
 interface InitiativeDecisionSessionPublicResultProps {
   readonly sessionId: string;
   readonly isPreview?: boolean;
 }
 
 /**
- * Public Decision Session result — CT drives title/purpose/question and nested
- * structured lists as one coherent presentation (no canonical dual-render).
+ * Public Decision Session result — ordinary reading uses canonical projection only.
+ * Do not asynchronously resolve or apply CT into visible DOM.
  */
 export function InitiativeDecisionSessionPublicResult({
   sessionId,
   isPreview = false,
 }: InitiativeDecisionSessionPublicResultProps) {
   const t = useTranslations("initiativeExperience");
-  const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
 
   const [projection, setProjection] = useState<PublicDecisionSessionProjection | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fields, setFields] = useState<Record<string, string>>({});
-  const [originalFields, setOriginalFields] = useState<Record<string, string>>({});
-  const [presentationMode, setPresentationMode] = useState<"original" | "localized">(
-    "original",
-  );
-  const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
-  const [originalLanguage, setOriginalLanguage] =
-    useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
-  const [canViewOriginal, setCanViewOriginal] = useState(false);
-  const [isMachineTranslated, setIsMachineTranslated] = useState(false);
-  const [isStale, setIsStale] = useState(false);
-  const [structured, setStructured] = useState<DecisionSessionStructuredContent | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,98 +70,6 @@ export function InitiativeDecisionSessionPublicResult({
     };
   }, [sessionId, t]);
 
-  useEffect(() => {
-    if (!projection) {
-      return;
-    }
-
-    const fallback = buildCanonicalFallbackFields(projection);
-    setFields(fallback);
-    setOriginalFields(fallback);
-    setPresentationMode("original");
-    setActiveLanguage(DEFAULT_PLATFORM_LANGUAGE);
-    setIsMachineTranslated(false);
-    setCanViewOriginal(false);
-    setStructured(projection.structuredContent);
-
-    if (!readingContext.ready) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const resolved = await resolveTranslatedContent({
-          sourceKind: "decision_session",
-          sourceRecordId: projection.sessionId,
-          language: displayLanguage,
-        });
-        if (cancelled) {
-          return;
-        }
-
-        const original = resolved.originalContent;
-        const localized = resolved.content;
-        const complete =
-          resolved.presentationMode !== "original" &&
-          resolved.activeLanguage === displayLanguage &&
-          isCompleteLocalizedProseBag({
-            originalFields: original,
-            localizedFields: localized,
-            requiredFields: DS_CT_FIELDS,
-          });
-
-        if (!complete) {
-          setFields(original);
-          setOriginalFields(original);
-          setActiveLanguage(resolved.originalLanguage);
-          setOriginalLanguage(resolved.originalLanguage);
-          setCanViewOriginal(false);
-          setIsMachineTranslated(false);
-          setIsStale(resolved.isStale);
-          setPresentationMode("original");
-          setStructured(
-            selectDecisionSessionStructuredForDisplay({
-              localizationComplete: false,
-              localizedStructuredJson: null,
-              canonicalStructured: projection.structuredContent,
-            }),
-          );
-          return;
-        }
-
-        setFields(localized);
-        setOriginalFields(original);
-        setActiveLanguage(resolved.activeLanguage);
-        setOriginalLanguage(resolved.originalLanguage);
-        setCanViewOriginal(resolved.canViewOriginal || resolved.canViewTranslation);
-        setIsMachineTranslated(resolved.isMachineTranslated);
-        setIsStale(resolved.isStale);
-        setPresentationMode("localized");
-        setStructured(
-          selectDecisionSessionStructuredForDisplay({
-            localizationComplete: true,
-            localizedStructuredJson: localized.structuredContent,
-            canonicalStructured: projection.structuredContent,
-          }),
-        );
-      } catch {
-        if (!cancelled) {
-          setFields(fallback);
-          setOriginalFields(fallback);
-          setPresentationMode("original");
-          setIsMachineTranslated(false);
-          setStructured(projection.structuredContent);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [projection, readingContext.ready, displayLanguage]);
-
   if (error) {
     return <p className="ids-source-panel__empty">{error}</p>;
   }
@@ -227,41 +78,40 @@ export function InitiativeDecisionSessionPublicResult({
     return <p className="ids-source-panel__empty">{t("author.decisionSession.public.loading")}</p>;
   }
 
-  const displayBag = presentationMode === "localized" ? fields : originalFields;
-  const proseFields: Array<{ key: "title" | "purpose" | "decisionQuestion"; label: string }> = [
-    { key: "title", label: t("author.decisionSession.fields.title") },
-    { key: "purpose", label: t("author.decisionSession.fields.context") },
-    { key: "decisionQuestion", label: t("author.decisionSession.fields.question") },
+  const structured: DecisionSessionStructuredContent | null = projection.structuredContent;
+  const purpose = structured?.decisionContext || projection.purpose;
+  const proseFields: Array<{ key: string; label: string; value: string }> = [
+    { key: "title", label: t("author.decisionSession.fields.title"), value: projection.title },
+    { key: "purpose", label: t("author.decisionSession.fields.context"), value: purpose },
+    {
+      key: "decisionQuestion",
+      label: t("author.decisionSession.fields.question"),
+      value: projection.decisionQuestion,
+    },
   ];
 
   return (
     <article
       className="ids-public"
       aria-label={t("author.decisionSession.public.aria")}
-      data-hu-presentation-mode={presentationMode}
+      data-hu-presentation-mode="original"
+      data-hu-reading-owner="browser-native"
+      lang={DEFAULT_PLATFORM_LANGUAGE}
+      data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
     >
       {isPreview ? (
         <p className="ids-public__meta">{t("author.decisionSession.public.previewMeta")}</p>
       ) : null}
       <section className="ids-public__section">
-        {proseFields.map(({ key, label }) => {
-          const value = displayBag[key]?.trim() ?? "";
-          const original = originalFields[key] ?? "";
-          if (!value && !original) {
+        {proseFields.map(({ key, label, value }) => {
+          const trimmed = value?.trim() ?? "";
+          if (!trimmed) {
             return null;
           }
           return (
             <div key={key} className="hu-public-translated-field">
               <h4>{label}</h4>
-              <TranslatedContentView
-                content={value.length > 0 ? value : original}
-                originalContent={original}
-                activeLanguage={activeLanguage}
-                originalLanguage={originalLanguage}
-                canViewOriginal={presentationMode === "localized" && canViewOriginal}
-                isMachineTranslated={presentationMode === "localized" && isMachineTranslated}
-                isStale={isStale}
-              />
+              <p>{trimmed}</p>
             </div>
           );
         })}

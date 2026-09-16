@@ -37,15 +37,14 @@ function readNested(messages: Record<string, unknown>, dottedPath: string): stri
 }
 
 describe("Pack 08I.7 — Civic Media residual localization", () => {
-  it("useCivicMediaResolvedEditorial is cache-only (Pack 1.1 — no generate-on-read)", () => {
+  it("useCivicMediaResolvedEditorial ordinary reading is canonical-only (no CT apply)", () => {
     const editorial = readWeb(
       "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
     assert.doesNotMatch(editorial, /generateContentTranslation\s*\(/);
-    assert.match(editorial, /resolvePublicContentDisplayLanguage/);
-    assert.match(editorial, /language:\s*displayLanguage/);
-    assert.match(editorial, /resolved\.activeLanguage !== displayLanguage/);
-    assert.match(editorial, /sourceKind:\s*"civic_media"/);
+    assert.doesNotMatch(editorial, /resolveTranslatedContent/);
+    assert.match(editorial, /buildCanonicalCivicMediaEditorial/);
+    assert.match(editorial, /skipClientTranslation/);
 
     assert.doesNotMatch(editorial, /JSON\.stringify/);
   });
@@ -75,9 +74,8 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
     assert.match(page, /layout="three-two-one"/);
     assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
     assert.match(editorial, /overlayCivicMediaEditorialFromFields/);
-    assert.match(editorial, /resolveTranslatedContent/);
-    assert.match(editorial, /if \(resolved\.presentationMode === "original"\)/);
-    assert.match(editorial, /setEditorial\(/);
+    assert.doesNotMatch(editorial, /resolveTranslatedContent/);
+    assert.match(editorial, /buildCanonicalCivicMediaEditorial/);
     assert.match(pipeline, /HuxWorkflowSection/);
     assert.match(hux, /horizontal-section-shell__content/);
     assert.match(shell, /horizontal-section-shell__content/);

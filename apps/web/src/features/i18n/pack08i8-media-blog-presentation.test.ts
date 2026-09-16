@@ -90,17 +90,17 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     assert.equal(overlay.trustedExplanationsById.bbc, "Пояснення BBC");
   });
 
-  it("Media verification/propaganda cards resolve catalogs by resource id", () => {
+  it("Media verification/propaganda cards use canonical resource prose for ordinary reading", () => {
     const page = readWeb(
       "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
     );
-    assert.match(page, /factChecking\.resources\.\$\{resource\.id\}\.mission/);
-    assert.match(page, /propaganda\.resources\.\$\{resource\.id\}\.explanation/);
-    assert.match(page, /Badge status="neutral"/);
-    assert.match(page, /label=\{focusLabel\}/);
+    assert.match(page, /mission=\{resource\.mission\}/);
+    assert.match(page, /explanationForDisplay/);
     assert.match(page, /editorial\.overview\.title/);
     assert.match(page, /editorial\.faq\.map/);
     assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
+    assert.match(page, /data-hu-reading-owner="browser-native"/);
+    assert.doesNotMatch(page, /factChecking\.resources\.\$\{resource\.id\}\.mission/);
     assert.doesNotMatch(page, /Badge status=\{resource\.focus\}/);
   });
 
@@ -172,7 +172,7 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     assert.equal(presented.contentHtml, ukHtml);
   });
 
-  it("Blog article ordinary reading is stable canonical DOM; cards keep presentation helper", () => {
+  it("Blog article and feed cards use stable canonical ordinary reading", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const authors = readWeb("features/blog/components/BlogAuthorsSidebar.tsx");
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
@@ -187,9 +187,9 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
       readWeb("app/blog/[slug]/page.tsx"),
       /loadBlogArticlePresentationSeed/,
     );
-    assert.match(authors, /latestLabel/);
-    assert.match(authors, /resolveBlogPostPresentation/);
-    assert.match(card, /resolveBlogPostPresentation/);
-    assert.match(latest, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(authors, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(card, /resolveBlogPostPresentation/);
+    assert.doesNotMatch(latest, /resolveBlogPostPresentation/);
+    assert.match(card, /DEFAULT_PLATFORM_LANGUAGE|data-hu-reading-owner="browser-native"/);
   });
 });

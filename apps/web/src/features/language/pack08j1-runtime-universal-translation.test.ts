@@ -263,14 +263,15 @@ describe("Pack 08J.1 — runtime presentation boundary", () => {
 
   it("15–17. locale contracts — UI displayLanguage, no Gemini in SSR modules, stale gen guard", () => {
     const blogCard = readWeb("features/blog/components/BlogPostCard.tsx");
-    assert.match(blogCard, /resolvePublicContentDisplayLanguage/);
+    // Ordinary Blog card reading is canonical; displayLanguage may still appear for dates/chrome.
     assert.doesNotMatch(blogCard, /readingContext\.readingLanguage/);
-    assert.match(blogCard, /requestGeneration/);
+    assert.doesNotMatch(blogCard, /resolveBlogPostPresentation/);
 
     const mediaEditorial = readWeb(
       "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
-    assert.match(mediaEditorial, /resolvePublicContentDisplayLanguage/);
+    assert.doesNotMatch(mediaEditorial, /resolveTranslatedContent/);
+    assert.match(mediaEditorial, /buildCanonicalCivicMediaEditorial/);
     assert.doesNotMatch(mediaEditorial, /readingContext\.readingLanguage/);
 
     const localized = readWeb("features/language/resolve-localized-presentation.ts");

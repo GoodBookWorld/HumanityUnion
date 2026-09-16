@@ -127,7 +127,8 @@ export function resolveLocalizedPublicNewsCardView(input: {
 }
 
 /**
- * Hook: render public-news-card from persisted PLP or coherent canonical.
+ * Hook: ordinary public-news-card reading uses canonical title/summary.
+ * PLP resolve helpers remain available outside this visible-reading path.
  * Never resolve/generate content_translations on read.
  */
 export function useLocalizedPublicNewsCard(
@@ -135,22 +136,24 @@ export function useLocalizedPublicNewsCard(
   options?: {
     /** @deprecated Kept for call-site compatibility; CT is never used for RSS. */
     readonly skipClientTranslation?: boolean;
+    /** @deprecated Ordinary reading ignores PLP overlays for visible text. */
     readonly plpPresentation?: PublicNewsPlpPresentationInput;
   },
 ): LocalizedPublicNewsCardView {
   void options?.skipClientTranslation;
+  void options?.plpPresentation;
   const locale = useLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
-  const plpPresentation = options?.plpPresentation ?? null;
 
   return useMemo(
     () =>
       resolveLocalizedPublicNewsCardView({
         article,
         locale: displayLanguage,
-        plpPresentation,
+        // Unify Ordinary Public Reading — canonical visible text only.
+        plpPresentation: null,
       }),
-    [article, displayLanguage, plpPresentation],
+    [article, displayLanguage],
   );
 }
 

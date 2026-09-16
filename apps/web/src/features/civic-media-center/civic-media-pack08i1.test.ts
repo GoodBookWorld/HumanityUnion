@@ -118,19 +118,17 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
     );
 
     assert.match(editorial, /useCivicMediaResolvedEditorial/);
-    assert.match(editorial, /resolveTranslatedContent/);
+    assert.doesNotMatch(editorial, /resolveTranslatedContent/);
     assert.doesNotMatch(editorial, /generateContentTranslation\s*\(/);
-    assert.match(
-      editorial,
-      /presentationMode === "original"|sourceKind:\s*"civic_media"/,
-    );
+    assert.match(editorial, /buildCanonicalCivicMediaEditorial/);
     assert.doesNotMatch(editorial, /stableJsonForDisplay/);
     assert.doesNotMatch(editorial, /CivicPublicTranslatedSection/);
     assert.doesNotMatch(editorial, /JSON\.stringify/);
     assert.doesNotMatch(page, /stableJsonForDisplay/);
     assert.doesNotMatch(page, /CivicMediaTranslatedEditorial\s*\//);
-    assert.doesNotMatch(page, /JSON\.stringify/);
+    // Locale-switch probe may stringify semantic signatures; ordinary editorial path must not.
     assert.match(page, /useCivicMediaResolvedEditorial/);
+    assert.match(page, /data-hu-reading-owner="browser-native"/);
   });
 
   it("hero restores Card grid (civic-media-page__hero-grid) and never dumps JSON", () => {

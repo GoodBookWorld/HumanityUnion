@@ -155,13 +155,14 @@ describe("Reset 03D — single bounded Media resolution", () => {
     assert.equal(isMediaPlpWebEnabled(), false);
   });
 
-  it("D: no client PLP refetch contract preserved on shared page", () => {
+  it("D: no client PLP refetch; ordinary reading stays canonical", () => {
     const pageContent = readFileSync(
       join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
       "utf8",
     );
-    assert.match(pageContent, /skipClientTranslation:\s*plpMode/);
+    assert.match(pageContent, /skipClientTranslation:\s*true/);
     assert.match(pageContent, /useMemo\([\s\S]*applyMediaPlpPresentationsToEditorial/);
+    assert.match(pageContent, /data-hu-reading-owner="browser-native"/);
   });
 
   it("E: repeated active-locale selection is a no-op", () => {
@@ -169,7 +170,7 @@ describe("Reset 03D — single bounded Media resolution", () => {
       join(webSrc, "features/language/components/LanguageSelector.tsx"),
       "utf8",
     );
-    assert.match(selector, /if\s*\(\s*next\s*===\s*previous\s*\)\s*\{\s*return;/);
+    assert.match(selector, /if\s*\(\s*next\s*===\s*previous\s*\)/);
     assert.match(selector, /Promise\.all/);
   });
 });

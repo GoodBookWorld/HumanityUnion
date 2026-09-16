@@ -130,8 +130,9 @@ describe("Decision Session structured display selection", () => {
     assert.doesNotMatch(source, /\b(uk|ar|zh-Hant|zh_Hant)\b/);
     assert.doesNotMatch(publicResult, /locale\s*===\s*["'](uk|ar|zh)/);
     assert.doesNotMatch(publicResult, /switch\s*\(\s*locale/);
-    assert.match(publicResult, /selectDecisionSessionStructuredForDisplay/);
-    assert.match(publicResult, /isCompleteLocalizedProseBag/);
+    assert.doesNotMatch(publicResult, /resolveTranslatedContent/);
+    assert.match(publicResult, /data-hu-reading-owner="browser-native"/);
+    assert.match(publicResult, /DEFAULT_PLATFORM_LANGUAGE/);
     assert.doesNotMatch(publicResult, /CivicPublicTranslatedSection/);
   });
 });

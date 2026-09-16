@@ -89,12 +89,12 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     );
     assert.match(mediaCss, /\.civic-media-page\s*\{[^}]*min-width:\s*0/s);
     assert.match(mediaCss, /\.civic-media-page\s*\{[^}]*overflow-wrap:\s*anywhere/s);
-    assert.match(mediaCss, /\.civic-media-page__points\s*\{[^}]*min-width:\s*0/s);
-    assert.match(mediaCss, /\.civic-media-page__points\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.match(mediaCss, /\.civic-media-page__hero-grid\s*\{[^}]*min-width:\s*0/s);
+    assert.match(mediaCss, /\.civic-media-page__editorial\s*\{[^}]*overflow-wrap:\s*anywhere/s);
     assert.match(editorial, /useCivicMediaResolvedEditorial/);
-    assert.match(editorial, /resolveTranslatedContent/);
-    // Pack 08J.1 — trusted explanations are semantic; names/URLs/diagram stay identity-only.
-    assert.match(editorial, /trustedMediaExplanations|trustedExplanationsById/);
+    assert.doesNotMatch(editorial, /resolveTranslatedContent/);
+    // Pack 08J.1 — trusted explanations remain re-exported for overlay consumers.
+    assert.match(editorial, /buildTrustedExplanationsById|CivicMediaTrustedExplanationsById/);
     assert.doesNotMatch(editorial, /diagramSvg|websiteUrl/);
   });
 
@@ -149,7 +149,8 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     assert.match(petition, /PublicTranslatedFields/);
     assert.match(analysis, /PublicTranslatedFields/);
     assert.match(initiativePage, /useInitiativePublicPresentation/);
-    assert.match(initiativeHook, /resolveInitiativeDetailPresentation/);
+    assert.match(initiativeHook, /presentationMode:\s*"original"/);
+    assert.doesNotMatch(initiativeHook, /resolveInitiativeDetailPresentation/);
   });
 
   it("17 Task 05 civic surfaces remain wired", () => {

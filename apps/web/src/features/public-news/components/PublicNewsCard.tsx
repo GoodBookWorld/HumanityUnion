@@ -4,6 +4,7 @@ import type { PublicNewsArticleItem } from "@hu/types";
 import {
   isMediaRegistryCategory,
   mediaRegistryCategoryMessageKey,
+  DEFAULT_PLATFORM_LANGUAGE,
 } from "@hu/types";
 import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -166,7 +167,12 @@ export function PublicNewsCard({
         <PublicNewsCardImage title={view.title} imageUrl={view.imageUrl} />
       </div>
 
-      <div className="public-news-card__body">
+      <div
+        className="public-news-card__body"
+        lang={DEFAULT_PLATFORM_LANGUAGE}
+        data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+        data-hu-reading-owner="browser-native"
+      >
         <MediaSemanticNode
           as="h3"
           id={`public-news-title-${view.id}`}

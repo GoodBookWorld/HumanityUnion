@@ -104,8 +104,6 @@ describe("Pack 08I.15 — presentation contracts", () => {
   it("3–6. Initiative + Public Choice cards/detail share Initiative presentation", () => {
     for (const relative of [
       "features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx",
-      "features/country-experience/components/CountryInitiativeRailCard.tsx",
-      "features/country-experience/components/CountryElectionRailCard.tsx",
       "features/public-initiative-experience/components/PublicInitiativeLatestInitiatives.tsx",
       "features/community-intelligence/components/RelatedInitiativesWidget.tsx",
     ]) {
@@ -113,6 +111,18 @@ describe("Pack 08I.15 — presentation contracts", () => {
       assert.match(
         src,
         /useInitiativeCardTitlePresentation|useCivicInitiativeLocalizedTitle/,
+      );
+      assert.doesNotMatch(src, /\{initiative\.title\}|\{item\.title\}/);
+    }
+
+    for (const relative of [
+      "features/country-experience/components/CountryInitiativeRailCard.tsx",
+      "features/country-experience/components/CountryElectionRailCard.tsx",
+    ]) {
+      const src = readWeb(relative);
+      assert.match(
+        src,
+        /useInitiativeCardTitlePresentation|useCivicInitiativeLocalizedTitle|titleLocalized|CANONICAL_FALLBACK/,
       );
       assert.doesNotMatch(src, /\{initiative\.title\}|\{item\.title\}/);
     }
@@ -164,7 +174,9 @@ describe("Pack 08I.15 — presentation contracts", () => {
     const lifecycleCard = readWeb(
       "features/public-initiative-experience/components/LifecycleTranslatedRecordCard.tsx",
     );
-    assert.match(lifecycleCard, /CivicPublicTranslatedSection|PublicTranslatedFields|resolveTranslatedContent/);
+    assert.match(lifecycleCard, /CivicPublicTranslatedSection|PublicTranslatedFields/);
+    assert.doesNotMatch(lifecycleCard, /resolveTranslatedContent/);
+    assert.doesNotMatch(lifecycleCard, /resolveInitiativeDetailPresentation/);
   });
 
   it("16–19. fallback / CURRENT / reactive locale / RTL contracts preserved", () => {
@@ -177,8 +189,9 @@ describe("Pack 08I.15 — presentation contracts", () => {
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    assert.match(hook, /generation !== requestGeneration\.current/);
-    assert.match(hook, /resolved\.activeLanguage !== displayLanguage/);
+    assert.match(hook, /presentationMode:\s*"original"/);
+    assert.doesNotMatch(hook, /resolveTranslatedContent/);
+    assert.doesNotMatch(hook, /requestGeneration/);
 
     const rtl = readWeb("features/language/language.ts");
     assert.match(rtl, /isRtlLanguageCode|RTL_LANGUAGE_CODES/);

@@ -75,10 +75,11 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
     const mediaEditorial = readWeb(
       "src/features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
-    assert.match(mediaEditorial, /CIVIC_MEDIA_RECORD_ID|sourceKind:\s*"civic_media"/);
-    assert.match(mediaEditorial, /sourceKind:\s*"civic_media"/);
-    // Pack 1.1 — cache-only; no participant generate-on-read.
+    assert.match(mediaEditorial, /CIVIC_MEDIA_RECORD_ID|buildCanonicalCivicMediaEditorial/);
+    assert.match(mediaEditorial, /buildCanonicalCivicMediaEditorial/);
+    // Pack 1.1 / Unify Ordinary Public Reading — no CT apply on ordinary reading.
     assert.doesNotMatch(mediaEditorial, /generateContentTranslation\s*\(/);
+    assert.doesNotMatch(mediaEditorial, /resolveTranslatedContent/);
     // Pack 08J.1 — trusted explanations remain re-exported for overlay consumers.
     assert.match(mediaEditorial, /trustedExplanationsById|buildTrustedExplanationsById/);
     assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl/);

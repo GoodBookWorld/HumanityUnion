@@ -128,12 +128,13 @@ describe("Pack 08I.13 — discussion comment presentation", () => {
     assert.equal(resolved.body, "Український коментар");
   });
 
-  it("panel wires discussion comment presentation resolver", () => {
+  it("panel ordinary reading uses canonical comment body without CT apply", () => {
     const panel = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
-    assert.match(panel, /resolveDiscussionCommentPresentation/);
-    assert.match(panel, /displayBody/);
+    assert.doesNotMatch(panel, /resolveDiscussionCommentPresentation/);
+    assert.match(panel, /comment\.body/);
+    assert.match(panel, /data-hu-reading-owner="browser-native"/);
   });
 
   it("Media pipeline uses WEB_UI catalogs with civic overlay presentation", () => {

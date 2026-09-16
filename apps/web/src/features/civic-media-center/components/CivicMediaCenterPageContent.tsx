@@ -12,6 +12,7 @@ import type {
   PublicNewsArticleItem,
   TrustedMediaResource,
 } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 import { mediaSsrPlpAlignedWithRequestedLocale } from "../../language/media-plp/media-ssr-plp-locale-alignment";
 
 import { Card } from "../../../design-system/components/Card";
@@ -550,8 +551,7 @@ function CivicMediaCenterLoaded({
   const plpMode = effectiveTrustedById != null && effectivePrinciplesById != null;
   const runtimeBranch =
     mediaLocalizationRuntimeBranch ?? (plpMode ? "PLP" : "LEGACY");
-  // Reset 03C.2 / 03E — stable identity; editorial overview/FAQ from PLP when present.
-  // Implementation 02 — locale isolation at apply; locale in deps so soft-nav recomputes.
+  // Keep PLP apply helpers wired for infra/probes; ordinary reading does not use overlays.
   const plpEditorial = useMemo(
     () =>
       plpMode && effectiveTrustedById && effectivePrinciplesById
@@ -594,30 +594,22 @@ function CivicMediaCenterLoaded({
         : undefined,
     [plpMode, media.propagandaAnalysis, effectivePropagandaById, requestedLocale],
   );
-  const editorial = useCivicMediaResolvedEditorial(
-    media,
-    plpEditorial ?? (ssrPlpAlignedWithRequestedLocale ? initialEditorial : undefined),
-    { skipClientTranslation: plpMode },
-  );
+  void plpEditorial;
+  void factCheckMaps;
+  void propagandaMaps;
+  void initialEditorial;
+  // Unify Ordinary Public Reading — canonical editorial / resource prose only.
+  const editorial = useCivicMediaResolvedEditorial(media, undefined, {
+    skipClientTranslation: true,
+  });
   useMediaPlpLocaleSwitchLifecycle({
     plpMode,
     plpTrustedById: effectiveTrustedById,
     plpPrinciplesById: effectivePrinciplesById,
   });
 
-  const editorialApplied =
-    plpMode &&
-    effectiveEditorialPresentation?.mode === "PUBLISHED_LOCALIZED" &&
-    editorial.overview.title.trim() !== media.overview.title.trim() &&
-    editorial.overview.summary.trim() !== media.overview.summary.trim();
-  const editorialResult = plpMode
-    ? plpModeToSemanticResult(
-        editorialApplied ? "PUBLISHED_LOCALIZED" : "CANONICAL_FALLBACK",
-      )
-    : "CANONICAL_FALLBACK";
-  const editorialMode = editorialApplied
-    ? "PUBLISHED_LOCALIZED"
-    : effectiveEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
+  const editorialResult = "CANONICAL_FALLBACK" as const;
+  const editorialMode = plpMode ? ("CANONICAL_FALLBACK" as const) : undefined;
 
   const liveTruthProbeStatus =
     mediaPlpLiveTruthProbeStatus ?? "NOT_WIRED";
@@ -659,7 +651,12 @@ function CivicMediaCenterLoaded({
             >
               {t("pageTitle")}
             </MediaSemanticNode>
-            <div className="civic-media-page__editorial">
+            <div
+              className="civic-media-page__editorial"
+              lang={DEFAULT_PLATFORM_LANGUAGE}
+              data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+              data-hu-reading-owner="browser-native"
+            >
               <MediaSemanticNode
                 as="h2"
                 className="civic-media-page__overview-title"
@@ -738,11 +735,7 @@ function CivicMediaCenterLoaded({
           renderItem={(principle) => (
             <PrincipleCard
               principle={principle}
-                plpMode={
-                  plpMode
-                    ? effectivePrinciplesById?.[principle.id]?.mode ?? "CANONICAL_FALLBACK"
-                    : undefined
-                }
+              plpMode={plpMode ? "CANONICAL_FALLBACK" : undefined}
               plpEntityId={plpMode ? principle.id : undefined}
             />
           )}
@@ -766,11 +759,7 @@ function CivicMediaCenterLoaded({
                 resource={resource}
                 categoryTitle={categoryTitle}
                 explanation={editorial.trustedExplanationsById[resource.id]}
-                  plpMode={
-                    plpMode
-                      ? effectiveTrustedById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
-                      : undefined
-                  }
+                plpMode={plpMode ? "CANONICAL_FALLBACK" : undefined}
               />
             )}
           />
@@ -787,29 +776,17 @@ function CivicMediaCenterLoaded({
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
             const resolved = effectiveFactCheckById?.[resource.id];
-            const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
             return (
               <FactCheckCard
                 resource={resource}
-                mission={
-                  usedLocalized
-                    ? (factCheckMaps?.missionsById[resource.id] ?? "")
-                    : (factCheckMaps?.missionsById[resource.id] ?? resource.mission)
-                }
-                coverage={
-                  usedLocalized
-                    ? (factCheckMaps?.coverageById[resource.id] ?? "")
-                    : (factCheckMaps?.coverageById[resource.id] ?? resource.coverage)
-                }
+                mission={resource.mission}
+                coverage={resource.coverage}
                 plpMode={
-                  plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
+                  plpMode ? "CANONICAL_FALLBACK" : undefined
                 }
                 fallbackReason={
                   plpMode
-                    ? resolved?.reasonCode ??
-                      (resolved?.mode !== "PUBLISHED_LOCALIZED"
-                        ? "NO_PUBLISHED_SNAPSHOT"
-                        : undefined)
+                    ? resolved?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
                     : undefined
                 }
               />
@@ -828,30 +805,19 @@ function CivicMediaCenterLoaded({
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
             const resolved = effectivePropagandaById?.[resource.id];
-            const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
+            const focusForDisplay = resource.focus;
+            const explanationForDisplay = resource.explanation;
             return (
               <PropagandaCard
                 resource={resource}
-                focus={
-                  usedLocalized
-                    ? (propagandaMaps?.focusById[resource.id] ?? "")
-                    : (propagandaMaps?.focusById[resource.id] ?? resource.focus)
-                }
-                explanation={
-                  usedLocalized
-                    ? (propagandaMaps?.explanationsById[resource.id] ?? "")
-                    : (propagandaMaps?.explanationsById[resource.id] ??
-                      resource.explanation)
-                }
+                focus={focusForDisplay}
+                explanation={explanationForDisplay}
                 plpMode={
-                  plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
+                  plpMode ? "CANONICAL_FALLBACK" : undefined
                 }
                 fallbackReason={
                   plpMode
-                    ? resolved?.reasonCode ??
-                      (resolved?.mode !== "PUBLISHED_LOCALIZED"
-                        ? "NO_PUBLISHED_SNAPSHOT"
-                        : undefined)
+                    ? resolved?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
                     : undefined
                 }
               />

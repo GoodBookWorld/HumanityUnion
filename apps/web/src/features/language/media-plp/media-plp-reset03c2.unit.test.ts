@@ -96,7 +96,7 @@ describe("Reset 03C.2 — reproduce locale-switch deadlock (pre-fix)", () => {
     );
   });
 
-  it("regression: skipClientTranslation must not setEditorial on identity churn", () => {
+  it("regression: ordinary Media reading is canonical (no CT/PLP setEditorial churn)", () => {
     const hook = readFileSync(
       join(
         webSrc,
@@ -104,17 +104,10 @@ describe("Reset 03C.2 — reproduce locale-switch deadlock (pre-fix)", () => {
       ),
       "utf8",
     );
-    // Pre-fix pattern coupled effect deps to unstable parent identities.
-    assert.doesNotMatch(
-      hook,
-      /if\s*\(\s*skipClientTranslation\s*\)\s*\{\s*setEditorial/,
-      "PLP mode must derive editorial synchronously (no setEditorial loop)",
-    );
-    assert.match(hook, /plpDerivedEditorial/);
-    assert.match(
-      hook,
-      /if\s*\(\s*skipClientTranslation\s*\)\s*\{\s*return\s+plpDerivedEditorial/,
-    );
+    assert.doesNotMatch(hook, /setEditorial/);
+    assert.doesNotMatch(hook, /resolveTranslatedContent/);
+    assert.match(hook, /buildCanonicalCivicMediaEditorial/);
+    assert.match(hook, /skipClientTranslation/);
   });
 });
 
