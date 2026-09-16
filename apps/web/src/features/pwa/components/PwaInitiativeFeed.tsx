@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { CommunityCollaborationOpportunityProjection } from "@hu/types";
+import {
+  DEFAULT_PLATFORM_LANGUAGE,
+  type CommunityCollaborationOpportunityProjection,
+} from "@hu/types";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { fetchWorldInitiativesProjection } from "../../initiatives/world-initiatives-api";
@@ -140,13 +143,20 @@ export function PwaInitiativeFeed() {
             return (
             <li key={item.initiativeId} className="hu-pwa-initiative-feed__item">
               <Link className="hu-pwa-initiative-feed__card" href={item.href}>
-                <h3 className="hu-pwa-initiative-feed__title">{presentation.title}</h3>
-                {presentation.context ? (
-                  <p className="hu-pwa-initiative-feed__context">{presentation.context}</p>
-                ) : null}
-                {presentation.explanation ? (
-                  <p className="hu-pwa-initiative-feed__why">{presentation.explanation}</p>
-                ) : null}
+                <div
+                  className="hu-pwa-initiative-feed__canonical-reading"
+                  lang={DEFAULT_PLATFORM_LANGUAGE}
+                  data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+                  data-hu-reading-owner="browser-native"
+                >
+                  <h3 className="hu-pwa-initiative-feed__title">{presentation.title}</h3>
+                  {presentation.context ? (
+                    <p className="hu-pwa-initiative-feed__context">{presentation.context}</p>
+                  ) : null}
+                  {presentation.explanation ? (
+                    <p className="hu-pwa-initiative-feed__why">{presentation.explanation}</p>
+                  ) : null}
+                </div>
               </Link>
             </li>
             );

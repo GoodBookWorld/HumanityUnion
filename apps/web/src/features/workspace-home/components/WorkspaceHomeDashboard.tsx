@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
+
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { BetaOnboardingChecklist } from "../../closed-beta/components/BetaOnboardingChecklist";
 import { PersonalStatisticsCards } from "../../personal-statistics/components/PersonalStatisticsCards";
@@ -125,7 +127,12 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
                 >
                   <span className="workspace-home-actions__label">{label}</span>
                   {action.unavailableReason ? (
-                    <span className="workspace-home-actions__reason">
+                    <span
+                      className="workspace-home-actions__reason"
+                      lang={DEFAULT_PLATFORM_LANGUAGE}
+                      data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+                      data-hu-reading-owner="browser-native"
+                    >
                       {action.unavailableReason}
                     </span>
                   ) : null}
@@ -177,7 +184,13 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
                   <p className="workspace-home-timeline__label">
                     {resolveWorkspaceActivityEventLabel(t, tCivic, entry.label)}
                   </p>
-                  <p>{entry.detail}</p>
+                  <p
+                    lang={DEFAULT_PLATFORM_LANGUAGE}
+                    data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+                    data-hu-reading-owner="browser-native"
+                  >
+                    {entry.detail}
+                  </p>
                   {entry.href ? <Link href={entry.href}>{t("home.openRecord")}</Link> : null}
                 </li>
               ))}
