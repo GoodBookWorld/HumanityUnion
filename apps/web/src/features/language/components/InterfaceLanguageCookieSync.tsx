@@ -34,8 +34,12 @@ export {
  * when they differ from the actual cookie.
  *
  * Also reconciles stale next-intl: when cookie already equals Preferred Reading but
- * `useLocale()` still differs, runs the shared same-path locale-switch recompose
- * (replace + refresh) — cookie-only "aligned" is not presentation-aligned.
+ * `useLocale()` still differs, refresh-only recomposes presentation — cookie-only
+ * "aligned" is not presentation-aligned.
+ *
+ * Locale-free private routes (e.g. `/workspace`) must never `router.replace` the
+ * current path for presentation sync. Same-path replace re-fires this effect and
+ * thrash-navigates. Cookie writes still occur; navigation href remains null.
  *
  * Pack 2.1A — on a valid locale-prefixed SEO public document URL, do not write
  * a conflicting cookie or `router.refresh()` (URL locale remains authoritative).
@@ -57,11 +61,12 @@ export function InterfaceLanguageCookieSync() {
     const path = pathname || "/";
 
     const recomposePresentation = () => {
+      // Refresh-only: locale-free shells have no localized href. Never
+      // forceSamePathRecompose — Preferences apply owns that path explicitly.
       runLocaleSwitchNavigation({
         router,
         pathname: path,
         href: null,
-        forceSamePathRecompose: true,
       });
     };
 

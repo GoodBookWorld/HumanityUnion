@@ -390,13 +390,15 @@ describe("Stale next-intl presentation locale reconciliation", () => {
     assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/uk/media"), true);
     assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/zh-hant/blog"), true);
     assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/initiatives"), false);
+    assert.equal(shouldSuppressInterfaceLanguageCookieSyncForPath("/workspace"), false);
 
     const component = readWeb(
       "src/features/language/components/InterfaceLanguageCookieSync.tsx",
     );
     assert.match(component, /shouldSuppressInterfaceLanguageCookieSyncForPath/);
     assert.match(component, /runLocaleSwitchNavigation/);
-    assert.match(component, /forceSamePathRecompose:\s*true/);
+    // CookieSync must refresh-only on locale-free paths — never same-path replace.
+    assert.doesNotMatch(component, /forceSamePathRecompose:\s*true/);
     assert.match(component, /currentPresentationLocale:\s*presentationLocale/);
     assert.match(component, /runGuestPresentationLocaleNextIntlRecompose/);
   });
@@ -416,7 +418,7 @@ describe("Stale next-intl presentation locale reconciliation", () => {
     assert.equal(refreshCount, 0);
   });
 
-  it("same-path recompose uses shared runLocaleSwitchNavigation (not a second mechanism)", () => {
+  it("Preferences forceSamePathRecompose still replaces then refreshes (unchanged)", () => {
     const replaces: string[] = [];
     const refreshes: number[] = [];
     const result = runLocaleSwitchNavigation({
@@ -428,13 +430,157 @@ describe("Stale next-intl presentation locale reconciliation", () => {
           refreshes.push(1);
         },
       },
-      pathname: "/initiatives/public/demo",
+      pathname: "/preferences",
       href: null,
       forceSamePathRecompose: true,
     });
     assert.equal(result.didReplace, true);
     assert.equal(result.didRefresh, true);
-    assert.deepEqual(replaces, ["/initiatives/public/demo"]);
+    assert.deepEqual(replaces, ["/preferences"]);
     assert.equal(refreshes.length, 1);
+  });
+
+  it("locale-free CookieSync recompose is refresh-only — never replace(/workspace)", () => {
+    const replaces: string[] = [];
+    const refreshes: number[] = [];
+    const result = runLocaleSwitchNavigation({
+      router: {
+        replace: (href) => {
+          replaces.push(href);
+        },
+        refresh: () => {
+          refreshes.push(1);
+        },
+      },
+      pathname: "/workspace",
+      href: null,
+    });
+    assert.equal(result.didReplace, false);
+    assert.equal(result.didRefresh, true);
+    assert.deepEqual(replaces, []);
+    assert.equal(refreshes.length, 1);
+  });
+
+  it("non-en Preferred Reading + stale hu_lang on /workspace: write once, refresh once, no replace", async () => {
+    const replaces: string[] = [];
+    const writes: string[] = [];
+    let cookie: string | null = "en";
+    let refreshCount = 0;
+
+    const refresh = () => {
+      // Mirror CookieSync wiring: locale-free path → refresh-only.
+      const nav = runLocaleSwitchNavigation({
+        router: {
+          replace: (href) => {
+            replaces.push(href);
+          },
+          refresh: () => {
+            refreshCount += 1;
+          },
+        },
+        pathname: "/workspace",
+        href: null,
+      });
+      assert.equal(nav.didReplace, false);
+    };
+
+    const first = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("uk"),
+      readCookie: () => cookie,
+      writeCookie: async (locale) => {
+        writes.push(locale);
+        cookie = locale;
+        return { locale };
+      },
+      refresh,
+      currentPresentationLocale: "en",
+    });
+    assert.equal(first, "written");
+    assert.deepEqual(writes, ["uk"]);
+    assert.equal(cookie, "uk");
+    assert.equal(refreshCount, 1);
+    assert.deepEqual(replaces, []);
+
+    // Settling: effect would re-run with same preferred; latch blocks another refresh.
+    const second = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("uk"),
+      readCookie: () => cookie,
+      writeCookie: async (locale) => {
+        writes.push(locale);
+        return { locale };
+      },
+      refresh,
+      currentPresentationLocale: "en",
+    });
+    assert.equal(second, "aligned");
+    assert.equal(refreshCount, 1);
+    assert.deepEqual(writes, ["uk"]);
+    assert.deepEqual(replaces, []);
+
+    // Fully aligned: no navigation.
+    const third = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("uk"),
+      readCookie: () => "uk",
+      writeCookie: async (locale) => {
+        writes.push(locale);
+        return { locale };
+      },
+      refresh,
+      currentPresentationLocale: "uk",
+    });
+    assert.equal(third, "aligned");
+    assert.equal(refreshCount, 1);
+    assert.deepEqual(replaces, []);
+  });
+
+  it("en Preferred Reading + /workspace aligned → no navigation/recomposition", async () => {
+    const replaces: string[] = [];
+    let refreshCount = 0;
+    const outcome = await runPresentationLocaleCookieSyncAttempt({
+      generation: getPresentationLocaleSyncGenerationForTests(),
+      getPreferences: async () => prefsFor("en"),
+      readCookie: () => "en",
+      writeCookie: async (locale) => ({ locale }),
+      refresh: () => {
+        runLocaleSwitchNavigation({
+          router: {
+            replace: (href) => {
+              replaces.push(href);
+            },
+            refresh: () => {
+              refreshCount += 1;
+            },
+          },
+          pathname: "/workspace",
+          href: null,
+        });
+      },
+      currentPresentationLocale: "en",
+    });
+    assert.equal(outcome, "aligned");
+    assert.equal(refreshCount, 0);
+    assert.deepEqual(replaces, []);
+  });
+
+  it("public locale-switch with valid localized href still replaces then refreshes", () => {
+    const calls: string[] = [];
+    const result = runLocaleSwitchNavigation({
+      router: {
+        replace: (href) => {
+          calls.push(`replace:${href}`);
+        },
+        refresh: () => {
+          calls.push("refresh");
+        },
+      },
+      pathname: "/uk/media",
+      href: "/ar/media",
+    });
+    assert.equal(result.didReplace, true);
+    assert.equal(result.didRefresh, true);
+    assert.deepEqual(calls, ["replace:/ar/media", "refresh"]);
   });
 });

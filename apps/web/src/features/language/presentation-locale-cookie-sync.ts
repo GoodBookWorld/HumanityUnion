@@ -10,7 +10,8 @@
  *
  * Alignment requires cookie AND client next-intl (`useLocale`) to match Preferred
  * Reading. Cookie-only equality is not sufficient — stale NextIntlClientProvider
- * must recompose via the shared locale-switch navigation path.
+ * must recompose via refresh-only locale-switch navigation (never same-path replace
+ * from CookieSync on locale-free private routes).
  */
 
 import type { MemberPreferences } from "@hu/types";
@@ -122,8 +123,10 @@ export type PresentationLocaleCookieSyncDeps = {
   readonly readCookie: () => string | null;
   readonly writeCookie: (locale: string) => Promise<{ locale: string }>;
   /**
-   * Shared locale-switch recompose (prefer same-path replace + refresh).
+   * Shared locale-switch recompose callback.
+   * CookieSync wires refresh-only navigation (no same-path replace).
    * Used when cookie is written or when cookie/preferred match but next-intl is stale.
+   * One-shot latch prevents repeated refresh while the same target is settling.
    */
   readonly refresh: () => void;
   readonly isCancelled?: () => boolean;

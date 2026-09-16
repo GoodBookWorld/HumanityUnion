@@ -18,18 +18,19 @@ export type LocaleSwitchRouter = {
  *
  * - When `href` differs from the current pathname: replace to the new
  *   locale-prefixed route, then refresh so RSC re-composes for that locale.
- * - When `href` is null/same: refresh only (cookie + same-document locale),
- *   unless `forceSamePathRecompose` — then replace current pathname + refresh
- *   so root `<html lang/dir>` / next-intl / Brand recompose on workspace routes.
+ * - When `href` is null/same: refresh only (cookie + same-document locale).
+ * - `forceSamePathRecompose` is reserved for explicit Preferences language apply
+ *   (one-shot). InterfaceLanguageCookieSync must NOT set it — same-path replace
+ *   on locale-free private routes thrash-navigates.
  */
 export function runLocaleSwitchNavigation(input: {
   readonly router: LocaleSwitchRouter;
   readonly pathname: string;
   readonly href: string | null;
   /**
-   * Preferences / workspace language apply: soft refresh alone can leave the
+   * Explicit Preferences language apply only: soft refresh alone can leave the
    * root document locale stale. Same-path replace + refresh forces recomposition
-   * without inventing new URL rules.
+   * without inventing new URL rules. Do not use from CookieSync.
    */
   readonly forceSamePathRecompose?: boolean;
 }): {
