@@ -18,6 +18,7 @@ import { Button, HuFeedbackMessage } from "../../../design-system";
 import { getMe } from "../../auth/auth-api";
 import { resolveSafeReturnTo } from "../../auth/lib/resolve-safe-return-to";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
+import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import {
   expressInitiativeCollaborationInterest,
   fetchInitiativeCollaborationParticipants,
@@ -487,6 +488,41 @@ function CommentActions({
   );
 }
 
+/** Ordinary discussion body — WEB browser-native; PWA Pack 01 hu-persisted when CURRENT. */
+function DiscussionCommentBody({
+  commentId,
+  canonicalBody,
+}: {
+  commentId: string;
+  canonicalBody: string;
+}) {
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind: "discussion_comment",
+    sourceRecordId: commentId,
+    fallbackFields: { body: canonicalBody },
+    fieldOrder: ["body"],
+  });
+  const body =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.fields.body?.trim() || canonicalBody
+      : canonicalBody;
+  const lang =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
+
+  return (
+    <p
+      className="pie-discussion__body"
+      lang={lang}
+      data-hu-content-lang={lang}
+      data-hu-reading-owner={persisted.owner}
+    >
+      {body}
+    </p>
+  );
+}
+
 /** Part 4/5 — one complete visual card: author row, comment, status indicators, action row. */
 function DiscussionCommentCard({
   initiativeId,
@@ -554,14 +590,7 @@ function DiscussionCommentCard({
           {formatInitiativeExperienceDate(locale, comment.createdAt, { month: "short" })}
         </span>
       </p>
-      <p
-        className="pie-discussion__body"
-        lang={DEFAULT_PLATFORM_LANGUAGE}
-        data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
-        data-hu-reading-owner="browser-native"
-      >
-        {comment.body}
-      </p>
+      <DiscussionCommentBody commentId={comment.commentId} canonicalBody={comment.body} />
       {indicatorKeys.length > 0 ? (
         <p className="pie-discussion__collab-indicators">
           {indicatorKeys.map((key) => (

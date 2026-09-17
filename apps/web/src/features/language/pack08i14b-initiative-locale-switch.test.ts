@@ -65,28 +65,27 @@ describe("Pack 08I.14B — single display-language contract", () => {
     );
   });
 
-  it("Discussion ordinary reading uses canonical body; PublicTranslatedFields stays Pack 1", () => {
+  it("Discussion ordinary WEB stays Pack 1; PWA uses ownership-gated CT", () => {
     const discussion = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
     assert.doesNotMatch(discussion, /resolveDiscussionCommentPresentation/);
-    assert.match(discussion, /comment\.body/);
-    assert.match(discussion, /DEFAULT_PLATFORM_LANGUAGE/);
-    assert.match(discussion, /data-hu-reading-owner="browser-native"/);
+    assert.match(discussion, /DiscussionCommentBody/);
+    assert.match(discussion, /useHuPersistedOrdinaryFields/);
+    assert.match(discussion, /data-hu-reading-owner=\{persisted\.owner\}/);
 
     const lifecycle = readWeb(
       "features/public-initiative-experience/components/LifecycleTranslatedRecordCard.tsx",
     );
     assert.doesNotMatch(lifecycle, /resolveInitiativeDetailPresentation/);
     assert.doesNotMatch(lifecycle, /resolveTranslatedContent/);
-    assert.match(lifecycle, /data-hu-reading-owner="browser-native"/);
+    assert.match(lifecycle, /PublicTranslatedFields/);
 
     const fields = readWeb("features/language/components/PublicTranslatedFields.tsx");
     assert.match(fields, /resolvePublicContentDisplayLanguage/);
-    // Pack 1 — no CT resolve language=displayLanguage on ordinary reading path.
-    assert.doesNotMatch(fields, /language:\s*displayLanguage/);
-    assert.doesNotMatch(fields, /readingContext\.readingLanguage/);
-    assert.doesNotMatch(fields, /resolveTranslatedContent/);
+    assert.match(fields, /useHuPersistedOrdinaryFields/);
+    // CT resolve lives in the shared hook, gated by hu-persisted owner.
+    assert.doesNotMatch(fields, /generateContentTranslation/);
   });
 });
 
@@ -137,10 +136,11 @@ describe("Pack 08I.14B — locale switch without reload", () => {
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    // Ordinary reading no longer races CT async apply — presentation is canonical-only.
-    assert.match(hook, /presentationMode:\s*"original"/);
-    assert.doesNotMatch(hook, /resolveTranslatedContent/);
-    assert.doesNotMatch(hook, /requestGeneration/);
+    // PWA Pack 01: CT apply is ownership-gated; requestGeneration cancels stale resolves.
+    assert.match(hook, /useOrdinaryReadingOwner/);
+    assert.match(hook, /owner !== "hu-persisted"/);
+    assert.match(hook, /requestGeneration/);
+    assert.match(hook, /resolved\.activeLanguage !== displayLanguage/);
   });
 
   it("final DOM tracks locale presentation: UK then EN then UK", () => {
@@ -241,12 +241,14 @@ describe("Pack 08I.14B — View Original + control visuals", () => {
 });
 
 describe("Pack 08I.14B — wiring regressions", () => {
-  it("presentation hook ordinary reading stays canonical without CT apply", () => {
+  it("presentation hook WEB stays canonical; PWA CT is ownership-gated", () => {
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
     assert.match(hook, /presentationMode:\s*"original"/);
-    assert.doesNotMatch(hook, /resolveTranslatedContent/);
-    assert.doesNotMatch(hook, /setPresentation\(\(previous\) =>/);
+    assert.match(hook, /useOrdinaryReadingOwner/);
+    assert.match(hook, /owner !== "hu-persisted"/);
+    assert.match(hook, /resolveInitiativeDetailPresentation/);
+    assert.doesNotMatch(hook, /generateContentTranslation/);
   });
 });

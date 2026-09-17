@@ -7,6 +7,7 @@ import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../format-language-display-name";
 import { resolvePublicContentDisplayLanguage } from "../resolve-public-content-display-language";
+import { useHuPersistedOrdinaryFields } from "../use-hu-persisted-ordinary-fields";
 import { TranslatedContentView } from "./TranslatedContentView";
 
 import "./public-translated-fields.css";
@@ -21,7 +22,7 @@ export interface PublicTranslatedFieldsProps {
   readonly className?: string;
   /**
    * @deprecated Pack 1.1 — participant on-demand generation is retired.
-   * Prop is ignored; ordinary public reading uses stable canonical/fallback DOM.
+   * Prop is ignored; ordinary public reading never generates on miss.
    */
   readonly enableOnDemandGenerate?: boolean;
 }
@@ -29,14 +30,14 @@ export interface PublicTranslatedFieldsProps {
 /**
  * Ordinary public reading presentation for published civic/lifecycle prose.
  *
- * Stable Browser Translation Pack 1 — Layer 1 reading ownership:
- * - Visible fields are the caller canonical/fallback bag only.
- * - Do not asynchronously resolve or apply CT into visible React text after mount
- *   (that races and overwrites browser-native translation).
- * - CT infrastructure remains available for Search/SEO/warm outside this path.
+ * Pack 1 WEB invariant:
+ * - Normal browser: visible fields stay canonical/fallback (browser-native).
+ * - No CT post-mount overwrite in browser mode.
  *
- * `sourceKind` / `sourceRecordId` remain in the API for callers and diagnostics;
- * they are not used to fetch CT for ordinary reading presentation.
+ * PWA Full Translation Pack 01:
+ * - Standalone + uk|ar|zh-Hant: cache-only CURRENT persisted fields.
+ * - Missing/stale/incomplete → canonical fallback.
+ * - Never provider-on-read.
  */
 export function PublicTranslatedFields({
   sourceKind,
@@ -49,21 +50,36 @@ export function PublicTranslatedFields({
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind,
+    sourceRecordId,
+    fallbackFields,
+    fieldOrder,
+  });
 
-  // Stable canonical/fallback DOM — no post-mount CT setFields.
-  const fields = fallbackFields;
-  const originalFields = fallbackFields;
-  const presentationMode = "original" as const;
-  const activeLanguage: LanguageCode = DEFAULT_PLATFORM_LANGUAGE;
-  const originalLanguage: LanguageCode = DEFAULT_PLATFORM_LANGUAGE;
+  const fields =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.fields
+      : fallbackFields;
+  const originalFields =
+    persisted.owner === "hu-persisted" ? persisted.originalFields : fallbackFields;
+  const presentationMode =
+    persisted.owner === "hu-persisted" ? persisted.presentationMode : ("original" as const);
+  const activeLanguage: LanguageCode =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
+  const originalLanguage: LanguageCode =
+    persisted.owner === "hu-persisted" ? persisted.originalLanguage : DEFAULT_PLATFORM_LANGUAGE;
   const preferredLanguage: LanguageCode = displayLanguage;
+  const readingOwner = persisted.owner;
 
   return (
     <div
       className={["hu-public-translated-fields", className].filter(Boolean).join(" ")}
       data-hu-localization-boundary="visible-content"
       data-hu-presentation-mode={presentationMode}
-      data-hu-reading-owner="browser-native"
+      data-hu-reading-owner={readingOwner}
       data-hu-source-kind={sourceKind}
       data-hu-source-record-id={sourceRecordId}
     >
@@ -81,9 +97,13 @@ export function PublicTranslatedFields({
               originalContent={original}
               activeLanguage={activeLanguage}
               originalLanguage={originalLanguage}
-              canViewOriginal={false}
-              isMachineTranslated={false}
-              isStale={false}
+              canViewOriginal={
+                persisted.owner === "hu-persisted" ? persisted.canViewOriginal : false
+              }
+              isMachineTranslated={
+                persisted.owner === "hu-persisted" ? persisted.isMachineTranslated : false
+              }
+              isStale={persisted.owner === "hu-persisted" ? persisted.isStale : false}
             />
           </div>
         );

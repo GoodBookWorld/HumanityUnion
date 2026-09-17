@@ -2,6 +2,7 @@
 
 import type { CivicMediaCenterPublic } from "@hu/types";
 
+import { useOrdinaryReadingOwner } from "../../language/use-ordinary-reading-owner";
 import {
   buildCanonicalCivicMediaEditorial,
   type CivicMediaResolvedEditorial,
@@ -19,22 +20,26 @@ export {
 } from "../civic-media-canonical-editorial";
 
 /**
- * Ordinary Civic Media editorial reading — canonical fields only.
+ * Ordinary Civic Media editorial reading.
  *
- * Unify Ordinary Public Reading:
- * - Do not asynchronously resolve or apply CT into visible editorial DOM.
- * - PLP/CT overlay helpers remain exported for seeds and non-reading infra.
- * - `initialEditorial` / skipClientTranslation kept for call-site compatibility.
+ * Pack 1 WEB: canonical fields only (browser-native).
+ * PWA Pack 01: when owner is hu-persisted, callers may pass a PLP/CT overlay
+ * via `initialEditorial` (existing Media PLP / CT contract). Never generate on read.
  */
 export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
   initialEditorial?: CivicMediaResolvedEditorial,
   options?: {
-    /** @deprecated Ordinary reading always uses canonical; CT/PLP are not applied. */
+    /** @deprecated Pack 1.1 — never generates; retained for call-site compatibility. */
     readonly skipClientTranslation?: boolean;
   },
 ): CivicMediaResolvedEditorial {
-  void initialEditorial;
   void options;
+  const { owner, ownershipReady } = useOrdinaryReadingOwner({ sourceKind: "civic_media" });
+
+  if (ownershipReady && owner === "hu-persisted" && initialEditorial) {
+    return initialEditorial;
+  }
+
   return buildCanonicalCivicMediaEditorial(media);
 }

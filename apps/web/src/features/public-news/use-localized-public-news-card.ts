@@ -127,16 +127,16 @@ export function resolveLocalizedPublicNewsCardView(input: {
 }
 
 /**
- * Hook: ordinary public-news-card reading uses canonical title/summary.
- * PLP resolve helpers remain available outside this visible-reading path.
- * Never resolve/generate content_translations on read.
+ * Hook: ordinary public-news-card reading ALWAYS uses RSS source/original
+ * title/summary in WEB and standalone PWA (Pack 01 exclusion).
+ * Never resolve CT/PLP translated card fields for visible reading.
  */
 export function useLocalizedPublicNewsCard(
   article: PublicNewsArticleItem,
   options?: {
     /** @deprecated Kept for call-site compatibility; CT is never used for RSS. */
     readonly skipClientTranslation?: boolean;
-    /** @deprecated Ordinary reading ignores PLP overlays for visible text. */
+    /** Ignored for visible RSS reading — Pack 01 PWA exclusion. */
     readonly plpPresentation?: PublicNewsPlpPresentationInput;
   },
 ): LocalizedPublicNewsCardView {
@@ -150,7 +150,7 @@ export function useLocalizedPublicNewsCard(
       resolveLocalizedPublicNewsCardView({
         article,
         locale: displayLanguage,
-        // Unify Ordinary Public Reading — canonical visible text only.
+        // Pack 01 — Public News RSS visible reading is never HU-persisted.
         plpPresentation: null,
       }),
     [article, displayLanguage],

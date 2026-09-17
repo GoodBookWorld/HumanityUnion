@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { PublicBlogPostListItem } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
+import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { formatBlogPublishedDate } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
@@ -37,12 +38,23 @@ function truncateWordsForDisplay(text: string, maxWords: number): string {
 }
 
 /**
- * Ordinary public Blog card reading — canonical title/excerpt only.
- * No post-mount CT apply (unified browser-native reading).
+ * Ordinary public Blog card reading.
+ * Pack 1 WEB: canonical title/excerpt (browser-native).
+ * PWA Pack 01: hu-persisted CURRENT when available.
  */
 export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind: "blog_post",
+    sourceRecordId: post.postId,
+    fallbackFields: {
+      title: post.title,
+      excerpt: post.excerpt,
+      content: "",
+    },
+    fieldOrder: ["title", "excerpt"],
+  });
 
   function commentsLabel(count: number): string {
     if (count <= 0) {
@@ -58,13 +70,27 @@ export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
   const href = `/blog/${encodeURIComponent(post.slug)}`;
   const commentsHref = `${href}#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
-  const titleForDisplay = post.title;
-  const excerptSource = post.excerpt;
+  const titleForDisplay =
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.title?.trim()
+      ? persisted.fields.title
+      : post.title;
+  const excerptSource =
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.excerpt?.trim()
+      ? persisted.fields.excerpt
+      : post.excerpt;
   const excerptForDisplay =
     layout === "related"
       ? truncateWordsForDisplay(excerptSource, 10)
       : excerptSource;
   const isRelated = layout === "related";
+  const titleLang =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
 
   return (
     <article
@@ -72,13 +98,13 @@ export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
         .filter(Boolean)
         .join(" ")}
       aria-labelledby={titleId}
-      data-hu-reading-owner="browser-native"
+      data-hu-reading-owner={persisted.owner}
     >
       <div className="blog-post-card__body">
         <h2
           id={titleId}
           className="hu-heading-3 blog-post-card__title"
-          lang={DEFAULT_PLATFORM_LANGUAGE}
+          lang={titleLang}
         >
           <Link href={href}>{titleForDisplay}</Link>
         </h2>

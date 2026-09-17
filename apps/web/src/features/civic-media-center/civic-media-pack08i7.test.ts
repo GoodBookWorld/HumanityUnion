@@ -37,13 +37,15 @@ function readNested(messages: Record<string, unknown>, dottedPath: string): stri
 }
 
 describe("Pack 08I.7 — Civic Media residual localization", () => {
-  it("useCivicMediaResolvedEditorial ordinary reading is canonical-only (no CT apply)", () => {
+  it("useCivicMediaResolvedEditorial ordinary WEB is canonical; PWA may accept PLP overlay", () => {
     const editorial = readWeb(
       "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
     assert.doesNotMatch(editorial, /generateContentTranslation\s*\(/);
     assert.doesNotMatch(editorial, /resolveTranslatedContent/);
     assert.match(editorial, /buildCanonicalCivicMediaEditorial/);
+    assert.match(editorial, /useOrdinaryReadingOwner/);
+    assert.match(editorial, /owner === "hu-persisted" && initialEditorial/);
     assert.match(editorial, /skipClientTranslation/);
 
     assert.doesNotMatch(editorial, /JSON\.stringify/);

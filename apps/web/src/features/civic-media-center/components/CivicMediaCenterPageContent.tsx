@@ -45,6 +45,7 @@ import {
   MediaSemanticNode,
   plpModeToSemanticResult,
 } from "../../language/media-plp/media-semantic-contract";
+import { useOrdinaryReadingOwner } from "../../language/use-ordinary-reading-owner";
 import {
   recordClientTranslationRequestCount,
   recordLocaleSwitchCompleted,
@@ -594,22 +595,34 @@ function CivicMediaCenterLoaded({
         : undefined,
     [plpMode, media.propagandaAnalysis, effectivePropagandaById, requestedLocale],
   );
-  void plpEditorial;
   void factCheckMaps;
   void propagandaMaps;
   void initialEditorial;
-  // Unify Ordinary Public Reading — canonical editorial / resource prose only.
-  const editorial = useCivicMediaResolvedEditorial(media, undefined, {
-    skipClientTranslation: true,
-  });
+  // Ordinary reading: WEB = canonical; PWA Pack 01 may apply PLP editorial overlay.
+  const { owner: civicMediaOwner } = useOrdinaryReadingOwner({ sourceKind: "civic_media" });
+  const editorial = useCivicMediaResolvedEditorial(
+    media,
+    civicMediaOwner === "hu-persisted" ? plpEditorial : undefined,
+    {
+      skipClientTranslation: civicMediaOwner !== "hu-persisted",
+    },
+  );
   useMediaPlpLocaleSwitchLifecycle({
     plpMode,
     plpTrustedById: effectiveTrustedById,
     plpPrinciplesById: effectivePrinciplesById,
   });
 
-  const editorialResult = "CANONICAL_FALLBACK" as const;
-  const editorialMode = plpMode ? ("CANONICAL_FALLBACK" as const) : undefined;
+  const editorialResult =
+    civicMediaOwner === "hu-persisted" && plpEditorial
+      ? ("PUBLISHED_LOCALIZED" as const)
+      : ("CANONICAL_FALLBACK" as const);
+  const editorialMode =
+    civicMediaOwner === "hu-persisted" && plpMode
+      ? ("PUBLISHED_LOCALIZED" as const)
+      : plpMode
+        ? ("CANONICAL_FALLBACK" as const)
+        : undefined;
 
   const liveTruthProbeStatus =
     mediaPlpLiveTruthProbeStatus ?? "NOT_WIRED";
@@ -653,9 +666,17 @@ function CivicMediaCenterLoaded({
             </MediaSemanticNode>
             <div
               className="civic-media-page__editorial"
-              lang={DEFAULT_PLATFORM_LANGUAGE}
-              data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
-              data-hu-reading-owner="browser-native"
+              lang={
+                civicMediaOwner === "hu-persisted" && editorialResult === "PUBLISHED_LOCALIZED"
+                  ? requestedLocale
+                  : DEFAULT_PLATFORM_LANGUAGE
+              }
+              data-hu-content-lang={
+                civicMediaOwner === "hu-persisted" && editorialResult === "PUBLISHED_LOCALIZED"
+                  ? requestedLocale
+                  : DEFAULT_PLATFORM_LANGUAGE
+              }
+              data-hu-reading-owner={civicMediaOwner}
             >
               <MediaSemanticNode
                 as="h2"

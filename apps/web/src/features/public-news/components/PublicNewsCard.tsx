@@ -115,6 +115,7 @@ export function PublicNewsCard({
       className="public-news-card"
       aria-labelledby={`public-news-title-${view.id}`}
       data-hu-surface="public-news-card"
+      data-hu-ordinary-reading-exclusion="public-news-rss"
       data-hu-coverage={view.coverage.status}
       data-hu-fallback-nodes={String(view.coverage.canonicalFallbackNodeCount)}
     >

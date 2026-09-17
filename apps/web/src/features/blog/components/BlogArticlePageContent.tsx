@@ -8,6 +8,7 @@ import type { PublicBlogPostDetail } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
+import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
@@ -48,12 +49,9 @@ interface BlogArticlePageContentProps {
 /**
  * Ordinary public Blog article reading.
  *
- * Stable Browser Translation — Blog reading:
- * - Visible title/body are the canonical published post only.
- * - Do not asynchronously resolve or apply content-translation into visible
- *   React HTML after mount (that races and overwrites browser-native translation).
- * - Shared blog presentation helpers remain for cards, seeds, Search/SEO outside
- *   this ordinary reading path.
+ * Pack 1 WEB: canonical published post only (browser-native).
+ * PWA Pack 01: standalone + uk|ar|zh-Hant → cache-only CURRENT persisted fields.
+ * Never provider-on-read.
  */
 export function BlogArticlePageContent({
   slug,
@@ -71,6 +69,17 @@ export function BlogArticlePageContent({
   const [error, setError] = useState<"not_found" | "unavailable" | "generic" | null>(() =>
     seeded && initialPost === null ? "not_found" : null,
   );
+
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind: "blog_post",
+    sourceRecordId: post?.postId ?? "",
+    fallbackFields: {
+      title: post?.title ?? "",
+      excerpt: post?.excerpt ?? "",
+      content: post?.content ?? "",
+    },
+    fieldOrder: ["title", "excerpt", "content"],
+  });
 
   useEffect(() => {
     if (seeded) {
@@ -187,14 +196,31 @@ export function BlogArticlePageContent({
     t,
     post.category.name,
   );
-  // Stable canonical reading DOM — no post-mount CT title/body replacement.
-  const titleForDisplay = post.title;
-  const bodyHtml = post.content;
+  // Pack 1 WEB: canonical. PWA Pack 01: CURRENT persisted when available.
+  const titleForDisplay =
+    post &&
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.title?.trim()
+      ? persisted.fields.title
+      : post.title;
+  const bodyHtml =
+    post &&
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.content?.trim()
+      ? persisted.fields.content
+      : post.content;
+  const readingOwner = persisted.owner;
+  const contentLang =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
 
   return (
     <main
       className="blog-page blog-article hu-page-container blog-page--pack15c"
-      data-hu-reading-owner="browser-native"
+      data-hu-reading-owner={readingOwner}
     >
       <div className="blog-layout">
         <BlogDiscoverySearch
@@ -253,14 +279,13 @@ export function BlogArticlePageContent({
           </div>
 
           {/*
-            Canonical Blog source prose is English. Declare that on the reading
-            surface so non-English Preferred Reading (<html lang>) does not make
-            browser MT skip the English article body.
+            WEB: English canonical for browser-native reading.
+            PWA Pack 01 hu-persisted: activeLanguage when CURRENT localized fields apply.
           */}
           <div
             className="blog-article__canonical-reading"
-            lang={DEFAULT_PLATFORM_LANGUAGE}
-            data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+            lang={contentLang}
+            data-hu-content-lang={contentLang}
           >
             <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
               {titleForDisplay}

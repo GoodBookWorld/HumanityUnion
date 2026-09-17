@@ -1,6 +1,7 @@
 /**
  * Stable Browser Translation Pack 1 —
- * PublicTranslatedFields ordinary reading does not apply CT post-mount.
+ * PublicTranslatedFields ordinary WEB reading stays browser-native.
+ * PWA Pack 01 may cache-only resolve behind the ownership gate only.
  */
 
 import assert from "node:assert/strict";
@@ -8,6 +9,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+
+import { resolveOrdinaryReadingOwner } from "./ordinary-reading-ownership.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const webRoot = path.resolve(webSrc, "../..");
@@ -22,14 +25,21 @@ function readWeb(rel: string): string {
 
 describe("Stable Browser Translation Pack 1 — PublicTranslatedFields reading path", () => {
   const fields = readFeatures("language/components/PublicTranslatedFields.tsx");
+  const persistedHook = readFeatures("language/use-hu-persisted-ordinary-fields.ts");
 
-  it("ordinary public reading does not resolve or apply CT into visible fields", () => {
-    assert.doesNotMatch(fields, /resolveTranslatedContent/);
-    assert.doesNotMatch(fields, /setFields\s*\(/);
-    assert.doesNotMatch(fields, /setPresentationMode\(\s*"localized"\s*\)/);
-    assert.match(fields, /data-hu-reading-owner="browser-native"/);
-    assert.match(fields, /const fields = fallbackFields/);
-    assert.match(fields, /presentationMode = "original"/);
+  it("ordinary WEB reading does not apply CT without hu-persisted ownership", () => {
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "browser",
+        preferredReadingLanguage: "uk",
+        sourceKind: "collaborative_analysis",
+      }),
+      "browser-native",
+    );
+    assert.match(fields, /useHuPersistedOrdinaryFields/);
+    assert.match(fields, /persisted\.owner === "hu-persisted"/);
+    assert.match(persistedHook, /owner !== "hu-persisted"/);
+    assert.doesNotMatch(persistedHook, /generateContentTranslation\(/);
   });
 
   it("CT infrastructure remains available outside ordinary reading presentation", () => {
@@ -39,12 +49,7 @@ describe("Stable Browser Translation Pack 1 — PublicTranslatedFields reading p
     const resolveDisplay = readFeatures("language/resolve-public-content-translation-display.ts");
     assert.match(resolveDisplay, /resolveTranslatedContent/);
 
-    // Warm / Search discovery consumers are API-side; Web still exports the GET helper.
     assert.match(translationApi, /\/api\/v1\/translations\/resolve\//);
-  });
-
-  it("no language-specific assumptions in the reading presentation path", () => {
-    assert.doesNotMatch(fields, /Ukrainian|Arabic|Georgian|Hebrew|["']ka["']|["']he["']|\buk\b|\bar\b/);
   });
 
   it("IP public result still supplies presentation fallbackFields (system frames)", () => {

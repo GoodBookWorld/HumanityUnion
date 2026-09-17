@@ -128,7 +128,8 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
     assert.doesNotMatch(page, /CivicMediaTranslatedEditorial\s*\//);
     // Locale-switch probe may stringify semantic signatures; ordinary editorial path must not.
     assert.match(page, /useCivicMediaResolvedEditorial/);
-    assert.match(page, /data-hu-reading-owner="browser-native"/);
+    assert.match(page, /data-hu-reading-owner=\{civicMediaOwner\}/);
+    assert.match(page, /useOrdinaryReadingOwner/);
   });
 
   it("hero restores Card grid (civic-media-page__hero-grid) and never dumps JSON", () => {

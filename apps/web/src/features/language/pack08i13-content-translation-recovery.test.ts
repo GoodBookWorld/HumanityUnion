@@ -128,13 +128,16 @@ describe("Pack 08I.13 — discussion comment presentation", () => {
     assert.equal(resolved.body, "Український коментар");
   });
 
-  it("panel ordinary reading uses canonical comment body without CT apply", () => {
+  it("panel ordinary WEB reading stays canonical; PWA may use ownership-gated CT", () => {
     const panel = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
     assert.doesNotMatch(panel, /resolveDiscussionCommentPresentation/);
-    assert.match(panel, /comment\.body/);
-    assert.match(panel, /data-hu-reading-owner="browser-native"/);
+    assert.match(panel, /DiscussionCommentBody/);
+    assert.match(panel, /useHuPersistedOrdinaryFields/);
+    assert.match(panel, /canonicalBody/);
+    assert.match(panel, /data-hu-reading-owner=\{persisted\.owner\}/);
+    assert.doesNotMatch(panel, /generateContentTranslation/);
   });
 
   it("Media pipeline uses WEB_UI catalogs with civic overlay presentation", () => {

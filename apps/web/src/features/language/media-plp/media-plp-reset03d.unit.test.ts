@@ -155,14 +155,15 @@ describe("Reset 03D — single bounded Media resolution", () => {
     assert.equal(isMediaPlpWebEnabled(), false);
   });
 
-  it("D: no client PLP refetch; ordinary reading stays canonical", () => {
+  it("D: no client PLP refetch; ordinary WEB stays canonical; PWA may overlay", () => {
     const pageContent = readFileSync(
       join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
       "utf8",
     );
-    assert.match(pageContent, /skipClientTranslation:\s*true/);
+    assert.match(pageContent, /useOrdinaryReadingOwner/);
+    assert.match(pageContent, /civicMediaOwner === "hu-persisted" \? plpEditorial/);
     assert.match(pageContent, /useMemo\([\s\S]*applyMediaPlpPresentationsToEditorial/);
-    assert.match(pageContent, /data-hu-reading-owner="browser-native"/);
+    assert.match(pageContent, /data-hu-reading-owner=\{civicMediaOwner\}/);
   });
 
   it("E: repeated active-locale selection is a no-op", () => {
