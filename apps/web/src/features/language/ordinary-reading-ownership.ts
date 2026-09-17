@@ -1,9 +1,13 @@
 /**
- * Language Architecture Pack 02 — Registry/readiness-driven ordinary-reading ownership.
+ * Language Architecture Pack 02 / Version 5.0 — Registry-driven ordinary-reading ownership.
  *
  * NORMAL WEB: browser-native (canonical → browser Translate).
- * STANDALONE PWA + Registry gates + civic READY: hu-persisted (CURRENT → visible).
+ * STANDALONE PWA + Registry activation gates: hu-persisted (CURRENT → visible;
+ * missing/stale → per-artifact canonical fallback).
  * Public News RSS cards: always browser-native / source original (sourceKind-based).
+ *
+ * Version 5.0 invariant: `pwaPersistedReadingReady` is Admin/activation only —
+ * it must not gate individual runtime persisted reads.
  */
 
 import type {

@@ -43,7 +43,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
     );
   });
 
-  it("2. standalone PWA + full gates READY → hu-persisted", () => {
+  it("2. standalone PWA + Registry activation gates → hu-persisted", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "standalone",
@@ -67,7 +67,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
     );
   });
 
-  it("4. readiness not ready → canonical / browser-native", () => {
+  it("4. Version 5.0: readiness false does not disable PWA persisted reading", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "standalone",
@@ -75,7 +75,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
         sourceKind: "blog_post",
         pwaEligibility: { ...eligible, pwaPersistedReadingReady: false },
       }),
-      "browser-native",
+      "hu-persisted",
     );
   });
 
@@ -94,14 +94,14 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
     assert.doesNotMatch(ownership, /\["uk",\s*"ar",\s*"zh-Hant"\]/);
   });
 
-  it("6. uk/ar/zh-Hant retain Pack 01 behavior when Registry/readiness gates pass", () => {
+  it("6. uk/ar/zh-Hant retain Pack 01 behavior when Registry activation gates pass", () => {
     for (const language of ["uk", "ar", "zh-Hant"] as const) {
       assert.equal(
         resolveOrdinaryReadingOwner({
           presentationMode: "standalone",
           preferredReadingLanguage: language,
           sourceKind: "initiative",
-          pwaEligibility: eligible,
+          pwaEligibility: { ...eligible, pwaPersistedReadingReady: false },
         }),
         "hu-persisted",
       );
@@ -204,5 +204,124 @@ describe("Language Architecture Pack 02 — surface invariants", () => {
     assert.doesNotMatch(ownership, /=== "ar"|=== 'ar'|RTL_LANGUAGE/);
     const resolveDoc = readFeatures("language/resolve-document-locale.ts");
     assert.match(resolveDoc, /textDirection/);
+  });
+});
+
+describe("Version 5.0 — PWA persisted reading vs corpus readiness", () => {
+  const activatedNotReady: PwaPersistedOrdinaryReadingEligibility = {
+    enabled: true,
+    contentTranslationEnabled: true,
+    pwaPersistedReadingEnabled: true,
+    pwaPersistedReadingReady: false,
+  };
+
+  it("standalone + activated language + ready=false → hu-persisted for ordinary kinds", () => {
+    for (const sourceKind of [
+      "initiative",
+      "collaborative_analysis",
+      "improvement_proposal",
+      "blog_post",
+      "civic_media",
+      "discussion_comment",
+    ] as const) {
+      assert.equal(
+        resolveOrdinaryReadingOwner({
+          presentationMode: "standalone",
+          preferredReadingLanguage: "uk",
+          sourceKind,
+          pwaEligibility: activatedNotReady,
+        }),
+        "hu-persisted",
+        sourceKind,
+      );
+    }
+  });
+
+  it("Preferred Reading change recomputes ownership without allowlist", () => {
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "standalone",
+        preferredReadingLanguage: "ar",
+        sourceKind: "initiative",
+        pwaEligibility: activatedNotReady,
+      }),
+      "hu-persisted",
+    );
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "standalone",
+        preferredReadingLanguage: "zh-Hant",
+        sourceKind: "improvement_proposal",
+        pwaEligibility: activatedNotReady,
+      }),
+      "hu-persisted",
+    );
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "standalone",
+        preferredReadingLanguage: "xx-FutureLang",
+        sourceKind: "collaborative_analysis",
+        pwaEligibility: activatedNotReady,
+      }),
+      "hu-persisted",
+    );
+    const ownerHook = readFeatures("language/use-ordinary-reading-owner.ts");
+    assert.match(ownerHook, /\[preferredReadingLanguage\]/);
+  });
+
+  it("per-artifact CURRENT resolve + canonical fallback remain ownership-gated (not readiness)", () => {
+    const hook = readFeatures("language/use-hu-persisted-ordinary-fields.ts");
+    assert.match(hook, /owner !== "hu-persisted"/);
+    assert.match(hook, /resolveTranslatedContent/);
+    assert.match(hook, /if \(!complete\)/);
+    assert.match(hook, /setPresentationMode\("original"\)/);
+    assert.doesNotMatch(hook, /pwaPersistedReadingReady/);
+    assert.doesNotMatch(hook, /generateContentTranslation\(/);
+  });
+
+  it("Admin readiness fields remain in contracts (not removed)", () => {
+    const admin = readFeatures("administration/components/AdminLanguagesSection.tsx");
+    assert.match(admin, /pwaCivicReadinessStatus/);
+    assert.match(admin, /pwaPersistedReadingReady/);
+    const api = readFeatures("language/public-languages-api.ts");
+    assert.match(api, /pwaPersistedReadingReady/);
+  });
+
+  it("Civic Media PLP remains reachable when owner is hu-persisted despite ready=false", () => {
+    assert.equal(
+      shouldResolveHuPersistedOrdinaryReading({
+        presentationMode: "standalone",
+        preferredReadingLanguage: "uk",
+        sourceKind: "civic_media",
+        pwaEligibility: activatedNotReady,
+      }),
+      true,
+    );
+    const page = readFeatures("civic-media-center/components/CivicMediaCenterPageContent.tsx");
+    assert.match(page, /civicMediaOwner === "hu-persisted" \? plpEditorial/);
+  });
+
+  it("public_news stays excluded even when activation gates pass and ready=false", () => {
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "standalone",
+        preferredReadingLanguage: "uk",
+        sourceKind: "public_news",
+        pwaEligibility: activatedNotReady,
+      }),
+      "browser-native",
+    );
+  });
+
+  it("normal WEB stays browser-native when activation gates pass", () => {
+    assert.equal(
+      resolveOrdinaryReadingOwner({
+        presentationMode: "browser",
+        preferredReadingLanguage: "uk",
+        sourceKind: "initiative",
+        pwaEligibility: activatedNotReady,
+      }),
+      "browser-native",
+    );
   });
 });

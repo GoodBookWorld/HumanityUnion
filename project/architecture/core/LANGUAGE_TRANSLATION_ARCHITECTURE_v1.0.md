@@ -30,6 +30,34 @@ Browser Google Translate may remain a convenience layer. It is **not** the sourc
 
 ---
 
+## Version 5.0 — PWA persisted ordinary reading (normative)
+
+PWA persisted ordinary reading is a baseline Humanity Union Version 5.0 capability.
+
+**Invariant:** PWA persisted ordinary reading is controlled by Registry activation and Preferred Reading Language. Corpus readiness is an activation/administration signal, not a runtime read kill switch. Once PWA persisted reading is enabled for a language, each artifact independently resolves persisted CURRENT presentation with canonical fallback.
+
+Runtime ownership (installed/standalone PWA):
+
+```
+standalone
+AND enabled
+AND contentTranslationEnabled
+AND pwaPersistedReadingEnabled
+AND sourceKind ≠ public_news
+→ hu-persisted
+```
+
+`pwaPersistedReadingReady` / `pwaCivicReadinessStatus` remain Admin, preparation, activation, and corpus-diagnostic signals. They must **not** gate individual persisted reads after `pwaPersistedReadingEnabled` is open.
+
+Additional Version 5.0 reading invariants:
+
+- Normal Web ordinary reading remains browser-native (canonical → browser Translate).
+- Public News RSS visible cards remain source/original in WEB and PWA for every language.
+- Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist).
+- Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
+
+---
+
 ## Discovery summary (Pack 01)
 
 ### What existed

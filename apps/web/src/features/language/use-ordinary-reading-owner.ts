@@ -1,10 +1,14 @@
 /**
- * Language Architecture Pack 02 — client ordinary-reading ownership hook.
+ * Language Architecture Pack 02 / Version 5.0 — client ordinary-reading ownership.
  *
  * SSR and first paint default to browser-native (hydration-safe canonical DOM).
  * After mount, standalone detection + public Registry catalog may upgrade to
  * hu-persisted; callers then cache-only resolve CURRENT translation without
  * provider generation.
+ *
+ * Catalog may include `pwaPersistedReadingReady` for Admin/activation visibility;
+ * runtime ownership uses Registry activation gates only (not corpus READY).
+ * Preferred Reading Language changes recompute eligibility via effect deps.
  */
 
 "use client";

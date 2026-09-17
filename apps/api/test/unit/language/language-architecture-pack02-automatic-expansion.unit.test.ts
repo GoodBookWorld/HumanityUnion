@@ -160,7 +160,7 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
     assert.equal(ka.pwaPersistedReadingEnabled, false);
   });
 
-  it("eligibility predicate requires all four gates", () => {
+  it("eligibility predicate requires Registry activation gates (not corpus READY)", () => {
     assert.equal(
       isPwaPersistedOrdinaryReadingEligible({
         enabled: true,
@@ -179,6 +179,7 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
       }),
       false,
     );
+    // Version 5.0 — readiness false must not block runtime eligibility.
     assert.equal(
       isPwaPersistedOrdinaryReadingEligible({
         enabled: true,
@@ -186,7 +187,7 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
         pwaPersistedReadingEnabled: true,
         pwaPersistedReadingReady: false,
       }),
-      false,
+      true,
     );
   });
 });

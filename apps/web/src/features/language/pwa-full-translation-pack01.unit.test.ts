@@ -32,6 +32,11 @@ const pack01Eligible: PwaPersistedOrdinaryReadingEligibility = {
   pwaPersistedReadingReady: true,
 };
 
+const pack01EligibleNotReady: PwaPersistedOrdinaryReadingEligibility = {
+  ...pack01Eligible,
+  pwaPersistedReadingReady: false,
+};
+
 describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
   it("enables hu-persisted for standalone + uk|ar|zh-Hant when Registry gates pass", () => {
     for (const language of ["uk", "ar", "zh-Hant"] as const) {
@@ -49,7 +54,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
           presentationMode: "standalone",
           preferredReadingLanguage: language,
           sourceKind: "collaborative_analysis",
-          pwaEligibility: pack01Eligible,
+          pwaEligibility: pack01EligibleNotReady,
         }),
         true,
       );

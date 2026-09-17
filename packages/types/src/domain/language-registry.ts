@@ -131,8 +131,10 @@ export interface LanguageRegistryPublic {
   /** Admin gate for hu-persisted ordinary reading in standalone PWA. */
   readonly pwaPersistedReadingEnabled: boolean;
   /**
-   * Derived: PWA civic CURRENT coverage is READY for this locale.
-   * Computed for the public catalog; not a durable Admin write field.
+   * Derived Admin/activation signal: PWA civic presentation-coverage READY.
+   * Not a durable Admin write field. Not a runtime ordinary-reading kill switch —
+   * once `pwaPersistedReadingEnabled` is open, per-artifact CURRENT/canonical
+   * resolution proceeds independently of this flag (Version 5.0).
    */
   readonly pwaPersistedReadingReady: boolean;
   readonly aliases: readonly LanguageRegistryLocale[];
@@ -254,23 +256,31 @@ export function resolvePwaPersistedReadingEnabled(
 }
 
 /**
- * Registry + readiness gates for hu-persisted ordinary reading in standalone PWA.
+ * Registry activation gates for hu-persisted ordinary reading in standalone PWA.
  * Presentation mode and public_news exclusion are applied by the owner resolver.
+ *
+ * Version 5.0 — `pwaPersistedReadingReady` may be present for Admin/catalog
+ * diagnostics but is **not** part of the runtime eligibility decision.
  */
 export interface PwaPersistedOrdinaryReadingEligibility {
   readonly enabled: boolean;
   readonly contentTranslationEnabled: boolean;
   readonly pwaPersistedReadingEnabled: boolean;
+  /** Admin/activation corpus signal only — ignored by runtime eligibility. */
   readonly pwaPersistedReadingReady: boolean;
 }
 
+/**
+ * Runtime PWA persisted-reading eligibility (Version 5.0).
+ * Does **not** require `pwaPersistedReadingReady` — corpus readiness is an
+ * activation/administration signal, not a per-read kill switch.
+ */
 export function isPwaPersistedOrdinaryReadingEligible(
   input: PwaPersistedOrdinaryReadingEligibility,
 ): boolean {
   return (
     input.enabled === true &&
     input.contentTranslationEnabled === true &&
-    input.pwaPersistedReadingEnabled === true &&
-    input.pwaPersistedReadingReady === true
+    input.pwaPersistedReadingEnabled === true
   );
 }
