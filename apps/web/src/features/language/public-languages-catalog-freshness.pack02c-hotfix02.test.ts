@@ -33,6 +33,10 @@ type LangRow = {
   textDirection: "ltr" | "rtl";
   fallbackLocale: string;
   uiTranslationStatus: "none" | "partial" | "complete";
+  seoIndexingEnabled?: boolean;
+  contentTranslationEnabled?: boolean;
+  pwaPersistedReadingEnabled?: boolean;
+  pwaPersistedReadingReady?: boolean;
   aliases: string[];
 };
 

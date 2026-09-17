@@ -98,16 +98,21 @@ export type {
   LanguageRegistryUpdateInput,
   LanguageTextDirection,
   LanguageUiTranslationStatus,
+  PwaPersistedOrdinaryReadingEligibility,
   SeoIndexableLanguageRecord,
 } from "./language-registry.js";
 export {
   LANGUAGE_REGISTRY_DEFAULT_FALLBACK_LOCALE,
   LANGUAGE_UI_TRANSLATION_STATUSES,
+  LEGACY_PWA_PERSISTED_READING_DEFAULT_TRUE_LOCALES,
+  defaultPwaPersistedReadingEnabledForLocale,
   deriveLanguageCodeFromLocale,
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
+  isPwaPersistedOrdinaryReadingEligible,
   isSeoIndexableLanguage,
   normalizeLanguageRegistryLocaleKey,
+  resolvePwaPersistedReadingEnabled,
 } from "./language-registry.js";
 export type {
   LanguageActivationCtOwnedKind,
@@ -122,7 +127,10 @@ export type {
   LanguageLocalizationOwnershipClass,
   LanguageLocalizationReadinessReport,
   LanguageLocalizationReadinessState,
+  LanguagePwaCivicReadinessSlice,
   LanguageWebUiReadinessSlice,
+  PwaCivicCoverageScalars,
+  PwaCivicReadinessStatus,
 } from "./language-localization-readiness.js";
 export {
   LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
@@ -131,11 +139,16 @@ export {
   LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
   LANGUAGE_LOCALIZATION_READINESS_STATES,
+  PWA_CIVIC_READINESS_STATUSES,
+  buildLanguagePwaCivicReadinessSlice,
   deriveLanguageLocalizationReadinessState,
+  derivePwaCivicReadinessState,
   emptyLanguageLocalizationCountBucket,
+  emptyPwaCivicCoverageScalars,
   isLanguageLocalizationReadinessState,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
+  isPwaCivicReadinessStatus,
 } from "./language-localization-readiness.js";
 export type {
   LanguageActivationAdminView,

@@ -85,6 +85,7 @@ describe("Localization Authority Closure 05 — Media registry-driven targets", 
       contentTranslationEnabled: true,
       searchEnabled: false,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
     });
 
     const targets = await resolvePlpAutoBuildLocales();

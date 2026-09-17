@@ -71,6 +71,7 @@ describe("Language activation async job", () => {
       contentTranslationEnabled: true,
       searchEnabled: false,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
     return created;

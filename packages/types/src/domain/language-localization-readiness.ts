@@ -163,6 +163,58 @@ export type LanguageHigherAuthorityReadinessSlice = {
   readonly note: string | null;
 };
 
+/**
+ * PWA civic persisted-reading readiness (Pack 02).
+ * Distinct from Closure 07 overall READY (WEB_UI / CV / Brand / Legal).
+ */
+export type PwaCivicReadinessStatus =
+  | "DISABLED"
+  | "BACKFILL_REQUIRED"
+  | "BACKFILL_IN_PROGRESS"
+  | "READY"
+  | "DEGRADED"
+  | "FAILED";
+
+export const PWA_CIVIC_READINESS_STATUSES = [
+  "DISABLED",
+  "BACKFILL_REQUIRED",
+  "BACKFILL_IN_PROGRESS",
+  "READY",
+  "DEGRADED",
+  "FAILED",
+] as const satisfies readonly PwaCivicReadinessStatus[];
+
+export function isPwaCivicReadinessStatus(value: unknown): value is PwaCivicReadinessStatus {
+  return (
+    typeof value === "string" &&
+    (PWA_CIVIC_READINESS_STATUSES as readonly string[]).includes(value)
+  );
+}
+
+export type PwaCivicCoverageScalars = {
+  readonly current: number;
+  readonly missing: number;
+  readonly stale: number;
+  readonly failed: number;
+  readonly pending: number;
+  readonly workItemsRequired: number;
+  readonly measuredKindCount: number;
+  readonly unmeasuredKindCount: number;
+  /**
+   * `complete` — every PWA-civic kind was measured.
+   * `partial_unmeasured` — some kinds remain UNKNOWN (never reported as 100%).
+   */
+  readonly coverageMeasurement: "complete" | "partial_unmeasured";
+};
+
+export type LanguagePwaCivicReadinessSlice = {
+  readonly pwaPersistedReadingEnabled: boolean;
+  readonly pwaPersistedReadingReady: boolean;
+  readonly pwaCivicReadinessStatus: PwaCivicReadinessStatus;
+  readonly coverage: PwaCivicCoverageScalars;
+  readonly note: string | null;
+};
+
 export type LanguageLocalizationReadinessReport = {
   readonly pack: "closure07";
   readonly locale: LanguageRegistryLocale;
@@ -172,6 +224,7 @@ export type LanguageLocalizationReadinessReport = {
     readonly contentTranslationEnabled: boolean;
     readonly searchEnabled: boolean;
     readonly seoIndexingEnabled: boolean;
+    readonly pwaPersistedReadingEnabled: boolean;
   };
   /** Registry flags allow automatic CT/PLP targeting (engine path). */
   readonly engineReady: boolean;
@@ -181,6 +234,8 @@ export type LanguageLocalizationReadinessReport = {
   readonly webUi: LanguageWebUiReadinessSlice;
   readonly controlledVocabulary: LanguageControlledVocabularyReadinessSlice;
   readonly higherAuthority: LanguageHigherAuthorityReadinessSlice;
+  /** Pack 02 — PWA civic persisted-reading slice (does not require WEB_UI/CV/Brand/Legal). */
+  readonly pwaCivic: LanguagePwaCivicReadinessSlice;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
   readonly kindRows: readonly LanguageLocalizationKindStatusRow[];
@@ -288,6 +343,97 @@ export function deriveLanguageLocalizationReadinessState(input: {
     return "READY";
   }
   return "CONFIGURED";
+}
+
+/**
+ * Derive PWA civic readiness from Registry gates + bounded civic coverage.
+ * Does not require WEB_UI, Controlled Vocabulary, Brand, or Legal completeness.
+ *
+ * Safe activation:
+ * - `coverageMeasurement: "partial_unmeasured"` never becomes READY
+ *   (UNKNOWN must not be reported as complete).
+ * - READY → DEGRADED when measured CURRENT exists alongside new missing/stale work.
+ */
+export function derivePwaCivicReadinessState(input: {
+  readonly enabled: boolean;
+  readonly contentTranslationEnabled: boolean;
+  readonly pwaPersistedReadingEnabled: boolean;
+  readonly coverage: PwaCivicCoverageScalars;
+}): PwaCivicReadinessStatus {
+  if (
+    !input.enabled ||
+    !input.contentTranslationEnabled ||
+    !input.pwaPersistedReadingEnabled
+  ) {
+    return "DISABLED";
+  }
+
+  const { coverage } = input;
+  const incomplete = coverage.missing + coverage.stale;
+  const pending = coverage.pending;
+  const failed = coverage.failed;
+  const current = coverage.current;
+  const work = coverage.workItemsRequired;
+
+  if (pending > 0 && work > 0) {
+    return "BACKFILL_IN_PROGRESS";
+  }
+  if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
+    return "FAILED";
+  }
+  // Honest: unmeasured kinds in scope must not become READY.
+  if (coverage.coverageMeasurement === "partial_unmeasured" || coverage.unmeasuredKindCount > 0) {
+    if (current > 0 && incomplete === 0) {
+      return "DEGRADED";
+    }
+    return "BACKFILL_REQUIRED";
+  }
+  if (failed > 0 && current > 0 && incomplete === 0) {
+    return "DEGRADED";
+  }
+  if (incomplete > 0 || work > 0) {
+    if (current > 0 && incomplete > 0) {
+      return "DEGRADED";
+    }
+    return "BACKFILL_REQUIRED";
+  }
+  if (incomplete === 0 && failed === 0 && pending === 0) {
+    return "READY";
+  }
+  return "BACKFILL_REQUIRED";
+}
+
+export function emptyPwaCivicCoverageScalars(): PwaCivicCoverageScalars {
+  return {
+    ...emptyLanguageLocalizationCountBucket(),
+    measuredKindCount: 0,
+    unmeasuredKindCount: 0,
+    coverageMeasurement: "partial_unmeasured",
+  };
+}
+
+export function buildLanguagePwaCivicReadinessSlice(input: {
+  readonly pwaPersistedReadingEnabled: boolean;
+  readonly coverage: PwaCivicCoverageScalars;
+  readonly enabled: boolean;
+  readonly contentTranslationEnabled: boolean;
+  readonly note?: string | null;
+}): LanguagePwaCivicReadinessSlice {
+  const pwaCivicReadinessStatus = derivePwaCivicReadinessState({
+    enabled: input.enabled,
+    contentTranslationEnabled: input.contentTranslationEnabled,
+    pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,
+    coverage: input.coverage,
+  });
+  return {
+    pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,
+    pwaPersistedReadingReady: pwaCivicReadinessStatus === "READY",
+    pwaCivicReadinessStatus,
+    coverage: input.coverage,
+    note:
+      input.note ??
+      "PWA civic readiness ignores WEB_UI / Brand / Legal / Glossary completeness; missing CURRENT falls back to canonical per artifact.",
+  };
 }
 
 export type LanguageHistoricalBackfillPlanItem = {

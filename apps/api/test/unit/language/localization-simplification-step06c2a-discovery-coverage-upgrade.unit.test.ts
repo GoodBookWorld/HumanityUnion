@@ -131,6 +131,7 @@ describe("Localization Simplification Step 06C.2A — discovery coverage upgrade
       contentTranslationEnabled: false,
       searchEnabled: true,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
 

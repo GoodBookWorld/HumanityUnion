@@ -71,6 +71,11 @@ export function setLanguageRegistryForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
 }
 
+/** True when Registry is using the in-memory adapter (tests / no Mongo). */
+export function isLanguageRegistryMemoryAdapterActive(): boolean {
+  return shouldUseMemoryAdapter();
+}
+
 export function resetLanguageRegistryStoreForTests(): void {
   resetLanguageRegistryMemoryForTests();
   mongoSeedPromise = null;
@@ -156,6 +161,7 @@ function buildRecordFromCreateInput(input: LanguageRegistryCreateInput): Languag
     contentTranslationEnabled: input.contentTranslationEnabled === true,
     searchEnabled: input.searchEnabled === true,
     seoIndexingEnabled: input.seoIndexingEnabled === true,
+    pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled === true,
     aliases,
     providerMappings: { ...(input.providerMappings ?? {}) },
     createdAt: now,
@@ -246,7 +252,8 @@ export async function createLanguageRegistryRecord(
     !record.enabled &&
     (input.searchEnabled === true ||
       input.seoIndexingEnabled === true ||
-      input.contentTranslationEnabled === true)
+      input.contentTranslationEnabled === true ||
+      input.pwaPersistedReadingEnabled === true)
   ) {
     throw new LanguageRegistryValidationError(
       "Feature enablement flags require enabled=true.",
@@ -351,6 +358,8 @@ export async function updateLanguageRegistryRecord(
       input.contentTranslationEnabled ?? current.contentTranslationEnabled,
     searchEnabled: input.searchEnabled ?? current.searchEnabled,
     seoIndexingEnabled: input.seoIndexingEnabled ?? current.seoIndexingEnabled,
+    pwaPersistedReadingEnabled:
+      input.pwaPersistedReadingEnabled ?? current.pwaPersistedReadingEnabled,
     aliases: nextAliases,
     providerMappings:
       input.providerMappings !== undefined
@@ -363,7 +372,8 @@ export async function updateLanguageRegistryRecord(
     !next.enabled &&
     (input.searchEnabled === true ||
       input.seoIndexingEnabled === true ||
-      input.contentTranslationEnabled === true)
+      input.contentTranslationEnabled === true ||
+      input.pwaPersistedReadingEnabled === true)
   ) {
     throw new LanguageRegistryValidationError(
       "Feature enablement flags require enabled=true.",

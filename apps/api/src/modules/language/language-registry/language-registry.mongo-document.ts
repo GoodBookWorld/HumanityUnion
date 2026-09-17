@@ -4,6 +4,7 @@ import {
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
   normalizeLanguageRegistryLocaleKey,
+  resolvePwaPersistedReadingEnabled,
 } from "@hu/types";
 
 import { LanguageRegistryValidationError } from "./language-registry.errors.js";
@@ -23,6 +24,8 @@ export interface LanguageRegistryMongoDocument {
   contentTranslationEnabled: boolean;
   searchEnabled: boolean;
   seoIndexingEnabled: boolean;
+  /** Absent on legacy documents — coerce via resolvePwaPersistedReadingEnabled. */
+  pwaPersistedReadingEnabled?: boolean;
   aliases: string[];
   /**
    * Lowercase uniqueness keys for aliases (multikey unique index).
@@ -56,6 +59,7 @@ export function toLanguageRegistryMongoDocument(
     contentTranslationEnabled: record.contentTranslationEnabled === true,
     searchEnabled: record.searchEnabled === true,
     seoIndexingEnabled: record.seoIndexingEnabled === true,
+    pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled === true,
     aliases,
     ...(aliasKeys.length > 0 ? { aliasKeys } : {}),
     providerMappings: { ...record.providerMappings },
@@ -91,6 +95,10 @@ export function fromLanguageRegistryMongoDocument(
     contentTranslationEnabled: doc.contentTranslationEnabled === true,
     searchEnabled: doc.searchEnabled === true,
     seoIndexingEnabled: doc.seoIndexingEnabled === true,
+    pwaPersistedReadingEnabled: resolvePwaPersistedReadingEnabled(
+      doc.locale,
+      doc.pwaPersistedReadingEnabled,
+    ),
     aliases: Array.isArray(doc.aliases) ? [...doc.aliases] : [],
     providerMappings: { ...(doc.providerMappings ?? {}) },
     createdAt: doc.createdAt,

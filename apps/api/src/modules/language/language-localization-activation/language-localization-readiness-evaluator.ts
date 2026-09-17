@@ -1,14 +1,20 @@
 /**
  * Closure 07 — language localization readiness evaluator.
  * Provider-free, write-free, Registry-driven.
+ *
+ * Pack 02: corpus counts come from bounded PWA civic coverage (no full hydrate).
+ * PWA civic readiness is a distinct slice that does not require WEB_UI / CV /
+ * Brand / Legal completeness.
  */
 
 import {
   LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
+  buildLanguagePwaCivicReadinessSlice,
   deriveLanguageLocalizationReadinessState,
   emptyLanguageLocalizationCountBucket,
+  emptyPwaCivicCoverageScalars,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
   type LanguageLocalizationKindStatusRow,
@@ -22,22 +28,28 @@ import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
 import { assessControlledVocabularyReadinessForLocale } from "./assess-controlled-vocabulary-readiness.js";
 import { assessWebUiCatalogReadinessForLocale } from "./assess-web-ui-catalog-readiness.js";
 import {
-  aggregateCtCountsFromPlan,
-  aggregatePlpCountsFromPlan,
-  planLanguageHistoricalBackfill,
-  type LanguageHistoricalBackfillPlannerDeps,
-} from "./language-historical-backfill-planner.js";
+  measureBoundedPwaCivicCoverage,
+  type BoundedPwaCivicCoverageDeps,
+  type BoundedPwaCivicCoverageReport,
+} from "./bounded-pwa-civic-coverage.js";
 
 export type EvaluateLanguageLocalizationReadinessInput = {
   readonly locale: string;
   readonly registryRecord?: LanguageRegistryRecord | null;
-  readonly plannerDeps?: LanguageHistoricalBackfillPlannerDeps;
   readonly assessWebUi?: typeof assessWebUiCatalogReadinessForLocale;
   readonly assessControlledVocabulary?: typeof assessControlledVocabularyReadinessForLocale;
+  readonly assessHigherAuthority?: typeof assessHigherAuthority;
   readonly skipCorpusPlan?: boolean;
   /** Injected count buckets when skipCorpusPlan or tests supply measured state. */
   readonly ctCounts?: ReturnType<typeof emptyLanguageLocalizationCountBucket>;
   readonly plpCounts?: ReturnType<typeof emptyLanguageLocalizationCountBucket>;
+  readonly pwaCivicCoverage?: BoundedPwaCivicCoverageReport;
+  readonly coverageDeps?: BoundedPwaCivicCoverageDeps;
+  /**
+   * @deprecated Pack 02 — hydrate planner is no longer used for readiness.
+   * Kept for call-site compatibility; ignored.
+   */
+  readonly plannerDeps?: unknown;
 };
 
 async function assessHigherAuthority(locale: string): Promise<{
@@ -63,7 +75,6 @@ async function assessHigherAuthority(locale: string): Promise<{
       legalPublished =
         (privacy?.status === "published" || !privacy) &&
         (terms?.status === "published" || !terms);
-      // Honest: if neither document exists for locale, false; if any exists, require published.
       if (privacy || terms) {
         legalPublished =
           (!privacy || privacy.status === "published") &&
@@ -83,7 +94,7 @@ async function assessHigherAuthority(locale: string): Promise<{
 
 /**
  * Compute localization readiness for one Registry locale.
- * Does not call TranslationProvider. Does not mutate localization state.
+ * Does not hydrate the full public localization corpus.
  * Does not flip seoIndexingEnabled / searchEnabled.
  */
 export async function evaluateLanguageLocalizationReadiness(
@@ -100,6 +111,7 @@ export async function evaluateLanguageLocalizationReadiness(
     contentTranslationEnabled: record?.contentTranslationEnabled === true,
     searchEnabled: record?.searchEnabled === true,
     seoIndexingEnabled: record?.seoIndexingEnabled === true,
+    pwaPersistedReadingEnabled: record?.pwaPersistedReadingEnabled === true,
   };
 
   const engineReady =
@@ -108,24 +120,58 @@ export async function evaluateLanguageLocalizationReadiness(
   const assessWebUi = input.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
   const assessControlledVocabulary =
     input.assessControlledVocabulary ?? assessControlledVocabularyReadinessForLocale;
+  const assessHigher =
+    input.assessHigherAuthority ?? assessHigherAuthority;
 
   const webUi = await assessWebUi({ locale });
   const controlledVocabulary = await assessControlledVocabulary({ locale });
-  const higherAuthority = await assessHigherAuthority(locale);
+  const higherAuthority = await assessHigher(locale);
 
   let ct = input.ctCounts ?? emptyLanguageLocalizationCountBucket();
   let plpMedia = input.plpCounts ?? emptyLanguageLocalizationCountBucket();
+  let bounded: BoundedPwaCivicCoverageReport | null = input.pwaCivicCoverage ?? null;
 
-  if (!input.skipCorpusPlan && engineReady && !input.ctCounts && !input.plpCounts) {
-    const plan = await planLanguageHistoricalBackfill({
+  if (
+    !input.skipCorpusPlan &&
+    engineReady &&
+    !input.ctCounts &&
+    !input.plpCounts &&
+    !input.pwaCivicCoverage
+  ) {
+    bounded = await measureBoundedPwaCivicCoverage({
       locale,
-      registryEligible: true,
-      mode: "dry-run",
-      deps: input.plannerDeps,
+      deps: input.coverageDeps,
     });
-    ct = aggregateCtCountsFromPlan(plan);
-    plpMedia = aggregatePlpCountsFromPlan(plan);
+    ct = bounded.ct;
+    plpMedia = bounded.plpMedia;
+  } else if (input.pwaCivicCoverage) {
+    ct = input.ctCounts ?? input.pwaCivicCoverage.ct;
+    plpMedia = input.plpCounts ?? input.pwaCivicCoverage.plpMedia;
   }
+
+  const pwaCoverage = bounded?.coverage ?? emptyPwaCivicCoverageScalars();
+  const pwaCivic = buildLanguagePwaCivicReadinessSlice({
+    enabled: registry.enabled,
+    contentTranslationEnabled: registry.contentTranslationEnabled,
+    pwaPersistedReadingEnabled: registry.pwaPersistedReadingEnabled,
+    coverage:
+      input.skipCorpusPlan && !bounded
+        ? {
+            ...emptyPwaCivicCoverageScalars(),
+            ...{
+              current: ct.current + plpMedia.current,
+              missing: ct.missing + plpMedia.missing,
+              stale: ct.stale + plpMedia.stale,
+              failed: ct.failed + plpMedia.failed,
+              pending: ct.pending + plpMedia.pending,
+              workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,
+              measuredKindCount: 1,
+              unmeasuredKindCount: 0,
+              coverageMeasurement: "complete" as const,
+            },
+          }
+        : pwaCoverage,
+  });
 
   const state = deriveLanguageLocalizationReadinessState({
     enabled: registry.enabled,
@@ -142,12 +188,20 @@ export async function evaluateLanguageLocalizationReadiness(
     state === "READY";
 
   const kindRows: LanguageLocalizationKindStatusRow[] = [
-    ...LANGUAGE_ACTIVATION_CT_OWNED_KINDS.map((kindId) => ({
-      kindId,
-      ownership: "CT_OWNED" as const,
-      counts: null,
-      note: null,
-    })),
+    ...LANGUAGE_ACTIVATION_CT_OWNED_KINDS.map((kindId) => {
+      const measured = bounded?.kindRows.find((row) => row.kindId === kindId);
+      return {
+        kindId,
+        ownership: "CT_OWNED" as const,
+        counts: measured?.counts ?? null,
+        note:
+          measured?.status === "UNMEASURED"
+            ? measured.reason
+            : measured
+              ? null
+              : "Outside bounded PWA civic measure set — not counted as complete.",
+      };
+    }),
     {
       kindId: "civic_media_editorial",
       ownership: "PLP_OWNED",
@@ -178,6 +232,9 @@ export async function evaluateLanguageLocalizationReadiness(
   if (!engineReady) {
     gaps.push("Registry not enabled+contentTranslationEnabled");
   }
+  if (!registry.pwaPersistedReadingEnabled) {
+    gaps.push("pwaPersistedReadingEnabled=false (PWA civic gate closed)");
+  }
   if (!webUi.dataReady) {
     gaps.push(
       `WEB_UI catalog not ready (missing=${webUi.missingKeyCount}, empty=${webUi.emptyKeyCount}, englishFallback=${webUi.englishFallbackKeyCount})`,
@@ -199,6 +256,14 @@ export async function evaluateLanguageLocalizationReadiness(
   if (plpMedia.workItemsRequired > 0) {
     gaps.push(`PLP Media backfill work items: ${plpMedia.workItemsRequired}`);
   }
+  if (pwaCivic.coverage.unmeasuredKindCount > 0) {
+    gaps.push(
+      `PWA civic unmeasured kinds: ${pwaCivic.coverage.unmeasuredKindCount} (not reported as complete)`,
+    );
+  }
+  if (pwaCivic.pwaCivicReadinessStatus !== "READY" && registry.pwaPersistedReadingEnabled) {
+    gaps.push(`PWA civic status: ${pwaCivic.pwaCivicReadinessStatus}`);
+  }
   for (const kindId of LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS) {
     gaps.push(`${kindId}: NO_TRANSLATION_OWNER (does not block READY)`);
   }
@@ -214,6 +279,7 @@ export async function evaluateLanguageLocalizationReadiness(
     webUi,
     controlledVocabulary,
     higherAuthority,
+    pwaCivic,
     ct,
     plpMedia,
     kindRows,

@@ -127,6 +127,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         contentTranslationEnabled: false,
         searchEnabled: false,
         seoIndexingEnabled: false,
+        pwaPersistedReadingEnabled: false,
         aliases: [],
         providerMappings: {},
         createdAt: "2020-01-01T00:00:00.000Z",
@@ -156,6 +157,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         contentTranslationEnabled: false,
         searchEnabled: true,
         seoIndexingEnabled: true,
+        pwaPersistedReadingEnabled: false,
         aliases: [],
         providerMappings: {},
         createdAt: "2020-01-01T00:00:00.000Z",
@@ -267,6 +269,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
       contentTranslationEnabled: true,
       searchEnabled: false,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
 
@@ -466,6 +469,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         contentTranslationEnabled: true,
         searchEnabled: false,
         seoIndexingEnabled: false,
+        pwaPersistedReadingEnabled: false,
         aliases: [],
         providerMappings: {},
         createdAt: "2020-01-01T00:00:00.000Z",

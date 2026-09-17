@@ -23,6 +23,7 @@ export interface LanguageRegistrySeedDefinition {
   readonly contentTranslationEnabled: boolean;
   readonly searchEnabled: boolean;
   readonly seoIndexingEnabled: boolean;
+  readonly pwaPersistedReadingEnabled: boolean;
 }
 
 /**
@@ -42,6 +43,7 @@ export const LANGUAGE_REGISTRY_SEED_DEFINITIONS: readonly LanguageRegistrySeedDe
     contentTranslationEnabled: false,
     searchEnabled: true,
     seoIndexingEnabled: true,
+    pwaPersistedReadingEnabled: false,
   },
   {
     languageId: "lang-uk",
@@ -55,6 +57,7 @@ export const LANGUAGE_REGISTRY_SEED_DEFINITIONS: readonly LanguageRegistrySeedDe
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
   },
   {
     languageId: "lang-zh-Hant",
@@ -68,6 +71,7 @@ export const LANGUAGE_REGISTRY_SEED_DEFINITIONS: readonly LanguageRegistrySeedDe
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
   },
   {
     languageId: "lang-ar",
@@ -81,6 +85,7 @@ export const LANGUAGE_REGISTRY_SEED_DEFINITIONS: readonly LanguageRegistrySeedDe
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
   },
 ] as const;
 
@@ -101,6 +106,7 @@ export function buildLanguageRegistrySeedRecord(
     contentTranslationEnabled: definition.contentTranslationEnabled,
     searchEnabled: definition.searchEnabled,
     seoIndexingEnabled: definition.seoIndexingEnabled,
+    pwaPersistedReadingEnabled: definition.pwaPersistedReadingEnabled,
     aliases: [...definition.aliases],
     providerMappings: {},
     createdAt: nowIso,

@@ -58,6 +58,16 @@ function report(
       missingPreferredTermGaps: ["discussion"],
     },
     higherAuthority: { brandPublished: null, legalPublished: null, note: null },
+    pwaCivic: {
+      pwaPersistedReadingEnabled: false,
+      pwaPersistedReadingReady: false,
+      pwaCivicReadinessStatus: "DISABLED",
+      coverage: {
+        current: 0, missing: 0, stale: 0, failed: 0, pending: 0, workItemsRequired: 0,
+        measuredKindCount: 0, unmeasuredKindCount: 0, coverageMeasurement: "partial_unmeasured",
+      },
+      note: null,
+    },
     ct: {
       ...emptyLanguageLocalizationCountBucket(),
       missing: 3,
@@ -86,6 +96,7 @@ describe("Step 07B.2 — SEO readiness decoupled from Extended Localization", ()
         contentTranslationEnabled: false,
         searchEnabled: false,
         seoIndexingEnabled: true,
+        pwaPersistedReadingEnabled: false,
       },
       engineReady: false,
       languageDataReady: false,
@@ -111,6 +122,7 @@ describe("Step 07B.2 — SEO readiness decoupled from Extended Localization", ()
         contentTranslationEnabled: true,
         searchEnabled: true,
         seoIndexingEnabled: false,
+        pwaPersistedReadingEnabled: false,
       },
       languageDataReady: true,
       state: "READY",
@@ -124,6 +136,7 @@ describe("Step 07B.2 — SEO readiness decoupled from Extended Localization", ()
         contentTranslationEnabled: false,
         searchEnabled: false,
         seoIndexingEnabled: true,
+        pwaPersistedReadingEnabled: false,
       },
       state: "DISABLED",
     });
@@ -137,6 +150,7 @@ describe("Step 07B.2 — SEO readiness decoupled from Extended Localization", ()
         contentTranslationEnabled: false,
         searchEnabled: false,
         seoIndexingEnabled: true,
+        pwaPersistedReadingEnabled: false,
       },
       state: "DISABLED",
       engineReady: false,

@@ -220,6 +220,9 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
         nativeName: "Українська",
         textDirection: "ltr",
         seoIndexingEnabled: true,
+        contentTranslationEnabled: false,
+        pwaPersistedReadingEnabled: false,
+        pwaPersistedReadingReady: false,
       }),
       "Українська (Ukrainian)",
     );
@@ -231,6 +234,9 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
         nativeName: "English",
         textDirection: "ltr",
         seoIndexingEnabled: true,
+        contentTranslationEnabled: false,
+        pwaPersistedReadingEnabled: false,
+        pwaPersistedReadingReady: false,
       }),
       "English",
     );

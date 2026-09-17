@@ -12,6 +12,7 @@ import {
 import {
   listAdministrationAuditsForTarget,
   resetAdministrationAuditMemoryForTests,
+  setAdministrationAuditForceMemoryForTests,
 } from "../../../src/modules/administration/index.js";
 import {
   LanguageRegistryConflictError,
@@ -30,6 +31,7 @@ import {
 describe("Production Completion Pack 02B Task 04 — Admin write control plane", () => {
   beforeEach(async () => {
     setLanguageRegistryForceMemoryForTests(true);
+    setAdministrationAuditForceMemoryForTests(true);
     resetLanguageRegistryStoreForTests();
     resetAdministrationAuditMemoryForTests();
     setLanguageRegistryAdminAssertOverrideForTests(async (userId) => {
@@ -51,6 +53,7 @@ describe("Production Completion Pack 02B Task 04 — Admin write control plane",
     setLanguageRegistryAdminAssertOverrideForTests(null);
     resetLanguageRegistryStoreForTests();
     setLanguageRegistryForceMemoryForTests(false);
+    setAdministrationAuditForceMemoryForTests(false);
     resetAdministrationAuditMemoryForTests();
   });
 
@@ -284,6 +287,7 @@ describe("Production Completion Pack 02B Task 04 — Admin write control plane",
         searchEnabled: true,
         contentTranslationEnabled: true,
         seoIndexingEnabled: true,
+        pwaPersistedReadingEnabled: false,
       },
     });
     assert.equal(enabled.enabled, true);

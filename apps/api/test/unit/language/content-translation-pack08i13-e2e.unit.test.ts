@@ -127,6 +127,7 @@ describe("Pack 08I.13 — content translation E2E identity boundary", () => {
       uiTranslationStatus: "complete",
       searchEnabled: true,
       seoIndexingEnabled: true,
+      pwaPersistedReadingEnabled: false,
     });
     setMediaResourceForceMemoryForTests(true);
     resetInitiativeCommentStoreForTests();

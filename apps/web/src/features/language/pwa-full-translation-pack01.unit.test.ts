@@ -1,5 +1,7 @@
 /**
  * PWA Full Translation Pack 01 — ordinary-reading ownership + WEB invariant.
+ * Pack 02 generalized the allowlist to Registry/readiness gates; Pack 01
+ * behavioral invariants for uk/ar/zh-Hant remain under those gates.
  */
 
 import assert from "node:assert/strict";
@@ -8,9 +10,10 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import type { PwaPersistedOrdinaryReadingEligibility } from "@hu/types";
+
 import {
   isOrdinaryReadingPublicNewsExclusion,
-  PWA_PERSISTED_ORDINARY_READING_LANGUAGES,
   resolveOrdinaryReadingOwner,
   shouldResolveHuPersistedOrdinaryReading,
 } from "./ordinary-reading-ownership.js";
@@ -22,16 +25,22 @@ function readFeatures(rel: string): string {
   return readFileSync(path.join(featuresRoot, rel), "utf8");
 }
 
-describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
-  it("enables hu-persisted only for standalone + uk|ar|zh-Hant", () => {
-    assert.deepEqual([...PWA_PERSISTED_ORDINARY_READING_LANGUAGES], ["uk", "ar", "zh-Hant"]);
+const pack01Eligible: PwaPersistedOrdinaryReadingEligibility = {
+  enabled: true,
+  contentTranslationEnabled: true,
+  pwaPersistedReadingEnabled: true,
+  pwaPersistedReadingReady: true,
+};
 
+describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
+  it("enables hu-persisted for standalone + uk|ar|zh-Hant when Registry gates pass", () => {
     for (const language of ["uk", "ar", "zh-Hant"] as const) {
       assert.equal(
         resolveOrdinaryReadingOwner({
           presentationMode: "standalone",
           preferredReadingLanguage: language,
           sourceKind: "initiative",
+          pwaEligibility: pack01Eligible,
         }),
         "hu-persisted",
       );
@@ -40,6 +49,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
           presentationMode: "standalone",
           preferredReadingLanguage: language,
           sourceKind: "collaborative_analysis",
+          pwaEligibility: pack01Eligible,
         }),
         true,
       );
@@ -53,6 +63,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
           presentationMode: "browser",
           preferredReadingLanguage: language,
           sourceKind: "initiative",
+          pwaEligibility: pack01Eligible,
         }),
         "browser-native",
       );
@@ -65,6 +76,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
         presentationMode: "standalone",
         preferredReadingLanguage: "en",
         sourceKind: "blog_post",
+        pwaEligibility: pack01Eligible,
       }),
       "browser-native",
     );
@@ -77,6 +89,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
         presentationMode: "standalone",
         preferredReadingLanguage: "uk",
         sourceKind: "public_news",
+        pwaEligibility: pack01Eligible,
       }),
       "browser-native",
     );

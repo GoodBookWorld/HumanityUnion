@@ -56,6 +56,11 @@ export interface LanguageRegistryRecord {
   readonly searchEnabled: boolean;
   /** Independent of `enabled` — SEO/indexing readiness. */
   readonly seoIndexingEnabled: boolean;
+  /**
+   * Admin gate for hu-persisted ordinary reading in standalone PWA.
+   * Independent of Search/SEO. Does not by itself imply civic CURRENT coverage.
+   */
+  readonly pwaPersistedReadingEnabled: boolean;
   /** Alternate tags that resolve to this canonical locale (e.g. zh-TW → zh-Hant). */
   readonly aliases: readonly LanguageRegistryLocale[];
   readonly providerMappings: LanguageProviderMappings;
@@ -76,6 +81,7 @@ export interface LanguageRegistryCreateInput {
   readonly contentTranslationEnabled?: boolean;
   readonly searchEnabled?: boolean;
   readonly seoIndexingEnabled?: boolean;
+  readonly pwaPersistedReadingEnabled?: boolean;
   readonly aliases?: readonly LanguageRegistryLocale[];
   readonly providerMappings?: LanguageProviderMappings;
 }
@@ -90,6 +96,7 @@ export interface LanguageRegistryUpdateInput {
   readonly contentTranslationEnabled?: boolean;
   readonly searchEnabled?: boolean;
   readonly seoIndexingEnabled?: boolean;
+  readonly pwaPersistedReadingEnabled?: boolean;
   readonly aliases?: readonly LanguageRegistryLocale[];
   readonly providerMappings?: LanguageProviderMappings;
   /**
@@ -119,6 +126,15 @@ export interface LanguageRegistryPublic {
   readonly uiTranslationStatus: LanguageUiTranslationStatus;
   /** Eligible for SEO-indexable locale-prefixed public documents when true. */
   readonly seoIndexingEnabled: boolean;
+  /** CT warm / PLP auto-build target eligibility (Registry flag). */
+  readonly contentTranslationEnabled: boolean;
+  /** Admin gate for hu-persisted ordinary reading in standalone PWA. */
+  readonly pwaPersistedReadingEnabled: boolean;
+  /**
+   * Derived: PWA civic CURRENT coverage is READY for this locale.
+   * Computed for the public catalog; not a durable Admin write field.
+   */
+  readonly pwaPersistedReadingReady: boolean;
   readonly aliases: readonly LanguageRegistryLocale[];
 }
 
@@ -143,6 +159,7 @@ export interface LanguageRegistryAdmin {
   readonly contentTranslationEnabled: boolean;
   readonly searchEnabled: boolean;
   readonly seoIndexingEnabled: boolean;
+  readonly pwaPersistedReadingEnabled: boolean;
   readonly aliases: readonly LanguageRegistryLocale[];
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -203,4 +220,57 @@ export interface SeoIndexableLanguageRecord {
  */
 export function isSeoIndexableLanguage(record: SeoIndexableLanguageRecord): boolean {
   return record.enabled === true && record.seoIndexingEnabled === true;
+}
+
+/**
+ * Pack 01 locales that receive `pwaPersistedReadingEnabled=true` when the
+ * durable field is absent on an existing Registry document (read-time default).
+ * Not a runtime PWA eligibility allowlist — ownership uses Registry + readiness.
+ */
+export const LEGACY_PWA_PERSISTED_READING_DEFAULT_TRUE_LOCALES = [
+  "uk",
+  "ar",
+  "zh-Hant",
+] as const;
+
+export function defaultPwaPersistedReadingEnabledForLocale(locale: string): boolean {
+  const key = normalizeLanguageRegistryLocaleKey(locale);
+  return (LEGACY_PWA_PERSISTED_READING_DEFAULT_TRUE_LOCALES as readonly string[]).some(
+    (entry) => normalizeLanguageRegistryLocaleKey(entry) === key,
+  );
+}
+
+/**
+ * Resolve durable flag with Pack 01 backward-compatible default when unset.
+ */
+export function resolvePwaPersistedReadingEnabled(
+  locale: string,
+  stored: boolean | null | undefined,
+): boolean {
+  if (typeof stored === "boolean") {
+    return stored;
+  }
+  return defaultPwaPersistedReadingEnabledForLocale(locale);
+}
+
+/**
+ * Registry + readiness gates for hu-persisted ordinary reading in standalone PWA.
+ * Presentation mode and public_news exclusion are applied by the owner resolver.
+ */
+export interface PwaPersistedOrdinaryReadingEligibility {
+  readonly enabled: boolean;
+  readonly contentTranslationEnabled: boolean;
+  readonly pwaPersistedReadingEnabled: boolean;
+  readonly pwaPersistedReadingReady: boolean;
+}
+
+export function isPwaPersistedOrdinaryReadingEligible(
+  input: PwaPersistedOrdinaryReadingEligibility,
+): boolean {
+  return (
+    input.enabled === true &&
+    input.contentTranslationEnabled === true &&
+    input.pwaPersistedReadingEnabled === true &&
+    input.pwaPersistedReadingReady === true
+  );
 }

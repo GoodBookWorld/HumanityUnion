@@ -8,6 +8,16 @@ export {
 export type { LanguageHistoricalBackfillPlannerDeps } from "./language-historical-backfill-planner.js";
 export { evaluateLanguageLocalizationReadiness } from "./language-localization-readiness-evaluator.js";
 export type { EvaluateLanguageLocalizationReadinessInput } from "./language-localization-readiness-evaluator.js";
+export {
+  measureBoundedPwaCivicCoverage,
+  setBoundedPwaCivicCoverageDepsForTests,
+  buildPwaCivicBoundedMeasurePlans,
+  PWA_CIVIC_BOUNDED_CT_KINDS,
+} from "./bounded-pwa-civic-coverage.js";
+export type {
+  BoundedPwaCivicCoverageDeps,
+  BoundedPwaCivicCoverageReport,
+} from "./bounded-pwa-civic-coverage.js";
 export { activateLanguageLocalization } from "./language-activation-orchestrator.js";
 export type {
   ActivateLanguageLocalizationInput,

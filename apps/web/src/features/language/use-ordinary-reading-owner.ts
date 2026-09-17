@@ -1,9 +1,10 @@
 /**
- * PWA Full Translation Pack 01 — client ordinary-reading ownership hook.
+ * Language Architecture Pack 02 — client ordinary-reading ownership hook.
  *
  * SSR and first paint default to browser-native (hydration-safe canonical DOM).
- * After mount, standalone detection may upgrade to hu-persisted; callers then
- * cache-only resolve CURRENT translation without provider generation.
+ * After mount, standalone detection + public Registry catalog may upgrade to
+ * hu-persisted; callers then cache-only resolve CURRENT translation without
+ * provider generation.
  */
 
 "use client";
@@ -11,13 +12,22 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 
-import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
+import type {
+  ContentTranslationSourceKind,
+  LanguageCode,
+  PwaPersistedOrdinaryReadingEligibility,
+} from "@hu/types";
+import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
 
 import {
   resolvePresentationMode,
   subscribePresentationMode,
   type HuPresentationMode,
 } from "../pwa/presentation-mode";
+import {
+  listSelectablePublicLanguages,
+  PUBLIC_LANGUAGES_CHANGED_EVENT,
+} from "./public-languages-api";
 import { resolvePublicContentDisplayLanguage } from "./resolve-public-content-display-language";
 import {
   resolveOrdinaryReadingOwner,
@@ -36,6 +46,27 @@ export interface OrdinaryReadingOwnerState {
   readonly ownershipReady: boolean;
 }
 
+type PublicPwaEligibilityRow = PwaPersistedOrdinaryReadingEligibility & {
+  readonly locale: string;
+};
+
+function findEligibility(
+  rows: readonly PublicPwaEligibilityRow[],
+  locale: string,
+): PwaPersistedOrdinaryReadingEligibility | null {
+  const key = normalizeLanguageRegistryLocaleKey(locale);
+  const row = rows.find((entry) => normalizeLanguageRegistryLocaleKey(entry.locale) === key);
+  if (!row) {
+    return null;
+  }
+  return {
+    enabled: row.enabled,
+    contentTranslationEnabled: row.contentTranslationEnabled,
+    pwaPersistedReadingEnabled: row.pwaPersistedReadingEnabled,
+    pwaPersistedReadingReady: row.pwaPersistedReadingReady,
+  };
+}
+
 export function useOrdinaryReadingOwner(input?: {
   readonly sourceKind?: ContentTranslationSourceKind | string | null;
 }): OrdinaryReadingOwnerState {
@@ -45,6 +76,8 @@ export function useOrdinaryReadingOwner(input?: {
   // Hydration-safe: SSR + first client paint stay browser-native.
   const [presentationMode, setPresentationMode] = useState<HuPresentationMode>("browser");
   const [ownershipReady, setOwnershipReady] = useState(false);
+  const [pwaEligibility, setPwaEligibility] =
+    useState<PwaPersistedOrdinaryReadingEligibility | null>(null);
 
   useEffect(() => {
     const apply = (mode: HuPresentationMode) => {
@@ -55,11 +88,51 @@ export function useOrdinaryReadingOwner(input?: {
     return subscribePresentationMode(apply);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const languages = await listSelectablePublicLanguages();
+        if (cancelled) {
+          return;
+        }
+        const rows: PublicPwaEligibilityRow[] = languages.map((row) => ({
+          locale: row.locale,
+          enabled: true,
+          contentTranslationEnabled: row.contentTranslationEnabled === true,
+          pwaPersistedReadingEnabled: row.pwaPersistedReadingEnabled === true,
+          pwaPersistedReadingReady: row.pwaPersistedReadingReady === true,
+        }));
+        setPwaEligibility(findEligibility(rows, preferredReadingLanguage));
+      } catch {
+        if (!cancelled) {
+          setPwaEligibility(null);
+        }
+      }
+    };
+
+    void load();
+    const onChanged = () => {
+      void load();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener(PUBLIC_LANGUAGES_CHANGED_EVENT, onChanged);
+    }
+    return () => {
+      cancelled = true;
+      if (typeof window !== "undefined") {
+        window.removeEventListener(PUBLIC_LANGUAGES_CHANGED_EVENT, onChanged);
+      }
+    };
+  }, [preferredReadingLanguage]);
+
   const owner = ownershipReady
     ? resolveOrdinaryReadingOwner({
         presentationMode,
         preferredReadingLanguage,
         sourceKind: input?.sourceKind,
+        pwaEligibility,
       })
     : "browser-native";
 

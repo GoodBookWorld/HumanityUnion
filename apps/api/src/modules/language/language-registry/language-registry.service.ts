@@ -14,6 +14,7 @@ import type {
 } from "@hu/types";
 import {
   DEFAULT_PLATFORM_LANGUAGE,
+  buildLanguagePwaCivicReadinessSlice,
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
   normalizeLanguageRegistryLocaleKey,
@@ -27,15 +28,75 @@ import {
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
 import { invalidateGlobalSearchIndex } from "../../global-search/global-search.index.js";
+import { measureBoundedPwaCivicCoverage } from "../language-localization-activation/bounded-pwa-civic-coverage.js";
 import {
   LanguageRegistryNotFoundError,
   LanguageRegistryValidationError,
 } from "./language-registry.errors.js";
 import {
   createLanguageRegistryRecord,
+  isLanguageRegistryMemoryAdapterActive,
   listLanguageRegistry,
   updateLanguageRegistryRecord,
 } from "./language-registry.repository.js";
+
+/** Short TTL so GET /languages does not re-aggregate on every field/component. */
+const PUBLIC_PWA_READY_TTL_MS = 30_000;
+
+const publicPwaReadyCache = new Map<
+  string,
+  { readonly ready: boolean; readonly fetchedAtMs: number }
+>();
+
+export function resetPublicPwaReadyCacheForTests(): void {
+  publicPwaReadyCache.clear();
+}
+
+async function resolvePublicPwaPersistedReadingReady(
+  record: LanguageRegistryRecord,
+): Promise<boolean> {
+  if (
+    !record.enabled ||
+    !record.contentTranslationEnabled ||
+    !record.pwaPersistedReadingEnabled
+  ) {
+    return false;
+  }
+
+  // Memory adapter / unconfigured Mongo: never block public catalog on coverage I/O.
+  if (isLanguageRegistryMemoryAdapterActive()) {
+    return false;
+  }
+
+  const cached = publicPwaReadyCache.get(record.locale);
+  const now = Date.now();
+  if (cached && now - cached.fetchedAtMs < PUBLIC_PWA_READY_TTL_MS) {
+    return cached.ready;
+  }
+
+  try {
+    const measured = await measureBoundedPwaCivicCoverage({
+      locale: record.locale,
+      deps: {
+        isMongoReady: () => !isLanguageRegistryMemoryAdapterActive(),
+      },
+    });
+    const slice = buildLanguagePwaCivicReadinessSlice({
+      enabled: record.enabled,
+      contentTranslationEnabled: record.contentTranslationEnabled,
+      pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled,
+      coverage: measured.coverage,
+    });
+    publicPwaReadyCache.set(record.locale, {
+      ready: slice.pwaPersistedReadingReady,
+      fetchedAtMs: now,
+    });
+    return slice.pwaPersistedReadingReady;
+  } catch {
+    publicPwaReadyCache.set(record.locale, { ready: false, fetchedAtMs: now });
+    return false;
+  }
+}
 
 type AdminActor = {
   userId: string;
@@ -78,6 +139,10 @@ function toPublicLanguage(record: LanguageRegistryRecord): LanguageRegistryPubli
     fallbackLocale: record.fallbackLocale,
     uiTranslationStatus: record.uiTranslationStatus,
     seoIndexingEnabled: record.seoIndexingEnabled === true,
+    contentTranslationEnabled: record.contentTranslationEnabled === true,
+    pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled === true,
+    // Filled by listPublicLanguages after bounded readiness evaluation.
+    pwaPersistedReadingReady: false,
     aliases: [...record.aliases],
   };
 }
@@ -96,6 +161,7 @@ function toAdminLanguage(record: LanguageRegistryRecord): LanguageRegistryAdmin 
     contentTranslationEnabled: record.contentTranslationEnabled,
     searchEnabled: record.searchEnabled,
     seoIndexingEnabled: record.seoIndexingEnabled,
+    pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled,
     aliases: [...record.aliases],
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -112,6 +178,7 @@ function summarizeLanguage(record: LanguageRegistryRecord): string {
     `content=${record.contentTranslationEnabled}`,
     `search=${record.searchEnabled}`,
     `seo=${record.seoIndexingEnabled}`,
+    `pwaPersisted=${record.pwaPersistedReadingEnabled}`,
     `aliases=${record.aliases.length}`,
   ].join(" ");
 }
@@ -208,6 +275,7 @@ function parseCreateBody(body: unknown): LanguageRegistryCreateInput {
     contentTranslationEnabled: optionalBoolean(record, "contentTranslationEnabled"),
     searchEnabled: optionalBoolean(record, "searchEnabled"),
     seoIndexingEnabled: optionalBoolean(record, "seoIndexingEnabled"),
+    pwaPersistedReadingEnabled: optionalBoolean(record, "pwaPersistedReadingEnabled"),
     aliases: optionalStringArray(record, "aliases")?.map((alias) =>
       assertBcp47Locale(alias, "aliases"),
     ),
@@ -243,6 +311,7 @@ function parsePatchBody(body: unknown): LanguageRegistryUpdateInput {
     contentTranslationEnabled?: boolean;
     searchEnabled?: boolean;
     seoIndexingEnabled?: boolean;
+    pwaPersistedReadingEnabled?: boolean;
     aliases?: string[];
   } = {};
 
@@ -284,6 +353,9 @@ function parsePatchBody(body: unknown): LanguageRegistryUpdateInput {
   if ("seoIndexingEnabled" in record) {
     patch.seoIndexingEnabled = optionalBoolean(record, "seoIndexingEnabled");
   }
+  if ("pwaPersistedReadingEnabled" in record) {
+    patch.pwaPersistedReadingEnabled = optionalBoolean(record, "pwaPersistedReadingEnabled");
+  }
   if ("aliases" in record) {
     patch.aliases = optionalStringArray(record, "aliases")?.map((alias) =>
       assertBcp47Locale(alias, "aliases"),
@@ -309,9 +381,15 @@ function resolveUpdateAuditAction(
 
 export async function listPublicLanguages(): Promise<LanguageRegistryPublicListResponse> {
   const records = await listLanguageRegistry();
-  return {
-    languages: records.filter((row) => row.enabled === true).map(toPublicLanguage),
-  };
+  const enabled = records.filter((row) => row.enabled === true);
+  const languages = await Promise.all(
+    enabled.map(async (record) => {
+      const base = toPublicLanguage(record);
+      const pwaPersistedReadingReady = await resolvePublicPwaPersistedReadingReady(record);
+      return { ...base, pwaPersistedReadingReady };
+    }),
+  );
+  return { languages };
 }
 
 export async function listAdminLanguages(input: {
@@ -381,6 +459,7 @@ export async function updateAdminLanguage(input: {
     !(before.enabled === true && before.searchEnabled === true);
   if (
     becameSearchDiscoveryEligible &&
+    !isLanguageRegistryMemoryAdapterActive() &&
     normalizeLanguageRegistryLocaleKey(updated.locale) !==
       normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
   ) {
@@ -406,6 +485,7 @@ export async function updateAdminLanguage(input: {
     !(before.enabled === true && before.contentTranslationEnabled === true);
   if (
     becameCtEligible &&
+    !isLanguageRegistryMemoryAdapterActive() &&
     normalizeLanguageRegistryLocaleKey(updated.locale) !==
       normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
   ) {

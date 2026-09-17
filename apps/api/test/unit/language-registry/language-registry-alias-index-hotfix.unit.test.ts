@@ -44,6 +44,7 @@ function baseRecord(
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
     providerMappings: {},
     createdAt: "2026-08-30T00:00:00.000Z",
     updatedAt: "2026-08-30T00:00:00.000Z",

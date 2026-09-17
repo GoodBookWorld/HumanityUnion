@@ -46,6 +46,7 @@ interface LanguageFormState {
   contentTranslationEnabled: boolean;
   searchEnabled: boolean;
   seoIndexingEnabled: boolean;
+  pwaPersistedReadingEnabled: boolean;
   aliasesText: string;
 }
 
@@ -63,6 +64,7 @@ function emptyForm(fallbackLocale = "en"): LanguageFormState {
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
     aliasesText: "",
   };
 }
@@ -79,6 +81,7 @@ function toForm(row: LanguageRegistryAdmin): LanguageFormState {
     contentTranslationEnabled: row.contentTranslationEnabled,
     searchEnabled: row.searchEnabled,
     seoIndexingEnabled: row.seoIndexingEnabled,
+    pwaPersistedReadingEnabled: row.pwaPersistedReadingEnabled,
     aliasesText: row.aliases.join(", "),
   };
 }
@@ -173,6 +176,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           contentTranslationEnabled: form.contentTranslationEnabled,
           searchEnabled: form.searchEnabled,
           seoIndexingEnabled: form.seoIndexingEnabled,
+          pwaPersistedReadingEnabled: form.pwaPersistedReadingEnabled,
           aliases,
         };
         await updateAdminLanguage(editingId, patch);
@@ -189,6 +193,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           contentTranslationEnabled: form.contentTranslationEnabled,
           searchEnabled: form.searchEnabled,
           seoIndexingEnabled: form.seoIndexingEnabled,
+          pwaPersistedReadingEnabled: form.pwaPersistedReadingEnabled,
           aliases,
         };
         await createAdminLanguage(createBody);
@@ -459,6 +464,20 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                 />
                 SEO indexing
               </label>
+              <label className="admin-languages__form-check">
+                <input
+                  type="checkbox"
+                  checked={form.pwaPersistedReadingEnabled}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pwaPersistedReadingEnabled: event.target.checked,
+                    }))
+                  }
+                />
+                PWA persisted reading
+              </label>
             </div>
             {!editingId ? (
               <p className="hu-caption admin-languages__form-note">
@@ -497,6 +516,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   <th>Content</th>
                   <th>Search</th>
                   <th>SEO</th>
+                  <th>PWA</th>
                   <th>Localization</th>
                   <th>Fallback</th>
                   <th>Actions</th>
@@ -526,6 +546,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>{yesNo(row.contentTranslationEnabled)}</td>
                       <td>{yesNo(row.searchEnabled)}</td>
                       <td>{yesNo(row.seoIndexingEnabled)}</td>
+                      <td>{yesNo(row.pwaPersistedReadingEnabled)}</td>
                       <td>
                         {activation === "loading" || readiness === "loading" ? (
                           <span className="hu-caption">Checking…</span>
@@ -538,6 +559,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             </div>
                             <div>
                               Extended: <code>{activation.readiness.state}</code>
+                            </div>
+                            <div>
+                              PWA civic:{" "}
+                              <code>{activation.readiness.pwaCivic.pwaCivicReadinessStatus}</code>
+                              {activation.readiness.pwaCivic.pwaPersistedReadingReady
+                                ? " · ready"
+                                : ""}
                             </div>
                             <div>
                               Search-ready=
@@ -555,13 +583,18 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             </div>
                             <div>
                               CT rem={activation.readiness.ct.workItemsRequired} · PLP rem=
-                              {activation.readiness.plpMedia.workItemsRequired}
+                              {activation.readiness.plpMedia.workItemsRequired} · PWA miss=
+                              {activation.readiness.pwaCivic.coverage.missing}
                             </div>
                           </div>
                         ) : readiness && typeof readiness === "object" ? (
                           <div className="hu-caption">
                             <div>
                               Extended: <code>{readiness.state}</code>
+                            </div>
+                            <div>
+                              PWA civic: <code>{readiness.pwaCivic.pwaCivicReadinessStatus}</code>
+                              {readiness.pwaCivic.pwaPersistedReadingReady ? " · ready" : ""}
                             </div>
                             <div>
                               Search-ready=

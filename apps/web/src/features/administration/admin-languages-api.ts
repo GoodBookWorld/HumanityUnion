@@ -23,6 +23,7 @@ export interface AdminLanguageCreateInput {
   readonly contentTranslationEnabled?: boolean;
   readonly searchEnabled?: boolean;
   readonly seoIndexingEnabled?: boolean;
+  readonly pwaPersistedReadingEnabled?: boolean;
   readonly aliases?: readonly string[];
 }
 
@@ -36,6 +37,7 @@ export interface AdminLanguagePatchInput {
   readonly contentTranslationEnabled?: boolean;
   readonly searchEnabled?: boolean;
   readonly seoIndexingEnabled?: boolean;
+  readonly pwaPersistedReadingEnabled?: boolean;
   readonly aliases?: readonly string[];
 }
 

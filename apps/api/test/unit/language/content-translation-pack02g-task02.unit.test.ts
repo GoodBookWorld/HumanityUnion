@@ -106,6 +106,7 @@ describe("Production Completion Pack 02G Task 02 — eligibility + sourceVersion
       uiTranslationStatus: "complete",
       searchEnabled: true,
       seoIndexingEnabled: true,
+      pwaPersistedReadingEnabled: false,
     });
     await createLanguageRegistryRecord({
       locale: "g2-warm-b",
@@ -150,6 +151,7 @@ describe("Production Completion Pack 02G Task 02 — eligibility + sourceVersion
     await updateLanguageRegistryRecord("lang-uk", {
       searchEnabled: true,
       seoIndexingEnabled: true,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "complete",
     });
     const afterFlags = await listAutomaticContentTranslationTargetLocales();

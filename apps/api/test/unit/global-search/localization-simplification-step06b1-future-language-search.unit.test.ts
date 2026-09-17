@@ -151,6 +151,7 @@ function notReadyExtendedLocalizationReport(): LanguageLocalizationReadinessRepo
       contentTranslationEnabled: false,
       searchEnabled: true,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
     },
     webUi: {
       engineReady: false,
@@ -170,6 +171,16 @@ function notReadyExtendedLocalizationReport(): LanguageLocalizationReadinessRepo
       missingPreferredTermGaps: ["discussion"],
     },
     higherAuthority: { brandPublished: null, legalPublished: null, note: null },
+    pwaCivic: {
+      pwaPersistedReadingEnabled: false,
+      pwaPersistedReadingReady: false,
+      pwaCivicReadinessStatus: "DISABLED",
+      coverage: {
+        current: 0, missing: 0, stale: 0, failed: 0, pending: 0, workItemsRequired: 0,
+        measuredKindCount: 0, unmeasuredKindCount: 0, coverageMeasurement: "partial_unmeasured",
+      },
+      note: null,
+    },
     ct: {
       ...emptyLanguageLocalizationCountBucket(),
       missing: 5,
@@ -203,6 +214,7 @@ async function registerFutureSearchLocale(input?: {
     contentTranslationEnabled: false,
     searchEnabled: input?.searchEnabled !== false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
     aliases: [],
   });
 }

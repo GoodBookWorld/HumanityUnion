@@ -198,6 +198,7 @@ describe("Localization Simplification Step 06C.1 — Initiative Search discovery
       contentTranslationEnabled: false,
       searchEnabled: true,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
 
@@ -398,6 +399,7 @@ describe("Localization Simplification Step 06C.1 — Initiative Search discovery
       contentTranslationEnabled: true,
       searchEnabled: true,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
 
@@ -530,6 +532,7 @@ describe("Localization Simplification Step 06C.1 — Initiative Search discovery
           contentTranslationEnabled: false,
           searchEnabled: true,
           seoIndexingEnabled: false,
+          pwaPersistedReadingEnabled: false,
         },
       }),
       true,

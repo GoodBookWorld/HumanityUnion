@@ -105,6 +105,7 @@ describe("Production Completion Pack 02G Task 04 — durable warm + outbox", () 
       uiTranslationStatus: "complete",
       searchEnabled: false,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
     });
     await createLanguageRegistryRecord({
       locale: "g4-warm-b",

@@ -36,15 +36,10 @@ export {
 export type { CivicContentSourceKind } from "./localization-ownership";
 export {
   isOrdinaryReadingPublicNewsExclusion,
-  isPwaPersistedOrdinaryReadingLanguage,
-  PWA_PERSISTED_ORDINARY_READING_LANGUAGES,
   resolveOrdinaryReadingOwner,
   shouldResolveHuPersistedOrdinaryReading,
 } from "./ordinary-reading-ownership";
-export type {
-  OrdinaryReadingOwner,
-  PwaPersistedOrdinaryReadingLanguage,
-} from "./ordinary-reading-ownership";
+export type { OrdinaryReadingOwner } from "./ordinary-reading-ownership";
 export {
   applyControlledPublicVocabularyToProse,
   presentCollaborativeAnalysisFieldsWithControlledVocabulary,

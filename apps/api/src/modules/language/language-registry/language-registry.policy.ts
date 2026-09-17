@@ -39,6 +39,11 @@ export function assertLanguageRegistryAdminPolicy(
   if (candidate.contentTranslationEnabled && !enabled) {
     throw new LanguageRegistryValidationError("contentTranslationEnabled requires enabled=true.");
   }
+  if (candidate.pwaPersistedReadingEnabled && !enabled) {
+    throw new LanguageRegistryValidationError(
+      "pwaPersistedReadingEnabled requires enabled=true.",
+    );
+  }
 
   if (isCanonicalEnglishLocale(candidate.locale)) {
     if (!enabled) {
@@ -104,7 +109,8 @@ export function applyDisabledFeatureFlagClearance(
   if (
     !candidate.contentTranslationEnabled &&
     !candidate.searchEnabled &&
-    !candidate.seoIndexingEnabled
+    !candidate.seoIndexingEnabled &&
+    !candidate.pwaPersistedReadingEnabled
   ) {
     return candidate;
   }
@@ -113,5 +119,6 @@ export function applyDisabledFeatureFlagClearance(
     contentTranslationEnabled: false,
     searchEnabled: false,
     seoIndexingEnabled: false,
+    pwaPersistedReadingEnabled: false,
   };
 }

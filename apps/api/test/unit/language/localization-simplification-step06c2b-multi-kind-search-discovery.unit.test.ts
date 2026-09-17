@@ -151,6 +151,7 @@ describe("Localization Simplification Step 06C.2B — multi-kind Search discover
       contentTranslationEnabled: false,
       searchEnabled: true,
       seoIndexingEnabled: false,
+      pwaPersistedReadingEnabled: false,
       uiTranslationStatus: "none",
     });
 
