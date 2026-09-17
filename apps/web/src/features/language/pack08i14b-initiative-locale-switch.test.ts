@@ -245,10 +245,12 @@ describe("Pack 08I.14B — wiring regressions", () => {
     const hook = readWeb(
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
-    assert.match(hook, /presentationMode:\s*"original"/);
+    assert.match(hook, /selectBrowserNativeInitiativePresentation/);
     assert.match(hook, /useOrdinaryReadingOwner/);
     assert.match(hook, /owner !== "hu-persisted"/);
     assert.match(hook, /resolveInitiativeDetailPresentation/);
+    assert.match(hook, /initialPresentation/);
+    assert.match(hook, /seedLocaleRef/);
     assert.doesNotMatch(hook, /generateContentTranslation/);
   });
 });

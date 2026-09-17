@@ -66,6 +66,7 @@ Additional Version 5.0 reading invariants:
 - Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist).
 - Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
 - Pre-Pack-02 Registry documents missing `pwaPersistedReadingEnabled` coerce enabled only for historically accepted Pack 01 locales (`uk`, `ar`, `zh-Hant`); arbitrary future locales with the field absent remain disabled.
+- Initiative public title/description: under `hu-persisted` only, a locale-matched SSR `initialPresentation` seed may paint while ownership/reading context settles; cache-only CURRENT resolve then owns the hero/overview presentation object. Normal Web must not consume that seed as ordinary visible presentation.
 
 ---
 

@@ -1,8 +1,11 @@
 /**
  * Ordinary Initiative public presentation.
  *
- * Pack 1 WEB: canonical title/description only (browser-native).
- * PWA Pack 01: standalone + uk|ar|zh-Hant → cache-only CURRENT persisted fields.
+ * Version 5.0 / Pack 1 WEB: canonical title/description only (browser-native).
+ * Version 5.0 installed PWA: owner === hu-persisted → SSR seed (locale-matched)
+ * + cache-only CURRENT CT resolve → hero/overview presentation object.
+ *
+ * Do not restore persisted ordinary presentation on normal Web.
  */
 
 "use client";
@@ -10,15 +13,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 
-import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 
 import { useOrdinaryReadingOwner } from "../language/use-ordinary-reading-owner";
 import { usePublicContentReadingContext } from "../language/use-public-content-reading-context";
+import {
+  isDistinctInitiativePresentationSeed,
+  selectBrowserNativeInitiativePresentation,
+  selectHuPersistedInitiativeLocaleInterim,
+  selectHuPersistedInitiativeResolvedPresentation,
+  selectHuPersistedInitiativeSeedPresentation,
+} from "./initiative-ordinary-presentation-selection";
 import { resolveInitiativeDetailPresentation } from "./resolve-initiative-detail-presentation";
 import {
   mergeInitiativePublicPresentationUpdate,
   resolveInitiativePublicDisplayLanguage,
-  selectInitiativePublicPresentation,
   type InitiativePublicPresentation,
   type InitiativePublicPresentationCanonical,
 } from "./initiative-public-presentation";
@@ -33,48 +42,92 @@ export function useInitiativePublicPresentation(input: {
   const displayLanguage = resolveInitiativePublicDisplayLanguage(interfaceLocale);
   const { owner, ownershipReady } = useOrdinaryReadingOwner({ sourceKind: "initiative" });
   const requestGeneration = useRef(0);
+  /**
+   * SSR seed is bound to the Preferred Reading / interface locale at the moment
+   * ownership first becomes hu-persisted. After a PWA locale switch, seed must
+   * not reintroduce another language's translated bag.
+   */
+  const seedLocaleRef = useRef<LanguageCode | null>(null);
 
+  // Hydration-safe: SSR + first client paint stay canonical (WEB invariant).
   const [presentation, setPresentation] = useState<InitiativePublicPresentation>(() =>
-    selectInitiativePublicPresentation({
-      canonical: input.canonical,
-      presentationMode: "original",
-      activeLanguage: DEFAULT_PLATFORM_LANGUAGE,
-      originalLanguage: DEFAULT_PLATFORM_LANGUAGE,
-      canViewOriginal: false,
-      canViewTranslation: false,
-      isMachineTranslated: false,
-    }),
+    selectBrowserNativeInitiativePresentation(input.canonical),
   );
 
+  // Pack 08I.14B / Version 5.0 — drop prior-locale translation immediately.
   useEffect(() => {
-    // WEB / English / ownership not ready: stay canonical.
     if (!ownershipReady || owner !== "hu-persisted") {
-      setPresentation(
-        selectInitiativePublicPresentation({
-          canonical: input.canonical,
-          presentationMode: "original",
-          activeLanguage: DEFAULT_PLATFORM_LANGUAGE,
-          originalLanguage: DEFAULT_PLATFORM_LANGUAGE,
-          canViewOriginal: false,
-          canViewTranslation: false,
-          isMachineTranslated: false,
-        }),
-      );
+      return;
+    }
+    setPresentation((previous) => {
+      if (previous.activeLanguage === displayLanguage) {
+        return previous;
+      }
+      return selectHuPersistedInitiativeLocaleInterim({
+        canonical: {
+          title: previous.originalTitle,
+          description: previous.originalDescription,
+        },
+        displayLanguage,
+        originalLanguage: previous.originalLanguage,
+      });
+    });
+  }, [displayLanguage, ownershipReady, owner]);
+
+  useEffect(() => {
+    // WEB / ownership not ready: visible ordinary reading stays canonical.
+    // Do not consume persisted seed as normal-Web presentation.
+    if (!ownershipReady || owner !== "hu-persisted") {
+      seedLocaleRef.current = null;
+      setPresentation(selectBrowserNativeInitiativePresentation(input.canonical));
       return;
     }
 
+    if (seedLocaleRef.current === null) {
+      seedLocaleRef.current = displayLanguage;
+    }
+
+    const seedLocale = seedLocaleRef.current;
+    const seedUsable =
+      seedLocale === displayLanguage &&
+      isDistinctInitiativePresentationSeed(input.canonical, input.initialPresentation);
+
     if (!readingContext.ready) {
-      setPresentation(
-        selectInitiativePublicPresentation({
-          canonical: input.canonical,
-          activeLanguage: displayLanguage,
-        }),
-      );
+      // Keep / apply locale-matched seed while capability settles — do not
+      // permanently destroy seed needed once resolve can run.
+      if (seedUsable && input.initialPresentation) {
+        setPresentation(
+          selectHuPersistedInitiativeSeedPresentation({
+            canonical: input.canonical,
+            seed: input.initialPresentation,
+            displayLanguage,
+          }),
+        );
+      } else {
+        setPresentation(
+          selectHuPersistedInitiativeLocaleInterim({
+            canonical: input.canonical,
+            displayLanguage,
+          }),
+        );
+      }
       return;
     }
 
     const generation = ++requestGeneration.current;
     let cancelled = false;
+
+    // Settling paint: seed when locale-matched; otherwise interim canonical.
+    if (seedUsable && input.initialPresentation) {
+      setPresentation(
+        selectHuPersistedInitiativeSeedPresentation({
+          canonical: input.canonical,
+          seed: input.initialPresentation,
+          displayLanguage,
+        }),
+      );
+    }
+
     void resolveInitiativeDetailPresentation({
       initiativeId: input.initiativeId,
       canonical: input.canonical,
@@ -90,23 +143,7 @@ export function useInitiativePublicPresentation(input: {
       if (resolved.activeLanguage !== displayLanguage) {
         return;
       }
-      const next = selectInitiativePublicPresentation({
-        canonical: {
-          title: resolved.originalTitle,
-          description: resolved.originalDescription,
-        },
-        translated:
-          resolved.presentationMode === "translated"
-            ? { title: resolved.title, description: resolved.description }
-            : null,
-        presentationMode: resolved.presentationMode,
-        activeLanguage: resolved.activeLanguage,
-        originalLanguage: resolved.originalLanguage,
-        isMachineTranslated: resolved.isMachineTranslated,
-        isStale: resolved.isStale,
-        canViewOriginal: resolved.canViewOriginal,
-        canViewTranslation: resolved.canViewTranslation,
-      });
+      const next = selectHuPersistedInitiativeResolvedPresentation(resolved);
       setPresentation((previous) =>
         mergeInitiativePublicPresentationUpdate({ previous, next }),
       );
@@ -121,6 +158,7 @@ export function useInitiativePublicPresentation(input: {
     displayLanguage,
     input.canonical.description,
     input.canonical.title,
+    input.initialPresentation,
     input.initiativeId,
     readingContext.ready,
     readingContext.translationPreference,

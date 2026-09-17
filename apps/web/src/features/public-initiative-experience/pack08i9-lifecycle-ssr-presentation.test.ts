@@ -173,7 +173,10 @@ describe("Pack 08I.9 — PIE SSR-first seed + hydration", () => {
     assert.match(experiencePage, /useInitiativePublicPresentation/);
     assert.match(experiencePage, /initialPresentation/);
     assert.match(overview, /presentationDescription/);
-    assert.match(hook, /keep SSR seed|!input\.initialPresentation/);
+    // Version 5.0: locale-matched SSR seed is consumed under hu-persisted only.
+    assert.match(hook, /initialPresentation/);
+    assert.match(hook, /seedLocaleRef|selectHuPersistedInitiativeSeedPresentation/);
+    assert.match(hook, /owner !== "hu-persisted"/);
   });
 
   it("EXISTING UK initiative translation → detail presentation (TRANSLATION_EXISTS_BUT_NOT_DISPLAYED=0)", async () => {
