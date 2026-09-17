@@ -1,14 +1,18 @@
 /**
  * Pack 02 — bounded-memory PWA civic localization coverage.
  *
- * Production readiness/activation path replacement for hydrate-heavy
- * `auditPublicLocalizationCorpus` polling. Mongo aggregations / scalar counts
- * only; sequential sourceKind processing; no corpus Maps; no workItems[] /
- * candidates[] accumulation; no translated prose returned to Node; no provider;
- * no warm/backfill; no Mongo writes.
+ * PRESENTATION-COVERAGE readiness (not character volume, not live sourceVersion-
+ * perfect identity matching). Compares expected public ordinary-reading
+ * presentation identities against persisted CURRENT content_translations rows
+ * with the same honesty level for every included CT kind:
  *
- * Patterns adapted from diagnose-staging-ct-coverage-light (domain service,
- * not a diagnostic script call).
+ *   approximateMissing = max(0, eligiblePresentationIdentities - current)
+ *
+ * Never hydrates localization corpus Maps/workItems; no provider/warm/write;
+ * no translated prose returned to Node merely to count it.
+ *
+ * public_news is permanently excluded from this corpus (visible RSS ordinary
+ * reading stays source/original).
  */
 
 import type { Document } from "mongodb";
@@ -24,31 +28,55 @@ import {
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
-import { CONTENT_TRANSLATION_FIELD_ALLOWLIST } from "../content-translation-eligibility.js";
 import {
   classifyMediaEditorialLocalizationForLocale,
   type MediaHuLocalizationIntegrityStatus,
 } from "../media-hu-localization-integrity.js";
 import { isLanguageRegistryMemoryAdapterActive } from "../language-registry/language-registry.repository.js";
 
-/** PWA civic CT kinds measurable via flat bounded aggregation. */
+/**
+ * Full ordinary-reading PWA civic CT readiness corpus (presentation identities).
+ * Excludes public_news. civic_media editorial is measured via PLP separately.
+ */
 export const PWA_CIVIC_BOUNDED_CT_KINDS = [
   "initiative",
-  "collaborative_analysis",
-  "blog_post",
   "discussion_comment",
+  "collaborative_analysis",
+  "improvement_proposal",
+  "petition",
+  "initiative_revision",
+  "decision_session",
+  "collective_decision",
+  "implementation_commitment",
+  "implementation_tracking",
   "official_response",
+  "public_impact",
+  "civic_archive",
+  "blog_post",
 ] as const satisfies readonly ContentTranslationSourceKind[];
 
 export type PwaCivicBoundedCtKind = (typeof PWA_CIVIC_BOUNDED_CT_KINDS)[number];
+
+/** Proposal statuses counted by warm Part D discovery / extractPublicImprovementProposalIds. */
+export const PWA_CIVIC_IMPROVEMENT_PROPOSAL_PUBLIC_STATUSES = [
+  "published",
+  "included_in_revision",
+  "keep_for_later",
+  "not_applicable",
+] as const;
 
 type BoundedKindMeasurePlan = {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly status: "measured" | "UNMEASURED";
   readonly collectionName?: string;
+  /**
+   * `documents` — count matching docs as presentation identities.
+   * `improvement_proposal_unwind` — published collections × public proposalIds.
+   */
+  readonly identityMode?: "documents" | "improvement_proposal_unwind";
   readonly match?: Document;
-  readonly allowlistedFields?: readonly string[];
   readonly reason?: string;
+  readonly eligibilityNote?: string;
 };
 
 export type PwaCivicKindCoverageRow = {
@@ -68,6 +96,8 @@ export type BoundedPwaCivicCoverageReport = {
   readonly PROVIDER_CALLS: 0;
   readonly WRITES_PERFORMED: 0;
   readonly usedFullCorpusHydrate: false;
+  /** Explicit Pack 02 readiness model marker. */
+  readonly readinessModel: "presentation_coverage";
 };
 
 export type BoundedPwaCivicCoverageDeps = {
@@ -94,28 +124,6 @@ function computeApproximateMissing(input: {
   readonly current: number;
 }): number {
   return Math.max(0, input.canonicalEligible - input.current);
-}
-
-function mongoStringFieldCharLen(fieldPath: string): Document {
-  return {
-    $cond: [
-      { $eq: [{ $type: fieldPath }, "string"] },
-      { $strLenCP: fieldPath },
-      0,
-    ],
-  };
-}
-
-function mongoSumAllowlistedFieldChars(fields: readonly string[]): Document | number {
-  if (fields.length === 0) {
-    return 0;
-  }
-  if (fields.length === 1) {
-    return mongoStringFieldCharLen(`$${fields[0]}`);
-  }
-  return {
-    $add: fields.map((field) => mongoStringFieldCharLen(`$${field}`)),
-  };
 }
 
 /** CT status counts — grouped scalars only (never translatedContent). */
@@ -184,31 +192,28 @@ export function buildPwaCivicCtStatusCountsPipeline(
   ];
 }
 
-export function buildPwaCivicCanonicalEligiblePipeline(input: {
-  readonly match: Document;
-  readonly allowlistedFields: readonly string[];
-}): Document[] {
+/** Count matching documents as presentation identities (no character volume). */
+export function buildPresentationIdentityCountPipeline(match: Document): Document[] {
+  return [{ $match: match }, { $count: "eligibleRecords" }];
+}
+
+/**
+ * Improvement Proposal presentation IDs — aligns with
+ * listPublishedImprovementProposalIdsPage / extractPublicImprovementProposalIds.
+ */
+export function buildImprovementProposalIdentityCountPipeline(): Document[] {
   return [
-    { $match: input.match },
+    { $match: { status: "published" } },
+    { $unwind: "$proposals" },
     {
-      $project: {
-        _chars: mongoSumAllowlistedFieldChars(input.allowlistedFields),
+      $match: {
+        "proposals.status": {
+          $in: [...PWA_CIVIC_IMPROVEMENT_PROPOSAL_PUBLIC_STATUSES],
+        },
+        "proposals.proposalId": { $type: "string", $ne: "" },
       },
     },
-    {
-      $group: {
-        _id: null,
-        eligibleRecords: { $sum: 1 },
-        eligibleCharacters: { $sum: "$_chars" },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        eligibleRecords: 1,
-        eligibleCharacters: 1,
-      },
-    },
+    { $count: "eligibleRecords" },
   ];
 }
 
@@ -232,89 +237,121 @@ function plpBucketFromStatus(
   }
 }
 
+function documentPlan(
+  sourceKind: ContentTranslationSourceKind,
+  collectionName: string,
+  match: Document,
+  eligibilityNote: string,
+): BoundedKindMeasurePlan {
+  return {
+    sourceKind,
+    status: "measured",
+    collectionName,
+    identityMode: "documents",
+    match,
+    eligibilityNote,
+  };
+}
+
+/**
+ * Bounded presentation-identity measure plans for the full PWA civic CT corpus.
+ * Eligibility predicates reuse warm/public projection rules (not character allowlists).
+ */
 export function buildPwaCivicBoundedMeasurePlans(): readonly BoundedKindMeasurePlan[] {
-  const plans: BoundedKindMeasurePlan[] = [];
-
-  for (const sourceKind of PWA_CIVIC_BOUNDED_CT_KINDS) {
-    const fields = CONTENT_TRANSLATION_FIELD_ALLOWLIST[sourceKind];
-    if (!fields?.length) {
-      plans.push({
-        sourceKind,
-        status: "UNMEASURED",
-        reason: `CONTENT_TRANSLATION_FIELD_ALLOWLIST for ${sourceKind} is empty.`,
-      });
-      continue;
-    }
-
-    if (sourceKind === "initiative") {
-      plans.push({
-        sourceKind,
-        status: "measured",
-        collectionName: MONGO_COLLECTIONS.initiatives,
-        match: {
-          lifecyclePhase: "projected",
-          "visibility.policy": "public",
-        },
-        allowlistedFields: [...fields],
-      });
-      continue;
-    }
-
-    if (sourceKind === "collaborative_analysis") {
-      plans.push({
-        sourceKind,
-        status: "measured",
-        collectionName: MONGO_COLLECTIONS.initiativeAnalyses,
-        match: { status: "published" },
-        allowlistedFields: [...fields],
-      });
-      continue;
-    }
-
-    if (sourceKind === "blog_post") {
-      plans.push({
-        sourceKind,
-        status: "measured",
-        collectionName: MONGO_COLLECTIONS.blogPosts,
-        match: { status: "published" },
-        allowlistedFields: [...fields],
-      });
-      continue;
-    }
-
-    if (sourceKind === "discussion_comment") {
-      plans.push({
-        sourceKind,
-        status: "measured",
-        collectionName: MONGO_COLLECTIONS.initiativeComments,
-        match: {
-          status: "approved",
-          deletedAt: { $exists: false },
-        },
-        allowlistedFields: [...fields],
-      });
-      continue;
-    }
-
-    if (sourceKind === "official_response") {
-      plans.push({
-        sourceKind,
-        status: "measured",
-        collectionName: MONGO_COLLECTIONS.officialResponses,
-        match: { publicationStatus: { $ne: "draft" } },
-        allowlistedFields: [...fields],
-      });
-      continue;
-    }
-
-    plans.push({
-      sourceKind,
-      status: "UNMEASURED",
-      reason: `No bounded measure plan for ${sourceKind}.`,
-    });
-  }
-
-  return plans;
+  return [
+    documentPlan(
+      "initiative",
+      MONGO_COLLECTIONS.initiatives,
+      {
+        lifecyclePhase: "projected",
+        "visibility.policy": "public",
+      },
+      "Public projected initiatives (bounded Pack 02 core).",
+    ),
+    documentPlan(
+      "discussion_comment",
+      MONGO_COLLECTIONS.initiativeComments,
+      {
+        status: "approved",
+        deletedAt: { $exists: false },
+      },
+      "Approved non-deleted discussion comments.",
+    ),
+    documentPlan(
+      "collaborative_analysis",
+      MONGO_COLLECTIONS.initiativeAnalyses,
+      { status: "published" },
+      "Published collaborative analyses.",
+    ),
+    {
+      sourceKind: "improvement_proposal",
+      status: "measured",
+      collectionName: MONGO_COLLECTIONS.initiativeImprovementProposalsCollections,
+      identityMode: "improvement_proposal_unwind",
+      eligibilityNote:
+        "Published Part D collections × public proposal statuses (warm listPublishedImprovementProposalIdsPage).",
+    },
+    documentPlan(
+      "petition",
+      MONGO_COLLECTIONS.petitions,
+      { status: { $ne: "Draft" } },
+      "Non-draft petitions (CT warm discovery eligibility).",
+    ),
+    documentPlan(
+      "initiative_revision",
+      MONGO_COLLECTIONS.initiativeVersionRevisions,
+      {},
+      "All version revisions (warm discovery lists revisions for public initiatives; CT identity = revisionId).",
+    ),
+    documentPlan(
+      "decision_session",
+      MONGO_COLLECTIONS.decisionSessions,
+      { status: { $in: ["published", "closed"] } },
+      "Public decision sessions (published|closed).",
+    ),
+    documentPlan(
+      "collective_decision",
+      MONGO_COLLECTIONS.initiativeCollectiveDecisions,
+      { status: { $in: ["opened", "closed", "cancelled"] } },
+      "Public collective decisions (opened|closed|cancelled).",
+    ),
+    documentPlan(
+      "implementation_commitment",
+      MONGO_COLLECTIONS.initiativeImplementationCommitments,
+      { status: { $in: ["published", "withdrawn", "completed"] } },
+      "Public implementation commitments (published|withdrawn|completed).",
+    ),
+    documentPlan(
+      "implementation_tracking",
+      MONGO_COLLECTIONS.initiativeImplementationTrackings,
+      { status: { $in: ["active", "completed", "archived"] } },
+      "Public implementation trackings (active|completed|archived).",
+    ),
+    documentPlan(
+      "official_response",
+      MONGO_COLLECTIONS.officialResponses,
+      { publicationStatus: { $ne: "draft" } },
+      "Non-draft official responses (bounded Pack 02 core).",
+    ),
+    documentPlan(
+      "public_impact",
+      MONGO_COLLECTIONS.initiativePublicImpacts,
+      { status: { $in: ["published", "verified", "archived"] } },
+      "Public impacts (published|verified|archived).",
+    ),
+    documentPlan(
+      "civic_archive",
+      MONGO_COLLECTIONS.publicCivicArchiveRecords,
+      { status: "published" },
+      "Published civic archive records.",
+    ),
+    documentPlan(
+      "blog_post",
+      MONGO_COLLECTIONS.blogPosts,
+      { status: "published" },
+      "Published blog posts.",
+    ),
+  ];
 }
 
 async function defaultAggregate(
@@ -345,8 +382,42 @@ function sumBuckets(
   return { current, missing, stale, failed, pending, workItemsRequired };
 }
 
+function unmeasuredReport(locale: string, reason: string): BoundedPwaCivicCoverageReport {
+  const coverage = emptyPwaCivicCoverageScalars();
+  return {
+    locale,
+    coverage: {
+      ...coverage,
+      unmeasuredKindCount: PWA_CIVIC_BOUNDED_CT_KINDS.length + 1,
+      coverageMeasurement: "partial_unmeasured",
+    },
+    kindRows: [
+      ...PWA_CIVIC_BOUNDED_CT_KINDS.map((kindId) => ({
+        kindId,
+        ownership: "CT_OWNED" as const,
+        status: "UNMEASURED" as const,
+        counts: null,
+        reason,
+      })),
+      {
+        kindId: "civic_media_editorial",
+        ownership: "PLP_OWNED" as const,
+        status: "UNMEASURED" as const,
+        counts: null,
+        reason,
+      },
+    ],
+    ct: emptyLanguageLocalizationCountBucket(),
+    plpMedia: emptyLanguageLocalizationCountBucket(),
+    PROVIDER_CALLS: 0,
+    WRITES_PERFORMED: 0,
+    usedFullCorpusHydrate: false,
+    readinessModel: "presentation_coverage",
+  };
+}
+
 /**
- * Measure PWA civic CURRENT coverage for one locale.
+ * Measure PWA civic presentation-coverage for one locale.
  * Never hydrates full localization corpus. Never writes. Never calls providers.
  */
 export async function measureBoundedPwaCivicCoverage(input: {
@@ -368,36 +439,10 @@ export async function measureBoundedPwaCivicCoverage(input: {
     deps.classifyMediaEditorial ?? classifyMediaEditorialLocalizationForLocale;
 
   if (!mongoReady()) {
-    const coverage = emptyPwaCivicCoverageScalars();
-    return {
+    return unmeasuredReport(
       locale,
-      coverage: {
-        ...coverage,
-        unmeasuredKindCount: PWA_CIVIC_BOUNDED_CT_KINDS.length + 1,
-        coverageMeasurement: "partial_unmeasured",
-      },
-      kindRows: [
-        ...PWA_CIVIC_BOUNDED_CT_KINDS.map((kindId) => ({
-          kindId,
-          ownership: "CT_OWNED" as const,
-          status: "UNMEASURED" as const,
-          counts: null,
-          reason: "Mongo not configured — cannot measure CURRENT coverage.",
-        })),
-        {
-          kindId: "civic_media_editorial",
-          ownership: "PLP_OWNED" as const,
-          status: "UNMEASURED" as const,
-          counts: null,
-          reason: "Mongo not configured — cannot measure PLP editorial.",
-        },
-      ],
-      ct: emptyLanguageLocalizationCountBucket(),
-      plpMedia: emptyLanguageLocalizationCountBucket(),
-      PROVIDER_CALLS: 0,
-      WRITES_PERFORMED: 0,
-      usedFullCorpusHydrate: false,
-    };
+      "Mongo not configured — cannot measure presentation coverage.",
+    );
   }
 
   try {
@@ -407,36 +452,10 @@ export async function measureBoundedPwaCivicCoverage(input: {
       classifyMedia,
     });
   } catch {
-    const coverage = emptyPwaCivicCoverageScalars();
-    return {
+    return unmeasuredReport(
       locale,
-      coverage: {
-        ...coverage,
-        unmeasuredKindCount: PWA_CIVIC_BOUNDED_CT_KINDS.length + 1,
-        coverageMeasurement: "partial_unmeasured",
-      },
-      kindRows: [
-        ...PWA_CIVIC_BOUNDED_CT_KINDS.map((kindId) => ({
-          kindId,
-          ownership: "CT_OWNED" as const,
-          status: "UNMEASURED" as const,
-          counts: null,
-          reason: "Bounded coverage measurement failed — treating as UNMEASURED.",
-        })),
-        {
-          kindId: "civic_media_editorial",
-          ownership: "PLP_OWNED" as const,
-          status: "UNMEASURED" as const,
-          counts: null,
-          reason: "Bounded coverage measurement failed — treating as UNMEASURED.",
-        },
-      ],
-      ct: emptyLanguageLocalizationCountBucket(),
-      plpMedia: emptyLanguageLocalizationCountBucket(),
-      PROVIDER_CALLS: 0,
-      WRITES_PERFORMED: 0,
-      usedFullCorpusHydrate: false,
-    };
+      "Bounded coverage measurement failed — treating as UNMEASURED.",
+    );
   }
 }
 
@@ -463,7 +482,7 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
 
   // Sequential sourceKind processing — no multi-kind hydrate.
   for (const plan of plans) {
-    if (plan.status === "UNMEASURED" || !plan.collectionName || !plan.match) {
+    if (plan.status === "UNMEASURED" || !plan.collectionName || !plan.identityMode) {
       unmeasuredKindCount += 1;
       kindRows.push({
         kindId: plan.sourceKind,
@@ -475,13 +494,12 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
       continue;
     }
 
-    const eligibleDocs = await aggregate(
-      plan.collectionName,
-      buildPwaCivicCanonicalEligiblePipeline({
-        match: plan.match,
-        allowlistedFields: plan.allowlistedFields ?? [],
-      }),
-    );
+    const identityPipeline =
+      plan.identityMode === "improvement_proposal_unwind"
+        ? buildImprovementProposalIdentityCountPipeline()
+        : buildPresentationIdentityCountPipeline(plan.match ?? {});
+
+    const eligibleDocs = await aggregate(plan.collectionName, identityPipeline);
     const eligibleRecords =
       typeof eligibleDocs[0]?.eligibleRecords === "number"
         ? eligibleDocs[0].eligibleRecords
@@ -512,7 +530,7 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
       ownership: "CT_OWNED",
       status: "measured",
       counts,
-      reason: null,
+      reason: plan.eligibilityNote ?? null,
     });
   }
 
@@ -526,7 +544,7 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
       ownership: "PLP_OWNED",
       status: "measured",
       counts: plpMedia,
-      reason: null,
+      reason: "PLP HU-owned civic media editorial presentation.",
     });
   } catch {
     unmeasuredKindCount += 1;
@@ -562,5 +580,6 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
     PROVIDER_CALLS: 0,
     WRITES_PERFORMED: 0,
     usedFullCorpusHydrate: false,
+    readinessModel: "presentation_coverage",
   };
 }

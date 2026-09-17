@@ -561,7 +561,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               Extended: <code>{activation.readiness.state}</code>
                             </div>
                             <div>
-                              PWA civic:{" "}
+                              PWA civic presentation coverage:{" "}
                               <code>{activation.readiness.pwaCivic.pwaCivicReadinessStatus}</code>
                               {activation.readiness.pwaCivic.pwaPersistedReadingReady
                                 ? " · ready"
@@ -593,7 +593,8 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               Extended: <code>{readiness.state}</code>
                             </div>
                             <div>
-                              PWA civic: <code>{readiness.pwaCivic.pwaCivicReadinessStatus}</code>
+                              PWA civic presentation coverage:{" "}
+                              <code>{readiness.pwaCivic.pwaCivicReadinessStatus}</code>
                               {readiness.pwaCivic.pwaPersistedReadingReady ? " · ready" : ""}
                             </div>
                             <div>

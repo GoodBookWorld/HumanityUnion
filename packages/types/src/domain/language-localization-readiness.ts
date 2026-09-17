@@ -212,6 +212,12 @@ export type LanguagePwaCivicReadinessSlice = {
   readonly pwaPersistedReadingReady: boolean;
   readonly pwaCivicReadinessStatus: PwaCivicReadinessStatus;
   readonly coverage: PwaCivicCoverageScalars;
+  /**
+   * Pack 02 READY = bounded ordinary civic **presentation-coverage** for the
+   * target locale (eligible presentation identities vs CURRENT rows). Not
+   * character volume, WEB_UI/Brand/Legal/Glossary completeness, or guaranteed
+   * live sourceVersion-perfect readiness.
+   */
   readonly note: string | null;
 };
 
@@ -432,7 +438,7 @@ export function buildLanguagePwaCivicReadinessSlice(input: {
     coverage: input.coverage,
     note:
       input.note ??
-      "PWA civic readiness ignores WEB_UI / Brand / Legal / Glossary completeness; missing CURRENT falls back to canonical per artifact.",
+      "PWA civic presentation coverage: eligible ordinary-reading presentation identities vs CURRENT persisted rows (approximateMissing). Ignores WEB_UI / Brand / Legal / Glossary; not character volume or live sourceVersion-perfect. Missing CURRENT falls back to canonical per artifact. public_news excluded.",
   };
 }
 

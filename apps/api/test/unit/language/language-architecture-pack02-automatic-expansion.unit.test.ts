@@ -22,8 +22,12 @@ import {
 } from "@hu/types";
 
 import {
+  buildImprovementProposalIdentityCountPipeline,
+  buildPresentationIdentityCountPipeline,
+  buildPwaCivicBoundedMeasurePlans,
   evaluateLanguageLocalizationReadiness,
   measureBoundedPwaCivicCoverage,
+  PWA_CIVIC_BOUNDED_CT_KINDS,
   setBoundedPwaCivicCoverageDepsForTests,
 } from "../../../src/modules/language/language-localization-activation/index.js";
 import { fromLanguageRegistryMongoDocument } from "../../../src/modules/language/language-registry/language-registry.mongo-document.js";
@@ -41,6 +45,9 @@ import {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const apiSrc = path.resolve(here, "../../../src");
 
+/** Full corpus = 14 CT kinds + civic_media editorial PLP. */
+const FULL_PWA_CIVIC_KIND_COUNT = PWA_CIVIC_BOUNDED_CT_KINDS.length + 1;
+
 function coverageReady(overrides?: Partial<PwaCivicCoverageScalars>): PwaCivicCoverageScalars {
   return {
     current: 10,
@@ -49,10 +56,24 @@ function coverageReady(overrides?: Partial<PwaCivicCoverageScalars>): PwaCivicCo
     failed: 0,
     pending: 0,
     workItemsRequired: 0,
-    measuredKindCount: 6,
+    measuredKindCount: FULL_PWA_CIVIC_KIND_COUNT,
     unmeasuredKindCount: 0,
     coverageMeasurement: "complete",
     ...overrides,
+  };
+}
+
+function emptyOverrideReport(locale: string, coverage: PwaCivicCoverageScalars) {
+  return {
+    locale,
+    coverage,
+    kindRows: [],
+    ct: emptyLanguageLocalizationCountBucket(),
+    plpMedia: emptyLanguageLocalizationCountBucket(),
+    PROVIDER_CALLS: 0 as const,
+    WRITES_PERFORMED: 0 as const,
+    usedFullCorpusHydrate: false as const,
+    readinessModel: "presentation_coverage" as const,
   };
 }
 
@@ -252,6 +273,77 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
     setBoundedPwaCivicCoverageDepsForTests(null);
   });
 
+  it("full PWA civic CT corpus includes lifecycle kinds and excludes public_news", () => {
+    const kinds = [...PWA_CIVIC_BOUNDED_CT_KINDS];
+    for (const required of [
+      "improvement_proposal",
+      "petition",
+      "initiative_revision",
+      "decision_session",
+      "collective_decision",
+      "implementation_commitment",
+      "implementation_tracking",
+      "public_impact",
+      "civic_archive",
+      "initiative",
+      "discussion_comment",
+      "collaborative_analysis",
+      "official_response",
+      "blog_post",
+    ] as const) {
+      assert.ok(kinds.includes(required), `missing ${required}`);
+    }
+    assert.equal(kinds.includes("public_news" as never), false);
+    assert.equal(kinds.length, 14);
+
+    const plans = buildPwaCivicBoundedMeasurePlans();
+    assert.equal(plans.length, 14);
+    const byKind = new Map(plans.map((p) => [p.sourceKind, p]));
+    assert.equal(byKind.get("improvement_proposal")?.identityMode, "improvement_proposal_unwind");
+    assert.equal(JSON.stringify(byKind.get("petition")?.match), JSON.stringify({ status: { $ne: "Draft" } }));
+    assert.equal(
+      JSON.stringify(byKind.get("decision_session")?.match),
+      JSON.stringify({ status: { $in: ["published", "closed"] } }),
+    );
+    assert.equal(
+      JSON.stringify(byKind.get("collective_decision")?.match),
+      JSON.stringify({ status: { $in: ["opened", "closed", "cancelled"] } }),
+    );
+    assert.equal(
+      JSON.stringify(byKind.get("implementation_commitment")?.match),
+      JSON.stringify({ status: { $in: ["published", "withdrawn", "completed"] } }),
+    );
+    assert.equal(
+      JSON.stringify(byKind.get("implementation_tracking")?.match),
+      JSON.stringify({ status: { $in: ["active", "completed", "archived"] } }),
+    );
+    assert.equal(
+      JSON.stringify(byKind.get("public_impact")?.match),
+      JSON.stringify({ status: { $in: ["published", "verified", "archived"] } }),
+    );
+    assert.equal(JSON.stringify(byKind.get("civic_archive")?.match), JSON.stringify({ status: "published" }));
+    assert.equal(JSON.stringify(byKind.get("initiative_revision")?.match), "{}");
+  });
+
+  it("identity pipelines count presentation IDs — no character volume", () => {
+    const source = readFileSync(
+      path.join(
+        apiSrc,
+        "modules/language/language-localization-activation/bounded-pwa-civic-coverage.ts",
+      ),
+      "utf8",
+    );
+    assert.doesNotMatch(source, /\$strLenCP|characterVolume|translatedChars|canonicalChars/);
+    assert.match(source, /presentation_coverage/);
+    assert.match(source, /approximateMissing/);
+
+    const identity = buildPresentationIdentityCountPipeline({ status: "published" });
+    assert.equal(identity.at(-1)?.$count, "eligibleRecords");
+    const ip = buildImprovementProposalIdentityCountPipeline();
+    assert.ok(ip.some((stage) => stage.$unwind === "$proposals"));
+    assert.equal(ip.at(-1)?.$count, "eligibleRecords");
+  });
+
   it("does not call full corpus hydrate / provider / warm / write", async () => {
     const source = readFileSync(
       path.join(
@@ -288,29 +380,163 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
     assert.equal(report.usedFullCorpusHydrate, false);
     assert.equal(report.PROVIDER_CALLS, 0);
     assert.equal(report.WRITES_PERFORMED, 0);
+    assert.equal(report.readinessModel, "presentation_coverage");
     assert.ok(report.coverage.unmeasuredKindCount > 0);
     assert.equal(report.coverage.coverageMeasurement, "partial_unmeasured");
     assert.ok(report.kindRows.every((row) => row.status === "UNMEASURED"));
+    assert.ok(report.kindRows.some((row) => row.kindId === "civic_media_editorial"));
+    assert.equal(
+      report.kindRows.some((row) => row.kindId === "public_news"),
+      false,
+    );
   });
 
   it("accepts injected coverage without provider side effects", async () => {
     const injected = await measureBoundedPwaCivicCoverage({
       locale: "xx-Test",
       deps: {
-        coverageOverride: {
-          locale: "xx-Test",
-          coverage: coverageReady(),
-          kindRows: [],
-          ct: emptyLanguageLocalizationCountBucket(),
-          plpMedia: emptyLanguageLocalizationCountBucket(),
-          PROVIDER_CALLS: 0,
-          WRITES_PERFORMED: 0,
-          usedFullCorpusHydrate: false,
-        },
+        coverageOverride: emptyOverrideReport("xx-Test", coverageReady()),
       },
     });
     assert.equal(injected.coverage.coverageMeasurement, "complete");
     assert.equal(injected.coverage.missing, 0);
+    assert.equal(injected.readinessModel, "presentation_coverage");
+  });
+
+  it("aggregate path: missing CURRENT in any included kind yields approximateMissing", async () => {
+    const collectionsSeen: string[] = [];
+    setBoundedPwaCivicCoverageDepsForTests({
+      isMongoReady: () => true,
+      classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+      aggregate: async (collectionName, pipeline) => {
+        collectionsSeen.push(collectionName);
+        if (collectionName === "content_translations") {
+          return [
+            {
+              targetLanguage: "uk",
+              sourceKind: "initiative",
+              current: 1,
+              stale: 0,
+            },
+          ];
+        }
+        // Every eligible source collection reports 2 presentation identities.
+        if (pipeline.some((stage) => stage.$count === "eligibleRecords")) {
+          return [{ eligibleRecords: 2 }];
+        }
+        return [];
+      },
+    });
+
+    const report = await measureBoundedPwaCivicCoverage({ locale: "uk" });
+    assert.equal(report.readinessModel, "presentation_coverage");
+    assert.equal(report.coverage.coverageMeasurement, "complete");
+    assert.equal(report.coverage.unmeasuredKindCount, 0);
+    assert.equal(report.kindRows.length, FULL_PWA_CIVIC_KIND_COUNT);
+
+    const ip = report.kindRows.find((r) => r.kindId === "improvement_proposal");
+    assert.ok(ip && ip.status === "measured" && ip.counts);
+    assert.equal(ip.counts.missing, 2); // eligible 2, current 0
+
+    const petition = report.kindRows.find((r) => r.kindId === "petition");
+    assert.ok(petition && petition.status === "measured" && petition.counts);
+    assert.equal(petition.counts.missing, 2);
+
+    for (const kind of [
+      "initiative_revision",
+      "decision_session",
+      "collective_decision",
+      "implementation_commitment",
+      "implementation_tracking",
+      "public_impact",
+      "civic_archive",
+    ] as const) {
+      const row = report.kindRows.find((r) => r.kindId === kind);
+      assert.ok(row && row.status === "measured" && row.counts, kind);
+      assert.equal(row.counts.missing, 2, kind);
+    }
+
+    const media = report.kindRows.find((r) => r.kindId === "civic_media_editorial");
+    assert.ok(media);
+    assert.equal(media.ownership, "PLP_OWNED");
+    assert.equal(media.status, "measured");
+    assert.equal(media.counts?.current, 1);
+
+    assert.equal(
+      report.kindRows.some((r) => r.kindId === "public_news"),
+      false,
+    );
+    assert.ok(report.coverage.missing > 0);
+    assert.doesNotMatch(collectionsSeen.join(","), /public_news/);
+  });
+
+  it("complete presentation coverage across all included kinds permits READY", async () => {
+    setBoundedPwaCivicCoverageDepsForTests({
+      isMongoReady: () => true,
+      classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+      aggregate: async (collectionName, pipeline) => {
+        if (collectionName === "content_translations") {
+          return PWA_CIVIC_BOUNDED_CT_KINDS.map((sourceKind) => ({
+            targetLanguage: "ar",
+            sourceKind,
+            current: 2,
+            stale: 0,
+          }));
+        }
+        if (pipeline.some((stage) => stage.$count === "eligibleRecords")) {
+          return [{ eligibleRecords: 2 }];
+        }
+        return [];
+      },
+    });
+
+    const report = await measureBoundedPwaCivicCoverage({ locale: "ar" });
+    assert.equal(report.coverage.missing, 0);
+    assert.equal(report.coverage.stale, 0);
+    assert.equal(report.coverage.unmeasuredKindCount, 0);
+    assert.equal(report.coverage.coverageMeasurement, "complete");
+
+    const status = derivePwaCivicReadinessState({
+      enabled: true,
+      contentTranslationEnabled: true,
+      pwaPersistedReadingEnabled: true,
+      coverage: report.coverage,
+    });
+    assert.equal(status, "READY");
+  });
+
+  it("UNKNOWN/UNMEASURED included kind cannot produce READY", async () => {
+    setBoundedPwaCivicCoverageDepsForTests({
+      isMongoReady: () => true,
+      classifyMediaEditorial: async () => {
+        throw new Error("PLP failed");
+      },
+      aggregate: async (collectionName, pipeline) => {
+        if (collectionName === "content_translations") {
+          return PWA_CIVIC_BOUNDED_CT_KINDS.map((sourceKind) => ({
+            targetLanguage: "zh-Hant",
+            sourceKind,
+            current: 2,
+            stale: 0,
+          }));
+        }
+        if (pipeline.some((stage) => stage.$count === "eligibleRecords")) {
+          return [{ eligibleRecords: 2 }];
+        }
+        return [];
+      },
+    });
+
+    const report = await measureBoundedPwaCivicCoverage({ locale: "zh-Hant" });
+    assert.ok(report.coverage.unmeasuredKindCount >= 1);
+    assert.equal(report.coverage.coverageMeasurement, "partial_unmeasured");
+    const status = derivePwaCivicReadinessState({
+      enabled: true,
+      contentTranslationEnabled: true,
+      pwaPersistedReadingEnabled: true,
+      coverage: report.coverage,
+    });
+    assert.notEqual(status, "READY");
   });
 });
 
@@ -342,6 +568,7 @@ describe("Language Architecture Pack 02 — readiness evaluator PWA slice", () =
       skipCorpusPlan: true,
       ctCounts: { ...emptyLanguageLocalizationCountBucket(), current: 5 },
       plpCounts: { ...emptyLanguageLocalizationCountBucket(), current: 1 },
+      pwaCivicCoverage: emptyOverrideReport("xx-Pwa", coverageReady()),
       assessWebUi: async () => ({
         engineReady: true as const,
         dataReady: false,
@@ -369,7 +596,55 @@ describe("Language Architecture Pack 02 — readiness evaluator PWA slice", () =
     assert.equal(report.pwaCivic.pwaPersistedReadingEnabled, true);
     assert.equal(report.pwaCivic.pwaCivicReadinessStatus, "READY");
     assert.equal(report.pwaCivic.pwaPersistedReadingReady, true);
+    assert.match(report.pwaCivic.note ?? "", /presentation coverage/i);
     assert.notEqual(report.state, "READY");
+  });
+
+  it("missing CURRENT across corpus → BACKFILL/DEGRADED; READY→DEGRADED when current remains", async () => {
+    const degraded = await evaluateLanguageLocalizationReadiness({
+      locale: "uk",
+      registryRecord: baseRecord({
+        locale: "uk",
+        pwaPersistedReadingEnabled: true,
+      }),
+      skipCorpusPlan: true,
+      pwaCivicCoverage: emptyOverrideReport(
+        "uk",
+        coverageReady({ current: 8, missing: 3, workItemsRequired: 3 }),
+      ),
+      assessWebUi: async () => ({
+        engineReady: true as const,
+        dataReady: true,
+        requiredKeyCount: 0,
+        missingKeyCount: 0,
+        emptyKeyCount: 0,
+        englishFallbackKeyCount: 0,
+        sampleMissingPaths: [],
+      }),
+      assessControlledVocabulary: async () => ({
+        presentationReady: true,
+        conceptsChecked: 0,
+        conceptsWithTerminologyPreferredTerm: 0,
+        conceptsWithWebUiFallbackOnly: 0,
+        conceptsMissingLocalizedLabel: 0,
+        missingPreferredTermGaps: [],
+      }),
+      assessHigherAuthority: async () => ({
+        brandPublished: null,
+        legalPublished: null,
+        note: null,
+      }),
+    });
+    assert.equal(degraded.pwaCivic.pwaCivicReadinessStatus, "DEGRADED");
+    assert.equal(degraded.pwaCivic.pwaPersistedReadingReady, false);
+
+    const backfill = derivePwaCivicReadinessState({
+      enabled: true,
+      contentTranslationEnabled: true,
+      pwaPersistedReadingEnabled: true,
+      coverage: coverageReady({ current: 0, missing: 5, workItemsRequired: 5 }),
+    });
+    assert.equal(backfill, "BACKFILL_REQUIRED");
   });
 
   it("Registry disable / PWA gate closed → PWA DISABLED", async () => {

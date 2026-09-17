@@ -12,7 +12,10 @@ export {
   measureBoundedPwaCivicCoverage,
   setBoundedPwaCivicCoverageDepsForTests,
   buildPwaCivicBoundedMeasurePlans,
+  buildPresentationIdentityCountPipeline,
+  buildImprovementProposalIdentityCountPipeline,
   PWA_CIVIC_BOUNDED_CT_KINDS,
+  PWA_CIVIC_IMPROVEMENT_PROPOSAL_PUBLIC_STATUSES,
 } from "./bounded-pwa-civic-coverage.js";
 export type {
   BoundedPwaCivicCoverageDeps,

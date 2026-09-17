@@ -186,6 +186,11 @@ describe("Language Architecture Pack 02 — surface invariants", () => {
     assert.match(page, /civicMediaOwner === "hu-persisted" \? plpEditorial/);
   });
 
+  it("Admin labels PWA civic as presentation coverage", () => {
+    const admin = readFeatures("administration/components/AdminLanguagesSection.tsx");
+    assert.match(admin, /PWA civic presentation coverage/);
+  });
+
   it("11. provider is never called from visible-reading path", () => {
     const fields = readFeatures("language/components/PublicTranslatedFields.tsx");
     const hook = readFeatures("language/use-hu-persisted-ordinary-fields.ts");
