@@ -34,6 +34,7 @@ import { fromLanguageRegistryMongoDocument } from "../../../src/modules/language
 import {
   createLanguageRegistryRecord,
   ensureLanguageRegistrySeeded,
+  listPublicLanguages,
   resetLanguageRegistryStoreForTests,
   setLanguageRegistryForceMemoryForTests,
 } from "../../../src/modules/language/index.js";
@@ -115,27 +116,29 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
   });
 
   it("mongo document coerce preserves Pack 01 locales when field absent", () => {
-    const uk = fromLanguageRegistryMongoDocument({
-      languageId: "lang-uk",
-      locale: "uk",
-      localeKey: "uk",
-      languageCode: "uk",
-      englishName: "Ukrainian",
-      nativeName: "Українська",
-      textDirection: "ltr",
-      fallbackLocale: "en",
-      enabled: true,
-      uiTranslationStatus: "complete",
-      contentTranslationEnabled: true,
-      searchEnabled: true,
-      seoIndexingEnabled: false,
-      // field intentionally omitted — Pack 01 migration default
-      aliases: [],
-      providerMappings: {},
-      createdAt: "2020-01-01T00:00:00.000Z",
-      updatedAt: "2020-01-01T00:00:00.000Z",
-    });
-    assert.equal(uk.pwaPersistedReadingEnabled, true);
+    for (const locale of ["uk", "ar", "zh-Hant"] as const) {
+      const row = fromLanguageRegistryMongoDocument({
+        languageId: `lang-${locale}`,
+        locale,
+        localeKey: locale.toLowerCase(),
+        languageCode: locale.split("-")[0] ?? locale,
+        englishName: locale,
+        nativeName: locale,
+        textDirection: locale === "ar" ? "rtl" : "ltr",
+        fallbackLocale: "en",
+        enabled: true,
+        uiTranslationStatus: "complete",
+        contentTranslationEnabled: true,
+        searchEnabled: true,
+        seoIndexingEnabled: false,
+        // field intentionally omitted — Pack 01 migration default
+        aliases: [],
+        providerMappings: {},
+        createdAt: "2020-01-01T00:00:00.000Z",
+        updatedAt: "2020-01-01T00:00:00.000Z",
+      });
+      assert.equal(row.pwaPersistedReadingEnabled, true, locale);
+    }
 
     const ka = fromLanguageRegistryMongoDocument({
       languageId: "lang-ka",
@@ -186,6 +189,100 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
         contentTranslationEnabled: true,
         pwaPersistedReadingEnabled: true,
         pwaPersistedReadingReady: false,
+      }),
+      true,
+    );
+  });
+});
+
+describe("Version 5.0 — public languages runtime capability (no corpus readiness I/O)", () => {
+  beforeEach(async () => {
+    setLanguageRegistryForceMemoryForTests(true);
+    resetLanguageRegistryStoreForTests();
+    await ensureLanguageRegistrySeeded();
+  });
+
+  afterEach(() => {
+    resetLanguageRegistryStoreForTests();
+    setLanguageRegistryForceMemoryForTests(false);
+  });
+
+  it("listPublicLanguages source does not invoke measureBoundedPwaCivicCoverage", () => {
+    const service = readFileSync(
+      path.join(apiSrc, "modules/language/language-registry/language-registry.service.ts"),
+      "utf8",
+    );
+    assert.doesNotMatch(service, /measureBoundedPwaCivicCoverage\(/);
+    assert.doesNotMatch(service, /buildLanguagePwaCivicReadinessSlice\(/);
+    assert.match(service, /lightweight public Registry capability catalog/i);
+    assert.match(service, /pwaPersistedReadingReady:\s*false/);
+  });
+
+  it("public capability catalog returns activation flags without corpus readiness", async () => {
+    const created = await createLanguageRegistryRecord({
+      locale: "xx-Cap",
+      englishName: "Capability Test",
+      nativeName: "Capability Test",
+      textDirection: "ltr",
+      enabled: true,
+      contentTranslationEnabled: true,
+      pwaPersistedReadingEnabled: true,
+    });
+    assert.equal(created.pwaPersistedReadingEnabled, true);
+
+    const publicList = await listPublicLanguages();
+    const row = publicList.languages.find((entry) => entry.locale === "xx-Cap");
+    assert.ok(row);
+    assert.equal(row.contentTranslationEnabled, true);
+    assert.equal(row.pwaPersistedReadingEnabled, true);
+    // Public catalog does not compute operational readiness.
+    assert.equal(row.pwaPersistedReadingReady, false);
+  });
+
+  it("readiness measurement failure is irrelevant to public capability (Admin path still measures)", async () => {
+    const publicList = await listPublicLanguages();
+    assert.ok(Array.isArray(publicList.languages));
+
+    setBoundedPwaCivicCoverageDepsForTests({
+      isMongoReady: () => {
+        throw new Error("simulated readiness failure");
+      },
+    });
+    // Public capability remains available even if readiness tooling would throw.
+    const again = await listPublicLanguages();
+    assert.ok(again.languages.length >= 0);
+
+    const evaluator = readFileSync(
+      path.join(
+        apiSrc,
+        "modules/language/language-localization-activation/language-localization-readiness-evaluator.ts",
+      ),
+      "utf8",
+    );
+    assert.match(evaluator, /measureBoundedPwaCivicCoverage/);
+    setBoundedPwaCivicCoverageDepsForTests(null);
+  });
+
+  it("explicit future locale with activation flags is runtime-eligible without allowlist", async () => {
+    await createLanguageRegistryRecord({
+      locale: "xx-FuturePwa",
+      englishName: "Future PWA",
+      nativeName: "Future PWA",
+      textDirection: "ltr",
+      enabled: true,
+      contentTranslationEnabled: true,
+      pwaPersistedReadingEnabled: true,
+    });
+    const row = (await listPublicLanguages()).languages.find(
+      (entry) => entry.locale === "xx-FuturePwa",
+    );
+    assert.ok(row);
+    assert.equal(
+      isPwaPersistedOrdinaryReadingEligible({
+        enabled: true,
+        contentTranslationEnabled: row.contentTranslationEnabled,
+        pwaPersistedReadingEnabled: row.pwaPersistedReadingEnabled,
+        pwaPersistedReadingReady: row.pwaPersistedReadingReady,
       }),
       true,
     );

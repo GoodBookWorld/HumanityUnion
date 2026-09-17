@@ -131,10 +131,10 @@ export interface LanguageRegistryPublic {
   /** Admin gate for hu-persisted ordinary reading in standalone PWA. */
   readonly pwaPersistedReadingEnabled: boolean;
   /**
-   * Derived Admin/activation signal: PWA civic presentation-coverage READY.
-   * Not a durable Admin write field. Not a runtime ordinary-reading kill switch —
-   * once `pwaPersistedReadingEnabled` is open, per-artifact CURRENT/canonical
-   * resolution proceeds independently of this flag (Version 5.0).
+   * Operational readiness signal for Admin/activation contracts only.
+   * Public `GET /api/v1/languages` capability catalog does **not** compute this
+   * (always false there — Version 5.0: readiness I/O must not sit on ordinary PWA reads).
+   * True READY/DEGRADED comes from `evaluateLanguageLocalizationReadiness` / Admin activation.
    */
   readonly pwaPersistedReadingReady: boolean;
   readonly aliases: readonly LanguageRegistryLocale[];

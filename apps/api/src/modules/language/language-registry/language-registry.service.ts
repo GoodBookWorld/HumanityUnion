@@ -1,5 +1,9 @@
 /**
  * Production Completion Pack 02B Task 04 — Language Registry Admin read/write services.
+ *
+ * Version 5.0 — GET public languages is a lightweight Registry capability catalog.
+ * Bounded corpus readiness (`measureBoundedPwaCivicCoverage`) is Admin/activation only
+ * via `evaluateLanguageLocalizationReadiness` — never on the ordinary PWA read path.
  */
 import type {
   LanguageRegistryAdmin,
@@ -14,7 +18,6 @@ import type {
 } from "@hu/types";
 import {
   DEFAULT_PLATFORM_LANGUAGE,
-  buildLanguagePwaCivicReadinessSlice,
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
   normalizeLanguageRegistryLocaleKey,
@@ -28,7 +31,6 @@ import {
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
 import { invalidateGlobalSearchIndex } from "../../global-search/global-search.index.js";
-import { measureBoundedPwaCivicCoverage } from "../language-localization-activation/bounded-pwa-civic-coverage.js";
 import {
   LanguageRegistryNotFoundError,
   LanguageRegistryValidationError,
@@ -39,64 +41,6 @@ import {
   listLanguageRegistry,
   updateLanguageRegistryRecord,
 } from "./language-registry.repository.js";
-
-/** Short TTL so GET /languages does not re-aggregate on every field/component. */
-const PUBLIC_PWA_READY_TTL_MS = 30_000;
-
-const publicPwaReadyCache = new Map<
-  string,
-  { readonly ready: boolean; readonly fetchedAtMs: number }
->();
-
-export function resetPublicPwaReadyCacheForTests(): void {
-  publicPwaReadyCache.clear();
-}
-
-async function resolvePublicPwaPersistedReadingReady(
-  record: LanguageRegistryRecord,
-): Promise<boolean> {
-  if (
-    !record.enabled ||
-    !record.contentTranslationEnabled ||
-    !record.pwaPersistedReadingEnabled
-  ) {
-    return false;
-  }
-
-  // Memory adapter / unconfigured Mongo: never block public catalog on coverage I/O.
-  if (isLanguageRegistryMemoryAdapterActive()) {
-    return false;
-  }
-
-  const cached = publicPwaReadyCache.get(record.locale);
-  const now = Date.now();
-  if (cached && now - cached.fetchedAtMs < PUBLIC_PWA_READY_TTL_MS) {
-    return cached.ready;
-  }
-
-  try {
-    const measured = await measureBoundedPwaCivicCoverage({
-      locale: record.locale,
-      deps: {
-        isMongoReady: () => !isLanguageRegistryMemoryAdapterActive(),
-      },
-    });
-    const slice = buildLanguagePwaCivicReadinessSlice({
-      enabled: record.enabled,
-      contentTranslationEnabled: record.contentTranslationEnabled,
-      pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled,
-      coverage: measured.coverage,
-    });
-    publicPwaReadyCache.set(record.locale, {
-      ready: slice.pwaPersistedReadingReady,
-      fetchedAtMs: now,
-    });
-    return slice.pwaPersistedReadingReady;
-  } catch {
-    publicPwaReadyCache.set(record.locale, { ready: false, fetchedAtMs: now });
-    return false;
-  }
-}
 
 type AdminActor = {
   userId: string;
@@ -141,7 +85,10 @@ function toPublicLanguage(record: LanguageRegistryRecord): LanguageRegistryPubli
     seoIndexingEnabled: record.seoIndexingEnabled === true,
     contentTranslationEnabled: record.contentTranslationEnabled === true,
     pwaPersistedReadingEnabled: record.pwaPersistedReadingEnabled === true,
-    // Filled by listPublicLanguages after bounded readiness evaluation.
+    /**
+     * Operational readiness is Admin/activation-only (Version 5.0).
+     * Public capability catalog never measures corpus coverage.
+     */
     pwaPersistedReadingReady: false,
     aliases: [...record.aliases],
   };
@@ -379,17 +326,16 @@ function resolveUpdateAuditAction(
   return "language_registry.update";
 }
 
+/**
+ * Version 5.0 — lightweight public Registry capability catalog.
+ * Durable activation flags only. Never measures corpus readiness / CURRENT coverage.
+ * Operational readiness remains on Admin activation / evaluateLanguageLocalizationReadiness.
+ */
 export async function listPublicLanguages(): Promise<LanguageRegistryPublicListResponse> {
   const records = await listLanguageRegistry();
-  const enabled = records.filter((row) => row.enabled === true);
-  const languages = await Promise.all(
-    enabled.map(async (record) => {
-      const base = toPublicLanguage(record);
-      const pwaPersistedReadingReady = await resolvePublicPwaPersistedReadingReady(record);
-      return { ...base, pwaPersistedReadingReady };
-    }),
-  );
-  return { languages };
+  return {
+    languages: records.filter((row) => row.enabled === true).map(toPublicLanguage),
+  };
 }
 
 export async function listAdminLanguages(input: {

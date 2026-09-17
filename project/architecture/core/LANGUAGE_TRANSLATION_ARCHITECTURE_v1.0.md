@@ -36,6 +36,15 @@ PWA persisted ordinary reading is a baseline Humanity Union Version 5.0 capabili
 
 **Invariant:** PWA persisted ordinary reading is controlled by Registry activation and Preferred Reading Language. Corpus readiness is an activation/administration signal, not a runtime read kill switch. Once PWA persisted reading is enabled for a language, each artifact independently resolves persisted CURRENT presentation with canonical fallback.
 
+### RUNTIME CAPABILITY vs OPERATIONAL READINESS
+
+| Concern | Role | Request path |
+|--------|------|--------------|
+| **RUNTIME CAPABILITY** | Lightweight durable Registry activation flags (`enabled`, `contentTranslationEnabled`, `pwaPersistedReadingEnabled`, locale identity) | Public `GET /api/v1/languages` → ordinary PWA ownership |
+| **OPERATIONAL READINESS** | Bounded corpus presentation-coverage diagnostics (`pwaCivicReadinessStatus`, `pwaPersistedReadingReady`, READY/DEGRADED) | Admin / activation / `evaluateLanguageLocalizationReadiness` only |
+
+Operational readiness **must never** sit on the ordinary PWA read request path. Public language capability lookup must not invoke `measureBoundedPwaCivicCoverage`, corpus enumeration, CURRENT counts, or activation-status computation.
+
 Runtime ownership (installed/standalone PWA):
 
 ```
@@ -51,10 +60,12 @@ AND sourceKind ≠ public_news
 
 Additional Version 5.0 reading invariants:
 
+- Preferred Reading Language selects the participant's PWA persisted presentation locale.
 - Normal Web ordinary reading remains browser-native (canonical → browser Translate).
 - Public News RSS visible cards remain source/original in WEB and PWA for every language.
 - Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist).
 - Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
+- Pre-Pack-02 Registry documents missing `pwaPersistedReadingEnabled` coerce enabled only for historically accepted Pack 01 locales (`uk`, `ar`, `zh-Hant`); arbitrary future locales with the field absent remain disabled.
 
 ---
 

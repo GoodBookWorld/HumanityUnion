@@ -287,6 +287,13 @@ describe("Version 5.0 — PWA persisted reading vs corpus readiness", () => {
     assert.match(api, /pwaPersistedReadingReady/);
   });
 
+  it("public languages client remains the ownership capability source (no corpus measure on Web)", () => {
+    const ownerHook = readFeatures("language/use-ordinary-reading-owner.ts");
+    assert.match(ownerHook, /listSelectablePublicLanguages/);
+    assert.match(ownerHook, /RUNTIME CAPABILITY|activation flags/i);
+    assert.doesNotMatch(ownerHook, /measureBoundedPwaCivicCoverage/);
+  });
+
   it("Civic Media PLP remains reachable when owner is hu-persisted despite ready=false", () => {
     assert.equal(
       shouldResolveHuPersistedOrdinaryReading({

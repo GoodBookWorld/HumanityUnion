@@ -91,12 +91,15 @@ describe("Production Completion Pack 02B Task 02 — Language Registry bootstrap
       const keys = Object.keys(row).sort();
       assert.deepEqual(keys, [
         "aliases",
+        "contentTranslationEnabled",
         "englishName",
         "fallbackLocale",
         "languageCode",
         "languageId",
         "locale",
         "nativeName",
+        "pwaPersistedReadingEnabled",
+        "pwaPersistedReadingReady",
         "seoIndexingEnabled",
         "textDirection",
         "uiTranslationStatus",
@@ -107,9 +110,12 @@ describe("Production Completion Pack 02B Task 02 — Language Registry bootstrap
       assert.equal("aliasKeys" in row, false);
       assert.equal("createdAt" in row, false);
       assert.equal("updatedAt" in row, false);
-      assert.equal("contentTranslationEnabled" in row, false);
       assert.equal("searchEnabled" in row, false);
       assert.equal(typeof row.seoIndexingEnabled, "boolean");
+      assert.equal(typeof row.contentTranslationEnabled, "boolean");
+      assert.equal(typeof row.pwaPersistedReadingEnabled, "boolean");
+      // Version 5.0 — public capability catalog does not compute corpus readiness.
+      assert.equal(row.pwaPersistedReadingReady, false);
     }
   });
 
