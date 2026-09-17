@@ -94,13 +94,16 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     const page = readWeb(
       "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
     );
-    assert.match(page, /mission=\{resource\.mission\}/);
-    assert.match(page, /explanationForDisplay/);
+    assert.match(page, /selectCivicMediaFactCheckOrdinaryPresentation/);
+    assert.match(page, /selectCivicMediaPropagandaOrdinaryPresentation/);
+    assert.match(page, /mission=\{presentation\.mission\}/);
+    assert.match(page, /explanation=\{presentation\.explanation\}/);
     assert.match(page, /editorial\.overview\.title/);
     assert.match(page, /editorial\.faq\.map/);
     assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
     assert.match(page, /useOrdinaryReadingOwner/);
     assert.match(page, /data-hu-reading-owner=\{civicMediaOwner\}/);
+    assert.doesNotMatch(page, /void factCheckMaps/);
     assert.doesNotMatch(page, /factChecking\.resources\.\$\{resource\.id\}\.mission/);
     assert.doesNotMatch(page, /Badge status=\{resource\.focus\}/);
   });

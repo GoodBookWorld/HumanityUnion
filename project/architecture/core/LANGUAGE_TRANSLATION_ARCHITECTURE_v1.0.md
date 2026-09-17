@@ -67,6 +67,7 @@ Additional Version 5.0 reading invariants:
 - Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
 - Pre-Pack-02 Registry documents missing `pwaPersistedReadingEnabled` coerce enabled only for historically accepted Pack 01 locales (`uk`, `ar`, `zh-Hant`); arbitrary future locales with the field absent remain disabled.
 - Initiative public title/description: under `hu-persisted` only, a locale-matched SSR `initialPresentation` seed may paint while ownership/reading context settles; cache-only CURRENT resolve then owns the hero/overview presentation object. Normal Web must not consume that seed as ordinary visible presentation.
+- **PWA persisted-reading baseline (complete):** installed/standalone PWA ordinary reading → Preferred Reading Language → Registry-enabled persisted presentation → CT/PLP domain consumers → localized CURRENT/published presentation → canonical fallback. Civic Media remains PLP-owned (including verification mission/coverage chips and analysis focus/explanation). Normal Web remains browser-native. Public News remains source-original.
 
 ---
 

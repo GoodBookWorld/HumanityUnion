@@ -178,6 +178,9 @@ describe("PWA Full Translation Pack 01 — surface wiring", () => {
     assert.match(page, /useOrdinaryReadingOwner/);
     assert.match(page, /civicMediaOwner === "hu-persisted" \? plpEditorial/);
     assert.match(editorial, /owner === "hu-persisted" && initialEditorial/);
+    assert.match(page, /selectCivicMediaFactCheckOrdinaryPresentation/);
+    assert.match(page, /selectCivicMediaPropagandaOrdinaryPresentation/);
+    assert.doesNotMatch(page, /void factCheckMaps/);
   });
 
   it("Author Mode / generate-on-read remain retired on ordinary reading path", () => {

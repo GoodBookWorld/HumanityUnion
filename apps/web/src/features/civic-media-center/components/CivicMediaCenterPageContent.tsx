@@ -42,6 +42,10 @@ import {
   applyMediaPlpPropagandaMaps,
 } from "../../language/media-plp/apply-media-plp-editorial";
 import {
+  selectCivicMediaFactCheckOrdinaryPresentation,
+  selectCivicMediaPropagandaOrdinaryPresentation,
+} from "../../language/media-plp/civic-media-hu-persisted-resource-presentation";
+import {
   MediaSemanticNode,
   plpModeToSemanticResult,
 } from "../../language/media-plp/media-semantic-contract";
@@ -595,10 +599,8 @@ function CivicMediaCenterLoaded({
         : undefined,
     [plpMode, media.propagandaAnalysis, effectivePropagandaById, requestedLocale],
   );
-  void factCheckMaps;
-  void propagandaMaps;
   void initialEditorial;
-  // Ordinary reading: WEB = canonical; PWA Pack 01 may apply PLP editorial overlay.
+  // Ordinary reading: WEB = canonical; PWA may apply PLP editorial + resource maps.
   const { owner: civicMediaOwner } = useOrdinaryReadingOwner({ sourceKind: "civic_media" });
   const editorial = useCivicMediaResolvedEditorial(
     media,
@@ -797,19 +799,22 @@ function CivicMediaCenterLoaded({
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
             const resolved = effectiveFactCheckById?.[resource.id];
+            const presentation = selectCivicMediaFactCheckOrdinaryPresentation({
+              owner: civicMediaOwner,
+              resource,
+              missionsById: factCheckMaps?.missionsById,
+              coverageById: factCheckMaps?.coverageById,
+              resolvedMode: resolved?.mode,
+              resolvedReasonCode: resolved?.reasonCode,
+              plpBatchActive: Boolean(plpMode),
+            });
             return (
               <FactCheckCard
                 resource={resource}
-                mission={resource.mission}
-                coverage={resource.coverage}
-                plpMode={
-                  plpMode ? "CANONICAL_FALLBACK" : undefined
-                }
-                fallbackReason={
-                  plpMode
-                    ? resolved?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
-                    : undefined
-                }
+                mission={presentation.mission}
+                coverage={presentation.coverage}
+                plpMode={presentation.plpMode}
+                fallbackReason={presentation.fallbackReason}
               />
             );
           }}
@@ -826,21 +831,22 @@ function CivicMediaCenterLoaded({
           getItemKey={(resource) => resource.id}
           renderItem={(resource) => {
             const resolved = effectivePropagandaById?.[resource.id];
-            const focusForDisplay = resource.focus;
-            const explanationForDisplay = resource.explanation;
+            const presentation = selectCivicMediaPropagandaOrdinaryPresentation({
+              owner: civicMediaOwner,
+              resource,
+              focusById: propagandaMaps?.focusById,
+              explanationsById: propagandaMaps?.explanationsById,
+              resolvedMode: resolved?.mode,
+              resolvedReasonCode: resolved?.reasonCode,
+              plpBatchActive: Boolean(plpMode),
+            });
             return (
               <PropagandaCard
                 resource={resource}
-                focus={focusForDisplay}
-                explanation={explanationForDisplay}
-                plpMode={
-                  plpMode ? "CANONICAL_FALLBACK" : undefined
-                }
-                fallbackReason={
-                  plpMode
-                    ? resolved?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
-                    : undefined
-                }
+                focus={presentation.focus}
+                explanation={presentation.explanation}
+                plpMode={presentation.plpMode}
+                fallbackReason={presentation.fallbackReason}
               />
             );
           }}
