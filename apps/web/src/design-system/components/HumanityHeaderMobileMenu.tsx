@@ -55,7 +55,7 @@ export function HumanityHeaderMobileMenu({
         aria-label={tNav("mobileNavAria")}
       >
         <div className="humanity-header__mobile-language">
-          <LanguageSelector className="hu-language-selector--header" />
+          <LanguageSelector className="hu-language-selector--mobile" />
         </div>
         <nav aria-label={tNav("primaryNavAria")}>
           <ul className="humanity-header__mobile-nav-list">

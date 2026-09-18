@@ -152,29 +152,17 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
   it("LanguageSelector viewport-safe CSS remains for non-header consumers", () => {
     const css = readWeb("features/language/components/language-selector.css");
 
-    // Desktop list geometry remains absolute + inset-inline-start for default selector.
+    // Historical dropdown alignment remains absolute + inset-inline-start.
+    // Open overlay lists are then clamped in place-language-selector-list.ts.
     assert.match(
       css,
       /\.hu-language-selector__list\s*\{[^}]*position:\s*absolute[^}]*inset-inline-start:\s*0/s,
     );
-    // Header/mobile viewport overrides remain in stylesheet for any future non-nav mounts.
-    assert.match(
-      css,
-      /@media\s*\(max-width:\s*768px\)[\s\S]*\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*position:\s*fixed/,
-    );
-    assert.match(
-      css,
-      /\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*inset-inline:\s*4vw/,
-    );
-    assert.match(
-      css,
-      /\.hu-language-selector--header\s+\.hu-language-selector__list[\s\S]*max-height:\s*min\(65dvh/,
-    );
-    assert.match(
-      css,
-      /\.hu-language-selector--header\s+\.hu-language-selector__option[\s\S]*overflow-wrap:\s*anywhere/,
-    );
+    assert.match(css, /--hu-language-selector-visible-rows:\s*10/);
+    assert.match(css, /overflow-x:\s*hidden/);
+    assert.match(css, /overflow-y:\s*auto/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
+    assert.doesNotMatch(css, /inset-inline:\s*4vw/);
   });
 
   it("PWA standalone burger Global Menu mounts the shared LanguageSelector", () => {
@@ -192,9 +180,11 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(pwaHeader, /PwaGlobalMenu/);
     assert.match(globalMenu, /LanguageSelector/);
     assert.match(globalMenu, /hu-pwa-global-menu__language/);
+    assert.match(globalMenu, /hu-language-selector--mobile/);
+    assert.doesNotMatch(globalMenu, /variant="icon"/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
-    assert.match(css, /hu-language-selector--mobile[\s\S]*max-height:\s*min\(65dvh/);
-    assert.match(css, /hu-language-selector__icon-trigger[\s\S]*min-height:\s*var\(--hu-touch-target/);
+    assert.match(css, /hu-language-selector--mobile[\s\S]*100dvh - 5rem/);
+    assert.match(css, /hu-language-selector__select[\s\S]*inset 0 1px 2px/);
     assert.match(pwaCss, /hu-pwa-global-menu__panel[\s\S]*inset-inline-end:\s*0/);
   });
 

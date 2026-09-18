@@ -82,7 +82,7 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
           {tPwa("menuTitle")}
         </h2>
         <div className="hu-pwa-global-menu__language">
-          <LanguageSelector className="hu-language-selector--header" variant="icon" />
+          <LanguageSelector className="hu-language-selector--mobile" />
         </div>
         <ul className="hu-pwa-global-menu__list">
           {GLOBAL_LINKS.map((link) => {

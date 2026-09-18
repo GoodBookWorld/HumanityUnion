@@ -89,12 +89,16 @@
   z-index: 60;
   inset-inline-start: 0;
   top: calc(100% + 0.25rem);
+  box-sizing: border-box;
   min-width: max(100%, 11rem);
+  max-width: calc(100vw - 1rem);
   max-height: calc(
-    var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size)
+    var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size) +
+      0.5rem + 2px
   );
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   margin: 0;
   padding: 0.25rem;
   list-style: none;
@@ -105,11 +109,12 @@
 }
 
 .hu-language-selector__option {
-  display: flex;
-  align-items: center;
+  display: block;
+  box-sizing: border-box;
   width: 100%;
+  height: var(--hu-language-selector-option-block-size);
   min-height: var(--hu-language-selector-option-block-size);
-  padding-block: 0.35rem;
+  padding-block: 0;
   padding-inline: 0.75rem;
   border: 0;
   border-radius: var(--hu-radius-sm, 0.35rem);
@@ -118,7 +123,11 @@
   font: inherit;
   font-size: var(--hu-font-size-sm);
   font-weight: 600;
+  line-height: var(--hu-language-selector-option-block-size);
   text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 
@@ -143,13 +152,14 @@
   max-width: 11rem;
 }
 
-/* Mobile / PWA burger: in-flow expandable panel (not a desktop edge dropdown). */
+/* Mobile / PWA menus: in-flow list inside an already viewport-bounded panel. */
 .hu-language-selector--mobile {
   position: relative;
   max-width: none;
   width: 100%;
   margin-block: var(--hu-space-2);
   margin-inline: 0;
+  --hu-language-selector-option-block-size: var(--hu-touch-target, 2.75rem);
 }
 
 .hu-language-selector--mobile .hu-language-selector__select {
@@ -157,28 +167,27 @@
 }
 
 .hu-language-selector--mobile .hu-language-selector__list {
-  /* Expand inside the burger panel — avoid absolute/right-edge desktop popup. */
+  /* Expand inside the menu panel — overlay clamp is for the header dropdown. */
   position: static;
   inset: auto;
   z-index: auto;
   box-sizing: border-box;
-  width: min(100%, 92vw);
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   margin-block-start: 0.5rem;
   margin-inline: 0;
-  max-height: min(65dvh, 22rem);
+  max-height: min(
+    calc(
+      var(--hu-language-selector-visible-rows) * var(--hu-language-selector-option-block-size) +
+        0.5rem + 2px
+    ),
+    calc(100dvh - 5rem)
+  );
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-}
-
-.hu-language-selector--mobile .hu-language-selector__option {
-  min-height: var(--hu-touch-target, 2.75rem);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.35;
 }
 
 .hu-language-selector--mobile .hu-language-selector__error {
@@ -248,49 +257,9 @@
 }
 
 /*
- * Standard mobile-web header selector (HumanityHeader end zone).
- * Desktop keeps the compact absolute dropdown; PWA burger uses --mobile (unchanged).
- * Root cause of overflow: absolute list with inset-inline-start:0 near the physical
- * end of the header pushed min-width:11rem content past the viewport edge.
+ * Header dropdown horizontal/vertical clamp is component-local
+ * (placeLanguageSelectorList). Do not pin the list with a locale offset.
  */
-@media (max-width: 768px) {
-  .hu-language-selector--header {
-    /* Keep the visible trigger compact; list is viewport-anchored below. */
-    position: relative;
-  }
-
-  .hu-language-selector--header .hu-language-selector__list {
-    position: fixed;
-    z-index: calc(var(--hu-z-header, 40) + 40);
-    /* Logical safe margins — ~92vw usable width, centered in the viewport. */
-    inset-inline: 4vw;
-    top: calc(var(--hu-header-height, 4.5rem) + 0.35rem);
-    width: auto;
-    min-width: 0;
-    max-width: none;
-    box-sizing: border-box;
-    max-height: min(65dvh, 22rem);
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
-
-  .hu-language-selector--header .hu-language-selector__option {
-    min-height: var(--hu-touch-target, 2.75rem);
-    white-space: normal;
-    overflow-wrap: anywhere;
-    line-height: 1.35;
-  }
-
-  .hu-language-selector--header .hu-language-selector__error {
-    position: fixed;
-    z-index: calc(var(--hu-z-header, 40) + 41);
-    inset-inline: 4vw;
-    top: calc(var(--hu-header-height, 4.5rem) + 0.35rem);
-    max-width: none;
-  }
-}
 
 @media (max-width: 430px) {
   .hu-language-selector:not(.hu-language-selector--mobile):not(.hu-language-selector--header) {

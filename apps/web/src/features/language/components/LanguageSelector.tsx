@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -26,6 +27,11 @@ import {
 } from "../public-languages-api";
 import { applyPresentationLocale } from "../apply-presentation-locale";
 import {
+  LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT,
+  languageSelectorUsesOverlayPlacement,
+  syncLanguageSelectorListPlacement,
+} from "../place-language-selector-list";
+import {
   markMediaLocaleSwitchPerfPhase,
 } from "../media-plp/media-plp-locale-switch-perf";
 
@@ -34,9 +40,6 @@ import "./language-selector.css";
 export { resolveLocaleSwitchNavigationHref } from "../resolve-locale-switch-navigation-href";
 export { runLocaleSwitchNavigation } from "../run-locale-switch-navigation";
 export { applyPresentationLocale } from "../apply-presentation-locale";
-
-/** Visible language rows before the list scrolls (does not cap total languages). */
-const LANGUAGE_SELECTOR_VISIBLE_ROWS = 10;
 
 interface LanguageSelectorProps {
   readonly className?: string;
@@ -75,6 +78,7 @@ export function LanguageSelector({
   const selectId = useId();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [options, setOptions] = useState<readonly SelectablePublicLanguage[]>([]);
   const [value, setValue] = useState("en");
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +191,34 @@ export function LanguageSelector({
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open || !languageSelectorUsesOverlayPlacement(className)) {
+      return;
+    }
+    const root = rootRef.current;
+    const list = listRef.current;
+    const trigger = root?.querySelector<HTMLButtonElement>("button[aria-haspopup='listbox']");
+    if (!list || !trigger) {
+      return;
+    }
+
+    const apply = () => {
+      syncLanguageSelectorListPlacement(list, trigger);
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    window.addEventListener("scroll", apply, true);
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", apply);
+    viewport?.addEventListener("scroll", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("scroll", apply, true);
+      viewport?.removeEventListener("resize", apply);
+      viewport?.removeEventListener("scroll", apply);
+    };
+  }, [open, className, options]);
 
   const applyLocale = useCallback(
     async (locale: string) => {
@@ -366,7 +398,7 @@ export function LanguageSelector({
       style={
         {
           ["--hu-language-selector-visible-rows" as string]: String(
-            LANGUAGE_SELECTOR_VISIBLE_ROWS,
+            LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT,
           ),
         } as CSSProperties
       }
@@ -420,6 +452,7 @@ export function LanguageSelector({
       </div>
       {open ? (
         <ul
+          ref={listRef}
           id={listId}
           className="hu-language-selector__list"
           role="listbox"
