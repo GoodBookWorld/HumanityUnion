@@ -30,7 +30,8 @@ describe("Localization Simplification Step 06A.3 — Preferred Reading presentat
     assert.match(handleSubmit, /updateMyPreferences/);
     assert.match(handleSubmit, /applyPresentationLocale\(/);
     assert.match(handleSubmit, /forceSamePathRecompose:\s*true/);
-    assert.match(handleSubmit, /seoIndexingEnabled:\s*selected\?\.seoIndexingEnabled === true/);
+    assert.match(handleSubmit, /readingLanguageControl:\s*true/);
+    assert.match(handleSubmit, /seoIndexingEnabled:\s*false/);
     assert.doesNotMatch(handleSubmit, /writeHuLangCookieViaWebRoute\(/);
     assert.doesNotMatch(handleSubmit, /router\.refresh\(\)/);
 
@@ -194,13 +195,13 @@ describe("Localization Simplification Step 06A.3 — Preferred Reading presentat
     }
   });
 
-  it("LanguageSelector remains unmounted in public navigation", () => {
+  it("LanguageSelector is mounted in public navigation", () => {
     const header = readWeb("src/design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("src/design-system/components/HumanityHeaderMobileMenu.tsx");
     const pwa = readWeb("src/features/pwa/components/PwaGlobalMenu.tsx");
-    assert.doesNotMatch(header, /LanguageSelector/);
-    assert.doesNotMatch(mobile, /LanguageSelector/);
-    assert.doesNotMatch(pwa, /LanguageSelector/);
+    assert.match(header, /LanguageSelector/);
+    assert.match(mobile, /LanguageSelector/);
+    assert.match(pwa, /LanguageSelector/);
   });
 
   it("forceSamePathRecompose replaces then refreshes when href is null/same", () => {

@@ -30,44 +30,54 @@ Browser Google Translate may remain a convenience layer. It is **not** the sourc
 
 ---
 
-## Version 5.0 — PWA persisted ordinary reading (normative)
+## Version 5.0 — Unified persisted reading (normative)
 
-PWA persisted ordinary reading is a baseline Humanity Union Version 5.0 capability.
+Unified persisted reading is the ordinary-reading architecture for Guest Web, Participant Web, and installed PWA. Eligible selected languages use persisted CT/PLP. Browser-native translation is no longer the Web owner.
 
-**Invariant:** PWA persisted ordinary reading is controlled by Registry activation and Preferred Reading Language. Corpus readiness is an activation/administration signal, not a runtime read kill switch. Once PWA persisted reading is enabled for a language, each artifact independently resolves persisted CURRENT presentation with canonical fallback.
+**Invariant:** Ordinary reading is controlled by Reading Language and Registry activation. Corpus readiness is an activation/administration signal, not a runtime read kill switch. Once persisted reading is enabled for a language, each artifact independently resolves persisted CURRENT presentation with canonical fallback.
 
 ### RUNTIME CAPABILITY vs OPERATIONAL READINESS
 
 | Concern | Role | Request path |
 |--------|------|--------------|
-| **RUNTIME CAPABILITY** | Lightweight durable Registry activation flags (`enabled`, `contentTranslationEnabled`, `pwaPersistedReadingEnabled`, locale identity) | Public `GET /api/v1/languages` → ordinary PWA ownership |
+| **RUNTIME CAPABILITY** | Lightweight durable Registry activation flags (`enabled`, `contentTranslationEnabled`, `pwaPersistedReadingEnabled`, locale identity) | Public `GET /api/v1/languages` → ordinary-reading ownership |
 | **OPERATIONAL READINESS** | Bounded corpus presentation-coverage diagnostics (`pwaCivicReadinessStatus`, `pwaPersistedReadingReady`, READY/DEGRADED) | Admin / activation / `evaluateLanguageLocalizationReadiness` only |
 
 Operational readiness **must never** sit on the ordinary PWA read request path. Public language capability lookup must not invoke `measureBoundedPwaCivicCoverage`, corpus enumeration, CURRENT counts, or activation-status computation.
 
-Runtime ownership (installed/standalone PWA):
+Runtime ownership (Guest Web, Participant Web, and installed PWA):
 
 ```
-standalone
+sourceKind ≠ public_news
+AND preferred reading language ≠ en
 AND enabled
 AND contentTranslationEnabled
 AND pwaPersistedReadingEnabled
-AND sourceKind ≠ public_news
 → hu-persisted
 ```
 
+`presentationMode` / standalone is not an ordinary-reading eligibility gate. The Registry field remains named `pwaPersistedReadingEnabled` in Phase 1 (Web + PWA). Search and SEO flags are not part of this predicate.
+
 `pwaPersistedReadingReady` / `pwaCivicReadinessStatus` remain Admin, preparation, activation, and corpus-diagnostic signals. They must **not** gate individual persisted reads after `pwaPersistedReadingEnabled` is open.
+
+Guest Reading Language is the existing `hu_lang` cookie (Header language control). Do not add a second guest store.
+
+Participant Reading Language is `experiencePreferences.readingLanguages[0]`. Header and Preferences → Preferred Reading Language are two controls over that one preference. `interfaceLanguage` stays aligned to the same locale. After login, the account preference wins and CookieSync writes `hu_lang`. Logout does not clear `hu_lang`.
+
+Reading Language selection is a presentation control. It must not mint SEO `/{locale}/` URLs. An existing SEO prefix is stripped to the locale-free path so URL locale does not own Reading Language. `searchEnabled` and `seoIndexingEnabled` stay independent.
+
+Browser Translate is an external browser capability, not the ordinary-reading owner for an eligible selected language. There is no document-level `translate="no"`.
 
 Additional Version 5.0 reading invariants:
 
-- Preferred Reading Language selects the participant's PWA persisted presentation locale.
-- Normal Web ordinary reading remains browser-native (canonical → browser Translate).
+- Preferred Reading Language selects the participant's persisted presentation locale on Web and PWA.
+- English remains canonical.
 - Public News RSS visible cards remain source/original in WEB and PWA for every language.
-- Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist).
+- Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist). `ka` and `he` are not enabled by this phase.
 - Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
 - Pre-Pack-02 Registry documents missing `pwaPersistedReadingEnabled` coerce enabled only for historically accepted Pack 01 locales (`uk`, `ar`, `zh-Hant`); arbitrary future locales with the field absent remain disabled.
-- Initiative public title/description: under `hu-persisted` only, a locale-matched SSR `initialPresentation` seed may paint while ownership/reading context settles; cache-only CURRENT resolve then owns the hero/overview presentation object. Normal Web must not consume that seed as ordinary visible presentation.
-- **PWA persisted-reading baseline (complete):** installed/standalone PWA ordinary reading → Preferred Reading Language → Registry-enabled persisted presentation → CT/PLP domain consumers → localized CURRENT/published presentation → canonical fallback. Civic Media remains PLP-owned (including verification mission/coverage chips and analysis focus/explanation). Normal Web remains browser-native. Public News remains source-original.
+- Initiative public title/description: SSR and first hydration stay canonical. After ownership is `hu-persisted`, a locale-matched SSR `initialPresentation` seed may paint, then cache-only CURRENT resolve owns the hero/overview presentation object.
+- **Unified persisted reading:** Guest Web, Participant Web, and installed PWA → Reading Language → Registry eligibility → existing CT/PLP consumers → localized CURRENT/published presentation → canonical fallback. Civic Media remains PLP-owned. Public News remains source-original. Browser Translate is not the HU owner.
 
 ---
 

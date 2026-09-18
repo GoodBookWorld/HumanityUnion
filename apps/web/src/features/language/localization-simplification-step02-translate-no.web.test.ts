@@ -147,14 +147,14 @@ describe("Localization Simplification Step 02 — Brand/Terminology translate=no
     assert.match(attrs, /resolveDocumentHtmlLocale|no-op|intentionally a no-op/i);
   });
 
-  it("Header/PWA LanguageSelector mounts removed (Step 03); cookie sync remains", () => {
+  it("Header/PWA LanguageSelector is mounted; cookie sync remains", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
     const pwa = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
-    assert.doesNotMatch(header, /LanguageSelector/);
-    assert.doesNotMatch(mobile, /LanguageSelector/);
-    assert.doesNotMatch(pwa, /LanguageSelector/);
+    assert.match(header, /LanguageSelector/);
+    assert.match(mobile, /LanguageSelector/);
+    assert.match(pwa, /LanguageSelector/);
     assert.match(layout, /InterfaceLanguageCookieSync/);
   });
 });

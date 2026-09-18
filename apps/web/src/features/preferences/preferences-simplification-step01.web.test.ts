@@ -37,8 +37,7 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     assert.match(src, /aria-describedby="pref-preferred-reading-language-help"/);
     assert.match(src, /language\.preferredReadingHelp/);
     assert.match(src, /preferences-workspace__field--primary/);
-    assert.match(src, /readingLanguages:\s*\[locale\]/);
-    assert.match(src, /interfaceLanguage:\s*locale/);
+    assert.match(src, /buildParticipantReadingLanguagePatch\(locale\)/);
   });
 
   it("hides Interface Language and Translation Preference controls while still saving experiencePreferences", () => {
@@ -109,15 +108,15 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     assert.match(enWriting, /do not control your browser/i);
   });
 
-  it("Header / PWA LanguageSelector mounts removed; cookie sync remains", () => {
+  it("Header / PWA LanguageSelector is mounted; cookie sync remains", () => {
     const layout = readWeb("src/design-system/components/HumanityLayout.tsx");
     const header = readWeb("src/design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("src/design-system/components/HumanityHeaderMobileMenu.tsx");
     const pwaMenu = readWeb("src/features/pwa/components/PwaGlobalMenu.tsx");
     assert.match(layout, /InterfaceLanguageCookieSync/);
-    assert.doesNotMatch(header, /LanguageSelector/);
-    assert.doesNotMatch(mobile, /LanguageSelector/);
-    assert.doesNotMatch(pwaMenu, /LanguageSelector/);
+    assert.match(header, /LanguageSelector/);
+    assert.match(mobile, /LanguageSelector/);
+    assert.match(pwaMenu, /LanguageSelector/);
   });
 
   it("SEO cookie sync suppression path remains intact", () => {

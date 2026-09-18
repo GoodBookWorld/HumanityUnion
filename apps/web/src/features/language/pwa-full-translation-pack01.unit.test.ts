@@ -61,7 +61,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
     }
   });
 
-  it("keeps normal WEB browser-native for uk/ar/zh-Hant", () => {
+  it("keeps Web and PWA eligible for uk/ar/zh-Hant when Registry gates pass", () => {
     for (const language of ["uk", "ar", "zh-Hant"] as const) {
       assert.equal(
         resolveOrdinaryReadingOwner({
@@ -70,7 +70,7 @@ describe("PWA Full Translation Pack 01 — ordinary reading ownership", () => {
           sourceKind: "initiative",
           pwaEligibility: pack01Eligible,
         }),
-        "browser-native",
+        "hu-persisted",
       );
     }
   });

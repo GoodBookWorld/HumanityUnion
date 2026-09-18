@@ -21,7 +21,7 @@ describe("Stable Browser Translation — Blog ordinary reading", () => {
   const article = readFeatures("blog/components/BlogArticlePageContent.tsx");
   const body = readFeatures("blog/components/BlogArticleBody.tsx");
 
-  it("visible Blog WEB reading stays browser-native; PWA uses ownership gate", () => {
+  it("Blog article uses ownership-gated CURRENT CT", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "browser",

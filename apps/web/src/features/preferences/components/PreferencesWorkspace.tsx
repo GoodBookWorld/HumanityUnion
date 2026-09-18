@@ -17,6 +17,7 @@ import { ApiUnavailableState } from "../../../design-system/components/ApiUnavai
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { applyPresentationLocale } from "../../language/apply-presentation-locale";
+import { buildParticipantReadingLanguagePatch } from "../../language/persist-participant-reading-language";
 import { resolvePreferredPresentationLocale } from "../../language/presentation-locale-cookie-sync";
 import {
   listSelectablePublicLanguages,
@@ -163,13 +164,11 @@ export function PreferencesWorkspace() {
         // recompose complete — CookieSync may still refresh once if useLocale lags.
         const presentationLocale = resolvePreferredPresentationLocale(updated);
         if (presentationLocale) {
-          const selected = languageOptions.find(
-            (row) => row.locale === presentationLocale,
-          );
           await applyPresentationLocale({
             locale: presentationLocale,
             pathname,
-            seoIndexingEnabled: selected?.seoIndexingEnabled === true,
+            seoIndexingEnabled: false,
+            readingLanguageControl: true,
             router,
             markAuthenticatedSync: true,
             // Workspace `/preferences` is not an SEO document — force same-path
@@ -261,13 +260,12 @@ export function PreferencesWorkspace() {
                   value={readingInOptions ? displayReading : displayReading || ""}
                   onChange={(event) => {
                     const locale = event.target.value;
+                    const patch = buildParticipantReadingLanguagePatch(locale);
                     setPreferences({
                       ...preferences,
                       experiencePreferences: {
                         ...preferences.experiencePreferences,
-                        readingLanguages: [locale],
-                        // Keep client draft aligned with API sync contract until save.
-                        interfaceLanguage: locale,
+                        ...patch,
                       },
                     });
                   }}

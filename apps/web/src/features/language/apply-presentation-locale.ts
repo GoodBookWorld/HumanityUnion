@@ -34,8 +34,16 @@ export type ApplyPresentationLocaleInput = {
   /**
    * Registry `seoIndexingEnabled` for the target locale.
    * Drives whether SEO public routes may mint `/{locale}/…` prefixes.
+   * Ignored when `readingLanguageControl` is true.
    */
   readonly seoIndexingEnabled: boolean;
+  /**
+   * Header / Preferred Reading Language are presentation controls.
+   * When true, never mint `/{locale}/…`. An existing SEO prefix is stripped to
+   * the locale-free path so URL locale cannot own Reading Language.
+   * Does not change Search/SEO contracts.
+   */
+  readonly readingLanguageControl?: boolean;
   readonly router: LocaleSwitchRouter;
   /**
    * When true, claim Cookie Sync generation before/after write so stale
@@ -93,7 +101,8 @@ export async function applyPresentationLocale(
   const href = resolveLocaleSwitchNavigationHref({
     pathname: input.pathname,
     nextLocale: written.locale,
-    seoIndexingEnabled: input.seoIndexingEnabled === true,
+    seoIndexingEnabled:
+      input.readingLanguageControl === true ? false : input.seoIndexingEnabled === true,
   });
 
   const schedule = input.scheduleNavigation ?? ((run: () => void) => {

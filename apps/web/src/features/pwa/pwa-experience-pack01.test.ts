@@ -124,7 +124,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     ]) {
       assert.match(menu, new RegExp(`labelKey: "${labelKey}"`));
     }
-    assert.doesNotMatch(menu, /LanguageSelector/);
+    assert.match(menu, /LanguageSelector/);
   });
 
   it("16b — hamburger Global Menu shows burger icons left of labels", () => {

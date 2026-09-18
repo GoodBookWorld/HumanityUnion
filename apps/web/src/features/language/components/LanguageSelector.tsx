@@ -16,6 +16,8 @@ import {
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences, updateMyPreferences } from "../../preferences/preferences-api";
 import { readHuLangCookieFromDocument } from "../hu-lang-cookie.web";
+import { buildParticipantReadingLanguagePatch } from "../persist-participant-reading-language";
+import { resolvePreferredPresentationLocale } from "../presentation-locale-cookie-sync";
 import {
   PUBLIC_LANGUAGES_CHANGED_EVENT,
   formatLanguageOptionLabel,
@@ -53,11 +55,10 @@ interface LanguageSelectorProps {
 const LANGUAGE_ICON_SRC = "/icons/messenger/language.png";
 
 /**
- * Pack 02C Task 03 — reusable language selector (enabled Registry languages only).
+ * Version 5.0 Reading Language control (Guest and Participant).
  * Guest: writes Web-origin `hu_lang` then refreshes for SSR lang/dir.
- * Authenticated: persists Participant `interfaceLanguage`, then syncs `hu_lang`.
- * Pack 02D — chrome label/status via next-intl; option names stay Registry-driven.
- * Pack 02F staging-smoke — refetch when Admin invalidates the public languages cache.
+ * Participant: same preference as Preferences — `readingLanguages[0]` plus
+ * aligned `interfaceLanguage`, then `hu_lang`. Does not mint SEO locale URLs.
  */
 export function LanguageSelector({
   className,
@@ -138,9 +139,9 @@ export function LanguageSelector({
           if (cancelled) {
             return;
           }
-          const interfaceLanguage = preferences.experiencePreferences.interfaceLanguage;
-          if (options.some((row) => row.locale === interfaceLanguage)) {
-            nextValue = interfaceLanguage;
+          const preferred = resolvePreferredPresentationLocale(preferences);
+          if (preferred && options.some((row) => row.locale === preferred)) {
+            nextValue = preferred;
           }
         } catch {
           const cookie = readHuLangCookieFromDocument();
@@ -197,19 +198,17 @@ export function LanguageSelector({
       const preferenceWrite =
         authStatus === "authenticated"
           ? updateMyPreferences({
-              // API accepts partial experiencePreferences; validator merges interfaceLanguage only.
-              experiencePreferences: { interfaceLanguage: locale } as never,
+              experiencePreferences: buildParticipantReadingLanguagePatch(locale) as never,
             })
           : Promise.resolve();
 
-      // Cookie + Registry-driven navigation share applyPresentationLocale with Preferences.
-      // Preference persist stays parallel (selector path); Preferences persists before calling apply.
-      const selected = options.find((row) => row.locale === locale);
+      // Reading Language is a presentation control — never mint /{locale}/ URLs.
       const [applied] = await Promise.all([
         applyPresentationLocale({
           locale,
           pathname,
-          seoIndexingEnabled: selected?.seoIndexingEnabled === true,
+          seoIndexingEnabled: false,
+          readingLanguageControl: true,
           router,
           markAuthenticatedSync: authStatus === "authenticated",
           recordMediaLocaleSwitch: true,

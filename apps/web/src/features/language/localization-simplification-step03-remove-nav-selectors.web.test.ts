@@ -14,23 +14,21 @@ function readWeb(rel: string): string {
   return readFileSync(path.join(webSrc, rel), "utf8");
 }
 
-describe("Localization Simplification Step 03 — remove public LanguageSelector mounts", () => {
-  it("Desktop header has no LanguageSelector", () => {
+describe("Version 5.0 — Header LanguageSelector remount", () => {
+  it("Desktop header mounts LanguageSelector", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
-    assert.doesNotMatch(header, /LanguageSelector/);
-    assert.doesNotMatch(header, /hu-language-selector/);
+    assert.match(header, /LanguageSelector/);
   });
 
-  it("Mobile public menu has no LanguageSelector", () => {
+  it("Mobile public menu mounts LanguageSelector", () => {
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
-    assert.doesNotMatch(mobile, /LanguageSelector/);
-    assert.doesNotMatch(mobile, /hu-language-selector/);
+    assert.match(mobile, /LanguageSelector/);
   });
 
-  it("PWA global menu has no LanguageSelector", () => {
+  it("PWA global menu mounts LanguageSelector", () => {
     const pwa = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
-    assert.doesNotMatch(pwa, /LanguageSelector/);
-    assert.doesNotMatch(pwa, /hu-pwa-global-menu__language/);
+    assert.match(pwa, /LanguageSelector/);
+    assert.match(pwa, /hu-pwa-global-menu__language/);
   });
 
   it("LanguageSelector implementation remains available (not deleted)", () => {

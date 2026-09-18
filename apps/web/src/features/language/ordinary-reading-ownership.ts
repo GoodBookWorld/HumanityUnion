@@ -1,13 +1,16 @@
 /**
- * Language Architecture Pack 02 / Version 5.0 — Registry-driven ordinary-reading ownership.
+ * Language Architecture Pack 02 / Version 5.0 — unified ordinary-reading ownership.
  *
- * NORMAL WEB: browser-native (canonical → browser Translate).
- * STANDALONE PWA + Registry activation gates: hu-persisted (CURRENT → visible;
+ * Guest Web, Participant Web, and installed PWA share one Reading Language.
+ * Eligible non-English locales use persisted CT/PLP (CURRENT → visible;
  * missing/stale → per-artifact canonical fallback).
- * Public News RSS cards: always browser-native / source original (sourceKind-based).
+ * English stays canonical. Public News RSS stays source-original.
+ * `presentationMode` is not an eligibility gate.
+ * Search/SEO flags are not eligibility gates.
  *
  * Version 5.0 invariant: `pwaPersistedReadingReady` is Admin/activation only —
  * it must not gate individual runtime persisted reads.
+ * Phase 1 keeps the Registry field name `pwaPersistedReadingEnabled`.
  */
 
 import type {
@@ -51,9 +54,8 @@ export function resolveOrdinaryReadingOwner(input: {
     return "browser-native";
   }
 
-  if (input.presentationMode !== "standalone") {
-    return "browser-native";
-  }
+  // Version 5.0 Phase 1 — standalone/PWA is not an ordinary-reading gate.
+  void input.presentationMode;
 
   const language = (input.preferredReadingLanguage || DEFAULT_PLATFORM_LANGUAGE).trim();
   if (!language || language === DEFAULT_PLATFORM_LANGUAGE) {

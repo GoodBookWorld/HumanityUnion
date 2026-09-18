@@ -27,7 +27,7 @@ describe("Stable Browser Translation Pack 1 — PublicTranslatedFields reading p
   const fields = readFeatures("language/components/PublicTranslatedFields.tsx");
   const persistedHook = readFeatures("language/use-hu-persisted-ordinary-fields.ts");
 
-  it("ordinary WEB reading does not apply CT without hu-persisted ownership", () => {
+  it("ordinary reading applies CT only when owner is hu-persisted", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "browser",

@@ -140,13 +140,12 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     );
   });
 
-  it("public Desktop/Mobile navigation no longer mounts LanguageSelector", () => {
+  it("public Desktop/Mobile navigation mounts the shared LanguageSelector", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
     const layout = readWeb("design-system/components/HumanityLayout.tsx");
-    assert.doesNotMatch(header, /LanguageSelector/);
-    assert.doesNotMatch(mobile, /LanguageSelector/);
-    // Locale cookie sync infrastructure remains (Preferences / guest paths).
+    assert.match(header, /LanguageSelector/);
+    assert.match(mobile, /LanguageSelector/);
     assert.match(layout, /InterfaceLanguageCookieSync/);
   });
 
@@ -178,7 +177,7 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
   });
 
-  it("PWA standalone burger Global Menu has no LanguageSelector mount", () => {
+  it("PWA standalone burger Global Menu mounts the shared LanguageSelector", () => {
     const safeArea = readWeb("features/pwa/pwa-safe-area.css");
     const pwaHeader = readWeb("features/pwa/components/PwaAppHeader.tsx");
     const globalMenu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
@@ -191,8 +190,8 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
       /\.humanity-app--pwa-standalone\s+\.humanity-header[\s\S]*display:\s*none/,
     );
     assert.match(pwaHeader, /PwaGlobalMenu/);
-    assert.doesNotMatch(globalMenu, /LanguageSelector/);
-    assert.doesNotMatch(globalMenu, /hu-pwa-global-menu__language/);
+    assert.match(globalMenu, /LanguageSelector/);
+    assert.match(globalMenu, /hu-pwa-global-menu__language/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*position:\s*static/);
     assert.match(css, /hu-language-selector--mobile[\s\S]*max-height:\s*min\(65dvh/);
     assert.match(css, /hu-language-selector__icon-trigger[\s\S]*min-height:\s*var\(--hu-touch-target/);
@@ -242,12 +241,14 @@ describe("Production Completion Pack 02C Task 03 — language selector + hu_lang
     );
   });
 
-  it("LanguageSelector passes Registry seoIndexingEnabled into href resolver", () => {
+  it("LanguageSelector reading control does not mint SEO locale URLs", () => {
     const selector = readWeb("features/language/components/LanguageSelector.tsx");
     const api = readWeb("features/language/public-languages-api.ts");
     const href = readWeb("features/language/resolve-locale-switch-navigation-href.ts");
     assert.match(api, /seoIndexingEnabled:\s*row\.seoIndexingEnabled\s*===\s*true/);
-    assert.match(selector, /seoIndexingEnabled:\s*selected\?\.seoIndexingEnabled\s*===\s*true/);
+    assert.match(selector, /readingLanguageControl:\s*true/);
+    assert.match(selector, /seoIndexingEnabled:\s*false/);
+    assert.doesNotMatch(selector, /seoIndexingEnabled:\s*selected\?\.seoIndexingEnabled/);
     assert.match(href, /seoIndexingEnabled\s*!==\s*true/);
     assert.doesNotMatch(href, /\bka\b/);
     assert.doesNotMatch(selector, /\bka\.json\b/);

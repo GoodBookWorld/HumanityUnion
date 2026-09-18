@@ -31,7 +31,7 @@ const eligible: PwaPersistedOrdinaryReadingEligibility = {
 };
 
 describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
-  it("1. normal WEB + arbitrary CT-enabled locale → browser-native", () => {
+  it("1. normal WEB + eligible locale → hu-persisted", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "browser",
@@ -39,7 +39,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
         sourceKind: "initiative",
         pwaEligibility: eligible,
       }),
-      "browser-native",
+      "hu-persisted",
     );
   });
 
@@ -112,7 +112,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
           sourceKind: "initiative",
           pwaEligibility: eligible,
         }),
-        "browser-native",
+        "hu-persisted",
       );
     }
   });
@@ -320,7 +320,7 @@ describe("Version 5.0 — PWA persisted reading vs corpus readiness", () => {
     );
   });
 
-  it("normal WEB stays browser-native when activation gates pass", () => {
+  it("normal WEB + eligible language stays hu-persisted", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "browser",
@@ -328,7 +328,7 @@ describe("Version 5.0 — PWA persisted reading vs corpus readiness", () => {
         sourceKind: "initiative",
         pwaEligibility: activatedNotReady,
       }),
-      "browser-native",
+      "hu-persisted",
     );
   });
 });

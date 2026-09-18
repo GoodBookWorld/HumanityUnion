@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { forwardRef, useCallback } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
+import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
 import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 
@@ -53,6 +54,9 @@ export function HumanityHeaderMobileMenu({
         aria-modal="true"
         aria-label={tNav("mobileNavAria")}
       >
+        <div className="humanity-header__mobile-language">
+          <LanguageSelector className="hu-language-selector--header" />
+        </div>
         <nav aria-label={tNav("primaryNavAria")}>
           <ul className="humanity-header__mobile-nav-list">
             {PRIMARY_NAVIGATION.map((item) => {

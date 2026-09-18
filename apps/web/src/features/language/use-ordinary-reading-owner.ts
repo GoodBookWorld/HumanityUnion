@@ -1,10 +1,10 @@
 /**
  * Language Architecture Pack 02 / Version 5.0 — client ordinary-reading ownership.
  *
- * SSR and first paint default to browser-native (hydration-safe canonical DOM).
- * After mount, standalone detection + lightweight public Registry capability
- * catalog may upgrade to hu-persisted; callers then cache-only resolve CURRENT
- * translation without provider generation.
+ * SSR and first paint default to canonical (hydration-safe).
+ * After mount, lightweight public Registry capability catalog may upgrade to
+ * hu-persisted on Web and PWA. Standalone detection is not an eligibility gate.
+ * Callers then cache-only resolve CURRENT translation without provider generation.
  *
  * Public `GET /api/v1/languages` is RUNTIME CAPABILITY only (activation flags).
  * Corpus readiness is never required for ownership (Admin/activation only).
