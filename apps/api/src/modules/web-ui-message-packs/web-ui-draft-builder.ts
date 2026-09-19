@@ -1,0 +1,713 @@
+/**
+ * Offline WEB_UI draft builder.
+ *
+ * Calls TranslationProvider.translate directly. Does not import, publish,
+ * activate, or write ContentTranslation, Civic Media, Registry, or Mongo cooldown.
+ */
+
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import {
+  isPublicReaderWebUiRequiredPath,
+  type LanguageCode,
+  type WebUiMessageTree,
+} from "@hu/types";
+
+import { extractJsonObjectText, planPlpProviderBatches } from "../language/media-plp-materializer/provider-response-contract.js";
+import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "../language/hu-terminology-glossary.js";
+import type { TranslationProviderRequest, TranslationProviderResult } from "../language/translation-provider.js";
+import { TranslationProviderError } from "../language/translation.config.js";
+import {
+  collectStringPaths,
+  inspectMessageStructure,
+  loadBundledEnglishWebUiMessagePack,
+  selectEnglishWebUiMessages,
+  validateWebUiMessageTreeAgainstEnglish,
+} from "./web-ui-message-pack.validate.js";
+import {
+  protectWebUiMessageForProvider,
+  restoreWebUiMessageFromProvider,
+  WebUiMessageStructureError,
+} from "./web-ui-message-structure-protect.js";
+
+const PROTECTION_VERSION = 1;
+const SOURCE_NOTE = "offline WEB_UI draft; not published";
+const DEFAULT_RETRY_DELAY_MS = 1_500;
+
+export class WebUiDraftBuilderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebUiDraftBuilderError";
+  }
+}
+
+export class WebUiDraftBatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebUiDraftBatchError";
+  }
+}
+
+export type WebUiDraftTextDirection = "ltr" | "rtl";
+export type WebUiDraftTerminologyMode = "english-seed" | "live";
+
+export interface WebUiDraftBatchPlan {
+  readonly id: string;
+  readonly namespace: string;
+  readonly keys: readonly string[];
+}
+
+export interface WebUiDraftManifest {
+  readonly locale: string;
+  readonly englishName: string;
+  readonly nativeName: string;
+  readonly textDirection: WebUiDraftTextDirection;
+  readonly scope: "public";
+  readonly sourceHash: string;
+  readonly protectionVersion: number;
+  readonly provider: string | null;
+  readonly model: string | null;
+  readonly terminologyMode: WebUiDraftTerminologyMode;
+  readonly leafCount: number;
+  readonly batchCount: number;
+  readonly completedBatchCount: number;
+  readonly failedBatchCount: number;
+  readonly failedBatches: readonly {
+    readonly id: string;
+    readonly paths: readonly string[];
+    readonly reason: string;
+  }[];
+  readonly englishIdenticalPaths: readonly string[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface WebUiDraftRunResult {
+  readonly mode: "dry-run" | "execute";
+  readonly locale: string;
+  readonly englishName: string;
+  readonly nativeName: string;
+  readonly textDirection: WebUiDraftTextDirection;
+  readonly leafCount: number;
+  readonly batchCount: number;
+  readonly providerCalls: number;
+  readonly terminologyMode: WebUiDraftTerminologyMode;
+  readonly artifactPath: string | null;
+  readonly completedBatchCount: number;
+  readonly failedBatchCount: number;
+}
+
+export interface WebUiDraftBuilderInput {
+  readonly argv?: readonly string[];
+  readonly locale?: string;
+  readonly execute?: boolean;
+  readonly useLiveTerminology?: boolean;
+  readonly englishName?: string;
+  readonly nativeName?: string;
+  readonly textDirection?: WebUiDraftTextDirection;
+  readonly includePaths?: readonly string[];
+  readonly translator?: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
+  readonly outRoot?: string;
+  readonly retryDelayMs?: number;
+  readonly sleep?: (ms: number) => Promise<void>;
+  readonly env?: {
+    readonly TRANSLATION_PROVIDER?: string;
+    readonly HU_READ_ONLY_DIAGNOSTIC?: string;
+  };
+  readonly model?: string;
+  readonly loadLiveTerminology?: (locale: string) => Promise<string>;
+  readonly log?: (line: string) => void;
+  readonly now?: () => string;
+}
+
+type BatchCheckpoint = {
+  id: string;
+  keys: string[];
+  status: "ok" | "failed";
+  attempts: number;
+  reason?: string;
+};
+
+export function canonicalizeWebUiDraftLocale(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    throw new WebUiDraftBuilderError("locale is required.");
+  }
+  const canonical = trimmed
+    .split("-")
+    .map((part, index) => {
+      if (index === 0) {
+        return part.toLowerCase();
+      }
+      if (/^[A-Za-z]{4}$/.test(part)) {
+        return `${part[0]?.toUpperCase() ?? ""}${part.slice(1).toLowerCase()}`;
+      }
+      if (/^[A-Za-z]{2}$/.test(part) || /^[0-9]{3}$/.test(part)) {
+        return part.toUpperCase();
+      }
+      return part.toLowerCase();
+    })
+    .join("-");
+  if (!/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(canonical)) {
+    throw new WebUiDraftBuilderError(`Invalid locale: ${input}`);
+  }
+  if (canonical === "en") {
+    throw new WebUiDraftBuilderError(
+      "The canonical English catalog cannot be the target of a WEB_UI draft.",
+    );
+  }
+  return canonical;
+}
+
+export function planWebUiDraftBatches(
+  flat: Readonly<Record<string, string>>,
+): readonly WebUiDraftBatchPlan[] {
+  const byNamespace = new Map<string, Record<string, string>>();
+  for (const key of Object.keys(flat).sort()) {
+    const namespace = key.split(".")[0] || key;
+    const bucket = byNamespace.get(namespace) ?? {};
+    bucket[key] = flat[key] ?? "";
+    byNamespace.set(namespace, bucket);
+  }
+  const plans: WebUiDraftBatchPlan[] = [];
+  for (const namespace of [...byNamespace.keys()].sort()) {
+    const batches = planPlpProviderBatches(byNamespace.get(namespace) ?? {});
+    for (const batch of batches) {
+      const keys = Object.keys(batch).sort();
+      plans.push({
+        id: createHash("sha256").update(keys.join("\n")).digest("hex").slice(0, 16),
+        namespace,
+        keys,
+      });
+    }
+  }
+  return plans;
+}
+
+function readPath(messages: Record<string, unknown>, dottedPath: string): unknown {
+  let current: unknown = messages;
+  for (const segment of dottedPath.split(".")) {
+    if (current == null || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+function hashFlat(flat: Readonly<Record<string, string>>): string {
+  const hash = createHash("sha256");
+  for (const key of Object.keys(flat).sort()) {
+    hash.update(key);
+    hash.update("\0");
+    hash.update(flat[key] ?? "");
+    hash.update("\0");
+  }
+  return hash.digest("hex");
+}
+
+function unflatten(flat: Readonly<Record<string, string>>): WebUiMessageTree {
+  const root: Record<string, unknown> = {};
+  for (const [pathKey, value] of Object.entries(flat)) {
+    const segments = pathKey.split(".");
+    let cursor = root;
+    for (let index = 0; index < segments.length - 1; index += 1) {
+      const segment = segments[index] ?? "";
+      const next = cursor[segment];
+      if (next == null || typeof next !== "object" || Array.isArray(next)) {
+        cursor[segment] = {};
+      }
+      cursor = cursor[segment] as Record<string, unknown>;
+    }
+    cursor[segments[segments.length - 1] ?? ""] = value;
+  }
+  return root as WebUiMessageTree;
+}
+
+function sameTokenList(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  const sortedLeft = [...left].sort();
+  const sortedRight = [...right].sort();
+  return sortedLeft.every((token, index) => token === sortedRight[index]);
+}
+
+function assertStructureMatches(english: string, translated: string): void {
+  const source = inspectMessageStructure(english);
+  const target = inspectMessageStructure(translated);
+  if (source.balanced && !target.balanced) {
+    throw new WebUiDraftBatchError("Message structure is unbalanced.");
+  }
+  if (!sameTokenList(source.placeholders, target.placeholders)) {
+    throw new WebUiDraftBatchError("Placeholders do not match English.");
+  }
+  if (!sameTokenList(source.richTags, target.richTags)) {
+    throw new WebUiDraftBatchError("Rich-text tags do not match English.");
+  }
+}
+
+export function assertCompletePublicWebUiDraft(input: {
+  readonly messages: WebUiMessageTree;
+  readonly requiredPaths: readonly string[];
+}): void {
+  const report = validateWebUiMessageTreeAgainstEnglish(input.messages);
+  if (report.rejectedUnknownPaths.length > 0) {
+    throw new WebUiDraftBuilderError(
+      `Unknown WEB_UI paths: ${report.rejectedUnknownPaths.slice(0, 8).join(", ")}`,
+    );
+  }
+  if (report.rejectedNonStringPaths.length > 0) {
+    throw new WebUiDraftBuilderError(
+      `Non-string WEB_UI leaves: ${report.rejectedNonStringPaths.slice(0, 8).join(", ")}`,
+    );
+  }
+  if (report.placeholderMismatchPaths.length > 0) {
+    throw new WebUiDraftBuilderError(
+      `Placeholder mismatch: ${report.placeholderMismatchPaths.slice(0, 8).join("; ")}`,
+    );
+  }
+  if (report.emptyPaths.length > 0) {
+    throw new WebUiDraftBuilderError(`Empty WEB_UI values: ${report.emptyPaths.slice(0, 8).join(", ")}`);
+  }
+  const present = new Set(collectStringPaths(input.messages as Record<string, unknown>));
+  const missing = input.requiredPaths.filter((pathKey) => !present.has(pathKey));
+  if (missing.length > 0) {
+    throw new WebUiDraftBuilderError(
+      `Public WEB_UI draft is incomplete. Missing ${missing.length} paths, including ${missing.slice(0, 8).join(", ")}`,
+    );
+  }
+  for (const pathKey of present) {
+    const value = readPath(input.messages as Record<string, unknown>, pathKey);
+    if (typeof value === "string" && (value.includes("⟦w") || value.includes("__HU_BRAND_SITE_NAME__"))) {
+      throw new WebUiDraftBuilderError(`Unresolved protection sentinel at ${pathKey}.`);
+    }
+  }
+}
+
+function buildTerminologyContext(input: {
+  readonly locale: string;
+  readonly englishName: string;
+  readonly nativeName: string;
+  readonly textDirection: WebUiDraftTextDirection;
+  readonly glossary: string;
+}): string {
+  return [
+    "WEB_UI catalog draft rules:",
+    `Target locale: ${input.locale}.`,
+    `English language name: ${input.englishName}.`,
+    `Native language name: ${input.nativeName}.`,
+    `Text direction: ${input.textDirection}.`,
+    "Values may contain protection sentinels such as ⟦w0⟧.",
+    "Copy every sentinel exactly. Do not translate, reorder, split, or drop sentinels.",
+    "Translate only natural-language text around sentinels.",
+    "Do not invent, rename, or drop JSON keys.",
+    "Short interface labels may stay identical to English when that is the natural form.",
+    "Glossary:",
+    input.glossary.trim(),
+  ].join("\n");
+}
+
+function parseTranslations(raw: string): Map<string, string> {
+  const extracted = extractJsonObjectText(raw);
+  if (!extracted.ok) {
+    throw new WebUiDraftBatchError("Provider response was not a JSON object.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(extracted.text);
+  } catch {
+    throw new WebUiDraftBatchError("Provider response JSON could not be parsed.");
+  }
+  if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new WebUiDraftBatchError("Provider response JSON root was not an object.");
+  }
+  const rows = (parsed as { translations?: unknown }).translations;
+  if (!Array.isArray(rows)) {
+    throw new WebUiDraftBatchError("Provider response is missing translations.");
+  }
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (row == null || typeof row !== "object" || Array.isArray(row)) {
+      throw new WebUiDraftBatchError("Provider translation row was not an object.");
+    }
+    const key = (row as { key?: unknown }).key;
+    const value = (row as { value?: unknown }).value;
+    if (typeof key !== "string" || typeof value !== "string") {
+      throw new WebUiDraftBatchError("Provider translation row must have string key and value.");
+    }
+    if (map.has(key)) {
+      throw new WebUiDraftBatchError(`Provider returned duplicate key ${key}.`);
+    }
+    map.set(key, value);
+  }
+  return map;
+}
+
+function isNonRetryable(error: unknown): boolean {
+  return (
+    error instanceof TranslationProviderError &&
+    (error.code === "safety_rejected" ||
+      error.code === "not_configured" ||
+      error.code === "forbidden" ||
+      error.code === "unsupported_language")
+  );
+}
+
+function readFlag(argv: readonly string[], name: string): string | undefined {
+  const withEquals = argv.find((arg) => arg.startsWith(`${name}=`));
+  if (withEquals) {
+    return withEquals.slice(name.length + 1);
+  }
+  const index = argv.indexOf(name);
+  if (index >= 0) {
+    return argv[index + 1];
+  }
+  return undefined;
+}
+
+function repoTmpRoot(): string {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(here, "../../../../..", "tmp");
+}
+
+function loadCorpus(includePaths: readonly string[] | undefined): {
+  readonly flat: Record<string, string>;
+  readonly requiredPaths: readonly string[];
+} {
+  const prepared = selectEnglishWebUiMessages("public");
+  const english = loadBundledEnglishWebUiMessagePack();
+  const selected = includePaths ?? prepared.selectedPaths;
+  const allowed = new Set(prepared.selectedPaths);
+  const flat: Record<string, string> = {};
+  for (const pathKey of selected) {
+    if (!allowed.has(pathKey) || !isPublicReaderWebUiRequiredPath(pathKey)) {
+      throw new WebUiDraftBuilderError(`Path is outside the public WEB_UI scope: ${pathKey}`);
+    }
+    const value = readPath(prepared.messages as Record<string, unknown>, pathKey);
+    const canonical = readPath(english, pathKey);
+    if (typeof value !== "string" || value !== canonical) {
+      throw new WebUiDraftBuilderError(`Path is not canonical English: ${pathKey}`);
+    }
+    flat[pathKey] = value;
+  }
+  return { flat, requiredPaths: selected };
+}
+
+function checkpointPaths(outRoot: string, locale: string): {
+  readonly directory: string;
+  readonly artifactPath: string;
+  readonly manifestPath: string;
+  readonly sourcePath: string;
+  readonly mapPath: string;
+  readonly batchDir: string;
+} {
+  const directory = path.join(outRoot, `web-ui-${locale}-draft`);
+  return {
+    directory,
+    artifactPath: path.join(outRoot, `web-ui-${locale}-draft.json`),
+    manifestPath: path.join(directory, "manifest.json"),
+    sourcePath: path.join(directory, "source.json"),
+    mapPath: path.join(directory, "translated-map.json"),
+    batchDir: path.join(directory, "batches"),
+  };
+}
+
+function readJson<T>(filePath: string): T | null {
+  if (!existsSync(filePath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(filePath, "utf8")) as T;
+}
+
+async function defaultSleep(ms: number): Promise<void> {
+  if (ms <= 0) {
+    return;
+  }
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function defaultLiveTerminology(locale: string): Promise<string> {
+  const module = await import("../language/terminology-glossary/terminology-glossary.provider-context.js");
+  return module.resolveProviderTerminologyContext(locale);
+}
+
+export async function runWebUiDraftBuilder(
+  input: WebUiDraftBuilderInput = {},
+): Promise<WebUiDraftRunResult> {
+  const argv = input.argv ?? [];
+  const execute = input.execute ?? argv.includes("--execute");
+  const useLiveTerminology = input.useLiveTerminology ?? argv.includes("--use-live-terminology");
+  const locale = canonicalizeWebUiDraftLocale(
+    input.locale ?? readFlag(argv, "--locale") ?? "",
+  );
+  const textDirectionRaw = input.textDirection ?? readFlag(argv, "--text-direction") ?? "ltr";
+  if (textDirectionRaw !== "ltr" && textDirectionRaw !== "rtl") {
+    throw new WebUiDraftBuilderError("textDirection must be ltr or rtl.");
+  }
+  const textDirection = textDirectionRaw;
+  const englishName = (input.englishName ?? readFlag(argv, "--english-name") ?? locale).trim();
+  const nativeName = (input.nativeName ?? readFlag(argv, "--native-name") ?? locale).trim();
+  const terminologyMode: WebUiDraftTerminologyMode = useLiveTerminology ? "live" : "english-seed";
+  const log = input.log ?? ((line: string) => console.log(line));
+  const now = input.now ?? (() => new Date().toISOString());
+  const { flat, requiredPaths } = loadCorpus(input.includePaths);
+  const batches = planWebUiDraftBatches(flat);
+  const sourceHash = hashFlat(flat);
+
+  if (!execute) {
+    log(
+      [
+        "WEB_UI draft dry-run",
+        `locale: ${locale}`,
+        `englishName: ${englishName}`,
+        `nativeName: ${nativeName}`,
+        `textDirection: ${textDirection}`,
+        "scope: public",
+        `leaves: ${requiredPaths.length}`,
+        `batches: ${batches.length}`,
+        `terminology: ${terminologyMode}`,
+        "provider calls: 0",
+      ].join("\n"),
+    );
+    return {
+      mode: "dry-run",
+      locale,
+      englishName,
+      nativeName,
+      textDirection,
+      leafCount: requiredPaths.length,
+      batchCount: batches.length,
+      providerCalls: 0,
+      terminologyMode,
+      artifactPath: null,
+      completedBatchCount: 0,
+      failedBatchCount: 0,
+    };
+  }
+
+  const envProvider = input.env?.TRANSLATION_PROVIDER ?? process.env.TRANSLATION_PROVIDER;
+  const envDiagnostic = input.env?.HU_READ_ONLY_DIAGNOSTIC ?? process.env.HU_READ_ONLY_DIAGNOSTIC;
+  if (envDiagnostic === "1") {
+    throw new WebUiDraftBuilderError("REFUSED: read-only diagnostic cannot call the translation provider.");
+  }
+  if (envProvider?.trim().toLowerCase() !== "gemini") {
+    throw new WebUiDraftBuilderError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
+  }
+
+  let translator = input.translator;
+  let providerLabel = input.translator ? "injected" : "gemini";
+  let modelLabel = input.model ?? (input.translator ? "injected" : "");
+  if (!translator) {
+    const { resolveTranslationConfig } = await import("../language/translation.config.js");
+    const { resolveTranslationProvider } = await import("../language/resolve-translation-provider.js");
+    const config = resolveTranslationConfig();
+    if (config.provider !== "gemini") {
+      throw new WebUiDraftBuilderError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
+    }
+    modelLabel = config.geminiModel;
+    const provider = resolveTranslationProvider();
+    translator = (request) => provider.translate(request);
+  }
+
+  const outRoot = input.outRoot ?? repoTmpRoot();
+  const paths = checkpointPaths(outRoot, locale);
+  if (existsSync(paths.directory) && !existsSync(paths.manifestPath)) {
+    throw new WebUiDraftBuilderError("Checkpoint directory is incomplete. Remove it and start again.");
+  }
+  mkdirSync(paths.batchDir, { recursive: true });
+  const existing = readJson<WebUiDraftManifest>(paths.manifestPath);
+  if (existing) {
+    if (existing.locale !== locale) {
+      throw new WebUiDraftBuilderError("Checkpoint locale does not match this run.");
+    }
+    if (existing.sourceHash !== sourceHash) {
+      throw new WebUiDraftBuilderError(
+        "Checkpoint source hash does not match the canonical English catalog. Remove the checkpoint directory and start again.",
+      );
+    }
+    if (existing.terminologyMode !== terminologyMode) {
+      throw new WebUiDraftBuilderError("Checkpoint terminology mode does not match this run.");
+    }
+    if (
+      existing.englishName !== englishName ||
+      existing.nativeName !== nativeName ||
+      existing.textDirection !== textDirection ||
+      existing.protectionVersion !== PROTECTION_VERSION
+    ) {
+      throw new WebUiDraftBuilderError("Checkpoint locale metadata does not match this run.");
+    }
+    if (
+      (existing.provider && existing.provider !== providerLabel) ||
+      (existing.model && modelLabel && existing.model !== modelLabel)
+    ) {
+      throw new WebUiDraftBuilderError("Checkpoint provider configuration does not match this run.");
+    }
+  }
+
+  const glossary = useLiveTerminology
+    ? await (input.loadLiveTerminology ?? defaultLiveTerminology)(locale)
+    : HUMANITY_UNION_TRANSLATION_TERMINOLOGY;
+  const terminologyContext = buildTerminologyContext({
+    locale,
+    englishName,
+    nativeName,
+    textDirection,
+    glossary,
+  });
+
+  const createdAt = existing?.createdAt ?? now();
+  const translated = readJson<Record<string, string>>(paths.mapPath) ?? {};
+  let providerCalls = 0;
+  let completedBatchCount = 0;
+  let failedBatchCount = 0;
+  const failedBatches: WebUiDraftManifest["failedBatches"][number][] = [];
+  const sleep = input.sleep ?? defaultSleep;
+  const retryDelayMs = input.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+
+  const writeManifest = (englishIdenticalPaths: readonly string[]): void => {
+    const manifest: WebUiDraftManifest = {
+      locale,
+      englishName,
+      nativeName,
+      textDirection,
+      scope: "public",
+      sourceHash,
+      protectionVersion: PROTECTION_VERSION,
+      provider: providerLabel,
+      model: modelLabel || null,
+      terminologyMode,
+      leafCount: requiredPaths.length,
+      batchCount: batches.length,
+      completedBatchCount,
+      failedBatchCount,
+      failedBatches,
+      englishIdenticalPaths,
+      createdAt,
+      updatedAt: now(),
+    };
+    writeFileSync(paths.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  };
+
+  writeFileSync(
+    paths.sourcePath,
+    `${JSON.stringify({ locale, sourceHash, scope: "public", messages: unflatten(flat) }, null, 2)}\n`,
+  );
+  writeManifest([]);
+
+  for (const batch of batches) {
+    const batchPath = path.join(paths.batchDir, `${batch.id}.json`);
+    const previous = readJson<BatchCheckpoint>(batchPath);
+    if (
+      previous?.status === "ok" &&
+      previous.keys.join("\n") === batch.keys.join("\n") &&
+      batch.keys.every((key) => typeof translated[key] === "string")
+    ) {
+      completedBatchCount += 1;
+      continue;
+    }
+
+    let attempt = 0;
+    let done = false;
+    let lastReason = "Provider batch failed.";
+    while (attempt < 2 && !done) {
+      attempt += 1;
+      try {
+        const payload = JSON.stringify({
+          translations: batch.keys.map((key) => ({
+            key,
+            value: protectWebUiMessageForProvider(flat[key] ?? "").text,
+          })),
+        });
+        providerCalls += 1;
+        const result = await translator({
+          sourceLanguage: "en",
+          targetLanguage: locale as LanguageCode,
+          text: payload,
+          contentType: "structured_json",
+          terminologyContext,
+          safetyCleared: true,
+        });
+        const returned = parseTranslations(result.translatedText);
+        const missing = batch.keys.filter((key) => !returned.has(key));
+        if (missing.length > 0) {
+          throw new WebUiDraftBatchError(`Provider omitted keys: ${missing.slice(0, 8).join(", ")}`);
+        }
+        const extra = [...returned.keys()].filter((key) => !batch.keys.includes(key));
+        if (extra.length > 0) {
+          throw new WebUiDraftBatchError(`Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`);
+        }
+        for (const key of batch.keys) {
+          const restored = restoreWebUiMessageFromProvider(returned.get(key) ?? "", flat[key] ?? "");
+          assertStructureMatches(flat[key] ?? "", restored);
+          translated[key] = restored;
+        }
+        done = true;
+      } catch (error) {
+        lastReason = error instanceof Error ? error.message : "Provider batch failed.";
+        if (isNonRetryable(error) || attempt >= 2) {
+          const checkpoint: BatchCheckpoint = {
+            id: batch.id,
+            keys: [...batch.keys],
+            status: "failed",
+            attempts: attempt,
+            reason: lastReason,
+          };
+          writeFileSync(batchPath, `${JSON.stringify(checkpoint, null, 2)}\n`);
+          failedBatchCount += 1;
+          failedBatches.push({ id: batch.id, paths: batch.keys, reason: lastReason });
+          writeFileSync(paths.mapPath, `${JSON.stringify(translated, null, 2)}\n`);
+          writeManifest([]);
+          throw new WebUiDraftBuilderError(lastReason);
+        }
+        await sleep(retryDelayMs);
+      }
+    }
+    if (!done) {
+      throw new WebUiDraftBuilderError(lastReason);
+    }
+    const checkpoint: BatchCheckpoint = {
+      id: batch.id,
+      keys: [...batch.keys],
+      status: "ok",
+      attempts: attempt,
+    };
+    writeFileSync(batchPath, `${JSON.stringify(checkpoint, null, 2)}\n`);
+    writeFileSync(paths.mapPath, `${JSON.stringify(translated, null, 2)}\n`);
+    completedBatchCount += 1;
+    writeManifest([]);
+  }
+
+  const englishIdenticalPaths = requiredPaths.filter((pathKey) => translated[pathKey] === flat[pathKey]);
+  const messages = unflatten(
+    Object.fromEntries(requiredPaths.map((pathKey) => [pathKey, translated[pathKey] ?? ""])),
+  );
+  assertCompletePublicWebUiDraft({ messages, requiredPaths });
+  writeFileSync(
+    paths.artifactPath,
+    `${JSON.stringify({ locale, status: "draft", sourceNote: SOURCE_NOTE, messages }, null, 2)}\n`,
+  );
+  writeManifest(englishIdenticalPaths);
+  log(
+    `WEB_UI draft written: ${paths.artifactPath} leaves=${requiredPaths.length} batches=${batches.length}`,
+  );
+  return {
+    mode: "execute",
+    locale,
+    englishName,
+    nativeName,
+    textDirection,
+    leafCount: requiredPaths.length,
+    batchCount: batches.length,
+    providerCalls,
+    terminologyMode,
+    artifactPath: paths.artifactPath,
+    completedBatchCount,
+    failedBatchCount,
+  };
+}
