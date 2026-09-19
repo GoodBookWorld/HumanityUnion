@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { isPublicReaderWebUiRequiredPath, type TranslationProviderId } from "@hu/types";
 
+import { DeterministicTranslationProvider } from "../../../src/modules/language/providers/deterministic-translation-provider.js";
 import { TranslationProviderError } from "../../../src/modules/language/translation.config.js";
 import type {
   TranslationProviderRequest,
@@ -69,15 +70,25 @@ function translateOutsideSentinels(value: string): string {
     .join("");
 }
 
+function flatPayload(request: TranslationProviderRequest): Record<string, string> {
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
+  assert.equal(Array.isArray(parsed.translations), false);
+  const flatMap: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    assert.equal(typeof value, "string");
+    flatMap[key] = value;
+  }
+  return flatMap;
+}
+
 function translatingEcho(request: TranslationProviderRequest): TranslationProviderResult {
-  const parsed = JSON.parse(request.text) as { translations: { key: string; value: string }[] };
+  const parsed = flatPayload(request);
   return {
-    translatedText: JSON.stringify({
-      translations: parsed.translations.map((row) => ({
-        key: row.key,
-        value: translateOutsideSentinels(row.value),
-      })),
-    }),
+    translatedText: JSON.stringify(
+      Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, translateOutsideSentinels(value)]),
+      ),
+    ),
     providerId: "deterministic",
     isPlaceholder: false,
   };
@@ -289,9 +300,7 @@ describe("offline WEB_UI draft builder", () => {
         env: executeEnv,
         translator: async (request) => {
           calls += 1;
-          const key = (JSON.parse(request.text) as { translations: { key: string }[] }).translations
-            .map((row) => row.key)
-            .join("|");
+          const key = Object.keys(flatPayload(request)).sort().join("|");
           targetKey ??= key;
           const attempt = (attempts.get(key) ?? 0) + 1;
           attempts.set(key, attempt);
@@ -307,9 +316,11 @@ describe("offline WEB_UI draft builder", () => {
 
     const missingCalls = await countCalls((request, attempt) => {
       if (attempt === 1) {
-        const parsed = JSON.parse(request.text) as { translations: { key: string; value: string }[] };
+        const parsed = flatPayload(request);
+        const [first] = Object.keys(parsed);
+        delete parsed[first ?? ""];
         return {
-          translatedText: JSON.stringify({ translations: parsed.translations.slice(1) }),
+          translatedText: JSON.stringify(parsed),
           providerId: "deterministic",
           isPlaceholder: false,
         };
@@ -318,11 +329,10 @@ describe("offline WEB_UI draft builder", () => {
     });
     const extraCalls = await countCalls((request, attempt) => {
       if (attempt === 1) {
-        const parsed = JSON.parse(request.text) as { translations: { key: string; value: string }[] };
+        const parsed = flatPayload(request);
+        parsed["navigation.notARealKey"] = "x";
         return {
-          translatedText: JSON.stringify({
-            translations: [...parsed.translations, { key: "navigation.notARealKey", value: "x" }],
-          }),
+          translatedText: JSON.stringify(parsed),
           providerId: "deterministic",
           isPlaceholder: false,
         };
@@ -337,11 +347,11 @@ describe("offline WEB_UI draft builder", () => {
     });
     const structureCalls = await countCalls((request, attempt) => {
       if (attempt === 1) {
-        const parsed = JSON.parse(request.text) as { translations: { key: string; value: string }[] };
+        const parsed = flatPayload(request);
         return {
-          translatedText: JSON.stringify({
-            translations: parsed.translations.map((row) => ({ key: row.key, value: "broken {extra}" })),
-          }),
+          translatedText: JSON.stringify(
+            Object.fromEntries(Object.keys(parsed).map((key) => [key, "broken {extra}"])),
+          ),
           providerId: "deterministic",
           isPlaceholder: false,
         };
@@ -485,6 +495,129 @@ describe("offline WEB_UI draft builder", () => {
       readFileSync(path.join(outRoot, "web-ui-eo-draft", "manifest.json"), "utf8"),
     ) as { terminologyMode: string };
     assert.equal(manifest.terminologyMode, "live");
+    rmSync(outRoot, { recursive: true, force: true });
+  });
+
+  it("accepts the TranslationProvider flat map and rejects a non-string row", async () => {
+    const provider = new DeterministicTranslationProvider();
+    const outRoot = tempRoot();
+    const includePaths = navigationPaths(2);
+    await runWebUiDraftBuilder({
+      locale: "eo",
+      execute: true,
+      includePaths,
+      outRoot,
+      log: () => undefined,
+      retryDelayMs: 0,
+      env: executeEnv,
+      translator: async (request) => {
+        const parsed = JSON.parse(request.text) as Record<string, unknown>;
+        assert.equal(Object.hasOwn(parsed, "translations"), false);
+        assert.equal(request.contentType, "structured_json");
+        for (const pathKey of includePaths) {
+          assert.equal(typeof parsed[pathKey], "string");
+        }
+        return provider.translate(request);
+      },
+    });
+    const artifact = JSON.parse(
+      readFileSync(path.join(outRoot, "web-ui-eo-draft.json"), "utf8"),
+    ) as { messages: Record<string, unknown> };
+    for (const pathKey of includePaths) {
+      let leaf: unknown = artifact.messages;
+      for (const segment of pathKey.split(".")) {
+        leaf = (leaf as Record<string, unknown>)[segment];
+      }
+      assert.equal(typeof leaf, "string");
+      assert.match(leaf as string, /^\[eo\] /);
+    }
+    rmSync(outRoot, { recursive: true, force: true });
+
+    const failedRoot = tempRoot();
+    let calls = 0;
+    await assert.rejects(
+      () =>
+        runWebUiDraftBuilder({
+          locale: "eo",
+          execute: true,
+          includePaths: navigationPaths(1),
+          outRoot: failedRoot,
+          log: () => undefined,
+          retryDelayMs: 0,
+          sleep: async () => undefined,
+          env: executeEnv,
+          translator: () => {
+            calls += 1;
+            return Promise.resolve({
+              translatedText: JSON.stringify({
+                translations: [{ key: navigationPaths(1)[0], value: { nested: "not-a-string" } }],
+              }),
+              providerId: "deterministic" as TranslationProviderId,
+              isPlaceholder: false,
+            });
+          },
+        }),
+      /Provider translation row must have string key and value/,
+    );
+    assert.equal(calls, 2);
+    rmSync(failedRoot, { recursive: true, force: true });
+  });
+
+  it("resumes after a failed row-validation batch without repeating completed batches", async () => {
+    const includePaths = navigationPaths(7);
+    const plans = planWebUiDraftBatches(
+      Object.fromEntries(includePaths.map((key) => [key, flat[key] ?? ""])),
+    );
+    assert.equal(plans.length, 2);
+    const failedKeys = plans[1]?.keys.join("|");
+    const outRoot = tempRoot();
+    await assert.rejects(
+      () =>
+        runWebUiDraftBuilder({
+          locale: "eo",
+          execute: true,
+          includePaths,
+          outRoot,
+          log: () => undefined,
+          retryDelayMs: 0,
+          sleep: async () => undefined,
+          env: executeEnv,
+          model: "test-model",
+          translator: async (request) => {
+            const key = Object.keys(flatPayload(request)).sort().join("|");
+            if (key === failedKeys) {
+              return {
+                translatedText: JSON.stringify({
+                  translations: [{ key: plans[1]?.keys[0], value: ["not-a-string"] }],
+                }),
+                providerId: "deterministic" as TranslationProviderId,
+                isPlaceholder: false,
+              };
+            }
+            return echo(request);
+          },
+        }),
+      /Provider translation row must have string key and value/,
+    );
+    let resumeCalls = 0;
+    const resumed = await runWebUiDraftBuilder({
+      locale: "eo",
+      execute: true,
+      includePaths,
+      outRoot,
+      log: () => undefined,
+      retryDelayMs: 0,
+      env: executeEnv,
+      model: "test-model",
+      translator: async (request) => {
+        resumeCalls += 1;
+        assert.equal(Object.keys(flatPayload(request)).sort().join("|"), failedKeys);
+        return echo(request);
+      },
+    });
+    assert.equal(resumeCalls, 1);
+    assert.equal(resumed.providerCalls, 1);
+    assert.equal(resumed.completedBatchCount, plans.length);
     rmSync(outRoot, { recursive: true, force: true });
   });
 

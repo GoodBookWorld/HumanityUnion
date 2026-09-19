@@ -301,10 +301,13 @@ function buildTerminologyContext(input: {
     `English language name: ${input.englishName}.`,
     `Native language name: ${input.nativeName}.`,
     `Text direction: ${input.textDirection}.`,
+    "The user message is one flat JSON object.",
+    "Each JSON key is a stable catalog path. Copy every JSON key exactly.",
+    "Translate only the string values. Every returned value must remain a string.",
+    "Return one JSON object with exactly those keys. Do not wrap, nest, or rename them.",
     "Values may contain protection sentinels such as ⟦w0⟧.",
     "Copy every sentinel exactly. Do not translate, reorder, split, or drop sentinels.",
     "Translate only natural-language text around sentinels.",
-    "Do not invent, rename, or drop JSON keys.",
     "Short interface labels may stay identical to English when that is the natural form.",
     "Glossary:",
     input.glossary.trim(),
@@ -325,22 +328,32 @@ function parseTranslations(raw: string): Map<string, string> {
   if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new WebUiDraftBatchError("Provider response JSON root was not an object.");
   }
-  const rows = (parsed as { translations?: unknown }).translations;
-  if (!Array.isArray(rows)) {
-    throw new WebUiDraftBatchError("Provider response is missing translations.");
+  const root = parsed as Record<string, unknown>;
+  // GeminiTranslationProvider structured_json preserves JSON keys and translates
+  // string values. A translations-array row is accepted only when it already
+  // matches that string contract; non-string rows stay rejected.
+  if (Array.isArray(root.translations)) {
+    const map = new Map<string, string>();
+    for (const row of root.translations) {
+      if (row == null || typeof row !== "object" || Array.isArray(row)) {
+        throw new WebUiDraftBatchError("Provider translation row was not an object.");
+      }
+      const key = (row as { key?: unknown }).key;
+      const value = (row as { value?: unknown }).value;
+      if (typeof key !== "string" || typeof value !== "string") {
+        throw new WebUiDraftBatchError("Provider translation row must have string key and value.");
+      }
+      if (map.has(key)) {
+        throw new WebUiDraftBatchError(`Provider returned duplicate key ${key}.`);
+      }
+      map.set(key, value);
+    }
+    return map;
   }
   const map = new Map<string, string>();
-  for (const row of rows) {
-    if (row == null || typeof row !== "object" || Array.isArray(row)) {
-      throw new WebUiDraftBatchError("Provider translation row was not an object.");
-    }
-    const key = (row as { key?: unknown }).key;
-    const value = (row as { value?: unknown }).value;
-    if (typeof key !== "string" || typeof value !== "string") {
-      throw new WebUiDraftBatchError("Provider translation row must have string key and value.");
-    }
-    if (map.has(key)) {
-      throw new WebUiDraftBatchError(`Provider returned duplicate key ${key}.`);
+  for (const [key, value] of Object.entries(root)) {
+    if (typeof value !== "string") {
+      throw new WebUiDraftBatchError(`Provider translation value for ${key} must be a string.`);
     }
     map.set(key, value);
   }
@@ -618,12 +631,11 @@ export async function runWebUiDraftBuilder(
     while (attempt < 2 && !done) {
       attempt += 1;
       try {
-        const payload = JSON.stringify({
-          translations: batch.keys.map((key) => ({
-            key,
-            value: protectWebUiMessageForProvider(flat[key] ?? "").text,
-          })),
-        });
+        const payloadObject: Record<string, string> = {};
+        for (const key of batch.keys) {
+          payloadObject[key] = protectWebUiMessageForProvider(flat[key] ?? "").text;
+        }
+        const payload = JSON.stringify(payloadObject);
         providerCalls += 1;
         const result = await translator({
           sourceLanguage: "en",
