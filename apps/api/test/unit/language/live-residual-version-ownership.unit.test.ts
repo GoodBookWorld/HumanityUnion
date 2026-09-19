@@ -89,6 +89,8 @@ async function failAttempt(input: {
   readonly sourceRecordId: string;
   readonly sourceVersion: string | null;
   readonly reasonCode: string;
+  readonly failureClass?: string;
+  readonly retryabilityHint?: string | null;
   readonly enqueueSourceVersion?: string;
 }) {
   const enqueued = await enqueueContentTranslationWarmRequested({
@@ -104,14 +106,14 @@ async function failAttempt(input: {
     encodeContentTranslationFailureMetadata({
       schema: "content_translation_failure_meta_v1",
       validationContractVersion: "v1",
-      failureClass: "VALIDATION_FAILED",
+      failureClass: input.failureClass ?? "VALIDATION_FAILED",
       failureReasonCode: input.reasonCode,
       sourceKind: "initiative",
       sourceRecordId: input.sourceRecordId,
       sourceVersion: input.sourceVersion,
       targetLocale: "uk",
       failedAt: new Date().toISOString(),
-      retryabilityHint: "non_retryable_until_code_or_content_change",
+      retryabilityHint: input.retryabilityHint ?? "non_retryable_until_code_or_content_change",
     }),
   );
 }
@@ -333,6 +335,154 @@ describe("live residual version ownership and readiness", () => {
     assert.equal(
       explained.selection.blocked.some(
         (row) => row.presentationIdentity.sourceRecordId === blocked.initiative.initiativeId,
+      ),
+      true,
+    );
+  });
+
+  it("structured retryable metadata is retry-ready and shared with residual selection", async () => {
+    const cases = [
+      { suffix: "timeout", failureClass: "PROVIDER_TIMEOUT" },
+      { suffix: "invalid-payload", failureClass: "PROVIDER_INVALID_RESPONSE" },
+      { suffix: "persist", failureClass: "PERSISTENCE_FAILED" },
+      { suffix: "missing-dispatch", failureClass: "MISSING_AFTER_DISPATCH" },
+    ] as const;
+    const readyIds: string[] = [];
+
+    for (const entry of cases) {
+      const live = await liveInitiative(entry.suffix);
+      await failAttempt({
+        sourceRecordId: live.initiative.initiativeId,
+        sourceVersion: live.source.sourceVersion,
+        reasonCode: "UNKNOWN_LEGACY",
+        failureClass: entry.failureClass,
+        retryabilityHint: "retryable",
+        enqueueSourceVersion: live.source.sourceVersion,
+      });
+      const preflight = await preflightFor(live.initiative.initiativeId, live.source.sourceVersion);
+      assert.equal(preflight.ready, true, entry.failureClass);
+      assert.equal(preflight.terminalFailureForCurrentVersion, false, entry.failureClass);
+      assert.equal(preflight.failureReasonCode, "UNKNOWN_LEGACY", entry.failureClass);
+      assert.equal(classifyPreflight(preflight), "RETRY_READY_MISSING", entry.failureClass);
+      readyIds.push(live.initiative.initiativeId);
+    }
+
+    const conservative = await liveInitiative("legacy-no-evidence");
+    await failAttempt({
+      sourceRecordId: conservative.initiative.initiativeId,
+      sourceVersion: conservative.source.sourceVersion,
+      reasonCode: "UNKNOWN_LEGACY",
+      failureClass: "UNKNOWN",
+      retryabilityHint: "unknown",
+      enqueueSourceVersion: conservative.source.sourceVersion,
+    });
+    const conservativePreflight = await preflightFor(
+      conservative.initiative.initiativeId,
+      conservative.source.sourceVersion,
+    );
+    assert.equal(conservativePreflight.ready, false);
+    assert.equal(conservativePreflight.terminalFailureForCurrentVersion, true);
+    assert.equal(classifyPreflight(conservativePreflight), "BLOCKED_FAILED_ATTEMPT");
+
+    const validation = await liveInitiative("validation");
+    await failAttempt({
+      sourceRecordId: validation.initiative.initiativeId,
+      sourceVersion: validation.source.sourceVersion,
+      reasonCode: "UNCHANGED_CIVIC_TITLE",
+      failureClass: "VALIDATION_FAILED",
+      retryabilityHint: "non_retryable_until_code_or_content_change",
+      enqueueSourceVersion: validation.source.sourceVersion,
+    });
+    const validationPreflight = await preflightFor(
+      validation.initiative.initiativeId,
+      validation.source.sourceVersion,
+    );
+    assert.equal(validationPreflight.ready, false);
+    assert.equal(classifyPreflight(validationPreflight), "BLOCKED_FAILED_ATTEMPT");
+
+    const older = await liveInitiative("older");
+    await failAttempt({
+      sourceRecordId: older.initiative.initiativeId,
+      sourceVersion: "historical-source-version",
+      reasonCode: "UNCHANGED_CIVIC_TITLE",
+      failureClass: "VALIDATION_FAILED",
+      enqueueSourceVersion: "historical-source-version",
+    });
+    const olderPreflight = await preflightFor(older.initiative.initiativeId, older.source.sourceVersion);
+    assert.equal(olderPreflight.ready, true);
+    assert.equal(olderPreflight.terminalFailureForCurrentVersion, false);
+
+    const current = await liveInitiative("current-live");
+    const now = new Date().toISOString();
+    const { upsertContentTranslation } = await import(
+      "../../../src/modules/language/persistence/content-translation.repository.js"
+    );
+    await upsertContentTranslation({
+      translationId: `tr-current-${current.initiative.initiativeId}`,
+      sourceKind: "initiative",
+      sourceRecordId: current.initiative.initiativeId,
+      sourceVersion: current.source.sourceVersion,
+      sourceLanguage: "en",
+      targetLanguage: "uk",
+      translatedContent: { title: "[uk] title", description: "[uk] body" },
+      translationProvider: "deterministic",
+      translationKind: "machine",
+      createdAt: now,
+      stale: false,
+      freshness: "current",
+    });
+    const currentPreflight = await preflightFor(
+      current.initiative.initiativeId,
+      current.source.sourceVersion,
+    );
+    assert.equal(currentPreflight.readyState, "CURRENT");
+    assert.equal(classifyPreflight(currentPreflight), "CURRENT");
+    assert.equal(isActionableLiveResidualBucket(classifyPreflight(currentPreflight)), false);
+
+    const explained = await explainPublicLocalizationResidualsWithPreflight({
+      workItems: [
+        ...readyIds.map((sourceRecordId) => ({
+          sourceKind: "initiative" as const,
+          sourceRecordId,
+          sourceVersion: "ignored-by-loader",
+          targetLanguage: "uk" as const,
+          state: "FAILED" as const,
+          autoNodeCount: 1,
+          missingOrStaleNodeCount: 1,
+          fallbackPaths: ["title"],
+        })),
+        {
+          sourceKind: "initiative" as const,
+          sourceRecordId: conservative.initiative.initiativeId,
+          sourceVersion: conservative.source.sourceVersion,
+          targetLanguage: "uk" as const,
+          state: "FAILED" as const,
+          autoNodeCount: 1,
+          missingOrStaleNodeCount: 1,
+          fallbackPaths: ["title"],
+        },
+      ],
+    });
+    const selected = selectReadyPresentationsForResidualRetry(explained.selection);
+    assert.equal(selected.length, readyIds.length);
+    for (const id of readyIds) {
+      assert.equal(
+        selected.some((row) => row.sourceRecordId === id),
+        true,
+        id,
+      );
+      const residual = explained.residuals.find(
+        (row) => row.presentationIdentity.sourceRecordId === id,
+      );
+      assert.equal(residual?.retryPreflight.ready, true);
+      assert.equal(
+        classifyPreflight(residual!.retryPreflight),
+        "RETRY_READY_MISSING",
+      );
+    }
+    assert.equal(
+      explained.selection.blocked.some(
+        (row) => row.presentationIdentity.sourceRecordId === conservative.initiative.initiativeId,
       ),
       true,
     );

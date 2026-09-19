@@ -14,6 +14,7 @@ import type {
 import { assertCanonicalSourceEligibleForTranslation } from "./content-translation-eligibility.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
+  WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
   isExplicitlyRetryableModernFailure,
   type ContentTranslationArchitectureRetryBasis,
@@ -249,6 +250,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       isExplicitlyRetryableModernFailure({
         failureClass,
         failureReasonCode,
+        retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
       })
     ) {
       architectureRetryBasis =
@@ -257,15 +259,10 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       readyState = "MISSING_READY_FOR_WARM";
       blockReason = null;
     } else if (
-      failureReasonCode === "UNCHANGED_SOURCE_PROSE" ||
-      failureReasonCode === "UNCHANGED_CIVIC_TITLE" ||
-      failureReasonCode === "EMPTY_TRANSLATION" ||
-      failureReasonCode === "MISSING_REQUIRED_PATH" ||
-      failureReasonCode === "INVALID_RICH_TEXT_STRUCTURE" ||
-      failureReasonCode === "OTHER_VALIDATION_FAILURE" ||
-      failureReasonCode === "UNEXPECTED_PATH" ||
-      failureReasonCode === "STRUCTURE_MISMATCH" ||
-      failureReasonCode === "TARGET_LANGUAGE_MISMATCH"
+      failureReasonCode != null &&
+      (WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS as readonly string[]).includes(
+        failureReasonCode,
+      )
     ) {
       blockReason = `Terminal validation failureReasonCode=${failureReasonCode} has no proven architecture retry basis.`;
     } else if (modernAttempt) {

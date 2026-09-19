@@ -360,11 +360,17 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
     const initiative = sampleInitiative("hist-generic");
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: initiative.initiativeId,
+    });
+    assert.ok(source);
     const enqueued = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
       reason: "operator_residual_retry",
       targetLocales: ["zh-Hant"],
+      sourceVersion: source.sourceVersion,
     });
     assert.ok(enqueued.eventId);
     // Simulate historical persisted meta with collapsed reason (pre-08K.2.5).
@@ -377,7 +383,7 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
         failureReasonCode: "VALIDATION_FAILED",
         sourceKind: "initiative",
         sourceRecordId: initiative.initiativeId,
-        sourceVersion: "v1",
+        sourceVersion: source.sourceVersion,
         targetLocale: "zh-Hant",
         failedAt: "2026-09-04T00:00:00.000Z",
         retryabilityHint: "non_retryable_until_code_or_content_change",

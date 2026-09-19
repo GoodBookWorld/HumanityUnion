@@ -242,19 +242,85 @@ export function resolveLocaleFailureFromMetadata(
 }
 
 /**
- * Modern terminal codes that may be retried under an explicit policy only.
+ * Same-version structural/semantic failures. These stay terminal even when a
+ * fallback reason or a retryable hint is also present.
+ */
+export const WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS = [
+  "UNCHANGED_SOURCE_PROSE",
+  "UNCHANGED_CIVIC_TITLE",
+  "EMPTY_TRANSLATION",
+  "MISSING_REQUIRED_PATH",
+  "INVALID_RICH_TEXT_STRUCTURE",
+  "OTHER_VALIDATION_FAILURE",
+  "UNEXPECTED_PATH",
+  "STRUCTURE_MISMATCH",
+  "TARGET_LANGUAGE_MISMATCH",
+] as const;
+
+const WARM_RETRYABLE_INFRASTRUCTURE_CLASSES = new Set([
+  "PROVIDER_TIMEOUT",
+  "PROVIDER_INVALID_RESPONSE",
+  "PERSISTENCE_FAILED",
+  "MISSING_AFTER_DISPATCH",
+  "SOURCE_UNAVAILABLE",
+]);
+
+const WARM_CONSERVATIVE_TERMINAL_CLASSES = new Set([
+  "PROVIDER_REJECTED",
+  "VALIDATION_FAILED",
+  "UNSUPPORTED_SOURCE",
+]);
+
+export type SameVersionWarmFailureRetryDecision = "retryable" | "terminal";
+
+function isWarmFailureReasonFallback(reason: string | null | undefined): boolean {
+  return reason == null || reason.trim() === "" || reason === "UNKNOWN_LEGACY";
+}
+
+/**
+ * Canonical same-version retry decision.
+ * Structured infrastructure classes and an explicit retryable hint win over
+ * UNKNOWN_LEGACY. Validation reason codes stay terminal. Missing evidence stays terminal.
+ */
+export function decideSameVersionWarmFailureRetry(input: {
+  readonly failureClass: string | null;
+  readonly failureReasonCode: string | null;
+  readonly retryabilityHint?: string | null;
+}): SameVersionWarmFailureRetryDecision {
+  const reason = input.failureReasonCode;
+  if (
+    reason != null &&
+    (WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS as readonly string[]).includes(reason)
+  ) {
+    return "terminal";
+  }
+  if (input.failureClass != null && WARM_RETRYABLE_INFRASTRUCTURE_CLASSES.has(input.failureClass)) {
+    return "retryable";
+  }
+  if (reason === "INVALID_PROVIDER_PAYLOAD") {
+    return "retryable";
+  }
+  if (
+    input.retryabilityHint === "retryable" &&
+    isWarmFailureReasonFallback(reason) &&
+    !(input.failureClass != null && WARM_CONSERVATIVE_TERMINAL_CLASSES.has(input.failureClass))
+  ) {
+    return "retryable";
+  }
+  return "terminal";
+}
+
+/**
+ * Modern failures that may be retried for the same sourceVersion.
+ * Delegates to decideSameVersionWarmFailureRetry so preflight and materialization
+ * policy do not keep separate lists.
  */
 export function isExplicitlyRetryableModernFailure(input: {
   readonly failureClass: string | null;
   readonly failureReasonCode: string | null;
+  readonly retryabilityHint?: string | null;
 }): boolean {
-  if (input.failureClass === "SOURCE_UNAVAILABLE") {
-    return true;
-  }
-  if (input.failureReasonCode === "INVALID_PROVIDER_PAYLOAD") {
-    return true;
-  }
-  return false;
+  return decideSameVersionWarmFailureRetry(input) === "retryable";
 }
 
 /**

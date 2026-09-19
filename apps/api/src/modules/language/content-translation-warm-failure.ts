@@ -8,6 +8,7 @@
 import { TranslationProviderError } from "./translation.config.js";
 import {
   ContentTranslationValidationError,
+  decideSameVersionWarmFailureRetry,
   parseContentTranslationFailureMetadata,
   resolveValidationReasonCodeFromError,
 } from "./content-translation-failure-metadata.js";
@@ -252,36 +253,39 @@ export function resolveContentTranslationFailureRetryPolicy(input: {
     };
   }
 
-  switch (input.failureClass) {
-    case "PROVIDER_TIMEOUT":
-    case "PROVIDER_INVALID_RESPONSE":
-    case "PERSISTENCE_FAILED":
-    case "SOURCE_UNAVAILABLE":
-    case "MISSING_AFTER_DISPATCH":
-      return {
-        retryability: "retryable",
-        mayScheduleNewWarm: true,
-        reason: `${input.failureClass} is transient or pipeline-recoverable after code/hydrate fix.`,
-      };
-    case "PROVIDER_REJECTED":
-    case "VALIDATION_FAILED":
-    case "UNSUPPORTED_SOURCE":
-      return {
-        retryability: "non_retryable_until_code_or_content_change",
-        mayScheduleNewWarm: false,
-        reason: `${input.failureClass} requires content or code change before retry.`,
-      };
-    case "SOURCE_VERSION_MISMATCH":
-      return {
-        retryability: "retryable_after_source_change",
-        mayScheduleNewWarm: true,
-        reason: "New sourceVersion may be warmed; obsolete failure is not authoritative.",
-      };
-    default:
-      return {
-        retryability: "unknown",
-        mayScheduleNewWarm: false,
-        reason: "UNKNOWN failure — do not auto-clear; inspect outbox lastError class only.",
-      };
+  if (input.failureClass === "SOURCE_VERSION_MISMATCH") {
+    return {
+      retryability: "retryable_after_source_change",
+      mayScheduleNewWarm: true,
+      reason: "New sourceVersion may be warmed; obsolete failure is not authoritative.",
+    };
   }
+
+  const sameVersion = decideSameVersionWarmFailureRetry({
+    failureClass: input.failureClass,
+    failureReasonCode: null,
+  });
+  if (sameVersion === "retryable") {
+    return {
+      retryability: "retryable",
+      mayScheduleNewWarm: true,
+      reason: `${input.failureClass} is transient or pipeline-recoverable after code/hydrate fix.`,
+    };
+  }
+  if (
+    input.failureClass === "PROVIDER_REJECTED" ||
+    input.failureClass === "VALIDATION_FAILED" ||
+    input.failureClass === "UNSUPPORTED_SOURCE"
+  ) {
+    return {
+      retryability: "non_retryable_until_code_or_content_change",
+      mayScheduleNewWarm: false,
+      reason: `${input.failureClass} requires content or code change before retry.`,
+    };
+  }
+  return {
+    retryability: "unknown",
+    mayScheduleNewWarm: false,
+    reason: "UNKNOWN failure — do not auto-clear; inspect outbox lastError class only.",
+  };
 }

@@ -510,6 +510,7 @@ async function diagnoseOneResidualIdentity(
       isExplicitlyRetryableModernFailure({
         failureClass,
         failureReasonCode,
+        retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
       })
     ) {
       architectureRetryBasis =
