@@ -134,6 +134,7 @@ function attempt(input: {
       : null,
     lastError,
     failureMetadata: parseContentTranslationFailureMetadata(lastError),
+    sourceVersion: parseContentTranslationFailureMetadata(lastError)?.sourceVersion ?? null,
   };
 }
 

@@ -24,10 +24,11 @@ describe("Admin Languages readiness details", () => {
     assert.match(details, /report\.ct\.current/);
     assert.match(details, /report\.ct\.stale/);
     assert.match(details, /report\.ct\.missing/);
+    assert.match(details, /report\.ct\.failed/);
     assert.match(details, /report\.ct\.workItemsRequired/);
     assert.match(details, /row\.ownership === "CT_OWNED"/);
     assert.match(details, /row\.kindId/);
-    assert.match(details, /row\.counts!\.current|counts\.current/);
+    assert.match(section, /Blocked=/);
   });
 
   it("3–4. renders PLP totals without overstating scope", () => {

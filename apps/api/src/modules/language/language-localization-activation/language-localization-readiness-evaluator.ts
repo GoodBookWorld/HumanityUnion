@@ -253,6 +253,9 @@ export async function evaluateLanguageLocalizationReadiness(
   if (ct.workItemsRequired > 0) {
     gaps.push(`CT backfill work items: ${ct.workItemsRequired}`);
   }
+  if (ct.failed > 0) {
+    gaps.push(`CT blocked current-version failures: ${ct.failed}`);
+  }
   if (plpMedia.workItemsRequired > 0) {
     gaps.push(`PLP Media backfill work items: ${plpMedia.workItemsRequired}`);
   }

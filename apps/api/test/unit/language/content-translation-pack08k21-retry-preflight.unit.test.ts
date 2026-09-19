@@ -25,6 +25,7 @@ import {
   ensureLanguageRegistrySeeded,
   enqueueContentTranslationWarmRequested,
   explainPublicLocalizationResidualsWithPreflight,
+  loadTranslatableSource,
   markContentTranslationWarmMemoryFailedForTests,
   parseContentTranslationFailureMetadata,
   resetContentTranslationMemoryStoreForTests,
@@ -256,10 +257,17 @@ describe("Pack 08K.2.1 — residual retry preflight", () => {
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
 
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: initiative.initiativeId,
+    });
+    assert.ok(source);
+
     const enqueued = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
       reason: "operator_backfill",
+      sourceVersion: source.sourceVersion,
     });
     assert.ok(enqueued.eventId);
     markContentTranslationWarmMemoryFailedForTests(
@@ -271,7 +279,7 @@ describe("Pack 08K.2.1 — residual retry preflight", () => {
         failureReasonCode: "UNCHANGED_CIVIC_TITLE",
         sourceKind: "initiative",
         sourceRecordId: initiative.initiativeId,
-        sourceVersion: "v1",
+        sourceVersion: source.sourceVersion,
         targetLocale: "uk",
         failedAt: new Date().toISOString(),
         retryabilityHint: "non_retryable_until_code_or_content_change",
@@ -282,7 +290,7 @@ describe("Pack 08K.2.1 — residual retry preflight", () => {
       workItem: {
         sourceKind: "initiative",
         sourceRecordId: initiative.initiativeId,
-        sourceVersion: "v1",
+        sourceVersion: source.sourceVersion,
         targetLanguage: "uk",
         state: "FAILED",
         autoNodeCount: 2,

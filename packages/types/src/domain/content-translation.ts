@@ -181,4 +181,10 @@ export interface ContentTranslationWarmRequestedCommand {
    * (e.g. EXACT_FAILURE_REASON_PROPAGATION_08K25). Observability / idempotency only.
    */
   readonly architectureRetryBasis?: string;
+  /**
+   * Source version this warm was requested for.
+   * Optional so historical outbox rows without it remain readable.
+   * Not backfilled onto legacy attempts.
+   */
+  readonly sourceVersion?: string;
 }

@@ -27,6 +27,7 @@ import {
 import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
 import { loadTranslatableSource } from "./content-translation.service.js";
 import { findContentTranslation } from "./persistence/content-translation.repository.js";
+import { failedAttemptSuppressesLiveSourceVersion } from "./warm-attempt-version-ownership.js";
 import {
   collectAutoTranslatableNodes,
   fingerprintPublicPresentation,
@@ -53,6 +54,10 @@ export type PublicLocalizationRetryPreflight = {
     | "ACTIVE_WORK"
     | "NOT_APPLICABLE";
   readonly blockReason: string | null;
+  /** Exact live sourceVersion row is stale. Historical versions are ignored. */
+  readonly liveTranslationStale?: boolean;
+  /** Proven attempt sourceVersion, or null when the failure cannot be attributed. */
+  readonly attemptSourceVersion?: string | null;
 };
 
 export type PublicLocalizationResidualWithPreflight = {
@@ -173,6 +178,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     sourceLanguage !== null && item.targetLanguage === sourceLanguage;
 
   let currentTranslationAbsent = true;
+  let liveTranslationStale = false;
   if (liveSourceVersion && liveSourceVersion !== "unloaded") {
     const row = await findContentTranslation({
       sourceKind: item.sourceKind,
@@ -182,10 +188,18 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     });
     if (row && row.freshness === "current" && row.stale !== true) {
       currentTranslationAbsent = false;
+    } else if (row && (row.stale === true || row.freshness === "stale")) {
+      liveTranslationStale = true;
     }
   }
 
-  const terminalFailureForCurrentVersion = disposition === "failed";
+  const attemptSourceVersion = peek.latestAttempt?.sourceVersion ?? null;
+  const versionOwnedFailure = failedAttemptSuppressesLiveSourceVersion({
+    disposition,
+    attemptSourceVersion,
+    liveSourceVersion,
+  });
+  let terminalFailureForCurrentVersion = false;
   const activeWorkAbsent = disposition !== "pending";
 
   let failureReasonCode: string | null = null;
@@ -218,7 +232,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     blockReason = "Presentation failed eligibility/fingerprint preflight.";
   } else if (!localeEligible) {
     blockReason = "Target locale is not enabled for content translation.";
-  } else if (terminalFailureForCurrentVersion) {
+  } else if (versionOwnedFailure) {
     const modernAttempt = isModernTerminalAttempt(peek.latestAttempt);
     if (
       failureReasonCode === "UNKNOWN_LEGACY" &&
@@ -259,11 +273,16 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     } else {
       blockReason = `Terminal failure without proven retry basis (failureReasonCode=${failureReasonCode ?? "null"}).`;
     }
+    if (!ready) {
+      terminalFailureForCurrentVersion = true;
+    }
   } else {
     architectureRetryBasis =
-      item.sourceKind === "collective_decision"
-        ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.COLLECTIVE_DECISION_HYDRATE_SYNC_08K2
-        : CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+      disposition === "failed" && failureReasonCode === "UNKNOWN_LEGACY"
+        ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.HISTORICAL_FAILURE_SEMANTICS_UNKNOWN_LEGACY_v1
+        : item.sourceKind === "collective_decision"
+          ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.COLLECTIVE_DECISION_HYDRATE_SYNC_08K2
+          : CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
     ready = true;
     readyState = "MISSING_READY_FOR_WARM";
     blockReason = null;
@@ -281,6 +300,8 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     ready,
     readyState,
     blockReason,
+    liveTranslationStale,
+    attemptSourceVersion,
   };
 }
 

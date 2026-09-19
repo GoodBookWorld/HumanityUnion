@@ -143,6 +143,7 @@ async function main(): Promise<number> {
       sourceKind: KaResidualDiagnosticKind;
       sourceRecordId: string;
       failureReason: string;
+      sourceVersionAssociation: "associated" | "absent";
     }> = [];
 
     const translations = getMongoCollection(MONGO_COLLECTIONS.contentTranslations);
@@ -222,6 +223,9 @@ async function main(): Promise<number> {
           sourceKind: candidate.sourceKind,
           sourceRecordId: candidate.sourceRecordId,
           failureReason: preflight.failureReasonCode ?? "unspecified",
+          sourceVersionAssociation: preflight.attemptSourceVersion
+            ? "associated"
+            : "absent",
         });
       }
     }
@@ -271,15 +275,18 @@ async function main(): Promise<number> {
     console.log(
       `collectiveDecisionHistoricalStaleButLiveCurrent=${collective.historicalStaleButLiveCurrent}`,
     );
+    const absentAssociations = blocked.filter(
+      (row) => row.sourceVersionAssociation === "absent",
+    ).length;
     console.log(
-      "failedAttemptSourceVersionAssociation=absent_from_attempt_schema",
+      `failedAttemptSourceVersionAssociation absent=${absentAssociations} associated=${blocked.length - absentAssociations}`,
     );
     if (blocked.length === 0) {
       console.log("blockedFailedAttempt rows=0");
     }
     for (const row of blocked) {
       console.log(
-        `blockedFailedAttempt sourceKind=${row.sourceKind} sourceRecordId=${row.sourceRecordId} failureReason=${row.failureReason} sourceVersionAssociation=absent_from_attempt_schema`,
+        `blockedFailedAttempt sourceKind=${row.sourceKind} sourceRecordId=${row.sourceRecordId} failureReason=${row.failureReason} sourceVersionAssociation=${row.sourceVersionAssociation}`,
       );
     }
     console.log("PROVIDER_CALLS=0");

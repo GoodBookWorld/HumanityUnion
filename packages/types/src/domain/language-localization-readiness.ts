@@ -345,6 +345,9 @@ export function deriveLanguageLocalizationReadinessState(input: {
   if (incomplete > 0 || work > 0) {
     return "BACKFILL_REQUIRED";
   }
+  if (pending > 0) {
+    return "BACKFILL_REQUIRED";
+  }
   if (current > 0 || (work === 0 && incomplete === 0 && failed === 0)) {
     return "READY";
   }
@@ -438,7 +441,7 @@ export function buildLanguagePwaCivicReadinessSlice(input: {
     coverage: input.coverage,
     note:
       input.note ??
-      "PWA civic presentation coverage: eligible ordinary-reading presentation identities vs CURRENT persisted rows (approximateMissing). Ignores WEB_UI / Brand / Legal / Glossary; not character volume or live sourceVersion-perfect. Missing CURRENT falls back to canonical per artifact. public_news excluded.",
+      "PWA civic live sourceVersion coverage: CURRENT, actionable missing/stale, and blocked current-version failures are counted separately. Historical stale rows are not work when the exact live sourceVersion is CURRENT. Ignores WEB_UI / Brand / Legal / Glossary. Missing CURRENT falls back to canonical per artifact. public_news excluded. Not a provider call.",
   };
 }
 

@@ -248,11 +248,17 @@ export async function runPublicLocalizationResidualRetry(input: {
 
   for (const unit of schedule) {
     try {
+      const source = await loadTranslatableSource({
+        sourceKind: unit.sourceKind,
+        sourceRecordId: unit.sourceRecordId,
+      });
+      const sourceVersion = source?.sourceVersion?.trim();
       const result = await enqueueContentTranslationWarmRequested({
         sourceKind: unit.sourceKind,
         sourceRecordId: unit.sourceRecordId,
         reason: "operator_residual_retry",
         targetLocales: unit.targetLocales,
+        ...(sourceVersion && sourceVersion !== "unloaded" ? { sourceVersion } : {}),
       });
       enqueueResults.push(result);
       if (result.enqueued) {

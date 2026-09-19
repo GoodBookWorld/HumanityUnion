@@ -29,6 +29,7 @@ import {
 import { logger } from "../../shared/observability/logger.js";
 import { refuseReadOnlyDiagnosticMutation } from "./read-only-diagnostic-guard.js";
 import { buildContentTranslationWarmRequestedCommand } from "./content-translation-warm-request.js";
+import { resolveWarmAttemptSourceVersion } from "./warm-attempt-version-ownership.js";
 
 export const CONTENT_TRANSLATION_WARM_AGGREGATE_TYPE = "ContentTranslationSource" as const;
 
@@ -127,6 +128,11 @@ export async function enqueueContentTranslationWarmRequested(
     readonly targetLocales?: readonly LanguageCode[];
     /** Pack 08K.2.6 — architecture basis for attempt idempotency. */
     readonly architectureRetryBasis?: string;
+    /**
+     * Live source version this request belongs to.
+     * Historical rows omit it and stay readable.
+     */
+    readonly sourceVersion?: string;
   },
   options: EnqueueOutboxOptions = {},
 ): Promise<ContentTranslationWarmEnqueueResult> {
@@ -205,6 +211,7 @@ export async function enqueueContentTranslationWarmRequested(
           ...(command.architectureRetryBasis
             ? { architectureRetryBasis: command.architectureRetryBasis }
             : {}),
+          ...(command.sourceVersion ? { sourceVersion: command.sourceVersion } : {}),
         },
         occurredAt: command.requestedAt,
       }),
@@ -316,6 +323,11 @@ export type ContentTranslationWarmAttemptSnapshot = {
   readonly failureMetadata: ReturnType<
     typeof import("./content-translation-failure-metadata.js").parseContentTranslationFailureMetadata
   >;
+  /**
+   * Proven source version for this attempt, or null/omitted when the row
+   * cannot establish one. Never invented for legacy rows.
+   */
+  readonly sourceVersion?: string | null;
 };
 
 function compareAttemptOrder(
@@ -414,6 +426,10 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
           : null,
         lastError: record.lastError,
         failureMetadata,
+        sourceVersion: resolveWarmAttemptSourceVersion({
+          failureMetadataSourceVersion: failureMetadata?.sourceVersion ?? null,
+          payloadSourceVersion: record.command.sourceVersion ?? null,
+        }),
       });
     }
   } else {
@@ -482,6 +498,11 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
         targetLocales: parseTargetLocalesFromPayload(payload),
         lastError,
         failureMetadata,
+        sourceVersion: resolveWarmAttemptSourceVersion({
+          failureMetadataSourceVersion: failureMetadata?.sourceVersion ?? null,
+          payloadSourceVersion:
+            typeof payload?.sourceVersion === "string" ? payload.sourceVersion : null,
+        }),
       });
     }
   }

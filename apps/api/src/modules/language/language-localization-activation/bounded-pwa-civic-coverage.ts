@@ -1,13 +1,13 @@
 /**
  * Pack 02 — bounded-memory PWA civic localization coverage.
  *
- * PRESENTATION-COVERAGE readiness (not character volume, not live sourceVersion-
- * perfect identity matching). Compares expected public ordinary-reading
- * presentation identities against persisted CURRENT content_translations rows
- * with the same honesty level for every included CT kind:
+ * Operational CT work remaining is the live residual identity classifier:
+ * discoverStagingInitiativePathWarmSources + loadTranslatableSource +
+ * buildPublicLocalizationRetryPreflight. Counts are exact current sourceVersion
+ * identities, not eligible-document arithmetic. Historical stale rows are not
+ * work when the live sourceVersion is already CURRENT.
  *
- *   approximateMissing = max(0, eligiblePresentationIdentities - current)
- *
+ * PLP editorial coverage stays a separate measured slice.
  * Never hydrates localization corpus Maps/workItems; no provider/warm/write;
  * no translated prose returned to Node merely to count it.
  *
@@ -33,6 +33,10 @@ import {
   type MediaHuLocalizationIntegrityStatus,
 } from "../media-hu-localization-integrity.js";
 import { isLanguageRegistryMemoryAdapterActive } from "../language-registry/language-registry.repository.js";
+import {
+  measureLiveActivationCtCoverage,
+  type LiveActivationCtCoverage,
+} from "../live-residual-ct-coverage.js";
 
 /**
  * Full ordinary-reading PWA civic CT readiness corpus (presentation identities).
@@ -107,6 +111,13 @@ export type BoundedPwaCivicCoverageDeps = {
     pipeline: Document[],
   ) => Promise<Document[]>;
   readonly classifyMediaEditorial?: typeof classifyMediaEditorialLocalizationForLocale;
+  /**
+   * Injected live CT classifier for unit tests. Production uses
+   * measureLiveActivationCtCoverage (discovery + preflight, read-only).
+   */
+  readonly measureLiveCt?: (input: {
+    readonly locale: string;
+  }) => Promise<LiveActivationCtCoverage>;
   /** Injected coverage for unit tests (skips Mongo). */
   readonly coverageOverride?: BoundedPwaCivicCoverageReport;
 };
@@ -434,9 +445,9 @@ export async function measureBoundedPwaCivicCoverage(input: {
   const mongoReady =
     deps.isMongoReady ??
     (() => isMongoConfigured() && !isLanguageRegistryMemoryAdapterActive());
-  const aggregate = deps.aggregate ?? defaultAggregate;
   const classifyMedia =
     deps.classifyMediaEditorial ?? classifyMediaEditorialLocalizationForLocale;
+  const measureLiveCt = deps.measureLiveCt ?? measureLiveActivationCtCoverage;
 
   if (!mongoReady()) {
     return unmeasuredReport(
@@ -448,8 +459,8 @@ export async function measureBoundedPwaCivicCoverage(input: {
   try {
     return await measureBoundedPwaCivicCoverageConnected({
       locale,
-      aggregate,
       classifyMedia,
+      measureLiveCt,
     });
   } catch {
     return unmeasuredReport(
@@ -461,78 +472,23 @@ export async function measureBoundedPwaCivicCoverage(input: {
 
 async function measureBoundedPwaCivicCoverageConnected(input: {
   readonly locale: string;
-  readonly aggregate: (
-    collectionName: string,
-    pipeline: Document[],
-  ) => Promise<Document[]>;
   readonly classifyMedia: typeof classifyMediaEditorialLocalizationForLocale;
+  readonly measureLiveCt: (input: {
+    readonly locale: string;
+  }) => Promise<LiveActivationCtCoverage>;
 }): Promise<BoundedPwaCivicCoverageReport> {
-  const { locale, aggregate, classifyMedia } = input;
+  const { locale, classifyMedia, measureLiveCt } = input;
+  const live = await measureLiveCt({ locale });
 
-  const plans = buildPwaCivicBoundedMeasurePlans();
-  const ctStatusRows = await aggregate(
-    MONGO_COLLECTIONS.contentTranslations,
-    buildPwaCivicCtStatusCountsPipeline([locale]),
-  );
-
-  const kindRows: PwaCivicKindCoverageRow[] = [];
-  const ctBuckets: LanguageLocalizationCountBucket[] = [];
-  let measuredKindCount = 0;
+  const kindRows: PwaCivicKindCoverageRow[] = live.kindRows.map((row) => ({
+    kindId: row.kindId,
+    ownership: "CT_OWNED" as const,
+    status: "measured" as const,
+    counts: row.counts,
+    reason: "Live sourceVersion residual classification.",
+  }));
+  let measuredKindCount = live.kindRows.length;
   let unmeasuredKindCount = 0;
-
-  // Sequential sourceKind processing — no multi-kind hydrate.
-  for (const plan of plans) {
-    if (plan.status === "UNMEASURED" || !plan.collectionName || !plan.identityMode) {
-      unmeasuredKindCount += 1;
-      kindRows.push({
-        kindId: plan.sourceKind,
-        ownership: "CT_OWNED",
-        status: "UNMEASURED",
-        counts: null,
-        reason: plan.reason ?? "UNMEASURED",
-      });
-      continue;
-    }
-
-    const identityPipeline =
-      plan.identityMode === "improvement_proposal_unwind"
-        ? buildImprovementProposalIdentityCountPipeline()
-        : buildPresentationIdentityCountPipeline(plan.match ?? {});
-
-    const eligibleDocs = await aggregate(plan.collectionName, identityPipeline);
-    const eligibleRecords =
-      typeof eligibleDocs[0]?.eligibleRecords === "number"
-        ? eligibleDocs[0].eligibleRecords
-        : 0;
-
-    const status = ctStatusRows.find(
-      (row) =>
-        row.targetLanguage === locale && row.sourceKind === plan.sourceKind,
-    );
-    const current = typeof status?.current === "number" ? status.current : 0;
-    const stale = typeof status?.stale === "number" ? status.stale : 0;
-    const missing = computeApproximateMissing({
-      canonicalEligible: eligibleRecords,
-      current,
-    });
-    const counts: LanguageLocalizationCountBucket = {
-      current,
-      missing,
-      stale,
-      failed: 0,
-      pending: 0,
-      workItemsRequired: missing + stale,
-    };
-    ctBuckets.push(counts);
-    measuredKindCount += 1;
-    kindRows.push({
-      kindId: plan.sourceKind,
-      ownership: "CT_OWNED",
-      status: "measured",
-      counts,
-      reason: plan.eligibilityNote ?? null,
-    });
-  }
 
   let plpMedia = emptyLanguageLocalizationCountBucket();
   try {
@@ -557,7 +513,7 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
     });
   }
 
-  const ct = sumBuckets(ctBuckets);
+  const ct = live.ct;
   const coverage: PwaCivicCoverageScalars = {
     current: ct.current + plpMedia.current,
     missing: ct.missing + plpMedia.missing,

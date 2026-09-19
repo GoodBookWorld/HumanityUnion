@@ -3,6 +3,8 @@
  * No Mongo, no provider, no enqueue.
  */
 
+import { classifyLiveResidualIdentity } from "../modules/language/live-residual-identity.js";
+
 export const KA_RESIDUAL_DIAGNOSTIC_LOCALE = "ka" as const;
 
 export const KA_RESIDUAL_DIAGNOSTIC_KINDS = [
@@ -66,19 +68,19 @@ export function classifyKaResidualIdentity(input: {
   readonly readyState: string;
   readonly terminalFailureForCurrentVersion: boolean;
 }): KaResidualOperationalBucket {
-  if (input.liveCurrent || input.readyState === "CURRENT") {
-    return "currentExactLiveVersion";
+  const bucket = classifyLiveResidualIdentity(input);
+  switch (bucket) {
+    case "CURRENT":
+      return "currentExactLiveVersion";
+    case "RETRY_READY_MISSING":
+      return "retryReadyMissing";
+    case "RETRY_READY_STALE":
+      return "retryReadyStale";
+    case "BLOCKED_FAILED_ATTEMPT":
+      return "blockedFailedAttempt";
+    default:
+      return "sourceOrPreflightBlocked";
   }
-  if (input.preflightReady && input.liveStale) {
-    return "retryReadyStale";
-  }
-  if (input.preflightReady) {
-    return "retryReadyMissing";
-  }
-  if (input.terminalFailureForCurrentVersion) {
-    return "blockedFailedAttempt";
-  }
-  return "sourceOrPreflightBlocked";
 }
 
 export function assertKaResidualDiagnosticSafetyGate(input: {

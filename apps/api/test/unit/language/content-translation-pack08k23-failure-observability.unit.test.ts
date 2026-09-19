@@ -74,6 +74,7 @@ function modernMeta(input: {
   sourceRecordId: string;
   targetLocale: string;
   failureReasonCode: string;
+  sourceVersion?: string;
   localeFailures?: readonly {
     targetLocale: string;
     failureClass: string;
@@ -88,7 +89,7 @@ function modernMeta(input: {
     failureReasonCode: input.failureReasonCode,
     sourceKind: "initiative",
     sourceRecordId: input.sourceRecordId,
-    sourceVersion: "v-test",
+    sourceVersion: input.sourceVersion ?? "v-test",
     targetLocale: input.targetLocale,
     failedAt: new Date().toISOString(),
     retryabilityHint: "non_retryable_until_code_or_content_change",
@@ -326,6 +327,12 @@ describe("Pack 08K.2.3 — terminal failure observability", () => {
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
 
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: initiative.initiativeId,
+    });
+    assert.ok(source);
+
     const legacy = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
@@ -344,6 +351,7 @@ describe("Pack 08K.2.3 — terminal failure observability", () => {
       reason: "operator_residual_retry",
       targetLocales: ["uk"],
       requestedAt: "2026-09-05T12:00:00.000Z",
+      sourceVersion: source.sourceVersion,
     });
     assert.ok(modern.eventId);
     markContentTranslationWarmMemoryFailedForTests(
@@ -352,6 +360,7 @@ describe("Pack 08K.2.3 — terminal failure observability", () => {
         sourceRecordId: initiative.initiativeId,
         targetLocale: "uk",
         failureReasonCode: "UNCHANGED_CIVIC_TITLE",
+        sourceVersion: source.sourceVersion,
       }),
     );
 
@@ -475,11 +484,18 @@ describe("Pack 08K.2.3 — terminal failure observability", () => {
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
 
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: initiative.initiativeId,
+    });
+    assert.ok(source);
+
     const modern = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
       reason: "operator_residual_retry",
       targetLocales: ["zh-Hant"],
+      sourceVersion: source.sourceVersion,
     });
     assert.ok(modern.eventId);
     markContentTranslationWarmMemoryFailedForTests(
@@ -488,6 +504,7 @@ describe("Pack 08K.2.3 — terminal failure observability", () => {
         sourceRecordId: initiative.initiativeId,
         targetLocale: "zh-Hant",
         failureReasonCode: "MISSING_REQUIRED_PATH",
+        sourceVersion: source.sourceVersion,
       }),
     );
 

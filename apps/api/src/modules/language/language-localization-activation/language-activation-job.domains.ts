@@ -113,6 +113,12 @@ export function buildHistoricalDomainProgress(input: {
   } else if (remaining > 0) {
     status = "pending";
     detail = `${owner} residual work items required: ${remaining}.`;
+  } else if (bucket.failed > 0) {
+    status = "in_progress";
+    detail = `${owner} blocked current-version translation failures: ${bucket.failed}.`;
+  } else if (bucket.pending > 0) {
+    status = "in_progress";
+    detail = `${owner} live identities are not actionable: ${bucket.pending}.`;
   }
 
   return {
@@ -152,14 +158,24 @@ export function deriveActivationJobStatus(input: {
   if (
     readiness.languageDataReady &&
     readiness.ct.workItemsRequired === 0 &&
-    readiness.plpMedia.workItemsRequired === 0
+    readiness.plpMedia.workItemsRequired === 0 &&
+    readiness.ct.failed === 0 &&
+    readiness.plpMedia.failed === 0 &&
+    readiness.ct.pending === 0 &&
+    readiness.plpMedia.pending === 0
   ) {
     return "completed";
   }
   if (input.ctEnqueueAttempted || input.plpEnqueueAttempted) {
+    const blocked =
+      readiness.ct.failed > 0 ||
+      readiness.plpMedia.failed > 0 ||
+      readiness.ct.pending > 0 ||
+      readiness.plpMedia.pending > 0;
     return readiness.state === "BACKFILL_IN_PROGRESS" ||
       readiness.ct.workItemsRequired > 0 ||
-      readiness.plpMedia.workItemsRequired > 0
+      readiness.plpMedia.workItemsRequired > 0 ||
+      blocked
       ? "running"
       : "completed";
   }

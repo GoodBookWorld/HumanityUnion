@@ -41,7 +41,7 @@ Unified persisted reading is the ordinary-reading architecture for Guest Web, Pa
 | Concern | Role | Request path |
 |--------|------|--------------|
 | **RUNTIME CAPABILITY** | Lightweight durable Registry activation flags (`enabled`, `contentTranslationEnabled`, `pwaPersistedReadingEnabled`, locale identity) | Public `GET /api/v1/languages` → ordinary-reading ownership |
-| **OPERATIONAL READINESS** | Bounded corpus presentation-coverage diagnostics (`pwaCivicReadinessStatus`, `pwaPersistedReadingReady`, READY/DEGRADED) | Admin / activation / `evaluateLanguageLocalizationReadiness` only |
+| **OPERATIONAL READINESS** | Bounded live sourceVersion identity classification (`CURRENT`, actionable missing/stale, blocked current-version failures). Historical stale rows are not work when the exact live sourceVersion is already CURRENT. | Admin / activation / `evaluateLanguageLocalizationReadiness` only |
 
 Operational readiness **must never** sit on the ordinary PWA read request path. Public language capability lookup must not invoke `measureBoundedPwaCivicCoverage`, corpus enumeration, CURRENT counts, or activation-status computation.
 

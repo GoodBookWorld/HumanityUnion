@@ -118,10 +118,17 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
     createInitiative(blockedInit);
     createdInitiativeIds.push(readyInit.initiativeId, blockedInit.initiativeId);
 
+    const blockedSource = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: blockedInit.initiativeId,
+    });
+    assert.ok(blockedSource);
+
     const failed = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: blockedInit.initiativeId,
       reason: "operator_backfill",
+      sourceVersion: blockedSource.sourceVersion,
     });
     assert.ok(failed.eventId);
     markContentTranslationWarmMemoryFailedForTests(
@@ -133,7 +140,7 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
         failureReasonCode: "UNCHANGED_CIVIC_TITLE",
         sourceKind: "initiative",
         sourceRecordId: blockedInit.initiativeId,
-        sourceVersion: "v1",
+        sourceVersion: blockedSource.sourceVersion,
         targetLocale: "uk",
         failedAt: new Date().toISOString(),
         retryabilityHint: "non_retryable_until_code_or_content_change",

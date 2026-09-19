@@ -105,16 +105,22 @@ function CountSummary({
   current,
   stale,
   missing,
+  failed = 0,
+  pending = 0,
   workItemsRequired,
 }: {
   readonly current: number;
   readonly stale: number;
   readonly missing: number;
+  readonly failed?: number;
+  readonly pending?: number;
   readonly workItemsRequired: number;
 }) {
   return (
     <span>
-      Current={current} · Stale={stale} · Missing={missing} · Work remaining={workItemsRequired}
+      Current={current} · Stale={stale} · Missing={missing} · Blocked={failed}
+      {pending > 0 ? ` · Not actionable=${pending}` : ""} · Work remaining=
+      {workItemsRequired}
     </span>
   );
 }
@@ -150,6 +156,8 @@ function LanguageReadinessDetails({
             current={report.pwaCivic.coverage.current}
             stale={report.pwaCivic.coverage.stale}
             missing={report.pwaCivic.coverage.missing}
+            failed={report.pwaCivic.coverage.failed}
+            pending={report.pwaCivic.coverage.pending}
             workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
           />
         </div>
@@ -163,6 +171,8 @@ function LanguageReadinessDetails({
             current={report.ct.current}
             stale={report.ct.stale}
             missing={report.ct.missing}
+            failed={report.ct.failed}
+            pending={report.ct.pending}
             workItemsRequired={report.ct.workItemsRequired}
           />
         </div>
@@ -175,6 +185,8 @@ function LanguageReadinessDetails({
                   current={row.counts!.current}
                   stale={row.counts!.stale}
                   missing={row.counts!.missing}
+                  failed={row.counts!.failed}
+                  pending={row.counts!.pending}
                   workItemsRequired={row.counts!.workItemsRequired}
                 />
               </li>
@@ -194,6 +206,8 @@ function LanguageReadinessDetails({
             current={report.plpMedia.current}
             stale={report.plpMedia.stale}
             missing={report.plpMedia.missing}
+            failed={report.plpMedia.failed}
+            pending={report.plpMedia.pending}
             workItemsRequired={report.plpMedia.workItemsRequired}
           />
         </div>

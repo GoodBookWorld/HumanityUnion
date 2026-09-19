@@ -64,6 +64,36 @@ function coverageReady(overrides?: Partial<PwaCivicCoverageScalars>): PwaCivicCo
   };
 }
 
+function stubLiveCt(input: {
+  readonly current: number;
+  readonly missing: number;
+  readonly stale?: number;
+  readonly failed?: number;
+}) {
+  const counts = {
+    current: input.current,
+    missing: input.missing,
+    stale: input.stale ?? 0,
+    failed: input.failed ?? 0,
+    pending: 0,
+    workItemsRequired: input.missing + (input.stale ?? 0),
+  };
+  return async () => ({
+    ct: {
+      current: counts.current * PWA_CIVIC_BOUNDED_CT_KINDS.length,
+      missing: counts.missing * PWA_CIVIC_BOUNDED_CT_KINDS.length,
+      stale: counts.stale * PWA_CIVIC_BOUNDED_CT_KINDS.length,
+      failed: counts.failed * PWA_CIVIC_BOUNDED_CT_KINDS.length,
+      pending: 0,
+      workItemsRequired: counts.workItemsRequired * PWA_CIVIC_BOUNDED_CT_KINDS.length,
+    },
+    kindRows: PWA_CIVIC_BOUNDED_CT_KINDS.map((kindId) => ({
+      kindId,
+      counts,
+    })),
+  });
+}
+
 function emptyOverrideReport(locale: string, coverage: PwaCivicCoverageScalars) {
   return {
     locale,
@@ -433,7 +463,7 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
     );
     assert.doesNotMatch(source, /\$strLenCP|characterVolume|translatedChars|canonicalChars/);
     assert.match(source, /presentation_coverage/);
-    assert.match(source, /approximateMissing/);
+    assert.match(source, /measureLiveActivationCtCoverage/);
 
     const identity = buildPresentationIdentityCountPipeline({ status: "published" });
     assert.equal(identity.at(-1)?.$count, "eligibleRecords");
@@ -506,6 +536,7 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
     setBoundedPwaCivicCoverageDepsForTests({
       isMongoReady: () => true,
       classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+      measureLiveCt: stubLiveCt({ current: 0, missing: 2 }),
       aggregate: async (collectionName, pipeline) => {
         collectionsSeen.push(collectionName);
         if (collectionName === "content_translations") {
@@ -572,6 +603,7 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
     setBoundedPwaCivicCoverageDepsForTests({
       isMongoReady: () => true,
       classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",
+      measureLiveCt: stubLiveCt({ current: 2, missing: 0 }),
       aggregate: async (collectionName, pipeline) => {
         if (collectionName === "content_translations") {
           return PWA_CIVIC_BOUNDED_CT_KINDS.map((sourceKind) => ({
@@ -609,6 +641,7 @@ describe("Language Architecture Pack 02 — bounded coverage engine", () => {
       classifyMediaEditorial: async () => {
         throw new Error("PLP failed");
       },
+      measureLiveCt: stubLiveCt({ current: 2, missing: 0 }),
       aggregate: async (collectionName, pipeline) => {
         if (collectionName === "content_translations") {
           return PWA_CIVIC_BOUNDED_CT_KINDS.map((sourceKind) => ({

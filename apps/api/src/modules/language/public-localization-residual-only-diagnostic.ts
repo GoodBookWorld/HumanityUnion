@@ -12,6 +12,7 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { failedAttemptSuppressesLiveSourceVersion } from "./warm-attempt-version-ownership.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   classifyLegacyOutboxLastError,
@@ -440,7 +441,12 @@ async function diagnoseOneResidualIdentity(
   currentTranslationAbsent = liveState !== "CURRENT";
 
   const disposition = peek.disposition;
-  const terminalFailureForCurrentVersion = disposition === "failed";
+  const versionOwnedFailure = failedAttemptSuppressesLiveSourceVersion({
+    disposition,
+    attemptSourceVersion: peek.latestAttempt?.sourceVersion ?? null,
+    liveSourceVersion,
+  });
+  let terminalFailureForCurrentVersion = false;
   const activeWorkAbsent = disposition !== "pending";
 
   let failureReasonCode: string | null = null;
@@ -489,7 +495,7 @@ async function diagnoseOneResidualIdentity(
     blockReason = "Presentation failed eligibility/fingerprint preflight.";
   } else if (!localeEligible) {
     blockReason = "Target locale is not enabled for content translation.";
-  } else if (terminalFailureForCurrentVersion) {
+  } else if (versionOwnedFailure) {
     if (
       failureReasonCode === "UNKNOWN_LEGACY" &&
       !modernAttempt &&
@@ -516,11 +522,16 @@ async function diagnoseOneResidualIdentity(
     } else {
       blockReason = `Terminal failure without proven retry basis (failureReasonCode=${failureReasonCode ?? "null"}).`;
     }
+    if (!ready) {
+      terminalFailureForCurrentVersion = true;
+    }
   } else {
     architectureRetryBasis =
-      identity.sourceKind === "collective_decision"
-        ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.COLLECTIVE_DECISION_HYDRATE_SYNC_08K2
-        : CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+      disposition === "failed" && failureReasonCode === "UNKNOWN_LEGACY"
+        ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.HISTORICAL_FAILURE_SEMANTICS_UNKNOWN_LEGACY_v1
+        : identity.sourceKind === "collective_decision"
+          ? CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.COLLECTIVE_DECISION_HYDRATE_SYNC_08K2
+          : CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
     ready = true;
     readyState = "MISSING_READY_FOR_WARM";
     blockReason = null;
