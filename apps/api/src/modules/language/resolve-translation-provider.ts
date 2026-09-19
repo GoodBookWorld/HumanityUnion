@@ -18,6 +18,10 @@ export function resolveTranslationProvider(): TranslationProvider {
     return overrideProvider;
   }
 
+  if (process.env.HU_READ_ONLY_DIAGNOSTIC === "1") {
+    throw new Error("REFUSED: read-only diagnostic cannot call the translation provider.");
+  }
+
   const config = resolveTranslationConfig();
   if (config.provider === "gemini") {
     assertGeminiTranslationConfigured(config);

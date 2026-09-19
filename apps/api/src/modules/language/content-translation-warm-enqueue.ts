@@ -27,6 +27,7 @@ import {
   type OutboxRecord,
 } from "../../infrastructure/outbox/index.js";
 import { logger } from "../../shared/observability/logger.js";
+import { refuseReadOnlyDiagnosticMutation } from "./read-only-diagnostic-guard.js";
 import { buildContentTranslationWarmRequestedCommand } from "./content-translation-warm-request.js";
 
 export const CONTENT_TRANSLATION_WARM_AGGREGATE_TYPE = "ContentTranslationSource" as const;
@@ -129,6 +130,7 @@ export async function enqueueContentTranslationWarmRequested(
   },
   options: EnqueueOutboxOptions = {},
 ): Promise<ContentTranslationWarmEnqueueResult> {
+  refuseReadOnlyDiagnosticMutation("enqueue content-translation warm work");
   const command = buildContentTranslationWarmRequestedCommand(input);
   const aggregateId = buildContentTranslationWarmAggregateId(command);
 

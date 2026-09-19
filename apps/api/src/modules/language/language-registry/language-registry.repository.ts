@@ -53,6 +53,7 @@ import {
   toLanguageRegistryMongoDocument,
   type LanguageRegistryMongoDocument,
 } from "./language-registry.mongo-document.js";
+import { refuseReadOnlyDiagnosticMutation } from "../read-only-diagnostic-guard.js";
 import {
   LANGUAGE_REGISTRY_SEED_DEFINITIONS,
   buildLanguageRegistrySeedRecord,
@@ -422,6 +423,7 @@ export async function ensureLanguageRegistrySeeded(): Promise<LanguageRegistrySe
         skippedExisting += 1;
         continue;
       }
+      refuseReadOnlyDiagnosticMutation("seed the language registry");
       upsertLanguageRegistryMemory(buildLanguageRegistrySeedRecord(definition));
       inserted += 1;
     }
@@ -445,6 +447,7 @@ export async function ensureLanguageRegistrySeeded(): Promise<LanguageRegistrySe
             skippedExisting += 1;
             continue;
           }
+          refuseReadOnlyDiagnosticMutation("seed the language registry");
           const seed = buildLanguageRegistrySeedRecord(definition);
           // Re-check alias conflicts against live rows before insert.
           const live = (await collection().find({}).toArray()).map((doc) =>

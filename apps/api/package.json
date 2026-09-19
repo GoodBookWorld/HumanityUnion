@@ -37,6 +37,7 @@
     "localization:check": "tsx src/scripts/check-localization-integrity.ts",
     "diagnose:public-localization": "tsx src/scripts/diagnose-public-localization-coverage.ts",
     "diagnose:ct-coverage-light": "tsx src/scripts/diagnose-staging-ct-coverage-light.ts",
+    "diagnose:ka-residual-identities": "tsx src/scripts/diagnose-ka-residual-identities.ts",
     "diagnose:localization-residuals": "tsx src/scripts/diagnose-localization-residuals.ts",
     "diagnose:media-localization": "tsx src/scripts/diagnose-media-localization.ts",
     "diagnose:media-plp-preflight": "tsx src/scripts/diagnose-media-plp-preflight.ts",
