@@ -2,7 +2,9 @@
  * Admin language localization activation job service.
  *
  * HTTP path: create/resume job + return status (no provider).
- * Async tick: assess WEB_UI/CV, enqueue CT/PLP residual once per generation.
+ * Explicit Activate/Resume reconciles currently actionable CT/PLP residual work.
+ * enqueueAttempted is historical observability, not a permanent lock.
+ * Status refresh does not reconcile, so waiting_for_data polling cannot enqueue.
  */
 
 import { randomUUID } from "node:crypto";
@@ -262,12 +264,21 @@ export async function startOrResumeLanguageActivationJob(input: {
   });
 }
 
+export type ProcessLanguageActivationJobOptions = {
+  /**
+   * Explicit Activate/Resume. Recomputes residual eligibility even after
+   * enqueueAttempted. Status refresh omits this.
+   */
+  readonly reconcileResiduals?: boolean;
+};
+
 /**
- * Advance one activation job: readiness → WEB_UI/CV domains → CT/PLP enqueue once.
+ * Advance one activation job: readiness → WEB_UI/CV domains → bounded CT/PLP reconcile.
  * Side-effect free regarding Search/SEO. Provider only via existing CT/PLP workers later.
  */
 export async function processLanguageActivationJob(
   jobId: string,
+  options?: ProcessLanguageActivationJobOptions,
 ): Promise<LanguageActivationJobRecord> {
   const existing = await getLanguageActivationJobById(jobId);
   if (!existing) {
@@ -334,9 +345,14 @@ export async function processLanguageActivationJob(
     const enqueueAlreadyDone =
       job.domains.ct.enqueueAttempted && job.domains.plp.enqueueAttempted;
 
-    // One execute per generation — residual CT/PLP enqueue is idempotent downstream.
+    // Historical flags stay for status. They do not block a later explicit reconcile.
+    // The first tick still runs when no enqueue has been attempted.
+    // Selection stays inside activateLanguageLocalization (residual preflight + PLP planner).
+    const shouldReconcileResiduals =
+      options?.reconcileResiduals === true || !enqueueAlreadyDone;
+
     // WEB_UI waiting_for_data does not block enqueue; presentation-ready still requires WEB_UI.
-    if (!enqueueAlreadyDone) {
+    if (shouldReconcileResiduals) {
       const stamp = nowIso();
       const result = await activate({
         locale: job.locale,
@@ -422,6 +438,8 @@ export async function getLanguageActivationAdminView(input: {
     (await getLatestLanguageActivationJobByLocale(locale));
 
   if (job && input.refreshJob !== false && (job.status === "waiting_for_data" || job.status === "running" || job.status === "queued")) {
+    // Status refresh may finish a never-attempted tick. It does not reconcile
+    // after enqueueAttempted, so polling cannot enqueue in a loop.
     job = await processLanguageActivationJob(job.jobId);
   }
 
@@ -479,7 +497,7 @@ export function scheduleLanguageActivationJobProcess(jobId: string): void {
   }
   scheduled.add(jobId);
   queueMicrotask(() => {
-    void processLanguageActivationJob(jobId)
+    void processLanguageActivationJob(jobId, { reconcileResiduals: true })
       .catch(() => {
         /* persisted as failed inside process */
       })
@@ -508,7 +526,9 @@ export async function startAndProcessLanguageActivationJobForTests(input: {
   if (started.job.status === "completed" || started.job.status === "failed") {
     return started;
   }
-  const job = await processLanguageActivationJob(started.job.jobId);
+  const job = await processLanguageActivationJob(started.job.jobId, {
+    reconcileResiduals: true,
+  });
   const record = await loadRegistryForLanguageId(input.languageId);
   const deps = processDeps();
   const evaluate = deps.evaluateReadiness ?? evaluateLanguageLocalizationReadiness;

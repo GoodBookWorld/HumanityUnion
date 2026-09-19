@@ -232,7 +232,7 @@ describe("Language activation async job", () => {
     );
   });
 
-  it("5–6. CT and PLP residual work enqueued once", async () => {
+  it("5–6. first activation enqueues; explicit resume reconciles again", async () => {
     const record = await createEligibleLocale("sw");
     let residualCalls = 0;
     let plpCalls = 0;
@@ -314,8 +314,10 @@ describe("Language activation async job", () => {
       languageId: record.languageId,
     });
     assert.equal(second.job?.jobId, first.job?.jobId);
-    assert.equal(residualCalls, 1);
-    assert.equal(plpCalls, 1);
+    assert.equal(second.job?.domains.ct.enqueueAttempted, true);
+    assert.equal(second.job?.domains.ct.enqueuedAt, first.job?.domains.ct.enqueuedAt);
+    assert.equal(residualCalls, 2);
+    assert.equal(plpCalls, 2);
   });
 
   it("7. repeat activation is idempotent/resumable", async () => {

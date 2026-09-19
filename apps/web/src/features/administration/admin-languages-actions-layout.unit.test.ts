@@ -58,6 +58,15 @@ describe("Admin Languages actions layout", () => {
     assert.doesNotMatch(readinessFn, /activateAdminLanguageLocalization/);
   });
 
+  it("9. active Resume posts activation; Refresh status does not", () => {
+    const section = read("features/administration/components/AdminLanguagesSection.tsx");
+    assert.match(section, /explicitResume/);
+    assert.match(section, /void handleActivateLocalization\(row\)/);
+    assert.match(section, /status === "waiting_for_data"/);
+    assert.match(section, /\? "Resume"/);
+    assert.doesNotMatch(section, /Resume \/ Refresh/);
+  });
+
   it("alias field placeholder is example text, not a stored Georgian alias list", () => {
     const section = read("features/administration/components/AdminLanguagesSection.tsx");
     assert.match(section, /placeholder="zh-TW, zh-HK"/);

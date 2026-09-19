@@ -478,8 +478,9 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           (`seoIndexingEnabled`), and Extended Localization (WEB_UI / CT / PLP) are separate
           concepts — incomplete Extended Localization does not block Search readiness or SEO
           indexability. Use Readiness to inspect Extended Localization state without enabling SEO.
-          Use Activate Localization to start/resume the durable async activation job (CT/PLP residual
-          enqueue). WEB_UI packs are Admin data (
+          Use Activate Localization to start the durable async activation job, and use it again
+          or Resume to reconcile newly actionable CT/PLP residual work. Refresh status measures
+          readiness and does not enqueue. WEB_UI packs are Admin data (
           <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
           ), never machine-generated. Search and SEO remain separate opt-in flags.
         </p>
@@ -786,13 +787,22 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               variant="tertiary"
                               disabled={saving || busy}
                               onClick={() => {
+                                const status = activation.job?.status;
+                                const explicitResume =
+                                  status === "waiting_for_data" ||
+                                  status === "running" ||
+                                  status === "queued";
+                                if (explicitResume) {
+                                  void handleActivateLocalization(row);
+                                  return;
+                                }
                                 void handleRefreshActivation(row);
                               }}
                             >
                               {activation.job.status === "waiting_for_data" ||
                               activation.job.status === "running" ||
                               activation.job.status === "queued"
-                                ? "Resume / Refresh"
+                                ? "Resume"
                                 : "Refresh status"}
                             </Button>
                           ) : null}
