@@ -138,7 +138,7 @@ export async function activateLanguageLocalization(
       writes += 1;
       notes.push(
         "PLP Media consumer enqueue requested for locale " +
-          "(editorial + principles/trusted/fact/propaganda + bounded news).",
+          "(editorial + principles/trusted/fact/propaganda; public news excluded).",
       );
     } else {
       notes.push("PLP Media consumer families already CURRENT — no enqueue.");

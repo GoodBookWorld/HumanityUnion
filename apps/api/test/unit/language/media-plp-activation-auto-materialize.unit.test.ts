@@ -97,7 +97,8 @@ describe("Media PLP activation auto-materialization", () => {
     assert.ok(result.enqueued > 0);
     assert.ok(result.staticCarouselEnqueued > 0);
     assert.ok(result.editorial.enqueued >= 1);
-    assert.ok(result.news.enqueued >= 1);
+    assert.equal(result.news.enqueued, 0);
+    assert.equal(result.news.consumerCount, 0);
 
     const work = listPlpAutoBuildWorkForTests().filter(
       (row) => row.locale === FUTURE_LOCALE,
@@ -113,10 +114,11 @@ describe("Media PLP activation auto-materialization", () => {
       locales: [FUTURE_LOCALE],
     });
 
-    assert.deepEqual(
-      [...result.families].sort(),
-      [...LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES].sort(),
+    const civicFamilies = LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES.filter(
+      (entityType) => entityType !== "public_news",
     );
+    assert.deepEqual([...result.families].sort(), [...civicFamilies].sort());
+    assert.equal(result.families.includes(MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS), false);
 
     const types = new Set(
       listPlpAutoBuildWorkForTests()
@@ -129,10 +131,10 @@ describe("Media PLP activation auto-materialization", () => {
       MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
       MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
       MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
-      MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
     ]) {
       assert.ok(types.has(family), `missing family ${family}`);
     }
+    assert.equal(types.has(MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS), false);
   });
 
   it("3. repeated activation is idempotent (pending work deduped; CURRENT skip via enqueue)", async () => {

@@ -423,8 +423,8 @@ export async function updateAdminLanguage(input: {
   }
 
   // Closure 05 / activation auto-materialization — Admin enabling content
-  // translation schedules bounded Media PLP for all consumer-visible families
-  // (editorial + principles/trusted/fact/propaganda + bounded news).
+  // translation schedules required Civic Media PLP
+  // (editorial + principles/trusted/fact/propaganda). Public News is excluded.
   const becameCtEligible =
     updated.enabled === true &&
     updated.contentTranslationEnabled === true &&

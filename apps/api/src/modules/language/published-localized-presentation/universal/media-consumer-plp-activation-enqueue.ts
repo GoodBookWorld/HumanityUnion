@@ -1,12 +1,16 @@
 /**
  * Language activation — bounded Media PLP enqueue for a newly CT-eligible locale.
  *
- * Covers consumer-visible /media families:
+ * Covers required Civic Media families:
  *   civic_media_editorial, civic_media_principle, civic_media_trusted,
- *   civic_media_fact_check, civic_media_propaganda, bounded public_news.
+ *   civic_media_fact_check, civic_media_propaganda.
+ *
+ * Public News / RSS is source-original in visible reading and is excluded
+ * from new-language activation. RSS ingest still owns news PLP independently.
  *
  * Durable enqueue only (fingerprint/CURRENT skip via enqueuePlpBuildRequest).
  * No provider await. No unbounded corpus scan. Registry locale list is the caller's.
+ * No locale allowlist.
  */
 
 import {
@@ -34,8 +38,16 @@ import {
 } from "../media/canonical-trees.js";
 import { enqueuePlpBuildRequest } from "./build-request-queue.js";
 import { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";
-import { enqueueConsumerVisibleNewsPlpBuilds } from "./news-consumer-build-trigger.js";
 import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
+
+/** Zeroed so activation callers can read `.news` without scheduling RSS PLP. */
+const NEWS_EXCLUDED_FROM_LANGUAGE_ACTIVATION = {
+  consumerCount: 0,
+  enqueued: 0,
+  skippedUsable: 0,
+  deduped: 0,
+  PROVIDER_CALLS: 0,
+} as const;
 
 export type MediaConsumerPlpActivationEnqueueResult = {
   readonly locales: readonly string[];
@@ -44,7 +56,7 @@ export type MediaConsumerPlpActivationEnqueueResult = {
   readonly skippedUsable: number;
   readonly deduped: number;
   readonly editorial: Awaited<ReturnType<typeof enqueueCivicMediaEditorialPlpBuilds>>;
-  readonly news: Awaited<ReturnType<typeof enqueueConsumerVisibleNewsPlpBuilds>>;
+  readonly news: typeof NEWS_EXCLUDED_FROM_LANGUAGE_ACTIVATION;
   readonly staticCarouselEnqueued: number;
   readonly PROVIDER_CALLS: 0;
 };
@@ -151,7 +163,6 @@ export async function enqueueConsumerVisibleMediaPlpBuildsForLocales(input: {
     MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
     MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
     MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
-    MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
   ] as const;
 
   const editorial = await enqueueCivicMediaEditorialPlpBuilds({ locales });
@@ -166,16 +177,14 @@ export async function enqueueConsumerVisibleMediaPlpBuildsForLocales(input: {
     staticDeduped += staticResult.deduped;
   }
 
-  const news = await enqueueConsumerVisibleNewsPlpBuilds({ locales });
-
   return {
     locales,
     families: [...families],
-    enqueued: editorial.enqueued + staticCarouselEnqueued + news.enqueued,
-    skippedUsable: editorial.skippedUsable + staticSkipped + news.skippedUsable,
-    deduped: editorial.deduped + staticDeduped + news.deduped,
+    enqueued: editorial.enqueued + staticCarouselEnqueued,
+    skippedUsable: editorial.skippedUsable + staticSkipped,
+    deduped: editorial.deduped + staticDeduped,
     editorial,
-    news,
+    news: NEWS_EXCLUDED_FROM_LANGUAGE_ACTIVATION,
     staticCarouselEnqueued,
     PROVIDER_CALLS: 0,
   };

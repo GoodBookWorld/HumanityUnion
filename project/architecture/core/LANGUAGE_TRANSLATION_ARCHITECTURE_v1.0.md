@@ -72,7 +72,7 @@ Additional Version 5.0 reading invariants:
 
 - Preferred Reading Language selects the participant's persisted presentation locale on Web and PWA.
 - English remains canonical.
-- Public News RSS visible cards remain source/original in WEB and PWA for every language.
+- Public News / RSS visible cards remain source-original in WEB and PWA for every language. They are excluded from Unified Persisted Reading and from new-language persisted-localization activation work. Civic Media editorial, fact-check, propaganda, trusted, and principles localization remains required. Historical Public News PLP records are not deleted.
 - Future languages use the same Registry-driven mechanism with no language-specific application code (no runtime locale allowlist). `ka` and `he` are not enabled by this phase.
 - Missing/stale/unavailable persisted presentation falls back **per artifact** to canonical/original — never demotes the whole language to browser-native solely because another artifact is incomplete.
 - Pre-Pack-02 Registry documents missing `pwaPersistedReadingEnabled` coerce enabled only for historically accepted Pack 01 locales (`uk`, `ar`, `zh-Hant`); arbitrary future locales with the field absent remain disabled.
