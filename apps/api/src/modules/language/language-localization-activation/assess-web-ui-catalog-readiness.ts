@@ -4,7 +4,7 @@
  * Registry/fixture-driven locales — no hardcoded production allowlist.
  */
 
-import type { LanguageWebUiReadinessSlice } from "@hu/types";
+import { isPublicReaderWebUiRequiredPath, type LanguageWebUiReadinessSlice } from "@hu/types";
 
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
 import {
@@ -13,22 +13,6 @@ import {
 } from "../../web-ui-message-packs/web-ui-message-pack.validate.js";
 
 type MessagePack = Record<string, unknown>;
-
-const PUBLIC_CHROME_PREFIXES = [
-  "common.",
-  "navigation.",
-  "actuc.",
-  "membershipPublic.",
-  "institutionsPublic.",
-  "publicHome.",
-  "blogPublic.",
-  "knowledgePublic.",
-  "civicMediaPublic.",
-  "volunteerPublic.",
-  "contactPublic.",
-  "legalPublic.",
-  "initiativeExperience.",
-] as const;
 
 function readPathValue(messages: MessagePack, dottedPath: string): unknown {
   let current: unknown = messages;
@@ -42,8 +26,9 @@ function readPathValue(messages: MessagePack, dottedPath: string): unknown {
 }
 
 /**
- * Assess required public WEB_UI chrome for a target locale.
- * Missing effective pack ⇒ not data-ready (honest).
+ * Assess public-reader WEB_UI catalog readiness for a target locale.
+ * Scope is `isPublicReaderWebUiRequiredPath` — not the full catalog.
+ * Missing effective pack ⇒ not data-ready.
  * Manual Registry `uiTranslationStatus` does not override measured readiness.
  */
 export async function assessWebUiCatalogReadinessForLocale(input: {
@@ -75,12 +60,7 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
   const effective = await resolveEffectiveWebUiMessagePack(input.locale);
   const requiredPaths =
     input.requiredPaths ??
-    collectStringPaths(english).filter((pathKey) =>
-      PUBLIC_CHROME_PREFIXES.some(
-        (prefix) =>
-          pathKey === prefix.slice(0, -1) || pathKey.startsWith(prefix),
-      ),
-    );
+    collectStringPaths(english).filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
 
   if (!effective) {
     return {

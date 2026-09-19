@@ -67,6 +67,14 @@ describe("Admin Languages actions layout", () => {
     assert.doesNotMatch(section, /Resume \/ Refresh/);
   });
 
+  it("10. readiness labels public WEB_UI separately from author workspace completeness", () => {
+    const section = read("features/administration/components/AdminLanguagesSection.tsx");
+    assert.match(section, /Public WEB_UI missing=/);
+    assert.match(section, /Public WEB_UI data ready/);
+    assert.match(section, /Author and steward workspace strings stay in the WEB_UI pack/);
+    assert.doesNotMatch(section, /<div>WEB_UI missing=/);
+  });
+
   it("alias field placeholder is example text, not a stored Georgian alias list", () => {
     const section = read("features/administration/components/AdminLanguagesSection.tsx");
     assert.match(section, /placeholder="zh-TW, zh-HK"/);

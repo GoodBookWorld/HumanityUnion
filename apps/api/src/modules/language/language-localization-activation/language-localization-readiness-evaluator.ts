@@ -237,7 +237,7 @@ export async function evaluateLanguageLocalizationReadiness(
   }
   if (!webUi.dataReady) {
     gaps.push(
-      `WEB_UI catalog not ready (missing=${webUi.missingKeyCount}, empty=${webUi.emptyKeyCount}, englishFallback=${webUi.englishFallbackKeyCount})`,
+      `Public WEB_UI catalog not ready (missing=${webUi.missingKeyCount}, empty=${webUi.emptyKeyCount}, englishFallback=${webUi.englishFallbackKeyCount})`,
     );
   }
   if (!controlledVocabulary.presentationReady) {

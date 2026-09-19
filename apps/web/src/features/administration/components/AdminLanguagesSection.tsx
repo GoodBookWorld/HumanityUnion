@@ -240,10 +240,15 @@ function LanguageReadinessDetails({
         <div>
           Extended Localization state: <code>{report.state}</code>
         </div>
-        <div>WEB_UI missing={report.webUi.missingKeyCount}</div>
-        <div>WEB_UI empty={report.webUi.emptyKeyCount}</div>
-        <div>WEB_UI English fallback={report.webUi.englishFallbackKeyCount}</div>
-        <div>WEB_UI data ready: {yesNo(report.webUi.dataReady)}</div>
+        <div>Public WEB_UI missing={report.webUi.missingKeyCount}</div>
+        <div>Public WEB_UI empty={report.webUi.emptyKeyCount}</div>
+        <div>Public WEB_UI English fallback={report.webUi.englishFallbackKeyCount}</div>
+        <div>Public WEB_UI data ready: {yesNo(report.webUi.dataReady)}</div>
+        <p className="admin-languages__readiness-note">
+          Public WEB_UI counts catalog keys needed for ordinary public reading.
+          Author and steward workspace strings stay in the WEB_UI pack and are not
+          required for this line.
+        </p>
       </section>
 
       <section className="admin-languages__readiness-section">
@@ -434,7 +439,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       setStatus(
         `${row.locale} activation: ${jobStatus}` +
           ` · dataReady=${view.languageDataReady}` +
-          ` · WEB_UI missing=${view.readiness.webUi.missingKeyCount}` +
+          ` · Public WEB_UI missing=${view.readiness.webUi.missingKeyCount}` +
           ` · CV missing=${view.readiness.controlledVocabulary.conceptsMissingLocalizedLabel}` +
           ` · CT remaining=${view.readiness.ct.workItemsRequired}` +
           ` · PLP remaining=${view.readiness.plpMedia.workItemsRequired}`,

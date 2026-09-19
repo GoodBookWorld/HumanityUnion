@@ -10,6 +10,8 @@
 
 import type { AbstractIntlMessages } from "next-intl";
 
+import { PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES } from "@hu/types";
+
 import { collectStringMessagePaths } from "../i18n/catalog-parity.js";
 
 export type PublicCatalogReadinessIssueKind =
@@ -44,24 +46,10 @@ function readPathValue(messages: AbstractIntlMessages, dottedPath: string): unkn
 }
 
 /**
- * Default required public chrome namespaces for approved public surfaces.
+ * Same contract as API public-reader readiness.
  * Callers may pass a narrower requiredPaths list for focused checks.
  */
-export const PUBLIC_SURFACE_WEB_UI_NAMESPACE_PREFIXES = [
-  "common.",
-  "navigation.",
-  "actuc.",
-  "membershipPublic.",
-  "institutionsPublic.",
-  "publicHome.",
-  "blogPublic.",
-  "knowledgePublic.",
-  "civicMediaPublic.",
-  "volunteerPublic.",
-  "contactPublic.",
-  "legalPublic.",
-  "initiativeExperience.",
-] as const;
+export const PUBLIC_SURFACE_WEB_UI_NAMESPACE_PREFIXES = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES;
 
 export function collectRequiredPublicChromePaths(
   englishCatalog: AbstractIntlMessages,

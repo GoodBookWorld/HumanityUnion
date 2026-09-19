@@ -150,6 +150,11 @@ export {
   isLocalizationReadyForSeo,
   isPwaCivicReadinessStatus,
 } from "./language-localization-readiness.js";
+export {
+  PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES,
+  isPublicReaderWebUiRequiredPath,
+} from "./public-reader-web-ui-scope.js";
+export type { PublicReaderWebUiRequiredPrefix } from "./public-reader-web-ui-scope.js";
 export type {
   LanguageActivationAdminView,
   LanguageActivationControlledVocabularyDomainProgress,

@@ -64,8 +64,8 @@ export async function buildWebUiDomainProgress(
     requiredKeyCount: readiness.webUi.requiredKeyCount,
     effectiveSource: effective?.source ?? "none",
     detail: dataReady
-      ? `WEB_UI ready via ${effective?.source ?? "unknown"}`
-      : `WEB_UI waiting_for_data (missing=${readiness.webUi.missingKeyCount}, empty=${readiness.webUi.emptyKeyCount}). Import Admin pack or Terminology does not fill WEB_UI chrome.`,
+      ? `Public WEB_UI ready via ${effective?.source ?? "unknown"}`
+      : `Public WEB_UI waiting_for_data (missing=${readiness.webUi.missingKeyCount}, empty=${readiness.webUi.emptyKeyCount}). Import Admin pack or Terminology does not fill public WEB_UI chrome.`,
   };
 }
 
