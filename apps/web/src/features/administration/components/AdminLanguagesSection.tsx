@@ -101,6 +101,160 @@ function yesNo(value: boolean): string {
   return value ? "Yes" : "No";
 }
 
+function CountSummary({
+  current,
+  stale,
+  missing,
+  workItemsRequired,
+}: {
+  readonly current: number;
+  readonly stale: number;
+  readonly missing: number;
+  readonly workItemsRequired: number;
+}) {
+  return (
+    <span>
+      Current={current} · Stale={stale} · Missing={missing} · Work remaining={workItemsRequired}
+    </span>
+  );
+}
+
+/**
+ * Admin presentation of an already-fetched readiness report.
+ * Does not recompute counts, call the provider, or write the Registry.
+ */
+function LanguageReadinessDetails({
+  report,
+}: {
+  readonly report: LanguageLocalizationReadinessReport;
+}) {
+  const ctKinds = report.kindRows.filter(
+    (row) => row.ownership === "CT_OWNED" && row.counts != null,
+  );
+
+  return (
+    <div className="admin-languages__readiness">
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Ordinary reading</h4>
+        <div>
+          Persisted Reading gate:{" "}
+          {report.registry.pwaPersistedReadingEnabled ? "Enabled" : "Disabled"}
+        </div>
+        <div>
+          PWA civic presentation state:{" "}
+          <code>{report.pwaCivic.pwaCivicReadinessStatus}</code>
+        </div>
+        <div>
+          Coverage:{" "}
+          <CountSummary
+            current={report.pwaCivic.coverage.current}
+            stale={report.pwaCivic.coverage.stale}
+            missing={report.pwaCivic.coverage.missing}
+            workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
+          />
+        </div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Content translation</h4>
+        <div>
+          CT totals:{" "}
+          <CountSummary
+            current={report.ct.current}
+            stale={report.ct.stale}
+            missing={report.ct.missing}
+            workItemsRequired={report.ct.workItemsRequired}
+          />
+        </div>
+        {ctKinds.length > 0 ? (
+          <ul className="admin-languages__readiness-kinds">
+            {ctKinds.map((row) => (
+              <li key={row.kindId}>
+                <code>{row.kindId}</code>{" "}
+                <CountSummary
+                  current={row.counts!.current}
+                  stale={row.counts!.stale}
+                  missing={row.counts!.missing}
+                  workItemsRequired={row.counts!.workItemsRequired}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>No measured CT kinds returned.</div>
+        )}
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">
+          Civic Media PLP (measured editorial coverage)
+        </h4>
+        <div>
+          <CountSummary
+            current={report.plpMedia.current}
+            stale={report.plpMedia.stale}
+            missing={report.plpMedia.missing}
+            workItemsRequired={report.plpMedia.workItemsRequired}
+          />
+        </div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Controlled vocabulary</h4>
+        <div>Concepts checked={report.controlledVocabulary.conceptsChecked}</div>
+        <div>
+          Missing localized labels=
+          {report.controlledVocabulary.conceptsMissingLocalizedLabel}
+        </div>
+        <div>
+          Terminology preferred-term coverage=
+          {report.controlledVocabulary.conceptsWithTerminologyPreferredTerm}
+        </div>
+        <div>
+          WEB_UI fallback-only={report.controlledVocabulary.conceptsWithWebUiFallbackOnly}
+        </div>
+        <div>
+          Presentation ready: {yesNo(report.controlledVocabulary.presentationReady)}
+        </div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Extended Localization</h4>
+        <p className="admin-languages__readiness-note">
+          Extended Localization readiness is separate from Unified Persisted Reading.
+        </p>
+        <div>
+          Extended Localization state: <code>{report.state}</code>
+        </div>
+        <div>WEB_UI missing={report.webUi.missingKeyCount}</div>
+        <div>WEB_UI empty={report.webUi.emptyKeyCount}</div>
+        <div>WEB_UI English fallback={report.webUi.englishFallbackKeyCount}</div>
+        <div>WEB_UI data ready: {yesNo(report.webUi.dataReady)}</div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Search / SEO</h4>
+        <div>Search flag={report.registry.searchEnabled ? "on" : "off"}</div>
+        <div>Search-ready={report.searchLocalizationReady ? "yes" : "no"}</div>
+        <div>SEO indexable={report.seoReady ? "yes" : "no"}</div>
+      </section>
+
+      <details className="admin-languages__readiness-gaps">
+        <summary>Gaps ({report.gaps.length})</summary>
+        {report.gaps.length === 0 ? (
+          <div>None returned.</div>
+        ) : (
+          <ul>
+            {report.gaps.map((gap) => (
+              <li key={gap}>{gap}</li>
+            ))}
+          </ul>
+        )}
+      </details>
+    </div>
+  );
+}
+
 export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProps) {
   const [items, setItems] = useState<LanguageRegistryAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -560,7 +714,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>{yesNo(row.searchEnabled)}</td>
                       <td>{yesNo(row.seoIndexingEnabled)}</td>
                       <td>{yesNo(row.pwaPersistedReadingEnabled)}</td>
-                      <td>
+                      <td className="admin-languages__localization-col">
                         {activation === "loading" || readiness === "loading" ? (
                           <span className="hu-caption">Checking…</span>
                         ) : activation === "error" || readiness === "error" ? (
@@ -570,55 +724,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             <div>
                               job: <code>{activation.job?.status ?? "none"}</code>
                             </div>
-                            <div>
-                              Extended: <code>{activation.readiness.state}</code>
-                            </div>
-                            <div>
-                              PWA civic presentation coverage:{" "}
-                              <code>{activation.readiness.pwaCivic.pwaCivicReadinessStatus}</code>
-                              {activation.readiness.pwaCivic.pwaPersistedReadingReady
-                                ? " · ready"
-                                : ""}
-                            </div>
-                            <div>
-                              Search-ready=
-                              {activation.readiness.searchLocalizationReady ? "yes" : "no"} ·
-                              SEO indexable=
-                              {activation.readiness.seoReady ? "yes" : "no"}
-                            </div>
-                            <div>
-                              WEB_UI missing={activation.readiness.webUi.missingKeyCount} · CV
-                              missing=
-                              {
-                                activation.readiness.controlledVocabulary
-                                  .conceptsMissingLocalizedLabel
-                              }
-                            </div>
-                            <div>
-                              CT rem={activation.readiness.ct.workItemsRequired} · PLP rem=
-                              {activation.readiness.plpMedia.workItemsRequired} · PWA miss=
-                              {activation.readiness.pwaCivic.coverage.missing}
-                            </div>
+                            <LanguageReadinessDetails report={activation.readiness} />
                           </div>
                         ) : readiness && typeof readiness === "object" ? (
-                          <div className="hu-caption">
-                            <div>
-                              Extended: <code>{readiness.state}</code>
-                            </div>
-                            <div>
-                              PWA civic presentation coverage:{" "}
-                              <code>{readiness.pwaCivic.pwaCivicReadinessStatus}</code>
-                              {readiness.pwaCivic.pwaPersistedReadingReady ? " · ready" : ""}
-                            </div>
-                            <div>
-                              Search-ready=
-                              {readiness.searchLocalizationReady ? "yes" : "no"} · SEO indexable=
-                              {readiness.seoReady ? "yes" : "no"}
-                            </div>
-                            {readiness.gaps.length > 0 ? (
-                              <div>{readiness.gaps.slice(0, 2).join(" · ")}</div>
-                            ) : null}
-                          </div>
+                          <LanguageReadinessDetails report={readiness} />
                         ) : (
                           <span className="hu-caption">—</span>
                         )}
