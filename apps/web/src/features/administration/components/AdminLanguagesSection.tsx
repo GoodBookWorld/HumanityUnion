@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type {
   AuthUserPublic,
@@ -118,6 +118,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   const [form, setForm] = useState<LanguageFormState>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,6 +153,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     setStatus(null);
     setError(null);
   }
+
+  useLayoutEffect(() => {
+    if (!formOpen) {
+      return;
+    }
+    formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [formOpen, editingId]);
 
   function closeForm() {
     setFormOpen(false);
@@ -321,7 +329,12 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
         {error ? <StatusBanner title="Languages error" message={error} /> : null}
 
         {formOpen ? (
-          <div className="admin-languages__form" role="region" aria-label={editingId ? "Edit language" : "Add language"}>
+          <div
+            ref={formRef}
+            className="admin-languages__form"
+            role="region"
+            aria-label={editingId ? "Edit language" : "Add language"}
+          >
             <h3 className="hu-subtitle">{editingId ? "Edit language" : "Add language"}</h3>
             <div className="admin-languages__form-grid">
               <label>
@@ -519,7 +532,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   <th>PWA</th>
                   <th>Localization</th>
                   <th>Fallback</th>
-                  <th>Actions</th>
+                  <th className="admin-languages__actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -613,7 +626,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>
                         <code>{row.fallbackLocale}</code>
                       </td>
-                      <td>
+                      <td className="admin-languages__actions-col">
                         <div className="admin-languages__row-actions">
                           <Button
                             type="button"
