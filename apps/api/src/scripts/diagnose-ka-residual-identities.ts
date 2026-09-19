@@ -13,13 +13,19 @@
  */
 
 import { HU_READ_ONLY_DIAGNOSTIC_ENV } from "../modules/language/read-only-diagnostic-guard.js";
+import { peekContentTranslationWarmOutboxFailure } from "../modules/language/content-translation-warm-enqueue.js";
 import {
   KA_RESIDUAL_DIAGNOSTIC_KINDS,
   KA_RESIDUAL_DIAGNOSTIC_LOCALE,
   assertKaResidualDiagnosticSafetyGate,
   classifyKaResidualIdentity,
+  classifyBlockedAttemptLastErrorShape,
+  classifyBlockedAttemptVersionProvenance,
   emptyKaResidualKindCounts,
   isKaResidualDiagnosticKind,
+  safeAttemptReasonToken,
+  safeFailureClassToken,
+  safeRetryHintToken,
   sumKaResidualCounts,
   type KaResidualDiagnosticKind,
   type KaResidualKindCounts,
@@ -144,6 +150,12 @@ async function main(): Promise<number> {
       sourceRecordId: string;
       failureReason: string;
       sourceVersionAssociation: "associated" | "absent";
+      sourceVersionProvenance: "failure_metadata" | "command_payload" | "none";
+      versionEqualsLive: boolean;
+      failureClass: string;
+      retryabilityHint: string;
+      lastErrorShape: "structured_metadata" | "unstructured" | "empty";
+      attemptReason: string;
     }> = [];
 
     const translations = getMongoCollection(MONGO_COLLECTIONS.contentTranslations);
@@ -219,6 +231,16 @@ async function main(): Promise<number> {
         bucketCounts.historicalStaleButLiveCurrent += 1;
       }
       if (bucket === "blockedFailedAttempt") {
+        const peek = await peekContentTranslationWarmOutboxFailure({
+          sourceKind: candidate.sourceKind,
+          sourceRecordId: candidate.sourceRecordId,
+          targetLocale: KA_RESIDUAL_DIAGNOSTIC_LOCALE,
+        });
+        const provenance = classifyBlockedAttemptVersionProvenance({
+          metadataSourceVersion: peek.failureMetadata?.sourceVersion ?? null,
+          resolvedAttemptSourceVersion: peek.latestAttempt?.sourceVersion ?? null,
+          liveSourceVersion: liveVersion,
+        });
         blocked.push({
           sourceKind: candidate.sourceKind,
           sourceRecordId: candidate.sourceRecordId,
@@ -226,6 +248,14 @@ async function main(): Promise<number> {
           sourceVersionAssociation: preflight.attemptSourceVersion
             ? "associated"
             : "absent",
+          sourceVersionProvenance: provenance.provenance,
+          versionEqualsLive: provenance.versionEqualsLive,
+          failureClass: safeFailureClassToken(
+            peek.failureMetadata?.failureClass ?? peek.lastErrorClass,
+          ),
+          retryabilityHint: safeRetryHintToken(peek.failureMetadata?.retryabilityHint),
+          lastErrorShape: classifyBlockedAttemptLastErrorShape(peek.lastErrorRaw),
+          attemptReason: safeAttemptReasonToken(peek.latestAttempt?.reason),
         });
       }
     }
@@ -286,7 +316,7 @@ async function main(): Promise<number> {
     }
     for (const row of blocked) {
       console.log(
-        `blockedFailedAttempt sourceKind=${row.sourceKind} sourceRecordId=${row.sourceRecordId} failureReason=${row.failureReason} sourceVersionAssociation=${row.sourceVersionAssociation}`,
+        `blockedFailedAttempt sourceKind=${row.sourceKind} sourceRecordId=${row.sourceRecordId} failureReason=${row.failureReason} sourceVersionAssociation=${row.sourceVersionAssociation} sourceVersionProvenance=${row.sourceVersionProvenance} versionEqualsLive=${row.versionEqualsLive ? "yes" : "no"} failureClass=${row.failureClass} retryabilityHint=${row.retryabilityHint} lastErrorShape=${row.lastErrorShape} attemptReason=${row.attemptReason}`,
       );
     }
     console.log("PROVIDER_CALLS=0");

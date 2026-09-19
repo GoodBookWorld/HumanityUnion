@@ -111,6 +111,113 @@ export function assertKaResidualDiagnosticSafetyGate(input: {
   return { ok: true };
 }
 
+const SAFE_FAILURE_CLASSES = new Set([
+  "PROVIDER_REJECTED",
+  "PROVIDER_TIMEOUT",
+  "PROVIDER_INVALID_RESPONSE",
+  "VALIDATION_FAILED",
+  "SOURCE_UNAVAILABLE",
+  "SOURCE_VERSION_MISMATCH",
+  "PERSISTENCE_FAILED",
+  "UNSUPPORTED_SOURCE",
+  "MISSING_AFTER_DISPATCH",
+  "UNKNOWN",
+]);
+
+const SAFE_RETRY_HINTS = new Set([
+  "retryable",
+  "retryable_after_source_change",
+  "non_retryable_until_code_or_content_change",
+  "unknown",
+]);
+
+const SAFE_ATTEMPT_REASONS = new Set([
+  "public_mutation",
+  "public_update",
+  "operator_manual",
+  "operator_backfill",
+  "operator_residual_retry",
+  "search_discovery_enable",
+]);
+
+function normalizeDiagnosticVersion(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "unloaded") {
+    return null;
+  }
+  return trimmed;
+}
+
+export type KaBlockedAttemptVersionProvenance =
+  | "failure_metadata"
+  | "command_payload"
+  | "none";
+
+/**
+ * Where the blocked attempt's sourceVersion was read from.
+ * Never copies the live sourceVersion onto the attempt.
+ * Metadata wins over the warm-command payload, matching resolveWarmAttemptSourceVersion.
+ */
+export function classifyBlockedAttemptVersionProvenance(input: {
+  readonly metadataSourceVersion: string | null | undefined;
+  readonly resolvedAttemptSourceVersion: string | null | undefined;
+  readonly liveSourceVersion: string | null | undefined;
+}): {
+  readonly provenance: KaBlockedAttemptVersionProvenance;
+  readonly versionEqualsLive: boolean;
+} {
+  const metadata = normalizeDiagnosticVersion(input.metadataSourceVersion);
+  const resolved = normalizeDiagnosticVersion(input.resolvedAttemptSourceVersion);
+  const live = normalizeDiagnosticVersion(input.liveSourceVersion);
+  const provenance: KaBlockedAttemptVersionProvenance = metadata
+    ? "failure_metadata"
+    : resolved
+      ? "command_payload"
+      : "none";
+  const owned = metadata ?? resolved;
+  return {
+    provenance,
+    versionEqualsLive: Boolean(owned && live && owned === live),
+  };
+}
+
+export function safeDiagnosticToken(
+  value: string | null | undefined,
+  allow: ReadonlySet<string>,
+): string {
+  if (typeof value !== "string") {
+    return "absent";
+  }
+  return allow.has(value) ? value : "unlisted";
+}
+
+export function classifyBlockedAttemptLastErrorShape(
+  lastError: string | null | undefined,
+): "structured_metadata" | "unstructured" | "empty" {
+  if (typeof lastError !== "string" || lastError.trim().length === 0) {
+    return "empty";
+  }
+  if (lastError.startsWith("CT_FAIL_META_V1:")) {
+    return "structured_metadata";
+  }
+  return "unstructured";
+}
+
+export function safeFailureClassToken(value: string | null | undefined): string {
+  return safeDiagnosticToken(value, SAFE_FAILURE_CLASSES);
+}
+
+export function safeRetryHintToken(value: string | null | undefined): string {
+  return safeDiagnosticToken(value, SAFE_RETRY_HINTS);
+}
+
+export function safeAttemptReasonToken(value: string | null | undefined): string {
+  return safeDiagnosticToken(value, SAFE_ATTEMPT_REASONS);
+}
+
 export function sumKaResidualCounts(
   rows: readonly KaResidualKindCounts[],
 ): KaResidualKindCounts {

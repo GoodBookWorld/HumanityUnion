@@ -9,6 +9,9 @@ import {
   KA_RESIDUAL_DIAGNOSTIC_LOCALE,
   assertKaResidualDiagnosticSafetyGate,
   classifyKaResidualIdentity,
+  classifyBlockedAttemptLastErrorShape,
+  classifyBlockedAttemptVersionProvenance,
+  safeFailureClassToken,
 } from "../../../src/scripts/diagnose-ka-residual-identities.logic.js";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -96,6 +99,37 @@ describe("ka residual identity diagnostic", () => {
     assert.equal(missingFlag.ok, false);
   });
 
+  it("attributes blocked sourceVersion only from the attempt, never from the live version", () => {
+    assert.deepEqual(
+      classifyBlockedAttemptVersionProvenance({
+        metadataSourceVersion: "attempt-v",
+        resolvedAttemptSourceVersion: "attempt-v",
+        liveSourceVersion: "attempt-v",
+      }),
+      { provenance: "failure_metadata", versionEqualsLive: true },
+    );
+    assert.deepEqual(
+      classifyBlockedAttemptVersionProvenance({
+        metadataSourceVersion: null,
+        resolvedAttemptSourceVersion: "payload-v",
+        liveSourceVersion: "payload-v",
+      }),
+      { provenance: "command_payload", versionEqualsLive: true },
+    );
+    assert.deepEqual(
+      classifyBlockedAttemptVersionProvenance({
+        metadataSourceVersion: null,
+        resolvedAttemptSourceVersion: null,
+        liveSourceVersion: "live-v",
+      }),
+      { provenance: "none", versionEqualsLive: false },
+    );
+    assert.equal(classifyBlockedAttemptLastErrorShape("CT_FAIL_META_V1:{}"), "structured_metadata");
+    assert.equal(classifyBlockedAttemptLastErrorShape("plain failure"), "unstructured");
+    assert.equal(safeFailureClassToken("secret prose"), "unlisted");
+    assert.equal(safeFailureClassToken("PROVIDER_TIMEOUT"), "PROVIDER_TIMEOUT");
+  });
+
   it("does not call activation, enqueue, or the provider from the script", () => {
     const script = readFileSync(
       join(apiRoot, "src/scripts/diagnose-ka-residual-identities.ts"),
@@ -104,6 +138,10 @@ describe("ka residual identity diagnostic", () => {
     assert.match(script, /discoverStagingInitiativePathWarmSources/);
     assert.match(script, /loadTranslatableSource/);
     assert.match(script, /buildPublicLocalizationRetryPreflight/);
+    assert.match(script, /peekContentTranslationWarmOutboxFailure/);
+    assert.match(script, /sourceVersionProvenance/);
+    assert.doesNotMatch(script, /console\.log\([^)]*lastErrorRaw/);
+    assert.doesNotMatch(script, /translatedContent|source fields/);
     assert.match(script, /HU_READ_ONLY_DIAGNOSTIC/);
     assert.doesNotMatch(script, /activateLanguageLocalization/);
     assert.doesNotMatch(script, /processLanguageActivationJob/);
