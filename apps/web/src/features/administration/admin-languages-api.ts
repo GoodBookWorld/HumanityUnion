@@ -5,6 +5,11 @@ import type {
   LanguageRegistryAdminListResponse,
   LanguageTextDirection,
   LanguageUiTranslationStatus,
+  LanguageWebUiReadinessSlice,
+  WebUiMessagePackPreparation,
+  WebUiMessagePackRecord,
+  WebUiMessagePackValidationReport,
+  WebUiMessageTree,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
@@ -99,4 +104,42 @@ export async function updateAdminLanguage(
   );
   invalidatePublicLanguagesClientCache();
   return updated;
+}
+
+const ADMIN_WEB_UI_PACKS_PATH = "/api/v1/admin/web-ui-message-packs";
+
+export async function fetchAdminWebUiMessagePackPreparation(
+  locale: string,
+  scope: "public" | "full",
+): Promise<WebUiMessagePackPreparation> {
+  return apiRequest<WebUiMessagePackPreparation>(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}/preparation?scope=${scope}`,
+  );
+}
+
+export async function importAdminWebUiMessagePack(
+  locale: string,
+  input: {
+    readonly messages: WebUiMessageTree;
+    readonly status: "draft" | "published";
+    readonly sourceNote?: string | null;
+  },
+): Promise<{
+  readonly pack: WebUiMessagePackRecord;
+  readonly validation: WebUiMessagePackValidationReport;
+  readonly readiness: LanguageWebUiReadinessSlice;
+}> {
+  return apiRequest(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        locale,
+        messages: input.messages,
+        status: input.status,
+        sourceNote: input.sourceNote ?? null,
+      }),
+    },
+  );
 }

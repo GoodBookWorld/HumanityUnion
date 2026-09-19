@@ -124,6 +124,13 @@ export async function upsertWebUiMessagePack(
       `Non-string WEB_UI leaves: ${validation.rejectedNonStringPaths.slice(0, 8).join(", ")}`,
     );
   }
+  if (validation.placeholderMismatchPaths.length > 0) {
+    throw new WebUiMessagePackValidationError(
+      `Placeholder or message structure mismatch: ${validation.placeholderMismatchPaths
+        .slice(0, 8)
+        .join("; ")}`,
+    );
+  }
 
   const now = new Date().toISOString();
   const existing = await getWebUiMessagePackByLocale(locale);

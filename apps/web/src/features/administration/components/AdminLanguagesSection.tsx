@@ -9,6 +9,8 @@ import type {
   LanguageRegistryAdmin,
   LanguageTextDirection,
   LanguageUiTranslationStatus,
+  WebUiMessagePackPreparation,
+  WebUiMessageTree,
 } from "@hu/types";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -21,6 +23,8 @@ import {
   fetchAdminLanguageActivationStatus,
   fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
+  fetchAdminWebUiMessagePackPreparation,
+  importAdminWebUiMessagePack,
   updateAdminLanguage,
   type AdminLanguageCreateInput,
   type AdminLanguagePatchInput,
@@ -99,6 +103,164 @@ function isEnglishLocale(locale: string): boolean {
 
 function yesNo(value: boolean): string {
   return value ? "Yes" : "No";
+}
+
+function packStatusLabel(preparation: WebUiMessagePackPreparation): string {
+  if (!preparation.pack) {
+    return "none";
+  }
+  return `${preparation.pack.status} revision ${preparation.pack.revision}`;
+}
+
+function describePreparation(preparation: WebUiMessagePackPreparation): string {
+  return (
+    `Public required ${preparation.publicRequiredKeyCount}` +
+    `, public missing ${preparation.publicReadiness.missingKeyCount}` +
+    `, public empty ${preparation.publicReadiness.emptyKeyCount}` +
+    `, public data ready ${yesNo(preparation.publicReadiness.dataReady)}` +
+    `. Full catalog ${preparation.fullCatalogKeyCount}` +
+    `, full missing ${preparation.fullCatalog.missingKeyCount}` +
+    `, full data ready ${yesNo(preparation.fullCatalog.dataReady)}` +
+    `. Pack: ${packStatusLabel(preparation)}.`
+  );
+}
+
+function downloadCatalogFile(locale: string, scope: "public" | "full", messages: WebUiMessageTree): void {
+  const artifact = {
+    locale,
+    status: "draft",
+    sourceNote: "Prepared from canonical English WEB_UI catalog",
+    messages,
+  };
+  const blob = new Blob([JSON.stringify(artifact, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `web-ui-${locale}-${scope}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Existing Admin pack contract: English catalog download, then PUT of the same messages tree.
+ * Does not call a translation provider and does not write the English source file.
+ */
+function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [publishOnImport, setPublishOnImport] = useState(false);
+
+  async function loadPreparation(scope: "public" | "full"): Promise<WebUiMessagePackPreparation> {
+    return fetchAdminWebUiMessagePackPreparation(locale, scope);
+  }
+
+  async function checkPack(): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    try {
+      const preparation = await loadPreparation("public");
+      setNote(describePreparation(preparation));
+    } catch (error) {
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function download(scope: "public" | "full"): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    try {
+      const preparation = await loadPreparation(scope);
+      downloadCatalogFile(preparation.locale, scope, preparation.messages);
+      setNote(describePreparation(preparation));
+    } catch (error) {
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importFile(file: File): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    try {
+      const parsed = JSON.parse(await file.text()) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        setNote("Catalog file must be a JSON object.");
+        return;
+      }
+      const body = parsed as Record<string, unknown>;
+      if (typeof body.locale === "string" && body.locale.trim()) {
+        if (body.locale.trim().toLowerCase() !== locale.trim().toLowerCase()) {
+          setNote(`This file is for ${body.locale.trim()}, not ${locale}. Import was not sent.`);
+          return;
+        }
+      }
+      if (!body.messages || typeof body.messages !== "object" || Array.isArray(body.messages)) {
+        setNote("Catalog file must include a messages object.");
+        return;
+      }
+      const result = await importAdminWebUiMessagePack(locale, {
+        messages: body.messages as WebUiMessageTree,
+        status: publishOnImport ? "published" : "draft",
+        sourceNote: typeof body.sourceNote === "string" ? body.sourceNote : null,
+      });
+      const problems = result.validation.placeholderMismatchPaths.length;
+      const empty = result.validation.emptyPaths.length;
+      setNote(
+        `Imported ${result.pack.status} revision ${result.pack.revision}` +
+          `. Public missing ${result.readiness.missingKeyCount}` +
+          `. Empty values ${empty}` +
+          `. Placeholder problems ${problems}` +
+          `. ${result.pack.status === "published" ? "Published packs are used at runtime." : "Draft packs are not used at runtime."}`,
+      );
+    } catch (error) {
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="admin-languages__pack-actions">
+      <div>Catalog pack</div>
+      <Button type="button" variant="secondary" disabled={busy} onClick={() => void checkPack()}>
+        Check catalog pack
+      </Button>
+      <Button type="button" variant="secondary" disabled={busy} onClick={() => void download("public")}>
+        Download public catalog
+      </Button>
+      <Button type="button" variant="secondary" disabled={busy} onClick={() => void download("full")}>
+        Download full catalog
+      </Button>
+      <label className="admin-languages__form-check">
+        <input
+          type="checkbox"
+          checked={publishOnImport}
+          disabled={busy}
+          onChange={(event) => setPublishOnImport(event.target.checked)}
+        />
+        Publish on import
+      </label>
+      <label>
+        Import catalog
+        <input
+          type="file"
+          accept="application/json,.json"
+          disabled={busy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) {
+              void importFile(file);
+            }
+          }}
+        />
+      </label>
+      {note ? <div>{note}</div> : null}
+    </div>
+  );
 }
 
 function CountSummary({
@@ -541,8 +703,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
           Localization starts the processing job, and Activate again or Resume
           reconciles newly actionable civic work. Refresh status measures readiness
           and does not enqueue. Waiting for data means the public catalog or
-          vocabulary is not ready, not a translation provider failure. Catalog packs
-          are Admin data (
+          vocabulary is not ready, not a translation provider failure. Download a public
+          or full English catalog for the selected locale, replace the values, then
+          import. The English source file is not replaced. Catalog packs are Admin
+          data (
           <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
           ). Search and SEO remain separate switches.
         </p>
@@ -810,9 +974,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                               <div>Job status is processing progress, not full localization.</div>
                             )}
                             <LanguageReadinessDetails report={activation.readiness} />
+                            <WebUiPackWorkflow locale={row.locale} />
                           </div>
                         ) : readiness && typeof readiness === "object" ? (
-                          <LanguageReadinessDetails report={readiness} />
+                          <div className="hu-caption">
+                            <LanguageReadinessDetails report={readiness} />
+                            <WebUiPackWorkflow locale={row.locale} />
+                          </div>
                         ) : (
                           <span className="hu-caption">—</span>
                         )}

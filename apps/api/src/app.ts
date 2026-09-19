@@ -222,6 +222,7 @@ import {
   publicLegalLocalizationRouter,
 } from "./modules/legal-localization/index.js";
 import {
+  ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT,
   adminWebUiMessagePackRouter,
   publicWebUiMessagePackRouter,
 } from "./modules/web-ui-message-packs/index.js";
@@ -257,7 +258,17 @@ app.use(
   express.raw({ type: "application/json" }),
   membershipStripeWebhookRouter,
 );
-app.use(express.json());
+const defaultJsonParser = express.json();
+const adminWebUiPackJsonParser = express.json({
+  limit: ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT,
+});
+app.use((req, res, next) => {
+  if (req.method === "PUT" && req.path.startsWith("/api/v1/admin/web-ui-message-packs/")) {
+    adminWebUiPackJsonParser(req, res, next);
+    return;
+  }
+  defaultJsonParser(req, res, next);
+});
 // Local/dev filesystem media only — R2 public media is served from R2_PUBLIC_BASE_URL.
 if ((process.env.MEDIA_STORAGE_PROVIDER ?? "local").trim().toLowerCase() !== "r2") {
   app.use(

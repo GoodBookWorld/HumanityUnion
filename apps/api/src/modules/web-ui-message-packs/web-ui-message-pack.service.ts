@@ -4,11 +4,13 @@
 
 import type {
   WebUiMessagePackAdminListResponse,
+  WebUiMessagePackPreparation,
+  WebUiMessagePackPreparationScope,
   WebUiMessagePackRecord,
   WebUiMessagePackUpsertInput,
   WebUiMessageTree,
 } from "@hu/types";
-import { isWebUiMessagePackStatus } from "@hu/types";
+import { isWebUiMessagePackStatus, normalizeLanguageRegistryLocaleKey } from "@hu/types";
 
 import {
   AdministrationForbiddenError,
@@ -28,7 +30,12 @@ import {
   requireWebUiMessagePackByLocale,
   upsertWebUiMessagePack,
 } from "./web-ui-message-pack.repository.js";
-import { validateWebUiMessageTreeAgainstEnglish } from "./web-ui-message-pack.validate.js";
+import {
+  collectStringPaths,
+  loadBundledEnglishWebUiMessagePack,
+  selectEnglishWebUiMessages,
+  validateWebUiMessageTreeAgainstEnglish,
+} from "./web-ui-message-pack.validate.js";
 
 type AdminActor = {
   userId: string;
@@ -58,6 +65,29 @@ async function assertAdminActor(userId: string): Promise<AdminActor> {
     throw new AdministrationForbiddenError("Administrator access is required.");
   }
   return { userId: user.userId, participantId: user.memberId };
+}
+
+function assertTargetLocaleIsNotEnglish(locale: string): void {
+  if (normalizeLanguageRegistryLocaleKey(locale) === "en") {
+    throw new WebUiMessagePackValidationError(
+      "The canonical English catalog cannot be replaced by a locale pack.",
+    );
+  }
+}
+
+async function resolvePackLocale(locale: string): Promise<string> {
+  const trimmed = locale.trim();
+  if (!trimmed) {
+    throw new AdministrationValidationError("locale is required.");
+  }
+  const registry = await resolveLanguageRegistryLocale(trimmed);
+  if (!registry) {
+    throw new WebUiMessagePackValidationError(
+      `Locale is not in Language Registry: ${trimmed}`,
+    );
+  }
+  assertTargetLocaleIsNotEnglish(registry.locale);
+  return registry.locale;
 }
 
 export async function listAdminWebUiMessagePacks(input: {
@@ -93,16 +123,7 @@ export async function upsertAdminWebUiMessagePack(input: {
   const admin = await assertAdminActor(input.actorUserId);
   const body = (input.body ?? {}) as Record<string, unknown>;
   const locale = typeof body.locale === "string" ? body.locale.trim() : "";
-  if (!locale) {
-    throw new AdministrationValidationError("locale is required.");
-  }
-
-  const registry = await resolveLanguageRegistryLocale(locale);
-  if (!registry) {
-    throw new WebUiMessagePackValidationError(
-      `Locale is not in Language Registry: ${locale}`,
-    );
-  }
+  const canonicalLocale = await resolvePackLocale(locale);
 
   if (body.messages == null || typeof body.messages !== "object" || Array.isArray(body.messages)) {
     throw new AdministrationValidationError("messages object is required.");
@@ -120,7 +141,7 @@ export async function upsertAdminWebUiMessagePack(input: {
   }
 
   const upsertInput: WebUiMessagePackUpsertInput = {
-    locale: registry.locale,
+    locale: canonicalLocale,
     messages: body.messages as WebUiMessageTree,
     status,
     sourceNote: typeof body.sourceNote === "string" ? body.sourceNote : null,
@@ -141,4 +162,36 @@ export async function getAdminWebUiMessagePackOrNull(input: {
 }): Promise<WebUiMessagePackRecord | null> {
   await assertAdminActor(input.actorUserId);
   return getWebUiMessagePackByLocale(input.locale);
+}
+
+export async function prepareAdminWebUiMessagePack(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly scope: WebUiMessagePackPreparationScope;
+}): Promise<WebUiMessagePackPreparation> {
+  await assertAdminActor(input.actorUserId);
+  const locale = await resolvePackLocale(input.locale);
+  const selected = selectEnglishWebUiMessages(input.scope);
+  const pack = await getWebUiMessagePackByLocale(locale);
+  const publicReadiness = await assessWebUiCatalogReadinessForLocale({ locale });
+  const fullReadiness = await assessWebUiCatalogReadinessForLocale({
+    locale,
+    requiredPaths: collectStringPaths(loadBundledEnglishWebUiMessagePack()),
+  });
+  return {
+    locale,
+    scope: input.scope,
+    source: "english-catalog",
+    publicRequiredKeyCount: selected.publicRequiredKeyCount,
+    fullCatalogKeyCount: selected.fullCatalogKeyCount,
+    pack: pack ? { status: pack.status, revision: pack.revision } : null,
+    publicReadiness,
+    fullCatalog: {
+      requiredKeyCount: fullReadiness.requiredKeyCount,
+      missingKeyCount: fullReadiness.missingKeyCount,
+      emptyKeyCount: fullReadiness.emptyKeyCount,
+      dataReady: fullReadiness.dataReady,
+    },
+    messages: selected.messages,
+  };
 }

@@ -12,16 +12,20 @@ export {
   loadBundledEnglishWebUiMessagePack,
   loadBundledWebUiMessagePackFromFs,
   collectStringPaths,
+  inspectMessageStructure,
+  selectEnglishWebUiMessages,
   resetEnglishWebUiPathCacheForTests,
 } from "./web-ui-message-pack.validate.js";
 export {
   setWebUiMessagePackAdminAssertOverrideForTests,
   listAdminWebUiMessagePacks,
   getAdminWebUiMessagePack,
+  prepareAdminWebUiMessagePack,
   upsertAdminWebUiMessagePack,
 } from "./web-ui-message-pack.service.js";
 export { default as publicWebUiMessagePackRouter } from "./public-web-ui-message-pack.routes.js";
 export { default as adminWebUiMessagePackRouter } from "./admin-web-ui-message-pack.routes.js";
+export { ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT } from "./admin-web-ui-message-pack.routes.js";
 export {
   WebUiMessagePackError,
   WebUiMessagePackValidationError,

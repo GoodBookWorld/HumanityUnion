@@ -18,10 +18,14 @@ import {
 import {
   getAdminWebUiMessagePack,
   listAdminWebUiMessagePacks,
+  prepareAdminWebUiMessagePack,
   upsertAdminWebUiMessagePack,
 } from "./web-ui-message-pack.service.js";
 
 const adminWebUiMessagePackRouter = Router();
+
+/** Complete catalogs exceed the default 100kb JSON parser. Scoped to this PUT only. */
+export const ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT = "4mb";
 
 function createFailureResponse(message: string) {
   return {
@@ -75,6 +79,28 @@ adminWebUiMessagePackRouter.get(
         actorUserId: req.auth!.id,
       });
       res.json(createSuccessResponse(result, "WEB_UI message packs listed."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminWebUiMessagePackRouter.get(
+  "/:locale/preparation",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const scope = req.query.scope;
+      if (scope !== undefined && scope !== "public" && scope !== "full") {
+        throw new AdministrationValidationError("scope must be public or full.");
+      }
+      const result = await prepareAdminWebUiMessagePack({
+        actorUserId: req.auth!.id,
+        locale: paramLocale(req.params.locale),
+        scope: scope === "full" ? "full" : "public",
+      });
+      res.json(createSuccessResponse(result, "WEB_UI catalog preparation loaded."));
     } catch (error) {
       handleError(res, error);
     }

@@ -75,6 +75,20 @@ describe("Admin Languages actions layout", () => {
     assert.doesNotMatch(section, /<div>WEB_UI missing=/);
   });
 
+  it("11. catalog pack actions reuse the existing Admin import contract", () => {
+    const section = read("features/administration/components/AdminLanguagesSection.tsx");
+    const api = read("features/administration/admin-languages-api.ts");
+    assert.match(section, /Download public catalog/);
+    assert.match(section, /Download full catalog/);
+    assert.match(section, /Import catalog/);
+    assert.match(section, /Publish on import/);
+    assert.match(section, /This file is for/);
+    assert.match(api, /\/preparation\?scope=/);
+    assert.match(api, /method: "PUT"/);
+    assert.doesNotMatch(section, /locale === ["']ka["']|locale === ["']he["']/);
+    assert.doesNotMatch(api, /GEMINI_API_KEY|generateContent|content_translations/);
+  });
+
   it("alias field placeholder is example text, not a stored Georgian alias list", () => {
     const section = read("features/administration/components/AdminLanguagesSection.tsx");
     assert.match(section, /placeholder="zh-TW, zh-HK"/);

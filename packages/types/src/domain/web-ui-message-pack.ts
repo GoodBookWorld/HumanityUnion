@@ -4,6 +4,8 @@
  * Never machine-translated via Gemini / TranslationProvider on read.
  */
 
+import type { LanguageWebUiReadinessSlice } from "./language-localization-readiness.js";
+
 export type WebUiMessagePackStatus = "draft" | "published";
 
 export const WEB_UI_MESSAGE_PACK_STATUSES = ["draft", "published"] as const;
@@ -60,4 +62,34 @@ export interface WebUiMessagePackValidationReport {
   readonly acceptedKeyCount: number;
   readonly rejectedUnknownPaths: readonly string[];
   readonly rejectedNonStringPaths: readonly string[];
+  /** Present but not a hard reject — public readiness already treats these as not ready. */
+  readonly emptyPaths: readonly string[];
+  /** Hard reject on import. Top-level placeholders and rich-text tags must match English. */
+  readonly placeholderMismatchPaths: readonly string[];
+}
+
+export type WebUiMessagePackPreparationScope = "public" | "full";
+
+/**
+ * English starting catalog for one Registry locale.
+ * `messages` is the existing pack tree. Replace values, then PUT the same shape.
+ */
+export interface WebUiMessagePackPreparation {
+  readonly locale: string;
+  readonly scope: WebUiMessagePackPreparationScope;
+  readonly source: "english-catalog";
+  readonly publicRequiredKeyCount: number;
+  readonly fullCatalogKeyCount: number;
+  readonly pack: {
+    readonly status: WebUiMessagePackStatus;
+    readonly revision: number;
+  } | null;
+  readonly publicReadiness: LanguageWebUiReadinessSlice;
+  readonly fullCatalog: {
+    readonly requiredKeyCount: number;
+    readonly missingKeyCount: number;
+    readonly emptyKeyCount: number;
+    readonly dataReady: boolean;
+  };
+  readonly messages: WebUiMessageTree;
 }

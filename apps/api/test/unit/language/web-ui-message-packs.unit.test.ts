@@ -2,16 +2,29 @@
  * WEB_UI remote/Admin message packs — foundation tests.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it, beforeEach } from "node:test";
+import { fileURLToPath } from "node:url";
 
+import { isPublicReaderWebUiRequiredPath } from "@hu/types";
+
+import { ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT } from "../../../src/modules/web-ui-message-packs/index.js";
 import {
   resetWebUiMessagePackStoreForTests,
   setWebUiMessagePackForceMemoryForTests,
   upsertWebUiMessagePack,
   getPublishedWebUiMessagePackByLocale,
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
+import { WebUiMessagePackValidationError } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.errors.js";
 import { resolveEffectiveWebUiMessagePack } from "../../../src/modules/web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
-import { validateWebUiMessageTreeAgainstEnglish } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
+import {
+  inspectMessageStructure,
+  loadBundledEnglishWebUiMessagePack,
+  loadBundledWebUiMessagePackFromFs,
+  selectEnglishWebUiMessages,
+  validateWebUiMessageTreeAgainstEnglish,
+} from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
 import { assessWebUiCatalogReadinessForLocale } from "../../../src/modules/language/language-localization-activation/assess-web-ui-catalog-readiness.js";
 import { assessControlledVocabularyReadinessForLocale } from "../../../src/modules/language/language-localization-activation/assess-controlled-vocabulary-readiness.js";
 import { resetWebUiControlledLabelCacheForTests } from "../../../src/modules/language/controlled-lifecycle-web-ui-labels.js";
@@ -161,6 +174,162 @@ describe("WEB_UI remote message packs", () => {
       const src = readFileSync(join(repo, name), "utf8");
       assert.doesNotMatch(src, /TranslationProvider|GEMINI_API_KEY|generateContent/);
       assert.doesNotMatch(src, /\bka\.json\b/);
+    }
+  });
+
+  it("public scope comes from isPublicReaderWebUiRequiredPath and excludes author workspace keys", () => {
+    const prepared = selectEnglishWebUiMessages("public");
+    const full = selectEnglishWebUiMessages("full");
+    assert.equal(prepared.selectedPaths.length, prepared.publicRequiredKeyCount);
+    assert.ok(prepared.publicRequiredKeyCount > 0);
+    assert.ok(prepared.publicRequiredKeyCount < prepared.fullCatalogKeyCount);
+    assert.equal(full.selectedPaths.length, full.fullCatalogKeyCount);
+    assert.ok(prepared.selectedPaths.every((pathKey) => isPublicReaderWebUiRequiredPath(pathKey)));
+    assert.equal(
+      prepared.selectedPaths.some((pathKey) => pathKey.startsWith("initiativeExperience.author.sidebar")),
+      false,
+    );
+    assert.ok(
+      full.selectedPaths.some((pathKey) => pathKey.startsWith("initiativeExperience.author.sidebar")),
+    );
+  });
+
+  it("ICU branch text is not treated as a placeholder", () => {
+    const inspected = inspectMessageStructure(
+      "{count, plural, =0 {No proposals} one {# proposal} other {# proposals}}",
+    );
+    assert.deepEqual([...inspected.placeholders], ["count"]);
+    const report = validateWebUiMessageTreeAgainstEnglish({
+      initiativeExperience: {
+        author: {
+          proposal: {
+            counts: {
+              proposals: "{count, plural, =0 {0 proposals} one {# proposal} other {# proposals}}",
+            },
+          },
+        },
+      },
+    } as never);
+    assert.equal(
+      report.placeholderMismatchPaths.some((entry) => entry.includes("{No}")),
+      false,
+    );
+    assert.equal(
+      report.placeholderMismatchPaths.some((entry) => entry.includes("counts.proposals")),
+      false,
+    );
+  });
+
+  it("rejects a dropped interpolation placeholder and diagnoses empty values", async () => {
+    const report = validateWebUiMessageTreeAgainstEnglish({
+      common: { language: "   " },
+      blogPublic: { pagination: { showingCount: "no count here" } },
+    } as never);
+    assert.ok(report.emptyPaths.includes("common.language"));
+    assert.ok(
+      report.placeholderMismatchPaths.some(
+        (entry) => entry.includes("blogPublic.pagination.showingCount") && entry.includes("{count}"),
+      ),
+    );
+    await assert.rejects(
+      () =>
+        upsertWebUiMessagePack({
+          locale: "eo",
+          status: "published",
+          messages: {
+            blogPublic: { pagination: { showingCount: "no count here" } },
+          } as never,
+        }),
+      (error: unknown) =>
+        error instanceof WebUiMessagePackValidationError && /showingCount/.test(error.message),
+    );
+  });
+
+  it("public-only pack satisfies public readiness and a full pack stays valid", async () => {
+    const englishPath = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../../../web/src/features/i18n/messages/en.json",
+    );
+    const before = readFileSync(englishPath);
+    const prepared = selectEnglishWebUiMessages("public");
+    await upsertWebUiMessagePack({
+      locale: "eo",
+      status: "published",
+      messages: prepared.messages,
+      sourceNote: "public scope",
+    });
+    const readiness = await assessWebUiCatalogReadinessForLocale({ locale: "eo" });
+    assert.equal(readiness.dataReady, true);
+    assert.equal(readiness.missingKeyCount, 0);
+    const full = await assessWebUiCatalogReadinessForLocale({
+      locale: "eo",
+      requiredPaths: selectEnglishWebUiMessages("full").selectedPaths,
+    });
+    assert.equal(full.dataReady, false);
+    assert.ok(full.missingKeyCount > 0);
+    assert.equal(readFileSync(englishPath).equals(before), true);
+
+    resetWebUiMessagePackStoreForTests();
+    const english = loadBundledEnglishWebUiMessagePack();
+    await upsertWebUiMessagePack({
+      locale: "eo",
+      status: "published",
+      messages: english as never,
+    });
+    const complete = await assessWebUiCatalogReadinessForLocale({
+      locale: "eo",
+      requiredPaths: selectEnglishWebUiMessages("full").selectedPaths,
+    });
+    assert.equal(complete.dataReady, true);
+    assert.equal(complete.missingKeyCount, 0);
+  });
+
+  it("draft packs are not runtime packs, and bundled locales still win over remote", async () => {
+    const prepared = selectEnglishWebUiMessages("public");
+    await upsertWebUiMessagePack({
+      locale: "eo",
+      status: "draft",
+      messages: prepared.messages,
+    });
+    assert.equal(await getPublishedWebUiMessagePackByLocale("eo"), null);
+    const draftReadiness = await assessWebUiCatalogReadinessForLocale({ locale: "eo" });
+    assert.equal(draftReadiness.dataReady, false);
+
+    const english = loadBundledEnglishWebUiMessagePack();
+    await upsertWebUiMessagePack({
+      locale: "uk",
+      status: "published",
+      messages: english as never,
+    });
+    const uk = await resolveEffectiveWebUiMessagePack("uk");
+    assert.equal(uk?.source, "bundled");
+    for (const locale of ["uk", "ar", "zh-Hant"] as const) {
+      const bundled = loadBundledWebUiMessagePackFromFs(locale);
+      assert.ok(bundled);
+      const report = validateWebUiMessageTreeAgainstEnglish(bundled as never);
+      assert.equal(report.rejectedUnknownPaths.length, 0);
+      const effective = await resolveEffectiveWebUiMessagePack(locale);
+      assert.equal(effective?.source, "bundled");
+    }
+  });
+
+  it("pack workflow has no locale-specific branch, provider call, or second store", () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const moduleDir = path.resolve(here, "../../../src/modules/web-ui-message-packs");
+    const appSource = readFileSync(path.resolve(here, "../../../src/app.ts"), "utf8");
+    assert.equal(ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT, "4mb");
+    assert.match(appSource, /req\.method === "PUT" && req\.path\.startsWith\("\/api\/v1\/admin\/web-ui-message-packs\/"\)/);
+    for (const name of [
+      "web-ui-message-pack.service.ts",
+      "web-ui-message-pack.validate.ts",
+      "admin-web-ui-message-pack.routes.ts",
+      "web-ui-message-pack.repository.ts",
+    ]) {
+      const src = readFileSync(path.join(moduleDir, name), "utf8");
+      assert.doesNotMatch(src, /locale === ["']ka["']|locale === ["']he["']/);
+      assert.doesNotMatch(src, /from ["'][^"']*TranslationProvider|GEMINI_API_KEY|generateContent/);
+      assert.doesNotMatch(src, /content_translations/);
+      assert.doesNotMatch(src, /writeFile/);
     }
   });
 });

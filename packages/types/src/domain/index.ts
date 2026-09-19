@@ -218,6 +218,8 @@ export {
 } from "./brand-localization.js";
 export type {
   WebUiMessagePackAdminListResponse,
+  WebUiMessagePackPreparation,
+  WebUiMessagePackPreparationScope,
   WebUiMessagePackPublicPayload,
   WebUiMessagePackRecord,
   WebUiMessagePackStatus,
