@@ -127,7 +127,7 @@ function CountSummary({
 
 /**
  * Admin presentation of an already-fetched readiness report.
- * Does not recompute counts, call the provider, or write the Registry.
+ * Labels only. Does not recompute counts, call a provider, or write the Registry.
  */
 function LanguageReadinessDetails({
   report,
@@ -137,36 +137,58 @@ function LanguageReadinessDetails({
   const ctKinds = report.kindRows.filter(
     (row) => row.ownership === "CT_OWNED" && row.counts != null,
   );
+  const knowledgeDebt = report.kindRows.filter(
+    (row) => row.ownership === "NO_TRANSLATION_OWNER",
+  );
 
   return (
     <div className="admin-languages__readiness">
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">Ordinary reading</h4>
+        <h4 className="admin-languages__readiness-heading">Registry</h4>
+        <p className="admin-languages__readiness-note">
+          These switches allow features. They do not mean translation is finished.
+        </p>
+        <div>Enabled: {yesNo(report.registry.enabled)}</div>
+        <div>Content translation enabled: {yesNo(report.registry.contentTranslationEnabled)}</div>
         <div>
-          Persisted Reading gate:{" "}
-          {report.registry.pwaPersistedReadingEnabled ? "Enabled" : "Disabled"}
+          Persisted reading enabled: {yesNo(report.registry.pwaPersistedReadingEnabled)}
         </div>
-        <div>
-          PWA civic presentation state:{" "}
-          <code>{report.pwaCivic.pwaCivicReadinessStatus}</code>
-        </div>
-        <div>
-          Coverage:{" "}
-          <CountSummary
-            current={report.pwaCivic.coverage.current}
-            stale={report.pwaCivic.coverage.stale}
-            missing={report.pwaCivic.coverage.missing}
-            failed={report.pwaCivic.coverage.failed}
-            pending={report.pwaCivic.coverage.pending}
-            workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
-          />
-        </div>
+        <div>Search enabled: {yesNo(report.registry.searchEnabled)}</div>
+        <div>SEO indexing enabled: {yesNo(report.registry.seoIndexingEnabled)}</div>
       </section>
 
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">Content translation</h4>
+        <h4 className="admin-languages__readiness-heading">Overall presentation</h4>
+        <p className="admin-languages__readiness-note">
+          Whether ordinary public presentation data is ready under the localization
+          owners that are implemented today.
+        </p>
         <div>
-          CT totals:{" "}
+          State: <code>{report.state}</code>
+        </div>
+        {report.state === "DATA_NOT_READY" ? (
+          <ul>
+            {report.webUi.dataReady ? null : (
+              <li>Public interface &amp; platform catalog is not ready.</li>
+            )}
+            {report.controlledVocabulary.presentationReady ? null : (
+              <li>Controlled Vocabulary is not ready.</li>
+            )}
+          </ul>
+        ) : null}
+        <p className="admin-languages__readiness-note">
+          Civic persisted content can show no remaining work while overall presentation
+          is still not ready.
+        </p>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Civic persisted content</h4>
+        <p className="admin-languages__readiness-note">
+          Persisted translations for civic records and other Content Translation-owned
+          public content. Work remaining counts those records only.
+        </p>
+        <div>
           <CountSummary
             current={report.ct.current}
             stale={report.ct.stale}
@@ -193,14 +215,30 @@ function LanguageReadinessDetails({
             ))}
           </ul>
         ) : (
-          <div>No measured CT kinds returned.</div>
+          <div>No measured civic record kinds returned.</div>
         )}
+        <div>
+          Persisted reading coverage:{" "}
+          <code>{report.pwaCivic.pwaCivicReadinessStatus}</code>
+        </div>
+        <div>
+          <CountSummary
+            current={report.pwaCivic.coverage.current}
+            stale={report.pwaCivic.coverage.stale}
+            missing={report.pwaCivic.coverage.missing}
+            failed={report.pwaCivic.coverage.failed}
+            pending={report.pwaCivic.coverage.pending}
+            workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
+          />
+        </div>
       </section>
 
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">
-          Civic Media PLP (measured editorial coverage)
-        </h4>
+        <h4 className="admin-languages__readiness-heading">Civic Media presentation</h4>
+        <p className="admin-languages__readiness-note">
+          Published localized presentation content. Public News remains source-original.
+          Page controls are part of the public catalog, not this count.
+        </p>
         <div>
           <CountSummary
             current={report.plpMedia.current}
@@ -214,18 +252,33 @@ function LanguageReadinessDetails({
       </section>
 
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">Controlled vocabulary</h4>
+        <h4 className="admin-languages__readiness-heading">
+          Public interface &amp; platform catalog
+        </h4>
+        <p className="admin-languages__readiness-note">
+          Catalog keys needed for ordinary public reading. Author and steward workspace
+          strings stay in the catalog and are not required for this line.
+        </p>
+        <div>Required={report.webUi.requiredKeyCount}</div>
+        <div>Missing={report.webUi.missingKeyCount}</div>
+        <div>Empty={report.webUi.emptyKeyCount}</div>
+        <div>English fallback={report.webUi.englishFallbackKeyCount}</div>
+        <div>Data ready: {yesNo(report.webUi.dataReady)}</div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Controlled Vocabulary</h4>
         <div>Concepts checked={report.controlledVocabulary.conceptsChecked}</div>
         <div>
           Missing localized labels=
           {report.controlledVocabulary.conceptsMissingLocalizedLabel}
         </div>
         <div>
-          Terminology preferred-term coverage=
+          Preferred-term coverage=
           {report.controlledVocabulary.conceptsWithTerminologyPreferredTerm}
         </div>
         <div>
-          WEB_UI fallback-only={report.controlledVocabulary.conceptsWithWebUiFallbackOnly}
+          Catalog fallback only={report.controlledVocabulary.conceptsWithWebUiFallbackOnly}
         </div>
         <div>
           Presentation ready: {yesNo(report.controlledVocabulary.presentationReady)}
@@ -233,29 +286,35 @@ function LanguageReadinessDetails({
       </section>
 
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">Extended Localization</h4>
+        <h4 className="admin-languages__readiness-heading">Knowledge</h4>
         <p className="admin-languages__readiness-note">
-          Extended Localization readiness is separate from Unified Persisted Reading.
+          Article localization owner not implemented yet. Knowledge page chrome is part
+          of the public catalog. This debt is separate from civic persisted content and
+          does not add civic work.
         </p>
-        <div>
-          Extended Localization state: <code>{report.state}</code>
-        </div>
-        <div>Public WEB_UI missing={report.webUi.missingKeyCount}</div>
-        <div>Public WEB_UI empty={report.webUi.emptyKeyCount}</div>
-        <div>Public WEB_UI English fallback={report.webUi.englishFallbackKeyCount}</div>
-        <div>Public WEB_UI data ready: {yesNo(report.webUi.dataReady)}</div>
-        <p className="admin-languages__readiness-note">
-          Public WEB_UI counts catalog keys needed for ordinary public reading.
-          Author and steward workspace strings stay in the WEB_UI pack and are not
-          required for this line.
-        </p>
+        {knowledgeDebt.length === 0 ? (
+          <div>Not reported as ready.</div>
+        ) : (
+          <div>Not ready. Does not block overall presentation.</div>
+        )}
       </section>
 
       <section className="admin-languages__readiness-section">
-        <h4 className="admin-languages__readiness-heading">Search / SEO</h4>
-        <div>Search flag={report.registry.searchEnabled ? "on" : "off"}</div>
-        <div>Search-ready={report.searchLocalizationReady ? "yes" : "no"}</div>
-        <div>SEO indexable={report.seoReady ? "yes" : "no"}</div>
+        <h4 className="admin-languages__readiness-heading">Search</h4>
+        <p className="admin-languages__readiness-note">
+          Search is independent of the catalog, civic content, and overall presentation.
+        </p>
+        <div>Search enabled: {yesNo(report.registry.searchEnabled)}</div>
+        <div>Search-ready: {yesNo(report.searchLocalizationReady)}</div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">SEO</h4>
+        <p className="admin-languages__readiness-note">
+          SEO indexability is independent of localization completeness.
+        </p>
+        <div>SEO indexing enabled: {yesNo(report.registry.seoIndexingEnabled)}</div>
+        <div>SEO indexable: {yesNo(report.seoReady)}</div>
       </section>
 
       <details className="admin-languages__readiness-gaps">
@@ -418,7 +477,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
         `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
           `; Search-ready=${report.searchLocalizationReady ? "yes" : "no"}` +
-          `; Extended Localization=${report.state}` +
+          `; Overall presentation=${report.state}` +
           `; SEO indexable=${report.seoReady ? "yes" : "no"}`,
       );
     } catch (readinessError) {
@@ -439,7 +498,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       setStatus(
         `${row.locale} activation: ${jobStatus}` +
           ` · dataReady=${view.languageDataReady}` +
-          ` · Public WEB_UI missing=${view.readiness.webUi.missingKeyCount}` +
+          ` · Public catalog missing=${view.readiness.webUi.missingKeyCount}` +
           ` · CV missing=${view.readiness.controlledVocabulary.conceptsMissingLocalizedLabel}` +
           ` · CT remaining=${view.readiness.ct.workItemsRequired}` +
           ` · PLP remaining=${view.readiness.plpMedia.workItemsRequired}`,
@@ -476,18 +535,16 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       <AdminPanelNavigation />
       <ProfileSection title="Languages">
         <p className="hu-caption admin-languages__lede">
-          Canonical Language Registry — Admin-managed locales for platform selection, translation,
-          and SEO indexing. Runtime pickers use enabled languages only. Locale is immutable after
-          creation. Backend policy is authoritative for conflicts and fallbacks. Basic language
-          availability (Enabled), Search capability (`searchEnabled`), SEO indexing
-          (`seoIndexingEnabled`), and Extended Localization (WEB_UI / CT / PLP) are separate
-          concepts — incomplete Extended Localization does not block Search readiness or SEO
-          indexability. Use Readiness to inspect Extended Localization state without enabling SEO.
-          Use Activate Localization to start the durable async activation job, and use it again
-          or Resume to reconcile newly actionable CT/PLP residual work. Refresh status measures
-          readiness and does not enqueue. WEB_UI packs are Admin data (
+          Canonical Language Registry. Enabled, Search, SEO indexing, and overall
+          presentation are separate. Incomplete presentation does not block Search or
+          SEO. Use Readiness to inspect presentation without enabling SEO. Activate
+          Localization starts the processing job, and Activate again or Resume
+          reconciles newly actionable civic work. Refresh status measures readiness
+          and does not enqueue. Waiting for data means the public catalog or
+          vocabulary is not ready, not a translation provider failure. Catalog packs
+          are Admin data (
           <code>PUT /api/v1/admin/web-ui-message-packs/:locale</code>
-          ), never machine-generated. Search and SEO remain separate opt-in flags.
+          ). Search and SEO remain separate switches.
         </p>
 
         <div className="admin-languages__toolbar">
@@ -627,7 +684,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                     }))
                   }
                 />
-                Content translation
+                Content translation enabled
               </label>
               <label className="admin-languages__form-check">
                 <input
@@ -663,7 +720,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                     }))
                   }
                 />
-                PWA persisted reading
+                Persisted reading enabled
               </label>
             </div>
             {!editingId ? (
@@ -703,7 +760,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   <th>Content</th>
                   <th>Search</th>
                   <th>SEO</th>
-                  <th>PWA</th>
+                  <th>Persisted reading</th>
                   <th>Localization</th>
                   <th>Fallback</th>
                   <th className="admin-languages__actions-col">Actions</th>
@@ -742,8 +799,16 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         ) : activation && typeof activation === "object" ? (
                           <div className="hu-caption">
                             <div>
-                              job: <code>{activation.job?.status ?? "none"}</code>
+                              Activation job: <code>{activation.job?.status ?? "none"}</code>
                             </div>
+                            {activation.job?.status === "waiting_for_data" ? (
+                              <div>
+                                Waiting for catalog or vocabulary data. Not a translation
+                                provider failure.
+                              </div>
+                            ) : (
+                              <div>Job status is processing progress, not full localization.</div>
+                            )}
                             <LanguageReadinessDetails report={activation.readiness} />
                           </div>
                         ) : readiness && typeof readiness === "object" ? (

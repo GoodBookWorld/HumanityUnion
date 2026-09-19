@@ -69,9 +69,9 @@ describe("Admin Languages actions layout", () => {
 
   it("10. readiness labels public WEB_UI separately from author workspace completeness", () => {
     const section = read("features/administration/components/AdminLanguagesSection.tsx");
-    assert.match(section, /Public WEB_UI missing=/);
-    assert.match(section, /Public WEB_UI data ready/);
-    assert.match(section, /Author and steward workspace strings stay in the WEB_UI pack/);
+    assert.match(section, /Public interface &amp; platform catalog/);
+    assert.match(section, /Data ready: \{yesNo\(report\.webUi\.dataReady\)\}/);
+    assert.match(section, /Author and steward workspace/);
     assert.doesNotMatch(section, /<div>WEB_UI missing=/);
   });
 

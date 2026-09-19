@@ -186,9 +186,10 @@ describe("Language Architecture Pack 02 — surface invariants", () => {
     assert.match(page, /civicMediaOwner === "hu-persisted" \? plpEditorial/);
   });
 
-  it("Admin labels PWA civic as presentation coverage", () => {
+  it("Admin labels persisted reading as a feature flag, not PWA-only coverage", () => {
     const admin = readFeatures("administration/components/AdminLanguagesSection.tsx");
-    assert.match(admin, /PWA civic presentation coverage/);
+    assert.match(admin, /Persisted reading enabled/);
+    assert.doesNotMatch(admin, /PWA civic presentation coverage|PWA persisted reading/);
   });
 
   it("11. provider is never called from visible-reading path", () => {
@@ -282,7 +283,7 @@ describe("Version 5.0 — PWA persisted reading vs corpus readiness", () => {
   it("Admin readiness fields remain in contracts (not removed)", () => {
     const admin = readFeatures("administration/components/AdminLanguagesSection.tsx");
     assert.match(admin, /pwaCivicReadinessStatus/);
-    assert.match(admin, /pwaPersistedReadingReady/);
+    assert.doesNotMatch(admin, /pwaPersistedReadingReady/);
     const api = readFeatures("language/public-languages-api.ts");
     assert.match(api, /pwaPersistedReadingReady/);
   });

@@ -20,7 +20,10 @@ describe("Admin Languages readiness details", () => {
     section.indexOf("export function AdminLanguagesSection"),
   );
 
-  it("1–2. renders CT totals and CT kindRows with counts", () => {
+  it("1–2. labels civic persisted content and still renders CT counts", () => {
+    assert.match(details, /Civic persisted content/);
+    assert.match(details, /Work remaining counts those records only/);
+    assert.doesNotMatch(details, /Content translation<\/h4>/);
     assert.match(details, /report\.ct\.current/);
     assert.match(details, /report\.ct\.stale/);
     assert.match(details, /report\.ct\.missing/);
@@ -31,14 +34,16 @@ describe("Admin Languages readiness details", () => {
     assert.match(section, /Blocked=/);
   });
 
-  it("3–4. renders PLP totals without overstating scope", () => {
+  it("3–4. labels Civic Media presentation without overstating scope", () => {
+    assert.match(details, /Civic Media presentation/);
+    assert.match(details, /Public News remains source-original/);
     assert.match(details, /report\.plpMedia\.current/);
     assert.match(details, /report\.plpMedia\.workItemsRequired/);
-    assert.match(details, /Civic Media PLP \(measured editorial coverage\)/);
     assert.doesNotMatch(details, /fact-check|propaganda|participant_public/);
   });
 
   it("5. renders controlled vocabulary counts", () => {
+    assert.match(details, /Controlled Vocabulary/);
     assert.match(details, /report\.controlledVocabulary\.conceptsChecked/);
     assert.match(details, /report\.controlledVocabulary\.conceptsMissingLocalizedLabel/);
     assert.match(details, /report\.controlledVocabulary\.conceptsWithTerminologyPreferredTerm/);
@@ -46,24 +51,28 @@ describe("Admin Languages readiness details", () => {
     assert.match(details, /report\.controlledVocabulary\.presentationReady/);
   });
 
-  it("6. renders WEB_UI counts and keeps Extended Localization separate", () => {
+  it("6. labels the public catalog and keeps Step 13A metrics", () => {
+    assert.match(details, /Public interface &amp; platform catalog/);
+    assert.match(details, /report\.webUi\.requiredKeyCount/);
     assert.match(details, /report\.webUi\.missingKeyCount/);
     assert.match(details, /report\.webUi\.emptyKeyCount/);
     assert.match(details, /report\.webUi\.englishFallbackKeyCount/);
     assert.match(details, /report\.webUi\.dataReady/);
+    assert.match(details, /Author and steward workspace/);
+    assert.doesNotMatch(details, /isPublicReaderWebUiRequiredPath|collectStringPaths/);
+    assert.match(details, /Overall presentation/);
     assert.match(details, /report\.state/);
-    assert.match(
-      details,
-      /Extended Localization readiness is separate from Unified Persisted Reading/,
-    );
+    assert.match(details, /report\.state === "DATA_NOT_READY"/);
   });
 
-  it("7. shows PWA coverage even when the persisted-reading gate is disabled", () => {
+  it("7. shows persisted reading coverage even when the feature flag is disabled", () => {
+    assert.match(details, /Persisted reading enabled/);
     assert.match(details, /report\.registry\.pwaPersistedReadingEnabled/);
     assert.match(details, /report\.pwaCivic\.pwaCivicReadinessStatus/);
     assert.match(details, /report\.pwaCivic\.coverage\.current/);
     assert.match(details, /report\.pwaCivic\.coverage\.missing/);
     assert.match(details, /report\.pwaCivic\.coverage\.workItemsRequired/);
+    assert.doesNotMatch(details, /PWA civic|PWA persisted reading/);
     assert.doesNotMatch(
       details,
       /pwaPersistedReadingEnabled[\s\S]{0,80}return null/,
@@ -75,11 +84,27 @@ describe("Admin Languages readiness details", () => {
     assert.doesNotMatch(section, /gaps\.slice\(0,\s*2\)/);
   });
 
-  it("9. keeps Search and SEO in their own section", () => {
-    assert.match(details, /Search \/ SEO/);
+  it("9. keeps Search and SEO in separate sections", () => {
+    assert.match(details, /<h4[^>]*>Search<\/h4>/);
+    assert.match(details, /<h4[^>]*>SEO<\/h4>/);
     assert.match(details, /report\.registry\.searchEnabled/);
     assert.match(details, /report\.searchLocalizationReady/);
     assert.match(details, /report\.seoReady/);
+    assert.match(details, /independent of the catalog/);
+    assert.match(details, /independent of localization completeness/);
+  });
+
+  it("10. keeps Knowledge debt separate from civic work", () => {
+    assert.match(details, /Knowledge/);
+    assert.match(details, /NO_TRANSLATION_OWNER/);
+    assert.match(details, /Article localization owner not implemented yet/);
+    assert.match(details, /does not add civic work/);
+    assert.match(details, /Does not block overall presentation/);
+  });
+
+  it("11. uses the same labels for every locale", () => {
+    assert.doesNotMatch(details, /locale\s*===?\s*["'](?:ka|he|uk|ar|zh-Hant)["']/);
+    assert.doesNotMatch(details, /\b(?:ka|he)\.json\b/);
   });
 
   it("10–11. Readiness click only fetches the existing report", () => {
