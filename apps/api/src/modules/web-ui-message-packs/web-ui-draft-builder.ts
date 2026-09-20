@@ -36,6 +36,11 @@ import {
 const PROTECTION_VERSION = 1;
 const SOURCE_NOTE = "offline WEB_UI draft; not published";
 const DEFAULT_RETRY_DELAY_MS = 1_500;
+/**
+ * Offline draft generation is not a request path.
+ * Match the existing 60s PLP provider timeout without raising the runtime default.
+ */
+export const OFFLINE_WEB_UI_PROVIDER_TIMEOUT_MS = 60_000;
 
 export class WebUiDraftBuilderError extends Error {
   constructor(message: string) {
@@ -160,6 +165,11 @@ export function canonicalizeWebUiDraftLocale(input: string): string {
     );
   }
   return canonical;
+}
+
+export function resolveOfflineWebUiProviderTimeoutMs(configuredTimeoutMs: number): number {
+  const configured = Number.isFinite(configuredTimeoutMs) ? configuredTimeoutMs : 0;
+  return Math.max(configured, OFFLINE_WEB_UI_PROVIDER_TIMEOUT_MS);
 }
 
 export function planWebUiDraftBatches(
@@ -517,14 +527,22 @@ export async function runWebUiDraftBuilder(
   let providerLabel = input.translator ? "injected" : "gemini";
   let modelLabel = input.model ?? (input.translator ? "injected" : "");
   if (!translator) {
-    const { resolveTranslationConfig } = await import("../language/translation.config.js");
-    const { resolveTranslationProvider } = await import("../language/resolve-translation-provider.js");
+    const { assertGeminiTranslationConfigured, resolveTranslationConfig } = await import(
+      "../language/translation.config.js"
+    );
+    const { GeminiTranslationProvider } = await import(
+      "../language/providers/gemini-translation-provider.js"
+    );
     const config = resolveTranslationConfig();
     if (config.provider !== "gemini") {
       throw new WebUiDraftBuilderError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
     }
+    assertGeminiTranslationConfigured(config);
     modelLabel = config.geminiModel;
-    const provider = resolveTranslationProvider();
+    const provider = new GeminiTranslationProvider({
+      ...config,
+      timeoutMs: resolveOfflineWebUiProviderTimeoutMs(config.timeoutMs),
+    });
     translator = (request) => provider.translate(request);
   }
 

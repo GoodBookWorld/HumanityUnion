@@ -20,6 +20,7 @@ import {
   assertCompletePublicWebUiDraft,
   canonicalizeWebUiDraftLocale,
   planWebUiDraftBatches,
+  resolveOfflineWebUiProviderTimeoutMs,
   runWebUiDraftBuilder,
 } from "../../../src/modules/web-ui-message-packs/web-ui-draft-builder.js";
 import {
@@ -621,6 +622,88 @@ describe("offline WEB_UI draft builder", () => {
     rmSync(outRoot, { recursive: true, force: true });
   });
 
+  it("keeps the runtime provider timeout and raises only the offline draft timeout", () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const configSource = readFileSync(
+      path.resolve(here, "../../../src/modules/language/translation.config.ts"),
+      "utf8",
+    );
+    const geminiSource = readFileSync(
+      path.resolve(here, "../../../src/modules/language/providers/gemini-translation-provider.ts"),
+      "utf8",
+    );
+    assert.match(configSource, /TRANSLATION_TIMEOUT_MS \?\? "25000"/);
+    assert.match(geminiSource, /this\.config\.timeoutMs/);
+    assert.doesNotMatch(geminiSource, /60_000/);
+    assert.equal(resolveOfflineWebUiProviderTimeoutMs(25_000), 60_000);
+    assert.equal(resolveOfflineWebUiProviderTimeoutMs(90_000), 90_000);
+    const keys = [
+      "civicMediaPublic.trustedCategoryDescriptions.academic-resource",
+      "civicMediaPublic.trustedCategoryDescriptions.independent-investigative",
+      "civicMediaPublic.trustedCategoryDescriptions.international-wire-service",
+      "civicMediaPublic.trustedCategoryDescriptions.public-broadcaster",
+      "civicMediaPublic.trustedCategoryDescriptions.regional-public-media",
+      "civicMediaPublic.trustedCategoryDescriptions.scientific-publisher",
+    ];
+    const plans = planWebUiDraftBatches(
+      Object.fromEntries(keys.map((key) => [key, flat[key] ?? ""])),
+    );
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0]?.id, "ad6cc334facf8f7f");
+  });
+
+  it("retries a provider timeout and skips batches already marked ok", async () => {
+    const includePaths = navigationPaths(7);
+    const plans = planWebUiDraftBatches(
+      Object.fromEntries(includePaths.map((key) => [key, flat[key] ?? ""])),
+    );
+    assert.equal(plans.length, 2);
+    const failedKeys = plans[1]?.keys.join("|");
+    const outRoot = tempRoot();
+    await assert.rejects(
+      () =>
+        runWebUiDraftBuilder({
+          locale: "eo",
+          execute: true,
+          includePaths,
+          outRoot,
+          log: () => undefined,
+          retryDelayMs: 0,
+          sleep: async () => undefined,
+          env: executeEnv,
+          model: "test-model",
+          translator: async (request) => {
+            const key = Object.keys(flatPayload(request)).sort().join("|");
+            if (key === failedKeys) {
+              throw new TranslationProviderError("timeout", "Gemini translation timed out");
+            }
+            return echo(request);
+          },
+        }),
+      /Gemini translation timed out/,
+    );
+    let resumeCalls = 0;
+    const resumed = await runWebUiDraftBuilder({
+      locale: "eo",
+      execute: true,
+      includePaths,
+      outRoot,
+      log: () => undefined,
+      retryDelayMs: 0,
+      env: executeEnv,
+      model: "test-model",
+      translator: async (request) => {
+        resumeCalls += 1;
+        assert.equal(Object.keys(flatPayload(request)).sort().join("|"), failedKeys);
+        return echo(request);
+      },
+    });
+    assert.equal(resumeCalls, 1);
+    assert.equal(resumed.providerCalls, 1);
+    assert.equal(resumed.completedBatchCount, plans.length);
+    rmSync(outRoot, { recursive: true, force: true });
+  });
+
   it("builder source does not import persistence, activation, or the Civic Media governor", () => {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const builder = readFileSync(
@@ -636,5 +719,7 @@ describe("offline WEB_UI draft builder", () => {
       assert.doesNotMatch(source, /thin-gemini-governor|thin-gemini-provider-state|upsertWebUiMessagePack/);
       assert.doesNotMatch(source, /activate-localization|locale === ["']ka["']|locale === ["']he["']/);
     }
+    assert.match(builder, /resolveOfflineWebUiProviderTimeoutMs/);
+    assert.doesNotMatch(builder, /resolveTranslationProvider/);
   });
 });
