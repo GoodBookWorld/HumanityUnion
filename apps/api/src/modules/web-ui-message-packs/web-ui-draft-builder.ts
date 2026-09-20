@@ -28,6 +28,9 @@ import {
   validateWebUiMessageTreeAgainstEnglish,
 } from "./web-ui-message-pack.validate.js";
 import {
+  classifyEnglishIdenticalWebUiTree,
+} from "./web-ui-identical-classification.js";
+import {
   protectWebUiMessageForProvider,
   restoreWebUiMessageFromProvider,
   WebUiMessageStructureError,
@@ -103,6 +106,8 @@ export interface WebUiDraftRunResult {
   readonly artifactPath: string | null;
   readonly completedBatchCount: number;
   readonly failedBatchCount: number;
+  readonly acceptedIdenticalCount?: number;
+  readonly suspiciousIdenticalCount?: number;
 }
 
 export interface WebUiDraftBuilderInput {
@@ -124,6 +129,12 @@ export interface WebUiDraftBuilderInput {
   };
   readonly model?: string;
   readonly loadLiveTerminology?: (locale: string) => Promise<string>;
+  readonly resolveRegistryLocale?: (locale: string) => Promise<{
+    readonly locale: string;
+    readonly englishName: string;
+    readonly nativeName: string;
+    readonly textDirection: string;
+  } | null>;
   readonly log?: (line: string) => void;
   readonly now?: () => string;
 }
@@ -464,18 +475,84 @@ export async function runWebUiDraftBuilder(
   input: WebUiDraftBuilderInput = {},
 ): Promise<WebUiDraftRunResult> {
   const argv = input.argv ?? [];
+  const retryIdentical = argv.includes("--retry-identical");
+  if (retryIdentical) {
+    const { runWebUiQualityRetry } = await import("./web-ui-quality-retry.js");
+    const quality = await runWebUiQualityRetry({
+      argv,
+      locale: input.locale,
+      execute: input.execute,
+      englishName: input.englishName,
+      nativeName: input.nativeName,
+      textDirection: input.textDirection,
+      translator: input.translator,
+      outRoot: input.outRoot,
+      retryDelayMs: input.retryDelayMs,
+      sleep: input.sleep,
+      env: input.env,
+      model: input.model,
+      loadLiveTerminology: input.loadLiveTerminology,
+      log: input.log,
+      now: input.now,
+    });
+    return {
+      mode: quality.mode,
+      locale: quality.locale,
+      englishName: input.englishName ?? readFlag(argv, "--english-name") ?? quality.locale,
+      nativeName: input.nativeName ?? readFlag(argv, "--native-name") ?? quality.locale,
+      textDirection: (input.textDirection ??
+        (readFlag(argv, "--text-direction") as WebUiDraftTextDirection | undefined) ??
+        "ltr") as WebUiDraftTextDirection,
+      leafCount: quality.retriedPathCount,
+      batchCount: quality.retriedPathCount === 0 ? 0 : Math.max(1, quality.providerCalls),
+      providerCalls: quality.providerCalls,
+      terminologyMode: "live",
+      artifactPath: quality.artifactPath,
+      completedBatchCount: quality.mode === "execute" ? quality.providerCalls > 0 ? 1 : 0 : 0,
+      failedBatchCount: 0,
+      acceptedIdenticalCount: quality.acceptedTechnical.length,
+      suspiciousIdenticalCount: quality.suspiciousRemaining.length,
+    };
+  }
+
   const execute = input.execute ?? argv.includes("--execute");
   const useLiveTerminology = input.useLiveTerminology ?? argv.includes("--use-live-terminology");
   const locale = canonicalizeWebUiDraftLocale(
     input.locale ?? readFlag(argv, "--locale") ?? "",
   );
-  const textDirectionRaw = input.textDirection ?? readFlag(argv, "--text-direction") ?? "ltr";
+
+  let englishName = (input.englishName ?? readFlag(argv, "--english-name") ?? "").trim();
+  let nativeName = (input.nativeName ?? readFlag(argv, "--native-name") ?? "").trim();
+  let textDirectionRaw = input.textDirection ?? readFlag(argv, "--text-direction") ?? "";
+  if (!englishName || !nativeName || (textDirectionRaw !== "ltr" && textDirectionRaw !== "rtl")) {
+    try {
+      const { resolveLanguagePreparationLocaleMetadata } = await import(
+        "../language-preparation/language-registry-metadata.js"
+      );
+      const metadata = await resolveLanguagePreparationLocaleMetadata({
+        locale,
+        englishName: englishName || undefined,
+        nativeName: nativeName || undefined,
+        textDirection: textDirectionRaw || undefined,
+        resolveRegistryLocale: input.resolveRegistryLocale,
+      });
+      englishName = metadata.englishName;
+      nativeName = metadata.nativeName;
+      textDirectionRaw = metadata.textDirection;
+    } catch (error) {
+      if (!englishName || !nativeName || (textDirectionRaw !== "ltr" && textDirectionRaw !== "rtl")) {
+        throw new WebUiDraftBuilderError(
+          error instanceof Error
+            ? error.message
+            : "Locale metadata requires Registry access or --english-name/--native-name/--text-direction.",
+        );
+      }
+    }
+  }
   if (textDirectionRaw !== "ltr" && textDirectionRaw !== "rtl") {
     throw new WebUiDraftBuilderError("textDirection must be ltr or rtl.");
   }
   const textDirection = textDirectionRaw;
-  const englishName = (input.englishName ?? readFlag(argv, "--english-name") ?? locale).trim();
-  const nativeName = (input.nativeName ?? readFlag(argv, "--native-name") ?? locale).trim();
   const terminologyMode: WebUiDraftTerminologyMode = useLiveTerminology ? "live" : "english-seed";
   const log = input.log ?? ((line: string) => console.log(line));
   const now = input.now ?? (() => new Date().toISOString());
@@ -631,7 +708,8 @@ export async function runWebUiDraftBuilder(
   );
   writeManifest([]);
 
-  for (const batch of batches) {
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+    const batch = batches[batchIndex]!;
     const batchPath = path.join(paths.batchDir, `${batch.id}.json`);
     const previous = readJson<BatchCheckpoint>(batchPath);
     if (
@@ -678,6 +756,7 @@ export async function runWebUiDraftBuilder(
           translated[key] = restored;
         }
         done = true;
+        log(`[${batchIndex + 1}/${batches.length}] ${batch.namespace} — ok`);
       } catch (error) {
         lastReason = error instanceof Error ? error.message : "Provider batch failed.";
         if (isNonRetryable(error) || attempt >= 2) {
@@ -693,8 +772,10 @@ export async function runWebUiDraftBuilder(
           failedBatches.push({ id: batch.id, paths: batch.keys, reason: lastReason });
           writeFileSync(paths.mapPath, `${JSON.stringify(translated, null, 2)}\n`);
           writeManifest([]);
+          log(`[${batchIndex + 1}/${batches.length}] ${batch.namespace} — failed`);
           throw new WebUiDraftBuilderError(lastReason);
         }
+        log(`[${batchIndex + 1}/${batches.length}] ${batch.namespace} — retry`);
         await sleep(retryDelayMs);
       }
     }
@@ -723,8 +804,24 @@ export async function runWebUiDraftBuilder(
     `${JSON.stringify({ locale, status: "draft", sourceNote: SOURCE_NOTE, messages }, null, 2)}\n`,
   );
   writeManifest(englishIdenticalPaths);
+  const classification = classifyEnglishIdenticalWebUiTree({
+    englishFlat: flat,
+    localizedFlat: Object.fromEntries(
+      requiredPaths.map((pathKey) => [pathKey, translated[pathKey] ?? ""]),
+    ),
+  });
   log(
-    `WEB_UI draft written: ${paths.artifactPath} leaves=${requiredPaths.length} batches=${batches.length}`,
+    [
+      "WEB_UI draft complete",
+      `locale: ${locale}`,
+      "scope: public",
+      `completedBatches: ${completedBatchCount}`,
+      `failedBatches: ${failedBatchCount}`,
+      `translatedLeaves: ${requiredPaths.length}`,
+      `acceptedIdentical: ${classification.acceptedTechnical.length}`,
+      `suspiciousIdentical: ${classification.suspiciousHuman.length}`,
+      `artifact: ${paths.artifactPath}`,
+    ].join("\n"),
   );
   return {
     mode: "execute",
@@ -739,5 +836,7 @@ export async function runWebUiDraftBuilder(
     artifactPath: paths.artifactPath,
     completedBatchCount,
     failedBatchCount,
+    acceptedIdenticalCount: classification.acceptedTechnical.length,
+    suspiciousIdenticalCount: classification.suspiciousHuman.length,
   };
 }

@@ -101,6 +101,13 @@ function tempRoot(): string {
 
 const executeEnv = { TRANSLATION_PROVIDER: "gemini" };
 
+const localeMeta = {
+  englishName: "Esperanto",
+  nativeName: "Esperanto",
+  textDirection: "ltr" as const,
+};
+
+
 describe("offline WEB_UI draft builder", () => {
   it("round-trips placeholders, ICU text, rich tags, and brand tokens", () => {
     const samples = [
@@ -169,6 +176,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths: paths,
           outRoot,
@@ -182,6 +190,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths: paths,
           outRoot,
@@ -209,6 +218,7 @@ describe("offline WEB_UI draft builder", () => {
     let peak = 0;
     const result = await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths: samplePaths(),
       outRoot,
@@ -243,6 +253,7 @@ describe("offline WEB_UI draft builder", () => {
     const includePaths = samplePaths();
     await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
@@ -292,6 +303,7 @@ describe("offline WEB_UI draft builder", () => {
       let targetKey: string | null = null;
       await runWebUiDraftBuilder({
         locale: "eo",
+        ...localeMeta,
         execute: true,
         includePaths,
         outRoot: root,
@@ -371,6 +383,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths: navigationPaths(2),
           outRoot,
@@ -394,6 +407,7 @@ describe("offline WEB_UI draft builder", () => {
     let calls = 0;
     await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
@@ -409,6 +423,7 @@ describe("offline WEB_UI draft builder", () => {
     const firstCalls = calls;
     const second = await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
@@ -431,6 +446,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths,
           outRoot,
@@ -462,6 +478,7 @@ describe("offline WEB_UI draft builder", () => {
     let loads = 0;
     await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       useLiveTerminology: true,
       includePaths: navigationPaths(1),
       log: () => undefined,
@@ -474,6 +491,7 @@ describe("offline WEB_UI draft builder", () => {
     const outRoot = tempRoot();
     await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       useLiveTerminology: true,
       includePaths: navigationPaths(1),
@@ -505,6 +523,7 @@ describe("offline WEB_UI draft builder", () => {
     const includePaths = navigationPaths(2);
     await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
@@ -540,6 +559,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths: navigationPaths(1),
           outRoot: failedRoot,
@@ -576,6 +596,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths,
           outRoot,
@@ -603,6 +624,7 @@ describe("offline WEB_UI draft builder", () => {
     let resumeCalls = 0;
     const resumed = await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
@@ -664,6 +686,7 @@ describe("offline WEB_UI draft builder", () => {
       () =>
         runWebUiDraftBuilder({
           locale: "eo",
+          ...localeMeta,
           execute: true,
           includePaths,
           outRoot,
@@ -685,6 +708,7 @@ describe("offline WEB_UI draft builder", () => {
     let resumeCalls = 0;
     const resumed = await runWebUiDraftBuilder({
       locale: "eo",
+      ...localeMeta,
       execute: true,
       includePaths,
       outRoot,
