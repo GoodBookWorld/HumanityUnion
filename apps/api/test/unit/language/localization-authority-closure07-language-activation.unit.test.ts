@@ -361,6 +361,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 5,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: ["analysis"],
       }),
     });
@@ -403,6 +404,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         conceptsWithTerminologyPreferredTerm: 1,
         conceptsWithWebUiFallbackOnly: 4,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: ["initiative"],
       }),
     });
@@ -493,6 +495,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 3,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: ["analysis", "discussion", "initiative"],
       }),
     });

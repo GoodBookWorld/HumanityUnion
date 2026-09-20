@@ -51,6 +51,7 @@ function baseReport(
       conceptsWithTerminologyPreferredTerm: 0,
       conceptsWithWebUiFallbackOnly: 0,
       conceptsMissingLocalizedLabel: 1,
+      missingLocalizedLabelConceptIds: [],
       missingPreferredTermGaps: ["discussion"],
     },
     higherAuthority: { brandPublished: null, legalPublished: null, note: null },
@@ -167,6 +168,7 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
         conceptsWithTerminologyPreferredTerm: 1,
         conceptsWithWebUiFallbackOnly: 4,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: [],
       },
       ct: { ...emptyLanguageLocalizationCountBucket(), current: 4 },
@@ -208,7 +210,7 @@ describe("Localization Simplification Step 06A — Search readiness decoupling",
     assert.match(searchFn, /registry\.enabled/);
     assert.doesNotMatch(searchFn, /isLocalizationReadyForSeo\(report\)/);
     assert.match(admin, /Search-ready/);
-    assert.match(admin, /Extended Localization/);
+    assert.match(admin, /Overall presentation/);
     assert.doesNotMatch(admin, /\b(?:ka|he)\b/);
   });
 

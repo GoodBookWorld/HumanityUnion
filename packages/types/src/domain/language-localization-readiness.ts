@@ -154,6 +154,8 @@ export type LanguageControlledVocabularyReadinessSlice = {
   readonly conceptsWithTerminologyPreferredTerm: number;
   readonly conceptsWithWebUiFallbackOnly: number;
   readonly conceptsMissingLocalizedLabel: number;
+  /** Controlled conceptIds with neither preferredTerm nor WEB_UI fallback. */
+  readonly missingLocalizedLabelConceptIds: readonly string[];
   readonly missingPreferredTermGaps: readonly string[];
 };
 

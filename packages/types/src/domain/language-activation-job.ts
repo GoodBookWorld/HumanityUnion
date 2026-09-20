@@ -76,6 +76,8 @@ export type LanguageActivationControlledVocabularyDomainProgress = {
   readonly conceptsMissing: number;
   readonly conceptsWithTerminologyPreferredTerm: number;
   readonly conceptsWithWebUiFallbackOnly: number;
+  /** Controlled conceptIds still missing a localized label. */
+  readonly missingConceptIds: readonly string[];
   readonly detail: string | null;
 };
 

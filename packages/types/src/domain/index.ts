@@ -542,6 +542,7 @@ export {
   CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
   applyControlledPublicVocabularyToProse,
   getControlledPublicVocabularyEntry,
+  glossaryConceptIdsForControlledVocabularyConcept,
 } from "./controlled-public-vocabulary.js";
 export { presentCollaborativeAnalysisFieldsWithControlledVocabulary } from "./present-controlled-collaborative-analysis.js";
 export {

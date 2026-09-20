@@ -98,6 +98,7 @@ function readyReadiness(
       conceptsWithTerminologyPreferredTerm: 0,
       conceptsWithWebUiFallbackOnly: 4,
       conceptsMissingLocalizedLabel: 0,
+      missingLocalizedLabelConceptIds: [],
       missingPreferredTermGaps: [],
     },
     higherAuthority: {
@@ -612,6 +613,7 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 4,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: [],
       }),
     });
@@ -891,6 +893,7 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 0,
         conceptsMissingLocalizedLabel: 2,
+        missingLocalizedLabelConceptIds: ["helpful", "active_allies"],
         missingPreferredTermGaps: ["helpful", "active_allies"],
       }),
     });

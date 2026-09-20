@@ -55,6 +55,7 @@ function report(
       conceptsWithTerminologyPreferredTerm: 0,
       conceptsWithWebUiFallbackOnly: 0,
       conceptsMissingLocalizedLabel: 1,
+      missingLocalizedLabelConceptIds: [],
       missingPreferredTermGaps: ["discussion"],
     },
     higherAuthority: { brandPublished: null, legalPublished: null, note: null },

@@ -44,6 +44,7 @@ export function emptyPendingDomains(): LanguageActivationJobDomains {
       conceptsMissing: 0,
       conceptsWithTerminologyPreferredTerm: 0,
       conceptsWithWebUiFallbackOnly: 0,
+      missingConceptIds: [],
       detail: null,
     },
     ct: historical(),
@@ -65,7 +66,7 @@ export async function buildWebUiDomainProgress(
     effectiveSource: effective?.source ?? "none",
     detail: dataReady
       ? `Public WEB_UI ready via ${effective?.source ?? "unknown"}`
-      : `Public WEB_UI waiting_for_data (missing=${readiness.webUi.missingKeyCount}, empty=${readiness.webUi.emptyKeyCount}). Import Admin pack or Terminology does not fill public WEB_UI chrome.`,
+      : `waiting_for_data missing=${readiness.webUi.missingKeyCount} empty=${readiness.webUi.emptyKeyCount} required=${readiness.webUi.requiredKeyCount} dataReady=false`,
   };
 }
 
@@ -76,6 +77,7 @@ export function buildControlledVocabularyDomainProgress(
   const ready =
     cv.conceptsWithTerminologyPreferredTerm + cv.conceptsWithWebUiFallbackOnly;
   const presentationReady = cv.presentationReady === true;
+  const missingConceptIds = [...(cv.missingLocalizedLabelConceptIds ?? [])];
   return {
     status: presentationReady ? "ready" : "waiting_for_data",
     presentationReady,
@@ -84,10 +86,33 @@ export function buildControlledVocabularyDomainProgress(
     conceptsMissing: cv.conceptsMissingLocalizedLabel,
     conceptsWithTerminologyPreferredTerm: cv.conceptsWithTerminologyPreferredTerm,
     conceptsWithWebUiFallbackOnly: cv.conceptsWithWebUiFallbackOnly,
+    missingConceptIds,
     detail: presentationReady
       ? "Controlled vocabulary presentation-ready (Terminology preferredTerm outranks WEB_UI)."
-      : `Missing ${cv.conceptsMissingLocalizedLabel} concept label(s). Fill via Terminology preferredTerm and/or complete WEB_UI pack.`,
+      : `waiting_for_data missing=${cv.conceptsMissingLocalizedLabel} missingConcepts=[${missingConceptIds.join(", ")}] preferredTermCoverage=${cv.conceptsWithTerminologyPreferredTerm} presentationReady=false`,
   };
+}
+
+export function buildDiagnosticSummary(input: {
+  readonly status: LanguageActivationJobStatus;
+  readonly readiness: LanguageLocalizationReadinessReport;
+  readonly domains: LanguageActivationJobDomains;
+}): string {
+  const webUi = input.domains.webUi;
+  const cv = input.domains.controlledVocabulary;
+  const cvMissing =
+    cv.missingConceptIds.length > 0
+      ? `missing=${cv.conceptsMissing} missingConcepts=[${cv.missingConceptIds.join(", ")}]`
+      : `missing=${cv.conceptsMissing}`;
+  return [
+    `job=${input.status}`,
+    `readiness=${input.readiness.state}`,
+    `languageDataReady=${input.readiness.languageDataReady}`,
+    `webUi=${webUi.status}(missing=${webUi.missingKeyCount},empty=${webUi.emptyKeyCount},required=${webUi.requiredKeyCount},dataReady=${webUi.dataReady})`,
+    `cv=${cv.status}(${cvMissing},conceptsChecked=${cv.conceptsChecked},preferredTermCoverage=${cv.conceptsWithTerminologyPreferredTerm},presentationReady=${cv.presentationReady})`,
+    `ctRemaining=${input.domains.ct.remainingWorkItems}`,
+    `plpRemaining=${input.domains.plp.remainingWorkItems}`,
+  ].join(" · ");
 }
 
 export function buildHistoricalDomainProgress(input: {
@@ -180,20 +205,4 @@ export function deriveActivationJobStatus(input: {
       : "completed";
   }
   return "running";
-}
-
-export function buildDiagnosticSummary(input: {
-  readonly status: LanguageActivationJobStatus;
-  readonly readiness: LanguageLocalizationReadinessReport;
-  readonly domains: LanguageActivationJobDomains;
-}): string {
-  return [
-    `job=${input.status}`,
-    `readiness=${input.readiness.state}`,
-    `languageDataReady=${input.readiness.languageDataReady}`,
-    `webUi=${input.domains.webUi.status}(missing=${input.domains.webUi.missingKeyCount})`,
-    `cv=${input.domains.controlledVocabulary.status}(missing=${input.domains.controlledVocabulary.conceptsMissing})`,
-    `ctRemaining=${input.domains.ct.remainingWorkItems}`,
-    `plpRemaining=${input.domains.plp.remainingWorkItems}`,
-  ].join(" · ");
 }

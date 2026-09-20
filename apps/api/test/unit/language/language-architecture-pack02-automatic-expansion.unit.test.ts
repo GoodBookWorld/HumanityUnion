@@ -715,6 +715,7 @@ describe("Language Architecture Pack 02 — readiness evaluator PWA slice", () =
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 0,
         conceptsMissingLocalizedLabel: 1,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: ["x"],
       }),
       assessHigherAuthority: async () => ({
@@ -758,6 +759,7 @@ describe("Language Architecture Pack 02 — readiness evaluator PWA slice", () =
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 0,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: [],
       }),
       assessHigherAuthority: async () => ({
@@ -805,6 +807,7 @@ describe("Language Architecture Pack 02 — readiness evaluator PWA slice", () =
         conceptsWithTerminologyPreferredTerm: 0,
         conceptsWithWebUiFallbackOnly: 0,
         conceptsMissingLocalizedLabel: 0,
+        missingLocalizedLabelConceptIds: [],
         missingPreferredTermGaps: [],
       }),
       assessHigherAuthority: async () => ({

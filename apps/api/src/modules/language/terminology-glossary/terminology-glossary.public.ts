@@ -8,6 +8,7 @@ import type { InitiativeLifecycleStageId, TerminologyConcept } from "@hu/types";
 import {
   CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
   INITIATIVE_LIFECYCLE_STAGE_REGISTRY,
+  glossaryConceptIdsForControlledVocabularyConcept,
 } from "@hu/types";
 
 import { resolveLanguageRegistryLocale } from "../language-registry/language-registry.repository.js";
@@ -29,23 +30,14 @@ export type ControlledLifecyclePreferredTermsResolution = {
   readonly preferredTermsByConceptId: Readonly<Record<string, string>>;
 };
 
-/**
- * Vocabulary conceptId → Glossary conceptId aliases (registry vs seed naming).
- * Keep Registry-driven; do not hardcode presentation locales.
- */
-function glossaryConceptIdsForVocabularyConcept(conceptId: string): readonly string[] {
-  if (conceptId === "active_allies") {
-    return [conceptId, "active_ally"];
-  }
-  return [conceptId];
-}
-
 function preferredTermForConcept(input: {
   readonly conceptId: string;
   readonly locale: string;
   readonly concepts: readonly TerminologyConcept[];
 }): string | null {
-  const matchIds = new Set(glossaryConceptIdsForVocabularyConcept(input.conceptId));
+  const matchIds = new Set(
+    glossaryConceptIdsForControlledVocabularyConcept(input.conceptId),
+  );
   for (const concept of input.concepts) {
     if (concept.status !== "published") {
       continue;

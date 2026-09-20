@@ -45,7 +45,16 @@ function assertDomains(value: unknown): LanguageActivationJobDomains {
       throw new LanguageActivationJobValidationError(`Invalid domain status: ${key}`);
     }
   }
-  return domains;
+  const cv = domains.controlledVocabulary;
+  return {
+    ...domains,
+    controlledVocabulary: {
+      ...cv,
+      missingConceptIds: Array.isArray(cv.missingConceptIds)
+        ? cv.missingConceptIds.filter((id): id is string => typeof id === "string")
+        : [],
+    },
+  };
 }
 
 export function toLanguageActivationJobMongoDocument(

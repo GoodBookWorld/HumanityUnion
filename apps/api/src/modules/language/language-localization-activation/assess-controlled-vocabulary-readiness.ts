@@ -6,6 +6,7 @@
 
 import {
   CONTROLLED_PUBLIC_VOCABULARY_REGISTRY,
+  glossaryConceptIdsForControlledVocabularyConcept,
   type LanguageControlledVocabularyReadinessSlice,
   type TerminologyConcept,
   type WebUiMessageTree,
@@ -19,13 +20,19 @@ function terminologyPreferredTermForConcept(input: {
   readonly locale: string;
   readonly concepts: readonly TerminologyConcept[];
 }): string | null {
+  const matchIds = new Set(
+    glossaryConceptIdsForControlledVocabularyConcept(input.conceptId),
+  );
   for (const concept of input.concepts) {
     if (concept.status !== "published") {
       continue;
     }
     const linkedStage = concept.linkedRefs?.stageId ?? "";
     const matches =
-      concept.conceptId === input.conceptId || linkedStage === input.conceptId;
+      matchIds.has(concept.conceptId) ||
+      matchIds.has(linkedStage) ||
+      concept.conceptId === input.conceptId ||
+      linkedStage === input.conceptId;
     if (!matches) {
       continue;
     }
@@ -116,6 +123,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
   let withWebUiOnly = 0;
   let missing = 0;
   const missingPreferredTermGaps: string[] = [];
+  const missingLocalizedLabelConceptIds: string[] = [];
 
   for (const entry of CONTROLLED_PUBLIC_VOCABULARY_REGISTRY) {
     const preferred = terminologyPreferredTermForConcept({
@@ -134,6 +142,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
       continue;
     }
     missing += 1;
+    missingLocalizedLabelConceptIds.push(entry.conceptId);
   }
 
   return {
@@ -142,6 +151,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
     conceptsWithTerminologyPreferredTerm: withTerm,
     conceptsWithWebUiFallbackOnly: withWebUiOnly,
     conceptsMissingLocalizedLabel: missing,
+    missingLocalizedLabelConceptIds,
     missingPreferredTermGaps,
   };
 }

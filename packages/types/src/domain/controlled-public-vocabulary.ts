@@ -103,6 +103,21 @@ export function getControlledPublicVocabularyEntry(
   return ENTRY_BY_CONCEPT.get(conceptId as ControlledPublicVocabularyConceptId) ?? null;
 }
 
+/**
+ * Glossary conceptIds that satisfy one Controlled Public Vocabulary conceptId.
+ * Registry naming (`active_allies`) and Glossary seed naming (`active_ally`) must agree
+ * for readiness and public preferred-term resolution.
+ * Does not invent concepts or change persisted IDs.
+ */
+export function glossaryConceptIdsForControlledVocabularyConcept(
+  conceptId: string,
+): readonly string[] {
+  if (conceptId === "active_allies") {
+    return [conceptId, "active_ally"];
+  }
+  return [conceptId];
+}
+
 export type ControlledVocabularyLabelLookup = Readonly<
   Partial<Record<ControlledPublicVocabularyConceptId, ControlledLifecycleLabelCandidates>>
 >;

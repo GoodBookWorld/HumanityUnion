@@ -288,6 +288,39 @@ function CountSummary({
 }
 
 /**
+ * Operator-facing blockers when activation is waiting on prepared data.
+ * Uses structured job domain progress already measured by readiness.
+ */
+function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[] {
+  const lines: string[] = [];
+  const job = view.job;
+  if (!job || job.status !== "waiting_for_data") {
+    return lines;
+  }
+  const webUi = job.domains.webUi;
+  if (webUi.status === "waiting_for_data") {
+    lines.push(
+      `Public interface catalog is blocking: missing ${webUi.missingKeyCount} of ${webUi.requiredKeyCount} required strings` +
+        (webUi.emptyKeyCount > 0 ? ` (${webUi.emptyKeyCount} empty).` : "."),
+    );
+  }
+  const cv = job.domains.controlledVocabulary;
+  if (cv.status === "waiting_for_data") {
+    const ids =
+      cv.missingConceptIds.length > 0
+        ? ` Missing concepts: ${cv.missingConceptIds.join(", ")}.`
+        : "";
+    lines.push(
+      `Controlled Vocabulary is blocking: ${cv.conceptsMissing} of ${cv.conceptsChecked} concepts still need a localized label.${ids}`,
+    );
+  }
+  if (lines.length > 0) {
+    lines.push("This is data preparation, not a translation-provider failure.");
+  }
+  return lines;
+}
+
+/**
  * Admin presentation of an already-fetched readiness report.
  * Labels only. Does not recompute counts, call a provider, or write the Registry.
  */
@@ -435,6 +468,12 @@ function LanguageReadinessDetails({
           Missing localized labels=
           {report.controlledVocabulary.conceptsMissingLocalizedLabel}
         </div>
+        {report.controlledVocabulary.missingLocalizedLabelConceptIds.length > 0 ? (
+          <div>
+            Missing concepts=
+            {report.controlledVocabulary.missingLocalizedLabelConceptIds.join(", ")}
+          </div>
+        ) : null}
         <div>
           Preferred-term coverage=
           {report.controlledVocabulary.conceptsWithTerminologyPreferredTerm}
@@ -657,11 +696,14 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
       setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
       const jobStatus = view.job?.status ?? "none";
+      const cvMissingIds =
+        view.readiness.controlledVocabulary.missingLocalizedLabelConceptIds;
       setStatus(
         `${row.locale} activation: ${jobStatus}` +
           ` · dataReady=${view.languageDataReady}` +
           ` · Public catalog missing=${view.readiness.webUi.missingKeyCount}` +
           ` · CV missing=${view.readiness.controlledVocabulary.conceptsMissingLocalizedLabel}` +
+          (cvMissingIds.length > 0 ? ` [${cvMissingIds.join(", ")}]` : "") +
           ` · CT remaining=${view.readiness.ct.workItemsRequired}` +
           ` · PLP remaining=${view.readiness.plpMedia.workItemsRequired}`,
       );
@@ -967,8 +1009,9 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             </div>
                             {activation.job?.status === "waiting_for_data" ? (
                               <div>
-                                Waiting for catalog or vocabulary data. Not a translation
-                                provider failure.
+                                {formatActivationWaitingGaps(activation).map((line) => (
+                                  <div key={line}>{line}</div>
+                                ))}
                               </div>
                             ) : (
                               <div>Job status is processing progress, not full localization.</div>
