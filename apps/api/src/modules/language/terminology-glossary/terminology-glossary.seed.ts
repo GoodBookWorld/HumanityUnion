@@ -149,6 +149,16 @@ export const TERMINOLOGY_GLOSSARY_SEED_DEFINITIONS: readonly TerminologyGlossary
     canonicalEnglishTerm: "Ready to Collaborate",
     category: "domain",
   },
+  {
+    conceptId: "helpful",
+    canonicalEnglishTerm: "Helpful",
+    category: "domain",
+  },
+  {
+    conceptId: "not_helpful",
+    canonicalEnglishTerm: "Not Helpful",
+    category: "domain",
+  },
 ] as const;
 
 const SEED_BY_CONCEPT_ID = new Map(

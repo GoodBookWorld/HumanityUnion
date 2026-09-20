@@ -37,8 +37,14 @@ import {
   buildDiagnosticSummary,
   buildHistoricalDomainProgress,
   buildWebUiDomainProgress,
+  brandDomainFromPreparationResult,
+  brandDomainPreparing,
+  brandDomainProviderConfigFailure,
   deriveActivationJobStatus,
   emptyPendingDomains,
+  terminologyDomainFromPreparationResult,
+  terminologyDomainPreparing,
+  terminologyDomainProviderConfigFailure,
 } from "./language-activation-job.domains.js";
 import { LanguageActivationJobValidationError } from "./language-activation-job.errors.js";
 import {
@@ -48,6 +54,12 @@ import {
   saveLanguageActivationJob,
 } from "./language-activation-job.repository.js";
 import { evaluateLanguageLocalizationReadiness } from "./language-localization-readiness-evaluator.js";
+import {
+  LanguageOwnerPreparationError,
+  runLanguageOwnerPreparation,
+  type LanguageOwnerPreparationInput,
+  type LanguageOwnerPreparationResult,
+} from "../../language-preparation/language-owner-preparation.js";
 
 type AdminActor = {
   userId: string;
@@ -87,6 +99,12 @@ export type LanguageActivationJobProcessDeps = {
   readonly skipCorpusInReadiness?: boolean;
   readonly evaluateReadiness?: typeof evaluateLanguageLocalizationReadiness;
   readonly activate?: typeof activateLanguageLocalization;
+  /** Deterministic tests inject preparation; production uses runLanguageOwnerPreparation. */
+  readonly runOwnerPreparation?: (
+    input: LanguageOwnerPreparationInput,
+  ) => Promise<LanguageOwnerPreparationResult>;
+  /** Skip Brand/Terminology preparation (existing activation unit tests). */
+  readonly skipOwnerPreparation?: boolean;
 };
 
 let processDepsOverrideForTests: LanguageActivationJobProcessDeps | null = null;
@@ -149,7 +167,14 @@ async function refreshDomains(
     enqueuedAt: job.domains.plp.enqueuedAt,
     owner: "PLP",
   });
-  return { webUi, controlledVocabulary, ct, plp };
+  return {
+    brand: job.domains.brand ?? emptyPendingDomains().brand,
+    terminology: job.domains.terminology ?? emptyPendingDomains().terminology,
+    webUi,
+    controlledVocabulary,
+    ct,
+    plp,
+  };
 }
 
 function toAdminView(input: {
@@ -258,7 +283,7 @@ export async function startOrResumeLanguageActivationJob(input: {
     job,
     readiness,
     notes: [
-      "Activation job queued. CT/PLP residual enqueue runs asynchronously (no provider in this request).",
+      "Activation job queued. Brand and Terminology preparation run asynchronously before WEB_UI measurement (no provider in this request).",
       "Search/SEO flags are not modified by activation.",
     ],
   });
@@ -333,6 +358,116 @@ export async function processLanguageActivationJob(
   }
 
   try {
+    // Explicit Activate/Resume runs Brand then Terminology before readiness remeasure.
+    // Status refresh omits reconcileResiduals so it never calls the translation provider.
+    const shouldPrepareOwners =
+      options?.reconcileResiduals === true &&
+      deps.skipOwnerPreparation !== true &&
+      job.locale !== "en";
+
+    if (shouldPrepareOwners) {
+      const prepare = deps.runOwnerPreparation ?? runLanguageOwnerPreparation;
+
+      job = {
+        ...job,
+        domains: {
+          ...job.domains,
+          brand: brandDomainPreparing(),
+        },
+        diagnosticSummary: "running — Preparing Brand…",
+        updatedAt: nowIso(),
+      };
+      await saveLanguageActivationJob(job);
+
+      try {
+        const brandResult = await prepare({
+          locale: job.locale,
+          execute: true,
+          owners: ["brand"],
+          log: () => undefined,
+        });
+        job = {
+          ...job,
+          domains: {
+            ...job.domains,
+            brand: brandDomainFromPreparationResult(brandResult),
+            terminology: terminologyDomainPreparing(),
+          },
+          diagnosticSummary: "running — Preparing terminology…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+
+        const terminologyResult = await prepare({
+          locale: job.locale,
+          execute: true,
+          owners: ["terminology"],
+          log: () => undefined,
+        });
+        job = {
+          ...job,
+          domains: {
+            ...job.domains,
+            terminology: terminologyDomainFromPreparationResult(terminologyResult),
+          },
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+      } catch (error) {
+        const message =
+          error instanceof LanguageOwnerPreparationError || error instanceof Error
+            ? error.message
+            : "Owner preparation failed.";
+        const providerFailureMessage = message.replace(/^REFUSED:\s*/i, "");
+        job = {
+          ...job,
+          domains: {
+            ...job.domains,
+            brand:
+              job.domains.brand.status === "ready"
+                ? job.domains.brand
+                : brandDomainProviderConfigFailure(providerFailureMessage),
+            terminology: terminologyDomainProviderConfigFailure(providerFailureMessage),
+          },
+          status: "failed",
+          lastError: providerFailureMessage,
+          diagnosticSummary: `failed — owner preparation: ${providerFailureMessage}`,
+          updatedAt: nowIso(),
+          completedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        return job;
+      }
+
+      if (
+        job.domains.brand.status === "failed" ||
+        job.domains.terminology.status === "failed"
+      ) {
+        job = {
+          ...job,
+          status: "failed",
+          lastError:
+            job.domains.terminology.detail ??
+            job.domains.brand.detail ??
+            "Owner preparation failed.",
+          diagnosticSummary: buildDiagnosticSummary({
+            status: "failed",
+            readiness: await evaluate({
+              locale: job.locale,
+              registryRecord: registry,
+              plannerDeps: deps.plannerDeps,
+              skipCorpusPlan: deps.skipCorpusInReadiness === true,
+            }),
+            domains: job.domains,
+          }),
+          updatedAt: nowIso(),
+          completedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        return job;
+      }
+    }
+
     let readiness = await evaluate({
       locale: job.locale,
       registryRecord: registry,
@@ -352,6 +487,7 @@ export async function processLanguageActivationJob(
       options?.reconcileResiduals === true || !enqueueAlreadyDone;
 
     // WEB_UI waiting_for_data does not block enqueue; presentation-ready still requires WEB_UI.
+    // Step 15B: WEB_UI remains measurement-only (no generation/import).
     if (shouldReconcileResiduals) {
       const stamp = nowIso();
       const result = await activate({
@@ -365,6 +501,8 @@ export async function processLanguageActivationJob(
 
       readiness = result.readiness;
       domains = {
+        brand: job.domains.brand ?? emptyPendingDomains().brand,
+        terminology: job.domains.terminology ?? emptyPendingDomains().terminology,
         webUi: await buildWebUiDomainProgress(readiness),
         controlledVocabulary: buildControlledVocabularyDomainProgress(readiness),
         ct: buildHistoricalDomainProgress({
@@ -397,7 +535,10 @@ export async function processLanguageActivationJob(
       updatedAt: nowIso(),
       completedAt:
         status === "completed" || status === "failed" ? nowIso() : null,
-      lastError: null,
+      lastError:
+        status === "failed"
+          ? domains.terminology.detail ?? domains.brand.detail ?? job.lastError
+          : null,
       searchEnabledSnapshot: registry.searchEnabled,
       seoIndexingEnabledSnapshot: registry.seoIndexingEnabled,
     };

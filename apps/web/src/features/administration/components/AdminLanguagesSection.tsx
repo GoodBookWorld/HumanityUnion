@@ -288,13 +288,58 @@ function CountSummary({
 }
 
 /**
+ * Operator-facing Brand / Terminology phase lines from the activation job.
+ */
+function formatOwnerPreparationProgress(view: LanguageActivationAdminView): string[] {
+  const job = view.job;
+  if (!job) {
+    return [];
+  }
+  const lines: string[] = [];
+  const brand = job.domains.brand;
+  if (brand?.status === "in_progress") {
+    lines.push(brand.detail ?? "Preparing Brand…");
+  } else if (brand?.status === "failed") {
+    lines.push(brand.detail ?? "Brand preparation failed — retry activation");
+  } else if (brand?.status === "ready") {
+    lines.push(
+      brand.reviewRequired
+        ? "Brand prepared — review available"
+        : brand.detail ?? "Brand ready",
+    );
+  }
+  const terminology = job.domains.terminology;
+  if (terminology?.status === "in_progress") {
+    lines.push(terminology.detail ?? "Preparing terminology…");
+  } else if (terminology?.status === "failed") {
+    lines.push(terminology.detail ?? "Terminology preparation failed — retry activation");
+  } else if (terminology?.status === "ready") {
+    lines.push(terminology.detail ?? "Terminology ready");
+  }
+  return lines;
+}
+
+/**
  * Operator-facing blockers when activation is waiting on prepared data.
  * Uses structured job domain progress already measured by readiness.
  */
 function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[] {
   const lines: string[] = [];
   const job = view.job;
-  if (!job || job.status !== "waiting_for_data") {
+  if (!job) {
+    return lines;
+  }
+  if (job.status === "failed") {
+    if (job.domains.brand?.providerFailure || job.domains.terminology?.providerFailure) {
+      lines.push(
+        job.domains.terminology?.detail ??
+          job.domains.brand?.detail ??
+          "Localization preparation failed — retry activation after the translation provider is available.",
+      );
+      return lines;
+    }
+  }
+  if (job.status !== "waiting_for_data") {
     return lines;
   }
   const webUi = job.domains.webUi;
@@ -1007,12 +1052,19 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                             <div>
                               Activation job: <code>{activation.job?.status ?? "none"}</code>
                             </div>
-                            {activation.job?.status === "waiting_for_data" ? (
+                            {formatOwnerPreparationProgress(activation).map((line) => (
+                              <div key={`owner-${line}`}>{line}</div>
+                            ))}
+                            {activation.job?.status === "waiting_for_data" ||
+                            activation.job?.status === "failed" ? (
                               <div>
                                 {formatActivationWaitingGaps(activation).map((line) => (
                                   <div key={line}>{line}</div>
                                 ))}
                               </div>
+                            ) : activation.job?.status === "running" ||
+                              activation.job?.status === "queued" ? (
+                              <div>Job status is processing progress, not full localization.</div>
                             ) : (
                               <div>Job status is processing progress, not full localization.</div>
                             )}

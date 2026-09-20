@@ -80,6 +80,7 @@ describe("Language activation async job", () => {
   function mockActivateNoOp() {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       activate: async (input) => {
         const { evaluateLanguageLocalizationReadiness } = await import(
           "../../../src/modules/language/language-localization-activation/language-localization-readiness-evaluator.js"
@@ -123,6 +124,7 @@ describe("Language activation async job", () => {
     let activateCalls = 0;
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       activate: async (input) => {
         activateCalls += 1;
         const { evaluateLanguageLocalizationReadiness } = await import(
@@ -248,6 +250,7 @@ describe("Language activation async job", () => {
     };
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       evaluateReadiness: async (input) => {
         const { evaluateLanguageLocalizationReadiness } = await import(
           "../../../src/modules/language/language-localization-activation/language-localization-readiness-evaluator.js"
@@ -324,6 +327,7 @@ describe("Language activation async job", () => {
     const record = await createEligibleLocale("fi");
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       runResidualRetry: async () =>
         ({ presentationsScheduled: 0, presentationsDeduped: 0 }) as never,
       enqueuePlpMediaConsumer: async () => {},
@@ -406,6 +410,7 @@ describe("Language activation async job", () => {
     let activateCalled = false;
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       activate: async () => {
         activateCalled = true;
         throw new Error("should not run on start-only");

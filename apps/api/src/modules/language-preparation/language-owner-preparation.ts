@@ -79,6 +79,8 @@ export type LanguageOwnerPreparationInput = {
   readonly argv?: readonly string[];
   readonly locale?: string;
   readonly execute?: boolean;
+  /** Default both. Activation may run Brand then Terminology as separate phases. */
+  readonly owners?: readonly ("brand" | "terminology")[];
   readonly englishName?: string;
   readonly nativeName?: string;
   readonly textDirection?: string;
@@ -270,35 +272,44 @@ export async function runLanguageOwnerPreparation(
   const englishFields = englishBrandSource(englishBrand);
   const brandMissing: BrandField[] = [];
   const brandOutcomes: LanguageOwnerFieldOutcome[] = [];
+  const owners = new Set(input.owners ?? ["brand", "terminology"]);
+  const prepareBrand = owners.has("brand");
+  const prepareTerminology = owners.has("terminology");
 
-  for (const field of [...BRAND_REQUIRED_FIELDS, ...BRAND_OPTIONAL_FIELDS]) {
-    const current = existingBrand?.[field];
-    if (isNonEmpty(current)) {
-      brandOutcomes.push({ field, outcome: "preserved" });
-    } else {
-      brandMissing.push(field);
-      brandOutcomes.push({
-        field,
-        outcome: execute ? "gap" : "gap",
-        reason: "missing-target-value",
-      });
+  if (prepareBrand) {
+    for (const field of [...BRAND_REQUIRED_FIELDS, ...BRAND_OPTIONAL_FIELDS]) {
+      const current = existingBrand?.[field];
+      if (isNonEmpty(current)) {
+        brandOutcomes.push({ field, outcome: "preserved" });
+      } else {
+        brandMissing.push(field);
+        brandOutcomes.push({
+          field,
+          outcome: "gap",
+          reason: "missing-target-value",
+        });
+      }
     }
   }
 
-  const concepts = (await listTerminology()).filter((concept) => concept.status === "published");
+  const concepts = prepareTerminology
+    ? (await listTerminology()).filter((concept) => concept.status === "published")
+    : [];
   const terminologyMissing: TerminologyConcept[] = [];
   const terminologyOutcomes: LanguageOwnerFieldOutcome[] = [];
-  for (const concept of concepts) {
-    const preferred = concept.translations[locale]?.preferredTerm;
-    if (isNonEmpty(preferred)) {
-      terminologyOutcomes.push({ field: concept.conceptId, outcome: "preserved" });
-    } else {
-      terminologyMissing.push(concept);
-      terminologyOutcomes.push({
-        field: concept.conceptId,
-        outcome: "gap",
-        reason: "missing-preferred-term",
-      });
+  if (prepareTerminology) {
+    for (const concept of concepts) {
+      const preferred = concept.translations[locale]?.preferredTerm;
+      if (isNonEmpty(preferred)) {
+        terminologyOutcomes.push({ field: concept.conceptId, outcome: "preserved" });
+      } else {
+        terminologyMissing.push(concept);
+        terminologyOutcomes.push({
+          field: concept.conceptId,
+          outcome: "gap",
+          reason: "missing-preferred-term",
+        });
+      }
     }
   }
 
@@ -338,48 +349,50 @@ export async function runLanguageOwnerPreparation(
     };
   }
 
-  const envProvider = input.env?.TRANSLATION_PROVIDER ?? process.env.TRANSLATION_PROVIDER;
-  const envDiagnostic = input.env?.HU_READ_ONLY_DIAGNOSTIC ?? process.env.HU_READ_ONLY_DIAGNOSTIC;
-  if (envDiagnostic === "1") {
-    throw new LanguageOwnerPreparationError("REFUSED: read-only diagnostic cannot call the translation provider.");
-  }
-  if (envProvider?.trim().toLowerCase() !== "gemini") {
-    throw new LanguageOwnerPreparationError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
-  }
-
+  const needsProvider = brandMissing.length > 0 || terminologyMissing.length > 0;
   let translator = input.translator;
-  if (!translator) {
-    const { assertGeminiTranslationConfigured, resolveTranslationConfig } = await import(
-      "../language/translation.config.js"
-    );
-    const { GeminiTranslationProvider } = await import(
-      "../language/providers/gemini-translation-provider.js"
-    );
-    const { resolveOfflineWebUiProviderTimeoutMs } = await import(
-      "../web-ui-message-packs/web-ui-draft-builder.js"
-    );
-    const config = resolveTranslationConfig();
-    if (config.provider !== "gemini") {
+  if (needsProvider) {
+    const envProvider = input.env?.TRANSLATION_PROVIDER ?? process.env.TRANSLATION_PROVIDER;
+    const envDiagnostic = input.env?.HU_READ_ONLY_DIAGNOSTIC ?? process.env.HU_READ_ONLY_DIAGNOSTIC;
+    if (envDiagnostic === "1") {
+      throw new LanguageOwnerPreparationError("REFUSED: read-only diagnostic cannot call the translation provider.");
+    }
+    if (envProvider?.trim().toLowerCase() !== "gemini") {
       throw new LanguageOwnerPreparationError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
     }
-    assertGeminiTranslationConfigured(config);
-    const provider = new GeminiTranslationProvider({
-      ...config,
-      timeoutMs: resolveOfflineWebUiProviderTimeoutMs(config.timeoutMs),
-    });
-    translator = (request) => provider.translate(request);
+    if (!translator) {
+      const { assertGeminiTranslationConfigured, resolveTranslationConfig } = await import(
+        "../language/translation.config.js"
+      );
+      const { GeminiTranslationProvider } = await import(
+        "../language/providers/gemini-translation-provider.js"
+      );
+      const { resolveOfflineWebUiProviderTimeoutMs } = await import(
+        "../web-ui-message-packs/web-ui-draft-builder.js"
+      );
+      const config = resolveTranslationConfig();
+      if (config.provider !== "gemini") {
+        throw new LanguageOwnerPreparationError("REFUSED: --execute requires TRANSLATION_PROVIDER=gemini.");
+      }
+      assertGeminiTranslationConfigured(config);
+      const provider = new GeminiTranslationProvider({
+        ...config,
+        timeoutMs: resolveOfflineWebUiProviderTimeoutMs(config.timeoutMs),
+      });
+      translator = (request) => provider.translate(request);
+    }
   }
 
   let providerCalls = 0;
   const generatedBrand: Partial<Record<BrandField, string>> = {};
-  if (brandMissing.length > 0) {
+  if (prepareBrand && brandMissing.length > 0) {
     const toTranslate = Object.fromEntries(
       brandMissing.map((field) => [field, englishFields[field]]),
     );
     try {
       providerCalls += 1;
       const translated = await translateFlatMap({
-        translator,
+        translator: translator!,
         locale,
         englishName: metadata.englishName,
         nativeName: metadata.nativeName,
@@ -411,80 +424,84 @@ export async function runLanguageOwnerPreparation(
   }
 
   let brandPersisted = false;
-  const requiredReady = BRAND_REQUIRED_FIELDS.every(
-    (field) => isNonEmpty(existingBrand?.[field]) || isNonEmpty(generatedBrand[field]),
-  );
-  if (requiredReady && (brandMissing.length === 0 || Object.keys(generatedBrand).length > 0 || !existingBrand)) {
-    const timestamp = now();
-    const next: BrandLocalizationRecord = {
-      brandId: existingBrand?.brandId ?? `brand-${locale}-${randomUUID().slice(0, 8)}`,
-      locale,
-      siteName: (isNonEmpty(existingBrand?.siteName)
-        ? existingBrand!.siteName
-        : generatedBrand.siteName)!,
-      slogan: (isNonEmpty(existingBrand?.slogan) ? existingBrand!.slogan : generatedBrand.slogan)!,
-      heroUnityQuote: (isNonEmpty(existingBrand?.heroUnityQuote)
-        ? existingBrand!.heroUnityQuote
-        : generatedBrand.heroUnityQuote)!,
-      seoSiteName: (isNonEmpty(existingBrand?.seoSiteName)
-        ? existingBrand!.seoSiteName
-        : generatedBrand.seoSiteName)!,
-      defaultMetaDescription: (isNonEmpty(existingBrand?.defaultMetaDescription)
-        ? existingBrand!.defaultMetaDescription
-        : generatedBrand.defaultMetaDescription)!,
-      status: existingBrand?.status ?? "draft",
-      createdAt: existingBrand?.createdAt ?? timestamp,
-      updatedAt: timestamp,
-      updatedByParticipantId: existingBrand?.updatedByParticipantId ?? null,
-      ...(isNonEmpty(existingBrand?.shortName)
-        ? { shortName: existingBrand!.shortName }
-        : isNonEmpty(generatedBrand.shortName)
-          ? { shortName: generatedBrand.shortName }
-          : {}),
-      ...(isNonEmpty(existingBrand?.seoTitleSuffix)
-        ? { seoTitleSuffix: existingBrand!.seoTitleSuffix }
-        : isNonEmpty(generatedBrand.seoTitleSuffix)
-          ? { seoTitleSuffix: generatedBrand.seoTitleSuffix }
-          : {}),
-      ...(isNonEmpty(existingBrand?.openGraphBrandName)
-        ? { openGraphBrandName: existingBrand!.openGraphBrandName }
-        : isNonEmpty(generatedBrand.openGraphBrandName)
-          ? { openGraphBrandName: generatedBrand.openGraphBrandName }
-          : {}),
-    };
-    if (brandMissing.some((field) => isNonEmpty(generatedBrand[field])) || !existingBrand) {
-      await saveBrand(next);
-      brandPersisted = true;
+  if (prepareBrand) {
+    const requiredReady = BRAND_REQUIRED_FIELDS.every(
+      (field) => isNonEmpty(existingBrand?.[field]) || isNonEmpty(generatedBrand[field]),
+    );
+    if (requiredReady && (brandMissing.length === 0 || Object.keys(generatedBrand).length > 0 || !existingBrand)) {
+      const timestamp = now();
+      const next: BrandLocalizationRecord = {
+        brandId: existingBrand?.brandId ?? `brand-${locale}-${randomUUID().slice(0, 8)}`,
+        locale,
+        siteName: (isNonEmpty(existingBrand?.siteName)
+          ? existingBrand!.siteName
+          : generatedBrand.siteName)!,
+        slogan: (isNonEmpty(existingBrand?.slogan) ? existingBrand!.slogan : generatedBrand.slogan)!,
+        heroUnityQuote: (isNonEmpty(existingBrand?.heroUnityQuote)
+          ? existingBrand!.heroUnityQuote
+          : generatedBrand.heroUnityQuote)!,
+        seoSiteName: (isNonEmpty(existingBrand?.seoSiteName)
+          ? existingBrand!.seoSiteName
+          : generatedBrand.seoSiteName)!,
+        defaultMetaDescription: (isNonEmpty(existingBrand?.defaultMetaDescription)
+          ? existingBrand!.defaultMetaDescription
+          : generatedBrand.defaultMetaDescription)!,
+        status: existingBrand?.status ?? "draft",
+        createdAt: existingBrand?.createdAt ?? timestamp,
+        updatedAt: timestamp,
+        updatedByParticipantId: existingBrand?.updatedByParticipantId ?? null,
+        ...(isNonEmpty(existingBrand?.shortName)
+          ? { shortName: existingBrand!.shortName }
+          : isNonEmpty(generatedBrand.shortName)
+            ? { shortName: generatedBrand.shortName }
+            : {}),
+        ...(isNonEmpty(existingBrand?.seoTitleSuffix)
+          ? { seoTitleSuffix: existingBrand!.seoTitleSuffix }
+          : isNonEmpty(generatedBrand.seoTitleSuffix)
+            ? { seoTitleSuffix: generatedBrand.seoTitleSuffix }
+            : {}),
+        ...(isNonEmpty(existingBrand?.openGraphBrandName)
+          ? { openGraphBrandName: existingBrand!.openGraphBrandName }
+          : isNonEmpty(generatedBrand.openGraphBrandName)
+            ? { openGraphBrandName: generatedBrand.openGraphBrandName }
+            : {}),
+      };
+      if (brandMissing.some((field) => isNonEmpty(generatedBrand[field])) || !existingBrand) {
+        await saveBrand(next);
+        brandPersisted = true;
+      }
     }
   }
 
   let terminologyPersisted = 0;
-  for (const concept of terminologyMissing) {
-    try {
-      providerCalls += 1;
-      const translated = await translateFlatMap({
-        translator,
-        locale,
-        englishName: metadata.englishName,
-        nativeName: metadata.nativeName,
-        textDirection: metadata.textDirection,
-        values: { preferredTerm: concept.canonicalEnglishTerm },
-        owner: "terminology",
-      });
-      await updateTerminology(concept.conceptId, translated.preferredTerm!, locale);
-      terminologyPersisted += 1;
-      const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
-      if (index >= 0) {
-        terminologyOutcomes[index] = { field: concept.conceptId, outcome: "generated" };
-      }
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "Terminology generation failed.";
-      const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
-      if (index >= 0) {
-        terminologyOutcomes[index] = { field: concept.conceptId, outcome: "failed", reason };
-      }
-      if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
-        throw error;
+  if (prepareTerminology) {
+    for (const concept of terminologyMissing) {
+      try {
+        providerCalls += 1;
+        const translated = await translateFlatMap({
+          translator: translator!,
+          locale,
+          englishName: metadata.englishName,
+          nativeName: metadata.nativeName,
+          textDirection: metadata.textDirection,
+          values: { preferredTerm: concept.canonicalEnglishTerm },
+          owner: "terminology",
+        });
+        await updateTerminology(concept.conceptId, translated.preferredTerm!, locale);
+        terminologyPersisted += 1;
+        const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
+        if (index >= 0) {
+          terminologyOutcomes[index] = { field: concept.conceptId, outcome: "generated" };
+        }
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "Terminology generation failed.";
+        const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
+        if (index >= 0) {
+          terminologyOutcomes[index] = { field: concept.conceptId, outcome: "failed", reason };
+        }
+        if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
+          throw error;
+        }
       }
     }
   }

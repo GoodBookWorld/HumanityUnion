@@ -1,8 +1,10 @@
 import type { Document } from "mongodb";
 import type {
+  LanguageActivationBrandDomainProgress,
   LanguageActivationJobDomains,
   LanguageActivationJobRecord,
   LanguageActivationJobStatus,
+  LanguageActivationTerminologyDomainProgress,
 } from "@hu/types";
 import {
   isLanguageActivationDomainStatus,
@@ -31,6 +33,46 @@ export interface LanguageActivationJobMongoDocument extends Document {
   seoIndexingEnabledSnapshot: boolean;
 }
 
+function defaultBrandDomain(): LanguageActivationBrandDomainProgress {
+  return {
+    status: "pending",
+    preparationAttempted: false,
+    fieldsPreserved: 0,
+    fieldsGenerated: 0,
+    fieldsFailed: 0,
+    brandStatus: null,
+    reviewRequired: false,
+    providerFailure: false,
+    detail: null,
+  };
+}
+
+function defaultTerminologyDomain(): LanguageActivationTerminologyDomainProgress {
+  return {
+    status: "pending",
+    preparationAttempted: false,
+    conceptsPreserved: 0,
+    conceptsGenerated: 0,
+    conceptsFailed: 0,
+    providerFailure: false,
+    detail: null,
+  };
+}
+
+function normalizeOwnerSlice<T extends { status: unknown }>(
+  value: unknown,
+  fallback: T,
+): T {
+  if (value == null || typeof value !== "object") {
+    return fallback;
+  }
+  const slice = value as T;
+  if (!isLanguageActivationDomainStatus(slice.status)) {
+    return fallback;
+  }
+  return { ...fallback, ...slice };
+}
+
 function assertDomains(value: unknown): LanguageActivationJobDomains {
   if (value == null || typeof value !== "object") {
     throw new LanguageActivationJobValidationError("Invalid activation job domains.");
@@ -48,6 +90,8 @@ function assertDomains(value: unknown): LanguageActivationJobDomains {
   const cv = domains.controlledVocabulary;
   return {
     ...domains,
+    brand: normalizeOwnerSlice(domains.brand, defaultBrandDomain()),
+    terminology: normalizeOwnerSlice(domains.terminology, defaultTerminologyDomain()),
     controlledVocabulary: {
       ...cv,
       missingConceptIds: Array.isArray(cv.missingConceptIds)

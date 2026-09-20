@@ -94,7 +94,40 @@ export type LanguageActivationHistoricalDomainProgress = {
   readonly detail: string | null;
 };
 
+/**
+ * Brand owner preparation phase (advisory for overall presentation readiness).
+ * Unpublished/draft Brand must not force waiting_for_data.
+ */
+export type LanguageActivationBrandDomainProgress = {
+  readonly status: LanguageActivationDomainStatus;
+  readonly preparationAttempted: boolean;
+  readonly fieldsPreserved: number;
+  readonly fieldsGenerated: number;
+  readonly fieldsFailed: number;
+  /** Persisted Brand lifecycle status after preparation, if known. */
+  readonly brandStatus: "draft" | "approved" | "published" | null;
+  /** True when values exist but Admin publication/review is still needed. */
+  readonly reviewRequired: boolean;
+  readonly providerFailure: boolean;
+  readonly detail: string | null;
+};
+
+/**
+ * Terminology Glossary preferredTerm preparation for Controlled Vocabulary readiness.
+ */
+export type LanguageActivationTerminologyDomainProgress = {
+  readonly status: LanguageActivationDomainStatus;
+  readonly preparationAttempted: boolean;
+  readonly conceptsPreserved: number;
+  readonly conceptsGenerated: number;
+  readonly conceptsFailed: number;
+  readonly providerFailure: boolean;
+  readonly detail: string | null;
+};
+
 export type LanguageActivationJobDomains = {
+  readonly brand: LanguageActivationBrandDomainProgress;
+  readonly terminology: LanguageActivationTerminologyDomainProgress;
   readonly webUi: LanguageActivationWebUiDomainProgress;
   readonly controlledVocabulary: LanguageActivationControlledVocabularyDomainProgress;
   readonly ct: LanguageActivationHistoricalDomainProgress;

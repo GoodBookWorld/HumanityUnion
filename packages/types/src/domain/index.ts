@@ -157,12 +157,14 @@ export {
 export type { PublicReaderWebUiRequiredPrefix } from "./public-reader-web-ui-scope.js";
 export type {
   LanguageActivationAdminView,
+  LanguageActivationBrandDomainProgress,
   LanguageActivationControlledVocabularyDomainProgress,
   LanguageActivationDomainStatus,
   LanguageActivationHistoricalDomainProgress,
   LanguageActivationJobDomains,
   LanguageActivationJobRecord,
   LanguageActivationJobStatus,
+  LanguageActivationTerminologyDomainProgress,
   LanguageActivationWebUiDomainProgress,
 } from "./language-activation-job.js";
 export {

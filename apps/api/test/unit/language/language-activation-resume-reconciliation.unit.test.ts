@@ -120,6 +120,7 @@ describe("activation resume residual reconciliation", () => {
     }));
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
       plannerDeps: {
         auditCorpus: async () => ({ byLocale: [] }) as never,
         classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",

@@ -3,15 +3,44 @@
  */
 
 import type {
+  LanguageActivationBrandDomainProgress,
   LanguageActivationControlledVocabularyDomainProgress,
   LanguageActivationHistoricalDomainProgress,
   LanguageActivationJobDomains,
   LanguageActivationJobStatus,
+  LanguageActivationTerminologyDomainProgress,
   LanguageActivationWebUiDomainProgress,
   LanguageLocalizationReadinessReport,
 } from "@hu/types";
 
+import type { LanguageOwnerPreparationResult } from "../../language-preparation/language-owner-preparation.js";
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
+
+function emptyBrandDomain(): LanguageActivationBrandDomainProgress {
+  return {
+    status: "pending",
+    preparationAttempted: false,
+    fieldsPreserved: 0,
+    fieldsGenerated: 0,
+    fieldsFailed: 0,
+    brandStatus: null,
+    reviewRequired: false,
+    providerFailure: false,
+    detail: null,
+  };
+}
+
+function emptyTerminologyDomain(): LanguageActivationTerminologyDomainProgress {
+  return {
+    status: "pending",
+    preparationAttempted: false,
+    conceptsPreserved: 0,
+    conceptsGenerated: 0,
+    conceptsFailed: 0,
+    providerFailure: false,
+    detail: null,
+  };
+}
 
 export function emptyPendingDomains(): LanguageActivationJobDomains {
   const historical = (): LanguageActivationHistoricalDomainProgress => ({
@@ -27,6 +56,8 @@ export function emptyPendingDomains(): LanguageActivationJobDomains {
     detail: null,
   });
   return {
+    brand: emptyBrandDomain(),
+    terminology: emptyTerminologyDomain(),
     webUi: {
       status: "pending",
       dataReady: false,
@@ -49,6 +80,124 @@ export function emptyPendingDomains(): LanguageActivationJobDomains {
     },
     ct: historical(),
     plp: historical(),
+  };
+}
+
+export function brandDomainPreparing(): LanguageActivationBrandDomainProgress {
+  return {
+    ...emptyBrandDomain(),
+    status: "in_progress",
+    detail: "Preparing Brand…",
+  };
+}
+
+export function terminologyDomainPreparing(): LanguageActivationTerminologyDomainProgress {
+  return {
+    ...emptyTerminologyDomain(),
+    status: "in_progress",
+    detail: "Preparing terminology…",
+  };
+}
+
+export function brandDomainFromPreparationResult(
+  result: LanguageOwnerPreparationResult,
+): LanguageActivationBrandDomainProgress {
+  const preserved = result.brand.outcomes.filter((row) => row.outcome === "preserved").length;
+  const generated = result.brand.outcomes.filter((row) => row.outcome === "generated").length;
+  const failed = result.brand.outcomes.filter((row) => row.outcome === "failed").length;
+  const providerFailure = failed > 0;
+  const brandStatus =
+    result.brand.status === "draft" ||
+    result.brand.status === "approved" ||
+    result.brand.status === "published"
+      ? result.brand.status
+      : null;
+  const reviewRequired = brandStatus === "draft" || brandStatus === "approved";
+  if (providerFailure) {
+    return {
+      status: "failed",
+      preparationAttempted: true,
+      fieldsPreserved: preserved,
+      fieldsGenerated: generated,
+      fieldsFailed: failed,
+      brandStatus,
+      reviewRequired: false,
+      providerFailure: true,
+      detail: "Brand preparation failed — retry activation after the translation provider is available.",
+    };
+  }
+  return {
+    status: "ready",
+    preparationAttempted: true,
+    fieldsPreserved: preserved,
+    fieldsGenerated: generated,
+    fieldsFailed: 0,
+    brandStatus,
+    reviewRequired,
+    providerFailure: false,
+    detail: reviewRequired
+      ? "Brand prepared — review available"
+      : brandStatus === "published"
+        ? "Brand ready (published)."
+        : "Brand ready.",
+  };
+}
+
+export function terminologyDomainFromPreparationResult(
+  result: LanguageOwnerPreparationResult,
+): LanguageActivationTerminologyDomainProgress {
+  const preserved = result.terminology.outcomes.filter((row) => row.outcome === "preserved").length;
+  const generated = result.terminology.outcomes.filter((row) => row.outcome === "generated").length;
+  const failed = result.terminology.outcomes.filter((row) => row.outcome === "failed").length;
+  if (failed > 0) {
+    return {
+      status: "failed",
+      preparationAttempted: true,
+      conceptsPreserved: preserved,
+      conceptsGenerated: generated,
+      conceptsFailed: failed,
+      providerFailure: true,
+      detail: "Terminology preparation failed — retry activation",
+    };
+  }
+  return {
+    status: "ready",
+    preparationAttempted: true,
+    conceptsPreserved: preserved,
+    conceptsGenerated: generated,
+    conceptsFailed: 0,
+    providerFailure: false,
+    detail: "Terminology ready",
+  };
+}
+
+export function brandDomainProviderConfigFailure(
+  message: string,
+): LanguageActivationBrandDomainProgress {
+  return {
+    status: "failed",
+    preparationAttempted: true,
+    fieldsPreserved: 0,
+    fieldsGenerated: 0,
+    fieldsFailed: 0,
+    brandStatus: null,
+    reviewRequired: false,
+    providerFailure: true,
+    detail: `Brand preparation failed — ${message}`,
+  };
+}
+
+export function terminologyDomainProviderConfigFailure(
+  message: string,
+): LanguageActivationTerminologyDomainProgress {
+  return {
+    status: "failed",
+    preparationAttempted: true,
+    conceptsPreserved: 0,
+    conceptsGenerated: 0,
+    conceptsFailed: 0,
+    providerFailure: true,
+    detail: `Terminology preparation failed — ${message}`,
   };
 }
 
@@ -100,6 +249,8 @@ export function buildDiagnosticSummary(input: {
 }): string {
   const webUi = input.domains.webUi;
   const cv = input.domains.controlledVocabulary;
+  const brand = input.domains.brand;
+  const terminology = input.domains.terminology;
   const cvMissing =
     cv.missingConceptIds.length > 0
       ? `missing=${cv.conceptsMissing} missingConcepts=[${cv.missingConceptIds.join(", ")}]`
@@ -108,6 +259,8 @@ export function buildDiagnosticSummary(input: {
     `job=${input.status}`,
     `readiness=${input.readiness.state}`,
     `languageDataReady=${input.readiness.languageDataReady}`,
+    `brand=${brand.status}(generated=${brand.fieldsGenerated},reviewRequired=${brand.reviewRequired},providerFailure=${brand.providerFailure})`,
+    `terminology=${terminology.status}(generated=${terminology.conceptsGenerated},providerFailure=${terminology.providerFailure})`,
     `webUi=${webUi.status}(missing=${webUi.missingKeyCount},empty=${webUi.emptyKeyCount},required=${webUi.requiredKeyCount},dataReady=${webUi.dataReady})`,
     `cv=${cv.status}(${cvMissing},conceptsChecked=${cv.conceptsChecked},preferredTermCoverage=${cv.conceptsWithTerminologyPreferredTerm},presentationReady=${cv.presentationReady})`,
     `ctRemaining=${input.domains.ct.remainingWorkItems}`,
@@ -162,7 +315,8 @@ export function buildHistoricalDomainProgress(input: {
 
 /**
  * Derive durable job lifecycle from measured readiness + enqueue flags.
- * Does not treat manual uiTranslationStatus as authority.
+ * Owner provider failures are not classified as ordinary waiting_for_data.
+ * Brand review/publication never forces waiting_for_data.
  */
 export function deriveActivationJobStatus(input: {
   readonly readiness: LanguageLocalizationReadinessReport;
@@ -173,6 +327,17 @@ export function deriveActivationJobStatus(input: {
   const { readiness, domains } = input;
   if (!readiness.engineReady) {
     return "failed";
+  }
+  if (
+    domains.brand.status === "failed" ||
+    domains.terminology.status === "failed" ||
+    domains.brand.providerFailure ||
+    domains.terminology.providerFailure
+  ) {
+    return "failed";
+  }
+  if (domains.brand.status === "in_progress" || domains.terminology.status === "in_progress") {
+    return "running";
   }
   if (
     domains.webUi.status === "waiting_for_data" ||
