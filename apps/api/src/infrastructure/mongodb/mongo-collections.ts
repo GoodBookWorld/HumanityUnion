@@ -135,6 +135,10 @@ export const MONGO_COLLECTIONS = {
   webUiMessagePacks: "web_ui_message_packs",
   /** Durable Admin language localization activation jobs (one active generation per locale). */
   languageActivationJobs: "language_activation_jobs",
+  /** Step 15C — WEB_UI activation checkpoint manifests (child of activation job). */
+  languageActivationWebUiCheckpoints: "language_activation_web_ui_checkpoints",
+  /** Step 15C — WEB_UI activation per-batch translation results. */
+  languageActivationWebUiBatches: "language_activation_web_ui_batches",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

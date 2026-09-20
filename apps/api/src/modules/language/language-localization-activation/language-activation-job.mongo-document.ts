@@ -5,6 +5,7 @@ import type {
   LanguageActivationJobRecord,
   LanguageActivationJobStatus,
   LanguageActivationTerminologyDomainProgress,
+  LanguageActivationWebUiDomainProgress,
 } from "@hu/types";
 import {
   isLanguageActivationDomainStatus,
@@ -44,6 +45,26 @@ function defaultBrandDomain(): LanguageActivationBrandDomainProgress {
     reviewRequired: false,
     providerFailure: false,
     detail: null,
+  };
+}
+
+function defaultWebUiDomain(): LanguageActivationWebUiDomainProgress {
+  return {
+    status: "pending",
+    dataReady: false,
+    missingKeyCount: 0,
+    emptyKeyCount: 0,
+    requiredKeyCount: 0,
+    effectiveSource: null,
+    detail: null,
+    preparationPhase: null,
+    checkpointId: null,
+    sourceHash: null,
+    totalBatches: 0,
+    completedBatches: 0,
+    totalLeaves: 0,
+    completedLeaves: 0,
+    providerFailure: false,
   };
 }
 
@@ -92,6 +113,7 @@ function assertDomains(value: unknown): LanguageActivationJobDomains {
     ...domains,
     brand: normalizeOwnerSlice(domains.brand, defaultBrandDomain()),
     terminology: normalizeOwnerSlice(domains.terminology, defaultTerminologyDomain()),
+    webUi: normalizeOwnerSlice(domains.webUi, defaultWebUiDomain()),
     controlledVocabulary: {
       ...cv,
       missingConceptIds: Array.isArray(cv.missingConceptIds)

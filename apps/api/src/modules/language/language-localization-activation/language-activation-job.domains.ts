@@ -66,6 +66,14 @@ export function emptyPendingDomains(): LanguageActivationJobDomains {
       requiredKeyCount: 0,
       effectiveSource: null,
       detail: null,
+      preparationPhase: null,
+      checkpointId: null,
+      sourceHash: null,
+      totalBatches: 0,
+      completedBatches: 0,
+      totalLeaves: 0,
+      completedLeaves: 0,
+      providerFailure: false,
     },
     controlledVocabulary: {
       status: "pending",
@@ -203,19 +211,75 @@ export function terminologyDomainProviderConfigFailure(
 
 export async function buildWebUiDomainProgress(
   readiness: LanguageLocalizationReadinessReport,
+  previous?: LanguageActivationWebUiDomainProgress | null,
 ): Promise<LanguageActivationWebUiDomainProgress> {
   const effective = await resolveEffectiveWebUiMessagePack(readiness.locale);
   const dataReady = readiness.webUi.dataReady === true;
+  // Active WEB_UI preparation (checkpoint) outranks measurement-only waiting.
+  if (
+    previous &&
+    (previous.status === "in_progress" ||
+      previous.preparationPhase === "primary" ||
+      previous.preparationPhase === "quality" ||
+      previous.preparationPhase === "validating" ||
+      previous.preparationPhase === "publishing")
+  ) {
+    return {
+      ...previous,
+      missingKeyCount: readiness.webUi.missingKeyCount,
+      emptyKeyCount: readiness.webUi.emptyKeyCount,
+      requiredKeyCount: readiness.webUi.requiredKeyCount,
+      effectiveSource: effective?.source ?? previous.effectiveSource,
+      dataReady: false,
+      status: "in_progress",
+    };
+  }
+  if (previous?.preparationPhase === "failed" || previous?.providerFailure) {
+    return {
+      ...previous,
+      missingKeyCount: readiness.webUi.missingKeyCount,
+      emptyKeyCount: readiness.webUi.emptyKeyCount,
+      requiredKeyCount: readiness.webUi.requiredKeyCount,
+      effectiveSource: effective?.source ?? previous.effectiveSource,
+      dataReady: false,
+      status: "failed",
+    };
+  }
+  if (previous?.preparationPhase === "ready" || dataReady) {
+    return {
+      status: "ready",
+      dataReady: true,
+      missingKeyCount: readiness.webUi.missingKeyCount,
+      emptyKeyCount: readiness.webUi.emptyKeyCount,
+      requiredKeyCount: readiness.webUi.requiredKeyCount,
+      effectiveSource: effective?.source ?? "none",
+      detail: previous?.detail ?? `Public WEB_UI ready via ${effective?.source ?? "unknown"}`,
+      preparationPhase: previous?.preparationPhase ?? "ready",
+      checkpointId: previous?.checkpointId ?? null,
+      sourceHash: previous?.sourceHash ?? null,
+      totalBatches: previous?.totalBatches ?? 0,
+      completedBatches: previous?.completedBatches ?? 0,
+      totalLeaves: previous?.totalLeaves ?? readiness.webUi.requiredKeyCount,
+      completedLeaves: previous?.completedLeaves ?? readiness.webUi.requiredKeyCount,
+      providerFailure: false,
+    };
+  }
   return {
-    status: dataReady ? "ready" : "waiting_for_data",
-    dataReady,
+    status: "waiting_for_data",
+    dataReady: false,
     missingKeyCount: readiness.webUi.missingKeyCount,
     emptyKeyCount: readiness.webUi.emptyKeyCount,
     requiredKeyCount: readiness.webUi.requiredKeyCount,
     effectiveSource: effective?.source ?? "none",
-    detail: dataReady
-      ? `Public WEB_UI ready via ${effective?.source ?? "unknown"}`
-      : `waiting_for_data missing=${readiness.webUi.missingKeyCount} empty=${readiness.webUi.emptyKeyCount} required=${readiness.webUi.requiredKeyCount} dataReady=false`,
+    detail: `waiting_for_data missing=${readiness.webUi.missingKeyCount} empty=${readiness.webUi.emptyKeyCount} required=${readiness.webUi.requiredKeyCount} dataReady=false`,
+    preparationPhase: null,
+    checkpointId: null,
+    sourceHash: null,
+    totalBatches: 0,
+    completedBatches: 0,
+    totalLeaves: readiness.webUi.requiredKeyCount,
+    completedLeaves: 0,
+    providerFailure: false,
   };
 }
 
@@ -261,7 +325,7 @@ export function buildDiagnosticSummary(input: {
     `languageDataReady=${input.readiness.languageDataReady}`,
     `brand=${brand.status}(generated=${brand.fieldsGenerated},reviewRequired=${brand.reviewRequired},providerFailure=${brand.providerFailure})`,
     `terminology=${terminology.status}(generated=${terminology.conceptsGenerated},providerFailure=${terminology.providerFailure})`,
-    `webUi=${webUi.status}(missing=${webUi.missingKeyCount},empty=${webUi.emptyKeyCount},required=${webUi.requiredKeyCount},dataReady=${webUi.dataReady})`,
+    `webUi=${webUi.status}(phase=${webUi.preparationPhase ?? "none"},batches=${webUi.completedBatches}/${webUi.totalBatches},dataReady=${webUi.dataReady},providerFailure=${webUi.providerFailure})`,
     `cv=${cv.status}(${cvMissing},conceptsChecked=${cv.conceptsChecked},preferredTermCoverage=${cv.conceptsWithTerminologyPreferredTerm},presentationReady=${cv.presentationReady})`,
     `ctRemaining=${input.domains.ct.remainingWorkItems}`,
     `plpRemaining=${input.domains.plp.remainingWorkItems}`,
@@ -331,12 +395,18 @@ export function deriveActivationJobStatus(input: {
   if (
     domains.brand.status === "failed" ||
     domains.terminology.status === "failed" ||
+    domains.webUi.status === "failed" ||
     domains.brand.providerFailure ||
-    domains.terminology.providerFailure
+    domains.terminology.providerFailure ||
+    domains.webUi.providerFailure
   ) {
     return "failed";
   }
-  if (domains.brand.status === "in_progress" || domains.terminology.status === "in_progress") {
+  if (
+    domains.brand.status === "in_progress" ||
+    domains.terminology.status === "in_progress" ||
+    domains.webUi.status === "in_progress"
+  ) {
     return "running";
   }
   if (

@@ -19,6 +19,16 @@ async function start(): Promise<void> {
   );
   await bootstrapPlpAutoBuildRuntime();
 
+  const { resumeIncompleteWebUiActivationJobsOnBoot } = await import(
+    "./modules/language/language-localization-activation/language-activation-job.service.js"
+  );
+  const webUiResume = await resumeIncompleteWebUiActivationJobsOnBoot();
+  if (webUiResume.scheduled > 0) {
+    console.log(
+      `Resumed ${webUiResume.scheduled} incomplete WEB_UI activation checkpoint(s).`,
+    );
+  }
+
   const { assertNormalCivicArchiveRuntimeDatabase, logCivicArchiveRuntimeDiagnostic } =
     await import("./modules/public-civic-archive/civic-archive-runtime-diagnostic.js");
 

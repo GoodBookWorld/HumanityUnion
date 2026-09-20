@@ -230,7 +230,7 @@ describe("Step 15A — CV identity + activation gap reporting", () => {
       readiness,
       domains,
     });
-    assert.match(summary, /webUi=waiting_for_data\(missing=2240/);
+    assert.match(summary, /webUi=waiting_for_data\(phase=none,batches=0\/0,dataReady=false/);
     assert.match(summary, /missingConcepts=\[helpful, not_helpful\]/);
   });
 
@@ -238,6 +238,7 @@ describe("Step 15A — CV identity + activation gap reporting", () => {
     const readiness = baseReadiness();
     const domains = emptyPendingDomains();
     domains.webUi = {
+      ...emptyPendingDomains().webUi,
       status: "waiting_for_data",
       dataReady: false,
       missingKeyCount: 2240,
@@ -255,6 +256,30 @@ describe("Step 15A — CV identity + activation gap reporting", () => {
         plpEnqueueAttempted: false,
       }),
       "waiting_for_data",
+    );
+  });
+
+  it("9b — WEB_UI in_progress forces top-level running (not waiting_for_data)", () => {
+    const readiness = baseReadiness();
+    const domains = emptyPendingDomains();
+    domains.webUi = {
+      ...emptyPendingDomains().webUi,
+      status: "in_progress",
+      preparationPhase: "primary",
+      dataReady: false,
+      totalBatches: 10,
+      completedBatches: 3,
+      detail: "Preparing public interface… 3 / 10 batches",
+    };
+    domains.controlledVocabulary = buildControlledVocabularyDomainProgress(readiness);
+    assert.equal(
+      deriveActivationJobStatus({
+        readiness,
+        domains,
+        ctEnqueueAttempted: false,
+        plpEnqueueAttempted: false,
+      }),
+      "running",
     );
   });
 

@@ -66,6 +66,22 @@ export type LanguageActivationWebUiDomainProgress = {
   readonly requiredKeyCount: number;
   readonly effectiveSource: "bundled" | "remote" | "none" | null;
   readonly detail: string | null;
+  /** Durable WEB_UI activation preparation phase (null when not preparing). */
+  readonly preparationPhase:
+    | "primary"
+    | "quality"
+    | "validating"
+    | "publishing"
+    | "ready"
+    | "failed"
+    | null;
+  readonly checkpointId: string | null;
+  readonly sourceHash: string | null;
+  readonly totalBatches: number;
+  readonly completedBatches: number;
+  readonly totalLeaves: number;
+  readonly completedLeaves: number;
+  readonly providerFailure: boolean;
 };
 
 export type LanguageActivationControlledVocabularyDomainProgress = {

@@ -167,6 +167,13 @@ export type {
   LanguageActivationTerminologyDomainProgress,
   LanguageActivationWebUiDomainProgress,
 } from "./language-activation-job.js";
+export type {
+  WebUiActivationBatchPhase,
+  WebUiActivationBatchRecord,
+  WebUiActivationBatchStatus,
+  WebUiActivationCheckpointPhase,
+  WebUiActivationCheckpointRecord,
+} from "./web-ui-activation-checkpoint.js";
 export {
   LANGUAGE_ACTIVATION_DOMAIN_STATUSES,
   LANGUAGE_ACTIVATION_JOB_STATUSES,

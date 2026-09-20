@@ -50,6 +50,10 @@ import {
   resetWebUiMessagePackStoreForTests,
   setWebUiMessagePackForceMemoryForTests,
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
+import {
+  resetWebUiActivationCheckpointStoreForTests,
+  setWebUiActivationCheckpointForceMemoryForTests,
+} from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const apiSrc = path.resolve(here, "../../../src");
@@ -81,6 +85,7 @@ describe("Step 15B — activation Brand + Terminology preparation", () => {
   }) {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
+      skipWebUiPreparation: true,
       activate: async (activateInput) => {
         const { evaluateLanguageLocalizationReadiness } = await import(
           "../../../src/modules/language/language-localization-activation/language-localization-readiness-evaluator.js"
@@ -163,6 +168,8 @@ describe("Step 15B — activation Brand + Terminology preparation", () => {
     resetLegalLocalizationStoreForTests();
     setWebUiMessagePackForceMemoryForTests(true);
     resetWebUiMessagePackStoreForTests();
+    setWebUiActivationCheckpointForceMemoryForTests(true);
+    resetWebUiActivationCheckpointStoreForTests();
     setLanguageActivationJobForceMemoryForTests(true);
     resetLanguageActivationJobStoreForTests();
     resetLanguageActivationJobSchedulerForTests();

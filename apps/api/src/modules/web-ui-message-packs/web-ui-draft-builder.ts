@@ -230,6 +230,11 @@ function hashFlat(flat: Readonly<Record<string, string>>): string {
   return hash.digest("hex");
 }
 
+/** Public: English public catalog fingerprint for activation checkpoints. */
+export function hashWebUiEnglishFlatMap(flat: Readonly<Record<string, string>>): string {
+  return hashFlat(flat);
+}
+
 function unflatten(flat: Readonly<Record<string, string>>): WebUiMessageTree {
   const root: Record<string, unknown> = {};
   for (const [pathKey, value] of Object.entries(flat)) {
@@ -246,6 +251,13 @@ function unflatten(flat: Readonly<Record<string, string>>): WebUiMessageTree {
     cursor[segments[segments.length - 1] ?? ""] = value;
   }
   return root as WebUiMessageTree;
+}
+
+/** Public: assemble a message tree from a flat path map. */
+export function unflattenWebUiMessageMap(
+  flat: Readonly<Record<string, string>>,
+): WebUiMessageTree {
+  return unflatten(flat);
 }
 
 function sameTokenList(left: readonly string[], right: readonly string[]): boolean {
@@ -389,6 +401,72 @@ function isNonRetryable(error: unknown): boolean {
       error.code === "forbidden" ||
       error.code === "unsupported_language")
   );
+}
+
+/**
+ * Shared single-batch WEB_UI translate: protect → provider → restore → structure assert.
+ * Used by offline draft builder and durable activation ticks. Concurrency remains 1 at caller.
+ */
+export async function translateWebUiProviderBatch(input: {
+  readonly locale: string;
+  readonly englishFlat: Readonly<Record<string, string>>;
+  readonly keys: readonly string[];
+  readonly terminologyContext: string;
+  readonly translator: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
+}): Promise<Readonly<Record<string, string>>> {
+  const payloadObject: Record<string, string> = {};
+  for (const key of input.keys) {
+    payloadObject[key] = protectWebUiMessageForProvider(input.englishFlat[key] ?? "").text;
+  }
+  const result = await input.translator({
+    sourceLanguage: "en",
+    targetLanguage: input.locale as LanguageCode,
+    text: JSON.stringify(payloadObject),
+    contentType: "structured_json",
+    terminologyContext: input.terminologyContext,
+    safetyCleared: true,
+  });
+  const returned = parseTranslations(result.translatedText);
+  const missing = input.keys.filter((key) => !returned.has(key));
+  if (missing.length > 0) {
+    throw new WebUiDraftBatchError(`Provider omitted keys: ${missing.slice(0, 8).join(", ")}`);
+  }
+  const extra = [...returned.keys()].filter((key) => !input.keys.includes(key));
+  if (extra.length > 0) {
+    throw new WebUiDraftBatchError(`Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`);
+  }
+  const out: Record<string, string> = {};
+  for (const key of input.keys) {
+    const restored = restoreWebUiMessageFromProvider(
+      returned.get(key) ?? "",
+      input.englishFlat[key] ?? "",
+    );
+    assertStructureMatches(input.englishFlat[key] ?? "", restored);
+    out[key] = restored;
+  }
+  return out;
+}
+
+/** Load the canonical English public WEB_UI flat map + required paths. */
+export function loadPublicWebUiEnglishCorpus(includePaths?: readonly string[]): {
+  readonly flat: Record<string, string>;
+  readonly requiredPaths: readonly string[];
+} {
+  return loadCorpus(includePaths);
+}
+
+export function buildWebUiDraftTerminologyContext(input: {
+  readonly locale: string;
+  readonly englishName: string;
+  readonly nativeName: string;
+  readonly textDirection: WebUiDraftTextDirection;
+  readonly glossary: string;
+}): string {
+  return buildTerminologyContext(input);
+}
+
+export function isWebUiProviderBatchNonRetryable(error: unknown): boolean {
+  return isNonRetryable(error);
 }
 
 function readFlag(argv: readonly string[], name: string): string | undefined {
@@ -727,37 +805,21 @@ export async function runWebUiDraftBuilder(
     while (attempt < 2 && !done) {
       attempt += 1;
       try {
-        const payloadObject: Record<string, string> = {};
-        for (const key of batch.keys) {
-          payloadObject[key] = protectWebUiMessageForProvider(flat[key] ?? "").text;
-        }
-        const payload = JSON.stringify(payloadObject);
-        providerCalls += 1;
-        const result = await translator({
-          sourceLanguage: "en",
-          targetLanguage: locale as LanguageCode,
-          text: payload,
-          contentType: "structured_json",
+        const restoredBatch = await translateWebUiProviderBatch({
+          locale,
+          englishFlat: flat,
+          keys: batch.keys,
           terminologyContext,
-          safetyCleared: true,
+          translator,
         });
-        const returned = parseTranslations(result.translatedText);
-        const missing = batch.keys.filter((key) => !returned.has(key));
-        if (missing.length > 0) {
-          throw new WebUiDraftBatchError(`Provider omitted keys: ${missing.slice(0, 8).join(", ")}`);
-        }
-        const extra = [...returned.keys()].filter((key) => !batch.keys.includes(key));
-        if (extra.length > 0) {
-          throw new WebUiDraftBatchError(`Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`);
-        }
+        providerCalls += 1;
         for (const key of batch.keys) {
-          const restored = restoreWebUiMessageFromProvider(returned.get(key) ?? "", flat[key] ?? "");
-          assertStructureMatches(flat[key] ?? "", restored);
-          translated[key] = restored;
+          translated[key] = restoredBatch[key]!;
         }
         done = true;
         log(`[${batchIndex + 1}/${batches.length}] ${batch.namespace} — ok`);
       } catch (error) {
+        providerCalls += 1;
         lastReason = error instanceof Error ? error.message : "Provider batch failed.";
         if (isNonRetryable(error) || attempt >= 2) {
           const checkpoint: BatchCheckpoint = {

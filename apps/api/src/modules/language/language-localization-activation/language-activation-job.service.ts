@@ -60,6 +60,17 @@ import {
   type LanguageOwnerPreparationInput,
   type LanguageOwnerPreparationResult,
 } from "../../language-preparation/language-owner-preparation.js";
+import { withContentTranslationWorkerSlot } from "../content-translation-worker-concurrency.js";
+import {
+  listJobsNeedingWebUiActivationResume,
+  processWebUiActivationTick,
+  webUiProgressFromCheckpoint,
+  type WebUiActivationPreparationDeps,
+} from "../../web-ui-message-packs/web-ui-activation-preparation.js";
+import {
+  getWebUiActivationCheckpoint,
+  getWebUiActivationCheckpointByJobId,
+} from "../../web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 
 type AdminActor = {
   userId: string;
@@ -105,6 +116,10 @@ export type LanguageActivationJobProcessDeps = {
   ) => Promise<LanguageOwnerPreparationResult>;
   /** Skip Brand/Terminology preparation (existing activation unit tests). */
   readonly skipOwnerPreparation?: boolean;
+  /** Skip durable WEB_UI preparation (15A/15B and measurement-only tests). */
+  readonly skipWebUiPreparation?: boolean;
+  /** Deterministic WEB_UI preparation deps (translator, includePaths, etc.). */
+  readonly webUiPreparationDeps?: WebUiActivationPreparationDeps;
 };
 
 let processDepsOverrideForTests: LanguageActivationJobProcessDeps | null = null;
@@ -153,7 +168,7 @@ async function refreshDomains(
   job: LanguageActivationJobRecord,
   readiness: LanguageLocalizationReadinessReport,
 ): Promise<LanguageActivationJobRecord["domains"]> {
-  const webUi = await buildWebUiDomainProgress(readiness);
+  const webUi = await syncWebUiDomainProgress(job, readiness);
   const controlledVocabulary = buildControlledVocabularyDomainProgress(readiness);
   const ct = buildHistoricalDomainProgress({
     bucket: readiness.ct,
@@ -175,6 +190,34 @@ async function refreshDomains(
     ct,
     plp,
   };
+}
+
+/**
+ * Provider-free: copy durable checkpoint progress onto domains.webUi, else measure.
+ */
+async function syncWebUiDomainProgress(
+  job: LanguageActivationJobRecord,
+  readiness: LanguageLocalizationReadinessReport,
+): Promise<LanguageActivationJobRecord["domains"]["webUi"]> {
+  const checkpointId =
+    job.domains.webUi.checkpointId ??
+    (await getWebUiActivationCheckpointByJobId(job.jobId))?.checkpointId ??
+    null;
+  if (checkpointId) {
+    const checkpoint = await getWebUiActivationCheckpoint(checkpointId);
+    if (checkpoint) {
+      return webUiProgressFromCheckpoint({
+        readinessDataReady: readiness.webUi.dataReady === true,
+        missingKeyCount: readiness.webUi.missingKeyCount,
+        emptyKeyCount: readiness.webUi.emptyKeyCount,
+        requiredKeyCount: readiness.webUi.requiredKeyCount,
+        effectiveSource: readiness.webUi.dataReady ? "remote" : "none",
+        checkpoint,
+        completedLeaves: job.domains.webUi.completedLeaves,
+      });
+    }
+  }
+  return buildWebUiDomainProgress(readiness, job.domains.webUi);
 }
 
 function toAdminView(input: {
@@ -283,7 +326,7 @@ export async function startOrResumeLanguageActivationJob(input: {
     job,
     readiness,
     notes: [
-      "Activation job queued. Brand and Terminology preparation run asynchronously before WEB_UI measurement (no provider in this request).",
+      "Activation job queued. Brand, Terminology, then public interface preparation run asynchronously (no provider in this request).",
       "Search/SEO flags are not modified by activation.",
     ],
   });
@@ -295,11 +338,17 @@ export type ProcessLanguageActivationJobOptions = {
    * enqueueAttempted. Status refresh omits this.
    */
   readonly reconcileResiduals?: boolean;
+  /**
+   * Background WEB_UI tick only — advances at most one batch; never Brand/Term.
+   * Provider allowed. Status refresh must not set this.
+   */
+  readonly webUiTick?: boolean;
 };
 
 /**
- * Advance one activation job: readiness → WEB_UI/CV domains → bounded CT/PLP reconcile.
- * Side-effect free regarding Search/SEO. Provider only via existing CT/PLP workers later.
+ * Advance one activation job: owners → WEB_UI batch tick → CT/PLP reconcile.
+ * Side-effect free regarding Search/SEO.
+ * Provider only via Activate/Resume, WEB_UI ticks, and existing CT/PLP workers.
  */
 export async function processLanguageActivationJob(
   jobId: string,
@@ -358,10 +407,11 @@ export async function processLanguageActivationJob(
   }
 
   try {
-    // Explicit Activate/Resume runs Brand then Terminology before readiness remeasure.
-    // Status refresh omits reconcileResiduals so it never calls the translation provider.
+    // Explicit Activate/Resume runs Brand then Terminology before WEB_UI.
+    // Status refresh and WEB_UI-only ticks omit this so they never call Brand/Term providers.
     const shouldPrepareOwners =
       options?.reconcileResiduals === true &&
+      options?.webUiTick !== true &&
       deps.skipOwnerPreparation !== true &&
       job.locale !== "en";
 
@@ -468,6 +518,59 @@ export async function processLanguageActivationJob(
       }
     }
 
+    // Durable WEB_UI preparation: at most one batch per tick (Activate or WEB_UI tick).
+    // Status refresh never sets reconcileResiduals/webUiTick — no provider.
+    const shouldPrepareWebUi =
+      (options?.reconcileResiduals === true || options?.webUiTick === true) &&
+      deps.skipWebUiPreparation !== true &&
+      job.locale !== "en";
+
+    if (shouldPrepareWebUi) {
+      const tick = await withContentTranslationWorkerSlot(() =>
+        processWebUiActivationTick({
+          job,
+          checkpointId: job.domains.webUi.checkpointId,
+          deps: deps.webUiPreparationDeps,
+        }),
+      );
+      job = {
+        ...job,
+        domains: {
+          ...job.domains,
+          webUi: tick.webUi,
+        },
+        diagnosticSummary: tick.webUi.detail ?? "running — Preparing public interface…",
+        updatedAt: nowIso(),
+      };
+
+      if (tick.webUi.status === "failed" || tick.checkpoint?.phase === "failed") {
+        job = {
+          ...job,
+          status: "failed",
+          lastError: tick.webUi.detail ?? "Public interface translation failed",
+          diagnosticSummary: `failed — WEB_UI: ${tick.webUi.detail ?? "translation failed"}`,
+          completedAt: nowIso(),
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        return job;
+      }
+
+      if (tick.needsAnotherTick && !tick.done) {
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        scheduleWebUiActivationTick(job.jobId);
+        return job;
+      }
+
+      await saveLanguageActivationJob(job);
+    }
+
     let readiness = await evaluate({
       locale: job.locale,
       registryRecord: registry,
@@ -484,11 +587,20 @@ export async function processLanguageActivationJob(
     // The first tick still runs when no enqueue has been attempted.
     // Selection stays inside activateLanguageLocalization (residual preflight + PLP planner).
     const shouldReconcileResiduals =
-      options?.reconcileResiduals === true || !enqueueAlreadyDone;
+      options?.reconcileResiduals === true ||
+      options?.webUiTick === true ||
+      !enqueueAlreadyDone;
 
     // WEB_UI waiting_for_data does not block enqueue; presentation-ready still requires WEB_UI.
-    // Step 15B: WEB_UI remains measurement-only (no generation/import).
-    if (shouldReconcileResiduals) {
+    // Skip residual reconcile while WEB_UI preparation is still in progress.
+    const webUiStillPreparing =
+      domains.webUi.status === "in_progress" ||
+      domains.webUi.preparationPhase === "primary" ||
+      domains.webUi.preparationPhase === "quality" ||
+      domains.webUi.preparationPhase === "validating" ||
+      domains.webUi.preparationPhase === "publishing";
+
+    if (shouldReconcileResiduals && !webUiStillPreparing) {
       const stamp = nowIso();
       const result = await activate({
         locale: job.locale,
@@ -503,7 +615,7 @@ export async function processLanguageActivationJob(
       domains = {
         brand: job.domains.brand ?? emptyPendingDomains().brand,
         terminology: job.domains.terminology ?? emptyPendingDomains().terminology,
-        webUi: await buildWebUiDomainProgress(readiness),
+        webUi: await syncWebUiDomainProgress(job, readiness),
         controlledVocabulary: buildControlledVocabularyDomainProgress(readiness),
         ct: buildHistoricalDomainProgress({
           bucket: readiness.ct,
@@ -537,7 +649,10 @@ export async function processLanguageActivationJob(
         status === "completed" || status === "failed" ? nowIso() : null,
       lastError:
         status === "failed"
-          ? domains.terminology.detail ?? domains.brand.detail ?? job.lastError
+          ? domains.webUi.detail ??
+            domains.terminology.detail ??
+            domains.brand.detail ??
+            job.lastError
           : null,
       searchEnabledSnapshot: registry.searchEnabled,
       seoIndexingEnabledSnapshot: registry.seoIndexingEnabled,
@@ -631,6 +746,7 @@ export async function getLanguageActivationAdminView(input: {
 }
 
 const scheduled = new Set<string>();
+const scheduledWebUi = new Set<string>();
 
 export function scheduleLanguageActivationJobProcess(jobId: string): void {
   if (scheduled.has(jobId)) {
@@ -648,14 +764,59 @@ export function scheduleLanguageActivationJobProcess(jobId: string): void {
   });
 }
 
+/**
+ * Schedule the next one-batch WEB_UI tick (setImmediate so HTTP returns first).
+ */
+export function scheduleWebUiActivationTick(jobId: string): void {
+  if (scheduledWebUi.has(jobId)) {
+    return;
+  }
+  scheduledWebUi.add(jobId);
+  setImmediate(() => {
+    void processLanguageActivationJob(jobId, { webUiTick: true })
+      .catch(() => {
+        /* persisted as failed inside process */
+      })
+      .finally(() => {
+        scheduledWebUi.delete(jobId);
+      });
+  });
+}
+
+/**
+ * API boot: resume incomplete WEB_UI checkpoints so Render recycle does not
+ * depend on an operator clicking Activate again.
+ */
+export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
+  readonly scheduled: number;
+}> {
+  const checkpoints = await listJobsNeedingWebUiActivationResume();
+  let count = 0;
+  for (const checkpoint of checkpoints) {
+    const job = await getLanguageActivationJobById(checkpoint.jobId);
+    if (!job) {
+      continue;
+    }
+    if (job.status !== "queued" && job.status !== "running") {
+      continue;
+    }
+    scheduleWebUiActivationTick(job.jobId);
+    count += 1;
+  }
+  return { scheduled: count };
+}
+
 export function resetLanguageActivationJobSchedulerForTests(): void {
   scheduled.clear();
+  scheduledWebUi.clear();
 }
 
 /** Test helper: run process synchronously without scheduler. */
 export async function startAndProcessLanguageActivationJobForTests(input: {
   readonly actorUserId: string;
   readonly languageId: string;
+  /** Drain WEB_UI ticks until done or failed (default true). */
+  readonly drainWebUiTicks?: boolean;
 }): Promise<LanguageActivationAdminView> {
   const started = await startOrResumeLanguageActivationJob({
     ...input,
@@ -667,9 +828,24 @@ export async function startAndProcessLanguageActivationJobForTests(input: {
   if (started.job.status === "completed" || started.job.status === "failed") {
     return started;
   }
-  const job = await processLanguageActivationJob(started.job.jobId, {
+  let job = await processLanguageActivationJob(started.job.jobId, {
     reconcileResiduals: true,
   });
+  if (input.drainWebUiTicks !== false) {
+    let guard = 0;
+    while (
+      job.status === "running" &&
+      (job.domains.webUi.status === "in_progress" ||
+        job.domains.webUi.preparationPhase === "primary" ||
+        job.domains.webUi.preparationPhase === "quality" ||
+        job.domains.webUi.preparationPhase === "validating" ||
+        job.domains.webUi.preparationPhase === "publishing") &&
+      guard < 5000
+    ) {
+      guard += 1;
+      job = await processLanguageActivationJob(job.jobId, { webUiTick: true });
+    }
+  }
   const record = await loadRegistryForLanguageId(input.languageId);
   const deps = processDeps();
   const evaluate = deps.evaluateReadiness ?? evaluateLanguageLocalizationReadiness;

@@ -49,6 +49,10 @@ import {
   resetWebUiMessagePackStoreForTests,
   setWebUiMessagePackForceMemoryForTests,
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
+import {
+  resetWebUiActivationCheckpointStoreForTests,
+  setWebUiActivationCheckpointForceMemoryForTests,
+} from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 
 const apiSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../src");
 const createdInitiativeIds: string[] = [];
@@ -107,6 +111,8 @@ describe("activation resume residual reconciliation", () => {
     await ensureLanguageRegistrySeeded();
     setWebUiMessagePackForceMemoryForTests(true);
     resetWebUiMessagePackStoreForTests();
+    setWebUiActivationCheckpointForceMemoryForTests(true);
+    resetWebUiActivationCheckpointStoreForTests();
     resetWebUiControlledLabelCacheForTests();
     resetContentTranslationMemoryStoreForTests();
     resetContentTranslationWarmMemoryForTests();
@@ -121,6 +127,7 @@ describe("activation resume residual reconciliation", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       plannerDeps: {
         auditCorpus: async () => ({ byLocale: [] }) as never,
         classifyMediaEditorial: async () => "CURRENT_PUBLISHED_COMPLETE",

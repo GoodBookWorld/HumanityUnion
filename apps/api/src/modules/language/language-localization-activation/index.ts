@@ -34,13 +34,20 @@ export {
   getLanguageActivationAdminView,
   processLanguageActivationJob,
   resetLanguageActivationJobSchedulerForTests,
+  resumeIncompleteWebUiActivationJobsOnBoot,
   scheduleLanguageActivationJobProcess,
+  scheduleWebUiActivationTick,
   setLanguageActivationJobAdminAssertOverrideForTests,
   setLanguageActivationJobProcessDepsForTests,
   startAndProcessLanguageActivationJobForTests,
   startOrResumeLanguageActivationJob,
 } from "./language-activation-job.service.js";
 export type { LanguageActivationJobProcessDeps } from "./language-activation-job.service.js";
+export {
+  buildWebUiDomainProgress,
+  deriveActivationJobStatus,
+  emptyPendingDomains,
+} from "./language-activation-job.domains.js";
 export {
   resetLanguageActivationJobStoreForTests,
   setLanguageActivationJobForceMemoryForTests,

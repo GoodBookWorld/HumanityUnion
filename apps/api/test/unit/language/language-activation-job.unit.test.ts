@@ -31,6 +31,10 @@ import {
   setWebUiMessagePackForceMemoryForTests,
   upsertWebUiMessagePack,
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
+import {
+  resetWebUiActivationCheckpointStoreForTests,
+  setWebUiActivationCheckpointForceMemoryForTests,
+} from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import { resetWebUiControlledLabelCacheForTests } from "../../../src/modules/language/controlled-lifecycle-web-ui-labels.js";
 import { loadBundledEnglishWebUiMessagePack } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
 
@@ -44,6 +48,8 @@ describe("Language activation async job", () => {
     await ensureLanguageRegistrySeeded();
     setWebUiMessagePackForceMemoryForTests(true);
     resetWebUiMessagePackStoreForTests();
+    setWebUiActivationCheckpointForceMemoryForTests(true);
+    resetWebUiActivationCheckpointStoreForTests();
     resetWebUiControlledLabelCacheForTests();
     setLanguageActivationJobForceMemoryForTests(true);
     resetLanguageActivationJobStoreForTests();
@@ -81,6 +87,7 @@ describe("Language activation async job", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       activate: async (input) => {
         const { evaluateLanguageLocalizationReadiness } = await import(
           "../../../src/modules/language/language-localization-activation/language-localization-readiness-evaluator.js"
@@ -125,6 +132,7 @@ describe("Language activation async job", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       activate: async (input) => {
         activateCalls += 1;
         const { evaluateLanguageLocalizationReadiness } = await import(
@@ -251,6 +259,7 @@ describe("Language activation async job", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       evaluateReadiness: async (input) => {
         const { evaluateLanguageLocalizationReadiness } = await import(
           "../../../src/modules/language/language-localization-activation/language-localization-readiness-evaluator.js"
@@ -328,6 +337,7 @@ describe("Language activation async job", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       runResidualRetry: async () =>
         ({ presentationsScheduled: 0, presentationsDeduped: 0 }) as never,
       enqueuePlpMediaConsumer: async () => {},
@@ -411,6 +421,7 @@ describe("Language activation async job", () => {
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
+      skipWebUiPreparation: true,
       activate: async () => {
         activateCalled = true;
         throw new Error("should not run on start-only");

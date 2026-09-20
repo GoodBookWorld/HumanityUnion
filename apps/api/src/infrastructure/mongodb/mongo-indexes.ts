@@ -1248,6 +1248,40 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Step 15C — WEB_UI activation checkpoints (child of language_activation_jobs).
+    collectionName: MONGO_COLLECTIONS.languageActivationWebUiCheckpoints,
+    indexes: [
+      {
+        key: { checkpointId: 1 },
+        unique: true,
+        name: "language_activation_web_ui_checkpoints_id_unique",
+      },
+      {
+        key: { jobId: 1, updatedAt: -1 },
+        name: "language_activation_web_ui_checkpoints_job",
+      },
+      {
+        key: { phase: 1 },
+        name: "language_activation_web_ui_checkpoints_phase",
+      },
+    ],
+  },
+  {
+    // Step 15C — WEB_UI activation batch values (one doc per checkpoint+phase+batch).
+    collectionName: MONGO_COLLECTIONS.languageActivationWebUiBatches,
+    indexes: [
+      {
+        key: { batchKey: 1 },
+        unique: true,
+        name: "language_activation_web_ui_batches_key_unique",
+      },
+      {
+        key: { checkpointId: 1, phase: 1 },
+        name: "language_activation_web_ui_batches_checkpoint_phase",
+      },
+    ],
+  },
+  {
     // Pack 08I.5 — Admin-managed Legal Localization (one record per documentType+locale).
     collectionName: MONGO_COLLECTIONS.legalLocalization,
     indexes: [

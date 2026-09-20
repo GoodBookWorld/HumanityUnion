@@ -288,7 +288,7 @@ function CountSummary({
 }
 
 /**
- * Operator-facing Brand / Terminology phase lines from the activation job.
+ * Operator-facing Brand / Terminology / WEB_UI phase lines from the activation job.
  */
 function formatOwnerPreparationProgress(view: LanguageActivationAdminView): string[] {
   const job = view.job;
@@ -316,6 +316,37 @@ function formatOwnerPreparationProgress(view: LanguageActivationAdminView): stri
   } else if (terminology?.status === "ready") {
     lines.push(terminology.detail ?? "Terminology ready");
   }
+  const webUi = job.domains.webUi;
+  if (webUi.status === "failed" || webUi.providerFailure) {
+    lines.push(
+      webUi.detail ?? "Public interface translation failed — retry activation",
+    );
+  } else if (webUi.status === "in_progress" || webUi.preparationPhase) {
+    if (webUi.preparationPhase === "quality") {
+      lines.push(
+        webUi.detail ??
+          `Checking translation quality… ${webUi.completedBatches} / ${webUi.totalBatches}`,
+      );
+    } else if (
+      webUi.preparationPhase === "validating" ||
+      webUi.preparationPhase === "publishing"
+    ) {
+      lines.push(webUi.detail ?? "Validating…");
+    } else if (webUi.preparationPhase === "ready") {
+      lines.push(webUi.detail ?? "Public interface ready");
+    } else if (webUi.preparationPhase === "primary" || webUi.status === "in_progress") {
+      const completed = webUi.completedLeaves || webUi.completedBatches;
+      const total = webUi.totalLeaves || webUi.totalBatches;
+      lines.push(
+        webUi.detail ??
+          (total > 0
+            ? `Preparing public interface… ${completed} / ${total}`
+            : "Preparing public interface…"),
+      );
+    }
+  } else if (webUi.status === "ready" && webUi.dataReady) {
+    lines.push(webUi.detail ?? "Public interface ready");
+  }
   return lines;
 }
 
@@ -330,11 +361,18 @@ function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[
     return lines;
   }
   if (job.status === "failed") {
-    if (job.domains.brand?.providerFailure || job.domains.terminology?.providerFailure) {
+    if (
+      job.domains.brand?.providerFailure ||
+      job.domains.terminology?.providerFailure ||
+      job.domains.webUi?.providerFailure
+    ) {
       lines.push(
-        job.domains.terminology?.detail ??
-          job.domains.brand?.detail ??
-          "Localization preparation failed — retry activation after the translation provider is available.",
+        job.domains.webUi?.providerFailure
+          ? (job.domains.webUi.detail ??
+              "Public interface translation failed — retry activation")
+          : (job.domains.terminology?.detail ??
+              job.domains.brand?.detail ??
+              "Localization preparation failed — retry activation after the translation provider is available."),
       );
       return lines;
     }
