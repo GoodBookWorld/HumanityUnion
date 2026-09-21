@@ -118,6 +118,34 @@
   margin: 0;
 }
 
+.admin-languages__progress {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 11rem;
+  margin-bottom: 0.35rem;
+}
+
+.admin-languages__progress-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-languages__progress-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 12%, #fff);
+  overflow: hidden;
+}
+
+.admin-languages__progress-fill {
+  height: 100%;
+  background: var(--hu-color-primary, #0174b0);
+}
+
+.admin-languages__progress-fill--failed {
+  background: #8a3b3b;
+}
+
 .admin-languages__form {
   margin: 1rem 0 1.5rem;
   padding: 1rem;

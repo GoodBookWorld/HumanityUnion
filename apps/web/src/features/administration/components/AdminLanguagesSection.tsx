@@ -30,6 +30,10 @@ import {
   type AdminLanguagePatchInput,
 } from "../admin-languages-api";
 import { shouldPollLanguageActivationJob, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS } from "../admin-languages-activation-poll";
+import {
+  localizationProgressFromActivation,
+  localizationProgressFromReadiness,
+} from "../admin-languages-localization-progress";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -411,14 +415,48 @@ function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[
   return lines;
 }
 
+function LocalizationProgressMeter({
+  progress,
+}: {
+  readonly progress: ReturnType<typeof localizationProgressFromActivation>;
+}) {
+  return (
+    <div className="admin-languages__progress">
+      <div className="admin-languages__progress-label">Localization {progress.percent}%</div>
+      <div
+        className="admin-languages__progress-track"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress.percent}
+        aria-label={`Localization ${progress.percent}%`}
+      >
+        <div
+          className={
+            progress.failed
+              ? "admin-languages__progress-fill admin-languages__progress-fill--failed"
+              : "admin-languages__progress-fill"
+          }
+          style={{ width: `${progress.percent}%` }}
+        />
+      </div>
+      <div className="hu-caption">{progress.phaseLabel}</div>
+    </div>
+  );
+}
+
 /**
  * Admin presentation of an already-fetched readiness report.
  * Labels only. Does not recompute counts, call a provider, or write the Registry.
  */
 function LanguageReadinessDetails({
   report,
+  job,
+  phaseLabel,
 }: {
   readonly report: LanguageLocalizationReadinessReport;
+  readonly job?: LanguageActivationAdminView["job"];
+  readonly phaseLabel?: string;
 }) {
   const ctKinds = report.kindRows.filter(
     (row) => row.ownership === "CT_OWNED" && row.counts != null,
@@ -426,9 +464,24 @@ function LanguageReadinessDetails({
   const knowledgeDebt = report.kindRows.filter(
     (row) => row.ownership === "NO_TRANSLATION_OWNER",
   );
+  const webUi = job?.domains.webUi;
 
   return (
     <div className="admin-languages__readiness">
+      {job ? (
+        <section className="admin-languages__readiness-section">
+          <h4 className="admin-languages__readiness-heading">Localization activation</h4>
+          <div>
+            Status: <code>{job.status}</code>
+          </div>
+          {webUi && webUi.totalBatches > 0 ? (
+            <div>
+              Public interface: {webUi.completedBatches} / {webUi.totalBatches} batches
+            </div>
+          ) : null}
+          <div>Phase: {phaseLabel ?? "Localization"}</div>
+        </section>
+      ) : null}
       <section className="admin-languages__readiness-section">
         <h4 className="admin-languages__readiness-heading">Registry</h4>
         <p className="admin-languages__readiness-note">
@@ -636,6 +689,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   const [activationById, setActivationById] = useState<
     Record<string, LanguageActivationAdminView | "loading" | "error">
   >({});
+  const [detailsOpenById, setDetailsOpenById] = useState<Record<string, boolean>>({});
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -661,6 +715,43 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    for (const row of items) {
+      void fetchAdminLanguageActivationStatus(row.languageId)
+        .then((view) => {
+          if (cancelled) {
+            return;
+          }
+          setActivationById((prev) => {
+            const current = prev[row.languageId];
+            if (current && current !== "error") {
+              return prev;
+            }
+            return { ...prev, [row.languageId]: view };
+          });
+        })
+        .catch(() => {
+          if (cancelled) {
+            return;
+          }
+          setActivationById((prev) => {
+            const current = prev[row.languageId];
+            if (current && current !== "error") {
+              return prev;
+            }
+            return { ...prev, [row.languageId]: "error" };
+          });
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   useEffect(() => {
     const languageIds = Object.entries(activationById)
@@ -796,11 +887,15 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   }
 
   async function handleCheckReadiness(row: LanguageRegistryAdmin) {
+    setDetailsOpenById((prev) => ({ ...prev, [row.languageId]: true }));
     setReadinessById((prev) => ({ ...prev, [row.languageId]: "loading" }));
     setError(null);
     try {
       const report = await fetchAdminLanguageLocalizationReadiness(row.languageId);
       setReadinessById((prev) => ({ ...prev, [row.languageId]: report }));
+      const view = await fetchAdminLanguageActivationStatus(row.languageId);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
       setStatus(
         `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
@@ -1107,6 +1202,17 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   const activation = activationById[row.languageId];
                   const canActivate =
                     row.enabled && row.contentTranslationEnabled && !english;
+                  const activationView =
+                    activation && typeof activation === "object" ? activation : null;
+                  const readinessReport =
+                    readiness && typeof readiness === "object" ? readiness : null;
+                  const progress = activationView
+                    ? localizationProgressFromActivation(activationView)
+                    : readinessReport
+                      ? localizationProgressFromReadiness(readinessReport)
+                      : null;
+                  const detailsOpen = detailsOpenById[row.languageId] === true;
+                  const detailReport = activationView?.readiness ?? readinessReport;
                   return (
                     <tr key={row.languageId}>
                       <td>{row.englishName}</td>
@@ -1125,42 +1231,38 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                       <td>{yesNo(row.seoIndexingEnabled)}</td>
                       <td>{yesNo(row.pwaPersistedReadingEnabled)}</td>
                       <td className="admin-languages__localization-col">
-                        {activation === "loading" || readiness === "loading" ? (
-                          <span className="hu-caption">Checking…</span>
-                        ) : activation === "error" || readiness === "error" ? (
-                          <span className="hu-caption">Unavailable</span>
-                        ) : activation && typeof activation === "object" ? (
-                          <div className="hu-caption">
-                            <div>
-                              Activation job: <code>{activation.job?.status ?? "none"}</code>
-                            </div>
-                            {formatOwnerPreparationProgress(activation).map((line) => (
-                              <div key={`owner-${line}`}>{line}</div>
-                            ))}
-                            {activation.job?.status === "waiting_for_data" ||
-                            activation.job?.status === "failed" ? (
-                              <div>
-                                {formatActivationWaitingGaps(activation).map((line) => (
-                                  <div key={line}>{line}</div>
-                                ))}
-                              </div>
-                            ) : activation.job?.status === "running" ||
-                              activation.job?.status === "queued" ? (
-                              <div>Job status is processing progress, not full localization.</div>
-                            ) : (
-                              <div>Job status is processing progress, not full localization.</div>
-                            )}
-                            <LanguageReadinessDetails report={activation.readiness} />
-                            <WebUiPackWorkflow locale={row.locale} />
-                          </div>
-                        ) : readiness && typeof readiness === "object" ? (
-                          <div className="hu-caption">
-                            <LanguageReadinessDetails report={readiness} />
-                            <WebUiPackWorkflow locale={row.locale} />
-                          </div>
-                        ) : (
-                          <span className="hu-caption">—</span>
-                        )}
+                        <div className="hu-caption">
+                          {progress ? (
+                            <LocalizationProgressMeter progress={progress} />
+                          ) : activation === "loading" || readiness === "loading" ? (
+                            <span className="hu-caption">Checking…</span>
+                          ) : activation === "error" || readiness === "error" ? (
+                            <span className="hu-caption">Unavailable</span>
+                          ) : (
+                            <span className="hu-caption">—</span>
+                          )}
+                          {detailsOpen && activationView ? (
+                            <>
+                              {formatOwnerPreparationProgress(activationView).map((line) => (
+                                <div key={`owner-${line}`}>{line}</div>
+                              ))}
+                              {activationView.job?.status === "waiting_for_data" ||
+                              activationView.job?.status === "failed"
+                                ? formatActivationWaitingGaps(activationView).map((line) => (
+                                    <div key={line}>{line}</div>
+                                  ))
+                                : null}
+                            </>
+                          ) : null}
+                          {detailsOpen && detailReport ? (
+                            <LanguageReadinessDetails
+                              report={detailReport}
+                              job={activationView?.job}
+                              phaseLabel={progress?.phaseLabel}
+                            />
+                          ) : null}
+                          {detailsOpen ? <WebUiPackWorkflow locale={row.locale} /> : null}
+                        </div>
                       </td>
                       <td>
                         <code>{row.fallbackLocale}</code>
