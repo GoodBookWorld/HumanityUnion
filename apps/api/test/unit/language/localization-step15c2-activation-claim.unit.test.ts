@@ -3,7 +3,7 @@
  * Deterministic only. No Gemini.
  */
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it, mock } from "node:test";
 
 import type { WebUiActivationCheckpointPhase } from "@hu/types";
 
@@ -398,15 +398,26 @@ describe("Step 15C.2 — activation claim and status projection", () => {
         },
       },
     });
-    const ticked = await processLanguageActivationJob(job.jobId, { webUiTick: true });
-    assert.equal(ticked.domains.webUi.status, "in_progress");
-    const status = await getLanguageActivationAdminView({
-      actorUserId: "admin-1",
-      languageId: record.languageId,
-    });
-    assert.equal(status.job?.status, "running");
-    assert.equal(status.job?.domains.webUi.status, "in_progress");
-    assert.equal(status.searchEnabled, false);
-    assert.equal(status.job?.searchEnabledSnapshot, false);
+    const callsBeforeTick = providerCalls;
+    mock.timers.enable({ apis: ["setImmediate"] });
+    try {
+      const ticked = await processLanguageActivationJob(job.jobId, { webUiTick: true });
+      assert.equal(ticked.domains.webUi.status, "in_progress");
+      assert.equal(ticked.status, "running");
+      const callsAfterTick = providerCalls;
+      assert.ok(callsAfterTick > callsBeforeTick);
+      const status = await getLanguageActivationAdminView({
+        actorUserId: "admin-1",
+        languageId: record.languageId,
+      });
+      assert.equal(providerCalls, callsAfterTick);
+      assert.equal(status.job?.status, "running");
+      assert.equal(status.job?.domains.webUi.status, "in_progress");
+      assert.equal(status.searchEnabled, false);
+      assert.equal(status.job?.searchEnabledSnapshot, false);
+    } finally {
+      resetLanguageActivationJobSchedulerForTests();
+      mock.timers.reset();
+    }
   });
 });

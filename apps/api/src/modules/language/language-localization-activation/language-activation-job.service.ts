@@ -879,6 +879,8 @@ export async function getLanguageActivationAdminView(input: {
 
 const scheduled = new Set<string>();
 const scheduledWebUi = new Set<string>();
+/** Coalesced follow-up when a tick is requested while this job already owns the slot. */
+const webUiFollowUpRequested = new Set<string>();
 
 export function scheduleLanguageActivationJobProcess(jobId: string): void {
   if (scheduled.has(jobId)) {
@@ -897,22 +899,42 @@ export function scheduleLanguageActivationJobProcess(jobId: string): void {
 }
 
 /**
- * Schedule the next one-batch WEB_UI tick (setImmediate so HTTP returns first).
+ * One WEB_UI tick at a time per job. A request made while the tick is in
+ * flight is remembered and run after the lock is released, not dropped.
  */
 export function scheduleWebUiActivationTick(jobId: string): void {
   if (scheduledWebUi.has(jobId)) {
+    webUiFollowUpRequested.add(jobId);
     return;
   }
   scheduledWebUi.add(jobId);
   setImmediate(() => {
+    let status: string | null = null;
     void processLanguageActivationJob(jobId, { webUiTick: true })
+      .then((job) => {
+        status = job.status;
+      })
       .catch(() => {
-        /* persisted as failed inside process */
+        status = "failed";
       })
       .finally(() => {
         scheduledWebUi.delete(jobId);
+        const followUp = webUiFollowUpRequested.delete(jobId);
+        if (followUp && (status === "running" || status === "queued")) {
+          scheduleWebUiActivationTick(jobId);
+        }
       });
   });
+}
+
+export function getWebUiActivationSchedulerSnapshotForTests(jobId: string): {
+  readonly inFlight: boolean;
+  readonly followUpRequested: boolean;
+} {
+  return {
+    inFlight: scheduledWebUi.has(jobId),
+    followUpRequested: webUiFollowUpRequested.has(jobId),
+  };
 }
 
 /**
@@ -963,6 +985,7 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
 export function resetLanguageActivationJobSchedulerForTests(): void {
   scheduled.clear();
   scheduledWebUi.clear();
+  webUiFollowUpRequested.clear();
 }
 
 /** Test helper: run process synchronously without scheduler. */
