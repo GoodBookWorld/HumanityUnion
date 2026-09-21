@@ -409,6 +409,16 @@ export function deriveActivationJobStatus(input: {
   ) {
     return "running";
   }
+  // Claimed automatic WEB_UI/Terminology work is pending, not an external data blocker.
+  if (
+    domains.webUi.status === "pending" &&
+    !domains.webUi.dataReady &&
+    !domains.webUi.providerFailure &&
+    domains.webUi.preparationPhase !== "failed" &&
+    domains.webUi.preparationPhase !== "ready"
+  ) {
+    return "running";
+  }
   if (
     domains.webUi.status === "waiting_for_data" ||
     domains.controlledVocabulary.status === "waiting_for_data"

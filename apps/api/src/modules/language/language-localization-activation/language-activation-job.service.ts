@@ -51,6 +51,7 @@ import {
   getActiveLanguageActivationJobByLocale,
   getLatestLanguageActivationJobByLocale,
   getLanguageActivationJobById,
+  listLanguageActivationJobs,
   saveLanguageActivationJob,
 } from "./language-activation-job.repository.js";
 import { evaluateLanguageLocalizationReadiness } from "./language-localization-readiness-evaluator.js";
@@ -167,8 +168,9 @@ async function loadRegistryForLanguageId(
 async function refreshDomains(
   job: LanguageActivationJobRecord,
   readiness: LanguageLocalizationReadinessReport,
+  options?: { readonly claimed?: boolean },
 ): Promise<LanguageActivationJobRecord["domains"]> {
-  const webUi = await syncWebUiDomainProgress(job, readiness);
+  const webUi = await syncWebUiDomainProgress(job, readiness, options);
   const controlledVocabulary = buildControlledVocabularyDomainProgress(readiness);
   const ct = buildHistoricalDomainProgress({
     bucket: readiness.ct,
@@ -192,12 +194,20 @@ async function refreshDomains(
   };
 }
 
+function isClaimedActivationStatus(
+  status: LanguageActivationJobRecord["status"],
+): boolean {
+  return status === "queued" || status === "running";
+}
+
 /**
- * Provider-free: copy durable checkpoint progress onto domains.webUi, else measure.
+ * Provider-free: checkpoint progress outranks a missing-catalog measurement.
+ * A claimed job must not project automatable WEB_UI as waiting_for_data.
  */
 async function syncWebUiDomainProgress(
   job: LanguageActivationJobRecord,
   readiness: LanguageLocalizationReadinessReport,
+  options?: { readonly claimed?: boolean },
 ): Promise<LanguageActivationJobRecord["domains"]["webUi"]> {
   const checkpointId =
     job.domains.webUi.checkpointId ??
@@ -217,7 +227,79 @@ async function syncWebUiDomainProgress(
       });
     }
   }
-  return buildWebUiDomainProgress(readiness, job.domains.webUi);
+  const measured = await buildWebUiDomainProgress(readiness, job.domains.webUi);
+  if (
+    options?.claimed &&
+    measured.status === "waiting_for_data" &&
+    !measured.providerFailure &&
+    measured.preparationPhase !== "failed"
+  ) {
+    return {
+      ...measured,
+      status: "pending",
+      dataReady: false,
+      detail: "Preparing public interface…",
+      preparationPhase: null,
+      checkpointId: job.domains.webUi.checkpointId,
+      sourceHash: job.domains.webUi.sourceHash,
+      providerFailure: false,
+    };
+  }
+  return measured;
+}
+
+/**
+ * Persist explicit Activate/Resume as active work before the Admin response.
+ * Same job id and generation. Does not call the translation provider.
+ */
+async function claimLanguageActivationJob(
+  job: LanguageActivationJobRecord,
+  readiness: LanguageLocalizationReadinessReport,
+): Promise<LanguageActivationJobRecord> {
+  let domains = await refreshDomains(job, readiness, { claimed: true });
+  const checkpointActive =
+    domains.webUi.status === "in_progress" ||
+    domains.webUi.preparationPhase === "primary" ||
+    domains.webUi.preparationPhase === "quality" ||
+    domains.webUi.preparationPhase === "validating" ||
+    domains.webUi.preparationPhase === "publishing";
+  const brand = domains.brand;
+  if (
+    !checkpointActive &&
+    brand.status !== "ready" &&
+    brand.status !== "failed" &&
+    brand.status !== "in_progress"
+  ) {
+    domains = {
+      ...domains,
+      brand: {
+        ...brand,
+        status: "in_progress",
+        detail: "Preparing Brand…",
+      },
+    };
+  }
+  const derived = deriveActivationJobStatus({
+    readiness,
+    domains,
+    ctEnqueueAttempted: domains.ct.enqueueAttempted,
+    plpEnqueueAttempted: domains.plp.enqueueAttempted,
+  });
+  const status = derived === "failed" ? "failed" : "running";
+  const claimed: LanguageActivationJobRecord = {
+    ...job,
+    status,
+    domains,
+    startedAt: job.startedAt ?? nowIso(),
+    completedAt: status === "failed" ? nowIso() : null,
+    updatedAt: nowIso(),
+    lastError: status === "failed" ? job.lastError : null,
+    diagnosticSummary: buildDiagnosticSummary({ status, readiness, domains }),
+    searchEnabledSnapshot: job.searchEnabledSnapshot,
+    seoIndexingEnabledSnapshot: job.seoIndexingEnabledSnapshot,
+  };
+  await saveLanguageActivationJob(claimed);
+  return claimed;
 }
 
 function toAdminView(input: {
@@ -257,19 +339,22 @@ export async function startOrResumeLanguageActivationJob(input: {
 
   const active = await getActiveLanguageActivationJobByLocale(locale);
   if (active) {
-    if (input.scheduleProcess !== false) {
-      scheduleLanguageActivationJobProcess(active.jobId);
-    }
     const readiness = await evaluate({
       locale,
       registryRecord: record,
       plannerDeps: deps.plannerDeps,
       skipCorpusPlan: deps.skipCorpusInReadiness === true,
     });
+    const claimed = await claimLanguageActivationJob(active, readiness);
+    if (input.scheduleProcess !== false && claimed.status !== "failed") {
+      scheduleLanguageActivationJobProcess(claimed.jobId);
+    }
     return toAdminView({
-      job: active,
+      job: claimed,
       readiness,
-      notes: ["Resumed existing activation job (idempotent)."],
+      notes: [
+        "Resumed existing activation job (idempotent). Activation claimed for automatic preparation; no provider in this request.",
+      ],
     });
   }
 
@@ -571,6 +656,24 @@ export async function processLanguageActivationJob(
       await saveLanguageActivationJob(job);
     }
 
+    if (
+      !shouldPrepareOwners &&
+      job.domains.brand.status === "in_progress" &&
+      job.domains.brand.preparationAttempted !== true
+    ) {
+      job = {
+        ...job,
+        domains: {
+          ...job.domains,
+          brand: {
+            ...job.domains.brand,
+            status: "pending",
+            detail: null,
+          },
+        },
+      };
+    }
+
     let readiness = await evaluate({
       locale: job.locale,
       registryRecord: registry,
@@ -676,7 +779,8 @@ export async function processLanguageActivationJob(
 }
 
 /**
- * Provider-free Admin status: refresh measured readiness onto the job record.
+ * Provider-free Admin status: project persisted activation + checkpoint progress.
+ * Does not call the translation provider and does not enqueue preparation.
  */
 export async function getLanguageActivationAdminView(input: {
   readonly actorUserId: string;
@@ -693,12 +797,6 @@ export async function getLanguageActivationAdminView(input: {
     (await getActiveLanguageActivationJobByLocale(locale)) ??
     (await getLatestLanguageActivationJobByLocale(locale));
 
-  if (job && input.refreshJob !== false && (job.status === "waiting_for_data" || job.status === "running" || job.status === "queued")) {
-    // Status refresh may finish a never-attempted tick. It does not reconcile
-    // after enqueueAttempted, so polling cannot enqueue in a loop.
-    job = await processLanguageActivationJob(job.jobId);
-  }
-
   const readiness = await evaluate({
     locale,
     registryRecord: record,
@@ -706,32 +804,66 @@ export async function getLanguageActivationAdminView(input: {
     skipCorpusPlan: deps.skipCorpusInReadiness === true,
   });
 
-  if (job) {
-    const domains = await refreshDomains(job, readiness);
-    const status = deriveActivationJobStatus({
+  if (
+    job &&
+    input.refreshJob !== false &&
+    (job.status === "waiting_for_data" ||
+      job.status === "running" ||
+      job.status === "queued")
+  ) {
+    const latest = (await getLanguageActivationJobById(job.jobId)) ?? job;
+    const claimed = isClaimedActivationStatus(latest.status);
+    const domains = await refreshDomains(latest, readiness, { claimed });
+    let status = deriveActivationJobStatus({
       readiness,
       domains,
       ctEnqueueAttempted: domains.ct.enqueueAttempted,
       plpEnqueueAttempted: domains.plp.enqueueAttempted,
     });
     if (
-      status !== job.status ||
-      domains.webUi.missingKeyCount !== job.domains.webUi.missingKeyCount ||
+      claimed &&
+      status === "waiting_for_data" &&
+      domains.webUi.status !== "failed" &&
+      !domains.webUi.providerFailure &&
+      domains.webUi.dataReady !== true
+    ) {
+      status = latest.status === "queued" ? "queued" : "running";
+    }
+    const raced = await getLanguageActivationJobById(job.jobId);
+    const tickWon =
+      raced != null &&
+      raced.updatedAt !== latest.updatedAt &&
+      isClaimedActivationStatus(raced.status) &&
+      (raced.domains.webUi.status === "in_progress" ||
+        raced.domains.webUi.preparationPhase === "primary" ||
+        raced.domains.webUi.preparationPhase === "quality" ||
+        raced.domains.webUi.preparationPhase === "validating" ||
+        raced.domains.webUi.preparationPhase === "publishing");
+    if (tickWon && raced) {
+      job = raced;
+    } else if (
+      status !== latest.status ||
+      domains.webUi.status !== latest.domains.webUi.status ||
+      domains.webUi.preparationPhase !== latest.domains.webUi.preparationPhase ||
+      domains.webUi.completedBatches !== latest.domains.webUi.completedBatches ||
+      domains.webUi.missingKeyCount !== latest.domains.webUi.missingKeyCount ||
       domains.controlledVocabulary.conceptsMissing !==
-        job.domains.controlledVocabulary.conceptsMissing
+        latest.domains.controlledVocabulary.conceptsMissing
     ) {
       job = {
-        ...job,
+        ...latest,
         status,
         domains,
         diagnosticSummary: buildDiagnosticSummary({ status, readiness, domains }),
         updatedAt: nowIso(),
         completedAt:
           status === "completed" || status === "failed"
-            ? job.completedAt ?? nowIso()
+            ? latest.completedAt ?? nowIso()
             : null,
       };
       await saveLanguageActivationJob(job);
+    } else {
+      job = latest;
     }
   }
 
@@ -791,16 +923,38 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
   readonly scheduled: number;
 }> {
   const checkpoints = await listJobsNeedingWebUiActivationResume();
+  const resumedJobIds = new Set<string>();
   let count = 0;
   for (const checkpoint of checkpoints) {
     const job = await getLanguageActivationJobById(checkpoint.jobId);
     if (!job) {
       continue;
     }
-    if (job.status !== "queued" && job.status !== "running") {
+    if (!isClaimedActivationStatus(job.status)) {
       continue;
     }
     scheduleWebUiActivationTick(job.jobId);
+    resumedJobIds.add(job.jobId);
+    count += 1;
+  }
+  // Claimed jobs that died before the first checkpoint. Never scan historical
+  // waiting_for_data jobs — those have no fresh activation intent.
+  const jobs = await listLanguageActivationJobs();
+  for (const job of jobs) {
+    if (!isClaimedActivationStatus(job.status) || resumedJobIds.has(job.jobId)) {
+      continue;
+    }
+    const webUi = job.domains.webUi;
+    if (
+      webUi.dataReady ||
+      webUi.status === "ready" ||
+      webUi.status === "failed" ||
+      webUi.providerFailure ||
+      webUi.checkpointId
+    ) {
+      continue;
+    }
+    scheduleLanguageActivationJobProcess(job.jobId);
     count += 1;
   }
   return { scheduled: count };

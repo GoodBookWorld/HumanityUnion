@@ -29,6 +29,7 @@ import {
   type AdminLanguageCreateInput,
   type AdminLanguagePatchInput,
 } from "../admin-languages-api";
+import { shouldPollLanguageActivationJob, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS } from "../admin-languages-activation-poll";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -321,6 +322,13 @@ function formatOwnerPreparationProgress(view: LanguageActivationAdminView): stri
     lines.push(
       webUi.detail ?? "Public interface translation failed — retry activation",
     );
+  } else if (
+    webUi.status === "pending" &&
+    (job.status === "running" || job.status === "queued") &&
+    job.domains.brand?.status !== "in_progress" &&
+    job.domains.terminology?.status !== "in_progress"
+  ) {
+    lines.push(webUi.detail ?? "Preparing public interface…");
   } else if (webUi.status === "in_progress" || webUi.preparationPhase) {
     if (webUi.preparationPhase === "quality") {
       lines.push(
@@ -653,6 +661,42 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const languageIds = Object.entries(activationById)
+      .filter((entry): entry is [string, LanguageActivationAdminView] => {
+        const value = entry[1];
+        return (
+          typeof value === "object" &&
+          value != null &&
+          shouldPollLanguageActivationJob(value.job?.status)
+        );
+      })
+      .map(([languageId]) => languageId);
+    if (languageIds.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    const timer = setInterval(() => {
+      for (const languageId of languageIds) {
+        void fetchAdminLanguageActivationStatus(languageId)
+          .then((view) => {
+            if (cancelled) {
+              return;
+            }
+            setActivationById((prev) => ({ ...prev, [languageId]: view }));
+            setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
+          })
+          .catch(() => {
+            /* Keep the last view. Polling must not call Activate. */
+          });
+      }
+    }, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [activationById]);
 
   function openCreate() {
     setEditingId(null);
