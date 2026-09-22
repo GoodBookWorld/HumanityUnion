@@ -34,6 +34,11 @@ import {
   localizationProgressFromActivation,
   localizationProgressFromReadiness,
 } from "../admin-languages-localization-progress";
+import {
+  activationSlotsNeedingHydrateLoading,
+  nextActivationSlotAfterHydrate,
+  nextActivationSlotAfterHydrateError,
+} from "../admin-languages-localization-hydrate";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -719,36 +724,55 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     void load();
   }, [load]);
 
+  const activatingIdRef = useRef(activatingId);
+  activatingIdRef.current = activatingId;
+
+  // Always-visible Localization status: hydrate every language from provider-free
+  // activation-status on Languages visit / refresh / return. Never call Activate.
   useEffect(() => {
     if (items.length === 0) {
       return;
     }
     let cancelled = false;
-    for (const row of items) {
-      void fetchAdminLanguageActivationStatus(row.languageId)
+    const languageIds = items.map((row) => row.languageId);
+    setActivationById((prev) => {
+      const needLoading = activationSlotsNeedingHydrateLoading(languageIds, prev);
+      if (needLoading.length === 0) {
+        return prev;
+      }
+      const next = { ...prev };
+      for (const languageId of needLoading) {
+        next[languageId] = "loading";
+      }
+      return next;
+    });
+    for (const languageId of languageIds) {
+      void fetchAdminLanguageActivationStatus(languageId)
         .then((view) => {
           if (cancelled) {
             return;
           }
-          setActivationById((prev) => {
-            const current = prev[row.languageId];
-            if (current && current !== "error") {
-              return prev;
-            }
-            return { ...prev, [row.languageId]: view };
-          });
+          setActivationById((prev) => ({
+            ...prev,
+            [languageId]: nextActivationSlotAfterHydrate({
+              current: prev[languageId],
+              view,
+              activateInFlight: activatingIdRef.current === languageId,
+            }),
+          }));
+          setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
         })
         .catch(() => {
           if (cancelled) {
             return;
           }
-          setActivationById((prev) => {
-            const current = prev[row.languageId];
-            if (current && current !== "error") {
-              return prev;
-            }
-            return { ...prev, [row.languageId]: "error" };
-          });
+          setActivationById((prev) => ({
+            ...prev,
+            [languageId]: nextActivationSlotAfterHydrateError({
+              current: prev[languageId],
+              activateInFlight: activatingIdRef.current === languageId,
+            }),
+          }));
         });
     }
     return () => {
@@ -756,20 +780,24 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     };
   }, [items]);
 
+  const pollingLanguageIds = Object.entries(activationById)
+    .filter((entry): entry is [string, LanguageActivationAdminView] => {
+      const value = entry[1];
+      return (
+        typeof value === "object" &&
+        value != null &&
+        shouldPollLanguageActivationJob(value.job?.status)
+      );
+    })
+    .map(([languageId]) => languageId)
+    .sort();
+  const pollingKey = pollingLanguageIds.join(",");
+
   useEffect(() => {
-    const languageIds = Object.entries(activationById)
-      .filter((entry): entry is [string, LanguageActivationAdminView] => {
-        const value = entry[1];
-        return (
-          typeof value === "object" &&
-          value != null &&
-          shouldPollLanguageActivationJob(value.job?.status)
-        );
-      })
-      .map(([languageId]) => languageId);
-    if (languageIds.length === 0) {
+    if (pollingKey.length === 0) {
       return;
     }
+    const languageIds = pollingKey.split(",");
     let cancelled = false;
     const timer = setInterval(() => {
       for (const languageId of languageIds) {
@@ -790,7 +818,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       cancelled = true;
       clearInterval(timer);
     };
-  }, [activationById]);
+  }, [pollingKey]);
 
   function openCreate() {
     setEditingId(null);
@@ -1237,12 +1265,14 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         <div className="hu-caption">
                           {progress ? (
                             <LocalizationProgressMeter progress={progress} />
-                          ) : activation === "loading" || readiness === "loading" ? (
+                          ) : activation === undefined ||
+                            activation === "loading" ||
+                            readiness === "loading" ? (
                             <span className="hu-caption">Checking…</span>
                           ) : activation === "error" || readiness === "error" ? (
                             <span className="hu-caption">Unavailable</span>
                           ) : (
-                            <span className="hu-caption">—</span>
+                            <span className="hu-caption">Unavailable</span>
                           )}
                           {detailsOpen && activationView ? (
                             <>

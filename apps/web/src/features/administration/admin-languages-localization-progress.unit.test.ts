@@ -377,8 +377,8 @@ describe("Step 15C.5 localization live progress", () => {
     assert.ok(LANGUAGE_ACTIVATION_POLL_INTERVAL_MS <= 5000);
 
     const section = readFileSync(path.join(here, "components/AdminLanguagesSection.tsx"), "utf8");
-    const pollStart = section.indexOf("shouldPollLanguageActivationJob(value.job?.status)");
-    const pollEnd = section.indexOf("}, [activationById]);");
+    const pollStart = section.indexOf("const pollingKey = pollingLanguageIds.join");
+    const pollEnd = section.indexOf("}, [pollingKey]);", pollStart);
     const poll = section.slice(pollStart, pollEnd);
     assert.match(poll, /fetchAdminLanguageActivationStatus/);
     assert.doesNotMatch(poll, /activateAdminLanguageLocalization/);
@@ -387,11 +387,14 @@ describe("Step 15C.5 localization live progress", () => {
     assert.match(section, /Localization activation/);
     assert.match(section, /Public interface:/);
     assert.match(section, /fetchAdminLanguageLocalizationReadiness\(row\.languageId\)/);
-    const load = section.slice(
-      section.indexOf("for (const row of items)"),
-      section.indexOf("}, [items]);"),
+    const loadStart = section.indexOf(
+      "Always-visible Localization status: hydrate every language",
     );
+    const loadEnd = section.indexOf("}, [items]);", loadStart);
+    const load = section.slice(loadStart, loadEnd);
     assert.match(load, /fetchAdminLanguageActivationStatus/);
     assert.doesNotMatch(load, /activateAdminLanguageLocalization/);
+    assert.match(load, /nextActivationSlotAfterHydrate/);
+    assert.doesNotMatch(load, /if \(current && current !== "error"\)/);
   });
 });

@@ -29,8 +29,8 @@ describe("Admin activation polling", () => {
       path.join(here, "components/AdminLanguagesSection.tsx"),
       "utf8",
     );
-    const start = section.indexOf("shouldPollLanguageActivationJob(value.job?.status)");
-    const end = section.indexOf("}, [activationById]);");
+    const start = section.indexOf("const pollingKey = pollingLanguageIds.join");
+    const end = section.indexOf("}, [pollingKey]);", start);
     assert.ok(start > 0 && end > start);
     const effect = section.slice(start, end);
     assert.match(effect, /fetchAdminLanguageActivationStatus/);
