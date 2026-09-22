@@ -453,27 +453,40 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
     assert.ok(getContentTranslationWorkerPeakConcurrencyForTests() <= 1);
   });
 
-  it("17–22 unexpected keys and structural violations stay rejected; concurrency stays 1", async () => {
+  it("17–22 unexpected keys are discarded then recovered; structural violations stay rejected", async () => {
     const corpus = loadPublicWebUiEnglishCorpus(INCLUDE_PATHS.slice(0, 3));
     const keys = Object.keys(corpus.flat).sort();
-    await assert.rejects(
-      () =>
-        translateWebUiProviderBatch({
-          locale: "eo",
-          englishFlat: corpus.flat,
-          keys,
-          terminologyContext: "LIVE",
-          translator: async () => ({
+    let calls = 0;
+    const recovered = await translateWebUiProviderBatch({
+      locale: "eo",
+      englishFlat: corpus.flat,
+      keys,
+      terminologyContext: "LIVE",
+      translator: async (request) => {
+        calls += 1;
+        const parsed = JSON.parse(request.text) as Record<string, string>;
+        if (calls === 1) {
+          const partial = Object.fromEntries(
+            Object.entries(parsed)
+              .slice(0, -1)
+              .map(([key, value]) => [key, `[xx] ${value}`]),
+          );
+          return {
             translatedText: JSON.stringify({
-              [keys[0]!]: `[xx] ${corpus.flat[keys[0]!]}`,
+              ...partial,
               "unexpected.key": "nope",
             }),
             providerId: "deterministic",
             isPlaceholder: false,
-          }),
-        }),
-      /unexpected keys/,
-    );
+          };
+        }
+        return translateAll(request);
+      },
+    });
+    assert.equal(calls, 2);
+    assert.deepEqual(recovered.discardedUnexpectedKeys, ["unexpected.key"]);
+    assert.equal(Object.keys(recovered.values).includes("unexpected.key"), false);
+    assert.equal(Object.keys(recovered.values).sort().join("|"), keys.join("|"));
 
     await assert.rejects(
       () =>
@@ -575,9 +588,9 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
       section.indexOf("function formatActivationWaitingGaps"),
       section.indexOf("function LocalizationProgressMeter"),
     );
-    assert.doesNotMatch(
+    assert.match(
       gaps,
-      /webUi\?\.providerFailure[\s\S]*Public interface translation failed/,
+      /WEB_UI failures are already shown by formatOwnerPreparationProgress|Detailed WEB_UI failure is shown once/,
     );
     assert.match(section, /formatOwnerPreparationProgress/);
 

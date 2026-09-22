@@ -648,6 +648,15 @@ async function processPrimaryBatchTick(input: {
       missingKeyRecoveryAttempted =
         missingKeyRecoveryAttempted || translated.missingKeyRecoveryAttempted;
       const values = translated.values;
+      const discarded = translated.discardedUnexpectedKeys;
+      let okReason: string | null = null;
+      if (translated.missingKeyRecoveryAttempted && discarded.length > 0) {
+        okReason = `ok after missing-key recovery (discarded unexpected: ${discarded.slice(0, 8).join(", ")})`;
+      } else if (translated.missingKeyRecoveryAttempted) {
+        okReason = "ok after missing-key recovery";
+      } else if (discarded.length > 0) {
+        okReason = `ok (discarded unexpected: ${discarded.slice(0, 8).join(", ")})`;
+      }
       await upsertWebUiActivationBatch({
         checkpointId: checkpoint.checkpointId,
         batchId: nextBatch.id,
@@ -657,9 +666,7 @@ async function processPrimaryBatchTick(input: {
         values,
         status: "ok",
         attempts: providerCalls,
-        reason: translated.missingKeyRecoveryAttempted
-          ? "ok after missing-key recovery"
-          : null,
+        reason: okReason,
         updatedAt: nowIso(deps),
       });
       const completedBatchCount = checkpoint.completedBatchCount + 1;
@@ -832,6 +839,15 @@ async function processQualityBatchTick(input: {
       providerCalls += translated.providerCalls;
       missingKeyRecoveryAttempted =
         missingKeyRecoveryAttempted || translated.missingKeyRecoveryAttempted;
+      const discarded = translated.discardedUnexpectedKeys;
+      let okReason: string | null = null;
+      if (translated.missingKeyRecoveryAttempted && discarded.length > 0) {
+        okReason = `ok after missing-key recovery (discarded unexpected: ${discarded.slice(0, 8).join(", ")})`;
+      } else if (translated.missingKeyRecoveryAttempted) {
+        okReason = "ok after missing-key recovery";
+      } else if (discarded.length > 0) {
+        okReason = `ok (discarded unexpected: ${discarded.slice(0, 8).join(", ")})`;
+      }
       await upsertWebUiActivationBatch({
         checkpointId: checkpoint.checkpointId,
         batchId: nextBatch.id,
@@ -841,9 +857,7 @@ async function processQualityBatchTick(input: {
         values: translated.values,
         status: "ok",
         attempts: providerCalls,
-        reason: translated.missingKeyRecoveryAttempted
-          ? "ok after missing-key recovery"
-          : null,
+        reason: okReason,
         updatedAt: nowIso(deps),
       });
       const qualityCompletedBatchCount = checkpoint.qualityCompletedBatchCount + 1;

@@ -408,6 +408,8 @@ export type WebUiProviderBatchTranslateResult = {
   /** Provider HTTP calls made for this batch (1, or 2 when missing-key recovery ran). */
   readonly providerCalls: number;
   readonly missingKeyRecoveryAttempted: boolean;
+  /** Exact unexpected catalog paths discarded from provider output (never persisted). */
+  readonly discardedUnexpectedKeys: readonly string[];
 };
 
 async function requestWebUiProviderTranslations(input: {
@@ -443,10 +445,33 @@ function restoreValidatedWebUiKey(input: {
 }
 
 /**
+ * Keep only exact expected keys. Unexpected paths are discarded — never remapped
+ * by leaf name, prefix, or similarity.
+ */
+function partitionExpectedProviderKeys(input: {
+  readonly expected: readonly string[];
+  readonly returned: ReadonlyMap<string, string>;
+}): {
+  readonly expectedValues: ReadonlyMap<string, string>;
+  readonly discardedUnexpectedKeys: readonly string[];
+} {
+  const expectedSet = new Set(input.expected);
+  const discardedUnexpectedKeys = [...input.returned.keys()]
+    .filter((key) => !expectedSet.has(key))
+    .sort();
+  const expectedValues = new Map<string, string>();
+  for (const key of input.expected) {
+    if (input.returned.has(key)) {
+      expectedValues.set(key, input.returned.get(key) ?? "");
+    }
+  }
+  return { expectedValues, discardedUnexpectedKeys };
+}
+
+/**
  * Shared single-batch WEB_UI translate: protect → provider → restore → structure assert.
- * If the provider omits some expected keys but returns a structurally valid subset,
- * one recovery request is made for the missing keys only, then results are merged.
- * Unexpected keys are still rejected. Structural violations fail immediately.
+ * Unexpected keys are discarded (never remapped). Missing expected keys get one
+ * bounded recovery request. Structural violations fail immediately.
  * Used by offline draft builder and durable activation ticks. Concurrency remains 1 at caller.
  */
 export async function translateWebUiProviderBatch(input: {
@@ -458,6 +483,7 @@ export async function translateWebUiProviderBatch(input: {
 }): Promise<WebUiProviderBatchTranslateResult> {
   const expected = input.keys;
   let providerCalls = 0;
+  const discardedUnexpectedKeys: string[] = [];
   providerCalls += 1;
   const returned = await requestWebUiProviderTranslations({
     locale: input.locale,
@@ -467,21 +493,14 @@ export async function translateWebUiProviderBatch(input: {
     translator: input.translator,
   });
 
-  const extra = [...returned.keys()].filter((key) => !expected.includes(key));
-  if (extra.length > 0) {
-    throw new WebUiDraftBatchError(
-      `Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`,
-    );
-  }
+  const partitioned = partitionExpectedProviderKeys({ expected, returned });
+  discardedUnexpectedKeys.push(...partitioned.discardedUnexpectedKeys);
 
   const valid: Record<string, string> = {};
-  for (const key of expected) {
-    if (!returned.has(key)) {
-      continue;
-    }
+  for (const [key, providerValue] of partitioned.expectedValues) {
     valid[key] = restoreValidatedWebUiKey({
       key,
-      providerValue: returned.get(key) ?? "",
+      providerValue,
       english: input.englishFlat[key] ?? "",
     });
   }
@@ -498,26 +517,30 @@ export async function translateWebUiProviderBatch(input: {
       terminologyContext: input.terminologyContext,
       translator: input.translator,
     });
-    const recoveryExtra = [...recovered.keys()].filter((key) => !missing.includes(key));
-    if (recoveryExtra.length > 0) {
-      throw new WebUiDraftBatchError(
-        `Provider returned unexpected keys: ${recoveryExtra.slice(0, 8).join(", ")}`,
-      );
-    }
-    for (const key of missing) {
-      if (!recovered.has(key)) {
-        continue;
+    const recoveryPartition = partitionExpectedProviderKeys({
+      expected: missing,
+      returned: recovered,
+    });
+    for (const key of recoveryPartition.discardedUnexpectedKeys) {
+      if (!discardedUnexpectedKeys.includes(key)) {
+        discardedUnexpectedKeys.push(key);
       }
+    }
+    for (const [key, providerValue] of recoveryPartition.expectedValues) {
       valid[key] = restoreValidatedWebUiKey({
         key,
-        providerValue: recovered.get(key) ?? "",
+        providerValue,
         english: input.englishFlat[key] ?? "",
       });
     }
     const stillMissing = expected.filter((key) => valid[key] === undefined);
     if (stillMissing.length > 0) {
+      const discardedNote =
+        discardedUnexpectedKeys.length > 0
+          ? ` (discarded unexpected: ${discardedUnexpectedKeys.slice(0, 8).join(", ")})`
+          : "";
       throw new WebUiDraftBatchError(
-        `Provider omitted keys after recovery: ${stillMissing.slice(0, 8).join(", ")}`,
+        `Provider omitted keys after recovery: ${stillMissing.slice(0, 8).join(", ")}${discardedNote}`,
       );
     }
   }
@@ -534,25 +557,29 @@ export async function translateWebUiProviderBatch(input: {
     values: out,
     providerCalls,
     missingKeyRecoveryAttempted,
+    discardedUnexpectedKeys: [...discardedUnexpectedKeys].sort(),
   };
 }
 
 /** Operator-facing WEB_UI batch failure detail. Never includes translated values. */
 export function sanitizeWebUiActivationFailureDetail(reason: string): string {
   const omitted = reason.match(
-    /Provider omitted keys(?: after recovery)?:\s*(.+)$/i,
+    /Provider omitted keys(?: after recovery)?:\s*([^()]+)/i,
   );
   if (omitted) {
     const count = omitted[1]!
       .split(",")
       .map((part) => part.trim())
       .filter(Boolean).length;
+    if (/discarded unexpected/i.test(reason)) {
+      return "Public interface translation failed: provider did not return the required catalog keys. Retry activation to continue.";
+    }
     return `Public interface translation failed: provider omitted ${count} required key${
       count === 1 ? "" : "s"
     }. Retry activation to continue.`;
   }
   if (/unexpected keys/i.test(reason)) {
-    return "Public interface translation failed: provider returned unexpected keys. Retry activation to continue.";
+    return "Public interface translation failed: provider did not return the required catalog keys. Retry activation to continue.";
   }
   if (/Placeholder|Rich-text|unbalanced|Protection sentinel|Brand/i.test(reason)) {
     return "Public interface translation failed: structure validation rejected the provider response. Retry activation to continue.";

@@ -261,6 +261,20 @@ describe("Step 15C.5 localization live progress", () => {
       }),
     );
     assert.ok(twoHundred.percent > five.percent);
+    // Estimated leaves must not override durable batch progress (21% vs ~8% flip).
+    const withLeafEstimate = webUiLocalizationUnits({
+      webUi: webUi({
+        completedBatches: 18,
+        totalBatches: 379,
+        completedLeaves: 108,
+        totalLeaves: 2240,
+      }),
+      publishedRequired: 2240,
+      publishedMissing: 2240,
+      publishedDataReady: false,
+    });
+    assert.equal(withLeafEstimate.done, 18);
+    assert.equal(withLeafEstimate.total, 379);
   });
 
   it("5–7 quality, validating, and publishing phases keep checkpoint progress", () => {

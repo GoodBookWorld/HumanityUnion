@@ -74,13 +74,19 @@ export function webUiLocalizationUnits(input: {
     webUi?.status === "in_progress";
   if (
     webUi &&
-    (active || webUi.completedBatches > 0 || webUi.completedLeaves > 0)
+    (active ||
+      webUi.completedBatches > 0 ||
+      webUi.completedLeaves > 0 ||
+      phase === "failed")
   ) {
-    if (webUi.totalLeaves > 0 && webUi.completedLeaves > 0) {
-      return units(webUi.completedLeaves, webUi.totalLeaves);
-    }
+    // Batch counts are the authoritative operational signal while a checkpoint
+    // is active or failed. Prefer them over estimated completedLeaves so the
+    // percentage does not collapse when leaf estimates appear.
     if (webUi.totalBatches > 0) {
       return units(webUi.completedBatches, webUi.totalBatches);
+    }
+    if (webUi.totalLeaves > 0) {
+      return units(webUi.completedLeaves, webUi.totalLeaves);
     }
   }
   return units(

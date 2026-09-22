@@ -323,9 +323,7 @@ function formatOwnerPreparationProgress(view: LanguageActivationAdminView): stri
   }
   const webUi = job.domains.webUi;
   if (webUi.status === "failed" || webUi.providerFailure) {
-    lines.push(
-      webUi.detail ?? "Public interface translation failed — retry activation",
-    );
+    // Detailed WEB_UI failure is shown once in LanguageReadinessDetails.
   } else if (
     webUi.status === "pending" &&
     (job.status === "running" || job.status === "queued") &&
@@ -480,6 +478,11 @@ function LanguageReadinessDetails({
             </div>
           ) : null}
           <div>Phase: {phaseLabel ?? "Localization"}</div>
+          {webUi && (webUi.status === "failed" || webUi.providerFailure) ? (
+            <div className="admin-languages__readiness-failure">
+              {webUi.detail ?? "Public interface translation failed — retry activation"}
+            </div>
+          ) : null}
         </section>
       ) : null}
       <section className="admin-languages__readiness-section">
