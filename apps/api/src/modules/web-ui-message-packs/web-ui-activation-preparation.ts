@@ -31,6 +31,7 @@ import {
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
   resolveOfflineWebUiProviderTimeoutMs,
+  sanitizeWebUiActivationFailureDetail,
   translateWebUiProviderBatch,
   unflattenWebUiMessageMap,
   WebUiDraftBuilderError,
@@ -131,7 +132,9 @@ export function webUiProgressFromCheckpoint(input: {
       emptyKeyCount: input.emptyKeyCount,
       requiredKeyCount: input.requiredKeyCount,
       effectiveSource: input.effectiveSource,
-      detail: cp.detail ?? "Public interface translation failed — retry activation",
+      detail:
+        cp.detail ??
+        sanitizeWebUiActivationFailureDetail("Public interface translation failed — retry activation"),
       preparationPhase: "failed",
       checkpointId: cp.checkpointId,
       sourceHash: cp.sourceHash,
@@ -235,6 +238,160 @@ export async function isPublicWebUiAlreadyReady(locale: string): Promise<boolean
   return readiness.dataReady === true;
 }
 
+/**
+ * True when a failed WEB_UI checkpoint can reopen on the same job without
+ * mixing catalogs. Catalog identity uses the durable sourceHash contract.
+ */
+export function isFailedWebUiCheckpointResumable(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly currentSourceHash: string;
+}): boolean {
+  const checkpoint = input.checkpoint;
+  if (checkpoint.phase !== "failed") {
+    return false;
+  }
+  if (checkpoint.sourceHash !== input.currentSourceHash) {
+    return false;
+  }
+  if (/source catalog changed/i.test(checkpoint.detail ?? "")) {
+    return false;
+  }
+  return true;
+}
+
+function reopenPhaseForFailedCheckpoint(
+  checkpoint: WebUiActivationCheckpointRecord,
+): Exclude<WebUiActivationCheckpointRecord["phase"], "failed" | "ready"> {
+  if (checkpoint.completedBatchCount < checkpoint.batchCount) {
+    return "primary";
+  }
+  if (checkpoint.qualityCompletedBatchCount < checkpoint.qualityBatchCount) {
+    return "quality";
+  }
+  if (checkpoint.suspiciousPathCount > 0 && checkpoint.qualityBatchCount === 0) {
+    return "quality";
+  }
+  return "validating";
+}
+
+/**
+ * Reopen a compatible failed checkpoint so the next tick selects the first
+ * non-ok planned batch. Preserves ok rows and the same checkpoint id.
+ */
+export async function reopenFailedWebUiActivationCheckpoint(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly sourceHash: string;
+  readonly deps?: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationCheckpointRecord> {
+  const deps = input.deps ?? {};
+  if (
+    !isFailedWebUiCheckpointResumable({
+      checkpoint: input.checkpoint,
+      currentSourceHash: input.sourceHash,
+    })
+  ) {
+    throw new WebUiDraftBuilderError(
+      "WEB_UI checkpoint is not resumable with the current public catalog.",
+    );
+  }
+  const phase = reopenPhaseForFailedCheckpoint(input.checkpoint);
+  let detail = "Preparing public interface…";
+  if (phase === "primary") {
+    detail = `Preparing public interface… ${input.checkpoint.completedBatchCount} / ${input.checkpoint.batchCount} batches`;
+  } else if (phase === "quality") {
+    detail = `Checking translation quality… ${input.checkpoint.qualityCompletedBatchCount} / ${Math.max(input.checkpoint.qualityBatchCount, 1)}`;
+  } else if (phase === "validating") {
+    detail = "Validating public interface…";
+  } else if (phase === "publishing") {
+    detail = "Publishing public interface…";
+  }
+  const reopened: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase,
+    detail,
+    updatedAt: nowIso(deps),
+  };
+  await upsertWebUiActivationCheckpoint(reopened);
+  return reopened;
+}
+
+/**
+ * Decide whether a failed LanguageActivationJob can resume the same WEB_UI
+ * checkpoint on explicit Activate. Does not mutate when restart is required.
+ */
+export async function evaluateFailedWebUiActivationResume(input: {
+  readonly job: LanguageActivationJobRecord;
+  readonly deps?: WebUiActivationPreparationDeps;
+}): Promise<
+  | {
+      readonly kind: "resume";
+      readonly checkpoint: WebUiActivationCheckpointRecord;
+      readonly webUi: LanguageActivationWebUiDomainProgress;
+    }
+  | {
+      readonly kind: "restart_required";
+      readonly checkpoint: WebUiActivationCheckpointRecord;
+      readonly webUi: LanguageActivationWebUiDomainProgress;
+      readonly detail: string;
+    }
+  | { readonly kind: "not_applicable" }
+> {
+  const deps = input.deps ?? {};
+  const checkpoint = await getWebUiActivationCheckpointByJobId(input.job.jobId);
+  if (!checkpoint || checkpoint.phase !== "failed") {
+    return { kind: "not_applicable" };
+  }
+  const { flat } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+  const sourceHash = hashWebUiEnglishFlatMap(flat);
+  if (
+    !isFailedWebUiCheckpointResumable({
+      checkpoint,
+      currentSourceHash: sourceHash,
+    })
+  ) {
+    const detail =
+      "Public interface source catalog changed. Retry activation to start a new preparation.";
+    const failed: WebUiActivationCheckpointRecord = {
+      ...checkpoint,
+      phase: "failed",
+      detail,
+      updatedAt: nowIso(deps),
+    };
+    await upsertWebUiActivationCheckpoint(failed);
+    return {
+      kind: "restart_required",
+      checkpoint: failed,
+      detail,
+      webUi: webUiProgressFromCheckpoint({
+        readinessDataReady: false,
+        missingKeyCount: failed.leafCount,
+        emptyKeyCount: 0,
+        requiredKeyCount: failed.leafCount,
+        effectiveSource: "none",
+        checkpoint: failed,
+      }),
+    };
+  }
+  const reopened = await reopenFailedWebUiActivationCheckpoint({
+    checkpoint,
+    sourceHash,
+    deps,
+  });
+  return {
+    kind: "resume",
+    checkpoint: reopened,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: Math.max(0, reopened.leafCount - reopened.completedBatchCount * 6),
+      emptyKeyCount: 0,
+      requiredKeyCount: reopened.leafCount,
+      effectiveSource: "none",
+      checkpoint: reopened,
+      completedLeaves: Math.min(reopened.leafCount, reopened.completedBatchCount * 6),
+    }),
+  };
+}
+
 export async function ensureWebUiActivationCheckpoint(input: {
   readonly job: LanguageActivationJobRecord;
   readonly deps?: WebUiActivationPreparationDeps;
@@ -289,9 +446,14 @@ export async function ensureWebUiActivationCheckpoint(input: {
         }),
       };
     }
-    if (existing.phase !== "failed") {
-      return {
+    if (existing.phase === "failed") {
+      const reopened = await reopenFailedWebUiActivationCheckpoint({
         checkpoint: existing,
+        sourceHash,
+        deps,
+      });
+      return {
+        checkpoint: reopened,
         skipped: false,
         webUi: webUiProgressFromCheckpoint({
           readinessDataReady: false,
@@ -299,10 +461,22 @@ export async function ensureWebUiActivationCheckpoint(input: {
           emptyKeyCount: readiness.emptyKeyCount,
           requiredKeyCount: readiness.requiredKeyCount,
           effectiveSource: "none",
-          checkpoint: existing,
+          checkpoint: reopened,
         }),
       };
     }
+    return {
+      checkpoint: existing,
+      skipped: false,
+      webUi: webUiProgressFromCheckpoint({
+        readinessDataReady: false,
+        missingKeyCount: readiness.missingKeyCount,
+        emptyKeyCount: readiness.emptyKeyCount,
+        requiredKeyCount: readiness.requiredKeyCount,
+        effectiveSource: "none",
+        checkpoint: existing,
+      }),
+    };
   }
 
   const metadata = await resolveLanguagePreparationLocaleMetadata({
@@ -459,17 +633,21 @@ async function processPrimaryBatchTick(input: {
   let attempt = 0;
   let lastReason = "Provider batch failed.";
   let providerCalls = 0;
+  let missingKeyRecoveryAttempted = false;
   while (attempt < 2) {
     attempt += 1;
     try {
-      providerCalls += 1;
-      const values = await translateWebUiProviderBatch({
+      const translated = await translateWebUiProviderBatch({
         locale: checkpoint.locale,
         englishFlat: flat,
         keys: nextBatch.keys,
         terminologyContext,
         translator,
       });
+      providerCalls += translated.providerCalls;
+      missingKeyRecoveryAttempted =
+        missingKeyRecoveryAttempted || translated.missingKeyRecoveryAttempted;
+      const values = translated.values;
       await upsertWebUiActivationBatch({
         checkpointId: checkpoint.checkpointId,
         batchId: nextBatch.id,
@@ -478,8 +656,10 @@ async function processPrimaryBatchTick(input: {
         keys: nextBatch.keys,
         values,
         status: "ok",
-        attempts: attempt,
-        reason: null,
+        attempts: providerCalls,
+        reason: translated.missingKeyRecoveryAttempted
+          ? "ok after missing-key recovery"
+          : null,
         updatedAt: nowIso(deps),
       });
       const completedBatchCount = checkpoint.completedBatchCount + 1;
@@ -490,7 +670,6 @@ async function processPrimaryBatchTick(input: {
         updatedAt: nowIso(deps),
       };
       await upsertWebUiActivationCheckpoint(checkpoint);
-      const more = completedBatchCount < checkpoint.batchCount;
       return {
         done: false,
         needsAnotherTick: true,
@@ -509,7 +688,15 @@ async function processPrimaryBatchTick(input: {
       };
     } catch (error) {
       lastReason = error instanceof Error ? error.message : "Provider batch failed.";
+      const recoveryInThisAttempt = /omitted keys after recovery/i.test(lastReason);
+      if (recoveryInThisAttempt) {
+        missingKeyRecoveryAttempted = true;
+        providerCalls += 2;
+      } else {
+        providerCalls += 1;
+      }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
+        const operatorDetail = sanitizeWebUiActivationFailureDetail(lastReason);
         await upsertWebUiActivationBatch({
           checkpointId: checkpoint.checkpointId,
           batchId: nextBatch.id,
@@ -518,15 +705,17 @@ async function processPrimaryBatchTick(input: {
           keys: nextBatch.keys,
           values: {},
           status: "failed",
-          attempts: attempt,
-          reason: lastReason,
+          attempts: providerCalls,
+          reason: missingKeyRecoveryAttempted
+            ? `${lastReason} (missing-key recovery attempted)`
+            : lastReason,
           updatedAt: nowIso(deps),
         });
         checkpoint = {
           ...checkpoint,
           phase: "failed",
           failedBatchCount: checkpoint.failedBatchCount + 1,
-          detail: "Public interface translation failed — retry activation",
+          detail: operatorDetail,
           updatedAt: nowIso(deps),
         };
         await upsertWebUiActivationCheckpoint(checkpoint);
@@ -629,27 +818,32 @@ async function processQualityBatchTick(input: {
   let attempt = 0;
   let providerCalls = 0;
   let lastReason = "Quality batch failed.";
+  let missingKeyRecoveryAttempted = false;
   while (attempt < 2) {
     attempt += 1;
     try {
-      providerCalls += 1;
-      const values = await translateWebUiProviderBatch({
+      const translated = await translateWebUiProviderBatch({
         locale: checkpoint.locale,
         englishFlat: flat,
         keys: nextBatch.keys,
         terminologyContext,
         translator,
       });
+      providerCalls += translated.providerCalls;
+      missingKeyRecoveryAttempted =
+        missingKeyRecoveryAttempted || translated.missingKeyRecoveryAttempted;
       await upsertWebUiActivationBatch({
         checkpointId: checkpoint.checkpointId,
         batchId: nextBatch.id,
         phase: "quality",
         namespace: nextBatch.namespace,
         keys: nextBatch.keys,
-        values,
+        values: translated.values,
         status: "ok",
-        attempts: attempt,
-        reason: null,
+        attempts: providerCalls,
+        reason: translated.missingKeyRecoveryAttempted
+          ? "ok after missing-key recovery"
+          : null,
         updatedAt: nowIso(deps),
       });
       const qualityCompletedBatchCount = checkpoint.qualityCompletedBatchCount + 1;
@@ -679,6 +873,13 @@ async function processQualityBatchTick(input: {
       };
     } catch (error) {
       lastReason = error instanceof Error ? error.message : "Quality batch failed.";
+      const recoveryInThisAttempt = /omitted keys after recovery/i.test(lastReason);
+      if (recoveryInThisAttempt) {
+        missingKeyRecoveryAttempted = true;
+        providerCalls += 2;
+      } else {
+        providerCalls += 1;
+      }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
         await upsertWebUiActivationBatch({
           checkpointId: checkpoint.checkpointId,
@@ -688,14 +889,16 @@ async function processQualityBatchTick(input: {
           keys: nextBatch.keys,
           values: {},
           status: "failed",
-          attempts: attempt,
-          reason: lastReason,
+          attempts: providerCalls,
+          reason: missingKeyRecoveryAttempted
+            ? `${lastReason} (missing-key recovery attempted)`
+            : lastReason,
           updatedAt: nowIso(deps),
         });
         checkpoint = {
           ...checkpoint,
           phase: "failed",
-          detail: "Public interface translation failed — retry activation",
+          detail: sanitizeWebUiActivationFailureDetail(lastReason),
           updatedAt: nowIso(deps),
         };
         await upsertWebUiActivationCheckpoint(checkpoint);

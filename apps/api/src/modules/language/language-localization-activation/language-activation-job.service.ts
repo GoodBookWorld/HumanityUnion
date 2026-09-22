@@ -63,6 +63,7 @@ import {
 } from "../../language-preparation/language-owner-preparation.js";
 import { withContentTranslationWorkerSlot } from "../content-translation-worker-concurrency.js";
 import {
+  evaluateFailedWebUiActivationResume,
   listJobsNeedingWebUiActivationResume,
   processWebUiActivationTick,
   webUiProgressFromCheckpoint,
@@ -372,6 +373,76 @@ export async function startOrResumeLanguageActivationJob(input: {
         readiness,
         notes: ["Activation already completed for this locale; no new job created."],
       });
+    }
+  }
+
+  if (latest?.status === "failed" && deps.skipWebUiPreparation !== true) {
+    const resume = await evaluateFailedWebUiActivationResume({
+      job: latest,
+      deps: deps.webUiPreparationDeps,
+    });
+    if (resume.kind === "resume") {
+      const readiness = await evaluate({
+        locale,
+        registryRecord: record,
+        plannerDeps: deps.plannerDeps,
+        skipCorpusPlan: deps.skipCorpusInReadiness === true,
+      });
+      const domains = await refreshDomains(
+        {
+          ...latest,
+          domains: {
+            ...latest.domains,
+            webUi: resume.webUi,
+          },
+        },
+        readiness,
+        { claimed: true },
+      );
+      const resumed: LanguageActivationJobRecord = {
+        ...latest,
+        status: "running",
+        domains: {
+          ...domains,
+          webUi: resume.webUi,
+        },
+        lastError: null,
+        completedAt: null,
+        startedAt: latest.startedAt ?? nowIso(),
+        diagnosticSummary: resume.webUi.detail ?? "running — Preparing public interface…",
+        updatedAt: nowIso(),
+      };
+      await saveLanguageActivationJob(resumed);
+      if (input.scheduleProcess !== false) {
+        scheduleLanguageActivationJobProcess(resumed.jobId);
+      }
+      return toAdminView({
+        job: resumed,
+        readiness,
+        notes: [
+          "Resumed existing failed WEB_UI activation on the same checkpoint. Completed batches are preserved; no provider in this request.",
+        ],
+      });
+    }
+    if (resume.kind === "restart_required") {
+      const readiness = await evaluate({
+        locale,
+        registryRecord: record,
+        plannerDeps: deps.plannerDeps,
+        skipCorpusPlan: deps.skipCorpusInReadiness === true,
+      });
+      const failed: LanguageActivationJobRecord = {
+        ...latest,
+        domains: {
+          ...latest.domains,
+          webUi: resume.webUi,
+        },
+        lastError: resume.detail,
+        diagnosticSummary: `failed — WEB_UI: ${resume.detail}`,
+        updatedAt: nowIso(),
+      };
+      await saveLanguageActivationJob(failed);
+      // Fall through to create a new generation — catalog identity changed.
     }
   }
 

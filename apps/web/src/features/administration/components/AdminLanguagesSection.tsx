@@ -375,19 +375,19 @@ function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[
   if (job.status === "failed") {
     if (
       job.domains.brand?.providerFailure ||
-      job.domains.terminology?.providerFailure ||
-      job.domains.webUi?.providerFailure
+      job.domains.terminology?.providerFailure
     ) {
+      // WEB_UI failures are already shown by formatOwnerPreparationProgress.
       lines.push(
-        job.domains.webUi?.providerFailure
-          ? (job.domains.webUi.detail ??
-              "Public interface translation failed — retry activation")
-          : (job.domains.terminology?.detail ??
-              job.domains.brand?.detail ??
+        job.domains.terminology?.providerFailure
+          ? (job.domains.terminology.detail ??
+              "Terminology preparation failed — retry activation")
+          : (job.domains.brand?.detail ??
               "Localization preparation failed — retry activation after the translation provider is available."),
       );
       return lines;
     }
+    return lines;
   }
   if (job.status !== "waiting_for_data") {
     return lines;

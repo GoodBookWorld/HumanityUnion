@@ -403,17 +403,20 @@ function isNonRetryable(error: unknown): boolean {
   );
 }
 
-/**
- * Shared single-batch WEB_UI translate: protect → provider → restore → structure assert.
- * Used by offline draft builder and durable activation ticks. Concurrency remains 1 at caller.
- */
-export async function translateWebUiProviderBatch(input: {
+export type WebUiProviderBatchTranslateResult = {
+  readonly values: Readonly<Record<string, string>>;
+  /** Provider HTTP calls made for this batch (1, or 2 when missing-key recovery ran). */
+  readonly providerCalls: number;
+  readonly missingKeyRecoveryAttempted: boolean;
+};
+
+async function requestWebUiProviderTranslations(input: {
   readonly locale: string;
   readonly englishFlat: Readonly<Record<string, string>>;
   readonly keys: readonly string[];
   readonly terminologyContext: string;
   readonly translator: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
-}): Promise<Readonly<Record<string, string>>> {
+}): Promise<Map<string, string>> {
   const payloadObject: Record<string, string> = {};
   for (const key of input.keys) {
     payloadObject[key] = protectWebUiMessageForProvider(input.englishFlat[key] ?? "").text;
@@ -426,25 +429,141 @@ export async function translateWebUiProviderBatch(input: {
     terminologyContext: input.terminologyContext,
     safetyCleared: true,
   });
-  const returned = parseTranslations(result.translatedText);
-  const missing = input.keys.filter((key) => !returned.has(key));
-  if (missing.length > 0) {
-    throw new WebUiDraftBatchError(`Provider omitted keys: ${missing.slice(0, 8).join(", ")}`);
-  }
-  const extra = [...returned.keys()].filter((key) => !input.keys.includes(key));
+  return parseTranslations(result.translatedText);
+}
+
+function restoreValidatedWebUiKey(input: {
+  readonly key: string;
+  readonly providerValue: string;
+  readonly english: string;
+}): string {
+  const restored = restoreWebUiMessageFromProvider(input.providerValue, input.english);
+  assertStructureMatches(input.english, restored);
+  return restored;
+}
+
+/**
+ * Shared single-batch WEB_UI translate: protect → provider → restore → structure assert.
+ * If the provider omits some expected keys but returns a structurally valid subset,
+ * one recovery request is made for the missing keys only, then results are merged.
+ * Unexpected keys are still rejected. Structural violations fail immediately.
+ * Used by offline draft builder and durable activation ticks. Concurrency remains 1 at caller.
+ */
+export async function translateWebUiProviderBatch(input: {
+  readonly locale: string;
+  readonly englishFlat: Readonly<Record<string, string>>;
+  readonly keys: readonly string[];
+  readonly terminologyContext: string;
+  readonly translator: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
+}): Promise<WebUiProviderBatchTranslateResult> {
+  const expected = input.keys;
+  let providerCalls = 0;
+  providerCalls += 1;
+  const returned = await requestWebUiProviderTranslations({
+    locale: input.locale,
+    englishFlat: input.englishFlat,
+    keys: expected,
+    terminologyContext: input.terminologyContext,
+    translator: input.translator,
+  });
+
+  const extra = [...returned.keys()].filter((key) => !expected.includes(key));
   if (extra.length > 0) {
-    throw new WebUiDraftBatchError(`Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`);
-  }
-  const out: Record<string, string> = {};
-  for (const key of input.keys) {
-    const restored = restoreWebUiMessageFromProvider(
-      returned.get(key) ?? "",
-      input.englishFlat[key] ?? "",
+    throw new WebUiDraftBatchError(
+      `Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`,
     );
-    assertStructureMatches(input.englishFlat[key] ?? "", restored);
-    out[key] = restored;
   }
-  return out;
+
+  const valid: Record<string, string> = {};
+  for (const key of expected) {
+    if (!returned.has(key)) {
+      continue;
+    }
+    valid[key] = restoreValidatedWebUiKey({
+      key,
+      providerValue: returned.get(key) ?? "",
+      english: input.englishFlat[key] ?? "",
+    });
+  }
+
+  const missing = expected.filter((key) => valid[key] === undefined);
+  let missingKeyRecoveryAttempted = false;
+  if (missing.length > 0) {
+    missingKeyRecoveryAttempted = true;
+    providerCalls += 1;
+    const recovered = await requestWebUiProviderTranslations({
+      locale: input.locale,
+      englishFlat: input.englishFlat,
+      keys: missing,
+      terminologyContext: input.terminologyContext,
+      translator: input.translator,
+    });
+    const recoveryExtra = [...recovered.keys()].filter((key) => !missing.includes(key));
+    if (recoveryExtra.length > 0) {
+      throw new WebUiDraftBatchError(
+        `Provider returned unexpected keys: ${recoveryExtra.slice(0, 8).join(", ")}`,
+      );
+    }
+    for (const key of missing) {
+      if (!recovered.has(key)) {
+        continue;
+      }
+      valid[key] = restoreValidatedWebUiKey({
+        key,
+        providerValue: recovered.get(key) ?? "",
+        english: input.englishFlat[key] ?? "",
+      });
+    }
+    const stillMissing = expected.filter((key) => valid[key] === undefined);
+    if (stillMissing.length > 0) {
+      throw new WebUiDraftBatchError(
+        `Provider omitted keys after recovery: ${stillMissing.slice(0, 8).join(", ")}`,
+      );
+    }
+  }
+
+  const out: Record<string, string> = {};
+  for (const key of expected) {
+    const value = valid[key];
+    if (value === undefined) {
+      throw new WebUiDraftBatchError(`Provider omitted keys: ${key}`);
+    }
+    out[key] = value;
+  }
+  return {
+    values: out,
+    providerCalls,
+    missingKeyRecoveryAttempted,
+  };
+}
+
+/** Operator-facing WEB_UI batch failure detail. Never includes translated values. */
+export function sanitizeWebUiActivationFailureDetail(reason: string): string {
+  const omitted = reason.match(
+    /Provider omitted keys(?: after recovery)?:\s*(.+)$/i,
+  );
+  if (omitted) {
+    const count = omitted[1]!
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean).length;
+    return `Public interface translation failed: provider omitted ${count} required key${
+      count === 1 ? "" : "s"
+    }. Retry activation to continue.`;
+  }
+  if (/unexpected keys/i.test(reason)) {
+    return "Public interface translation failed: provider returned unexpected keys. Retry activation to continue.";
+  }
+  if (/Placeholder|Rich-text|unbalanced|Protection sentinel|Brand/i.test(reason)) {
+    return "Public interface translation failed: structure validation rejected the provider response. Retry activation to continue.";
+  }
+  if (/timed out|timeout/i.test(reason)) {
+    return "Public interface translation failed: provider timed out. Retry activation to continue.";
+  }
+  if (/rate_limited|HTTP 429/i.test(reason)) {
+    return "Public interface translation failed: provider rate limited. Retry activation to continue.";
+  }
+  return "Public interface translation failed — retry activation";
 }
 
 /** Load the canonical English public WEB_UI flat map + required paths. */
@@ -812,14 +931,13 @@ export async function runWebUiDraftBuilder(
           terminologyContext,
           translator,
         });
-        providerCalls += 1;
+        providerCalls += restoredBatch.providerCalls;
         for (const key of batch.keys) {
-          translated[key] = restoredBatch[key]!;
+          translated[key] = restoredBatch.values[key]!;
         }
         done = true;
         log(`[${batchIndex + 1}/${batches.length}] ${batch.namespace} — ok`);
       } catch (error) {
-        providerCalls += 1;
         lastReason = error instanceof Error ? error.message : "Provider batch failed.";
         if (isNonRetryable(error) || attempt >= 2) {
           const checkpoint: BatchCheckpoint = {
