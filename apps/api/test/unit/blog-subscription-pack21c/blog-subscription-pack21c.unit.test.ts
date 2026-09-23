@@ -29,6 +29,11 @@ import {
   resetBlogSubscribersForTests,
   upsertBlogSubscriberRecord,
 } from "../../../src/modules/blog/persistence/blog-subscriber.repository.js";
+import {
+  installBlogSubscriptionSecurityTestSeams,
+  uninstallBlogSubscriptionSecurityTestSeams,
+  validTurnstileTokenForTests,
+} from "../blog-subscription-email-security-02b/blog-subscription-email-security-02b.helpers.js";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -65,6 +70,7 @@ describe("Pack 21C — Admin subscribers directory", () => {
   beforeEach(() => {
     resetBlogSubscribersForTests();
     resetBlogSubscriptionRateLimitsForTests();
+    installBlogSubscriptionSecurityTestSeams();
     setBlogSubscriberAdminActorOverrideForTests({
       userId: "admin-1",
       participantId: "participant-admin-1",
@@ -76,6 +82,7 @@ describe("Pack 21C — Admin subscribers directory", () => {
   afterEach(() => {
     setBlogSubscriberAdminActorOverrideForTests(null);
     setBlogSubscriberDisplayNameResolverForTests(null);
+    uninstallBlogSubscriptionSecurityTestSeams();
   });
 
   it("Admin-only list; non-Admin cannot enumerate", async () => {
@@ -234,6 +241,7 @@ describe("Pack 21C — Admin subscribers directory", () => {
     const accepted = await requestBlogSubscription({
       email: "resub21c@example.com",
       ipKey: "21c-resub",
+      turnstileToken: validTurnstileTokenForTests("21c-resub"),
     });
     assert.equal(accepted.accepted, true);
     const pending = await findBlogSubscriberByNormalizedEmail("resub21c@example.com");

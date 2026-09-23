@@ -74,6 +74,10 @@
   color: var(--hu-color-danger);
 }
 
+.blog-subscribe__turnstile {
+  min-height: 65px;
+}
+
 @media (min-width: 900px) {
   .blog-page__header {
     flex-direction: row;

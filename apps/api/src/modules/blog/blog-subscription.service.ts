@@ -1,5 +1,6 @@
 /**
  * Pack 21A — public Blog subscription lifecycle (subscribe / confirm / unsubscribe).
+ * EMAIL SECURITY 02B — durable abuse limits + Turnstile + privacy-safe audit.
  */
 import { randomUUID } from "node:crypto";
 
@@ -21,7 +22,11 @@ import {
   normalizeBlogSubscriptionEmail,
   toBlogSubscriptionEmailDisplay,
 } from "./blog-subscription-email.js";
-import { assertBlogSubscriptionSubscribeAllowed } from "./blog-subscription-rate-limit.js";
+import {
+  hashBlogSubscriptionSourceIp,
+  hashRecipientEmail,
+} from "./blog-subscription-privacy-hash.js";
+import { createBlogSubscriptionRateLimitError } from "./blog-subscription-rate-limit.js";
 import { resolveEffectiveBlogSubscriptionWelcomeMessage } from "./blog-subscription-settings.admin.service.js";
 import {
   generateBlogSubscriptionRawToken,
@@ -29,6 +34,13 @@ import {
   isBlogSubscriptionConfirmExpired,
   resolveBlogSubscriptionConfirmExpiresAt,
 } from "./blog-subscription-tokens.js";
+import { verifyBlogSubscriptionTurnstile } from "./blog-subscription-turnstile.js";
+import {
+  authorizeBlogSubscriptionConfirmationSend,
+  consumeBlogSubscriptionIpBudget,
+  isBlogSubscriptionAbuseUnavailableError,
+} from "./persistence/blog-subscription-abuse.repository.js";
+import { recordBlogSubscriptionSecurityEvent } from "./persistence/blog-subscription-security-event.repository.js";
 import {
   claimBlogSubscriberWelcomeSend,
   completeBlogSubscriberWelcomeSend,
@@ -44,6 +56,8 @@ const GENERIC_SUBSCRIBE_MESSAGE = "Check your email to confirm your subscription
 const GENERIC_CONFIRM_MESSAGE = "Your Blog subscription is confirmed.";
 const GENERIC_UNSUBSCRIBE_MESSAGE = "You have been unsubscribed from Blog publications.";
 const GENERIC_TOKEN_MESSAGE = "This link is invalid or has expired.";
+const GENERIC_UNAVAILABLE_MESSAGE =
+  "Unable to process your subscription right now. Please try again later.";
 
 async function resolveOptionalParticipantId(emailNormalized: string): Promise<string | undefined> {
   if (process.env.BLOG_SUBSCRIBER_FORCE_MEMORY === "true" || !isMongoConfigured()) {
@@ -93,56 +107,159 @@ export async function sendBlogSubscriptionConfirmationEmail(input: {
   to: string;
   rawConfirmToken: string;
   rawUnsubscribeToken: string;
-}): Promise<void> {
+}): Promise<string | undefined> {
   const config = resolveEmailConfig();
   const base = config.publicSiteUrl.replace(/\/$/, "");
   const confirmationUrl = `${base}/blog/subscribe/confirm?token=${encodeURIComponent(input.rawConfirmToken)}`;
   const unsubscribeUrl = `${base}/blog/subscribe/unsubscribe?token=${encodeURIComponent(input.rawUnsubscribeToken)}`;
 
-  await sendTransactionalEmail({
-    to: input.to,
-    template: "blog_subscription_confirm",
-    templateInput: {
-      confirmationUrl,
-      unsubscribeUrl,
-    },
-  }).catch((error: unknown) => {
+  try {
+    return await sendTransactionalEmail({
+      to: input.to,
+      template: "blog_subscription_confirm",
+      templateInput: {
+        confirmationUrl,
+        unsubscribeUrl,
+      },
+    });
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "confirm_email_failed";
     console.error(
       `[blog-subscription] confirm email failed | domain=${recipientDomainForLogs(input.to)} reason=${message}`,
     );
-  });
+    return undefined;
+  }
 }
 
 /**
  * Public subscribe — always returns a generic accepted message (no existence oracle).
+ * EMAIL SECURITY 02B: validate → IP budget → Turnstile → state/email auth → send.
  */
 export async function requestBlogSubscription(input: {
   email: unknown;
+  turnstileToken?: unknown;
   ipKey: string;
+  correlationId?: string;
 }): Promise<PublicBlogSubscribeResponse> {
+  const sourceIpHash = hashBlogSubscriptionSourceIp(input.ipKey);
+  const correlationId = input.correlationId?.trim() || undefined;
+
+  const audit = async (event: {
+    outcome: "allowed_send" | "allowed_no_send" | "blocked";
+    reason:
+      | "invalid_email"
+      | "ip_limit"
+      | "email_cooldown"
+      | "email_daily_cap"
+      | "turnstile_missing"
+      | "turnstile_invalid"
+      | "turnstile_unavailable"
+      | "subscribed_noop"
+      | "pending_cooldown"
+      | "mongo_unavailable"
+      | "ok_send"
+      | "ok_no_send";
+    recipientHash: string;
+    emailAuditId?: string;
+    template?: string;
+  }) => {
+    await recordBlogSubscriptionSecurityEvent({
+      outcome: event.outcome,
+      reason: event.reason,
+      recipientHash: event.recipientHash,
+      sourceIpHash,
+      ...(correlationId ? { correlationId } : {}),
+      ...(event.emailAuditId ? { emailAuditId: event.emailAuditId } : {}),
+      ...(event.template ? { template: event.template } : {}),
+    });
+  };
+
   if (typeof input.email !== "string" || !isValidBlogSubscriptionEmail(input.email)) {
+    await audit({
+      outcome: "blocked",
+      reason: "invalid_email",
+      recipientHash: "invalid",
+    });
     throw new BlogValidationError("A valid email address is required.");
   }
 
   const emailNormalized = normalizeBlogSubscriptionEmail(input.email);
   const emailDisplay = toBlogSubscriptionEmailDisplay(input.email);
+  const recipientHash = hashRecipientEmail(emailNormalized);
 
-  assertBlogSubscriptionSubscribeAllowed({
-    emailNormalized,
-    ipKey: input.ipKey,
+  try {
+    const ipAllowed = await consumeBlogSubscriptionIpBudget(sourceIpHash);
+    if (!ipAllowed) {
+      await audit({ outcome: "blocked", reason: "ip_limit", recipientHash });
+      throw createBlogSubscriptionRateLimitError();
+    }
+  } catch (error) {
+    if (isBlogSubscriptionAbuseUnavailableError(error)) {
+      await audit({ outcome: "blocked", reason: "mongo_unavailable", recipientHash });
+      throw new BlogValidationError(GENERIC_UNAVAILABLE_MESSAGE);
+    }
+    throw error;
+  }
+
+  const turnstile = await verifyBlogSubscriptionTurnstile({
+    token: input.turnstileToken,
+    remoteIp: input.ipKey,
   });
+  if (!turnstile.ok) {
+    await audit({ outcome: "blocked", reason: turnstile.reason, recipientHash });
+    if (turnstile.reason === "turnstile_missing") {
+      throw new BlogValidationError("Security verification is required.");
+    }
+    if (turnstile.reason === "turnstile_unavailable") {
+      throw new BlogValidationError(GENERIC_UNAVAILABLE_MESSAGE);
+    }
+    throw new BlogValidationError("Security verification failed. Please try again.");
+  }
 
-  const existing = await findBlogSubscriberByNormalizedEmail(emailNormalized);
-  const now = new Date().toISOString();
-  const participantId = await resolveOptionalParticipantId(emailNormalized);
+  let existing: BlogSubscriberRecord | null;
+  try {
+    existing = await findBlogSubscriberByNormalizedEmail(emailNormalized);
+  } catch {
+    await audit({ outcome: "blocked", reason: "mongo_unavailable", recipientHash });
+    throw new BlogValidationError(GENERIC_UNAVAILABLE_MESSAGE);
+  }
 
   if (existing?.status === "subscribed") {
+    await audit({
+      outcome: "allowed_no_send",
+      reason: "subscribed_noop",
+      recipientHash,
+    });
     return { accepted: true, message: GENERIC_SUBSCRIBE_MESSAGE };
   }
 
+  let sendAuth: Awaited<ReturnType<typeof authorizeBlogSubscriptionConfirmationSend>>;
+  try {
+    sendAuth = await authorizeBlogSubscriptionConfirmationSend(recipientHash);
+  } catch (error) {
+    if (isBlogSubscriptionAbuseUnavailableError(error)) {
+      await audit({ outcome: "blocked", reason: "mongo_unavailable", recipientHash });
+      throw new BlogValidationError(GENERIC_UNAVAILABLE_MESSAGE);
+    }
+    throw error;
+  }
+
+  if (!sendAuth.allowed) {
+    const pending =
+      existing?.status === "not_confirmed" && sendAuth.reason === "email_cooldown";
+    await audit({
+      outcome: "allowed_no_send",
+      reason: pending ? "pending_cooldown" : sendAuth.reason,
+      recipientHash,
+    });
+    return { accepted: true, message: GENERIC_SUBSCRIBE_MESSAGE };
+  }
+
+  const now = new Date().toISOString();
+  const participantId = await resolveOptionalParticipantId(emailNormalized);
+  const tokens = issueBlogSubscriptionTokens();
+
   if (existing) {
-    const tokens = issueBlogSubscriptionTokens();
     const updated: BlogSubscriberRecord = {
       subscriberId: existing.subscriberId,
       emailNormalized: existing.emailNormalized,
@@ -157,7 +274,6 @@ export async function requestBlogSubscription(input: {
           : {}),
       ...(existing.countryCode ? { countryCode: existing.countryCode } : {}),
       emailsSent: existing.emailsSent,
-      // Pack 21B — new confirmation lifecycle may receive a new Welcome email.
       confirmTokenHash: tokens.confirmTokenHash,
       confirmTokenExpiresAt: tokens.confirmTokenExpiresAt,
       unsubscribeTokenHash: tokens.unsubscribeTokenHash,
@@ -165,36 +281,38 @@ export async function requestBlogSubscription(input: {
       updatedAt: now,
     };
     await upsertBlogSubscriberRecord(updated);
-    await sendBlogSubscriptionConfirmationEmail({
-      to: emailNormalized,
-      rawConfirmToken: tokens.rawConfirmToken,
-      rawUnsubscribeToken: tokens.rawUnsubscribeToken,
-    });
-    return { accepted: true, message: GENERIC_SUBSCRIBE_MESSAGE };
+  } else {
+    const created: BlogSubscriberRecord = {
+      subscriberId: randomUUID(),
+      emailNormalized,
+      emailDisplay,
+      status: "not_confirmed",
+      subscriptionType: "blog_publications",
+      ...(participantId ? { participantId } : {}),
+      emailsSent: 0,
+      confirmTokenHash: tokens.confirmTokenHash,
+      confirmTokenExpiresAt: tokens.confirmTokenExpiresAt,
+      unsubscribeTokenHash: tokens.unsubscribeTokenHash,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await upsertBlogSubscriberRecord(created);
   }
 
-  const subscriberId = randomUUID();
-  const tokens = issueBlogSubscriptionTokens();
-  const created: BlogSubscriberRecord = {
-    subscriberId,
-    emailNormalized,
-    emailDisplay,
-    status: "not_confirmed",
-    subscriptionType: "blog_publications",
-    ...(participantId ? { participantId } : {}),
-    emailsSent: 0,
-    confirmTokenHash: tokens.confirmTokenHash,
-    confirmTokenExpiresAt: tokens.confirmTokenExpiresAt,
-    unsubscribeTokenHash: tokens.unsubscribeTokenHash,
-    createdAt: now,
-    updatedAt: now,
-  };
-  await upsertBlogSubscriberRecord(created);
-  await sendBlogSubscriptionConfirmationEmail({
+  const emailAuditId = await sendBlogSubscriptionConfirmationEmail({
     to: emailNormalized,
     rawConfirmToken: tokens.rawConfirmToken,
     rawUnsubscribeToken: tokens.rawUnsubscribeToken,
   });
+
+  await audit({
+    outcome: "allowed_send",
+    reason: "ok_send",
+    recipientHash,
+    ...(emailAuditId ? { emailAuditId } : {}),
+    template: "blog_subscription_confirm",
+  });
+
   return { accepted: true, message: GENERIC_SUBSCRIBE_MESSAGE };
 }
 

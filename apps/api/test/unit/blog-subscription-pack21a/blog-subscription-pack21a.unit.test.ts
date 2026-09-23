@@ -1,5 +1,6 @@
 /**
  * Pack 21A — Blog subscription domain, public subscribe / confirm / unsubscribe.
+ * EMAIL SECURITY 02B — Turnstile + durable abuse seams required for subscribe.
  */
 import "./blog-subscription-pack21a.setup.js";
 
@@ -17,12 +18,6 @@ import {
   resolveBlogSubscriptionConfirmExpiresAt,
 } from "../../../src/modules/blog/blog-subscription-tokens.js";
 import {
-  assertBlogSubscriptionSubscribeAllowed,
-  isBlogSubscriptionRateLimitError,
-  resetBlogSubscriptionRateLimitsForTests,
-  setBlogSubscriptionRateLimitNowMsForTests,
-} from "../../../src/modules/blog/blog-subscription-rate-limit.js";
-import {
   confirmBlogSubscription,
   requestBlogSubscription,
   unsubscribeBlogSubscription,
@@ -31,24 +26,42 @@ import {
   findBlogSubscriberByNormalizedEmail,
   resetBlogSubscribersForTests,
 } from "../../../src/modules/blog/persistence/blog-subscriber.repository.js";
+import {
+  BLOG_SUBSCRIPTION_EMAIL_COOLDOWN_MS,
+  BLOG_SUBSCRIPTION_IP_MAX_ATTEMPTS,
+} from "../../../src/modules/blog/blog-subscription-abuse-policy.js";
+import {
+  consumeBlogSubscriptionIpBudget,
+  resetBlogSubscriptionAbuseForTests,
+  setBlogSubscriptionAbuseNowMsForTests,
+} from "../../../src/modules/blog/persistence/blog-subscription-abuse.repository.js";
+import { hashBlogSubscriptionSourceIp } from "../../../src/modules/blog/blog-subscription-privacy-hash.js";
+import { isBlogSubscriptionRateLimitError } from "../../../src/modules/blog/blog-subscription-rate-limit.js";
 import { renderEmailTemplate } from "../../../src/modules/email/email.templates.js";
 import {
   disposeEmailWorkersForTests,
   drainEmailQueueForTests,
+  getMockEmailSendCount,
   resetMockEmailOutboxForTests,
 } from "../../../src/modules/email/email-test-helpers.js";
+import {
+  installBlogSubscriptionSecurityTestSeams,
+  uninstallBlogSubscriptionSecurityTestSeams,
+  validTurnstileTokenForTests,
+} from "../blog-subscription-email-security-02b/blog-subscription-email-security-02b.helpers.js";
 
 describe("Pack 21A — Blog subscription domain", () => {
   beforeEach(() => {
     resetBlogSubscribersForTests();
-    resetBlogSubscriptionRateLimitsForTests();
     resetMockEmailOutboxForTests();
+    installBlogSubscriptionSecurityTestSeams();
     process.env.EMAIL_PROVIDER = "mock";
   });
 
   afterEach(async () => {
     await drainEmailQueueForTests();
     disposeEmailWorkersForTests();
+    uninstallBlogSubscriptionSecurityTestSeams();
   });
 
   it("normalizes email with trim + lowercase only", () => {
@@ -62,6 +75,7 @@ describe("Pack 21A — Blog subscription domain", () => {
     const result = await requestBlogSubscription({
       email: "Reader@Example.com",
       ipKey: "10.0.0.1",
+      turnstileToken: validTurnstileTokenForTests("create"),
     });
     assert.equal(result.accepted, true);
     assert.match(result.message, /Check your email/i);
@@ -78,25 +92,34 @@ describe("Pack 21A — Blog subscription domain", () => {
     assert.equal(row!.countryCode, undefined);
   });
 
-  it("does not create a second row for duplicate pending email", async () => {
-    await requestBlogSubscription({ email: "dup@example.com", ipKey: "1" });
+  it("does not create a second row for duplicate pending email within cooldown", async () => {
+    await requestBlogSubscription({
+      email: "dup@example.com",
+      ipKey: "1",
+      turnstileToken: validTurnstileTokenForTests("dup1"),
+    });
     const first = await findBlogSubscriberByNormalizedEmail("dup@example.com");
-    await requestBlogSubscription({ email: "dup@example.com", ipKey: "1" });
+    const firstHash = first!.confirmTokenHash;
+    await requestBlogSubscription({
+      email: "dup@example.com",
+      ipKey: "1",
+      turnstileToken: validTurnstileTokenForTests("dup2"),
+    });
     const second = await findBlogSubscriberByNormalizedEmail("dup@example.com");
     assert.equal(first!.subscriberId, second!.subscriberId);
     assert.equal(second!.status, "not_confirmed");
+    assert.equal(second!.confirmTokenHash, firstHash);
   });
 
   it("does not create a duplicate for already subscribed email", async () => {
     const raw = generateBlogSubscriptionRawToken();
-    // create pending then confirm via service path
-    await requestBlogSubscription({ email: "subbed@example.com", ipKey: "2" });
+    await requestBlogSubscription({
+      email: "subbed@example.com",
+      ipKey: "2",
+      turnstileToken: validTurnstileTokenForTests("sub1"),
+    });
     const pending = await findBlogSubscriberByNormalizedEmail("subbed@example.com");
     assert.ok(pending?.confirmTokenHash);
-    // Recover raw token by re-request which rotates — instead confirm using hash match path:
-    // Issue known tokens by confirming after we craft — use unsubscribe/confirm from rotated request.
-    // Simpler: request, then confirm with token we don't have. Use direct upsert via confirm after
-    // extracting from a controlled hash:
     const known = generateBlogSubscriptionRawToken();
     const { upsertBlogSubscriberRecord } = await import(
       "../../../src/modules/blog/persistence/blog-subscriber.repository.js"
@@ -114,7 +137,11 @@ describe("Pack 21A — Blog subscription domain", () => {
     });
 
     const before = await findBlogSubscriberByNormalizedEmail("subbed@example.com");
-    const response = await requestBlogSubscription({ email: "subbed@example.com", ipKey: "2" });
+    const response = await requestBlogSubscription({
+      email: "subbed@example.com",
+      ipKey: "2",
+      turnstileToken: validTurnstileTokenForTests("sub2"),
+    });
     const after = await findBlogSubscriberByNormalizedEmail("subbed@example.com");
     assert.equal(response.accepted, true);
     assert.equal(before!.subscriberId, after!.subscriberId);
@@ -122,8 +149,14 @@ describe("Pack 21A — Blog subscription domain", () => {
     void raw;
   });
 
-  it("allows unsubscribed email to re-enter confirmation without a second row", async () => {
-    await requestBlogSubscription({ email: "again@example.com", ipKey: "3" });
+  it("allows unsubscribed email to re-enter confirmation after cooldown", async () => {
+    const start = 2_000_000_000_000;
+    setBlogSubscriptionAbuseNowMsForTests(start);
+    await requestBlogSubscription({
+      email: "again@example.com",
+      ipKey: "3",
+      turnstileToken: validTurnstileTokenForTests("again1"),
+    });
     const pending = await findBlogSubscriberByNormalizedEmail("again@example.com");
     const unsubRaw = generateBlogSubscriptionRawToken();
     const { upsertBlogSubscriberRecord } = await import(
@@ -140,7 +173,12 @@ describe("Pack 21A — Blog subscription domain", () => {
       updatedAt: now,
     });
 
-    await requestBlogSubscription({ email: "again@example.com", ipKey: "3" });
+    setBlogSubscriptionAbuseNowMsForTests(start + BLOG_SUBSCRIPTION_EMAIL_COOLDOWN_MS + 1);
+    await requestBlogSubscription({
+      email: "again@example.com",
+      ipKey: "3",
+      turnstileToken: validTurnstileTokenForTests("again2"),
+    });
     const resumed = await findBlogSubscriberByNormalizedEmail("again@example.com");
     assert.equal(resumed!.subscriberId, pending!.subscriberId);
     assert.equal(resumed!.status, "not_confirmed");
@@ -176,7 +214,6 @@ describe("Pack 21A — Blog subscription domain", () => {
     assert.ok(row!.subscribedAt);
     assert.equal(row!.confirmTokenHash, undefined);
 
-    // Reuse same token after clear → invalid
     await assert.rejects(() => confirmBlogSubscription({ token: confirmRaw }));
   });
 
@@ -236,44 +273,13 @@ describe("Pack 21A — Blog subscription domain", () => {
     assert.equal(second.unsubscribed, true);
   });
 
-  it("rate limits repeated subscribe attempts", () => {
-    process.env.BLOG_SUBSCRIPTION_MAX_PER_EMAIL_PER_WINDOW = "2";
-    process.env.BLOG_SUBSCRIPTION_MAX_PER_IP_PER_WINDOW = "100";
-    resetBlogSubscriptionRateLimitsForTests();
-    setBlogSubscriptionRateLimitNowMsForTests(1_000_000);
-    assertBlogSubscriptionSubscribeAllowed({ emailNormalized: "rl@example.com", ipKey: "9.9.9.9" });
-    assertBlogSubscriptionSubscribeAllowed({ emailNormalized: "rl@example.com", ipKey: "9.9.9.9" });
-    assert.throws(
-      () =>
-        assertBlogSubscriptionSubscribeAllowed({
-          emailNormalized: "rl@example.com",
-          ipKey: "9.9.9.9",
-        }),
-      (error: unknown) => isBlogSubscriptionRateLimitError(error),
-    );
-    delete process.env.BLOG_SUBSCRIPTION_MAX_PER_EMAIL_PER_WINDOW;
-    delete process.env.BLOG_SUBSCRIPTION_MAX_PER_IP_PER_WINDOW;
-  });
-
-  it("Pack 21F — rate-limit window expiry drops empty keys (no unbounded map growth)", () => {
-    process.env.BLOG_SUBSCRIPTION_MAX_PER_EMAIL_PER_WINDOW = "5";
-    process.env.BLOG_SUBSCRIPTION_MAX_PER_IP_PER_WINDOW = "20";
-    process.env.BLOG_SUBSCRIPTION_RATE_WINDOW_MINUTES = "60";
-    resetBlogSubscriptionRateLimitsForTests();
-    setBlogSubscriptionRateLimitNowMsForTests(1_000_000);
-    assertBlogSubscriptionSubscribeAllowed({
-      emailNormalized: "prune@example.com",
-      ipKey: "1.2.3.4",
-    });
-    // Advance beyond the window so prune drops the prior hit lists entirely.
-    setBlogSubscriptionRateLimitNowMsForTests(1_000_000 + 60 * 60_000 + 1);
-    assertBlogSubscriptionSubscribeAllowed({
-      emailNormalized: "prune@example.com",
-      ipKey: "1.2.3.4",
-    });
-    delete process.env.BLOG_SUBSCRIPTION_MAX_PER_EMAIL_PER_WINDOW;
-    delete process.env.BLOG_SUBSCRIPTION_MAX_PER_IP_PER_WINDOW;
-    delete process.env.BLOG_SUBSCRIPTION_RATE_WINDOW_MINUTES;
+  it("durable per-IP budget blocks after max attempts", async () => {
+    resetBlogSubscriptionAbuseForTests();
+    const ipHash = hashBlogSubscriptionSourceIp("9.9.9.9");
+    for (let i = 0; i < BLOG_SUBSCRIPTION_IP_MAX_ATTEMPTS; i += 1) {
+      assert.equal(await consumeBlogSubscriptionIpBudget(ipHash), true);
+    }
+    assert.equal(await consumeBlogSubscriptionIpBudget(ipHash), false);
   });
 
   it("confirmation template uses subscription footer and MailDeliveryService template id", () => {
@@ -289,8 +295,16 @@ describe("Pack 21A — Blog subscription domain", () => {
   });
 
   it("public subscribe message does not reveal subscriber existence", async () => {
-    const a = await requestBlogSubscription({ email: "oracle@example.com", ipKey: "8" });
-    await requestBlogSubscription({ email: "oracle@example.com", ipKey: "8" });
+    const a = await requestBlogSubscription({
+      email: "oracle@example.com",
+      ipKey: "8",
+      turnstileToken: validTurnstileTokenForTests("oracle1"),
+    });
+    await requestBlogSubscription({
+      email: "oracle@example.com",
+      ipKey: "8",
+      turnstileToken: validTurnstileTokenForTests("oracle2"),
+    });
     const pending = await findBlogSubscriberByNormalizedEmail("oracle@example.com");
     const { upsertBlogSubscriberRecord } = await import(
       "../../../src/modules/blog/persistence/blog-subscriber.repository.js"
@@ -305,7 +319,13 @@ describe("Pack 21A — Blog subscription domain", () => {
       confirmTokenExpiresAt: undefined,
       updatedAt: now,
     });
-    const b = await requestBlogSubscription({ email: "oracle@example.com", ipKey: "8" });
+    const b = await requestBlogSubscription({
+      email: "oracle@example.com",
+      ipKey: "8",
+      turnstileToken: validTurnstileTokenForTests("oracle3"),
+    });
     assert.equal(a.message, b.message);
+    assert.equal(getMockEmailSendCount() >= 1, true);
+    void isBlogSubscriptionRateLimitError;
   });
 });

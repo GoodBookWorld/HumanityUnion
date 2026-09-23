@@ -143,6 +143,10 @@ export const MONGO_COLLECTIONS = {
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",
   blogSubscriptionSettings: "blog_subscription_settings",
+  /** EMAIL SECURITY 02B — durable Blog subscribe IP/email abuse counters (TTL). */
+  blogSubscriptionAbuseCounters: "blog_subscription_abuse_counters",
+  /** EMAIL SECURITY 02B — privacy-safe Blog subscribe security events (~90d TTL). */
+  blogSubscriptionSecurityEvents: "blog_subscription_security_events",
   /** Pack 21D — (postId, subscriberId) publication email delivery ledger. */
   blogPublicationDeliveries: "blog_publication_deliveries",
   /** Pack 21E — Admin selected-subscriber message records. */

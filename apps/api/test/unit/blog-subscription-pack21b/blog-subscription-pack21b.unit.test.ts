@@ -53,6 +53,11 @@ import {
   resetMockEmailOutboxForTests,
 } from "../../../src/modules/email/email-test-helpers.js";
 import { MockEmailProvider } from "../../../src/modules/email/providers/mock.provider.js";
+import {
+  installBlogSubscriptionSecurityTestSeams,
+  uninstallBlogSubscriptionSecurityTestSeams,
+  validTurnstileTokenForTests,
+} from "../blog-subscription-email-security-02b/blog-subscription-email-security-02b.helpers.js";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -66,6 +71,7 @@ describe("Pack 21B — Welcome settings & Welcome email", () => {
     resetBlogSubscriptionSettingsForTests();
     resetBlogSubscriptionRateLimitsForTests();
     resetMockEmailOutboxForTests();
+    installBlogSubscriptionSecurityTestSeams();
     setBlogSubscriptionSettingsAdminActorOverrideForTests(null);
     process.env.EMAIL_PROVIDER = "mock";
   });
@@ -74,6 +80,7 @@ describe("Pack 21B — Welcome settings & Welcome email", () => {
     setBlogSubscriptionSettingsAdminActorOverrideForTests(null);
     await drainEmailQueueForTests();
     disposeEmailWorkersForTests();
+    uninstallBlogSubscriptionSecurityTestSeams();
   });
 
   it("uses default Welcome Message when no settings record exists", async () => {
@@ -172,7 +179,11 @@ describe("Pack 21B — Welcome settings & Welcome email", () => {
   });
 
   it("confirmation email request does not send Welcome prematurely", async () => {
-    await requestBlogSubscription({ email: "pending@example.com", ipKey: "21b-1" });
+    await requestBlogSubscription({
+      email: "pending@example.com",
+      ipKey: "21b-1",
+      turnstileToken: validTurnstileTokenForTests("21b-1"),
+    });
     await drainEmailQueueForTests();
 
     const welcomeMails = MockEmailProvider.sentMessages.filter(
@@ -333,7 +344,11 @@ describe("Pack 21B — Welcome settings & Welcome email", () => {
     assert.equal(unsubscribed!.status, "unsubscribed");
     assert.ok(unsubscribed!.welcomeSentAt);
 
-    await requestBlogSubscription({ email: "resub@example.com", ipKey: "21b-resub" });
+    await requestBlogSubscription({
+      email: "resub@example.com",
+      ipKey: "21b-resub",
+      turnstileToken: validTurnstileTokenForTests("21b-resub"),
+    });
     const pending = await findBlogSubscriberByNormalizedEmail("resub@example.com");
     assert.equal(pending!.status, "not_confirmed");
     assert.equal(pending!.welcomeSentAt, undefined);

@@ -4,11 +4,12 @@ import { apiRequest } from "../../lib/api-client";
 
 export async function requestPublicBlogSubscription(
   email: string,
+  turnstileToken: string,
 ): Promise<PublicBlogSubscribeResponse> {
   return apiRequest<PublicBlogSubscribeResponse>("/api/v1/public/blog/subscriptions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, turnstileToken }),
   });
 }
 
