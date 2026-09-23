@@ -214,6 +214,11 @@ function wdcraddEvent(id,relationId) {
     else if (data.action === "sync") publishView();
     else if (data.action === "setCountryNames" && data.names && typeof data.names === "object") {
       window.__HU_MAP_COUNTRY_NAMES = data.names;
+    } else if (data.action === "setPinLabels" && data.labels && typeof data.labels === "object") {
+      window.__HU_MAP_PIN_LABELS = data.labels;
+      if (data.canonicalLabels && typeof data.canonicalLabels === "object") {
+        window.__HU_MAP_PIN_LABELS_CANONICAL = data.canonicalLabels;
+      }
     }
   });
 

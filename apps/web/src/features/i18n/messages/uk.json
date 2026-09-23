@@ -5158,7 +5158,49 @@
       "hintDefault": "Використовуйте «Збільшити», щоб досліджувати регіони. Оберіть країну на карті або зі списку нижче.",
       "hintZoomed": "Перетягуйте карту для панорамування зі збільшенням. Натискання країни відкриває громадянську активність.",
       "exploreByCountry": "Досліджуйте громадянську активність за країною",
-      "selectCountry": "Оберіть країну"
+      "selectCountry": "Оберіть країну",
+      "legend": {
+        "presidentialRepublics": {
+          "title": "Президентська система",
+          "description": "Президентські республіки"
+        },
+        "semiPresidentialRepublic": {
+          "title": "Президентська система",
+          "description": "Напівпрезидентська республіка"
+        },
+        "executivePresidentRepublic": {
+          "title": "Республіки з виконавчим президентом",
+          "description": "Обраний або призначений президент"
+        },
+        "parliamentaryConstitutionalMonarchies": {
+          "title": "Парламентські конституційні монархії",
+          "description": "Конституційна монархія"
+        },
+        "parliamentaryRepublics": {
+          "title": "Парламентські республіки",
+          "description": "Парламентська система правління"
+        },
+        "parliamentaryConstitutionalMonarchy": {
+          "title": "Парламентська конституційна монархія",
+          "description": "Парламентська конституційна монархія"
+        },
+        "absoluteMonarchies": {
+          "title": "Абсолютні монархії",
+          "description": "Абсолютні монархії"
+        },
+        "militaryJunta": {
+          "title": "Військова хунта",
+          "description": "Конституційні положення призупинено"
+        },
+        "onePartyState": {
+          "title": "Однопартійна держава",
+          "description": "Авторитарний режим"
+        },
+        "provisionalGovernment": {
+          "title": "Тимчасовий уряд",
+          "description": "Невизначені політичні ситуації"
+        }
+      }
     },
     "unityIllustrationAria": "Ілюстрація єдності людства"
   },

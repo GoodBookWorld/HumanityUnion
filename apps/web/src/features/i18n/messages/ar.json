@@ -5158,7 +5158,49 @@
       "hintDefault": "استخدم التكبير لاستكشاف المناطق. اختر بلدًا على الخريطة أو من القائمة أدناه.",
       "hintZoomed": "اسحب الخريطة للتحريك أثناء التكبير. النقر على البلد يفتح النشاط المدني.",
       "exploreByCountry": "استكشف النشاط المدني حسب البلد",
-      "selectCountry": "اختر بلدًا"
+      "selectCountry": "اختر بلدًا",
+      "legend": {
+        "presidentialRepublics": {
+          "title": "النظام الرئاسي",
+          "description": "الجمهوريات الرئاسية"
+        },
+        "semiPresidentialRepublic": {
+          "title": "النظام الرئاسي",
+          "description": "جمهورية شبه رئاسية"
+        },
+        "executivePresidentRepublic": {
+          "title": "جمهوريات برئيس تنفيذي",
+          "description": "رئيس منتخب أو معيّن"
+        },
+        "parliamentaryConstitutionalMonarchies": {
+          "title": "الملكيات الدستورية البرلمانية",
+          "description": "ملكية دستورية"
+        },
+        "parliamentaryRepublics": {
+          "title": "الجمهوريات البرلمانية",
+          "description": "نظام الحكم البرلماني"
+        },
+        "parliamentaryConstitutionalMonarchy": {
+          "title": "ملكية دستورية برلمانية",
+          "description": "ملكية دستورية برلمانية"
+        },
+        "absoluteMonarchies": {
+          "title": "الملكيات المطلقة",
+          "description": "الملكيات المطلقة"
+        },
+        "militaryJunta": {
+          "title": "المجلس العسكري",
+          "description": "تعليق الأحكام الدستورية"
+        },
+        "onePartyState": {
+          "title": "دولة الحزب الواحد",
+          "description": "نظام سلطوي"
+        },
+        "provisionalGovernment": {
+          "title": "حكومة انتقالية",
+          "description": "أوضاع سياسية غير واضحة"
+        }
+      }
     },
     "unityIllustrationAria": "رسم توضيحي لوحدة الإنسانية"
   },

@@ -156,7 +156,7 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     }
   });
 
-  it("11–12 old 2240-key remote pack is not WEB_UI-ready under expanded scope", async () => {
+  it("11–12 old pre-15D.1 remote pack is not WEB_UI-ready under expanded scope", async () => {
     const english = loadBundledEnglishWebUiMessagePack();
     const all = collectStringPaths(english);
     const legacyPrefixes = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.filter(
@@ -167,16 +167,16 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
         (prefix) => pathKey === prefix.slice(0, -1) || pathKey.startsWith(prefix),
       ),
     );
-    assert.equal(legacyPaths.length, 2240);
+    assert.equal(legacyPaths.length, 2260);
     const required = all.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
-    assert.ok(required.length > 2240);
+    assert.ok(required.length > 2260);
     assert.equal(required.length - legacyPaths.length, 229);
 
     await upsertWebUiMessagePack({
       locale: "ka",
       status: "published",
       messages: projectPaths(english, legacyPaths) as never,
-      sourceNote: "legacy 2240-key public pack",
+      sourceNote: "legacy 2260-key public pack",
     });
     const readiness = await assessWebUiCatalogReadinessForLocale({ locale: "ka" });
     assert.equal(readiness.dataReady, false);

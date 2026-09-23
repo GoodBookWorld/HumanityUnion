@@ -5158,7 +5158,49 @@
       "hintDefault": "Use Zoom in to explore regions. Select a country on the map or from the list below.",
       "hintZoomed": "Drag the map to pan while zoomed. Country taps still open civic activity.",
       "exploreByCountry": "Explore civic activity by country",
-      "selectCountry": "Select a country"
+      "selectCountry": "Select a country",
+      "legend": {
+        "presidentialRepublics": {
+          "title": "Presidential system",
+          "description": "Presidential republics"
+        },
+        "semiPresidentialRepublic": {
+          "title": "Presidential system",
+          "description": "Semi-presidential republic"
+        },
+        "executivePresidentRepublic": {
+          "title": "Republics with an executive president",
+          "description": "Elected or appointed president"
+        },
+        "parliamentaryConstitutionalMonarchies": {
+          "title": "Parliamentary constitutional monarchies",
+          "description": "Constitutional monarchy"
+        },
+        "parliamentaryRepublics": {
+          "title": "Parliamentary republics",
+          "description": "Parliamentary system of government"
+        },
+        "parliamentaryConstitutionalMonarchy": {
+          "title": "Parliamentary constitutional monarchy",
+          "description": "Parliamentary constitutional monarchy"
+        },
+        "absoluteMonarchies": {
+          "title": "Absolute monarchies",
+          "description": "Absolute monarchies"
+        },
+        "militaryJunta": {
+          "title": "Military junta",
+          "description": "Constitutional provisions suspended"
+        },
+        "onePartyState": {
+          "title": "One-party state",
+          "description": "Authoritarian regime"
+        },
+        "provisionalGovernment": {
+          "title": "Provisional government",
+          "description": "Unclear political situations"
+        }
+      }
     },
     "unityIllustrationAria": "Humanity unity illustration"
   },

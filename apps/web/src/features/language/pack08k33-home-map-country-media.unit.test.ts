@@ -57,11 +57,16 @@ describe("Pack 08K.3.3 home map + country media", () => {
     assert.match(map, /getLocalizedCountryDisplayName/);
     assert.match(map, /publicHome\.interactiveMap/);
     assert.match(map, /setCountryNames/);
+    assert.match(map, /setPinLabels/);
     assert.match(map, /data-hu-surface="home-interactive-map"/);
     const iframe = readWebPublic("wdcr-js-map/map-interact.js");
     assert.match(iframe, /wdcrLocalizedHoverHtml/);
     assert.match(iframe, /__HU_MAP_COUNTRY_NAMES/);
+    assert.match(iframe, /setPinLabels/);
     assert.doesNotMatch(iframe, /Democracy Index Score/);
+    const pins = readWebPublic("wdcr-js-map/pins-config.js");
+    assert.match(pins, /wdcrLocalizedPinHoverHtml/);
+    assert.match(pins, /legendId/);
   });
 
   it("C–F: geography navigators use shared display-name resolver", () => {

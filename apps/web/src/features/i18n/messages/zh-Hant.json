@@ -5158,7 +5158,49 @@
       "hintDefault": "使用放大來探索區域。在地圖或下方清單中選擇國家。",
       "hintZoomed": "放大後可拖曳地圖平移。點選國家仍會開啟公民活動頁面。",
       "exploreByCountry": "依國家探索公民活動",
-      "selectCountry": "選擇國家"
+      "selectCountry": "選擇國家",
+      "legend": {
+        "presidentialRepublics": {
+          "title": "總統制",
+          "description": "總統制共和國"
+        },
+        "semiPresidentialRepublic": {
+          "title": "總統制",
+          "description": "半總統制共和國"
+        },
+        "executivePresidentRepublic": {
+          "title": "具行政權總統的共和國",
+          "description": "民選或任命的總統"
+        },
+        "parliamentaryConstitutionalMonarchies": {
+          "title": "議會制君主立憲制",
+          "description": "君主立憲制"
+        },
+        "parliamentaryRepublics": {
+          "title": "議會制共和國",
+          "description": "議會制政府"
+        },
+        "parliamentaryConstitutionalMonarchy": {
+          "title": "議會制君主立憲",
+          "description": "議會制君主立憲"
+        },
+        "absoluteMonarchies": {
+          "title": "絕對君主制",
+          "description": "絕對君主制"
+        },
+        "militaryJunta": {
+          "title": "軍政府",
+          "description": "憲法條文暫停施行"
+        },
+        "onePartyState": {
+          "title": "一黨制國家",
+          "description": "威權政權"
+        },
+        "provisionalGovernment": {
+          "title": "臨時政府",
+          "description": "政治情勢不明"
+        }
+      }
     },
     "unityIllustrationAria": "人類團結插圖"
   },

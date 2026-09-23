@@ -1,7 +1,7 @@
 /**
- * Pack 08K.3.3 — Home interactive map shell.
- * UI chrome via next-intl; country labels via geography display-name resolver.
- * Iframe tooltips receive locale-aware names over postMessage (no English hover prose).
+ * Pack 08K.3.3 / Step 15D.3.1 — Home interactive map shell.
+ * UI chrome + pin legend via next-intl; country labels via geography display-name resolver.
+ * Iframe tooltips receive locale-aware names/labels over postMessage.
  */
 
 "use client";
@@ -11,9 +11,41 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import { GEOGRAPHY_COUNTRIES, getLocalizedCountryDisplayName } from "@hu/geography";
+
+import enMessages from "../../i18n/messages/en.json";
+import {
+  MAP_PIN_LEGEND_ENTRIES,
+  type MapPinLegendLabelsById,
+} from "../map-pin-legend";
 import { WORLD_MAP_ZOOM_BOUNDS } from "../world-map-zoom";
 
 import "./interactive-world-map.css";
+
+function buildCanonicalPinLabelsFromEnglishCatalog(): MapPinLegendLabelsById {
+  const legend = (
+    enMessages as {
+      publicHome: {
+        interactiveMap: {
+          legend: Record<string, { title: string; description: string }>;
+        };
+      };
+    }
+  ).publicHome.interactiveMap.legend;
+  const map: Record<string, { title: string; description: string }> = {};
+  for (const entry of MAP_PIN_LEGEND_ENTRIES) {
+    const leaf = legend[entry.messageKey];
+    if (!leaf || typeof leaf.title !== "string" || typeof leaf.description !== "string") {
+      throw new Error(`Missing canonical pin legend copy for ${entry.messageKey}`);
+    }
+    map[entry.id] = {
+      title: leaf.title,
+      description: leaf.description,
+    };
+  }
+  return map;
+}
+
+const CANONICAL_PIN_LABELS = buildCanonicalPinLabelsFromEnglishCatalog();
 
 export interface InteractiveWorldMapProps {
   onCountrySelect?: (countryCode: string) => void;
@@ -33,6 +65,7 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("publicHome.interactiveMap");
+  const tLegend = useTranslations("publicHome.interactiveMap.legend");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [view, setView] = useState<MapViewState>({ scale: MIN_SCALE, x: 0, y: 0 });
 
@@ -53,6 +86,17 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
     return map;
   }, [localizedCountries]);
 
+  const pinLabelsById = useMemo((): MapPinLegendLabelsById => {
+    const map: Record<string, { title: string; description: string }> = {};
+    for (const entry of MAP_PIN_LEGEND_ENTRIES) {
+      map[entry.id] = {
+        title: tLegend(`${entry.messageKey}.title`),
+        description: tLegend(`${entry.messageKey}.description`),
+      };
+    }
+    return map;
+  }, [tLegend]);
+
   const postToMap = useCallback((action: string, payload?: Record<string, unknown>) => {
     const win = iframeRef.current?.contentWindow;
     if (!win) {
@@ -64,6 +108,19 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
   const pushLocaleNames = useCallback(() => {
     postToMap("setCountryNames", { names: countryNamesByCode, locale });
   }, [countryNamesByCode, locale, postToMap]);
+
+  const pushPinLabels = useCallback(() => {
+    postToMap("setPinLabels", {
+      labels: pinLabelsById,
+      canonicalLabels: CANONICAL_PIN_LABELS,
+      locale,
+    });
+  }, [locale, pinLabelsById, postToMap]);
+
+  const pushIframeLocalization = useCallback(() => {
+    pushLocaleNames();
+    pushPinLabels();
+  }, [pushLocaleNames, pushPinLabels]);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -84,7 +141,7 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
         return;
       }
       if (data.type === "ready") {
-        pushLocaleNames();
+        pushIframeLocalization();
         return;
       }
       if (data.type !== "view") {
@@ -101,11 +158,11 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [pushLocaleNames]);
+  }, [pushIframeLocalization]);
 
   useEffect(() => {
-    pushLocaleNames();
-  }, [pushLocaleNames]);
+    pushIframeLocalization();
+  }, [pushIframeLocalization]);
 
   function navigateToCountry(countryCode: string) {
     onCountrySelect?.(countryCode);
@@ -114,7 +171,7 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
 
   function handleIframeLoad() {
     postToMap("sync");
-    pushLocaleNames();
+    pushIframeLocalization();
   }
 
   return (

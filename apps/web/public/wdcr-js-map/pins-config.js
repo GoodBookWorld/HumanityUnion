@@ -28,7 +28,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Presidential system</u></b><span style='color: #999;'></span><br><span style='color: #0174b0;'><b>Presidential republics</b></span>",
+    "legendId": "presidential_republics",
     "pos_X": 10,
     "pos_Y": 250,
     "size": 12,
@@ -41,7 +41,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Presidential system</u></b><span style='color: #999;'></span><br><span style='color: #F2E353;'><b>Semi-presidential republic</b></span>",
+    "legendId": "semi_presidential_republic",
     "pos_X": 10,
     "pos_Y": 270,
     "size": 12,
@@ -54,7 +54,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Republics with an executive president</u></b><span style='color: #999;'></span><br><span style='color: #7FB566;'><b>Elected or appointed president</b></span>",
+    "legendId": "executive_president_republic",
     "pos_X": 10,
     "pos_Y": 290,
     "size": 12,
@@ -67,7 +67,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Parliamentary constitutional monarchies</u></b><span style='color: #999;'></span><br><span style='color: #D6615D;'><b>Constitutional monarchy</b></span>",
+    "legendId": "parliamentary_constitutional_monarchies",
     "pos_X": 10,
     "pos_Y": 310,
     "size": 12,
@@ -80,7 +80,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Parliamentary republics</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Parliamentary system of government</b></span>",
+    "legendId": "parliamentary_republics",
     "pos_X": 10,
     "pos_Y": 330,
     "size": 12,
@@ -93,7 +93,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Parliamentary constitutional monarchy</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Parliamentary constitutional monarchy</b></span>",
+    "legendId": "parliamentary_constitutional_monarchy",
     "pos_X": 10,
     "pos_Y": 350,
     "size": 12,//change the size to display this pin
@@ -106,7 +106,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Absolute monarchies</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Absolute monarchies</b></span>",
+    "legendId": "absolute_monarchies",
     "pos_X": 10,
     "pos_Y": 370,
     "size": 12,//change the size to display this pin
@@ -119,7 +119,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Military junta</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Constitutional provisions suspended</b></span>",
+    "legendId": "military_junta",
     "pos_X": 10,
     "pos_Y": 390,
     "size": 12,//change the size to display this pin
@@ -132,7 +132,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>One-party state</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Authoritarian regime</b></span>",
+    "legendId": "one_party_state",
     "pos_X": 10,
     "pos_Y": 410,
     "size": 12,//change the size to display this pin
@@ -145,7 +145,7 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Provisional government</u></b><span style='color: #999;'></span><br><span style='color: #ff6666;'><b>Unclear political situations</b></span>",
+    "legendId": "provisional_government",
     "pos_X": 10,
     "pos_Y": 430,
     "size": 12,//change the size to display this pin
@@ -197,6 +197,55 @@
   }// If you want to add more pin, you need to add comma ',' here
   ]
 };
+
+/** Step 15D.3.1 — localized legend labels injected by React parent (setPinLabels). */
+window.__HU_MAP_PIN_LABELS = window.__HU_MAP_PIN_LABELS || {};
+window.__HU_MAP_PIN_LABELS_CANONICAL = window.__HU_MAP_PIN_LABELS_CANONICAL || {};
+
+function wdcrEscapePinHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function wdcrResolvePinLabel(legendId) {
+  if (!legendId) {
+    return null;
+  }
+  var labels = window.__HU_MAP_PIN_LABELS || {};
+  var canonical = window.__HU_MAP_PIN_LABELS_CANONICAL || {};
+  var label = labels[legendId] || canonical[legendId] || null;
+  if (!label || typeof label.title !== "string" || typeof label.description !== "string") {
+    return null;
+  }
+  return label;
+}
+
+function wdcrLocalizedPinHoverHtml(id) {
+  var pin = pins_config.pins[id];
+  if (!pin) {
+    return "";
+  }
+  if (pin.active !== true) {
+    return typeof pin.hover === "string" ? pin.hover : "";
+  }
+  var label = wdcrResolvePinLabel(pin.legendId);
+  if (!label) {
+    return "";
+  }
+  var color = typeof pin.upColor === "string" && pin.upColor ? pin.upColor : "#333333";
+  return (
+    "<b><u>" +
+    wdcrEscapePinHtml(label.title) +
+    "</u></b><span style='color: #999;'></span><br><span style='color: " +
+    wdcrEscapePinHtml(color) +
+    ";'><b>" +
+    wdcrEscapePinHtml(label.description) +
+    "</b></span>"
+  );
+}
 
 // The following is the script for pins interaction DON'T EDIT !!!
 function isTouchEnabled() {
@@ -257,7 +306,7 @@ function wdcrjsAddEvent(id) {
   if(pins_config.pins[id].active === true){
     obj.attr({"cursor": "pointer"});
     obj.hover(function () {
-      jQuery("#wdcrjstip").show().html(pins_config.pins[id].hover);
+      jQuery("#wdcrjstip").show().html(wdcrLocalizedPinHoverHtml(id));
       obj.css({"fill":pins_config.pins[id].overColor});
     }, function () {
       jQuery("#wdcrjstip").hide();
@@ -287,7 +336,7 @@ function wdcrjsAddEvent(id) {
         var tipw=jQuery("#wdcrjstip").outerWidth(), tiph=jQuery("#wdcrjstip").outerHeight(),
         x = (x + tipw >jQuery(document).scrollLeft() +jQuery(window).width())? x - tipw -(20 * 2) : x ;
         y =(y + tiph >jQuery(document).scrollTop() +jQuery(window).height())? jQuery(document).scrollTop() +jQuery(window).height() -tiph - 10 : y ;
-        jQuery("#wdcrjstip").show().html(pins_config.pins[id].hover);
+        jQuery("#wdcrjstip").show().html(wdcrLocalizedPinHoverHtml(id));
         jQuery("#wdcrjstip").css({left:x, top:y});
       });
       obj.on("touchend", function () {
