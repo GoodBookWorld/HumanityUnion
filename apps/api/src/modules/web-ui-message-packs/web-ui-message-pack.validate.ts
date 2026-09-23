@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  isParticipantWebUiRequiredPath,
   isPublicReaderWebUiRequiredPath,
   type WebUiMessagePackPreparationScope,
   type WebUiMessagePackValidationReport,
@@ -174,20 +175,31 @@ function projectEnglishTree(paths: readonly string[]): WebUiMessageTree {
   return root as WebUiMessageTree;
 }
 
-/** English catalog slice. Public scope uses the Step 13A required-path contract. */
+/** English catalog slice. "public" scope = ordinary Public ∪ Participant (15D.2). */
 export function selectEnglishWebUiMessages(scope: WebUiMessagePackPreparationScope): {
   readonly messages: WebUiMessageTree;
   readonly publicRequiredKeyCount: number;
+  readonly participantRequiredKeyCount: number;
   readonly fullCatalogKeyCount: number;
   readonly selectedPaths: readonly string[];
 } {
   const english = loadBundledEnglishWebUiMessagePack();
   const allPaths = collectStringPaths(english);
   const publicPaths = allPaths.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
-  const selectedPaths = scope === "full" ? allPaths : publicPaths;
+  const participantPaths = allPaths.filter((pathKey) =>
+    isParticipantWebUiRequiredPath(pathKey),
+  );
+  const ordinaryPaths = [
+    ...new Set([
+      ...publicPaths,
+      ...participantPaths,
+    ]),
+  ].sort();
+  const selectedPaths = scope === "full" ? allPaths : ordinaryPaths;
   return {
     messages: projectEnglishTree(selectedPaths),
     publicRequiredKeyCount: publicPaths.length,
+    participantRequiredKeyCount: participantPaths.length,
     fullCatalogKeyCount: allPaths.length,
     selectedPaths,
   };

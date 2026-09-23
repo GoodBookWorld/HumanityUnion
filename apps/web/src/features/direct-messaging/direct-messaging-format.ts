@@ -1,6 +1,6 @@
 /** Part 9/10 — conversation-list and message timestamps share one relative/absolute format. */
-export function formatDirectMessageTimestamp(isoDate: string): string {
-  return new Date(isoDate).toLocaleString(undefined, {
+export function formatDirectMessageTimestamp(isoDate: string, locale?: string): string {
+  return new Date(isoDate).toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -57,7 +57,7 @@ export function resolveCollaborationSection(searchParams: URLSearchParams): Coll
   return searchParams.get("section") === "sessions" ? "sessions" : "channel";
 }
 
-export function formatDirectConversationActivity(isoDate: string): string {
+export function formatDirectConversationActivity(isoDate: string, locale?: string): string {
   const date = new Date(isoDate);
   const now = new Date();
   const isSameDay =
@@ -66,8 +66,8 @@ export function formatDirectConversationActivity(isoDate: string): string {
     date.getDate() === now.getDate();
 
   if (isSameDay) {
-    return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    return date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
   }
 
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }

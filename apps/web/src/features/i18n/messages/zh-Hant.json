@@ -798,6 +798,10 @@
         "scheduleHeading": "排程會議",
         "sessionFormAria": "排程協作會議"
       }
+    },
+    "authGate": {
+      "checkingSession": "正在檢查您的工作階段…",
+      "redirectingToLogin": "正在重新導向至登入…"
     }
   },
   "civicActivity": {
@@ -1033,7 +1037,8 @@
       "matchedPriorities": "符合您的優先事項",
       "newestPublic": "最新公開倡議",
       "carouselAria": "倡議輪播",
-      "viewAll": "查看所有倡議"
+      "viewAll": "查看所有倡議",
+      "sectionAria": "倡議動態"
     }
   },
   "initiativeExperience": {
@@ -6989,6 +6994,27 @@
         "title": "編輯範圍已更新",
         "message": "您的編輯範圍已更新。"
       }
+    },
+    "proposalActions": {
+      "accept": "接受",
+      "decline": "拒絕",
+      "accepted": "已接受",
+      "declined": "已拒絕",
+      "checkingStatus": "正在檢查提案狀態…",
+      "transferPrompt": "已提出責任轉移 — 接受以成為負責參與者。",
+      "acceptTitle": "接受責任？",
+      "acceptTransferTitle": "接受轉移？",
+      "acceptDescription": "接受表示您將承擔此實施承諾行動的責任。",
+      "acceptTransferDescription": "接受表示您將從目前負責參與者承接此實施承諾行動的責任。",
+      "declineTitle": "拒絕此提案？",
+      "declineTransferTitle": "拒絕此轉移？",
+      "declineDescription": "拒絕會駁回此擬議責任。作者之後可再提案其他人。",
+      "declineTransferDescription": "拒絕會維持目前負責參與者。",
+      "acceptedSuccess": "已接受承諾。您現在負責此行動。",
+      "acceptedTransferSuccess": "已接受轉移。您現在負責此行動。",
+      "declinedSuccess": "已拒絕承諾。",
+      "declinedTransferSuccess": "已拒絕轉移。目前負責參與者仍維持責任。",
+      "requestFailed": "請求失敗。"
     }
   }
 }

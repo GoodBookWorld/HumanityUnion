@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  isOrdinaryWebUiRequiredPath,
   isPublicReaderWebUiRequiredPath,
   type LanguageCode,
   type WebUiMessageTree,
@@ -642,8 +643,13 @@ function loadCorpus(includePaths: readonly string[] | undefined): {
   const allowed = new Set(prepared.selectedPaths);
   const flat: Record<string, string> = {};
   for (const pathKey of selected) {
-    if (!allowed.has(pathKey) || !isPublicReaderWebUiRequiredPath(pathKey)) {
-      throw new WebUiDraftBuilderError(`Path is outside the public WEB_UI scope: ${pathKey}`);
+    if (
+      !allowed.has(pathKey) ||
+      !isOrdinaryWebUiRequiredPath(pathKey, isPublicReaderWebUiRequiredPath)
+    ) {
+      throw new WebUiDraftBuilderError(
+        `Path is outside the ordinary (public+participant) WEB_UI scope: ${pathKey}`,
+      );
     }
     const value = readPath(prepared.messages as Record<string, unknown>, pathKey);
     const canonical = readPath(english, pathKey);

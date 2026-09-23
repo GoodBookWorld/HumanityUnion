@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   resolvePresentationMode,
@@ -10,6 +11,7 @@ import { PwaInitiativeFeed } from "./PwaInitiativeFeed";
 
 /** Surfaces the Initiative Feed prominently in installed standalone mode only. */
 export function PwaStandaloneInitiativeFeed() {
+  const t = useTranslations("pwa.feed");
   const [standalone, setStandalone] = useState(false);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function PwaStandaloneInitiativeFeed() {
   }
 
   return (
-    <section className="workspace-home-section" aria-label="Initiative feed">
+    <section className="workspace-home-section" aria-label={t("sectionAria")}>
       <PwaInitiativeFeed />
     </section>
   );

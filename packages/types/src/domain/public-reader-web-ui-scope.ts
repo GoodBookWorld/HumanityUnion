@@ -9,7 +9,8 @@
  * loses an ordinary public-reader surface.
  *
  * Excluded on purpose (still valid catalog keys):
- * - `workspace.*` — participant/author Workspace shell (Step 15D.2)
+ * - `workspace.*` / `notifications.*` — ordinary Participant surfaces
+ *   (Step 15D.2 `isParticipantWebUiRequiredPath`; not public-reader blocking)
  * - `initiativeExperience.manage` — create/edit/publish, cover media, form geography
  * - `initiativeExperience.author.sidebar` — lifecycle working sidebar
  * - `initiativeExperience.author.actions` / `sources` / `translation` — author verbs

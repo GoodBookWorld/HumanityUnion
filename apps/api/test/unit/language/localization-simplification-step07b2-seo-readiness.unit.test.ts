@@ -49,6 +49,15 @@ function report(
       englishFallbackKeyCount: 0,
       sampleMissingPaths: ["navigation.home"],
     },
+    participantWebUi: {
+      engineReady: true,
+      dataReady: true,
+      requiredKeyCount: 0,
+      missingKeyCount: 0,
+      emptyKeyCount: 0,
+      englishFallbackKeyCount: 0,
+      sampleMissingPaths: [],
+    },
     controlledVocabulary: {
       presentationReady: false,
       conceptsChecked: 1,
@@ -213,8 +222,8 @@ describe("Step 07B.2 — SEO readiness decoupled from Extended Localization", ()
     );
     assert.match(admin, /SEO indexable=/);
     assert.doesNotMatch(admin, /SEO-ready=/);
-    assert.match(admin, /does not block Search readiness or SEO\s+indexability/);
-    assert.match(admin, /Extended Localization/);
+    assert.match(admin, /does not block Search or\s+SEO/);
+    assert.match(admin, /Extended Localization|overall\s+presentation/);
 
     const eligibility = readRepo("apps/web/src/lib/seo/seo-language-eligibility.ts");
     assert.match(eligibility, /isSeoIndexableLanguage/);

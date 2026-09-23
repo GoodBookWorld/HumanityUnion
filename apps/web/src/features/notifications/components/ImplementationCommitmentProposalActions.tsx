@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImplementationCommitmentProposalStatus } from "@hu/types";
 
@@ -34,6 +35,7 @@ export function ImplementationCommitmentProposalActions({
   viewerParticipantId,
   onResolved,
 }: ImplementationCommitmentProposalActionsProps) {
+  const t = useTranslations("notifications");
   const [resolution, setResolution] = useState<ProposalActionResolution>("pending");
   const [proposalStatus, setProposalStatus] = useState<
     InitiativeImplementationCommitmentProposalStatus | null | undefined
@@ -112,16 +114,16 @@ export function ImplementationCommitmentProposalActions({
         await acceptInitiativeImplementationCommitment(commitmentId);
         setSuccessMessage(
           transferMode
-            ? "Transfer accepted. You are now responsible for this action."
-            : "Commitment accepted. You are now responsible for this action.",
+            ? t("proposalActions.acceptedTransferSuccess")
+            : t("proposalActions.acceptedSuccess"),
         );
         onResolved?.("accepted");
       } else {
         await declineInitiativeImplementationCommitment(commitmentId);
         setSuccessMessage(
           transferMode
-            ? "Transfer declined. The current responsible Participant remains responsible."
-            : "Commitment declined.",
+            ? t("proposalActions.declinedTransferSuccess")
+            : t("proposalActions.declinedSuccess"),
         );
         onResolved?.("declined");
       }
@@ -129,7 +131,8 @@ export function ImplementationCommitmentProposalActions({
       setConfirmMode(null);
       await reconcile();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed.";
+      const message =
+        err instanceof Error ? err.message : t("proposalActions.requestFailed");
       setError(message);
       await reconcile().catch(() => undefined);
       setConfirmMode(null);
@@ -138,22 +141,28 @@ export function ImplementationCommitmentProposalActions({
     }
   }
 
+  const relatedLink = relatedUrl ? (
+    <Link className="notifications-page__link" href={relatedUrl}>
+      {t("actions.viewRelatedCivicRecord")}
+    </Link>
+  ) : null;
+
   if (proposalStatus === undefined) {
-    return <p className="notifications-page__meta">Checking proposal status…</p>;
+    return (
+      <p className="notifications-page__meta">{t("proposalActions.checkingStatus")}</p>
+    );
   }
 
   if (resolution === "accepted") {
     return (
       <div className="notifications-page__proposal-actions">
         <span className="notifications-page__proposal-resolved" role="status">
-          Accepted
+          {t("proposalActions.accepted")}
         </span>
-        {successMessage ? <span className="notifications-page__proposal-success">{successMessage}</span> : null}
-        {relatedUrl ? (
-          <Link className="notifications-page__link" href={relatedUrl}>
-            View related civic record
-          </Link>
+        {successMessage ? (
+          <span className="notifications-page__proposal-success">{successMessage}</span>
         ) : null}
+        {relatedLink}
       </div>
     );
   }
@@ -162,14 +171,12 @@ export function ImplementationCommitmentProposalActions({
     return (
       <div className="notifications-page__proposal-actions">
         <span className="notifications-page__proposal-resolved" role="status">
-          Declined
+          {t("proposalActions.declined")}
         </span>
-        {successMessage ? <span className="notifications-page__proposal-success">{successMessage}</span> : null}
-        {relatedUrl ? (
-          <Link className="notifications-page__link" href={relatedUrl}>
-            View related civic record
-          </Link>
+        {successMessage ? (
+          <span className="notifications-page__proposal-success">{successMessage}</span>
         ) : null}
+        {relatedLink}
       </div>
     );
   }
@@ -182,11 +189,7 @@ export function ImplementationCommitmentProposalActions({
             {successMessage}
           </span>
         ) : null}
-        {relatedUrl ? (
-          <Link className="notifications-page__link" href={relatedUrl}>
-            View related civic record
-          </Link>
-        ) : null}
+        {relatedLink}
       </div>
     );
   }
@@ -195,9 +198,7 @@ export function ImplementationCommitmentProposalActions({
     <div className="notifications-page__proposal-actions">
       {error ? <p className="notifications-page__proposal-error">{error}</p> : null}
       {isTransferInvite ? (
-        <p className="notifications-page__meta">
-          Responsibility transfer proposed — Accept to become the responsible Participant.
-        </p>
+        <p className="notifications-page__meta">{t("proposalActions.transferPrompt")}</p>
       ) : null}
       <button
         type="button"
@@ -205,7 +206,7 @@ export function ImplementationCommitmentProposalActions({
         disabled={busy}
         onClick={() => setConfirmMode("accept")}
       >
-        Accept
+        {t("proposalActions.accept")}
       </button>
       <button
         type="button"
@@ -213,24 +214,24 @@ export function ImplementationCommitmentProposalActions({
         disabled={busy}
         onClick={() => setConfirmMode("decline")}
       >
-        Decline
+        {t("proposalActions.decline")}
       </button>
-      {relatedUrl ? (
-        <Link className="notifications-page__link" href={relatedUrl}>
-          View related civic record
-        </Link>
-      ) : null}
+      {relatedLink}
 
       <ConfirmDialog
         isOpen={confirmMode === "accept"}
-        title={isTransferInvite ? "Accept transfer?" : "Accept responsibility?"}
+        title={
+          isTransferInvite
+            ? t("proposalActions.acceptTransferTitle")
+            : t("proposalActions.acceptTitle")
+        }
         description={
           isTransferInvite
-            ? "Accepting means you take responsibility for this Implementation Commitment Action from the current responsible Participant."
-            : "Accepting means you take responsibility for this Implementation Commitment Action."
+            ? t("proposalActions.acceptTransferDescription")
+            : t("proposalActions.acceptDescription")
         }
-        confirmLabel="Accept"
-        cancelLabel="Cancel"
+        confirmLabel={t("proposalActions.accept")}
+        cancelLabel={t("actions.cancel")}
         destructive={false}
         isConfirming={busy}
         onCancel={() => {
@@ -240,14 +241,18 @@ export function ImplementationCommitmentProposalActions({
       />
       <ConfirmDialog
         isOpen={confirmMode === "decline"}
-        title={isTransferInvite ? "Decline this transfer?" : "Decline this proposal?"}
+        title={
+          isTransferInvite
+            ? t("proposalActions.declineTransferTitle")
+            : t("proposalActions.declineTitle")
+        }
         description={
           isTransferInvite
-            ? "Declining keeps the current responsible Participant in place."
-            : "Declining rejects this proposed responsibility. The Author may propose someone else later."
+            ? t("proposalActions.declineTransferDescription")
+            : t("proposalActions.declineDescription")
         }
-        confirmLabel="Decline"
-        cancelLabel="Cancel"
+        confirmLabel={t("proposalActions.decline")}
+        cancelLabel={t("actions.cancel")}
         destructive
         isConfirming={busy}
         onCancel={() => {

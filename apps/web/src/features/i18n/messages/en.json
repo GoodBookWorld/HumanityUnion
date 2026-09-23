@@ -798,6 +798,10 @@
         "scheduleHeading": "Schedule a Session",
         "sessionFormAria": "Schedule a Collaboration Session"
       }
+    },
+    "authGate": {
+      "checkingSession": "Checking your session…",
+      "redirectingToLogin": "Redirecting to Log in…"
     }
   },
   "civicActivity": {
@@ -1033,7 +1037,8 @@
       "matchedPriorities": "Matched to your priorities",
       "newestPublic": "Newest public Initiatives",
       "carouselAria": "Initiative carousel",
-      "viewAll": "View all Initiatives"
+      "viewAll": "View all Initiatives",
+      "sectionAria": "Initiative feed"
     }
   },
   "initiativeExperience": {
@@ -6989,6 +6994,27 @@
         "title": "Editor editing area updated",
         "message": "Your Editor editing area was updated."
       }
+    },
+    "proposalActions": {
+      "accept": "Accept",
+      "decline": "Decline",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "checkingStatus": "Checking proposal status…",
+      "transferPrompt": "Responsibility transfer proposed — Accept to become the responsible Participant.",
+      "acceptTitle": "Accept responsibility?",
+      "acceptTransferTitle": "Accept transfer?",
+      "acceptDescription": "Accepting means you take responsibility for this Implementation Commitment Action.",
+      "acceptTransferDescription": "Accepting means you take responsibility for this Implementation Commitment Action from the current responsible Participant.",
+      "declineTitle": "Decline this proposal?",
+      "declineTransferTitle": "Decline this transfer?",
+      "declineDescription": "Declining rejects this proposed responsibility. The Author may propose someone else later.",
+      "declineTransferDescription": "Declining keeps the current responsible Participant in place.",
+      "acceptedSuccess": "Commitment accepted. You are now responsible for this action.",
+      "acceptedTransferSuccess": "Transfer accepted. You are now responsible for this action.",
+      "declinedSuccess": "Commitment declined.",
+      "declinedTransferSuccess": "Transfer declined. The current responsible Participant remains responsible.",
+      "requestFailed": "Request failed."
     }
   }
 }

@@ -124,6 +124,7 @@ export async function evaluateLanguageLocalizationReadiness(
     input.assessHigherAuthority ?? assessHigherAuthority;
 
   const webUi = await assessWebUi({ locale });
+  const participantWebUi = await assessWebUi({ locale, scope: "participant" });
   const controlledVocabulary = await assessControlledVocabulary({ locale });
   const higherAuthority = await assessHigher(locale);
 
@@ -177,6 +178,7 @@ export async function evaluateLanguageLocalizationReadiness(
     enabled: registry.enabled,
     contentTranslationEnabled: registry.contentTranslationEnabled,
     webUiDataReady: webUi.dataReady,
+    participantWebUiDataReady: participantWebUi.dataReady,
     controlledVocabularyPresentationReady: controlledVocabulary.presentationReady,
     ct,
     plpMedia,
@@ -184,6 +186,7 @@ export async function evaluateLanguageLocalizationReadiness(
 
   const languageDataReady =
     webUi.dataReady &&
+    participantWebUi.dataReady &&
     controlledVocabulary.presentationReady &&
     state === "READY";
 
@@ -240,6 +243,11 @@ export async function evaluateLanguageLocalizationReadiness(
       `Public WEB_UI catalog not ready (missing=${webUi.missingKeyCount}, empty=${webUi.emptyKeyCount}, englishFallback=${webUi.englishFallbackKeyCount})`,
     );
   }
+  if (!participantWebUi.dataReady) {
+    gaps.push(
+      `Participant WEB_UI catalog not ready (missing=${participantWebUi.missingKeyCount}, empty=${participantWebUi.emptyKeyCount}, englishFallback=${participantWebUi.englishFallbackKeyCount})`,
+    );
+  }
   if (!controlledVocabulary.presentationReady) {
     gaps.push(
       `Controlled vocabulary missing localized labels (${controlledVocabulary.conceptsMissingLocalizedLabel})`,
@@ -280,6 +288,7 @@ export async function evaluateLanguageLocalizationReadiness(
     languageDataReady,
     state,
     webUi,
+    participantWebUi,
     controlledVocabulary,
     higherAuthority,
     pwaCivic,

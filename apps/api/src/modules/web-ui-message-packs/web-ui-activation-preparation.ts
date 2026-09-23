@@ -375,11 +375,32 @@ async function resolveTranslator(
 }
 
 /**
- * True when an effective public WEB_UI pack is already complete — skip generation.
+ * True when effective ordinary WEB_UI (public ∪ participant) is complete — skip generation.
  */
 export async function isPublicWebUiAlreadyReady(locale: string): Promise<boolean> {
-  const readiness = await assessWebUiCatalogReadinessForLocale({ locale });
-  return readiness.dataReady === true;
+  const ordinary = await assessOrdinaryWebUiCatalogReadiness(locale);
+  return ordinary.dataReady === true;
+}
+
+async function assessOrdinaryWebUiCatalogReadiness(locale: string): Promise<{
+  readonly dataReady: boolean;
+  readonly missingKeyCount: number;
+  readonly emptyKeyCount: number;
+  readonly requiredKeyCount: number;
+}> {
+  const [publicReadiness, participantReadiness] = await Promise.all([
+    assessWebUiCatalogReadinessForLocale({ locale }),
+    assessWebUiCatalogReadinessForLocale({ locale, scope: "participant" }),
+  ]);
+  return {
+    dataReady:
+      publicReadiness.dataReady === true && participantReadiness.dataReady === true,
+    missingKeyCount:
+      publicReadiness.missingKeyCount + participantReadiness.missingKeyCount,
+    emptyKeyCount: publicReadiness.emptyKeyCount + participantReadiness.emptyKeyCount,
+    requiredKeyCount:
+      publicReadiness.requiredKeyCount + participantReadiness.requiredKeyCount,
+  };
 }
 
 /**
@@ -661,7 +682,7 @@ export async function ensureWebUiActivationCheckpoint(input: {
 }> {
   const locale = input.job.locale;
   const deps = input.deps ?? {};
-  const readiness = await assessWebUiCatalogReadinessForLocale({ locale });
+  const readiness = await assessOrdinaryWebUiCatalogReadiness(locale);
 
   if (readiness.dataReady) {
     return {
@@ -1410,7 +1431,7 @@ export async function processWebUiActivationTick(input: {
   readonly deps?: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps ?? {};
-  const readiness = await assessWebUiCatalogReadinessForLocale({ locale: input.job.locale });
+  const readiness = await assessOrdinaryWebUiCatalogReadiness(input.job.locale);
   if (readiness.dataReady) {
     return {
       done: true,

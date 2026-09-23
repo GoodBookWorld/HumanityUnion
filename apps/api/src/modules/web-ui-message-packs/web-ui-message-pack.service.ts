@@ -174,6 +174,10 @@ export async function prepareAdminWebUiMessagePack(input: {
   const selected = selectEnglishWebUiMessages(input.scope);
   const pack = await getWebUiMessagePackByLocale(locale);
   const publicReadiness = await assessWebUiCatalogReadinessForLocale({ locale });
+  const participantReadiness = await assessWebUiCatalogReadinessForLocale({
+    locale,
+    scope: "participant",
+  });
   const fullReadiness = await assessWebUiCatalogReadinessForLocale({
     locale,
     requiredPaths: collectStringPaths(loadBundledEnglishWebUiMessagePack()),
@@ -183,9 +187,11 @@ export async function prepareAdminWebUiMessagePack(input: {
     scope: input.scope,
     source: "english-catalog",
     publicRequiredKeyCount: selected.publicRequiredKeyCount,
+    participantRequiredKeyCount: selected.participantRequiredKeyCount,
     fullCatalogKeyCount: selected.fullCatalogKeyCount,
     pack: pack ? { status: pack.status, revision: pack.revision } : null,
     publicReadiness,
+    participantReadiness,
     fullCatalog: {
       requiredKeyCount: fullReadiness.requiredKeyCount,
       missingKeyCount: fullReadiness.missingKeyCount,

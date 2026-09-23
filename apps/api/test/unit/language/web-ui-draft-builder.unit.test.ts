@@ -8,7 +8,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { isPublicReaderWebUiRequiredPath, type TranslationProviderId } from "@hu/types";
+import { isOrdinaryWebUiRequiredPath, isPublicReaderWebUiRequiredPath, type TranslationProviderId } from "@hu/types";
 
 import { DeterministicTranslationProvider } from "../../../src/modules/language/providers/deterministic-translation-provider.js";
 import { TranslationProviderError } from "../../../src/modules/language/translation.config.js";
@@ -159,8 +159,9 @@ describe("offline WEB_UI draft builder", () => {
     assert.equal(result.providerCalls, 0);
     assert.equal(calls, 0);
     assert.equal(result.artifactPath, null);
-    assert.equal(result.leafCount, prepared.publicRequiredKeyCount);
     assert.equal(result.leafCount, prepared.selectedPaths.length);
+    assert.ok(prepared.selectedPaths.length >= prepared.publicRequiredKeyCount);
+    assert.ok(prepared.participantRequiredKeyCount > 0);
     rmSync(outRoot, { recursive: true, force: true });
   });
 
@@ -208,7 +209,13 @@ describe("offline WEB_UI draft builder", () => {
     const plans = planWebUiDraftBatches(flat);
     assert.ok(plans.length > 1);
     assert.ok(plans.every((batch) => batch.keys.length <= 6 && batch.keys.length > 0));
-    assert.ok(plans.every((batch) => batch.keys.every((key) => isPublicReaderWebUiRequiredPath(key))));
+    assert.ok(
+      plans.every((batch) =>
+        batch.keys.every((key) =>
+          isOrdinaryWebUiRequiredPath(key, isPublicReaderWebUiRequiredPath),
+        ),
+      ),
+    );
     assert.equal(
       plans.some((batch) => batch.keys.some((key) => key.startsWith("initiativeExperience.author.sidebar"))),
       false,
@@ -340,6 +347,7 @@ describe("offline WEB_UI draft builder", () => {
       }
       return echo(request);
     });
+    // Unexpected keys are discarded (Step 15C.8) — no retry when expected keys are intact.
     const extraCalls = await countCalls((request, attempt) => {
       if (attempt === 1) {
         const parsed = flatPayload(request);
@@ -371,7 +379,8 @@ describe("offline WEB_UI draft builder", () => {
       }
       return echo(request);
     });
-    for (const calls of [missingCalls, extraCalls, malformedCalls, structureCalls]) {
+    assert.equal(extraCalls, batchCount);
+    for (const calls of [missingCalls, malformedCalls, structureCalls]) {
       assert.equal(calls, batchCount + 1);
     }
   });

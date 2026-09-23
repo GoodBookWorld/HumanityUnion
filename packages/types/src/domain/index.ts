@@ -155,6 +155,17 @@ export {
   isPublicReaderWebUiRequiredPath,
 } from "./public-reader-web-ui-scope.js";
 export type { PublicReaderWebUiRequiredPrefix } from "./public-reader-web-ui-scope.js";
+export {
+  PARTICIPANT_WEB_UI_REQUIRED_PREFIXES,
+  PARTICIPANT_WORKSPACE_EXCLUDED_PREFIXES,
+  isParticipantWebUiRequiredPath,
+  isParticipantWorkspaceExcludedPath,
+  isOrdinaryWebUiRequiredPath,
+} from "./participant-web-ui-scope.js";
+export type {
+  ParticipantWebUiRequiredPrefix,
+  ParticipantWorkspaceExcludedPrefix,
+} from "./participant-web-ui-scope.js";
 export type {
   LanguageActivationAdminView,
   LanguageActivationBrandDomainProgress,

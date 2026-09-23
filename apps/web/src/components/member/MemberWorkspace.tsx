@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import {
   WorkspaceSectionNav,
   type WorkspaceNavSection,
@@ -32,13 +36,15 @@ export function MemberWorkspace({
   navItems,
   sectionsLabel,
   sectionsAriaLabel,
-  navAriaLabel = "Workspace navigation",
+  navAriaLabel,
   workspaceNavigation,
   headerBar,
   assistant,
   assistantPlacement = "rail",
   children,
 }: MemberWorkspaceProps) {
+  const tWorkspace = useTranslations("workspace");
+  const resolvedNavAria = navAriaLabel ?? tWorkspace("mainNavigation");
   const withAssistantRail = Boolean(assistant) && assistantPlacement === "rail";
   const withAssistantCompact = Boolean(assistant) && assistantPlacement === "compact";
 
@@ -46,7 +52,7 @@ export function MemberWorkspace({
     <div
       className={`member-workspace${withAssistantRail ? " member-workspace--with-assistant" : ""}`}
     >
-      <aside className="member-workspace__nav" aria-label={navAriaLabel}>
+      <aside className="member-workspace__nav" aria-label={resolvedNavAria}>
         {workspaceNavigation}
         {navItems ? (
           <WorkspaceSectionNav

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DirectConversationSummary } from "@hu/types";
@@ -128,6 +128,7 @@ function NotificationRow({
   onReviewAuthorApplication?: (applicationId: string) => void;
 }) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
   const [busy, setBusy] = useState(false);
   const presentation = resolveNotificationPresentation(notification, t);
 
@@ -165,7 +166,7 @@ function NotificationRow({
       mode="notification"
       title={presentation.title}
       description={presentation.message}
-      meta={t("meta.recorded", { date: formatInitiativeDate(notification.createdAt) })}
+      meta={t("meta.recorded", { date: formatInitiativeDate(notification.createdAt, locale) })}
       unread={notification.status === "unread"}
       unreadLabel={t("unread.notification")}
       badge={
@@ -242,6 +243,7 @@ function NotificationRow({
 
 function DirectMessageRow({ conversation }: { conversation: DirectConversationSummary }) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
 
   return (
     <CommunicationCard
@@ -249,7 +251,7 @@ function DirectMessageRow({ conversation }: { conversation: DirectConversationSu
       avatarUrl={conversation.otherParticipant.avatarUrl}
       title={conversation.otherParticipant.displayName}
       description={conversation.lastMessagePreview ?? t("empty.noMessagesYet")}
-      meta={formatDirectConversationActivity(conversation.lastMessageAt)}
+      meta={formatDirectConversationActivity(conversation.lastMessageAt, locale)}
       unread={conversation.unread}
       unreadLabel={t("unread.messageFrom", { name: conversation.otherParticipant.displayName })}
       href={`/workspace/messages/${encodeURIComponent(conversation.conversationId)}`}
@@ -268,6 +270,7 @@ function DirectMessageRow({ conversation }: { conversation: DirectConversationSu
  */
 function ChannelMessageRow({ notification }: { notification: MemberNotificationView }) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
   const presentation = resolveNotificationPresentation(notification, t);
 
   return (
@@ -275,7 +278,7 @@ function ChannelMessageRow({ notification }: { notification: MemberNotificationV
       mode="message"
       title={presentation.title}
       description={presentation.message}
-      meta={formatInitiativeDate(notification.createdAt)}
+      meta={formatInitiativeDate(notification.createdAt, locale)}
       unread
       unreadLabel={t("unread.channelActivity")}
       href={notification.relatedUrl}
@@ -295,6 +298,7 @@ function ReminderRow({
   onFollowed: (reminderId: string) => void;
   onUpdated: () => void;
 }) {
+  const locale = useLocale();
   const isCommitmentProposal = reminder.relatedEntityType === IMPLEMENTATION_COMMITMENT_ENTITY;
 
   if (isCommitmentProposal) {
@@ -303,7 +307,7 @@ function ReminderRow({
         mode="reminder"
         title={reminder.title}
         description={reminder.message}
-        meta={formatInitiativeDate(reminder.createdAt)}
+        meta={formatInitiativeDate(reminder.createdAt, locale)}
         actions={
           <ImplementationCommitmentProposalActions
             commitmentId={reminder.relatedEntityId}
@@ -328,7 +332,7 @@ function ReminderRow({
       mode="reminder"
       title={reminder.title}
       description={reminder.message}
-      meta={formatInitiativeDate(reminder.createdAt)}
+      meta={formatInitiativeDate(reminder.createdAt, locale)}
       href={reminder.relatedUrl}
       ariaLabel={reminder.title}
       onClick={() => {
@@ -349,6 +353,7 @@ function ArchiveRow({
   onDeleted: () => void;
 }) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
@@ -383,7 +388,7 @@ function ArchiveRow({
       mode={item.kind}
       title={presentation.title}
       description={presentation.message}
-      meta={t("meta.archived", { date: formatInitiativeDate(timestampLabel) })}
+      meta={t("meta.archived", { date: formatInitiativeDate(timestampLabel, locale) })}
       actions={
         <button
           type="button"

@@ -798,6 +798,10 @@
         "scheduleHeading": "جدولة جلسة",
         "sessionFormAria": "جدولة جلسة تعاون"
       }
+    },
+    "authGate": {
+      "checkingSession": "جارٍ التحقق من جلستك…",
+      "redirectingToLogin": "جارٍ التحويل لتسجيل الدخول…"
     }
   },
   "civicActivity": {
@@ -1033,7 +1037,8 @@
       "matchedPriorities": "مطابقة لأولوياتك",
       "newestPublic": "أحدث المبادرات العامة",
       "carouselAria": "عرض المبادرات",
-      "viewAll": "عرض كل المبادرات"
+      "viewAll": "عرض كل المبادرات",
+      "sectionAria": "خلاصة المبادرات"
     }
   },
   "initiativeExperience": {
@@ -6989,6 +6994,27 @@
         "title": "حُدّث مجال تحرير المحرر",
         "message": "حُدّث مجال تحريرك كمحرر."
       }
+    },
+    "proposalActions": {
+      "accept": "قبول",
+      "decline": "رفض",
+      "accepted": "مقبول",
+      "declined": "مرفوض",
+      "checkingStatus": "جارٍ التحقق من حالة الاقتراح…",
+      "transferPrompt": "تم اقتراح نقل المسؤولية — اقبل لتصبح المشارك المسؤول.",
+      "acceptTitle": "قبول المسؤولية؟",
+      "acceptTransferTitle": "قبول النقل؟",
+      "acceptDescription": "القبول يعني أنك تتولى المسؤولية عن إجراء التزام التنفيذ هذا.",
+      "acceptTransferDescription": "القبول يعني أنك تتولى المسؤولية عن إجراء التزام التنفيذ هذا من المشارك المسؤول الحالي.",
+      "declineTitle": "رفض هذا الاقتراح؟",
+      "declineTransferTitle": "رفض هذا النقل؟",
+      "declineDescription": "الرفض يرفض هذه المسؤولية المقترحة. قد يقترح المؤلف شخصًا آخر لاحقًا.",
+      "declineTransferDescription": "الرفض يُبقي المشارك المسؤول الحالي في مكانه.",
+      "acceptedSuccess": "تم قبول الالتزام. أنت الآن مسؤول عن هذا الإجراء.",
+      "acceptedTransferSuccess": "تم قبول النقل. أنت الآن مسؤول عن هذا الإجراء.",
+      "declinedSuccess": "تم رفض الالتزام.",
+      "declinedTransferSuccess": "تم رفض النقل. يظل المشارك المسؤول الحالي مسؤولًا.",
+      "requestFailed": "فشل الطلب."
     }
   }
 }

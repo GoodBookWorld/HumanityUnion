@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
@@ -33,6 +33,7 @@ interface WorkspaceHomeDashboardProps {
 export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps) {
   const t = useTranslations("workspace");
   const tCivic = useTranslations("civicActivity");
+  const locale = useLocale();
   const authStatus = useClientAuthStatus();
   const [state, setState] = useState<WorkspaceHomeState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +180,7 @@ export function WorkspaceHomeDashboard({ onLoaded }: WorkspaceHomeDashboardProps
               {state.recentActivity.map((entry) => (
                 <li key={entry.id}>
                   <p className="workspace-home-timeline__date">
-                    {formatInitiativeDate(entry.occurredAt)}
+                    {formatInitiativeDate(entry.occurredAt, locale)}
                   </p>
                   <p className="workspace-home-timeline__label">
                     {resolveWorkspaceActivityEventLabel(t, tCivic, entry.label)}

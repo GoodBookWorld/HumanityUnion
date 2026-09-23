@@ -91,6 +91,15 @@ function view(input: {
       englishFallbackKeyCount: 0,
       sampleMissingPaths: [],
     },
+    participantWebUi: {
+      engineReady: true,
+      dataReady: true,
+      requiredKeyCount: 0,
+      missingKeyCount: 0,
+      emptyKeyCount: 0,
+      englishFallbackKeyCount: 0,
+      sampleMissingPaths: [],
+    },
     controlledVocabulary: {
       presentationReady: input.cvReady === true,
       conceptsChecked: input.cvChecked ?? 16,

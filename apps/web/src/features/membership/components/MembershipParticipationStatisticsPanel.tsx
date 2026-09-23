@@ -1,5 +1,5 @@
 import type { MembershipStatisticsPayload } from "@hu/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { formatMembershipStatisticValue } from "../../membership-statistics/membership-statistics-api";
 import { MembershipVotingExplanation } from "./MembershipVotingExplanation";
@@ -24,6 +24,7 @@ export function MembershipParticipationStatisticsPanel({
   showUpdatedAt = false,
 }: MembershipParticipationStatisticsPanelProps) {
   const t = useTranslations("membershipPublic");
+  const locale = useLocale();
   const resolvedTitle = title ?? t("statistics.defaultTitle");
   const rootClassName = className
     ? `membership-participation-statistics ${className}`
@@ -73,7 +74,7 @@ export function MembershipParticipationStatisticsPanel({
           {showUpdatedAt ? (
             <p className="membership-participation-statistics__updated">
               {t("statistics.lastUpdated", {
-                when: new Date(statistics.updatedAt).toLocaleString(undefined, {
+                when: new Date(statistics.updatedAt).toLocaleString(locale, {
                   dateStyle: "medium",
                   timeStyle: "short",
                 }),

@@ -79,12 +79,16 @@ export interface WebUiMessagePackPreparation {
   readonly scope: WebUiMessagePackPreparationScope;
   readonly source: "english-catalog";
   readonly publicRequiredKeyCount: number;
+  /** Step 15D.2 — ordinary Participant WEB_UI required path count. */
+  readonly participantRequiredKeyCount: number;
   readonly fullCatalogKeyCount: number;
   readonly pack: {
     readonly status: WebUiMessagePackStatus;
     readonly revision: number;
   } | null;
   readonly publicReadiness: LanguageWebUiReadinessSlice;
+  /** Step 15D.2 — Participant WEB_UI readiness against the effective pack. */
+  readonly participantReadiness: LanguageWebUiReadinessSlice;
   readonly fullCatalog: {
     readonly requiredKeyCount: number;
     readonly missingKeyCount: number;

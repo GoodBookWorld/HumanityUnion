@@ -219,9 +219,12 @@ function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
     ctRemaining: job?.domains.ct.remainingWorkItems ?? readiness.ct.workItemsRequired,
     plpCurrent: job?.domains.plp.current ?? readiness.plpMedia.current,
     plpRemaining: job?.domains.plp.remainingWorkItems ?? readiness.plpMedia.workItemsRequired,
-    publishedRequired: readiness.webUi.requiredKeyCount,
-    publishedMissing: readiness.webUi.missingKeyCount,
-    publishedDataReady: readiness.webUi.dataReady,
+    publishedRequired:
+      readiness.webUi.requiredKeyCount + readiness.participantWebUi.requiredKeyCount,
+    publishedMissing:
+      readiness.webUi.missingKeyCount + readiness.participantWebUi.missingKeyCount,
+    publishedDataReady:
+      readiness.webUi.dataReady && readiness.participantWebUi.dataReady,
   };
 }
 
@@ -246,8 +249,11 @@ export function localizationProgressFromReadiness(
     ctRemaining: report.ct.workItemsRequired,
     plpCurrent: report.plpMedia.current,
     plpRemaining: report.plpMedia.workItemsRequired,
-    publishedRequired: report.webUi.requiredKeyCount,
-    publishedMissing: report.webUi.missingKeyCount,
-    publishedDataReady: report.webUi.dataReady,
+    publishedRequired:
+      report.webUi.requiredKeyCount + report.participantWebUi.requiredKeyCount,
+    publishedMissing:
+      report.webUi.missingKeyCount + report.participantWebUi.missingKeyCount,
+    publishedDataReady:
+      report.webUi.dataReady && report.participantWebUi.dataReady,
   });
 }

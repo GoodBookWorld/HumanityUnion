@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, type ReactNode } from "react";
 
 import { isBootstrapUiAllowed } from "../bootstrap-ui.config";
@@ -18,6 +19,7 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "/workspace";
   const authStatus = useClientAuthStatus();
+  const t = useTranslations("workspace.authGate");
 
   useEffect(() => {
     if (authStatus === "pending") {
@@ -33,7 +35,7 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
   if (authStatus === "pending") {
     return (
       <p className="workspace-auth-gate__pending" role="status">
-        Checking your session…
+        {t("checkingSession")}
       </p>
     );
   }
@@ -41,7 +43,7 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
   if (authStatus === "unauthenticated" && !isBootstrapUiAllowed()) {
     return (
       <p className="workspace-auth-gate__pending" role="status">
-        Redirecting to Log in…
+        {t("redirectingToLogin")}
       </p>
     );
   }

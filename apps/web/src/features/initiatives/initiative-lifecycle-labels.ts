@@ -47,8 +47,8 @@ export function groupInitiativesByLifecyclePhase(
   };
 }
 
-export function formatInitiativeDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString(undefined, {
+export function formatInitiativeDate(isoDate: string, locale?: string): string {
+  return new Date(isoDate).toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",

@@ -129,6 +129,9 @@ function describePreparation(preparation: WebUiMessagePackPreparation): string {
     `, public missing ${preparation.publicReadiness.missingKeyCount}` +
     `, public empty ${preparation.publicReadiness.emptyKeyCount}` +
     `, public data ready ${yesNo(preparation.publicReadiness.dataReady)}` +
+    `. Participant required ${preparation.participantRequiredKeyCount}` +
+    `, participant missing ${preparation.participantReadiness.missingKeyCount}` +
+    `, participant data ready ${yesNo(preparation.participantReadiness.dataReady)}` +
     `. Full catalog ${preparation.fullCatalogKeyCount}` +
     `, full missing ${preparation.fullCatalog.missingKeyCount}` +
     `, full data ready ${yesNo(preparation.fullCatalog.dataReady)}` +
@@ -515,8 +518,8 @@ function LanguageReadinessDetails({
       <section className="admin-languages__readiness-section">
         <h4 className="admin-languages__readiness-heading">Overall presentation</h4>
         <p className="admin-languages__readiness-note">
-          Whether ordinary public presentation data is ready under the localization
-          owners that are implemented today.
+          Whether ordinary Public and Participant presentation data is ready under the
+          localization owners that are implemented today.
         </p>
         <div>
           State: <code>{report.state}</code>
@@ -525,6 +528,9 @@ function LanguageReadinessDetails({
           <ul>
             {report.webUi.dataReady ? null : (
               <li>Public interface &amp; platform catalog is not ready.</li>
+            )}
+            {report.participantWebUi.dataReady ? null : (
+              <li>Participant interface is not ready.</li>
             )}
             {report.controlledVocabulary.presentationReady ? null : (
               <li>Controlled Vocabulary is not ready.</li>
@@ -619,6 +625,19 @@ function LanguageReadinessDetails({
         <div>Empty={report.webUi.emptyKeyCount}</div>
         <div>English fallback={report.webUi.englishFallbackKeyCount}</div>
         <div>Data ready: {yesNo(report.webUi.dataReady)}</div>
+      </section>
+
+      <section className="admin-languages__readiness-section">
+        <h4 className="admin-languages__readiness-heading">Participant interface</h4>
+        <p className="admin-languages__readiness-note">
+          Catalog keys for ordinary signed-in Participant surfaces (Workspace,
+          Notifications). Author, steward, and admin tooling remain outside this line.
+        </p>
+        <div>Required={report.participantWebUi.requiredKeyCount}</div>
+        <div>Missing={report.participantWebUi.missingKeyCount}</div>
+        <div>Empty={report.participantWebUi.emptyKeyCount}</div>
+        <div>English fallback={report.participantWebUi.englishFallbackKeyCount}</div>
+        <div>Data ready: {yesNo(report.participantWebUi.dataReady)}</div>
       </section>
 
       <section className="admin-languages__readiness-section">

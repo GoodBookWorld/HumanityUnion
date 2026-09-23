@@ -1,10 +1,14 @@
 /**
- * Closure 07 — WEB_UI catalog readiness for one Registry locale (API-side).
+ * Closure 07 / Step 15D.2 — WEB_UI catalog readiness for one Registry locale (API-side).
  * Uses the same effective pack source as runtime (bundled FS → published remote).
  * Registry/fixture-driven locales — no hardcoded production allowlist.
  */
 
-import { isPublicReaderWebUiRequiredPath, type LanguageWebUiReadinessSlice } from "@hu/types";
+import {
+  isParticipantWebUiRequiredPath,
+  isPublicReaderWebUiRequiredPath,
+  type LanguageWebUiReadinessSlice,
+} from "@hu/types";
 
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
 import {
@@ -25,17 +29,19 @@ function readPathValue(messages: MessagePack, dottedPath: string): unknown {
   return current;
 }
 
+export type WebUiCatalogReadinessScope = "public" | "participant";
+
 /**
- * Assess public-reader WEB_UI catalog readiness for a target locale.
- * Scope is `isPublicReaderWebUiRequiredPath` — not the full catalog.
- * Missing effective pack ⇒ not data-ready.
- * Manual Registry `uiTranslationStatus` does not override measured readiness.
+ * Assess WEB_UI catalog readiness for a target locale.
+ * Default scope is public-reader (`isPublicReaderWebUiRequiredPath`).
+ * Participant scope uses `isParticipantWebUiRequiredPath` (Step 15D.2).
  */
 export async function assessWebUiCatalogReadinessForLocale(input: {
   readonly locale: string;
   readonly englishLocale?: string;
   readonly requiredPaths?: readonly string[];
   readonly flagEnglishIdenticalAsFallback?: boolean;
+  readonly scope?: WebUiCatalogReadinessScope;
 }): Promise<LanguageWebUiReadinessSlice> {
   const englishLocale = input.englishLocale ?? "en";
   let english: MessagePack;
@@ -58,9 +64,13 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
   }
 
   const effective = await resolveEffectiveWebUiMessagePack(input.locale);
+  const pathPredicate =
+    input.scope === "participant"
+      ? isParticipantWebUiRequiredPath
+      : isPublicReaderWebUiRequiredPath;
   const requiredPaths =
     input.requiredPaths ??
-    collectStringPaths(english).filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
+    collectStringPaths(english).filter((pathKey) => pathPredicate(pathKey));
 
   if (!effective) {
     return {
@@ -120,4 +130,14 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
     englishFallbackKeyCount,
     sampleMissingPaths,
   };
+}
+
+/** Convenience: Participant WEB_UI readiness for one locale. */
+export async function assessParticipantWebUiCatalogReadinessForLocale(input: {
+  readonly locale: string;
+  readonly englishLocale?: string;
+  readonly requiredPaths?: readonly string[];
+  readonly flagEnglishIdenticalAsFallback?: boolean;
+}): Promise<LanguageWebUiReadinessSlice> {
+  return assessWebUiCatalogReadinessForLocale({ ...input, scope: "participant" });
 }

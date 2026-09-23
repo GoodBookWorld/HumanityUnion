@@ -6,6 +6,8 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
 import {
+  isOrdinaryWebUiRequiredPath,
+  isParticipantWebUiRequiredPath,
   isPublicReaderWebUiRequiredPath,
   PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES,
 } from "@hu/types";
@@ -128,14 +130,20 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
 
   it("9 derives one canonical required count for API preparation", () => {
     const english = loadBundledEnglishWebUiMessagePack();
-    const fromPredicate = collectStringPaths(english).filter((pathKey) =>
-      isPublicReaderWebUiRequiredPath(pathKey),
-    );
+    const ordinary = [
+      ...new Set(
+        collectStringPaths(english).filter((pathKey) =>
+          isOrdinaryWebUiRequiredPath(pathKey, isPublicReaderWebUiRequiredPath),
+        ),
+      ),
+    ].sort();
     const prepared = selectEnglishWebUiMessages("public");
-    assert.equal(prepared.selectedPaths.length, fromPredicate.length);
-    assert.deepEqual([...prepared.selectedPaths].sort(), [...fromPredicate].sort());
+    assert.equal(prepared.selectedPaths.length, ordinary.length);
+    assert.deepEqual([...prepared.selectedPaths].sort(), ordinary);
+    assert.ok(prepared.participantRequiredKeyCount > 0);
+    assert.ok(prepared.selectedPaths.some((pathKey) => isParticipantWebUiRequiredPath(pathKey)));
     const corpus = loadPublicWebUiEnglishCorpus();
-    assert.equal(corpus.requiredPaths.length, fromPredicate.length);
+    assert.equal(corpus.requiredPaths.length, ordinary.length);
   });
 
   it("10 preparation export contains the new public families", () => {
@@ -162,7 +170,7 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     assert.equal(legacyPaths.length, 2240);
     const required = all.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
     assert.ok(required.length > 2240);
-    assert.equal(required.length - legacyPaths.length, 228);
+    assert.equal(required.length - legacyPaths.length, 229);
 
     await upsertWebUiMessagePack({
       locale: "ka",
@@ -259,7 +267,12 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     assert.ok(
       STEP15D1_FAMILIES.some((family) =>
         firstMissing.keys.some((key) => key.startsWith(family)),
-      ),
+      ) ||
+        firstMissing.keys.some(
+          (key) =>
+            isParticipantWebUiRequiredPath(key) && !isPublicReaderWebUiRequiredPath(key),
+        ),
+      "first uncovered batch is a 15D.1 public family or participant-only path",
     );
   });
 

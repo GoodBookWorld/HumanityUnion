@@ -65,6 +65,17 @@ describe("Admin Languages readiness details", () => {
     assert.match(details, /report\.state === "DATA_NOT_READY"/);
   });
 
+  it("6b. labels the Participant interface catalog", () => {
+    assert.match(details, /Participant interface/);
+    assert.match(details, /report\.participantWebUi\.requiredKeyCount/);
+    assert.match(details, /report\.participantWebUi\.missingKeyCount/);
+    assert.match(details, /report\.participantWebUi\.emptyKeyCount/);
+    assert.match(details, /report\.participantWebUi\.englishFallbackKeyCount/);
+    assert.match(details, /report\.participantWebUi\.dataReady/);
+    assert.match(details, /ordinary signed-in Participant surfaces/);
+    assert.doesNotMatch(details, /isParticipantWebUiRequiredPath/);
+  });
+
   it("7. shows persisted reading coverage even when the feature flag is disabled", () => {
     assert.match(details, /Persisted reading enabled/);
     assert.match(details, /report\.registry\.pwaPersistedReadingEnabled/);

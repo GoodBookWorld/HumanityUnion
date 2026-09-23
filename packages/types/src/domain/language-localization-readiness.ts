@@ -236,10 +236,13 @@ export type LanguageLocalizationReadinessReport = {
   };
   /** Registry flags allow automatic CT/PLP targeting (engine path). */
   readonly engineReady: boolean;
-  /** WEB_UI + controlled vocab + owned content completeness. */
+  /** WEB_UI (public + participant) + controlled vocab + owned content completeness. */
   readonly languageDataReady: boolean;
   readonly state: LanguageLocalizationReadinessState;
+  /** Public-reader WEB_UI readiness (`isPublicReaderWebUiRequiredPath`). */
   readonly webUi: LanguageWebUiReadinessSlice;
+  /** Participant WEB_UI readiness (`isParticipantWebUiRequiredPath`). Step 15D.2. */
+  readonly participantWebUi: LanguageWebUiReadinessSlice;
   readonly controlledVocabulary: LanguageControlledVocabularyReadinessSlice;
   readonly higherAuthority: LanguageHigherAuthorityReadinessSlice;
   /** Pack 02 — PWA civic persisted-reading slice (does not require WEB_UI/CV/Brand/Legal). */
@@ -312,6 +315,8 @@ export function deriveLanguageLocalizationReadinessState(input: {
   readonly enabled: boolean;
   readonly contentTranslationEnabled: boolean;
   readonly webUiDataReady: boolean;
+  /** Step 15D.2 — Participant interface; defaults true when omitted (legacy callers). */
+  readonly participantWebUiDataReady?: boolean;
   readonly controlledVocabularyPresentationReady: boolean;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
@@ -320,7 +325,12 @@ export function deriveLanguageLocalizationReadinessState(input: {
     return "DISABLED";
   }
 
-  if (!input.webUiDataReady || !input.controlledVocabularyPresentationReady) {
+  const participantReady = input.participantWebUiDataReady !== false;
+  if (
+    !input.webUiDataReady ||
+    !participantReady ||
+    !input.controlledVocabularyPresentationReady
+  ) {
     return "DATA_NOT_READY";
   }
 

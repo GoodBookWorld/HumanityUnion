@@ -7,7 +7,10 @@ import path from "node:path";
 import { describe, it, beforeEach } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { isPublicReaderWebUiRequiredPath } from "@hu/types";
+import {
+  isParticipantWebUiRequiredPath,
+  isPublicReaderWebUiRequiredPath,
+} from "@hu/types";
 
 import { ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT } from "../../../src/modules/web-ui-message-packs/index.js";
 import {
@@ -19,6 +22,7 @@ import {
 import { WebUiMessagePackValidationError } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.errors.js";
 import { resolveEffectiveWebUiMessagePack } from "../../../src/modules/web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
 import {
+  collectStringPaths,
   inspectMessageStructure,
   loadBundledEnglishWebUiMessagePack,
   loadBundledWebUiMessagePackFromFs,
@@ -177,14 +181,31 @@ describe("WEB_UI remote message packs", () => {
     }
   });
 
-  it("public scope comes from isPublicReaderWebUiRequiredPath and excludes author workspace keys", () => {
+  it("public scope is ordinary public∪participant unique paths and excludes author workspace keys", () => {
     const prepared = selectEnglishWebUiMessages("public");
     const full = selectEnglishWebUiMessages("full");
-    assert.equal(prepared.selectedPaths.length, prepared.publicRequiredKeyCount);
+    const english = loadBundledEnglishWebUiMessagePack();
+    const allPaths = collectStringPaths(english);
+    const uniqueOrdinary = new Set([
+      ...allPaths.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey)),
+      ...allPaths.filter((pathKey) => isParticipantWebUiRequiredPath(pathKey)),
+    ]);
+    assert.equal(prepared.selectedPaths.length, uniqueOrdinary.size);
     assert.ok(prepared.publicRequiredKeyCount > 0);
+    assert.ok(prepared.participantRequiredKeyCount > 0);
+    assert.ok(prepared.selectedPaths.length > prepared.publicRequiredKeyCount);
+    assert.ok(
+      prepared.selectedPaths.length <=
+        prepared.publicRequiredKeyCount + prepared.participantRequiredKeyCount,
+    );
     assert.ok(prepared.publicRequiredKeyCount < prepared.fullCatalogKeyCount);
     assert.equal(full.selectedPaths.length, full.fullCatalogKeyCount);
-    assert.ok(prepared.selectedPaths.every((pathKey) => isPublicReaderWebUiRequiredPath(pathKey)));
+    assert.ok(
+      prepared.selectedPaths.every(
+        (pathKey) =>
+          isPublicReaderWebUiRequiredPath(pathKey) || isParticipantWebUiRequiredPath(pathKey),
+      ),
+    );
     assert.equal(
       prepared.selectedPaths.some((pathKey) => pathKey.startsWith("initiativeExperience.author.sidebar")),
       false,

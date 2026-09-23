@@ -90,6 +90,15 @@ function baseReadiness(
       englishFallbackKeyCount: 0,
       sampleMissingPaths: [],
     },
+    participantWebUi: {
+      engineReady: true,
+      dataReady: true,
+      requiredKeyCount: 0,
+      missingKeyCount: 0,
+      emptyKeyCount: 0,
+      englishFallbackKeyCount: 0,
+      sampleMissingPaths: [],
+    },
     controlledVocabulary: {
       presentationReady: false,
       conceptsChecked: CONTROLLED_PUBLIC_VOCABULARY_REGISTRY.length,
