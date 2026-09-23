@@ -149,7 +149,7 @@ publicBlogRouter.get("/categories", async (_req, res) => {
   }
 });
 
-/** Pack 21A — public Blog email subscription (must register before /:slug). */
+/** Pack 21A / EMAIL SECURITY 02B — public Blog email subscription (must register before /:slug). */
 publicBlogRouter.post("/subscriptions", async (req, res) => {
   try {
     const { requestBlogSubscription } = await import("./blog-subscription.service.js");
@@ -159,9 +159,16 @@ publicBlogRouter.post("/subscriptions", async (req, res) => {
         : typeof req.headers["x-forwarded-for"] === "string"
           ? req.headers["x-forwarded-for"].split(",")[0]!.trim()
           : "unknown";
+    const correlationHeader = req.headers["x-request-id"];
+    const correlationId =
+      typeof correlationHeader === "string" && correlationHeader.trim()
+        ? correlationHeader.trim()
+        : undefined;
     const data = await requestBlogSubscription({
       email: req.body?.email,
+      turnstileToken: req.body?.turnstileToken ?? req.body?.cfTurnstileResponse,
       ipKey,
+      correlationId,
     });
     res.status(202).json(createSuccessResponse(data, data.message));
   } catch (error) {

@@ -223,6 +223,11 @@ export function validateProductionEnvironment(): void {
   problems.push(...collectInvalidEmailConfig());
   problems.push(...collectInvalidStripePaymentConfig());
 
+  // EMAIL SECURITY 02B — Blog Turnstile secret required on deployed production Node.
+  if (!readEnv("TURNSTILE_SECRET_KEY")) {
+    problems.push("Missing TURNSTILE_SECRET_KEY (required for Blog subscription Turnstile verification)");
+  }
+
   if (problems.length > 0) {
     throw new Error(
       `Invalid production configuration:\n- ${problems.join("\n- ")}\n` +

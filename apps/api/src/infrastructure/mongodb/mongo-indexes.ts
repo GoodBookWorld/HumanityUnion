@@ -1314,6 +1314,46 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // EMAIL SECURITY 02B — ephemeral Blog subscribe abuse counters.
+    collectionName: MONGO_COLLECTIONS.blogSubscriptionAbuseCounters,
+    indexes: [
+      {
+        key: { expiresAt: 1 },
+        expireAfterSeconds: 0,
+        name: "blog_subscription_abuse_counters_expires_at_ttl",
+      },
+      { key: { kind: 1, createdAt: -1 }, name: "blog_subscription_abuse_counters_kind_created" },
+    ],
+  },
+  {
+    // EMAIL SECURITY 02B — privacy-safe Blog subscribe security audit (~90d).
+    collectionName: MONGO_COLLECTIONS.blogSubscriptionSecurityEvents,
+    indexes: [
+      {
+        key: { eventId: 1 },
+        unique: true,
+        name: "blog_subscription_security_events_event_id_unique",
+      },
+      {
+        key: { expiresAt: 1 },
+        expireAfterSeconds: 0,
+        name: "blog_subscription_security_events_expires_at_ttl",
+      },
+      {
+        key: { occurredAt: -1 },
+        name: "blog_subscription_security_events_occurred_at",
+      },
+      {
+        key: { recipientHash: 1, occurredAt: -1 },
+        name: "blog_subscription_security_events_recipient_occurred",
+      },
+      {
+        key: { sourceIpHash: 1, occurredAt: -1 },
+        name: "blog_subscription_security_events_source_occurred",
+      },
+    ],
+  },
+  {
     // Pack 21D — one delivery fact per (post, subscriber); preserves sent for dedupe.
     collectionName: MONGO_COLLECTIONS.blogPublicationDeliveries,
     indexes: [

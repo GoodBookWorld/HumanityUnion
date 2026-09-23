@@ -127,6 +127,8 @@ describe("Production Hardening Pack 01 — production config guards", () => {
     process.env.SMTP_USERNAME = "noreply@example.org";
     process.env.SMTP_PASSWORD = "smtp-password-for-tests-only";
     process.env.SMTP_FROM_EMAIL = "noreply@example.org";
+    // EMAIL SECURITY 02B — Blog Turnstile secret required in production.
+    process.env.TURNSTILE_SECRET_KEY = "turnstile-secret-for-tests-only";
     // Clear durable file/memory values that may be present from apps/api/.env.
     for (const key of DURABLE_PERSISTENCE_ENV_KEYS) {
       delete process.env[key];
