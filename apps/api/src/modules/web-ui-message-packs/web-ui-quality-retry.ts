@@ -26,8 +26,10 @@ import {
   selectEnglishWebUiMessages,
 } from "./web-ui-message-pack.validate.js";
 import {
+  batchProtectedPayloadContainsSentinels,
   protectWebUiMessageForProvider,
   restoreWebUiMessageFromProvider,
+  webUiProtectionSentinelInstructions,
 } from "./web-ui-message-structure-protect.js";
 import {
   OFFLINE_WEB_UI_PROVIDER_TIMEOUT_MS,
@@ -361,8 +363,6 @@ export async function runWebUiQualityRetry(
     "Translate human-facing English that remained identical to the source.",
     "Use authoritative target-language preferred terminology consistently in exact labels, compounds, sentences, and ICU branches.",
     "Do not leave unchanged human-facing English unless it is genuinely a code, proper identifier, URL, acronym, numeric literal, or other intentionally untranslated token.",
-    "Values may contain protection sentinels such as ⟦w0⟧.",
-    "Copy every sentinel exactly. Do not translate, reorder, split, or drop sentinels.",
     "The user message is one flat JSON object. Preserve every JSON key exactly.",
     "Glossary:",
     glossary.trim(),
@@ -403,7 +403,12 @@ export async function runWebUiQualityRetry(
           targetLanguage: locale as LanguageCode,
           text: JSON.stringify(payloadObject),
           contentType: "structured_json",
-          terminologyContext,
+          terminologyContext: [
+            terminologyContext,
+            webUiProtectionSentinelInstructions(
+              batchProtectedPayloadContainsSentinels(payloadObject),
+            ),
+          ].join("\n"),
           safetyCleared: true,
         });
         const returned = parseTranslations(result.translatedText);

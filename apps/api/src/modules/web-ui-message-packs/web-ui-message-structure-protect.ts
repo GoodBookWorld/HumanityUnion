@@ -15,6 +15,46 @@ function sentinelPattern(): RegExp {
   return /⟦w(\d+)⟧/g;
 }
 
+/** Exact internal protection token grammar (`⟦w0⟧`, `⟦w12⟧`, …). */
+export const WEB_UI_PROTECTION_SENTINEL_PATTERN = /⟦w\d+⟧/g;
+
+/**
+ * Step 15D.4.1 — when English has zero protected slots, remove exact invented
+ * protection tokens the provider may have hallucinated. Does not touch other
+ * bracketed text or invalid sentinel-like syntax.
+ */
+export function stripInventedZeroSlotProtectionSentinels(providerValue: string): string {
+  const without = providerValue.replace(WEB_UI_PROTECTION_SENTINEL_PATTERN, "");
+  // Collapse horizontal whitespace runs created by token removal; keep newlines.
+  return without.replace(/[^\S\n]{2,}/g, " ").trim();
+}
+
+export function countExactProtectionSentinels(value: string): number {
+  return [...value.matchAll(sentinelPattern())].length;
+}
+
+/** True when any protected payload value already contains exact `⟦wN⟧` tokens. */
+export function batchProtectedPayloadContainsSentinels(
+  protectedPayload: Readonly<Record<string, string>>,
+): boolean {
+  return Object.values(protectedPayload).some((text) => countExactProtectionSentinels(text) > 0);
+}
+
+/**
+ * Step 15D.4.1 — sentinel copy rules only when the protected payload actually has slots.
+ * Locale-independent.
+ */
+export function webUiProtectionSentinelInstructions(batchContainsProtectionSentinels: boolean): string {
+  if (batchContainsProtectionSentinels) {
+    return [
+      "Values may contain protection sentinels such as ⟦w0⟧.",
+      "Copy every sentinel exactly. Do not translate, reorder, split, or drop sentinels.",
+      "Translate only natural-language text around sentinels.",
+    ].join("\n");
+  }
+  return "These values contain no protection tokens. Do not invent tokens such as ⟦w0⟧.";
+}
+
 export class WebUiMessageStructureError extends Error {
   constructor(message: string) {
     super(message);
@@ -235,10 +275,20 @@ export function protectWebUiMessageForProvider(english: string): ProtectedWebUiM
   return { text: parsed.text, slots };
 }
 
-/** Restore sentinels produced from the canonical English string. Rejects drift. */
+/** Restore sentinels produced from the canonical English string. Rejects drift.
+ * Step 15D.4.1: when English has zero slots, strip exact invented `⟦wN⟧` tokens
+ * then re-run the ordinary restore contract. Slots > 0 stay strictly unchanged.
+ */
 export function restoreWebUiMessageFromProvider(providerValue: string, english: string): string {
   const protectedMessage = protectWebUiMessageForProvider(english);
-  const matches = [...providerValue.matchAll(sentinelPattern())];
+  let value = providerValue;
+  if (
+    protectedMessage.slots.length === 0 &&
+    countExactProtectionSentinels(value) > 0
+  ) {
+    value = stripInventedZeroSlotProtectionSentinels(value);
+  }
+  const matches = [...value.matchAll(sentinelPattern())];
   if (matches.length !== protectedMessage.slots.length) {
     throw new WebUiMessageStructureError(
       `Protection sentinel count ${matches.length} does not match ${protectedMessage.slots.length}.`,
@@ -249,12 +299,12 @@ export function restoreWebUiMessageFromProvider(providerValue: string, english: 
       throw new WebUiMessageStructureError("Protection sentinels were reordered or renumbered.");
     }
   }
-  const restoredSlots = providerValue.replace(sentinelPattern(), (_match, rawIndex: string) => {
-    const value = protectedMessage.slots[Number(rawIndex)];
-    if (value === undefined) {
+  const restoredSlots = value.replace(sentinelPattern(), (_match, rawIndex: string) => {
+    const slotValue = protectedMessage.slots[Number(rawIndex)];
+    if (slotValue === undefined) {
       throw new WebUiMessageStructureError("Protection sentinel index is missing.");
     }
-    return value;
+    return slotValue;
   });
   const restored = restoreBrandTokensAfterMachineTranslation(restoredSlots);
   if (restored.includes("⟦w") || restored.includes(BRAND_MACHINE_SENTINEL)) {

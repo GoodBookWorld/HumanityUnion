@@ -32,9 +32,16 @@ import {
   classifyEnglishIdenticalWebUiTree,
 } from "./web-ui-identical-classification.js";
 import {
+  batchProtectedPayloadContainsSentinels,
   protectWebUiMessageForProvider,
   restoreWebUiMessageFromProvider,
+  webUiProtectionSentinelInstructions,
   WebUiMessageStructureError,
+} from "./web-ui-message-structure-protect.js";
+
+export {
+  batchProtectedPayloadContainsSentinels,
+  webUiProtectionSentinelInstructions,
 } from "./web-ui-message-structure-protect.js";
 
 const PROTECTION_VERSION = 1;
@@ -339,9 +346,6 @@ function buildTerminologyContext(input: {
     "Each JSON key is a stable catalog path. Copy every JSON key exactly.",
     "Translate only the string values. Every returned value must remain a string.",
     "Return one JSON object with exactly those keys. Do not wrap, nest, or rename them.",
-    "Values may contain protection sentinels such as ⟦w0⟧.",
-    "Copy every sentinel exactly. Do not translate, reorder, split, or drop sentinels.",
-    "Translate only natural-language text around sentinels.",
     "Short interface labels may stay identical to English when that is the natural form.",
     "Glossary:",
     input.glossary.trim(),
@@ -424,12 +428,16 @@ async function requestWebUiProviderTranslations(input: {
   for (const key of input.keys) {
     payloadObject[key] = protectWebUiMessageForProvider(input.englishFlat[key] ?? "").text;
   }
+  const terminologyContext = [
+    input.terminologyContext,
+    webUiProtectionSentinelInstructions(batchProtectedPayloadContainsSentinels(payloadObject)),
+  ].join("\n");
   const result = await input.translator({
     sourceLanguage: "en",
     targetLanguage: input.locale as LanguageCode,
     text: JSON.stringify(payloadObject),
     contentType: "structured_json",
-    terminologyContext: input.terminologyContext,
+    terminologyContext,
     safetyCleared: true,
   });
   return parseTranslations(result.translatedText);
