@@ -74,6 +74,7 @@ export type LanguageActivationWebUiDomainProgress = {
     | "publishing"
     | "ready"
     | "failed"
+    | "provider_cooldown"
     | null;
   readonly checkpointId: string | null;
   readonly sourceHash: string | null;
@@ -82,6 +83,10 @@ export type LanguageActivationWebUiDomainProgress = {
   readonly totalLeaves: number;
   readonly completedLeaves: number;
   readonly providerFailure: boolean;
+  /** Absolute ISO when provider cooldown ends (null when not cooling down). */
+  readonly nextAttemptAt?: string | null;
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?: string | null;
 };
 
 export type LanguageActivationControlledVocabularyDomainProgress = {

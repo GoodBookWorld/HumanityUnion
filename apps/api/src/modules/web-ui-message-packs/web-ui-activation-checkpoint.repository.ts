@@ -122,7 +122,7 @@ export async function listIncompleteWebUiActivationCheckpoints(): Promise<
   await ensureMongoReady();
   const docs = await checkpointCollection()
     .find({
-      phase: { $in: ["primary", "quality", "validating", "publishing"] },
+      phase: { $in: ["primary", "quality", "validating", "publishing", "provider_cooldown"] },
     })
     .toArray();
   return docs.map((doc) => {

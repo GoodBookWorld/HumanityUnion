@@ -367,6 +367,43 @@ describe("Step 15C.5 localization live progress", () => {
     assert.equal(withFlags.percent, ready.percent);
   });
 
+  it("provider_cooldown shows waiting label and retry time, not Failed", () => {
+    const withCooldown = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 360,
+          totalBatches: 379,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 360,
+              totalBatches: 379,
+              preparationPhase: "provider_cooldown",
+              providerFailure: false,
+            }),
+            nextAttemptAt: "2026-09-22T16:42:00.000Z",
+            transientFailureCount: 1,
+            lastTransientFailure: "rate_limited",
+          },
+        },
+      },
+    });
+    assert.match(withCooldown.phaseLabel, /Waiting for translation provider/);
+    assert.equal(withCooldown.failed, false);
+    assert.equal(withCooldown.nextAttemptAt, "2026-09-22T16:42:00.000Z");
+    assert.ok(withCooldown.percent > 80);
+    assert.doesNotMatch(withCooldown.phaseLabel, /Failed/);
+  });
+
   it("11–16 polling stays provider-free and the row shows progress plus readiness detail", () => {
     assert.equal(shouldPollLanguageActivationJob("queued"), true);
     assert.equal(shouldPollLanguageActivationJob("running"), true);

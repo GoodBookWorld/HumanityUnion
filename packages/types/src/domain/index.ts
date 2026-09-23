@@ -173,6 +173,7 @@ export type {
   WebUiActivationBatchStatus,
   WebUiActivationCheckpointPhase,
   WebUiActivationCheckpointRecord,
+  WebUiActivationTransientFailure,
 } from "./web-ui-activation-checkpoint.js";
 export {
   LANGUAGE_ACTIVATION_DOMAIN_STATUSES,

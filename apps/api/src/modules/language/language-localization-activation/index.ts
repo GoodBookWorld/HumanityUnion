@@ -37,6 +37,7 @@ export {
   resumeIncompleteWebUiActivationJobsOnBoot,
   scheduleLanguageActivationJobProcess,
   scheduleWebUiActivationTick,
+  scheduleWebUiActivationTickAt,
   setLanguageActivationJobAdminAssertOverrideForTests,
   setLanguageActivationJobProcessDepsForTests,
   startAndProcessLanguageActivationJobForTests,

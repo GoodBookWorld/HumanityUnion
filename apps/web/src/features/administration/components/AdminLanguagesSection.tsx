@@ -31,6 +31,7 @@ import {
 } from "../admin-languages-api";
 import { shouldPollLanguageActivationJob, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS } from "../admin-languages-activation-poll";
 import {
+  formatLocalizationRetryAt,
   localizationProgressFromActivation,
   localizationProgressFromReadiness,
 } from "../admin-languages-localization-progress";
@@ -337,7 +338,9 @@ function formatOwnerPreparationProgress(view: LanguageActivationAdminView): stri
   ) {
     lines.push(webUi.detail ?? "Preparing public interface…");
   } else if (webUi.status === "in_progress" || webUi.preparationPhase) {
-    if (webUi.preparationPhase === "quality") {
+    if (webUi.preparationPhase === "provider_cooldown") {
+      lines.push(webUi.detail ?? "Waiting for translation provider…");
+    } else if (webUi.preparationPhase === "quality") {
       lines.push(
         webUi.detail ??
           `Checking translation quality… ${webUi.completedBatches} / ${webUi.totalBatches}`,
@@ -444,6 +447,11 @@ function LocalizationProgressMeter({
         />
       </div>
       <div className="hu-caption">{progress.phaseLabel}</div>
+      {progress.nextAttemptAt ? (
+        <div className="hu-caption">
+          Automatic retry at {formatLocalizationRetryAt(progress.nextAttemptAt)}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1231,10 +1239,14 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                   const busy = togglingId === row.languageId || activatingId === row.languageId;
                   const readiness = readinessById[row.languageId];
                   const activation = activationById[row.languageId];
-                  const canActivate =
-                    row.enabled && row.contentTranslationEnabled && !english;
                   const activationView =
                     activation && typeof activation === "object" ? activation : null;
+                  const canActivate =
+                    row.enabled &&
+                    row.contentTranslationEnabled &&
+                    !english &&
+                    activationView?.job?.domains.webUi.preparationPhase !==
+                      "provider_cooldown";
                   const readinessReport =
                     readiness && typeof readiness === "object" ? readiness : null;
                   const progress = activationView

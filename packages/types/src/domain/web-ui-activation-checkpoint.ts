@@ -9,11 +9,15 @@ export type WebUiActivationCheckpointPhase =
   | "validating"
   | "publishing"
   | "ready"
-  | "failed";
+  | "failed"
+  /** Transient Gemini rate-limit wait; parent job stays running. */
+  | "provider_cooldown";
 
 export type WebUiActivationBatchPhase = "primary" | "quality";
 
 export type WebUiActivationBatchStatus = "ok" | "failed" | "pending";
+
+export type WebUiActivationTransientFailure = "rate_limited";
 
 export type WebUiActivationCheckpointRecord = {
   readonly checkpointId: string;
@@ -36,6 +40,11 @@ export type WebUiActivationCheckpointRecord = {
   readonly detail: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** Absolute ISO time when provider work may resume after cooldown. */
+  readonly nextAttemptAt?: string | null;
+  /** Consecutive transient rate-limit streak (resets on successful batch). */
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?: WebUiActivationTransientFailure | null;
 };
 
 export type WebUiActivationBatchRecord = {

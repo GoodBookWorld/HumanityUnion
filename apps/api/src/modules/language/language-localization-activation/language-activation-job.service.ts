@@ -263,7 +263,8 @@ async function claimLanguageActivationJob(
     domains.webUi.preparationPhase === "primary" ||
     domains.webUi.preparationPhase === "quality" ||
     domains.webUi.preparationPhase === "validating" ||
-    domains.webUi.preparationPhase === "publishing";
+    domains.webUi.preparationPhase === "publishing" ||
+    domains.webUi.preparationPhase === "provider_cooldown";
   const brand = domains.brand;
   if (
     !checkpointActive &&
@@ -347,6 +348,23 @@ export async function startOrResumeLanguageActivationJob(input: {
       skipCorpusPlan: deps.skipCorpusInReadiness === true,
     });
     const claimed = await claimLanguageActivationJob(active, readiness);
+    const coolingDown =
+      claimed.domains.webUi.preparationPhase === "provider_cooldown" ||
+      (claimed.domains.webUi.nextAttemptAt != null &&
+        claimed.domains.webUi.nextAttemptAt.length > 0);
+    if (coolingDown) {
+      const nextAttemptAt = claimed.domains.webUi.nextAttemptAt ?? null;
+      if (nextAttemptAt) {
+        scheduleWebUiActivationTickAt(claimed.jobId, nextAttemptAt);
+      }
+      return toAdminView({
+        job: claimed,
+        readiness,
+        notes: [
+          "Automatic translation-provider cooldown is pending. No new job or checkpoint created.",
+        ],
+      });
+    }
     if (input.scheduleProcess !== false && claimed.status !== "failed") {
       scheduleLanguageActivationJobProcess(claimed.jobId);
     }
@@ -712,6 +730,28 @@ export async function processLanguageActivationJob(
         return job;
       }
 
+      if (
+        tick.checkpoint?.phase === "provider_cooldown" ||
+        tick.webUi.preparationPhase === "provider_cooldown"
+      ) {
+        const nextAttemptAt = tick.webUi.nextAttemptAt ?? tick.checkpoint?.nextAttemptAt ?? null;
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          diagnosticSummary: tick.webUi.detail ?? "running — Waiting for translation provider…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        if (nextAttemptAt) {
+          scheduleWebUiActivationTickAt(job.jobId, nextAttemptAt);
+        } else {
+          scheduleWebUiActivationTick(job.jobId);
+        }
+        return job;
+      }
+
       if (tick.needsAnotherTick && !tick.done) {
         job = {
           ...job,
@@ -772,7 +812,8 @@ export async function processLanguageActivationJob(
       domains.webUi.preparationPhase === "primary" ||
       domains.webUi.preparationPhase === "quality" ||
       domains.webUi.preparationPhase === "validating" ||
-      domains.webUi.preparationPhase === "publishing";
+      domains.webUi.preparationPhase === "publishing" ||
+      domains.webUi.preparationPhase === "provider_cooldown";
 
     if (shouldReconcileResiduals && !webUiStillPreparing) {
       const stamp = nowIso();
@@ -909,7 +950,8 @@ export async function getLanguageActivationAdminView(input: {
         raced.domains.webUi.preparationPhase === "primary" ||
         raced.domains.webUi.preparationPhase === "quality" ||
         raced.domains.webUi.preparationPhase === "validating" ||
-        raced.domains.webUi.preparationPhase === "publishing");
+        raced.domains.webUi.preparationPhase === "publishing" ||
+        raced.domains.webUi.preparationPhase === "provider_cooldown");
     if (tickWon && raced) {
       job = raced;
     } else if (
@@ -952,6 +994,9 @@ const scheduled = new Set<string>();
 const scheduledWebUi = new Set<string>();
 /** Coalesced follow-up when a tick is requested while this job already owns the slot. */
 const webUiFollowUpRequested = new Set<string>();
+/** One delayed cooldown timer per jobId (live-process optimization). */
+const webUiDelayedTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const webUiDelayedNextAttemptAt = new Map<string, string>();
 
 export function scheduleLanguageActivationJobProcess(jobId: string): void {
   if (scheduled.has(jobId)) {
@@ -981,15 +1026,25 @@ export function scheduleWebUiActivationTick(jobId: string): void {
   scheduledWebUi.add(jobId);
   setImmediate(() => {
     let status: string | null = null;
+    let nextCooldownAt: string | null = null;
     void processLanguageActivationJob(jobId, { webUiTick: true })
       .then((job) => {
         status = job.status;
+        if (job.domains.webUi.preparationPhase === "provider_cooldown") {
+          nextCooldownAt = job.domains.webUi.nextAttemptAt ?? null;
+        }
       })
       .catch(() => {
         status = "failed";
       })
       .finally(() => {
         scheduledWebUi.delete(jobId);
+        // Prefer delayed cooldown over an immediate follow-up tick.
+        if (nextCooldownAt && (status === "running" || status === "queued")) {
+          webUiFollowUpRequested.delete(jobId);
+          scheduleWebUiActivationTickAt(jobId, nextCooldownAt);
+          return;
+        }
         const followUp = webUiFollowUpRequested.delete(jobId);
         if (followUp && (status === "running" || status === "queued")) {
           scheduleWebUiActivationTick(jobId);
@@ -998,19 +1053,59 @@ export function scheduleWebUiActivationTick(jobId: string): void {
   });
 }
 
+/**
+ * Schedule a single delayed WEB_UI tick for provider cooldown.
+ * Duplicate requests coalesce to one timer per jobId; earlier due time wins.
+ */
+export function scheduleWebUiActivationTickAt(
+  jobId: string,
+  nextAttemptAt: string,
+): void {
+  const dueMs = Date.parse(nextAttemptAt);
+  if (!Number.isFinite(dueMs)) {
+    scheduleWebUiActivationTick(jobId);
+    return;
+  }
+  const existingAt = webUiDelayedNextAttemptAt.get(jobId);
+  if (existingAt) {
+    const existingMs = Date.parse(existingAt);
+    if (Number.isFinite(existingMs) && existingMs <= dueMs) {
+      return;
+    }
+    const prior = webUiDelayedTimers.get(jobId);
+    if (prior) {
+      clearTimeout(prior);
+    }
+  }
+  const delayMs = Math.max(0, Math.min(dueMs - Date.now(), 2_147_483_647));
+  webUiDelayedNextAttemptAt.set(jobId, nextAttemptAt);
+  const timer = setTimeout(() => {
+    webUiDelayedTimers.delete(jobId);
+    webUiDelayedNextAttemptAt.delete(jobId);
+    scheduleWebUiActivationTick(jobId);
+  }, delayMs);
+  webUiDelayedTimers.set(jobId, timer);
+}
+
 export function getWebUiActivationSchedulerSnapshotForTests(jobId: string): {
   readonly inFlight: boolean;
   readonly followUpRequested: boolean;
+  readonly delayedPending: boolean;
+  readonly delayedNextAttemptAt: string | null;
 } {
   return {
     inFlight: scheduledWebUi.has(jobId),
     followUpRequested: webUiFollowUpRequested.has(jobId),
+    delayedPending: webUiDelayedTimers.has(jobId),
+    delayedNextAttemptAt: webUiDelayedNextAttemptAt.get(jobId) ?? null,
   };
 }
 
 /**
  * API boot: resume incomplete WEB_UI checkpoints so Render recycle does not
  * depend on an operator clicking Activate again.
+ * Provider_cooldown: schedule delayed or immediate continuation; zero provider
+ * calls until a due tick executes.
  */
 export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
   readonly scheduled: number;
@@ -1026,7 +1121,21 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
     if (!isClaimedActivationStatus(job.status)) {
       continue;
     }
-    scheduleWebUiActivationTick(job.jobId);
+    if (checkpoint.phase === "provider_cooldown") {
+      const nextAttemptAt = checkpoint.nextAttemptAt ?? null;
+      if (nextAttemptAt) {
+        const dueMs = Date.parse(nextAttemptAt);
+        if (Number.isFinite(dueMs) && dueMs > Date.now()) {
+          scheduleWebUiActivationTickAt(job.jobId, nextAttemptAt);
+        } else {
+          scheduleWebUiActivationTick(job.jobId);
+        }
+      } else {
+        scheduleWebUiActivationTick(job.jobId);
+      }
+    } else {
+      scheduleWebUiActivationTick(job.jobId);
+    }
     resumedJobIds.add(job.jobId);
     count += 1;
   }
@@ -1057,6 +1166,11 @@ export function resetLanguageActivationJobSchedulerForTests(): void {
   scheduled.clear();
   scheduledWebUi.clear();
   webUiFollowUpRequested.clear();
+  for (const timer of webUiDelayedTimers.values()) {
+    clearTimeout(timer);
+  }
+  webUiDelayedTimers.clear();
+  webUiDelayedNextAttemptAt.clear();
 }
 
 /** Test helper: run process synchronously without scheduler. */
@@ -1083,6 +1197,7 @@ export async function startAndProcessLanguageActivationJobForTests(input: {
     let guard = 0;
     while (
       job.status === "running" &&
+      job.domains.webUi.preparationPhase !== "provider_cooldown" &&
       (job.domains.webUi.status === "in_progress" ||
         job.domains.webUi.preparationPhase === "primary" ||
         job.domains.webUi.preparationPhase === "quality" ||

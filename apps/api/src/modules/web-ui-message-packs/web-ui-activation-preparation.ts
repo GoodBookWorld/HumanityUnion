@@ -38,6 +38,10 @@ import {
   type WebUiDraftBatchPlan,
 } from "./web-ui-draft-builder.js";
 import {
+  computeWebUiCooldownNextAttemptAt,
+  isWebUiRateLimitedError,
+} from "./web-ui-provider-cooldown.js";
+import {
   assembleWebUiActivationTranslatedMap,
   getWebUiActivationBatch,
   getWebUiActivationCheckpoint,
@@ -143,6 +147,9 @@ export function webUiProgressFromCheckpoint(input: {
       totalLeaves: cp.leafCount,
       completedLeaves: input.completedLeaves ?? 0,
       providerFailure: true,
+      nextAttemptAt: null,
+      transientFailureCount: cp.transientFailureCount ?? 0,
+      lastTransientFailure: cp.lastTransientFailure ?? null,
     };
   }
 
@@ -163,6 +170,32 @@ export function webUiProgressFromCheckpoint(input: {
       totalLeaves: cp.leafCount,
       completedLeaves: cp.leafCount,
       providerFailure: false,
+      nextAttemptAt: null,
+      transientFailureCount: 0,
+      lastTransientFailure: null,
+    };
+  }
+
+  if (cp.phase === "provider_cooldown") {
+    return {
+      status: "in_progress",
+      dataReady: false,
+      missingKeyCount: input.missingKeyCount,
+      emptyKeyCount: input.emptyKeyCount,
+      requiredKeyCount: input.requiredKeyCount,
+      effectiveSource: input.effectiveSource,
+      detail: cp.detail ?? "Waiting for translation provider…",
+      preparationPhase: "provider_cooldown",
+      checkpointId: cp.checkpointId,
+      sourceHash: cp.sourceHash,
+      totalBatches: cp.batchCount,
+      completedBatches: cp.completedBatchCount,
+      totalLeaves: cp.leafCount,
+      completedLeaves: input.completedLeaves ?? 0,
+      providerFailure: false,
+      nextAttemptAt: cp.nextAttemptAt ?? null,
+      transientFailureCount: cp.transientFailureCount ?? 0,
+      lastTransientFailure: cp.lastTransientFailure ?? null,
     };
   }
 
@@ -193,6 +226,9 @@ export function webUiProgressFromCheckpoint(input: {
     totalLeaves: cp.leafCount,
     completedLeaves: input.completedLeaves ?? 0,
     providerFailure: false,
+    nextAttemptAt: null,
+    transientFailureCount: cp.transientFailureCount ?? 0,
+    lastTransientFailure: null,
   };
 }
 
@@ -261,7 +297,7 @@ export function isFailedWebUiCheckpointResumable(input: {
 
 function reopenPhaseForFailedCheckpoint(
   checkpoint: WebUiActivationCheckpointRecord,
-): Exclude<WebUiActivationCheckpointRecord["phase"], "failed" | "ready"> {
+): "primary" | "quality" | "validating" | "publishing" {
   if (checkpoint.completedBatchCount < checkpoint.batchCount) {
     return "primary";
   }
@@ -272,6 +308,94 @@ function reopenPhaseForFailedCheckpoint(
     return "quality";
   }
   return "validating";
+}
+
+async function enterWebUiProviderCooldown(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly batch: WebUiDraftBatchPlan;
+  readonly batchPhase: "primary" | "quality";
+  readonly providerCalls: number;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationTickResult> {
+  const deps = input.deps;
+  const stamp = nowIso(deps);
+  const streak = (input.checkpoint.transientFailureCount ?? 0) + 1;
+  const nextAttemptAt = computeWebUiCooldownNextAttemptAt({
+    nowIso: stamp,
+    transientFailureCount: streak,
+  });
+  await upsertWebUiActivationBatch({
+    checkpointId: input.checkpoint.checkpointId,
+    batchId: input.batch.id,
+    phase: input.batchPhase,
+    namespace: input.batch.namespace,
+    keys: input.batch.keys,
+    values: {},
+    status: "pending",
+    attempts: input.providerCalls,
+    reason: "rate_limited",
+    updatedAt: stamp,
+  });
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase: "provider_cooldown",
+    nextAttemptAt,
+    transientFailureCount: streak,
+    lastTransientFailure: "rate_limited",
+    detail: "Waiting for translation provider…",
+    updatedAt: stamp,
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return {
+    done: false,
+    needsAnotherTick: true,
+    published: false,
+    providerCalls: input.providerCalls,
+    checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint,
+      completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+    }),
+  };
+}
+
+async function resumeWebUiCheckpointAfterCooldown(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationCheckpointRecord> {
+  const deps = input.deps;
+  const nowMs = Date.parse(nowIso(deps));
+  const dueAt = input.checkpoint.nextAttemptAt
+    ? Date.parse(input.checkpoint.nextAttemptAt)
+    : 0;
+  if (Number.isFinite(dueAt) && dueAt > nowMs) {
+    return input.checkpoint;
+  }
+  const phase = reopenPhaseForFailedCheckpoint(input.checkpoint);
+  let detail = "Preparing public interface…";
+  if (phase === "primary") {
+    detail = `Preparing public interface… ${input.checkpoint.completedBatchCount} / ${input.checkpoint.batchCount} batches`;
+  } else if (phase === "quality") {
+    detail = `Checking translation quality… ${input.checkpoint.qualityCompletedBatchCount} / ${Math.max(input.checkpoint.qualityBatchCount, 1)}`;
+  } else if (phase === "validating") {
+    detail = "Validating public interface…";
+  } else if (phase === "publishing") {
+    detail = "Publishing public interface…";
+  }
+  const resumed: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase,
+    nextAttemptAt: null,
+    detail,
+    updatedAt: nowIso(deps),
+  };
+  await upsertWebUiActivationCheckpoint(resumed);
+  return resumed;
 }
 
 /**
@@ -309,6 +433,9 @@ export async function reopenFailedWebUiActivationCheckpoint(input: {
     ...input.checkpoint,
     phase,
     detail,
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
     updatedAt: nowIso(deps),
   };
   await upsertWebUiActivationCheckpoint(reopened);
@@ -673,6 +800,9 @@ async function processPrimaryBatchTick(input: {
       checkpoint = {
         ...checkpoint,
         completedBatchCount,
+        nextAttemptAt: null,
+        transientFailureCount: 0,
+        lastTransientFailure: null,
         detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
@@ -702,6 +832,15 @@ async function processPrimaryBatchTick(input: {
       } else {
         providerCalls += 1;
       }
+      if (isWebUiRateLimitedError(error)) {
+        return enterWebUiProviderCooldown({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "primary",
+          providerCalls,
+          deps,
+        });
+      }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
         const operatorDetail = sanitizeWebUiActivationFailureDetail(lastReason);
         await upsertWebUiActivationBatch({
@@ -723,6 +862,7 @@ async function processPrimaryBatchTick(input: {
           phase: "failed",
           failedBatchCount: checkpoint.failedBatchCount + 1,
           detail: operatorDetail,
+          nextAttemptAt: null,
           updatedAt: nowIso(deps),
         };
         await upsertWebUiActivationCheckpoint(checkpoint);
@@ -865,6 +1005,9 @@ async function processQualityBatchTick(input: {
         ...checkpoint,
         qualityBatchCount: qualityBatches.length,
         qualityCompletedBatchCount,
+        nextAttemptAt: null,
+        transientFailureCount: 0,
+        lastTransientFailure: null,
         detail: `Checking translation quality… ${qualityCompletedBatchCount} / ${qualityBatches.length}`,
         updatedAt: nowIso(deps),
       };
@@ -893,6 +1036,15 @@ async function processQualityBatchTick(input: {
         providerCalls += 2;
       } else {
         providerCalls += 1;
+      }
+      if (isWebUiRateLimitedError(error)) {
+        return enterWebUiProviderCooldown({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "quality",
+          providerCalls,
+          deps,
+        });
       }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
         await upsertWebUiActivationBatch({
@@ -1133,7 +1285,7 @@ export async function processWebUiActivationTick(input: {
     });
   }
 
-  const checkpoint = await getWebUiActivationCheckpoint(checkpointId);
+  let checkpoint = await getWebUiActivationCheckpoint(checkpointId);
   if (!checkpoint) {
     throw new WebUiDraftBuilderError(`WEB_UI checkpoint not found: ${checkpointId}`);
   }
@@ -1172,6 +1324,29 @@ export async function processWebUiActivationTick(input: {
         checkpoint,
       }),
     };
+  }
+  if (checkpoint.phase === "provider_cooldown") {
+    const nowMs = Date.parse(nowIso(deps));
+    const dueAt = checkpoint.nextAttemptAt ? Date.parse(checkpoint.nextAttemptAt) : 0;
+    if (Number.isFinite(dueAt) && dueAt > nowMs) {
+      return {
+        done: false,
+        needsAnotherTick: true,
+        published: false,
+        providerCalls: 0,
+        checkpoint,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: checkpoint.leafCount,
+          emptyKeyCount: 0,
+          requiredKeyCount: checkpoint.leafCount,
+          effectiveSource: "none",
+          checkpoint,
+          completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+        }),
+      };
+    }
+    checkpoint = await resumeWebUiCheckpointAfterCooldown({ checkpoint, deps });
   }
   if (checkpoint.phase === "primary") {
     return processPrimaryBatchTick({ checkpoint, deps });

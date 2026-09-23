@@ -13,6 +13,8 @@ export type LocalizationProgress = {
   readonly percent: number;
   readonly phaseLabel: string;
   readonly failed: boolean;
+  /** Absolute ISO retry time while cooling down (Admin formats locally). */
+  readonly nextAttemptAt?: string | null;
 };
 
 type Count = {
@@ -110,30 +112,41 @@ function coverage(source: ProgressSource): Count {
   return add(add(cv, web), add(ct, plp));
 }
 
-function phaseLabel(source: ProgressSource, percent: number): { label: string; failed: boolean } {
+function phaseLabel(source: ProgressSource, percent: number): {
+  label: string;
+  failed: boolean;
+  nextAttemptAt: string | null;
+} {
   const failed =
     source.jobStatus === "failed" ||
     source.webUi?.status === "failed" ||
     source.webUi?.providerFailure === true ||
     source.webUi?.preparationPhase === "failed";
   if (failed) {
-    return { label: "Failed — retry activation", failed: true };
+    return { label: "Failed — retry activation", failed: true, nextAttemptAt: null };
+  }
+  if (source.webUi?.preparationPhase === "provider_cooldown") {
+    return {
+      label: "Waiting for translation provider",
+      failed: false,
+      nextAttemptAt: source.webUi.nextAttemptAt ?? null,
+    };
   }
   if (source.brandStatus === "in_progress") {
-    return { label: "Preparing Brand…", failed: false };
+    return { label: "Preparing Brand…", failed: false, nextAttemptAt: null };
   }
   if (source.terminologyStatus === "in_progress") {
-    return { label: "Preparing terminology…", failed: false };
+    return { label: "Preparing terminology…", failed: false, nextAttemptAt: null };
   }
   const phase = source.webUi?.preparationPhase ?? null;
   if (phase === "quality") {
-    return { label: "Checking translation quality…", failed: false };
+    return { label: "Checking translation quality…", failed: false, nextAttemptAt: null };
   }
   if (phase === "validating") {
-    return { label: "Validating public interface…", failed: false };
+    return { label: "Validating public interface…", failed: false, nextAttemptAt: null };
   }
   if (phase === "publishing") {
-    return { label: "Publishing public interface…", failed: false };
+    return { label: "Publishing public interface…", failed: false, nextAttemptAt: null };
   }
   if (phase === "primary" || source.webUi?.status === "in_progress") {
     const completed = source.webUi?.completedBatches ?? 0;
@@ -144,6 +157,7 @@ function phaseLabel(source: ProgressSource, percent: number): { label: string; f
           ? `Translating public interface · ${completed} / ${total} batches`
           : "Translating public interface",
       failed: false,
+      nextAttemptAt: null,
     };
   }
   const civicRemaining = source.ctRemaining + source.plpRemaining;
@@ -152,12 +166,12 @@ function phaseLabel(source: ProgressSource, percent: number): { label: string; f
     civicRemaining > 0 &&
     (phase === "ready" || source.webUi?.dataReady === true || source.publishedDataReady)
   ) {
-    return { label: "Finishing civic content…", failed: false };
+    return { label: "Finishing civic content…", failed: false, nextAttemptAt: null };
   }
   if (percent >= 100) {
-    return { label: "Ready", failed: false };
+    return { label: "Ready", failed: false, nextAttemptAt: null };
   }
-  return { label: "Localization", failed: false };
+  return { label: "Localization", failed: false, nextAttemptAt: null };
 }
 
 export function deriveLocalizationProgress(source: ProgressSource): LocalizationProgress {
@@ -165,7 +179,28 @@ export function deriveLocalizationProgress(source: ProgressSource): Localization
   const percent =
     covered.total <= 0 ? 100 : Math.round((100 * covered.done) / covered.total);
   const phase = phaseLabel(source, percent);
-  return { percent, phaseLabel: phase.label, failed: phase.failed };
+  return {
+    percent,
+    phaseLabel: phase.label,
+    failed: phase.failed,
+    nextAttemptAt: phase.nextAttemptAt,
+  };
+}
+
+/** Operator-local formatting for absolute cooldown retry time. */
+export function formatLocalizationRetryAt(nextAttemptAt: string): string {
+  const ms = Date.parse(nextAttemptAt);
+  if (!Number.isFinite(ms)) {
+    return nextAttemptAt;
+  }
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(ms));
+  } catch {
+    return new Date(ms).toLocaleTimeString();
+  }
 }
 
 function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
