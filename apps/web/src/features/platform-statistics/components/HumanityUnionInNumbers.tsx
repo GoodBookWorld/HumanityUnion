@@ -19,7 +19,6 @@ import "../platform-statistics.css";
 
 export function HumanityUnionInNumbers() {
   const t = useTranslations("publicHome.statistics");
-  const tMetrics = useTranslations("publicStatistics.metrics");
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
   const locale = useLocale();
@@ -78,23 +77,14 @@ export function HumanityUnionInNumbers() {
     return formatPlatformStatisticValue(value, locale);
   }
 
-  // Prefer shared metric labels when present; keep Home-specific descriptions.
-  const localizedCards = HOME_STATISTIC_CARDS.map((card) => {
-    const sharedKey =
-      card.key === "users"
-        ? "participants"
-        : card.key === "humanityUnionMembers"
-          ? "members"
-          : card.key;
-    const label = tMetrics.has(`${sharedKey}.label`)
-      ? tMetrics(`${sharedKey}.label`)
-      : t(`cards.${card.key as HomeStatisticKey}.label`);
-    return {
-      ...card,
-      label,
-      description: t(`cards.${card.key as HomeStatisticKey}.description`, siteName),
-    };
-  });
+  // Home labels/descriptions use publicHome.statistics only.
+  // Do not probe publicStatistics via `.has()` on an English-merged message
+  // tree — that treats English fallback as evidence of a localized value.
+  const localizedCards = HOME_STATISTIC_CARDS.map((card) => ({
+    ...card,
+    label: t(`cards.${card.key as HomeStatisticKey}.label`),
+    description: t(`cards.${card.key as HomeStatisticKey}.description`, siteName),
+  }));
 
   const allUnavailable = platformError && membershipError;
 

@@ -294,7 +294,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
     assert.notEqual(again.job?.status, "failed");
   });
 
-  it("10b sourceHash incompatibility does not merge stale checkpoint work", async () => {
+  it("10b sourceHash change rebases same checkpoint and reuses published paths", async () => {
     const { record, job } = await createQueuedJob("nv");
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
@@ -337,11 +337,13 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
       languageId: record.languageId,
       scheduleProcess: false,
     });
-    assert.notEqual(restarted.job?.jobId, job.jobId);
-    assert.equal(restarted.job?.status, "queued");
-    const old = await getWebUiActivationCheckpointByJobId(job.jobId);
-    assert.equal(old?.phase, "failed");
-    assert.match(old?.detail ?? "", /source catalog changed/i);
+    assert.equal(restarted.job?.jobId, job.jobId);
+    assert.notEqual(restarted.job?.status, "failed");
+    const rebased = await getWebUiActivationCheckpointByJobId(job.jobId);
+    assert.ok(rebased);
+    assert.equal(rebased.checkpointId, checkpoint.checkpointId);
+    assert.notEqual(rebased.sourceHash, "stale-hash-not-current");
+    assert.equal(rebased.phase, "primary");
   });
 
   it("11–16 missing-key recovery merges, validates, and stays bounded", async () => {

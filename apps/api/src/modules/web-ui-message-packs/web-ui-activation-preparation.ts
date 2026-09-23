@@ -84,6 +84,114 @@ function nowIso(deps: WebUiActivationPreparationDeps): string {
   return (deps.now ?? (() => new Date().toISOString()))();
 }
 
+function readMessagePathValue(messages: unknown, dottedPath: string): unknown {
+  let current: unknown = messages;
+  for (const segment of dottedPath.split(".")) {
+    if (current == null || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+/**
+ * Step 15D.1 — when the public required corpus expands, seed ok batches from
+ * an existing published pack so previously translated paths are not retranslated.
+ * Incomplete batches are left for the normal provider path.
+ */
+export async function seedWebUiActivationBatchesFromPublishedPack(input: {
+  readonly checkpointId: string;
+  readonly locale: string;
+  readonly flat: Readonly<Record<string, string>>;
+  readonly deps?: WebUiActivationPreparationDeps;
+}): Promise<{
+  readonly seededBatchCount: number;
+  readonly totalBatchCount: number;
+}> {
+  const deps = input.deps ?? {};
+  const stamp = nowIso(deps);
+  const published = await getPublishedWebUiMessagePackByLocale(input.locale);
+  const batches = planWebUiDraftBatches(input.flat);
+  if (!published) {
+    return { seededBatchCount: 0, totalBatchCount: batches.length };
+  }
+
+  let seededBatchCount = 0;
+  for (const batch of batches) {
+    const values: Record<string, string> = {};
+    let complete = true;
+    for (const key of batch.keys) {
+      const value = readMessagePathValue(published.messages, key);
+      if (typeof value !== "string" || value.trim().length === 0) {
+        complete = false;
+        break;
+      }
+      values[key] = value;
+    }
+    if (!complete) {
+      continue;
+    }
+    await upsertWebUiActivationBatch({
+      checkpointId: input.checkpointId,
+      batchId: batch.id,
+      phase: "primary",
+      namespace: batch.namespace,
+      keys: batch.keys,
+      values,
+      status: "ok",
+      attempts: 0,
+      reason: "reused from published pack",
+      updatedAt: stamp,
+    });
+    seededBatchCount += 1;
+  }
+  return { seededBatchCount, totalBatchCount: batches.length };
+}
+
+/**
+ * Rebase a checkpoint onto the current public English corpus fingerprint.
+ * Preserves the checkpoint id; seeds reusable published values; resumes primary.
+ */
+export async function rebaseWebUiCheckpointForCatalogExpansion(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly sourceHash: string;
+  readonly flat: Readonly<Record<string, string>>;
+  readonly requiredPaths: readonly string[];
+  readonly deps?: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationCheckpointRecord> {
+  const deps = input.deps ?? {};
+  const batches = planWebUiDraftBatches(input.flat);
+  const seeded = await seedWebUiActivationBatchesFromPublishedPack({
+    checkpointId: input.checkpoint.checkpointId,
+    locale: input.checkpoint.locale,
+    flat: input.flat,
+    deps,
+  });
+  const rebased: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    sourceHash: input.sourceHash,
+    phase: "primary",
+    leafCount: input.requiredPaths.length,
+    batchCount: batches.length,
+    completedBatchCount: seeded.seededBatchCount,
+    failedBatchCount: 0,
+    qualityBatchCount: 0,
+    qualityCompletedBatchCount: 0,
+    suspiciousPathCount: 0,
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
+    detail:
+      seeded.seededBatchCount > 0
+        ? `Preparing public interface… ${seeded.seededBatchCount} / ${batches.length} batches`
+        : "Preparing public interface…",
+    updatedAt: nowIso(deps),
+  };
+  await upsertWebUiActivationCheckpoint(rebased);
+  return rebased;
+}
+
 function countCompletedLeaves(
   batches: readonly { status: string; keys: readonly string[] }[],
 ): number {
@@ -468,8 +576,32 @@ export async function evaluateFailedWebUiActivationResume(input: {
   if (!checkpoint || checkpoint.phase !== "failed") {
     return { kind: "not_applicable" };
   }
-  const { flat } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+  const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(deps.includePaths);
   const sourceHash = hashWebUiEnglishFlatMap(flat);
+  if (checkpoint.sourceHash !== sourceHash) {
+    // Public corpus fingerprint changed (e.g. required-scope expansion).
+    // Rebase the same checkpoint and reuse published values for covered batches.
+    const rebased = await rebaseWebUiCheckpointForCatalogExpansion({
+      checkpoint,
+      sourceHash,
+      flat,
+      requiredPaths,
+      deps,
+    });
+    return {
+      kind: "resume",
+      checkpoint: rebased,
+      webUi: webUiProgressFromCheckpoint({
+        readinessDataReady: false,
+        missingKeyCount: Math.max(0, requiredPaths.length - rebased.completedBatchCount * 6),
+        emptyKeyCount: 0,
+        requiredKeyCount: requiredPaths.length,
+        effectiveSource: "none",
+        checkpoint: rebased,
+        completedLeaves: Math.min(rebased.leafCount, rebased.completedBatchCount * 6),
+      }),
+    };
+  }
   if (
     !isFailedWebUiCheckpointResumable({
       checkpoint,
@@ -547,21 +679,22 @@ export async function ensureWebUiActivationCheckpoint(input: {
   }
 
   // Prefer existing checkpoint for this job when sourceHash still matches.
+  // Source-hash change (e.g. Step 15D.1 public-scope expansion) rebases the
+  // same checkpoint and seeds reusable published values — no pack delete.
   const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(deps.includePaths);
   const sourceHash = hashWebUiEnglishFlatMap(flat);
   const existing = await getWebUiActivationCheckpointByJobId(input.job.jobId);
   if (existing) {
     if (existing.sourceHash !== sourceHash) {
-      const failed: WebUiActivationCheckpointRecord = {
-        ...existing,
-        phase: "failed",
-        detail:
-          "Public interface source catalog changed. Retry activation to start a new preparation.",
-        updatedAt: nowIso(deps),
-      };
-      await upsertWebUiActivationCheckpoint(failed);
+      const rebased = await rebaseWebUiCheckpointForCatalogExpansion({
+        checkpoint: existing,
+        sourceHash,
+        flat,
+        requiredPaths,
+        deps,
+      });
       return {
-        checkpoint: failed,
+        checkpoint: rebased,
         skipped: false,
         webUi: webUiProgressFromCheckpoint({
           readinessDataReady: false,
@@ -569,7 +702,8 @@ export async function ensureWebUiActivationCheckpoint(input: {
           emptyKeyCount: readiness.emptyKeyCount,
           requiredKeyCount: readiness.requiredKeyCount,
           effectiveSource: "none",
-          checkpoint: failed,
+          checkpoint: rebased,
+          completedLeaves: Math.min(rebased.leafCount, rebased.completedBatchCount * 6),
         }),
       };
     }
@@ -579,6 +713,28 @@ export async function ensureWebUiActivationCheckpoint(input: {
         sourceHash,
         deps,
       });
+      return {
+        checkpoint: reopened,
+        skipped: false,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: readiness.missingKeyCount,
+          emptyKeyCount: readiness.emptyKeyCount,
+          requiredKeyCount: readiness.requiredKeyCount,
+          effectiveSource: "none",
+          checkpoint: reopened,
+        }),
+      };
+    }
+    if (existing.phase === "ready") {
+      // Pack readiness already false above — reopen under the same hash.
+      const reopened: WebUiActivationCheckpointRecord = {
+        ...existing,
+        phase: "primary",
+        detail: `Preparing public interface… ${existing.completedBatchCount} / ${existing.batchCount} batches`,
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(reopened);
       return {
         checkpoint: reopened,
         skipped: false,
@@ -633,8 +789,26 @@ export async function ensureWebUiActivationCheckpoint(input: {
     updatedAt: nowIso(deps),
   };
   await upsertWebUiActivationCheckpoint(checkpoint);
+  const seeded = await seedWebUiActivationBatchesFromPublishedPack({
+    checkpointId: checkpoint.checkpointId,
+    locale,
+    flat,
+    deps,
+  });
+  const seededCheckpoint: WebUiActivationCheckpointRecord =
+    seeded.seededBatchCount > 0
+      ? {
+          ...checkpoint,
+          completedBatchCount: seeded.seededBatchCount,
+          detail: `Preparing public interface… ${seeded.seededBatchCount} / ${batches.length} batches`,
+          updatedAt: nowIso(deps),
+        }
+      : checkpoint;
+  if (seeded.seededBatchCount > 0) {
+    await upsertWebUiActivationCheckpoint(seededCheckpoint);
+  }
   return {
-    checkpoint,
+    checkpoint: seededCheckpoint,
     skipped: false,
     webUi: webUiProgressFromCheckpoint({
       readinessDataReady: false,
@@ -642,7 +816,11 @@ export async function ensureWebUiActivationCheckpoint(input: {
       emptyKeyCount: readiness.emptyKeyCount,
       requiredKeyCount: readiness.requiredKeyCount,
       effectiveSource: "none",
-      checkpoint,
+      checkpoint: seededCheckpoint,
+      completedLeaves: Math.min(
+        seededCheckpoint.leafCount,
+        seededCheckpoint.completedBatchCount * 6,
+      ),
     }),
   };
 }
@@ -657,26 +835,27 @@ async function processPrimaryBatchTick(input: {
   let checkpoint = input.checkpoint;
 
   if (checkpoint.sourceHash !== sourceHash) {
-    checkpoint = {
-      ...checkpoint,
-      phase: "failed",
-      detail: "Public interface source catalog changed during preparation.",
-      updatedAt: nowIso(deps),
-    };
-    await upsertWebUiActivationCheckpoint(checkpoint);
+    checkpoint = await rebaseWebUiCheckpointForCatalogExpansion({
+      checkpoint,
+      sourceHash,
+      flat,
+      requiredPaths,
+      deps,
+    });
     return {
-      done: true,
-      needsAnotherTick: false,
+      done: false,
+      needsAnotherTick: true,
       published: false,
       providerCalls: 0,
       checkpoint,
       webUi: webUiProgressFromCheckpoint({
         readinessDataReady: false,
-        missingKeyCount: requiredPaths.length,
+        missingKeyCount: Math.max(0, requiredPaths.length - checkpoint.completedBatchCount * 6),
         emptyKeyCount: 0,
         requiredKeyCount: requiredPaths.length,
         effectiveSource: "none",
         checkpoint,
+        completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
       }),
     };
   }
@@ -1291,22 +1470,17 @@ export async function processWebUiActivationTick(input: {
   }
 
   if (checkpoint.phase === "ready") {
-    return {
-      done: true,
-      needsAnotherTick: false,
-      published: false,
-      providerCalls: 0,
+    // Pack readiness is already false (checked above). Rebase/resume so an
+    // expanded public corpus cannot stay stuck on a stale ready checkpoint.
+    const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+    const sourceHash = hashWebUiEnglishFlatMap(flat);
+    checkpoint = await rebaseWebUiCheckpointForCatalogExpansion({
       checkpoint,
-      webUi: webUiProgressFromCheckpoint({
-        readinessDataReady: true,
-        missingKeyCount: 0,
-        emptyKeyCount: 0,
-        requiredKeyCount: checkpoint.leafCount,
-        effectiveSource: "remote",
-        checkpoint,
-        completedLeaves: checkpoint.leafCount,
-      }),
-    };
+      sourceHash,
+      flat,
+      requiredPaths,
+      deps,
+    });
   }
   if (checkpoint.phase === "failed") {
     return {

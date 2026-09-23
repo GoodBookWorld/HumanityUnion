@@ -309,7 +309,7 @@ describe("Step 15C — durable WEB_UI activation", () => {
     assert.equal(pack.status, "published");
   });
 
-  it("5 — sourceHash mismatch fails WEB_UI domain safely", async () => {
+  it("5 — sourceHash mismatch rebases and continues (no hard WEB_UI fail)", async () => {
     const record = await createEligibleLocale("ia");
     installDeps();
     const started = await startOrResumeLanguageActivationJob({
@@ -327,9 +327,12 @@ describe("Step 15C — durable WEB_UI activation", () => {
       sourceHash: "stale-hash-does-not-match",
     });
     job = await processLanguageActivationJob(job.jobId, { webUiTick: true });
-    assert.equal(job.status, "failed");
-    assert.equal(job.domains.webUi.status, "failed");
-    assert.match(job.domains.webUi.detail ?? "", /source catalog changed/i);
+    assert.notEqual(job.status, "failed");
+    assert.notEqual(job.domains.webUi.status, "failed");
+    const after = await getWebUiActivationCheckpointByJobId(job.jobId);
+    assert.ok(after);
+    assert.notEqual(after.sourceHash, "stale-hash-does-not-match");
+    assert.equal(after.phase, "primary");
   });
 
   it("6 — structure protection round-trip (placeholders survive restore)", async () => {

@@ -9,6 +9,7 @@
  * loses an ordinary public-reader surface.
  *
  * Excluded on purpose (still valid catalog keys):
+ * - `workspace.*` — participant/author Workspace shell (Step 15D.2)
  * - `initiativeExperience.manage` — create/edit/publish, cover media, form geography
  * - `initiativeExperience.author.sidebar` — lifecycle working sidebar
  * - `initiativeExperience.author.actions` / `sources` / `translation` — author verbs
@@ -17,6 +18,10 @@
  * Public result components still read named author subtrees (`*.public`,
  * field/section labels, ballot, archive document, shared result chrome).
  * Those prefixes stay required. The whole `author` tree is not.
+ *
+ * Step 15D.1 — ordinary public surfaces (stats metrics, PWA install, world
+ * initiatives list, initiative mini-card chrome, Search page chrome, Support)
+ * are required. Search result civic content remains CT/PLP-owned.
  */
 
 export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
@@ -26,6 +31,12 @@ export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
   "membershipPublic.",
   "institutionsPublic.",
   "publicHome.",
+  "publicStatistics.",
+  "pwa.",
+  "worldInitiativesPublic.",
+  "publicInitiativeMiniCard.",
+  "search.",
+  "supportPublic.",
   "blogPublic.",
   "knowledgePublic.",
   "civicMediaPublic.",

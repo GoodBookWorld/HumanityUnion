@@ -130,6 +130,13 @@ describe("public-reader WEB_UI readiness scope", () => {
     const required = all.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
 
     assert.ok(required.includes("navigation.home"));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("publicStatistics.")));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("pwa.")));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("worldInitiativesPublic.")));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("publicInitiativeMiniCard.")));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("search.")));
+    assert.ok(required.some((pathKey) => pathKey.startsWith("supportPublic.")));
+    assert.equal(required.some((pathKey) => pathKey.startsWith("workspace.")), false);
     assert.ok(
       required.some((pathKey) => pathKey.startsWith("initiativeExperience.sidebar.")),
     );

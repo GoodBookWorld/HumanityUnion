@@ -17,7 +17,10 @@ import { Button } from "../../../design-system";
 import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
-import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import {
   buildSearchResultPresentation,
   readSearchResultSummary,
@@ -33,12 +36,8 @@ import { InitiativeTimelineGroup } from "./InitiativeTimelineGroup";
 import "../global-search-page.css";
 import "./initiative-timeline-group.css";
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function formatSearchResultDate(locale: string, value: string): string {
+  return formatInitiativeExperienceDate(locale, value, { month: "long" });
 }
 
 function formatLocation(result: {
@@ -662,7 +661,7 @@ export function GlobalSearchPageContent() {
                           ) : null}
                           <p className="global-search-page__meta">
                             {formatLocation(result)} · {result.status} ·{" "}
-                            {t("updated", { date: formatDate(result.updatedAt) })}
+                            {t("updated", { date: formatSearchResultDate(locale, result.updatedAt) })}
                           </p>
                           <Link href={result.publicUrl}>
                             {result.entityType === "initiative"
