@@ -223,9 +223,20 @@ export function validateProductionEnvironment(): void {
   problems.push(...collectInvalidEmailConfig());
   problems.push(...collectInvalidStripePaymentConfig());
 
-  // EMAIL SECURITY 02B — Blog Turnstile secret required on deployed production Node.
+  // EMAIL SECURITY 02B — Blog Turnstile secret.
+  // Production cutover: hard-required. Staging/beta: warn only so a Blog-only
+  // missing key cannot take down the whole API; subscribe still fail-closes.
   if (!readEnv("TURNSTILE_SECRET_KEY")) {
-    problems.push("Missing TURNSTILE_SECRET_KEY (required for Blog subscription Turnstile verification)");
+    const explicitPlatformMode = readEnv("PLATFORM_MODE");
+    if (explicitPlatformMode === "production") {
+      problems.push(
+        "Missing TURNSTILE_SECRET_KEY (required for Blog subscription Turnstile verification)",
+      );
+    } else {
+      console.warn(
+        "WARNING: TURNSTILE_SECRET_KEY is not set. Blog subscription Turnstile verification will fail closed until configured.",
+      );
+    }
   }
 
   if (problems.length > 0) {
