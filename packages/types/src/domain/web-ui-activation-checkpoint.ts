@@ -17,7 +17,10 @@ export type WebUiActivationBatchPhase = "primary" | "quality";
 
 export type WebUiActivationBatchStatus = "ok" | "failed" | "pending";
 
-export type WebUiActivationTransientFailure = "rate_limited";
+export type WebUiActivationTransientFailure =
+  | "rate_limited"
+  | "unavailable"
+  | "timeout";
 
 export type WebUiActivationCheckpointRecord = {
   readonly checkpointId: string;

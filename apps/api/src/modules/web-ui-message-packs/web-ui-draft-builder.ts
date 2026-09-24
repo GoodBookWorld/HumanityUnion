@@ -599,6 +599,9 @@ export function sanitizeWebUiActivationFailureDetail(reason: string): string {
   if (/rate_limited|HTTP 429/i.test(reason)) {
     return "Public interface translation failed: provider rate limited. Retry activation to continue.";
   }
+  if (/unavailable|HTTP 5\d\d|network_failure/i.test(reason)) {
+    return "Public interface translation failed: provider temporarily unavailable. Retry activation to continue.";
+  }
   return "Public interface translation failed — retry activation";
 }
 

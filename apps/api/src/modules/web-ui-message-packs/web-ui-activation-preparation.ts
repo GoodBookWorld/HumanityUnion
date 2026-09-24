@@ -12,6 +12,7 @@ import type {
   LanguageActivationJobRecord,
   LanguageActivationWebUiDomainProgress,
   WebUiActivationCheckpointRecord,
+  WebUiActivationTransientFailure,
   WebUiMessageTree,
 } from "@hu/types";
 
@@ -38,8 +39,12 @@ import {
   type WebUiDraftBatchPlan,
 } from "./web-ui-draft-builder.js";
 import {
+  classifyWebUiTransientFailure,
   computeWebUiCooldownNextAttemptAt,
-  isWebUiRateLimitedError,
+  isWebUiTransientCooldownBudgetExhausted,
+  isWebUiTransientProviderError,
+  webUiProviderCooldownDetail,
+  webUiTransientBudgetExhaustedDetail,
 } from "./web-ui-provider-cooldown.js";
 import {
   assembleWebUiActivationTranslatedMap,
@@ -444,6 +449,7 @@ async function enterWebUiProviderCooldown(input: {
   readonly batch: WebUiDraftBatchPlan;
   readonly batchPhase: "primary" | "quality";
   readonly providerCalls: number;
+  readonly kind: WebUiActivationTransientFailure;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps;
@@ -462,7 +468,7 @@ async function enterWebUiProviderCooldown(input: {
     values: {},
     status: "pending",
     attempts: input.providerCalls,
-    reason: "rate_limited",
+    reason: input.kind,
     updatedAt: stamp,
   });
   const checkpoint: WebUiActivationCheckpointRecord = {
@@ -470,8 +476,8 @@ async function enterWebUiProviderCooldown(input: {
     phase: "provider_cooldown",
     nextAttemptAt,
     transientFailureCount: streak,
-    lastTransientFailure: "rate_limited",
-    detail: "Waiting for translation provider…",
+    lastTransientFailure: input.kind,
+    detail: webUiProviderCooldownDetail(input.kind),
     updatedAt: stamp,
   };
   await upsertWebUiActivationCheckpoint(checkpoint);
@@ -489,6 +495,55 @@ async function enterWebUiProviderCooldown(input: {
       effectiveSource: "none",
       checkpoint,
       completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+    }),
+  };
+}
+
+async function failWebUiBatchTerminal(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly batch: WebUiDraftBatchPlan;
+  readonly batchPhase: "primary" | "quality";
+  readonly providerCalls: number;
+  readonly reason: string;
+  readonly operatorDetail: string;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationTickResult> {
+  const deps = input.deps;
+  const stamp = nowIso(deps);
+  await upsertWebUiActivationBatch({
+    checkpointId: input.checkpoint.checkpointId,
+    batchId: input.batch.id,
+    phase: input.batchPhase,
+    namespace: input.batch.namespace,
+    keys: input.batch.keys,
+    values: {},
+    status: "failed",
+    attempts: input.providerCalls,
+    reason: input.reason,
+    updatedAt: stamp,
+  });
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase: "failed",
+    failedBatchCount: input.checkpoint.failedBatchCount + 1,
+    detail: input.operatorDetail,
+    nextAttemptAt: null,
+    updatedAt: stamp,
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return {
+    done: true,
+    needsAnotherTick: false,
+    published: false,
+    providerCalls: input.providerCalls,
+    checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint,
     }),
   };
 }
@@ -1032,55 +1087,40 @@ async function processPrimaryBatchTick(input: {
       } else {
         providerCalls += 1;
       }
-      if (isWebUiRateLimitedError(error)) {
+      const transientKind = classifyWebUiTransientFailure(error);
+      if (isWebUiTransientProviderError(error) && transientKind) {
+        if (isWebUiTransientCooldownBudgetExhausted(checkpoint.transientFailureCount ?? 0)) {
+          return failWebUiBatchTerminal({
+            checkpoint,
+            batch: nextBatch,
+            batchPhase: "primary",
+            providerCalls,
+            reason: lastReason,
+            operatorDetail: webUiTransientBudgetExhaustedDetail(transientKind),
+            deps,
+          });
+        }
         return enterWebUiProviderCooldown({
           checkpoint,
           batch: nextBatch,
           batchPhase: "primary",
           providerCalls,
+          kind: transientKind,
           deps,
         });
       }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
-        const operatorDetail = sanitizeWebUiActivationFailureDetail(lastReason);
-        await upsertWebUiActivationBatch({
-          checkpointId: checkpoint.checkpointId,
-          batchId: nextBatch.id,
-          phase: "primary",
-          namespace: nextBatch.namespace,
-          keys: nextBatch.keys,
-          values: {},
-          status: "failed",
-          attempts: providerCalls,
+        return failWebUiBatchTerminal({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "primary",
+          providerCalls,
           reason: missingKeyRecoveryAttempted
             ? `${lastReason} (missing-key recovery attempted)`
             : lastReason,
-          updatedAt: nowIso(deps),
+          operatorDetail: sanitizeWebUiActivationFailureDetail(lastReason),
+          deps,
         });
-        checkpoint = {
-          ...checkpoint,
-          phase: "failed",
-          failedBatchCount: checkpoint.failedBatchCount + 1,
-          detail: operatorDetail,
-          nextAttemptAt: null,
-          updatedAt: nowIso(deps),
-        };
-        await upsertWebUiActivationCheckpoint(checkpoint);
-        return {
-          done: true,
-          needsAnotherTick: false,
-          published: false,
-          providerCalls,
-          checkpoint,
-          webUi: webUiProgressFromCheckpoint({
-            readinessDataReady: false,
-            missingKeyCount: checkpoint.leafCount,
-            emptyKeyCount: 0,
-            requiredKeyCount: checkpoint.leafCount,
-            effectiveSource: "none",
-            checkpoint,
-          }),
-        };
       }
     }
   }
@@ -1237,52 +1277,40 @@ async function processQualityBatchTick(input: {
       } else {
         providerCalls += 1;
       }
-      if (isWebUiRateLimitedError(error)) {
+      const transientKind = classifyWebUiTransientFailure(error);
+      if (isWebUiTransientProviderError(error) && transientKind) {
+        if (isWebUiTransientCooldownBudgetExhausted(checkpoint.transientFailureCount ?? 0)) {
+          return failWebUiBatchTerminal({
+            checkpoint,
+            batch: nextBatch,
+            batchPhase: "quality",
+            providerCalls,
+            reason: lastReason,
+            operatorDetail: webUiTransientBudgetExhaustedDetail(transientKind),
+            deps,
+          });
+        }
         return enterWebUiProviderCooldown({
           checkpoint,
           batch: nextBatch,
           batchPhase: "quality",
           providerCalls,
+          kind: transientKind,
           deps,
         });
       }
       if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
-        await upsertWebUiActivationBatch({
-          checkpointId: checkpoint.checkpointId,
-          batchId: nextBatch.id,
-          phase: "quality",
-          namespace: nextBatch.namespace,
-          keys: nextBatch.keys,
-          values: {},
-          status: "failed",
-          attempts: providerCalls,
+        return failWebUiBatchTerminal({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "quality",
+          providerCalls,
           reason: missingKeyRecoveryAttempted
             ? `${lastReason} (missing-key recovery attempted)`
             : lastReason,
-          updatedAt: nowIso(deps),
+          operatorDetail: sanitizeWebUiActivationFailureDetail(lastReason),
+          deps,
         });
-        checkpoint = {
-          ...checkpoint,
-          phase: "failed",
-          detail: sanitizeWebUiActivationFailureDetail(lastReason),
-          updatedAt: nowIso(deps),
-        };
-        await upsertWebUiActivationCheckpoint(checkpoint);
-        return {
-          done: true,
-          needsAnotherTick: false,
-          published: false,
-          providerCalls,
-          checkpoint,
-          webUi: webUiProgressFromCheckpoint({
-            readinessDataReady: false,
-            missingKeyCount: 0,
-            emptyKeyCount: 0,
-            requiredKeyCount: requiredPaths.length,
-            effectiveSource: "none",
-            checkpoint,
-          }),
-        };
       }
     }
   }

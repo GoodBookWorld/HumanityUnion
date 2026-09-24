@@ -1,12 +1,9 @@
 /**
- * Step 15C.10 — automatic WEB_UI rate-limit cooldown and resume.
- * Deterministic provider only. No Gemini. No staging writes.
+ * Step 15D.7.4 — automatic WEB_UI transient provider recovery (unavailable/timeout).
+ * Extends 15C.10 cooldown. Deterministic provider only. No Gemini. No staging writes.
  */
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import {
   createLanguageRegistryRecord,
@@ -21,20 +18,26 @@ import {
   resetLanguageActivationJobSchedulerForTests,
   resetLanguageActivationJobStoreForTests,
   resumeIncompleteWebUiActivationJobsOnBoot,
-  scheduleWebUiActivationTickAt,
   setLanguageActivationJobAdminAssertOverrideForTests,
   setLanguageActivationJobForceMemoryForTests,
   setLanguageActivationJobProcessDepsForTests,
   startOrResumeLanguageActivationJob,
 } from "../../../src/modules/language/language-localization-activation/index.js";
-import { getWebUiActivationSchedulerSnapshotForTests } from "../../../src/modules/language/language-localization-activation/language-activation-job.service.js";
 import { getLanguageActivationJobById } from "../../../src/modules/language/language-localization-activation/language-activation-job.repository.js";
 import {
-  computeWebUiCooldownNextAttemptAt,
-  isWebUiRateLimitedError,
+  classifyWebUiTransientFailure,
+  isWebUiTransientCooldownBudgetExhausted,
+  isWebUiTransientProviderError,
+  WEB_UI_TRANSIENT_COOLDOWN_BUDGET,
+  webUiProviderCooldownDetail,
   webUiProviderCooldownSeconds,
+  webUiTransientBudgetExhaustedDetail,
 } from "../../../src/modules/web-ui-message-packs/web-ui-provider-cooldown.js";
-import { loadPublicWebUiEnglishCorpus } from "../../../src/modules/web-ui-message-packs/web-ui-draft-builder.js";
+import {
+  loadPublicWebUiEnglishCorpus,
+  sanitizeWebUiActivationFailureDetail,
+  WebUiDraftBatchError,
+} from "../../../src/modules/web-ui-message-packs/web-ui-draft-builder.js";
 import {
   getWebUiActivationCheckpointByJobId,
   listWebUiActivationBatches,
@@ -48,7 +51,6 @@ import {
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.repository.js";
 
 const TWO_BATCH_PATHS = loadPublicWebUiEnglishCorpus().requiredPaths.slice(0, 12);
-const here = path.dirname(fileURLToPath(import.meta.url));
 
 function translate(request: TranslationProviderRequest) {
   const parsed = JSON.parse(request.text) as Record<string, string>;
@@ -88,9 +90,9 @@ function activateNoOp() {
       },
       execute: {
         attempted: true,
-        ctKindsEnqueued: 2,
+        ctKindsEnqueued: 0,
         plpEditorialEnqueued: false,
-        notes: ["ct residual"],
+        notes: [],
       },
       PROVIDER_CALLS: 0 as const,
       WRITES_PERFORMED: 0 as const,
@@ -99,7 +101,7 @@ function activateNoOp() {
   };
 }
 
-describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
+describe("Step 15D.7.4 — automatic transient provider recovery", () => {
   beforeEach(async () => {
     setLanguageRegistryForceMemoryForTests(true);
     resetLanguageRegistryStoreForTests();
@@ -113,7 +115,7 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     resetLanguageActivationJobSchedulerForTests();
     setLanguageActivationJobAdminAssertOverrideForTests(async (userId) => ({
       userId,
-      participantId: "participant-admin-15c10",
+      participantId: "participant-admin-15d74",
     }));
   });
 
@@ -146,24 +148,43 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     return { record, job: started.job };
   }
 
-  it("1–8 rate_limited enters cooldown without terminal fail or second Gemini call", async () => {
-    assert.equal(webUiProviderCooldownSeconds(1), 60);
-    assert.equal(webUiProviderCooldownSeconds(2), 120);
-    assert.equal(webUiProviderCooldownSeconds(3), 300);
-    assert.equal(webUiProviderCooldownSeconds(99), 300);
+  it("1–3 typed transient classification covers rate_limited / unavailable / timeout", () => {
     assert.equal(
-      isWebUiRateLimitedError(new TranslationProviderError("rate_limited", "Gemini HTTP 429")),
+      isWebUiTransientProviderError(new TranslationProviderError("rate_limited", "x")),
       true,
     );
     assert.equal(
-      isWebUiRateLimitedError(new TranslationProviderError("timeout", "timed out")),
+      isWebUiTransientProviderError(new TranslationProviderError("unavailable", "Gemini HTTP 503")),
+      true,
+    );
+    assert.equal(
+      isWebUiTransientProviderError(new TranslationProviderError("timeout", "timed out")),
+      true,
+    );
+    assert.equal(
+      isWebUiTransientProviderError(new TranslationProviderError("network_failure", "net")),
+      true,
+    );
+    assert.equal(classifyWebUiTransientFailure(new TranslationProviderError("unavailable", "x")), "unavailable");
+    assert.equal(classifyWebUiTransientFailure(new TranslationProviderError("timeout", "x")), "timeout");
+    assert.equal(classifyWebUiTransientFailure(new TranslationProviderError("rate_limited", "x")), "rate_limited");
+    assert.equal(
+      isWebUiTransientProviderError(new TranslationProviderError("not_configured", "key")),
       false,
     );
+    assert.equal(
+      isWebUiTransientProviderError(new TranslationProviderError("safety_rejected", "blocked")),
+      false,
+    );
+    assert.equal(
+      isWebUiTransientProviderError(new WebUiDraftBatchError("Placeholders do not match English.")),
+      false,
+    );
+  });
 
-    const { record, job: started } = await createJob("eo");
+  it("2–5 unavailable enters cooldown; not terminal after one 503; nextAttemptAt persisted", async () => {
+    const { job: started } = await createJob("eo");
     const jobId = started.jobId;
-    const generation = started.generation;
-
     let providerCalls = 0;
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
@@ -171,67 +192,55 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       activate: activateNoOp(),
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
-        now: () => "2026-09-22T12:00:00.000Z",
+        now: () => "2026-09-24T12:00:00.000Z",
         translator: async (request) => {
           providerCalls += 1;
           if (providerCalls === 1) {
             return translate(request);
           }
-          throw new TranslationProviderError("rate_limited", "Gemini HTTP 429");
+          throw new TranslationProviderError("unavailable", "Gemini HTTP 503");
         },
         loadLiveTerminology: async () => "",
       },
     });
 
-    let job = await processLanguageActivationJob(jobId, { webUiTick: true });
-    assert.equal(job.status, "running");
-    assert.equal(job.domains.webUi.completedBatches, 1);
+    await processLanguageActivationJob(jobId, { webUiTick: true });
     const callsAfterOk = providerCalls;
-
-    job = await processLanguageActivationJob(jobId, { webUiTick: true });
-    assert.equal(providerCalls, callsAfterOk + 1, "no immediate second 429 call");
+    let job = await processLanguageActivationJob(jobId, { webUiTick: true });
+    assert.equal(providerCalls, callsAfterOk + 1, "no immediate second 503 call");
     assert.equal(job.status, "running");
     assert.notEqual(job.status, "failed");
     assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
     assert.equal(job.domains.webUi.providerFailure, false);
-    assert.equal(job.domains.webUi.completedBatches, 1);
+    assert.equal(job.domains.webUi.lastTransientFailure, "unavailable");
     assert.equal(job.domains.webUi.transientFailureCount, 1);
-    assert.equal(job.domains.webUi.lastTransientFailure, "rate_limited");
-    assert.equal(job.domains.webUi.nextAttemptAt, "2026-09-22T12:01:00.000Z");
+    assert.equal(job.domains.webUi.nextAttemptAt, "2026-09-24T12:01:00.000Z");
+    assert.match(
+      job.domains.webUi.detail ?? "",
+      /temporarily unavailable/i,
+    );
 
     const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
-    assert.ok(checkpoint);
     assert.equal(checkpoint!.phase, "provider_cooldown");
-    assert.equal(checkpoint!.jobId, jobId);
-    assert.equal(checkpoint!.generation, generation);
-    assert.equal(checkpoint!.completedBatchCount, 1);
+    assert.equal(checkpoint!.nextAttemptAt, "2026-09-24T12:01:00.000Z");
+    assert.equal(checkpoint!.lastTransientFailure, "unavailable");
     assert.equal(checkpoint!.failedBatchCount, 0);
-    assert.equal(checkpoint!.nextAttemptAt, "2026-09-22T12:01:00.000Z");
+    assert.equal(checkpoint!.completedBatchCount, 1);
 
     const batches = await listWebUiActivationBatches(checkpoint!.checkpointId, "primary");
     assert.equal(batches.filter((b) => b.status === "ok").length, 1);
     assert.equal(
-      batches.filter((b) => b.status === "pending" && b.reason === "rate_limited").length,
+      batches.filter((b) => b.status === "pending" && b.reason === "unavailable").length,
       1,
     );
 
-    const before = providerCalls;
+    // Still cooling down — no extra provider call.
     job = await processLanguageActivationJob(jobId, { webUiTick: true });
-    assert.equal(providerCalls, before);
+    assert.equal(providerCalls, callsAfterOk + 1);
     assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
-
-    const again = await startOrResumeLanguageActivationJob({
-      actorUserId: "admin-1",
-      languageId: record.languageId,
-      scheduleProcess: false,
-    });
-    assert.equal(again.job!.jobId, jobId);
-    assert.equal(again.job!.generation, generation);
-    const checkpointAfter = await getWebUiActivationCheckpointByJobId(jobId);
-    assert.equal(checkpointAfter!.checkpointId, checkpoint!.checkpointId);
   });
 
-  it("9–17 delayed resume clears cooldown and continues scheduling", async () => {
+  it("3 / 6–7 / 9–13 timeout cooldown resumes, clears streak, does not repeat ok batches", async () => {
     const { job: started } = await createJob("ia");
     const jobId = started.jobId;
     let providerCalls = 0;
@@ -242,7 +251,7 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       activate: activateNoOp(),
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
-        now: () => "2026-09-22T12:00:00.000Z",
+        now: () => "2026-09-24T12:00:00.000Z",
         translator: async (request) => {
           providerCalls += 1;
           if (providerCalls === 1) {
@@ -250,7 +259,7 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
           }
           if (failOnce) {
             failOnce = false;
-            throw new TranslationProviderError("rate_limited", "Gemini HTTP 429");
+            throw new TranslationProviderError("timeout", "Gemini translation timed out");
           }
           return translate(request);
         },
@@ -262,7 +271,13 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     await processLanguageActivationJob(jobId, { webUiTick: true });
     let job = await processLanguageActivationJob(jobId, { webUiTick: true });
     assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
+    assert.equal(job.domains.webUi.lastTransientFailure, "timeout");
+    assert.equal(webUiProviderCooldownSeconds(1), 60);
+    assert.equal(webUiProviderCooldownSeconds(2), 120);
+    assert.equal(webUiProviderCooldownSeconds(3), 300);
+
     const cooldownCheckpointId = job.domains.webUi.checkpointId;
+    const callsBeforeResume = providerCalls;
 
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
@@ -270,7 +285,7 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       activate: activateNoOp(),
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
-        now: () => "2026-09-22T12:01:01.000Z",
+        now: () => "2026-09-24T12:01:01.000Z",
         translator: async (request) => {
           providerCalls += 1;
           return translate(request);
@@ -286,21 +301,13 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     assert.equal(job.domains.webUi.transientFailureCount ?? 0, 0);
     assert.equal(job.domains.webUi.nextAttemptAt ?? null, null);
     assert.equal(job.domains.webUi.checkpointId, cooldownCheckpointId);
+    assert.equal(providerCalls, callsBeforeResume + 1);
 
     const batches = await listWebUiActivationBatches(cooldownCheckpointId!, "primary");
     assert.equal(batches.filter((b) => b.status === "ok").length, 2);
   });
 
-  it("18–24 delayed schedule coalesces; boot restores delay or immediate", async () => {
-    const near = new Date(Date.now() + 60_000).toISOString();
-    const later = new Date(Date.now() + 120_000).toISOString();
-    scheduleWebUiActivationTickAt("job-a", near);
-    scheduleWebUiActivationTickAt("job-a", later);
-    const snap = getWebUiActivationSchedulerSnapshotForTests("job-a");
-    assert.equal(snap.delayedPending, true);
-    assert.equal(snap.delayedNextAttemptAt, near);
-    resetLanguageActivationJobSchedulerForTests();
-
+  it("8 boot resume schedules delay from unavailable cooldown", async () => {
     const { job: started } = await createJob("vo");
     const jobId = started.jobId;
     let providerCalls = 0;
@@ -310,11 +317,11 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       activate: activateNoOp(),
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
-        now: () => "2026-09-22T12:00:00.000Z",
+        now: () => "2026-09-24T12:00:00.000Z",
         translator: async (request) => {
           providerCalls += 1;
           if (providerCalls === 1) return translate(request);
-          throw new TranslationProviderError("rate_limited", "Gemini HTTP 429");
+          throw new TranslationProviderError("unavailable", "Gemini HTTP 503");
         },
         loadLiveTerminology: async () => "",
       },
@@ -325,7 +332,6 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     assert.equal(checkpoint!.phase, "provider_cooldown");
     const callsBeforeBoot = providerCalls;
 
-    // Persist a future nextAttemptAt so boot must schedule a delay (not due yet).
     const futureAt = new Date(Date.now() + 90_000).toISOString();
     await upsertWebUiActivationCheckpoint({
       ...checkpoint!,
@@ -334,72 +340,109 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     resetLanguageActivationJobSchedulerForTests();
     const boot = await resumeIncompleteWebUiActivationJobsOnBoot();
     assert.ok(boot.scheduled >= 1);
-    const afterBoot = getWebUiActivationSchedulerSnapshotForTests(jobId);
-    assert.equal(afterBoot.delayedPending, true);
-    assert.equal(afterBoot.delayedNextAttemptAt, futureAt);
-    assert.equal(providerCalls, callsBeforeBoot, "boot schedules delay without provider call");
+    assert.equal(providerCalls, callsBeforeBoot);
+  });
 
+  it("11–14 streak grows; budget exhaustion becomes terminal", async () => {
+    assert.equal(WEB_UI_TRANSIENT_COOLDOWN_BUDGET, 5);
+    assert.equal(isWebUiTransientCooldownBudgetExhausted(4), false);
+    assert.equal(isWebUiTransientCooldownBudgetExhausted(5), true);
+
+    const { job: started } = await createJob("nov");
+    const jobId = started.jobId;
+    setLanguageActivationJobProcessDepsForTests({
+      skipCorpusInReadiness: true,
+      skipOwnerPreparation: true,
+      activate: activateNoOp(),
+      webUiPreparationDeps: {
+        includePaths: TWO_BATCH_PATHS,
+        now: () => "2026-09-24T12:00:00.000Z",
+        translator: async () => {
+          throw new TranslationProviderError("unavailable", "Gemini HTTP 503");
+        },
+        loadLiveTerminology: async () => "",
+      },
+    });
+
+    // First tick: enter cooldown streak=1
+    let job = await processLanguageActivationJob(jobId, { webUiTick: true });
+    assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
+    assert.equal(job.domains.webUi.transientFailureCount, 1);
+
+    for (let streak = 2; streak <= WEB_UI_TRANSIENT_COOLDOWN_BUDGET; streak += 1) {
+      const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
+      await upsertWebUiActivationCheckpoint({
+        ...checkpoint!,
+        phase: "primary",
+        nextAttemptAt: null,
+        transientFailureCount: streak - 1,
+        detail: "Preparing…",
+      });
+      setLanguageActivationJobProcessDepsForTests({
+        skipCorpusInReadiness: true,
+        skipOwnerPreparation: true,
+        activate: activateNoOp(),
+        webUiPreparationDeps: {
+          includePaths: TWO_BATCH_PATHS,
+          now: () => "2026-09-24T12:00:00.000Z",
+          translator: async () => {
+            throw new TranslationProviderError("unavailable", "Gemini HTTP 503");
+          },
+          loadLiveTerminology: async () => "",
+        },
+      });
+      job = await processLanguageActivationJob(jobId, { webUiTick: true });
+      assert.equal(job.status, "running");
+      assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
+      assert.equal(job.domains.webUi.transientFailureCount, streak);
+    }
+
+    // Next transient after budget → terminal
+    const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
     await upsertWebUiActivationCheckpoint({
       ...checkpoint!,
-      nextAttemptAt: "2020-01-01T00:00:00.000Z",
+      phase: "primary",
+      nextAttemptAt: null,
+      transientFailureCount: WEB_UI_TRANSIENT_COOLDOWN_BUDGET,
+      detail: "Preparing…",
     });
-    resetLanguageActivationJobSchedulerForTests();
-    const bootDue = await resumeIncompleteWebUiActivationJobsOnBoot();
-    assert.ok(bootDue.scheduled >= 1);
-    assert.equal(
-      getWebUiActivationSchedulerSnapshotForTests(jobId).delayedPending,
-      false,
-    );
-    const still = await getLanguageActivationJobById(jobId);
-    assert.equal(still!.jobId, jobId);
-    assert.equal(still!.generation, started.generation);
-    const cp2 = await getWebUiActivationCheckpointByJobId(jobId);
-    assert.equal(cp2!.checkpointId, checkpoint!.checkpointId);
+    job = await processLanguageActivationJob(jobId, { webUiTick: true });
+    assert.equal(job.status, "failed");
+    assert.equal(job.domains.webUi.preparationPhase, "failed");
+    assert.match(job.domains.webUi.detail ?? "", /unavailable repeatedly/i);
   });
 
-  it("25–30 Admin progress + Activate semantics for cooldown", () => {
-    const progressSrc = readFileSync(
-      path.join(
-        here,
-        "../../../../web/src/features/administration/admin-languages-localization-progress.ts",
-      ),
-      "utf8",
-    );
-    assert.match(progressSrc, /Waiting for translation provider/);
-    assert.match(progressSrc, /formatLocalizationRetryAt/);
-    assert.match(progressSrc, /provider_cooldown/);
-
-    const section = readFileSync(
-      path.join(
-        here,
-        "../../../../web/src/features/administration/components/AdminLanguagesSection.tsx",
-      ),
-      "utf8",
-    );
-    assert.match(section, /Automatic retry at/);
-    assert.match(section, /provider_cooldown/);
-    assert.match(section, /preparationPhase !==\s*"provider_cooldown"/);
-
-    const pollSrc = readFileSync(
-      path.join(
-        here,
-        "../../../../web/src/features/administration/admin-languages-activation-poll.ts",
-      ),
-      "utf8",
-    );
-    assert.match(pollSrc, /status === "running"/);
-
-    assert.equal(
-      computeWebUiCooldownNextAttemptAt({
-        nowIso: "2026-09-22T12:00:00.000Z",
-        transientFailureCount: 2,
-      }),
-      "2026-09-22T12:02:00.000Z",
-    );
+  it("15–18 config/auth/forbidden/unsupported/safety remain terminal", async () => {
+    for (const [code, message] of [
+      ["not_configured", "missing key"],
+      ["forbidden", "forbidden"],
+      ["unsupported_language", "nope"],
+      ["safety_rejected", "blocked"],
+    ] as const) {
+      resetLanguageActivationJobStoreForTests();
+      resetWebUiActivationCheckpointStoreForTests();
+      const { job: started } = await createJob(`t-${code.slice(0, 4)}`);
+      setLanguageActivationJobProcessDepsForTests({
+        skipCorpusInReadiness: true,
+        skipOwnerPreparation: true,
+        activate: activateNoOp(),
+        webUiPreparationDeps: {
+          includePaths: TWO_BATCH_PATHS,
+          translator: async () => {
+            throw new TranslationProviderError(code, message);
+          },
+          loadLiveTerminology: async () => "",
+        },
+      });
+      await processLanguageActivationJob(started.jobId, { webUiTick: true });
+      const job = await getLanguageActivationJobById(started.jobId);
+      assert.equal(job!.status, "failed", code);
+      assert.equal(job!.domains.webUi.preparationPhase, "failed", code);
+    }
   });
 
-  it("31 non-rate-limit failures remain terminal", async () => {
-    const { job: started } = await createJob("nov");
+  it("19 structure-validation failure is not provider cooldown", async () => {
+    const { job: started } = await createJob("struct");
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
@@ -407,38 +450,54 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
         translator: async () => {
-          throw new TranslationProviderError("safety_rejected", "blocked");
+          throw new WebUiDraftBatchError("Placeholders do not match English.");
         },
         loadLiveTerminology: async () => "",
       },
     });
     await processLanguageActivationJob(started.jobId, { webUiTick: true });
+    // Immediate retry then terminal (2 attempts) — never cooldown
     const job = await getLanguageActivationJobById(started.jobId);
     assert.equal(job!.status, "failed");
-    assert.equal(job!.domains.webUi.preparationPhase, "failed");
+    assert.notEqual(job!.domains.webUi.preparationPhase, "provider_cooldown");
+    assert.match(job!.domains.webUi.detail ?? "", /structure validation/i);
   });
 
-  it("35–36 CT residual after WEB_UI; no publish during cooldown", () => {
-    const serviceSrc = readFileSync(
-      path.join(
-        here,
-        "../../../src/modules/language/language-localization-activation/language-activation-job.service.ts",
-      ),
-      "utf8",
+  it("26–28 Admin/sanitize copy for unavailable and timeout; no raw secrets", () => {
+    assert.equal(
+      webUiProviderCooldownDetail("rate_limited"),
+      "Waiting for translation provider — rate limit.",
     );
-    assert.match(serviceSrc, /provider_cooldown/);
-    assert.match(serviceSrc, /webUiStillPreparing/);
-    assert.match(serviceSrc, /scheduleWebUiActivationTickAt/);
-    assert.match(serviceSrc, /preparationPhase === "provider_cooldown"/);
+    assert.match(webUiProviderCooldownDetail("unavailable"), /temporarily unavailable/i);
+    assert.match(webUiProviderCooldownDetail("timeout"), /timed out/i);
+    assert.match(webUiTransientBudgetExhaustedDetail("unavailable"), /Retry activation/);
+    assert.match(
+      sanitizeWebUiActivationFailureDetail("Gemini HTTP 503"),
+      /temporarily unavailable/i,
+    );
+    assert.match(
+      sanitizeWebUiActivationFailureDetail("Gemini translation timed out"),
+      /timed out/i,
+    );
+    const copies = [
+      webUiProviderCooldownDetail("unavailable"),
+      webUiProviderCooldownDetail("timeout"),
+      sanitizeWebUiActivationFailureDetail("Gemini HTTP 503"),
+      sanitizeWebUiActivationFailureDetail("Gemini translation timed out"),
+    ].join("\n");
+    assert.equal(/AIza|api[_-]?key|Bearer |sk-/i.test(copies), false);
+    assert.equal(/⟦w\d+⟧/.test(copies), false);
+  });
 
-    const prepSrc = readFileSync(
-      path.join(
-        here,
-        "../../../src/modules/web-ui-message-packs/web-ui-activation-preparation.ts",
-      ),
+  it("20 no locale-specific branch in cooldown module", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const source = fs.readFileSync(
+      path.resolve(here, "../../../src/modules/web-ui-message-packs/web-ui-provider-cooldown.ts"),
       "utf8",
     );
-    assert.match(prepSrc, /enterWebUiProviderCooldown/);
-    assert.match(prepSrc, /isWebUiTransientProviderError/);
+    assert.equal(/\bka\b|Georgian|ქართული/i.test(source), false);
   });
 });

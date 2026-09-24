@@ -126,8 +126,17 @@ function phaseLabel(source: ProgressSource, percent: number): {
     return { label: "Failed — retry activation", failed: true, nextAttemptAt: null };
   }
   if (source.webUi?.preparationPhase === "provider_cooldown") {
+    const kind = source.webUi.lastTransientFailure ?? null;
+    let label = "Waiting for translation provider";
+    if (kind === "rate_limited") {
+      label = "Waiting for translation provider — rate limit";
+    } else if (kind === "unavailable") {
+      label = "Translation provider temporarily unavailable";
+    } else if (kind === "timeout") {
+      label = "Translation provider timed out — retry scheduled";
+    }
     return {
-      label: "Waiting for translation provider",
+      label,
       failed: false,
       nextAttemptAt: source.webUi.nextAttemptAt ?? null,
     };

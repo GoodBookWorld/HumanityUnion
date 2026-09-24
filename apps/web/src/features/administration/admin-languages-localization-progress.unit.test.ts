@@ -406,7 +406,7 @@ describe("Step 15C.5 localization live progress", () => {
         },
       },
     });
-    assert.match(withCooldown.phaseLabel, /Waiting for translation provider/);
+    assert.match(withCooldown.phaseLabel, /Waiting for translation provider — rate limit/);
     assert.equal(withCooldown.failed, false);
     assert.equal(withCooldown.nextAttemptAt, "2026-09-22T16:42:00.000Z");
     assert.ok(withCooldown.percent > 80);
