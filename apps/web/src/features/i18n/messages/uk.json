@@ -421,6 +421,32 @@
       "deleting": "Видалення…",
       "selectCategory": "Оберіть категорію",
       "category": "Категорія",
+      "myPublications": {
+        "title": "Мої публікації",
+        "intro": "Керуйте власними публікаціями Блогу. Дата публікації — канонічна публічна дата (полудень UTC для значень лише з датою).",
+        "empty": "У вас ще немає публікацій.",
+        "columns": {
+          "title": "Назва",
+          "category": "Категорія",
+          "publicationDate": "Дата публікації",
+          "status": "Статус",
+          "visibility": "Видимість",
+          "lastUpdated": "Останнє оновлення",
+          "actions": "Дії"
+        },
+        "visibility": {
+          "public": "Публічна",
+          "notPublic": "Не публічна",
+          "scheduled": "Запланована"
+        },
+        "actionCompleted": "Дію з публікацією виконано.",
+        "scheduleCancelled": "Розклад скасовано.",
+        "deletedArchived": "Публікацію видалено (архівовано).",
+        "publish": "Опублікувати",
+        "publishNow": "Опублікувати зараз",
+        "cancelSchedule": "Скасувати розклад",
+        "working": "Обробка…"
+      },
       "editor": {
         "page": {
           "createTitle": "Нова публікація",

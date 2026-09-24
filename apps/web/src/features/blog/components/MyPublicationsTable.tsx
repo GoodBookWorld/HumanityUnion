@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
-import type { BlogAuthorWorkspacePostSummary, BlogCategoryId } from "@hu/types";
-import { BLOG_CATEGORIES } from "@hu/types";
+import type { BlogAuthorWorkspacePostSummary } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
+import { resolvePublishingListStatusLabel } from "../blog-workspace-i18n";
 import {
   archiveBlogPost,
   cancelScheduledBlogPublication,
@@ -18,20 +19,17 @@ import {
   publishBlogPost,
   startPublishedCorrection,
 } from "../publishing-api";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 
 import "../../administration/components/admin-panel.css";
 import "../../administration/components/admin-publishing.css";
 
-function categoryName(categoryId: BlogCategoryId): string {
-  return BLOG_CATEGORIES.find((category) => category.categoryId === categoryId)?.name ?? categoryId;
-}
-
-function formatCompactDate(value?: string): string {
+function formatCompactDate(value: string | undefined, locale: string): string {
   if (!value) {
     return "—";
   }
   try {
-    return new Intl.DateTimeFormat("en", {
+    return new Intl.DateTimeFormat(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -42,40 +40,20 @@ function formatCompactDate(value?: string): string {
   }
 }
 
-function lifecycleStatusLabel(post: BlogAuthorWorkspacePostSummary): string {
-  if (post.status === "draft" && post.review.reviewStatus === "changes_requested") {
-    return "Changes requested";
-  }
-  if (post.status === "draft" && post.review.reviewStatus === "declined") {
-    return "Declined";
-  }
-  switch (post.status) {
-    case "draft":
-      return "Draft";
-    case "submitted_for_review":
-      return "Under review";
-    case "scheduled":
-      return "Scheduled";
-    case "published":
-      return "Published";
-    case "archived":
-      return "Archived";
-    default:
-      return post.status;
-  }
-}
-
-function visibilityLabel(post: BlogAuthorWorkspacePostSummary): string {
+function visibilityLabel(
+  post: BlogAuthorWorkspacePostSummary,
+  t: ReturnType<typeof useTranslations<"workspace.publishingPage">>,
+): string {
   if (post.administrativelyBlocked) {
-    return "Blocked by administrator";
+    return t("blockedByAdmin");
   }
   if (post.status === "published") {
-    return "Public";
+    return t("myPublications.visibility.public");
   }
   if (post.status === "scheduled") {
-    return "Scheduled";
+    return t("myPublications.visibility.scheduled");
   }
-  return "Not public";
+  return t("myPublications.visibility.notPublic");
 }
 
 export interface MyPublicationsTableProps {
@@ -87,6 +65,9 @@ export function MyPublicationsTable({
   mutationsDisabled,
   canDirectPublish,
 }: MyPublicationsTableProps) {
+  const t = useTranslations("workspace.publishingPage");
+  const tBlog = useTranslations("blogPublic");
+  const locale = useLocale();
   const router = useRouter();
   const [items, setItems] = useState<BlogAuthorWorkspacePostSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +106,7 @@ export function MyPublicationsTable({
         postId,
         releaseScheduledNow ? { publicationDate: today } : undefined,
       );
-      setActionMessage("Publication action completed.");
+      setActionMessage(t("myPublications.actionCompleted"));
       await load();
     } catch (actionError) {
       setActionMessage(formatAuthFormError(actionError));
@@ -139,7 +120,7 @@ export function MyPublicationsTable({
     setActionMessage(null);
     try {
       await cancelScheduledBlogPublication(postId);
-      setActionMessage("Schedule cancelled.");
+      setActionMessage(t("myPublications.scheduleCancelled"));
       await load();
     } catch (actionError) {
       setActionMessage(formatAuthFormError(actionError));
@@ -156,7 +137,7 @@ export function MyPublicationsTable({
     setActionMessage(null);
     try {
       await archiveBlogPost(deleteTarget.postId);
-      setActionMessage("Publication deleted (archived).");
+      setActionMessage(t("myPublications.deletedArchived"));
       setDeleteTarget(null);
       await load();
     } catch (actionError) {
@@ -186,26 +167,23 @@ export function MyPublicationsTable({
   return (
     <section className="authoring-page__publications" aria-labelledby="my-publications-title">
       <h2 id="my-publications-title" className="hu-heading-3">
-        My Publications
+        {t("myPublications.title")}
       </h2>
-      <p className="hu-body authoring-page__muted">
-        Manage your own Blog publications. Publication date is the canonical public date (noon UTC
-        for date-only values).
-      </p>
+      <p className="hu-body authoring-page__muted">{t("myPublications.intro")}</p>
 
       {mutationsDisabled ? (
         <StatusBanner
-          title="Publishing actions unavailable"
-          message="Your Author access has been blocked. Please contact the administrator."
+          title={t("actionsUnavailableTitle")}
+          message={t("actionsUnavailableBody")}
         />
       ) : null}
 
       {actionMessage ? <p className="hu-caption">{actionMessage}</p> : null}
-      {error ? <StatusBanner title="Unable to load publications" message={error} /> : null}
-      {loading ? <p className="hu-body">Loading publications…</p> : null}
+      {error ? <StatusBanner title={t("loadErrorTitle")} message={error} /> : null}
+      {loading ? <p className="hu-body">{t("loading")}</p> : null}
 
       {!loading && !error && items.length === 0 ? (
-        <p className="hu-body">You have no publications yet.</p>
+        <p className="hu-body">{t("myPublications.empty")}</p>
       ) : null}
 
       {!loading && items.length > 0 ? (
@@ -213,13 +191,13 @@ export function MyPublicationsTable({
           <table className="admin-publishing-table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Publication date</th>
-                <th>Status</th>
-                <th>Visibility</th>
-                <th>Last updated</th>
-                <th>Actions</th>
+                <th>{t("myPublications.columns.title")}</th>
+                <th>{t("myPublications.columns.category")}</th>
+                <th>{t("myPublications.columns.publicationDate")}</th>
+                <th>{t("myPublications.columns.status")}</th>
+                <th>{t("myPublications.columns.visibility")}</th>
+                <th>{t("myPublications.columns.lastUpdated")}</th>
+                <th>{t("myPublications.columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -247,25 +225,25 @@ export function MyPublicationsTable({
                     <td>
                       <strong>{post.title}</strong>
                       {blocked ? (
-                        <div className="hu-caption">Blocked by administrator</div>
+                        <div className="hu-caption">{t("blockedByAdmin")}</div>
                       ) : null}
                     </td>
-                    <td>{categoryName(post.categoryId)}</td>
-                    <td>{formatCompactDate(post.publishedAt)}</td>
-                    <td>{lifecycleStatusLabel(post)}</td>
-                    <td>{visibilityLabel(post)}</td>
-                    <td>{formatCompactDate(post.updatedAt)}</td>
+                    <td>{resolveBlogCategoryDisplayName(post.categoryId, tBlog)}</td>
+                    <td>{formatCompactDate(post.publishedAt, locale)}</td>
+                    <td>{resolvePublishingListStatusLabel(post, t)}</td>
+                    <td>{visibilityLabel(post, t)}</td>
+                    <td>{formatCompactDate(post.updatedAt, locale)}</td>
                     <td>
                       <div className="admin-publishing-table__actions">
                         <Link className="admin-panel__link" href={viewHref}>
-                          View
+                          {t("actions.view")}
                         </Link>
                         {editable && post.status !== "published" ? (
                           <Link
                             className="admin-panel__link"
                             href={`/workspace/publishing/${post.postId}`}
                           >
-                            Edit
+                            {t("actions.edit")}
                           </Link>
                         ) : null}
                         {publishedManageable && canDirectPublish ? (
@@ -273,7 +251,7 @@ export function MyPublicationsTable({
                             className="admin-panel__link"
                             href={`/workspace/publishing/${post.postId}`}
                           >
-                            Edit / Correct
+                            {t("actions.editCorrect")}
                           </Link>
                         ) : null}
                         {publishedManageable && !canDirectPublish ? (
@@ -283,7 +261,7 @@ export function MyPublicationsTable({
                             disabled={actionBusyId === post.postId}
                             onClick={() => setCorrectionTarget(post)}
                           >
-                            Edit / Correct
+                            {t("actions.editCorrect")}
                           </Button>
                         ) : null}
                         {publishedManageable ? (
@@ -293,7 +271,7 @@ export function MyPublicationsTable({
                             disabled={actionBusyId === post.postId}
                             onClick={() => setDeleteTarget(post)}
                           >
-                            Delete
+                            {t("actions.delete")}
                           </Button>
                         ) : null}
                         {canPublish ? (
@@ -306,10 +284,10 @@ export function MyPublicationsTable({
                             }
                           >
                             {actionBusyId === post.postId
-                              ? "Working…"
+                              ? t("myPublications.working")
                               : post.status === "scheduled"
-                                ? "Publish now"
-                                : "Publish"}
+                                ? t("myPublications.publishNow")
+                                : t("myPublications.publish")}
                           </Button>
                         ) : null}
                         {canCancelSchedule ? (
@@ -319,7 +297,7 @@ export function MyPublicationsTable({
                             disabled={actionBusyId === post.postId}
                             onClick={() => void handleCancelSchedule(post.postId)}
                           >
-                            Cancel schedule
+                            {t("myPublications.cancelSchedule")}
                           </Button>
                         ) : null}
                       </div>
@@ -334,10 +312,12 @@ export function MyPublicationsTable({
 
       <ConfirmDialog
         isOpen={Boolean(correctionTarget)}
-        title="Start correction?"
-        description="This removes the publication from the public Blog while you edit. Changes must be submitted for review before the article is public again."
+        title={t("correctionTitle")}
+        description={t("correctionBody")}
         confirmLabel={
-          actionBusyId === correctionTarget?.postId ? "Starting…" : "Start correction"
+          actionBusyId === correctionTarget?.postId
+            ? t("correctionStarting")
+            : t("correctionConfirm")
         }
         destructive={false}
         isConfirming={actionBusyId === correctionTarget?.postId}
@@ -347,9 +327,11 @@ export function MyPublicationsTable({
 
       <ConfirmDialog
         isOpen={Boolean(deleteTarget)}
-        title="Delete this publication?"
-        description="The publication is archived and removed from the public Blog. The record is preserved for accountability."
-        confirmLabel={actionBusyId === deleteTarget?.postId ? "Deleting…" : "Delete"}
+        title={t("deleteTitle")}
+        description={t("deleteBody")}
+        confirmLabel={
+          actionBusyId === deleteTarget?.postId ? t("deleting") : t("deleteConfirm")
+        }
         destructive
         isConfirming={actionBusyId === deleteTarget?.postId}
         onCancel={() => setDeleteTarget(null)}

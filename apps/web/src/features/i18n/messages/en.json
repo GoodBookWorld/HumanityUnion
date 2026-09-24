@@ -421,6 +421,32 @@
       "deleting": "Deleting…",
       "selectCategory": "Select a category",
       "category": "Category",
+      "myPublications": {
+        "title": "My Publications",
+        "intro": "Manage your own Blog publications. Publication date is the canonical public date (noon UTC for date-only values).",
+        "empty": "You have no publications yet.",
+        "columns": {
+          "title": "Title",
+          "category": "Category",
+          "publicationDate": "Publication date",
+          "status": "Status",
+          "visibility": "Visibility",
+          "lastUpdated": "Last updated",
+          "actions": "Actions"
+        },
+        "visibility": {
+          "public": "Public",
+          "notPublic": "Not public",
+          "scheduled": "Scheduled"
+        },
+        "actionCompleted": "Publication action completed.",
+        "scheduleCancelled": "Schedule cancelled.",
+        "deletedArchived": "Publication deleted (archived).",
+        "publish": "Publish",
+        "publishNow": "Publish now",
+        "cancelSchedule": "Cancel schedule",
+        "working": "Working…"
+      },
       "editor": {
         "page": {
           "createTitle": "New Publication",

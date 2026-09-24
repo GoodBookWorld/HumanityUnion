@@ -421,6 +421,32 @@
       "deleting": "جارٍ الحذف…",
       "selectCategory": "اختر فئة",
       "category": "الفئة",
+      "myPublications": {
+        "title": "منشوراتي",
+        "intro": "أدِر منشورات المدونة الخاصة بك. تاريخ النشر هو التاريخ العام المعتمد (ظهر UTC للقيم ذات التاريخ فقط).",
+        "empty": "ليس لديك منشورات بعد.",
+        "columns": {
+          "title": "العنوان",
+          "category": "الفئة",
+          "publicationDate": "تاريخ النشر",
+          "status": "الحالة",
+          "visibility": "الظهور",
+          "lastUpdated": "آخر تحديث",
+          "actions": "الإجراءات"
+        },
+        "visibility": {
+          "public": "عام",
+          "notPublic": "غير عام",
+          "scheduled": "مجدول"
+        },
+        "actionCompleted": "اكتمل إجراء النشر.",
+        "scheduleCancelled": "تم إلغاء الجدولة.",
+        "deletedArchived": "تم حذف المنشور (أُرشف).",
+        "publish": "نشر",
+        "publishNow": "انشر الآن",
+        "cancelSchedule": "إلغاء الجدولة",
+        "working": "جارٍ العمل…"
+      },
       "editor": {
         "page": {
           "createTitle": "منشور جديد",

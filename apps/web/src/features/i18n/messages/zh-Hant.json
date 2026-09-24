@@ -421,6 +421,32 @@
       "deleting": "刪除中…",
       "selectCategory": "選擇分類",
       "category": "分類",
+      "myPublications": {
+        "title": "我的發布內容",
+        "intro": "管理您自己的部落格文章。發布日期是正式的公開日期（僅日期值採 UTC 正午）。",
+        "empty": "您尚未有任何發布內容。",
+        "columns": {
+          "title": "標題",
+          "category": "類別",
+          "publicationDate": "發布日期",
+          "status": "狀態",
+          "visibility": "可見性",
+          "lastUpdated": "最後更新",
+          "actions": "操作"
+        },
+        "visibility": {
+          "public": "公開",
+          "notPublic": "未公開",
+          "scheduled": "已排程"
+        },
+        "actionCompleted": "發布操作已完成。",
+        "scheduleCancelled": "已取消排程。",
+        "deletedArchived": "已刪除發布內容（已封存）。",
+        "publish": "發布",
+        "publishNow": "立即發布",
+        "cancelSchedule": "取消排程",
+        "working": "處理中…"
+      },
       "editor": {
         "page": {
           "createTitle": "新文章",
