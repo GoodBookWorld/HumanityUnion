@@ -87,9 +87,34 @@ export interface CivicTimelineEntry {
   href?: string;
 }
 
+/**
+ * One UTC calendar day in the Civic Activity Over Time window.
+ * Counts unique timeline-event ids (see aggregate counting contract).
+ */
+export interface CivicActivityDayBucket {
+  /** UTC calendar date `YYYY-MM-DD`. */
+  readonly date: string;
+  readonly actionCount: number;
+}
+
+/**
+ * Derived, non-persisted 30-day civic-action series for the eighth summary card.
+ * Not visits, attendance, or time spent.
+ */
+export interface CivicActivityOverTime {
+  readonly windowDays: number;
+  /** Oldest → newest; always `windowDays` entries (zeros included). */
+  readonly days: readonly CivicActivityDayBucket[];
+  readonly actionsInPeriod: number;
+  /** Days with actionCount > 0. */
+  readonly activeCivicDays: number;
+}
+
 export interface CivicActivitySnapshot {
   groups: CivicActivityGroup[];
   timeline: CivicTimelineEntry[];
+  /** Full-source daily civic actions (independent of timeline display cap). */
+  activityOverTime: CivicActivityOverTime;
   loadedAt: string;
 }
 

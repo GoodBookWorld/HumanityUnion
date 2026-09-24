@@ -852,7 +852,20 @@
       "decision-participation": "Моя участь у рішеннях",
       "implementation-commitments": "Мої зобов’язання з реалізації",
       "implementation-tracking": "Моє відстеження реалізації",
-      "public-impact": "Мій суспільний вплив"
+      "public-impact": "Мій суспільний вплив",
+      "activity-over-time": "Громадянська активність у часі"
+    },
+    "charts": {
+      "showDetails": "Показати деталі",
+      "hideDetails": "Сховати деталі",
+      "civicActions": "Громадянські дії",
+      "activeCivicDays": "Активні громадянські дні",
+      "lastNDays": "Останні {count} дн.",
+      "windowLabel": "Період",
+      "proposedInvitations": "Запропоновані запрошення: {count}",
+      "statusBreakdownAria": "Розподіл статусів для {title}. {detail}",
+      "overTimeAria": "{actions} громадянських дій протягом {days} активних громадянських днів за останні {window} дн.",
+      "overTimeEmpty": "У цьому періоді громадянських дій не зафіксовано."
     },
     "notes": {
       "decisionVotesLinked": "Кількість голосів відображає рішення, пов’язані з вашими ініціативами.",

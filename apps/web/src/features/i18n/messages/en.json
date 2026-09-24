@@ -852,7 +852,20 @@
       "decision-participation": "My Decision Participation",
       "implementation-commitments": "My Implementation Commitments",
       "implementation-tracking": "My Implementation Tracking",
-      "public-impact": "My Public Impact"
+      "public-impact": "My Public Impact",
+      "activity-over-time": "Civic Activity Over Time"
+    },
+    "charts": {
+      "showDetails": "Show details",
+      "hideDetails": "Hide details",
+      "civicActions": "Civic actions",
+      "activeCivicDays": "Active civic days",
+      "lastNDays": "Last {count} days",
+      "windowLabel": "Window",
+      "proposedInvitations": "Proposed invitations: {count}",
+      "statusBreakdownAria": "Status breakdown for {title}. {detail}",
+      "overTimeAria": "{actions} civic actions across {days} active civic days in the last {window} days.",
+      "overTimeEmpty": "No civic actions recorded in this period."
     },
     "notes": {
       "decisionVotesLinked": "Vote counts reflect decisions linked to your initiatives.",

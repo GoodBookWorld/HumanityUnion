@@ -129,6 +129,14 @@ describe("Closure 03B — civic activity + workspace chrome i18n", () => {
         const label = groups[id] ?? "";
         assert.ok(label.length > 0, `${locale} groups.${id}`);
       }
+      assert.ok(
+        typeof groups["activity-over-time"] === "string" &&
+          groups["activity-over-time"].length > 0,
+        `${locale} groups.activity-over-time`,
+      );
+      const charts = civic.charts as Record<string, string> | undefined;
+      assert.ok(charts && typeof charts.showDetails === "string", `${locale} charts.showDetails`);
+      assert.ok(charts && typeof charts.civicActions === "string", `${locale} charts.civicActions`);
 
       const events = (civic.timeline as { events: Record<string, string> }).events;
       for (const type of TIMELINE_EVENT_TYPES) {
@@ -211,8 +219,9 @@ describe("Closure 03B — civic activity + workspace chrome i18n", () => {
     assert.match(page, /navAriaLabel=\{t\("sections\.workspaceNavAria"\)\}/);
 
     const memberWorkspace = readWeb("components/member/MemberWorkspace.tsx");
-    assert.match(memberWorkspace, /navAriaLabel\s*=\s*"Workspace navigation"/);
-    assert.match(memberWorkspace, /aria-label=\{navAriaLabel\}/);
+    assert.match(memberWorkspace, /navAriaLabel/);
+    assert.match(memberWorkspace, /tWorkspace\("mainNavigation"\)/);
+    assert.match(memberWorkspace, /aria-label=\{resolvedNavAria\}|aria-label=\{navAriaLabel\}/);
 
     const tracker = readWeb(
       "features/workspace-civic-assistant/use-workspace-section-tracker.ts",

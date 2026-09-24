@@ -77,7 +77,10 @@ export function MyCivicActivitySection() {
       </ProfileSection>
 
       <ProfileSection title={t("sections.summary")} id="section-activity-summary">
-        <CivicActivitySummaryCards groups={snapshot.groups} />
+        <CivicActivitySummaryCards
+          groups={snapshot.groups}
+          activityOverTime={snapshot.activityOverTime}
+        />
       </ProfileSection>
 
       <ProfileSection title={t("sections.timeline")} id="section-activity-timeline">

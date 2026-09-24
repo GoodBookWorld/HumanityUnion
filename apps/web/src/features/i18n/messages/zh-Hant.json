@@ -852,7 +852,20 @@
       "decision-participation": "我的決策參與",
       "implementation-commitments": "我的實施承諾",
       "implementation-tracking": "我的實施追蹤",
-      "public-impact": "我的公共影響"
+      "public-impact": "我的公共影響",
+      "activity-over-time": "公民活動趨勢"
+    },
+    "charts": {
+      "showDetails": "顯示詳細資料",
+      "hideDetails": "隱藏詳細資料",
+      "civicActions": "公民行動",
+      "activeCivicDays": "活躍公民天數",
+      "lastNDays": "最近 {count} 天",
+      "windowLabel": "期間",
+      "proposedInvitations": "提議邀請：{count}",
+      "statusBreakdownAria": "{title} 的狀態分布。{detail}",
+      "overTimeAria": "最近 {window} 天內，共 {actions} 項公民行動，涵蓋 {days} 個活躍公民天。",
+      "overTimeEmpty": "此期間沒有記錄到公民行動。"
     },
     "notes": {
       "decisionVotesLinked": "投票計數反映與您的倡議相關的決策。",

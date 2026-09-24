@@ -852,7 +852,20 @@
       "decision-participation": "مشاركتي في القرارات",
       "implementation-commitments": "التزامات التنفيذ الخاصة بي",
       "implementation-tracking": "تتبع التنفيذ الخاص بي",
-      "public-impact": "أثري العام"
+      "public-impact": "أثري العام",
+      "activity-over-time": "النشاط المدني عبر الزمن"
+    },
+    "charts": {
+      "showDetails": "إظهار التفاصيل",
+      "hideDetails": "إخفاء التفاصيل",
+      "civicActions": "إجراءات مدنية",
+      "activeCivicDays": "أيام مدنية نشطة",
+      "lastNDays": "آخر {count} يومًا",
+      "windowLabel": "الفترة",
+      "proposedInvitations": "دعوات مقترحة: {count}",
+      "statusBreakdownAria": "توزيع الحالات لـ {title}. {detail}",
+      "overTimeAria": "{actions} إجراءً مدنيًا عبر {days} يومًا مدنيًا نشطًا خلال آخر {window} يومًا.",
+      "overTimeEmpty": "لا توجد إجراءات مدنية مسجّلة في هذه الفترة."
     },
     "notes": {
       "decisionVotesLinked": "تعكس أعداد الأصوات القرارات المرتبطة بمبادراتك.",

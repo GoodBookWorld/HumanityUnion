@@ -18,6 +18,10 @@ import type {
   CivicTimelineEntry,
   MyDecisionVoteRecord,
 } from "../types";
+import {
+  buildCivicActivityOverTime,
+  dedupeCivicTimelineEntries,
+} from "./civic-activity-over-time";
 
 function latestDate(values: Array<string | null | undefined>): string | null {
   const timestamps = values.filter((value): value is string => Boolean(value));
@@ -429,6 +433,20 @@ function buildPublicImpactTimelineEntries(impacts: InitiativePublicImpact[]): Ci
   return entries;
 }
 
+export function collectCivicTimelineEntries(source: CivicActivitySourceData): CivicTimelineEntry[] {
+  return dedupeCivicTimelineEntries([
+    ...buildInitiativeTimelineEntries(source.initiatives),
+    ...buildAnalysisTimelineEntries(source.analyses),
+    ...buildProposalTimelineEntries(source.proposals),
+    ...buildVoteTimelineEntries(source.votes),
+    ...buildDecisionSessionTimelineEntries(source.decisionSessions),
+    ...buildCommitmentTimelineEntries(source.commitments),
+    ...buildTrackingTimelineEntries(source.trackings),
+    ...buildTrackingUpdateTimelineEntries(source.trackingUpdates),
+    ...buildPublicImpactTimelineEntries(source.impacts),
+  ]);
+}
+
 export function buildCivicActivitySnapshot(source: CivicActivitySourceData): CivicActivitySnapshot {
   const groups: CivicActivityGroup[] = [
     buildInitiativesGroup(source.initiatives),
@@ -440,23 +458,16 @@ export function buildCivicActivitySnapshot(source: CivicActivitySourceData): Civ
     buildPublicImpactGroup(source.impacts),
   ];
 
-  const timeline = [
-    ...buildInitiativeTimelineEntries(source.initiatives),
-    ...buildAnalysisTimelineEntries(source.analyses),
-    ...buildProposalTimelineEntries(source.proposals),
-    ...buildVoteTimelineEntries(source.votes),
-    ...buildDecisionSessionTimelineEntries(source.decisionSessions),
-    ...buildCommitmentTimelineEntries(source.commitments),
-    ...buildTrackingTimelineEntries(source.trackings),
-    ...buildTrackingUpdateTimelineEntries(source.trackingUpdates),
-    ...buildPublicImpactTimelineEntries(source.impacts),
-  ]
+  const uniqueTimeline = collectCivicTimelineEntries(source);
+  const activityOverTime = buildCivicActivityOverTime(uniqueTimeline);
+  const timeline = [...uniqueTimeline]
     .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
     .slice(0, 40);
 
   return {
     groups,
     timeline,
+    activityOverTime,
     loadedAt: new Date().toISOString(),
   };
 }
