@@ -14,6 +14,7 @@ import type {
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { findAuthUserByEmail } from "../auth/auth-user.repository.js";
 import { resolveEmailConfig } from "../email/email.config.js";
+import { buildBlogListUnsubscribeHeaders } from "../email/email-list-headers.js";
 import { sendTransactionalEmail, sendTransactionalEmailAndAwait } from "../email/email.service.js";
 import { recipientDomainForLogs } from "../email/email-safety-guards.js";
 import { BlogValidationError } from "./blog.errors.js";
@@ -355,6 +356,7 @@ async function sendWelcomeEmailBestEffort(input: {
         blogUrl,
         unsubscribeUrl,
       },
+      listHeaders: buildBlogListUnsubscribeHeaders(rawUnsubscribeToken),
     });
 
     if (!delivery.emailSent) {

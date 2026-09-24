@@ -8,6 +8,10 @@
  *
  * Location: `src/proxy.ts` (same level as `src/app`) — required for Next 16
  * discovery when App Router lives under `src/app` (Pack 2.1C).
+ *
+ * EMAIL DELIVERABILITY 03A.1 — POST `/blog/subscribe/unsubscribe` is rewritten
+ * to an internal Route Handler (page.tsx and route.ts cannot share a segment).
+ * GET passes through unchanged to the existing unsubscribe page.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -27,6 +31,9 @@ import {
   rewriteRequestCookieHeaderHuLang,
   type SeoProxyRegistryLocaleRow,
 } from "./features/language/public-seo-locale-request";
+
+const BLOG_UNSUBSCRIBE_PATH = "/blog/subscribe/unsubscribe";
+const BLOG_UNSUBSCRIBE_INTERNAL_PATH = "/api/internal/blog-subscribe-unsubscribe";
 
 /**
  * Public languages list only includes enabled locales (membership ⇒ enabled).
@@ -68,8 +75,16 @@ async function fetchSeoProxyRegistryCatalog(): Promise<
 }
 
 export async function proxy(request: NextRequest) {
-  const requestHeaders = new Headers(request.headers);
   const pathname = request.nextUrl.pathname;
+
+  // RFC 8058 one-click: same public URI as human GET page; POST → internal handler.
+  if (pathname === BLOG_UNSUBSCRIBE_PATH && request.method === "POST") {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = BLOG_UNSUBSCRIBE_INTERNAL_PATH;
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
+  const requestHeaders = new Headers(request.headers);
   requestHeaders.set(HU_PATHNAME_HEADER, pathname);
 
   const parsed = parsePublicSeoLocalePrefixedPath(pathname);

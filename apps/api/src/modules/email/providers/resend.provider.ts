@@ -64,6 +64,7 @@ export class ResendEmailProvider implements EmailProvider {
         subject: request.subject,
         html: request.html,
         text: request.text,
+        ...(request.listHeaders ? { headers: { ...request.listHeaders } } : {}),
       }),
     });
 

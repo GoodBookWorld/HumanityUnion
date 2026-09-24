@@ -1,5 +1,7 @@
 import type { EmailTemplateId } from "@hu/types";
 
+import type { EmailListUnsubscribeHeaders } from "./email-list-headers.js";
+
 export type EmailProviderMode = "mock" | "smtp" | "resend";
 
 /** Canonical mail delivery outcome (internal — never expose SMTP details to users). */
@@ -12,6 +14,8 @@ export interface EmailSendRequest {
   text: string;
   template: EmailTemplateId;
   replyTo?: string;
+  /** RFC 8058 list headers only — allowlisted and sanitized before providers see them. */
+  listHeaders?: EmailListUnsubscribeHeaders;
 }
 
 export interface EmailSendResult {

@@ -29,6 +29,8 @@ import type { BlogPost, BlogSubscriberRecord } from "@hu/types";
 
 import type { CanonicalDomainEventEnvelope } from "../../infrastructure/events/domain-event.js";
 import { resolveEmailConfig } from "../email/email.config.js";
+import { buildBlogListUnsubscribeHeaders } from "../email/email-list-headers.js";
+import type { EmailListUnsubscribeHeaders } from "../email/email-list-headers.js";
 import { sendTransactionalEmailAndAwait } from "../email/email.service.js";
 import { findBlogPostById } from "./persistence/blog.repository.js";
 import {
@@ -176,17 +178,20 @@ export interface BlogPublicationDeliveryDependencies {
   sendPublicationEmail(input: {
     to: string;
     templateInput: Record<string, string | number | undefined>;
+    listHeaders?: EmailListUnsubscribeHeaders;
   }): Promise<{ emailSent: boolean; status: string; emailDeliveryError?: string }>;
 }
 
 async function defaultSendPublicationEmail(input: {
   to: string;
   templateInput: Record<string, string | number | undefined>;
+  listHeaders?: EmailListUnsubscribeHeaders;
 }): Promise<{ emailSent: boolean; status: string; emailDeliveryError?: string }> {
   const delivery = await sendTransactionalEmailAndAwait({
     to: input.to,
     template: "blog_publication_digest",
     templateInput: input.templateInput,
+    ...(input.listHeaders ? { listHeaders: input.listHeaders } : {}),
   });
   return {
     emailSent: delivery.emailSent,
@@ -269,6 +274,7 @@ async function deliverToSubscriber(input: {
         unsubscribeUrl,
         ...(input.coverImageUrl ? { coverImageUrl: input.coverImageUrl } : {}),
       },
+      listHeaders: buildBlogListUnsubscribeHeaders(rawUnsubscribeToken),
     });
 
     if (!delivery.emailSent) {
