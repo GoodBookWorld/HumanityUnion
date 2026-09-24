@@ -81,7 +81,7 @@ describe("Step 15D.2 — Participant WEB_UI readiness", () => {
         sample,
       );
     }
-    assert.equal(isParticipantWebUiRequiredPath("workspace.publishingPage.title"), false);
+    assert.equal(isParticipantWebUiRequiredPath("workspace.publishingPage.title"), true);
     assert.equal(isParticipantWebUiRequiredPath("workspace.editorialPage.title"), false);
     assert.equal(isParticipantWebUiRequiredPath("workspace.editorPanel.title"), false);
     assert.equal(isParticipantWebUiRequiredPath("workspace.administration.title"), false);

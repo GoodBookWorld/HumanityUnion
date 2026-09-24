@@ -156,13 +156,16 @@ export {
 } from "./public-reader-web-ui-scope.js";
 export type { PublicReaderWebUiRequiredPrefix } from "./public-reader-web-ui-scope.js";
 export {
+  PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS,
   PARTICIPANT_WEB_UI_REQUIRED_PREFIXES,
   PARTICIPANT_WORKSPACE_EXCLUDED_PREFIXES,
+  isParticipantAuthAccountSecurityPath,
   isParticipantWebUiRequiredPath,
   isParticipantWorkspaceExcludedPath,
   isOrdinaryWebUiRequiredPath,
 } from "./participant-web-ui-scope.js";
 export type {
+  ParticipantAuthAccountSecurityPath,
   ParticipantWebUiRequiredPrefix,
   ParticipantWorkspaceExcludedPrefix,
 } from "./participant-web-ui-scope.js";

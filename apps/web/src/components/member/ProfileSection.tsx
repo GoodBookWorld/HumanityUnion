@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import "./profile-section.css";
 
 interface ProfileSectionProps {
@@ -8,6 +12,7 @@ interface ProfileSectionProps {
 }
 
 export function ProfileSection({ title, id, children, placeholder = false }: ProfileSectionProps) {
+  const t = useTranslations("common");
   const sectionId = id ?? title.replace(/\s+/g, "-").toLowerCase();
 
   return (
@@ -15,7 +20,11 @@ export function ProfileSection({ title, id, children, placeholder = false }: Pro
       <h2 className="profile-section__title" id={`section-${sectionId}`}>
         {title}
       </h2>
-      {placeholder ? <p className="profile-section__placeholder">Coming soon</p> : children}
+      {placeholder ? (
+        <p className="profile-section__placeholder">{t("comingSoon")}</p>
+      ) : (
+        children
+      )}
     </section>
   );
 }

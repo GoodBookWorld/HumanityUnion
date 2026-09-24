@@ -9,9 +9,10 @@
  * loses an ordinary public-reader surface.
  *
  * Excluded on purpose (still valid catalog keys):
- * - `workspace.*` / `notifications.*` — ordinary Participant surfaces
- *   (Step 15D.2 `isParticipantWebUiRequiredPath`; not public-reader blocking)
- * - `initiativeExperience.manage` — create/edit/publish, cover media, form geography
+ * - `workspace.*` / `notifications.*` / `preferences.*` / `memberProfile.*` —
+ *   ordinary Participant surfaces (Step 15D.2/15D.5 `isParticipantWebUiRequiredPath`;
+ *   not public-reader blocking)
+ * - `initiativeExperience.manage` — create/edit form (Participant readiness)
  * - `initiativeExperience.author.sidebar` — lifecycle working sidebar
  * - `initiativeExperience.author.actions` / `sources` / `translation` — author verbs
  * - other `initiativeExperience.author.*` editor trees that are not listed below
@@ -23,6 +24,10 @@
  * Step 15D.1 — ordinary public surfaces (stats metrics, PWA install, world
  * initiatives list, initiative mini-card chrome, Search page chrome, Support)
  * are required. Search result civic content remains CT/PLP-owned.
+ *
+ * Step 15D.5 — `participantPublic.*` is public member/profile chrome
+ * (`/member/{publicName}`). Persisted bio/skills remain PLP-owned
+ * (`participant_public`).
  */
 
 export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
@@ -44,6 +49,7 @@ export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
   "volunteerPublic.",
   "contactPublic.",
   "legalPublic.",
+  "participantPublic.",
   "initiativeExperience.activityAreas.",
   "initiativeExperience.assistant.",
   "initiativeExperience.civicArchivePublic.",

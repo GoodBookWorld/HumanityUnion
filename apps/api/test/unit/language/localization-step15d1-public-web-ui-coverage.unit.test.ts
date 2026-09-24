@@ -159,24 +159,31 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
   it("11–12 old pre-15D.1 remote pack is not WEB_UI-ready under expanded scope", async () => {
     const english = loadBundledEnglishWebUiMessagePack();
     const all = collectStringPaths(english);
+    const STEP15D5_PUBLIC_FAMILIES = ["participantPublic."] as const;
+    const post15d1PublicExpansion = [
+      ...(STEP15D1_FAMILIES as readonly string[]),
+      ...(STEP15D5_PUBLIC_FAMILIES as readonly string[]),
+    ];
     const legacyPrefixes = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.filter(
-      (prefix) => !(STEP15D1_FAMILIES as readonly string[]).includes(prefix),
+      (prefix) => !post15d1PublicExpansion.includes(prefix),
     );
     const legacyPaths = all.filter((pathKey) =>
       legacyPrefixes.some(
         (prefix) => pathKey === prefix.slice(0, -1) || pathKey.startsWith(prefix),
       ),
     );
-    assert.equal(legacyPaths.length, 2260);
+    // 15D.1 baseline 2260 + common.comingSoon (15D.5)
+    assert.equal(legacyPaths.length, 2261);
     const required = all.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
-    assert.ok(required.length > 2260);
-    assert.equal(required.length - legacyPaths.length, 229);
+    assert.ok(required.length > 2261);
+    // 15D.1 families (229) + participantPublic (43)
+    assert.equal(required.length - legacyPaths.length, 272);
 
     await upsertWebUiMessagePack({
       locale: "ka",
       status: "published",
       messages: projectPaths(english, legacyPaths) as never,
-      sourceNote: "legacy 2260-key public pack",
+      sourceNote: "legacy 2261-key public pack",
     });
     const readiness = await assessWebUiCatalogReadinessForLocale({ locale: "ka" });
     assert.equal(readiness.dataReady, false);
@@ -188,7 +195,8 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
           path.startsWith("search.") ||
           path.startsWith("pwa.") ||
           path.startsWith("supportPublic.") ||
-          path.startsWith("publicStatistics."),
+          path.startsWith("publicStatistics.") ||
+          path.startsWith("participantPublic."),
       ),
     );
   });
@@ -198,8 +206,13 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     const required = collectStringPaths(english).filter((pathKey) =>
       isPublicReaderWebUiRequiredPath(pathKey),
     );
+    const STEP15D5_PUBLIC_FAMILIES = ["participantPublic."] as const;
+    const post15d1PublicExpansion = [
+      ...(STEP15D1_FAMILIES as readonly string[]),
+      ...(STEP15D5_PUBLIC_FAMILIES as readonly string[]),
+    ];
     const legacyPrefixes = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.filter(
-      (prefix) => !(STEP15D1_FAMILIES as readonly string[]).includes(prefix),
+      (prefix) => !post15d1PublicExpansion.includes(prefix),
     );
     const legacyPaths = required.filter((pathKey) =>
       legacyPrefixes.some(

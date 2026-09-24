@@ -11,7 +11,8 @@
     "hide": "Hide",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "possibleReasonPrefix": "Possible reason:"
+    "possibleReasonPrefix": "Possible reason:",
+    "comingSoon": "Coming soon"
   },
   "a11y": {
     "skipToMainContent": "Skip to main content"
@@ -978,6 +979,68 @@
       "citiesMultiRegionHelp": "{count} cities and communities available. Scroll the list or search to filter. You can add preferred cities or communities from multiple regions.",
       "cleanupTitle": "Geography preferences updated",
       "cleanupMessage": "Some cities were removed because their country or region is no longer selected."
+    }
+  },
+  "authoringPage": {
+    "loading": "Loading Authoring…",
+    "signInRequired": "Sign in to access Authoring.",
+    "unavailable": "Authoring is unavailable.",
+    "signIn": "Sign in",
+    "status": {
+      "applicationReceivedTitle": "Application received",
+      "applicationReceivedBody": "Your Author application has been received. We will review it and respond as soon as possible.",
+      "applicationPendingTitle": "Application pending",
+      "applicationPendingBody": "Your Author application is pending review. We will respond as soon as possible.",
+      "changesRequestedTitle": "Changes requested",
+      "changesRequestedFallback": "Changes were requested before your application can continue.",
+      "declinedTitle": "Author application update",
+      "declinedFallback": "Your Author application was not accepted at this time. You may submit a new application.",
+      "blockedTitle": "Author access blocked",
+      "blockedBody": "Your Author access has been blocked. Please contact the administrator.",
+      "authorTitle": "Author access granted",
+      "authorBody": "You can now create and submit Blog publications in the Publishing Workspace.",
+      "trustedAuthorTitle": "Trusted Author",
+      "trustedAuthorBody": "Trusted Authors may publish their own accepted content directly, unless Safety requires review. Safety cannot be bypassed."
+    },
+    "blockedWorkspaceNote": "Your Participant Workspace remains available. Author publishing tools are suspended until an Administrator restores access.",
+    "publishing": {
+      "title": "Publishing Workspace",
+      "body": "You can now create and submit Blog publications. Open Publishing to manage drafts, preview privately, and submit for review.",
+      "openPublishing": "Open Publishing",
+      "visitPublicBlog": "Visit public Blog"
+    },
+    "becomeAuthor": {
+      "title": "Become a Blog Author",
+      "thanks": "Thank you for your interest in contributing to the Humanity Union Blog.",
+      "purpose": "The Blog is a place for thoughtful publications that can help people understand ideas, challenges, experience and possible solutions from a perspective of humanity, responsibility and constructive dialogue.",
+      "encouragement": "Humanity Union encourages publications that look beyond hostility and division and consider how an issue affects people, communities and the wider human experience. Authors may disagree strongly. Support claims with evidence where possible, distinguish fact from opinion, avoid dehumanizing language, explain consequences, acknowledge uncertainty, and consider constructive alternatives.",
+      "standards": "Articles should aim to contribute to understanding rather than hostility, manipulation, personal attacks or sensationalism. This is not a requirement of ideological conformity — the principle is human dignity, evidence, constructive reasoning, responsibility, and respect for others."
+    },
+    "categories": {
+      "title": "Publication categories",
+      "guidanceOnly": "Guidance only — preferred categories do not restrict what you may later publish.",
+      "consciousExistence": "Reflection, knowledge, awareness, social understanding, education, and human development.",
+      "humanSecurity": "Safety, rights, peace, institutions, public risks, protection, and social stability.",
+      "ourLife": "Everyday life, communities, relationships, culture, environment, and personal and collective experience."
+    },
+    "application": {
+      "title": "Author application",
+      "updateTitle": "Update your application",
+      "motivationLabel": "Why would you like to contribute to the Humanity Union Blog?",
+      "motivationError": "Please share a bit more about why you would like to contribute.",
+      "topicsLabel": "What topics would you like to write about?",
+      "topicsError": "Please describe the topics you would like to write about.",
+      "previousWritingLabel": "Optional example or link to previous writing",
+      "previousWritingPlaceholder": "https://",
+      "preferredCategoriesLegend": "Preferred Blog categories",
+      "preferredCategoriesHelp": "Select one or more. This is an interest signal only.",
+      "preferredCategoriesError": "Select at least one preferred category.",
+      "agreeStandards": "I agree that publications must follow platform Safety and publishing standards.",
+      "agreeStandardsError": "You must agree to follow platform Safety and publishing standards.",
+      "submitting": "Submitting…",
+      "submitted": "Submitted",
+      "submit": "Submit application",
+      "resubmit": "Resubmit application"
     }
   },
   "pwa": {

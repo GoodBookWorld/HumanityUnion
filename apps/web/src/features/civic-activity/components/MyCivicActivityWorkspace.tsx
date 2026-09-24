@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { formatInitiativeDate } from "../../initiatives/initiative-lifecycle-labels";
@@ -146,6 +146,7 @@ function ActiveActivityGroupCard({
   iconSrc: string | undefined;
 }) {
   const t = useTranslations("civicActivity");
+  const locale = useLocale();
   const { metrics } = group;
   const note = resolveGroupNote(group.noteKey, t);
 
@@ -222,7 +223,7 @@ function ActiveActivityGroupCard({
           <dt>{t("metrics.latestActivity")}</dt>
           <dd>
             {metrics.latestActivityDate
-              ? formatInitiativeDate(metrics.latestActivityDate)
+              ? formatInitiativeDate(metrics.latestActivityDate, locale)
               : t("metrics.noActivityYet")}
           </dd>
         </div>
@@ -233,11 +234,12 @@ function ActiveActivityGroupCard({
 
 function TimelineItem({ entry }: { entry: CivicTimelineEntry }) {
   const t = useTranslations("civicActivity");
+  const locale = useLocale();
 
   return (
     <li className="civic-activity-workspace__timeline-item">
       <p className="civic-activity-workspace__timeline-date">
-        {formatInitiativeDate(entry.occurredAt)}
+        {formatInitiativeDate(entry.occurredAt, locale)}
       </p>
       <p className="civic-activity-workspace__timeline-label">
         {resolveTimelineLabel(entry.type, t)}
@@ -258,6 +260,7 @@ interface CivicActivityIntroProps {
 
 export function CivicActivityIntro({ loadedAt }: CivicActivityIntroProps) {
   const t = useTranslations("civicActivity");
+  const locale = useLocale();
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
 
@@ -265,7 +268,7 @@ export function CivicActivityIntro({ loadedAt }: CivicActivityIntroProps) {
     <>
       <p className="civic-activity-workspace__intro">{t("intro", siteName)}</p>
       <p className="civic-activity-workspace__status">
-        {t("statusLoaded", { date: formatInitiativeDate(loadedAt) })}
+        {t("statusLoaded", { date: formatInitiativeDate(loadedAt, locale) })}
       </p>
     </>
   );

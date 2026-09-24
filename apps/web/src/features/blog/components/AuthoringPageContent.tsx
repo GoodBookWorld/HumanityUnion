@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 
 import type { BlogAuthoringAccessState, BlogCategoryId } from "@hu/types";
 import { BLOG_CATEGORIES } from "@hu/types";
@@ -22,76 +23,85 @@ import { MyPublicationsTable } from "./MyPublicationsTable";
 
 import "../authoring.css";
 
-const CATEGORY_GUIDANCE: Record<BlogCategoryId, string> = {
-  conscious_existence:
-    "Reflection, knowledge, awareness, social understanding, education, and human development.",
-  human_security:
-    "Safety, rights, peace, institutions, public risks, protection, and social stability.",
-  our_life:
-    "Everyday life, communities, relationships, culture, environment, and personal and collective experience.",
+const CATEGORY_GUIDANCE_KEYS: Record<
+  string,
+  "categories.consciousExistence" | "categories.humanSecurity" | "categories.ourLife"
+> = {
+  conscious_existence: "categories.consciousExistence",
+  human_security: "categories.humanSecurity",
+  our_life: "categories.ourLife",
 };
 
+function categoryGuidanceKey(
+  categoryId: BlogCategoryId,
+): "categories.consciousExistence" | "categories.humanSecurity" | "categories.ourLife" {
+  return CATEGORY_GUIDANCE_KEYS[categoryId] ?? "categories.consciousExistence";
+}
+
 function StatusMessage({ state }: { state: BlogAuthoringAccessState }) {
+  const t = useTranslations("authoringPage");
+
   switch (state.presentation) {
     case "application_submitted":
       return (
         <StatusBanner
-          title="Application received"
-          message="Your Author application has been received. We will review it and respond as soon as possible."
+          title={t("status.applicationReceivedTitle")}
+          message={t("status.applicationReceivedBody")}
         />
       );
     case "application_under_review":
       return (
         <StatusBanner
-          title="Application pending"
-          message="Your Author application is pending review. We will respond as soon as possible."
+          title={t("status.applicationPendingTitle")}
+          message={t("status.applicationPendingBody")}
         />
       );
     case "application_changes_requested":
       return (
         <StatusBanner
-          title="Changes requested"
+          title={t("status.changesRequestedTitle")}
           message={
             state.application?.reviewNote
               ? state.application.reviewNote
-              : "Changes were requested before your application can continue."
+              : t("status.changesRequestedFallback")
           }
         />
       );
     case "application_declined":
       return (
         <StatusBanner
-          title="Author application update"
+          title={t("status.declinedTitle")}
           message={
             state.application?.reviewNote
               ? state.application.reviewNote
-              : "Your Author application was not accepted at this time. You may submit a new application."
+              : t("status.declinedFallback")
           }
         />
       );
     case "author_blocked":
       return (
         <StatusBanner
-          title="Author access blocked"
-          message="Your Author access has been blocked. Please contact the administrator."
+          title={t("status.blockedTitle")}
+          message={t("status.blockedBody")}
         />
       );
     case "author":
       return (
         <StatusBanner
-          title="Author access granted"
-          message="You can now create and submit Blog publications in the Publishing Workspace."
+          title={t("status.authorTitle")}
+          message={t("status.authorBody")}
         />
       );
     case "trusted_author":
       return (
         <StatusBanner
-          title="Trusted Author"
-          message="Trusted Authors may publish their own accepted content directly, unless Safety requires review. Safety cannot be bypassed."
+          title={t("status.trustedAuthorTitle")}
+          message={t("status.trustedAuthorBody")}
         />
       );
     case "editor":
     case "administrator":
+      // Privileged editorial chrome — outside ordinary Participant WEB_UI readiness.
       return (
         <StatusBanner
           title="Editorial access"
@@ -104,6 +114,7 @@ function StatusMessage({ state }: { state: BlogAuthoringAccessState }) {
 }
 
 export function AuthoringPageContent() {
+  const t = useTranslations("authoringPage");
   const [state, setState] = useState<BlogAuthoringAccessState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,7 +152,7 @@ export function AuthoringPageContent() {
         }
         setLoading(false);
         if (isAuthenticationRequiredError(fetchError)) {
-          setError("Sign in to access Authoring.");
+          setError(t("signInRequired"));
           return;
         }
         setError(formatAuthFormError(fetchError));
@@ -150,7 +161,7 @@ export function AuthoringPageContent() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   function toggleCategory(categoryId: BlogCategoryId) {
     setPreferredCategoryIds((current) =>
@@ -168,17 +179,16 @@ export function AuthoringPageContent() {
 
     const nextErrors: Record<string, string> = {};
     if (motivation.trim().length < 10) {
-      nextErrors.motivation = "Please share a bit more about why you would like to contribute.";
+      nextErrors.motivation = t("application.motivationError");
     }
     if (topics.trim().length < 10) {
-      nextErrors.topics = "Please describe the topics you would like to write about.";
+      nextErrors.topics = t("application.topicsError");
     }
     if (preferredCategoryIds.length === 0) {
-      nextErrors.preferredCategoryIds = "Select at least one preferred category.";
+      nextErrors.preferredCategoryIds = t("application.preferredCategoriesError");
     }
     if (!agreedToStandards) {
-      nextErrors.agreedToStandards =
-        "You must agree to follow platform Safety and publishing standards.";
+      nextErrors.agreedToStandards = t("application.agreeStandardsError");
     }
 
     setFieldErrors(nextErrors);
@@ -218,7 +228,7 @@ export function AuthoringPageContent() {
   if (loading) {
     return (
       <div className="authoring-page">
-        <p className="hu-body">Loading Authoring…</p>
+        <p className="hu-body">{t("loading")}</p>
       </div>
     );
   }
@@ -227,10 +237,10 @@ export function AuthoringPageContent() {
     return (
       <div className="authoring-page">
         <p className="hu-body" role="alert">
-          {error ?? "Authoring is unavailable."}
+          {error ?? t("unavailable")}
         </p>
         <Link href="/login" className="hu-button hu-button--secondary hu-button--sm">
-          Sign in
+          {t("signIn")}
         </Link>
       </div>
     );
@@ -260,34 +270,28 @@ export function AuthoringPageContent() {
       <StatusMessage state={state} />
 
       {isBlockedAuthor ? (
-        <p className="hu-body">
-          Your Participant Workspace remains available. Author publishing tools are suspended until
-          an Administrator restores access.
-        </p>
+        <p className="hu-body">{t("blockedWorkspaceNote")}</p>
       ) : null}
 
       {isPublishingReady ? (
         <Card className="authoring-page__card">
-          <h2 className="hu-heading-3">Publishing Workspace</h2>
-          <p className="hu-body">
-            You can now create and submit Blog publications. Open Publishing to manage drafts,
-            preview privately, and submit for review.
-          </p>
+          <h2 className="hu-heading-3">{t("publishing.title")}</h2>
+          <p className="hu-body">{t("publishing.body")}</p>
           {state.publishingWorkspaceHref ? (
             <p className="hu-form-actions">
               <Link
                 href={state.publishingWorkspaceHref}
                 className="hu-button hu-button--primary hu-button--sm"
               >
-                Open Publishing
+                {t("publishing.openPublishing")}
               </Link>
               <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-                Visit public Blog
+                {t("publishing.visitPublicBlog")}
               </Link>
             </p>
           ) : (
             <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-              Visit public Blog
+              {t("publishing.visitPublicBlog")}
             </Link>
           )}
         </Card>
@@ -295,44 +299,25 @@ export function AuthoringPageContent() {
 
       {!isPublishingReady && !isBlockedAuthor ? (
         <Card className="authoring-page__card">
-          <h2 className="hu-heading-2">Become a Blog Author</h2>
-          <p className="hu-body">
-            Thank you for your interest in contributing to the Humanity Union Blog.
-          </p>
-          <p className="hu-body">
-            The Blog is a place for thoughtful publications that can help people understand ideas,
-            challenges, experience and possible solutions from a perspective of humanity,
-            responsibility and constructive dialogue.
-          </p>
-          <p className="hu-body">
-            Humanity Union encourages publications that look beyond hostility and division and
-            consider how an issue affects people, communities and the wider human experience. Authors
-            may disagree strongly. Support claims with evidence where possible, distinguish fact from
-            opinion, avoid dehumanizing language, explain consequences, acknowledge uncertainty, and
-            consider constructive alternatives.
-          </p>
-          <p className="hu-body">
-            Articles should aim to contribute to understanding rather than hostility, manipulation,
-            personal attacks or sensationalism. This is not a requirement of ideological conformity —
-            the principle is human dignity, evidence, constructive reasoning, responsibility, and
-            respect for others.
-          </p>
+          <h2 className="hu-heading-2">{t("becomeAuthor.title")}</h2>
+          <p className="hu-body">{t("becomeAuthor.thanks")}</p>
+          <p className="hu-body">{t("becomeAuthor.purpose")}</p>
+          <p className="hu-body">{t("becomeAuthor.encouragement")}</p>
+          <p className="hu-body">{t("becomeAuthor.standards")}</p>
         </Card>
       ) : null}
 
       {!isPublishingReady && !isBlockedAuthor ? (
         <section className="authoring-page__categories" aria-labelledby="authoring-categories-title">
           <h2 id="authoring-categories-title" className="hu-heading-3">
-            Publication categories
+            {t("categories.title")}
           </h2>
-          <p className="hu-body authoring-page__muted">
-            Guidance only — preferred categories do not restrict what you may later publish.
-          </p>
+          <p className="hu-body authoring-page__muted">{t("categories.guidanceOnly")}</p>
           <div className="authoring-page__category-grid">
             {BLOG_CATEGORIES.map((category) => (
               <Card key={category.categoryId} className="authoring-page__category-card">
                 <h3 className="hu-heading-4">{category.name}</h3>
-                <p className="hu-body">{CATEGORY_GUIDANCE[category.categoryId]}</p>
+                <p className="hu-body">{t(categoryGuidanceKey(category.categoryId))}</p>
               </Card>
             ))}
           </div>
@@ -342,13 +327,11 @@ export function AuthoringPageContent() {
       {showForm ? (
         <Card className="authoring-page__card">
           <h2 className="hu-heading-3">
-            {state.canResubmit ? "Update your application" : "Author application"}
+            {state.canResubmit ? t("application.updateTitle") : t("application.title")}
           </h2>
           <form className="authoring-page__form" onSubmit={handleSubmit} noValidate>
             <div className="authoring-page__field">
-              <label htmlFor="authoring-motivation">
-                Why would you like to contribute to the Humanity Union Blog?
-              </label>
+              <label htmlFor="authoring-motivation">{t("application.motivationLabel")}</label>
               <textarea
                 id="authoring-motivation"
                 className="hu-form-control"
@@ -366,7 +349,7 @@ export function AuthoringPageContent() {
             </div>
 
             <div className="authoring-page__field">
-              <label htmlFor="authoring-topics">What topics would you like to write about?</label>
+              <label htmlFor="authoring-topics">{t("application.topicsLabel")}</label>
               <textarea
                 id="authoring-topics"
                 className="hu-form-control"
@@ -384,24 +367,22 @@ export function AuthoringPageContent() {
             </div>
 
             <div className="authoring-page__field">
-              <label htmlFor="authoring-previous">
-                Optional example or link to previous writing
-              </label>
+              <label htmlFor="authoring-previous">{t("application.previousWritingLabel")}</label>
               <input
                 id="authoring-previous"
                 className="hu-form-control"
                 type="url"
                 inputMode="url"
-                placeholder="https://"
+                placeholder={t("application.previousWritingPlaceholder")}
                 value={previousWritingUrl}
                 onChange={(event) => setPreviousWritingUrl(event.target.value)}
               />
             </div>
 
             <fieldset className="authoring-page__fieldset">
-              <legend>Preferred Blog categories</legend>
+              <legend>{t("application.preferredCategoriesLegend")}</legend>
               <p className="hu-body authoring-page__muted" id="authoring-categories-help">
-                Select one or more. This is an interest signal only.
+                {t("application.preferredCategoriesHelp")}
               </p>
               <div
                 className="authoring-page__checkbox-grid"
@@ -433,9 +414,7 @@ export function AuthoringPageContent() {
                 onChange={(event) => setAgreedToStandards(event.target.checked)}
                 aria-invalid={Boolean(fieldErrors.agreedToStandards)}
               />
-              <span>
-                I agree that publications must follow platform Safety and publishing standards.
-              </span>
+              <span>{t("application.agreeStandards")}</span>
             </label>
             {fieldErrors.agreedToStandards ? (
               <p className="authoring-page__error" role="alert">
@@ -457,12 +436,12 @@ export function AuthoringPageContent() {
               ariaLive="polite"
             >
               {submitPhase === "submitting"
-                ? "Submitting…"
+                ? t("application.submitting")
                 : submitPhase === "success"
-                  ? "Submitted"
+                  ? t("application.submitted")
                   : state.canResubmit
-                    ? "Resubmit application"
-                    : "Submit application"}
+                    ? t("application.resubmit")
+                    : t("application.submit")}
             </Button>
           </form>
         </Card>

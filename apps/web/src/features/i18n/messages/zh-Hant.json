@@ -11,7 +11,8 @@
     "hide": "隱藏",
     "showPassword": "顯示密碼",
     "hidePassword": "隱藏密碼",
-    "possibleReasonPrefix": "可能原因："
+    "possibleReasonPrefix": "可能原因：",
+    "comingSoon": "即將推出"
   },
   "a11y": {
     "skipToMainContent": "跳至主要內容"
@@ -978,6 +979,68 @@
       "citiesMultiRegionHelp": "共有 {count} 個城市與社區。請捲動清單或搜尋以篩選。您可從多個地區新增偏好城市或社區。",
       "cleanupTitle": "地理偏好已更新",
       "cleanupMessage": "部分城市已移除，因為其國家或地區不再被選取。"
+    }
+  },
+  "authoringPage": {
+    "loading": "正在載入寫作申請…",
+    "signInRequired": "請登入以使用寫作申請。",
+    "unavailable": "寫作申請目前無法使用。",
+    "signIn": "登入",
+    "status": {
+      "applicationReceivedTitle": "已收到申請",
+      "applicationReceivedBody": "我們已收到您的作者申請，將盡快審核並回覆。",
+      "applicationPendingTitle": "申請審核中",
+      "applicationPendingBody": "您的作者申請正在審核中，我們將盡快回覆。",
+      "changesRequestedTitle": "需要修改",
+      "changesRequestedFallback": "申請需先完成修改後才能繼續。",
+      "declinedTitle": "作者申請更新",
+      "declinedFallback": "您的作者申請此次未獲接受。您可以重新提交申請。",
+      "blockedTitle": "作者權限已停用",
+      "blockedBody": "您的作者權限已被停用。請聯絡管理員。",
+      "authorTitle": "已授予作者權限",
+      "authorBody": "您現在可以在發布工作區建立並提交部落格文章。",
+      "trustedAuthorTitle": "受信任作者",
+      "trustedAuthorBody": "受信任作者可直接發布已接受的內容，除非安全審查要求另行審核。安全審查不可略過。"
+    },
+    "blockedWorkspaceNote": "您的參與者工作區仍可使用。作者發布工具已暫停，直到管理員恢復權限。",
+    "publishing": {
+      "title": "發布工作區",
+      "body": "您現在可以建立並提交部落格文章。開啟發布以管理草稿、私下預覽並送交審核。",
+      "openPublishing": "開啟發布",
+      "visitPublicBlog": "造訪公開部落格"
+    },
+    "becomeAuthor": {
+      "title": "成為部落格作者",
+      "thanks": "感謝您有意為 Humanity Union 部落格撰稿。",
+      "purpose": "部落格是發表深思內容的空間，協助人們從人性、責任與建設性對話的角度理解想法、挑戰、經驗與可能解方。",
+      "encouragement": "Humanity Union 鼓勵超越敵意與對立的文章，並思考議題如何影響人、社群與更廣泛的人類經驗。作者可以強烈不同意。盡可能以證據支持主張、區分事實與意見、避免非人化語言、說明後果、承認不確定性，並思考建設性替代方案。",
+      "standards": "文章應致力於增進理解，而非敵意、操控、人身攻擊或聳動炒作。這不是意識形態一致性的要求——原則是人性尊嚴、證據、建設性推理、責任與尊重他人。"
+    },
+    "categories": {
+      "title": "發布類別",
+      "guidanceOnly": "僅供參考——偏好類別不會限制您之後可發布的內容。",
+      "consciousExistence": "反思、知識、覺察、社會理解、教育與人類發展。",
+      "humanSecurity": "安全、權利、和平、制度、公共風險、保護與社會穩定。",
+      "ourLife": "日常生活、社群、關係、文化、環境，以及個人與集體經驗。"
+    },
+    "application": {
+      "title": "作者申請",
+      "updateTitle": "更新您的申請",
+      "motivationLabel": "您為什麼想為 Humanity Union 部落格撰稿？",
+      "motivationError": "請再多說明一些您想貢獻的原因。",
+      "topicsLabel": "您想寫哪些主題？",
+      "topicsError": "請描述您想撰寫的主題。",
+      "previousWritingLabel": "可選：先前寫作範例或連結",
+      "previousWritingPlaceholder": "https://",
+      "preferredCategoriesLegend": "偏好的部落格類別",
+      "preferredCategoriesHelp": "請選擇一個或多個。這僅是興趣訊號。",
+      "preferredCategoriesError": "請至少選擇一個偏好類別。",
+      "agreeStandards": "我同意發布內容必須遵循平台安全與發布標準。",
+      "agreeStandardsError": "您必須同意遵循平台安全與發布標準。",
+      "submitting": "提交中…",
+      "submitted": "已提交",
+      "submit": "提交申請",
+      "resubmit": "重新提交申請"
     }
   },
   "pwa": {
