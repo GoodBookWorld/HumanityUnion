@@ -13,6 +13,11 @@ export type LocalizationProgress = {
   readonly percent: number;
   readonly phaseLabel: string;
   readonly failed: boolean;
+  /**
+   * True while orchestration is still active (running / preparing /
+   * provider_cooldown), including automatic cooldown resume.
+   */
+  readonly activelyProgressing: boolean;
   /** Absolute ISO retry time while cooling down (Admin formats locally). */
   readonly nextAttemptAt?: string | null;
 };
@@ -183,6 +188,41 @@ function phaseLabel(source: ProgressSource, percent: number): {
   return { label: "Localization", failed: false, nextAttemptAt: null };
 }
 
+/**
+ * Operator activity indicator — mirrors existing job / preparation phases.
+ * Does not invent a parallel state machine.
+ */
+function isLocalizationActivelyProgressing(
+  source: ProgressSource,
+  failed: boolean,
+): boolean {
+  if (failed) {
+    return false;
+  }
+  if (source.webUi?.preparationPhase === "provider_cooldown") {
+    return true;
+  }
+  if (source.brandStatus === "in_progress" || source.terminologyStatus === "in_progress") {
+    return true;
+  }
+  const phase = source.webUi?.preparationPhase ?? null;
+  if (
+    phase === "primary" ||
+    phase === "quality" ||
+    phase === "validating" ||
+    phase === "publishing"
+  ) {
+    return true;
+  }
+  if (source.webUi?.status === "in_progress") {
+    return true;
+  }
+  if (source.jobStatus === "running" || source.jobStatus === "queued") {
+    return true;
+  }
+  return false;
+}
+
 export function deriveLocalizationProgress(source: ProgressSource): LocalizationProgress {
   const covered = coverage(source);
   const percent =
@@ -192,6 +232,7 @@ export function deriveLocalizationProgress(source: ProgressSource): Localization
     percent,
     phaseLabel: phase.label,
     failed: phase.failed,
+    activelyProgressing: isLocalizationActivelyProgressing(source, phase.failed),
     nextAttemptAt: phase.nextAttemptAt,
   };
 }

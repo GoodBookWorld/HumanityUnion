@@ -85,6 +85,7 @@ describe("Language selector visual restoration", () => {
       listWidth: 220,
       viewportWidth: 800,
       direction: "ltr",
+      horizontalAlign: "trigger",
     });
     assert.ok(placed.left >= MARGIN);
     assert.ok(placed.left + placed.width <= 800 - MARGIN);
@@ -97,6 +98,7 @@ describe("Language selector visual restoration", () => {
       listWidth: 220,
       viewportWidth: 800,
       direction: "ltr",
+      horizontalAlign: "trigger",
     });
     assert.equal(placed.left, MARGIN);
     assert.ok(placed.left + placed.width <= 800 - MARGIN);
@@ -110,6 +112,7 @@ describe("Language selector visual restoration", () => {
       listWidth: 220,
       viewportWidth: 800,
       direction: "rtl",
+      horizontalAlign: "trigger",
     });
     assert.ok(placed.left >= MARGIN);
     assert.ok(placed.left + placed.width <= 800 - MARGIN);
@@ -118,9 +121,44 @@ describe("Language selector visual restoration", () => {
       listWidth: 180,
       viewportWidth: 800,
       direction: "rtl",
+      horizontalAlign: "trigger",
     });
     assert.equal(roomy.left, 760 - 180);
     assert.ok(roomy.left + roomy.width <= 800 - MARGIN);
+  });
+
+  it("mobile centers the open list in the viewport without edge clipping", () => {
+    const placed = place({
+      trigger: { left: 280, right: 360, top: 8, bottom: 40 },
+      listWidth: 220,
+      viewportWidth: 390,
+      direction: "ltr",
+    });
+    assert.ok(placed.left >= MARGIN);
+    assert.ok(placed.left + placed.width <= 390 - MARGIN);
+    const expectedLeft = Math.round((390 - placed.width) / 2);
+    assert.equal(
+      placed.left,
+      Math.max(MARGIN, Math.min(expectedLeft, 390 - MARGIN - placed.width)),
+    );
+    const rtl = place({
+      trigger: { left: 10, right: 90, top: 8, bottom: 40 },
+      listWidth: 220,
+      viewportWidth: 360,
+      direction: "rtl",
+    });
+    assert.ok(rtl.left >= MARGIN);
+    assert.ok(rtl.left + rtl.width <= 360 - MARGIN);
+  });
+
+  it("desktop trigger anchoring is unchanged above the mobile breakpoint", () => {
+    const placed = place({
+      trigger: { left: 40, right: 160, top: 8, bottom: 40 },
+      listWidth: 176,
+      viewportWidth: 1024,
+      direction: "ltr",
+    });
+    assert.equal(placed.left, 40);
   });
 
   it("short viewport clamps height and still allows vertical scroll", () => {
@@ -130,6 +168,8 @@ describe("Language selector visual restoration", () => {
       rowCount: 12,
       trigger: { left: 20, right: 140, top: 80, bottom: 112 },
       viewportHeight: 220,
+      viewportWidth: 800,
+      horizontalAlign: "trigger",
     });
     assert.ok(placed.maxHeight < LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT * ROW);
     assert.ok(placed.maxHeight > 0);
@@ -150,7 +190,7 @@ describe("Language selector visual restoration", () => {
     assert.doesNotMatch(pwa, /variant="icon"/);
     assert.match(css, /inset 0 1px 2px/);
     assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--header"), true);
-    assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--mobile"), false);
+    assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--mobile"), true);
   });
 
   it("10–11. Guest cookie path and Participant shared patch remain", () => {

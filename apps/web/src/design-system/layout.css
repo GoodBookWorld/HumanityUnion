@@ -96,6 +96,13 @@
   min-width: 0;
 }
 
+/* Mobile — hide brand name + slogan text only; logo stays. */
+@media (max-width: 768px) {
+  .humanity-header__brand-text {
+    display: none;
+  }
+}
+
 .humanity-header__brand-name {
   color: var(--hu-color-primary);
   font-size: var(--hu-font-size-lg);
@@ -645,6 +652,7 @@
   padding-block: var(--hu-section-gap);
   padding-inline: var(--hu-page-padding-inline);
   box-sizing: border-box;
+  min-width: 0;
 }
 
 /* Canonical public content shell — Launch Readiness Pack 03. */

@@ -260,7 +260,9 @@ a.volunteer-page__cta.hu-button {
   height: auto;
   object-fit: contain;
   transform: scale(1);
-  transform-origin: center right;
+  /* LTR: grow toward the left (origin on the inline-end / right edge).
+   * RTL: logical inline-end flips so growth mirrors toward the right. */
+  transform-origin: center inline-end;
   transition:
     transform 220ms ease,
     box-shadow 220ms ease;
@@ -330,6 +332,20 @@ a.volunteer-page__cta.hu-button {
     background-size: auto, cover;
     background-position: center, center right;
     background-repeat: no-repeat;
+  }
+
+  /* Registry-driven document direction — flip hero asset + wash for RTL only. */
+  [dir="rtl"] .volunteer-page__hero {
+    background-image:
+      linear-gradient(
+        270deg,
+        color-mix(in srgb, #ffffff 86%, transparent) 0%,
+        color-mix(in srgb, #ffffff 62%, transparent) 38%,
+        color-mix(in srgb, #ffffff 18%, transparent) 58%,
+        transparent 72%
+      ),
+      url("/icons/volunteer/volunteer-rtl.webp");
+    background-position: center, center left;
   }
 
   .volunteer-page__hero-copy {

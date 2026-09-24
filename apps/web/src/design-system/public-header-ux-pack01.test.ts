@@ -60,7 +60,7 @@ describe("Public Header UX Pack 01 / Refinement 02 — floating navigation heade
     assert.match(header, /humanity-header__utility--desktop/);
     assert.match(header, /HeaderAuthUtility/);
     assert.match(header, /HumanityHeaderMobileMenu/);
-    assert.match(header, /aria-label="Primary navigation"/);
+    assert.match(header, /aria-label=\{tNav\("primaryNavAria"\)\}/);
   });
 
   it("guest Log in uses the workspace login icon above the Log in label", () => {
@@ -79,6 +79,17 @@ describe("Public Header UX Pack 01 / Refinement 02 — floating navigation heade
     assert.match(css, /\.humanity-header__tagline\s*\{[^}]*letter-spacing:\s*0\.10em/s);
     assert.match(css, /\.humanity-header__brand-name\s*\{[^}]*font-size:\s*var\(--hu-font-size-lg\)/s);
     assert.match(css, /\.humanity-header__tagline\s*\{[^}]*font-size:\s*0\.6875rem/s);
+  });
+
+  it("hides brand name and slogan text on mobile while keeping the logo", () => {
+    const css = read("layout.css");
+    const header = read("components/HumanityHeader.tsx");
+    assert.match(header, /humanity-header__brand-text/);
+    assert.match(header, /humanity-header__logo/);
+    assert.match(
+      css,
+      /@media \(max-width:\s*768px\)\s*\{[^}]*\.humanity-header__brand-text\s*\{[^}]*display:\s*none/s,
+    );
   });
 
   it("removes the full-bleed bordered header shell", () => {

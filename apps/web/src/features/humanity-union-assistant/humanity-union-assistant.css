@@ -5,6 +5,9 @@
 /* —— Workspace Widget —— */
 .hu-assistant-widget {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .hu-assistant-widget__card {
@@ -14,6 +17,9 @@
   color: var(--hu-color-text);
   padding: var(--hu-space-4) var(--hu-space-5);
   box-shadow: var(--hu-shadow-card);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .hu-assistant-widget__header {

@@ -322,6 +322,7 @@ describe("Step 15C.5 localization live progress", () => {
       }),
     );
     assert.equal(failed.failed, true);
+    assert.equal(failed.activelyProgressing, false);
     assert.equal(failed.phaseLabel, "Failed — retry activation");
     assert.ok(failed.percent > 0);
   });
@@ -351,6 +352,7 @@ describe("Step 15C.5 localization live progress", () => {
     );
     assert.equal(ready.percent, 100);
     assert.equal(ready.phaseLabel, "Ready");
+    assert.equal(ready.activelyProgressing, false);
     const withFlags = localizationProgressFromActivation(
       view({
         status: "completed",
@@ -408,6 +410,7 @@ describe("Step 15C.5 localization live progress", () => {
     });
     assert.match(withCooldown.phaseLabel, /Waiting for translation provider — rate limit/);
     assert.equal(withCooldown.failed, false);
+    assert.equal(withCooldown.activelyProgressing, true);
     assert.equal(withCooldown.nextAttemptAt, "2026-09-22T16:42:00.000Z");
     assert.ok(withCooldown.percent > 80);
     assert.doesNotMatch(withCooldown.phaseLabel, /Failed/);
@@ -433,6 +436,11 @@ describe("Step 15C.5 localization live progress", () => {
     assert.match(section, /Localization activation/);
     assert.match(section, /Public interface:/);
     assert.match(section, /fetchAdminLanguageLocalizationReadiness\(row\.languageId\)/);
+    assert.match(section, /admin-languages__progress-activity/);
+    assert.match(section, /activelyProgressing/);
+    assert.match(section, /selectedLanguageId/);
+    assert.match(section, /admin-languages-picker/);
+    assert.match(section, /languagePickerLabel/);
     const loadStart = section.indexOf(
       "Always-visible Localization status: hydrate every language",
     );

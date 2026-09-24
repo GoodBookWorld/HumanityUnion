@@ -1,12 +1,18 @@
 .member-profile-workspace {
   display: grid;
   gap: var(--hu-space-6);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .member-profile-workspace__sections {
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-2);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .member-profile-workspace__section-link {
@@ -16,23 +22,32 @@
   text-decoration: none;
   color: inherit;
   font-size: var(--hu-text-sm);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .member-profile-workspace__form {
   display: grid;
   gap: var(--hu-space-4);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .member-profile-workspace__field {
   display: grid;
   gap: var(--hu-space-2);
   font-size: var(--hu-text-sm);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .member-profile-workspace__field input,
 .member-profile-workspace__field textarea,
 .member-profile-workspace__field select {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: var(--hu-space-2) var(--hu-space-3);
   border: 1px solid var(--hu-border-subtle);
   border-radius: var(--hu-radius-md);

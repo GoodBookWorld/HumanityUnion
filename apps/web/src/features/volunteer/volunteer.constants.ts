@@ -8,6 +8,8 @@ export const VOLUNTEER_CREATE_INITIATIVE_ICON = "/icons/workspace/initiatives.sv
 
 export const VOLUNTEER_ASSETS = {
   hero: "/icons/volunteer/head-volunteer.webp",
+  /** RTL-only hero plane — selected when document `dir === rtl`. */
+  heroRtl: "/icons/volunteer/volunteer-rtl.webp",
   honeyEarth: "/icons/volunteer/honey-earth.webp",
   people: "/icons/volunteer/people.png",
   greenHome: "/icons/volunteer/green-home.png",

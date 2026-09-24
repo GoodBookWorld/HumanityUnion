@@ -12,6 +12,8 @@
 export const LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT = 10;
 export const LANGUAGE_SELECTOR_VIEWPORT_MARGIN_PX = 8;
 export const LANGUAGE_SELECTOR_LIST_GAP_PX = 4;
+/** Matches header mobile breakpoint — center the open list on narrow viewports. */
+export const LANGUAGE_SELECTOR_MOBILE_VIEWPORT_MAX_PX = 768;
 
 export interface LanguageSelectorListPlacement {
   readonly left: number;
@@ -39,6 +41,11 @@ export function placeLanguageSelectorList(input: {
   readonly direction: "ltr" | "rtl";
   readonly margin?: number;
   readonly gap?: number;
+  /**
+   * `viewport-center` — mobile only: center the panel in the viewport.
+   * `trigger` — desktop/tablet: anchor to the trigger, then clamp.
+   */
+  readonly horizontalAlign?: "trigger" | "viewport-center";
 }): LanguageSelectorListPlacement {
   const margin = input.margin ?? LANGUAGE_SELECTOR_VIEWPORT_MARGIN_PX;
   const gap = input.gap ?? LANGUAGE_SELECTOR_LIST_GAP_PX;
@@ -47,12 +54,22 @@ export function placeLanguageSelectorList(input: {
   const chrome = Math.max(0, input.listChrome);
   const viewportWidth = Math.max(0, input.viewportWidth);
   const viewportHeight = Math.max(0, input.viewportHeight);
+  const horizontalAlign =
+    input.horizontalAlign ??
+    (viewportWidth <= LANGUAGE_SELECTOR_MOBILE_VIEWPORT_MAX_PX
+      ? "viewport-center"
+      : "trigger");
 
   const maxWidth = Math.max(0, viewportWidth - margin * 2);
   const width = Math.min(Math.max(0, input.listWidth), maxWidth);
 
-  let left =
-    input.direction === "rtl" ? input.trigger.right - width : input.trigger.left;
+  let left: number;
+  if (horizontalAlign === "viewport-center") {
+    left = Math.round((viewportWidth - width) / 2);
+  } else {
+    left =
+      input.direction === "rtl" ? input.trigger.right - width : input.trigger.left;
+  }
   if (left + width > viewportWidth - margin) {
     left = viewportWidth - margin - width;
   }
@@ -76,11 +93,12 @@ export function placeLanguageSelectorList(input: {
   return { left, top, width, maxHeight, opensAbove };
 }
 
-/** Overlay clamp is for the header dropdown. In-flow menu lists stay inside their panel. */
-export function languageSelectorUsesOverlayPlacement(className: string | undefined): boolean {
-  return !String(className ?? "")
-    .split(/\s+/)
-    .includes("hu-language-selector--mobile");
+/**
+ * Overlay placement for header and mobile/PWA mounts.
+ * Mobile uses viewport-centered horizontal alignment so the list cannot clip.
+ */
+export function languageSelectorUsesOverlayPlacement(_className?: string): boolean {
+  return true;
 }
 
 export function syncLanguageSelectorListPlacement(
@@ -103,15 +121,20 @@ export function syncLanguageSelectorListPlacement(
     parseFloat(style.borderBottomWidth);
   const direction = getComputedStyle(trigger).direction === "rtl" ? "rtl" : "ltr";
   const triggerRect = trigger.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
   const placed = placeLanguageSelectorList({
     trigger: triggerRect,
     listWidth: naturalWidth,
     rowHeight,
     rowCount,
     listChrome: Number.isFinite(listChrome) ? listChrome : 0,
-    viewportWidth: window.innerWidth,
+    viewportWidth,
     viewportHeight: window.innerHeight,
     direction,
+    horizontalAlign:
+      viewportWidth <= LANGUAGE_SELECTOR_MOBILE_VIEWPORT_MAX_PX
+        ? "viewport-center"
+        : "trigger",
   });
 
   list.style.position = "fixed";

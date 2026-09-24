@@ -426,9 +426,13 @@ function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[
 
 function LocalizationProgressMeter({
   progress,
+  showActivity,
 }: {
   readonly progress: ReturnType<typeof localizationProgressFromActivation>;
+  /** Hide while Readiness details occupy the status area. */
+  readonly showActivity: boolean;
 }) {
+  const showSpinner = showActivity && progress.activelyProgressing && !progress.failed;
   return (
     <div className="admin-languages__progress">
       <div className="admin-languages__progress-label">Localization {progress.percent}%</div>
@@ -449,6 +453,28 @@ function LocalizationProgressMeter({
           style={{ width: `${progress.percent}%` }}
         />
       </div>
+      {showSpinner ? (
+        <div
+          className="admin-languages__progress-activity"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span className="admin-languages__progress-activity-ring" aria-hidden="true">
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+            <span className="admin-languages__progress-activity-dot" />
+          </span>
+          <span className="admin-languages__progress-activity-sr">
+            Localization is still actively progressing.
+          </span>
+        </div>
+      ) : null}
       <div className="hu-caption">{progress.phaseLabel}</div>
       {progress.nextAttemptAt ? (
         <div className="hu-caption">
@@ -457,6 +483,10 @@ function LocalizationProgressMeter({
       ) : null}
     </div>
   );
+}
+
+function languagePickerLabel(row: LanguageRegistryAdmin): string {
+  return `${row.nativeName} (${row.englishName}) — ${row.locale}`;
 }
 
 /**
@@ -725,6 +755,7 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     Record<string, LanguageActivationAdminView | "loading" | "error">
   >({});
   const [detailsOpenById, setDetailsOpenById] = useState<Record<string, boolean>>({});
+  const [selectedLanguageId, setSelectedLanguageId] = useState<string | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -750,6 +781,20 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Keep the selected language after refresh / edit when still present.
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelectedLanguageId(null);
+      return;
+    }
+    setSelectedLanguageId((prev) => {
+      if (prev && items.some((row) => row.languageId === prev)) {
+        return prev;
+      }
+      return items[0]!.languageId;
+    });
+  }, [items]);
 
   const activatingIdRef = useRef(activatingId);
   activatingIdRef.current = activatingId;
@@ -945,6 +990,11 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   }
 
   async function handleCheckReadiness(row: LanguageRegistryAdmin) {
+    const wasOpen = detailsOpenById[row.languageId] === true;
+    if (wasOpen) {
+      setDetailsOpenById((prev) => ({ ...prev, [row.languageId]: false }));
+      return;
+    }
     setDetailsOpenById((prev) => ({ ...prev, [row.languageId]: true }));
     setReadinessById((prev) => ({ ...prev, [row.languageId]: "loading" }));
     setError(null);
@@ -1013,6 +1063,10 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
   }
 
   const editingEnglish = Boolean(editingId && isEnglishLocale(form.locale));
+  const selectedRow =
+    selectedLanguageId == null
+      ? null
+      : (items.find((row) => row.languageId === selectedLanguageId) ?? null);
 
   return (
     <main className="admin-panel">
@@ -1233,185 +1287,236 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
         {loading ? <p className="hu-caption">Loading languages…</p> : null}
 
         {!loading ? (
-          <div className="admin-languages__table-wrap">
-            <table className="admin-initiatives-table admin-languages-table">
-              <thead>
-                <tr>
-                  <th>English</th>
-                  <th>Native</th>
-                  <th>Locale</th>
-                  <th>Dir</th>
-                  <th>Enabled</th>
-                  <th>UI</th>
-                  <th>Content</th>
-                  <th>Search</th>
-                  <th>SEO</th>
-                  <th>Persisted reading</th>
-                  <th>Localization</th>
-                  <th>Fallback</th>
-                  <th className="admin-languages__actions-col">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((row) => {
-                  const english = isEnglishLocale(row.locale);
-                  const busy = togglingId === row.languageId || activatingId === row.languageId;
-                  const readiness = readinessById[row.languageId];
-                  const activation = activationById[row.languageId];
-                  const activationView =
-                    activation && typeof activation === "object" ? activation : null;
-                  const canActivate =
-                    row.enabled &&
-                    row.contentTranslationEnabled &&
-                    !english &&
-                    activationView?.job?.domains.webUi.preparationPhase !==
-                      "provider_cooldown";
-                  const readinessReport =
-                    readiness && typeof readiness === "object" ? readiness : null;
-                  const progress = activationView
-                    ? localizationProgressFromActivation(activationView)
-                    : readinessReport
-                      ? localizationProgressFromReadiness(readinessReport)
-                      : null;
-                  const detailsOpen = detailsOpenById[row.languageId] === true;
-                  const detailReport = activationView?.readiness ?? readinessReport;
-                  return (
-                    <tr key={row.languageId}>
-                      <td>{row.englishName}</td>
-                      <td>{row.nativeName}</td>
-                      <td>
-                        <code>{row.locale}</code>
-                        {row.aliases.length > 0 ? (
-                          <div className="hu-caption">aliases: {row.aliases.join(", ")}</div>
-                        ) : null}
-                      </td>
-                      <td>{row.textDirection}</td>
-                      <td>{yesNo(row.enabled)}</td>
-                      <td>{row.uiTranslationStatus}</td>
-                      <td>{yesNo(row.contentTranslationEnabled)}</td>
-                      <td>{yesNo(row.searchEnabled)}</td>
-                      <td>{yesNo(row.seoIndexingEnabled)}</td>
-                      <td>{yesNo(row.pwaPersistedReadingEnabled)}</td>
-                      <td className="admin-languages__localization-col">
-                        <div className="hu-caption">
-                          {progress ? (
-                            <LocalizationProgressMeter progress={progress} />
-                          ) : activation === undefined ||
-                            activation === "loading" ||
-                            readiness === "loading" ? (
-                            <span className="hu-caption">Checking…</span>
-                          ) : activation === "error" || readiness === "error" ? (
-                            <span className="hu-caption">Unavailable</span>
-                          ) : (
-                            <span className="hu-caption">Unavailable</span>
-                          )}
-                          {detailsOpen && activationView ? (
-                            <>
-                              {formatOwnerPreparationProgress(activationView).map((line) => (
-                                <div key={`owner-${line}`}>{line}</div>
-                              ))}
-                              {activationView.job?.status === "waiting_for_data" ||
-                              activationView.job?.status === "failed"
-                                ? formatActivationWaitingGaps(activationView).map((line) => (
-                                    <div key={line}>{line}</div>
-                                  ))
-                                : null}
-                            </>
-                          ) : null}
-                          {detailsOpen && detailReport ? (
-                            <LanguageReadinessDetails
-                              report={detailReport}
-                              job={activationView?.job}
-                              phaseLabel={progress?.phaseLabel}
-                            />
-                          ) : null}
-                          {detailsOpen ? <WebUiPackWorkflow locale={row.locale} /> : null}
-                        </div>
-                      </td>
-                      <td>
-                        <code>{row.fallbackLocale}</code>
-                      </td>
-                      <td className="admin-languages__actions-col">
-                        <div className="admin-languages__row-actions">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            disabled={saving || busy}
-                            onClick={() => openEdit(row)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="tertiary"
-                            disabled={saving || busy || readiness === "loading"}
-                            onClick={() => {
-                              void handleCheckReadiness(row);
-                            }}
-                          >
-                            Readiness
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="primary"
-                            disabled={saving || busy || !canActivate}
-                            aria-label={`Activate localization for ${row.locale}`}
-                            onClick={() => {
-                              void handleActivateLocalization(row);
-                            }}
-                          >
-                            {activatingId === row.languageId ? "…" : "Activate Localization"}
-                          </Button>
-                          {activation && typeof activation === "object" && activation.job ? (
-                            <Button
-                              type="button"
-                              variant="tertiary"
-                              disabled={saving || busy}
-                              onClick={() => {
-                                const status = activation.job?.status;
-                                const explicitResume =
-                                  status === "waiting_for_data" ||
-                                  status === "running" ||
-                                  status === "queued";
-                                if (explicitResume) {
-                                  void handleActivateLocalization(row);
-                                  return;
-                                }
-                                void handleRefreshActivation(row);
-                              }}
-                            >
-                              {activation.job.status === "waiting_for_data" ||
-                              activation.job.status === "running" ||
-                              activation.job.status === "queued"
-                                ? "Resume"
-                                : "Refresh status"}
-                            </Button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="tertiary"
-                            disabled={saving || busy || (english && row.enabled)}
-                            aria-label={
-                              english && row.enabled
-                                ? "English cannot be disabled"
-                                : row.enabled
-                                  ? `Disable ${row.locale}`
-                                  : `Enable ${row.locale}`
-                            }
-                            onClick={() => {
-                              void handleToggleEnabled(row);
-                            }}
-                          >
-                            {togglingId === row.languageId ? "…" : row.enabled ? "Disable" : "Enable"}
-                          </Button>
-                        </div>
-                      </td>
+          <>
+            <div className="admin-languages__picker">
+              <label className="admin-languages__picker-label" htmlFor="admin-languages-picker">
+                Select language
+              </label>
+              <select
+                id="admin-languages-picker"
+                className="admin-panel__input admin-languages__picker-select"
+                value={selectedLanguageId ?? ""}
+                disabled={items.length === 0}
+                onChange={(event) => {
+                  setSelectedLanguageId(event.target.value || null);
+                }}
+              >
+                {items.length === 0 ? (
+                  <option value="">No languages</option>
+                ) : (
+                  items.map((option) => (
+                    <option key={option.languageId} value={option.languageId}>
+                      {languagePickerLabel(option)}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {selectedRow ? (
+              <div className="admin-languages__table-wrap">
+                <table className="admin-initiatives-table admin-languages-table">
+                  <thead>
+                    <tr>
+                      <th>English</th>
+                      <th>Native</th>
+                      <th>Locale</th>
+                      <th>Dir</th>
+                      <th>Enabled</th>
+                      <th>UI</th>
+                      <th>Content</th>
+                      <th>Search</th>
+                      <th>SEO</th>
+                      <th>Persisted reading</th>
+                      <th>Localization</th>
+                      <th>Fallback</th>
+                      <th className="admin-languages__actions-col">Actions</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const row = selectedRow;
+                      const english = isEnglishLocale(row.locale);
+                      const busy =
+                        togglingId === row.languageId || activatingId === row.languageId;
+                      const readiness = readinessById[row.languageId];
+                      const activation = activationById[row.languageId];
+                      const activationView =
+                        activation && typeof activation === "object" ? activation : null;
+                      const canActivate =
+                        row.enabled &&
+                        row.contentTranslationEnabled &&
+                        !english &&
+                        activationView?.job?.domains.webUi.preparationPhase !==
+                          "provider_cooldown";
+                      const readinessReport =
+                        readiness && typeof readiness === "object" ? readiness : null;
+                      const progress = activationView
+                        ? localizationProgressFromActivation(activationView)
+                        : readinessReport
+                          ? localizationProgressFromReadiness(readinessReport)
+                          : null;
+                      const detailsOpen = detailsOpenById[row.languageId] === true;
+                      const detailReport = activationView?.readiness ?? readinessReport;
+                      return (
+                        <tr key={row.languageId}>
+                          <td>{row.englishName}</td>
+                          <td>{row.nativeName}</td>
+                          <td>
+                            <code>{row.locale}</code>
+                            {row.aliases.length > 0 ? (
+                              <div className="hu-caption">
+                                aliases: {row.aliases.join(", ")}
+                              </div>
+                            ) : null}
+                          </td>
+                          <td>{row.textDirection}</td>
+                          <td>{yesNo(row.enabled)}</td>
+                          <td>{row.uiTranslationStatus}</td>
+                          <td>{yesNo(row.contentTranslationEnabled)}</td>
+                          <td>{yesNo(row.searchEnabled)}</td>
+                          <td>{yesNo(row.seoIndexingEnabled)}</td>
+                          <td>{yesNo(row.pwaPersistedReadingEnabled)}</td>
+                          <td className="admin-languages__localization-col">
+                            <div className="hu-caption">
+                              {progress ? (
+                                <LocalizationProgressMeter
+                                  progress={progress}
+                                  showActivity={!detailsOpen}
+                                />
+                              ) : activation === undefined ||
+                                activation === "loading" ||
+                                readiness === "loading" ? (
+                                <span className="hu-caption">Checking…</span>
+                              ) : activation === "error" || readiness === "error" ? (
+                                <span className="hu-caption">Unavailable</span>
+                              ) : (
+                                <span className="hu-caption">Unavailable</span>
+                              )}
+                              {detailsOpen && activationView ? (
+                                <>
+                                  {formatOwnerPreparationProgress(activationView).map(
+                                    (line) => (
+                                      <div key={`owner-${line}`}>{line}</div>
+                                    ),
+                                  )}
+                                  {activationView.job?.status === "waiting_for_data" ||
+                                  activationView.job?.status === "failed"
+                                    ? formatActivationWaitingGaps(activationView).map(
+                                        (line) => <div key={line}>{line}</div>,
+                                      )
+                                    : null}
+                                </>
+                              ) : null}
+                              {detailsOpen && detailReport ? (
+                                <LanguageReadinessDetails
+                                  report={detailReport}
+                                  job={activationView?.job}
+                                  phaseLabel={progress?.phaseLabel}
+                                />
+                              ) : null}
+                              {detailsOpen ? (
+                                <WebUiPackWorkflow locale={row.locale} />
+                              ) : null}
+                            </div>
+                          </td>
+                          <td>
+                            <code>{row.fallbackLocale}</code>
+                          </td>
+                          <td className="admin-languages__actions-col">
+                            <div className="admin-languages__row-actions">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={saving || busy}
+                                onClick={() => openEdit(row)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="tertiary"
+                                disabled={saving || busy || readiness === "loading"}
+                                aria-pressed={detailsOpen}
+                                onClick={() => {
+                                  void handleCheckReadiness(row);
+                                }}
+                              >
+                                Readiness
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="primary"
+                                disabled={saving || busy || !canActivate}
+                                aria-label={`Activate localization for ${row.locale}`}
+                                onClick={() => {
+                                  void handleActivateLocalization(row);
+                                }}
+                              >
+                                {activatingId === row.languageId
+                                  ? "…"
+                                  : "Activate Localization"}
+                              </Button>
+                              {activation &&
+                              typeof activation === "object" &&
+                              activation.job ? (
+                                <Button
+                                  type="button"
+                                  variant="tertiary"
+                                  disabled={saving || busy}
+                                  onClick={() => {
+                                    const status = activation.job?.status;
+                                    const explicitResume =
+                                      status === "waiting_for_data" ||
+                                      status === "running" ||
+                                      status === "queued";
+                                    if (explicitResume) {
+                                      void handleActivateLocalization(row);
+                                      return;
+                                    }
+                                    void handleRefreshActivation(row);
+                                  }}
+                                >
+                                  {activation.job.status === "waiting_for_data" ||
+                                  activation.job.status === "running" ||
+                                  activation.job.status === "queued"
+                                    ? "Resume"
+                                    : "Refresh status"}
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="tertiary"
+                                disabled={saving || busy || (english && row.enabled)}
+                                aria-label={
+                                  english && row.enabled
+                                    ? "English cannot be disabled"
+                                    : row.enabled
+                                      ? `Disable ${row.locale}`
+                                      : `Enable ${row.locale}`
+                                }
+                                onClick={() => {
+                                  void handleToggleEnabled(row);
+                                }}
+                              >
+                                {togglingId === row.languageId
+                                  ? "…"
+                                  : row.enabled
+                                    ? "Disable"
+                                    : "Enable"}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="hu-caption">No language selected.</p>
+            )}
+          </>
         ) : null}
       </ProfileSection>
     </main>

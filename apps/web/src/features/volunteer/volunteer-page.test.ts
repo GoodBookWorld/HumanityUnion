@@ -115,6 +115,19 @@ describe("Volunteer public page", () => {
     );
   });
 
+  it("RTL hero uses volunteer-rtl.webp via dir=rtl without locale lists", () => {
+    const css = read("features/volunteer/volunteer-page.css");
+    const constants = read("features/volunteer/volunteer.constants.ts");
+    assert.equal(VOLUNTEER_ASSETS.heroRtl, "/icons/volunteer/volunteer-rtl.webp");
+    assert.ok(
+      existsSync(path.join(webRoot, "public/icons/volunteer/volunteer-rtl.webp")),
+    );
+    assert.match(css, /\[dir=["']rtl["']\]\s*\.volunteer-page__hero/);
+    assert.match(css, /\[dir=["']rtl["']\][\s\S]*volunteer-rtl\.webp/);
+    assert.doesNotMatch(css, /["']ar["']|["']he["']|locale\s*===\s*["']ar["']/);
+    assert.doesNotMatch(constants, /["']ar["']|["']he["']/);
+  });
+
   it("does not use custom wheel / window.scrollBy handoff; keeps native overflow scrolling", () => {
     const content = read("features/volunteer/components/VolunteerPageContent.tsx");
     const css = read("features/volunteer/volunteer-page.css");
@@ -139,6 +152,10 @@ describe("Volunteer public page", () => {
     assert.match(css, /\.volunteer-page__visual-image[\s\S]*transition:[\s\S]*transform/);
     assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*\.volunteer-page__visual-image:hover[\s\S]*transform:\s*none/);
     assert.match(css, /\.volunteer-page__visual-card[\s\S]*overflow:\s*visible/);
+    assert.match(
+      css,
+      /\.volunteer-page__visual-image[\s\S]*transform-origin:\s*center\s+inline-end/,
+    );
   });
 
   it("Support Volunteer CTA defaults to /volunteer", () => {

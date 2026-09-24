@@ -146,6 +146,120 @@
   background: #8a3b3b;
 }
 
+/* Compact ring of dots — localization still actively progressing. */
+.admin-languages__progress-activity {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 0.15rem;
+  min-height: 1.1rem;
+}
+
+.admin-languages__progress-activity-ring {
+  --admin-languages-activity-size: 0.9rem;
+  position: relative;
+  width: var(--admin-languages-activity-size);
+  height: var(--admin-languages-activity-size);
+  flex-shrink: 0;
+  animation: admin-languages-activity-spin 1.1s linear infinite;
+}
+
+.admin-languages__progress-activity-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.22rem;
+  height: 0.22rem;
+  margin: -0.11rem;
+  border-radius: 50%;
+  background: var(--hu-color-primary, #0174b0);
+  opacity: 0.35;
+  transform: rotate(calc(var(--admin-languages-activity-i) * 45deg))
+    translateY(calc(var(--admin-languages-activity-size) / -2 + 0.11rem));
+}
+
+.admin-languages__progress-activity-dot:nth-child(1) {
+  --admin-languages-activity-i: 0;
+  opacity: 1;
+}
+.admin-languages__progress-activity-dot:nth-child(2) {
+  --admin-languages-activity-i: 1;
+  opacity: 0.85;
+}
+.admin-languages__progress-activity-dot:nth-child(3) {
+  --admin-languages-activity-i: 2;
+  opacity: 0.7;
+}
+.admin-languages__progress-activity-dot:nth-child(4) {
+  --admin-languages-activity-i: 3;
+  opacity: 0.55;
+}
+.admin-languages__progress-activity-dot:nth-child(5) {
+  --admin-languages-activity-i: 4;
+  opacity: 0.45;
+}
+.admin-languages__progress-activity-dot:nth-child(6) {
+  --admin-languages-activity-i: 5;
+  opacity: 0.35;
+}
+.admin-languages__progress-activity-dot:nth-child(7) {
+  --admin-languages-activity-i: 6;
+  opacity: 0.28;
+}
+.admin-languages__progress-activity-dot:nth-child(8) {
+  --admin-languages-activity-i: 7;
+  opacity: 0.22;
+}
+
+@keyframes admin-languages-activity-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-languages__progress-activity-ring {
+    animation: none;
+  }
+
+  .admin-languages__progress-activity-dot {
+    opacity: 0.65;
+  }
+}
+
+.admin-languages__progress-activity-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-languages__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  max-width: 100%;
+}
+
+.admin-languages__picker-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.admin-languages__picker-select {
+  min-width: min(100%, 18rem);
+  max-width: 100%;
+  flex: 1 1 14rem;
+  box-sizing: border-box;
+}
+
 .admin-languages__form {
   margin: 1rem 0 1.5rem;
   padding: 1rem;
