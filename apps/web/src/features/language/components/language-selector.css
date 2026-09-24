@@ -258,8 +258,27 @@
 
 /*
  * Header dropdown horizontal/vertical clamp is component-local
- * (placeLanguageSelectorList). Do not pin the list with a locale offset.
+ * (placeLanguageSelectorList + body portal). Do not pin with a locale offset.
+ *
+ * Narrow viewports: center the open header list on the VIEWPORT (not the
+ * right-side trigger containing block). JS sync mirrors this contract after
+ * measuring width/height; CSS establishes the same horizontal rule for first paint.
  */
+@media (max-width: 768px) {
+  .hu-language-selector--header .hu-language-selector__list {
+    position: fixed;
+    left: 50vw;
+    right: auto;
+    inset-inline-start: auto;
+    inset-inline-end: auto;
+    transform: translateX(-50%);
+    width: min(18rem, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+    min-width: 0;
+    box-sizing: border-box;
+    z-index: 80;
+  }
+}
 
 @media (max-width: 430px) {
   .hu-language-selector:not(.hu-language-selector--mobile):not(.hu-language-selector--header) {
@@ -275,12 +294,18 @@
 
   /* Header trigger stays compact on narrow phones without changing desktop. */
   .hu-language-selector--header {
-    max-width: 7.5rem;
+    max-width: 6.5rem;
   }
 
   .hu-language-selector--header .hu-language-selector__select {
     font-size: 0.75rem;
     padding-inline-start: 0.55rem;
     padding-inline-end: 1.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .hu-language-selector--header {
+    max-width: 5.75rem;
   }
 }

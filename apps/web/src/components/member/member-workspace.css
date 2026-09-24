@@ -132,7 +132,8 @@
 /* Pack 09C — tablet + mobile: Workspace nav lives in the left drawer, not a cramped sidebar. */
 @media (max-width: 1024px) {
   .member-workspace {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr) — bare 1fr (= minmax(auto, 1fr)) lets min-content children widen the page. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .member-workspace__nav {
@@ -140,10 +141,10 @@
   }
 
   .member-workspace__content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .member-workspace__header--with-assistant {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

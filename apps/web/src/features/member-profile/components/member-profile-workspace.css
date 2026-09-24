@@ -97,3 +97,14 @@
   color: var(--hu-color-danger);
   font-size: var(--hu-text-sm);
 }
+
+/* Standalone PWA: keep /member width chain inside the fixed chrome on first paint. */
+.humanity-app--pwa-standalone .member-workspace,
+.humanity-app--pwa-standalone .member-workspace__main,
+.humanity-app--pwa-standalone .member-profile-workspace,
+.humanity-app--pwa-standalone .member-profile-workspace .profile-section {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

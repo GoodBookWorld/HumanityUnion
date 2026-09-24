@@ -12,7 +12,9 @@ import {
   useTransition,
   type CSSProperties,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences, updateMyPreferences } from "../../preferences/preferences-api";
@@ -87,6 +89,12 @@ export function LanguageSelector({
   const [catalogEpoch, setCatalogEpoch] = useState(0);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [portalReady, setPortalReady] = useState(false);
+  const usesOverlayPlacement = languageSelectorUsesOverlayPlacement(className);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   useEffect(() => {
     const onLanguagesChanged = () => {
@@ -175,9 +183,11 @@ export function LanguageSelector({
       return;
     }
     const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || listRef.current?.contains(target)) {
+        return;
       }
+      setOpen(false);
     };
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -193,7 +203,7 @@ export function LanguageSelector({
   }, [open]);
 
   useLayoutEffect(() => {
-    if (!open || !languageSelectorUsesOverlayPlacement(className)) {
+    if (!open || !usesOverlayPlacement) {
       return;
     }
     const root = rootRef.current;
@@ -218,7 +228,7 @@ export function LanguageSelector({
       viewport?.removeEventListener("resize", apply);
       viewport?.removeEventListener("scroll", apply);
     };
-  }, [open, className, options]);
+  }, [open, usesOverlayPlacement, options, portalReady]);
 
   const applyLocale = useCallback(
     async (locale: string) => {
@@ -383,6 +393,49 @@ export function LanguageSelector({
     return null;
   }
 
+  const listbox: ReactNode = open ? (
+    <ul
+      ref={listRef}
+      id={listId}
+      className="hu-language-selector__list"
+      role="listbox"
+      aria-labelledby={`${selectId}-label`}
+      tabIndex={-1}
+    >
+      {options.map((option, index) => {
+        const selected = option.locale === currentLocale;
+        const active = index === activeIndex;
+        return (
+          <li key={option.languageId} role="presentation">
+            <button
+              type="button"
+              role="option"
+              className={[
+                "hu-language-selector__option",
+                selected ? "hu-language-selector__option--selected" : null,
+                active ? "hu-language-selector__option--active" : null,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              lang={option.locale}
+              aria-selected={selected}
+              tabIndex={active ? 0 : -1}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => void commitLocale(option.locale)}
+            >
+              {formatLanguageOptionLabel(option)}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
+
+  const portaledListbox =
+    listbox && usesOverlayPlacement && portalReady
+      ? createPortal(listbox, document.body)
+      : listbox;
+
   return (
     <div
       ref={rootRef}
@@ -450,43 +503,7 @@ export function LanguageSelector({
           )}
         </button>
       </div>
-      {open ? (
-        <ul
-          ref={listRef}
-          id={listId}
-          className="hu-language-selector__list"
-          role="listbox"
-          aria-labelledby={`${selectId}-label`}
-          tabIndex={-1}
-        >
-          {options.map((option, index) => {
-            const selected = option.locale === currentLocale;
-            const active = index === activeIndex;
-            return (
-              <li key={option.languageId} role="presentation">
-                <button
-                  type="button"
-                  role="option"
-                  className={[
-                    "hu-language-selector__option",
-                    selected ? "hu-language-selector__option--selected" : null,
-                    active ? "hu-language-selector__option--active" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  lang={option.locale}
-                  aria-selected={selected}
-                  tabIndex={active ? 0 : -1}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => void commitLocale(option.locale)}
-                >
-                  {formatLanguageOptionLabel(option)}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+      {portaledListbox}
       {error ? (
         <p className="hu-language-selector__error" role="alert">
           {error}

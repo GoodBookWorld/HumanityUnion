@@ -81,15 +81,24 @@ describe("Public Header UX Pack 01 / Refinement 02 — floating navigation heade
     assert.match(css, /\.humanity-header__tagline\s*\{[^}]*font-size:\s*0\.6875rem/s);
   });
 
-  it("hides brand name and slogan text on mobile while keeping the logo", () => {
+  it("keeps brand name and slogan visible on mobile with unbroken lines", () => {
     const css = read("layout.css");
     const header = read("components/HumanityHeader.tsx");
     assert.match(header, /humanity-header__brand-text/);
     assert.match(header, /humanity-header__logo/);
-    assert.match(
+    assert.doesNotMatch(
       css,
       /@media \(max-width:\s*768px\)\s*\{[^}]*\.humanity-header__brand-text\s*\{[^}]*display:\s*none/s,
     );
+    assert.match(
+      css,
+      /@media \(max-width:\s*768px\)[\s\S]*?\.humanity-header__brand-name[\s\S]*?white-space:\s*nowrap/,
+    );
+    assert.match(
+      css,
+      /@media \(max-width:\s*768px\)[\s\S]*?\.humanity-header__tagline[\s\S]*?white-space:\s*nowrap/,
+    );
+    assert.match(css, /\.humanity-header__brand-name[\s\S]*?clamp\(/);
   });
 
   it("removes the full-bleed bordered header shell", () => {

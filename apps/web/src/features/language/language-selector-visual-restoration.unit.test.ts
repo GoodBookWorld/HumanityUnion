@@ -190,7 +190,7 @@ describe("Language selector visual restoration", () => {
     assert.doesNotMatch(pwa, /variant="icon"/);
     assert.match(css, /inset 0 1px 2px/);
     assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--header"), true);
-    assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--mobile"), true);
+    assert.equal(languageSelectorUsesOverlayPlacement("hu-language-selector--mobile"), false);
   });
 
   it("10–11. Guest cookie path and Participant shared patch remain", () => {
@@ -199,5 +199,24 @@ describe("Language selector visual restoration", () => {
     assert.match(selector, /readingLanguageControl:\s*true/);
     assert.match(selector, /applyPresentationLocale/);
     assert.match(selector, /syncLanguageSelectorListPlacement/);
+  });
+
+  it("mobile header list uses viewport-center CSS contract and body portal", () => {
+    const css = readWeb("features/language/components/language-selector.css");
+    const selector = readWeb("features/language/components/LanguageSelector.tsx");
+    const placement = readWeb("features/language/place-language-selector-list.ts");
+    assert.match(
+      css,
+      /@media \(max-width:\s*768px\)[\s\S]*?\.hu-language-selector--header \.hu-language-selector__list[\s\S]*?left:\s*50vw[\s\S]*?transform:\s*translateX\(-50%\)/,
+    );
+    assert.match(css, /max-width:\s*calc\(100vw - 16px\)/);
+    assert.match(selector, /createPortal/);
+    assert.match(selector, /document\.body/);
+    assert.match(placement, /left\s*=\s*"50vw"/);
+    assert.match(placement, /translateX\(-50%\)/);
+    assert.match(
+      placement,
+      /hu-language-selector--mobile/,
+    );
   });
 });

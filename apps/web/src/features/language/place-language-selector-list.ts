@@ -94,18 +94,41 @@ export function placeLanguageSelectorList(input: {
 }
 
 /**
- * Overlay placement for header and mobile/PWA mounts.
- * Mobile uses viewport-centered horizontal alignment so the list cannot clip.
+ * Overlay clamp is for the header dropdown (portaled / fixed to the viewport).
+ * In-flow mobile/PWA menu lists stay inside their already viewport-bounded panel.
  */
-export function languageSelectorUsesOverlayPlacement(_className?: string): boolean {
-  return true;
+export function languageSelectorUsesOverlayPlacement(className: string | undefined): boolean {
+  return !String(className ?? "")
+    .split(/\s+/)
+    .includes("hu-language-selector--mobile");
 }
 
 export function syncLanguageSelectorListPlacement(
   list: HTMLElement,
   trigger: HTMLElement,
 ): void {
+  // Measure content width before applying fixed placement. Clear width locks and
+  // the base `min-width: max(100%, …)` rule — once portaled to `document.body`,
+  // percentage min-width resolves against the viewport and inflates the panel.
+  const previousWidth = list.style.width;
+  const previousMaxWidth = list.style.maxWidth;
+  const previousMinWidth = list.style.minWidth;
+  const previousTransform = list.style.transform;
+  const previousLeft = list.style.left;
+  const previousPosition = list.style.position;
+  list.style.position = "fixed";
+  list.style.left = "-9999px";
+  list.style.width = "max-content";
+  list.style.maxWidth = "none";
+  list.style.minWidth = "11rem";
+  list.style.transform = "";
   const naturalWidth = list.getBoundingClientRect().width;
+  list.style.width = previousWidth;
+  list.style.maxWidth = previousMaxWidth;
+  list.style.minWidth = previousMinWidth;
+  list.style.transform = previousTransform;
+  list.style.left = previousLeft;
+  list.style.position = previousPosition;
   if (naturalWidth <= 0) {
     return;
   }
@@ -122,6 +145,8 @@ export function syncLanguageSelectorListPlacement(
   const direction = getComputedStyle(trigger).direction === "rtl" ? "rtl" : "ltr";
   const triggerRect = trigger.getBoundingClientRect();
   const viewportWidth = window.innerWidth;
+  const margin = LANGUAGE_SELECTOR_VIEWPORT_MARGIN_PX;
+  const viewportCenter = viewportWidth <= LANGUAGE_SELECTOR_MOBILE_VIEWPORT_MAX_PX;
   const placed = placeLanguageSelectorList({
     trigger: triggerRect,
     listWidth: naturalWidth,
@@ -131,18 +156,14 @@ export function syncLanguageSelectorListPlacement(
     viewportWidth,
     viewportHeight: window.innerHeight,
     direction,
-    horizontalAlign:
-      viewportWidth <= LANGUAGE_SELECTOR_MOBILE_VIEWPORT_MAX_PX
-        ? "viewport-center"
-        : "trigger",
+    margin,
+    horizontalAlign: viewportCenter ? "viewport-center" : "trigger",
   });
 
   list.style.position = "fixed";
-  list.style.left = `${placed.left}px`;
   list.style.top = `${placed.top}px`;
   list.style.width = `${placed.width}px`;
   list.style.minWidth = "0";
-  list.style.maxWidth = `${placed.width}px`;
   list.style.maxHeight = `${placed.maxHeight}px`;
   list.style.right = "auto";
   list.style.bottom = "auto";
@@ -153,4 +174,16 @@ export function syncLanguageSelectorListPlacement(
   list.style.overflowX = "hidden";
   list.style.overflowY = "auto";
   list.style.zIndex = "80";
+
+  if (viewportCenter) {
+    // Viewport-relative centering: vw units + self-centered translate. Must be
+    // paired with a true viewport containing block (list portaled to body).
+    list.style.left = "50vw";
+    list.style.transform = "translateX(-50%)";
+    list.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+  } else {
+    list.style.left = `${placed.left}px`;
+    list.style.transform = "";
+    list.style.maxWidth = `${placed.width}px`;
+  }
 }
