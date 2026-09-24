@@ -6769,6 +6769,19 @@
       "privateBody": "Your Profile Visibility is currently set to Private, so other Participants cannot open your profile at all.",
       "unavailable": "Profile preview is unavailable.",
       "unavailableTitle": "Profile preview temporarily unavailable"
+    },
+    "avatar": {
+      "choose": "Choose Avatar",
+      "replace": "Replace Avatar",
+      "remove": "Remove Avatar",
+      "uploading": "Uploading avatar…",
+      "empty": "No avatar selected",
+      "uploadFailed": "Image upload failed.",
+      "removeFailed": "Image removal failed.",
+      "cropAria": "Avatar crop editor",
+      "cropInstructions": "Drag the image to position it. Use Zoom to adjust framing — left zooms out, center is the default crop, right zooms in. The circular preview matches how your avatar appears across the platform.",
+      "cropSave": "Save Avatar",
+      "cropSaving": "Saving Avatar…"
     }
   },
   "notifications": {

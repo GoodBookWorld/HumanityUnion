@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { avatarCropBlobToFile, loadAvatarCropSource, type AvatarCropSource } from "../avatar-crop";
 import { AvatarCropEditor } from "./AvatarCropEditor";
@@ -24,6 +25,7 @@ export function AvatarImageUploadField({
   onRemove,
   helperText,
 }: AvatarImageUploadFieldProps) {
+  const t = useTranslations("memberProfile.avatar");
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export function AvatarImageUploadField({
       const source = await loadAvatarCropSource(file);
       setCropSource(source);
     } catch (validationError) {
-      setError(validationError instanceof Error ? validationError.message : "Image upload failed.");
+      setError(validationError instanceof Error ? validationError.message : t("uploadFailed"));
     } finally {
       event.target.value = "";
     }
@@ -72,7 +74,7 @@ export function AvatarImageUploadField({
       await onUpload(avatarCropBlobToFile(blob));
       closeCropEditor();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
+      setError(uploadError instanceof Error ? uploadError.message : t("uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -89,7 +91,7 @@ export function AvatarImageUploadField({
     try {
       await onRemove();
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : "Image removal failed.");
+      setError(removeError instanceof Error ? removeError.message : t("removeFailed"));
     } finally {
       setUploading(false);
     }
@@ -105,7 +107,7 @@ export function AvatarImageUploadField({
           <img src={imageUrl} alt="" className="media-image-upload-field__image" />
         ) : (
           <p className="media-image-upload-field__placeholder" role="status">
-            No avatar selected
+            {t("empty")}
           </p>
         )}
       </div>
@@ -129,7 +131,7 @@ export function AvatarImageUploadField({
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
         >
-          {imageUrl ? "Replace Avatar" : "Choose Avatar"}
+          {imageUrl ? t("replace") : t("choose")}
         </button>
         {imageUrl && onRemove ? (
           <button
@@ -138,12 +140,12 @@ export function AvatarImageUploadField({
             disabled={uploading}
             onClick={() => void handleRemove()}
           >
-            Remove Avatar
+            {t("remove")}
           </button>
         ) : null}
       </div>
 
-      {uploading ? <p className="media-image-upload-field__status">Uploading avatar…</p> : null}
+      {uploading ? <p className="media-image-upload-field__status">{t("uploading")}</p> : null}
       {error ? (
         <p className="media-image-upload-field__error" role="alert">
           {error}

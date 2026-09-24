@@ -147,7 +147,12 @@ describe("Step 15D.5 — complete ordinary Participant localization coverage", (
     assert.equal(isParticipantWebUiRequiredPath("auth.loginTitle"), false);
     assert.equal(isParticipantWebUiRequiredPath("auth.registerTitle"), false);
     assert.equal(isParticipantWebUiRequiredPath("auth.password"), false);
-    assert.equal(isParticipantWebUiRequiredPath("auth.forgotPassword"), false);
+    // Own-account password/email chrome (15D.7)
+    assert.equal(isParticipantWebUiRequiredPath("auth.newPassword"), true);
+    assert.equal(isParticipantWebUiRequiredPath("auth.forgotPassword"), true);
+    assert.equal(isParticipantWebUiRequiredPath("auth.email"), true);
+    assert.equal(isParticipantWebUiRequiredPath("auth.logIn"), true);
+    assert.equal(isParticipantWebUiRequiredPath("auth.confirmEmail"), true);
   });
 
   it("9–10 participantPublic is Public-reader; bio/skills remain PLP-owned", () => {

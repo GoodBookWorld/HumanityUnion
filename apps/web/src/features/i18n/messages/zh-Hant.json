@@ -6769,6 +6769,19 @@
       "privateBody": "您的個人資料可見度目前設為私人，因此其他參與者完全無法開啟您的個人資料。",
       "unavailable": "個人資料預覽無法使用。",
       "unavailableTitle": "個人資料預覽暫時無法使用"
+    },
+    "avatar": {
+      "choose": "選擇頭像",
+      "replace": "更換頭像",
+      "remove": "移除頭像",
+      "uploading": "正在上傳頭像…",
+      "empty": "尚未選擇頭像",
+      "uploadFailed": "圖片上傳失敗。",
+      "removeFailed": "圖片移除失敗。",
+      "cropAria": "頭像裁切編輯器",
+      "cropInstructions": "拖曳圖片以調整位置。使用縮放調整構圖——左側縮小、中間為預設裁切、右側放大。圓形預覽與平台上的頭像顯示一致。",
+      "cropSave": "儲存頭像",
+      "cropSaving": "正在儲存頭像…"
     }
   },
   "notifications": {

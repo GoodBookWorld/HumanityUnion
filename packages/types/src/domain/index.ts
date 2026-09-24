@@ -156,19 +156,38 @@ export {
 } from "./public-reader-web-ui-scope.js";
 export type { PublicReaderWebUiRequiredPrefix } from "./public-reader-web-ui-scope.js";
 export {
+  PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS,
   PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS,
   PARTICIPANT_WEB_UI_REQUIRED_PREFIXES,
   PARTICIPANT_WORKSPACE_EXCLUDED_PREFIXES,
+  isParticipantAuthOwnAccountPath,
   isParticipantAuthAccountSecurityPath,
   isParticipantWebUiRequiredPath,
   isParticipantWorkspaceExcludedPath,
   isOrdinaryWebUiRequiredPath,
 } from "./participant-web-ui-scope.js";
 export type {
+  ParticipantAuthOwnAccountPath,
   ParticipantAuthAccountSecurityPath,
   ParticipantWebUiRequiredPrefix,
   ParticipantWorkspaceExcludedPrefix,
 } from "./participant-web-ui-scope.js";
+export {
+  WEB_UI_COVERAGE_OWNERSHIP_KINDS,
+  WEB_UI_PRIVILEGED_PREFIXES,
+  WEB_UI_OTHER_OWNER_PREFIXES,
+  WEB_UI_LEGACY_PREFIXES,
+  classifyWebUiCoveragePath,
+  isWebUiPrivilegedPath,
+  isWebUiOtherOwnerPath,
+  isWebUiLegacyPath,
+  isOrdinaryCoverageRequiredPath,
+  listUnknownWebUiCoveragePaths,
+} from "./web-ui-coverage-ownership.js";
+export type {
+  WebUiCoverageOwnershipKind,
+  WebUiCoverageClassification,
+} from "./web-ui-coverage-ownership.js";
 export type {
   LanguageActivationAdminView,
   LanguageActivationBrandDomainProgress,

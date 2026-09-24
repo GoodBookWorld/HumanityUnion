@@ -160,9 +160,11 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     const english = loadBundledEnglishWebUiMessagePack();
     const all = collectStringPaths(english);
     const STEP15D5_PUBLIC_FAMILIES = ["participantPublic."] as const;
+    const STEP15D7_PUBLIC_FAMILIES = ["a11y.", "auth.", "publicNews.", "publicGeo."] as const;
     const post15d1PublicExpansion = [
       ...(STEP15D1_FAMILIES as readonly string[]),
       ...(STEP15D5_PUBLIC_FAMILIES as readonly string[]),
+      ...(STEP15D7_PUBLIC_FAMILIES as readonly string[]),
     ];
     const legacyPrefixes = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.filter(
       (prefix) => !post15d1PublicExpansion.includes(prefix),
@@ -176,8 +178,8 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
     assert.equal(legacyPaths.length, 2261);
     const required = all.filter((pathKey) => isPublicReaderWebUiRequiredPath(pathKey));
     assert.ok(required.length > 2261);
-    // 15D.1 families (229) + participantPublic (43)
-    assert.equal(required.length - legacyPaths.length, 272);
+    // 15D.1 (229) + participantPublic (43) + a11y (1) + auth (115) + publicNews (83) + publicGeo (193)
+    assert.equal(required.length - legacyPaths.length, 664);
 
     await upsertWebUiMessagePack({
       locale: "ka",
@@ -196,7 +198,10 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
           path.startsWith("pwa.") ||
           path.startsWith("supportPublic.") ||
           path.startsWith("publicStatistics.") ||
-          path.startsWith("participantPublic."),
+          path.startsWith("participantPublic.") ||
+          path.startsWith("publicNews.") ||
+          path.startsWith("publicGeo.") ||
+          path.startsWith("auth."),
       ),
     );
   });
@@ -207,9 +212,11 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
       isPublicReaderWebUiRequiredPath(pathKey),
     );
     const STEP15D5_PUBLIC_FAMILIES = ["participantPublic."] as const;
+    const STEP15D7_PUBLIC_FAMILIES = ["a11y.", "auth.", "publicNews.", "publicGeo."] as const;
     const post15d1PublicExpansion = [
       ...(STEP15D1_FAMILIES as readonly string[]),
       ...(STEP15D5_PUBLIC_FAMILIES as readonly string[]),
+      ...(STEP15D7_PUBLIC_FAMILIES as readonly string[]),
     ];
     const legacyPrefixes = PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.filter(
       (prefix) => !post15d1PublicExpansion.includes(prefix),
@@ -277,15 +284,23 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
 
     const firstMissing = batches.find((batch) => !okSeeded.some((row) => row.batchId === batch.id));
     assert.ok(firstMissing);
+    const expansionFamilies = [
+      ...(STEP15D1_FAMILIES as readonly string[]),
+      "participantPublic.",
+      "a11y.",
+      "auth.",
+      "publicNews.",
+      "publicGeo.",
+    ];
     assert.ok(
-      STEP15D1_FAMILIES.some((family) =>
+      expansionFamilies.some((family) =>
         firstMissing.keys.some((key) => key.startsWith(family)),
       ) ||
         firstMissing.keys.some(
           (key) =>
             isParticipantWebUiRequiredPath(key) && !isPublicReaderWebUiRequiredPath(key),
         ),
-      "first uncovered batch is a 15D.1 public family or participant-only path",
+      "first uncovered batch is an expanded public family or participant-only path",
     );
   });
 

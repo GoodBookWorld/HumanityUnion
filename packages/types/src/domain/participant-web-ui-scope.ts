@@ -1,9 +1,10 @@
 /**
- * Canonical participant WEB_UI readiness scope (Step 15D.2 / 15D.5).
+ * Canonical participant WEB_UI readiness scope (Step 15D.2 / 15D.5 / 15D.7).
  *
  * Ordinary authenticated Participant surfaces — Workspace, Notifications,
  * Civic Activity, Initiative creation/manage, own Profile, Preferences,
- * Account Security, authoring application/status, and Publishing chrome.
+ * own-account security/password/email chrome, authoring application/status,
+ * and Publishing chrome.
  * Distinct from PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.
  *
  * Locale-independent. Ownership of catalog keys is unchanged; this list only
@@ -39,10 +40,13 @@ export const PARTICIPANT_WEB_UI_REQUIRED_PREFIXES = [
 ] as const;
 
 /**
- * Exact auth paths for ordinary own-account security (AccountSecuritySection).
- * Deliberately not all `auth.*` — login/signup/public auth stay outside.
+ * Exact auth paths for ordinary signed-in own-account chrome:
+ * AccountSecuritySection + AccountPanel password/email/login controls.
+ * Deliberately not all `auth.*` — public login/signup/recovery stay on the
+ * Public-reader classifier (`auth.` prefix there).
  */
-export const PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS = [
+export const PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS = [
+  // AccountSecuritySection (2FA / account security)
   "auth.accountSecurity",
   "auth.emailConfirmed",
   "auth.yes",
@@ -66,7 +70,16 @@ export const PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS = [
   "auth.twoStepDisabledSuccess",
   "auth.newVerificationCodeSent",
   "auth.incorrectCode",
+  // AccountPanel own-account management
+  "auth.newPassword",
+  "auth.forgotPassword",
+  "auth.email",
+  "auth.logIn",
+  "auth.confirmEmail",
 ] as const;
+
+/** @deprecated Use PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS (Step 15D.7). */
+export const PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS = PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS;
 
 export type ParticipantWebUiRequiredPrefix =
   (typeof PARTICIPANT_WEB_UI_REQUIRED_PREFIXES)[number];
@@ -74,8 +87,11 @@ export type ParticipantWebUiRequiredPrefix =
 export type ParticipantWorkspaceExcludedPrefix =
   (typeof PARTICIPANT_WORKSPACE_EXCLUDED_PREFIXES)[number];
 
-export type ParticipantAuthAccountSecurityPath =
-  (typeof PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS)[number];
+export type ParticipantAuthOwnAccountPath =
+  (typeof PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS)[number];
+
+/** @deprecated Use ParticipantAuthOwnAccountPath. */
+export type ParticipantAuthAccountSecurityPath = ParticipantAuthOwnAccountPath;
 
 function matchesPrefix(pathKey: string, prefix: string): boolean {
   if (prefix.endsWith(".")) {
@@ -94,24 +110,27 @@ export function isParticipantWorkspaceExcludedPath(pathKey: string): boolean {
   );
 }
 
-/** True when a path is the ordinary own-account security auth subset. */
+/** True when a path is ordinary signed-in own-account auth chrome. */
+export function isParticipantAuthOwnAccountPath(pathKey: string): boolean {
+  return (PARTICIPANT_AUTH_OWN_ACCOUNT_PATHS as readonly string[]).includes(pathKey);
+}
+
+/** @deprecated Use isParticipantAuthOwnAccountPath. */
 export function isParticipantAuthAccountSecurityPath(pathKey: string): boolean {
-  return (PARTICIPANT_AUTH_ACCOUNT_SECURITY_PATHS as readonly string[]).includes(
-    pathKey,
-  );
+  return isParticipantAuthOwnAccountPath(pathKey);
 }
 
 /**
  * True when a catalog path is required for ordinary Participant WEB_UI readiness.
  * Includes ordinary Workspace chrome (excluding professional trees), Notifications,
  * full Civic Activity chrome, Initiative manage, member profile, Preferences,
- * authoring application/status, and the account-security auth subset.
+ * authoring application/status, and the own-account auth subset.
  */
 export function isParticipantWebUiRequiredPath(pathKey: string): boolean {
   if (pathKey === "workspace" || pathKey.startsWith("workspace.")) {
     return !isParticipantWorkspaceExcludedPath(pathKey);
   }
-  if (isParticipantAuthAccountSecurityPath(pathKey)) {
+  if (isParticipantAuthOwnAccountPath(pathKey)) {
     return true;
   }
   return PARTICIPANT_WEB_UI_REQUIRED_PREFIXES.some((prefix) =>

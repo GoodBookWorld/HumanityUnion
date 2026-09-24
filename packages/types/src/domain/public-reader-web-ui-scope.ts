@@ -28,16 +28,24 @@
  * Step 15D.5 — `participantPublic.*` is public member/profile chrome
  * (`/member/{publicName}`). Persisted bio/skills remain PLP-owned
  * (`participant_public`).
+ *
+ * Step 15D.7 — `publicNews.*` / `publicGeo.*` / `a11y.*` / public `auth.*`
+ * chrome are required. Public News *article body* remains source-original;
+ * these keys are page chrome only.
  */
 
 export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
   "common.",
   "navigation.",
+  "a11y.",
+  "auth.",
   "actuc.",
   "membershipPublic.",
   "institutionsPublic.",
   "publicHome.",
   "publicStatistics.",
+  "publicNews.",
+  "publicGeo.",
   "pwa.",
   "worldInitiativesPublic.",
   "publicInitiativeMiniCard.",
