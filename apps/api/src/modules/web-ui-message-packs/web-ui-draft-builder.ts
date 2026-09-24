@@ -277,7 +277,7 @@ function sameTokenList(left: readonly string[], right: readonly string[]): boole
   return sortedLeft.every((token, index) => token === sortedRight[index]);
 }
 
-function assertStructureMatches(english: string, translated: string): void {
+export function assertStructureMatches(english: string, translated: string): void {
   const source = inspectMessageStructure(english);
   const target = inspectMessageStructure(translated);
   if (source.balanced && !target.balanced) {

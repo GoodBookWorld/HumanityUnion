@@ -416,12 +416,19 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
     assert.equal(failCalls, 2);
 
     const { record, job } = await createQueuedJob("ia");
+    // Use a single multi-key namespace so the first tick exercises missing-key recovery
+    // (corpus prefix can start with a one-key a11y batch).
+    const multiKeyPaths = INCLUDE_PATHS.filter((pathKey) => pathKey.startsWith("actuc.")).slice(
+      0,
+      6,
+    );
+    assert.ok(multiKeyPaths.length >= 2);
     setLanguageActivationJobProcessDepsForTests({
       skipCorpusInReadiness: true,
       skipOwnerPreparation: true,
       activate: activateNoOp(),
       webUiPreparationDeps: {
-        includePaths: INCLUDE_PATHS.slice(0, 6),
+        includePaths: multiKeyPaths,
         loadLiveTerminology: async () => "LIVE",
         translator: async (request) => {
           const parsed = JSON.parse(request.text) as Record<string, string>;
@@ -448,9 +455,10 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
     const checkpoint = await getWebUiActivationCheckpointByJobId(job.jobId);
     assert.ok(checkpoint);
     const batches = await listWebUiActivationBatches(checkpoint.checkpointId, "primary");
-    const ok = batches.find((batch) => batch.status === "ok");
-    assert.ok(ok);
-    assert.equal(ok.reason, "ok after missing-key recovery");
+    const recovered = batches.find(
+      (batch) => batch.status === "ok" && batch.reason === "ok after missing-key recovery",
+    );
+    assert.ok(recovered, "expected missing-key recovery on the multi-key actuc batch");
     assert.equal(await getPublishedWebUiMessagePackByLocale(record.locale), null);
     assert.ok(getContentTranslationWorkerPeakConcurrencyForTests() <= 1);
   });

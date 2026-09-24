@@ -14,6 +14,8 @@ import {
   type WebUiMessageTree,
 } from "@hu/types";
 
+import { advanceIcuApostropheFriendly } from "./web-ui-icu-apostrophe.js";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENGLISH_MESSAGES_PATH = path.resolve(
   here,
@@ -36,6 +38,7 @@ export interface MessageStructureInspection {
 /**
  * Top-level next-intl arguments only.
  * Words inside an ICU branch, such as `{count, plural, =0 {No proposals}}`, are not variables.
+ * Apostrophes follow ICU 4.8 apostrophe-friendly rules (see `advanceIcuApostropheFriendly`).
  */
 export function inspectMessageStructure(value: string): MessageStructureInspection {
   const placeholders: string[] = [];
@@ -49,13 +52,9 @@ export function inspectMessageStructure(value: string): MessageStructureInspecti
   let balanced = true;
   let index = 0;
   while (index < value.length) {
-    if (value[index] === "'" && value[index + 1] === "'") {
-      index += 2;
-      continue;
-    }
     if (value[index] === "'") {
-      const end = value.indexOf("'", index + 1);
-      index = end === -1 ? value.length : end + 1;
+      // Quoted syntax runs are skipped — braces inside are not placeholders.
+      index = advanceIcuApostropheFriendly(value, index).nextIndex;
       continue;
     }
     if (value[index] !== "{") {
@@ -68,16 +67,17 @@ export function inspectMessageStructure(value: string): MessageStructureInspecti
       placeholders.push(argument[0]);
     }
 
+    const argHead = value.slice(index, Math.min(value.length, index + 48)).toLowerCase();
+    const numberSignRequiresQuote =
+      argHead.includes(", plural") || argHead.includes(", selectordinal");
+
     let depth = 1;
     index += 1;
     while (index < value.length && depth > 0) {
-      if (value[index] === "'" && value[index + 1] === "'") {
-        index += 2;
-        continue;
-      }
       if (value[index] === "'") {
-        const end = value.indexOf("'", index + 1);
-        index = end === -1 ? value.length : end + 1;
+        index = advanceIcuApostropheFriendly(value, index, {
+          numberSignRequiresQuote,
+        }).nextIndex;
         continue;
       }
       if (value[index] === "{") {

@@ -8,6 +8,8 @@ import {
   restoreBrandTokensAfterMachineTranslation,
 } from "@hu/types";
 
+import { advanceIcuApostropheFriendly } from "./web-ui-icu-apostrophe.js";
+
 const ICU_TYPES = new Set(["plural", "select", "selectordinal"]);
 const BRAND_MACHINE_SENTINEL = "__HU_BRAND_SITE_NAME__";
 
@@ -94,17 +96,18 @@ function readTag(input: string, index: number): { readonly raw: string; readonly
   return { raw: match[0], next: index + match[0].length };
 }
 
-function findBalancedEnd(input: string, openIndex: number): number {
+function findBalancedEnd(
+  input: string,
+  openIndex: number,
+  numberSignRequiresQuote = false,
+): number {
   let depth = 0;
   let index = openIndex;
   while (index < input.length) {
-    if (input[index] === "'" && input[index + 1] === "'") {
-      index += 2;
-      continue;
-    }
     if (input[index] === "'") {
-      const end = input.indexOf("'", index + 1);
-      index = end === -1 ? input.length : end + 1;
+      index = advanceIcuApostropheFriendly(input, index, {
+        numberSignRequiresQuote,
+      }).nextIndex;
       continue;
     }
     if (input[index] === "{") {
@@ -125,22 +128,21 @@ function parseMessage(
   index: number,
   slots: string[],
   stopOnBrace: boolean,
+  numberSignRequiresQuote = false,
 ): { readonly text: string; readonly index: number } {
   let text = "";
   while (index < input.length) {
     if (stopOnBrace && input[index] === "}") {
       return { text, index };
     }
-    if (input[index] === "'" && input[index + 1] === "'") {
-      text += "''";
-      index += 2;
-      continue;
-    }
     if (input[index] === "'") {
-      const end = input.indexOf("'", index + 1);
-      const next = end === -1 ? input.length : end + 1;
-      text += input.slice(index, next);
-      index = next;
+      const start = index;
+      const advanced = advanceIcuApostropheFriendly(input, index, {
+        numberSignRequiresQuote,
+      });
+      // Preserve apostrophes and any quoted literal syntax exactly for the provider.
+      text += input.slice(start, advanced.nextIndex);
+      index = advanced.nextIndex;
       continue;
     }
     if (input.startsWith(BRAND_MACHINE_SENTINEL, index)) {
@@ -183,12 +185,26 @@ function parseArgument(
   slots: string[],
 ): { readonly text: string; readonly index: number } {
   const slotMark = slots.length;
+  const name = readIdent(input, openIndex + 1);
+  const typePeek = (() => {
+    if (!name) {
+      return null;
+    }
+    const afterName = skipWs(input, openIndex + 1 + name.length);
+    if (input[afterName] !== ",") {
+      return null;
+    }
+    const typeStart = skipWs(input, afterName + 1);
+    return readIdent(input, typeStart);
+  })();
+  const numberSignRequiresQuote =
+    typePeek === "plural" || typePeek === "selectordinal";
+
   const abandon = (): { readonly text: string; readonly index: number } => {
     slots.length = slotMark;
-    const end = findBalancedEnd(input, openIndex);
+    const end = findBalancedEnd(input, openIndex, numberSignRequiresQuote);
     return { text: slot(slots, input.slice(openIndex, end)), index: end };
   };
-  const name = readIdent(input, openIndex + 1);
   if (!name) {
     return { text: "{", index: openIndex + 1 };
   }
@@ -240,9 +256,9 @@ function parseArgument(
       }
     } else {
       const selector = readIdent(input, cursor);
-    if (!selector) {
-      return abandon();
-    }
+      if (!selector) {
+        return abandon();
+      }
       cursor += selector.length;
     }
     cursor = skipWs(input, cursor);
@@ -251,7 +267,13 @@ function parseArgument(
     }
     text += slot(slots, input.slice(selectorStart, cursor + 1));
     cursor += 1;
-    const inner = parseMessage(input, cursor, slots, true);
+    const inner = parseMessage(
+      input,
+      cursor,
+      slots,
+      true,
+      numberSignRequiresQuote,
+    );
     text += inner.text;
     cursor = inner.index;
     if (input[cursor] !== "}") {
