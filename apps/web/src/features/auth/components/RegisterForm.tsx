@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -8,6 +8,11 @@ import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { PasswordInput } from "../../../design-system/components/PasswordInput";
 import { formatAuthFormError } from "../../../lib/api-client";
+import {
+  TurnstileWidget,
+  resolveTurnstileSiteKey,
+  type TurnstileWidgetHandle,
+} from "../../security/turnstile/TurnstileWidget";
 import { getPlatformConfig } from "../../closed-beta/platform-api";
 import { register } from "../auth-api";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
@@ -17,6 +22,7 @@ import "./auth-form.css";
 export function RegisterForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +31,13 @@ export function RegisterForm() {
   const [configWarning, setConfigWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const siteKey = resolveTurnstileSiteKey();
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
 
   useEffect(() => {
     void getPlatformConfig()
@@ -39,8 +52,21 @@ export function RegisterForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
+
+    // Submit control is disabled until a token exists; guard for race/expiry.
+    if (!siteKey || !turnstileToken) {
+      setSubmitting(false);
+      resetTurnstile();
+      return;
+    }
+
+    const tokenForRequest = turnstileToken;
+    setTurnstileToken(null);
 
     try {
       const result = await register({
@@ -48,6 +74,7 @@ export function RegisterForm() {
         displayName,
         password,
         inviteCode: requiresInvite ? inviteCode : undefined,
+        turnstileToken: tokenForRequest,
       });
 
       if ("emailConfirmationRequired" in result && result.emailConfirmationRequired) {
@@ -60,10 +87,13 @@ export function RegisterForm() {
       router.refresh();
     } catch (submitError) {
       setError(formatAuthFormError(submitError));
+      resetTurnstile();
     } finally {
       setSubmitting(false);
     }
   }
+
+  const canSubmit = !submitting && Boolean(turnstileToken) && Boolean(siteKey);
 
   return (
     <Card>
@@ -79,6 +109,7 @@ export function RegisterForm() {
             required
             aria-required="true"
             value={email}
+            disabled={submitting}
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
@@ -93,6 +124,7 @@ export function RegisterForm() {
             required
             aria-required="true"
             value={displayName}
+            disabled={submitting}
             onChange={(event) => setDisplayName(event.target.value)}
           />
         </label>
@@ -108,6 +140,7 @@ export function RegisterForm() {
               required
               aria-required="true"
               value={inviteCode}
+              disabled={submitting}
               onChange={(event) => setInviteCode(event.target.value)}
             />
           </label>
@@ -122,9 +155,17 @@ export function RegisterForm() {
             required
             minLength={8}
             value={password}
+            disabled={submitting}
             onChange={setPassword}
           />
         </label>
+        <TurnstileWidget
+          ref={turnstileRef}
+          className="auth-form__turnstile"
+          data-testid="auth-register-turnstile"
+          size="flexible"
+          onTokenChange={setTurnstileToken}
+        />
         {configWarning ? (
           <AuthFeedbackMessage variant="info" title={t("registrationNotice")}>
             <p>{configWarning}</p>
@@ -136,7 +177,7 @@ export function RegisterForm() {
           </AuthFeedbackMessage>
         ) : null}
         <div className="auth-form__actions">
-          <Button type="submit" variant="primary" disabled={submitting}>
+          <Button type="submit" variant="primary" disabled={!canSubmit}>
             {submitting ? t("creatingAccount") : t("createAccount")}
           </Button>
           <Button href="/login">{t("alreadyHaveAccount")}</Button>

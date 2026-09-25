@@ -52,9 +52,12 @@ describe("Pack 21A — Blog subscription UI", () => {
 
   it("Blog subscribe form integrates Cloudflare Turnstile", () => {
     const form = read("features/blog/components/BlogSubscriptionForm.tsx");
-    assert.match(form, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
+    const widget = read("features/security/turnstile/TurnstileWidget.tsx");
+    assert.match(form, /TurnstileWidget/);
     assert.match(form, /turnstile/);
     assert.match(form, /requestPublicBlogSubscription\(email,\s*tokenForRequest\)/);
+    assert.match(widget, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
     assert.doesNotMatch(form, /TURNSTILE_SECRET_KEY/);
+    assert.doesNotMatch(widget, /TURNSTILE_SECRET_KEY/);
   });
 });

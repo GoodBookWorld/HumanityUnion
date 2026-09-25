@@ -93,6 +93,7 @@ export async function register(input: {
   displayName: string;
   password: string;
   inviteCode?: string;
+  turnstileToken: string;
 }): Promise<RegisterResult> {
   const result = await apiRequest<RegisterResult>("/api/v1/auth/register", {
     method: "POST",
@@ -115,7 +116,11 @@ export async function register(input: {
   return result;
 }
 
-export async function login(input: { email: string; password: string }): Promise<LoginResult> {
+export async function login(input: {
+  email: string;
+  password: string;
+  turnstileToken: string;
+}): Promise<LoginResult> {
   const result = await apiRequest<LoginResult>("/api/v1/auth/login", {
     method: "POST",
     headers: {

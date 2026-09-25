@@ -9,6 +9,17 @@
   font-size: var(--hu-font-size-sm);
 }
 
+/*
+ * Step 15D.8E.3 — iOS/WebKit focus zoom.
+ * Labels/help stay at --hu-font-size-sm; interactive controls must be >=16px.
+ * Overrides `font: inherit` from design-system/components.css for auth fields.
+ */
+.humanity-app .auth-form__field input,
+.humanity-app .auth-form__field textarea,
+.humanity-app .auth-form__field select {
+  font-size: var(--hu-font-size-base);
+}
+
 .auth-form__field input {
   /* Shared control styles live in design-system/components.css */
 }
@@ -17,6 +28,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-3);
+}
+
+.auth-form__turnstile {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .auth-feedback {

@@ -71,6 +71,7 @@ import {
   isEmailConfirmationRequiredResponse,
   isLoginTwoStepRequiredResponse,
 } from "./auth.service.js";
+import { requireAuthTurnstileToken } from "./auth-turnstile.guard.js";
 import { verifyRefreshToken } from "./auth-tokens.js";
 
 const authRouter = Router();
@@ -215,9 +216,17 @@ authRouter.post("/register", registerRateLimit, async (req, res) => {
     password?: unknown;
     displayName?: unknown;
     inviteCode?: unknown;
+    turnstileToken?: unknown;
+    cfTurnstileResponse?: unknown;
   };
 
   try {
+    // STEP 15D.8E.3 — Turnstile before any credential/account write.
+    await requireAuthTurnstileToken(
+      body.turnstileToken ?? body.cfTurnstileResponse,
+      resolveClientIpKey(req),
+    );
+
     const result = await registerAuthUser({
       email: String(body.email ?? ""),
       password: String(body.password ?? ""),
@@ -266,9 +275,17 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
   const body = req.body as {
     email?: unknown;
     password?: unknown;
+    turnstileToken?: unknown;
+    cfTurnstileResponse?: unknown;
   };
 
   try {
+    // STEP 15D.8E.3 — Turnstile before credential verification.
+    await requireAuthTurnstileToken(
+      body.turnstileToken ?? body.cfTurnstileResponse,
+      resolveClientIpKey(req),
+    );
+
     const result = await loginAuthUser({
       email: String(body.email ?? ""),
       password: String(body.password ?? ""),

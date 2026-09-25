@@ -1,49 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useId, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
+import {
+  TurnstileWidget,
+  resolveTurnstileSiteKey,
+  type TurnstileWidgetHandle,
+} from "../../security/turnstile/TurnstileWidget";
 import { requestPublicBlogSubscription } from "../blog-subscription-api";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        element: HTMLElement,
-        options: {
-          sitekey: string;
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-          theme?: "light" | "dark" | "auto";
-        },
-      ) => string;
-      reset: (widgetId?: string) => void;
-      remove: (widgetId?: string) => void;
-    };
-    onHuBlogTurnstileLoad?: () => void;
-  }
-}
-
-const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
-const TURNSTILE_SCRIPT_SRC =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onHuBlogTurnstileLoad";
-
-function resolveTurnstileSiteKey(): string {
-  return process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
-}
-
 /**
  * Pack 21A / EMAIL SECURITY 02B — Blog header subscribe form (email + Turnstile + Subscribe).
+ * STEP 15D.8E.3 — Turnstile host extracted to shared TurnstileWidget (behavior preserved).
  */
 export function BlogSubscriptionForm() {
   const t = useTranslations("blogPublic.subscribe");
   const emailId = useId();
-  const widgetHostRef = useRef<HTMLDivElement | null>(null);
-  const widgetIdRef = useRef<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [email, setEmail] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [state, setState] = useState<FormState>("idle");
@@ -52,75 +29,8 @@ export function BlogSubscriptionForm() {
 
   const resetTurnstile = useCallback(() => {
     setTurnstileToken(null);
-    if (widgetIdRef.current && window.turnstile) {
-      try {
-        window.turnstile.reset(widgetIdRef.current);
-      } catch {
-        // Widget may already be gone.
-      }
-    }
+    turnstileRef.current?.reset();
   }, []);
-
-  const renderWidget = useCallback(() => {
-    if (!siteKey || !widgetHostRef.current || !window.turnstile) {
-      return;
-    }
-    if (widgetIdRef.current) {
-      try {
-        window.turnstile.remove(widgetIdRef.current);
-      } catch {
-        // ignore
-      }
-      widgetIdRef.current = null;
-    }
-    widgetHostRef.current.innerHTML = "";
-    widgetIdRef.current = window.turnstile.render(widgetHostRef.current, {
-      sitekey: siteKey,
-      callback: (token: string) => {
-        setTurnstileToken(token);
-      },
-      "expired-callback": () => {
-        setTurnstileToken(null);
-      },
-      "error-callback": () => {
-        setTurnstileToken(null);
-      },
-      theme: "auto",
-    });
-  }, [siteKey]);
-
-  useEffect(() => {
-    if (!siteKey) {
-      return;
-    }
-
-    window.onHuBlogTurnstileLoad = () => {
-      renderWidget();
-    };
-
-    const existing = document.getElementById(TURNSTILE_SCRIPT_ID);
-    if (window.turnstile) {
-      renderWidget();
-    } else if (!existing) {
-      const script = document.createElement("script");
-      script.id = TURNSTILE_SCRIPT_ID;
-      script.src = TURNSTILE_SCRIPT_SRC;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        try {
-          window.turnstile.remove(widgetIdRef.current);
-        } catch {
-          // ignore
-        }
-        widgetIdRef.current = null;
-      }
-    };
-  }, [siteKey, renderWidget]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -196,13 +106,13 @@ export function BlogSubscriptionForm() {
           {state === "submitting" ? t("submitting") : t("submit")}
         </Button>
       </div>
-      {siteKey ? (
-        <div
-          className="blog-subscribe__turnstile"
-          ref={widgetHostRef}
-          data-testid="blog-subscribe-turnstile"
-        />
-      ) : null}
+      <TurnstileWidget
+        ref={turnstileRef}
+        className="blog-subscribe__turnstile"
+        data-testid="blog-subscribe-turnstile"
+        size="normal"
+        onTokenChange={setTurnstileToken}
+      />
       {message ? (
         <p
           id={`${emailId}-status`}

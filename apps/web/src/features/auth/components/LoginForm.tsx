@@ -2,12 +2,17 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { PasswordInput } from "../../../design-system/components/PasswordInput";
 import { formatAuthFormError } from "../../../lib/api-client";
+import {
+  TurnstileWidget,
+  resolveTurnstileSiteKey,
+  type TurnstileWidgetHandle,
+} from "../../security/turnstile/TurnstileWidget";
 import { login } from "../auth-api";
 import { resolveSafeReturnTo } from "../lib/resolve-safe-return-to";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
@@ -19,18 +24,39 @@ function LoginFormFields() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"), "/workspace");
+  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const siteKey = resolveTurnstileSiteKey();
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
+    // Submit control is disabled until a token exists; guard for race/expiry.
+    if (!siteKey || !turnstileToken) {
+      setSubmitting(false);
+      resetTurnstile();
+      return;
+    }
+
+    const tokenForRequest = turnstileToken;
+    setTurnstileToken(null);
+
     try {
-      const result = await login({ email, password });
+      const result = await login({ email, password, turnstileToken: tokenForRequest });
 
       if ("emailConfirmationRequired" in result && result.emailConfirmationRequired) {
         router.push("/confirm-email");
@@ -48,10 +74,13 @@ function LoginFormFields() {
       router.refresh();
     } catch (submitError) {
       setError(formatAuthFormError(submitError));
+      resetTurnstile();
     } finally {
       setSubmitting(false);
     }
   }
+
+  const canSubmit = !submitting && Boolean(turnstileToken) && Boolean(siteKey);
 
   return (
     <Card>
@@ -67,6 +96,7 @@ function LoginFormFields() {
             required
             aria-required="true"
             value={email}
+            disabled={submitting}
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
@@ -79,16 +109,24 @@ function LoginFormFields() {
             autoComplete="current-password"
             required
             value={password}
+            disabled={submitting}
             onChange={setPassword}
           />
         </label>
+        <TurnstileWidget
+          ref={turnstileRef}
+          className="auth-form__turnstile"
+          data-testid="auth-login-turnstile"
+          size="flexible"
+          onTokenChange={setTurnstileToken}
+        />
         {error ? (
           <AuthFeedbackMessage variant="error" title={t("signInFailed")}>
             <p>{error}</p>
           </AuthFeedbackMessage>
         ) : null}
         <div className="auth-form__actions">
-          <Button type="submit" variant="primary" disabled={submitting}>
+          <Button type="submit" variant="primary" disabled={!canSubmit}>
             {submitting ? t("signingIn") : t("logIn")}
           </Button>
           <Button href="/register">{t("createAccount")}</Button>
