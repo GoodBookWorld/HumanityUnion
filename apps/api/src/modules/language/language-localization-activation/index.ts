@@ -36,6 +36,7 @@ export {
   resetLanguageActivationJobSchedulerForTests,
   resumeIncompleteWebUiActivationJobsOnBoot,
   scheduleLanguageActivationJobProcess,
+  scheduleLanguageActivationJobProcessAt,
   scheduleWebUiActivationTick,
   scheduleWebUiActivationTickAt,
   setLanguageActivationJobAdminAssertOverrideForTests,
@@ -45,6 +46,7 @@ export {
 } from "./language-activation-job.service.js";
 export type { LanguageActivationJobProcessDeps } from "./language-activation-job.service.js";
 export {
+  brandDomainFromPreparationResult,
   buildWebUiDomainProgress,
   deriveActivationJobStatus,
   emptyPendingDomains,

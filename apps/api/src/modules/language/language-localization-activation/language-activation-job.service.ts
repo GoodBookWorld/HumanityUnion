@@ -63,6 +63,7 @@ import {
   type LanguageOwnerPreparationResult,
 } from "../../language-preparation/language-owner-preparation.js";
 import { withContentTranslationWorkerSlot } from "../content-translation-worker-concurrency.js";
+import { isActivationCooldownDue } from "../activation-provider-transient-recovery.js";
 import {
   evaluateFailedWebUiActivationResume,
   listJobsNeedingWebUiActivationResume,
@@ -352,11 +353,25 @@ export async function startOrResumeLanguageActivationJob(input: {
     const coolingDown =
       claimed.domains.webUi.preparationPhase === "provider_cooldown" ||
       (claimed.domains.webUi.nextAttemptAt != null &&
-        claimed.domains.webUi.nextAttemptAt.length > 0);
+        claimed.domains.webUi.nextAttemptAt.length > 0) ||
+      (claimed.domains.brand.status === "in_progress" &&
+        claimed.domains.brand.nextAttemptAt != null &&
+        claimed.domains.brand.nextAttemptAt.length > 0) ||
+      (claimed.domains.terminology.status === "in_progress" &&
+        claimed.domains.terminology.nextAttemptAt != null &&
+        claimed.domains.terminology.nextAttemptAt.length > 0);
     if (coolingDown) {
-      const nextAttemptAt = claimed.domains.webUi.nextAttemptAt ?? null;
+      const nextAttemptAt =
+        claimed.domains.webUi.nextAttemptAt ??
+        claimed.domains.brand.nextAttemptAt ??
+        claimed.domains.terminology.nextAttemptAt ??
+        null;
       if (nextAttemptAt) {
-        scheduleWebUiActivationTickAt(claimed.jobId, nextAttemptAt);
+        if (claimed.domains.webUi.preparationPhase === "provider_cooldown") {
+          scheduleWebUiActivationTickAt(claimed.jobId, nextAttemptAt);
+        } else {
+          scheduleLanguageActivationJobProcessAt(claimed.jobId, nextAttemptAt);
+        }
       }
       return toAdminView({
         job: claimed,
@@ -592,71 +607,153 @@ export async function processLanguageActivationJob(
 
     if (shouldPrepareOwners) {
       const prepare = deps.runOwnerPreparation ?? runLanguageOwnerPreparation;
+      const nowMs = Date.now();
 
-      job = {
-        ...job,
-        domains: {
-          ...job.domains,
-          brand: brandDomainPreparing(),
-        },
-        diagnosticSummary: "running — Preparing Brand…",
-        updatedAt: nowIso(),
-      };
-      await saveLanguageActivationJob(job);
+      const brandCooling =
+        job.domains.brand.status === "in_progress" &&
+        Boolean(job.domains.brand.nextAttemptAt);
+      if (brandCooling && !isActivationCooldownDue({
+        nextAttemptAt: job.domains.brand.nextAttemptAt,
+        nowMs,
+      })) {
+        const nextAttemptAt = job.domains.brand.nextAttemptAt!;
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          diagnosticSummary:
+            job.domains.brand.detail ??
+            "running — Waiting for translation provider…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        scheduleLanguageActivationJobProcessAt(job.jobId, nextAttemptAt);
+        return job;
+      }
 
-      try {
-        const brandResult = await prepare({
-          locale: job.locale,
-          execute: true,
-          owners: ["brand"],
-          log: () => undefined,
-        });
+      if (
+        job.domains.brand.status !== "failed" &&
+        !(
+          brandCooling &&
+          !isActivationCooldownDue({
+            nextAttemptAt: job.domains.brand.nextAttemptAt,
+            nowMs,
+          })
+        )
+      ) {
+        // Gap-only prepare — re-run even when previously ready so Activate fills new gaps.
         job = {
           ...job,
           domains: {
             ...job.domains,
-            brand: brandDomainFromPreparationResult(brandResult),
-            terminology: terminologyDomainPreparing(),
+            brand: {
+              ...brandDomainPreparing(),
+              fieldsPreserved: job.domains.brand.fieldsPreserved,
+              fieldsGenerated: job.domains.brand.fieldsGenerated,
+              brandStatus: job.domains.brand.brandStatus,
+              reviewRequired: job.domains.brand.reviewRequired,
+              transientFailureCount: job.domains.brand.transientFailureCount ?? 0,
+              lastTransientFailure: job.domains.brand.lastTransientFailure ?? null,
+            },
           },
-          diagnosticSummary: "running — Preparing terminology…",
+          diagnosticSummary: "running — Preparing Brand…",
           updatedAt: nowIso(),
         };
         await saveLanguageActivationJob(job);
 
-        const terminologyResult = await prepare({
-          locale: job.locale,
-          execute: true,
-          owners: ["terminology"],
-          log: () => undefined,
+        try {
+          const brandResult = await withContentTranslationWorkerSlot(() =>
+            prepare({
+              locale: job.locale,
+              execute: true,
+              owners: ["brand"],
+              log: () => undefined,
+            }),
+          );
+          const brandDomain = brandDomainFromPreparationResult(brandResult, {
+            previous: job.domains.brand,
+            nowIso: nowIso(),
+          });
+          job = {
+            ...job,
+            domains: {
+              ...job.domains,
+              brand: brandDomain,
+            },
+            updatedAt: nowIso(),
+          };
+          await saveLanguageActivationJob(job);
+
+          if (brandDomain.nextAttemptAt && brandDomain.status === "in_progress") {
+            job = {
+              ...job,
+              status: "running",
+              completedAt: null,
+              lastError: null,
+              diagnosticSummary:
+                brandDomain.detail ?? "running — Waiting for translation provider…",
+              updatedAt: nowIso(),
+            };
+            await saveLanguageActivationJob(job);
+            scheduleLanguageActivationJobProcessAt(job.jobId, brandDomain.nextAttemptAt);
+            return job;
+          }
+        } catch (error) {
+          const message =
+            error instanceof LanguageOwnerPreparationError || error instanceof Error
+              ? error.message
+              : "Owner preparation failed.";
+          const providerFailureMessage = message.replace(/^REFUSED:\s*/i, "");
+          job = {
+            ...job,
+            domains: {
+              ...job.domains,
+              brand: brandDomainProviderConfigFailure(providerFailureMessage),
+            },
+            status: "failed",
+            lastError: providerFailureMessage,
+            diagnosticSummary: `failed — owner preparation: ${providerFailureMessage}`,
+            updatedAt: nowIso(),
+            completedAt: nowIso(),
+          };
+          await saveLanguageActivationJob(job);
+          return job;
+        }
+      }
+
+      // Early return already handled when brandCooling && !due (above).
+      // Recompute after possible brand work:
+      const brandStillCooling =
+        job.domains.brand.status === "in_progress" &&
+        Boolean(job.domains.brand.nextAttemptAt) &&
+        !isActivationCooldownDue({
+          nextAttemptAt: job.domains.brand.nextAttemptAt,
+          nowMs: Date.now(),
         });
+      if (brandStillCooling) {
+        scheduleLanguageActivationJobProcessAt(
+          job.jobId,
+          job.domains.brand.nextAttemptAt!,
+        );
+        return job;
+      }
+
+      if (job.domains.brand.status === "failed") {
         job = {
           ...job,
-          domains: {
-            ...job.domains,
-            terminology: terminologyDomainFromPreparationResult(terminologyResult),
-          },
-          updatedAt: nowIso(),
-        };
-        await saveLanguageActivationJob(job);
-      } catch (error) {
-        const message =
-          error instanceof LanguageOwnerPreparationError || error instanceof Error
-            ? error.message
-            : "Owner preparation failed.";
-        const providerFailureMessage = message.replace(/^REFUSED:\s*/i, "");
-        job = {
-          ...job,
-          domains: {
-            ...job.domains,
-            brand:
-              job.domains.brand.status === "ready"
-                ? job.domains.brand
-                : brandDomainProviderConfigFailure(providerFailureMessage),
-            terminology: terminologyDomainProviderConfigFailure(providerFailureMessage),
-          },
           status: "failed",
-          lastError: providerFailureMessage,
-          diagnosticSummary: `failed — owner preparation: ${providerFailureMessage}`,
+          lastError: job.domains.brand.detail ?? "Brand preparation failed.",
+          diagnosticSummary: buildDiagnosticSummary({
+            status: "failed",
+            readiness: await evaluate({
+              locale: job.locale,
+              registryRecord: registry,
+              plannerDeps: deps.plannerDeps,
+              skipCorpusPlan: deps.skipCorpusInReadiness === true,
+            }),
+            domains: job.domains,
+          }),
           updatedAt: nowIso(),
           completedAt: nowIso(),
         };
@@ -664,17 +761,132 @@ export async function processLanguageActivationJob(
         return job;
       }
 
+      const terminologyCooling =
+        job.domains.terminology.status === "in_progress" &&
+        Boolean(job.domains.terminology.nextAttemptAt);
       if (
-        job.domains.brand.status === "failed" ||
-        job.domains.terminology.status === "failed"
+        terminologyCooling &&
+        !isActivationCooldownDue({
+          nextAttemptAt: job.domains.terminology.nextAttemptAt,
+          nowMs,
+        })
       ) {
+        const nextAttemptAt = job.domains.terminology.nextAttemptAt!;
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          diagnosticSummary:
+            job.domains.terminology.detail ??
+            "running — Waiting for translation provider…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        scheduleLanguageActivationJobProcessAt(job.jobId, nextAttemptAt);
+        return job;
+      }
+
+      if (job.domains.terminology.status !== "failed") {
+        job = {
+          ...job,
+          domains: {
+            ...job.domains,
+            terminology: {
+              ...terminologyDomainPreparing(),
+              conceptsPreserved: job.domains.terminology.conceptsPreserved,
+              conceptsGenerated: job.domains.terminology.conceptsGenerated,
+              transientFailureCount:
+                job.domains.terminology.transientFailureCount ?? 0,
+              lastTransientFailure:
+                job.domains.terminology.lastTransientFailure ?? null,
+              providerDiagnostic:
+                job.domains.terminology.providerDiagnostic ?? null,
+            },
+          },
+          diagnosticSummary: "running — Preparing terminology…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+
+        try {
+          const terminologyResult = await withContentTranslationWorkerSlot(() =>
+            prepare({
+              locale: job.locale,
+              execute: true,
+              owners: ["terminology"],
+              log: () => undefined,
+            }),
+          );
+          const terminologyDomain = terminologyDomainFromPreparationResult(
+            terminologyResult,
+            {
+              previous: job.domains.terminology,
+              nowIso: nowIso(),
+            },
+          );
+          job = {
+            ...job,
+            domains: {
+              ...job.domains,
+              terminology: terminologyDomain,
+            },
+            updatedAt: nowIso(),
+          };
+          await saveLanguageActivationJob(job);
+
+          if (
+            terminologyDomain.nextAttemptAt &&
+            terminologyDomain.status === "in_progress"
+          ) {
+            job = {
+              ...job,
+              status: "running",
+              completedAt: null,
+              lastError: null,
+              diagnosticSummary:
+                terminologyDomain.detail ??
+                "running — Waiting for translation provider…",
+              updatedAt: nowIso(),
+            };
+            await saveLanguageActivationJob(job);
+            scheduleLanguageActivationJobProcessAt(
+              job.jobId,
+              terminologyDomain.nextAttemptAt,
+            );
+            return job;
+          }
+        } catch (error) {
+          const message =
+            error instanceof LanguageOwnerPreparationError || error instanceof Error
+              ? error.message
+              : "Owner preparation failed.";
+          const providerFailureMessage = message.replace(/^REFUSED:\s*/i, "");
+          job = {
+            ...job,
+            domains: {
+              ...job.domains,
+              terminology: terminologyDomainProviderConfigFailure(
+                providerFailureMessage,
+              ),
+            },
+            status: "failed",
+            lastError: providerFailureMessage,
+            diagnosticSummary: `failed — owner preparation: ${providerFailureMessage}`,
+            updatedAt: nowIso(),
+            completedAt: nowIso(),
+          };
+          await saveLanguageActivationJob(job);
+          return job;
+        }
+      }
+
+      if (job.domains.terminology.status === "failed") {
         job = {
           ...job,
           status: "failed",
           lastError:
-            job.domains.terminology.detail ??
-            job.domains.brand.detail ??
-            "Owner preparation failed.",
+            job.domains.terminology.detail ?? "Terminology preparation failed.",
           diagnosticSummary: buildDiagnosticSummary({
             status: "failed",
             readiness: await evaluate({
@@ -998,6 +1210,9 @@ const webUiFollowUpRequested = new Set<string>();
 /** One delayed cooldown timer per jobId (live-process optimization). */
 const webUiDelayedTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const webUiDelayedNextAttemptAt = new Map<string, string>();
+/** Delayed full-process wake for Brand/Terminology provider cooldown. */
+const ownerDelayedTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const ownerDelayedNextAttemptAt = new Map<string, string>();
 
 export function scheduleLanguageActivationJobProcess(jobId: string): void {
   if (scheduled.has(jobId)) {
@@ -1013,6 +1228,40 @@ export function scheduleLanguageActivationJobProcess(jobId: string): void {
         scheduled.delete(jobId);
       });
   });
+}
+
+/**
+ * Schedule a delayed full activation process for Brand/Terminology cooldown.
+ * Does not hold the translation worker slot while waiting.
+ */
+export function scheduleLanguageActivationJobProcessAt(
+  jobId: string,
+  nextAttemptAt: string,
+): void {
+  const dueMs = Date.parse(nextAttemptAt);
+  if (!Number.isFinite(dueMs)) {
+    scheduleLanguageActivationJobProcess(jobId);
+    return;
+  }
+  const existingAt = ownerDelayedNextAttemptAt.get(jobId);
+  if (existingAt) {
+    const existingMs = Date.parse(existingAt);
+    if (Number.isFinite(existingMs) && existingMs <= dueMs) {
+      return;
+    }
+    const prior = ownerDelayedTimers.get(jobId);
+    if (prior) {
+      clearTimeout(prior);
+    }
+  }
+  const delayMs = Math.max(0, Math.min(dueMs - Date.now(), 2_147_483_647));
+  ownerDelayedNextAttemptAt.set(jobId, nextAttemptAt);
+  const timer = setTimeout(() => {
+    ownerDelayedTimers.delete(jobId);
+    ownerDelayedNextAttemptAt.delete(jobId);
+    scheduleLanguageActivationJobProcess(jobId);
+  }, delayMs);
+  ownerDelayedTimers.set(jobId, timer);
 }
 
 /**
@@ -1140,11 +1389,28 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
     resumedJobIds.add(job.jobId);
     count += 1;
   }
-  // Claimed jobs that died before the first checkpoint. Never scan historical
-  // waiting_for_data jobs — those have no fresh activation intent.
+  // Brand / Terminology durable cooldown — resume running jobs after restart.
+  // Never reopen historical `failed` jobs (manual migration only).
   const jobs = await listLanguageActivationJobs();
   for (const job of jobs) {
     if (!isClaimedActivationStatus(job.status) || resumedJobIds.has(job.jobId)) {
+      continue;
+    }
+    const brandNext = job.domains.brand.nextAttemptAt ?? null;
+    const termNext = job.domains.terminology.nextAttemptAt ?? null;
+    const ownerCooling =
+      (job.domains.brand.status === "in_progress" && brandNext) ||
+      (job.domains.terminology.status === "in_progress" && termNext);
+    if (ownerCooling) {
+      const nextAttemptAt = brandNext ?? termNext!;
+      const dueMs = Date.parse(nextAttemptAt);
+      if (Number.isFinite(dueMs) && dueMs > Date.now()) {
+        scheduleLanguageActivationJobProcessAt(job.jobId, nextAttemptAt);
+      } else {
+        scheduleLanguageActivationJobProcess(job.jobId);
+      }
+      resumedJobIds.add(job.jobId);
+      count += 1;
       continue;
     }
     const webUi = job.domains.webUi;
@@ -1172,6 +1438,11 @@ export function resetLanguageActivationJobSchedulerForTests(): void {
   }
   webUiDelayedTimers.clear();
   webUiDelayedNextAttemptAt.clear();
+  for (const timer of ownerDelayedTimers.values()) {
+    clearTimeout(timer);
+  }
+  ownerDelayedTimers.clear();
+  ownerDelayedNextAttemptAt.clear();
 }
 
 /** Test helper: run process synchronously without scheduler. */

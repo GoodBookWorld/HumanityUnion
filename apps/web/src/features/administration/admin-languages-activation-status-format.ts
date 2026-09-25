@@ -68,6 +68,13 @@ export function formatOwnerPreparationProgress(
   const terminology = job.domains.terminology;
   if (terminology?.status === "in_progress") {
     lines.push(terminology.detail ?? "Preparing terminology…");
+    if (terminology.nextAttemptAt) {
+      const diagnosticSummary =
+        formatTerminologyProviderDiagnosticSummary(terminology);
+      if (diagnosticSummary) {
+        lines.push(`Terminology provider: ${diagnosticSummary}`);
+      }
+    }
   } else if (terminology?.status === "failed") {
     const deferredToWaitingGaps =
       job.status === "failed" && terminology.providerFailure === true;

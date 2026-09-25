@@ -1,29 +1,35 @@
 /**
- * Step 15C.10 / 15D.7.4 — durable WEB_UI provider cooldown for transient failures.
+ * Step 15C.10 / 15D.7.4 / 15D.12.9 — durable WEB_UI provider cooldown for transient failures.
  *
- * Caps wait at 300s. Caps automatic cooldown entries so outages cannot loop forever.
- * Retry-After deferred (WEB_UI Gemini path does not expose it).
+ * Delegates classification and bounded backoff to the shared activation transient recovery
+ * module. Transient conditions stay in durable cooldown (no terminal FAILED solely from
+ * consecutive transient count).
  */
 
 import type { WebUiActivationTransientFailure } from "@hu/types";
 
 import { TranslationProviderError } from "../language/translation.config.js";
+import {
+  activationProviderCooldownDetail,
+  activationProviderCooldownSeconds,
+  classifyActivationProviderTransientFailure,
+  computeActivationCooldownNextAttemptAt,
+  isActivationProviderTransientError,
+  ACTIVATION_TRANSIENT_COOLDOWN_MAX_SECONDS,
+} from "../language/activation-provider-transient-recovery.js";
 
-/** Maximum consecutive cooldown entries before terminal failed (operator may Retry). */
-export const WEB_UI_TRANSIENT_COOLDOWN_BUDGET = 5;
+/** @deprecated Transient failures no longer terminalize from consecutive count (15D.12.9). */
+export const WEB_UI_TRANSIENT_COOLDOWN_BUDGET = Number.POSITIVE_INFINITY;
+
+/** Re-export shared max for tests / callers. */
+export const WEB_UI_TRANSIENT_COOLDOWN_MAX_SECONDS =
+  ACTIVATION_TRANSIENT_COOLDOWN_MAX_SECONDS;
 
 /**
- * Step 15C.10 — conservative fallback cooldown for WEB_UI transient provider failures.
- * Caps at 300s.
+ * Bounded increasing cooldown for WEB_UI transient provider failures.
  */
 export function webUiProviderCooldownSeconds(transientFailureCount: number): number {
-  if (transientFailureCount <= 1) {
-    return 60;
-  }
-  if (transientFailureCount === 2) {
-    return 120;
-  }
-  return 300;
+  return activationProviderCooldownSeconds(transientFailureCount);
 }
 
 /** @deprecated Prefer `isWebUiTransientProviderError` — kept for 15C.10 call sites/tests. */
@@ -32,79 +38,49 @@ export function isWebUiRateLimitedError(error: unknown): boolean {
 }
 
 /**
- * Step 15D.7.4 — typed transient provider failures eligible for durable cooldown.
+ * Typed transient provider failures eligible for durable cooldown.
  * Uses TranslationProviderError codes only (no Gemini string matching).
  */
 export function isWebUiTransientProviderError(error: unknown): boolean {
-  if (!(error instanceof TranslationProviderError)) {
-    return false;
-  }
-  return (
-    error.code === "rate_limited" ||
-    error.code === "unavailable" ||
-    error.code === "timeout" ||
-    error.code === "network_failure"
-  );
+  return isActivationProviderTransientError(error);
 }
 
 /**
  * Map a transient provider error to the durable checkpoint failure kind.
- * `network_failure` shares the unavailable operator path.
  */
 export function classifyWebUiTransientFailure(
   error: unknown,
 ): WebUiActivationTransientFailure | null {
-  if (!(error instanceof TranslationProviderError)) {
-    return null;
-  }
-  if (error.code === "rate_limited") {
-    return "rate_limited";
-  }
-  if (error.code === "timeout") {
-    return "timeout";
-  }
-  if (error.code === "unavailable" || error.code === "network_failure") {
-    return "unavailable";
-  }
-  return null;
+  return classifyActivationProviderTransientFailure(error);
 }
 
-/** True when another cooldown would exceed the automatic recovery budget. */
+/**
+ * @deprecated Always false — transient streak no longer exhausts to FAILED (15D.12.9).
+ */
 export function isWebUiTransientCooldownBudgetExhausted(
-  transientFailureCount: number,
+  _transientFailureCount: number,
 ): boolean {
-  return transientFailureCount >= WEB_UI_TRANSIENT_COOLDOWN_BUDGET;
+  return false;
 }
 
 export function computeWebUiCooldownNextAttemptAt(input: {
   readonly nowIso: string;
   readonly transientFailureCount: number;
 }): string {
-  const waitSec = webUiProviderCooldownSeconds(input.transientFailureCount);
-  const baseMs = Date.parse(input.nowIso);
-  const from = Number.isFinite(baseMs) ? baseMs : Date.now();
-  return new Date(from + waitSec * 1000).toISOString();
+  return computeActivationCooldownNextAttemptAt(input);
 }
 
 /** Operator-facing checkpoint detail while waiting (no secrets / payloads). */
 export function webUiProviderCooldownDetail(
   kind: WebUiActivationTransientFailure,
 ): string {
-  switch (kind) {
-    case "rate_limited":
-      return "Waiting for translation provider — rate limit.";
-    case "unavailable":
-      return "Translation provider is temporarily unavailable. Automatic retry scheduled.";
-    case "timeout":
-      return "Translation provider timed out. Automatic retry scheduled.";
-    default: {
-      const _exhaustive: never = kind;
-      return _exhaustive;
-    }
-  }
+  return activationProviderCooldownDetail(kind);
 }
 
-/** Terminal copy after transient budget exhaustion (Retry Activation allowed). */
+/**
+ * @deprecated No longer used for normal transient recovery (15D.12.9).
+ * Kept for permanent-path / historical test assertions only.
+ */
 export function webUiTransientBudgetExhaustedDetail(
   kind: WebUiActivationTransientFailure,
 ): string {

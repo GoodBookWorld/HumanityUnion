@@ -28,7 +28,6 @@ import {
   classifyWebUiTransientFailure,
   isWebUiTransientCooldownBudgetExhausted,
   isWebUiTransientProviderError,
-  WEB_UI_TRANSIENT_COOLDOWN_BUDGET,
   webUiProviderCooldownDetail,
   webUiProviderCooldownSeconds,
   webUiTransientBudgetExhaustedDetail,
@@ -343,10 +342,11 @@ describe("Step 15D.7.4 — automatic transient provider recovery", () => {
     assert.equal(providerCalls, callsBeforeBoot);
   });
 
-  it("11–14 streak grows; budget exhaustion becomes terminal", async () => {
-    assert.equal(WEB_UI_TRANSIENT_COOLDOWN_BUDGET, 5);
-    assert.equal(isWebUiTransientCooldownBudgetExhausted(4), false);
-    assert.equal(isWebUiTransientCooldownBudgetExhausted(5), true);
+  it("11–14 streak grows beyond old budget of 5; stays in durable cooldown not FAILED", async () => {
+    assert.equal(isWebUiTransientCooldownBudgetExhausted(5), false);
+    assert.equal(isWebUiTransientCooldownBudgetExhausted(99), false);
+    assert.equal(webUiProviderCooldownSeconds(5), 900);
+    assert.equal(webUiProviderCooldownSeconds(99), 900);
 
     const { job: started } = await createJob("nov");
     const jobId = started.jobId;
@@ -369,7 +369,7 @@ describe("Step 15D.7.4 — automatic transient provider recovery", () => {
     assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
     assert.equal(job.domains.webUi.transientFailureCount, 1);
 
-    for (let streak = 2; streak <= WEB_UI_TRANSIENT_COOLDOWN_BUDGET; streak += 1) {
+    for (let streak = 2; streak <= 6; streak += 1) {
       const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
       await upsertWebUiActivationCheckpoint({
         ...checkpoint!,
@@ -395,21 +395,8 @@ describe("Step 15D.7.4 — automatic transient provider recovery", () => {
       assert.equal(job.status, "running");
       assert.equal(job.domains.webUi.preparationPhase, "provider_cooldown");
       assert.equal(job.domains.webUi.transientFailureCount, streak);
+      assert.notEqual(job.domains.webUi.status, "failed");
     }
-
-    // Next transient after budget → terminal
-    const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
-    await upsertWebUiActivationCheckpoint({
-      ...checkpoint!,
-      phase: "primary",
-      nextAttemptAt: null,
-      transientFailureCount: WEB_UI_TRANSIENT_COOLDOWN_BUDGET,
-      detail: "Preparing…",
-    });
-    job = await processLanguageActivationJob(jobId, { webUiTick: true });
-    assert.equal(job.status, "failed");
-    assert.equal(job.domains.webUi.preparationPhase, "failed");
-    assert.match(job.domains.webUi.detail ?? "", /unavailable repeatedly/i);
   });
 
   it("15–18 config/auth/forbidden/unsupported/safety remain terminal", async () => {

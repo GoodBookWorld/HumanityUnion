@@ -41,10 +41,8 @@ import {
 import {
   classifyWebUiTransientFailure,
   computeWebUiCooldownNextAttemptAt,
-  isWebUiTransientCooldownBudgetExhausted,
   isWebUiTransientProviderError,
   webUiProviderCooldownDetail,
-  webUiTransientBudgetExhaustedDetail,
 } from "./web-ui-provider-cooldown.js";
 import {
   assembleWebUiActivationTranslatedMap,
@@ -1153,17 +1151,6 @@ async function processPrimaryBatchTick(input: {
       }
       const transientKind = classifyWebUiTransientFailure(error);
       if (isWebUiTransientProviderError(error) && transientKind) {
-        if (isWebUiTransientCooldownBudgetExhausted(checkpoint.transientFailureCount ?? 0)) {
-          return failWebUiBatchTerminal({
-            checkpoint,
-            batch: nextBatch,
-            batchPhase: "primary",
-            providerCalls,
-            reason: lastReason,
-            operatorDetail: webUiTransientBudgetExhaustedDetail(transientKind),
-            deps,
-          });
-        }
         return enterWebUiProviderCooldown({
           checkpoint,
           batch: nextBatch,
@@ -1343,17 +1330,6 @@ async function processQualityBatchTick(input: {
       }
       const transientKind = classifyWebUiTransientFailure(error);
       if (isWebUiTransientProviderError(error) && transientKind) {
-        if (isWebUiTransientCooldownBudgetExhausted(checkpoint.transientFailureCount ?? 0)) {
-          return failWebUiBatchTerminal({
-            checkpoint,
-            batch: nextBatch,
-            batchPhase: "quality",
-            providerCalls,
-            reason: lastReason,
-            operatorDetail: webUiTransientBudgetExhaustedDetail(transientKind),
-            deps,
-          });
-        }
         return enterWebUiProviderCooldown({
           checkpoint,
           batch: nextBatch,

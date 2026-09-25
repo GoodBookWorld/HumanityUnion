@@ -150,7 +150,9 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     assert.equal(webUiProviderCooldownSeconds(1), 60);
     assert.equal(webUiProviderCooldownSeconds(2), 120);
     assert.equal(webUiProviderCooldownSeconds(3), 300);
-    assert.equal(webUiProviderCooldownSeconds(99), 300);
+    assert.equal(webUiProviderCooldownSeconds(4), 600);
+    assert.equal(webUiProviderCooldownSeconds(5), 900);
+    assert.equal(webUiProviderCooldownSeconds(99), 900);
     assert.equal(
       isWebUiRateLimitedError(new TranslationProviderError("rate_limited", "Gemini HTTP 429")),
       true,

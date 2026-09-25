@@ -131,6 +131,14 @@ export type LanguageActivationBrandDomainProgress = {
   readonly reviewRequired: boolean;
   readonly providerFailure: boolean;
   readonly detail: string | null;
+  /** Absolute ISO when provider cooldown ends (null when not cooling down). */
+  readonly nextAttemptAt?: string | null;
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?:
+    | "rate_limited"
+    | "unavailable"
+    | "timeout"
+    | null;
 };
 
 /**
@@ -171,6 +179,14 @@ export type LanguageActivationTerminologyDomainProgress = {
   readonly detail: string | null;
   /** Optional sanitized provider failure classification (observability only). */
   readonly providerDiagnostic?: LanguageActivationTerminologyProviderDiagnostic | null;
+  /** Absolute ISO when provider cooldown ends (null when not cooling down). */
+  readonly nextAttemptAt?: string | null;
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?:
+    | "rate_limited"
+    | "unavailable"
+    | "timeout"
+    | null;
 };
 
 export type LanguageActivationJobDomains = {

@@ -30,7 +30,11 @@ type Count = {
 type ProgressSource = {
   readonly jobStatus: LanguageActivationJobStatus | null;
   readonly brandStatus: string | null;
+  readonly brandNextAttemptAt: string | null;
+  readonly brandLastTransientFailure: string | null;
   readonly terminologyStatus: string | null;
+  readonly terminologyNextAttemptAt: string | null;
+  readonly terminologyLastTransientFailure: string | null;
   readonly webUi: LanguageActivationWebUiDomainProgress | null;
   readonly cvChecked: number;
   readonly cvMissing: number;
@@ -144,6 +148,29 @@ function phaseLabel(source: ProgressSource, percent: number): {
       label,
       failed: false,
       nextAttemptAt: source.webUi.nextAttemptAt ?? null,
+    };
+  }
+  const ownerCooldown =
+    (source.brandStatus === "in_progress" && source.brandNextAttemptAt) ||
+    (source.terminologyStatus === "in_progress" && source.terminologyNextAttemptAt);
+  if (ownerCooldown) {
+    const kind =
+      source.brandNextAttemptAt != null
+        ? source.brandLastTransientFailure
+        : source.terminologyLastTransientFailure;
+    let label = "Waiting for translation provider — automatic retry scheduled";
+    if (kind === "rate_limited") {
+      label = "Waiting for translation provider — rate limit";
+    } else if (kind === "unavailable") {
+      label = "Translation provider temporarily unavailable";
+    } else if (kind === "timeout") {
+      label = "Translation provider timed out — retry scheduled";
+    }
+    return {
+      label,
+      failed: false,
+      nextAttemptAt:
+        source.brandNextAttemptAt ?? source.terminologyNextAttemptAt ?? null,
     };
   }
   if (source.brandStatus === "in_progress") {
@@ -260,7 +287,12 @@ function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
   return {
     jobStatus: job?.status ?? null,
     brandStatus: job?.domains.brand.status ?? null,
+    brandNextAttemptAt: job?.domains.brand.nextAttemptAt ?? null,
+    brandLastTransientFailure: job?.domains.brand.lastTransientFailure ?? null,
     terminologyStatus: job?.domains.terminology.status ?? null,
+    terminologyNextAttemptAt: job?.domains.terminology.nextAttemptAt ?? null,
+    terminologyLastTransientFailure:
+      job?.domains.terminology.lastTransientFailure ?? null,
     webUi: job?.domains.webUi ?? null,
     cvChecked: cv?.conceptsChecked ?? readiness.controlledVocabulary.conceptsChecked,
     cvMissing: cv?.conceptsMissing ?? readiness.controlledVocabulary.conceptsMissingLocalizedLabel,
@@ -290,7 +322,11 @@ export function localizationProgressFromReadiness(
   return deriveLocalizationProgress({
     jobStatus: null,
     brandStatus: null,
+    brandNextAttemptAt: null,
+    brandLastTransientFailure: null,
     terminologyStatus: null,
+    terminologyNextAttemptAt: null,
+    terminologyLastTransientFailure: null,
     webUi: null,
     cvChecked: report.controlledVocabulary.conceptsChecked,
     cvMissing: report.controlledVocabulary.conceptsMissingLocalizedLabel,

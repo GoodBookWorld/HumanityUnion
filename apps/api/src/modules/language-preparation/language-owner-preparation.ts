@@ -22,6 +22,10 @@ import type {
 } from "../language/translation-provider.js";
 import { TranslationProviderError } from "../language/translation.config.js";
 import {
+  classifyActivationProviderTransientFailure,
+  isActivationProviderTransientError,
+} from "../language/activation-provider-transient-recovery.js";
+import {
   resolveLanguagePreparationLocaleMetadata,
   type LanguagePreparationLocaleMetadata,
 } from "./language-registry-metadata.js";
@@ -57,6 +61,12 @@ export type LanguageOwnerFieldOutcome =
   | { readonly field: string; readonly outcome: "failed"; readonly reason: string }
   | { readonly field: string; readonly outcome: "gap"; readonly reason: string };
 
+/** Durable cooldown signal — activation must not FAILED for this reason. */
+export type LanguageOwnerTransientFailure = {
+  readonly kind: "rate_limited" | "unavailable" | "timeout";
+  readonly reason: string;
+};
+
 export type LanguageOwnerPreparationResult = {
   readonly mode: "dry-run" | "execute";
   readonly locale: string;
@@ -73,6 +83,11 @@ export type LanguageOwnerPreparationResult = {
     readonly persistedCount: number;
   };
   readonly providerCalls: number;
+  /**
+   * When set, a transient provider error stopped further work in this attempt.
+   * Remaining gaps stay as `gap` (not failed). Activation enters durable cooldown.
+   */
+  readonly transientFailure?: LanguageOwnerTransientFailure | null;
 };
 
 export type LanguageOwnerPreparationInput = {
@@ -384,6 +399,7 @@ export async function runLanguageOwnerPreparation(
   }
 
   let providerCalls = 0;
+  let transientFailure: LanguageOwnerTransientFailure | null = null;
   const generatedBrand: Partial<Record<BrandField, string>> = {};
   if (prepareBrand && brandMissing.length > 0) {
     const toTranslate = Object.fromEntries(
@@ -411,14 +427,20 @@ export async function runLanguageOwnerPreparation(
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : "Brand generation failed.";
-      for (let index = 0; index < brandOutcomes.length; index += 1) {
-        const row = brandOutcomes[index]!;
-        if (row.outcome === "gap") {
-          brandOutcomes[index] = { field: row.field, outcome: "failed", reason };
+      const transientKind = classifyActivationProviderTransientFailure(error);
+      if (isActivationProviderTransientError(error) && transientKind) {
+        // Leave missing fields as gap — activation will durable-cooldown and resume.
+        transientFailure = { kind: transientKind, reason };
+      } else {
+        for (let index = 0; index < brandOutcomes.length; index += 1) {
+          const row = brandOutcomes[index]!;
+          if (row.outcome === "gap") {
+            brandOutcomes[index] = { field: row.field, outcome: "failed", reason };
+          }
         }
-      }
-      if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
-        throw error;
+        if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
+          throw error;
+        }
       }
     }
   }
@@ -474,7 +496,7 @@ export async function runLanguageOwnerPreparation(
   }
 
   let terminologyPersisted = 0;
-  if (prepareTerminology) {
+  if (prepareTerminology && !transientFailure) {
     for (const concept of terminologyMissing) {
       try {
         providerCalls += 1;
@@ -495,6 +517,12 @@ export async function runLanguageOwnerPreparation(
         }
       } catch (error) {
         const reason = error instanceof Error ? error.message : "Terminology generation failed.";
+        const transientKind = classifyActivationProviderTransientFailure(error);
+        if (isActivationProviderTransientError(error) && transientKind) {
+          // Stop further concept calls this attempt; remaining stay as gap.
+          transientFailure = { kind: transientKind, reason };
+          break;
+        }
         const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
         if (index >= 0) {
           terminologyOutcomes[index] = { field: concept.conceptId, outcome: "failed", reason };
@@ -534,5 +562,6 @@ export async function runLanguageOwnerPreparation(
       persistedCount: terminologyPersisted,
     },
     providerCalls,
+    transientFailure,
   };
 }

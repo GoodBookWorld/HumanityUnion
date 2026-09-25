@@ -297,9 +297,11 @@ describe("Step 15B — activation Brand + Terminology preparation", () => {
     });
     assert.ok(brands.get("eo")?.siteName);
     assert.equal(view.job?.domains.brand.status, "ready");
-    assert.equal(view.job?.domains.terminology.status, "failed");
-    assert.equal(view.job?.status, "failed");
-    assert.equal(view.job?.domains.terminology.providerFailure, true);
+    // Transient Terminology timeout → durable cooldown, not FAILED (15D.12.9)
+    assert.equal(view.job?.domains.terminology.status, "in_progress");
+    assert.ok(view.job?.domains.terminology.nextAttemptAt);
+    assert.equal(view.job?.domains.terminology.providerFailure, false);
+    assert.equal(view.job?.status, "running");
   });
 
   it("8 provider config failure is owner failure, not waiting_for_data", async () => {

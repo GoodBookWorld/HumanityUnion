@@ -16,6 +16,10 @@ import type {
 import type { LanguageOwnerPreparationResult } from "../../language-preparation/language-owner-preparation.js";
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
 import {
+  activationProviderCooldownDetail,
+  computeActivationCooldownNextAttemptAt,
+} from "../activation-provider-transient-recovery.js";
+import {
   aggregateTerminologyFailureDiagnostics,
   terminologyProviderDiagnosticFromReason,
 } from "./terminology-activation-failure-diagnostic.js";
@@ -114,11 +118,14 @@ export function terminologyDomainPreparing(): LanguageActivationTerminologyDomai
 
 export function brandDomainFromPreparationResult(
   result: LanguageOwnerPreparationResult,
+  options?: {
+    readonly previous?: LanguageActivationBrandDomainProgress | null;
+    readonly nowIso?: string;
+  },
 ): LanguageActivationBrandDomainProgress {
   const preserved = result.brand.outcomes.filter((row) => row.outcome === "preserved").length;
   const generated = result.brand.outcomes.filter((row) => row.outcome === "generated").length;
   const failed = result.brand.outcomes.filter((row) => row.outcome === "failed").length;
-  const providerFailure = failed > 0;
   const brandStatus =
     result.brand.status === "draft" ||
     result.brand.status === "approved" ||
@@ -126,6 +133,30 @@ export function brandDomainFromPreparationResult(
       ? result.brand.status
       : null;
   const reviewRequired = brandStatus === "draft" || brandStatus === "approved";
+
+  if (result.transientFailure && result.brand.outcomes.some((row) => row.outcome === "gap")) {
+    const streak = (options?.previous?.transientFailureCount ?? 0) + 1;
+    const nowIso = options?.nowIso ?? new Date().toISOString();
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      fieldsPreserved: preserved,
+      fieldsGenerated: generated,
+      fieldsFailed: 0,
+      brandStatus,
+      reviewRequired: false,
+      providerFailure: false,
+      detail: activationProviderCooldownDetail(result.transientFailure.kind),
+      nextAttemptAt: computeActivationCooldownNextAttemptAt({
+        nowIso,
+        transientFailureCount: streak,
+      }),
+      transientFailureCount: streak,
+      lastTransientFailure: result.transientFailure.kind,
+    };
+  }
+
+  const providerFailure = failed > 0;
   if (providerFailure) {
     return {
       status: "failed",
@@ -137,6 +168,9 @@ export function brandDomainFromPreparationResult(
       reviewRequired: false,
       providerFailure: true,
       detail: "Brand preparation failed — retry activation after the translation provider is available.",
+      nextAttemptAt: null,
+      transientFailureCount: 0,
+      lastTransientFailure: null,
     };
   }
   return {
@@ -153,15 +187,51 @@ export function brandDomainFromPreparationResult(
       : brandStatus === "published"
         ? "Brand ready (published)."
         : "Brand ready.",
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
   };
 }
 
 export function terminologyDomainFromPreparationResult(
   result: LanguageOwnerPreparationResult,
+  options?: {
+    readonly previous?: LanguageActivationTerminologyDomainProgress | null;
+    readonly nowIso?: string;
+  },
 ): LanguageActivationTerminologyDomainProgress {
   const preserved = result.terminology.outcomes.filter((row) => row.outcome === "preserved").length;
   const generated = result.terminology.outcomes.filter((row) => row.outcome === "generated").length;
   const failed = result.terminology.outcomes.filter((row) => row.outcome === "failed").length;
+  const remainingGaps = result.terminology.outcomes.filter((row) => row.outcome === "gap").length;
+
+  if (result.transientFailure && remainingGaps > 0) {
+    const streak = (options?.previous?.transientFailureCount ?? 0) + 1;
+    const nowIso = options?.nowIso ?? new Date().toISOString();
+    const diagnosticFromFailed = aggregateTerminologyFailureDiagnostics(
+      result.terminology.outcomes,
+    );
+    const diagnostic =
+      diagnosticFromFailed ??
+      terminologyProviderDiagnosticFromReason(result.transientFailure.reason);
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      conceptsPreserved: preserved,
+      conceptsGenerated: generated,
+      conceptsFailed: failed,
+      providerFailure: false,
+      detail: activationProviderCooldownDetail(result.transientFailure.kind),
+      providerDiagnostic: diagnostic,
+      nextAttemptAt: computeActivationCooldownNextAttemptAt({
+        nowIso,
+        transientFailureCount: streak,
+      }),
+      transientFailureCount: streak,
+      lastTransientFailure: result.transientFailure.kind,
+    };
+  }
+
   if (failed > 0) {
     return {
       status: "failed",
@@ -173,6 +243,9 @@ export function terminologyDomainFromPreparationResult(
       // Stable operator retry copy — do not replace; diagnostics live in providerDiagnostic.
       detail: "Terminology preparation failed — retry activation",
       providerDiagnostic: aggregateTerminologyFailureDiagnostics(result.terminology.outcomes),
+      nextAttemptAt: null,
+      transientFailureCount: 0,
+      lastTransientFailure: null,
     };
   }
   return {
@@ -184,6 +257,9 @@ export function terminologyDomainFromPreparationResult(
     providerFailure: false,
     detail: "Terminology ready",
     providerDiagnostic: null,
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
   };
 }
 
