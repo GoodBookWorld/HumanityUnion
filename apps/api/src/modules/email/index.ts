@@ -46,5 +46,14 @@ export {
   deleteEmailAuditRecordsByRecipientHashPrefix,
 } from "./email.audit.js";
 export { renderEmailTemplate, hashRecipientEmail } from "./email.templates.js";
+export {
+  buildBlogListUnsubscribeHeaders,
+  sanitizeEmailListUnsubscribeHeaders,
+  EMAIL_LIST_UNSUBSCRIBE_HEADER,
+  EMAIL_LIST_UNSUBSCRIBE_POST_HEADER,
+  EMAIL_LIST_UNSUBSCRIBE_POST_VALUE,
+  EmailListHeaderValidationError,
+} from "./email-list-headers.js";
+export type { EmailListUnsubscribeHeaders } from "./email-list-headers.js";
 export { clearEmailQueueForTests } from "./email.queue.js";
 export { MockEmailProvider } from "./providers/mock.provider.js";

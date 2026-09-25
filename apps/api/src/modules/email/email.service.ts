@@ -13,6 +13,10 @@ import {
   recipientDomainForLogs,
   TestRecipientBlockedError,
 } from "./email-safety-guards.js";
+import {
+  sanitizeEmailListUnsubscribeHeaders,
+  type EmailListUnsubscribeHeaders,
+} from "./email-list-headers.js";
 import { renderEmailTemplate } from "./email.templates.js";
 import type { EmailSendRequest, EmailSendResult, MailDeliveryStatus } from "./email.types.js";
 
@@ -27,6 +31,8 @@ export interface SendTransactionalEmailInput {
   to: string;
   template: EmailTemplateId;
   templateInput: Record<string, string | number | undefined>;
+  /** Optional RFC 8058 List-Unsubscribe headers (welcome/digest only). */
+  listHeaders?: EmailListUnsubscribeHeaders;
 }
 
 export interface EmailDeliveryResult {
@@ -148,6 +154,8 @@ export async function sendTransactionalEmailAndAwait(
     throw error;
   }
 
+  const listHeaders = sanitizeEmailListUnsubscribeHeaders(input.listHeaders);
+
   const request: EmailSendRequest = {
     to: input.to,
     subject: content.subject,
@@ -155,6 +163,7 @@ export async function sendTransactionalEmailAndAwait(
     text: content.text,
     template: input.template,
     replyTo: config.replyTo,
+    ...(listHeaders ? { listHeaders } : {}),
   };
 
   try {
@@ -194,6 +203,8 @@ export async function sendTransactionalEmail(input: SendTransactionalEmailInput)
     recipientEmail: input.to,
   });
 
+  const listHeaders = sanitizeEmailListUnsubscribeHeaders(input.listHeaders);
+
   const request: EmailSendRequest = {
     to: input.to,
     subject: content.subject,
@@ -201,6 +212,7 @@ export async function sendTransactionalEmail(input: SendTransactionalEmailInput)
     text: content.text,
     template: input.template,
     replyTo: config.replyTo,
+    ...(listHeaders ? { listHeaders } : {}),
   };
 
   enqueueEmailDelivery(() => deliverEmail(request, auditRecord.emailId));

@@ -46,15 +46,21 @@ See `docs/BARREL_EXPORT_POLICY.md` for the full policy.
 AI recovery entry: `architecture/recovery/chat-agent/README.md`
 Canonical live handoff: `project/NEXT_SESSION.md`
 
-Before any Pack may report **COMPLETE**:
+### Documentation Gate (before any Pack may report COMPLETE)
 
-1. Update `project/NEXT_SESSION.md`.
+A Pack/Epic is **not CLOSED** until this gate is evaluated:
+
+1. Update `project/NEXT_SESSION.md` whenever the live objective changed.
 2. Update current-focus / last-completed in `project/PROJECT_STATE.md`.
-3. Update `project/PROJECT_DASHBOARD.md` only when capability/Pack status actually changed.
+3. Update `project/PROJECT_DASHBOARD.md` when capability/Pack status actually changed.
 4. Add a `project/WORK_LOG.md` entry when useful for historical traceability.
-5. Update `architecture/recovery/chat-agent/README.md` only when recovery paths, authority structure, environment topology, or major current focus changed.
-6. Do **not** paste full Pack reports into `architecture/recovery/chat-agent/`.
+5. Update ADR / change register when architectural decisions changed.
+6. Update `architecture/recovery/chat-agent/README.md` only when recovery paths, authority structure, environment topology, or major current focus changed.
+7. Do **not** paste full Pack reports into `architecture/recovery/chat-agent/`.
+8. The completion report MUST list which canonical documents were updated or why no update was required.
+
+Do not require meaningless edits when a document is unaffected. See also `architecture/DEVELOPMENT_BASELINE.md` § Documentation Gate.
 
 Every Bash/operator instruction must explicitly label the execution location: **CURSOR AGENT**, **LOCAL MAC TERMINAL**, **RENDER API WEB SHELL**, or **RENDER WEB WEB SHELL**.
 
-A stale live-state document must not override a normative ADR. Superseded ADR-002 (Activity-root) must not override `ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0`.
+A stale live-state document must not override a normative ADR. Superseded ADR-002 (Activity-root) must not override `ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0`. Repository evidence wins over stale narrative documentation. Never commit secrets or `production-admin-source.json`.

@@ -957,4 +957,3 @@ export async function findPlpAutoBuildWorkByKey(input: {
   const doc = await collection().findOne({ workKey });
   return doc ? mapDoc(doc as PlpAutoBuildWorkDocument) : null;
 }
-

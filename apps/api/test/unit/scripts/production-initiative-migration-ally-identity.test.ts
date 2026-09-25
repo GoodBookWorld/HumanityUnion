@@ -226,7 +226,7 @@ describe("Production Initiative migration Ally composite identity — Task 07.7.
       appliedValue: false,
       phase: "B_membership",
     });
-    // Migration changed prof-2 false→true; concurrent edit left it true already? 
+    // Migration changed prof-2 false→true; concurrent edit left it true already?
     // Actually: applied true, but concurrent set to false → skip
     ledger.recordProfileVisibilityPatch({
       profileId: "prof-2",

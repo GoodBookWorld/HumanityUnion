@@ -1038,4 +1038,3 @@ ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
 - Warm command may carry optional `targetLocales` so residual fan-out processes only ready identities; CURRENT/blocked locales are not provider-called.
 - Historical FAILED outbox rows are not globally cleared; new `operator_residual_retry` work is enqueued for approved `architectureRetryBasis` only.
 - Wait observes `RETRY_SELECTED_IDENTITIES` only. Final `POST_*` counters come from a fresh corpus audit (never the pre-execution snapshot). Zero-fallback success requires `POST_CANONICAL_FALLBACK_NODES === 0` from that fresh audit.
-

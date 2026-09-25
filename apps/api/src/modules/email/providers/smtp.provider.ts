@@ -63,6 +63,7 @@ export class SmtpEmailProvider implements EmailProvider {
           subject: request.subject,
           html: request.html,
           text: request.text,
+          ...(request.listHeaders ? { headers: { ...request.listHeaders } } : {}),
         });
 
         lastSuccessAt = new Date().toISOString();

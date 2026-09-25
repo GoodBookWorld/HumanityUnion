@@ -38,19 +38,36 @@ function verifyCountryExperience(): void {
     "apps/web/src/features/country-experience/components/CountryExperienceDynamicPage.tsx",
   );
   assert(
-    dynamicPage.includes("Country Statistics"),
+    dynamicPage.includes('id="country-statistics-title"') &&
+      dynamicPage.includes('tStats("country.title")') &&
+      dynamicPage.includes("platform-statistics") &&
+      dynamicPage.includes("PublicStatisticsGrid"),
     "Country page must include statistics section",
   );
   assert(
-    dynamicPage.includes("Search Civic Activity in This Country"),
+    dynamicPage.includes('id="country-search-title"') &&
+      dynamicPage.includes('t("country.search.title")') &&
+      dynamicPage.includes("country-experience-dynamic__search-card") &&
+      dynamicPage.includes("handleSearchSubmit"),
     "Country page must include scoped search form",
   );
   assert(
-    dynamicPage.includes("Country Initiatives"),
+    dynamicPage.includes("<CountryCivicActionSection") &&
+      dynamicPage.includes('from "./CountryCivicActionSection"'),
     "Country page must include initiatives section",
   );
+  const civicActionSection = readRepoFile(
+    "apps/web/src/features/country-experience/components/CountryCivicActionSection.tsx",
+  );
   assert(
-    dynamicPage.includes("Recommended Media"),
+    civicActionSection.includes('id="country-civic-action-heading"') &&
+      civicActionSection.includes("country-civic-action"),
+    "Country initiatives section must render civic action heading surface",
+  );
+  assert(
+    dynamicPage.includes('data-hu-surface="country-recommended-media"') &&
+      dynamicPage.includes('t("country.media.title")') &&
+      dynamicPage.includes("HuxDirectorySection"),
     "Country page must include recommended media carousel",
   );
   assert(
@@ -100,11 +117,23 @@ function verifyCountryExperience(): void {
     "Home statistics must not include Civic Action Packages",
   );
   assert(
-    stats.includes('label: "Members"'),
+    stats.includes("humanityUnionMembers") &&
+      stats.includes('useTranslations("publicHome.statistics")') &&
+      stats.includes("HOME_STATISTIC_CARDS"),
+    "Home statistics must render localized Members card via humanityUnionMembers",
+  );
+
+  const statsConfig = readRepoFile(
+    "apps/web/src/features/platform-statistics/public-statistics-config.ts",
+  );
+  assert(
+    statsConfig.includes('key: "humanityUnionMembers"') &&
+      statsConfig.includes('label: "Members"'),
     'Home statistics Members card must be labeled "Members"',
   );
   assert(
-    stats.includes('iconSrc: "/icons/workspace/member-check.svg"'),
+    statsConfig.includes('members: "/icons/workspace/member-check.svg"') &&
+      statsConfig.includes("iconSrc: PUBLIC_STATISTIC_ICONS.members"),
     "Members card must use member-check.svg",
   );
 }
@@ -118,7 +147,7 @@ function verifyEmailDelivery(): void {
     "Email service must support synchronous awaited delivery",
   );
   assert(
-    emailService.includes("emailSent: true"),
+    emailService.includes('emailSent: result.status === "sent"'),
     "Email service must return emailSent on success",
   );
 
@@ -136,7 +165,8 @@ function verifyEmailDelivery(): void {
 
   const confirmForm = readRepoFile("apps/web/src/features/auth/components/ConfirmEmailForm.tsx");
   assert(
-    confirmForm.includes("We could not send the confirmation code"),
+    confirmForm.includes('t("couldNotSendConfirmationCode")') &&
+      confirmForm.includes("deliveryFailureMessage"),
     "Confirm email UI must show delivery failure message",
   );
 

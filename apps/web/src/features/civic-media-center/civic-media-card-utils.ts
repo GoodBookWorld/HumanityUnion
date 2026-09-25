@@ -54,4 +54,3 @@ export function coverageToChips(coverage: string): string[] {
     .filter(Boolean)
     .slice(0, 4);
 }
-
