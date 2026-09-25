@@ -59,7 +59,10 @@ import {
   getPublishedWebUiMessagePackByLocale,
   upsertWebUiMessagePack,
 } from "./web-ui-message-pack.repository.js";
-import { assessWebUiCatalogReadinessForLocale } from "../language/language-localization-activation/assess-web-ui-catalog-readiness.js";
+import {
+  assessWebUiMessageTreeReadiness,
+} from "../language/language-localization-activation/assess-web-ui-catalog-readiness.js";
+import { tryAdoptPackagedWebUiCatalog } from "./adopt-packaged-web-ui-catalog.js";
 import { collectStringPaths } from "./web-ui-message-pack.validate.js";
 
 export type WebUiActivationTickResult = {
@@ -79,6 +82,11 @@ export type WebUiActivationPreparationDeps = {
   readonly now?: () => string;
   /** Test-only: limit planned batches (does not change production). */
   readonly includePaths?: readonly string[];
+  /**
+   * Optional packaged catalog loader (defaults to API assets).
+   * Used by Activate Localization adoption before the provider path.
+   */
+  readonly loadPackagedWebUiCatalog?: (locale: string) => WebUiMessageTree | null;
   readonly env?: {
     readonly TRANSLATION_PROVIDER?: string;
     readonly HU_READ_ONLY_DIAGNOSTIC?: string;
@@ -380,23 +388,41 @@ async function resolveTranslator(
 }
 
 /**
- * True when effective ordinary WEB_UI (public ∪ participant) is complete — skip generation.
+ * True when canonical published ordinary WEB_UI (public ∪ participant) is complete.
+ * Packaged/bundled FS catalogs are not authoritative for Activate skip — adoption
+ * must publish into Mongo first (Step 15D.12.4).
  */
 export async function isPublicWebUiAlreadyReady(locale: string): Promise<boolean> {
-  const ordinary = await assessOrdinaryWebUiCatalogReadiness(locale);
+  const ordinary = await assessPublishedOrdinaryWebUiCatalogReadiness(locale);
   return ordinary.dataReady === true;
 }
 
-async function assessOrdinaryWebUiCatalogReadiness(locale: string): Promise<{
+/**
+ * Authoritative Activate Localization readiness: published Mongo pack only.
+ */
+async function assessPublishedOrdinaryWebUiCatalogReadiness(locale: string): Promise<{
   readonly dataReady: boolean;
   readonly missingKeyCount: number;
   readonly emptyKeyCount: number;
   readonly requiredKeyCount: number;
 }> {
-  const [publicReadiness, participantReadiness] = await Promise.all([
-    assessWebUiCatalogReadinessForLocale({ locale }),
-    assessWebUiCatalogReadinessForLocale({ locale, scope: "participant" }),
-  ]);
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+  if (!published) {
+    return {
+      dataReady: false,
+      missingKeyCount: 1,
+      emptyKeyCount: 0,
+      requiredKeyCount: 0,
+    };
+  }
+  const publicReadiness = assessWebUiMessageTreeReadiness({
+    messages: published.messages,
+    scope: "public",
+  });
+  const participantReadiness = assessWebUiMessageTreeReadiness({
+    messages: published.messages,
+    scope: "participant",
+  });
   return {
     dataReady:
       publicReadiness.dataReady === true && participantReadiness.dataReady === true,
@@ -734,15 +760,18 @@ export async function ensureWebUiActivationCheckpoint(input: {
   readonly checkpoint: WebUiActivationCheckpointRecord | null;
   readonly skipped: boolean;
   readonly webUi: LanguageActivationWebUiDomainProgress;
+  /** True when a packaged catalog was published on this call (zero provider). */
+  readonly adoptedFromPackaged?: boolean;
 }> {
   const locale = input.job.locale;
   const deps = input.deps ?? {};
-  const readiness = await assessOrdinaryWebUiCatalogReadiness(locale);
+  const readiness = await assessPublishedOrdinaryWebUiCatalogReadiness(locale);
 
   if (readiness.dataReady) {
     return {
       checkpoint: null,
       skipped: true,
+      adoptedFromPackaged: false,
       webUi: webUiProgressFromCheckpoint({
         readinessDataReady: true,
         missingKeyCount: readiness.missingKeyCount,
@@ -752,6 +781,41 @@ export async function ensureWebUiActivationCheckpoint(input: {
         checkpoint: null,
       }),
     };
+  }
+
+  // Step 15D.12.4 — adopt packaged catalog into canonical published authority
+  // before opening the provider-generation checkpoint path.
+  const adopted = await tryAdoptPackagedWebUiCatalog({
+    locale,
+    generation: input.job.generation,
+    deps: {
+      loadPackagedWebUiCatalog: deps.loadPackagedWebUiCatalog,
+      includePaths: deps.includePaths,
+    },
+  });
+  if (adopted.outcome === "adopted") {
+    const after = await assessPublishedOrdinaryWebUiCatalogReadiness(locale);
+    // Production: require authoritative published READY. Test includePaths subsets
+    // already passed assertComplete + tree readiness inside adopt.
+    if (after.dataReady || deps.includePaths != null) {
+      const { requiredPaths } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+      return {
+        checkpoint: null,
+        skipped: true,
+        adoptedFromPackaged: true,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: true,
+          missingKeyCount: after.dataReady ? after.missingKeyCount : 0,
+          emptyKeyCount: after.dataReady ? after.emptyKeyCount : 0,
+          requiredKeyCount: after.dataReady
+            ? after.requiredKeyCount
+            : requiredPaths.length,
+          effectiveSource: "remote",
+          checkpoint: null,
+        }),
+      };
+    }
+    // Adopted publish did not satisfy authoritative READY — fall through to provider.
   }
 
   // Prefer existing checkpoint for this job when sourceHash still matches.
@@ -1459,7 +1523,7 @@ export async function processWebUiActivationTick(input: {
   readonly deps?: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps ?? {};
-  const readiness = await assessOrdinaryWebUiCatalogReadiness(input.job.locale);
+  const readiness = await assessPublishedOrdinaryWebUiCatalogReadiness(input.job.locale);
   if (readiness.dataReady) {
     return {
       done: true,

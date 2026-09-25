@@ -2,7 +2,7 @@
  * Validate remote WEB_UI message trees against bundled English foundation paths.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,9 +14,11 @@ import {
   type WebUiMessageTree,
 } from "@hu/types";
 
+import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
 import { advanceIcuApostropheFriendly } from "./web-ui-icu-apostrophe.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+/** Dev/fallback only — production/Docker prefer packaged API assets. */
 const ENGLISH_MESSAGES_PATH = path.resolve(
   here,
   "../../../../web/src/features/i18n/messages/en.json",
@@ -221,9 +223,20 @@ function collectStringPaths(messages: MessagePack, prefix = ""): string[] {
 }
 
 export function loadBundledEnglishWebUiMessagePack(): MessagePack {
+  const packaged = loadPackagedWebUiCatalog("en");
+  if (packaged) {
+    return packaged as MessagePack;
+  }
+  if (!existsSync(ENGLISH_MESSAGES_PATH)) {
+    throw new Error("English WEB_UI foundation catalog is missing from packaged assets.");
+  }
   return JSON.parse(readFileSync(ENGLISH_MESSAGES_PATH, "utf8")) as MessagePack;
 }
 
+/**
+ * Dev/test helper: load a locale message tree from apps/web when present.
+ * Activation adoption must not rely on this path — use packaged API assets instead.
+ */
 export function loadBundledWebUiMessagePackFromFs(locale: string): MessagePack | null {
   try {
     const filePath = path.resolve(

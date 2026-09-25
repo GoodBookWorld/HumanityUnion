@@ -8,6 +8,7 @@ import {
   isParticipantWebUiRequiredPath,
   isPublicReaderWebUiRequiredPath,
   type LanguageWebUiReadinessSlice,
+  type WebUiMessageTree,
 } from "@hu/types";
 
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
@@ -32,25 +33,18 @@ function readPathValue(messages: MessagePack, dottedPath: string): unknown {
 export type WebUiCatalogReadinessScope = "public" | "participant";
 
 /**
- * Assess WEB_UI catalog readiness for a target locale.
- * Default scope is public-reader (`isPublicReaderWebUiRequiredPath`).
- * Participant scope uses `isParticipantWebUiRequiredPath` (Step 15D.2).
+ * Assess a concrete WEB_UI message tree against the English foundation (no pack resolve).
+ * Used by packaged-catalog adoption and published-authority checks.
  */
-export async function assessWebUiCatalogReadinessForLocale(input: {
-  readonly locale: string;
-  readonly englishLocale?: string;
+export function assessWebUiMessageTreeReadiness(input: {
+  readonly messages: WebUiMessageTree;
   readonly requiredPaths?: readonly string[];
   readonly flagEnglishIdenticalAsFallback?: boolean;
   readonly scope?: WebUiCatalogReadinessScope;
-}): Promise<LanguageWebUiReadinessSlice> {
-  const englishLocale = input.englishLocale ?? "en";
+}): LanguageWebUiReadinessSlice {
   let english: MessagePack;
   try {
-    english =
-      englishLocale === "en"
-        ? loadBundledEnglishWebUiMessagePack()
-        : ((await resolveEffectiveWebUiMessagePack(englishLocale))?.messages as MessagePack) ??
-          loadBundledEnglishWebUiMessagePack();
+    english = loadBundledEnglishWebUiMessagePack();
   } catch {
     return {
       engineReady: true,
@@ -63,7 +57,6 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
     };
   }
 
-  const effective = await resolveEffectiveWebUiMessagePack(input.locale);
   const pathPredicate =
     input.scope === "participant"
       ? isParticipantWebUiRequiredPath
@@ -72,19 +65,7 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
     input.requiredPaths ??
     collectStringPaths(english).filter((pathKey) => pathPredicate(pathKey));
 
-  if (!effective) {
-    return {
-      engineReady: true,
-      dataReady: false,
-      requiredKeyCount: requiredPaths.length,
-      missingKeyCount: requiredPaths.length,
-      emptyKeyCount: 0,
-      englishFallbackKeyCount: 0,
-      sampleMissingPaths: requiredPaths.slice(0, 12),
-    };
-  }
-
-  const target = effective.messages as MessagePack;
+  const target = input.messages as MessagePack;
   const flagIdentical = input.flagEnglishIdenticalAsFallback ?? false;
   let missingKeyCount = 0;
   let emptyKeyCount = 0;
@@ -130,6 +111,99 @@ export async function assessWebUiCatalogReadinessForLocale(input: {
     englishFallbackKeyCount,
     sampleMissingPaths,
   };
+}
+
+/**
+ * Assess WEB_UI catalog readiness for a target locale.
+ * Default scope is public-reader (`isPublicReaderWebUiRequiredPath`).
+ * Participant scope uses `isParticipantWebUiRequiredPath` (Step 15D.2).
+ */
+export async function assessWebUiCatalogReadinessForLocale(input: {
+  readonly locale: string;
+  readonly englishLocale?: string;
+  readonly requiredPaths?: readonly string[];
+  readonly flagEnglishIdenticalAsFallback?: boolean;
+  readonly scope?: WebUiCatalogReadinessScope;
+}): Promise<LanguageWebUiReadinessSlice> {
+  const englishLocale = input.englishLocale ?? "en";
+  if (englishLocale !== "en") {
+    let english: MessagePack;
+    try {
+      english =
+        ((await resolveEffectiveWebUiMessagePack(englishLocale))?.messages as MessagePack) ??
+        loadBundledEnglishWebUiMessagePack();
+    } catch {
+      return {
+        engineReady: true,
+        dataReady: false,
+        requiredKeyCount: 0,
+        missingKeyCount: 1,
+        emptyKeyCount: 0,
+        englishFallbackKeyCount: 0,
+        sampleMissingPaths: ["(english foundation catalog missing)"],
+      };
+    }
+    const pathPredicate =
+      input.scope === "participant"
+        ? isParticipantWebUiRequiredPath
+        : isPublicReaderWebUiRequiredPath;
+    const requiredPaths =
+      input.requiredPaths ??
+      collectStringPaths(english).filter((pathKey) => pathPredicate(pathKey));
+    const effective = await resolveEffectiveWebUiMessagePack(input.locale);
+    if (!effective) {
+      return {
+        engineReady: true,
+        dataReady: false,
+        requiredKeyCount: requiredPaths.length,
+        missingKeyCount: requiredPaths.length,
+        emptyKeyCount: 0,
+        englishFallbackKeyCount: 0,
+        sampleMissingPaths: requiredPaths.slice(0, 12),
+      };
+    }
+    return assessWebUiMessageTreeReadiness({
+      messages: effective.messages,
+      requiredPaths,
+      flagEnglishIdenticalAsFallback: input.flagEnglishIdenticalAsFallback,
+      scope: input.scope,
+    });
+  }
+
+  const effective = await resolveEffectiveWebUiMessagePack(input.locale);
+  if (!effective) {
+    let requiredKeyCount = 0;
+    try {
+      const english = loadBundledEnglishWebUiMessagePack();
+      const pathPredicate =
+        input.scope === "participant"
+          ? isParticipantWebUiRequiredPath
+          : isPublicReaderWebUiRequiredPath;
+      requiredKeyCount = (
+        input.requiredPaths ??
+        collectStringPaths(english).filter((pathKey) => pathPredicate(pathKey))
+      ).length;
+    } catch {
+      requiredKeyCount = 0;
+    }
+    return {
+      engineReady: true,
+      dataReady: false,
+      requiredKeyCount,
+      missingKeyCount: Math.max(requiredKeyCount, 1),
+      emptyKeyCount: 0,
+      englishFallbackKeyCount: 0,
+      sampleMissingPaths:
+        requiredKeyCount > 0 ? ["(no effective WEB_UI pack)"] : ["(english foundation catalog missing)"],
+    };
+  }
+
+  return assessWebUiMessageTreeReadiness({
+    messages: effective.messages,
+    requiredPaths: input.requiredPaths,
+    flagEnglishIdenticalAsFallback: input.flagEnglishIdenticalAsFallback,
+    scope: input.scope,
+  });
 }
 
 /** Convenience: Participant WEB_UI readiness for one locale. */
