@@ -13,7 +13,7 @@ import {
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
 } from "./web-ui-draft-builder.js";
-import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
+import { loadPackagedWebUiCatalog, resolvePackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
 import { upsertWebUiMessagePack } from "./web-ui-message-pack.repository.js";
 import { validateWebUiMessageTreeAgainstEnglish } from "./web-ui-message-pack.validate.js";
 
@@ -46,13 +46,47 @@ export async function tryAdoptPackagedWebUiCatalog(input: {
     return { outcome: "absent" };
   }
 
-  const load = input.deps?.loadPackagedWebUiCatalog ?? loadPackagedWebUiCatalog;
-  const packaged = load(locale);
+  // Prefer injected loader (tests). Default path surfaces collision diagnostics.
+  if (input.deps?.loadPackagedWebUiCatalog) {
+    const packaged = input.deps.loadPackagedWebUiCatalog(locale);
+    if (packaged == null) {
+      return { outcome: "absent" };
+    }
+    return adoptValidatedPackagedCatalog({
+      locale,
+      packaged,
+      generation: input.generation,
+      includePaths: input.deps.includePaths,
+    });
+  }
+
+  const resolved = resolvePackagedWebUiCatalog(locale);
+  if (resolved.outcome === "collision") {
+    return { outcome: "rejected", reason: resolved.detail };
+  }
+  if (resolved.outcome === "absent") {
+    return { outcome: "absent" };
+  }
+  const packaged = loadPackagedWebUiCatalog(locale);
   if (packaged == null) {
     return { outcome: "absent" };
   }
+  return adoptValidatedPackagedCatalog({
+    locale,
+    packaged,
+    generation: input.generation,
+    includePaths: input.deps?.includePaths,
+  });
+}
 
-  const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(input.deps?.includePaths);
+async function adoptValidatedPackagedCatalog(input: {
+  readonly locale: string;
+  readonly packaged: WebUiMessageTree;
+  readonly generation?: number;
+  readonly includePaths?: readonly string[];
+}): Promise<AdoptPackagedWebUiCatalogResult> {
+  const packaged = input.packaged;
+  const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(input.includePaths);
   const sourceHash = hashWebUiEnglishFlatMap(flat);
 
   const validation = validateWebUiMessageTreeAgainstEnglish(packaged);
@@ -79,7 +113,7 @@ export async function tryAdoptPackagedWebUiCatalog(input: {
   }
 
   // Authoritative readiness: full Public + Participant unless test includePaths subset.
-  if (input.deps?.includePaths) {
+  if (input.includePaths) {
     const subset = assessWebUiMessageTreeReadiness({
       messages: packaged,
       requiredPaths,
@@ -111,7 +145,7 @@ export async function tryAdoptPackagedWebUiCatalog(input: {
 
   const generation = input.generation ?? 0;
   await upsertWebUiMessagePack({
-    locale,
+    locale: input.locale,
     messages: packaged,
     status: "published",
     sourceNote: `Language activation packaged catalog adoption; generation ${generation}; sourceHash=${sourceHash}`,

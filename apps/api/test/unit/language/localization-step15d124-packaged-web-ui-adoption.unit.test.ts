@@ -413,6 +413,7 @@ describe("Step 15D.12.4 packaged WEB_UI catalog adoption", () => {
     assert.ok(loadPackagedWebUiCatalog("uk"));
     assert.ok(loadPackagedWebUiCatalog("ar"));
     assert.ok(loadPackagedWebUiCatalog("zh-Hant"));
+    assert.ok(loadPackagedWebUiCatalog("zh-hant"));
     assert.equal(loadPackagedWebUiCatalog("no-such-locale-xyz"), null);
   });
 });
