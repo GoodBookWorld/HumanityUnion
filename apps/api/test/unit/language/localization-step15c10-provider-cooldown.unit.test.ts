@@ -427,9 +427,11 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
       "utf8",
     );
     assert.match(serviceSrc, /provider_cooldown/);
-    assert.match(serviceSrc, /webUiStillPreparing/);
+    assert.match(serviceSrc, /isLanguageActivationWebUiReadyForHistoricalEnqueue/);
     assert.match(serviceSrc, /scheduleWebUiActivationTickAt/);
     assert.match(serviceSrc, /preparationPhase === "provider_cooldown"/);
+    assert.doesNotMatch(serviceSrc, /webUiStillPreparing/);
+    assert.doesNotMatch(serviceSrc, /waiting_for_data does not block enqueue/);
 
     const prepSrc = readFileSync(
       path.join(

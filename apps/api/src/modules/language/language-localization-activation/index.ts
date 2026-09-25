@@ -48,6 +48,7 @@ export {
   buildWebUiDomainProgress,
   deriveActivationJobStatus,
   emptyPendingDomains,
+  isLanguageActivationWebUiReadyForHistoricalEnqueue,
 } from "./language-activation-job.domains.js";
 export {
   resetLanguageActivationJobStoreForTests,

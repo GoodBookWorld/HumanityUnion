@@ -184,7 +184,8 @@ describe("Language activation async job", () => {
     );
     assert.equal(view.seoIndexingEnabled, false);
     assert.equal(view.searchEnabled, false);
-    assert.equal(activateCalls, 1);
+    // 15D.9.1 — residual activate blocked until WEB_UI READY.
+    assert.equal(activateCalls, 0);
   });
 
   it("2. missing WEB_UI → waiting_for_data, not false READY", async () => {
@@ -244,6 +245,13 @@ describe("Language activation async job", () => {
 
   it("5–6. first activation enqueues; explicit resume reconciles again", async () => {
     const record = await createEligibleLocale("sw");
+    const english = loadBundledEnglishWebUiMessagePack();
+    await upsertWebUiMessagePack({
+      locale: "sw",
+      status: "published",
+      messages: english as never,
+      sourceNote: "test ready WEB_UI before residual enqueue",
+    });
     let residualCalls = 0;
     let plpCalls = 0;
     const ctBucket = {

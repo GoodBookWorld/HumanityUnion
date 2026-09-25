@@ -42,6 +42,7 @@ import {
   brandDomainProviderConfigFailure,
   deriveActivationJobStatus,
   emptyPendingDomains,
+  isLanguageActivationWebUiReadyForHistoricalEnqueue,
   terminologyDomainFromPreparationResult,
   terminologyDomainPreparing,
   terminologyDomainProviderConfigFailure,
@@ -805,17 +806,17 @@ export async function processLanguageActivationJob(
       options?.webUiTick === true ||
       !enqueueAlreadyDone;
 
-    // WEB_UI waiting_for_data does not block enqueue; presentation-ready still requires WEB_UI.
-    // Skip residual reconcile while WEB_UI preparation is still in progress.
-    const webUiStillPreparing =
-      domains.webUi.status === "in_progress" ||
-      domains.webUi.preparationPhase === "primary" ||
-      domains.webUi.preparationPhase === "quality" ||
-      domains.webUi.preparationPhase === "validating" ||
-      domains.webUi.preparationPhase === "publishing" ||
-      domains.webUi.preparationPhase === "provider_cooldown";
+    // Residual CT/PLP only after authoritative WEB_UI READY for the current corpus.
+    // Incomplete WEB_UI (pending / waiting_for_data / active phases / cooldown / failed /
+    // dataReady=false / stale catalog vs measured readiness) blocks enqueue.
+    const webUiReadyForHistorical =
+      isLanguageActivationWebUiReadyForHistoricalEnqueue({
+        webUi: domains.webUi,
+        publicWebUiDataReady: readiness.webUi.dataReady === true,
+        participantWebUiDataReady: readiness.participantWebUi.dataReady === true,
+      });
 
-    if (shouldReconcileResiduals && !webUiStillPreparing) {
+    if (shouldReconcileResiduals && webUiReadyForHistorical) {
       const stamp = nowIso();
       const result = await activate({
         locale: job.locale,

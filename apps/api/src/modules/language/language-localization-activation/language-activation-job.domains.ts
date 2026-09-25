@@ -284,6 +284,43 @@ export async function buildWebUiDomainProgress(
   };
 }
 
+/**
+ * Authoritative WEB_UI READY gate for residual CT / Civic Media PLP enqueue.
+ *
+ * Residual historical work may start only after the current required WEB_UI
+ * corpus is READY — not merely because preparation stopped (`pending`,
+ * `waiting_for_data`, active phases, cooldown, or failed are never READY).
+ *
+ * Uses the existing domain + readiness contract (status/phase/dataReady and
+ * measured Public + Participant catalog readiness). No parallel definition.
+ */
+export function isLanguageActivationWebUiReadyForHistoricalEnqueue(input: {
+  readonly webUi: LanguageActivationWebUiDomainProgress;
+  readonly publicWebUiDataReady: boolean;
+  readonly participantWebUiDataReady: boolean;
+}): boolean {
+  const { webUi } = input;
+  if (webUi.providerFailure) {
+    return false;
+  }
+  if (webUi.status === "failed" || webUi.preparationPhase === "failed") {
+    return false;
+  }
+  if (webUi.status !== "ready") {
+    return false;
+  }
+  if (webUi.preparationPhase != null && webUi.preparationPhase !== "ready") {
+    return false;
+  }
+  if (webUi.dataReady !== true) {
+    return false;
+  }
+  if (input.publicWebUiDataReady !== true || input.participantWebUiDataReady !== true) {
+    return false;
+  }
+  return true;
+}
+
 export function buildControlledVocabularyDomainProgress(
   readiness: LanguageLocalizationReadinessReport,
 ): LanguageActivationControlledVocabularyDomainProgress {
