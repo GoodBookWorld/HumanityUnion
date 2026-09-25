@@ -327,6 +327,13 @@ function formatOwnerPreparationProgress(view: LanguageActivationAdminView): stri
     lines.push(terminology.detail ?? "Preparing terminology…");
   } else if (terminology?.status === "failed") {
     lines.push(terminology.detail ?? "Terminology preparation failed — retry activation");
+    const codes = terminology.providerDiagnostic?.failureCodes;
+    if (codes && codes.length > 0) {
+      const diagnosticSummary = codes
+        .map((row) => `${row.code} (${row.count})`)
+        .join(", ");
+      lines.push(`Terminology provider failure: ${diagnosticSummary}`);
+    }
   } else if (terminology?.status === "ready") {
     lines.push(terminology.detail ?? "Terminology ready");
   }

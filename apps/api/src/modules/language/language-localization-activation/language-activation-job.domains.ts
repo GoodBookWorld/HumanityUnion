@@ -15,6 +15,10 @@ import type {
 
 import type { LanguageOwnerPreparationResult } from "../../language-preparation/language-owner-preparation.js";
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
+import {
+  aggregateTerminologyFailureDiagnostics,
+  terminologyProviderDiagnosticFromReason,
+} from "./terminology-activation-failure-diagnostic.js";
 
 function emptyBrandDomain(): LanguageActivationBrandDomainProgress {
   return {
@@ -39,6 +43,7 @@ function emptyTerminologyDomain(): LanguageActivationTerminologyDomainProgress {
     conceptsFailed: 0,
     providerFailure: false,
     detail: null,
+    providerDiagnostic: null,
   };
 }
 
@@ -165,7 +170,9 @@ export function terminologyDomainFromPreparationResult(
       conceptsGenerated: generated,
       conceptsFailed: failed,
       providerFailure: true,
+      // Stable operator retry copy — do not replace; diagnostics live in providerDiagnostic.
       detail: "Terminology preparation failed — retry activation",
+      providerDiagnostic: aggregateTerminologyFailureDiagnostics(result.terminology.outcomes),
     };
   }
   return {
@@ -176,6 +183,7 @@ export function terminologyDomainFromPreparationResult(
     conceptsFailed: 0,
     providerFailure: false,
     detail: "Terminology ready",
+    providerDiagnostic: null,
   };
 }
 
@@ -206,6 +214,7 @@ export function terminologyDomainProviderConfigFailure(
     conceptsFailed: 0,
     providerFailure: true,
     detail: `Terminology preparation failed — ${message}`,
+    providerDiagnostic: terminologyProviderDiagnosticFromReason(message),
   };
 }
 

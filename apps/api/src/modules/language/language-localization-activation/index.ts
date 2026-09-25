@@ -49,7 +49,16 @@ export {
   deriveActivationJobStatus,
   emptyPendingDomains,
   isLanguageActivationWebUiReadyForHistoricalEnqueue,
+  terminologyDomainFromPreparationResult,
+  terminologyDomainProviderConfigFailure,
 } from "./language-activation-job.domains.js";
+export {
+  aggregateTerminologyFailureDiagnostics,
+  classifyTerminologyActivationFailureReason,
+  formatTerminologyProviderDiagnosticSummary,
+  sanitizeTerminologyProviderDiagnostic,
+  terminologyProviderDiagnosticFromReason,
+} from "./terminology-activation-failure-diagnostic.js";
 export {
   resetLanguageActivationJobStoreForTests,
   setLanguageActivationJobForceMemoryForTests,

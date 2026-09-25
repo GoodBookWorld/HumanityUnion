@@ -198,6 +198,9 @@ export type {
   LanguageActivationJobRecord,
   LanguageActivationJobStatus,
   LanguageActivationTerminologyDomainProgress,
+  LanguageActivationTerminologyFailureCode,
+  LanguageActivationTerminologyFailureCodeCount,
+  LanguageActivationTerminologyProviderDiagnostic,
   LanguageActivationWebUiDomainProgress,
 } from "./language-activation-job.js";
 export type {
