@@ -9,6 +9,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  LANGUAGE_SELECTOR_LIST_GAP_PX,
   LANGUAGE_SELECTOR_VIEWPORT_MARGIN_PX,
   LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT,
   languageSelectorUsesOverlayPlacement,
@@ -218,5 +219,80 @@ describe("Language selector visual restoration", () => {
       placement,
       /hu-language-selector--mobile/,
     );
+    // Portaled list keeps row tokens so option height / ten-row max stay valid.
+    assert.match(
+      css,
+      /\.hu-language-selector__list\s*\{[\s\S]*?--hu-language-selector-option-block-size:\s*2\.25rem/,
+    );
+    assert.match(selector, /--hu-language-selector-visible-rows/);
+  });
+
+  it("vertical placement clears sticky chrome so the first row cannot clip", () => {
+    const placement = readWeb("features/language/place-language-selector-list.ts");
+    assert.match(placement, /clearanceTop/);
+    assert.match(placement, /resolveLanguageSelectorClearanceTop/);
+    assert.match(placement, /humanity-header|hu-pwa-app-header/);
+    assert.match(placement, /LANGUAGE_SELECTOR_OVERLAY_Z_INDEX/);
+    assert.match(placement, /scrollTop\s*=\s*0/);
+    // Trigger sits inside a taller sticky header — list must start below chrome.
+    const placed = place({
+      trigger: { left: 280, right: 360, top: 12, bottom: 44 },
+      listWidth: 220,
+      viewportWidth: 390,
+      viewportHeight: 700,
+      clearanceTop: 72,
+      horizontalAlign: "viewport-center",
+    });
+    assert.ok(placed.top >= 72 + LANGUAGE_SELECTOR_LIST_GAP_PX);
+    assert.equal(placed.opensAbove, false);
+    assert.ok(placed.top + placed.maxHeight <= 700 - MARGIN);
+    // First row fully inside the panel box (height allows at least one row).
+    assert.ok(placed.maxHeight >= ROW);
+  });
+
+  it("available height clamps so at most ten rows fit the viewport", () => {
+    const short = place({
+      rowCount: 14,
+      trigger: { left: 20, right: 140, top: 8, bottom: 40 },
+      listWidth: 200,
+      viewportWidth: 390,
+      viewportHeight: 280,
+      clearanceTop: 56,
+      horizontalAlign: "viewport-center",
+    });
+    assert.ok(short.maxHeight <= LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT * ROW + CHROME);
+    assert.ok(short.top + short.maxHeight <= 280 - MARGIN);
+    assert.ok(short.maxHeight < 14 * ROW + CHROME);
+    const roomy = place({
+      rowCount: 14,
+      trigger: { left: 20, right: 140, top: 8, bottom: 40 },
+      listWidth: 200,
+      viewportWidth: 390,
+      viewportHeight: 1200,
+      clearanceTop: 56,
+      horizontalAlign: "viewport-center",
+    });
+    assert.equal(roomy.maxHeight, LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT * ROW + CHROME);
+  });
+
+  it("long language option names stay contained by list width", () => {
+    const css = readWeb("features/language/components/language-selector.css");
+    assert.match(
+      css,
+      /\.hu-language-selector__option[\s\S]*?text-overflow:\s*ellipsis/,
+    );
+    assert.match(
+      css,
+      /\.hu-language-selector__option[\s\S]*?max-width:\s*100%/,
+    );
+    const placed = place({
+      trigger: { left: 280, right: 360, top: 8, bottom: 40 },
+      listWidth: 640,
+      viewportWidth: 360,
+      horizontalAlign: "viewport-center",
+    });
+    assert.ok(placed.width <= 360 - MARGIN * 2);
+    assert.ok(placed.left >= MARGIN);
+    assert.ok(placed.left + placed.width <= 360 - MARGIN);
   });
 });

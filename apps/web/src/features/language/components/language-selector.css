@@ -90,6 +90,9 @@
   inset-inline-start: 0;
   top: calc(100% + 0.25rem);
   box-sizing: border-box;
+  /* Fallback when the list is portaled outside `.hu-language-selector`. */
+  --hu-language-selector-visible-rows: 10;
+  --hu-language-selector-option-block-size: 2.25rem;
   min-width: max(100%, 11rem);
   max-width: calc(100vw - 1rem);
   max-height: calc(
@@ -112,6 +115,7 @@
   display: block;
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   height: var(--hu-language-selector-option-block-size);
   min-height: var(--hu-language-selector-option-block-size);
   padding-block: 0;
@@ -276,7 +280,8 @@
     max-width: calc(100vw - 16px);
     min-width: 0;
     box-sizing: border-box;
-    z-index: 80;
+    /* Above sticky header (100) — placement JS also sets this on the portal. */
+    z-index: 140;
   }
 }
 

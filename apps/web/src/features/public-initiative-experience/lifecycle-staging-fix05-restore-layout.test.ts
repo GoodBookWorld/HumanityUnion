@@ -69,10 +69,11 @@ describe("Lifecycle Staging Fix 05 — restore canonical Initiative layout", () 
     assert.match(openButton, /hu-assistant-open-button/);
     assert.match(openButton, /\["hu-assistant-open-button", className\]/);
     assert.match(openButtonCss, /\.hu-assistant-open-button\s*\{[^}]*flex-direction:\s*row/s);
-    assert.match(openButtonCss, /\.hu-assistant-open-button\s*\{[^}]*flex-wrap:\s*nowrap/s);
+    assert.match(openButtonCss, /\.hu-assistant-open-button\s*\{[^}]*flex-wrap:\s*wrap/s);
     assert.match(openButtonCss, /\.hu-assistant-open-button__icon\s*\{[^}]*width:\s*28px/s);
     assert.match(openButtonCss, /\.hu-assistant-open-button__icon\s*\{[^}]*height:\s*28px/s);
-    assert.match(openButtonCss, /\.hu-assistant-open-button__label\s*\{[^}]*white-space:\s*nowrap/s);
+    assert.match(openButtonCss, /\.hu-assistant-open-button__label\s*\{[^}]*white-space:\s*normal/s);
+    assert.match(openButtonCss, /\.hu-assistant-open-button__label\s*\{[^}]*overflow-wrap:\s*anywhere/s);
   });
 
   it("collaboration and comment deep-links still target the same shell", () => {

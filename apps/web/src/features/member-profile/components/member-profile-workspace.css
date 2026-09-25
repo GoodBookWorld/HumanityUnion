@@ -70,8 +70,16 @@
 .member-profile-workspace__checkbox {
   display: flex;
   gap: var(--hu-space-2);
-  align-items: center;
+  align-items: flex-start;
   font-size: var(--hu-text-sm);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.member-profile-workspace__checkbox > span,
+.member-profile-workspace__checkbox > label,
+.member-profile-workspace__checkbox {
+  overflow-wrap: anywhere;
 }
 
 .member-profile-workspace__field-hint {

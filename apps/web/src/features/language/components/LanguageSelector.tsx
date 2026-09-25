@@ -401,6 +401,15 @@ export function LanguageSelector({
       role="listbox"
       aria-labelledby={`${selectId}-label`}
       tabIndex={-1}
+      style={
+        {
+          // Portaled lists leave the selector root — keep row-size tokens on the
+          // list itself so max-height / option height stay correct.
+          ["--hu-language-selector-visible-rows" as string]: String(
+            LANGUAGE_SELECTOR_VISIBLE_ROW_LIMIT,
+          ),
+        } as CSSProperties
+      }
     >
       {options.map((option, index) => {
         const selected = option.locale === currentLocale;

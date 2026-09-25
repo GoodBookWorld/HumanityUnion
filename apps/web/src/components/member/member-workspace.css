@@ -99,12 +99,18 @@
   letter-spacing: var(--hu-letter-spacing-tight);
   color: var(--hu-color-text);
   margin: 0 0 var(--hu-space-1);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .member-workspace__subtitle {
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-sm);
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .member-workspace__main {

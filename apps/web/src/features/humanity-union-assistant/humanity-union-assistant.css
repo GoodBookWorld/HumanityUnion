@@ -1,5 +1,9 @@
 .hu-assistant-surface-entry {
   margin: 0.75rem 0 1rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* —— Workspace Widget —— */
@@ -437,10 +441,14 @@
 .hu-assistant-open-button {
   display: inline-flex;
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.65rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 3rem;
   border: 1px solid rgba(28, 36, 48, 0.2);
   background: #f7f4ef;
@@ -462,10 +470,12 @@
 }
 
 .hu-assistant-open-button__label {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   text-align: start;
-  white-space: nowrap;
+  /* Localized brand + CTA must wrap — nowrap forced multilingual page overflow. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-open-button:hover {

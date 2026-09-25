@@ -53,12 +53,13 @@
 .personal-statistics__label {
   margin: 0;
   max-width: 100%;
+  min-width: 0;
   font-size: clamp(0.62rem, 10cqi, 0.85rem);
   line-height: 1.25;
   font-weight: 600;
   color: var(--hu-color-text-muted);
-  /* Prefer shrinking before mid-word breaks (Pack 19C.4). */
-  overflow-wrap: normal;
+  /* Prefer shrinking/wrapping before forcing the page wider (multilingual). */
+  overflow-wrap: anywhere;
   word-break: normal;
   hyphens: none;
   text-wrap: balance;

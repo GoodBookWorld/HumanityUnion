@@ -65,4 +65,44 @@ describe("Member profile responsive overflow (15D.8A.1)", () => {
       assert.doesNotMatch(css, /\bhtml\s*,\s*body\s*\{[^}]*overflow-x:\s*hidden/s);
     }
   });
+
+  it("assistant launcher wraps multilingual labels instead of widening the page", () => {
+    const assistant = read("features/humanity-union-assistant/humanity-union-assistant.css");
+    assert.match(
+      assistant,
+      /\.hu-assistant-open-button__label[\s\S]*?white-space:\s*normal/,
+    );
+    assert.match(
+      assistant,
+      /\.hu-assistant-open-button__label[\s\S]*?overflow-wrap:\s*anywhere/,
+    );
+    assert.match(assistant, /\.hu-assistant-open-button\s*\{[\s\S]*?max-width:\s*100%/);
+    assert.match(assistant, /\.hu-assistant-surface-entry\s*\{[\s\S]*?min-width:\s*0/);
+    assert.doesNotMatch(
+      assistant,
+      /\.hu-assistant-open-button__label\s*\{[^}]*white-space:\s*nowrap/s,
+    );
+  });
+
+  it("multilingual /member shrink contract has no locale-specific width branches", () => {
+    const profile = read("features/member-profile/components/member-profile-workspace.css");
+    const member = read("components/member/member-workspace.css");
+    const assistant = read("features/humanity-union-assistant/humanity-union-assistant.css");
+    for (const css of [profile, member, assistant]) {
+      assert.doesNotMatch(css, /\[lang=["'](?:uk|ka|ar|he|zh)/);
+      assert.doesNotMatch(css, /:lang\(/);
+      assert.doesNotMatch(css, /dir=["']rtl["'][^{]*\{[^}]*width/s);
+    }
+    assert.match(member, /\.member-workspace__title[\s\S]*?overflow-wrap:\s*anywhere/);
+    assert.match(profile, /\.member-profile-workspace__checkbox[\s\S]*?min-width:\s*0/);
+  });
+
+  it("RTL member profile reuses the same physical shrink contract", () => {
+    const profile = read("features/member-profile/components/member-profile-workspace.css");
+    const section = read("components/member/profile-section.css");
+    assert.match(profile, /max-width:\s*100%/);
+    assert.match(section, /box-sizing:\s*border-box/);
+    // Logical geometry only — no physical left/right width hacks for RTL locales.
+    assert.doesNotMatch(profile, /\[dir=["']rtl["']\][^{]*\{[^}]*(?:width|margin-left|left):/s);
+  });
 });

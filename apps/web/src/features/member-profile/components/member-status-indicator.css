@@ -28,5 +28,8 @@
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: inherit;
-  white-space: nowrap;
+  min-width: 0;
+  /* Allow localized membership labels to wrap instead of widening the row. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
