@@ -1,4 +1,18 @@
+/*
+ * Step 15D.8E.1 — align `.workspace-page` with `.humanity-workspace-page`.
+ * Both classes appear on `/workspace` (`main.workspace-page.humanity-workspace-page`).
+ * Keep an identical shrink-safe contract so cascade order cannot drop max-width/min-width.
+ */
 .workspace-page {
-  width: min(var(--hu-workspace-max-width), 100%);
-  margin: 0 auto;
+  width: min(100%, var(--hu-workspace-max-width));
+  max-width: min(100%, var(--hu-workspace-max-width));
+  min-width: 0;
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap);
+  padding-inline: max(
+    var(--hu-page-padding-inline),
+    env(safe-area-inset-left, 0px),
+    env(safe-area-inset-right, 0px)
+  );
+  box-sizing: border-box;
 }

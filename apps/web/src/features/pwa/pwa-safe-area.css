@@ -16,7 +16,48 @@
   );
 }
 
-/* Standalone shell: reserve space for App Header + Bottom Nav */
+/*
+ * Step 15D.8E.1 — critical standalone geometry must apply on the FIRST paint.
+ * Prefer CSS display-mode (no React useEffect). Keep `.humanity-app--pwa-standalone`
+ * for legacy iOS `navigator.standalone` after PwaShell hydrates.
+ * Matches presentation-mode.ts installed queries (not fullscreen).
+ */
+@media (display-mode: standalone),
+  (display-mode: minimal-ui),
+  (display-mode: window-controls-overlay) {
+  .humanity-layout__main {
+    padding-top: var(--hu-pwa-app-header-height);
+    padding-bottom: calc(var(--hu-pwa-bottom-nav-height) + var(--hu-space-3));
+  }
+
+  .humanity-header,
+  .humanity-footer {
+    display: none;
+  }
+
+  /* Drawer owns Workspace nav — single shrink-safe column before hydration. */
+  .member-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .member-workspace__nav {
+    display: none;
+  }
+
+  .member-workspace__content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .member-workspace__header--with-assistant {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hu-assistant-fab {
+    display: none !important;
+  }
+}
+
+/* Standalone shell: reserve space for App Header + Bottom Nav (body class / iOS) */
 .humanity-app--pwa-standalone .humanity-layout__main {
   padding-top: var(--hu-pwa-app-header-height);
   padding-bottom: calc(var(--hu-pwa-bottom-nav-height) + var(--hu-space-3));
@@ -34,6 +75,14 @@
 
 .humanity-app--pwa-standalone .member-workspace__nav {
   display: none;
+}
+
+.humanity-app--pwa-standalone .member-workspace__content-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.humanity-app--pwa-standalone .member-workspace__header--with-assistant {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* Hide browser-mode Assistant FAB when bottom nav owns Assistant */
@@ -57,6 +106,20 @@
 /* Assistant near-fullscreen in standalone mobile */
 @media (max-width: 768px) {
   .humanity-app--pwa-standalone .hu-assistant-modal {
+    inset: var(--hu-safe-area-top) var(--hu-safe-area-right) var(--hu-safe-area-bottom)
+      var(--hu-safe-area-left);
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 768px) and (display-mode: standalone),
+  (max-width: 768px) and (display-mode: minimal-ui),
+  (max-width: 768px) and (display-mode: window-controls-overlay) {
+  .hu-assistant-modal {
     inset: var(--hu-safe-area-top) var(--hu-safe-area-right) var(--hu-safe-area-bottom)
       var(--hu-safe-area-left);
     width: auto;

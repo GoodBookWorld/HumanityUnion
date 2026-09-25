@@ -34,6 +34,8 @@ describe("Member profile responsive overflow (15D.8A.1)", () => {
 
   it("workspace page + layout main are shrink-safe", () => {
     const layout = read("design-system/layout.css");
+    assert.match(layout, /\.humanity-layout\s*\{[\s\S]*?min-width:\s*0/);
+    assert.match(layout, /\.humanity-layout\s*\{[\s\S]*?max-width:\s*100%/);
     assert.match(layout, /\.humanity-layout__main\s*\{[\s\S]*?min-width:\s*0/);
     assert.match(layout, /\.humanity-layout__main\s*\{[\s\S]*?max-width:\s*100%/);
     assert.match(

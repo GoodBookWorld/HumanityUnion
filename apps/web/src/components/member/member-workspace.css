@@ -14,8 +14,13 @@
   --hu-workspace-highlight: #df9815;
 
   display: grid;
-  /* Launch Readiness Pack 03 — fill the outer `.humanity-workspace-page` shell. */
-  grid-template-columns: var(--hu-sidebar-width) minmax(0, 1fr);
+  /*
+   * Launch Readiness Pack 03 — fill the outer `.humanity-workspace-page` shell.
+   * Step 15D.8E.1 — sidebar track is minmax(0, token) so a fixed rem width cannot
+   * establish a document min-width larger than the viewport (desktop still caps
+   * at --hu-sidebar-width when space allows).
+   */
+  grid-template-columns: minmax(0, var(--hu-sidebar-width)) minmax(0, 1fr);
   gap: var(--hu-content-gap);
   width: 100%;
   max-width: 100%;
@@ -74,10 +79,12 @@
 /* Pack 17B — Title | Assistant on one desktop row when compact placement is used */
 .member-workspace__header--with-assistant {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem);
+  /* Step 15D.8E.1 — no hard 14rem floor that can widen the document. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
   gap: var(--hu-space-4) var(--hu-space-6);
   align-items: start;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -117,11 +124,18 @@
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  /* Step 15D.8E.1 — long tokens must wrap inside the shell, not widen the document. */
+  overflow-wrap: anywhere;
 }
 
 .member-workspace__content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, var(--hu-initiative-sidebar-width));
+  /*
+   * Step 15D.8E.1 — assistant rail uses minmax(0, token) instead of minmax(260px, …)
+   * so the intrinsic minimum cannot force document width past the viewport.
+   * Desktop still grows the rail up to --hu-initiative-sidebar-width when space allows.
+   */
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--hu-initiative-sidebar-width));
   gap: var(--hu-space-6);
   align-items: start;
   width: 100%;

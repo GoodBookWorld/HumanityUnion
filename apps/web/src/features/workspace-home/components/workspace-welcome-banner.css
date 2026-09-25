@@ -6,6 +6,10 @@
   background: var(--hu-color-surface);
   box-shadow: var(--hu-shadow-sm);
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .workspace-welcome-banner__accent {
@@ -24,6 +28,9 @@
   font-size: var(--hu-font-size-xl);
   font-weight: 700;
   color: var(--hu-color-text);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .workspace-welcome-banner__text {
