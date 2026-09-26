@@ -49,7 +49,7 @@ describe("WEB_UI remote message packs", () => {
     assert.ok(report.rejectedUnknownPaths.some((p) => p.startsWith("notARealNamespace")));
   });
 
-  it("bundled locale still resolves from filesystem (uk)", async () => {
+  it("bundled locale resolves from filesystem when no published pack (uk)", async () => {
     const effective = await resolveEffectiveWebUiMessagePack("uk");
     assert.ok(effective);
     assert.equal(effective?.source, "bundled");
@@ -305,7 +305,7 @@ describe("WEB_UI remote message packs", () => {
     assert.equal(complete.missingKeyCount, 0);
   });
 
-  it("draft packs are not runtime packs, and bundled locales still win over remote", async () => {
+  it("draft packs are not runtime packs; published Mongo wins over bundled", async () => {
     const prepared = selectEnglishWebUiMessages("public");
     await upsertWebUiMessagePack({
       locale: "eo",
@@ -320,15 +320,29 @@ describe("WEB_UI remote message packs", () => {
     await upsertWebUiMessagePack({
       locale: "uk",
       status: "published",
-      messages: english as never,
+      messages: {
+        ...(english as Record<string, unknown>),
+        common: {
+          ...((english as { common?: Record<string, unknown> }).common ?? {}),
+          language: "PUBLISHED_WINS",
+        },
+      } as never,
     });
     const uk = await resolveEffectiveWebUiMessagePack("uk");
-    assert.equal(uk?.source, "bundled");
+    assert.equal(uk?.source, "remote");
+    assert.equal(
+      (uk?.messages as { common?: { language?: string } }).common?.language,
+      "PUBLISHED_WINS",
+    );
     for (const locale of ["uk", "ar", "zh-Hant"] as const) {
       const bundled = loadBundledWebUiMessagePackFromFs(locale);
       assert.ok(bundled);
       const report = validateWebUiMessageTreeAgainstEnglish(bundled as never);
       assert.equal(report.rejectedUnknownPaths.length, 0);
+    }
+    // Without a published pack, bundled locales remain bootstrap authority.
+    resetWebUiMessagePackStoreForTests();
+    for (const locale of ["uk", "ar", "zh-Hant"] as const) {
       const effective = await resolveEffectiveWebUiMessagePack(locale);
       assert.equal(effective?.source, "bundled");
     }

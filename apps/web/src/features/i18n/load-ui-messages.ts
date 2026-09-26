@@ -1,15 +1,18 @@
 /**
  * Production Completion Pack 02D Task 01 — UI message catalog loading.
  *
- * Always deep-merges onto bundled English so partial verification locales
- * (uk / zh-Hant / ar) and remote Admin packs fall back safely.
+ * Always deep-merges onto bundled English so remote Admin packs and
+ * pre-activation bundled overlays fall back safely.
  * Locale tags are exact (`zh-Hant`).
  *
- * Resolution order for overlay:
- * 1. bundled pack (when present)
- * 2. published remote/Admin pack
- * 3. optional configured fallbackLocale pack (bundled then remote)
+ * Resolution order for overlay (Gate D — Mongo published first):
+ * 1. published remote/Admin Mongo pack
+ * 2. bundled localized pack (pre-activation / bootstrap only)
+ * 3. optional configured fallbackLocale pack (same remote→bundled order)
  * 4. English-only (merge base)
+ *
+ * Once a published remote pack is selected, missing keys fall back to
+ * English via deep-merge — not to a second bundled localized generation.
  */
 
 import type { AbstractIntlMessages } from "next-intl";
@@ -85,15 +88,18 @@ export async function loadBundledUiMessagePack(
   };
 }
 
-/** Bundled-first source — ships with the Web app. */
+/** Bundled bootstrap source — ships with the Web app (pre-activation fallback). */
 export const bundledUiMessagePackSource: UiMessagePackSource = {
   load: loadBundledUiMessagePack,
 };
 
-/** Default sources: bundled then remote/Admin (no shipped-locale remote allowlist). */
+/**
+ * Default sources: published remote/Admin Mongo first, then bundled bootstrap.
+ * No shipped-locale remote allowlist — arbitrary Registry locales use the same order.
+ */
 export const defaultUiMessagePackSources: readonly UiMessagePackSource[] = [
-  bundledUiMessagePackSource,
   remoteUiMessagePackSource,
+  bundledUiMessagePackSource,
 ];
 
 /**

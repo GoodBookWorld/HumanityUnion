@@ -1,6 +1,6 @@
 /**
  * Closure 07 / Step 15D.2 — WEB_UI catalog readiness for one Registry locale (API-side).
- * Uses the same effective pack source as runtime (bundled FS → published remote).
+ * Uses the same effective pack source as runtime (published Mongo → bundled FS).
  * Registry/fixture-driven locales — no hardcoded production allowlist.
  */
 
