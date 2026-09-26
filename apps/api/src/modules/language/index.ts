@@ -139,7 +139,10 @@ export { notifyPublicPresentationChanged } from "./public-presentation-changed.j
 export {
   LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS,
   LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS,
+  LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS,
+  LOCALIZATION_RECONCILIATION_NO_PROGRESS_MAX_DELAY_MS,
   assessLocalizationReconciliationEligibility,
+  classifyLocalizationReconciliationProgress,
   peekLocalizationReconciliationDriverStateForTests,
   resetLocalizationReconciliationDriverForTests,
   resumeLocalizationReconciliationOnBoot,
@@ -150,6 +153,7 @@ export {
   wakeLocalizationReconciliationAfterActivation,
 } from "./localization-reconciliation-driver.js";
 export type {
+  LocalizationReconciliationContinuationKind,
   LocalizationReconciliationEligibility,
   LocalizationReconciliationPassResult,
   LocalizationReconciliationWakeReason,

@@ -479,15 +479,18 @@ describe("STEP 15D.14.C.2 durable reconciliation driver", () => {
       },
       enqueuePlp: async () => undefined,
       continuationDelayMs: 60_000,
+      noProgressBaseDelayMs: 5_000,
+      noProgressMaxDelayMs: 20_000,
     });
 
     const pass = await runLocalizationReconciliationPass("zh-Hant");
     assert.equal(pass.ran, true);
     assert.equal(pass.continuationScheduled, true);
-    assert.equal(pass.reason, "cooldown_deferred");
+    assert.equal(pass.usefulProgress, false);
+    assert.equal(pass.continuationKind, "provider_pressure_backoff");
+    assert.ok(pass.continuationDelayMs >= 5_000);
     assert.equal(residualCalls, 1);
 
-    // Driver wake path: one pass, then delayed cooldown continuation (not immediate).
     scheduleLocalizationReconciliation({ locale: "zh-Hant", reason: "test" });
     await flushMicrotasks();
     assert.equal(residualCalls, 2);
@@ -497,7 +500,6 @@ describe("STEP 15D.14.C.2 durable reconciliation driver", () => {
       ),
       true,
     );
-    // No third immediate pass — delayed only.
     await flushMicrotasks(8);
     assert.equal(residualCalls, 2);
   });
