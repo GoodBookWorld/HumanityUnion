@@ -12,6 +12,7 @@ import {
   resolveLocaleFailureFromMetadata,
   type ContentTranslationSafeFailureMetadata,
 } from "./content-translation-failure-metadata.js";
+import { classifyContentTranslationValidity } from "./content-translation-validity.js";
 
 export type ResidualResolvedTranslationState =
   | "CURRENT"
@@ -19,6 +20,8 @@ export type ResidualResolvedTranslationState =
   | "TERMINAL_FAILED"
   | "MISSING"
   | "STALE"
+  /** Gate B — identity-current but not presentation-eligible (deterministic placeholder). */
+  | "INVALID"
   | "UNKNOWN";
 
 export type ContentTranslationWarmOutboxDisposition =
@@ -186,23 +189,66 @@ export function resolveAttemptFailureFields(
 
 /**
  * Canonical translation-state precedence for live sourceVersion:
- * A. CURRENT translation row => CURRENT (regardless of historical failures)
+ * A. Identity-current + presentation-eligible => CURRENT
+ * A′. Identity-current + placeholder/invalid provenance => INVALID (Gate B)
  * B. active current-version attempt => ACTIVE
  * C. latest terminal attempt => TERMINAL_FAILED
  * D. no translation / no attempt => MISSING
  * E. non-current translation row => STALE
+ *
+ * freshness=current alone is not presentation eligibility.
  */
 export function resolveCanonicalResidualTranslationState(input: {
   readonly translationRow: {
     readonly freshness?: string;
     readonly stale?: boolean;
     readonly sourceVersion?: string;
+    readonly translationProvider?: string;
+    readonly translationKind?: string;
+    readonly translatedContent?: unknown;
+    readonly sourceLanguage?: string;
+    readonly targetLanguage?: string;
   } | null;
   readonly liveSourceVersion: string | null;
   readonly outboxDisposition: ContentTranslationWarmOutboxDisposition;
 }): ResidualResolvedTranslationState {
   const row = input.translationRow;
   if (row && row.freshness === "current" && row.stale !== true) {
+    // Prefer full classifier when provenance fields are present; otherwise
+    // preserve legacy CURRENT for callers that only pass freshness/stale.
+    if (
+      row.translationProvider != null ||
+      row.translationKind != null ||
+      row.translatedContent != null
+    ) {
+      const validity = classifyContentTranslationValidity({
+        translation: {
+          translationId: "residual-classify",
+          sourceKind: "initiative",
+          sourceRecordId: "residual-classify",
+          sourceVersion: row.sourceVersion ?? input.liveSourceVersion ?? "",
+          sourceLanguage: (row.sourceLanguage ?? "en") as LanguageCode,
+          targetLanguage: (row.targetLanguage ?? "uk") as LanguageCode,
+          translatedContent:
+            (row.translatedContent as Record<string, unknown> | string) ?? {},
+          translationProvider: (row.translationProvider ?? "unknown") as never,
+          translationKind: (row.translationKind ?? "machine") as never,
+          createdAt: "",
+          stale: false,
+          freshness: "current",
+        },
+        liveSourceVersion: input.liveSourceVersion,
+      });
+      if (validity.reconciliationState === "INVALID") {
+        return "INVALID";
+      }
+      if (validity.presentationEligible) {
+        return "CURRENT";
+      }
+      if (validity.reconciliationState === "STALE") {
+        return "STALE";
+      }
+    }
     return "CURRENT";
   }
   if (row && (row.stale === true || row.freshness === "stale")) {

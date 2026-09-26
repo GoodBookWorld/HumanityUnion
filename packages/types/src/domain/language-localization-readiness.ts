@@ -126,6 +126,11 @@ export type LanguageLocalizationCountBucket = {
   readonly current: number;
   readonly missing: number;
   readonly stale: number;
+  /**
+   * Gate B — identity-current but not presentation-eligible (e.g. deterministic
+   * placeholder). Counts as reconciliation work, never as localized CURRENT.
+   */
+  readonly invalid: number;
   readonly failed: number;
   readonly pending: number;
   readonly workItemsRequired: number;
@@ -197,6 +202,8 @@ export type PwaCivicCoverageScalars = {
   readonly current: number;
   readonly missing: number;
   readonly stale: number;
+  /** Gate B — identity-current placeholders; reconciliation work, not coverage. */
+  readonly invalid?: number;
   readonly failed: number;
   readonly pending: number;
   readonly workItemsRequired: number;
@@ -301,6 +308,7 @@ export function emptyLanguageLocalizationCountBucket(): LanguageLocalizationCoun
     current: 0,
     missing: 0,
     stale: 0,
+    invalid: 0,
     failed: 0,
     pending: 0,
     workItemsRequired: 0,
@@ -342,8 +350,10 @@ export function deriveLanguageLocalizationReadinessState(input: {
   const incomplete =
     input.ct.missing +
     input.ct.stale +
+    input.ct.invalid +
     input.plpMedia.missing +
-    input.plpMedia.stale;
+    input.plpMedia.stale +
+    input.plpMedia.invalid;
 
   if (pending > 0 && work > 0) {
     return "BACKFILL_IN_PROGRESS";
@@ -390,7 +400,8 @@ export function derivePwaCivicReadinessState(input: {
   }
 
   const { coverage } = input;
-  const incomplete = coverage.missing + coverage.stale;
+  const incomplete =
+    coverage.missing + coverage.stale + (coverage.invalid ?? 0);
   const pending = coverage.pending;
   const failed = coverage.failed;
   const current = coverage.current;

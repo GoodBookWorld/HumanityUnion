@@ -77,6 +77,18 @@ export {
 } from "./resolve-translated-display.js";
 export type { ResolveTranslatedDisplayInput } from "./resolve-translated-display.js";
 export {
+  classifyContentTranslationValidity,
+  hasDeterministicPlaceholderPayloadPattern,
+  hasRealLocalizationProvenance,
+  isDeterministicPlaceholderProvenance,
+  isKnownPlaceholderTranslation,
+  isPresentationEligibleTranslation,
+} from "./content-translation-validity.js";
+export type {
+  ContentTranslationReconciliationState,
+  ContentTranslationValidityClassification,
+} from "./content-translation-validity.js";
+export {
   applyPublicPresentationTranslations,
   collectAutoTranslatableNodes,
   ensureLocalizedPublicPresentation,

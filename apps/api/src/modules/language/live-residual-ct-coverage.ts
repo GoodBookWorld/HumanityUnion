@@ -34,6 +34,7 @@ type MutableBucket = {
   current: number;
   missing: number;
   stale: number;
+  invalid: number;
   failed: number;
   pending: number;
   workItemsRequired: number;
@@ -44,6 +45,7 @@ function emptyMutable(): MutableBucket {
     current: 0,
     missing: 0,
     stale: 0,
+    invalid: 0,
     failed: 0,
     pending: 0,
     workItemsRequired: 0,
@@ -68,6 +70,10 @@ export function applyLiveResidualBucket(
       return;
     case "RETRY_READY_STALE":
       bucket.stale += 1;
+      bucket.workItemsRequired += 1;
+      return;
+    case "RETRY_READY_INVALID":
+      bucket.invalid += 1;
       bucket.workItemsRequired += 1;
       return;
     case "BLOCKED_FAILED_ATTEMPT":
@@ -150,6 +156,7 @@ export async function measureLiveActivationCtCoverage(input: {
       classification = classifyLiveResidualIdentity({
         liveCurrent: preflight.readyState === "CURRENT",
         liveStale: preflight.liveTranslationStale === true,
+        liveInvalid: preflight.liveTranslationInvalid === true,
         preflightReady: preflight.ready,
         readyState: preflight.readyState,
         terminalFailureForCurrentVersion: preflight.terminalFailureForCurrentVersion,
@@ -169,6 +176,7 @@ export async function measureLiveActivationCtCoverage(input: {
     ct.current += row.counts.current;
     ct.missing += row.counts.missing;
     ct.stale += row.counts.stale;
+    ct.invalid += row.counts.invalid;
     ct.failed += row.counts.failed;
     ct.pending += row.counts.pending;
     ct.workItemsRequired += row.counts.workItemsRequired;

@@ -37,6 +37,7 @@ import {
   fieldsAsPublicPresentation,
   type PublicLocalizationWorkItem,
 } from "./public-localization-corpus.js";
+import { classifyContentTranslationValidity } from "./content-translation-validity.js";
 
 export type PublicLocalizationRetryPreflight = {
   readonly sourceResolvable: boolean;
@@ -52,11 +53,15 @@ export type PublicLocalizationRetryPreflight = {
     | "MISSING_READY_FOR_WARM"
     | "BLOCKED"
     | "CURRENT"
+    /** Gate B — identity-current deterministic placeholder; not presentation-eligible. */
+    | "INVALID_PLACEHOLDER"
     | "ACTIVE_WORK"
     | "NOT_APPLICABLE";
   readonly blockReason: string | null;
   /** Exact live sourceVersion row is stale. Historical versions are ignored. */
   readonly liveTranslationStale?: boolean;
+  /** Gate B — identity-current row exists but is not presentation-eligible. */
+  readonly liveTranslationInvalid?: boolean;
   /** Proven attempt sourceVersion, or null when the failure cannot be attributed. */
   readonly attemptSourceVersion?: string | null;
 };
@@ -180,6 +185,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
 
   let currentTranslationAbsent = true;
   let liveTranslationStale = false;
+  let liveTranslationInvalid = false;
   if (liveSourceVersion && liveSourceVersion !== "unloaded") {
     const row = await findContentTranslation({
       sourceKind: item.sourceKind,
@@ -188,7 +194,20 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       targetLanguage: item.targetLanguage,
     });
     if (row && row.freshness === "current" && row.stale !== true) {
-      currentTranslationAbsent = false;
+      const validity = classifyContentTranslationValidity({
+        translation: row,
+        liveSourceVersion,
+      });
+      if (validity.presentationEligible) {
+        currentTranslationAbsent = false;
+      } else if (validity.reconciliationState === "INVALID") {
+        // Gate B — do not treat placeholder as localized CURRENT; do not block
+        // future real-provider reconciliation (Gate C enqueues).
+        liveTranslationInvalid = true;
+        currentTranslationAbsent = true;
+      } else {
+        currentTranslationAbsent = false;
+      }
     } else if (row && (row.stale === true || row.freshness === "stale")) {
       liveTranslationStale = true;
     }
@@ -219,7 +238,14 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   let readyState: PublicLocalizationRetryPreflight["readyState"] = "BLOCKED";
   let blockReason: string | null = null;
 
-  if (!currentTranslationAbsent) {
+  if (liveTranslationInvalid) {
+    // Gate B — classification only; Gate C reconciles. Do not set ready=true
+    // so existing residual retry selection will not enqueue here.
+    readyState = "INVALID_PLACEHOLDER";
+    ready = false;
+    blockReason =
+      "Identity-current translation is not presentation-eligible (deterministic placeholder).";
+  } else if (!currentTranslationAbsent) {
     readyState = "CURRENT";
     blockReason = "CURRENT translation already exists for live sourceVersion.";
   } else if (!activeWorkAbsent) {
@@ -298,6 +324,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     readyState,
     blockReason,
     liveTranslationStale,
+    liveTranslationInvalid,
     attemptSourceVersion,
   };
 }

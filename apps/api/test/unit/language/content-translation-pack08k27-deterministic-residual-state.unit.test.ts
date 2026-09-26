@@ -580,9 +580,11 @@ describe("Pack 08K.2.7 — deterministic residual state resolution", () => {
       sourceRecordId: initiative.initiativeId,
       targetLocale: "uk",
     });
-    assert.equal(snapshot.resolvedTranslationState, "CURRENT");
-    // Snapshot still reports selected attempt for diagnostics, but state is CURRENT.
+    // Gate B — identity-current deterministic placeholder is INVALID, not CURRENT.
+    // Historical FAILED attempt does not erase the row; presentation eligibility fails.
+    assert.equal(snapshot.resolvedTranslationState, "INVALID");
     assert.equal(snapshot.translationRowExists, true);
+    assert.equal(snapshot.translationRowStatus, "invalid");
   });
 
   it("list attempts remain bounded", async () => {

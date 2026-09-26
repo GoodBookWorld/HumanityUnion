@@ -22,6 +22,8 @@ export type LocalizationIntegrityArtifactState =
   | "CURRENT"
   | "MISSING"
   | "STALE"
+  /** Gate B — identity-current but not presentation-eligible (e.g. deterministic placeholder). */
+  | "INVALID"
   | "FAILED"
   | "PENDING"
   | "PROTECTED"

@@ -173,6 +173,7 @@ export async function evaluateLanguageLocalizationReadiness(
               current: ct.current + plpMedia.current,
               missing: ct.missing + plpMedia.missing,
               stale: ct.stale + plpMedia.stale,
+              invalid: ct.invalid + plpMedia.invalid,
               failed: ct.failed + plpMedia.failed,
               pending: ct.pending + plpMedia.pending,
               workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,

@@ -8,6 +8,8 @@ export type LiveResidualIdentityBucket =
   | "CURRENT"
   | "RETRY_READY_MISSING"
   | "RETRY_READY_STALE"
+  /** Gate B — identity-current placeholder; reconciliation work, not coverage. */
+  | "RETRY_READY_INVALID"
   | "BLOCKED_FAILED_ATTEMPT"
   | "ACTIVE_WORK"
   | "SOURCE_OR_PREFLIGHT_BLOCKED";
@@ -15,10 +17,14 @@ export type LiveResidualIdentityBucket =
 export function classifyLiveResidualIdentity(input: {
   readonly liveCurrent: boolean;
   readonly liveStale: boolean;
+  readonly liveInvalid?: boolean;
   readonly preflightReady: boolean;
   readonly readyState: string;
   readonly terminalFailureForCurrentVersion: boolean;
 }): LiveResidualIdentityBucket {
+  if (input.liveInvalid || input.readyState === "INVALID_PLACEHOLDER") {
+    return "RETRY_READY_INVALID";
+  }
   if (input.liveCurrent || input.readyState === "CURRENT") {
     return "CURRENT";
   }

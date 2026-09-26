@@ -157,7 +157,27 @@ export function buildPwaCivicCtStatusCountsPipeline(
           $sum: {
             $cond: [
               {
-                $and: [{ $eq: ["$freshness", "current"] }, { $ne: ["$stale", true] }],
+                $and: [
+                  { $eq: ["$freshness", "current"] },
+                  { $ne: ["$stale", true] },
+                  // Gate B — deterministic placeholders are not localized CURRENT.
+                  { $ne: [{ $toLower: { $ifNull: ["$translationProvider", ""] } }, "deterministic"] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        invalid: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$freshness", "current"] },
+                  { $ne: ["$stale", true] },
+                  { $eq: [{ $toLower: { $ifNull: ["$translationProvider", ""] } }, "deterministic"] },
+                ],
               },
               1,
               0,
@@ -197,6 +217,7 @@ export function buildPwaCivicCtStatusCountsPipeline(
         targetLanguage: "$_id.targetLanguage",
         sourceKind: "$_id.sourceKind",
         current: 1,
+        invalid: 1,
         stale: 1,
       },
     },
@@ -379,6 +400,7 @@ function sumBuckets(
   let current = 0;
   let missing = 0;
   let stale = 0;
+  let invalid = 0;
   let failed = 0;
   let pending = 0;
   let workItemsRequired = 0;
@@ -386,11 +408,12 @@ function sumBuckets(
     current += row.current;
     missing += row.missing;
     stale += row.stale;
+    invalid += row.invalid;
     failed += row.failed;
     pending += row.pending;
     workItemsRequired += row.workItemsRequired;
   }
-  return { current, missing, stale, failed, pending, workItemsRequired };
+  return { current, missing, stale, invalid, failed, pending, workItemsRequired };
 }
 
 function unmeasuredReport(locale: string, reason: string): BoundedPwaCivicCoverageReport {
@@ -518,6 +541,7 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
     current: ct.current + plpMedia.current,
     missing: ct.missing + plpMedia.missing,
     stale: ct.stale + plpMedia.stale,
+    invalid: ct.invalid + plpMedia.invalid,
     failed: ct.failed + plpMedia.failed,
     pending: ct.pending + plpMedia.pending,
     workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,

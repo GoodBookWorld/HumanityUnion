@@ -26,6 +26,7 @@ import {
   selectLatestLocaleRelevantWarmAttempt,
   type ResidualResolvedTranslationState,
 } from "./content-translation-residual-state-core.js";
+import { classifyContentTranslationValidity } from "./content-translation-validity.js";
 
 export type { ResidualResolvedTranslationState } from "./content-translation-residual-state-core.js";
 export {
@@ -41,7 +42,7 @@ export type ResidualStateSnapshot = {
   readonly sourceVersion: string | null;
   readonly sourceFingerprint: string | null;
   readonly translationRowExists: boolean;
-  readonly translationRowStatus: "current" | "stale" | "absent" | "other";
+  readonly translationRowStatus: "current" | "stale" | "absent" | "other" | "invalid";
   readonly translationVersionMatch: boolean | null;
   readonly translationUpdatedAt: string | null;
   readonly activeAttemptExists: boolean;
@@ -123,7 +124,12 @@ export async function resolveExplicitResidualState(input: {
   let translationRowStatus: ResidualStateSnapshot["translationRowStatus"] = "absent";
   if (translationRow) {
     if (translationRow.freshness === "current" && translationRow.stale !== true) {
-      translationRowStatus = "current";
+      const validity = classifyContentTranslationValidity({
+        translation: translationRow,
+        liveSourceVersion: sourceVersion,
+      });
+      translationRowStatus =
+        validity.reconciliationState === "INVALID" ? "invalid" : "current";
     } else if (translationRow.stale === true || translationRow.freshness === "stale") {
       translationRowStatus = "stale";
     } else {

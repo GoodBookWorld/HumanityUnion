@@ -28,6 +28,8 @@ import {
   type TranslatedContentRecord,
 } from "@hu/types";
 
+import { classifyContentTranslationValidity } from "./content-translation-validity.js";
+
 import {
   CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
   discoverStagingInitiativePathWarmSources,
@@ -52,6 +54,8 @@ export type PublicLocalizationTargetTranslationState =
   | "MISSING"
   | "MISSING_AFTER_DISPATCH"
   | "STALE"
+  /** Gate B — identity-current deterministic placeholder. */
+  | "INVALID"
   | "FAILED"
   | "QUEUED"
   | "PROCESSING"
@@ -268,6 +272,29 @@ export function planPresentationLocaleCoverage(input: {
   }
 
   if (current) {
+    const validity = classifyContentTranslationValidity({
+      translation: current,
+      liveSourceVersion: input.sourceVersion,
+    });
+    if (validity.reconciliationState === "INVALID") {
+      return {
+        localizedNodes: 0,
+        fallbackNodes: autoNodes.length,
+        protectedNodes,
+        state: "INVALID",
+        workItem: {
+          sourceKind: input.sourceKind,
+          sourceRecordId: input.sourceRecordId,
+          sourceVersion: input.sourceVersion,
+          targetLanguage: input.targetLanguage,
+          state: "INVALID",
+          autoNodeCount: autoNodes.length,
+          missingOrStaleNodeCount: autoNodes.length,
+          fallbackPaths: autoNodes.map((node) => node.path),
+        },
+        fallbackPaths: autoNodes.map((node) => node.path),
+      };
+    }
     const translatedFields = translatedFieldsFromRecord(current.translatedContent);
     const counted = countLocalizedAutoNodes(autoNodes, translatedFields);
     if (counted.fallback === 0) {

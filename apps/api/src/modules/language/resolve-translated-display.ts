@@ -10,6 +10,8 @@ import {
   normalizeLanguageRegistryLocaleKey,
 } from "@hu/types";
 
+import { isPresentationEligibleTranslation } from "./content-translation-validity.js";
+
 /**
  * Preserve Registry locale structure (`zh-Hant`). Do not use
  * `normalizeLanguageCode` here — it collapses `zh-Hant` → `zh` and breaks
@@ -104,19 +106,18 @@ export function resolveTranslatedDisplay(
   const originalContent = input.originalContent ?? "";
   const translations = input.translations ?? [];
 
+  /** Gate B — preferred_translation requires presentation eligibility, not mere freshness. */
   const preferredCurrent = translations.find(
     (item) =>
       localesEqual(item.targetLanguage, preferred) &&
-      !item.stale &&
-      item.freshness === "current",
+      isPresentationEligibleTranslation(item),
   );
 
   const otherApproved =
     input.allowOtherApprovedTranslation
       ? translations.find(
           (item) =>
-            !item.stale &&
-            item.freshness === "current" &&
+            isPresentationEligibleTranslation(item) &&
             (item.translationKind === "human" || item.translationKind === "author-approved") &&
             !localesEqual(item.targetLanguage, originalLanguage),
         )
