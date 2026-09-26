@@ -114,16 +114,26 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
 ] as const;
 
 /**
- * STEP 15D.14.B.2 — PLP-owned public Participant presentation (biography /
- * public free-text skills). Distinct from Media PLP; readiness data may
- * project this slice without Admin UI redesign (Gate F).
+ * STEP 15D.14.B.2.1 — Participant-authored public profile prose.
+ * Biography / free-text skills are SOURCE_ORIGINAL — not a translation owner.
+ * Listed for ownership truthfulness; never counted as localization work.
  */
-export const LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES = [
+export const LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES = [
   "participant_public",
 ] as const;
 
+export type LanguageActivationSourceOriginalParticipantEntityType =
+  (typeof LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES)[number];
+
+/**
+ * @deprecated B.2.1 — translation obligation retired; use
+ * LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES.
+ */
+export const LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES =
+  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES;
+
 export type LanguageActivationPlpOwnedParticipantEntityType =
-  (typeof LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES)[number];
+  LanguageActivationSourceOriginalParticipantEntityType;
 
 export type LanguageActivationPlpOwnedMediaEntityType =
   (typeof LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES)[number];
@@ -269,9 +279,8 @@ export type LanguageLocalizationReadinessReport = {
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
   /**
-   * STEP 15D.14.B.2 — participant_public PLP completeness (biography / public
-   * skills). Data for Gate F; does not alone flip Closure 07 READY.
-   * Optional on legacy fixtures; evaluator always populates.
+   * STEP 15D.14.B.2.1 — participant_public is SOURCE_ORIGINAL for biography /
+   * free-text skills. Optional legacy field; never localization work.
    */
   readonly plpParticipant?: LanguageLocalizationCountBucket;
   readonly kindRows: readonly LanguageLocalizationKindStatusRow[];

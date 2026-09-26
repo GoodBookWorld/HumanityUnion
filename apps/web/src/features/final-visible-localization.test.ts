@@ -38,7 +38,7 @@ describe("Final visible localization fix", () => {
     assert.match(widget, /useLocalizedBrand/);
   });
 
-  it("Biography/Skills public presentation reconnects participant_public PLP", () => {
+  it("Biography/Skills public presentation is SOURCE_ORIGINAL (not PLP MACHINE)", () => {
     const service = readApi("modules/member-profile/member-profile.service.ts");
     const apply = readApi(
       "modules/language/published-localized-presentation/universal/adapters/apply-participant-public-plp.ts",
@@ -51,13 +51,14 @@ describe("Final visible localization fix", () => {
     );
     const preview = readWeb("features/member-profile/components/OwnerProfilePreview.tsx");
 
-    assert.match(adapter, /skills:\s*"MACHINE_CONTENT"/);
+    assert.match(adapter, /skills:\s*"SOURCE_ORIGINAL"/);
+    assert.match(adapter, /biography:\s*"SOURCE_ORIGINAL"/);
     assert.match(adapter, /findMemberProfileByProfileId/);
-    assert.match(apply, /resolvePublishedPresentation/);
-    assert.match(apply, /PUBLISHED_LOCALIZED/);
+    assert.match(apply, /return input\.projection/);
+    assert.doesNotMatch(apply, /PUBLISHED_LOCALIZED/);
     assert.match(service, /applyParticipantPublicPlpToProjection/);
     assert.match(service, /enqueueParticipantPublicPlpBuilds/);
-    assert.match(enqueue, /resolvePlpAutoBuildLocales/);
+    assert.doesNotMatch(enqueue, /enqueuePlpBuildRequest/);
     assert.match(preview, /getMyPublicMemberProfilePreview\(locale\)/);
     assert.doesNotMatch(preview, /getPublicMemberProfileByPublicName/);
     assert.doesNotMatch(preview, /credentials:\s*"omit"/);

@@ -41,9 +41,9 @@ import { applyParticipantPublicPlpToProjection } from "../language/published-loc
 import { enqueueParticipantPublicPlpBuilds } from "../language/published-localized-presentation/universal/adapters/enqueue-participant-public-plp.js";
 
 /**
- * STEP 15D.14.B.2 — enqueue only when MACHINE_CONTENT / eligibility inputs
- * that affect participant_public canonicalVersion change. Identity-only edits
- * (displayName / organization) must not strand or rebuild PLP.
+ * STEP 15D.14.B.2 — enqueue only when MACHINE_CONTENT would change.
+ * B.2.1 — participant_public has no MACHINE_CONTENT; enqueue is a no-op.
+ * Calls remain safe so profile mutations do not need special casing.
  */
 function profileProseChanged(
   before: MemberProfile,

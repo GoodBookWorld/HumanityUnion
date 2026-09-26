@@ -16,11 +16,18 @@ export type PlpFieldOwnershipClass =
   | "BRAND"
   | "LEGAL"
   | "PROTECTED_CANONICAL"
+  /**
+   * Participant-authored (or equivalent) prose kept exactly as written.
+   * Not a machine-localization obligation; not provider input; not readiness work.
+   * STEP 15D.14.B.2.1 — biography / free-text skills.
+   */
+  | "SOURCE_ORIGINAL"
   | "UI_DICTIONARY"
   | "NON_LOCALIZABLE_DATA";
 
 export const PLP_FIELD_OWNERSHIP_CLASSES = [
   "PROTECTED_CANONICAL",
+  "SOURCE_ORIGINAL",
   "LEGAL",
   "BRAND",
   "MANUAL_OR_AUTHOR_APPROVED",
@@ -34,6 +41,7 @@ export const PLP_FIELD_OWNERSHIP_CLASSES = [
  * Whether a field may be stored as AUTO machine content inside a PLP snapshot.
  * CONTROLLED_VOCABULARY / UI_DICTIONARY / BRAND / LEGAL typically resolve from
  * their authoritative systems at read/compose time when not embedded.
+ * SOURCE_ORIGINAL never enters the machine layer.
  */
 export function plpFieldMayEnterMachineLayer(
   ownership: PlpFieldOwnershipClass,

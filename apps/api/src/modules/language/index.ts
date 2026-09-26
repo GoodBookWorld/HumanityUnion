@@ -109,6 +109,9 @@ export { classifyPublishedLocalizedPresentationValidity } from "./published-loca
 export type { PlpReconciliationState, PlpValidityClassification } from "./published-localized-presentation/plp-validity.js";
 export {
   buildParticipantPublicMachineContentFingerprintInput,
+  participantPublicHasMachineLocalizationObligation,
+  resolveParticipantPublicPresentationSkills,
+  PARTICIPANT_PUBLIC_SOURCE_ORIGINAL_VERSION,
 } from "./published-localized-presentation/universal/adapters/participant-public-adapter.js";
 export {
   applyPublicPresentationTranslations,

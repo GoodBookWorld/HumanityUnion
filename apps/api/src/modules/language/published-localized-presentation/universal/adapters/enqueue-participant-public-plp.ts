@@ -1,54 +1,19 @@
 /**
- * Enqueue participant_public PLP builds after public profile prose changes.
- * Async only — never provider-on-read.
+ * STEP 15D.14.B.2.1 — participant_public has no machine-localization obligation.
+ *
+ * Biography / free-text skills are SOURCE_ORIGINAL. Do not enqueue provider
+ * builds for interface-language changes or prose edits.
+ *
+ * Kept as a stable call-site so profile mutations remain safe to invoke.
  */
 
 import type { MemberProfile } from "@hu/types";
 
-import { resolvePlpAutoBuildLocales } from "../public-source-mutation-bridge.js";
-import { enqueuePlpBuildRequest } from "../build-request-queue.js";
-import {
-  buildParticipantPublicCanonicalPresentation,
-  PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-} from "./participant-public-adapter.js";
-
-function isEligibleForPublicPlp(profile: MemberProfile): boolean {
-  if (profile.status === "suspended") {
-    return false;
-  }
-  return profile.profileVisibility === "public" || profile.profileVisibility === "members_only";
-}
-
 /**
- * Fire-and-forget enqueue for Registry locales (excluding English).
- * Safe to call after biography / skills / organization / visibility mutations.
+ * Fire-and-forget no-op — translation obligation retired.
  */
 export async function enqueueParticipantPublicPlpBuilds(
-  profile: MemberProfile,
+  _profile: MemberProfile,
 ): Promise<void> {
-  if (!isEligibleForPublicPlp(profile)) {
-    return;
-  }
-
-  const { presentation, canonicalVersion } = buildParticipantPublicCanonicalPresentation({
-    profileId: profile.profileId,
-    displayName: profile.displayName,
-    biography: profile.biography,
-    organization: profile.organization,
-    skills: profile.skills,
-    skillsVisibility: profile.skillsVisibility,
-  });
-
-  const locales = await resolvePlpAutoBuildLocales({ excludeSourceLanguage: "en" });
-  for (const locale of locales) {
-    void enqueuePlpBuildRequest({
-      entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-      entityId: profile.profileId,
-      locale,
-      canonicalVersion,
-      contentRevision: 1,
-      trigger: "CANONICAL_CONTENT_UPDATED",
-      canonicalPresentation: presentation,
-    });
-  }
+  return;
 }

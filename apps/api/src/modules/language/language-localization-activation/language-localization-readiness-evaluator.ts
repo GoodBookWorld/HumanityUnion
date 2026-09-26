@@ -11,7 +11,7 @@ import {
   LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
-  LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES,
+  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
   buildLanguagePwaCivicReadinessSlice,
   deriveLanguageLocalizationReadinessState,
   emptyLanguageLocalizationCountBucket,
@@ -143,9 +143,8 @@ export async function evaluateLanguageLocalizationReadiness(
 
   let ct = input.ctCounts ?? emptyLanguageLocalizationCountBucket();
   let plpMedia = input.plpCounts ?? emptyLanguageLocalizationCountBucket();
-  // Gate F data surface — participant_public PLP; not folded into Closure 07 READY %.
-  const plpParticipant =
-    input.plpParticipantCounts ?? emptyLanguageLocalizationCountBucket();
+  // Gate F truthfulness — SOURCE_ORIGINAL; never localization work.
+  const plpParticipant = emptyLanguageLocalizationCountBucket();
   let bounded: BoundedPwaCivicCoverageReport | null = input.pwaCivicCoverage ?? null;
 
   if (
@@ -228,12 +227,12 @@ export async function evaluateLanguageLocalizationReadiness(
       counts: plpMedia,
       note: "PLP HU-owned Media editorial",
     },
-    ...LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES.map((kindId) => ({
+    ...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES.map((kindId) => ({
       kindId,
-      ownership: "PLP_OWNED" as const,
-      counts: plpParticipant,
+      ownership: "PROTECTED_EXCLUDED" as const,
+      counts: null,
       note:
-        "PLP participant_public (biography / public skills). Data for Gate F — not Closure 07 READY gate.",
+        "SOURCE_ORIGINAL — Participant biography/free-text skills are authored as-is; not translation completeness work (15D.14.B.2.1).",
     })),
     ...LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS.map((kindId) => ({
       kindId,
@@ -290,20 +289,6 @@ export async function evaluateLanguageLocalizationReadiness(
   }
   if (plpMedia.workItemsRequired > 0) {
     gaps.push(`PLP Media backfill work items: ${plpMedia.workItemsRequired}`);
-  }
-  if (plpParticipant.workItemsRequired > 0) {
-    gaps.push(
-      `PLP participant_public work items: ${plpParticipant.workItemsRequired} (Gate F surface; does not flip Closure 07 READY)`,
-    );
-  }
-  if (plpParticipant.invalid > 0) {
-    gaps.push(`PLP participant_public INVALID: ${plpParticipant.invalid}`);
-  }
-  if (plpParticipant.stale > 0) {
-    gaps.push(`PLP participant_public STALE: ${plpParticipant.stale}`);
-  }
-  if (plpParticipant.missing > 0) {
-    gaps.push(`PLP participant_public MISSING: ${plpParticipant.missing}`);
   }
   if (pwaCivic.coverage.unmeasuredKindCount > 0) {
     gaps.push(

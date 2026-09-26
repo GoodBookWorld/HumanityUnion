@@ -26,7 +26,6 @@ import {
   buildParticipantPublicCanonicalPresentation,
   buildParticipantPublicMachineContentFingerprintInput,
 } from "../../../src/modules/language/published-localized-presentation/universal/adapters/participant-public-adapter.js";
-import { classifyPublishedLocalizedPresentationValidity } from "../../../src/modules/language/published-localized-presentation/plp-validity.js";
 import { resolveCanonicalRegistryLocale } from "../../../src/modules/language/language-registry/index.js";
 import {
   ensureLanguageRegistrySeeded,
@@ -260,7 +259,7 @@ describe("15D.14.B.2 — localization input / terminology / owners", () => {
     assert.equal(fixed.ok, true);
   });
 
-  it("F. participant_public fingerprint: prose STALE; identity edit stable", () => {
+  it("F. participant_public SOURCE_ORIGINAL — prose edits do not create localization version work", () => {
     const a = buildParticipantPublicCanonicalPresentation({
       profileId: "p1",
       displayName: "Ada",
@@ -287,26 +286,18 @@ describe("15D.14.B.2 — localization input / terminology / owners", () => {
       skills: ["Rust"],
       skillsVisibility: "public",
     });
-    assert.notEqual(a.canonicalVersion, proseEdit.canonicalVersion);
-
-    assert.equal(
-      classifyPublishedLocalizedPresentationValidity({
-        locale: "uk",
-        liveCanonicalVersion: proseEdit.canonicalVersion,
-        canonicalPresentation: proseEdit.presentation,
-        snapshot: null,
-      }).reconciliationState,
-      "MISSING",
-    );
+    // B.2.1 — source-original owner version is not prose-driven.
+    assert.equal(a.canonicalVersion, proseEdit.canonicalVersion);
   });
 
-  it("G. private skills excluded from MACHINE_CONTENT / provider fingerprint", () => {
+  it("G. private skills excluded; no MACHINE_CONTENT obligation", () => {
     const privateSkills = buildParticipantPublicMachineContentFingerprintInput({
       biography: "Hello",
       skills: ["secret-skill", "private-only"],
       skillsVisibility: "private",
     });
     assert.deepEqual(privateSkills.skills, []);
+    assert.equal(privateSkills.biography, "");
 
     const built = buildParticipantPublicCanonicalPresentation({
       profileId: "p2",
@@ -327,69 +318,22 @@ describe("15D.14.B.2 — localization input / terminology / owners", () => {
       ),
       "utf8",
     );
-    assert.match(adapter, /PRIVATE_SOURCE_ONLY|skillsVisibility/);
+    assert.match(adapter, /SOURCE_ORIGINAL/);
+    assert.match(adapter, /skillsVisibility/);
+    assert.doesNotMatch(adapter, /biography:\s*"MACHINE_CONTENT"/);
   });
 
-  it("H. PLP deterministic / invalid not READY", () => {
-    const built = buildParticipantPublicCanonicalPresentation({
-      profileId: "p3",
-      displayName: "Cara",
-      biography: "Bio",
-      skills: [],
-      skillsVisibility: "public",
+  it("H. PLP deterministic / invalid not READY (generic PLP contract intact)", () => {
+    // Architecture rule still holds for MACHINE owners; participant_public itself
+    // has no machine obligation after B.2.1.
+    const rowReason = classifyContentTranslationValidity({
+      translation: baseCt({
+        translationProvider: "deterministic",
+        translatedContent: { title: "[zh-Hant] title" },
+      }),
+      liveSourceVersion: "v-source",
     });
-    const invalid = classifyPublishedLocalizedPresentationValidity({
-      locale: "uk",
-      liveCanonicalVersion: built.canonicalVersion,
-      canonicalPresentation: built.presentation,
-      snapshot: {
-        snapshotId: "s1",
-        identity: {
-          entityType: "participant_public",
-          entityId: "p3",
-          locale: "uk",
-          canonicalVersion: built.canonicalVersion,
-          localizationSchemaVersion: "PLP.2",
-        },
-        state: "PUBLISHED",
-        contentRevision: 1,
-        presentation: {
-          biography: "[uk] Bio",
-          skills: [],
-        },
-        provenance: [
-          {
-            path: "biography",
-            source: "MACHINE",
-            appliedAt: "2026-09-01T00:00:00.000Z",
-            provider: "deterministic",
-          },
-        ],
-        contentIntegrity: {
-          version: "CLI.1",
-          status: "PASSED",
-          TRANSLATABLE_NODE_COUNT: 1,
-          LOCALIZED_VALUE_NODE_COUNT: 1,
-          CANONICAL_IDENTICAL_NODE_COUNT: 0,
-          EMPTY_OR_MISSING_NODE_COUNT: 0,
-          PROTECTED_CANONICAL_NODE_COUNT: 0,
-          reasonCodes: [],
-          evaluatedAt: "2026-09-01T00:00:00.000Z",
-        },
-        structuralIntegrity: {
-          version: "LSI.1",
-          status: "PASSED",
-          CANONICAL_SOURCE_PATHS: 1,
-          BUILD_INPUT_PATHS: 1,
-          LOCALIZED_OUTPUT_PATHS: 1,
-          STRUCTURAL_MISMATCH_COUNT: 0,
-          reasonCodes: [],
-          evaluatedAt: "2026-09-01T00:00:00.000Z",
-        },
-      },
-      terminologyViolations: false,
-    });
-    assert.notEqual(invalid.reconciliationState, "READY");
+    assert.equal(rowReason.reconciliationState, "INVALID");
   });
 
   it("I. Blog sidebar consumes shared hu-persisted blog_post boundary", () => {
