@@ -394,7 +394,11 @@ export async function runLanguageOwnerPreparation(
         ...config,
         timeoutMs: resolveOfflineWebUiProviderTimeoutMs(config.timeoutMs),
       });
-      translator = (request) => provider.translate(request);
+      const { runLocalizationProviderRequest } = await import(
+        "../language/localization-provider-governor.js"
+      );
+      translator = (request) =>
+        runLocalizationProviderRequest(() => provider.translate(request));
     }
   }
 

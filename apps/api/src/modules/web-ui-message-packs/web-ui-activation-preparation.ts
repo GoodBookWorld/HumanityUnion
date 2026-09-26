@@ -382,7 +382,10 @@ async function resolveTranslator(
     ...config,
     timeoutMs: resolveOfflineWebUiProviderTimeoutMs(config.timeoutMs),
   });
-  return (request) => provider.translate(request);
+  const { runLocalizationProviderRequest } = await import(
+    "../language/localization-provider-governor.js"
+  );
+  return (request) => runLocalizationProviderRequest(() => provider.translate(request));
 }
 
 /**

@@ -1,3 +1,4 @@
+import { resetThinGeminiProviderStateForTests } from "./media-plp-materializer/thin-gemini-provider-state.js";
 import { DeterministicTranslationProvider } from "./providers/deterministic-translation-provider.js";
 import { GeminiTranslationProvider } from "./providers/gemini-translation-provider.js";
 import {
@@ -37,6 +38,9 @@ export function setTranslationProviderForTests(provider: TranslationProvider): v
 
 export function resetTranslationProviderForTests(): void {
   overrideProvider = null;
+  if (process.env.NODE_TEST_ENV === "true") {
+    resetThinGeminiProviderStateForTests();
+  }
 }
 
 export function translationProviderPublicErrorMessage(error: unknown): string {

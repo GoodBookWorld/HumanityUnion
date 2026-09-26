@@ -336,7 +336,7 @@ describe("Pack 08I.16.1 — lightweight discovery regression", () => {
     assert.match(worker, /DEFAULT_WORKER_CONCURRENCY = 1/);
     assert.match(worker, /withContentTranslationWorkerSlot/);
     const service = readApi("src/modules/language/content-translation.service.ts");
-    assert.match(service, /withContentTranslationWorkerSlot/);
+    assert.match(service, /runLocalizationProviderRequest/);
   });
 
   it("script fails closed on DISCOVERY_FAILURE and documents allow-empty", () => {

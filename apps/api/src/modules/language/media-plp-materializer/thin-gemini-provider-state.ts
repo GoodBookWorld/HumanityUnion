@@ -8,6 +8,7 @@
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
+import { activationProviderCooldownSeconds } from "../activation-provider-transient-recovery.js";
 import {
   PLP_PROVIDER_QUOTA_CLASS,
   type PlpProviderQuotaClass,
@@ -22,6 +23,13 @@ export type ThinGeminiProviderCooldownReason =
   | "PROVIDER_COOLDOWN"
   | "UNKNOWN_QUOTA";
 
+/** Shared localization pressure category. Not a second cooldown store. */
+export type LocalizationProviderPressureCategory =
+  | "rate_limited"
+  | "unavailable"
+  | "timeout"
+  | "network_failure";
+
 export type ThinGeminiProviderStateRecord = {
   readonly providerId: typeof THIN_GEMINI_PROVIDER_STATE_ID;
   readonly cooldownUntil: string | null;
@@ -31,6 +39,9 @@ export type ThinGeminiProviderStateRecord = {
   readonly quotaLimitId: string | null;
   readonly quotaRetryDelaySeconds: number | null;
   readonly updatedAt: string;
+  /** Gate E — which transient class last armed the shared cooldown. */
+  readonly pressureCategory?: LocalizationProviderPressureCategory | null;
+  readonly pressureStreak?: number;
 };
 
 export type ThinGeminiCooldownSnapshot = {
@@ -60,7 +71,9 @@ export function resetThinGeminiProviderStateForTests(): void {
 }
 
 export function useThinGeminiProviderStateMemory(): boolean {
-  return forceMemoryForTests || !isMongoConfigured();
+  // Tests share one process. Keep pressure in memory so a simulated 429 cannot
+  // write the developer database, and so a later test can clear it synchronously.
+  return forceMemoryForTests || process.env.NODE_TEST_ENV === "true" || !isMongoConfigured();
 }
 
 function nowIso(): string {
@@ -76,6 +89,8 @@ function emptyState(updatedAt = nowIso()): ThinGeminiProviderStateRecord {
     quotaMetric: null,
     quotaLimitId: null,
     quotaRetryDelaySeconds: null,
+    pressureCategory: null,
+    pressureStreak: 0,
     updatedAt,
   };
 }
@@ -182,6 +197,8 @@ export async function activateThinGeminiProviderCooldown(input: {
     quotaMetric: input.quotaMetric ?? null,
     quotaLimitId: input.quotaLimitId ?? null,
     quotaRetryDelaySeconds: input.quotaRetryDelaySeconds ?? cooldownSeconds,
+    pressureCategory: "rate_limited",
+    pressureStreak: (existing?.pressureStreak ?? 0) + 1,
     updatedAt: nowIso(),
   };
 
@@ -190,6 +207,55 @@ export async function activateThinGeminiProviderCooldown(input: {
     return next;
   }
 
+  await collection().updateOne(
+    { providerId: THIN_GEMINI_PROVIDER_STATE_ID },
+    { $set: next },
+    { upsert: true },
+  );
+  return next;
+}
+
+/**
+ * Gate E — arm the one shared localization cooldown.
+ * Extends an active window. Does not store provider payloads or secrets.
+ * A later success does not clear the window before `cooldownUntil`.
+ */
+export async function activateLocalizationProviderPressure(input: {
+  readonly category: LocalizationProviderPressureCategory;
+  readonly nowMs?: number;
+  readonly retryAfterSeconds?: number | null;
+}): Promise<ThinGeminiProviderStateRecord> {
+  const nowMs = input.nowMs ?? Date.now();
+  const existing = await readThinGeminiProviderState();
+  const existingUntilMs = existing?.cooldownUntil ? Date.parse(existing.cooldownUntil) : 0;
+  const stillActive = Number.isFinite(existingUntilMs) && existingUntilMs > nowMs;
+  const streak = stillActive ? (existing?.pressureStreak ?? 1) + 1 : 1;
+  const bounded = activationProviderCooldownSeconds(streak);
+  const hinted =
+    input.retryAfterSeconds != null && input.retryAfterSeconds > 0
+      ? Math.min(Math.trunc(input.retryAfterSeconds), 900)
+      : 0;
+  const waitSec = Math.max(bounded, hinted);
+  const proposedUntilMs = nowMs + waitSec * 1000;
+  const cooldownUntil = new Date(
+    stillActive && existingUntilMs > proposedUntilMs ? existingUntilMs : proposedUntilMs,
+  ).toISOString();
+  const next: ThinGeminiProviderStateRecord = {
+    providerId: THIN_GEMINI_PROVIDER_STATE_ID,
+    cooldownUntil,
+    cooldownReason: input.category === "rate_limited" ? "HTTP_429" : "PROVIDER_COOLDOWN",
+    quotaClass: existing?.quotaClass ?? null,
+    quotaMetric: existing?.quotaMetric ?? null,
+    quotaLimitId: existing?.quotaLimitId ?? null,
+    quotaRetryDelaySeconds: waitSec,
+    pressureCategory: input.category,
+    pressureStreak: streak,
+    updatedAt: new Date(nowMs).toISOString(),
+  };
+  if (useThinGeminiProviderStateMemory()) {
+    memoryState = next;
+    return next;
+  }
   await collection().updateOne(
     { providerId: THIN_GEMINI_PROVIDER_STATE_ID },
     { $set: next },

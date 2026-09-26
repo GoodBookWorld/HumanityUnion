@@ -84,7 +84,7 @@ import {
   collectSourceTextLeaves,
 } from "./localization-input-contract.js";
 import { TranslationProviderError } from "./translation.config.js";
-import { withContentTranslationWorkerSlot } from "./content-translation-worker-concurrency.js";
+import { runLocalizationProviderRequest } from "./localization-provider-governor.js";
 
 export interface LoadedTranslatableSource {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -491,7 +491,7 @@ export async function getOrCreateContentTranslation(input: {
       sourceLanguage: source.sourceLanguage,
       targetLanguage,
       translatePayload: async (payload) => {
-        const result = await withContentTranslationWorkerSlot(() =>
+        const result = await runLocalizationProviderRequest(() =>
           provider.translate({
             sourceLanguage: source.sourceLanguage,
             targetLanguage,
@@ -530,7 +530,7 @@ export async function getOrCreateContentTranslation(input: {
       translatedFields,
     });
   } else {
-    const result = await withContentTranslationWorkerSlot(() =>
+    const result = await runLocalizationProviderRequest(() =>
       provider.translate({
         sourceLanguage: source.sourceLanguage,
         targetLanguage,

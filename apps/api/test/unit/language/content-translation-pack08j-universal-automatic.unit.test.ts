@@ -325,7 +325,7 @@ describe("Pack 08J — architecture contracts", () => {
   it("single translation engine preserved", () => {
     const service = readApi("src/modules/language/content-translation.service.ts");
     assert.match(service, /sanitizeFieldsForAutomaticTranslation/);
-    assert.match(service, /withContentTranslationWorkerSlot/);
+    assert.match(service, /runLocalizationProviderRequest/);
     const worker = readApi("src/modules/language/content-translation-worker-concurrency.ts");
     assert.match(worker, /DEFAULT_WORKER_CONCURRENCY = 1/);
   });

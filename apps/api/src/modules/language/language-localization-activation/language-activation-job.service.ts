@@ -62,7 +62,6 @@ import {
   type LanguageOwnerPreparationInput,
   type LanguageOwnerPreparationResult,
 } from "../../language-preparation/language-owner-preparation.js";
-import { withContentTranslationWorkerSlot } from "../content-translation-worker-concurrency.js";
 import { isActivationCooldownDue } from "../activation-provider-transient-recovery.js";
 import {
   evaluateFailedWebUiActivationResume,
@@ -668,14 +667,12 @@ export async function processLanguageActivationJob(
         await saveLanguageActivationJob(job);
 
         try {
-          const brandResult = await withContentTranslationWorkerSlot(() =>
-            prepare({
-              locale: canonicalLocale,
-              execute: true,
-              owners: ["brand"],
-              log: () => undefined,
-            }),
-          );
+          const brandResult = await prepare({
+            locale: canonicalLocale,
+            execute: true,
+            owners: ["brand"],
+            log: () => undefined,
+          });
           const brandDomain = brandDomainFromPreparationResult(brandResult, {
             previous: job.domains.brand,
             nowIso: nowIso(),
@@ -815,14 +812,12 @@ export async function processLanguageActivationJob(
         await saveLanguageActivationJob(job);
 
         try {
-          const terminologyResult = await withContentTranslationWorkerSlot(() =>
-            prepare({
-              locale: canonicalLocale,
-              execute: true,
-              owners: ["terminology"],
-              log: () => undefined,
-            }),
-          );
+          const terminologyResult = await prepare({
+            locale: canonicalLocale,
+            execute: true,
+            owners: ["terminology"],
+            log: () => undefined,
+          });
           const terminologyDomain = terminologyDomainFromPreparationResult(
             terminologyResult,
             {
@@ -918,13 +913,11 @@ export async function processLanguageActivationJob(
       normalizeLanguageRegistryLocaleKey(canonicalLocale) !== "en";
 
     if (shouldPrepareWebUi) {
-      const tick = await withContentTranslationWorkerSlot(() =>
-        processWebUiActivationTick({
-          job,
-          checkpointId: job.domains.webUi.checkpointId,
-          deps: deps.webUiPreparationDeps,
-        }),
-      );
+      const tick = await processWebUiActivationTick({
+        job,
+        checkpointId: job.domains.webUi.checkpointId,
+        deps: deps.webUiPreparationDeps,
+      });
       job = {
         ...job,
         domains: {

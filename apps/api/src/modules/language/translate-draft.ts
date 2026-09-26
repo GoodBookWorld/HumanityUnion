@@ -11,6 +11,7 @@ import {
   assertEnabledSelectableLocale,
   resolveEnabledCanonicalLocale,
 } from "./language-registry-runtime.js";
+import { runLocalizationProviderRequest } from "./localization-provider-governor.js";
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
@@ -51,16 +52,18 @@ export async function translateDraft(
     throw error;
   }
 
-  const result = await provider.translate({
-    sourceLanguage,
-    targetLanguage,
-    text: sourceText,
-    contentType: isStructured ? "structured_json" : "plain",
-    sourceRecordId: request.sourceRecordId,
-    sourceVersion: request.sourceVersion,
-    terminologyContext,
-    safetyCleared: true,
-  });
+  const result = await runLocalizationProviderRequest(() =>
+    provider.translate({
+      sourceLanguage,
+      targetLanguage,
+      text: sourceText,
+      contentType: isStructured ? "structured_json" : "plain",
+      sourceRecordId: request.sourceRecordId,
+      sourceVersion: request.sourceVersion,
+      terminologyContext,
+      safetyCleared: true,
+    }),
+  );
 
   let translatedContent: Record<string, unknown> | string = result.translatedText;
   if (isStructured) {
