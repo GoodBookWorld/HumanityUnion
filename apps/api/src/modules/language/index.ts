@@ -464,6 +464,7 @@ export {
   updateAdminLanguage,
   setLanguageRegistryAdminAssertOverrideForTests,
   resetLanguageRegistryStoreForTests,
+  resolveCanonicalRegistryLocale,
   resolveLanguageRegistryLocale,
   setLanguageRegistryForceMemoryForTests,
   updateLanguageRegistryRecord,

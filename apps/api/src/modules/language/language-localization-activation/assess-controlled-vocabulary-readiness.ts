@@ -13,6 +13,7 @@ import {
 } from "@hu/types";
 
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
+import { resolveCanonicalRegistryLocale } from "../language-registry/index.js";
 import { listTerminologyConcepts } from "../terminology-glossary/terminology-glossary.repository.js";
 
 function terminologyPreferredTermForConcept(input: {
@@ -109,6 +110,9 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
   readonly listConcepts?: typeof listTerminologyConcepts;
 }): Promise<LanguageControlledVocabularyReadinessSlice> {
   const listConcepts = input.listConcepts ?? listTerminologyConcepts;
+  /** Gate A — glossary map keys are Registry CANONICAL LOCALE. */
+  const locale =
+    (await resolveCanonicalRegistryLocale(input.locale)) ?? input.locale.trim();
   let concepts: readonly TerminologyConcept[] = [];
   try {
     concepts = await listConcepts();
@@ -116,7 +120,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
     concepts = [];
   }
 
-  const effective = await resolveEffectiveWebUiMessagePack(input.locale);
+  const effective = await resolveEffectiveWebUiMessagePack(locale);
   const messages = effective?.messages ?? null;
 
   let withTerm = 0;
@@ -128,7 +132,7 @@ export async function assessControlledVocabularyReadinessForLocale(input: {
   for (const entry of CONTROLLED_PUBLIC_VOCABULARY_REGISTRY) {
     const preferred = terminologyPreferredTermForConcept({
       conceptId: entry.conceptId,
-      locale: input.locale,
+      locale,
       concepts,
     });
     const webUi = messages ? webUiLabelFromPack(entry.conceptId, messages) : null;

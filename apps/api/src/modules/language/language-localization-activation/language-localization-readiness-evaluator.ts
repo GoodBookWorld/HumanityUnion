@@ -17,6 +17,7 @@ import {
   emptyPwaCivicCoverageScalars,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
+  normalizeLanguageRegistryLocaleKey,
   type LanguageLocalizationKindStatusRow,
   type LanguageLocalizationReadinessReport,
   type LanguageRegistryRecord,
@@ -52,6 +53,13 @@ export type EvaluateLanguageLocalizationReadinessInput = {
   readonly plannerDeps?: unknown;
 };
 
+function brandLocaleMatches(entryLocale: string, canonicalLocale: string): boolean {
+  return (
+    normalizeLanguageRegistryLocaleKey(entryLocale) ===
+    normalizeLanguageRegistryLocaleKey(canonicalLocale)
+  );
+}
+
 async function assessHigherAuthority(locale: string): Promise<{
   brandPublished: boolean | null;
   legalPublished: boolean | null;
@@ -61,7 +69,7 @@ async function assessHigherAuthority(locale: string): Promise<{
   let legalPublished: boolean | null = null;
   try {
     const brands = await listBrandLocalizations();
-    const row = brands.find((entry) => entry.locale === locale);
+    const row = brands.find((entry) => brandLocaleMatches(entry.locale, locale));
     brandPublished = row ? row.status === "published" : false;
   } catch {
     brandPublished = null;
@@ -100,11 +108,13 @@ async function assessHigherAuthority(locale: string): Promise<{
 export async function evaluateLanguageLocalizationReadiness(
   input: EvaluateLanguageLocalizationReadinessInput,
 ): Promise<LanguageLocalizationReadinessReport> {
-  const locale = input.locale.trim();
+  const requestedLocale = input.locale.trim();
   const record =
     input.registryRecord !== undefined
       ? input.registryRecord
-      : await resolveLanguageRegistryLocale(locale);
+      : await resolveLanguageRegistryLocale(requestedLocale);
+  /** Gate A — owner assessments use Registry CANONICAL LOCALE, not job identity key. */
+  const locale = record?.locale ?? requestedLocale;
 
   const registry = {
     enabled: record?.enabled === true,

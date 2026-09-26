@@ -5,6 +5,7 @@ export {
   getLanguageRegistryByLocale,
   listLanguageRegistry,
   resetLanguageRegistryStoreForTests,
+  resolveCanonicalRegistryLocale,
   resolveLanguageRegistryLocale,
   setLanguageRegistryForceMemoryForTests,
   updateLanguageRegistryRecord,

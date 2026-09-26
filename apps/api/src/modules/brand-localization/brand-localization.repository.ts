@@ -10,6 +10,7 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { resolveCanonicalRegistryLocale } from "../language/language-registry/index.js";
 import {
   BrandLocalizationError,
   BrandLocalizationNotFoundError,
@@ -162,10 +163,12 @@ export async function listBrandLocalizations(): Promise<BrandLocalizationRecord[
 export async function getBrandLocalizationByLocale(
   locale: string,
 ): Promise<BrandLocalizationRecord | null> {
-  const key = locale.trim();
-  if (!key) {
+  const trimmed = locale.trim();
+  if (!trimmed) {
     return null;
   }
+  /** Gate A — Brand rows are stored under Registry CANONICAL LOCALE. */
+  const key = (await resolveCanonicalRegistryLocale(trimmed)) ?? trimmed;
 
   await ensureBrandLocalizationSeeded();
 

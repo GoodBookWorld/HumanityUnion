@@ -337,11 +337,13 @@ export async function startOrResumeLanguageActivationJob(input: {
   const record = await loadRegistryForLanguageId(input.languageId);
   assertActivationEligible(record);
 
-  const locale = normalizeLanguageRegistryLocaleKey(record.locale);
+  /** Gate A — job.locale stores Registry CANONICAL; jobId uses IDENTITY KEY. */
+  const locale = record.locale;
+  const localeKey = normalizeLanguageRegistryLocaleKey(record.locale);
   const deps = processDeps();
   const evaluate = deps.evaluateReadiness ?? evaluateLanguageLocalizationReadiness;
 
-  const active = await getActiveLanguageActivationJobByLocale(locale);
+  const active = await getActiveLanguageActivationJobByLocale(localeKey);
   if (active) {
     const readiness = await evaluate({
       locale,
@@ -483,7 +485,7 @@ export async function startOrResumeLanguageActivationJob(input: {
   const createdAt = nowIso();
   const generation = (latest?.generation ?? 0) + 1;
   const job: LanguageActivationJobRecord = {
-    jobId: `lang-act-${locale}-${generation}-${randomUUID().slice(0, 8)}`,
+    jobId: `lang-act-${localeKey}-${generation}-${randomUUID().slice(0, 8)}`,
     locale,
     languageId: record.languageId,
     generation,
@@ -580,6 +582,9 @@ export async function processLanguageActivationJob(
     return job;
   }
 
+  /** Gate A — historical jobs may store identity-key locale; owners use CANONICAL. */
+  const canonicalLocale = registry.locale;
+
   if (!registry.enabled || !registry.contentTranslationEnabled) {
     job = {
       ...job,
@@ -603,7 +608,7 @@ export async function processLanguageActivationJob(
       options?.reconcileResiduals === true &&
       options?.webUiTick !== true &&
       deps.skipOwnerPreparation !== true &&
-      job.locale !== "en";
+      normalizeLanguageRegistryLocaleKey(canonicalLocale) !== "en";
 
     if (shouldPrepareOwners) {
       const prepare = deps.runOwnerPreparation ?? runLanguageOwnerPreparation;
@@ -665,7 +670,7 @@ export async function processLanguageActivationJob(
         try {
           const brandResult = await withContentTranslationWorkerSlot(() =>
             prepare({
-              locale: job.locale,
+              locale: canonicalLocale,
               execute: true,
               owners: ["brand"],
               log: () => undefined,
@@ -747,7 +752,7 @@ export async function processLanguageActivationJob(
           diagnosticSummary: buildDiagnosticSummary({
             status: "failed",
             readiness: await evaluate({
-              locale: job.locale,
+              locale: canonicalLocale,
               registryRecord: registry,
               plannerDeps: deps.plannerDeps,
               skipCorpusPlan: deps.skipCorpusInReadiness === true,
@@ -812,7 +817,7 @@ export async function processLanguageActivationJob(
         try {
           const terminologyResult = await withContentTranslationWorkerSlot(() =>
             prepare({
-              locale: job.locale,
+              locale: canonicalLocale,
               execute: true,
               owners: ["terminology"],
               log: () => undefined,
@@ -890,7 +895,7 @@ export async function processLanguageActivationJob(
           diagnosticSummary: buildDiagnosticSummary({
             status: "failed",
             readiness: await evaluate({
-              locale: job.locale,
+              locale: canonicalLocale,
               registryRecord: registry,
               plannerDeps: deps.plannerDeps,
               skipCorpusPlan: deps.skipCorpusInReadiness === true,
@@ -910,7 +915,7 @@ export async function processLanguageActivationJob(
     const shouldPrepareWebUi =
       (options?.reconcileResiduals === true || options?.webUiTick === true) &&
       deps.skipWebUiPreparation !== true &&
-      job.locale !== "en";
+      normalizeLanguageRegistryLocaleKey(canonicalLocale) !== "en";
 
     if (shouldPrepareWebUi) {
       const tick = await withContentTranslationWorkerSlot(() =>
@@ -999,7 +1004,7 @@ export async function processLanguageActivationJob(
     }
 
     let readiness = await evaluate({
-      locale: job.locale,
+      locale: canonicalLocale,
       registryRecord: registry,
       plannerDeps: deps.plannerDeps,
       skipCorpusPlan: deps.skipCorpusInReadiness === true,
@@ -1031,7 +1036,7 @@ export async function processLanguageActivationJob(
     if (shouldReconcileResiduals && webUiReadyForHistorical) {
       const stamp = nowIso();
       const result = await activate({
-        locale: job.locale,
+        locale: canonicalLocale,
         execute: true,
         plannerDeps: deps.plannerDeps,
         runResidualRetry: deps.runResidualRetry,
@@ -1114,7 +1119,8 @@ export async function getLanguageActivationAdminView(input: {
 }): Promise<LanguageActivationAdminView> {
   await assertAdminActor(input.actorUserId);
   const record = await loadRegistryForLanguageId(input.languageId);
-  const locale = normalizeLanguageRegistryLocaleKey(record.locale);
+  /** Gate A — Admin readiness always evaluates Registry CANONICAL LOCALE. */
+  const locale = record.locale;
   const deps = processDeps();
   const evaluate = deps.evaluateReadiness ?? evaluateLanguageLocalizationReadiness;
 
