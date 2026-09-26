@@ -155,6 +155,11 @@ export async function runPublicLocalizationResidualRetry(input: {
   readonly kinds?: readonly StagingWarmSourceKind[];
   readonly deps?: StagingWarmDiscoveryDeps;
   readonly targetLocales?: readonly LanguageCode[];
+  /**
+   * Gate C.2 — bounded enqueue per pass. Remaining ready identities stay
+   * rediscoverable on the next driver continuation.
+   */
+  readonly maxPresentations?: number;
 }): Promise<PublicLocalizationResidualRetryResult> {
   const discovery = await discoverPublicLocalizationCorpus({
     kinds: input.kinds,
@@ -208,14 +213,23 @@ export async function runPublicLocalizationResidualRetry(input: {
     ready: selected,
   });
 
-  const identityCountFromSchedule = schedule.reduce(
+  const boundedSchedule =
+    input.maxPresentations != null && input.maxPresentations > 0
+      ? schedule.slice(0, input.maxPresentations)
+      : schedule;
+
+  const identityCountFromSchedule = boundedSchedule.reduce(
     (sum, unit) => sum + unit.readyIdentityCount,
     0,
   );
   const presentationGroupingExplained =
-    schedule.length !== selected.length && identityCountFromSchedule === selected.length;
+    boundedSchedule.length !== selected.length &&
+    identityCountFromSchedule <= selected.length;
 
-  if (identityCountFromSchedule !== selected.length) {
+  if (
+    input.maxPresentations == null &&
+    identityCountFromSchedule !== selected.length
+  ) {
     return {
       mode: input.execute ? "execute" : "dry-run",
       preAudit,
@@ -225,8 +239,8 @@ export async function runPublicLocalizationResidualRetry(input: {
       RETRY_SELECTED_IDENTITIES: 0,
       selectedIdentities: [],
       blockedIdentities: blocked.map(summarizeBlocked),
-      schedule,
-      presentationsToEnqueue: schedule.length,
+      schedule: boundedSchedule,
+      presentationsToEnqueue: boundedSchedule.length,
       presentationGroupingExplained: false,
       selectedWorkItems: [],
       presentationsScheduled: 0,
@@ -281,8 +295,8 @@ export async function runPublicLocalizationResidualRetry(input: {
     RETRY_SELECTED_IDENTITIES: selected.length,
     selectedIdentities: selected.map(summarizeIdentity),
     blockedIdentities: blocked.map(summarizeBlocked),
-    schedule,
-    presentationsToEnqueue: schedule.length,
+    schedule: boundedSchedule,
+    presentationsToEnqueue: boundedSchedule.length,
     presentationGroupingExplained,
     selectedWorkItems,
   };
@@ -306,7 +320,7 @@ export async function runPublicLocalizationResidualRetry(input: {
   let presentationsDeduped = 0;
   let presentationsFailed = 0;
 
-  for (const unit of schedule) {
+  for (const unit of boundedSchedule) {
     try {
       const source = await loadTranslatableSource({
         sourceKind: unit.sourceKind,

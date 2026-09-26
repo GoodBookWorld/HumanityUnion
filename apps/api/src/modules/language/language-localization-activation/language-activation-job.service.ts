@@ -1092,6 +1092,24 @@ export async function processLanguageActivationJob(
     };
 
     await saveLanguageActivationJob(job);
+
+    // Gate C.2 — durable residual driver wake. Does not reopen completed→running.
+    // Activation prepares the language; reconciliation converges content after READY.
+    const workItemsRequired =
+      readiness.ct.workItemsRequired + readiness.plpMedia.workItemsRequired;
+    if (webUiReadyForHistorical && workItemsRequired > 0) {
+      void import("../localization-reconciliation-driver.js").then(
+        ({ wakeLocalizationReconciliationAfterActivation }) => {
+          wakeLocalizationReconciliationAfterActivation({
+            locale: canonicalLocale,
+            webUiReady: true,
+            activationStatus: job.status,
+            workItemsRequired,
+          });
+        },
+      );
+    }
+
     return job;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Activation failed.";

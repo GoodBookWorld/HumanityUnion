@@ -136,6 +136,24 @@ export {
 } from "./public-localized-presentation.js";
 export type { PublicAutoTranslatableNode } from "./public-localized-presentation.js";
 export { notifyPublicPresentationChanged } from "./public-presentation-changed.js";
+export {
+  LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS,
+  LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS,
+  assessLocalizationReconciliationEligibility,
+  peekLocalizationReconciliationDriverStateForTests,
+  resetLocalizationReconciliationDriverForTests,
+  resumeLocalizationReconciliationOnBoot,
+  runLocalizationReconciliationPass,
+  scheduleLocalizationReconciliation,
+  scheduleLocalizationReconciliationForAutomaticLocales,
+  setLocalizationReconciliationDriverDepsForTests,
+  wakeLocalizationReconciliationAfterActivation,
+} from "./localization-reconciliation-driver.js";
+export type {
+  LocalizationReconciliationEligibility,
+  LocalizationReconciliationPassResult,
+  LocalizationReconciliationWakeReason,
+} from "./localization-reconciliation-driver.js";
 export { translateDraft } from "./translate-draft.js";
 export {
   buildParticipantLanguageContextFromExperience,

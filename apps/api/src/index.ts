@@ -29,6 +29,18 @@ async function start(): Promise<void> {
     );
   }
 
+  // Gate C.2 — durable residual reconciliation for completed/running locales
+  // with WEB_UI READY + actionable CT/PLP work (independent of activation.status).
+  const { resumeLocalizationReconciliationOnBoot } = await import(
+    "./modules/language/localization-reconciliation-driver.js"
+  );
+  const reconciliationResume = await resumeLocalizationReconciliationOnBoot();
+  if (reconciliationResume.scheduled > 0) {
+    console.log(
+      `Scheduled localization reconciliation discovery for ${reconciliationResume.scheduled} locale(s).`,
+    );
+  }
+
   const { assertNormalCivicArchiveRuntimeDatabase, logCivicArchiveRuntimeDiagnostic } =
     await import("./modules/public-civic-archive/civic-archive-runtime-diagnostic.js");
 
