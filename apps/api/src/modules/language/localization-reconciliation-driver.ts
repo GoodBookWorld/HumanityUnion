@@ -1,12 +1,14 @@
 /**
- * STEP 15D.14.C.2 / C.3 — durable localization reconciliation driver.
+ * STEP 15D.14.C.2 / C.3 / C.3.2 — durable localization reconciliation driver.
  *
- * C.2: completed (or running) languages with WEB_UI READY and actionable
- * MISSING/STALE/INVALID work converge without Activate/Resume and without
- * reopening activation.status.
+ * C.2: completed languages with WEB_UI READY + actionable work converge without
+ * Activate/Resume and without reopening activation.status.
  *
- * C.3: useful progress required for normal continuation; unchanged work /
- * dedupe-only / provider pressure enter bounded increasing backoff.
+ * C.3: no-progress / provider-pressure backoff when a pass does not converge.
+ *
+ * C.3.2: usefulProgress requires durable READY/current coverage increase.
+ * Scheduling, dedupe, PLP enqueue-called, truncation, and pending-shift
+ * work-count decreases are observability only — never progress.
  *
  * Reuses Gate C residual retry + PLP consumer enqueue + outbox/warm pipeline.
  * Does not redefine READY/MISSING/STALE/INVALID.
@@ -23,7 +25,10 @@ import { resolveLanguageRegistryLocale } from "./language-registry/language-regi
 import { assessWebUiCatalogReadinessForLocale } from "./language-localization-activation/assess-web-ui-catalog-readiness.js";
 import { measureLiveActivationCtCoverage } from "./live-residual-ct-coverage.js";
 import { runPublicLocalizationResidualRetry } from "./public-localization-residual-retry.js";
-import { planLanguageHistoricalBackfill } from "./language-localization-activation/language-historical-backfill-planner.js";
+import {
+  aggregatePlpCountsFromPlan,
+  planLanguageHistoricalBackfill,
+} from "./language-localization-activation/language-historical-backfill-planner.js";
 
 /** Bounded CT residual presentations enqueued per driver pass. */
 export const LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS = 25;
@@ -66,6 +71,14 @@ export type LocalizationReconciliationEligibility = {
     | "web_ui_not_ready"
     | "no_actionable_work";
   readonly workItemsRequired: number;
+  /** Authoritative CT CURRENT / READY coverage (live residual). */
+  readonly ctCurrent: number;
+  /** Authoritative PLP CURRENT coverage from Gate C planner. */
+  readonly plpCurrent: number;
+  /** ctCurrent + plpCurrent — durable convergence signal. */
+  readonly durableCurrent: number;
+  /** CT pending / ACTIVE_WORK (observability; not progress). */
+  readonly pending: number;
 };
 
 export type LocalizationReconciliationPassResult = {
@@ -77,6 +90,14 @@ export type LocalizationReconciliationPassResult = {
   readonly retryReadyIdentities: number;
   readonly workItemsRequiredBefore: number;
   readonly workItemsRequiredAfter: number;
+  readonly currentBefore: number;
+  readonly currentAfter: number;
+  readonly ctCurrentBefore: number;
+  readonly ctCurrentAfter: number;
+  readonly plpCurrentBefore: number;
+  readonly plpCurrentAfter: number;
+  readonly pendingBefore: number;
+  readonly pendingAfter: number;
   readonly usefulProgress: boolean;
   readonly continuationKind: LocalizationReconciliationContinuationKind;
   readonly continuationScheduled: boolean;
@@ -122,6 +143,19 @@ function activeDeps(): LocalizationReconciliationDriverDeps {
 
 function nowMs(): number {
   return (activeDeps().nowMs ?? Date.now)();
+}
+
+function emptyCoverageFields(): Pick<
+  LocalizationReconciliationEligibility,
+  "workItemsRequired" | "ctCurrent" | "plpCurrent" | "durableCurrent" | "pending"
+> {
+  return {
+    workItemsRequired: 0,
+    ctCurrent: 0,
+    plpCurrent: 0,
+    durableCurrent: 0,
+    pending: 0,
+  };
 }
 
 export function setLocalizationReconciliationDriverDepsForTests(
@@ -185,8 +219,6 @@ function blockedLooksLikeProviderPressure(
         return true;
       }
     }
-    // Blocked residual with zero newly scheduled work under load is treated as
-    // retryable pressure (outbox/warm owns the durable retry contract).
     return residual.presentationsScheduled === 0;
   }
   return false;
@@ -195,6 +227,7 @@ function blockedLooksLikeProviderPressure(
 /**
  * Registry + WEB_UI 15D.9.1 + actionable CT/PLP work.
  * Does not consult activation.status.
+ * Exposes authoritative CURRENT coverage for C.3.2 durable progress.
  */
 export async function assessLocalizationReconciliationEligibility(
   localeInput: string,
@@ -207,7 +240,7 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale: "",
       reason: "empty_locale",
-      workItemsRequired: 0,
+      ...emptyCoverageFields(),
     };
   }
   const resolve = d.resolveLocale ?? resolveLanguageRegistryLocale;
@@ -218,7 +251,7 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale,
       reason: "source_locale",
-      workItemsRequired: 0,
+      ...emptyCoverageFields(),
     };
   }
   if (record?.enabled !== true || record.contentTranslationEnabled !== true) {
@@ -226,7 +259,7 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale,
       reason: "registry_ineligible",
-      workItemsRequired: 0,
+      ...emptyCoverageFields(),
     };
   }
 
@@ -241,7 +274,7 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale,
       reason: "web_ui_not_ready",
-      workItemsRequired: 0,
+      ...emptyCoverageFields(),
     };
   }
 
@@ -253,7 +286,11 @@ export async function assessLocalizationReconciliationEligibility(
     registryEligible: true,
     mode: "dry-run",
   });
-  // CT counts come from live residual (includes INVALID). PLP from Gate C planner.
+  const plpCounts = aggregatePlpCountsFromPlan(plan);
+  const ctCurrent = ctCoverage.ct.current;
+  const plpCurrent = plpCounts.current;
+  const durableCurrent = ctCurrent + plpCurrent;
+  const pending = ctCoverage.ct.pending;
   const workItemsRequired =
     ctCoverage.ct.workItemsRequired + plan.summary.plpWorkItems;
 
@@ -263,6 +300,10 @@ export async function assessLocalizationReconciliationEligibility(
       canonicalLocale,
       reason: "no_actionable_work",
       workItemsRequired: 0,
+      ctCurrent,
+      plpCurrent,
+      durableCurrent,
+      pending,
     };
   }
 
@@ -271,6 +312,10 @@ export async function assessLocalizationReconciliationEligibility(
     canonicalLocale,
     reason: "ok",
     workItemsRequired,
+    ctCurrent,
+    plpCurrent,
+    durableCurrent,
+    pending,
   };
 }
 
@@ -302,13 +347,16 @@ async function enqueuePlpForLocale(
 }
 
 /**
- * Useful progress: authoritative work decreased, or new work was newly
- * scheduled into the durable pipeline. Repeated dedupe of identical work is
- * NOT progress (C.3).
+ * C.3.2 — durable progress = authoritative READY/current coverage increased.
+ * Scheduling / dedupe / PLP-enqueue-called / pending-shift work drops are NOT progress.
  */
 export function classifyLocalizationReconciliationProgress(input: {
+  readonly currentBefore: number;
+  readonly currentAfter: number;
   readonly workItemsRequiredBefore: number;
   readonly workItemsRequiredAfter: number;
+  readonly pendingBefore: number;
+  readonly pendingAfter: number;
   readonly presentationsScheduled: number;
   readonly presentationsDeduped: number;
   readonly plpEnqueued: boolean;
@@ -316,22 +364,60 @@ export function classifyLocalizationReconciliationProgress(input: {
   readonly presentationsToEnqueue: number;
 }): {
   readonly usefulProgress: boolean;
+  readonly durableCurrentIncreased: boolean;
   readonly workDecreased: boolean;
+  readonly pendingIncreased: boolean;
   readonly newlyScheduled: boolean;
   readonly truncatedWithNewSchedule: boolean;
 } {
+  const durableCurrentIncreased = input.currentAfter > input.currentBefore;
   const workDecreased =
     input.workItemsRequiredAfter < input.workItemsRequiredBefore;
+  const pendingIncreased = input.pendingAfter > input.pendingBefore;
   const newlyScheduled =
     input.presentationsScheduled > 0 || input.plpEnqueued === true;
   const truncatedWithNewSchedule =
     input.retryReadyIdentities > input.presentationsToEnqueue &&
     input.presentationsScheduled > 0;
   return {
-    usefulProgress: workDecreased || newlyScheduled || truncatedWithNewSchedule,
+    usefulProgress: durableCurrentIncreased,
+    durableCurrentIncreased,
     workDecreased,
+    pendingIncreased,
     newlyScheduled,
     truncatedWithNewSchedule,
+  };
+}
+
+function idlePassResult(input: {
+  readonly locale: string;
+  readonly reason: string;
+  readonly before: LocalizationReconciliationEligibility;
+  readonly after?: LocalizationReconciliationEligibility;
+}): LocalizationReconciliationPassResult {
+  const after = input.after ?? input.before;
+  return {
+    locale: input.locale,
+    ran: false,
+    reason: input.reason,
+    presentationsScheduled: 0,
+    presentationsDeduped: 0,
+    retryReadyIdentities: 0,
+    workItemsRequiredBefore: input.before.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    currentBefore: input.before.durableCurrent,
+    currentAfter: after.durableCurrent,
+    ctCurrentBefore: input.before.ctCurrent,
+    ctCurrentAfter: after.ctCurrent,
+    plpCurrentBefore: input.before.plpCurrent,
+    plpCurrentAfter: after.plpCurrent,
+    pendingBefore: input.before.pending,
+    pendingAfter: after.pending,
+    usefulProgress: false,
+    continuationKind: "none",
+    continuationScheduled: false,
+    continuationDelayMs: 0,
+    noProgressStreak: 0,
   };
 }
 
@@ -353,26 +439,15 @@ export async function runLocalizationReconciliationPass(
     if (key) {
       noProgressStreakByLocale.delete(key);
     }
-    return {
+    return idlePassResult({
       locale: eligibility.canonicalLocale || localeInput,
-      ran: false,
       reason: eligibility.reason,
-      presentationsScheduled: 0,
-      presentationsDeduped: 0,
-      retryReadyIdentities: 0,
-      workItemsRequiredBefore: eligibility.workItemsRequired,
-      workItemsRequiredAfter: eligibility.workItemsRequired,
-      usefulProgress: false,
-      continuationKind: "none",
-      continuationScheduled: false,
-      continuationDelayMs: 0,
-      noProgressStreak: 0,
-    };
+      before: eligibility,
+    });
   }
 
   const locale = eligibility.canonicalLocale;
   const localeKey = canonicalKey(locale);
-  const workBefore = eligibility.workItemsRequired;
   const maxPresentations =
     d.maxPresentationsPerPass ??
     LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS;
@@ -395,10 +470,14 @@ export async function runLocalizationReconciliationPass(
     });
   }
 
-  const workAfter = await assessLocalizationReconciliationEligibility(locale, d);
+  const after = await assessLocalizationReconciliationEligibility(locale, d);
   const progress = classifyLocalizationReconciliationProgress({
-    workItemsRequiredBefore: workBefore,
-    workItemsRequiredAfter: workAfter.workItemsRequired,
+    currentBefore: eligibility.durableCurrent,
+    currentAfter: after.durableCurrent,
+    workItemsRequiredBefore: eligibility.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    pendingBefore: eligibility.pending,
+    pendingAfter: after.pending,
     presentationsScheduled: residual.presentationsScheduled,
     presentationsDeduped: residual.presentationsDeduped,
     plpEnqueued,
@@ -406,22 +485,33 @@ export async function runLocalizationReconciliationPass(
     presentationsToEnqueue: residual.presentationsToEnqueue,
   });
 
-  const workRemains =
-    workAfter.eligible && workAfter.workItemsRequired > 0;
+  const baseFields = {
+    locale,
+    ran: true as const,
+    presentationsScheduled: residual.presentationsScheduled,
+    presentationsDeduped: residual.presentationsDeduped,
+    retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
+    workItemsRequiredBefore: eligibility.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    currentBefore: eligibility.durableCurrent,
+    currentAfter: after.durableCurrent,
+    ctCurrentBefore: eligibility.ctCurrent,
+    ctCurrentAfter: after.ctCurrent,
+    plpCurrentBefore: eligibility.plpCurrent,
+    plpCurrentAfter: after.plpCurrent,
+    pendingBefore: eligibility.pending,
+    pendingAfter: after.pending,
+  };
+
+  const workRemains = after.eligible && after.workItemsRequired > 0;
 
   if (!workRemains) {
     noProgressStreakByLocale.delete(localeKey);
     return {
-      locale,
-      ran: true,
+      ...baseFields,
       reason: "ok",
-      presentationsScheduled: residual.presentationsScheduled,
-      presentationsDeduped: residual.presentationsDeduped,
-      retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
-      workItemsRequiredBefore: workBefore,
-      workItemsRequiredAfter: workAfter.workItemsRequired,
       usefulProgress: progress.usefulProgress,
-      continuationKind: "none",
+      continuationKind: "none" as const,
       continuationScheduled: false,
       continuationDelayMs: 0,
       noProgressStreak: 0,
@@ -433,23 +523,16 @@ export async function runLocalizationReconciliationPass(
     const delay =
       d.continuationDelayMs ?? LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS;
     return {
-      locale,
-      ran: true,
+      ...baseFields,
       reason: "ok",
-      presentationsScheduled: residual.presentationsScheduled,
-      presentationsDeduped: residual.presentationsDeduped,
-      retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
-      workItemsRequiredBefore: workBefore,
-      workItemsRequiredAfter: workAfter.workItemsRequired,
       usefulProgress: true,
-      continuationKind: "normal",
+      continuationKind: "normal" as const,
       continuationScheduled: true,
       continuationDelayMs: delay,
       noProgressStreak: 0,
     };
   }
 
-  // No useful progress: unchanged work and/or dedupe-only rediscovery.
   const streak = (noProgressStreakByLocale.get(localeKey) ?? 0) + 1;
   noProgressStreakByLocale.set(localeKey, streak);
   const providerPressure = blockedLooksLikeProviderPressure(residual);
@@ -458,14 +541,8 @@ export async function runLocalizationReconciliationPass(
     providerPressure ? "provider_pressure_backoff" : "no_progress_backoff";
 
   return {
-    locale,
-    ran: true,
+    ...baseFields,
     reason: continuationKind,
-    presentationsScheduled: residual.presentationsScheduled,
-    presentationsDeduped: residual.presentationsDeduped,
-    retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
-    workItemsRequiredBefore: workBefore,
-    workItemsRequiredAfter: workAfter.workItemsRequired,
     usefulProgress: false,
     continuationKind,
     continuationScheduled: true,
@@ -570,6 +647,14 @@ export function scheduleLocalizationReconciliation(input: {
           retryReadyIdentities: passResult.retryReadyIdentities,
           workItemsRequiredBefore: passResult.workItemsRequiredBefore,
           workItemsRequiredAfter: passResult.workItemsRequiredAfter,
+          currentBefore: passResult.currentBefore,
+          currentAfter: passResult.currentAfter,
+          ctCurrentBefore: passResult.ctCurrentBefore,
+          ctCurrentAfter: passResult.ctCurrentAfter,
+          plpCurrentBefore: passResult.plpCurrentBefore,
+          plpCurrentAfter: passResult.plpCurrentAfter,
+          pendingBefore: passResult.pendingBefore,
+          pendingAfter: passResult.pendingAfter,
           usefulProgress: passResult.usefulProgress,
           continuationKind: passResult.continuationKind,
           continuationScheduled: passResult.continuationScheduled,

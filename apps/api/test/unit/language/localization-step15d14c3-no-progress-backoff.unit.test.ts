@@ -47,18 +47,20 @@ function emptyCtBucket(overrides: {
   stale?: number;
   invalid?: number;
   workItemsRequired?: number;
+  current?: number;
+  pending?: number;
 }) {
   const missing = overrides.missing ?? 0;
   const stale = overrides.stale ?? 0;
   const invalid = overrides.invalid ?? 0;
   return {
     ct: {
-      current: 0,
+      current: overrides.current ?? 0,
       missing,
       stale,
       invalid,
       failed: 0,
-      pending: 0,
+      pending: overrides.pending ?? 0,
       workItemsRequired:
         overrides.workItemsRequired ?? missing + stale + invalid,
     },
@@ -155,10 +157,14 @@ afterEach(() => {
 });
 
 describe("STEP 15D.14.C.3 no-progress / provider-pressure backoff", () => {
-  it("progress classifier: dedupe alone is not useful progress", () => {
+  it("progress classifier: only durable current increase is useful progress", () => {
     const onlyDedupe = classifyLocalizationReconciliationProgress({
+      currentBefore: 40,
+      currentAfter: 40,
       workItemsRequiredBefore: 26,
       workItemsRequiredAfter: 26,
+      pendingBefore: 0,
+      pendingAfter: 0,
       presentationsScheduled: 0,
       presentationsDeduped: 17,
       plpEnqueued: false,
@@ -168,33 +174,56 @@ describe("STEP 15D.14.C.3 no-progress / provider-pressure backoff", () => {
     assert.equal(onlyDedupe.usefulProgress, false);
 
     const newlyScheduled = classifyLocalizationReconciliationProgress({
+      currentBefore: 40,
+      currentAfter: 40,
       workItemsRequiredBefore: 26,
       workItemsRequiredAfter: 26,
+      pendingBefore: 0,
+      pendingAfter: 0,
       presentationsScheduled: 3,
       presentationsDeduped: 0,
       plpEnqueued: false,
       retryReadyIdentities: 17,
       presentationsToEnqueue: 3,
     });
-    assert.equal(newlyScheduled.usefulProgress, true);
+    assert.equal(newlyScheduled.usefulProgress, false);
 
-    const workDropped = classifyLocalizationReconciliationProgress({
+    const workDroppedViaPending = classifyLocalizationReconciliationProgress({
+      currentBefore: 40,
+      currentAfter: 40,
       workItemsRequiredBefore: 26,
       workItemsRequiredAfter: 17,
+      pendingBefore: 0,
+      pendingAfter: 9,
       presentationsScheduled: 0,
       presentationsDeduped: 0,
       plpEnqueued: false,
       retryReadyIdentities: 0,
       presentationsToEnqueue: 0,
     });
-    assert.equal(workDropped.usefulProgress, true);
+    assert.equal(workDroppedViaPending.usefulProgress, false);
+
+    const durableReady = classifyLocalizationReconciliationProgress({
+      currentBefore: 40,
+      currentAfter: 42,
+      workItemsRequiredBefore: 26,
+      workItemsRequiredAfter: 24,
+      pendingBefore: 0,
+      pendingAfter: 0,
+      presentationsScheduled: 0,
+      presentationsDeduped: 0,
+      plpEnqueued: false,
+      retryReadyIdentities: 0,
+      presentationsToEnqueue: 0,
+    });
+    assert.equal(durableReady.usefulProgress, true);
   });
 
-  it("A. progress + remaining work -> normal continuation", async () => {
+  it("A. enqueue without durable current increase -> no-progress backoff", async () => {
     setLocalizationReconciliationDriverDepsForTests({
       resolveLocale: async () => registryRecord("ka"),
       assessWebUi: async () => ({ dataReady: true }),
-      measureCtWork: async () => emptyCtBucket({ missing: 10 }),
+      measureCtWork: async () => emptyCtBucket({ missing: 10, current: 40 }),
       planBackfill: async () => emptyPlan(0),
       runResidual: async () =>
         residualResult({ scheduled: 3, ready: 10, toEnqueue: 3 }),
@@ -204,14 +233,11 @@ describe("STEP 15D.14.C.3 no-progress / provider-pressure backoff", () => {
     });
 
     const pass = await runLocalizationReconciliationPass("ka");
-    assert.equal(pass.usefulProgress, true);
-    assert.equal(pass.continuationKind, "normal");
+    assert.equal(pass.usefulProgress, false);
+    assert.equal(pass.currentBefore, pass.currentAfter);
+    assert.equal(pass.continuationKind, "no_progress_backoff");
     assert.equal(pass.continuationScheduled, true);
-    assert.equal(
-      pass.continuationDelayMs,
-      1_000,
-    );
-    assert.equal(pass.noProgressStreak, 0);
+    assert.equal(pass.continuationDelayMs, 5_000);
   });
 
   it("B. unchanged work + zero newly scheduled -> no-progress backoff", async () => {
@@ -324,23 +350,25 @@ describe("STEP 15D.14.C.3 no-progress / provider-pressure backoff", () => {
     assert.equal(fifth.continuationDelayMs, 8_000); // capped
   });
 
-  it("F. later successful progress -> backoff resets", async () => {
-    let scheduled = 0;
+  it("F. later durable current increase -> backoff resets", async () => {
+    let ctCurrent = 40;
+    let bumpOnResidual = false;
     setLocalizationReconciliationDriverDepsForTests({
       resolveLocale: async () => registryRecord("ka"),
       assessWebUi: async () => ({ dataReady: true }),
-      measureCtWork: async () => emptyCtBucket({ missing: 5 }),
+      measureCtWork: async () => emptyCtBucket({ missing: 5, current: ctCurrent }),
       planBackfill: async () => emptyPlan(0),
       runResidual: async () => {
-        if (scheduled === 0) {
-          return residualResult({
-            scheduled: 0,
-            deduped: 5,
-            ready: 5,
-            toEnqueue: 5,
-          });
+        if (bumpOnResidual) {
+          ctCurrent += 2;
+          return residualResult({ scheduled: 2, ready: 5, toEnqueue: 2 });
         }
-        return residualResult({ scheduled: 2, ready: 5, toEnqueue: 2 });
+        return residualResult({
+          scheduled: 0,
+          deduped: 5,
+          ready: 5,
+          toEnqueue: 5,
+        });
       },
       enqueuePlp: async () => undefined,
       continuationDelayMs: 500,
@@ -356,9 +384,10 @@ describe("STEP 15D.14.C.3 no-progress / provider-pressure backoff", () => {
       1,
     );
 
-    scheduled = 1;
+    bumpOnResidual = true;
     const advanced = await runLocalizationReconciliationPass("ka");
     assert.equal(advanced.usefulProgress, true);
+    assert.ok(advanced.currentAfter > advanced.currentBefore);
     assert.equal(advanced.continuationKind, "normal");
     assert.equal(advanced.noProgressStreak, 0);
     assert.equal(advanced.continuationDelayMs, 500);

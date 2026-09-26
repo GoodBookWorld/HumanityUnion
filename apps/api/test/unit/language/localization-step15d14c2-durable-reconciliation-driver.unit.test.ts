@@ -42,18 +42,20 @@ function emptyCtBucket(overrides: {
   stale?: number;
   invalid?: number;
   workItemsRequired?: number;
+  current?: number;
+  pending?: number;
 }) {
   const missing = overrides.missing ?? 0;
   const stale = overrides.stale ?? 0;
   const invalid = overrides.invalid ?? 0;
   return {
     ct: {
-      current: 0,
+      current: overrides.current ?? 0,
       missing,
       stale,
       invalid,
       failed: 0,
-      pending: 0,
+      pending: overrides.pending ?? 0,
       workItemsRequired:
         overrides.workItemsRequired ?? missing + stale + invalid,
     },
