@@ -2,6 +2,14 @@
  * RESET 05 — public Participant profile PLP adapter.
  * Only visibility-eligible public/members_only profiles; never contact/security/private data.
  *
+ * STEP 15D.14.B.2 — canonicalVersion fingerprints only MACHINE_CONTENT that
+ * affects localized presentation (biography + public skills). Protected
+ * identity (displayName / organization) is presentation-copied, not translated,
+ * and must not STALE PLP when only those fields change.
+ *
+ * Private skills (skillsVisibility !== public) are PRIVATE_SOURCE_ONLY —
+ * excluded from MACHINE_CONTENT, provider payload, and completeness.
+ *
  * Production: loads live MemberProfile from Mongo.
  * Tests may still seed an in-memory override via seedParticipantPublicPlpForTests.
  */
@@ -40,6 +48,7 @@ type TestSeedRow = {
   biography: string;
   organization: string;
   skills: readonly string[];
+  skillsVisibility: "public" | "members_only" | "private";
   visibility: "public" | "members_only" | "hidden";
   revision: number;
 };
@@ -56,6 +65,7 @@ export function seedParticipantPublicPlpForTests(input: {
   readonly biography: string;
   readonly organization?: string;
   readonly skills?: readonly string[];
+  readonly skillsVisibility?: "public" | "members_only" | "private";
   readonly visibility?: "public" | "members_only" | "hidden";
 }): void {
   testStore.set(input.profileId, {
@@ -63,14 +73,44 @@ export function seedParticipantPublicPlpForTests(input: {
     biography: input.biography,
     organization: input.organization ?? "",
     skills: input.skills ?? [],
+    skillsVisibility: input.skillsVisibility ?? "public",
     visibility: input.visibility ?? "public",
     revision: 1,
   });
 }
 
-function fingerprint(presentation: PublicPresentationNode): string {
+/**
+ * Fingerprint only localization-affecting MACHINE_CONTENT (Option A).
+ * Private skills omitted — must never enter provider or completeness.
+ */
+export function buildParticipantPublicMachineContentFingerprintInput(input: {
+  readonly biography?: string | null;
+  readonly skills?: readonly string[] | null;
+  readonly skillsVisibility?: string | null;
+}): {
+  readonly biography: string;
+  readonly skills: readonly string[];
+} {
+  const biography = typeof input.biography === "string" ? input.biography : "";
+  const skillsPublic = input.skillsVisibility === "public";
+  const skills =
+    skillsPublic && Array.isArray(input.skills)
+      ? input.skills.filter((s) => typeof s === "string" && s.trim().length > 0)
+      : [];
+  return { biography, skills };
+}
+
+function fingerprintMachineContent(input: {
+  readonly biography: string;
+  readonly skills: readonly string[];
+}): string {
   return createHash("sha256")
-    .update(JSON.stringify(presentation))
+    .update(
+      JSON.stringify({
+        biography: input.biography,
+        skills: input.skills,
+      }),
+    )
     .digest("hex")
     .slice(0, 32);
 }
@@ -103,20 +143,26 @@ export function buildParticipantPublicCanonicalPresentation(input: {
   readonly biography?: string;
   readonly organization?: string;
   readonly skills?: readonly string[];
+  readonly skillsVisibility?: string;
 }): {
   readonly presentation: PublicPresentationNode;
   readonly canonicalVersion: string;
 } {
+  const machine = buildParticipantPublicMachineContentFingerprintInput({
+    biography: input.biography,
+    skills: input.skills,
+    skillsVisibility: input.skillsVisibility ?? "public",
+  });
   const presentation = buildPresentation({
     profileId: input.profileId,
     displayName: input.displayName,
-    biography: input.biography ?? "",
+    biography: machine.biography,
     organization: input.organization ?? "",
-    skills: input.skills ?? [],
+    skills: machine.skills,
   });
   return {
     presentation,
-    canonicalVersion: fingerprint(presentation),
+    canonicalVersion: fingerprintMachineContent(machine),
   };
 }
 
@@ -124,7 +170,28 @@ export const participantPublicPlpDomainAdapter: PlpDomainAdapter = {
   adapterId: "participant_public",
   supportedEntityTypes: [PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE],
   usesConsumerIdentityAuthority: false,
-  fingerprintCanonicalVersion: fingerprint,
+  fingerprintCanonicalVersion: (presentation) => {
+    // Adapter registry still calls this with full presentation; derive machine
+    // subset so identity edits do not invent a divergent fingerprint.
+    const biography =
+      presentation &&
+      typeof presentation === "object" &&
+      !Array.isArray(presentation) &&
+      typeof (presentation as Record<string, unknown>).biography === "string"
+        ? String((presentation as Record<string, unknown>).biography)
+        : "";
+    const skillsRaw =
+      presentation &&
+      typeof presentation === "object" &&
+      !Array.isArray(presentation) &&
+      Array.isArray((presentation as Record<string, unknown>).skills)
+        ? ((presentation as Record<string, unknown>).skills as unknown[])
+        : [];
+    const skills = skillsRaw.filter(
+      (entry): entry is string => typeof entry === "string",
+    );
+    return fingerprintMachineContent({ biography, skills });
+  },
   fieldPolicyFor: () => POLICY,
   async resolveCanonicalEntity(input): Promise<PlpLocalizableEntityContract | null> {
     const seeded = testStore.get(input.entityId);
@@ -132,19 +199,20 @@ export const participantPublicPlpDomainAdapter: PlpDomainAdapter = {
       if (seeded.visibility === "hidden") {
         return null;
       }
-      const presentation = buildPresentation({
+      const built = buildParticipantPublicCanonicalPresentation({
         profileId: input.entityId,
         displayName: seeded.displayName,
         biography: seeded.biography,
         organization: seeded.organization,
         skills: seeded.skills,
+        skillsVisibility: seeded.skillsVisibility,
       });
       return {
         entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
         entityId: input.entityId,
-        canonicalVersion: fingerprint(presentation),
+        canonicalVersion: built.canonicalVersion,
         localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-        canonicalPresentation: presentation,
+        canonicalPresentation: built.presentation,
         fieldPolicy: POLICY,
         targetLocale: input.locale,
         contentRevision: seeded.revision,
@@ -159,20 +227,21 @@ export const participantPublicPlpDomainAdapter: PlpDomainAdapter = {
       return null;
     }
 
-    const presentation = buildPresentation({
+    const built = buildParticipantPublicCanonicalPresentation({
       profileId: profile.profileId,
       displayName: profile.displayName,
-      biography: profile.biography ?? "",
-      organization: profile.organization ?? "",
-      skills: profile.skills ?? [],
+      biography: profile.biography,
+      organization: profile.organization,
+      skills: profile.skills,
+      skillsVisibility: profile.skillsVisibility,
     });
 
     return {
       entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
       entityId: profile.profileId,
-      canonicalVersion: fingerprint(presentation),
+      canonicalVersion: built.canonicalVersion,
       localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-      canonicalPresentation: presentation,
+      canonicalPresentation: built.presentation,
       fieldPolicy: POLICY,
       targetLocale: input.locale,
       contentRevision: 1,

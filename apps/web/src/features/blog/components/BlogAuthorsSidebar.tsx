@@ -8,11 +8,43 @@ import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
+import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { fetchPublicBlogAuthors } from "../api";
 
+function AuthorLatestPublicationTitle({
+  postId,
+  canonicalTitle,
+}: {
+  readonly postId: string;
+  readonly canonicalTitle: string;
+}) {
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind: "blog_post",
+    sourceRecordId: postId,
+    fallbackFields: {
+      title: canonicalTitle,
+      excerpt: "",
+      content: "",
+    },
+    fieldOrder: ["title"],
+  });
+  const title =
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.title?.trim()
+      ? persisted.fields.title
+      : canonicalTitle;
+  const titleLang =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
+  return <span lang={titleLang}>{title}</span>;
+}
+
 /**
- * Ordinary public Blog authors rail — canonical latest titles only.
- * No post-mount CT apply (unified browser-native reading).
+ * Ordinary public Blog authors rail.
+ * STEP 15D.14.B.2 — latest publication title via shared blog_post hu-persisted
+ * boundary (canonical fallback when localized presentation unavailable).
  */
 export function BlogAuthorsSidebar() {
   const t = useTranslations("blogPublic.discovery.authors");
@@ -69,12 +101,11 @@ export function BlogAuthorsSidebar() {
                   )}
                 </div>
                 <p className="blog-authors-list__latest-label hu-caption">{t("latestLabel")}</p>
-                <Link
-                  href={publicationHref}
-                  className="blog-authors-list__latest"
-                  lang={DEFAULT_PLATFORM_LANGUAGE}
-                >
-                  {entry.latestPublication.title}
+                <Link href={publicationHref} className="blog-authors-list__latest">
+                  <AuthorLatestPublicationTitle
+                    postId={entry.latestPublication.postId}
+                    canonicalTitle={entry.latestPublication.title}
+                  />
                 </Link>
               </li>
             );

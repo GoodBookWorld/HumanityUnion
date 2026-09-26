@@ -40,18 +40,20 @@ import {
 import { applyParticipantPublicPlpToProjection } from "../language/published-localized-presentation/universal/adapters/apply-participant-public-plp.js";
 import { enqueueParticipantPublicPlpBuilds } from "../language/published-localized-presentation/universal/adapters/enqueue-participant-public-plp.js";
 
+/**
+ * STEP 15D.14.B.2 — enqueue only when MACHINE_CONTENT / eligibility inputs
+ * that affect participant_public canonicalVersion change. Identity-only edits
+ * (displayName / organization) must not strand or rebuild PLP.
+ */
 function profileProseChanged(
   before: MemberProfile,
   after: MemberProfile,
 ): boolean {
   return (
     before.biography !== after.biography ||
-    before.organization !== after.organization ||
     JSON.stringify(before.skills) !== JSON.stringify(after.skills) ||
     before.profileVisibility !== after.profileVisibility ||
-    before.skillsVisibility !== after.skillsVisibility ||
-    before.showOrganization !== after.showOrganization ||
-    before.displayName !== after.displayName
+    before.skillsVisibility !== after.skillsVisibility
   );
 }
 

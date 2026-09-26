@@ -292,6 +292,17 @@ export function mapProviderBoundaryReasonToFailure(input: {
     });
   }
 
+  if (reason === "TERMINOLOGY_PROTECTION_VIOLATION") {
+    return structuredFailure({
+      failureCode: "PROVIDER_INTEGRITY",
+      retryable: false,
+      stage: "provider",
+      safeReason: forensics
+        ? `PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION;${forensics}`
+        : "PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION",
+    });
+  }
+
   if (reason === "PAYLOAD_LIMIT") {
     return structuredFailure({
       failureCode: "PROVIDER_PAYLOAD",

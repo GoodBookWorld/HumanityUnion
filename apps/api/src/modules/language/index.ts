@@ -89,6 +89,28 @@ export type {
   ContentTranslationValidityClassification,
 } from "./content-translation-validity.js";
 export {
+  LOCALIZATION_INPUT_POLICY_VERSION,
+  buildLocalizationInputVersion,
+  buildLocalizationInputVersionFromConcepts,
+  buildTerminologyDigest,
+  classifyLocalizationInputCurrentness,
+  collectSourceTextLeaves,
+  selectEffectiveTerminologyLines,
+  sourceContainsCanonicalTerm,
+} from "./localization-input-contract.js";
+export {
+  TerminologyProtectionViolationError,
+  assessRequiredTerminologyProtection,
+  assertRequiredTerminologyProtection,
+  loadPublishedTerminologyConcepts,
+  resolveSharedProviderTerminologyContext,
+} from "./terminology-protection-contract.js";
+export { classifyPublishedLocalizedPresentationValidity } from "./published-localized-presentation/plp-validity.js";
+export type { PlpReconciliationState, PlpValidityClassification } from "./published-localized-presentation/plp-validity.js";
+export {
+  buildParticipantPublicMachineContentFingerprintInput,
+} from "./published-localized-presentation/universal/adapters/participant-public-adapter.js";
+export {
   applyPublicPresentationTranslations,
   collectAutoTranslatableNodes,
   ensureLocalizedPublicPresentation,

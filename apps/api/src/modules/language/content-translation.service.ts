@@ -74,6 +74,14 @@ import {
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
+import {
+  assertRequiredTerminologyProtection,
+  loadPublishedTerminologyConcepts,
+} from "./terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "./localization-input-contract.js";
 import { TranslationProviderError } from "./translation.config.js";
 import { withContentTranslationWorkerSlot } from "./content-translation-worker-concurrency.js";
 
@@ -564,6 +572,33 @@ export async function getOrCreateContentTranslation(input: {
     };
   }
 
+  const concepts = await loadPublishedTerminologyConcepts();
+  const sourceText = collectSourceTextLeaves(providerFields);
+  const translatedText = collectSourceTextLeaves(translatedFields);
+  try {
+    assertRequiredTerminologyProtection({
+      concepts,
+      targetLocale: targetLanguage,
+      sourceText,
+      translatedText,
+    });
+  } catch (error) {
+    throw new ContentTranslationValidationError(
+      "TERMINOLOGY_PROTECTION_VIOLATION",
+      error instanceof Error
+        ? error.message
+        : "Required terminology/preferred terms were not honored.",
+      "malformed_response",
+    );
+  }
+
+  const inputVersion = buildLocalizationInputVersionFromConcepts({
+    sourceVersion: source.sourceVersion,
+    targetLocale: targetLanguage,
+    concepts,
+    sourceText,
+  });
+
   const record: TranslatedContentRecord = {
     translationId: existing?.translationId ?? `translation-${randomUUID()}`,
     sourceKind: source.sourceKind,
@@ -578,6 +613,7 @@ export async function getOrCreateContentTranslation(input: {
     updatedAt: new Date().toISOString(),
     stale: false,
     freshness: "current",
+    localizationInputVersion: inputVersion.localizationInputVersion,
   };
 
   await upsertContentTranslation(record);

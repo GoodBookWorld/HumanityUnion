@@ -64,6 +64,11 @@ export interface TranslatedContentRecord {
   /** True when sourceVersion no longer matches the live original. */
   readonly stale: boolean;
   readonly freshness: TranslationFreshness;
+  /**
+   * STEP 15D.14.B.2 — hash of sourceVersion + locale + effective terminology
+   * + policy version. Optional for historical rows (legacy_unversioned).
+   */
+  readonly localizationInputVersion?: string;
 }
 
 /**

@@ -36,6 +36,7 @@ export async function enqueueParticipantPublicPlpBuilds(
     biography: profile.biography,
     organization: profile.organization,
     skills: profile.skills,
+    skillsVisibility: profile.skillsVisibility,
   });
 
   const locales = await resolvePlpAutoBuildLocales({ excludeSourceLanguage: "en" });

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { PublicBlogPostListItem } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
+import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { formatBlogPublishedDate } from "../api";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogCoverImage } from "./BlogCoverImage";
@@ -18,7 +19,26 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
   const href = `/blog/${encodeURIComponent(post.slug)}`;
-  const titleForDisplay = post.title;
+  const persisted = useHuPersistedOrdinaryFields({
+    sourceKind: "blog_post",
+    sourceRecordId: post.postId,
+    fallbackFields: {
+      title: post.title,
+      excerpt: "",
+      content: "",
+    },
+    fieldOrder: ["title"],
+  });
+  const titleForDisplay =
+    persisted.owner === "hu-persisted" &&
+    persisted.presentationMode === "localized" &&
+    persisted.fields.title?.trim()
+      ? persisted.fields.title
+      : post.title;
+  const titleLang =
+    persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"
+      ? persisted.activeLanguage
+      : DEFAULT_PLATFORM_LANGUAGE;
   const categoryLabel = resolveBlogCategoryDisplayName(
     post.category.categoryId,
     t,
@@ -26,7 +46,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
   );
 
   return (
-    <li className="blog-latest-mini__item">
+    <li className="blog-latest-mini__item" data-hu-reading-owner={persisted.owner}>
       <Link href={href} className="blog-latest-mini__link">
         <span className="blog-latest-mini__thumb-frame" aria-hidden="true">
           <BlogCoverImage
@@ -38,7 +58,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
           />
         </span>
         <span className="blog-latest-mini__body">
-          <span className="blog-latest-mini__title" lang={DEFAULT_PLATFORM_LANGUAGE}>
+          <span className="blog-latest-mini__title" lang={titleLang}>
             {titleForDisplay}
           </span>
           <span className="blog-latest-mini__category">{categoryLabel}</span>
@@ -54,7 +74,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
 
 /**
  * Pack 14D — Latest 4 mini-cards for the right discovery rail.
- * Ordinary reading: canonical titles only (no CT visible apply).
+ * STEP 15D.14.B.2 — same blog_post hu-persisted ordinary-reading boundary as cards.
  */
 export function BlogLatestMiniCards({ posts }: BlogLatestMiniCardsProps) {
   const t = useTranslations("blogPublic.discovery.latest");

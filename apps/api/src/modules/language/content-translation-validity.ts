@@ -7,6 +7,7 @@
  * B. STRUCTURALLY COMPLETE — required translated fields (when originals provided)
  * C. PRESENTATION ELIGIBLE — real localized presentation, not a placeholder
  * D. RECONCILIATION STATE — READY / MISSING / STALE / INVALID / BLOCKED / NOT_APPLICABLE
+ * E. LOCALIZATION INPUT — terminology/policy input version (15D.14.B.2)
  *
  * Gate C consumes this classifier for reconciliation. Gate B does not mutate data.
  */
@@ -16,6 +17,8 @@ import {
   normalizeLanguageRegistryLocaleKey,
   type TranslatedContentRecord,
 } from "@hu/types";
+
+import { classifyLocalizationInputCurrentness } from "./localization-input-contract.js";
 
 export type ContentTranslationReconciliationState =
   | "READY"
@@ -145,7 +148,10 @@ function translatedFieldsFromRecord(
 export function classifyContentTranslationValidity(input: {
   readonly translation: TranslatedContentRecord | null | undefined;
   readonly liveSourceVersion?: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
   readonly originalFields?: Readonly<Record<string, string>> | null;
+  /** When true, treat as INVALID even if otherwise READY (producer rejected path). */
+  readonly terminologyProtectionFailed?: boolean;
 }): ContentTranslationValidityClassification {
   const row = input.translation ?? null;
   if (!row) {
@@ -202,6 +208,38 @@ export function classifyContentTranslationValidity(input: {
       localizedCoverage: false,
       workRemaining: true,
       reasons: ["stale_identity"],
+    };
+  }
+
+  // 15D.14.B.2 — terminology/policy input drift → reconcilable STALE.
+  // Historical rows without localizationInputVersion stay legacy (not auto-STALE).
+  if (identityCurrent && input.liveLocalizationInputVersion) {
+    const inputState = classifyLocalizationInputCurrentness({
+      storedLocalizationInputVersion: row.localizationInputVersion,
+      liveLocalizationInputVersion: input.liveLocalizationInputVersion,
+    });
+    if (inputState === "stale") {
+      return {
+        identityCurrent: false,
+        structurallyComplete,
+        presentationEligible: false,
+        reconciliationState: "STALE",
+        localizedCoverage: false,
+        workRemaining: true,
+        reasons: ["localization_input_stale"],
+      };
+    }
+  }
+
+  if (input.terminologyProtectionFailed === true && identityCurrent) {
+    return {
+      identityCurrent: true,
+      structurallyComplete,
+      presentationEligible: false,
+      reconciliationState: "INVALID",
+      localizedCoverage: false,
+      workRemaining: true,
+      reasons: ["terminology_protection_violation"],
     };
   }
 
@@ -268,9 +306,11 @@ export function classifyContentTranslationValidity(input: {
 export function isPresentationEligibleTranslation(
   row: TranslatedContentRecord,
   liveSourceVersion?: string | null,
+  liveLocalizationInputVersion?: string | null,
 ): boolean {
   return classifyContentTranslationValidity({
     translation: row,
     liveSourceVersion,
+    liveLocalizationInputVersion,
   }).presentationEligible;
 }

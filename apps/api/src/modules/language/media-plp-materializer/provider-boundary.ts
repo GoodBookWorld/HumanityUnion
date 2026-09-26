@@ -19,6 +19,16 @@ import {
 
 import type { TranslationProvider } from "../translation-provider.js";
 import { TranslationProviderError } from "../translation.config.js";
+import { TerminologyGlossaryValidationError } from "../terminology-glossary/terminology-glossary.errors.js";
+import {
+  loadPublishedTerminologyConcepts,
+  resolveSharedProviderTerminologyContext,
+  assessRequiredTerminologyProtection,
+} from "../terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "../localization-input-contract.js";
 import {
   markMaterializerProviderCall,
   markMaterializerProviderImported,
@@ -72,6 +82,7 @@ export type ProviderBoundaryFailureReason =
   | "WRONG_TARGET_LANGUAGE"
   | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
   | "BRAND_TOKEN_PRESERVATION_FAILED"
+  | "TERMINOLOGY_PROTECTION_VIOLATION"
   | "PARTIAL"
   | "TIMEOUT";
 
@@ -480,10 +491,41 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   readonly sourceVersion: string;
   readonly maxInputBytes?: number;
   readonly PROVIDER_TRANSPORT?: string;
+  /** Optional pre-resolved context; when omitted, live glossary is loaded. */
+  readonly terminologyContext?: string;
 }): Promise<ProviderBoundaryResult> {
   const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
   const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
   const expectedPaths = Object.keys(input.autoValues).sort();
+
+  let terminologyContext = input.terminologyContext?.trim() || "";
+  if (!terminologyContext) {
+    try {
+      terminologyContext = await resolveSharedProviderTerminologyContext(input.locale);
+    } catch (error) {
+      if (error instanceof TerminologyGlossaryValidationError) {
+        return failResult({
+          reason: "PROVIDER_FAILURE",
+          bytes: 0,
+          transport,
+          forensics: emptyForensics({ expectedPaths }),
+          messagePrefix: `TERMINOLOGY_CONTEXT_UNAVAILABLE:${error.message}`,
+        });
+      }
+      throw error;
+    }
+  }
+
+  const sourceText = collectSourceTextLeaves(input.autoValues);
+  const concepts = await loadPublishedTerminologyConcepts();
+  // localizationInputVersion computed for callers that stamp identity; digest
+  // also drives required-term enforcement below.
+  void buildLocalizationInputVersionFromConcepts({
+    sourceVersion: input.sourceVersion,
+    targetLocale: input.locale,
+    concepts,
+    sourceText,
+  });
 
   // RESET 05D.6 — extract Brand slots; provider receives MACHINE_TEXT only.
   const { payload: providerOwnedPayload, plans: brandSlotPlans } =
@@ -643,6 +685,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           contentType: "structured_json",
           sourceRecordId: input.sourceRecordId,
           sourceVersion: input.sourceVersion,
+          terminologyContext,
           safetyCleared: true,
         });
         lastProviderId = result.providerId;
@@ -1002,6 +1045,31 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         pathDiagnostics: toPathDiagnostics(forensics),
         forensics,
       };
+    }
+
+    // 15D.14.B.2 — required preferred/protected terms must appear; residual
+    // English canonical (e.g. mixed …Initiative) must not become READY.
+    const translatedText = collectSourceTextLeaves(aligned);
+    const termAssessment = assessRequiredTerminologyProtection({
+      concepts,
+      targetLocale: input.locale,
+      sourceText,
+      translatedText,
+    });
+    if (!termAssessment.ok) {
+      return failResult({
+        reason: "TERMINOLOGY_PROTECTION_VIOLATION",
+        bytes: totalBytes,
+        transport,
+        forensics: {
+          ...forensicsBase,
+          PROVIDER_PARTIAL_SUBREASON: "OTHER_STRUCTURAL_FAILURE",
+          PROVIDER_FAILURE_SUBTYPE: null,
+        },
+        messagePrefix: `TERMINOLOGY_PROTECTION_VIOLATION:${termAssessment.violations
+          .map((v) => `${v.conceptId}:${v.reason}`)
+          .join(",")}`,
+      });
     }
 
     return {

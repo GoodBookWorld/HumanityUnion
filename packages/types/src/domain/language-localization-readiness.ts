@@ -113,6 +113,18 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "public_news",
 ] as const;
 
+/**
+ * STEP 15D.14.B.2 — PLP-owned public Participant presentation (biography /
+ * public free-text skills). Distinct from Media PLP; readiness data may
+ * project this slice without Admin UI redesign (Gate F).
+ */
+export const LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES = [
+  "participant_public",
+] as const;
+
+export type LanguageActivationPlpOwnedParticipantEntityType =
+  (typeof LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES)[number];
+
 export type LanguageActivationPlpOwnedMediaEntityType =
   (typeof LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES)[number];
 
@@ -256,6 +268,12 @@ export type LanguageLocalizationReadinessReport = {
   readonly pwaCivic: LanguagePwaCivicReadinessSlice;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
+  /**
+   * STEP 15D.14.B.2 — participant_public PLP completeness (biography / public
+   * skills). Data for Gate F; does not alone flip Closure 07 READY.
+   * Optional on legacy fixtures; evaluator always populates.
+   */
+  readonly plpParticipant?: LanguageLocalizationCountBucket;
   readonly kindRows: readonly LanguageLocalizationKindStatusRow[];
   readonly seoReady: boolean;
   readonly searchLocalizationReady: boolean;
