@@ -31,6 +31,64 @@ import {
   type ResidualRetryPresentationSchedule,
 } from "./public-localization-retry-preflight.js";
 import { loadTranslatableSource } from "./content-translation.service.js";
+import {
+  planLocalizationReconciliationItem,
+  type LocalizationReconciliationPlanItem,
+} from "./localization-reconciliation-planner.js";
+import type { ContentTranslationReconciliationState } from "./content-translation-validity.js";
+
+function residualReconciliationState(
+  row: PublicLocalizationResidualWithPreflight,
+): ContentTranslationReconciliationState {
+  if (row.retryPreflight.liveTranslationInvalid) {
+    return "INVALID";
+  }
+  if (row.retryPreflight.liveTranslationStale) {
+    return "STALE";
+  }
+  const state = String(row.translationState).toUpperCase();
+  if (state.includes("STALE")) {
+    return "STALE";
+  }
+  if (state.includes("INVALID")) {
+    return "INVALID";
+  }
+  return "MISSING";
+}
+
+/** Gate C — deterministic INVALID → STALE → MISSING order (language-agnostic). */
+function sortResidualsByReconciliationPriority(
+  rows: readonly PublicLocalizationResidualWithPreflight[],
+): PublicLocalizationResidualWithPreflight[] {
+  const keyed: Array<{
+    row: PublicLocalizationResidualWithPreflight;
+    plan: LocalizationReconciliationPlanItem;
+  }> = rows.map((row) => ({
+    row,
+    plan: planLocalizationReconciliationItem({
+      owner: "CT",
+      entityType: row.family,
+      entityId: row.presentationIdentity.sourceRecordId,
+      targetLocale: row.targetLocale,
+      reconciliationState: residualReconciliationState(row),
+    }),
+  }));
+  keyed.sort((a, b) => {
+    if (a.plan.priority !== b.plan.priority) {
+      return a.plan.priority - b.plan.priority;
+    }
+    const type = a.plan.entityType.localeCompare(b.plan.entityType);
+    if (type !== 0) {
+      return type;
+    }
+    const id = a.plan.entityId.localeCompare(b.plan.entityId);
+    if (id !== 0) {
+      return id;
+    }
+    return a.plan.targetLocale.localeCompare(b.plan.targetLocale);
+  });
+  return keyed.map((entry) => entry.row);
+}
 
 export type PublicLocalizationResidualRetryMode = "dry-run" | "execute";
 
@@ -119,7 +177,9 @@ export async function runPublicLocalizationResidualRetry(input: {
   const blocked = explained.selection.blocked;
 
   // Defend against any non-ready sneaking into ready[].
-  const selected = ready.filter((row) => row.retryPreflight.ready === true);
+  const selected = sortResidualsByReconciliationPriority(
+    ready.filter((row) => row.retryPreflight.ready === true),
+  );
   if (selected.length !== ready.length) {
     return {
       mode: input.execute ? "execute" : "dry-run",

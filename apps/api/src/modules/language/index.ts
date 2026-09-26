@@ -78,6 +78,7 @@ export {
 export type { ResolveTranslatedDisplayInput } from "./resolve-translated-display.js";
 export {
   classifyContentTranslationValidity,
+  classifyContentTranslationForReconciliation,
   hasDeterministicPlaceholderPayloadPattern,
   hasRealLocalizationProvenance,
   isDeterministicPlaceholderProvenance,
@@ -88,6 +89,19 @@ export type {
   ContentTranslationReconciliationState,
   ContentTranslationValidityClassification,
 } from "./content-translation-validity.js";
+export {
+  isProviderWorkAction,
+  planLocalizationReconciliationItem,
+  planSourceOriginalExclusion,
+  reconciliationActionForState,
+  reconciliationWorkPriority,
+  sortLocalizationReconciliationPlan,
+} from "./localization-reconciliation-planner.js";
+export type {
+  LocalizationReconciliationOwner,
+  LocalizationReconciliationPlanItem,
+  LocalizationReconciliationWorkAction,
+} from "./localization-reconciliation-planner.js";
 export {
   LOCALIZATION_INPUT_POLICY_VERSION,
   buildLocalizationInputVersion,

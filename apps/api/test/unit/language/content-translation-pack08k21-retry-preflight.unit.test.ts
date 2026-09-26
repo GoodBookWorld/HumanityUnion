@@ -224,8 +224,19 @@ describe("Pack 08K.2.1 — residual retry preflight", () => {
       sourceVersion: source.sourceVersion,
       sourceLanguage: "en",
       targetLanguage: "uk",
-      translatedContent: { question: "[uk] Q" },
-      translationProvider: "deterministic",
+      translatedContent: {
+        question: "Питання українською",
+        outcomeSummary: source.fields.outcomeSummary
+          ? "Підсумок українською"
+          : "",
+        transparencyNote: source.fields.transparencyNote
+          ? "Прозорість українською"
+          : "",
+        structuredContent: source.fields.structuredContent
+          ? source.fields.structuredContent
+          : "",
+      },
+      translationProvider: "gemini",
       translationKind: "machine",
       createdAt: new Date().toISOString(),
       stale: false,

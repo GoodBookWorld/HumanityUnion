@@ -47,5 +47,10 @@ export function classifyLiveResidualIdentity(input: {
 export function isActionableLiveResidualBucket(
   bucket: LiveResidualIdentityBucket,
 ): boolean {
-  return bucket === "RETRY_READY_MISSING" || bucket === "RETRY_READY_STALE";
+  return (
+    bucket === "RETRY_READY_MISSING" ||
+    bucket === "RETRY_READY_STALE" ||
+    // Gate C — INVALID placeholders / non-presentation-eligible CURRENT are work.
+    bucket === "RETRY_READY_INVALID"
+  );
 }

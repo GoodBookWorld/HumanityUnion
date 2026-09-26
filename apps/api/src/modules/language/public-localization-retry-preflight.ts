@@ -37,7 +37,8 @@ import {
   fieldsAsPublicPresentation,
   type PublicLocalizationWorkItem,
 } from "./public-localization-corpus.js";
-import { classifyContentTranslationValidity } from "./content-translation-validity.js";
+import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
+import { loadPublishedTerminologyConcepts } from "./terminology-protection-contract.js";
 
 export type PublicLocalizationRetryPreflight = {
   readonly sourceResolvable: boolean;
@@ -143,6 +144,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   let presentationValid = false;
   let liveSourceVersion: string | null = null;
   let sourceLanguage: LanguageCode | null = null;
+  let sourceFields: Record<string, string> | null = null;
 
   try {
     const source = await loadTranslatableSource({
@@ -153,6 +155,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       sourceResolvable = true;
       sourceLanguage = source.sourceLanguage;
       liveSourceVersion = source.sourceVersion;
+      sourceFields = source.fields;
       const presentation = fieldsAsPublicPresentation(source.fields);
       collectAutoTranslatableNodes(presentation);
       fingerprintPublicPresentation(presentation);
@@ -194,16 +197,28 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       targetLanguage: item.targetLanguage,
     });
     if (row && row.freshness === "current" && row.stale !== true) {
-      const validity = classifyContentTranslationValidity({
+      let concepts: Awaited<ReturnType<typeof loadPublishedTerminologyConcepts>> = [];
+      try {
+        concepts = await loadPublishedTerminologyConcepts();
+      } catch {
+        concepts = [];
+      }
+      const validity = classifyContentTranslationForReconciliation({
         translation: row,
         liveSourceVersion,
+        originalFields: sourceFields,
+        concepts,
       });
-      if (validity.presentationEligible) {
+      if (validity.presentationEligible && validity.reconciliationState === "READY") {
         currentTranslationAbsent = false;
       } else if (validity.reconciliationState === "INVALID") {
-        // Gate B — do not treat placeholder as localized CURRENT; do not block
-        // future real-provider reconciliation (Gate C enqueues).
+        // Gate B/C — placeholder / terminology residual: normal reconciliation work.
         liveTranslationInvalid = true;
+        currentTranslationAbsent = true;
+      } else if (validity.reconciliationState === "STALE") {
+        liveTranslationStale = true;
+        currentTranslationAbsent = true;
+      } else if (validity.workRemaining) {
         currentTranslationAbsent = true;
       } else {
         currentTranslationAbsent = false;
@@ -239,12 +254,12 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   let blockReason: string | null = null;
 
   if (liveTranslationInvalid) {
-    // Gate B — classification only; Gate C reconciles. Do not set ready=true
-    // so existing residual retry selection will not enqueue here.
+    // Gate C — INVALID presentation-ineligible CURRENT is normal reconciliation work.
+    architectureRetryBasis =
+      CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
     readyState = "INVALID_PLACEHOLDER";
-    ready = false;
-    blockReason =
-      "Identity-current translation is not presentation-eligible (deterministic placeholder).";
+    ready = true;
+    blockReason = null;
   } else if (!currentTranslationAbsent) {
     readyState = "CURRENT";
     blockReason = "CURRENT translation already exists for live sourceVersion.";

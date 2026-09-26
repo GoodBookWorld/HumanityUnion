@@ -46,6 +46,7 @@ import {
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
 import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
+import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
 import {
   isSearchDiscoveryMappedSourceKind,
   projectFieldsToSearchDiscoveryAllowlist,
@@ -427,9 +428,25 @@ export async function getOrCreateContentTranslation(input: {
             translatedContent: existing.translatedContent,
           })
         ) {
-          return { source, translation: existing, generated: false };
+          // Gate C — coverage alone is not READY. INVALID / input-STALE must regenerate.
+          let concepts: Awaited<ReturnType<typeof loadPublishedTerminologyConcepts>> =
+            [];
+          try {
+            concepts = await loadPublishedTerminologyConcepts();
+          } catch {
+            concepts = [];
+          }
+          const validity = classifyContentTranslationForReconciliation({
+            translation: existing,
+            liveSourceVersion: source.sourceVersion,
+            originalFields: fullProviderFields,
+            concepts,
+          });
+          if (validity.reconciliationState === "READY") {
+            return { source, translation: existing, generated: false };
+          }
         }
-        // Compact or incomplete — fall through to full regenerate/replace.
+        // Compact, incomplete, INVALID, or STALE — fall through to regenerate/replace.
       } else {
         // on_demand: preserve prior "any current row skips" contract.
         return { source, translation: existing, generated: false };

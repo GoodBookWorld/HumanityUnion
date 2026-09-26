@@ -15,10 +15,16 @@
 import {
   isCompleteLocalizedProseBag,
   normalizeLanguageRegistryLocaleKey,
+  type TerminologyConcept,
   type TranslatedContentRecord,
 } from "@hu/types";
 
-import { classifyLocalizationInputCurrentness } from "./localization-input-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  classifyLocalizationInputCurrentness,
+  collectSourceTextLeaves,
+} from "./localization-input-contract.js";
+import { assessRequiredTerminologyProtection } from "./terminology-protection-contract.js";
 
 export type ContentTranslationReconciliationState =
   | "READY"
@@ -313,4 +319,51 @@ export function isPresentationEligibleTranslation(
     liveSourceVersion,
     liveLocalizationInputVersion,
   }).presentationEligible;
+}
+
+/**
+ * Gate C — classify using live terminology + localizationInputVersion when
+ * concepts and original fields are available. Does not invent currentness:
+ * delegates to classifyContentTranslationValidity after assessing B.2 inputs.
+ *
+ * Historical rows without localizationInputVersion stay legacy_unversioned
+ * (not mass-STALE). Terminology residual on identity-current rows → INVALID.
+ */
+export function classifyContentTranslationForReconciliation(input: {
+  readonly translation: TranslatedContentRecord | null | undefined;
+  readonly liveSourceVersion?: string | null;
+  readonly originalFields?: Readonly<Record<string, string>> | null;
+  readonly concepts?: readonly TerminologyConcept[] | null;
+}): ContentTranslationValidityClassification {
+  const row = input.translation ?? null;
+  let terminologyProtectionFailed: boolean | undefined;
+  let liveLocalizationInputVersion: string | undefined;
+
+  if (row && input.concepts && input.originalFields) {
+    const sourceText = collectSourceTextLeaves(input.originalFields);
+    const translatedText = collectSourceTextLeaves(
+      translatedFieldsFromRecord(row.translatedContent),
+    );
+    const assessment = assessRequiredTerminologyProtection({
+      concepts: input.concepts,
+      targetLocale: String(row.targetLanguage),
+      sourceText,
+      translatedText,
+    });
+    terminologyProtectionFailed = !assessment.ok;
+    liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
+      sourceVersion: input.liveSourceVersion ?? row.sourceVersion,
+      targetLocale: String(row.targetLanguage),
+      concepts: input.concepts,
+      sourceText,
+    }).localizationInputVersion;
+  }
+
+  return classifyContentTranslationValidity({
+    translation: row,
+    liveSourceVersion: input.liveSourceVersion,
+    liveLocalizationInputVersion,
+    originalFields: input.originalFields,
+    terminologyProtectionFailed,
+  });
 }

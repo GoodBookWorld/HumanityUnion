@@ -25,10 +25,12 @@ import {
   type LanguageCode,
   type PublicPresentationIdentity,
   type PublicPresentationNode,
+  type TerminologyConcept,
   type TranslatedContentRecord,
 } from "@hu/types";
 
-import { classifyContentTranslationValidity } from "./content-translation-validity.js";
+import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
+import { loadPublishedTerminologyConcepts } from "./terminology-protection-contract.js";
 
 import {
   CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
@@ -220,6 +222,9 @@ export function planPresentationLocaleCoverage(input: {
   readonly targetLanguage: LanguageCode;
   readonly translationRows: readonly TranslatedContentRecord[];
   readonly outboxDisposition?: "pending" | "failed" | "none" | "published";
+  /** Gate C — when present, apply B.2 terminology + localizationInputVersion. */
+  readonly originalFields?: Readonly<Record<string, string>> | null;
+  readonly concepts?: readonly TerminologyConcept[] | null;
 }): {
   readonly localizedNodes: number;
   readonly fallbackNodes: number;
@@ -272,9 +277,11 @@ export function planPresentationLocaleCoverage(input: {
   }
 
   if (current) {
-    const validity = classifyContentTranslationValidity({
+    const validity = classifyContentTranslationForReconciliation({
       translation: current,
       liveSourceVersion: input.sourceVersion,
+      originalFields: input.originalFields ?? null,
+      concepts: input.concepts ?? null,
     });
     if (validity.reconciliationState === "INVALID") {
       return {
@@ -295,9 +302,28 @@ export function planPresentationLocaleCoverage(input: {
         fallbackPaths: autoNodes.map((node) => node.path),
       };
     }
+    if (validity.reconciliationState === "STALE") {
+      return {
+        localizedNodes: 0,
+        fallbackNodes: autoNodes.length,
+        protectedNodes,
+        state: "STALE",
+        workItem: {
+          sourceKind: input.sourceKind,
+          sourceRecordId: input.sourceRecordId,
+          sourceVersion: input.sourceVersion,
+          targetLanguage: input.targetLanguage,
+          state: "STALE",
+          autoNodeCount: autoNodes.length,
+          missingOrStaleNodeCount: autoNodes.length,
+          fallbackPaths: autoNodes.map((node) => node.path),
+        },
+        fallbackPaths: autoNodes.map((node) => node.path),
+      };
+    }
     const translatedFields = translatedFieldsFromRecord(current.translatedContent);
     const counted = countLocalizedAutoNodes(autoNodes, translatedFields);
-    if (counted.fallback === 0) {
+    if (counted.fallback === 0 && validity.reconciliationState === "READY") {
       return {
         localizedNodes: counted.localized,
         fallbackNodes: 0,
@@ -460,6 +486,13 @@ export async function auditPublicLocalizationCorpus(input?: {
   }
 
   const workItems: PublicLocalizationWorkItem[] = [];
+  let concepts: Awaited<ReturnType<typeof loadPublishedTerminologyConcepts>> = [];
+  try {
+    concepts = await loadPublishedTerminologyConcepts();
+  } catch {
+    // Read-path soft-fail: classify without live terminology when glossary is unavailable.
+    concepts = [];
+  }
 
   for (const candidate of discovery.candidates) {
     const family = candidate.sourceKind;
@@ -539,6 +572,8 @@ export async function auditPublicLocalizationCorpus(input?: {
         targetLanguage: locale,
         translationRows: rows,
         outboxDisposition,
+        originalFields: source.fields,
+        concepts,
       });
 
       localizedNodes += planned.localizedNodes;
@@ -659,7 +694,13 @@ export function uniquePresentationsRequiringWork(
   const seen = new Set<string>();
   const out: StagingWarmCandidate[] = [];
   for (const item of workItems) {
-    if (item.state !== "MISSING" && item.state !== "STALE" && item.state !== "FAILED" && item.state !== "MISSING_AFTER_DISPATCH") {
+    if (
+      item.state !== "MISSING" &&
+      item.state !== "STALE" &&
+      item.state !== "INVALID" &&
+      item.state !== "FAILED" &&
+      item.state !== "MISSING_AFTER_DISPATCH"
+    ) {
       continue;
     }
     const key = `${item.sourceKind}::${item.sourceRecordId}`;

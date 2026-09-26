@@ -30,12 +30,15 @@ import {
   resetContentTranslationWarmMemoryForTests,
   resetContentTranslationWorkerConcurrencyForTests,
   resetLanguageRegistryStoreForTests,
+  resetTerminologyGlossaryStoreForTests,
   resetTranslationProviderForTests,
   resolveContentTranslationWorkerConcurrency,
   runPublicLocalizationResidualRetry,
   selectReadyPresentationsForResidualRetry,
   setContentTranslationWarmForceMemoryForTests,
   setLanguageRegistryForceMemoryForTests,
+  setTerminologyGlossaryForceMemoryForTests,
+  setTranslationProviderForTests,
   updateLanguageRegistryRecord,
   waitForPublicLocalizationMaterialization,
 } from "../../../src/modules/language/index.js";
@@ -88,8 +91,10 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
     resetLanguageRegistryStoreForTests();
     resetTranslationProviderForTests();
     resetContentTranslationWorkerConcurrencyForTests();
+    resetTerminologyGlossaryStoreForTests();
     setLanguageRegistryForceMemoryForTests(true);
     setContentTranslationWarmForceMemoryForTests(true);
+    setTerminologyGlossaryForceMemoryForTests(true);
     await ensureLanguageRegistrySeeded();
     for (const locale of ["uk", "zh-Hant", "ar"] as const) {
       await updateLanguageRegistryRecord(`lang-${locale}`, {
@@ -109,6 +114,8 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
     }
     setContentTranslationWarmForceMemoryForTests(false);
     setLanguageRegistryForceMemoryForTests(false);
+    setTerminologyGlossaryForceMemoryForTests(false);
+    resetTranslationProviderForTests();
   });
 
   it("only retry-ready identities selected; blocked never scheduled", async () => {
@@ -184,7 +191,7 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
     });
     assert.ok(source);
 
-    // CURRENT for ar — must not be overwritten / must not be selected.
+    // READY for ar — Gate C preserves; must not be selected as work.
     await upsertContentTranslation({
       translationId: "tr-ar-08k22",
       sourceKind: "initiative",
@@ -192,8 +199,11 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
       sourceVersion: source.sourceVersion,
       sourceLanguage: "en",
       targetLanguage: "ar",
-      translatedContent: { title: "[ar] T", description: "[ar] D" },
-      translationProvider: "deterministic",
+      translatedContent: {
+        title: "عنوان عربي محفوظ",
+        description: "وصف عربي محفوظ",
+      },
+      translationProvider: "gemini",
       translationKind: "machine",
       createdAt: new Date().toISOString(),
       stale: false,
@@ -251,7 +261,7 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
       sourceVersion: source.sourceVersion,
       targetLanguage: "ar",
     });
-    assert.equal(arRow?.translatedContent?.title, "[ar] T");
+    assert.equal(arRow?.translatedContent?.title, "عنوان عربي محفوظ");
   });
 
   it("CURRENT never provider-called/overwritten on residual warm", async () => {
@@ -271,8 +281,11 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
       sourceVersion: source.sourceVersion,
       sourceLanguage: "en",
       targetLanguage: "uk",
-      translatedContent: { title: "[uk] KEEP", description: "[uk] KEEP" },
-      translationProvider: "deterministic",
+      translatedContent: {
+        title: "Збережений український заголовок",
+        description: "Збережений опис",
+      },
+      translationProvider: "gemini",
       translationKind: "machine",
       createdAt: new Date().toISOString(),
       stale: false,
@@ -298,19 +311,23 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
       sourceVersion: source.sourceVersion,
       targetLanguage: "uk",
     });
-    assert.equal(row?.translatedContent?.title, "[uk] KEEP");
+    assert.equal(row?.translatedContent?.title, "Збережений український заголовок");
   });
 
   it("missing safety gate script contract => zero writes; production refused", () => {
-    const script = readApi("src/scripts/reconcile-public-localization.ts");
-    assert.match(script, /--retry-ready-residuals/);
-    assert.match(script, /runPublicLocalizationResidualRetry/);
-    assert.match(script, /ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION/);
-    assert.match(script, /humanity_union_staging/);
-    assert.match(script, /PLATFORM_MODE=production is not allowed/);
-    assert.match(script, /--mongo is required with --execute --retry-ready-residuals/);
-    assert.match(script, /residual path never uses full-corpus enqueue selection/);
-    assert.doesNotMatch(script, /production-admin-source\.json/);
+    const entry = readApi("src/scripts/reconcile-public-localization.ts");
+    assert.match(entry, /--retry-ready-residuals/);
+    const heavy = readApi("src/scripts/reconcile-public-localization-heavy.ts");
+    assert.match(heavy, /runPublicLocalizationResidualRetry/);
+    assert.match(heavy, /ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION/);
+    assert.match(heavy, /humanity_union_staging/);
+    assert.match(heavy, /PLATFORM_MODE=production is not allowed/);
+    assert.match(
+      heavy,
+      /--mongo is required with --execute and residual retry flags/,
+    );
+    assert.match(heavy, /residual path never uses full-corpus enqueue selection/);
+    assert.doesNotMatch(entry, /production-admin-source\.json/);
   });
 
   it("worker concurrency remains bounded default 1", () => {
@@ -443,6 +460,23 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
   });
 
   it("fresh post-audit differs from pre-audit when materialization succeeds", async () => {
+    // Gate B/C — deterministic placeholders cannot become READY coverage.
+    setTranslationProviderForTests({
+      providerId: "gemini",
+      async translate(request) {
+        const parsed = JSON.parse(request.text) as Record<string, string>;
+        const localized: Record<string, string> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          localized[key] = `UK:${value}`;
+        }
+        return {
+          translatedText: JSON.stringify(localized),
+          providerId: "gemini" as const,
+          isPlaceholder: false,
+        };
+      },
+    });
+
     const initiative = sampleInitiative("post-audit");
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
@@ -498,7 +532,8 @@ describe("Pack 08K.2.2 — gated residual retry", () => {
     assert.equal(successFromFresh, true);
     assert.notEqual(
       successFromFresh,
-      pre.preAudit.totals.CANONICAL_FALLBACK_NODES === 0,
+      pre.preAudit.totals.CANONICAL_FALLBACK_NODES === 0 &&
+        pre.preAudit.totals.WORK_ITEMS_REQUIRED === 0,
     );
     void executed;
   });
