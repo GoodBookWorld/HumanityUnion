@@ -62,7 +62,8 @@ describe("Pack 10G — city select large-list discoverability", () => {
     assert.match(preferred, /GeographyMultiSelect/);
     assert.match(preferred, /citiesMultiRegionHelp|manage\.geography\.citiesAvailable/);
     assert.doesNotMatch(preferred, /requireSearch=\{/);
-    assert.match(preferred, /geography\.addPreferredRegion|addPreferredRegion/);
+    assert.match(preferred, /commitPreferredRegionSelection/);
+    assert.doesNotMatch(preferred, /addPreferredRegion/);
     assert.doesNotMatch(multi, /requireSearch/);
     assert.doesNotMatch(multi, /awaitingSearch/);
   });

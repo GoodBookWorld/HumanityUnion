@@ -9,33 +9,27 @@ import {
   buildPreferredRegionLabel,
   fetchCommunitiesByRegion,
   formatPreferredCityCommunityId,
-  formatPreferredRegionId,
   GEOGRAPHY_COUNTRIES,
   getRegionsForCountry,
   parsePreferredCityCommunityId,
   parsePreferredRegionId,
-  sanitizeParticipationGeography,
   toGeographyCommunityOptions,
 } from "@hu/geography";
-import { Button } from "../../../design-system/components/Button";
 import {
   GeographySearchSelect,
   OTHER_REGION_SLUG,
 } from "../../../design-system/components/GeographySearchSelect";
 import { GeographyMultiSelect } from "../../../design-system/components/GeographyMultiSelect";
 import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
+import {
+  applyPreferredCountrySelection,
+  commitPreferredRegionSelection,
+  removePreferredRegionSelection,
+} from "../preferred-geography-selection";
 
 interface PreferredGeographyFieldsProps {
   participationPreferences: ParticipationPreferences;
   onChange: (next: ParticipationPreferences) => void;
-}
-
-function toggleValue(values: string[], value: string, checked: boolean): string[] {
-  if (checked) {
-    return values.includes(value) ? values : [...values, value];
-  }
-
-  return values.filter((entry) => entry !== value);
 }
 
 export function PreferredGeographyFields({
@@ -216,49 +210,48 @@ export function PreferredGeographyFields({
     };
   }, [preferredCityCommunityIds, preferredCountryIds, preferredRegions]);
 
-  function applyParticipationChange(next: ParticipationPreferences, showCleanup = true) {
-    const sanitized = sanitizeParticipationGeography(next);
-    const removedCount = sanitized.removedCityCount + sanitized.removedRegionCount;
+  function handlePreferredCountriesChange(nextCountryIds: string[]) {
+    const next = applyPreferredCountrySelection(participationPreferences, nextCountryIds);
+    const removedCities =
+      participationPreferences.preferredCityCommunityIds.length -
+      next.preferredCityCommunityIds.length;
+    const removedRegions =
+      participationPreferences.preferredRegions.length - next.preferredRegions.length;
 
-    if (showCleanup && removedCount > 0) {
+    if (removedCities + removedRegions > 0) {
       setCleanupMessage(t("geography.cleanupMessage"));
     }
 
-    onChange(sanitized.participationPreferences);
+    onChange(next);
   }
 
-  function handlePreferredCountriesChange(nextCountryIds: string[]) {
-    applyParticipationChange({
-      ...participationPreferences,
-      preferredCountryIds: nextCountryIds,
-    });
-  }
+  function handlePreferredRegionChange(nextRegionCode: string) {
+    const committed = commitPreferredRegionSelection(
+      participationPreferences,
+      regionCountryCode,
+      nextRegionCode,
+    );
 
-  function handleAddPreferredRegion() {
-    if (!regionCountryCode || !regionCode || regionCode === OTHER_REGION_SLUG) {
+    if (!committed) {
+      setRegionCode("");
       return;
     }
 
-    applyParticipationChange(
-      {
-        ...participationPreferences,
-        preferredCountryIds: toggleValue(preferredCountryIds, regionCountryCode, true),
-        preferredRegions: toggleValue(
-          preferredRegions,
-          formatPreferredRegionId(regionCountryCode, regionCode),
-          true,
-        ),
-      },
-      false,
-    );
+    onChange(committed);
     setRegionCode("");
   }
 
   function handleRemovePreferredRegion(regionId: string) {
-    applyParticipationChange({
-      ...participationPreferences,
-      preferredRegions: preferredRegions.filter((entry) => entry !== regionId),
-    });
+    const next = removePreferredRegionSelection(participationPreferences, regionId);
+    const removedCities =
+      participationPreferences.preferredCityCommunityIds.length -
+      next.preferredCityCommunityIds.length;
+
+    if (removedCities > 0) {
+      setCleanupMessage(t("geography.cleanupMessage"));
+    }
+
+    onChange(next);
   }
 
   function handlePreferredCitiesChange(nextCityCommunityIds: string[]) {
@@ -310,17 +303,9 @@ export function PreferredGeographyFields({
           label={t("geography.administrativeRegion")}
           value={regionCode}
           options={regionPickerOptions}
-          onChange={setRegionCode}
+          onChange={handlePreferredRegionChange}
           disabled={!regionCountryCode}
         />
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={!regionCode || regionCode === OTHER_REGION_SLUG}
-          onClick={handleAddPreferredRegion}
-        >
-          {t("geography.addPreferredRegion")}
-        </Button>
         {selectedRegionEntries.length > 0 ? (
           <ul className="preferences-workspace__region-list">
             {selectedRegionEntries.map((region) => (
