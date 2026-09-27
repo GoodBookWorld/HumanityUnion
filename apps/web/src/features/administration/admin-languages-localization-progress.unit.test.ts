@@ -425,6 +425,46 @@ describe("Step 15C.5 localization live progress", () => {
     assert.doesNotMatch(withCooldown.phaseLabel, /Failed/);
   });
 
+  it("structure_retry shows automatic retry, not Failed and not a rate limit", () => {
+    const waiting = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 52,
+          totalBatches: 702,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 52,
+              totalBatches: 702,
+              preparationPhase: "structure_retry",
+              providerFailure: false,
+            }),
+            status: "in_progress",
+            nextAttemptAt: "2026-09-27T08:00:00.000Z",
+            transientFailureCount: 0,
+            lastTransientFailure: null,
+            detail: "Automatic retry scheduled. No operator action required.",
+          },
+        },
+      },
+    });
+    assert.equal(waiting.phaseLabel, "Automatic retry scheduled");
+    assert.equal(waiting.failed, false);
+    assert.equal(waiting.activelyProgressing, true);
+    assert.equal(waiting.nextAttemptAt, "2026-09-27T08:00:00.000Z");
+    assert.doesNotMatch(waiting.phaseLabel, /Failed/);
+    assert.doesNotMatch(waiting.phaseLabel, /rate limit/i);
+  });
+
   it("11–16 polling stays provider-free and the row shows progress plus readiness detail", () => {
     assert.equal(shouldPollLanguageActivationJob("queued"), true);
     assert.equal(shouldPollLanguageActivationJob("running"), true);

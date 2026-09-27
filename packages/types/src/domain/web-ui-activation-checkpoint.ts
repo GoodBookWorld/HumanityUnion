@@ -11,7 +11,12 @@ export type WebUiActivationCheckpointPhase =
   | "ready"
   | "failed"
   /** Transient Gemini rate-limit wait; parent job stays running. */
-  | "provider_cooldown";
+  | "provider_cooldown"
+  /**
+   * Delayed retry after a parseable provider payload broke protected structure.
+   * Not provider pressure. Parent job stays running.
+   */
+  | "structure_retry";
 
 export type WebUiActivationBatchPhase = "primary" | "quality";
 
@@ -48,6 +53,11 @@ export type WebUiActivationCheckpointRecord = {
   /** Consecutive transient rate-limit streak (resets on successful batch). */
   readonly transientFailureCount?: number;
   readonly lastTransientFailure?: WebUiActivationTransientFailure | null;
+  /**
+   * Consecutive retryable provider-output structure failures.
+   * Separate from transientFailureCount so this wait is not provider pressure.
+   */
+  readonly structureRetryCount?: number;
 };
 
 export type WebUiActivationBatchRecord = {

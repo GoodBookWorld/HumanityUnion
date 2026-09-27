@@ -97,6 +97,10 @@ export function formatOwnerPreparationProgress(
   } else if (webUi.status === "in_progress" || webUi.preparationPhase) {
     if (webUi.preparationPhase === "provider_cooldown") {
       lines.push(webUi.detail ?? "Waiting for translation provider…");
+    } else if (webUi.preparationPhase === "structure_retry") {
+      lines.push(
+        webUi.detail ?? "Automatic retry scheduled. No operator action required.",
+      );
     } else if (webUi.preparationPhase === "quality") {
       lines.push(
         webUi.detail ??

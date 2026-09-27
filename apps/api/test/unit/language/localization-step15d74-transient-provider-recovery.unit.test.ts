@@ -443,11 +443,14 @@ describe("Step 15D.7.4 — automatic transient provider recovery", () => {
       },
     });
     await processLanguageActivationJob(started.jobId, { webUiTick: true });
-    // Immediate retry then terminal (2 attempts) — never cooldown
+    // Immediate retry, then durable structure wait. Never Gate E cooldown.
     const job = await getLanguageActivationJobById(started.jobId);
-    assert.equal(job!.status, "failed");
+    assert.equal(job!.status, "running");
+    assert.equal(job!.domains.webUi.preparationPhase, "structure_retry");
     assert.notEqual(job!.domains.webUi.preparationPhase, "provider_cooldown");
-    assert.match(job!.domains.webUi.detail ?? "", /structure validation/i);
+    assert.equal(job!.domains.webUi.providerFailure, false);
+    assert.match(job!.domains.webUi.detail ?? "", /No operator action required/);
+    assert.equal(job!.domains.webUi.lastTransientFailure ?? null, null);
   });
 
   it("26–28 Admin/sanitize copy for unavailable and timeout; no raw secrets", () => {

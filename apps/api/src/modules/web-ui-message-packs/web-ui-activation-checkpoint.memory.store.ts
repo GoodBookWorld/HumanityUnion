@@ -47,7 +47,8 @@ export function listIncompleteWebUiActivationCheckpointsMemory(): readonly WebUi
       row.phase === "quality" ||
       row.phase === "validating" ||
       row.phase === "publishing" ||
-      row.phase === "provider_cooldown",
+      row.phase === "provider_cooldown" ||
+      row.phase === "structure_retry",
   );
 }
 

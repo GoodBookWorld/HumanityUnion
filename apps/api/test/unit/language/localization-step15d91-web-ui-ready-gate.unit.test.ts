@@ -99,7 +99,7 @@ describe("Step 15D.9.1 WEB_UI READY gate (pure)", () => {
       }),
       false,
     );
-    for (const phase of ["primary", "quality", "validating", "publishing", "provider_cooldown"] as const) {
+    for (const phase of ["primary", "quality", "validating", "publishing", "provider_cooldown", "structure_retry"] as const) {
       assert.equal(
         gate({
           webUi: readyWebUi({

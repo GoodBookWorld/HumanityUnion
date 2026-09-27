@@ -308,7 +308,8 @@ export async function buildWebUiDomainProgress(
       previous.preparationPhase === "quality" ||
       previous.preparationPhase === "validating" ||
       previous.preparationPhase === "publishing" ||
-      previous.preparationPhase === "provider_cooldown")
+      previous.preparationPhase === "provider_cooldown" ||
+      previous.preparationPhase === "structure_retry")
   ) {
     return {
       ...previous,

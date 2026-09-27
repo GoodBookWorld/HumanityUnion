@@ -15,7 +15,7 @@ export type LocalizationProgress = {
   readonly failed: boolean;
   /**
    * True while orchestration is still active (running / preparing /
-   * provider_cooldown), including automatic cooldown resume.
+   * provider_cooldown / structure_retry), including automatic resume.
    */
   readonly activelyProgressing: boolean;
   /** Absolute ISO retry time while cooling down (Admin formats locally). */
@@ -83,6 +83,7 @@ export function webUiLocalizationUnits(input: {
     phase === "quality" ||
     phase === "validating" ||
     phase === "publishing" ||
+    phase === "structure_retry" ||
     webUi?.status === "in_progress";
   if (
     webUi &&
@@ -147,6 +148,13 @@ function phaseLabel(source: ProgressSource): {
     }
     return {
       label,
+      failed: false,
+      nextAttemptAt: source.webUi.nextAttemptAt ?? null,
+    };
+  }
+  if (source.webUi?.preparationPhase === "structure_retry") {
+    return {
+      label: "Automatic retry scheduled",
       failed: false,
       nextAttemptAt: source.webUi.nextAttemptAt ?? null,
     };
@@ -228,6 +236,9 @@ function isLocalizationActivelyProgressing(
     return false;
   }
   if (source.webUi?.preparationPhase === "provider_cooldown") {
+    return true;
+  }
+  if (source.webUi?.preparationPhase === "structure_retry") {
     return true;
   }
   if (source.brandStatus === "in_progress" || source.terminologyStatus === "in_progress") {

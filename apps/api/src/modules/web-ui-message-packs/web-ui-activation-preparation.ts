@@ -40,12 +40,18 @@ import {
   WebUiDraftBuilderError,
   type WebUiDraftBatchPlan,
 } from "./web-ui-draft-builder.js";
+import { computeActivationCooldownNextAttemptAt } from "../language/activation-provider-transient-recovery.js";
 import {
   classifyWebUiTransientFailure,
   computeWebUiCooldownNextAttemptAt,
   isWebUiTransientProviderError,
   webUiProviderCooldownDetail,
 } from "./web-ui-provider-cooldown.js";
+import {
+  isRetryableWebUiProviderOutputStructureFailure,
+  WEB_UI_STRUCTURE_RETRY_DETAIL,
+  WEB_UI_STRUCTURE_RETRY_REASON,
+} from "./web-ui-provider-output-structure.js";
 import {
   assembleWebUiActivationTranslatedMap,
   getWebUiActivationBatch,
@@ -333,6 +339,29 @@ export function webUiProgressFromCheckpoint(input: {
     };
   }
 
+  if (cp.phase === "structure_retry") {
+    return {
+      status: "in_progress",
+      dataReady: false,
+      missingKeyCount: input.missingKeyCount,
+      emptyKeyCount: input.emptyKeyCount,
+      requiredKeyCount: input.requiredKeyCount,
+      effectiveSource: input.effectiveSource,
+      detail: cp.detail ?? WEB_UI_STRUCTURE_RETRY_DETAIL,
+      preparationPhase: "structure_retry",
+      checkpointId: cp.checkpointId,
+      sourceHash: cp.sourceHash,
+      totalBatches: cp.batchCount,
+      completedBatches: cp.completedBatchCount,
+      totalLeaves: cp.leafCount,
+      completedLeaves: input.completedLeaves ?? 0,
+      providerFailure: false,
+      nextAttemptAt: cp.nextAttemptAt ?? null,
+      transientFailureCount: cp.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
+
   let detail = "Preparing public interface…";
   if (cp.phase === "primary") {
     detail = `Preparing public interface… ${cp.completedBatchCount} / ${cp.batchCount} batches`;
@@ -528,6 +557,64 @@ async function enterWebUiProviderCooldown(input: {
     needsAnotherTick: true,
     published: false,
     providerCalls: input.providerCalls,
+    checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint,
+      completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+    }),
+  };
+}
+
+/**
+ * After the in-tick attempts, wait and retry the same batch later.
+ * Does not arm Gate E and does not store provider text.
+ */
+async function enterWebUiStructureRetry(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly batch: WebUiDraftBatchPlan;
+  readonly batchPhase: "primary" | "quality";
+  readonly providerCalls: number;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationTickResult> {
+  const deps = input.deps;
+  const stamp = nowIso(deps);
+  const streak = (input.checkpoint.structureRetryCount ?? 0) + 1;
+  const nextAttemptAt = computeActivationCooldownNextAttemptAt({
+    nowIso: stamp,
+    transientFailureCount: streak,
+  });
+  await upsertWebUiActivationBatch({
+    checkpointId: input.checkpoint.checkpointId,
+    batchId: input.batch.id,
+    phase: input.batchPhase,
+    namespace: input.batch.namespace,
+    keys: input.batch.keys,
+    values: {},
+    status: "pending",
+    attempts: input.providerCalls,
+    reason: WEB_UI_STRUCTURE_RETRY_REASON,
+    updatedAt: stamp,
+  });
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase: "structure_retry",
+    nextAttemptAt,
+    structureRetryCount: streak,
+    detail: WEB_UI_STRUCTURE_RETRY_DETAIL,
+    updatedAt: stamp,
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return {
+    done: false,
+    needsAnotherTick: false,
+    published: false,
+    providerCalls: input.providerCalls,
+    deferredUntil: nextAttemptAt,
     checkpoint,
     webUi: webUiProgressFromCheckpoint({
       readinessDataReady: false,
@@ -1138,6 +1225,7 @@ async function processPrimaryBatchTick(input: {
         nextAttemptAt: null,
         transientFailureCount: 0,
         lastTransientFailure: null,
+        structureRetryCount: 0,
         detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
@@ -1178,7 +1266,17 @@ async function processPrimaryBatchTick(input: {
           deps,
         });
       }
-      if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
+      if (isRetryableWebUiProviderOutputStructureFailure(error)) {
+        if (attempt >= 2) {
+          return enterWebUiStructureRetry({
+            checkpoint,
+            batch: nextBatch,
+            batchPhase: "primary",
+            providerCalls,
+            deps,
+          });
+        }
+      } else if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
         return failWebUiBatchTerminal({
           checkpoint,
           batch: nextBatch,
@@ -1317,6 +1415,7 @@ async function processQualityBatchTick(input: {
         nextAttemptAt: null,
         transientFailureCount: 0,
         lastTransientFailure: null,
+        structureRetryCount: 0,
         detail: `Checking translation quality… ${qualityCompletedBatchCount} / ${qualityBatches.length}`,
         updatedAt: nowIso(deps),
       };
@@ -1357,7 +1456,17 @@ async function processQualityBatchTick(input: {
           deps,
         });
       }
-      if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
+      if (isRetryableWebUiProviderOutputStructureFailure(error)) {
+        if (attempt >= 2) {
+          return enterWebUiStructureRetry({
+            checkpoint,
+            batch: nextBatch,
+            batchPhase: "quality",
+            providerCalls,
+            deps,
+          });
+        }
+      } else if (isWebUiProviderBatchNonRetryable(error) || attempt >= 2) {
         return failWebUiBatchTerminal({
           checkpoint,
           batch: nextBatch,
@@ -1606,6 +1715,58 @@ export async function processWebUiActivationTick(input: {
       }),
     };
   }
+  if (checkpoint.phase === "structure_retry") {
+    const nowMs = Date.parse(nowIso(deps));
+    const dueAt = checkpoint.nextAttemptAt ? Date.parse(checkpoint.nextAttemptAt) : 0;
+    if (Number.isFinite(dueAt) && dueAt > nowMs) {
+      return {
+        done: false,
+        needsAnotherTick: false,
+        published: false,
+        providerCalls: 0,
+        deferredUntil: checkpoint.nextAttemptAt,
+        checkpoint,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: checkpoint.leafCount,
+          emptyKeyCount: 0,
+          requiredKeyCount: checkpoint.leafCount,
+          effectiveSource: "none",
+          checkpoint,
+          completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+        }),
+      };
+    }
+    const cooldown = await readSharedProviderCooldown(deps);
+    if (cooldown.active && cooldown.cooldownUntil) {
+      const waiting: WebUiActivationCheckpointRecord = {
+        ...checkpoint,
+        phase: "structure_retry",
+        nextAttemptAt: cooldown.cooldownUntil,
+        detail: WEB_UI_STRUCTURE_RETRY_DETAIL,
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(waiting);
+      return {
+        done: false,
+        needsAnotherTick: false,
+        published: false,
+        providerCalls: 0,
+        deferredUntil: cooldown.cooldownUntil,
+        checkpoint: waiting,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: waiting.leafCount,
+          emptyKeyCount: 0,
+          requiredKeyCount: waiting.leafCount,
+          effectiveSource: "none",
+          checkpoint: waiting,
+          completedLeaves: Math.min(waiting.leafCount, waiting.completedBatchCount * 6),
+        }),
+      };
+    }
+    checkpoint = await resumeWebUiCheckpointAfterCooldown({ checkpoint, deps });
+  }
   if (checkpoint.phase === "provider_cooldown") {
     const nowMs = Date.parse(nowIso(deps));
     const dueAt = checkpoint.nextAttemptAt ? Date.parse(checkpoint.nextAttemptAt) : 0;
@@ -1633,27 +1794,7 @@ export async function processWebUiActivationTick(input: {
     // In-memory governor state is read synchronously so a tick that is already
     // in flight does not yield before its provider batch. Mongo is read only
     // when the durable store is the source of truth.
-    const peeked = deps.readProviderCooldown ? null : peekThinGeminiCooldownSnapshot();
-    let cooldown: { active: boolean; cooldownUntil: string | null };
-    if (peeked) {
-      cooldown = {
-        active: peeked.active,
-        cooldownUntil: peeked.active ? peeked.cooldownUntil : null,
-      };
-    } else {
-      try {
-        const read = await (deps.readProviderCooldown ?? readLocalizationProviderCooldown)();
-        cooldown = {
-          active: read.active,
-          cooldownUntil: read.active ? read.cooldownUntil : null,
-        };
-      } catch (error) {
-        if (deps.readProviderCooldown) {
-          throw error;
-        }
-        cooldown = { active: false, cooldownUntil: null };
-      }
-    }
+    const cooldown = await readSharedProviderCooldown(deps);
     if (cooldown.active && cooldown.cooldownUntil) {
       return {
         done: false,
@@ -1684,6 +1825,30 @@ export async function processWebUiActivationTick(input: {
     return processQualityBatchTick({ checkpoint, deps });
   }
   return finalizeValidateAndPublish({ checkpoint, deps });
+}
+
+async function readSharedProviderCooldown(
+  deps: WebUiActivationPreparationDeps,
+): Promise<{ active: boolean; cooldownUntil: string | null }> {
+  const peeked = deps.readProviderCooldown ? null : peekThinGeminiCooldownSnapshot();
+  if (peeked) {
+    return {
+      active: peeked.active,
+      cooldownUntil: peeked.active ? peeked.cooldownUntil : null,
+    };
+  }
+  try {
+    const read = await (deps.readProviderCooldown ?? readLocalizationProviderCooldown)();
+    return {
+      active: read.active,
+      cooldownUntil: read.active ? read.cooldownUntil : null,
+    };
+  } catch (error) {
+    if (deps.readProviderCooldown) {
+      throw error;
+    }
+    return { active: false, cooldownUntil: null };
+  }
 }
 
 export async function listJobsNeedingWebUiActivationResume(): Promise<

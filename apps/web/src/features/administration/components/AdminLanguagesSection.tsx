@@ -1269,7 +1269,9 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         row.contentTranslationEnabled &&
                         !english &&
                         activationView?.job?.domains.webUi.preparationPhase !==
-                          "provider_cooldown";
+                          "provider_cooldown" &&
+                        activationView?.job?.domains.webUi.preparationPhase !==
+                          "structure_retry";
                       const readinessReport =
                         readiness && typeof readiness === "object" ? readiness : null;
                       const progress = activationView

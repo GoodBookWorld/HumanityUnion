@@ -274,7 +274,8 @@ async function claimLanguageActivationJob(
     domains.webUi.preparationPhase === "quality" ||
     domains.webUi.preparationPhase === "validating" ||
     domains.webUi.preparationPhase === "publishing" ||
-    domains.webUi.preparationPhase === "provider_cooldown";
+    domains.webUi.preparationPhase === "provider_cooldown" ||
+    domains.webUi.preparationPhase === "structure_retry";
   const brand = domains.brand;
   if (
     !checkpointActive &&
@@ -360,8 +361,11 @@ export async function startOrResumeLanguageActivationJob(input: {
       skipCorpusPlan: deps.skipCorpusInReadiness === true,
     });
     const claimed = await claimLanguageActivationJob(active, readiness);
-    const coolingDown =
+    const webUiWaiting =
       claimed.domains.webUi.preparationPhase === "provider_cooldown" ||
+      claimed.domains.webUi.preparationPhase === "structure_retry";
+    const coolingDown =
+      webUiWaiting ||
       (claimed.domains.brand.status === "in_progress" &&
         claimed.domains.brand.nextAttemptAt != null &&
         claimed.domains.brand.nextAttemptAt.length > 0) ||
@@ -375,7 +379,7 @@ export async function startOrResumeLanguageActivationJob(input: {
         claimed.domains.terminology.nextAttemptAt ??
         null;
       if (nextAttemptAt) {
-        if (claimed.domains.webUi.preparationPhase === "provider_cooldown") {
+        if (webUiWaiting) {
           scheduleWebUiActivationTickAt(claimed.jobId, nextAttemptAt);
         } else {
           scheduleLanguageActivationJobProcessAt(claimed.jobId, nextAttemptAt);
@@ -385,7 +389,9 @@ export async function startOrResumeLanguageActivationJob(input: {
         job: claimed,
         readiness,
         notes: [
-          "Automatic translation-provider cooldown is pending. No new job or checkpoint created.",
+          claimed.domains.webUi.preparationPhase === "structure_retry"
+            ? "Automatic retry is scheduled. No operator action is required."
+            : "Automatic translation-provider cooldown is pending. No new job or checkpoint created.",
         ],
       });
     }
@@ -563,7 +569,12 @@ async function activationCorpusMeasurementBlockedByProviderCooldown(input: {
   if (phase === "validating" || phase === "publishing") {
     return false;
   }
-  if (phase === "primary" || phase === "quality" || phase === "provider_cooldown") {
+  if (
+    phase === "primary" ||
+    phase === "quality" ||
+    phase === "provider_cooldown" ||
+    phase === "structure_retry"
+  ) {
     return true;
   }
   const assess = input.deps.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
@@ -1020,7 +1031,9 @@ export async function processLanguageActivationJob(
 
       if (
         tick.checkpoint?.phase === "provider_cooldown" ||
-        tick.webUi.preparationPhase === "provider_cooldown"
+        tick.webUi.preparationPhase === "provider_cooldown" ||
+        tick.checkpoint?.phase === "structure_retry" ||
+        tick.webUi.preparationPhase === "structure_retry"
       ) {
         const nextAttemptAt = tick.webUi.nextAttemptAt ?? tick.checkpoint?.nextAttemptAt ?? null;
         job = {
@@ -1093,7 +1106,10 @@ export async function processLanguageActivationJob(
     ) {
       // Durable wake target. In-memory timers do not survive restart.
       // Phase, batches, and attempts stay as they were.
-      if (job.domains.webUi.preparationPhase !== "provider_cooldown") {
+      if (
+        job.domains.webUi.preparationPhase !== "provider_cooldown" &&
+        job.domains.webUi.preparationPhase !== "structure_retry"
+      ) {
         job = {
           ...job,
           status: "running",
@@ -1124,7 +1140,8 @@ export async function processLanguageActivationJob(
 
     if (
       job.domains.webUi.nextAttemptAt &&
-      job.domains.webUi.preparationPhase !== "provider_cooldown"
+      job.domains.webUi.preparationPhase !== "provider_cooldown" &&
+      job.domains.webUi.preparationPhase !== "structure_retry"
     ) {
       job = {
         ...job,
@@ -1325,7 +1342,8 @@ export async function getLanguageActivationAdminView(input: {
         raced.domains.webUi.preparationPhase === "quality" ||
         raced.domains.webUi.preparationPhase === "validating" ||
         raced.domains.webUi.preparationPhase === "publishing" ||
-        raced.domains.webUi.preparationPhase === "provider_cooldown");
+        raced.domains.webUi.preparationPhase === "provider_cooldown" ||
+        raced.domains.webUi.preparationPhase === "structure_retry");
     if (tickWon && raced) {
       job = raced;
     } else if (
@@ -1448,7 +1466,10 @@ export function scheduleWebUiActivationTick(jobId: string): void {
     void processLanguageActivationJob(jobId, { webUiTick: true })
       .then((job) => {
         status = job.status;
-        if (job.domains.webUi.preparationPhase === "provider_cooldown") {
+        if (
+          job.domains.webUi.preparationPhase === "provider_cooldown" ||
+          job.domains.webUi.preparationPhase === "structure_retry"
+        ) {
           nextCooldownAt = job.domains.webUi.nextAttemptAt ?? null;
         }
       })
@@ -1546,7 +1567,7 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
     if (!isClaimedActivationStatus(job.status)) {
       continue;
     }
-    if (checkpoint.phase === "provider_cooldown") {
+    if (checkpoint.phase === "provider_cooldown" || checkpoint.phase === "structure_retry") {
       const nextAttemptAt = checkpoint.nextAttemptAt ?? null;
       if (nextAttemptAt) {
         const dueMs = Date.parse(nextAttemptAt);
@@ -1603,7 +1624,8 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
         wakeAt &&
         job.status === "running" &&
         webUi.status !== "failed" &&
-        webUi.preparationPhase !== "provider_cooldown"
+        webUi.preparationPhase !== "provider_cooldown" &&
+        webUi.preparationPhase !== "structure_retry"
       ) {
         const dueMs = Date.parse(wakeAt);
         if (Number.isFinite(dueMs) && dueMs > Date.now()) {
@@ -1663,6 +1685,7 @@ export async function startAndProcessLanguageActivationJobForTests(input: {
     while (
       job.status === "running" &&
       job.domains.webUi.preparationPhase !== "provider_cooldown" &&
+      job.domains.webUi.preparationPhase !== "structure_retry" &&
       (job.domains.webUi.status === "in_progress" ||
         job.domains.webUi.preparationPhase === "primary" ||
         job.domains.webUi.preparationPhase === "quality" ||
