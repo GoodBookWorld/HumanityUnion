@@ -56,6 +56,39 @@ export function localizationProviderPressureError(remainingSeconds: number): Tra
   );
 }
 
+/**
+ * Read-only view of the one shared Gate E cooldown.
+ * Does not arm, extend, or clear pressure and does not call the provider.
+ * An expired `cooldownUntil` is inactive.
+ */
+export type LocalizationProviderCooldownRead = {
+  readonly active: boolean;
+  readonly cooldownUntil: string | null;
+  readonly pressureCategory: LocalizationProviderPressureCategory | null;
+};
+
+export async function readLocalizationProviderCooldown(): Promise<LocalizationProviderCooldownRead> {
+  const inactive: LocalizationProviderCooldownRead = {
+    active: false,
+    cooldownUntil: null,
+    pressureCategory: null,
+  };
+  let snapshot: Awaited<ReturnType<typeof getThinGeminiCooldownSnapshot>>;
+  try {
+    snapshot = await getThinGeminiCooldownSnapshot(nowMs());
+  } catch {
+    return inactive;
+  }
+  if (!snapshot.active) {
+    return inactive;
+  }
+  return {
+    active: true,
+    cooldownUntil: snapshot.cooldownUntil,
+    pressureCategory: snapshot.pressureCategory,
+  };
+}
+
 async function pressureActive(): Promise<{ active: boolean; remainingSeconds: number }> {
   const snapshot = await getThinGeminiCooldownSnapshot(nowMs());
   return { active: snapshot.active, remainingSeconds: snapshot.remainingSeconds };

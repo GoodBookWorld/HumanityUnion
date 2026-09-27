@@ -23,6 +23,8 @@ import { logger } from "../../shared/observability/logger.js";
 import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
 import { resolveLanguageRegistryLocale } from "./language-registry/language-registry.repository.js";
 import { assessWebUiCatalogReadinessForLocale } from "./language-localization-activation/assess-web-ui-catalog-readiness.js";
+import { readLocalizationProviderCooldown } from "./localization-provider-governor.js";
+import type { LocalizationProviderCooldownRead } from "./localization-provider-governor.js";
 import { measureLiveActivationCtCoverage } from "./live-residual-ct-coverage.js";
 import { runPublicLocalizationResidualRetry } from "./public-localization-residual-retry.js";
 import {
@@ -58,7 +60,8 @@ export type LocalizationReconciliationContinuationKind =
   | "none"
   | "normal"
   | "no_progress_backoff"
-  | "provider_pressure_backoff";
+  | "provider_pressure_backoff"
+  | "provider_cooldown";
 
 export type LocalizationReconciliationEligibility = {
   readonly eligible: boolean;
@@ -68,8 +71,11 @@ export type LocalizationReconciliationEligibility = {
     | "empty_locale"
     | "source_locale"
     | "registry_ineligible"
-    | "web_ui_not_ready"
-    | "no_actionable_work";
+  | "web_ui_not_ready"
+  | "provider_cooldown"
+  | "no_actionable_work";
+  /** Set only when reason is provider_cooldown. Wake target, not a coverage fact. */
+  readonly cooldownUntil?: string | null;
   readonly workItemsRequired: number;
   /** Authoritative CT CURRENT / READY coverage (live residual). */
   readonly ctCurrent: number;
@@ -103,6 +109,8 @@ export type LocalizationReconciliationPassResult = {
   readonly continuationScheduled: boolean;
   readonly continuationDelayMs: number;
   readonly noProgressStreak: number;
+  /** When set, a pending wake earlier than this instant is moved out to it. */
+  readonly notBeforeMs?: number;
 };
 
 export type LocalizationReconciliationDriverDeps = {
@@ -118,6 +126,7 @@ export type LocalizationReconciliationDriverDeps = {
   readonly noProgressMaxDelayMs?: number;
   readonly maxPresentationsPerPass?: number;
   readonly nowMs?: () => number;
+  readonly readProviderCooldown?: () => Promise<LocalizationProviderCooldownRead>;
 };
 
 let depsOverride: LocalizationReconciliationDriverDeps | null = null;
@@ -274,6 +283,32 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale,
       reason: "web_ui_not_ready",
+      ...emptyCoverageFields(),
+    };
+  }
+
+  // Shared provider cooldown is after the WEB_UI gate and before corpus work.
+  // An expired cooldownUntil is inactive. Reading does not arm or extend pressure.
+  // A snapshot read failure fails open so a missing client cannot stall convergence.
+  const readCooldown = d.readProviderCooldown ?? readLocalizationProviderCooldown;
+  let cooldown: LocalizationProviderCooldownRead = {
+    active: false,
+    cooldownUntil: null,
+    pressureCategory: null,
+  };
+  try {
+    cooldown = await readCooldown();
+  } catch (error) {
+    if (d.readProviderCooldown) {
+      throw error;
+    }
+  }
+  if (cooldown.active && cooldown.cooldownUntil) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "provider_cooldown",
+      cooldownUntil: cooldown.cooldownUntil,
       ...emptyCoverageFields(),
     };
   }
@@ -435,6 +470,24 @@ export async function runLocalizationReconciliationPass(
     d,
   );
   if (!eligibility.eligible) {
+    if (eligibility.reason === "provider_cooldown" && eligibility.cooldownUntil) {
+      const untilMs = Date.parse(eligibility.cooldownUntil);
+      const delay = Number.isFinite(untilMs) ? Math.max(0, untilMs - nowMs()) : 0;
+      return {
+        ...idlePassResult({
+          locale: eligibility.canonicalLocale || localeInput,
+          reason: "provider_cooldown",
+          before: eligibility,
+        }),
+        continuationKind: "provider_cooldown",
+        continuationScheduled: delay > 0,
+        continuationDelayMs: delay,
+        notBeforeMs: Number.isFinite(untilMs) ? untilMs : undefined,
+        noProgressStreak: noProgressStreakByLocale.get(
+          canonicalKey(eligibility.canonicalLocale || localeInput),
+        ) ?? 0,
+      };
+    }
     const key = canonicalKey(eligibility.canonicalLocale || localeInput);
     if (key) {
       noProgressStreakByLocale.delete(key);
@@ -564,7 +617,7 @@ function clearDelayed(localeKey: string): void {
 function wakeReasonForContinuation(
   kind: LocalizationReconciliationContinuationKind,
 ): LocalizationReconciliationWakeReason {
-  if (kind === "provider_pressure_backoff") {
+  if (kind === "provider_pressure_backoff" || kind === "provider_cooldown") {
     return "cooldown_wake";
   }
   if (kind === "no_progress_backoff") {
@@ -581,6 +634,11 @@ export function scheduleLocalizationReconciliation(input: {
   readonly locale: string;
   readonly reason: LocalizationReconciliationWakeReason;
   readonly delayMs?: number;
+  /**
+   * Cooldown deferral: do not keep a wake earlier than this instant.
+   * An existing wake at or after it is reused. One timer per locale.
+   */
+  readonly notBeforeMs?: number;
 }): { readonly accepted: boolean; readonly localeKey: string } {
   const localeKey = canonicalKey(input.locale);
   if (!localeKey || localeKey === "en") {
@@ -588,21 +646,25 @@ export function scheduleLocalizationReconciliation(input: {
   }
 
   const delayMs = input.delayMs ?? 0;
+  const notBeforeMs = input.notBeforeMs;
 
-  if (delayMs > 0) {
-    const dueAt = nowMs() + delayMs;
+  if (delayMs > 0 || (notBeforeMs != null && notBeforeMs > nowMs())) {
+    const dueAt = Math.max(nowMs() + Math.max(0, delayMs), notBeforeMs ?? 0);
     const existingDue = delayedDueAtMs.get(localeKey);
-    if (
-      existingDue != null &&
-      delayedTimers.has(localeKey) &&
-      existingDue <= dueAt
-    ) {
-      // Keep earlier (or equal) wake — do not accumulate timers.
-      return { accepted: true, localeKey };
+    if (existingDue != null && delayedTimers.has(localeKey)) {
+      if (notBeforeMs != null) {
+        if (existingDue >= dueAt) {
+          return { accepted: true, localeKey };
+        }
+      } else if (existingDue <= dueAt) {
+        // Keep earlier (or equal) wake — do not accumulate timers.
+        return { accepted: true, localeKey };
+      }
     }
     clearDelayed(localeKey);
     delayedReasons.set(localeKey, input.reason);
     delayedDueAtMs.set(localeKey, dueAt);
+    const waitMs = Math.max(0, dueAt - nowMs());
     const timer = setTimeout(() => {
       delayedTimers.delete(localeKey);
       delayedReasons.delete(localeKey);
@@ -612,7 +674,7 @@ export function scheduleLocalizationReconciliation(input: {
         reason: "continuation",
         delayMs: 0,
       });
-    }, delayMs);
+    }, waitMs);
     if (typeof timer.unref === "function") {
       timer.unref();
     }
@@ -666,6 +728,7 @@ export function scheduleLocalizationReconciliation(input: {
             locale: localeKey,
             reason: wakeReasonForContinuation(passResult.continuationKind),
             delayMs: passResult.continuationDelayMs,
+            notBeforeMs: passResult.notBeforeMs,
           });
         }
       } catch (error) {

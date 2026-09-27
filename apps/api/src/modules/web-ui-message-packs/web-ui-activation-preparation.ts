@@ -18,6 +18,8 @@ import type {
 
 import { resolveLanguagePreparationLocaleMetadata } from "../language-preparation/language-registry-metadata.js";
 import { resolveProviderTerminologyContext } from "../language/terminology-glossary/terminology-glossary.provider-context.js";
+import { readLocalizationProviderCooldown } from "../language/localization-provider-governor.js";
+import { peekThinGeminiCooldownSnapshot } from "../language/media-plp-materializer/thin-gemini-provider-state.js";
 import type {
   TranslationProviderRequest,
   TranslationProviderResult,
@@ -70,6 +72,11 @@ export type WebUiActivationTickResult = {
   readonly webUi: LanguageActivationWebUiDomainProgress;
   readonly checkpoint: WebUiActivationCheckpointRecord | null;
   readonly providerCalls: number;
+  /**
+   * Shared provider cooldown blocked the next provider batch.
+   * Checkpoint bytes are unchanged. Caller wakes at this instant.
+   */
+  readonly deferredUntil?: string | null;
 };
 
 export type WebUiActivationPreparationDeps = {
@@ -89,6 +96,14 @@ export type WebUiActivationPreparationDeps = {
     readonly TRANSLATION_PROVIDER?: string;
     readonly HU_READ_ONLY_DIAGNOSTIC?: string;
   };
+  /**
+   * Test seam. Production reads the shared Gate E cooldown document.
+   * Must not arm or extend pressure.
+   */
+  readonly readProviderCooldown?: () => Promise<{
+    readonly active: boolean;
+    readonly cooldownUntil: string | null;
+  }>;
 };
 
 function nowIso(deps: WebUiActivationPreparationDeps): string {
@@ -1613,6 +1628,54 @@ export async function processWebUiActivationTick(input: {
       };
     }
     checkpoint = await resumeWebUiCheckpointAfterCooldown({ checkpoint, deps });
+  }
+  if (checkpoint.phase === "primary" || checkpoint.phase === "quality") {
+    // In-memory governor state is read synchronously so a tick that is already
+    // in flight does not yield before its provider batch. Mongo is read only
+    // when the durable store is the source of truth.
+    const peeked = deps.readProviderCooldown ? null : peekThinGeminiCooldownSnapshot();
+    let cooldown: { active: boolean; cooldownUntil: string | null };
+    if (peeked) {
+      cooldown = {
+        active: peeked.active,
+        cooldownUntil: peeked.active ? peeked.cooldownUntil : null,
+      };
+    } else {
+      try {
+        const read = await (deps.readProviderCooldown ?? readLocalizationProviderCooldown)();
+        cooldown = {
+          active: read.active,
+          cooldownUntil: read.active ? read.cooldownUntil : null,
+        };
+      } catch (error) {
+        if (deps.readProviderCooldown) {
+          throw error;
+        }
+        cooldown = { active: false, cooldownUntil: null };
+      }
+    }
+    if (cooldown.active && cooldown.cooldownUntil) {
+      return {
+        done: false,
+        needsAnotherTick: false,
+        published: false,
+        providerCalls: 0,
+        deferredUntil: cooldown.cooldownUntil,
+        checkpoint,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: checkpoint.leafCount,
+          emptyKeyCount: 0,
+          requiredKeyCount: checkpoint.leafCount,
+          effectiveSource: "none",
+          checkpoint,
+          completedLeaves: Math.min(
+            checkpoint.leafCount,
+            checkpoint.completedBatchCount * 6,
+          ),
+        }),
+      };
+    }
   }
   if (checkpoint.phase === "primary") {
     return processPrimaryBatchTick({ checkpoint, deps });

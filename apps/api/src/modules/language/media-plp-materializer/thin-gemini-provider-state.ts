@@ -53,6 +53,8 @@ export type ThinGeminiCooldownSnapshot = {
   readonly quotaLimitId: string | null;
   readonly quotaRetryDelaySeconds: number | null;
   readonly remainingSeconds: number;
+  /** Present on the same durable record. Null when no category was stored. */
+  readonly pressureCategory: LocalizationProviderPressureCategory | null;
 };
 
 type ThinGeminiProviderStateDocument = ThinGeminiProviderStateRecord;
@@ -73,7 +75,13 @@ export function resetThinGeminiProviderStateForTests(): void {
 export function useThinGeminiProviderStateMemory(): boolean {
   // Tests share one process. Keep pressure in memory so a simulated 429 cannot
   // write the developer database, and so a later test can clear it synchronously.
-  return forceMemoryForTests || process.env.NODE_TEST_ENV === "true" || !isMongoConfigured();
+  // node:test sets NODE_TEST_CONTEXT even when NODE_TEST_ENV is unset.
+  return (
+    forceMemoryForTests ||
+    process.env.NODE_TEST_ENV === "true" ||
+    typeof process.env.NODE_TEST_CONTEXT === "string" ||
+    !isMongoConfigured()
+  );
 }
 
 function nowIso(): string {
@@ -105,6 +113,7 @@ function toSnapshot(
   state: ThinGeminiProviderStateRecord | null,
   nowMs: number = Date.now(),
 ): ThinGeminiCooldownSnapshot {
+  const pressureCategory = state?.pressureCategory ?? null;
   if (!state?.cooldownUntil) {
     return {
       active: false,
@@ -115,6 +124,7 @@ function toSnapshot(
       quotaLimitId: state?.quotaLimitId ?? null,
       quotaRetryDelaySeconds: state?.quotaRetryDelaySeconds ?? null,
       remainingSeconds: 0,
+      pressureCategory,
     };
   }
   const untilMs = Date.parse(state.cooldownUntil);
@@ -128,6 +138,7 @@ function toSnapshot(
       quotaLimitId: state.quotaLimitId,
       quotaRetryDelaySeconds: state.quotaRetryDelaySeconds,
       remainingSeconds: 0,
+      pressureCategory,
     };
   }
   return {
@@ -139,6 +150,7 @@ function toSnapshot(
     quotaLimitId: state.quotaLimitId,
     quotaRetryDelaySeconds: state.quotaRetryDelaySeconds,
     remainingSeconds: Math.ceil((untilMs - nowMs) / 1000),
+    pressureCategory,
   };
 }
 
@@ -150,6 +162,15 @@ export async function readThinGeminiProviderState(): Promise<ThinGeminiProviderS
     providerId: THIN_GEMINI_PROVIDER_STATE_ID,
   });
   return doc ?? null;
+}
+
+export function peekThinGeminiCooldownSnapshot(
+  nowMs: number = Date.now(),
+): ThinGeminiCooldownSnapshot | null {
+  if (!useThinGeminiProviderStateMemory()) {
+    return null;
+  }
+  return toSnapshot(memoryState, nowMs);
 }
 
 export async function getThinGeminiCooldownSnapshot(

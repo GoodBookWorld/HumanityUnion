@@ -56,6 +56,11 @@ import {
   saveLanguageActivationJob,
 } from "./language-activation-job.repository.js";
 import { evaluateLanguageLocalizationReadiness } from "./language-localization-readiness-evaluator.js";
+import { assessWebUiCatalogReadinessForLocale } from "./assess-web-ui-catalog-readiness.js";
+import {
+  readLocalizationProviderCooldown,
+  type LocalizationProviderCooldownRead,
+} from "../localization-provider-governor.js";
 import {
   LanguageOwnerPreparationError,
   runLanguageOwnerPreparation,
@@ -123,6 +128,10 @@ export type LanguageActivationJobProcessDeps = {
   readonly skipWebUiPreparation?: boolean;
   /** Deterministic WEB_UI preparation deps (translator, includePaths, etc.). */
   readonly webUiPreparationDeps?: WebUiActivationPreparationDeps;
+  /** Test seam for the shared Gate E cooldown read. Production uses the governor. */
+  readonly readProviderCooldown?: () => Promise<LocalizationProviderCooldownRead>;
+  /** Test seam for the cheap WEB_UI catalog gate. Production uses catalog readiness. */
+  readonly assessWebUi?: typeof assessWebUiCatalogReadinessForLocale;
 };
 
 let processDepsOverrideForTests: LanguageActivationJobProcessDeps | null = null;
@@ -353,8 +362,6 @@ export async function startOrResumeLanguageActivationJob(input: {
     const claimed = await claimLanguageActivationJob(active, readiness);
     const coolingDown =
       claimed.domains.webUi.preparationPhase === "provider_cooldown" ||
-      (claimed.domains.webUi.nextAttemptAt != null &&
-        claimed.domains.webUi.nextAttemptAt.length > 0) ||
       (claimed.domains.brand.status === "in_progress" &&
         claimed.domains.brand.nextAttemptAt != null &&
         claimed.domains.brand.nextAttemptAt.length > 0) ||
@@ -541,6 +548,34 @@ export type ProcessLanguageActivationJobOptions = {
  * Side-effect free regarding Search/SEO.
  * Provider only via Activate/Resume, WEB_UI ticks, and existing CT/PLP workers.
  */
+async function activationCorpusMeasurementBlockedByProviderCooldown(input: {
+  readonly job: LanguageActivationJobRecord;
+  readonly deps: LanguageActivationJobProcessDeps;
+  readonly locale: string;
+  readonly ownersDeferred: boolean;
+}): Promise<boolean> {
+  if (input.ownersDeferred) {
+    return true;
+  }
+  const phase = input.job.domains.webUi.preparationPhase;
+  // Validate/publish is local checkpoint work. Do not skip the rest of the tick
+  // for it, and do not treat it as provider-blocked corpus work.
+  if (phase === "validating" || phase === "publishing") {
+    return false;
+  }
+  if (phase === "primary" || phase === "quality" || phase === "provider_cooldown") {
+    return true;
+  }
+  const assess = input.deps.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
+  const publicWebUi = await assess({ locale: input.locale });
+  const participantWebUi = await assess({ locale: input.locale, scope: "participant" });
+  return isLanguageActivationWebUiReadyForHistoricalEnqueue({
+    webUi: input.job.domains.webUi,
+    publicWebUiDataReady: publicWebUi.dataReady === true,
+    participantWebUiDataReady: participantWebUi.dataReady === true,
+  });
+}
+
 export async function processLanguageActivationJob(
   jobId: string,
   options?: ProcessLanguageActivationJobOptions,
@@ -609,7 +644,28 @@ export async function processLanguageActivationJob(
       deps.skipOwnerPreparation !== true &&
       normalizeLanguageRegistryLocaleKey(canonicalLocale) !== "en";
 
+    const inactiveCooldown: LocalizationProviderCooldownRead = {
+      active: false,
+      cooldownUntil: null,
+      pressureCategory: null,
+    };
+    const readCooldown = deps.readProviderCooldown ?? readLocalizationProviderCooldown;
+    let ownerCooldown: LocalizationProviderCooldownRead = inactiveCooldown;
     if (shouldPrepareOwners) {
+      try {
+        ownerCooldown = await readCooldown();
+      } catch (error) {
+        if (deps.readProviderCooldown) {
+          throw error;
+        }
+      }
+    }
+    const deferOwnerProviders =
+      shouldPrepareOwners &&
+      ownerCooldown.active === true &&
+      Boolean(ownerCooldown.cooldownUntil);
+
+    if (shouldPrepareOwners && !deferOwnerProviders) {
       const prepare = deps.runOwnerPreparation ?? runLanguageOwnerPreparation;
       const nowMs = Date.now();
 
@@ -928,6 +984,27 @@ export async function processLanguageActivationJob(
         updatedAt: nowIso(),
       };
 
+      if (tick.deferredUntil) {
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          diagnosticSummary:
+            tick.webUi.detail ?? "running — Waiting for translation provider…",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        if (options?.webUiTick === true) {
+          scheduleWebUiActivationTickAt(job.jobId, tick.deferredUntil, { notBefore: true });
+        } else {
+          scheduleLanguageActivationJobProcessAt(job.jobId, tick.deferredUntil, {
+            notBefore: true,
+          });
+        }
+        return job;
+      }
+
       if (tick.webUi.status === "failed" || tick.checkpoint?.phase === "failed") {
         job = {
           ...job,
@@ -994,6 +1071,73 @@ export async function processLanguageActivationJob(
           },
         },
       };
+    }
+
+    let corpusCooldown: LocalizationProviderCooldownRead = inactiveCooldown;
+    try {
+      corpusCooldown = await readCooldown();
+    } catch (error) {
+      if (deps.readProviderCooldown) {
+        throw error;
+      }
+    }
+    if (
+      corpusCooldown.active &&
+      corpusCooldown.cooldownUntil &&
+      (await activationCorpusMeasurementBlockedByProviderCooldown({
+        job,
+        deps,
+        locale: canonicalLocale,
+        ownersDeferred: deferOwnerProviders,
+      }))
+    ) {
+      // Durable wake target. In-memory timers do not survive restart.
+      // Phase, batches, and attempts stay as they were.
+      if (job.domains.webUi.preparationPhase !== "provider_cooldown") {
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          domains: {
+            ...job.domains,
+            webUi: {
+              ...job.domains.webUi,
+              nextAttemptAt: corpusCooldown.cooldownUntil,
+            },
+          },
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+      }
+      if (options?.webUiTick === true) {
+        scheduleWebUiActivationTickAt(job.jobId, corpusCooldown.cooldownUntil, {
+          notBefore: true,
+        });
+      } else {
+        scheduleLanguageActivationJobProcessAt(job.jobId, corpusCooldown.cooldownUntil, {
+          notBefore: true,
+        });
+      }
+      return job;
+    }
+
+    if (
+      job.domains.webUi.nextAttemptAt &&
+      job.domains.webUi.preparationPhase !== "provider_cooldown"
+    ) {
+      job = {
+        ...job,
+        domains: {
+          ...job.domains,
+          webUi: {
+            ...job.domains.webUi,
+            nextAttemptAt: null,
+          },
+        },
+        updatedAt: nowIso(),
+      };
+      await saveLanguageActivationJob(job);
     }
 
     let readiness = await evaluate({
@@ -1254,6 +1398,7 @@ export function scheduleLanguageActivationJobProcess(jobId: string): void {
 export function scheduleLanguageActivationJobProcessAt(
   jobId: string,
   nextAttemptAt: string,
+  options?: { readonly notBefore?: boolean },
 ): void {
   const dueMs = Date.parse(nextAttemptAt);
   if (!Number.isFinite(dueMs)) {
@@ -1263,8 +1408,14 @@ export function scheduleLanguageActivationJobProcessAt(
   const existingAt = ownerDelayedNextAttemptAt.get(jobId);
   if (existingAt) {
     const existingMs = Date.parse(existingAt);
-    if (Number.isFinite(existingMs) && existingMs <= dueMs) {
-      return;
+    if (Number.isFinite(existingMs)) {
+      if (options?.notBefore) {
+        if (existingMs >= dueMs) {
+          return;
+        }
+      } else if (existingMs <= dueMs) {
+        return;
+      }
     }
     const prior = ownerDelayedTimers.get(jobId);
     if (prior) {
@@ -1327,6 +1478,7 @@ export function scheduleWebUiActivationTick(jobId: string): void {
 export function scheduleWebUiActivationTickAt(
   jobId: string,
   nextAttemptAt: string,
+  options?: { readonly notBefore?: boolean },
 ): void {
   const dueMs = Date.parse(nextAttemptAt);
   if (!Number.isFinite(dueMs)) {
@@ -1336,8 +1488,14 @@ export function scheduleWebUiActivationTickAt(
   const existingAt = webUiDelayedNextAttemptAt.get(jobId);
   if (existingAt) {
     const existingMs = Date.parse(existingAt);
-    if (Number.isFinite(existingMs) && existingMs <= dueMs) {
-      return;
+    if (Number.isFinite(existingMs)) {
+      if (options?.notBefore) {
+        if (existingMs >= dueMs) {
+          return;
+        }
+      } else if (existingMs <= dueMs) {
+        return;
+      }
     }
     const prior = webUiDelayedTimers.get(jobId);
     if (prior) {
@@ -1438,6 +1596,24 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
       webUi.providerFailure ||
       webUi.checkpointId
     ) {
+      // Shared-cooldown corpus deferral stores the wake here without changing
+      // WEB_UI phase. A restart has no in-memory timer.
+      const wakeAt = webUi.nextAttemptAt ?? null;
+      if (
+        wakeAt &&
+        job.status === "running" &&
+        webUi.status !== "failed" &&
+        webUi.preparationPhase !== "provider_cooldown"
+      ) {
+        const dueMs = Date.parse(wakeAt);
+        if (Number.isFinite(dueMs) && dueMs > Date.now()) {
+          scheduleLanguageActivationJobProcessAt(job.jobId, wakeAt, { notBefore: true });
+        } else {
+          scheduleLanguageActivationJobProcess(job.jobId);
+        }
+        resumedJobIds.add(job.jobId);
+        count += 1;
+      }
       continue;
     }
     scheduleLanguageActivationJobProcess(job.jobId);
