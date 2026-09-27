@@ -31,6 +31,10 @@ import {
 } from "../admin-languages-api";
 import { shouldPollLanguageActivationJob, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS } from "../admin-languages-activation-poll";
 import {
+  freshActivationReadinessBinding,
+  runGuardedActivationStatus,
+} from "../admin-languages-activation-status-guard";
+import {
   formatActivationWaitingGaps,
   formatOwnerPreparationProgress,
 } from "../admin-languages-activation-status-format";
@@ -717,20 +721,24 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       return next;
     });
     for (const languageId of languageIds) {
-      void fetchAdminLanguageActivationStatus(languageId)
+      const guarded = runGuardedActivationStatus(languageId, () =>
+        fetchAdminLanguageActivationStatus(languageId),
+      );
+      void guarded.promise
         .then((view) => {
           if (cancelled) {
             return;
           }
+          const bound = freshActivationReadinessBinding(view);
           setActivationById((prev) => ({
             ...prev,
             [languageId]: nextActivationSlotAfterHydrate({
               current: prev[languageId],
-              view,
+              view: bound.activation,
               activateInFlight: activatingIdRef.current === languageId,
             }),
           }));
-          setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
+          setReadinessById((prev) => ({ ...prev, [languageId]: bound.readiness }));
         })
         .catch(() => {
           if (cancelled) {
@@ -771,13 +779,20 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     let cancelled = false;
     const timer = setInterval(() => {
       for (const languageId of languageIds) {
-        void fetchAdminLanguageActivationStatus(languageId)
+        const guarded = runGuardedActivationStatus(languageId, () =>
+          fetchAdminLanguageActivationStatus(languageId),
+        );
+        if (!guarded.started) {
+          continue;
+        }
+        void guarded.promise
           .then((view) => {
             if (cancelled) {
               return;
             }
-            setActivationById((prev) => ({ ...prev, [languageId]: view }));
-            setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
+            const bound = freshActivationReadinessBinding(view);
+            setActivationById((prev) => ({ ...prev, [languageId]: bound.activation }));
+            setReadinessById((prev) => ({ ...prev, [languageId]: bound.readiness }));
           })
           .catch(() => {
             /* Keep the last view. Polling must not call Activate. */
@@ -899,9 +914,13 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     try {
       const report = await fetchAdminLanguageLocalizationReadiness(row.languageId);
       setReadinessById((prev) => ({ ...prev, [row.languageId]: report }));
-      const view = await fetchAdminLanguageActivationStatus(row.languageId);
-      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
-      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      const guarded = runGuardedActivationStatus(row.languageId, () =>
+        fetchAdminLanguageActivationStatus(row.languageId),
+      );
+      const view = await guarded.promise;
+      const bound = freshActivationReadinessBinding(view);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: bound.activation }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: bound.readiness }));
       setStatus(
         `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
@@ -947,12 +966,16 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     setActivationById((prev) => ({ ...prev, [row.languageId]: "loading" }));
     setError(null);
     try {
-      const view = await fetchAdminLanguageActivationStatus(row.languageId);
-      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
-      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      const guarded = runGuardedActivationStatus(row.languageId, () =>
+        fetchAdminLanguageActivationStatus(row.languageId),
+      );
+      const view = await guarded.promise;
+      const bound = freshActivationReadinessBinding(view);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: bound.activation }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: bound.readiness }));
       setStatus(
         `${row.locale} activation status: ${view.job?.status ?? "none"}` +
-          ` · readiness=${view.readiness.state}`,
+          ` · readiness=${bound.readiness.state}`,
       );
     } catch (statusError) {
       setActivationById((prev) => ({ ...prev, [row.languageId]: "error" }));

@@ -2,6 +2,13 @@ import { Router, type Response } from "express";
 
 import { createSuccessResponse } from "../../../shared/http-response.js";
 import {
+  CORRELATION_ID_HEADER,
+  createCorrelationId,
+  getCorrelationContext,
+  readCorrelationIdFromHeader,
+} from "../../../shared/observability/correlation.js";
+import { beginAdminActivationStatusObservation } from "./admin-activation-status-observation.js";
+import {
   AdministrationForbiddenError,
   AdministrationUnauthorizedError,
   AdministrationValidationError,
@@ -198,20 +205,45 @@ adminLanguagesRouter.get(
   authenticationMiddleware,
   requireAuthenticationMiddleware,
   async (req, res) => {
+    const languageId = Array.isArray(req.params.languageId)
+      ? req.params.languageId[0]
+      : req.params.languageId;
+    const correlationId =
+      getCorrelationContext()?.correlationId ??
+      readCorrelationIdFromHeader(req.headers[CORRELATION_ID_HEADER]) ??
+      createCorrelationId();
+    const observation = beginAdminActivationStatusObservation({
+      correlationId,
+      languageId: languageId ?? "",
+    });
+    let outcome: {
+      result: "ok" | "error";
+      httpStatus: number;
+      locale: string | null;
+    } = { result: "error", httpStatus: 500, locale: null };
     try {
-      const languageId = Array.isArray(req.params.languageId)
-        ? req.params.languageId[0]
-        : req.params.languageId;
       const view = await getLanguageActivationAdminView({
         actorUserId: req.auth!.id,
         languageId: languageId ?? "",
         refreshJob: true,
       });
+      outcome = {
+        result: "ok",
+        httpStatus: 200,
+        locale: view.readiness.locale,
+      };
       res.json(
         createSuccessResponse(view, "Language localization activation status loaded."),
       );
     } catch (error) {
       handleError(res, error);
+      outcome = {
+        result: "error",
+        httpStatus: res.statusCode || 500,
+        locale: null,
+      };
+    } finally {
+      observation.complete(outcome);
     }
   },
 );
