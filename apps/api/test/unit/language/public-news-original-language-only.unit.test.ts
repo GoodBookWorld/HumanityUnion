@@ -12,21 +12,22 @@ import {
 } from "@hu/types";
 
 describe("Reset 01 — public_news PLP MACHINE policy", () => {
-  it("title/summary are MACHINE; protected fields remain protected", () => {
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
+  it("title/summary are SOURCE_ORIGINAL; protected fields remain protected", () => {
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "SOURCE_ORIGINAL");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "SOURCE_ORIGINAL");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.category, "CONTROLLED_VOCABULARY");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.sourceName, "PROTECTED_SOURCE_VALUE");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.articleUrl, "PROTECTED_SOURCE_VALUE");
-    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], []);
   });
 
-  it("activation lists place public_news under PLP, not protected-excluded", () => {
+  it("activation lists place public_news outside machine PLP owners", () => {
     assert.equal(LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS.length, 0);
-    assert.ok(
+    assert.equal(
       (LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES as readonly string[]).includes(
         "public_news",
       ),
+      false,
     );
   });
 });

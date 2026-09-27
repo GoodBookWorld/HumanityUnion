@@ -285,6 +285,7 @@ function CountSummary({
   current,
   stale,
   missing,
+  invalid = 0,
   failed = 0,
   pending = 0,
   workItemsRequired,
@@ -292,13 +293,14 @@ function CountSummary({
   readonly current: number;
   readonly stale: number;
   readonly missing: number;
+  readonly invalid?: number;
   readonly failed?: number;
   readonly pending?: number;
   readonly workItemsRequired: number;
 }) {
   return (
     <span>
-      Current={current} · Stale={stale} · Missing={missing} · Blocked={failed}
+      Current={current} · Stale={stale} · Missing={missing} · Invalid={invalid} · Blocked={failed}
       {pending > 0 ? ` · Not actionable=${pending}` : ""} · Work remaining=
       {workItemsRequired}
     </span>
@@ -465,6 +467,7 @@ function LanguageReadinessDetails({
             current={report.ct.current}
             stale={report.ct.stale}
             missing={report.ct.missing}
+            invalid={report.ct.invalid}
             failed={report.ct.failed}
             pending={report.ct.pending}
             workItemsRequired={report.ct.workItemsRequired}
@@ -479,6 +482,7 @@ function LanguageReadinessDetails({
                   current={row.counts!.current}
                   stale={row.counts!.stale}
                   missing={row.counts!.missing}
+                  invalid={row.counts!.invalid}
                   failed={row.counts!.failed}
                   pending={row.counts!.pending}
                   workItemsRequired={row.counts!.workItemsRequired}
@@ -498,6 +502,7 @@ function LanguageReadinessDetails({
             current={report.pwaCivic.coverage.current}
             stale={report.pwaCivic.coverage.stale}
             missing={report.pwaCivic.coverage.missing}
+            invalid={report.pwaCivic.coverage.invalid ?? 0}
             failed={report.pwaCivic.coverage.failed}
             pending={report.pwaCivic.coverage.pending}
             workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
@@ -516,6 +521,7 @@ function LanguageReadinessDetails({
             current={report.plpMedia.current}
             stale={report.plpMedia.stale}
             missing={report.plpMedia.missing}
+            invalid={report.plpMedia.invalid}
             failed={report.plpMedia.failed}
             pending={report.plpMedia.pending}
             workItemsRequired={report.plpMedia.workItemsRequired}
@@ -535,6 +541,7 @@ function LanguageReadinessDetails({
         <div>Missing={report.webUi.missingKeyCount}</div>
         <div>Empty={report.webUi.emptyKeyCount}</div>
         <div>English fallback={report.webUi.englishFallbackKeyCount}</div>
+        <div>Structural invalid={report.webUi.structuralInvalidCount ?? 0}</div>
         <div>Data ready: {yesNo(report.webUi.dataReady)}</div>
       </section>
 
@@ -548,6 +555,7 @@ function LanguageReadinessDetails({
         <div>Missing={report.participantWebUi.missingKeyCount}</div>
         <div>Empty={report.participantWebUi.emptyKeyCount}</div>
         <div>English fallback={report.participantWebUi.englishFallbackKeyCount}</div>
+        <div>Structural invalid={report.participantWebUi.structuralInvalidCount ?? 0}</div>
         <div>Data ready: {yesNo(report.participantWebUi.dataReady)}</div>
       </section>
 
@@ -574,6 +582,15 @@ function LanguageReadinessDetails({
         <div>
           Presentation ready: {yesNo(report.controlledVocabulary.presentationReady)}
         </div>
+        {job ? (
+          <div>
+            Terminology owner: <code>{job.domains.terminology.status}</code>
+          </div>
+        ) : null}
+        <p className="admin-languages__readiness-note">
+          A catalog fallback can make a concept displayable. That does not mean the
+          Terminology owner has finished preparing preferred terms.
+        </p>
       </section>
 
       <section className="admin-languages__readiness-section">

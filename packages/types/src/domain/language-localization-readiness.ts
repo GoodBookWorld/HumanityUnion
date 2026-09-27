@@ -101,8 +101,8 @@ export type LanguageActivationNoOwnerKindId =
   (typeof LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS)[number];
 
 /**
- * Closure 08 / Reset 01 — PLP-owned Media entity types for public /media.
- * Includes public_news carousel cards (title+summary MACHINE).
+ * Closure 08 / STEP 15D.14.F.2 — PLP-owned Media entity types for public /media.
+ * Humanity Union machine prose only. public_news is SOURCE_ORIGINAL.
  */
 export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_editorial",
@@ -110,7 +110,6 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
-  "public_news",
 ] as const;
 
 /**
@@ -121,6 +120,30 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
 export const LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES = [
   "participant_public",
 ] as const;
+
+/**
+ * Entities with no machine-localization obligation.
+ * Historical queue rows do not override this predicate.
+ */
+export const LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES = [
+  ...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
+  "public_news",
+] as const;
+
+export type LanguageLocalizationSourceOriginalEntityType =
+  (typeof LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES)[number];
+
+export function isLocalizationSourceOriginalEntityType(entityType: string): boolean {
+  return (LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES as readonly string[]).includes(
+    entityType,
+  );
+}
+
+export function isAuthoritativeMachineLocalizedPlpEntityType(entityType: string): boolean {
+  return (LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES as readonly string[]).includes(
+    entityType,
+  );
+}
 
 export type LanguageActivationSourceOriginalParticipantEntityType =
   (typeof LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES)[number];
@@ -173,6 +196,12 @@ export type LanguageWebUiReadinessSlice = {
   readonly emptyKeyCount: number;
   readonly englishFallbackKeyCount: number;
   readonly sampleMissingPaths: readonly string[];
+  /**
+   * STEP 15D.14.F.2 — same structural contract as publication
+   * (`validateWebUiMessageTreeAgainstEnglish`). Missing keys can be 0
+   * while this count is still greater than 0.
+   */
+  readonly structuralInvalidCount?: number;
 };
 
 export type LanguageControlledVocabularyReadinessSlice = {

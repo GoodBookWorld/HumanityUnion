@@ -15,7 +15,11 @@ import type {
   PlpPublicationTriggerKind,
   PublicPresentationNode,
 } from "@hu/types";
-import { plpBuildWorkKey, PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
+import {
+  isLocalizationSourceOriginalEntityType,
+  plpBuildWorkKey,
+  PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+} from "@hu/types";
 
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { classifyUsableLocalizedPresentation } from "../usability.js";
@@ -265,6 +269,24 @@ function skippedUsableResult(input: EnqueueInput): EnqueuePlpBuildRequestResult 
 export function enqueuePlpBuildRequest(
   input: EnqueueInput,
 ): Promise<EnqueuePlpBuildRequestResult> {
+  if (isLocalizationSourceOriginalEntityType(input.entityType)) {
+    return Promise.resolve({
+      request: {
+        workKey: plpBuildWorkKey(input),
+        entityType: input.entityType,
+        entityId: input.entityId,
+        locale: String(input.locale).toLowerCase(),
+        canonicalVersion: input.canonicalVersion,
+        contentRevision: input.contentRevision,
+        trigger: input.trigger,
+        enqueuedAt: new Date().toISOString(),
+        status: "SKIPPED_USABLE",
+      },
+      accepted: false,
+      deduped: false,
+      skippedUsable: true,
+    });
+  }
   const needsUsableProbe =
     input.skipUsableCheck !== false && input.canonicalPresentation != null;
 

@@ -20,11 +20,11 @@ import {
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Reset 01 — web public_news PLP carousel prose", () => {
-  it("policy: title/summary MACHINE; identity/URL protected", () => {
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
+  it("policy: title/summary SOURCE_ORIGINAL; identity/URL protected", () => {
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "SOURCE_ORIGINAL");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "SOURCE_ORIGINAL");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.sourceName, "PROTECTED_SOURCE_VALUE");
-    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], []);
   });
 
   it("hook applies PLP whole-entity; no provider-on-read", () => {
@@ -32,6 +32,7 @@ describe("Reset 01 — web public_news PLP carousel prose", () => {
       path.join(here, "../../public-news/use-localized-public-news-card.ts"),
       "utf8",
     );
+    assert.match(hook, /plpPresentation: null/);
     assert.match(hook, /resolvePublicNewsCardFieldsFromPlp/);
     assert.doesNotMatch(hook, /TranslationProvider/);
     assert.doesNotMatch(hook, /generateContentTranslation/);

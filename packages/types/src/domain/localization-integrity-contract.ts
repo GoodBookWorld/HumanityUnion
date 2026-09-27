@@ -12,7 +12,7 @@ import {
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
   LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
-  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
+  LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
   type LanguageLocalizationReadinessState,
@@ -91,15 +91,15 @@ export const LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY = {
    * STEP 15D.14.B.2.1 — Participant biography/skills are SOURCE_ORIGINAL.
    * Not a translation completeness owner.
    */
-  sourceOriginal: [...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES],
+  sourceOriginal: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES],
   protectedExcluded: [...LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS],
   noOwner: [...LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS],
   manualAuthor: [...LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS],
   mediaCarouselDecision: "REQUIRED_PLP_DISCRETE_ENTITY_TYPES" as const,
   mediaCarouselNote:
     "Public /media carousel HU-owned cards are discrete PLP entity types " +
-    "(principle/trusted/fact_check/propaganda/public_news) plus editorial. " +
-    "public_news title+summary are MACHINE_CONTENT via bounded carousel PLP. " +
+    "(editorial/principle/trusted/fact_check/propaganda). " +
+    "public_news title/summary are SOURCE_ORIGINAL and are not PLP work. " +
     "Synthetic planner kind civic_media_carousel is an enqueue bucket, not an entityType. " +
     "participant_public biography/skills are SOURCE_ORIGINAL (not PLP translation work).",
 } as const;

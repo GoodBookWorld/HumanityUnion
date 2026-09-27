@@ -221,11 +221,29 @@ export async function evaluateLanguageLocalizationReadiness(
               : "Outside bounded PWA civic measure set — not counted as complete.",
       };
     }),
+    ...(bounded?.kindRows.some((row) => row.ownership === "PLP_OWNED")
+      ? bounded.kindRows
+          .filter((row) => row.ownership === "PLP_OWNED")
+          .map((row) => ({
+            kindId: row.kindId,
+            ownership: "PLP_OWNED" as const,
+            counts: row.counts,
+            note: row.reason,
+          }))
+      : [
+          {
+            kindId: "civic_media_editorial",
+            ownership: "PLP_OWNED" as const,
+            counts: plpMedia,
+            note: "PLP HU-owned Media editorial",
+          },
+        ]),
     {
-      kindId: "civic_media_editorial",
-      ownership: "PLP_OWNED",
-      counts: plpMedia,
-      note: "PLP HU-owned Media editorial",
+      kindId: "public_news",
+      ownership: "PROTECTED_EXCLUDED" as const,
+      counts: null,
+      note:
+        "SOURCE_ORIGINAL — publisher headline/summary are not localization work (15D.14.F.2).",
     },
     ...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES.map((kindId) => ({
       kindId,

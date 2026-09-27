@@ -80,8 +80,15 @@ function view(input: {
       pwaPersistedReadingEnabled: false,
     },
     engineReady: true,
-    languageDataReady: dataReady,
-    state: dataReady ? "READY" : "DATA_NOT_READY",
+    languageDataReady: dataReady && (input.cvReady === true) && ((input.ctRemaining ?? 0) + (input.plpRemaining ?? 0) === 0),
+    state:
+      dataReady &&
+      input.cvReady === true &&
+      (input.ctRemaining ?? 0) + (input.plpRemaining ?? 0) === 0
+        ? "READY"
+        : dataReady
+          ? "BACKFILL_REQUIRED"
+          : "DATA_NOT_READY",
     webUi: {
       engineReady: true,
       dataReady,
@@ -452,5 +459,72 @@ describe("Step 15C.5 localization live progress", () => {
     assert.doesNotMatch(load, /activateAdminLanguageLocalization/);
     assert.match(load, /nextActivationSlotAfterHydrate/);
     assert.doesNotMatch(load, /if \(current && current !== "error"\)/);
+  });
+
+  it("18–20 incomplete authoritative work cannot display 100% or Ready", () => {
+    const uk = localizationProgressFromActivation(
+      view({
+        status: "running",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 46,
+        ctRemaining: 19,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          requiredKeyCount: 4142,
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(uk.percent, 99);
+    assert.notEqual(uk.phaseLabel, "Ready");
+
+    const completed = localizationProgressFromActivation(
+      view({
+        status: "completed",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 46,
+        ctRemaining: 19,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          requiredKeyCount: 4142,
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(completed.percent, 99);
+    assert.notEqual(completed.phaseLabel, "Ready");
+  });
+
+  it("28 terminology fallback does not complete the terminology owner", () => {
+    const progress = localizationProgressFromActivation(
+      view({
+        status: "running",
+        terminologyStatus: "in_progress",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 10,
+        ctRemaining: 0,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(progress.phaseLabel, "Preparing terminology…");
+    assert.notEqual(progress.phaseLabel, "Ready");
   });
 });

@@ -46,6 +46,7 @@ type ProgressSource = {
   readonly publishedRequired: number;
   readonly publishedMissing: number;
   readonly publishedDataReady: boolean;
+  readonly readinessState: string | null;
 };
 
 function units(done: number, total: number): Count {
@@ -121,7 +122,7 @@ function coverage(source: ProgressSource): Count {
   return add(add(cv, web), add(ct, plp));
 }
 
-function phaseLabel(source: ProgressSource, percent: number): {
+function phaseLabel(source: ProgressSource): {
   label: string;
   failed: boolean;
   nextAttemptAt: string | null;
@@ -209,7 +210,7 @@ function phaseLabel(source: ProgressSource, percent: number): {
   ) {
     return { label: "Finishing civic content…", failed: false, nextAttemptAt: null };
   }
-  if (percent >= 100) {
+  if (source.readinessState === "READY") {
     return { label: "Ready", failed: false, nextAttemptAt: null };
   }
   return { label: "Localization", failed: false, nextAttemptAt: null };
@@ -252,9 +253,10 @@ function isLocalizationActivelyProgressing(
 
 export function deriveLocalizationProgress(source: ProgressSource): LocalizationProgress {
   const covered = coverage(source);
-  const percent =
-    covered.total <= 0 ? 100 : Math.round((100 * covered.done) / covered.total);
-  const phase = phaseLabel(source, percent);
+  const rounded =
+    covered.total <= 0 ? 0 : Math.round((100 * covered.done) / covered.total);
+  const percent = source.readinessState === "READY" ? 100 : Math.min(99, rounded);
+  const phase = phaseLabel(source);
   return {
     percent,
     phaseLabel: phase.label,
@@ -294,19 +296,20 @@ function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
     terminologyLastTransientFailure:
       job?.domains.terminology.lastTransientFailure ?? null,
     webUi: job?.domains.webUi ?? null,
-    cvChecked: cv?.conceptsChecked ?? readiness.controlledVocabulary.conceptsChecked,
-    cvMissing: cv?.conceptsMissing ?? readiness.controlledVocabulary.conceptsMissingLocalizedLabel,
-    cvReady: cv?.presentationReady ?? readiness.controlledVocabulary.presentationReady,
-    ctCurrent: job?.domains.ct.current ?? readiness.ct.current,
-    ctRemaining: job?.domains.ct.remainingWorkItems ?? readiness.ct.workItemsRequired,
-    plpCurrent: job?.domains.plp.current ?? readiness.plpMedia.current,
-    plpRemaining: job?.domains.plp.remainingWorkItems ?? readiness.plpMedia.workItemsRequired,
+    cvChecked: readiness.controlledVocabulary.conceptsChecked,
+    cvMissing: readiness.controlledVocabulary.conceptsMissingLocalizedLabel,
+    cvReady: readiness.controlledVocabulary.presentationReady,
+    ctCurrent: readiness.ct.current,
+    ctRemaining: readiness.ct.workItemsRequired,
+    plpCurrent: readiness.plpMedia.current,
+    plpRemaining: readiness.plpMedia.workItemsRequired,
     publishedRequired:
       readiness.webUi.requiredKeyCount + readiness.participantWebUi.requiredKeyCount,
     publishedMissing:
       readiness.webUi.missingKeyCount + readiness.participantWebUi.missingKeyCount,
     publishedDataReady:
       readiness.webUi.dataReady && readiness.participantWebUi.dataReady,
+    readinessState: readiness.state,
   };
 }
 
@@ -341,5 +344,6 @@ export function localizationProgressFromReadiness(
       report.webUi.missingKeyCount + report.participantWebUi.missingKeyCount,
     publishedDataReady:
       report.webUi.dataReady && report.participantWebUi.dataReady,
+    readinessState: report.state,
   });
 }

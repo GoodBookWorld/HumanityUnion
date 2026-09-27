@@ -309,14 +309,8 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
         verifyDurability: async () => ({ ok: true }),
       },
     );
-    assert.ok(
-      outcome.status === "COMPLETED" || outcome.status === "FAILED",
-      outcome.status,
-    );
-    assert.doesNotMatch(
-      String(outcome.failure?.safeReason ?? ""),
-      /no_machine_auto_paths/,
-    );
+    assert.equal(outcome.status, "SKIPPED_USABLE");
+    assert.equal(outcome.failure, undefined);
   });
 
   it("12: collection enqueue can schedule bounded media-12 public_news work", async () => {
@@ -327,8 +321,8 @@ describe("RESET 05E.1 — current consumer recovery compatibility", () => {
       limit: 12,
     });
     assert.equal(rss.PROVIDER_CALLS, 0);
-    assert.equal(rss.consumerCount, 1);
-    assert.equal(rss.enqueued, 1);
+    assert.equal(rss.consumerCount, 0);
+    assert.equal(rss.enqueued, 0);
   });
 
   it("13: heal path does not fan out news; carousel collection owns RSS builds", () => {

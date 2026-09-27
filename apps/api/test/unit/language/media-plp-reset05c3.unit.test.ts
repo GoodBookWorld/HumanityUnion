@@ -158,100 +158,109 @@ describe("RESET 05C.3 — structured failure truth", () => {
           /* never resolves */
         }),
     });
-    assert.equal(result.status, "FAILED");
-    assert.equal(result.failure?.failureCode, "PROVIDER_TIMEOUT");
-    assert.equal(result.failure?.retryable, true);
-    assert.equal(result.failure?.stage, "provider");
+    assert.equal(result.status, "SKIPPED_USABLE");
+    assert.equal(result.failure, undefined);
   });
 
-  it("2: provider HTTP/error failure persists PROVIDER_FAILURE", async () => {
+  it("2: public_news does not enter the provider failure path", async () => {
     const article = makeNews(2);
     await upsertPublicNewsRecords([article]);
+    let calls = 0;
     const result = await processPlpBuildRequest(requestFor(article), {
-      callProvider: async () => ({
-        ok: false,
-        reason: "PROVIDER_FAILURE",
-        message: "upstream 503",
-      }),
+      callProvider: async () => {
+        calls += 1;
+        return {
+          ok: false,
+          reason: "PROVIDER_FAILURE",
+          message: "upstream 503",
+        };
+      },
     });
-    assert.equal(result.status, "FAILED");
-    assert.equal(result.failure?.failureCode, "PROVIDER_FAILURE");
-    assert.equal(result.failure?.retryable, true);
+    assert.equal(result.status, "SKIPPED_USABLE");
+    assert.equal(calls, 0);
   });
 
-  it("3: provider partial output persists PROVIDER_PARTIAL terminal", async () => {
+  it("3: public_news partial provider output is not requested", async () => {
     const article = makeNews(3);
     await upsertPublicNewsRecords([article]);
+    let calls = 0;
     const result = await processPlpBuildRequest(requestFor(article), {
-      callProvider: async () => ({
-        ok: false,
-        reason: "PARTIAL",
-        message: "missing paths",
-      }),
+      callProvider: async () => {
+        calls += 1;
+        return {
+          ok: false,
+          reason: "PARTIAL",
+          message: "missing paths",
+        };
+      },
     });
-    assert.equal(result.failure?.failureCode, "PROVIDER_PARTIAL");
-    assert.equal(result.failure?.retryable, false);
+    assert.equal(result.status, "SKIPPED_USABLE");
+    assert.equal(calls, 0);
   });
 
-  it("4: integrity rejection persists PROVIDER_INTEGRITY", async () => {
+  it("4: public_news integrity rejection is not requested", async () => {
     const article = makeNews(4);
     await upsertPublicNewsRecords([article]);
+    let calls = 0;
     const result = await processPlpBuildRequest(requestFor(article), {
-      callProvider: async () => ({
-        ok: false,
-        reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
-        message: "integrity",
-      }),
+      callProvider: async () => {
+        calls += 1;
+        return {
+          ok: false,
+          reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
+          message: "integrity",
+        };
+      },
     });
-    assert.equal(result.failure?.failureCode, "PROVIDER_INTEGRITY");
-    assert.equal(result.failure?.retryable, false);
+    assert.equal(result.status, "SKIPPED_USABLE");
+    assert.equal(calls, 0);
   });
 
-  it("5: source/adapter failure persists SOURCE_NOT_FOUND", async () => {
+  it("5: missing public_news source is not claimed for translation", async () => {
+    let calls = 0;
     const result = await processPlpBuildRequest(
       requestFor(makeNews(5), "missing-v"),
       {
         callProvider: async () => {
+          calls += 1;
           throw new Error("must not call");
         },
       },
     );
-    assert.equal(result.status, "FAILED");
-    assert.equal(result.failure?.failureCode, "SOURCE_NOT_FOUND");
-    assert.equal(result.failure?.retryable, false);
+    assert.equal(result.status, "SKIPPED_USABLE");
+    assert.equal(calls, 0);
   });
 
-  it("6–7: publish/stale paths classify correctly", async () => {
+  it("6–7: stale or publish paths do not call a provider for public_news", async () => {
     const article = makeNews(6);
     await upsertPublicNewsRecords([article]);
+    let calls = 0;
     const stale = await processPlpBuildRequest(
       requestFor(article, "stale-version"),
       {
         callProvider: async () => {
+          calls += 1;
           throw new Error("no");
         },
       },
     );
-    assert.equal(stale.status, "FAILED");
-    assert.equal(stale.failure?.failureCode, "STALE_CANONICAL_VERSION");
-    assert.match(stale.failure?.safeReason ?? "", /STALE_WORK_VERSION=stale-version/);
-    assert.match(stale.failure?.safeReason ?? "", /STALE_CURRENT_SOURCE_VERSION=/);
-    assert.match(stale.failure?.safeReason ?? "", /STALE_BOUNDARY=claim_source_reload/);
+    assert.equal(stale.status, "SKIPPED_USABLE");
 
     const publishFail = await processPlpBuildRequest(requestFor(article), {
-      importProvider: async () => ({
-        provider: new FakeLocalMediaPlpTransport({}),
-        PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
-      }),
+      importProvider: async () => {
+        calls += 1;
+        return {
+          provider: new FakeLocalMediaPlpTransport({}),
+          PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
+        };
+      },
       verifyDurability: async () => ({
         ok: false,
         reason: "Durable current pointer missing after publish.",
       }),
     });
-    assert.equal(publishFail.status, "FAILED");
-    assert.equal(publishFail.failure?.failureCode, "PUBLISH_FAILED");
-    assert.equal(publishFail.failure?.stage, "durability");
-    assert.equal(publishFail.failure?.retryable, true);
+    assert.equal(publishFail.status, "SKIPPED_USABLE");
+    assert.equal(calls, 0);
   });
 
   it("8–10: retryable below cap; terminal at maxAttempts; no 6th attempt", async () => {
@@ -260,19 +269,19 @@ describe("RESET 05C.3 — structured failure truth", () => {
     await upsertPublicNewsRecords([article]);
     const version = fingerprint(article);
 
-    setPlpBuildRequestProcessor((request) =>
-      processPlpBuildRequest(request, {
-        callProvider: async () => ({
-          ok: false,
-          reason: "TIMEOUT",
-          message: "timeout",
-        }),
-      }),
-    );
+    setPlpBuildRequestProcessor(async () => ({
+      status: "FAILED",
+      failure: {
+        failureCode: "PROVIDER_TIMEOUT",
+        retryable: true,
+        stage: "provider",
+        safeReason: "TIMEOUT",
+      },
+    }));
 
     await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: mediaPlpPublicNewsEntityId(article.id),
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-05c3-retry",
       locale: "uk",
       canonicalVersion: version,
       contentRevision: 1,
@@ -283,7 +292,7 @@ describe("RESET 05C.3 — structured failure truth", () => {
     await waitIdle();
 
     const work = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
+      (r) => r.entityId === "editorial-05c3-retry",
     );
     assert.ok(work);
     assert.equal(work!.status, "failed");
@@ -296,8 +305,8 @@ describe("RESET 05C.3 — structured failure truth", () => {
 
     // Re-enqueue same version must not reopen terminal failed.
     const again = await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: mediaPlpPublicNewsEntityId(article.id),
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-05c3-retry",
       locale: "uk",
       canonicalVersion: version,
       contentRevision: 1,
@@ -318,8 +327,8 @@ describe("RESET 05C.3 — structured failure truth", () => {
     const version = fingerprint(article);
 
     const seeded = await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: mediaPlpPublicNewsEntityId(article.id),
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-05c3-success",
       locale: "uk",
       canonicalVersion: "old-v",
       contentRevision: 1,
@@ -338,19 +347,11 @@ describe("RESET 05C.3 — structured failure truth", () => {
       },
     });
 
-    setPlpBuildRequestProcessor((request) =>
-      processPlpBuildRequest(request, {
-        importProvider: async () => ({
-          provider: new FakeLocalMediaPlpTransport({}),
-          PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
-        }),
-        verifyDurability: async () => ({ ok: true }),
-      }),
-    );
+    setPlpBuildRequestProcessor(async () => ({ status: "COMPLETED" }));
 
     await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: mediaPlpPublicNewsEntityId(article.id),
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-05c3-success",
       locale: "uk",
       canonicalVersion: version,
       contentRevision: 1,
@@ -361,7 +362,7 @@ describe("RESET 05C.3 — structured failure truth", () => {
     await waitIdle();
 
     const work = listPlpAutoBuildWorkForTests().find(
-      (r) => r.entityId === mediaPlpPublicNewsEntityId(article.id),
+      (r) => r.entityId === "editorial-05c3-success" && r.canonicalVersion === version,
     );
     assert.equal(work?.status, "completed");
     assert.equal(work?.canonicalVersion, version);

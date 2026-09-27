@@ -20,6 +20,7 @@ import type { Document } from "mongodb";
 import {
   emptyLanguageLocalizationCountBucket,
   emptyPwaCivicCoverageScalars,
+  isAuthoritativeMachineLocalizedPlpEntityType,
   type ContentTranslationSourceKind,
   type LanguageLocalizationCountBucket,
   type PwaCivicCoverageScalars,
@@ -28,6 +29,7 @@ import {
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
+import { assessMediaCarouselPlpPresenceForLocale } from "../assess-media-carousel-plp-presence.js";
 import {
   classifyMediaEditorialLocalizationForLocale,
   type MediaHuLocalizationIntegrityStatus,
@@ -394,6 +396,21 @@ async function defaultAggregate(
   return collection.aggregate(pipeline, { allowDiskUse: false }).toArray();
 }
 
+function addCountBuckets(
+  left: LanguageLocalizationCountBucket,
+  right: LanguageLocalizationCountBucket,
+): LanguageLocalizationCountBucket {
+  return {
+    current: left.current + right.current,
+    missing: left.missing + right.missing,
+    stale: left.stale + right.stale,
+    invalid: left.invalid + right.invalid,
+    failed: left.failed + right.failed,
+    pending: left.pending + right.pending,
+    workItemsRequired: left.workItemsRequired + right.workItemsRequired,
+  };
+}
+
 function sumBuckets(
   rows: readonly LanguageLocalizationCountBucket[],
 ): LanguageLocalizationCountBucket {
@@ -534,6 +551,32 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
       counts: null,
       reason: "PLP editorial integrity classification failed.",
     });
+  }
+
+  try {
+    const carousel = await assessMediaCarouselPlpPresenceForLocale({
+      locale,
+      pageSize: 200,
+    });
+    for (const row of carousel.byKind) {
+      if (!isAuthoritativeMachineLocalizedPlpEntityType(row.kindId)) {
+        continue;
+      }
+      if (row.kindId === "civic_media_editorial") {
+        continue;
+      }
+      plpMedia = addCountBuckets(plpMedia, row.counts);
+      measuredKindCount += 1;
+      kindRows.push({
+        kindId: row.kindId,
+        ownership: "PLP_OWNED",
+        status: "measured",
+        counts: row.counts,
+        reason: "PLP HU-owned civic media presentation.",
+      });
+    }
+  } catch {
+    unmeasuredKindCount += 1;
   }
 
   const ct = live.ct;

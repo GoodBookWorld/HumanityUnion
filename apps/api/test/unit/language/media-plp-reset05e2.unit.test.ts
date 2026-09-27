@@ -247,8 +247,8 @@ describe("RESET 05E.2 — Gemini HTTP transport forensics", () => {
   it("10–12: nextAttemptAt + Retry-After prevent early reclaim / tight loops", async () => {
     process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY = "1";
     const upsert = await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: "news-backoff",
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-backoff",
       locale: "uk",
       canonicalVersion: "v-test",
       contentRevision: 1,

@@ -15,6 +15,7 @@ import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/res
 import {
   collectStringPaths,
   loadBundledEnglishWebUiMessagePack,
+  validateWebUiMessageTreeAgainstEnglish,
 } from "../../web-ui-message-packs/web-ui-message-pack.validate.js";
 
 type MessagePack = Record<string, unknown>;
@@ -54,6 +55,7 @@ export function assessWebUiMessageTreeReadiness(input: {
       emptyKeyCount: 0,
       englishFallbackKeyCount: 0,
       sampleMissingPaths: ["(english foundation catalog missing)"],
+      structuralInvalidCount: 1,
     };
   }
 
@@ -101,15 +103,33 @@ export function assessWebUiMessageTreeReadiness(input: {
     }
   }
 
+  const structural = validateWebUiMessageTreeAgainstEnglish(input.messages);
+  const structuralInvalidCount =
+    structural.placeholderMismatchPaths.length +
+    structural.rejectedNonStringPaths.length +
+    structural.rejectedUnknownPaths.length +
+    structural.emptyPaths.length;
+  if (structuralInvalidCount > 0) {
+    for (const pathKey of structural.placeholderMismatchPaths) {
+      if (sampleMissingPaths.length >= 12) break;
+      const bare = pathKey.replace(/\s+\([^)]*\)$/, "");
+      if (!sampleMissingPaths.includes(bare)) sampleMissingPaths.push(bare);
+    }
+  }
+
   return {
     engineReady: true,
     dataReady:
-      missingKeyCount === 0 && emptyKeyCount === 0 && englishFallbackKeyCount === 0,
+      missingKeyCount === 0 &&
+      emptyKeyCount === 0 &&
+      englishFallbackKeyCount === 0 &&
+      structuralInvalidCount === 0,
     requiredKeyCount: requiredPaths.length,
     missingKeyCount,
     emptyKeyCount,
     englishFallbackKeyCount,
     sampleMissingPaths,
+    structuralInvalidCount,
   };
 }
 

@@ -11,6 +11,7 @@ import {
   LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY,
   buildLocalizationIntegrityReport,
   emptyLanguageLocalizationCountBucket,
+  isLocalizationSourceOriginalEntityType,
   type LanguageCode,
   type LocalizationIntegrityArtifactRow,
   type LocalizationIntegrityReport,
@@ -33,7 +34,6 @@ const HU_CAROUSEL_KINDS = new Set([
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
-  "public_news",
 ]);
 
 function mapMediaStatus(
@@ -297,6 +297,15 @@ export async function runLocalizationIntegrityCheck(
         ownership: "MANUAL_AUTHOR",
         state: "CURRENT",
         detail: "No MANUAL_AUTHOR public kinds after Implementation 01 (Part D is CT-owned)",
+      });
+      continue;
+    }
+    if (isLocalizationSourceOriginalEntityType(kind)) {
+      artifacts.push({
+        kindId: kind,
+        ownership: "PROTECTED_EXCLUDED",
+        state: "PROTECTED",
+        detail: "SOURCE_ORIGINAL. Not a localization unit.",
       });
       continue;
     }

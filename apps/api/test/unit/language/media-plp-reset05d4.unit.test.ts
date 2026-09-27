@@ -168,7 +168,7 @@ describe("RESET 05D.4 — provider boundary closure", () => {
     assert.match(restored, /\{siteName\}/);
   });
 
-  it("6–7: public_news machine AUTO bag is title+summary (Reset 01)", () => {
+  it("6–7: public_news title and summary are not machine AUTO paths", () => {
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
         id: "news-524c08bdec9253ae24ed",
@@ -189,9 +189,9 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       .filter((n) => isCollectedPathMachineEligible(n.path, policy))
       .map((n) => n.path)
       .sort();
-    assert.deepEqual(expected, ["summary", "title"]);
-    assert.equal(policy.title, "MACHINE_CONTENT");
-    assert.equal(policy.summary, "MACHINE_CONTENT");
+    assert.deepEqual(expected, []);
+    assert.equal(policy.title, "SOURCE_ORIGINAL");
+    assert.equal(policy.summary, "SOURCE_ORIGINAL");
   });
 
   it("8–10: provider taxonomy unchanged; empty fake provider cannot publish incomplete news", async () => {
@@ -254,32 +254,16 @@ describe("RESET 05D.4 — provider boundary closure", () => {
       }),
     );
     kickPlpAutoBuildDrain();
-    for (let i = 0; i < 80; i += 1) {
-      const row = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId);
-      if (row?.status === "completed" || row?.status === "failed") break;
-      await new Promise((r) => setTimeout(r, 25));
-    }
+    await new Promise((r) => setTimeout(r, 30));
     const done = listPlpAutoBuildWorkForTests().find((r) => r.entityId === entityId)!;
-    // Empty fake transport may still complete when it echoes canonical AUTO
-    // paths; the important Reset 01 signal is that public_news is no longer
-    // blocked by no_machine_auto_paths and can enter the PLP build path.
-    assert.ok(
-      done.status === "completed" || done.status === "failed",
-      done.lastError ?? done.status,
-    );
-    if (done.status === "failed") {
-      assert.doesNotMatch(String(done.lastError ?? ""), /no_machine_auto_paths/);
-    }
+    assert.equal(done.status, "pending");
+    assert.equal(done.attempts, 0);
     const snapshot = await findCurrentPublishedPresentation({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId,
       locale: "uk",
     });
-    if (done.status === "completed") {
-      assert.ok(snapshot);
-    } else {
-      assert.equal(snapshot, null);
-    }
+    assert.equal(snapshot, null);
   });
 
   it("11: completed work clears current failure metadata", async () => {

@@ -56,6 +56,12 @@ import {
   resetPublicNewsMemoryStoreForTests,
   upsertPublicNewsRecords,
 } from "../../../src/modules/public-news/public-news.repository.js";
+import {
+  ensureLanguageRegistrySeeded,
+  resetLanguageRegistryStoreForTests,
+  setLanguageRegistryForceMemoryForTests,
+  updateLanguageRegistryRecord,
+} from "../../../src/modules/language/index.js";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -114,6 +120,8 @@ afterEach(() => {
   setPlpAutoBuildWorkForceMemoryForTests(false);
   resetPublishedLocalizationPersistenceForTests();
   resetPublicNewsMemoryStoreForTests();
+  setLanguageRegistryForceMemoryForTests(false);
+  resetLanguageRegistryStoreForTests();
   delete process.env.HU_PLP_AUTO_BUILD_LOCALES;
 });
 
@@ -247,7 +255,8 @@ describe("RESET 05D — delivery closure", () => {
       canonicalPresentation: tree,
       reopenFailedSameVersion: false,
     });
-    assert.equal(blocked.deduped, true);
+    assert.equal(blocked.accepted, false);
+    assert.equal(blocked.skippedUsable, true);
 
     const healed = await enqueuePlpBuildRequest({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
@@ -259,11 +268,12 @@ describe("RESET 05D — delivery closure", () => {
       canonicalPresentation: tree,
       reopenFailedSameVersion: true,
     });
-    assert.equal(healed.accepted, true);
+    assert.equal(healed.accepted, false);
+    assert.equal(healed.skippedUsable, true);
     const work = listPlpAutoBuildWorkForTests().find(
       (row) => row.entityId === mediaPlpPublicNewsEntityId(article.id),
     );
-    assert.equal(work?.status, "pending");
+    assert.equal(work?.status, "failed");
     assert.equal(work?.attempts, 0);
     assert.equal(work?.failureCode, "PROVIDER_TIMEOUT");
   });
@@ -277,6 +287,14 @@ describe("RESET 05D — delivery closure", () => {
       "utf8",
     );
     assert.doesNotMatch(resolveSrc, /gemini|thin-gemini|importMediaPlpMaterializerProvider/);
+
+    setLanguageRegistryForceMemoryForTests(true);
+    resetLanguageRegistryStoreForTests();
+    await ensureLanguageRegistrySeeded();
+    await updateLanguageRegistryRecord("lang-uk", {
+      enabled: true,
+      contentTranslationEnabled: true,
+    });
 
     await bootstrapPlpAutoBuildRuntime();
     const editorial = listPlpAutoBuildWorkForTests().find(

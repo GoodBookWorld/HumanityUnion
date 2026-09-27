@@ -41,7 +41,7 @@ export async function assessMediaCarouselPlpPresenceForLocale(
   readonly total: LanguageLocalizationCountBucket;
   readonly byKind: readonly MediaCarouselPlpPresenceByKind[];
 }> {
-  const pageSize = Math.max(1, Math.min(input.pageSize ?? 50, 100));
+  const pageSize = Math.max(1, Math.min(input.pageSize ?? 50, 200));
   const findPlp = input.findPlp ?? findCurrentPublishedPresentation;
   const locale = input.locale.trim();
 

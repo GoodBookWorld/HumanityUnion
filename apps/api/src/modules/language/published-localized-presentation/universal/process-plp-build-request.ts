@@ -10,7 +10,7 @@ import type {
   MediaPlpEntityType,
   PlpBuildRequest,
 } from "@hu/types";
-import { MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
+import { isLocalizationSourceOriginalEntityType, MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { getPublishedLocalizationPersistenceMode } from "../persistence/repository.js";
@@ -130,6 +130,9 @@ export async function processPlpBuildRequest(
   request: PlpBuildRequest,
   deps: ProcessPlpBuildRequestDeps = {},
 ): Promise<ProcessPlpBuildRequestResult> {
+  if (isLocalizationSourceOriginalEntityType(request.entityType)) {
+    return { status: "SKIPPED_USABLE" };
+  }
   ensureMediaPlpAdapterRegistered();
   ensureAllDefaultPlpAdaptersRegistered();
 

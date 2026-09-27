@@ -7,7 +7,11 @@
 
 import type { Document } from "mongodb";
 import type { PlpPublicationTriggerKind } from "@hu/types";
-import { plpBuildWorkKey } from "@hu/types";
+import {
+  isLocalizationSourceOriginalEntityType,
+  LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES,
+  plpBuildWorkKey,
+} from "@hu/types";
 
 import { isMongoConfigured } from "../../../../infrastructure/mongodb/mongo-config.js";
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
@@ -418,6 +422,7 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
               row.claimedAt != null &&
               row.claimedAt < stuckBefore)),
       )
+      .filter((row) => !isLocalizationSourceOriginalEntityType(row.entityType))
       .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
     const next = candidates[0];
     if (!next) {
@@ -443,6 +448,9 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
   const claimed = await col.findOneAndUpdate(
     {
       $and: [
+        {
+          entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
+        },
         { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
         {
           $or: [
