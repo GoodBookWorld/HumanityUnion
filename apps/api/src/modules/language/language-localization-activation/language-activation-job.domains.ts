@@ -345,7 +345,8 @@ export async function buildWebUiDomainProgress(
       previous.preparationPhase === "validating" ||
       previous.preparationPhase === "publishing" ||
       previous.preparationPhase === "provider_cooldown" ||
-      previous.preparationPhase === "structure_retry")
+      previous.preparationPhase === "structure_retry" ||
+      previous.preparationPhase === "structure_blocked")
   ) {
     return {
       ...previous,

@@ -16,7 +16,12 @@ export type WebUiActivationCheckpointPhase =
    * Delayed retry after a parseable provider payload broke protected structure.
    * Not provider pressure. Parent job stays running.
    */
-  | "structure_retry";
+  | "structure_retry"
+  /**
+   * Same batch and same provider-shape version failed reconstructed structure
+   * until the bound. Provider calls stop. Not a provider outage.
+   */
+  | "structure_blocked";
 
 export type WebUiActivationBatchPhase = "primary" | "quality";
 
@@ -58,6 +63,13 @@ export type WebUiActivationCheckpointRecord = {
    * Separate from transientFailureCount so this wait is not provider pressure.
    */
   readonly structureRetryCount?: number;
+  /**
+   * Provider payload shape last attempted for this checkpoint.
+   * Absent means the historical sentinel representation.
+   */
+  readonly providerShapeVersion?: number | null;
+  /** Reconstructed-structure failures under providerShapeVersion. */
+  readonly providerShapeFailureCount?: number | null;
 };
 
 export type WebUiActivationBatchRecord = {

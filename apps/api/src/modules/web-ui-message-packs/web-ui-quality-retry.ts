@@ -10,9 +10,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { LanguageCode, WebUiMessageTree } from "@hu/types";
+import type { WebUiMessageTree } from "@hu/types";
 
-import { extractJsonObjectText } from "../language/media-plp-materializer/provider-response-contract.js";
 import type { TranslationProviderRequest, TranslationProviderResult } from "../language/translation-provider.js";
 import { TranslationProviderError } from "../language/translation.config.js";
 import {
@@ -21,23 +20,16 @@ import {
 } from "./web-ui-identical-classification.js";
 import {
   collectStringPaths,
-  inspectMessageStructure,
   loadBundledEnglishWebUiMessagePack,
   selectEnglishWebUiMessages,
 } from "./web-ui-message-pack.validate.js";
-import {
-  batchProtectedPayloadContainsSentinels,
-  protectWebUiMessageForProvider,
-  restoreWebUiMessageFromProvider,
-  webUiProtectionSentinelInstructions,
-} from "./web-ui-message-structure-protect.js";
 import {
   OFFLINE_WEB_UI_PROVIDER_TIMEOUT_MS,
   assertCompletePublicWebUiDraft,
   canonicalizeWebUiDraftLocale,
   planWebUiDraftBatches,
   resolveOfflineWebUiProviderTimeoutMs,
-  WebUiDraftBatchError,
+  translateWebUiProviderBatch,
   WebUiDraftBuilderError,
   type WebUiDraftTextDirection,
 } from "./web-ui-draft-builder.js";
@@ -163,60 +155,6 @@ function hashFlat(flat: Readonly<Record<string, string>>): string {
     hash.update("\0");
   }
   return hash.digest("hex");
-}
-
-function parseTranslations(raw: string): Map<string, string> {
-  const extracted = extractJsonObjectText(raw);
-  if (!extracted.ok) {
-    throw new WebUiDraftBatchError("Provider response was not a JSON object.");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(extracted.text);
-  } catch {
-    throw new WebUiDraftBatchError("Provider response JSON could not be parsed.");
-  }
-  if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new WebUiDraftBatchError("Provider response JSON root was not an object.");
-  }
-  const root = parsed as Record<string, unknown>;
-  if (Array.isArray(root.translations)) {
-    const map = new Map<string, string>();
-    for (const row of root.translations) {
-      if (row == null || typeof row !== "object" || Array.isArray(row)) {
-        throw new WebUiDraftBatchError("Provider translation row was not an object.");
-      }
-      const key = (row as { key?: unknown }).key;
-      const value = (row as { value?: unknown }).value;
-      if (typeof key !== "string" || typeof value !== "string") {
-        throw new WebUiDraftBatchError("Provider translation row must have string key and value.");
-      }
-      map.set(key, value);
-    }
-    return map;
-  }
-  const map = new Map<string, string>();
-  for (const [key, value] of Object.entries(root)) {
-    if (typeof value !== "string") {
-      throw new WebUiDraftBatchError(`Provider translation value for ${key} must be a string.`);
-    }
-    map.set(key, value);
-  }
-  return map;
-}
-
-function assertStructureMatches(english: string, localized: string): void {
-  const source = inspectMessageStructure(english);
-  const target = inspectMessageStructure(localized);
-  if (!target.balanced) {
-    throw new WebUiDraftBatchError("Localized message braces are unbalanced.");
-  }
-  if ([...target.placeholders].sort().join("\0") !== [...source.placeholders].sort().join("\0")) {
-    throw new WebUiDraftBatchError("Localized placeholders do not match English.");
-  }
-  if ([...target.richTags].sort().join("\0") !== [...source.richTags].sort().join("\0")) {
-    throw new WebUiDraftBatchError("Localized rich-text tags do not match English.");
-  }
 }
 
 async function defaultPreferredSurfaces(locale: string): Promise<ReadonlyMap<string, string>> {
@@ -393,37 +331,16 @@ export async function runWebUiQualityRetry(
     while (attempt < 2 && !done) {
       attempt += 1;
       try {
-        const payloadObject: Record<string, string> = {};
-        for (const key of batch.keys) {
-          payloadObject[key] = protectWebUiMessageForProvider(englishFlat[key] ?? "").text;
-        }
-        providerCalls += 1;
-        const result = await translator({
-          sourceLanguage: "en",
-          targetLanguage: locale as LanguageCode,
-          text: JSON.stringify(payloadObject),
-          contentType: "structured_json",
-          terminologyContext: [
-            terminologyContext,
-            webUiProtectionSentinelInstructions(
-              batchProtectedPayloadContainsSentinels(payloadObject),
-            ),
-          ].join("\n"),
-          safetyCleared: true,
+        const translated = await translateWebUiProviderBatch({
+          locale,
+          englishFlat,
+          keys: batch.keys,
+          terminologyContext,
+          translator,
         });
-        const returned = parseTranslations(result.translatedText);
-        const missing = batch.keys.filter((key) => !returned.has(key));
-        if (missing.length > 0) {
-          throw new WebUiDraftBatchError(`Provider omitted keys: ${missing.slice(0, 8).join(", ")}`);
-        }
-        const extra = [...returned.keys()].filter((key) => !batch.keys.includes(key));
-        if (extra.length > 0) {
-          throw new WebUiDraftBatchError(`Provider returned unexpected keys: ${extra.slice(0, 8).join(", ")}`);
-        }
+        providerCalls += translated.providerCalls;
         for (const key of batch.keys) {
-          const restored = restoreWebUiMessageFromProvider(returned.get(key) ?? "", englishFlat[key] ?? "");
-          assertStructureMatches(englishFlat[key] ?? "", restored);
-          working[key] = restored;
+          working[key] = translated.values[key] ?? "";
         }
         done = true;
         log(`[${index + 1}/${batches.length}] ${batch.namespace} — ok`);

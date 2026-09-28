@@ -57,11 +57,47 @@ export function webUiProtectionSentinelInstructions(batchContainsProtectionSenti
   return "These values contain no protection tokens. Do not invent tokens such as ⟦w0⟧.";
 }
 
+/**
+ * Provider-facing copy for the span contract.
+ * Plain batches stay a single instruction. Span arrays are explained only when present.
+ * Sentinels are not part of this contract.
+ */
+export function webUiProviderSpanInstructions(batchContainsSpanArrays: boolean): string {
+  if (!batchContainsSpanArrays) {
+    return "Translate each string value. Do not add placeholders, tags, or brace expressions.";
+  }
+  return [
+    "Some values are arrays of text fragments.",
+    "Translate each fragment in order and return an array of the same length.",
+    "Leave empty strings empty.",
+    "Do not insert placeholders, tags, or brace expressions.",
+    "String values are complete messages. Translate the string.",
+  ].join("\n");
+}
+
 export class WebUiMessageStructureError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "WebUiMessageStructureError";
   }
+}
+
+/** Provider JSON shape did not match the span contract. Not a reconstructed-structure failure. */
+export class WebUiProviderPayloadShapeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebUiProviderPayloadShapeError";
+  }
+}
+
+export interface WebUiProviderSegmentPlan {
+  readonly plain: boolean;
+  /** Human spans in source order, including empty spans that are not sent. */
+  readonly spans: readonly string[];
+  /** Original protected elements in source order. Not sent to the provider. */
+  readonly slots: readonly string[];
+  /** Indexes of non-empty spans, in source order. */
+  readonly providerSpanIndexes: readonly number[];
 }
 
 export interface ProtectedWebUiMessage {
@@ -295,6 +331,80 @@ export function protectWebUiMessageForProvider(english: string): ProtectedWebUiM
   const slots: string[] = [];
   const parsed = parseMessage(brandProtected, 0, slots, false);
   return { text: parsed.text, slots };
+}
+
+const SENTINEL_SPLIT = /⟦w\d+⟧/;
+
+/**
+ * Split a message into human spans and protected slots.
+ * The provider receives only non-empty human spans. Slots stay in application memory.
+ */
+export function segmentWebUiMessageForProvider(english: string): WebUiProviderSegmentPlan {
+  const protectedMessage = protectWebUiMessageForProvider(english);
+  if (protectedMessage.slots.length === 0) {
+    return {
+      plain: true,
+      spans: [english],
+      slots: [],
+      providerSpanIndexes: [],
+    };
+  }
+  const spans = protectedMessage.text.split(SENTINEL_SPLIT);
+  if (spans.length !== protectedMessage.slots.length + 1) {
+    throw new WebUiMessageStructureError("Protection extraction did not cover the message.");
+  }
+  return {
+    plain: false,
+    spans,
+    slots: protectedMessage.slots,
+    providerSpanIndexes: spans.flatMap((span, index) => (span.length > 0 ? [index] : [])),
+  };
+}
+
+/** Value placed under one catalog key in the existing batch JSON request. */
+export function webUiProviderPayloadValue(english: string): string | readonly string[] {
+  const plan = segmentWebUiMessageForProvider(english);
+  if (plan.plain) {
+    return english;
+  }
+  return plan.providerSpanIndexes.map((index) => plan.spans[index] ?? "");
+}
+
+/**
+ * Interleave translated human spans with the original slots in source order.
+ * Brand machine sentinels are restored to `{siteName}` here. Placeholder movement is not accepted.
+ */
+export function reconstructWebUiMessageFromProviderSpans(
+  english: string,
+  providerValue: string | readonly string[],
+): string {
+  const plan = segmentWebUiMessageForProvider(english);
+  if (plan.plain) {
+    if (typeof providerValue !== "string") {
+      throw new WebUiProviderPayloadShapeError("Provider translation value must be a string.");
+    }
+    return providerValue;
+  }
+  if (!Array.isArray(providerValue) || providerValue.some((span) => typeof span !== "string")) {
+    throw new WebUiProviderPayloadShapeError("Provider span list must be an array of strings.");
+  }
+  if (providerValue.length !== plan.providerSpanIndexes.length) {
+    throw new WebUiProviderPayloadShapeError(
+      `Provider span count ${providerValue.length} does not match ${plan.providerSpanIndexes.length}.`,
+    );
+  }
+  const translated = [...plan.spans];
+  plan.providerSpanIndexes.forEach((spanIndex, providerIndex) => {
+    translated[spanIndex] = providerValue[providerIndex] ?? "";
+  });
+  let text = "";
+  for (let index = 0; index < translated.length; index += 1) {
+    text += translated[index] ?? "";
+    if (index < plan.slots.length) {
+      text += plan.slots[index] ?? "";
+    }
+  }
+  return restoreBrandTokensAfterMachineTranslation(text);
 }
 
 /** Restore sentinels produced from the canonical English string. Rejects drift.

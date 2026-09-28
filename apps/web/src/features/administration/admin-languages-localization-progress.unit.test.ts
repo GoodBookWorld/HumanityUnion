@@ -465,6 +465,45 @@ describe("Step 15C.5 localization live progress", () => {
     assert.doesNotMatch(waiting.phaseLabel, /rate limit/i);
   });
 
+  it("structure_blocked is a structural defect, not Failed and not a rate limit", () => {
+    const blocked = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 52,
+          totalBatches: 702,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 52,
+              totalBatches: 702,
+              preparationPhase: "structure_blocked",
+              providerFailure: false,
+            }),
+            status: "in_progress",
+            nextAttemptAt: null,
+            detail:
+              "Automatic translation is blocked by a structural defect. Invalid output was not published. No operator retry is required.",
+          },
+        },
+      },
+    });
+    assert.equal(blocked.phaseLabel, "Automatic translation blocked by a structural defect");
+    assert.equal(blocked.failed, false);
+    assert.equal(blocked.activelyProgressing, false);
+    assert.equal(blocked.nextAttemptAt ?? null, null);
+    assert.doesNotMatch(blocked.phaseLabel, /Failed/);
+    assert.doesNotMatch(blocked.phaseLabel, /rate limit/i);
+  });
+
   it("primary pacing wait shows the retry time and not Failed", () => {
     const waiting = localizationProgressFromActivation({
       ...view({

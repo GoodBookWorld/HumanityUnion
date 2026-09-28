@@ -275,7 +275,8 @@ async function claimLanguageActivationJob(
     domains.webUi.preparationPhase === "validating" ||
     domains.webUi.preparationPhase === "publishing" ||
     domains.webUi.preparationPhase === "provider_cooldown" ||
-    domains.webUi.preparationPhase === "structure_retry";
+    domains.webUi.preparationPhase === "structure_retry" ||
+    domains.webUi.preparationPhase === "structure_blocked";
   const brand = domains.brand;
   if (
     !checkpointActive &&
@@ -361,6 +362,15 @@ export async function startOrResumeLanguageActivationJob(input: {
       skipCorpusPlan: deps.skipCorpusInReadiness === true,
     });
     const claimed = await claimLanguageActivationJob(active, readiness);
+    if (claimed.domains.webUi.preparationPhase === "structure_blocked") {
+      return toAdminView({
+        job: claimed,
+        readiness,
+        notes: [
+          "Automatic translation is blocked by a structural defect. No operator retry is required.",
+        ],
+      });
+    }
     const webUiWaiting =
       claimed.domains.webUi.preparationPhase === "provider_cooldown" ||
       claimed.domains.webUi.preparationPhase === "structure_retry";
@@ -1053,6 +1063,24 @@ export async function processLanguageActivationJob(
         return job;
       }
 
+      if (
+        tick.checkpoint?.phase === "structure_blocked" ||
+        tick.webUi.preparationPhase === "structure_blocked"
+      ) {
+        job = {
+          ...job,
+          status: "running",
+          completedAt: null,
+          lastError: null,
+          diagnosticSummary:
+            tick.webUi.detail ??
+            "running — Automatic translation is blocked by a structural defect.",
+          updatedAt: nowIso(),
+        };
+        await saveLanguageActivationJob(job);
+        return job;
+      }
+
       if (tick.needsAnotherTick && !tick.done) {
         job = {
           ...job,
@@ -1343,7 +1371,8 @@ export async function getLanguageActivationAdminView(input: {
         raced.domains.webUi.preparationPhase === "validating" ||
         raced.domains.webUi.preparationPhase === "publishing" ||
         raced.domains.webUi.preparationPhase === "provider_cooldown" ||
-        raced.domains.webUi.preparationPhase === "structure_retry");
+        raced.domains.webUi.preparationPhase === "structure_retry" ||
+        raced.domains.webUi.preparationPhase === "structure_blocked");
     if (tickWon && raced) {
       job = raced;
     } else if (
@@ -1678,6 +1707,7 @@ export async function startAndProcessLanguageActivationJobForTests(input: {
       job.status === "running" &&
       job.domains.webUi.preparationPhase !== "provider_cooldown" &&
       job.domains.webUi.preparationPhase !== "structure_retry" &&
+      job.domains.webUi.preparationPhase !== "structure_blocked" &&
       (job.domains.webUi.status === "in_progress" ||
         job.domains.webUi.preparationPhase === "primary" ||
         job.domains.webUi.preparationPhase === "quality" ||

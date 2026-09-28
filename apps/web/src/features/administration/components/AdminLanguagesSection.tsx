@@ -1271,7 +1271,9 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         activationView?.job?.domains.webUi.preparationPhase !==
                           "provider_cooldown" &&
                         activationView?.job?.domains.webUi.preparationPhase !==
-                          "structure_retry";
+                          "structure_retry" &&
+                        activationView?.job?.domains.webUi.preparationPhase !==
+                          "structure_blocked";
                       const readinessReport =
                         readiness && typeof readiness === "object" ? readiness : null;
                       const progress = activationView

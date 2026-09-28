@@ -55,9 +55,14 @@ import {
 } from "./web-ui-provider-cooldown.js";
 import {
   isRetryableWebUiProviderOutputStructureFailure,
+  WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND,
+  WEB_UI_PROVIDER_SHAPE_VERSION,
+  WEB_UI_STRUCTURE_BLOCKED_DETAIL,
+  WEB_UI_STRUCTURE_BLOCKED_REASON,
   WEB_UI_STRUCTURE_PACING_REASON,
   WEB_UI_STRUCTURE_RETRY_DETAIL,
   WEB_UI_STRUCTURE_RETRY_REASON,
+  webUiProviderShapeFailureCountForBound,
 } from "./web-ui-provider-output-structure.js";
 import {
   assembleWebUiActivationTranslatedMap,
@@ -346,6 +351,29 @@ export function webUiProgressFromCheckpoint(input: {
     };
   }
 
+  if (cp.phase === "structure_blocked") {
+    return {
+      status: "in_progress",
+      dataReady: false,
+      missingKeyCount: input.missingKeyCount,
+      emptyKeyCount: input.emptyKeyCount,
+      requiredKeyCount: input.requiredKeyCount,
+      effectiveSource: input.effectiveSource,
+      detail: cp.detail ?? WEB_UI_STRUCTURE_BLOCKED_DETAIL,
+      preparationPhase: "structure_blocked",
+      checkpointId: cp.checkpointId,
+      sourceHash: cp.sourceHash,
+      totalBatches: cp.batchCount,
+      completedBatches: cp.completedBatchCount,
+      totalLeaves: cp.leafCount,
+      completedLeaves: input.completedLeaves ?? 0,
+      providerFailure: false,
+      nextAttemptAt: null,
+      transientFailureCount: cp.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
+
   if (cp.phase === "structure_retry") {
     return {
       status: "in_progress",
@@ -581,19 +609,97 @@ async function enterWebUiProviderCooldown(input: {
  * After the in-tick attempts, wait and retry the same batch later.
  * Does not arm Gate E and does not store provider text.
  */
+function nextProviderShapeFailureCount(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly structureFailuresThisTick: number;
+}): { readonly structureRetryCount: number; readonly providerShapeFailureCount: number } {
+  return {
+    structureRetryCount: (input.checkpoint.structureRetryCount ?? 0) + 1,
+    providerShapeFailureCount:
+      webUiProviderShapeFailureCountForBound(input.checkpoint) + input.structureFailuresThisTick,
+  };
+}
+
+async function enterWebUiStructureBlocked(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly batch: WebUiDraftBatchPlan;
+  readonly batchPhase: "primary" | "quality";
+  readonly providerCalls: number;
+  readonly structureRetryCount: number;
+  readonly providerShapeFailureCount: number;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationTickResult> {
+  const deps = input.deps;
+  const stamp = nowIso(deps);
+  await upsertWebUiActivationBatch({
+    checkpointId: input.checkpoint.checkpointId,
+    batchId: input.batch.id,
+    phase: input.batchPhase,
+    namespace: input.batch.namespace,
+    keys: input.batch.keys,
+    values: {},
+    status: "pending",
+    attempts: input.providerCalls,
+    reason: WEB_UI_STRUCTURE_BLOCKED_REASON,
+    updatedAt: stamp,
+  });
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    phase: "structure_blocked",
+    nextAttemptAt: null,
+    structureRetryCount: input.structureRetryCount,
+    providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+    providerShapeFailureCount: input.providerShapeFailureCount,
+    detail: WEB_UI_STRUCTURE_BLOCKED_DETAIL,
+    updatedAt: stamp,
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return {
+    done: false,
+    needsAnotherTick: false,
+    published: false,
+    providerCalls: input.providerCalls,
+    checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint,
+      completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+    }),
+  };
+}
+
 async function enterWebUiStructureRetry(input: {
   readonly checkpoint: WebUiActivationCheckpointRecord;
   readonly batch: WebUiDraftBatchPlan;
   readonly batchPhase: "primary" | "quality";
   readonly providerCalls: number;
+  readonly structureFailuresThisTick: number;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps;
   const stamp = nowIso(deps);
-  const streak = (input.checkpoint.structureRetryCount ?? 0) + 1;
+  const counts = nextProviderShapeFailureCount({
+    checkpoint: input.checkpoint,
+    structureFailuresThisTick: input.structureFailuresThisTick,
+  });
+  if (counts.providerShapeFailureCount >= WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND) {
+    return enterWebUiStructureBlocked({
+      checkpoint: input.checkpoint,
+      batch: input.batch,
+      batchPhase: input.batchPhase,
+      providerCalls: input.providerCalls,
+      structureRetryCount: counts.structureRetryCount,
+      providerShapeFailureCount: counts.providerShapeFailureCount,
+      deps,
+    });
+  }
   const nextAttemptAt = computeActivationCooldownNextAttemptAt({
     nowIso: stamp,
-    transientFailureCount: streak,
+    transientFailureCount: counts.structureRetryCount,
   });
   await upsertWebUiActivationBatch({
     checkpointId: input.checkpoint.checkpointId,
@@ -611,7 +717,9 @@ async function enterWebUiStructureRetry(input: {
     ...input.checkpoint,
     phase: "structure_retry",
     nextAttemptAt,
-    structureRetryCount: streak,
+    structureRetryCount: counts.structureRetryCount,
+    providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+    providerShapeFailureCount: counts.providerShapeFailureCount,
     detail: WEB_UI_STRUCTURE_RETRY_DETAIL,
     updatedAt: stamp,
   };
@@ -1344,6 +1452,8 @@ async function processPrimaryBatchTick(input: {
         transientFailureCount: 0,
         lastTransientFailure: null,
         structureRetryCount: 0,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+        providerShapeFailureCount: 0,
         detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
@@ -1406,6 +1516,7 @@ async function processPrimaryBatchTick(input: {
             batch: nextBatch,
             batchPhase: "primary",
             providerCalls,
+            structureFailuresThisTick,
             deps,
           });
         }
@@ -1559,6 +1670,8 @@ async function processQualityBatchTick(input: {
         transientFailureCount: 0,
         lastTransientFailure: null,
         structureRetryCount: 0,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+        providerShapeFailureCount: 0,
         detail: `Checking translation quality… ${qualityCompletedBatchCount} / ${qualityBatches.length}`,
         updatedAt: nowIso(deps),
       };
@@ -1621,6 +1734,7 @@ async function processQualityBatchTick(input: {
             batch: nextBatch,
             batchPhase: "quality",
             providerCalls,
+            structureFailuresThisTick,
             deps,
           });
         }
@@ -1872,6 +1986,36 @@ export async function processWebUiActivationTick(input: {
         checkpoint,
       }),
     };
+  }
+  if (checkpoint.phase === "structure_blocked") {
+    if ((checkpoint.providerShapeVersion ?? 0) < WEB_UI_PROVIDER_SHAPE_VERSION) {
+      const reopened: WebUiActivationCheckpointRecord = {
+        ...checkpoint,
+        phase: "primary",
+        nextAttemptAt: null,
+        detail: `Preparing public interface… ${checkpoint.completedBatchCount} / ${checkpoint.batchCount} batches`,
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(reopened);
+      checkpoint = reopened;
+    } else {
+      return {
+        done: false,
+        needsAnotherTick: false,
+        published: false,
+        providerCalls: 0,
+        checkpoint,
+        webUi: webUiProgressFromCheckpoint({
+          readinessDataReady: false,
+          missingKeyCount: checkpoint.leafCount,
+          emptyKeyCount: 0,
+          requiredKeyCount: checkpoint.leafCount,
+          effectiveSource: "none",
+          checkpoint,
+          completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
+        }),
+      };
+    }
   }
   if (checkpoint.phase === "structure_retry") {
     const nowMs = Date.parse(nowIso(deps));

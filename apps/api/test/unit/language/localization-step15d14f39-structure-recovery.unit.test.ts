@@ -83,13 +83,26 @@ const PLACEHOLDER_PATH = laterPlaceholderPath();
 const TWO_BATCH_PATHS = [...PRESERVED_PATHS, PLACEHOLDER_PATH];
 
 function echo(request: TranslationProviderRequest, corruptSentinels: boolean) {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
-  const translated: Record<string, string> = {};
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
+  const translated: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(parsed)) {
-    if (corruptSentinels && value.includes("⟦w0⟧")) {
-      translated[key] = value.replaceAll("⟦w0⟧", "⟦w1⟧");
+    if (Array.isArray(value)) {
+      const spans = value.map((span) => String(span));
+      if (corruptSentinels) {
+        const index = spans.findIndex((span) => span.length > 0);
+        if (index >= 0) {
+          spans[index] = `${spans[index]} {renamed}`;
+        }
+      } else {
+        for (let index = 0; index < spans.length; index += 1) {
+          if (spans[index]!.length > 0) {
+            spans[index] = `[xx] ${spans[index]}`;
+          }
+        }
+      }
+      translated[key] = spans;
     } else {
-      translated[key] = `[xx] ${value}`;
+      translated[key] = `[xx] ${String(value)}`;
     }
   }
   return {

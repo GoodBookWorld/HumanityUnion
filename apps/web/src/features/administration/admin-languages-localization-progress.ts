@@ -152,6 +152,13 @@ function phaseLabel(source: ProgressSource): {
       nextAttemptAt: source.webUi.nextAttemptAt ?? null,
     };
   }
+  if (source.webUi?.preparationPhase === "structure_blocked") {
+    return {
+      label: "Automatic translation blocked by a structural defect",
+      failed: false,
+      nextAttemptAt: null,
+    };
+  }
   if (source.webUi?.preparationPhase === "structure_retry") {
     return {
       label: "Automatic retry scheduled",
@@ -241,6 +248,9 @@ function isLocalizationActivelyProgressing(
   }
   if (source.webUi?.preparationPhase === "provider_cooldown") {
     return true;
+  }
+  if (source.webUi?.preparationPhase === "structure_blocked") {
+    return false;
   }
   if (source.webUi?.preparationPhase === "structure_retry") {
     return true;

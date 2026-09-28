@@ -78,12 +78,22 @@ const INCLUDE_PATHS = [
   "common.show",
 ] as const;
 
+function prefixProviderValue(value: unknown): unknown {
+  if (typeof value === "string") return `[xx] ${value}`;
+  if (Array.isArray(value)) {
+    return value.map((span) =>
+      typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+    );
+  }
+  return value;
+}
+
 function translateFlat(request: TranslationProviderRequest): TranslationProviderResult {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
   return {
     translatedText: JSON.stringify(
       Object.fromEntries(
-        Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`]),
+        Object.entries(parsed).map(([key, value]) => [key, prefixProviderValue(value)]),
       ),
     ),
     providerId: "deterministic",

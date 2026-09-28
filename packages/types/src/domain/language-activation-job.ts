@@ -76,6 +76,7 @@ export type LanguageActivationWebUiDomainProgress = {
     | "failed"
     | "provider_cooldown"
     | "structure_retry"
+    | "structure_blocked"
     | null;
   readonly checkpointId: string | null;
   readonly sourceHash: string | null;

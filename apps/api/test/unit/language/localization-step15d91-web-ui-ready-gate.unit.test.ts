@@ -99,7 +99,7 @@ describe("Step 15D.9.1 WEB_UI READY gate (pure)", () => {
       }),
       false,
     );
-    for (const phase of ["primary", "quality", "validating", "publishing", "provider_cooldown", "structure_retry"] as const) {
+    for (const phase of ["primary", "quality", "validating", "publishing", "provider_cooldown", "structure_retry", "structure_blocked"] as const) {
       assert.equal(
         gate({
           webUi: readyWebUi({
@@ -419,11 +419,20 @@ describe("Step 15D.9.1 WEB_UI READY gate (job process)", () => {
       webUiPreparationDeps: {
         includePaths: TWO_BATCH_PATHS,
         translator: async (request: TranslationProviderRequest) => {
-          const parsed = JSON.parse(request.text) as Record<string, string>;
+          const parsed = JSON.parse(request.text) as Record<string, unknown>;
           return {
             translatedText: JSON.stringify(
               Object.fromEntries(
-                Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`]),
+                Object.entries(parsed).map(([key, value]) => [
+                  key,
+                  typeof value === "string"
+                    ? `[xx] ${value}`
+                    : Array.isArray(value)
+                      ? value.map((span) =>
+                          typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+                        )
+                      : value,
+                ]),
               ),
             ),
             providerId: "deterministic",
