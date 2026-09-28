@@ -72,6 +72,7 @@ import {
   evaluateFailedWebUiActivationResume,
   listJobsNeedingWebUiActivationResume,
   processWebUiActivationTick,
+  tryReopenRecoverableFailedWebUiCheckpoint,
   webUiProgressFromCheckpoint,
   type WebUiActivationPreparationDeps,
 } from "../../web-ui-message-packs/web-ui-activation-preparation.js";
@@ -1607,8 +1608,38 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
     count += 1;
   }
   // Brand / Terminology durable cooldown — resume running jobs after restart.
-  // Never reopen historical `failed` jobs (manual migration only).
+  // A failed job reopens only when its open WEB_UI batch is a recoverable
+  // provider-shape failure on the current source and plan. Other failed jobs
+  // stay closed.
   const jobs = await listLanguageActivationJobs();
+  for (const job of jobs) {
+    if (job.status !== "failed" || resumedJobIds.has(job.jobId)) {
+      continue;
+    }
+    const recovered = await tryReopenRecoverableFailedWebUiCheckpoint({
+      jobId: job.jobId,
+      deps: processDeps().webUiPreparationDeps,
+    });
+    if (!recovered) {
+      continue;
+    }
+    const restored = await saveLanguageActivationJob({
+      ...job,
+      status: "running",
+      lastError: null,
+      completedAt: null,
+      domains: {
+        ...job.domains,
+        webUi: recovered.webUi,
+      },
+      diagnosticSummary:
+        recovered.webUi.detail ?? "running — Preparing public interface…",
+      updatedAt: nowIso(),
+    });
+    scheduleWebUiActivationTick(restored.jobId);
+    resumedJobIds.add(restored.jobId);
+    count += 1;
+  }
   for (const job of jobs) {
     if (!isClaimedActivationStatus(job.status) || resumedJobIds.has(job.jobId)) {
       continue;

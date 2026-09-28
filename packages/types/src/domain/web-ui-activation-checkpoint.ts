@@ -68,7 +68,7 @@ export type WebUiActivationCheckpointRecord = {
    * Absent means the historical sentinel representation.
    */
   readonly providerShapeVersion?: number | null;
-  /** Reconstructed-structure failures under providerShapeVersion. */
+  /** Provider-shape and reconstructed-structure failures under providerShapeVersion. */
   readonly providerShapeFailureCount?: number | null;
 };
 

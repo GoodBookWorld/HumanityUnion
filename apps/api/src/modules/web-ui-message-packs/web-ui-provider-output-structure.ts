@@ -1,3 +1,5 @@
+import { WebUiProviderPayloadShapeError } from "./web-ui-message-structure-protect.js";
+
 /**
  * STEP 15D.14.F.3.9 — retryable WEB_UI provider-output structure failures.
  *
@@ -17,8 +19,9 @@
 export const WEB_UI_PROVIDER_SHAPE_VERSION = 1;
 
 /**
- * Reconstructed-structure failures allowed for one batch under one shape version.
- * Counts provider responses, not pacing waits. Generic, not locale-specific.
+ * Provider payload-shape and reconstructed-structure failures allowed for one
+ * batch under one shape version. Counts provider responses, not pacing waits.
+ * Generic, not locale-specific.
  */
 export const WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND = 6;
 
@@ -71,6 +74,31 @@ export function webUiProviderShapeFailureCountForBound(input: {
     return 0;
   }
   return input.providerShapeFailureCount ?? 0;
+}
+
+const PROVIDER_SPAN_COUNT_MISMATCH =
+  /^Provider span count \d+ does not match \d+\.$/;
+
+/**
+ * Provider returned the wrong JSON type or the wrong span-array length.
+ * The payload stays invalid. Recovery is a later paced request, not truncation.
+ */
+export function isRecoverableWebUiProviderPayloadShapeMessage(
+  message: string,
+): boolean {
+  return (
+    message === "Provider span list must be an array of strings." ||
+    message === "Provider translation value must be a string." ||
+    PROVIDER_SPAN_COUNT_MISMATCH.test(message)
+  );
+}
+
+export function isRecoverableWebUiProviderPayloadShapeFailure(error: unknown): boolean {
+  if (error instanceof WebUiProviderPayloadShapeError) return true;
+  return (
+    error instanceof Error &&
+    isRecoverableWebUiProviderPayloadShapeMessage(error.message)
+  );
 }
 
 export function isRetryableWebUiProviderOutputStructureFailure(error: unknown): boolean {

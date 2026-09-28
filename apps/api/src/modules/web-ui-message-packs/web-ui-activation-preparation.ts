@@ -54,6 +54,8 @@ import {
   webUiProviderCooldownDetail,
 } from "./web-ui-provider-cooldown.js";
 import {
+  isRecoverableWebUiProviderPayloadShapeFailure,
+  isRecoverableWebUiProviderPayloadShapeMessage,
   isRetryableWebUiProviderOutputStructureFailure,
   WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND,
   WEB_UI_PROVIDER_SHAPE_VERSION,
@@ -70,6 +72,7 @@ import {
   getWebUiActivationCheckpoint,
   getWebUiActivationCheckpointByJobId,
   listIncompleteWebUiActivationCheckpoints,
+  listWebUiActivationBatches,
   upsertWebUiActivationBatch,
   upsertWebUiActivationCheckpoint,
 } from "./web-ui-activation-checkpoint.repository.js";
@@ -870,6 +873,102 @@ export async function reopenFailedWebUiActivationCheckpoint(input: {
   return reopened;
 }
 
+function batchKeysMatch(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Reopen one failed WEB_UI checkpoint when the open batch failed because the
+ * provider returned the wrong payload shape. Same generation and same rows.
+ * Source, plan, configuration, and checkpoint defects stay closed.
+ */
+export async function tryReopenRecoverableFailedWebUiCheckpoint(input: {
+  readonly jobId: string;
+  readonly deps?: WebUiActivationPreparationDeps;
+}): Promise<{
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly webUi: LanguageActivationWebUiDomainProgress;
+} | null> {
+  const deps = input.deps ?? {};
+  const checkpoint = await getWebUiActivationCheckpointByJobId(input.jobId);
+  if (!checkpoint || checkpoint.phase !== "failed") {
+    return null;
+  }
+  const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+  const sourceHash = hashWebUiEnglishFlatMap(flat);
+  if (
+    !isFailedWebUiCheckpointResumable({
+      checkpoint,
+      currentSourceHash: sourceHash,
+    })
+  ) {
+    return null;
+  }
+  const plan = planWebUiDraftBatches(flat);
+  if (
+    plan.length !== checkpoint.batchCount ||
+    requiredPaths.length !== checkpoint.leafCount ||
+    checkpoint.completedBatchCount < 0 ||
+    checkpoint.completedBatchCount >= plan.length
+  ) {
+    return null;
+  }
+  const stored = await listWebUiActivationBatches(checkpoint.checkpointId, "primary");
+  const byId = new Map(stored.map((row) => [row.batchId, row]));
+  for (let index = 0; index < checkpoint.completedBatchCount; index += 1) {
+    const planned = plan[index];
+    if (!planned) {
+      return null;
+    }
+    const row = byId.get(planned.id);
+    if (
+      !row ||
+      row.status !== "ok" ||
+      row.namespace !== planned.namespace ||
+      !batchKeysMatch(row.keys, planned.keys)
+    ) {
+      return null;
+    }
+  }
+  const open = plan[checkpoint.completedBatchCount];
+  const failed = open ? byId.get(open.id) : undefined;
+  if (
+    !open ||
+    !failed ||
+    failed.status !== "failed" ||
+    failed.namespace !== open.namespace ||
+    !batchKeysMatch(failed.keys, open.keys) ||
+    !isRecoverableWebUiProviderPayloadShapeMessage(failed.reason ?? "")
+  ) {
+    return null;
+  }
+  const reopened = await reopenFailedWebUiActivationCheckpoint({
+    checkpoint,
+    sourceHash,
+    deps,
+  });
+  return {
+    checkpoint: reopened,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: Math.max(0, reopened.leafCount - reopened.completedBatchCount * 6),
+      emptyKeyCount: 0,
+      requiredKeyCount: reopened.leafCount,
+      effectiveSource: "none",
+      checkpoint: reopened,
+      completedLeaves: Math.min(reopened.leafCount, reopened.completedBatchCount * 6),
+    }),
+  };
+}
+
 /**
  * Decide whether a failed LanguageActivationJob can resume the same WEB_UI
  * checkpoint on explicit Activate. Does not mutate when restart is required.
@@ -1508,6 +1607,16 @@ async function processPrimaryBatchTick(input: {
           deps,
         });
       }
+      if (isRecoverableWebUiProviderPayloadShapeFailure(error)) {
+        return enterWebUiStructureRetry({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "primary",
+          providerCalls,
+          structureFailuresThisTick: structureFailuresThisTick + 1,
+          deps,
+        });
+      }
       if (isRetryableWebUiProviderOutputStructureFailure(error)) {
         structureFailuresThisTick += 1;
         if (structureFailuresThisTick >= 2 || attempt >= 2) {
@@ -1723,6 +1832,16 @@ async function processQualityBatchTick(input: {
           batchPhase: "quality",
           providerCalls,
           kind: transientKind,
+          deps,
+        });
+      }
+      if (isRecoverableWebUiProviderPayloadShapeFailure(error)) {
+        return enterWebUiStructureRetry({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "quality",
+          providerCalls,
+          structureFailuresThisTick: structureFailuresThisTick + 1,
           deps,
         });
       }
