@@ -262,20 +262,44 @@ describe("Step 15C — durable WEB_UI activation", () => {
     assert.match(pack.sourceNote ?? "", /live terminology/i);
   });
 
-  it("3 — provider concurrency stays 1 across WEB_UI ticks", async () => {
+  it("3 — injected WEB_UI ticks call the translator one at a time", async () => {
     const record = await createEligibleLocale("sw");
+    let inFlight = 0;
+    let peak = 0;
     installDeps({
       translator: async (request) => {
-        assert.equal(getContentTranslationWorkerPeakConcurrencyForTests(), 1);
-        return translateFlat(request);
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        try {
+          return translateFlat(request);
+        } finally {
+          inFlight -= 1;
+        }
       },
     });
-    await startAndProcessLanguageActivationJobForTests({
+    const view = await startAndProcessLanguageActivationJobForTests({
       actorUserId: "admin-1",
       languageId: record.languageId,
     });
     assert.ok(providerCalls >= 2);
-    assert.equal(getContentTranslationWorkerPeakConcurrencyForTests(), 1);
+    assert.equal(peak, 1);
+    assert.equal(inFlight, 0);
+    // Injected translators do not enter the production worker slot.
+    assert.equal(getContentTranslationWorkerPeakConcurrencyForTests(), 0);
+    const pack = await getPublishedWebUiMessagePackByLocale("sw");
+    assert.ok(pack);
+    assert.equal(pack.status, "published");
+    assert.equal(view.job?.domains.webUi.status, "ready");
+
+    const preparation = readFileSync(
+      path.join(apiSrc, "modules/web-ui-message-packs/web-ui-activation-preparation.ts"),
+      "utf8",
+    );
+    assert.match(preparation, /if \(deps\.translator\) \{\s*return deps\.translator;\s*\}/);
+    assert.match(
+      preparation,
+      /return \(request\) => runLocalizationProviderRequest\(\(\) => provider\.translate\(request\)\)/,
+    );
   });
 
   it("4 — resume after simulated restart via persisted batch docs", async () => {
