@@ -32,8 +32,9 @@ import {
 import { seedMediaResourcesFromCanonicalSources } from "./media-resource.seed.js";
 import {
   deleteMediaResource,
-  getMediaResourceById,
+  getMediaResourceByIdentity,
   listMediaResources,
+  listMediaResourcesByPublisherId,
   upsertMediaResource,
   type ListMediaResourcesFilter,
 } from "./persistence/media-resource.repository.js";
@@ -311,6 +312,7 @@ export interface AdminMediaResourceCreateInput {
 export interface AdminMediaResourceUpdateInput {
   actorUserId: string;
   id: string;
+  resourceType?: MediaResourceType;
   scopeType?: MediaResourceScopeType;
   countryCode?: string | null;
   name?: string;
@@ -358,17 +360,41 @@ export async function listAdminMediaResources(input: {
   return listMediaResources(filter);
 }
 
+async function loadMediaResourceByIdentity(input: {
+  id: string;
+  resourceType?: MediaResourceType;
+}): Promise<MediaResource> {
+  if (input.resourceType) {
+    const resource = await getMediaResourceByIdentity({
+      resourceType: input.resourceType,
+      id: input.id,
+    });
+    if (!resource) {
+      throw new MediaResourceNotFoundError();
+    }
+    return resource;
+  }
+
+  const matches = await listMediaResourcesByPublisherId(input.id);
+  if (matches.length === 0) {
+    throw new MediaResourceNotFoundError();
+  }
+  if (matches.length > 1) {
+    throw new MediaResourceValidationError(
+      "resourceType is required when more than one media resource shares this id.",
+    );
+  }
+  return matches[0]!;
+}
+
 export async function getAdminMediaResource(input: {
   actorUserId: string;
   id: string;
+  resourceType?: MediaResourceType;
 }): Promise<MediaResource> {
   await assertAdminUser(input.actorUserId);
   await ensureMediaResourcesSeededOnce();
-  const resource = await getMediaResourceById(input.id);
-  if (!resource) {
-    throw new MediaResourceNotFoundError();
-  }
-  return resource;
+  return loadMediaResourceByIdentity(input);
 }
 
 export async function createAdminMediaResource(
@@ -435,8 +461,15 @@ export async function createAdminMediaResource(
 
   const now = new Date().toISOString();
   const id = input.id?.trim() || `media-resource-${randomUUID()}`;
-  if (await getMediaResourceById(id)) {
-    throw new MediaResourceConflictError(`Media resource id already exists: ${id}.`);
+  if (
+    await getMediaResourceByIdentity({
+      resourceType,
+      id,
+    })
+  ) {
+    throw new MediaResourceConflictError(
+      `Media resource id already exists for ${resourceType}: ${id}.`,
+    );
   }
 
   const resource: MediaResource = {
@@ -480,10 +513,10 @@ export async function updateAdminMediaResource(
 ): Promise<MediaResource> {
   await ensureMediaResourcesSeededOnce();
 
-  const existing = await getMediaResourceById(input.id);
-  if (!existing) {
-    throw new MediaResourceNotFoundError();
-  }
+  const existing = await loadMediaResourceByIdentity({
+    id: input.id,
+    resourceType: input.resourceType,
+  });
 
   const scopeType = input.scopeType ?? existing.scopeType;
   if (scopeType !== "WORLD" && scopeType !== "COUNTRY") {
@@ -619,12 +652,10 @@ export async function updateAdminMediaResource(
 export async function activateAdminMediaResource(input: {
   actorUserId: string;
   id: string;
+  resourceType?: MediaResourceType;
 }): Promise<MediaResource> {
   await ensureMediaResourcesSeededOnce();
-  const existing = await getMediaResourceById(input.id);
-  if (!existing) {
-    throw new MediaResourceNotFoundError();
-  }
+  const existing = await loadMediaResourceByIdentity(input);
   const admin = await assertMediaMutationActor(input.actorUserId, existing);
   if (
     existing.resourceType === "NEWS_SOURCE" &&
@@ -656,12 +687,10 @@ export async function activateAdminMediaResource(input: {
 export async function deactivateAdminMediaResource(input: {
   actorUserId: string;
   id: string;
+  resourceType?: MediaResourceType;
 }): Promise<MediaResource> {
   await ensureMediaResourcesSeededOnce();
-  const existing = await getMediaResourceById(input.id);
-  if (!existing) {
-    throw new MediaResourceNotFoundError();
-  }
+  const existing = await loadMediaResourceByIdentity(input);
   const admin = await assertMediaMutationActor(input.actorUserId, existing);
   if (!existing.active) {
     return existing;
@@ -687,14 +716,12 @@ export async function deactivateAdminMediaResource(input: {
 export async function deleteAdminMediaResource(input: {
   actorUserId: string;
   id: string;
+  resourceType?: MediaResourceType;
   hard?: boolean;
 }): Promise<{ resource: MediaResource | null; softDeactivated: boolean }> {
   const admin = await assertAdminUser(input.actorUserId);
   await ensureMediaResourcesSeededOnce();
-  const existing = await getMediaResourceById(input.id);
-  if (!existing) {
-    throw new MediaResourceNotFoundError();
-  }
+  const existing = await loadMediaResourceByIdentity(input);
 
   if (!input.hard) {
     if (!existing.active) {
@@ -729,7 +756,10 @@ export async function deleteAdminMediaResource(input: {
     );
   }
 
-  await deleteMediaResource(existing.id);
+  await deleteMediaResource({
+    resourceType: existing.resourceType,
+    id: existing.id,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.delete",

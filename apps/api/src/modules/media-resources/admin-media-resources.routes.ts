@@ -118,6 +118,7 @@ adminMediaResourcesRouter.get(
       const result = await getAdminMediaResource({
         actorUserId: req.auth!.id,
         id: String(req.params.id ?? "").trim(),
+        resourceType: parseResourceType(req.query.resourceType),
       });
       res.json(createSuccessResponse(result, "Admin media resource loaded."));
     } catch (error) {
@@ -169,6 +170,7 @@ adminMediaResourcesRouter.patch(
       const result = await updateAdminMediaResource({
         actorUserId: req.auth!.id,
         id: String(req.params.id ?? "").trim(),
+        resourceType: parseResourceType(req.query.resourceType),
         scopeType: parseScopeType(body.scopeType),
         countryCode:
           body.countryCode === undefined
@@ -220,6 +222,7 @@ adminMediaResourcesRouter.post(
       const result = await activateAdminMediaResource({
         actorUserId: req.auth!.id,
         id: String(req.params.id ?? "").trim(),
+        resourceType: parseResourceType(req.query.resourceType),
       });
       res.json(createSuccessResponse(result, "Media resource activated."));
     } catch (error) {
@@ -237,6 +240,7 @@ adminMediaResourcesRouter.post(
       const result = await deactivateAdminMediaResource({
         actorUserId: req.auth!.id,
         id: String(req.params.id ?? "").trim(),
+        resourceType: parseResourceType(req.query.resourceType),
       });
       res.json(createSuccessResponse(result, "Media resource deactivated."));
     } catch (error) {
@@ -258,6 +262,7 @@ adminMediaResourcesRouter.delete(
       const result = await deleteAdminMediaResource({
         actorUserId: req.auth!.id,
         id: String(req.params.id ?? "").trim(),
+        resourceType: parseResourceType(req.query.resourceType),
         hard,
       });
       res.json(

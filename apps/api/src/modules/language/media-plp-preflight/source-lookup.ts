@@ -8,7 +8,6 @@ import type {
   MediaPlpEntityType,
   PublicNewsArticleItem,
   PublicPresentationNode,
-  TrustedMediaCategoryId,
 } from "@hu/types";
 import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
@@ -28,9 +27,9 @@ import {
   buildCanonicalPrinciplePresentation,
   buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
-  buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
 } from "../published-localized-presentation/media/canonical-trees.js";
+import { resolveTrustedMediaEditorialCanonical } from "../published-localized-presentation/media/trusted-editorial-source.js";
 import { markMediaPlpPreflightSourceLookup } from "./counters.js";
 
 export type MediaPlpPreflightSourceLookup = {
@@ -208,67 +207,23 @@ async function loadTrustedSource(
   entityId: string,
 ): Promise<MediaPlpPreflightSourceLookup> {
   markMediaPlpPreflightSourceLookup();
-  const collection = getMongoCollection<Record<string, unknown>>(
-    MONGO_COLLECTIONS.mediaResources,
-  );
-  const cursor = collection.find(
-    { id: entityId },
-    {
-      projection: {
-        id: 1,
-        name: 1,
-        websiteUrl: 1,
-        description: 1,
-        resourceType: 1,
-        active: 1,
-        categoryId: 1,
-        logoLabel: 1,
-        secondaryText: 1,
-        countryCode: 1,
-        sortOrder: 1,
-      },
-      limit: 2,
-    },
-  );
-  const doc = (await cursor.next()) as Record<string, unknown> | null;
-  const second = await cursor.next();
-  if (second) {
-    return emptySource(2, true);
-  }
-  if (!doc) {
+  const editorial = await resolveTrustedMediaEditorialCanonical(entityId);
+  if (!editorial.sourceFound || !editorial.canonicalPresentation || !editorial.canonicalVersion) {
     return emptySource(0);
   }
-
-  const resourceType = asString(doc.resourceType);
-  const active = doc.active === true;
-  const sourcePublic = active && resourceType === "TRUSTED_MEDIA";
-
-  const categoryRaw = asString(doc.categoryId) || "international-wire-service";
-  const categoryId = categoryRaw as TrustedMediaCategoryId;
-
-  const tree = buildCanonicalTrustedPresentation({
-    id: asString(doc.id) || entityId,
-    name: asString(doc.name),
-    logoLabel: asString(doc.logoLabel) || "?",
-    country: asString(doc.secondaryText) || asString(doc.countryCode) || "International",
-    ...(asString(doc.countryCode) ? { countryCode: asString(doc.countryCode) } : {}),
-    categoryId,
-    explanation: asString(doc.description),
-    websiteUrl: asString(doc.websiteUrl),
-    sortOrder: typeof doc.sortOrder === "number" ? doc.sortOrder : 0,
-  });
-  const canonicalVersion = fingerprintMediaPlpCanonicalVersion(
-    asMediaPlpPresentationNode(tree),
-  );
-
   return {
     SOURCE_FOUND: true,
-    SOURCE_PUBLIC: sourcePublic,
-    CANONICAL_VERSION: canonicalVersion,
-    SOURCE_DOCUMENT_BYTES: documentBytes(doc),
+    SOURCE_PUBLIC: editorial.sourcePublic,
+    CANONICAL_VERSION: editorial.canonicalVersion,
+    SOURCE_DOCUMENT_BYTES: documentBytes({
+      id: entityId,
+      resourceType: "TRUSTED_MEDIA",
+      authority: editorial.authority,
+      explanationLength: editorial.resource?.explanation.length ?? 0,
+    }),
     SOURCE_RECORDS_MATCHED: 1,
     identityCollision: false,
-    canonicalPresentation: asMediaPlpPresentationNode(tree),
+    canonicalPresentation: editorial.canonicalPresentation,
   };
 }
 

@@ -8,7 +8,6 @@ import type {
   MediaPlpEntityType,
   PublicNewsArticleItem,
   PublicPresentationNode,
-  TrustedMediaCategoryId,
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
@@ -24,9 +23,9 @@ import {
   buildCanonicalPrinciplePresentation,
   buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
-  buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
 } from "../published-localized-presentation/media/canonical-trees.js";
+import { resolveTrustedMediaEditorialCanonical } from "../published-localized-presentation/media/trusted-editorial-source.js";
 import { collectAutoPaths } from "../published-localized-presentation/presentation-paths.js";
 import { isCollectedPathMachineEligible } from "../published-localized-presentation/universal/field-authority.js";
 import { resolveMediaPlpFieldPolicy } from "../published-localized-presentation/universal/adapters/media-plp-field-policies.js";
@@ -163,55 +162,13 @@ async function resolveTrusted(
   entityId: string,
 ): Promise<MediaPlpMaterializerSourceResolve> {
   markMaterializerSourceLookup();
-  const collection = getMongoCollection<Record<string, unknown>>(
-    MONGO_COLLECTIONS.mediaResources,
-  );
-  const cursor = collection.find(
-    { id: entityId },
-    {
-      projection: {
-        id: 1,
-        name: 1,
-        websiteUrl: 1,
-        description: 1,
-        resourceType: 1,
-        active: 1,
-        categoryId: 1,
-        logoLabel: 1,
-        secondaryText: 1,
-        countryCode: 1,
-        sortOrder: 1,
-      },
-      limit: 2,
-    },
-  );
-  const doc = (await cursor.next()) as Record<string, unknown> | null;
-  if (await cursor.next()) {
-    return { ...empty(), identityCollision: true };
-  }
-  if (!doc) {
+  const editorial = await resolveTrustedMediaEditorialCanonical(entityId);
+  if (!editorial.sourceFound || !editorial.canonicalPresentation) {
     return empty();
   }
-  const sourcePublic =
-    doc.active === true && asString(doc.resourceType) === "TRUSTED_MEDIA";
-  const categoryId = (asString(doc.categoryId) ||
-    "international-wire-service") as TrustedMediaCategoryId;
   return withTree(
-    asMediaPlpPresentationNode(
-      buildCanonicalTrustedPresentation({
-        id: asString(doc.id) || entityId,
-        name: asString(doc.name),
-        logoLabel: asString(doc.logoLabel) || "?",
-        country:
-          asString(doc.secondaryText) || asString(doc.countryCode) || "International",
-        ...(asString(doc.countryCode) ? { countryCode: asString(doc.countryCode) } : {}),
-        categoryId,
-        explanation: asString(doc.description),
-        websiteUrl: asString(doc.websiteUrl),
-        sortOrder: typeof doc.sortOrder === "number" ? doc.sortOrder : 0,
-      }),
-    ),
-    sourcePublic,
+    editorial.canonicalPresentation,
+    editorial.sourcePublic,
     MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
   );
 }

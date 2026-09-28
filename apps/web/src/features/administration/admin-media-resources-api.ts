@@ -53,8 +53,18 @@ export async function listAdminMediaResources(
   );
 }
 
-export async function getAdminMediaResource(id: string): Promise<MediaResource> {
-  return apiRequest<MediaResource>(`/api/v1/admin/media-resources/${encodeURIComponent(id)}`);
+function withResourceType(path: string, resourceType: MediaResourceType): string {
+  const joiner = path.includes("?") ? "&" : "?";
+  return `${path}${joiner}resourceType=${encodeURIComponent(resourceType)}`;
+}
+
+export async function getAdminMediaResource(
+  id: string,
+  resourceType: MediaResourceType,
+): Promise<MediaResource> {
+  return apiRequest<MediaResource>(
+    withResourceType(`/api/v1/admin/media-resources/${encodeURIComponent(id)}`, resourceType),
+  );
 }
 
 export async function createAdminMediaResource(
@@ -69,36 +79,56 @@ export async function createAdminMediaResource(
 
 export async function updateAdminMediaResource(
   id: string,
+  resourceType: MediaResourceType,
   input: Partial<Omit<AdminMediaResourceWriteInput, "resourceType">>,
 ): Promise<MediaResource> {
-  return apiRequest<MediaResource>(`/api/v1/admin/media-resources/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
+  return apiRequest<MediaResource>(
+    withResourceType(`/api/v1/admin/media-resources/${encodeURIComponent(id)}`, resourceType),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
 }
 
-export async function activateAdminMediaResource(id: string): Promise<MediaResource> {
+export async function activateAdminMediaResource(
+  id: string,
+  resourceType: MediaResourceType,
+): Promise<MediaResource> {
   return apiRequest<MediaResource>(
-    `/api/v1/admin/media-resources/${encodeURIComponent(id)}/activate`,
+    withResourceType(
+      `/api/v1/admin/media-resources/${encodeURIComponent(id)}/activate`,
+      resourceType,
+    ),
     { method: "POST" },
   );
 }
 
-export async function deactivateAdminMediaResource(id: string): Promise<MediaResource> {
+export async function deactivateAdminMediaResource(
+  id: string,
+  resourceType: MediaResourceType,
+): Promise<MediaResource> {
   return apiRequest<MediaResource>(
-    `/api/v1/admin/media-resources/${encodeURIComponent(id)}/deactivate`,
+    withResourceType(
+      `/api/v1/admin/media-resources/${encodeURIComponent(id)}/deactivate`,
+      resourceType,
+    ),
     { method: "POST" },
   );
 }
 
 export async function deleteAdminMediaResource(
   id: string,
+  resourceType: MediaResourceType,
   options: { hard?: boolean } = {},
 ): Promise<MediaResource | { id: string; deleted: true }> {
   const suffix = options.hard ? "?hard=true" : "";
   return apiRequest(
-    `/api/v1/admin/media-resources/${encodeURIComponent(id)}${suffix}`,
+    withResourceType(
+      `/api/v1/admin/media-resources/${encodeURIComponent(id)}${suffix}`,
+      resourceType,
+    ),
     { method: "DELETE" },
   );
 }

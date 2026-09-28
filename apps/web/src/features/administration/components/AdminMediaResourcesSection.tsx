@@ -190,7 +190,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
 
       if (editingId) {
         const { resourceType: _ignored, ...update } = payload;
-        await updateAdminMediaResource(editingId, update);
+        await updateAdminMediaResource(editingId, form.resourceType, update);
         setStatus("Media resource updated.");
       } else {
         await createAdminMediaResource(payload);
@@ -205,10 +205,10 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     }
   }
 
-  async function handleActivate(id: string) {
+  async function handleActivate(resource: MediaResource) {
     setError(null);
     try {
-      await activateAdminMediaResource(id);
+      await activateAdminMediaResource(resource.id, resource.resourceType);
       setStatus("Resource activated.");
       await load();
     } catch (activateError) {
@@ -216,10 +216,10 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     }
   }
 
-  async function handleDeactivate(id: string) {
+  async function handleDeactivate(resource: MediaResource) {
     setError(null);
     try {
-      await deactivateAdminMediaResource(id);
+      await deactivateAdminMediaResource(resource.id, resource.resourceType);
       setStatus("Resource deactivated.");
       await load();
     } catch (deactivateError) {
@@ -239,7 +239,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     }
     setError(null);
     try {
-      await deleteAdminMediaResource(resource.id, {
+      await deleteAdminMediaResource(resource.id, resource.resourceType, {
         hard: !resource.active && resource.resourceType !== "NEWS_SOURCE",
       });
       setStatus(
@@ -629,7 +629,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                             <Button
                               type="button"
                               variant="secondary"
-                              onClick={() => void handleDeactivate(resource.id)}
+                              onClick={() => void handleDeactivate(resource)}
                             >
                               Deactivate
                             </Button>
@@ -637,7 +637,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                             <Button
                               type="button"
                               variant="secondary"
-                              onClick={() => void handleActivate(resource.id)}
+                              onClick={() => void handleActivate(resource)}
                             >
                               Activate
                             </Button>
