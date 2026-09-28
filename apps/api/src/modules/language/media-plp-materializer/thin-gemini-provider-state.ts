@@ -42,6 +42,13 @@ export type ThinGeminiProviderStateRecord = {
   /** Gate E — which transient class last armed the shared cooldown. */
   readonly pressureCategory?: LocalizationProviderPressureCategory | null;
   readonly pressureStreak?: number;
+  /**
+   * F.3.12 — global minimum gap between localization provider request starts.
+   * Shared by every owner and locale. Not a provider payload.
+   */
+  readonly lastProviderRequestAt?: string | null;
+  readonly nextProviderRequestAt?: string | null;
+  readonly pacingIntervalMs?: number | null;
 };
 
 export type ThinGeminiCooldownSnapshot = {
@@ -99,7 +106,23 @@ function emptyState(updatedAt = nowIso()): ThinGeminiProviderStateRecord {
     quotaRetryDelaySeconds: null,
     pressureCategory: null,
     pressureStreak: 0,
+    lastProviderRequestAt: null,
+    nextProviderRequestAt: null,
+    pacingIntervalMs: null,
     updatedAt,
+  };
+}
+
+function pacingFieldsFrom(
+  existing: ThinGeminiProviderStateRecord | null | undefined,
+): Pick<
+  ThinGeminiProviderStateRecord,
+  "lastProviderRequestAt" | "nextProviderRequestAt" | "pacingIntervalMs"
+> {
+  return {
+    lastProviderRequestAt: existing?.lastProviderRequestAt ?? null,
+    nextProviderRequestAt: existing?.nextProviderRequestAt ?? null,
+    pacingIntervalMs: existing?.pacingIntervalMs ?? null,
   };
 }
 
@@ -220,6 +243,7 @@ export async function activateThinGeminiProviderCooldown(input: {
     quotaRetryDelaySeconds: input.quotaRetryDelaySeconds ?? cooldownSeconds,
     pressureCategory: "rate_limited",
     pressureStreak: (existing?.pressureStreak ?? 0) + 1,
+    ...pacingFieldsFrom(existing),
     updatedAt: nowIso(),
   };
 
@@ -271,6 +295,7 @@ export async function activateLocalizationProviderPressure(input: {
     quotaRetryDelaySeconds: waitSec,
     pressureCategory: input.category,
     pressureStreak: streak,
+    ...pacingFieldsFrom(existing),
     updatedAt: new Date(nowMs).toISOString(),
   };
   if (useThinGeminiProviderStateMemory()) {
@@ -287,7 +312,11 @@ export async function activateLocalizationProviderPressure(input: {
 
 /** Clear cooldown (tests / operator). */
 export async function clearThinGeminiProviderCooldown(): Promise<void> {
-  const cleared = emptyState();
+  const existing = await readThinGeminiProviderState();
+  const cleared: ThinGeminiProviderStateRecord = {
+    ...emptyState(),
+    ...pacingFieldsFrom(existing),
+  };
   if (useThinGeminiProviderStateMemory()) {
     memoryState = cleared;
     return;
@@ -297,4 +326,108 @@ export async function clearThinGeminiProviderCooldown(): Promise<void> {
     { $set: cleared },
     { upsert: true },
   );
+}
+
+/** True when a new provider request may start at `nowMs`. */
+export function localizationProviderPacingWindowOpen(
+  nextProviderRequestAt: string | null | undefined,
+  nowMs: number,
+): boolean {
+  if (!nextProviderRequestAt) {
+    return true;
+  }
+  const untilMs = Date.parse(nextProviderRequestAt);
+  return !Number.isFinite(untilMs) || untilMs <= nowMs;
+}
+
+export type LocalizationProviderPacingPermit = {
+  readonly acquired: boolean;
+  readonly nextAllowedAt: string | null;
+  readonly intervalMs: number;
+};
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
+}
+
+/**
+ * Atomically claim the next global provider-start window.
+ * Memory compare-and-set is synchronous. Mongo uses a conditional update on
+ * the singleton `providerId` document so two processes cannot both win.
+ * Interval <= 0 does not write (tests only). Production never passes 0.
+ */
+export async function tryAcquireLocalizationProviderPacingPermit(input: {
+  readonly nowMs: number;
+  readonly intervalMs: number;
+}): Promise<LocalizationProviderPacingPermit> {
+  const intervalMs = input.intervalMs;
+  if (intervalMs <= 0) {
+    return { acquired: true, nextAllowedAt: null, intervalMs: 0 };
+  }
+  const nowIsoStamp = new Date(input.nowMs).toISOString();
+  const nextAllowedAt = new Date(input.nowMs + intervalMs).toISOString();
+  if (useThinGeminiProviderStateMemory()) {
+    const existing = memoryState;
+    if (!localizationProviderPacingWindowOpen(existing?.nextProviderRequestAt, input.nowMs)) {
+      return {
+        acquired: false,
+        nextAllowedAt: existing?.nextProviderRequestAt ?? nextAllowedAt,
+        intervalMs: existing?.pacingIntervalMs ?? intervalMs,
+      };
+    }
+    memoryState = {
+      ...(existing ?? emptyState(nowIsoStamp)),
+      lastProviderRequestAt: nowIsoStamp,
+      nextProviderRequestAt: nextAllowedAt,
+      pacingIntervalMs: intervalMs,
+      updatedAt: nowIsoStamp,
+    };
+    return { acquired: true, nextAllowedAt, intervalMs };
+  }
+
+  try {
+    await collection().updateOne(
+      { providerId: THIN_GEMINI_PROVIDER_STATE_ID },
+      { $setOnInsert: emptyState(nowIsoStamp) },
+      { upsert: true },
+    );
+  } catch (error) {
+    if (!isDuplicateKeyError(error)) {
+      throw error;
+    }
+  }
+
+  const updated = await collection().findOneAndUpdate(
+    {
+      providerId: THIN_GEMINI_PROVIDER_STATE_ID,
+      $or: [
+        { nextProviderRequestAt: null },
+        { nextProviderRequestAt: { $exists: false } },
+        { nextProviderRequestAt: { $lte: nowIsoStamp } },
+      ],
+    },
+    {
+      $set: {
+        lastProviderRequestAt: nowIsoStamp,
+        nextProviderRequestAt: nextAllowedAt,
+        pacingIntervalMs: intervalMs,
+        updatedAt: nowIsoStamp,
+      },
+    },
+    { returnDocument: "after" },
+  );
+  if (updated) {
+    return { acquired: true, nextAllowedAt, intervalMs };
+  }
+  const current = await readThinGeminiProviderState();
+  return {
+    acquired: false,
+    nextAllowedAt: current?.nextProviderRequestAt ?? nextAllowedAt,
+    intervalMs: current?.pacingIntervalMs ?? intervalMs,
+  };
 }

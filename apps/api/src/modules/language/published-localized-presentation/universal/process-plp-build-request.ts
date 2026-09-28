@@ -347,6 +347,22 @@ export async function processPlpBuildRequest(
       localizationValues = { ...providerResult.values };
       localizationSource = "PROVIDER";
     } catch (error) {
+      const { isLocalizationProviderPacingDeferredError } = await import(
+        "../../localization-provider-governor.js"
+      );
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return failed({
+          status: "FAILED",
+          failure: structuredFailure({
+            failureCode: "PROVIDER_FAILURE",
+            retryable: true,
+            stage: "provider",
+            safeReason: "PROVIDER_PACING_WAIT",
+            pacingDefer: true,
+            pacingUntil: error.nextAllowedAt,
+          }),
+        });
+      }
       return failed({
         status: "FAILED",
         failure: failureFromTimeoutError(error),

@@ -494,6 +494,25 @@ async function processClaimedWork(
       failure,
     });
   } catch (error) {
+    const { isLocalizationProviderPacingDeferredError } = await import(
+      "../../localization-provider-governor.js"
+    );
+    if (isLocalizationProviderPacingDeferredError(error)) {
+      await markPlpAutoBuildWorkFailed({
+        workKey: work.workKey,
+        attempts: work.attempts,
+        maxAttempts: work.maxAttempts,
+        failure: structuredFailure({
+          failureCode: "PROVIDER_FAILURE",
+          retryable: true,
+          stage: "provider",
+          safeReason: "PROVIDER_PACING_WAIT",
+          pacingDefer: true,
+          pacingUntil: error.nextAllowedAt,
+        }),
+      });
+      return;
+    }
     const failure = structuredFailure({
       failureCode: "UNKNOWN",
       retryable: true,

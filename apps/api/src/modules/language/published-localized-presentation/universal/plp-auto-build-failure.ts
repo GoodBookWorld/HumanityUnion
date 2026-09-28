@@ -50,6 +50,12 @@ export type PlpAutoBuildStructuredFailure = {
    * RESET 05E.3 — quota/cooldown deferral: keep pending, do not burn attempt budget.
    */
   readonly quotaDefer?: boolean;
+  /**
+   * F.3.12 — global pacing wait. Keep pending and do not burn an attempt.
+   * Not a provider failure and not an HTTP 429.
+   */
+  readonly pacingDefer?: boolean;
+  readonly pacingUntil?: string | null;
 };
 
 export type ProcessPlpBuildRequestResult =
@@ -153,6 +159,8 @@ export function structuredFailure(input: {
   readonly stage: PlpAutoBuildFailureStage;
   readonly safeReason: string;
   readonly quotaDefer?: boolean;
+  readonly pacingDefer?: boolean;
+  readonly pacingUntil?: string | null;
 }): PlpAutoBuildStructuredFailure {
   return {
     failureCode: input.failureCode,
@@ -160,6 +168,9 @@ export function structuredFailure(input: {
     stage: input.stage,
     safeReason: sanitizePlpAutoBuildFailureReason(input.safeReason),
     ...(input.quotaDefer === true ? { quotaDefer: true } : {}),
+    ...(input.pacingDefer === true
+      ? { pacingDefer: true, pacingUntil: input.pacingUntil ?? null }
+      : {}),
   };
 }
 

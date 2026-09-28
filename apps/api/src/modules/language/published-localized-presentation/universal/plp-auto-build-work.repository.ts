@@ -401,10 +401,17 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
   const stuckBefore = new Date(Date.now() - STUCK_RUNNING_MS).toISOString();
 
   // RESET 05E.3 — do not claim while thin_gemini durable cooldown is active.
-  // Prevents attempt churn / request bursts during RESOURCE_EXHAUSTED.
+  // F.3.12 — also wait for the shared global pacing permit. Neither path calls Gemini.
   try {
     const cooldown = await getThinGeminiCooldownSnapshot();
     if (cooldown.active) {
+      return null;
+    }
+    const { readLocalizationProviderPacing } = await import(
+      "../../localization-provider-governor.js"
+    );
+    const pacing = await readLocalizationProviderPacing();
+    if (pacing.blocked) {
       return null;
     }
   } catch {
@@ -619,6 +626,46 @@ export async function markPlpAutoBuildWorkFailed(input: {
     }
   }
   const now = nowIso();
+  if (input.failure.pacingDefer === true && input.failure.pacingUntil) {
+    const restoredAttempts = Math.max(0, Math.trunc(input.attempts) - 1);
+    const failurePatch = {
+      lastError: "PROVIDER_PACING_WAIT",
+      failureCode: input.failure.failureCode,
+      failureStage: input.failure.stage,
+      retryable: true,
+      lastFailureAt: now,
+      nextAttemptAt: input.failure.pacingUntil,
+      attempts: restoredAttempts,
+    };
+    if (usePlpAutoBuildWorkMemory()) {
+      const existing = memoryByWorkKey.get(input.workKey);
+      if (!existing) {
+        return { requeued: false, quotaDeferred: false };
+      }
+      memoryByWorkKey.set(input.workKey, {
+        ...existing,
+        ...failurePatch,
+        status: "pending",
+        updatedAt: now,
+        claimedAt: null,
+        completedAt: null,
+      });
+      return { requeued: true, quotaDeferred: false };
+    }
+    await collection().updateOne(
+      { workKey: input.workKey },
+      {
+        $set: {
+          status: "pending",
+          ...failurePatch,
+          updatedAt: now,
+          claimedAt: null,
+          completedAt: null,
+        },
+      },
+    );
+    return { requeued: true, quotaDeferred: false };
+  }
   const quotaDefer =
     input.failure.quotaDefer === true || isPlpQuotaDeferSafeReason(safeReason);
 

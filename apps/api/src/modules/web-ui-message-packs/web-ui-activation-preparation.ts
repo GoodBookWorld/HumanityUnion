@@ -18,7 +18,13 @@ import type {
 
 import { resolveLanguagePreparationLocaleMetadata } from "../language-preparation/language-registry-metadata.js";
 import { resolveProviderTerminologyContext } from "../language/terminology-glossary/terminology-glossary.provider-context.js";
-import { readLocalizationProviderCooldown } from "../language/localization-provider-governor.js";
+import {
+  isLocalizationProviderPacingDeferredError,
+  laterLocalizationInstant,
+  localizationProviderNowMs,
+  readLocalizationProviderPacing,
+  readLocalizationProviderCooldown,
+} from "../language/localization-provider-governor.js";
 import { peekThinGeminiCooldownSnapshot } from "../language/media-plp-materializer/thin-gemini-provider-state.js";
 import type {
   TranslationProviderRequest,
@@ -49,6 +55,7 @@ import {
 } from "./web-ui-provider-cooldown.js";
 import {
   isRetryableWebUiProviderOutputStructureFailure,
+  WEB_UI_STRUCTURE_PACING_REASON,
   WEB_UI_STRUCTURE_RETRY_DETAIL,
   WEB_UI_STRUCTURE_RETRY_REASON,
 } from "./web-ui-provider-output-structure.js";
@@ -389,7 +396,7 @@ export function webUiProgressFromCheckpoint(input: {
     totalLeaves: cp.leafCount,
     completedLeaves: input.completedLeaves ?? 0,
     providerFailure: false,
-    nextAttemptAt: null,
+    nextAttemptAt: cp.nextAttemptAt ?? null,
     transientFailureCount: cp.transientFailureCount ?? 0,
     lastTransientFailure: null,
   };
@@ -1068,6 +1075,107 @@ export async function ensureWebUiActivationCheckpoint(input: {
   };
 }
 
+function webUiTickFromCheckpoint(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly providerCalls: number;
+  readonly deferredUntil?: string | null;
+  readonly needsAnotherTick: boolean;
+}): WebUiActivationTickResult {
+  return {
+    done: false,
+    needsAnotherTick: input.needsAnotherTick,
+    published: false,
+    providerCalls: input.providerCalls,
+    deferredUntil: input.deferredUntil,
+    checkpoint: input.checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: input.checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: input.checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint: input.checkpoint,
+      completedLeaves: Math.min(
+        input.checkpoint.leafCount,
+        input.checkpoint.completedBatchCount * 6,
+      ),
+    }),
+  };
+}
+
+/**
+ * Global pacing wait. Does not increment failure counters and does not call
+ * the provider. The checkpoint stays on the same phase.
+ */
+async function deferWebUiForProviderPacing(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly batch: WebUiDraftBatchPlan | null;
+  readonly batchPhase: "primary" | "quality";
+  readonly providerCalls: number;
+  readonly allowedAt: string;
+  readonly structureFailuresThisTick: number;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<WebUiActivationTickResult> {
+  const deps = input.deps;
+  const stamp = nowIso(deps);
+  if (input.batch && input.structureFailuresThisTick > 0) {
+    await upsertWebUiActivationBatch({
+      checkpointId: input.checkpoint.checkpointId,
+      batchId: input.batch.id,
+      phase: input.batchPhase,
+      namespace: input.batch.namespace,
+      keys: input.batch.keys,
+      values: {},
+      status: "pending",
+      attempts: input.structureFailuresThisTick,
+      reason: WEB_UI_STRUCTURE_PACING_REASON,
+      updatedAt: stamp,
+    });
+  }
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...input.checkpoint,
+    nextAttemptAt: input.allowedAt,
+    updatedAt: stamp,
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return webUiTickFromCheckpoint({
+    checkpoint,
+    providerCalls: input.providerCalls,
+    deferredUntil: input.allowedAt,
+    needsAnotherTick: false,
+  });
+}
+
+/** After a real provider call, yield until the global permit instead of chaining. */
+async function yieldWebUiSuccessForProviderPacing(
+  result: WebUiActivationTickResult,
+  deps: WebUiActivationPreparationDeps,
+): Promise<WebUiActivationTickResult> {
+  if (result.providerCalls <= 0 || !result.checkpoint || result.deferredUntil) {
+    return result;
+  }
+  const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+  if (!pacing.blocked || !pacing.nextProviderRequestAt) {
+    return result;
+  }
+  const checkpoint: WebUiActivationCheckpointRecord = {
+    ...result.checkpoint,
+    nextAttemptAt: pacing.nextProviderRequestAt,
+    updatedAt: nowIso(deps),
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return {
+    ...result,
+    needsAnotherTick: false,
+    deferredUntil: pacing.nextProviderRequestAt,
+    checkpoint,
+    webUi: {
+      ...result.webUi,
+      nextAttemptAt: pacing.nextProviderRequestAt,
+    },
+  };
+}
+
 async function processPrimaryBatchTick(input: {
   readonly checkpoint: WebUiActivationCheckpointRecord;
   readonly deps: WebUiActivationPreparationDeps;
@@ -1179,7 +1287,17 @@ async function processPrimaryBatchTick(input: {
     };
   }
 
-  let attempt = 0;
+  const pendingPrimary = await getWebUiActivationBatch({
+    checkpointId: checkpoint.checkpointId,
+    batchId: nextBatch.id,
+    phase: "primary",
+  });
+  let structureFailuresThisTick =
+    pendingPrimary?.status === "pending" &&
+    pendingPrimary.reason === WEB_UI_STRUCTURE_PACING_REASON
+      ? pendingPrimary.attempts
+      : 0;
+  let attempt = structureFailuresThisTick;
   let lastReason = "Provider batch failed.";
   let providerCalls = 0;
   let missingKeyRecoveryAttempted = false;
@@ -1230,23 +1348,37 @@ async function processPrimaryBatchTick(input: {
         updatedAt: nowIso(deps),
       };
       await upsertWebUiActivationCheckpoint(checkpoint);
-      return {
-        done: false,
-        needsAnotherTick: true,
-        published: false,
-        providerCalls,
-        checkpoint,
-        webUi: webUiProgressFromCheckpoint({
-          readinessDataReady: false,
-          missingKeyCount: Math.max(0, checkpoint.leafCount - completedBatchCount * 6),
-          emptyKeyCount: 0,
-          requiredKeyCount: checkpoint.leafCount,
-          effectiveSource: "none",
+      return yieldWebUiSuccessForProviderPacing(
+        {
+          done: false,
+          needsAnotherTick: true,
+          published: false,
+          providerCalls,
           checkpoint,
-          completedLeaves: Math.min(checkpoint.leafCount, completedBatchCount * 6),
-        }),
-      };
+          webUi: webUiProgressFromCheckpoint({
+            readinessDataReady: false,
+            missingKeyCount: Math.max(0, checkpoint.leafCount - completedBatchCount * 6),
+            emptyKeyCount: 0,
+            requiredKeyCount: checkpoint.leafCount,
+            effectiveSource: "none",
+            checkpoint,
+            completedLeaves: Math.min(checkpoint.leafCount, completedBatchCount * 6),
+          }),
+        },
+        deps,
+      );
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return deferWebUiForProviderPacing({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "primary",
+          providerCalls,
+          allowedAt: error.nextAllowedAt,
+          structureFailuresThisTick,
+          deps,
+        });
+      }
       lastReason = error instanceof Error ? error.message : "Provider batch failed.";
       const recoveryInThisAttempt = /omitted keys after recovery/i.test(lastReason);
       if (recoveryInThisAttempt) {
@@ -1267,7 +1399,8 @@ async function processPrimaryBatchTick(input: {
         });
       }
       if (isRetryableWebUiProviderOutputStructureFailure(error)) {
-        if (attempt >= 2) {
+        structureFailuresThisTick += 1;
+        if (structureFailuresThisTick >= 2 || attempt >= 2) {
           return enterWebUiStructureRetry({
             checkpoint,
             batch: nextBatch,
@@ -1369,7 +1502,17 @@ async function processQualityBatchTick(input: {
     glossary,
   });
 
-  let attempt = 0;
+  const pendingQuality = await getWebUiActivationBatch({
+    checkpointId: checkpoint.checkpointId,
+    batchId: nextBatch.id,
+    phase: "quality",
+  });
+  let structureFailuresThisTick =
+    pendingQuality?.status === "pending" &&
+    pendingQuality.reason === WEB_UI_STRUCTURE_PACING_REASON
+      ? pendingQuality.attempts
+      : 0;
+  let attempt = structureFailuresThisTick;
   let providerCalls = 0;
   let lastReason = "Quality batch failed.";
   let missingKeyRecoveryAttempted = false;
@@ -1420,23 +1563,37 @@ async function processQualityBatchTick(input: {
         updatedAt: nowIso(deps),
       };
       await upsertWebUiActivationCheckpoint(checkpoint);
-      return {
-        done: false,
-        needsAnotherTick: true,
-        published: false,
-        providerCalls,
-        checkpoint,
-        webUi: webUiProgressFromCheckpoint({
-          readinessDataReady: false,
-          missingKeyCount: 0,
-          emptyKeyCount: 0,
-          requiredKeyCount: requiredPaths.length,
-          effectiveSource: "none",
+      return yieldWebUiSuccessForProviderPacing(
+        {
+          done: false,
+          needsAnotherTick: true,
+          published: false,
+          providerCalls,
           checkpoint,
-          completedLeaves: requiredPaths.length,
-        }),
-      };
+          webUi: webUiProgressFromCheckpoint({
+            readinessDataReady: false,
+            missingKeyCount: 0,
+            emptyKeyCount: 0,
+            requiredKeyCount: requiredPaths.length,
+            effectiveSource: "none",
+            checkpoint,
+            completedLeaves: requiredPaths.length,
+          }),
+        },
+        deps,
+      );
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return deferWebUiForProviderPacing({
+          checkpoint,
+          batch: nextBatch,
+          batchPhase: "quality",
+          providerCalls,
+          allowedAt: error.nextAllowedAt,
+          structureFailuresThisTick,
+          deps,
+        });
+      }
       lastReason = error instanceof Error ? error.message : "Quality batch failed.";
       const recoveryInThisAttempt = /omitted keys after recovery/i.test(lastReason);
       if (recoveryInThisAttempt) {
@@ -1457,7 +1614,8 @@ async function processQualityBatchTick(input: {
         });
       }
       if (isRetryableWebUiProviderOutputStructureFailure(error)) {
-        if (attempt >= 2) {
+        structureFailuresThisTick += 1;
+        if (structureFailuresThisTick >= 2 || attempt >= 2) {
           return enterWebUiStructureRetry({
             checkpoint,
             batch: nextBatch,
@@ -1738,11 +1896,16 @@ export async function processWebUiActivationTick(input: {
       };
     }
     const cooldown = await readSharedProviderCooldown(deps);
-    if (cooldown.active && cooldown.cooldownUntil) {
+    const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+    const blockedUntil = laterLocalizationInstant(
+      cooldown.active ? cooldown.cooldownUntil : null,
+      pacing.blocked ? pacing.nextProviderRequestAt : null,
+    );
+    if (blockedUntil) {
       const waiting: WebUiActivationCheckpointRecord = {
         ...checkpoint,
         phase: "structure_retry",
-        nextAttemptAt: cooldown.cooldownUntil,
+        nextAttemptAt: blockedUntil,
         detail: WEB_UI_STRUCTURE_RETRY_DETAIL,
         updatedAt: nowIso(deps),
       };
@@ -1752,7 +1915,7 @@ export async function processWebUiActivationTick(input: {
         needsAnotherTick: false,
         published: false,
         providerCalls: 0,
-        deferredUntil: cooldown.cooldownUntil,
+        deferredUntil: blockedUntil,
         checkpoint: waiting,
         webUi: webUiProgressFromCheckpoint({
           readinessDataReady: false,
@@ -1795,24 +1958,39 @@ export async function processWebUiActivationTick(input: {
     // in flight does not yield before its provider batch. Mongo is read only
     // when the durable store is the source of truth.
     const cooldown = await readSharedProviderCooldown(deps);
-    if (cooldown.active && cooldown.cooldownUntil) {
+    const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+    const blockedUntil = laterLocalizationInstant(
+      cooldown.active ? cooldown.cooldownUntil : null,
+      pacing.blocked ? pacing.nextProviderRequestAt : null,
+    );
+    const blockedMs = blockedUntil ? Date.parse(blockedUntil) : NaN;
+    if (blockedUntil && Number.isFinite(blockedMs) && blockedMs > localizationProviderNowMs()) {
+      let waiting = checkpoint;
+      if (pacing.blocked && checkpoint.nextAttemptAt !== blockedUntil) {
+        waiting = {
+          ...checkpoint,
+          nextAttemptAt: blockedUntil,
+          updatedAt: nowIso(deps),
+        };
+        await upsertWebUiActivationCheckpoint(waiting);
+      }
       return {
         done: false,
         needsAnotherTick: false,
         published: false,
         providerCalls: 0,
-        deferredUntil: cooldown.cooldownUntil,
-        checkpoint,
+        deferredUntil: blockedUntil,
+        checkpoint: waiting,
         webUi: webUiProgressFromCheckpoint({
           readinessDataReady: false,
-          missingKeyCount: checkpoint.leafCount,
+          missingKeyCount: waiting.leafCount,
           emptyKeyCount: 0,
-          requiredKeyCount: checkpoint.leafCount,
+          requiredKeyCount: waiting.leafCount,
           effectiveSource: "none",
-          checkpoint,
+          checkpoint: waiting,
           completedLeaves: Math.min(
-            checkpoint.leafCount,
-            checkpoint.completedBatchCount * 6,
+            waiting.leafCount,
+            waiting.completedBatchCount * 6,
           ),
         }),
       };

@@ -1567,18 +1567,10 @@ export async function resumeIncompleteWebUiActivationJobsOnBoot(): Promise<{
     if (!isClaimedActivationStatus(job.status)) {
       continue;
     }
-    if (checkpoint.phase === "provider_cooldown" || checkpoint.phase === "structure_retry") {
-      const nextAttemptAt = checkpoint.nextAttemptAt ?? null;
-      if (nextAttemptAt) {
-        const dueMs = Date.parse(nextAttemptAt);
-        if (Number.isFinite(dueMs) && dueMs > Date.now()) {
-          scheduleWebUiActivationTickAt(job.jobId, nextAttemptAt);
-        } else {
-          scheduleWebUiActivationTick(job.jobId);
-        }
-      } else {
-        scheduleWebUiActivationTick(job.jobId);
-      }
+    const nextAttemptAt = checkpoint.nextAttemptAt ?? null;
+    const dueMs = nextAttemptAt ? Date.parse(nextAttemptAt) : NaN;
+    if (nextAttemptAt && Number.isFinite(dueMs) && dueMs > Date.now()) {
+      scheduleWebUiActivationTickAt(job.jobId, nextAttemptAt);
     } else {
       scheduleWebUiActivationTick(job.jobId);
     }

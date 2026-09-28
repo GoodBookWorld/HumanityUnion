@@ -190,7 +190,11 @@ function phaseLabel(source: ProgressSource): {
   }
   const phase = source.webUi?.preparationPhase ?? null;
   if (phase === "quality") {
-    return { label: "Checking translation quality…", failed: false, nextAttemptAt: null };
+    return {
+      label: "Checking translation quality…",
+      failed: false,
+      nextAttemptAt: source.webUi?.nextAttemptAt ?? null,
+    };
   }
   if (phase === "validating") {
     return { label: "Validating public interface…", failed: false, nextAttemptAt: null };
@@ -207,7 +211,7 @@ function phaseLabel(source: ProgressSource): {
           ? `Translating public interface · ${completed} / ${total} batches`
           : "Translating public interface",
       failed: false,
-      nextAttemptAt: null,
+      nextAttemptAt: source.webUi?.nextAttemptAt ?? null,
     };
   }
   const civicRemaining = source.ctRemaining + source.plpRemaining;

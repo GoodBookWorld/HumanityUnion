@@ -11,6 +11,13 @@
 
 export const WEB_UI_STRUCTURE_RETRY_REASON = "retryable_provider_output_structure";
 
+/**
+ * One structure-invalid response already happened. The next provider attempt
+ * is waiting for the global pacing permit. Not a failure and not a structure
+ * retry streak.
+ */
+export const WEB_UI_STRUCTURE_PACING_REASON = "awaiting_provider_pacing";
+
 /** Operator copy. No locale name and no rate-limit wording. */
 export const WEB_UI_STRUCTURE_RETRY_DETAIL =
   "Automatic retry scheduled. No operator action required.";

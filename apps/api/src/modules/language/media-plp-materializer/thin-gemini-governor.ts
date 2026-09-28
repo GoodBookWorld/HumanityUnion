@@ -12,8 +12,10 @@ import {
   resetContentTranslationWorkerConcurrencyForTests,
 } from "../content-translation-worker-concurrency.js";
 import {
+  LocalizationProviderPacingDeferredError,
   localizationProviderNowMs,
   localizationProviderPressureError,
+  readLocalizationProviderPacing,
   runLocalizationProviderRequest,
 } from "../localization-provider-governor.js";
 import { TranslationProviderError } from "../translation.config.js";
@@ -95,6 +97,11 @@ export async function withThinGeminiGovernor<T>(run: () => Promise<T>): Promise<
   const snapshot = await getThinGeminiCooldownSnapshot(localizationProviderNowMs());
   if (snapshot.active) {
     throw localizationProviderPressureError(snapshot.remainingSeconds);
+  }
+
+  const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+  if (pacing.blocked && pacing.nextProviderRequestAt) {
+    throw new LocalizationProviderPacingDeferredError(pacing.nextProviderRequestAt);
   }
 
   const spacingMs = resolveThinGeminiMinSpacingMs();

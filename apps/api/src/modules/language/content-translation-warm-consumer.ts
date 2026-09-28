@@ -53,6 +53,7 @@ import {
   buildContentTranslationWorkIdentity,
   buildContentTranslationWorkIdentityKey,
 } from "./content-translation-work-identity.js";
+import { isLocalizationProviderPacingDeferredError } from "./localization-provider-governor.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 export const CONTENT_TRANSLATION_WARM_CONSUMER_ID = "content-translation-warm-v1" as const;
@@ -64,7 +65,12 @@ export type ContentTranslationWarmLocaleOutcome =
   | {
       readonly targetLanguage: LanguageCode;
       readonly workIdentityKey: string;
-      readonly status: "skipped_existing" | "skipped_source_language" | "generated" | "skipped_ineligible";
+      readonly status:
+        | "skipped_existing"
+        | "skipped_source_language"
+        | "generated"
+        | "skipped_ineligible"
+        | "deferred_pacing";
     }
   | {
       readonly targetLanguage: LanguageCode;
@@ -89,7 +95,9 @@ export interface ContentTranslationWarmProcessResult {
     | "skipped_ineligible"
     | "failed_retryable"
     /** Pack 08I.14B.3 — locale failure without CURRENT; must not mark warm success. */
-    | "failed_terminal";
+    | "failed_terminal"
+    /** Global pacing permit is closed. Not a provider failure. */
+    | "deferred_pacing";
   readonly locales: readonly ContentTranslationWarmLocaleOutcome[];
 }
 
@@ -344,6 +352,13 @@ export async function processContentTranslationWarmRequested(
 
       return { targetLanguage, workIdentityKey, status };
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return {
+          targetLanguage,
+          workIdentityKey,
+          status: "deferred_pacing" as const,
+        };
+      }
       const materialization = classifyContentTranslationMaterializationFailure(error);
       const failureClass = classifyContentTranslationWarmFailure(error);
       const errorCode =
@@ -394,6 +409,21 @@ export async function processContentTranslationWarmRequested(
       locale.status === "skipped_existing" ||
       locale.status === "skipped_source_language",
   );
+
+  if (
+    !sawRetryableFailure &&
+    !sawNonRetryableFailure &&
+    locales.some((locale) => locale.status === "deferred_pacing")
+  ) {
+    return {
+      sourceKind: source.sourceKind,
+      sourceRecordId: source.sourceRecordId,
+      sourceVersion: source.sourceVersion,
+      sourceLanguage: source.sourceLanguage,
+      outcome: "deferred_pacing",
+      locales,
+    };
+  }
 
   if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
     const outcome = sawRetryableFailure ? "failed_retryable" : "failed_terminal";

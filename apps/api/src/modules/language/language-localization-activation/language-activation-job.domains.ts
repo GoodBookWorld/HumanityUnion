@@ -134,6 +134,26 @@ export function brandDomainFromPreparationResult(
       : null;
   const reviewRequired = brandStatus === "draft" || brandStatus === "approved";
 
+  if (
+    result.pacingDeferredUntil &&
+    result.brand.outcomes.some((row) => row.outcome === "gap")
+  ) {
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      fieldsPreserved: preserved,
+      fieldsGenerated: generated,
+      fieldsFailed: 0,
+      brandStatus,
+      reviewRequired: false,
+      providerFailure: false,
+      detail: "Preparing Brand…",
+      nextAttemptAt: result.pacingDeferredUntil,
+      transientFailureCount: options?.previous?.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
+
   if (result.transientFailure && result.brand.outcomes.some((row) => row.outcome === "gap")) {
     const streak = (options?.previous?.transientFailureCount ?? 0) + 1;
     const nowIso = options?.nowIso ?? new Date().toISOString();
@@ -204,6 +224,22 @@ export function terminologyDomainFromPreparationResult(
   const generated = result.terminology.outcomes.filter((row) => row.outcome === "generated").length;
   const failed = result.terminology.outcomes.filter((row) => row.outcome === "failed").length;
   const remainingGaps = result.terminology.outcomes.filter((row) => row.outcome === "gap").length;
+
+  if (result.pacingDeferredUntil && remainingGaps > 0) {
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      conceptsPreserved: preserved,
+      conceptsGenerated: generated,
+      conceptsFailed: failed,
+      providerFailure: false,
+      detail: "Preparing terminology…",
+      providerDiagnostic: null,
+      nextAttemptAt: result.pacingDeferredUntil,
+      transientFailureCount: options?.previous?.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
 
   if (result.transientFailure && remainingGaps > 0) {
     const streak = (options?.previous?.transientFailureCount ?? 0) + 1;

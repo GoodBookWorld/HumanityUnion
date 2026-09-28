@@ -29,6 +29,7 @@ import {
   localizationProviderPressureError,
   runLocalizationProviderRequest,
   setLocalizationProviderClockForTests,
+  setLocalizationProviderPacingIntervalMsForTests,
 } from "../../../src/modules/language/localization-provider-governor.js";
 import {
   activateLocalizationProviderPressure,
@@ -78,10 +79,12 @@ beforeEach(() => {
   resetPlpAutoBuildWorkStoreForTests();
   process.env.CONTENT_TRANSLATION_WORKER_CONCURRENCY = "1";
   process.env.HU_PLP_THIN_GEMINI_MIN_SPACING_MS = "0";
+  setLocalizationProviderPacingIntervalMsForTests(0);
 });
 
 afterEach(() => {
   setLocalizationProviderClockForTests(null);
+  setLocalizationProviderPacingIntervalMsForTests(null);
   setThinGeminiProviderStateForceMemoryForTests(false);
   resetThinGeminiProviderStateForTests();
   resetContentTranslationWorkerConcurrencyForTests();

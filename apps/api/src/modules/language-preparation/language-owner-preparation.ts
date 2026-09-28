@@ -25,6 +25,7 @@ import {
   classifyActivationProviderTransientFailure,
   isActivationProviderTransientError,
 } from "../language/activation-provider-transient-recovery.js";
+import { isLocalizationProviderPacingDeferredError } from "../language/localization-provider-governor.js";
 import {
   resolveLanguagePreparationLocaleMetadata,
   type LanguagePreparationLocaleMetadata,
@@ -88,6 +89,11 @@ export type LanguageOwnerPreparationResult = {
    * Remaining gaps stay as `gap` (not failed). Activation enters durable cooldown.
    */
   readonly transientFailure?: LanguageOwnerTransientFailure | null;
+  /**
+   * Global pacing permit is not open. Remaining gaps stay `gap`.
+   * This is not a provider failure and does not increment transient counters.
+   */
+  readonly pacingDeferredUntil?: string | null;
 };
 
 export type LanguageOwnerPreparationInput = {
@@ -404,13 +410,13 @@ export async function runLanguageOwnerPreparation(
 
   let providerCalls = 0;
   let transientFailure: LanguageOwnerTransientFailure | null = null;
+  let pacingDeferredUntil: string | null = null;
   const generatedBrand: Partial<Record<BrandField, string>> = {};
   if (prepareBrand && brandMissing.length > 0) {
     const toTranslate = Object.fromEntries(
       brandMissing.map((field) => [field, englishFields[field]]),
     );
     try {
-      providerCalls += 1;
       const translated = await translateFlatMap({
         translator: translator!,
         locale,
@@ -420,6 +426,7 @@ export async function runLanguageOwnerPreparation(
         values: toTranslate,
         owner: "brand",
       });
+      providerCalls += 1;
       for (const field of brandMissing) {
         generatedBrand[field] = translated[field]!;
       }
@@ -430,20 +437,25 @@ export async function runLanguageOwnerPreparation(
         }
       }
     } catch (error) {
-      const reason = error instanceof Error ? error.message : "Brand generation failed.";
-      const transientKind = classifyActivationProviderTransientFailure(error);
-      if (isActivationProviderTransientError(error) && transientKind) {
-        // Leave missing fields as gap — activation will durable-cooldown and resume.
-        transientFailure = { kind: transientKind, reason };
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        pacingDeferredUntil = error.nextAllowedAt;
       } else {
-        for (let index = 0; index < brandOutcomes.length; index += 1) {
-          const row = brandOutcomes[index]!;
-          if (row.outcome === "gap") {
-            brandOutcomes[index] = { field: row.field, outcome: "failed", reason };
+        const reason = error instanceof Error ? error.message : "Brand generation failed.";
+        providerCalls += 1;
+        const transientKind = classifyActivationProviderTransientFailure(error);
+        if (isActivationProviderTransientError(error) && transientKind) {
+          // Leave missing fields as gap — activation will durable-cooldown and resume.
+          transientFailure = { kind: transientKind, reason };
+        } else {
+          for (let index = 0; index < brandOutcomes.length; index += 1) {
+            const row = brandOutcomes[index]!;
+            if (row.outcome === "gap") {
+              brandOutcomes[index] = { field: row.field, outcome: "failed", reason };
+            }
           }
-        }
-        if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
-          throw error;
+          if (error instanceof TranslationProviderError && error.code === "safety_rejected") {
+            throw error;
+          }
         }
       }
     }
@@ -500,10 +512,9 @@ export async function runLanguageOwnerPreparation(
   }
 
   let terminologyPersisted = 0;
-  if (prepareTerminology && !transientFailure) {
+  if (prepareTerminology && !transientFailure && !pacingDeferredUntil) {
     for (const concept of terminologyMissing) {
       try {
-        providerCalls += 1;
         const translated = await translateFlatMap({
           translator: translator!,
           locale,
@@ -513,6 +524,7 @@ export async function runLanguageOwnerPreparation(
           values: { preferredTerm: concept.canonicalEnglishTerm },
           owner: "terminology",
         });
+        providerCalls += 1;
         await updateTerminology(concept.conceptId, translated.preferredTerm!, locale);
         terminologyPersisted += 1;
         const index = terminologyOutcomes.findIndex((row) => row.field === concept.conceptId);
@@ -520,7 +532,12 @@ export async function runLanguageOwnerPreparation(
           terminologyOutcomes[index] = { field: concept.conceptId, outcome: "generated" };
         }
       } catch (error) {
+        if (isLocalizationProviderPacingDeferredError(error)) {
+          pacingDeferredUntil = error.nextAllowedAt;
+          break;
+        }
         const reason = error instanceof Error ? error.message : "Terminology generation failed.";
+        providerCalls += 1;
         const transientKind = classifyActivationProviderTransientFailure(error);
         if (isActivationProviderTransientError(error) && transientKind) {
           // Stop further concept calls this attempt; remaining stay as gap.
@@ -567,5 +584,6 @@ export async function runLanguageOwnerPreparation(
     },
     providerCalls,
     transientFailure,
+    pacingDeferredUntil,
   };
 }
