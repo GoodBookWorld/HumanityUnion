@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { WorkspaceAuthGate } from "../../features/auth/components/WorkspaceAuthGate";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
@@ -5,9 +7,10 @@ import { AdminWorkspaceHeader } from "../../features/administration/components/A
 
 import "../../features/administration/components/admin-panel.css";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Admin Panel | Humanity Union",
   description: "Platform administration for Humanity Union administrators.",
+  robots: { index: false, follow: false },
 };
 
 /**
