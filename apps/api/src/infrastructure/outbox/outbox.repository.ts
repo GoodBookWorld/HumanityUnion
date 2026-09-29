@@ -30,6 +30,7 @@ interface OutboxMongoDocument extends Document {
   causationId: string | null;
   createdAt: string;
   publishedAt: string | null;
+  availableAt?: string | null;
 }
 
 function assertMongoAvailable(): void {
@@ -53,6 +54,7 @@ function mapDocument(document: OutboxMongoDocument): OutboxRecord {
     causationId: document.causationId,
     createdAt: document.createdAt,
     publishedAt: document.publishedAt,
+    availableAt: document.availableAt ?? null,
   };
 }
 
@@ -112,17 +114,86 @@ export async function enqueueDomainEvent(
   return record;
 }
 
+/**
+ * Pending work is due when it has no pacing hold, or the hold has elapsed.
+ * ISO timestamps compare in order. Missing availableAt stays immediately due.
+ */
+export function isOutboxPendingDispatchDue(input: {
+  readonly status: OutboxRecord["status"];
+  readonly availableAt?: string | null;
+  readonly nowMs: number;
+}): boolean {
+  if (input.status !== "pending") {
+    return false;
+  }
+  if (!input.availableAt) {
+    return true;
+  }
+  const dueMs = Date.parse(input.availableAt);
+  if (!Number.isFinite(dueMs)) {
+    return true;
+  }
+  return dueMs <= input.nowMs;
+}
+
+/**
+ * Pacing defer is not a translation failure. The error is recognized by shape
+ * so infrastructure does not import the localization governor.
+ */
+export function outboxPacingDeferAvailableAt(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+  const candidate = error as { name?: unknown; nextAllowedAt?: unknown };
+  if (candidate.name !== "LocalizationProviderPacingDeferredError") {
+    return null;
+  }
+  if (typeof candidate.nextAllowedAt !== "string" || candidate.nextAllowedAt.length === 0) {
+    return null;
+  }
+  return candidate.nextAllowedAt;
+}
+
 export async function fetchPendingOutboxRecords(limit: number): Promise<OutboxRecord[]> {
   assertMongoAvailable();
 
+  const now = new Date().toISOString();
   const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
   const documents = await collection
-    .find({ status: "pending" })
+    .find({
+      status: "pending",
+      $or: [
+        { availableAt: { $exists: false } },
+        { availableAt: null },
+        { availableAt: { $lte: now } },
+      ],
+    })
     .sort({ createdAt: 1 })
     .limit(limit)
     .toArray();
 
   return documents.map(mapDocument);
+}
+
+/**
+ * Keep a pending outbox row retryable until the provider pacing permit opens.
+ * Does not publish, fail, increment attempts, or write failure metadata.
+ */
+export async function deferOutboxRecordUntilAvailable(
+  outboxId: string,
+  availableAt: string,
+): Promise<void> {
+  assertMongoAvailable();
+
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  await collection.updateOne(
+    { _id: outboxId, status: "pending" },
+    {
+      $set: {
+        availableAt,
+      },
+    },
+  );
 }
 
 export async function markOutboxRecordPublished(outboxId: string): Promise<void> {

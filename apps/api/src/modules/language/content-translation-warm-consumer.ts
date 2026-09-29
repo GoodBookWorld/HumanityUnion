@@ -47,6 +47,7 @@ import {
   semanticResidualRetryEligibleAtIso,
 } from "./content-translation-failure-metadata.js";
 import {
+  deferContentTranslationWarmMemoryForPacingForTests,
   listContentTranslationWarmAttempts,
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryFailedForTests,
@@ -58,7 +59,12 @@ import {
   buildContentTranslationWorkIdentity,
   buildContentTranslationWorkIdentityKey,
 } from "./content-translation-work-identity.js";
-import { isLocalizationProviderPacingDeferredError } from "./localization-provider-governor.js";
+import {
+  LocalizationProviderPacingDeferredError,
+  isLocalizationProviderPacingDeferredError,
+  laterLocalizationInstant,
+  localizationProviderNowMs,
+} from "./localization-provider-governor.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 export const CONTENT_TRANSLATION_WARM_CONSUMER_ID = "content-translation-warm-v1" as const;
@@ -76,6 +82,8 @@ export type ContentTranslationWarmLocaleOutcome =
         | "generated"
         | "skipped_ineligible"
         | "deferred_pacing";
+      /** Set only for deferred_pacing. The provider permit time, not a failure. */
+      readonly pacingNextAllowedAt?: string;
     }
   | {
       readonly targetLanguage: LanguageCode;
@@ -363,6 +371,7 @@ export async function processContentTranslationWarmRequested(
           targetLanguage,
           workIdentityKey,
           status: "deferred_pacing" as const,
+          pacingNextAllowedAt: error.nextAllowedAt,
         };
       }
       const materialization = classifyContentTranslationMaterializationFailure(error);
@@ -425,14 +434,18 @@ export async function processContentTranslationWarmRequested(
     !sawNonRetryableFailure &&
     locales.some((locale) => locale.status === "deferred_pacing")
   ) {
-    return {
-      sourceKind: source.sourceKind,
-      sourceRecordId: source.sourceRecordId,
-      sourceVersion: source.sourceVersion,
-      sourceLanguage: source.sourceLanguage,
-      outcome: "deferred_pacing",
-      locales,
-    };
+    // Pacing closed the permit before Gemini. This is not delivery, not a
+    // semantic failure, and not Gate E. The same outbox event stays pending.
+    let nextAllowedAt: string | null = null;
+    for (const locale of locales) {
+      if (locale.status !== "deferred_pacing") {
+        continue;
+      }
+      nextAllowedAt = laterLocalizationInstant(nextAllowedAt, locale.pacingNextAllowedAt);
+    }
+    throw new LocalizationProviderPacingDeferredError(
+      nextAllowedAt ?? new Date(Date.now() + 10_000).toISOString(),
+    );
   }
 
   if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
@@ -610,12 +623,23 @@ export async function processContentTranslationWarmMemoryQueueForTests(): Promis
 > {
   const pending = listContentTranslationWarmMemoryPendingForTests();
   const results: ContentTranslationWarmProcessResult[] = [];
+  const nowMs = localizationProviderNowMs();
   for (const row of pending) {
+    if (row.availableAt) {
+      const dueMs = Date.parse(row.availableAt);
+      if (Number.isFinite(dueMs) && dueMs > nowMs) {
+        continue;
+      }
+    }
     try {
       const result = await processContentTranslationWarmRequested(row.command);
       markContentTranslationWarmMemoryPublishedForTests(row.eventId);
       results.push(result);
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        deferContentTranslationWarmMemoryForPacingForTests(row.eventId, error.nextAllowedAt);
+        continue;
+      }
       markContentTranslationWarmMemoryFailedForTests(
         row.eventId,
         error instanceof Error ? error.message : "warm memory drain failure",
