@@ -9,6 +9,7 @@ import { TranslationProviderError } from "./translation.config.js";
 import {
   ContentTranslationValidationError,
   decideSameVersionWarmFailureRetry,
+  isSemanticResidualDeferReason,
   parseContentTranslationFailureMetadata,
   resolveValidationReasonCodeFromError,
 } from "./content-translation-failure-metadata.js";
@@ -67,10 +68,12 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
   if (error instanceof Error) {
     const meta = parseContentTranslationFailureMetadata(error.message);
     if (meta) {
+      const semantic = isSemanticResidualDeferReason(meta.failureReasonCode);
       return {
         failureClass: meta.failureClass as ContentTranslationMaterializationFailureClass,
-        retryability:
-          (meta.retryabilityHint as ContentTranslationFailureRetryability) ?? "unknown",
+        retryability: semantic
+          ? "non_retryable_until_code_or_content_change"
+          : ((meta.retryabilityHint as ContentTranslationFailureRetryability) ?? "unknown"),
         providerErrorCode:
           error instanceof TranslationProviderError ? error.code : null,
         failureReasonCode: meta.failureReasonCode,
@@ -79,20 +82,9 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
   }
 
   if (error instanceof ContentTranslationValidationError) {
-    const nonRetryableReasons = new Set([
-      "UNCHANGED_SOURCE_PROSE",
-      "UNCHANGED_CIVIC_TITLE",
-      "EMPTY_TRANSLATION",
-      "INVALID_RICH_TEXT_STRUCTURE",
-      "MISSING_REQUIRED_PATH",
-      "UNEXPECTED_PATH",
-      "STRUCTURE_MISMATCH",
-      "TARGET_LANGUAGE_MISMATCH",
-      "OTHER_VALIDATION_FAILURE",
-    ]);
     return {
       failureClass: "VALIDATION_FAILED",
-      retryability: nonRetryableReasons.has(error.reasonCode)
+      retryability: isSemanticResidualDeferReason(error.reasonCode)
         ? "non_retryable_until_code_or_content_change"
         : error.reasonCode === "INVALID_PROVIDER_PAYLOAD"
           ? "retryable"

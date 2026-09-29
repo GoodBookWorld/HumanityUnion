@@ -57,7 +57,7 @@ function residualReconciliationState(
 }
 
 /** Gate C — deterministic INVALID → STALE → MISSING order (language-agnostic). */
-function sortResidualsByReconciliationPriority(
+export function sortResidualsByReconciliationPriority(
   rows: readonly PublicLocalizationResidualWithPreflight[],
 ): PublicLocalizationResidualWithPreflight[] {
   const keyed: Array<{
@@ -88,6 +88,20 @@ function sortResidualsByReconciliationPriority(
     return a.plan.targetLocale.localeCompare(b.plan.targetLocale);
   });
   return keyed.map((entry) => entry.row);
+}
+
+/**
+ * F.3.19 — priority among identities that may be attempted now.
+ * A semantic defer skips the identity for this pass. It stays residual work
+ * and returns to this order when retryEligibleAt arrives, or sooner when the
+ * source version or localization input version changes.
+ */
+export function selectCurrentlyRetryEligibleResiduals(
+  rows: readonly PublicLocalizationResidualWithPreflight[],
+): PublicLocalizationResidualWithPreflight[] {
+  return sortResidualsByReconciliationPriority(rows).filter(
+    (row) => row.retryPreflight.semanticRetryDeferred !== true,
+  );
 }
 
 export type PublicLocalizationResidualRetryMode = "dry-run" | "execute";
@@ -182,10 +196,10 @@ export async function runPublicLocalizationResidualRetry(input: {
   const blocked = explained.selection.blocked;
 
   // Defend against any non-ready sneaking into ready[].
-  const selected = sortResidualsByReconciliationPriority(
+  const priorityOrdered = sortResidualsByReconciliationPriority(
     ready.filter((row) => row.retryPreflight.ready === true),
   );
-  if (selected.length !== ready.length) {
+  if (priorityOrdered.length !== ready.length) {
     return {
       mode: input.execute ? "execute" : "dry-run",
       preAudit,
@@ -207,6 +221,10 @@ export async function runPublicLocalizationResidualRetry(input: {
         "ABORT: selected identities diverge from ready filter before enqueue (integrity).",
     };
   }
+
+  // Deferred identities stay in the ready audit and in workRemaining.
+  // They are not enqueued until their bounded retry time, or a version change.
+  const selected = selectCurrentlyRetryEligibleResiduals(priorityOrdered);
 
   const schedule = selectReadyPresentationsForResidualRetry({
     ...explained.selection,

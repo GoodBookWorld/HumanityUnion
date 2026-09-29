@@ -141,6 +141,31 @@ export async function markOutboxRecordPublished(outboxId: string): Promise<void>
   );
 }
 
+/**
+ * Semantic residual defer marks the outbox row terminal on the first failure
+ * so the dispatcher does not redeliver it as a provider retry. The lastError
+ * still carries the durable retryEligibleAt.
+ */
+export function isImmediateTerminalOutboxFailure(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { immediateTerminalOutboxFailure?: unknown }).immediateTerminalOutboxFailure ===
+      true
+  );
+}
+
+export function resolveOutboxFailureStatus(input: {
+  readonly attempts: number;
+  readonly maxAttempts: number;
+  readonly immediateTerminal: boolean;
+}): OutboxRecord["status"] {
+  if (input.immediateTerminal || input.attempts >= input.maxAttempts) {
+    return "failed";
+  }
+  return "pending";
+}
+
 export async function markOutboxRecordFailed(
   outboxId: string,
   error: unknown,
@@ -157,7 +182,11 @@ export async function markOutboxRecordFailed(
   }
 
   const attempts = existing.attempts + 1;
-  const status: OutboxRecord["status"] = attempts >= maxAttempts ? "failed" : "pending";
+  const status = resolveOutboxFailureStatus({
+    attempts,
+    maxAttempts,
+    immediateTerminal: isImmediateTerminalOutboxFailure(error),
+  });
 
   await collection.updateOne(
     { _id: outboxId },

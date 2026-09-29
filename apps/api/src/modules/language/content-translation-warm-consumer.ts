@@ -37,12 +37,17 @@ import {
   classifyContentTranslationWarmFailure,
 } from "./content-translation-warm-failure.js";
 import {
+  ContentTranslationValidationError,
+  SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
   encodeContentTranslationFailureMetadata,
+  isSemanticResidualDeferReason,
   normalizeExactValidationReasonCode,
   resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
+  semanticResidualRetryEligibleAtIso,
 } from "./content-translation-failure-metadata.js";
 import {
+  listContentTranslationWarmAttempts,
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryFailedForTests,
   markContentTranslationWarmMemoryPublishedForTests,
@@ -82,6 +87,7 @@ export type ContentTranslationWarmLocaleOutcome =
       readonly errorCode: string;
       /** Exact validator reason — never the generic string "VALIDATION_FAILED". */
       readonly failureReasonCode: string;
+      readonly localizationInputVersion?: string | null;
     };
 
 export interface ContentTranslationWarmProcessResult {
@@ -399,6 +405,10 @@ export async function processContentTranslationWarmRequested(
         materializationFailureClass: materialization.failureClass,
         errorCode,
         failureReasonCode,
+        localizationInputVersion:
+          error instanceof ContentTranslationValidationError
+            ? error.localizationInputVersion
+            : null,
       };
     }
   });
@@ -453,6 +463,53 @@ export async function processContentTranslationWarmRequested(
         ? "PROVIDER_INVALID_RESPONSE"
         : "VALIDATION_FAILED");
 
+    // Semantic/validity rejection is not a provider outage. Do not redeliver
+    // it as unavailable, and do not arm Gate E. Record a bounded defer instead.
+    const semanticOnly =
+      !sawRetryableFailure &&
+      failedLocales.length > 0 &&
+      failedLocales.every((locale) => isSemanticResidualDeferReason(locale.failureReasonCode));
+
+    let retryEligibleAt: string | null = null;
+    let localizationInputVersion: string | null = null;
+    if (semanticOnly) {
+      const failedAtMs = Date.now();
+      let streak = 1;
+      try {
+        const prior = await listContentTranslationWarmAttempts({
+          sourceKind: source.sourceKind,
+          sourceRecordId: source.sourceRecordId,
+        });
+        streak =
+          prior.filter((attempt) => {
+            const attemptVersion =
+              attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null;
+            return (
+              isSemanticResidualDeferReason(attempt.failureMetadata?.failureReasonCode) &&
+              attemptVersion === source.sourceVersion
+            );
+          }).length + 1;
+      } catch {
+        streak = 1;
+      }
+      retryEligibleAt = semanticResidualRetryEligibleAtIso({ failedAtMs, streak });
+      localizationInputVersion =
+        failedLocales.find((locale) => locale.localizationInputVersion)?.localizationInputVersion ??
+        null;
+    }
+
+    const persistedHint = semanticOnly
+      ? SEMANTIC_RESIDUAL_DEFER_RETRY_HINT
+      : firstFailed?.failureClass === "retryable"
+        ? "retryable"
+        : "non_retryable_until_code_or_content_change";
+    const persistedLocaleFailures = semanticOnly
+      ? localeFailures.map((row) => ({
+          ...row,
+          retryabilityHint: SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
+        }))
+      : localeFailures;
+
     const metaMessage = encodeContentTranslationFailureMetadata({
       schema: "content_translation_failure_meta_v1",
       validationContractVersion: "v1",
@@ -463,17 +520,20 @@ export async function processContentTranslationWarmRequested(
       sourceVersion: source.sourceVersion,
       targetLocale: firstFailed?.targetLanguage ?? null,
       failedAt: new Date().toISOString(),
-      retryabilityHint:
-        firstFailed?.failureClass === "retryable"
-          ? "retryable"
-          : "non_retryable_until_code_or_content_change",
-      ...(localeFailures.length ? { localeFailures } : {}),
+      retryabilityHint: persistedHint,
+      ...(persistedLocaleFailures.length ? { localeFailures: persistedLocaleFailures } : {}),
+      ...(retryEligibleAt ? { retryEligibleAt } : {}),
+      ...(localizationInputVersion ? { localizationInputVersion } : {}),
     });
 
     const err = new TranslationProviderError(
       sawRetryableFailure ? "unavailable" : "bad_request",
       metaMessage,
     );
+    if (semanticOnly) {
+      (err as Error & { immediateTerminalOutboxFailure?: boolean }).immediateTerminalOutboxFailure =
+        true;
+    }
     logger.warn(
       sawRetryableFailure
         ? "content_translation.warm.consume_retryable"

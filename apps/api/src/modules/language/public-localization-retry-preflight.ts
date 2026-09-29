@@ -17,6 +17,7 @@ import {
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
   isExplicitlyRetryableModernFailure,
+  shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
@@ -39,6 +40,10 @@ import {
 } from "./public-localization-corpus.js";
 import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
 import { loadPublishedTerminologyConcepts } from "./terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "./localization-input-contract.js";
 
 export type PublicLocalizationRetryPreflight = {
   readonly sourceResolvable: boolean;
@@ -65,6 +70,13 @@ export type PublicLocalizationRetryPreflight = {
   readonly liveTranslationInvalid?: boolean;
   /** Proven attempt sourceVersion, or null when the failure cannot be attributed. */
   readonly attemptSourceVersion?: string | null;
+  /**
+   * F.3.19 — semantic/validity retry is recorded, but this identity is not
+   * selectable until retryEligibleAt. It remains INVALID/STALE/MISSING work.
+   * This is not BLOCKED and not a Gate E cooldown.
+   */
+  readonly semanticRetryDeferred?: boolean;
+  readonly semanticRetryEligibleAt?: string | null;
 };
 
 export type PublicLocalizationResidualWithPreflight = {
@@ -326,6 +338,35 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     blockReason = null;
   }
 
+  let semanticRetryDeferred = false;
+  let semanticRetryEligibleAt: string | null = null;
+  if (ready) {
+    let liveLocalizationInputVersion: string | null = null;
+    const recordedInput = peek.failureMetadata?.localizationInputVersion ?? null;
+    if (recordedInput && liveSourceVersion && sourceFields) {
+      try {
+        const concepts = await loadPublishedTerminologyConcepts();
+        liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
+          sourceVersion: liveSourceVersion,
+          targetLocale: item.targetLanguage,
+          concepts,
+          sourceText: collectSourceTextLeaves(sourceFields),
+        }).localizationInputVersion;
+      } catch {
+        liveLocalizationInputVersion = null;
+      }
+    }
+    semanticRetryDeferred = shouldDeferResidualSelection({
+      ready,
+      metadata: peek.failureMetadata,
+      liveSourceVersion,
+      liveLocalizationInputVersion,
+    });
+    if (semanticRetryDeferred) {
+      semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
+    }
+  }
+
   return {
     sourceResolvable,
     presentationValid,
@@ -341,6 +382,8 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     liveTranslationStale,
     liveTranslationInvalid,
     attemptSourceVersion,
+    semanticRetryDeferred,
+    semanticRetryEligibleAt,
   };
 }
 
@@ -496,7 +539,7 @@ export function selectReadyPresentationsForResidualRetry(
   const byPresentation = new Map<string, ResidualRetryPresentationSchedule>();
 
   for (const row of selection.ready) {
-    if (!row.retryPreflight.ready) {
+    if (!row.retryPreflight.ready || row.retryPreflight.semanticRetryDeferred === true) {
       continue;
     }
     const key = `${row.presentationIdentity.sourceKind}::${row.presentationIdentity.sourceRecordId}`;
@@ -527,13 +570,9 @@ export function selectReadyPresentationsForResidualRetry(
     });
   }
 
-  return [...byPresentation.values()].sort((a, b) => {
-    const kind = a.sourceKind.localeCompare(b.sourceKind);
-    if (kind !== 0) {
-      return kind;
-    }
-    return a.sourceRecordId.localeCompare(b.sourceRecordId);
-  });
+  // Preserve caller order. Residual retry already sorts INVALID → STALE → MISSING
+  // and drops identities whose semantic defer has not elapsed.
+  return [...byPresentation.values()];
 }
 
 /**

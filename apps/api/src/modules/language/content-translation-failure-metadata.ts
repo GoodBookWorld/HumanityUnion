@@ -67,6 +67,14 @@ export type ContentTranslationSafeFailureMetadata = {
    * fans out multiple locales. Never includes bodies/prompts/secrets.
    */
   readonly localeFailures?: readonly ContentTranslationLocaleFailureRecord[];
+  /**
+   * F.3.19 — earliest time this source version may be selected again after a
+   * semantic/validity rejection. Stored on the outbox lastError. Not a Gate E
+   * provider cooldown and not a completion marker.
+   */
+  readonly retryEligibleAt?: string | null;
+  /** Localization input version at the failed attempt, when known. */
+  readonly localizationInputVersion?: string | null;
 };
 
 const META_PREFIX = "CT_FAIL_META_V1:";
@@ -74,14 +82,18 @@ const META_PREFIX = "CT_FAIL_META_V1:";
 export class ContentTranslationValidationError extends TranslationProviderError {
   readonly reasonCode: ContentTranslationValidationReasonCode;
 
+  readonly localizationInputVersion: string | null;
+
   constructor(
     reasonCode: ContentTranslationValidationReasonCode,
     message: string,
     providerCode: "bad_request" | "malformed_response" = "bad_request",
+    localizationInputVersion: string | null = null,
   ) {
     super(providerCode, message);
     this.name = "ContentTranslationValidationError";
     this.reasonCode = reasonCode;
+    this.localizationInputVersion = localizationInputVersion;
   }
 }
 
@@ -185,6 +197,12 @@ export function parseContentTranslationFailureMetadata(
       failedAt: typeof raw.failedAt === "string" ? raw.failedAt : "",
       retryabilityHint: typeof raw.retryabilityHint === "string" ? raw.retryabilityHint : null,
       ...(localeFailures?.length ? { localeFailures } : {}),
+      ...(typeof raw.retryEligibleAt === "string" && raw.retryEligibleAt.length > 0
+        ? { retryEligibleAt: raw.retryEligibleAt }
+        : {}),
+      ...(typeof raw.localizationInputVersion === "string" && raw.localizationInputVersion.length > 0
+        ? { localizationInputVersion: raw.localizationInputVersion }
+        : {}),
     };
   } catch {
     return null;
@@ -256,7 +274,117 @@ export const WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS = [
   "UNEXPECTED_PATH",
   "STRUCTURE_MISMATCH",
   "TARGET_LANGUAGE_MISMATCH",
+  "TERMINOLOGY_PROTECTION_VIOLATION",
 ] as const;
+
+/**
+ * Semantic/validity rejections. These are not provider transport failures and
+ * must not arm Gate E. Selection uses a bounded residual defer instead.
+ */
+export const SEMANTIC_RESIDUAL_DEFER_REASON_CODES = [
+  "TERMINOLOGY_PROTECTION_VIOLATION",
+  "UNCHANGED_SOURCE_PROSE",
+  "UNCHANGED_CIVIC_TITLE",
+  "EMPTY_TRANSLATION",
+  "INVALID_RICH_TEXT_STRUCTURE",
+  "MISSING_REQUIRED_PATH",
+  "UNEXPECTED_PATH",
+  "STRUCTURE_MISMATCH",
+  "TARGET_LANGUAGE_MISMATCH",
+  "OTHER_VALIDATION_FAILURE",
+] as const;
+
+export type SemanticResidualDeferReasonCode =
+  (typeof SEMANTIC_RESIDUAL_DEFER_REASON_CODES)[number];
+
+/** First semantic rejection waits 10 minutes; the delay doubles per same-version streak. */
+export const SEMANTIC_RESIDUAL_DEFER_BASE_MS = 10 * 60 * 1000;
+/** Cap so a failing identity becomes eligible again and is never skipped forever. */
+export const SEMANTIC_RESIDUAL_DEFER_MAX_MS = 6 * 60 * 60 * 1000;
+export const SEMANTIC_RESIDUAL_DEFER_STREAK_CAP = 8;
+
+export const SEMANTIC_RESIDUAL_DEFER_RETRY_HINT = "deferred_semantic_retry";
+
+export function isSemanticResidualDeferReason(
+  reasonCode: string | null | undefined,
+): reasonCode is SemanticResidualDeferReasonCode {
+  return (
+    typeof reasonCode === "string" &&
+    (SEMANTIC_RESIDUAL_DEFER_REASON_CODES as readonly string[]).includes(reasonCode)
+  );
+}
+
+/**
+ * Bounded backoff. Streak 1 = 10 minutes, then 20, 40, 80, 160, 320 minutes,
+ * capped at 6 hours. The identity remains residual work for the whole window.
+ */
+export function semanticResidualDeferDelayMs(streak: number): number {
+  const bounded = Math.min(
+    SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
+    Math.max(1, Math.floor(streak)),
+  );
+  const delay = SEMANTIC_RESIDUAL_DEFER_BASE_MS * 2 ** (bounded - 1);
+  return Math.min(SEMANTIC_RESIDUAL_DEFER_MAX_MS, delay);
+}
+
+export function semanticResidualRetryEligibleAtIso(input: {
+  readonly failedAtMs: number;
+  readonly streak: number;
+}): string {
+  return new Date(input.failedAtMs + semanticResidualDeferDelayMs(input.streak)).toISOString();
+}
+
+/**
+ * Selection skip. Inactive when the source version changed, when both recorded
+ * localization input versions differ, or when retryEligibleAt has passed.
+ */
+export function isSemanticResidualDeferActive(input: {
+  readonly metadata: ContentTranslationSafeFailureMetadata | null;
+  readonly liveSourceVersion: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
+  readonly nowMs?: number;
+}): boolean {
+  const meta = input.metadata;
+  if (!meta?.retryEligibleAt || !isSemanticResidualDeferReason(meta.failureReasonCode)) {
+    return false;
+  }
+  if (
+    input.liveSourceVersion &&
+    meta.sourceVersion &&
+    meta.sourceVersion !== input.liveSourceVersion
+  ) {
+    return false;
+  }
+  if (
+    input.liveLocalizationInputVersion &&
+    meta.localizationInputVersion &&
+    meta.localizationInputVersion !== input.liveLocalizationInputVersion
+  ) {
+    return false;
+  }
+  const eligibleAt = Date.parse(meta.retryEligibleAt);
+  if (!Number.isFinite(eligibleAt)) {
+    return false;
+  }
+  return eligibleAt > (input.nowMs ?? Date.now());
+}
+
+/**
+ * A current presentation-eligible replacement is not deferred.
+ * Defer applies only to a residual that is otherwise selectable.
+ */
+export function shouldDeferResidualSelection(input: {
+  readonly ready: boolean;
+  readonly metadata: ContentTranslationSafeFailureMetadata | null;
+  readonly liveSourceVersion: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
+  readonly nowMs?: number;
+}): boolean {
+  if (!input.ready) {
+    return false;
+  }
+  return isSemanticResidualDeferActive(input);
+}
 
 const WARM_RETRYABLE_INFRASTRUCTURE_CLASSES = new Set([
   "PROVIDER_TIMEOUT",

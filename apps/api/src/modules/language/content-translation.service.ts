@@ -592,6 +592,12 @@ export async function getOrCreateContentTranslation(input: {
   const concepts = await loadPublishedTerminologyConcepts();
   const sourceText = collectSourceTextLeaves(providerFields);
   const translatedText = collectSourceTextLeaves(translatedFields);
+  const inputVersion = buildLocalizationInputVersionFromConcepts({
+    sourceVersion: source.sourceVersion,
+    targetLocale: targetLanguage,
+    concepts,
+    sourceText,
+  });
   try {
     assertRequiredTerminologyProtection({
       concepts,
@@ -600,21 +606,16 @@ export async function getOrCreateContentTranslation(input: {
       translatedText,
     });
   } catch (error) {
+    // Leave the stored row unchanged. The failed replacement is not Current.
     throw new ContentTranslationValidationError(
       "TERMINOLOGY_PROTECTION_VIOLATION",
       error instanceof Error
         ? error.message
         : "Required terminology/preferred terms were not honored.",
       "malformed_response",
+      inputVersion.localizationInputVersion,
     );
   }
-
-  const inputVersion = buildLocalizationInputVersionFromConcepts({
-    sourceVersion: source.sourceVersion,
-    targetLocale: targetLanguage,
-    concepts,
-    sourceText,
-  });
 
   const record: TranslatedContentRecord = {
     translationId: existing?.translationId ?? `translation-${randomUUID()}`,
