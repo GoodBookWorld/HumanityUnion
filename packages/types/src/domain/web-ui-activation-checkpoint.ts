@@ -32,6 +32,28 @@ export type WebUiActivationTransientFailure =
   | "unavailable"
   | "timeout";
 
+/**
+ * Safe structure/shape class. Codes are stable machine names.
+ * They must not carry provider text, secrets, or translated output.
+ */
+export const WEB_UI_STRUCTURE_FAILURE_CLASSES = [
+  "provider_payload_type_mismatch",
+  "provider_span_count_mismatch",
+  "deterministic_reconstruction_mismatch",
+  "placeholder_mismatch",
+  "icu_braces_mismatch",
+  "tag_mismatch",
+  "protected_slot_mismatch",
+  "validation_failure_after_reconstruction",
+] as const;
+
+export type WebUiStructureFailureClass = (typeof WEB_UI_STRUCTURE_FAILURE_CLASSES)[number];
+
+export type WebUiStructureFailureDiagnostic = {
+  readonly failureClass: WebUiStructureFailureClass;
+  readonly code: string;
+};
+
 export type WebUiActivationCheckpointRecord = {
   readonly checkpointId: string;
   readonly jobId: string;
@@ -70,6 +92,8 @@ export type WebUiActivationCheckpointRecord = {
   readonly providerShapeVersion?: number | null;
   /** Provider-shape and reconstructed-structure failures under providerShapeVersion. */
   readonly providerShapeFailureCount?: number | null;
+  /** Why this checkpoint last entered a structure retry or block. Not provider text. */
+  readonly structureFailure?: WebUiStructureFailureDiagnostic | null;
 };
 
 export type WebUiActivationBatchRecord = {
@@ -83,4 +107,6 @@ export type WebUiActivationBatchRecord = {
   readonly attempts: number;
   readonly reason: string | null;
   readonly updatedAt: string;
+  /** Present when the last structure/shape failure discarded provider output. */
+  readonly structureFailure?: WebUiStructureFailureDiagnostic | null;
 };

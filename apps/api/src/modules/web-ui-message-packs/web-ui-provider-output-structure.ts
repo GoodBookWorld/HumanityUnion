@@ -1,3 +1,5 @@
+import type { WebUiStructureFailureDiagnostic } from "@hu/types";
+
 import { WebUiProviderPayloadShapeError } from "./web-ui-message-structure-protect.js";
 
 /**
@@ -14,9 +16,20 @@ import { WebUiProviderPayloadShapeError } from "./web-ui-message-structure-prote
 /**
  * Provider payload shape for WEB_UI batches.
  * Absent or 0 is the historical sentinel representation.
- * 1 sends human-language spans and reconstructs structure locally.
+ * 1 sends mixed plain strings and human-language span arrays.
+ * 2 sends every leaf as an ordered span array and reopens checkpoints
+ * blocked under an older shape.
  */
-export const WEB_UI_PROVIDER_SHAPE_VERSION = 1;
+export const WEB_UI_PROVIDER_SHAPE_VERSION = 2;
+
+const WEB_UI_ACTIVE_CHECKPOINT_PHASES = [
+  "primary",
+  "quality",
+  "validating",
+  "publishing",
+  "provider_cooldown",
+  "structure_retry",
+] as const;
 
 /**
  * Provider payload-shape and reconstructed-structure failures allowed for one
@@ -76,8 +89,96 @@ export function webUiProviderShapeFailureCountForBound(input: {
   return input.providerShapeFailureCount ?? 0;
 }
 
+/**
+ * Active phases stay recoverable. structure_blocked is recoverable only when
+ * the deployed shape version is newer than the version that exhausted the bound.
+ */
+export function isRecoverableWebUiActivationCheckpoint(record: {
+  readonly phase: string;
+  readonly providerShapeVersion?: number | null;
+}): boolean {
+  if ((WEB_UI_ACTIVE_CHECKPOINT_PHASES as readonly string[]).includes(record.phase)) {
+    return true;
+  }
+  if (record.phase !== "structure_blocked") {
+    return false;
+  }
+  return (record.providerShapeVersion ?? 0) < WEB_UI_PROVIDER_SHAPE_VERSION;
+}
+
+export function incompleteWebUiActivationCheckpointMongoFilter(): Record<string, unknown> {
+  return {
+    $or: [
+      { phase: { $in: [...WEB_UI_ACTIVE_CHECKPOINT_PHASES] } },
+      {
+        phase: "structure_blocked",
+        $or: [
+          { providerShapeVersion: { $exists: false } },
+          { providerShapeVersion: null },
+          { providerShapeVersion: { $lt: WEB_UI_PROVIDER_SHAPE_VERSION } },
+        ],
+      },
+    ],
+  };
+}
+
 const PROVIDER_SPAN_COUNT_MISMATCH =
   /^Provider span count \d+ does not match \d+\.$/;
+
+/**
+ * Classify a structure or payload-shape failure without keeping provider text.
+ */
+export function classifyWebUiStructureFailure(error: unknown): WebUiStructureFailureDiagnostic {
+  const message = error instanceof Error ? error.message : "";
+  if (
+    message === "Provider span list must be an array of strings." ||
+    message === "Provider translation value must be a string."
+  ) {
+    return diagnostic("provider_payload_type_mismatch");
+  }
+  if (PROVIDER_SPAN_COUNT_MISMATCH.test(message)) {
+    return diagnostic("provider_span_count_mismatch");
+  }
+  if (
+    message === "Protection extraction did not cover the message." ||
+    message === "English source already contains a protection sentinel."
+  ) {
+    return diagnostic("deterministic_reconstruction_mismatch");
+  }
+  if (
+    message === "Placeholders do not match English." ||
+    message === "Localized placeholders do not match English."
+  ) {
+    return diagnostic("placeholder_mismatch");
+  }
+  if (
+    message === "Message structure is unbalanced." ||
+    message === "Localized message braces are unbalanced."
+  ) {
+    return diagnostic("icu_braces_mismatch");
+  }
+  if (
+    message === "Rich-text tags do not match English." ||
+    message === "Localized rich-text tags do not match English."
+  ) {
+    return diagnostic("tag_mismatch");
+  }
+  if (
+    message === "Protection sentinels were reordered or renumbered." ||
+    message === "Protection sentinel index is missing." ||
+    message === "Unresolved protection sentinel remains." ||
+    SENTINEL_COUNT_MISMATCH.test(message)
+  ) {
+    return diagnostic("protected_slot_mismatch");
+  }
+  return diagnostic("validation_failure_after_reconstruction");
+}
+
+function diagnostic(
+  failureClass: WebUiStructureFailureDiagnostic["failureClass"],
+): WebUiStructureFailureDiagnostic {
+  return { failureClass, code: failureClass };
+}
 
 /**
  * Provider returned the wrong JSON type or the wrong span-array length.

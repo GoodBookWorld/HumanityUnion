@@ -59,19 +59,15 @@ export function webUiProtectionSentinelInstructions(batchContainsProtectionSenti
 
 /**
  * Provider-facing copy for the span contract.
- * Plain batches stay a single instruction. Span arrays are explained only when present.
- * Sentinels are not part of this contract.
+ * Every leaf is an ordered array of human spans, including a one-span message.
+ * Sentinels and source grammar stay outside the provider payload.
  */
-export function webUiProviderSpanInstructions(batchContainsSpanArrays: boolean): string {
-  if (!batchContainsSpanArrays) {
-    return "Translate each string value. Do not add placeholders, tags, or brace expressions.";
-  }
+export function webUiProviderSpanInstructions(): string {
   return [
-    "Some values are arrays of text fragments.",
+    "Every value is an array of text fragments.",
     "Translate each fragment in order and return an array of the same length.",
     "Leave empty strings empty.",
     "Do not insert placeholders, tags, or brace expressions.",
-    "String values are complete messages. Translate the string.",
   ].join("\n");
 }
 
@@ -361,11 +357,14 @@ export function segmentWebUiMessageForProvider(english: string): WebUiProviderSe
   };
 }
 
-/** Value placed under one catalog key in the existing batch JSON request. */
-export function webUiProviderPayloadValue(english: string): string | readonly string[] {
+/**
+ * Value placed under one catalog key in the batch JSON request.
+ * Plain and structured leaves use the same array grammar.
+ */
+export function webUiProviderPayloadValue(english: string): readonly string[] {
   const plan = segmentWebUiMessageForProvider(english);
   if (plan.plain) {
-    return english;
+    return [english];
   }
   return plan.providerSpanIndexes.map((index) => plan.spans[index] ?? "");
 }
@@ -379,19 +378,17 @@ export function reconstructWebUiMessageFromProviderSpans(
   providerValue: string | readonly string[],
 ): string {
   const plan = segmentWebUiMessageForProvider(english);
-  if (plan.plain) {
-    if (typeof providerValue !== "string") {
-      throw new WebUiProviderPayloadShapeError("Provider translation value must be a string.");
-    }
-    return providerValue;
-  }
+  const expectedCount = plan.plain ? 1 : plan.providerSpanIndexes.length;
   if (!Array.isArray(providerValue) || providerValue.some((span) => typeof span !== "string")) {
     throw new WebUiProviderPayloadShapeError("Provider span list must be an array of strings.");
   }
-  if (providerValue.length !== plan.providerSpanIndexes.length) {
+  if (providerValue.length !== expectedCount) {
     throw new WebUiProviderPayloadShapeError(
-      `Provider span count ${providerValue.length} does not match ${plan.providerSpanIndexes.length}.`,
+      `Provider span count ${providerValue.length} does not match ${expectedCount}.`,
     );
+  }
+  if (plan.plain) {
+    return providerValue[0] ?? "";
   }
   const translated = [...plan.spans];
   plan.providerSpanIndexes.forEach((spanIndex, providerIndex) => {

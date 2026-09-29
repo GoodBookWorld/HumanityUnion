@@ -107,7 +107,7 @@ function sameTokenList(left: readonly string[], right: readonly string[]): boole
   return sortedLeft.every((token, tokenIndex) => token === sortedRight[tokenIndex]);
 }
 
-function describeStructureMismatch(english: string, target: string): string | null {
+export function describeStructureMismatch(english: string, target: string): string | null {
   const source = inspectMessageStructure(english);
   const translated = inspectMessageStructure(target);
   const problems: string[] = [];

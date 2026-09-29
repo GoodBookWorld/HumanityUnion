@@ -5,6 +5,7 @@
  * Universal: copies every *.json present (no locale allowlist).
  * API runtime must never read apps/web/src directly.
  */
+import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,3 +23,12 @@ for (const name of files) {
 console.log(
   `Synced ${files.length} packaged WEB_UI catalog(s) → ${path.relative(apiRoot, targetDir)}`,
 );
+
+const repair = spawnSync(
+  "npx",
+  ["tsx", path.join(here, "repair-packaged-web-ui-structure.mts")],
+  { cwd: apiRoot, stdio: "inherit" },
+);
+if (repair.status !== 0) {
+  process.exit(repair.status ?? 1);
+}

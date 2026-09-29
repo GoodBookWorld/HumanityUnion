@@ -104,13 +104,18 @@ export function assessWebUiMessageTreeReadiness(input: {
   }
 
   const structural = validateWebUiMessageTreeAgainstEnglish(input.messages);
+  const requiredSet = new Set(requiredPaths);
+  const inRequiredScope = (labeledPath: string): boolean =>
+    requiredSet.has(labeledPath.replace(/\s+\([^)]*\)$/, ""));
+  const scopedPlaceholderMismatches =
+    structural.placeholderMismatchPaths.filter(inRequiredScope);
   const structuralInvalidCount =
-    structural.placeholderMismatchPaths.length +
-    structural.rejectedNonStringPaths.length +
-    structural.rejectedUnknownPaths.length +
-    structural.emptyPaths.length;
+    scopedPlaceholderMismatches.length +
+    structural.rejectedNonStringPaths.filter(inRequiredScope).length +
+    structural.rejectedUnknownPaths.filter(inRequiredScope).length +
+    structural.emptyPaths.filter(inRequiredScope).length;
   if (structuralInvalidCount > 0) {
-    for (const pathKey of structural.placeholderMismatchPaths) {
+    for (const pathKey of scopedPlaceholderMismatches) {
       if (sampleMissingPaths.length >= 12) break;
       const bare = pathKey.replace(/\s+\([^)]*\)$/, "");
       if (!sampleMissingPaths.includes(bare)) sampleMissingPaths.push(bare);

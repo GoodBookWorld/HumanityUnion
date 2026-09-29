@@ -342,7 +342,7 @@ function buildTerminologyContext(input: {
     `Text direction: ${input.textDirection}.`,
     "The user message is one flat JSON object.",
     "Each JSON key is a stable catalog path. Copy every JSON key exactly.",
-    "Translate only the string values. Every returned value must remain a string.",
+    "Every value is an array of human-language fragments. Return an array of the same length.",
     "Return one JSON object with exactly those keys. Do not wrap, nest, or rename them.",
     "Short interface labels may stay identical to English when that is the natural form.",
     "Glossary:",
@@ -431,18 +431,13 @@ async function requestWebUiProviderTranslations(input: {
   readonly terminologyContext: string;
   readonly translator: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
 }): Promise<Map<string, string | readonly string[]>> {
-  const payloadObject: Record<string, string | readonly string[]> = {};
-  let batchContainsSpanArrays = false;
+  const payloadObject: Record<string, readonly string[]> = {};
   for (const key of input.keys) {
-    const value = webUiProviderPayloadValue(input.englishFlat[key] ?? "");
-    payloadObject[key] = value;
-    if (Array.isArray(value)) {
-      batchContainsSpanArrays = true;
-    }
+    payloadObject[key] = webUiProviderPayloadValue(input.englishFlat[key] ?? "");
   }
   const terminologyContext = [
     input.terminologyContext,
-    webUiProviderSpanInstructions(batchContainsSpanArrays),
+    webUiProviderSpanInstructions(),
   ].join("\n");
   const result = await input.translator({
     sourceLanguage: "en",

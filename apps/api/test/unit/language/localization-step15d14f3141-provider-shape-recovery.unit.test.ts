@@ -164,17 +164,22 @@ describe("F.3.14.1 provider payload shape classification", () => {
       },
     );
     assert.throws(
-      () => reconstructWebUiMessageFromProviderSpans(securePin, ["not", "a", "string"]),
+      () => reconstructWebUiMessageFromProviderSpans(securePin, "plain-string"),
       (error: unknown) => {
+        assert.ok(error instanceof WebUiProviderPayloadShapeError);
         assert.equal(isRecoverableWebUiProviderPayloadShapeFailure(error), true);
         assert.equal(
           isRecoverableWebUiProviderPayloadShapeMessage(
-            "Provider translation value must be a string.",
+            "Provider span list must be an array of strings.",
           ),
           true,
         );
         return true;
       },
+    );
+    assert.throws(
+      () => reconstructWebUiMessageFromProviderSpans(securePin, ["not", "a", "string"]),
+      /Provider span count 3 does not match 1\./,
     );
     assert.equal(isRecoverableWebUiProviderPayloadShapeMessage(SOURCE_SENTINEL), false);
     assert.equal(

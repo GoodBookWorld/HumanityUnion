@@ -14,6 +14,7 @@ import type {
   WebUiActivationCheckpointRecord,
   WebUiActivationTransientFailure,
   WebUiMessageTree,
+  WebUiStructureFailureDiagnostic,
 } from "@hu/types";
 
 import { resolveLanguagePreparationLocaleMetadata } from "../language-preparation/language-registry-metadata.js";
@@ -54,6 +55,7 @@ import {
   webUiProviderCooldownDetail,
 } from "./web-ui-provider-cooldown.js";
 import {
+  classifyWebUiStructureFailure,
   isRecoverableWebUiProviderPayloadShapeFailure,
   isRecoverableWebUiProviderPayloadShapeMessage,
   isRetryableWebUiProviderOutputStructureFailure,
@@ -630,6 +632,7 @@ async function enterWebUiStructureBlocked(input: {
   readonly providerCalls: number;
   readonly structureRetryCount: number;
   readonly providerShapeFailureCount: number;
+  readonly structureFailure: WebUiStructureFailureDiagnostic;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps;
@@ -644,6 +647,7 @@ async function enterWebUiStructureBlocked(input: {
     status: "pending",
     attempts: input.providerCalls,
     reason: WEB_UI_STRUCTURE_BLOCKED_REASON,
+    structureFailure: input.structureFailure,
     updatedAt: stamp,
   });
   const checkpoint: WebUiActivationCheckpointRecord = {
@@ -653,6 +657,7 @@ async function enterWebUiStructureBlocked(input: {
     structureRetryCount: input.structureRetryCount,
     providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
     providerShapeFailureCount: input.providerShapeFailureCount,
+    structureFailure: input.structureFailure,
     detail: WEB_UI_STRUCTURE_BLOCKED_DETAIL,
     updatedAt: stamp,
   };
@@ -681,6 +686,7 @@ async function enterWebUiStructureRetry(input: {
   readonly batchPhase: "primary" | "quality";
   readonly providerCalls: number;
   readonly structureFailuresThisTick: number;
+  readonly structureFailure: WebUiStructureFailureDiagnostic;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<WebUiActivationTickResult> {
   const deps = input.deps;
@@ -697,6 +703,7 @@ async function enterWebUiStructureRetry(input: {
       providerCalls: input.providerCalls,
       structureRetryCount: counts.structureRetryCount,
       providerShapeFailureCount: counts.providerShapeFailureCount,
+      structureFailure: input.structureFailure,
       deps,
     });
   }
@@ -714,6 +721,7 @@ async function enterWebUiStructureRetry(input: {
     status: "pending",
     attempts: input.providerCalls,
     reason: WEB_UI_STRUCTURE_RETRY_REASON,
+    structureFailure: input.structureFailure,
     updatedAt: stamp,
   });
   const checkpoint: WebUiActivationCheckpointRecord = {
@@ -723,6 +731,7 @@ async function enterWebUiStructureRetry(input: {
     structureRetryCount: counts.structureRetryCount,
     providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
     providerShapeFailureCount: counts.providerShapeFailureCount,
+    structureFailure: input.structureFailure,
     detail: WEB_UI_STRUCTURE_RETRY_DETAIL,
     updatedAt: stamp,
   };
@@ -1541,6 +1550,7 @@ async function processPrimaryBatchTick(input: {
         status: "ok",
         attempts: providerCalls,
         reason: okReason,
+        structureFailure: null,
         updatedAt: nowIso(deps),
       });
       const completedBatchCount = checkpoint.completedBatchCount + 1;
@@ -1553,6 +1563,7 @@ async function processPrimaryBatchTick(input: {
         structureRetryCount: 0,
         providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         providerShapeFailureCount: 0,
+        structureFailure: null,
         detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
@@ -1614,6 +1625,7 @@ async function processPrimaryBatchTick(input: {
           batchPhase: "primary",
           providerCalls,
           structureFailuresThisTick: structureFailuresThisTick + 1,
+          structureFailure: classifyWebUiStructureFailure(error),
           deps,
         });
       }
@@ -1626,6 +1638,7 @@ async function processPrimaryBatchTick(input: {
             batchPhase: "primary",
             providerCalls,
             structureFailuresThisTick,
+            structureFailure: classifyWebUiStructureFailure(error),
             deps,
           });
         }
@@ -1768,6 +1781,7 @@ async function processQualityBatchTick(input: {
         status: "ok",
         attempts: providerCalls,
         reason: okReason,
+        structureFailure: null,
         updatedAt: nowIso(deps),
       });
       const qualityCompletedBatchCount = checkpoint.qualityCompletedBatchCount + 1;
@@ -1781,6 +1795,7 @@ async function processQualityBatchTick(input: {
         structureRetryCount: 0,
         providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         providerShapeFailureCount: 0,
+        structureFailure: null,
         detail: `Checking translation quality… ${qualityCompletedBatchCount} / ${qualityBatches.length}`,
         updatedAt: nowIso(deps),
       };
@@ -1842,6 +1857,7 @@ async function processQualityBatchTick(input: {
           batchPhase: "quality",
           providerCalls,
           structureFailuresThisTick: structureFailuresThisTick + 1,
+          structureFailure: classifyWebUiStructureFailure(error),
           deps,
         });
       }
@@ -1854,6 +1870,7 @@ async function processQualityBatchTick(input: {
             batchPhase: "quality",
             providerCalls,
             structureFailuresThisTick,
+            structureFailure: classifyWebUiStructureFailure(error),
             deps,
           });
         }
@@ -2112,6 +2129,10 @@ export async function processWebUiActivationTick(input: {
         ...checkpoint,
         phase: "primary",
         nextAttemptAt: null,
+        structureRetryCount: 0,
+        providerShapeFailureCount: 0,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+        structureFailure: null,
         detail: `Preparing public interface… ${checkpoint.completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };

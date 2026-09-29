@@ -215,7 +215,10 @@ export type {
   WebUiActivationCheckpointPhase,
   WebUiActivationCheckpointRecord,
   WebUiActivationTransientFailure,
+  WebUiStructureFailureClass,
+  WebUiStructureFailureDiagnostic,
 } from "./web-ui-activation-checkpoint.js";
+export { WEB_UI_STRUCTURE_FAILURE_CLASSES } from "./web-ui-activation-checkpoint.js";
 export {
   LANGUAGE_ACTIVATION_DOMAIN_STATUSES,
   LANGUAGE_ACTIVATION_JOB_STATUSES,

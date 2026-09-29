@@ -83,8 +83,8 @@ function payloadText(value: string | readonly string[]): string {
 describe("F.3.13.1 deterministic WEB_UI structure", () => {
   it("1–13 spans, reconstruction, validation, and batch 52 payload", async () => {
     const plain = webUiProviderPayloadValue("Back to Home");
-    assert.equal(plain, "Back to Home");
-    assert.equal(reconstructWebUiMessageFromProviderSpans("Back to Home", "回首頁"), "回首頁");
+    assert.deepEqual(plain, ["Back to Home"]);
+    assert.equal(reconstructWebUiMessageFromProviderSpans("Back to Home", ["回首頁"]), "回首頁");
 
     const one = webUiProviderPayloadValue(LAST_N_DAYS);
     assert.deepEqual(one, ["Last ", " days"]);

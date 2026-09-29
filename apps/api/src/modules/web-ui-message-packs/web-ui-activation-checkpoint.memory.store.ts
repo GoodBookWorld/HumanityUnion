@@ -7,6 +7,8 @@ import type {
   WebUiActivationCheckpointRecord,
 } from "@hu/types";
 
+import { isRecoverableWebUiActivationCheckpoint } from "./web-ui-provider-output-structure.js";
+
 const checkpoints = new Map<string, WebUiActivationCheckpointRecord>();
 const batches = new Map<string, WebUiActivationBatchRecord>();
 
@@ -41,15 +43,7 @@ export function getWebUiActivationCheckpointByJobMemory(
 }
 
 export function listIncompleteWebUiActivationCheckpointsMemory(): readonly WebUiActivationCheckpointRecord[] {
-  return [...checkpoints.values()].filter(
-    (row) =>
-      row.phase === "primary" ||
-      row.phase === "quality" ||
-      row.phase === "validating" ||
-      row.phase === "publishing" ||
-      row.phase === "provider_cooldown" ||
-      row.phase === "structure_retry",
-  );
+  return [...checkpoints.values()].filter((row) => isRecoverableWebUiActivationCheckpoint(row));
 }
 
 export function upsertWebUiActivationBatchMemory(

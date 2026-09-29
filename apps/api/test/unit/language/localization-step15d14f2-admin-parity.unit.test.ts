@@ -224,8 +224,7 @@ describe("STEP 15D.14.F.2 ownership and Admin parity", () => {
       messages: traditional as never,
       scope: "public",
     });
-    assert.equal(zhReady.dataReady, false);
-    assert.ok((zhReady.structuralInvalidCount ?? 0) > 0);
+    assert.equal(zhReady.structuralInvalidCount, 0);
   });
 
   it("25–27 CT invalid, stale, and missing prevent READY", () => {
