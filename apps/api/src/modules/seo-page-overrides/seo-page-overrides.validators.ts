@@ -60,6 +60,15 @@ export function validateSeoPageEntityKey(
     return key.toUpperCase();
   }
 
+  if (family === "support" || family === "volunteer") {
+    if (key !== family) {
+      throw new SeoPageOverrideValidationError(
+        `entityKey for ${family} must be the stable singleton "${family}".`,
+      );
+    }
+    return key;
+  }
+
   return key;
 }
 
@@ -76,6 +85,10 @@ export function expectedCanonicalPathForSeoPage(
       return `/knowledge/${encodeURIComponent(entityKey)}`;
     case "civic-archive":
       return `/civic-archive/${encodeURIComponent(entityKey)}`;
+    case "support":
+      return "/support";
+    case "volunteer":
+      return "/volunteer";
   }
 }
 

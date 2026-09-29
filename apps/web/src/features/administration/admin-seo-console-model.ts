@@ -28,7 +28,9 @@ export type SeoPageFamilyId =
   | "participant-profile"
   | "petition"
   | "knowledge"
-  | "civic-archive";
+  | "civic-archive"
+  | "support"
+  | "volunteer";
 
 export type SeoMode = "automatic" | "customized" | "deferred";
 
@@ -110,6 +112,10 @@ function familyLabel(family: SeoPageFamilyId): string {
       return "Knowledge";
     case "civic-archive":
       return "Civic Archive";
+    case "support":
+      return "Support";
+    case "volunteer":
+      return "Volunteer";
   }
 }
 
@@ -243,13 +249,51 @@ export function buildCountrySeoInventoryRows(
 
 export function isSeoPageOverrideEditableFamily(
   family: SeoPageFamilyId,
-): family is "country" | "initiative" | "knowledge" | "civic-archive" {
+): family is "country" | "initiative" | "knowledge" | "civic-archive" | "support" | "volunteer" {
   return (
     family === "country" ||
     family === "initiative" ||
     family === "knowledge" ||
-    family === "civic-archive"
+    family === "civic-archive" ||
+    family === "support" ||
+    family === "volunteer"
   );
+}
+
+export function buildSupportSeoInventoryRow(input?: {
+  seoMode?: Exclude<SeoMode, "deferred">;
+}): SeoPageInventoryRow {
+  return buildSeoPageInventoryRow({
+    family: "support",
+    entityKey: "support",
+    title: "Support",
+    canonicalPath: "/support",
+    metadata: coverageToCapabilityStatus("covered"),
+    canonical: coverageToCapabilityStatus("covered"),
+    openGraph: coverageToCapabilityStatus("covered"),
+    sitemap: coverageToCapabilityStatus("covered"),
+    structuredData: coverageToCapabilityStatus("covered"),
+    seoMode: input?.seoMode ?? "automatic",
+    publicHref: "/support",
+  });
+}
+
+export function buildVolunteerSeoInventoryRow(input?: {
+  seoMode?: Exclude<SeoMode, "deferred">;
+}): SeoPageInventoryRow {
+  return buildSeoPageInventoryRow({
+    family: "volunteer",
+    entityKey: "volunteer",
+    title: "Volunteer",
+    canonicalPath: "/volunteer",
+    metadata: coverageToCapabilityStatus("covered"),
+    canonical: coverageToCapabilityStatus("covered"),
+    openGraph: coverageToCapabilityStatus("covered"),
+    sitemap: coverageToCapabilityStatus("covered"),
+    structuredData: coverageToCapabilityStatus("covered"),
+    seoMode: input?.seoMode ?? "automatic",
+    publicHref: "/volunteer",
+  });
 }
 
 export function buildBlogSeoInventoryRow(input: {

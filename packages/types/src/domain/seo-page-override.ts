@@ -8,6 +8,8 @@ export const SEO_PAGE_OVERRIDE_FAMILIES = [
   "initiative",
   "knowledge",
   "civic-archive",
+  "support",
+  "volunteer",
 ] as const;
 
 export type SeoPageOverrideFamily = (typeof SEO_PAGE_OVERRIDE_FAMILIES)[number];
