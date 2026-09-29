@@ -62,7 +62,8 @@ export const CANONICAL_ENGLISH_BRAND_FALLBACK = {
   heroUnityQuote: CANONICAL_ENGLISH_HERO_UNITY_QUOTE_MULTILINE,
   seoSiteName: "Humanity Union",
   seoTitleSuffix: "Humanity Union",
-  defaultMetaDescription: "World Solidarity civic technology platform",
+  defaultMetaDescription:
+    "Humanity Union is an international social education and civic collaboration platform for learning, public initiatives, discussion, and collective action.",
   openGraphBrandName: "Humanity Union",
 } as const;
 
