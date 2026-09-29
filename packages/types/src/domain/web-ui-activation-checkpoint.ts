@@ -103,7 +103,23 @@ export type WebUiActivationCheckpointRecord = {
   readonly providerShapeFailureCount?: number | null;
   /** Why this checkpoint last entered a structure retry or block. Not provider text. */
   readonly structureFailure?: WebUiStructureFailureDiagnostic | null;
+  /**
+   * Absent on checkpoints created before partial leaf reuse.
+   * Those checkpoints keep full-batch provider semantics.
+   */
+  readonly preparationContract?: WebUiPreparationContract | null;
 };
+
+/** New checkpoints reuse valid leaves. Older checkpoints omit this field. */
+export type WebUiPreparationContract = "partial_reuse_v1";
+
+export type WebUiBatchPreparationProvenance =
+  | "REUSED_EXISTING_VALID"
+  | "PROVIDER_GENERATED"
+  | "MIXED";
+
+/** Preparation seed only. Not a runtime authority. */
+export type WebUiLeafReuseSource = "MONGO_PUBLISHED" | "PACKAGED" | "BUNDLED";
 
 export type WebUiActivationBatchRecord = {
   readonly checkpointId: string;
@@ -118,4 +134,10 @@ export type WebUiActivationBatchRecord = {
   readonly updatedAt: string;
   /** Present when the last structure/shape failure discarded provider output. */
   readonly structureFailure?: WebUiStructureFailureDiagnostic | null;
+  /** How this batch's values were obtained. Absent on older rows. */
+  readonly preparationProvenance?: WebUiBatchPreparationProvenance | null;
+  /** Seed catalog for reused leaves. Absent when the batch is provider-only or mixed-source. */
+  readonly reuseSource?: WebUiLeafReuseSource | null;
+  readonly reusedKeyCount?: number | null;
+  readonly providerKeyCount?: number | null;
 };

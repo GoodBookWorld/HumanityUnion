@@ -215,6 +215,9 @@ export type {
   WebUiActivationCheckpointPhase,
   WebUiActivationCheckpointRecord,
   WebUiActivationTransientFailure,
+  WebUiBatchPreparationProvenance,
+  WebUiLeafReuseSource,
+  WebUiPreparationContract,
   WebUiStructureFailureClass,
   WebUiStructureFailureDiagnostic,
 } from "./web-ui-activation-checkpoint.js";

@@ -13,6 +13,7 @@ import type {
   LanguageActivationWebUiDomainProgress,
   WebUiActivationCheckpointRecord,
   WebUiActivationTransientFailure,
+  WebUiLeafReuseSource,
   WebUiMessageTree,
   WebUiStructureFailureDiagnostic,
 } from "@hu/types";
@@ -86,7 +87,13 @@ import {
   assessWebUiMessageTreeReadiness,
 } from "../language/language-localization-activation/assess-web-ui-catalog-readiness.js";
 import { tryAdoptPackagedWebUiCatalog } from "./adopt-packaged-web-ui-catalog.js";
-import { collectStringPaths } from "./web-ui-message-pack.validate.js";
+import { collectStringPaths, loadBundledWebUiMessagePackFromFs } from "./web-ui-message-pack.validate.js";
+import {
+  classifyWebUiCatalogLeaves,
+  readWebUiPackSourceHash,
+  WEB_UI_PARTIAL_REUSE_CONTRACT,
+} from "./web-ui-leaf-reuse.js";
+import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
 
 export type WebUiActivationTickResult = {
   readonly done: boolean;
@@ -115,6 +122,8 @@ export type WebUiActivationPreparationDeps = {
    * Used by Activate Localization adoption before the provider path.
    */
   readonly loadPackagedWebUiCatalog?: (locale: string) => WebUiMessageTree | null;
+  /** Test seam. Production reads the bundled filesystem catalog. */
+  readonly loadBundledWebUiCatalog?: (locale: string) => WebUiMessageTree | null;
   readonly env?: {
     readonly TRANSLATION_PROVIDER?: string;
     readonly HU_READ_ONLY_DIAGNOSTIC?: string;
@@ -191,6 +200,98 @@ export async function seedWebUiActivationBatchesFromPublishedPack(input: {
       status: "ok",
       attempts: 0,
       reason: "reused from published pack",
+      updatedAt: stamp,
+    });
+    seededBatchCount += 1;
+  }
+  return { seededBatchCount, totalBatchCount: batches.length };
+}
+
+async function loadWebUiLeafReuseDecisions(input: {
+  readonly locale: string;
+  readonly flat: Readonly<Record<string, string>>;
+  readonly sourceHash: string;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<ReturnType<typeof classifyWebUiCatalogLeaves>> {
+  const deps = input.deps;
+  const published = await getPublishedWebUiMessagePackByLocale(input.locale);
+  const recordedHash = readWebUiPackSourceHash(published?.sourceNote);
+  const packaged = deps.loadPackagedWebUiCatalog
+    ? deps.loadPackagedWebUiCatalog(input.locale)
+    : loadPackagedWebUiCatalog(input.locale);
+  const bundled = deps.loadBundledWebUiCatalog
+    ? deps.loadBundledWebUiCatalog(input.locale)
+    : (loadBundledWebUiMessagePackFromFs(input.locale) as WebUiMessageTree | null);
+  return classifyWebUiCatalogLeaves({
+    englishFlat: input.flat,
+    mongo: published?.messages ?? null,
+    mongoSourceHashCompatible: recordedHash == null || recordedHash === input.sourceHash,
+    packaged,
+    bundled,
+  });
+}
+
+/**
+ * Mark batches whose every leaf is already valid. Provider work is not started.
+ * Does not overwrite an existing batch row, so an in-progress checkpoint is unchanged.
+ */
+async function seedPartiallyReusableWebUiBatches(input: {
+  readonly checkpointId: string;
+  readonly flat: Readonly<Record<string, string>>;
+  readonly sourceHash: string;
+  readonly locale: string;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<{ readonly seededBatchCount: number; readonly totalBatchCount: number }> {
+  const deps = input.deps;
+  const decisions = await loadWebUiLeafReuseDecisions({
+    locale: input.locale,
+    flat: input.flat,
+    sourceHash: input.sourceHash,
+    deps,
+  });
+  const batches = planWebUiDraftBatches(input.flat);
+  const stamp = nowIso(deps);
+  let seededBatchCount = 0;
+  for (const batch of batches) {
+    const existing = await getWebUiActivationBatch({
+      checkpointId: input.checkpointId,
+      batchId: batch.id,
+      phase: "primary",
+    });
+    if (existing) {
+      continue;
+    }
+    const values: Record<string, string> = {};
+    const sources = new Set<WebUiLeafReuseSource>();
+    let reusable = true;
+    for (const key of batch.keys) {
+      const decision = decisions.get(key);
+      if (decision?.classification !== "VALID_REUSABLE" || decision.value == null) {
+        reusable = false;
+        break;
+      }
+      values[key] = decision.value;
+      if (decision.source) {
+        sources.add(decision.source);
+      }
+    }
+    if (!reusable) {
+      continue;
+    }
+    await upsertWebUiActivationBatch({
+      checkpointId: input.checkpointId,
+      batchId: batch.id,
+      phase: "primary",
+      namespace: batch.namespace,
+      keys: batch.keys,
+      values,
+      status: "ok",
+      attempts: 0,
+      reason: "reused existing valid",
+      preparationProvenance: "REUSED_EXISTING_VALID",
+      reuseSource: sources.size === 1 ? [...sources][0] ?? null : null,
+      reusedKeyCount: batch.keys.length,
+      providerKeyCount: 0,
       updatedAt: stamp,
     });
     seededBatchCount += 1;
@@ -1253,12 +1354,14 @@ export async function ensureWebUiActivationCheckpoint(input: {
     detail: "Preparing public interface…",
     createdAt: nowIso(deps),
     updatedAt: nowIso(deps),
+    preparationContract: WEB_UI_PARTIAL_REUSE_CONTRACT,
   };
   await upsertWebUiActivationCheckpoint(checkpoint);
-  const seeded = await seedWebUiActivationBatchesFromPublishedPack({
+  const seeded = await seedPartiallyReusableWebUiBatches({
     checkpointId: checkpoint.checkpointId,
     locale,
     flat,
+    sourceHash,
     deps,
   });
   const seededCheckpoint: WebUiActivationCheckpointRecord =
@@ -1467,7 +1570,24 @@ async function processPrimaryBatchTick(input: {
       ),
     });
     const suspiciousFlat: Record<string, string> = {};
+    const reuseDecisions =
+      checkpoint.preparationContract === WEB_UI_PARTIAL_REUSE_CONTRACT
+        ? await loadWebUiLeafReuseDecisions({
+            locale: checkpoint.locale,
+            flat,
+            sourceHash,
+            deps,
+          })
+        : null;
     for (const row of classification.suspiciousHuman) {
+      const preserved = reuseDecisions?.get(row.path);
+      if (
+        preserved?.classification === "VALID_REUSABLE" &&
+        preserved.value != null &&
+        translated[row.path] === preserved.value
+      ) {
+        continue;
+      }
       suspiciousFlat[row.path] = flat[row.path] ?? "";
     }
     const qualityBatches = planWebUiDraftBatches(suspiciousFlat);
@@ -1508,6 +1628,64 @@ async function processPrimaryBatchTick(input: {
     batchId: nextBatch.id,
     phase: "primary",
   });
+  const partialReuse = checkpoint.preparationContract === WEB_UI_PARTIAL_REUSE_CONTRACT;
+  let repairKeys: readonly string[] = nextBatch.keys;
+  let reusedValues: Record<string, string> = {};
+  let reusedSource: WebUiLeafReuseSource | null = null;
+  if (partialReuse) {
+    const decisions = await loadWebUiLeafReuseDecisions({
+      locale: checkpoint.locale,
+      flat,
+      sourceHash,
+      deps,
+    });
+    const sources = new Set<WebUiLeafReuseSource>();
+    const residual: string[] = [];
+    for (const key of nextBatch.keys) {
+      const decision = decisions.get(key);
+      if (decision?.classification === "VALID_REUSABLE" && decision.value != null) {
+        reusedValues[key] = decision.value;
+        if (decision.source) {
+          sources.add(decision.source);
+        }
+      } else {
+        residual.push(key);
+      }
+    }
+    repairKeys = residual;
+    reusedSource = sources.size === 1 ? [...sources][0] ?? null : null;
+    if (repairKeys.length === 0) {
+      await upsertWebUiActivationBatch({
+        checkpointId: checkpoint.checkpointId,
+        batchId: nextBatch.id,
+        phase: "primary",
+        namespace: nextBatch.namespace,
+        keys: nextBatch.keys,
+        values: reusedValues,
+        status: "ok",
+        attempts: 0,
+        reason: "reused existing valid",
+        preparationProvenance: "REUSED_EXISTING_VALID",
+        reuseSource: reusedSource,
+        reusedKeyCount: nextBatch.keys.length,
+        providerKeyCount: 0,
+        updatedAt: nowIso(deps),
+      });
+      const completedBatchCount = checkpoint.completedBatchCount + 1;
+      checkpoint = {
+        ...checkpoint,
+        completedBatchCount,
+        detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(checkpoint);
+      return webUiTickFromCheckpoint({
+        checkpoint,
+        providerCalls: 0,
+        needsAnotherTick: true,
+      });
+    }
+  }
   let structureFailuresThisTick =
     pendingPrimary?.status === "pending" &&
     pendingPrimary.reason === WEB_UI_STRUCTURE_PACING_REASON
@@ -1523,14 +1701,14 @@ async function processPrimaryBatchTick(input: {
       const translated = await translateWebUiProviderBatch({
         locale: checkpoint.locale,
         englishFlat: flat,
-        keys: nextBatch.keys,
+        keys: repairKeys,
         terminologyContext,
         translator,
       });
       providerCalls += translated.providerCalls;
       missingKeyRecoveryAttempted =
         missingKeyRecoveryAttempted || translated.missingKeyRecoveryAttempted;
-      const values = translated.values;
+      const values = { ...reusedValues, ...translated.values };
       const discarded = translated.discardedUnexpectedKeys;
       let okReason: string | null = null;
       if (translated.missingKeyRecoveryAttempted && discarded.length > 0) {
@@ -1540,6 +1718,8 @@ async function processPrimaryBatchTick(input: {
       } else if (discarded.length > 0) {
         okReason = `ok (discarded unexpected: ${discarded.slice(0, 8).join(", ")})`;
       }
+      const providerKeyCount = repairKeys.length;
+      const reusedKeyCount = nextBatch.keys.length - providerKeyCount;
       await upsertWebUiActivationBatch({
         checkpointId: checkpoint.checkpointId,
         batchId: nextBatch.id,
@@ -1551,6 +1731,11 @@ async function processPrimaryBatchTick(input: {
         attempts: providerCalls,
         reason: okReason,
         structureFailure: null,
+        preparationProvenance:
+          reusedKeyCount > 0 ? "MIXED" : "PROVIDER_GENERATED",
+        reuseSource: reusedKeyCount > 0 ? reusedSource : null,
+        reusedKeyCount,
+        providerKeyCount,
         updatedAt: nowIso(deps),
       });
       const completedBatchCount = checkpoint.completedBatchCount + 1;
