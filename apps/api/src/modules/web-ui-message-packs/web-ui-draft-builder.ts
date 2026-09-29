@@ -34,6 +34,8 @@ import {
 import {
   reconstructWebUiMessageFromProviderSpans,
   webUiProviderPayloadValue,
+  WebUiProviderSpanCountError,
+  webUiProviderCardinalityLines,
   webUiProviderSpanInstructions,
 } from "./web-ui-message-structure-protect.js";
 
@@ -342,7 +344,7 @@ function buildTerminologyContext(input: {
     `Text direction: ${input.textDirection}.`,
     "The user message is one flat JSON object.",
     "Each JSON key is a stable catalog path. Copy every JSON key exactly.",
-    "Every value is an array of human-language fragments. Return an array of the same length.",
+    "Every value is an array of human-language fragments. Each key's exact array length is stated below.",
     "Return one JSON object with exactly those keys. Do not wrap, nest, or rename them.",
     "Short interface labels may stay identical to English when that is the natural form.",
     "Glossary:",
@@ -438,6 +440,10 @@ async function requestWebUiProviderTranslations(input: {
   const terminologyContext = [
     input.terminologyContext,
     webUiProviderSpanInstructions(),
+    webUiProviderCardinalityLines({
+      keys: input.keys,
+      payload: payloadObject,
+    }),
   ].join("\n");
   const result = await input.translator({
     sourceLanguage: "en",
@@ -455,7 +461,19 @@ function restoreValidatedWebUiKey(input: {
   readonly providerValue: string | readonly string[];
   readonly english: string;
 }): string {
-  const restored = reconstructWebUiMessageFromProviderSpans(input.english, input.providerValue);
+  let restored: string;
+  try {
+    restored = reconstructWebUiMessageFromProviderSpans(input.english, input.providerValue);
+  } catch (error) {
+    if (error instanceof WebUiProviderSpanCountError && error.catalogKey == null) {
+      throw new WebUiProviderSpanCountError({
+        catalogKey: input.key,
+        expectedSpanCount: error.expectedSpanCount,
+        actualSpanCount: error.actualSpanCount,
+      });
+    }
+    throw error;
+  }
   assertStructureMatches(input.english, restored);
   return restored;
 }

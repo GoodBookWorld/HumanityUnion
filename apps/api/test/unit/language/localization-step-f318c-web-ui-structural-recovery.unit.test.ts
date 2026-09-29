@@ -357,7 +357,10 @@ describe("F.3.18C version-aware checkpoint recovery", () => {
     );
     const filter = incompleteWebUiActivationCheckpointMongoFilter();
     assert.match(JSON.stringify(filter), /structure_blocked/);
-    assert.match(JSON.stringify(filter), /"\$lt":2/);
+    assert.equal(
+      JSON.stringify(filter).includes(`"$lt":${WEB_UI_PROVIDER_SHAPE_VERSION}`),
+      true,
+    );
 
     const corpus = loadPublicWebUiEnglishCorpus();
     const fullPlan = planWebUiDraftBatches(corpus.flat);

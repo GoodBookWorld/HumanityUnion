@@ -52,6 +52,15 @@ export type WebUiStructureFailureClass = (typeof WEB_UI_STRUCTURE_FAILURE_CLASSE
 export type WebUiStructureFailureDiagnostic = {
   readonly failureClass: WebUiStructureFailureClass;
   readonly code: string;
+  /**
+   * First catalog path rejected in request order.
+   * Set for a span-count mismatch. Not provider text.
+   */
+  readonly catalogKey?: string | null;
+  /** Span-array length required for catalogKey. */
+  readonly expectedSpanCount?: number | null;
+  /** Span-array length returned for catalogKey. */
+  readonly actualSpanCount?: number | null;
 };
 
 export type WebUiActivationCheckpointRecord = {

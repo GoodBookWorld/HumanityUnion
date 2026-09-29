@@ -59,16 +59,44 @@ export function webUiProtectionSentinelInstructions(batchContainsProtectionSenti
 
 /**
  * Provider-facing copy for the span contract.
- * Every leaf is an ordered array of human spans, including a one-span message.
- * Sentinels and source grammar stay outside the provider payload.
+ * Every leaf is an ordered array of non-empty human spans.
+ * Empty spans, placeholders, ICU grammar, and Brand sentinels stay local.
  */
 export function webUiProviderSpanInstructions(): string {
   return [
-    "Every value is an array of text fragments.",
-    "Translate each fragment in order and return an array of the same length.",
-    "Leave empty strings empty.",
+    "Every catalog key is independent.",
+    "Return one JSON object with the same keys.",
+    "Each value must be a JSON array of strings.",
+    "Do not return a scalar string for any key, including a key with one fragment.",
+    "Do not flatten arrays across keys.",
+    "Each key has its own array length. Do not copy one key's length onto another.",
+    "Preserve fragment order.",
+    "Do not merge, split, add, or omit fragments.",
     "Do not insert placeholders, tags, or brace expressions.",
+    "Empty structural spans are not included in this request. Do not add empty strings.",
   ].join("\n");
+}
+
+/**
+ * Exact integer length for each requested leaf, in request order.
+ * The lines name the count only. They do not repeat fragment text.
+ */
+export function webUiProviderCardinalityLines(input: {
+  readonly keys: readonly string[];
+  readonly payload: Readonly<Record<string, readonly string[]>>;
+}): string {
+  return input.keys
+    .map((key) => {
+      const count = input.payload[key]?.length ?? 0;
+      return [
+        `${key} expects exactly ${count} translated strings.`,
+        `Return one JSON array of length ${count}.`,
+        "Preserve order.",
+        "Do not merge, split, add, or omit fragments.",
+        "Do not convert the array into a scalar string.",
+      ].join(" ");
+    })
+    .join("\n");
 }
 
 export class WebUiMessageStructureError extends Error {
@@ -83,6 +111,31 @@ export class WebUiProviderPayloadShapeError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "WebUiProviderPayloadShapeError";
+  }
+}
+
+/**
+ * One leaf returned an array of the wrong length.
+ * catalogKey is the first leaf rejected in request order.
+ * The message carries counts only, never translated text.
+ */
+export class WebUiProviderSpanCountError extends WebUiProviderPayloadShapeError {
+  readonly catalogKey: string | null;
+  readonly expectedSpanCount: number;
+  readonly actualSpanCount: number;
+
+  constructor(input: {
+    readonly catalogKey?: string | null;
+    readonly expectedSpanCount: number;
+    readonly actualSpanCount: number;
+  }) {
+    super(
+      `Provider span count ${input.actualSpanCount} does not match ${input.expectedSpanCount}.`,
+    );
+    this.name = "WebUiProviderSpanCountError";
+    this.catalogKey = input.catalogKey ?? null;
+    this.expectedSpanCount = input.expectedSpanCount;
+    this.actualSpanCount = input.actualSpanCount;
   }
 }
 
@@ -383,9 +436,10 @@ export function reconstructWebUiMessageFromProviderSpans(
     throw new WebUiProviderPayloadShapeError("Provider span list must be an array of strings.");
   }
   if (providerValue.length !== expectedCount) {
-    throw new WebUiProviderPayloadShapeError(
-      `Provider span count ${providerValue.length} does not match ${expectedCount}.`,
-    );
+    throw new WebUiProviderSpanCountError({
+      expectedSpanCount: expectedCount,
+      actualSpanCount: providerValue.length,
+    });
   }
   if (plan.plain) {
     return providerValue[0] ?? "";

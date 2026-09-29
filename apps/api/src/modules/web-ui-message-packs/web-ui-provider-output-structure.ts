@@ -1,6 +1,9 @@
 import type { WebUiStructureFailureDiagnostic } from "@hu/types";
 
-import { WebUiProviderPayloadShapeError } from "./web-ui-message-structure-protect.js";
+import {
+  WebUiProviderPayloadShapeError,
+  WebUiProviderSpanCountError,
+} from "./web-ui-message-structure-protect.js";
 
 /**
  * STEP 15D.14.F.3.9 — retryable WEB_UI provider-output structure failures.
@@ -19,8 +22,9 @@ import { WebUiProviderPayloadShapeError } from "./web-ui-message-structure-prote
  * 1 sends mixed plain strings and human-language span arrays.
  * 2 sends every leaf as an ordered span array and reopens checkpoints
  * blocked under an older shape.
+ * 3 states the exact span count for each key and records that count on mismatch.
  */
-export const WEB_UI_PROVIDER_SHAPE_VERSION = 2;
+export const WEB_UI_PROVIDER_SHAPE_VERSION = 3;
 
 const WEB_UI_ACTIVE_CHECKPOINT_PHASES = [
   "primary",
@@ -136,8 +140,8 @@ export function classifyWebUiStructureFailure(error: unknown): WebUiStructureFai
   ) {
     return diagnostic("provider_payload_type_mismatch");
   }
-  if (PROVIDER_SPAN_COUNT_MISMATCH.test(message)) {
-    return diagnostic("provider_span_count_mismatch");
+  if (error instanceof WebUiProviderSpanCountError || PROVIDER_SPAN_COUNT_MISMATCH.test(message)) {
+    return spanCountDiagnostic(error);
   }
   if (
     message === "Protection extraction did not cover the message." ||
@@ -178,6 +182,22 @@ function diagnostic(
   failureClass: WebUiStructureFailureDiagnostic["failureClass"],
 ): WebUiStructureFailureDiagnostic {
   return { failureClass, code: failureClass };
+}
+
+/**
+ * The first leaf rejected in request order. Counts only — never span text.
+ */
+function spanCountDiagnostic(error: unknown): WebUiStructureFailureDiagnostic {
+  if (!(error instanceof WebUiProviderSpanCountError)) {
+    return diagnostic("provider_span_count_mismatch");
+  }
+  return {
+    failureClass: "provider_span_count_mismatch",
+    code: "provider_span_count_mismatch",
+    catalogKey: error.catalogKey,
+    expectedSpanCount: error.expectedSpanCount,
+    actualSpanCount: error.actualSpanCount,
+  };
 }
 
 /**
