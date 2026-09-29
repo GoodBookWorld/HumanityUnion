@@ -145,6 +145,19 @@ describe("Step 07E — Registry-driven multilingual sitemap", () => {
     assert.equal(media[0]?.lastModified, "2024-01-01");
   });
 
+  it("static /volunteer expands through the shared SEO perimeter", () => {
+    const volunteer = listStaticPublicSitemapEntries().filter((entry) => entry.path === "/volunteer");
+    assert.equal(volunteer.length, 1);
+    const expanded = expandPublicSitemapEntriesForSeoLocales({
+      entries: volunteer,
+      seoIndexableLocales: ["en", "zz-FUTURE"],
+    });
+    assert.deepEqual(
+      expanded.map((entry) => entry.path),
+      ["/volunteer", "/zz-future/volunteer"],
+    );
+  });
+
   it("14. synthetic future locale works without application hardcoding", () => {
     const expanded = expandPublicSitemapEntriesForSeoLocales({
       entries: [{ path: "/institutions" }],
