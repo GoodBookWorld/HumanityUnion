@@ -12,6 +12,12 @@ import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-pa
 import { fetchPublicSeoPageOverride } from "../../lib/seo/fetch-public-seo-page-override";
 
 /**
+ * Request-time metadata. The canonical override read uses cache: no-store,
+ * which cannot be statically prerendered. Localized documents skip that read.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Step 07F.2 — Volunteer SEO from WEB_UI volunteerPublic chrome.
  * Canonical/hreflang via shared request-aware builder.
  */
@@ -25,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
     : await fetchPublicSeoPageOverride({
         family: "volunteer",
         entityKey: "volunteer",
-      });
+      }).catch(() => null);
   return buildPublicPageMetadataForRequest({
     ...applyPageSeoOverrideToMetadataInput(
       {

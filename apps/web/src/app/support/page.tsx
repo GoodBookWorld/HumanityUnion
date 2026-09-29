@@ -8,6 +8,12 @@ import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-pa
 import { fetchPublicSeoPageOverride } from "../../lib/seo/fetch-public-seo-page-override";
 
 /**
+ * Request-time metadata. The override read uses cache: no-store, which cannot
+ * be statically prerendered; a failed read keeps the automatic WEB_UI metadata.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Support SEO from WEB_UI supportPublic title/subtitle.
  * Locale-free canonical only — /support is outside the multilingual SEO perimeter.
  */
@@ -19,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const override = await fetchPublicSeoPageOverride({
     family: "support",
     entityKey: "support",
-  });
+  }).catch(() => null);
   return buildPublicPageMetadataForRequest({
     ...applyPageSeoOverrideToMetadataInput(
       {

@@ -189,7 +189,9 @@ describe("Step 07A — Support metadata override", () => {
     );
 
     const page = readWeb("app/support/page.tsx");
+    assert.match(page, /export const dynamic = "force-dynamic"/);
     assert.match(page, /fetchPublicSeoPageOverride/);
+    assert.match(page, /\.catch\(\(\) => null\)/);
     assert.match(page, /family:\s*"support"/);
     assert.match(page, /entityKey:\s*"support"/);
     assert.match(page, /applyPageSeoOverrideToMetadataInput/);
@@ -280,7 +282,9 @@ describe("Step 07A — Volunteer canonical override isolation", () => {
     );
 
     const page = readWeb("app/volunteer/page.tsx");
+    assert.match(page, /export const dynamic = "force-dynamic"/);
     assert.match(page, /volunteerPublic/);
+    assert.match(page, /\.catch\(\(\) => null\)/);
     assert.match(page, /isLocalePrefixedDocument/);
     assert.match(page, /selectCanonicalEnglishSeoOverrideForDocument/);
     assert.match(page, /family:\s*"volunteer"/);
