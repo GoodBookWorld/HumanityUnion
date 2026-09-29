@@ -175,6 +175,17 @@ describe("SEO Pack 07 — API and UI safety", () => {
     assert.match(editor, /Indexing:/);
     assert.doesNotMatch(editor, /setCanonical|indexable.*checkbox|robots.*select/i);
     assert.match(editor, /mergePageSeoOverrideIntoAutomatic/);
+    assert.match(editor, /admin-seo-editor__body/);
+    assert.match(editor, /document\.body\.style\.overflow = "hidden"/);
+    assert.match(editor, /document\.body\.style\.overflow = ""/);
+
+    const css = readWeb("features/administration/components/admin-seo-console.css");
+    assert.match(css, /\.confirm-dialog-backdrop:has\(\.admin-seo-editor\)/);
+    assert.match(css, /max-height:\s*calc\(100dvh - 2rem\)/);
+    assert.match(css, /\.admin-seo-editor__body\s*\{[^}]*overflow-y:\s*auto/s);
+    assert.match(css, /\.admin-seo-editor__footer\s*\{[^}]*flex:\s*0 0 auto/s);
+    const bodyRule = css.slice(css.indexOf(".admin-seo-editor__body"), css.indexOf(".admin-seo-editor__footer"));
+    assert.doesNotMatch(bodyRule, /admin-seo-editor__footer/);
   });
 
   it("does not introduce a Blog duplicate override source or SeoSettings store", () => {

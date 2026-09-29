@@ -271,6 +271,7 @@ export function AdminSeoPageEditorModal({
           </p>
         </header>
 
+        <div className="admin-seo-editor__body">
         {error ? <StatusBanner title="Unable to save SEO" message={error} /> : null}
         {message ? <p className="hu-body admin-seo-editor__message">{message}</p> : null}
 
@@ -387,6 +388,7 @@ export function AdminSeoPageEditorModal({
             authoritative.
           </p>
         </section>
+        </div>
 
         <footer className="admin-seo-editor__footer">
           <Button type="button" variant="secondary" disabled={saving} onClick={onClose}>
