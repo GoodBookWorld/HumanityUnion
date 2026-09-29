@@ -43,7 +43,9 @@ export {
   setLanguageActivationJobProcessDepsForTests,
   startAndProcessLanguageActivationJobForTests,
   startOrResumeLanguageActivationJob,
+  ensureWebUiPreparationForUnreadyLocale,
 } from "./language-activation-job.service.js";
+export type { WebUiPreparationEnsureResult } from "./language-activation-job.service.js";
 export type { LanguageActivationJobProcessDeps } from "./language-activation-job.service.js";
 export {
   brandDomainFromPreparationResult,

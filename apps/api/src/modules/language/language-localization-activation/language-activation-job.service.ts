@@ -335,6 +335,92 @@ function toAdminView(input: {
   };
 }
 
+export type WebUiPreparationEnsureResult = {
+  readonly action: "created" | "reused" | "skipped";
+  readonly reason: string;
+  readonly jobId: string | null;
+  readonly generation: number | null;
+  readonly locale: string;
+};
+
+/**
+ * Idempotent system wake for authoritative WEB_UI that is not ready and has
+ * no compatible active preparation. Same activation job engine as Activate.
+ * Does not enqueue CT/PLP. Does not require an operator.
+ */
+export async function ensureWebUiPreparationForUnreadyLocale(input: {
+  readonly locale: string;
+  readonly scheduleProcess?: boolean;
+}): Promise<WebUiPreparationEnsureResult> {
+  const requestedKey = normalizeLanguageRegistryLocaleKey(input.locale);
+  if (!requestedKey || requestedKey === "en") {
+    return {
+      action: "skipped",
+      reason: "source_locale",
+      jobId: null,
+      generation: null,
+      locale: input.locale,
+    };
+  }
+  const record = await resolveLanguageRegistryLocale(input.locale);
+  const localeKey = record
+    ? normalizeLanguageRegistryLocaleKey(record.locale)
+    : "";
+  if (
+    !record ||
+    !localeKey ||
+    localeKey === "en" ||
+    record.enabled !== true ||
+    record.contentTranslationEnabled !== true
+  ) {
+    return {
+      action: "skipped",
+      reason: !record || localeKey === "en" ? "source_locale" : "registry_ineligible",
+      jobId: null,
+      generation: null,
+      locale: record?.locale ?? input.locale,
+    };
+  }
+
+  const deps = processDeps();
+  const assess = deps.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
+  const [publicWebUi, participantWebUi] = await Promise.all([
+    assess({ locale: record.locale }),
+    assess({ locale: record.locale, scope: "participant" }),
+  ]);
+  const active = await getActiveLanguageActivationJobByLocale(localeKey);
+  if (
+    publicWebUi.dataReady === true &&
+    participantWebUi.dataReady === true &&
+    !active
+  ) {
+    return {
+      action: "skipped",
+      reason: "web_ui_ready",
+      jobId: null,
+      generation: null,
+      locale: record.locale,
+    };
+  }
+
+  const latestBefore = await getLatestLanguageActivationJobByLocale(record.locale);
+  const view = await startOrResumeLanguageActivationJobCore({
+    record,
+    createdByParticipantId: null,
+    scheduleProcess: input.scheduleProcess,
+    automaticRecovery: true,
+  });
+  const job = view.job;
+  const created = Boolean(job && job.jobId !== latestBefore?.jobId);
+  return {
+    action: created ? "created" : job ? "reused" : "skipped",
+    reason: created ? "scheduled" : "existing_work",
+    jobId: job?.jobId ?? null,
+    generation: job?.generation ?? null,
+    locale: record.locale,
+  };
+}
+
 /**
  * Create or resume a durable activation job for one Registry language.
  * Returns immediately after persisting queued/active state — no provider calls.
@@ -346,6 +432,25 @@ export async function startOrResumeLanguageActivationJob(input: {
 }): Promise<LanguageActivationAdminView> {
   const admin = await assertAdminActor(input.actorUserId);
   const record = await loadRegistryForLanguageId(input.languageId);
+  return startOrResumeLanguageActivationJobCore({
+    record,
+    createdByParticipantId: admin.participantId,
+    scheduleProcess: input.scheduleProcess,
+  });
+}
+
+/**
+ * Shared Activate / automatic WEB_UI recovery persistence.
+ * Returns immediately after persisting queued/active state — no provider calls.
+ */
+async function startOrResumeLanguageActivationJobCore(input: {
+  readonly record: LanguageRegistryRecord;
+  readonly createdByParticipantId: string | null;
+  readonly scheduleProcess?: boolean;
+  /** Leave a healthy running job alone. Still creates when none is active. */
+  readonly automaticRecovery?: boolean;
+}): Promise<LanguageActivationAdminView> {
+  const record = input.record;
   assertActivationEligible(record);
 
   /** Gate A — job.locale stores Registry CANONICAL; jobId uses IDENTITY KEY. */
@@ -406,7 +511,16 @@ export async function startOrResumeLanguageActivationJob(input: {
         ],
       });
     }
-    if (input.scheduleProcess !== false && claimed.status !== "failed") {
+    if (input.automaticRecovery) {
+      const neverStarted = active.status === "queued" && active.startedAt == null;
+      if (
+        neverStarted &&
+        input.scheduleProcess !== false &&
+        claimed.status !== "failed"
+      ) {
+        scheduleLanguageActivationJobProcess(claimed.jobId);
+      }
+    } else if (input.scheduleProcess !== false && claimed.status !== "failed") {
       scheduleLanguageActivationJobProcess(claimed.jobId);
     }
     return toAdminView({
@@ -520,7 +634,7 @@ export async function startOrResumeLanguageActivationJob(input: {
     updatedAt: createdAt,
     startedAt: null,
     completedAt: null,
-    createdByParticipantId: admin.participantId,
+    createdByParticipantId: input.createdByParticipantId,
     searchEnabledSnapshot: record.searchEnabled,
     seoIndexingEnabledSnapshot: record.seoIndexingEnabled,
   };

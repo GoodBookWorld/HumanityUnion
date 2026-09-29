@@ -295,6 +295,13 @@ describe("STEP 15D.14.C.2 durable reconciliation driver", () => {
       enqueuePlp: async () => {
         plpCalls += 1;
       },
+      ensureWebUiPreparation: async () => ({
+        action: "skipped" as const,
+        reason: "test_stub",
+        jobId: null,
+        generation: null,
+        locale: "ka",
+      }),
     });
 
     const eligibility = await assessLocalizationReconciliationEligibility("ka");
@@ -681,6 +688,13 @@ describe("STEP 15D.14.C.2 durable reconciliation driver", () => {
       measureCtWork: async () => emptyCtBucket({ missing: 1 }),
       planBackfill: async () => emptyPlan(0),
       runResidual: async () => residualResult({}),
+      ensureWebUiPreparation: async () => ({
+        action: "skipped" as const,
+        reason: "test_stub",
+        jobId: null,
+        generation: null,
+        locale: "ka",
+      }),
     });
     scheduleLocalizationReconciliationForAutomaticLocales({
       reason: "terminology_mutation",

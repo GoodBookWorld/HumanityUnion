@@ -23,6 +23,8 @@ import { logger } from "../../shared/observability/logger.js";
 import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
 import { resolveLanguageRegistryLocale } from "./language-registry/language-registry.repository.js";
 import { assessWebUiCatalogReadinessForLocale } from "./language-localization-activation/assess-web-ui-catalog-readiness.js";
+import { ensureWebUiPreparationForUnreadyLocale } from "./language-localization-activation/language-activation-job.service.js";
+import type { WebUiPreparationEnsureResult } from "./language-localization-activation/language-activation-job.service.js";
 import { readLocalizationProviderCooldown } from "./localization-provider-governor.js";
 import type { LocalizationProviderCooldownRead } from "./localization-provider-governor.js";
 import { measureLiveActivationCtCoverage } from "./live-residual-ct-coverage.js";
@@ -127,6 +129,14 @@ export type LocalizationReconciliationDriverDeps = {
   readonly maxPresentationsPerPass?: number;
   readonly nowMs?: () => number;
   readonly readProviderCooldown?: () => Promise<LocalizationProviderCooldownRead>;
+  /**
+   * Idempotent WEB_UI preparation when reconciliation is blocked on WEB_UI.
+   * Production uses the activation job engine. Tests may substitute a fake.
+   */
+  readonly ensureWebUiPreparation?: (input: {
+    readonly locale: string;
+    readonly scheduleProcess?: boolean;
+  }) => Promise<WebUiPreparationEnsureResult>;
 };
 
 let depsOverride: LocalizationReconciliationDriverDeps | null = null;
@@ -491,6 +501,33 @@ export async function runLocalizationReconciliationPass(
     const key = canonicalKey(eligibility.canonicalLocale || localeInput);
     if (key) {
       noProgressStreakByLocale.delete(key);
+    }
+    if (eligibility.reason === "web_ui_not_ready") {
+      const locale = eligibility.canonicalLocale || localeInput;
+      const ensure =
+        d.ensureWebUiPreparation ?? ensureWebUiPreparationForUnreadyLocale;
+      try {
+        await ensure({ locale, scheduleProcess: true });
+      } catch (error) {
+        logger.warn("localization.reconciliation.web_ui_recovery_failed", {
+          component: "localization-reconciliation-driver",
+          locale,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      const delay =
+        d.noProgressBaseDelayMs ??
+        LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS;
+      return {
+        ...idlePassResult({
+          locale,
+          reason: "web_ui_not_ready",
+          before: eligibility,
+        }),
+        continuationKind: "no_progress_backoff",
+        continuationScheduled: delay > 0,
+        continuationDelayMs: delay,
+      };
     }
     return idlePassResult({
       locale: eligibility.canonicalLocale || localeInput,
