@@ -420,13 +420,14 @@ describe("F.3.14.1 bounded provider-shape recovery", () => {
     assert.notEqual(job.status, "failed");
     assert.equal(job.domains.webUi.preparationPhase, "structure_blocked");
     assert.equal(job.domains.webUi.providerFailure, false);
-    assert.equal(job.domains.webUi.nextAttemptAt ?? null, null);
+    assert.ok(Date.parse(job.domains.webUi.nextAttemptAt ?? "") > nowMs);
     assert.equal(job.domains.webUi.detail, WEB_UI_STRUCTURE_BLOCKED_DETAIL);
     assert.doesNotMatch(job.domains.webUi.detail ?? "", /rate limit/i);
     assert.doesNotMatch(job.domains.webUi.detail ?? "", /retry activation/i);
     const checkpoint = await getWebUiActivationCheckpointByJobId(jobId);
     assert.equal(checkpoint?.phase, "structure_blocked");
-    assert.equal(checkpoint?.nextAttemptAt ?? null, null);
+    assert.equal(checkpoint?.structureRecoveryCycleCount, 1);
+    assert.ok(Date.parse(checkpoint?.nextAttemptAt ?? "") > nowMs);
     assert.equal(checkpoint?.providerShapeFailureCount, WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND);
     const batches = await listWebUiActivationBatches(checkpoint!.checkpointId, "primary");
     assert.equal(batches[0]?.status, "pending");

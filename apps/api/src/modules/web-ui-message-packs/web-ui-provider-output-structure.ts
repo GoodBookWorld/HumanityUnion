@@ -42,6 +42,19 @@ const WEB_UI_ACTIVE_CHECKPOINT_PHASES = [
  */
 export const WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND = 6;
 
+/**
+ * Exhausted inner cycles allowed for one blocked streak, including the cycle
+ * that first reached the inner bound. Cycle 2 may run after the outer backoff.
+ * A third exhaustion does not schedule provider work.
+ */
+export const WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES = 2;
+
+/**
+ * Durable wait after the first exhausted inner cycle, before the one later
+ * same-version cycle. Separate from pacing, the inner ladder, and Gate E.
+ */
+export const WEB_UI_STRUCTURE_RECOVERY_BACKOFF_MS = 60 * 60 * 1000;
+
 export const WEB_UI_STRUCTURE_RETRY_REASON = "retryable_provider_output_structure";
 
 /** Same-version reconstructed structure failed until the bound. Provider calls stop. */
@@ -94,12 +107,62 @@ export function webUiProviderShapeFailureCountForBound(input: {
 }
 
 /**
- * Active phases stay recoverable. structure_blocked is recoverable only when
- * the deployed shape version is newer than the version that exhausted the bound.
+ * Outer-cycle count for the current blocked streak.
+ * A missing field on an already exhausted same-version block is cycle 1.
+ * Any other missing field is 0. Does not read provider text.
+ */
+export function webUiStructureRecoveryCycleCount(record: {
+  readonly phase?: string;
+  readonly providerShapeVersion?: number | null;
+  readonly providerShapeFailureCount?: number | null;
+  readonly structureRetryCount?: number | null;
+  readonly structureRecoveryCycleCount?: number | null;
+}): number {
+  if (typeof record.structureRecoveryCycleCount === "number") {
+    return record.structureRecoveryCycleCount;
+  }
+  const sameOrNewerShape =
+    (record.providerShapeVersion ?? 0) >= WEB_UI_PROVIDER_SHAPE_VERSION;
+  const innerExhausted =
+    (record.providerShapeFailureCount ?? 0) >= WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND ||
+    (record.structureRetryCount ?? 0) >= WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND;
+  if (record.phase === "structure_blocked" && sameOrNewerShape && innerExhausted) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * Same-version structure_blocked work that may still receive the one later cycle.
+ * Cycle 2 is terminal. A block with no exhaustion evidence stays closed.
+ */
+export function isSameVersionStructureRecoveryOpen(record: {
+  readonly phase: string;
+  readonly providerShapeVersion?: number | null;
+  readonly providerShapeFailureCount?: number | null;
+  readonly structureRetryCount?: number | null;
+  readonly structureRecoveryCycleCount?: number | null;
+}): boolean {
+  if (record.phase !== "structure_blocked") {
+    return false;
+  }
+  if ((record.providerShapeVersion ?? 0) !== WEB_UI_PROVIDER_SHAPE_VERSION) {
+    return false;
+  }
+  const cycle = webUiStructureRecoveryCycleCount(record);
+  return cycle >= 1 && cycle < WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES;
+}
+
+/**
+ * Active phases stay recoverable. An older shape reopens immediately.
+ * The current shape reopens only for an outer recovery cycle that is still open.
  */
 export function isRecoverableWebUiActivationCheckpoint(record: {
   readonly phase: string;
   readonly providerShapeVersion?: number | null;
+  readonly providerShapeFailureCount?: number | null;
+  readonly structureRetryCount?: number | null;
+  readonly structureRecoveryCycleCount?: number | null;
 }): boolean {
   if ((WEB_UI_ACTIVE_CHECKPOINT_PHASES as readonly string[]).includes(record.phase)) {
     return true;
@@ -107,7 +170,10 @@ export function isRecoverableWebUiActivationCheckpoint(record: {
   if (record.phase !== "structure_blocked") {
     return false;
   }
-  return (record.providerShapeVersion ?? 0) < WEB_UI_PROVIDER_SHAPE_VERSION;
+  if ((record.providerShapeVersion ?? 0) < WEB_UI_PROVIDER_SHAPE_VERSION) {
+    return true;
+  }
+  return isSameVersionStructureRecoveryOpen(record);
 }
 
 export function incompleteWebUiActivationCheckpointMongoFilter(): Record<string, unknown> {
@@ -120,6 +186,38 @@ export function incompleteWebUiActivationCheckpointMongoFilter(): Record<string,
           { providerShapeVersion: { $exists: false } },
           { providerShapeVersion: null },
           { providerShapeVersion: { $lt: WEB_UI_PROVIDER_SHAPE_VERSION } },
+          {
+            providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+            structureRecoveryCycleCount: {
+              $gte: 1,
+              $lt: WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES,
+            },
+          },
+          {
+            providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+            $and: [
+              {
+                $or: [
+                  { structureRecoveryCycleCount: { $exists: false } },
+                  { structureRecoveryCycleCount: null },
+                ],
+              },
+              {
+                $or: [
+                  {
+                    providerShapeFailureCount: {
+                      $gte: WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND,
+                    },
+                  },
+                  {
+                    structureRetryCount: {
+                      $gte: WEB_UI_PROVIDER_SHAPE_STRUCTURE_FAILURE_BOUND,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         ],
       },
     ],

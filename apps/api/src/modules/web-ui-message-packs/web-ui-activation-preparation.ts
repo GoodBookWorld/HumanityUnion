@@ -65,9 +65,12 @@ import {
   WEB_UI_STRUCTURE_BLOCKED_DETAIL,
   WEB_UI_STRUCTURE_BLOCKED_REASON,
   WEB_UI_STRUCTURE_PACING_REASON,
+  WEB_UI_STRUCTURE_RECOVERY_BACKOFF_MS,
+  WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES,
   WEB_UI_STRUCTURE_RETRY_DETAIL,
   WEB_UI_STRUCTURE_RETRY_REASON,
   webUiProviderShapeFailureCountForBound,
+  webUiStructureRecoveryCycleCount,
 } from "./web-ui-provider-output-structure.js";
 import {
   assembleWebUiActivationTranslatedMap,
@@ -474,7 +477,7 @@ export function webUiProgressFromCheckpoint(input: {
       totalLeaves: cp.leafCount,
       completedLeaves: input.completedLeaves ?? 0,
       providerFailure: false,
-      nextAttemptAt: null,
+      nextAttemptAt: cp.nextAttemptAt ?? null,
       transientFailureCount: cp.transientFailureCount ?? 0,
       lastTransientFailure: null,
     };
@@ -751,14 +754,21 @@ async function enterWebUiStructureBlocked(input: {
     structureFailure: input.structureFailure,
     updatedAt: stamp,
   });
+  const exhaustedCycles = webUiStructureRecoveryCycleCount(input.checkpoint) + 1;
+  const terminal = exhaustedCycles >= WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES;
+  const nextAttemptAt = terminal
+    ? null
+    : new Date(Date.parse(stamp) + WEB_UI_STRUCTURE_RECOVERY_BACKOFF_MS).toISOString();
   const checkpoint: WebUiActivationCheckpointRecord = {
     ...input.checkpoint,
     phase: "structure_blocked",
-    nextAttemptAt: null,
+    nextAttemptAt,
     structureRetryCount: input.structureRetryCount,
     providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
     providerShapeFailureCount: input.providerShapeFailureCount,
     structureFailure: input.structureFailure,
+    structureRecoveryCycleCount: exhaustedCycles,
+    structureRecoveryBlockedBatchId: input.batch.id,
     detail: WEB_UI_STRUCTURE_BLOCKED_DETAIL,
     updatedAt: stamp,
   };
@@ -768,6 +778,7 @@ async function enterWebUiStructureBlocked(input: {
     needsAnotherTick: false,
     published: false,
     providerCalls: input.providerCalls,
+    deferredUntil: nextAttemptAt,
     checkpoint,
     webUi: webUiProgressFromCheckpoint({
       readinessDataReady: false,
@@ -1749,6 +1760,8 @@ async function processPrimaryBatchTick(input: {
         providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         providerShapeFailureCount: 0,
         structureFailure: null,
+        structureRecoveryCycleCount: 0,
+        structureRecoveryBlockedBatchId: null,
         detail: `Preparing public interface… ${completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
@@ -1981,6 +1994,8 @@ async function processQualityBatchTick(input: {
         providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         providerShapeFailureCount: 0,
         structureFailure: null,
+        structureRecoveryCycleCount: 0,
+        structureRecoveryBlockedBatchId: null,
         detail: `Checking translation quality… ${qualityCompletedBatchCount} / ${qualityBatches.length}`,
         updatedAt: nowIso(deps),
       };
@@ -2210,6 +2225,161 @@ async function finalizeValidateAndPublish(input: {
   };
 }
 
+function structureBlockTickResult(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly deferredUntil?: string | null;
+}): WebUiActivationTickResult {
+  return {
+    done: false,
+    needsAnotherTick: false,
+    published: false,
+    providerCalls: 0,
+    deferredUntil: input.deferredUntil,
+    checkpoint: input.checkpoint,
+    webUi: webUiProgressFromCheckpoint({
+      readinessDataReady: false,
+      missingKeyCount: input.checkpoint.leafCount,
+      emptyKeyCount: 0,
+      requiredKeyCount: input.checkpoint.leafCount,
+      effectiveSource: "none",
+      checkpoint: input.checkpoint,
+      completedLeaves: Math.min(
+        input.checkpoint.leafCount,
+        input.checkpoint.completedBatchCount * 6,
+      ),
+    }),
+  };
+}
+
+async function findStructureBlockedBatchId(checkpointId: string): Promise<string | null> {
+  const batches = await listWebUiActivationBatches(checkpointId, "primary");
+  const pending = batches.find(
+    (row) => row.status !== "ok" && row.reason === WEB_UI_STRUCTURE_BLOCKED_REASON,
+  );
+  return pending?.batchId ?? null;
+}
+
+/**
+ * Same-version structure_blocked policy.
+ * Cycle 1 waits out the outer backoff. The due tick reopens primary.
+ * Cycle 2 stays closed. Gate E and pacing move the wake later.
+ * Ok batches are not rewritten here.
+ */
+async function settleSameVersionStructureBlock(input: {
+  readonly checkpoint: WebUiActivationCheckpointRecord;
+  readonly job: LanguageActivationJobRecord;
+  readonly deps: WebUiActivationPreparationDeps;
+}): Promise<
+  | { readonly kind: "closed"; readonly result: WebUiActivationTickResult }
+  | { readonly kind: "reopened"; readonly checkpoint: WebUiActivationCheckpointRecord }
+> {
+  const deps = input.deps;
+  let checkpoint = input.checkpoint;
+  const cycle = webUiStructureRecoveryCycleCount(checkpoint);
+  if (cycle >= WEB_UI_STRUCTURE_RECOVERY_OUTER_MAX_CYCLES) {
+    if (checkpoint.nextAttemptAt != null || checkpoint.structureRecoveryCycleCount !== cycle) {
+      checkpoint = {
+        ...checkpoint,
+        structureRecoveryCycleCount: cycle,
+        nextAttemptAt: null,
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(checkpoint);
+    }
+    return { kind: "closed", result: structureBlockTickResult({ checkpoint }) };
+  }
+  if (cycle < 1) {
+    return { kind: "closed", result: structureBlockTickResult({ checkpoint }) };
+  }
+
+  const nowMs = Date.parse(nowIso(deps));
+  const dueAt = checkpoint.nextAttemptAt ? Date.parse(checkpoint.nextAttemptAt) : Number.NaN;
+  if (!Number.isFinite(dueAt)) {
+    const nextAttemptAt = new Date(nowMs + WEB_UI_STRUCTURE_RECOVERY_BACKOFF_MS).toISOString();
+    checkpoint = {
+      ...checkpoint,
+      structureRecoveryCycleCount: cycle,
+      structureRecoveryBlockedBatchId:
+        checkpoint.structureRecoveryBlockedBatchId ??
+        (await findStructureBlockedBatchId(checkpoint.checkpointId)),
+      nextAttemptAt,
+      updatedAt: nowIso(deps),
+    };
+    await upsertWebUiActivationCheckpoint(checkpoint);
+    return {
+      kind: "closed",
+      result: structureBlockTickResult({ checkpoint, deferredUntil: nextAttemptAt }),
+    };
+  }
+  if (dueAt > nowMs) {
+    if (typeof checkpoint.structureRecoveryCycleCount !== "number") {
+      checkpoint = {
+        ...checkpoint,
+        structureRecoveryCycleCount: cycle,
+        structureRecoveryBlockedBatchId:
+          checkpoint.structureRecoveryBlockedBatchId ??
+          (await findStructureBlockedBatchId(checkpoint.checkpointId)),
+        updatedAt: nowIso(deps),
+      };
+      await upsertWebUiActivationCheckpoint(checkpoint);
+    }
+    return {
+      kind: "closed",
+      result: structureBlockTickResult({
+        checkpoint,
+        deferredUntil: checkpoint.nextAttemptAt,
+      }),
+    };
+  }
+
+  if (
+    checkpoint.jobId !== input.job.jobId ||
+    checkpoint.generation !== input.job.generation ||
+    (checkpoint.providerShapeVersion ?? 0) !== WEB_UI_PROVIDER_SHAPE_VERSION
+  ) {
+    return { kind: "closed", result: structureBlockTickResult({ checkpoint }) };
+  }
+  const { flat } = loadPublicWebUiEnglishCorpus(deps.includePaths);
+  if (checkpoint.sourceHash !== hashWebUiEnglishFlatMap(flat)) {
+    return { kind: "closed", result: structureBlockTickResult({ checkpoint }) };
+  }
+
+  const cooldown = await readSharedProviderCooldown(deps);
+  const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+  const blockedUntil = laterLocalizationInstant(
+    cooldown.active ? cooldown.cooldownUntil : null,
+    pacing.blocked ? pacing.nextProviderRequestAt : null,
+  );
+  const blockedMs = blockedUntil ? Date.parse(blockedUntil) : Number.NaN;
+  if (blockedUntil && Number.isFinite(blockedMs) && blockedMs > nowMs) {
+    checkpoint = {
+      ...checkpoint,
+      nextAttemptAt: blockedUntil,
+      structureRecoveryCycleCount: cycle,
+      updatedAt: nowIso(deps),
+    };
+    await upsertWebUiActivationCheckpoint(checkpoint);
+    return {
+      kind: "closed",
+      result: structureBlockTickResult({ checkpoint, deferredUntil: blockedUntil }),
+    };
+  }
+
+  checkpoint = {
+    ...checkpoint,
+    phase: "primary",
+    nextAttemptAt: null,
+    structureRetryCount: 0,
+    providerShapeFailureCount: 0,
+    providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
+    structureRecoveryCycleCount: cycle,
+    detail: `Preparing public interface… ${checkpoint.completedBatchCount} / ${checkpoint.batchCount} batches`,
+    updatedAt: nowIso(deps),
+  };
+  await upsertWebUiActivationCheckpoint(checkpoint);
+  return { kind: "reopened", checkpoint };
+}
+
 /**
  * Advance WEB_UI activation by at most one provider batch (or finalize validate/publish).
  */
@@ -2318,28 +2488,23 @@ export async function processWebUiActivationTick(input: {
         providerShapeFailureCount: 0,
         providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         structureFailure: null,
+        structureRecoveryCycleCount: 0,
+        structureRecoveryBlockedBatchId: null,
         detail: `Preparing public interface… ${checkpoint.completedBatchCount} / ${checkpoint.batchCount} batches`,
         updatedAt: nowIso(deps),
       };
       await upsertWebUiActivationCheckpoint(reopened);
       checkpoint = reopened;
     } else {
-      return {
-        done: false,
-        needsAnotherTick: false,
-        published: false,
-        providerCalls: 0,
+      const settled = await settleSameVersionStructureBlock({
         checkpoint,
-        webUi: webUiProgressFromCheckpoint({
-          readinessDataReady: false,
-          missingKeyCount: checkpoint.leafCount,
-          emptyKeyCount: 0,
-          requiredKeyCount: checkpoint.leafCount,
-          effectiveSource: "none",
-          checkpoint,
-          completedLeaves: Math.min(checkpoint.leafCount, checkpoint.completedBatchCount * 6),
-        }),
-      };
+        job: input.job,
+        deps,
+      });
+      if (settled.kind === "closed") {
+        return settled.result;
+      }
+      checkpoint = settled.checkpoint;
     }
   }
   if (checkpoint.phase === "structure_retry") {

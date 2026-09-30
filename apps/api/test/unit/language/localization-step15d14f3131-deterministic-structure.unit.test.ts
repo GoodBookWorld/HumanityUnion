@@ -390,12 +390,13 @@ describe("F.3.13.1 activation checkpoint and bounds", () => {
     assert.equal(job.status, "running");
     assert.equal(job.domains.webUi.providerFailure, false);
     assert.equal(job.domains.webUi.preparationPhase, "structure_blocked");
-    assert.equal(job.domains.webUi.nextAttemptAt ?? null, null);
+    assert.ok(Date.parse(job.domains.webUi.nextAttemptAt ?? "") > nowMs);
     assert.match(job.domains.webUi.detail ?? "", /structural defect/);
     assert.doesNotMatch(job.domains.webUi.detail ?? "", /rate limit/i);
     const blocked = await getWebUiActivationCheckpointByJobId(started.job.jobId);
     assert.equal(blocked?.phase, "structure_blocked");
-    assert.equal(blocked?.nextAttemptAt ?? null, null);
+    assert.equal(blocked?.structureRecoveryCycleCount, 1);
+    assert.ok(Date.parse(blocked?.nextAttemptAt ?? "") > nowMs);
     assert.equal(blocked?.providerShapeFailureCount, 6);
     assert.equal(blocked?.structureRetryCount, 43);
     const pending = await listWebUiActivationBatches(blocked!.checkpointId, "primary");

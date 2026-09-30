@@ -469,6 +469,8 @@ async function startOrResumeLanguageActivationJobCore(input: {
     });
     const claimed = await claimLanguageActivationJob(active, readiness);
     if (claimed.domains.webUi.preparationPhase === "structure_blocked") {
+      // Outer recovery, when still open, already has a durable nextAttemptAt.
+      // Do not create a generation, reset counters, or move that wake earlier.
       return toAdminView({
         job: claimed,
         readiness,
@@ -1612,7 +1614,9 @@ export function scheduleWebUiActivationTick(jobId: string): void {
         status = job.status;
         if (
           job.domains.webUi.preparationPhase === "provider_cooldown" ||
-          job.domains.webUi.preparationPhase === "structure_retry"
+          job.domains.webUi.preparationPhase === "structure_retry" ||
+          (job.domains.webUi.preparationPhase === "structure_blocked" &&
+            job.domains.webUi.nextAttemptAt)
         ) {
           nextCooldownAt = job.domains.webUi.nextAttemptAt ?? null;
         }

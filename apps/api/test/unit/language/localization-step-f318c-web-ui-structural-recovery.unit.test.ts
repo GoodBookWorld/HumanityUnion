@@ -491,15 +491,16 @@ describe("F.3.18C version-aware checkpoint recovery", () => {
 
     await seed(WEB_UI_PROVIDER_SHAPE_VERSION);
     const sameVersionListed = await listIncompleteWebUiActivationCheckpoints();
-    assert.equal(sameVersionListed.length, 0);
-    const sameBoot = await resumeIncompleteWebUiActivationJobsOnBoot();
-    assert.equal(sameBoot.scheduled, 0);
+    assert.equal(sameVersionListed.length, 1);
     const sameJob = await processLanguageActivationJob(jobId, { webUiTick: true });
     resetLanguageActivationJobSchedulerForTests();
     assert.equal(calls, 0);
     assert.equal(sameJob.generation, 6);
     assert.equal(sameJob.domains.webUi.preparationPhase, "structure_blocked");
     assert.equal(sameJob.domains.webUi.completedBatches, 1);
+    const adopted = await getWebUiActivationCheckpointByJobId(jobId);
+    assert.equal(adopted?.structureRecoveryCycleCount, 1);
+    assert.ok(Date.parse(adopted?.nextAttemptAt ?? "") > nowMs);
 
     calls = 0;
     await seed(WEB_UI_PROVIDER_SHAPE_VERSION - 1);
@@ -574,7 +575,8 @@ describe("F.3.18C version-aware checkpoint recovery", () => {
     assert.equal(checkpoint?.providerShapeVersion, WEB_UI_PROVIDER_SHAPE_VERSION);
     assert.equal(checkpoint?.structureFailure?.failureClass, "placeholder_mismatch");
     assert.equal(checkpoint?.structureFailure?.code, "placeholder_mismatch");
-    assert.equal(checkpoint?.nextAttemptAt ?? null, null);
+    assert.equal(checkpoint?.structureRecoveryCycleCount, 1);
+    assert.ok(Date.parse(checkpoint?.nextAttemptAt ?? "") > nowMs);
     const batches = await listWebUiActivationBatches(checkpoint!.checkpointId, "primary");
     const blocked = batches.find((row) => row.status === "pending");
     assert.ok(blocked);

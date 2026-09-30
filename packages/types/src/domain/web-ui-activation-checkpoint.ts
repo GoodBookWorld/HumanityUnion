@@ -104,6 +104,18 @@ export type WebUiActivationCheckpointRecord = {
   /** Why this checkpoint last entered a structure retry or block. Not provider text. */
   readonly structureFailure?: WebUiStructureFailureDiagnostic | null;
   /**
+   * Exhausted structural cycles in the current blocked streak.
+   * Absent on older checkpoints. A structure_blocked row that already reached
+   * the inner bound and has no field is cycle 1.
+   * Reset only after a batch is stored ok.
+   */
+  readonly structureRecoveryCycleCount?: number | null;
+  /**
+   * Batch that opened the current outer streak.
+   * Selection still uses batch status. This is streak identity, not provider text.
+   */
+  readonly structureRecoveryBlockedBatchId?: string | null;
+  /**
    * Absent on checkpoints created before partial leaf reuse.
    * Those checkpoints keep full-batch provider semantics.
    */
