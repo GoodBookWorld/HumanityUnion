@@ -12,7 +12,8 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "possibleReasonPrefix": "Possible reason:",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "interfaceNote": "Interface note"
   },
   "a11y": {
     "skipToMainContent": "Skip to main content"

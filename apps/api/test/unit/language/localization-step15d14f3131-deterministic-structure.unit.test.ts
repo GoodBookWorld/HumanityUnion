@@ -73,7 +73,7 @@ const BATCH_52_KEYS = [
   "civicActivity.charts.lastNDays",
   "civicActivity.charts.overTimeAria",
 ] as const;
-const SOURCE_HASH = "0a980a20425d5e06cf3e2810feff59f940b716b7aae31effdc8b8226764f5fb1";
+const SOURCE_HASH = "103fafff48971d8d0daaee359af85e4f8606d86f97f6aa1ad5b44e863676b4ec";
 const BATCH_52_ID = "46cecf57798fcf0a";
 
 function payloadText(value: string | readonly string[]): string {
