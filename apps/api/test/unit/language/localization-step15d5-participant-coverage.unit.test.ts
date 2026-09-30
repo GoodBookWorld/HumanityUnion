@@ -27,6 +27,7 @@ import {
   upsertWebUiActivationCheckpoint,
 } from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import {
+  fingerprintWebUiEnglishLeaf,
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
@@ -64,6 +65,20 @@ function readPath(messages: Record<string, unknown>, dottedPath: string): unknow
     current = (current as Record<string, unknown>)[segment];
   }
   return current;
+}
+
+function sourceFingerprintsFor(
+  english: Record<string, unknown>,
+  paths: readonly string[],
+): Record<string, string> {
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of paths) {
+    const value = readPath(english, pathKey);
+    if (typeof value === "string") {
+      fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(value);
+    }
+  }
+  return fingerprints;
 }
 
 function projectPaths(
@@ -249,6 +264,7 @@ describe("Step 15D.5 — complete ordinary Participant localization coverage", (
       status: "published",
       messages: projectPaths(english, legacy481, (value) => `[ka] ${value}`) as never,
       sourceNote: "legacy 481-complete participant pack",
+      sourceFingerprintsByPath: sourceFingerprintsFor(english, legacy481),
     });
 
     const incomplete = await assessWebUiCatalogReadinessForLocale({

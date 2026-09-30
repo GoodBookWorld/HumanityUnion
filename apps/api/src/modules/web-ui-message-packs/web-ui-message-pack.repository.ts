@@ -144,6 +144,10 @@ export async function upsertWebUiMessagePack(
     updatedAt: now,
     updatedByParticipantId: input.updatedByParticipantId ?? null,
     sourceNote: input.sourceNote ?? null,
+    sourceFingerprintsByPath:
+      input.sourceFingerprintsByPath === undefined
+        ? existing?.sourceFingerprintsByPath ?? null
+        : input.sourceFingerprintsByPath,
   };
 
   if (shouldUseMemoryAdapter()) {
@@ -156,6 +160,42 @@ export async function upsertWebUiMessagePack(
     { localeKey },
     { $set: toWebUiMessagePackMongoDocument(record, localeKey) },
     { upsert: true },
+  );
+  return record;
+}
+
+/**
+ * Persist leaf fingerprints on an existing published pack.
+ * Does not change messages, revision, or sourceNote, and does not validate again.
+ */
+export async function writePublishedWebUiSourceFingerprints(input: {
+  readonly locale: string;
+  readonly sourceFingerprintsByPath: Readonly<Record<string, string>>;
+  readonly updatedAt: string;
+}): Promise<WebUiMessagePackRecord | null> {
+  const existing = await getPublishedWebUiMessagePackByLocale(input.locale);
+  if (!existing) {
+    return null;
+  }
+  const localeKey = normalizeLanguageRegistryLocaleKey(existing.locale);
+  const record: WebUiMessagePackRecord = {
+    ...existing,
+    sourceFingerprintsByPath: input.sourceFingerprintsByPath,
+    updatedAt: input.updatedAt,
+  };
+  if (shouldUseMemoryAdapter()) {
+    upsertWebUiMessagePackMemory(record, localeKey);
+    return record;
+  }
+  await ensureMongoReady();
+  await collection().updateOne(
+    { localeKey },
+    {
+      $set: {
+        sourceFingerprintsByPath: input.sourceFingerprintsByPath,
+        updatedAt: input.updatedAt,
+      },
+    },
   );
   return record;
 }

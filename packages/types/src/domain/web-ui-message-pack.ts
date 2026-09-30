@@ -37,6 +37,11 @@ export interface WebUiMessagePackRecord {
   readonly updatedByParticipantId?: string | null;
   /** Optional operator note (import source, ticket, etc.). */
   readonly sourceNote?: string | null;
+  /**
+   * Fingerprint of the authoritative English value for each published required path.
+   * Absent on packs published before per-leaf source currentness.
+   */
+  readonly sourceFingerprintsByPath?: Readonly<Record<string, string>> | null;
 }
 
 export interface WebUiMessagePackUpsertInput {
@@ -45,6 +50,12 @@ export interface WebUiMessagePackUpsertInput {
   readonly status?: WebUiMessagePackStatus;
   readonly sourceNote?: string | null;
   readonly updatedByParticipantId?: string | null;
+  /**
+   * When omitted, the existing map is left unchanged.
+   * Publish passes the map for the current required paths.
+   * Pass null to clear it.
+   */
+  readonly sourceFingerprintsByPath?: Readonly<Record<string, string>> | null;
 }
 
 export interface WebUiMessagePackPublicPayload {

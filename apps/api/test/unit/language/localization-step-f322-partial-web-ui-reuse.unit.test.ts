@@ -30,6 +30,7 @@ import {
   upsertWebUiActivationCheckpoint,
 } from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import {
+  fingerprintWebUiEnglishLeaf,
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
@@ -56,6 +57,24 @@ const SHARED = "auth.currentPassword";
 
 function tree(flat: Record<string, string>): WebUiMessageTree {
   return unflattenWebUiMessageMap(flat);
+}
+
+async function publishProven(localized: Record<string, string>): Promise<void> {
+  const corpus = loadPublicWebUiEnglishCorpus(Object.keys(localized));
+  const sourceFingerprintsByPath: Record<string, string> = {};
+  for (const pathKey of Object.keys(localized)) {
+    const english = corpus.flat[pathKey];
+    if (typeof english === "string") {
+      sourceFingerprintsByPath[pathKey] = fingerprintWebUiEnglishLeaf(english);
+    }
+  }
+  await upsertWebUiMessagePack({
+    locale: LOCALE,
+    messages: tree(localized),
+    status: "published",
+    sourceNote: `sourceHash=${hashWebUiEnglishFlatMap(corpus.flat)}`,
+    sourceFingerprintsByPath,
+  });
 }
 
 function jobRecord(checkpointId?: string): LanguageActivationJobRecord {
@@ -166,23 +185,30 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
     assert.equal(
       classifyWebUiLeafForReuse({
         english: "Save",
-        candidates: [{ source: "PACKAGED", value: "حفظ", sourceHashCompatible: true }],
+        candidates: [{ source: "MONGO_PUBLISHED", value: "حفظ", provenCurrent: true }],
       }).classification,
-      "VALID_REUSABLE",
+      "REUSE_CURRENT",
+    );
+    assert.equal(
+      classifyWebUiLeafForReuse({
+        english: "Save",
+        candidates: [{ source: "PACKAGED", value: "حفظ", provenCurrent: false }],
+      }).classification,
+      "STALE_SOURCE",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
         english: "Showing {count} article",
-        candidates: [{ source: "PACKAGED", value: "عرض", sourceHashCompatible: true }],
+        candidates: [{ source: "PACKAGED", value: "عرض", provenCurrent: false }],
       }).classification,
-      "STRUCTURALLY_INVALID",
+      "STRUCTURE_INCOMPATIBLE",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
         english: "Try again",
-        candidates: [{ source: "BUNDLED", value: "حاول {count}", sourceHashCompatible: true }],
+        candidates: [{ source: "BUNDLED", value: "حاول {count}", provenCurrent: false }],
       }).classification,
-      "STRUCTURALLY_INVALID",
+      "STRUCTURE_INCOMPATIBLE",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
@@ -191,11 +217,11 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
           {
             source: "PACKAGED",
             value: "{count, plural, one {# article}",
-            sourceHashCompatible: true,
+            provenCurrent: true,
           },
         ],
       }).classification,
-      "STRUCTURALLY_INVALID",
+      "STRUCTURE_INCOMPATIBLE",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
@@ -204,25 +230,25 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
           {
             source: "PACKAGED",
             value: "حفظ __HU_BRAND_SITE_NAME__",
-            sourceHashCompatible: true,
+            provenCurrent: true,
           },
         ],
       }).classification,
-      "STRUCTURALLY_INVALID",
+      "INVALID_TRANSLATION",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
         english: "Save",
-        candidates: [{ source: "MONGO_PUBLISHED", value: "حفظ", sourceHashCompatible: false }],
+        candidates: [{ source: "MONGO_PUBLISHED", value: "حفظ", provenCurrent: false }],
       }).classification,
-      "STALE",
+      "STALE_SOURCE",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
         english: "Save",
-        candidates: [{ source: "PACKAGED", value: "   ", sourceHashCompatible: true }],
+        candidates: [{ source: "PACKAGED", value: "   ", provenCurrent: true }],
       }).classification,
-      "EMPTY",
+      "INVALID_TRANSLATION",
     );
     assert.equal(
       classifyWebUiLeafForReuse({
@@ -233,11 +259,11 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
     );
   });
 
-  it("A/M/O/Q/R. one invalid packaged leaf is the only provider work, then the full candidate publishes", async () => {
+  it("A/M/O/Q/R. one invalid published leaf is the only provider work, then the full candidate publishes", async () => {
     const sent: string[][] = [];
+    await publishProven({ [SAVE]: "حفظ" });
     const { result } = await drain({
       paths: [SAVE, SHOWING],
-      packaged: tree({ [SAVE]: "حفظ", [SHOWING]: "عرض" }),
       translator: recordingTranslator(sent),
     });
     assert.equal(result.published, true);
@@ -248,7 +274,7 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
     const reused = batches.find((batch) => batch.preparationProvenance === "REUSED_EXISTING_VALID");
     assert.ok(reused);
     assert.equal(reused?.attempts, 0);
-    assert.equal(reused?.reuseSource, "PACKAGED");
+    assert.equal(reused?.reuseSource, "MONGO_PUBLISHED");
     assert.equal(reused?.values[SAVE], "حفظ");
     const pack = await getPublishedWebUiMessagePackByLocale(LOCALE);
     assert.ok(pack);
@@ -264,9 +290,9 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
 
   it("B/E. multiple residuals are sent and valid participant leaves are not", async () => {
     const sent: string[][] = [];
+    await publishProven({ [CANCEL]: "", [PREFS]: "تفضيلات" });
     await drain({
       paths: [SAVE, CANCEL, PREFS],
-      packaged: tree({ [SAVE]: "حاول {extra}", [CANCEL]: "", [PREFS]: "تفضيلات" }),
       translator: recordingTranslator(sent),
     });
     const flatSent = sent.flat().sort();
@@ -276,12 +302,12 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
 
   it("C/F/G. missing public leaf is repaired and valid participant plus shared leaves are reused once", async () => {
     const sent: string[][] = [];
+    await publishProven({
+      [PREFS]: "تفضيلات",
+      [SHARED]: "كلمة المرور",
+    });
     await drain({
       paths: [SHOWING, PREFS, SHARED],
-      packaged: tree({
-        [PREFS]: "تفضيلات",
-        [SHARED]: "كلمة المرور",
-      }),
       translator: recordingTranslator(sent),
     });
     assert.deepEqual(sent.flat(), [SHOWING]);
@@ -297,23 +323,16 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
 
   it("D. an empty required leaf is repaired and the valid sibling is reused", async () => {
     const sent: string[][] = [];
+    await publishProven({ [SAVE]: "حفظ", [CANCEL]: "  " });
     await drain({
       paths: [SAVE, CANCEL],
-      packaged: tree({ [SAVE]: "حفظ", [CANCEL]: "  " }),
       translator: recordingTranslator(sent),
     });
     assert.deepEqual(sent.flat(), [CANCEL]);
   });
 
-  it("L. a compatible Mongo pack preserves its valid values", async () => {
-    const corpus = loadPublicWebUiEnglishCorpus([SAVE, SHOWING]);
-    const sourceHash = hashWebUiEnglishFlatMap(corpus.flat);
-    await upsertWebUiMessagePack({
-      locale: LOCALE,
-      messages: tree({ [SAVE]: "منشور" }),
-      status: "published",
-      sourceNote: `sourceHash=${sourceHash}`,
-    });
+  it("L. a fingerprint-matched Mongo pack preserves its valid values", async () => {
+    await publishProven({ [SAVE]: "منشور" });
     const sent: string[][] = [];
     await drain({
       paths: [SAVE, SHOWING],
@@ -329,7 +348,7 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
     assert.equal(reused?.attempts, 0);
   });
 
-  it("N. bundled leaves are reused when Mongo and packaged seeds are absent", async () => {
+  it("N. bundled leaves without leaf-source proof are not reused", async () => {
     const sent: string[][] = [];
     await drain({
       paths: [SAVE, SHOWING],
@@ -337,24 +356,28 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
       bundled: tree({ [SAVE]: "حفظ", [SHOWING]: "عرض" }),
       translator: recordingTranslator(sent),
     });
-    assert.deepEqual(sent.flat(), [SHOWING]);
+    assert.deepEqual(sent.flat().sort(), [SAVE, SHOWING].sort());
     const checkpoint = await getWebUiActivationCheckpointByJobId(jobRecord().jobId);
     const batches = await listWebUiActivationBatches(checkpoint!.checkpointId, "primary");
-    const reused = batches.find((batch) => batch.keys.includes(SAVE));
-    assert.equal(reused?.reuseSource, "BUNDLED");
-    assert.equal(reused?.values[SAVE], "حفظ");
+    const reused = batches.find((batch) => batch.reuseSource === "BUNDLED");
+    assert.equal(reused, undefined);
   });
 
   it("P. incomplete residual repair does not publish a partial pack", async () => {
+    await publishProven({ [SAVE]: "حفظ" });
     await drain({
       paths: [SAVE, SHOWING],
-      packaged: tree({ [SAVE]: "حفظ", [SHOWING]: "عرض" }),
       translator: async () => {
         throw new Error("provider unavailable for test");
       },
     });
     const pack = await getPublishedWebUiMessagePackByLocale(LOCALE);
-    assert.equal(pack, null);
+    assert.equal(pack?.revision, 1);
+    assert.equal(
+      (pack?.messages as { blogPublic?: { pagination?: { showingCount?: string } } }).blogPublic
+        ?.pagination?.showingCount,
+      undefined,
+    );
     const checkpoint = await getWebUiActivationCheckpointByJobId(jobRecord().jobId);
     const reused = await getWebUiActivationBatch({
       checkpointId: checkpoint!.checkpointId,
@@ -368,10 +391,11 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
   it("S/T. a later tick does not resend reused or repaired leaves", async () => {
     const sent: string[][] = [];
     const translator = recordingTranslator(sent);
+    await publishProven({ [SAVE]: "حفظ" });
     const deps: WebUiActivationPreparationDeps = {
       includePaths: [SAVE, SHOWING],
       loadLiveTerminology: async () => "",
-      loadPackagedWebUiCatalog: () => tree({ [SAVE]: "حفظ", [SHOWING]: "عرض" }),
+      loadPackagedWebUiCatalog: () => null,
       loadBundledWebUiCatalog: () => null,
       readProviderCooldown: async () => ({ active: false, cooldownUntil: null }),
       translator,

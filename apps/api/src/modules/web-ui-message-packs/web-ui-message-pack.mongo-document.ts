@@ -11,6 +11,7 @@ export type WebUiMessagePackMongoDocument = {
   updatedAt: string;
   updatedByParticipantId?: string | null;
   sourceNote?: string | null;
+  sourceFingerprintsByPath?: Readonly<Record<string, string>> | null;
 };
 
 export function toWebUiMessagePackMongoDocument(
@@ -28,6 +29,7 @@ export function toWebUiMessagePackMongoDocument(
     updatedAt: record.updatedAt,
     updatedByParticipantId: record.updatedByParticipantId ?? null,
     sourceNote: record.sourceNote ?? null,
+    sourceFingerprintsByPath: record.sourceFingerprintsByPath ?? null,
   };
 }
 
@@ -44,5 +46,6 @@ export function fromWebUiMessagePackMongoDocument(
     updatedAt: doc.updatedAt,
     updatedByParticipantId: doc.updatedByParticipantId ?? null,
     sourceNote: doc.sourceNote ?? null,
+    sourceFingerprintsByPath: doc.sourceFingerprintsByPath ?? null,
   };
 }

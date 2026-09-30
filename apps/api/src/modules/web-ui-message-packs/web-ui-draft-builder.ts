@@ -243,6 +243,32 @@ export function hashWebUiEnglishFlatMap(flat: Readonly<Record<string, string>>):
   return hashFlat(flat);
 }
 
+/**
+ * Fingerprint of one authoritative English WEB_UI leaf.
+ * The value alone: no path, locale, translation, timestamp, or job id.
+ * The same English string always hashes the same way.
+ */
+export function fingerprintWebUiEnglishLeaf(englishValue: string): string {
+  return createHash("sha256").update(englishValue, "utf8").digest("hex");
+}
+
+/** Fingerprints for the given required paths. Paths absent from the flat map are omitted. */
+export function buildWebUiSourceFingerprintsByPath(
+  englishFlat: Readonly<Record<string, string>>,
+  paths?: readonly string[],
+): Record<string, string> {
+  const selected = paths ?? Object.keys(englishFlat);
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of selected) {
+    const englishValue = englishFlat[pathKey];
+    if (typeof englishValue !== "string") {
+      continue;
+    }
+    fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(englishValue);
+  }
+  return fingerprints;
+}
+
 function unflatten(flat: Readonly<Record<string, string>>): WebUiMessageTree {
   const root: Record<string, unknown> = {};
   for (const [pathKey, value] of Object.entries(flat)) {

@@ -24,6 +24,7 @@ import { listAutomaticContentTranslationTargetLocales } from "./content-translat
 import { resolveLanguageRegistryLocale } from "./language-registry/language-registry.repository.js";
 import { assessWebUiCatalogReadinessForLocale } from "./language-localization-activation/assess-web-ui-catalog-readiness.js";
 import { ensureWebUiPreparationForUnreadyLocale } from "./language-localization-activation/language-activation-job.service.js";
+import { stampWebUiLeafSourceFingerprintsIfCatalogUnchanged } from "../web-ui-message-packs/web-ui-leaf-source-stamp.js";
 import type { WebUiPreparationEnsureResult } from "./language-localization-activation/language-activation-job.service.js";
 import { readLocalizationProviderCooldown } from "./localization-provider-governor.js";
 import type { LocalizationProviderCooldownRead } from "./localization-provider-governor.js";
@@ -475,6 +476,18 @@ export async function runLocalizationReconciliationPass(
   deps?: LocalizationReconciliationDriverDeps,
 ): Promise<LocalizationReconciliationPassResult> {
   const d = { ...activeDeps(), ...(deps ?? {}) };
+  const stampLocale = localeInput.trim();
+  if (stampLocale && canonicalKey(stampLocale) !== "en") {
+    try {
+      await stampWebUiLeafSourceFingerprintsIfCatalogUnchanged(stampLocale);
+    } catch (error) {
+      logger.warn("localization.reconciliation.web_ui_leaf_stamp_failed", {
+        component: "localization-reconciliation-driver",
+        locale: stampLocale,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   const eligibility = await assessLocalizationReconciliationEligibility(
     localeInput,
     d,

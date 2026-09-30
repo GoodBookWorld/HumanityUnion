@@ -37,6 +37,7 @@ import { classifyEnglishIdenticalWebUiTree } from "./web-ui-identical-classifica
 import {
   assertCompletePublicWebUiDraft,
   buildWebUiDraftTerminologyContext,
+  buildWebUiSourceFingerprintsByPath,
   hashWebUiEnglishFlatMap,
   isWebUiProviderBatchNonRetryable,
   loadPublicWebUiEnglishCorpus,
@@ -85,6 +86,7 @@ import {
 import {
   getPublishedWebUiMessagePackByLocale,
   upsertWebUiMessagePack,
+  writePublishedWebUiSourceFingerprints,
 } from "./web-ui-message-pack.repository.js";
 import {
   assessWebUiMessageTreeReadiness,
@@ -93,7 +95,6 @@ import { tryAdoptPackagedWebUiCatalog } from "./adopt-packaged-web-ui-catalog.js
 import { collectStringPaths, loadBundledWebUiMessagePackFromFs } from "./web-ui-message-pack.validate.js";
 import {
   classifyWebUiCatalogLeaves,
-  readWebUiPackSourceHash,
   WEB_UI_PARTIAL_REUSE_CONTRACT,
 } from "./web-ui-leaf-reuse.js";
 import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
@@ -145,21 +146,11 @@ function nowIso(deps: WebUiActivationPreparationDeps): string {
   return (deps.now ?? (() => new Date().toISOString()))();
 }
 
-function readMessagePathValue(messages: unknown, dottedPath: string): unknown {
-  let current: unknown = messages;
-  for (const segment of dottedPath.split(".")) {
-    if (current == null || typeof current !== "object" || Array.isArray(current)) {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}
-
 /**
- * Step 15D.1 — when the public required corpus expands, seed ok batches from
- * an existing published pack so previously translated paths are not retranslated.
- * Incomplete batches are left for the normal provider path.
+ * Seed ok batches only from leaves proven current by per-leaf English fingerprints.
+ * A non-empty localized string is not enough. Existing ok batches whose leaves
+ * are no longer proven are returned to pending so a catalog change cannot
+ * publish them unchanged.
  */
 export async function seedWebUiActivationBatchesFromPublishedPack(input: {
   readonly checkpointId: string;
@@ -174,23 +165,83 @@ export async function seedWebUiActivationBatchesFromPublishedPack(input: {
   const stamp = nowIso(deps);
   const published = await getPublishedWebUiMessagePackByLocale(input.locale);
   const batches = planWebUiDraftBatches(input.flat);
-  if (!published) {
-    return { seededBatchCount: 0, totalBatchCount: batches.length };
+  const decisions = classifyWebUiCatalogLeaves({
+    englishFlat: input.flat,
+    mongo: published?.messages ?? null,
+    mongoSourceFingerprintsByPath: published?.sourceFingerprintsByPath ?? null,
+    packaged: null,
+    bundled: null,
+  });
+
+  const provenValue = (key: string): string | null => {
+    const decision = decisions.get(key);
+    if (decision?.classification === "REUSE_CURRENT" && decision.value != null) {
+      return decision.value;
+    }
+    return null;
+  };
+
+  const existingBatches = await listWebUiActivationBatches(input.checkpointId, "primary");
+  for (const existing of existingBatches) {
+    if (existing.status !== "ok") {
+      continue;
+    }
+    const stillProven = existing.keys.every(
+      (key) => provenValue(key) != null && existing.values[key] === provenValue(key),
+    );
+    if (stillProven) {
+      continue;
+    }
+    const kept: Record<string, string> = {};
+    for (const key of existing.keys) {
+      const value = provenValue(key);
+      if (value != null) {
+        kept[key] = value;
+      }
+    }
+    await upsertWebUiActivationBatch({
+      checkpointId: existing.checkpointId,
+      batchId: existing.batchId,
+      phase: existing.phase,
+      namespace: existing.namespace,
+      keys: existing.keys,
+      values: kept,
+      status: "pending",
+      attempts: existing.attempts,
+      reason: "source leaf reconsidered",
+      preparationProvenance: null,
+      reuseSource: null,
+      reusedKeyCount: Object.keys(kept).length,
+      providerKeyCount: null,
+      updatedAt: stamp,
+    });
   }
 
   let seededBatchCount = 0;
   for (const batch of batches) {
     const values: Record<string, string> = {};
-    let complete = true;
+    let reusable = true;
     for (const key of batch.keys) {
-      const value = readMessagePathValue(published.messages, key);
-      if (typeof value !== "string" || value.trim().length === 0) {
-        complete = false;
+      const value = provenValue(key);
+      if (value == null) {
+        reusable = false;
         break;
       }
       values[key] = value;
     }
-    if (!complete) {
+    if (!reusable) {
+      continue;
+    }
+    const existing = await getWebUiActivationBatch({
+      checkpointId: input.checkpointId,
+      batchId: batch.id,
+      phase: "primary",
+    });
+    if (
+      existing?.status === "ok" &&
+      batch.keys.every((key) => existing.values[key] === values[key])
+    ) {
+      seededBatchCount += 1;
       continue;
     }
     await upsertWebUiActivationBatch({
@@ -203,6 +254,10 @@ export async function seedWebUiActivationBatchesFromPublishedPack(input: {
       status: "ok",
       attempts: 0,
       reason: "reused from published pack",
+      preparationProvenance: "REUSED_EXISTING_VALID",
+      reuseSource: "MONGO_PUBLISHED",
+      reusedKeyCount: batch.keys.length,
+      providerKeyCount: 0,
       updatedAt: stamp,
     });
     seededBatchCount += 1;
@@ -213,12 +268,10 @@ export async function seedWebUiActivationBatchesFromPublishedPack(input: {
 async function loadWebUiLeafReuseDecisions(input: {
   readonly locale: string;
   readonly flat: Readonly<Record<string, string>>;
-  readonly sourceHash: string;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<ReturnType<typeof classifyWebUiCatalogLeaves>> {
   const deps = input.deps;
   const published = await getPublishedWebUiMessagePackByLocale(input.locale);
-  const recordedHash = readWebUiPackSourceHash(published?.sourceNote);
   const packaged = deps.loadPackagedWebUiCatalog
     ? deps.loadPackagedWebUiCatalog(input.locale)
     : loadPackagedWebUiCatalog(input.locale);
@@ -228,7 +281,7 @@ async function loadWebUiLeafReuseDecisions(input: {
   return classifyWebUiCatalogLeaves({
     englishFlat: input.flat,
     mongo: published?.messages ?? null,
-    mongoSourceHashCompatible: recordedHash == null || recordedHash === input.sourceHash,
+    mongoSourceFingerprintsByPath: published?.sourceFingerprintsByPath ?? null,
     packaged,
     bundled,
   });
@@ -241,7 +294,6 @@ async function loadWebUiLeafReuseDecisions(input: {
 async function seedPartiallyReusableWebUiBatches(input: {
   readonly checkpointId: string;
   readonly flat: Readonly<Record<string, string>>;
-  readonly sourceHash: string;
   readonly locale: string;
   readonly deps: WebUiActivationPreparationDeps;
 }): Promise<{ readonly seededBatchCount: number; readonly totalBatchCount: number }> {
@@ -249,7 +301,6 @@ async function seedPartiallyReusableWebUiBatches(input: {
   const decisions = await loadWebUiLeafReuseDecisions({
     locale: input.locale,
     flat: input.flat,
-    sourceHash: input.sourceHash,
     deps,
   });
   const batches = planWebUiDraftBatches(input.flat);
@@ -269,7 +320,7 @@ async function seedPartiallyReusableWebUiBatches(input: {
     let reusable = true;
     for (const key of batch.keys) {
       const decision = decisions.get(key);
-      if (decision?.classification !== "VALID_REUSABLE" || decision.value == null) {
+      if (decision?.classification !== "REUSE_CURRENT" || decision.value == null) {
         reusable = false;
         break;
       }
@@ -1372,7 +1423,6 @@ export async function ensureWebUiActivationCheckpoint(input: {
     checkpointId: checkpoint.checkpointId,
     locale,
     flat,
-    sourceHash,
     deps,
   });
   const seededCheckpoint: WebUiActivationCheckpointRecord =
@@ -1586,14 +1636,13 @@ async function processPrimaryBatchTick(input: {
         ? await loadWebUiLeafReuseDecisions({
             locale: checkpoint.locale,
             flat,
-            sourceHash,
             deps,
           })
         : null;
     for (const row of classification.suspiciousHuman) {
       const preserved = reuseDecisions?.get(row.path);
       if (
-        preserved?.classification === "VALID_REUSABLE" &&
+        preserved?.classification === "REUSE_CURRENT" &&
         preserved.value != null &&
         translated[row.path] === preserved.value
       ) {
@@ -1647,14 +1696,13 @@ async function processPrimaryBatchTick(input: {
     const decisions = await loadWebUiLeafReuseDecisions({
       locale: checkpoint.locale,
       flat,
-      sourceHash,
       deps,
     });
     const sources = new Set<WebUiLeafReuseSource>();
     const residual: string[] = [];
     for (const key of nextBatch.keys) {
       const decision = decisions.get(key);
-      if (decision?.classification === "VALID_REUSABLE" && decision.value != null) {
+      if (decision?.classification === "REUSE_CURRENT" && decision.value != null) {
         reusedValues[key] = decision.value;
         if (decision.source) {
           sources.add(decision.source);
@@ -2158,6 +2206,18 @@ async function finalizeValidateAndPublish(input: {
         return cursor === translated[path];
       });
     if (allMatch) {
+      const desiredFingerprints = buildWebUiSourceFingerprintsByPath(flat, requiredPaths);
+      const existingFingerprints = existing.sourceFingerprintsByPath ?? {};
+      const fingerprintsCurrent = requiredPaths.every(
+        (path) => existingFingerprints[path] === desiredFingerprints[path],
+      );
+      if (!fingerprintsCurrent) {
+        await writePublishedWebUiSourceFingerprints({
+          locale: checkpoint.locale,
+          sourceFingerprintsByPath: desiredFingerprints,
+          updatedAt: nowIso(deps),
+        });
+      }
       checkpoint = {
         ...checkpoint,
         phase: "ready",
@@ -2197,6 +2257,7 @@ async function finalizeValidateAndPublish(input: {
     messages,
     status: "published",
     sourceNote: `Language activation generation ${checkpoint.generation}; live terminology; sourceHash=${checkpoint.sourceHash}`,
+    sourceFingerprintsByPath: buildWebUiSourceFingerprintsByPath(flat, requiredPaths),
   });
 
   checkpoint = {

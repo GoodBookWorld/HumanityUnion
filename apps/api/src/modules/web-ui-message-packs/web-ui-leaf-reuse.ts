@@ -1,11 +1,15 @@
 /**
  * Per-leaf WEB_UI reuse for preparation.
- * Whole-catalog adoption stays atomic. Valid leaves can still be kept.
- * Seed catalogs are preparation inputs, not a second runtime authority.
+ * A Mongo leaf is current only when its stored English fingerprint matches
+ * the current authoritative English value and the localized value still
+ * passes the presentation contract.
+ * Packaged and bundled catalogs are bootstrap candidates. Structure match
+ * alone does not prove them current.
  */
 
 import type { WebUiLeafReuseSource, WebUiMessageTree } from "@hu/types";
 
+import { fingerprintWebUiEnglishLeaf } from "./web-ui-draft-builder.js";
 import { describeStructureMismatch } from "./web-ui-message-pack.validate.js";
 
 export const WEB_UI_PARTIAL_REUSE_CONTRACT = "partial_reuse_v1" as const;
@@ -14,22 +18,20 @@ const BRAND_MACHINE_SENTINEL = "__HU_BRAND_SITE_NAME__";
 const PROTECTION_MARK = "⟦w";
 
 export type WebUiLeafReuseClass =
-  | "VALID_REUSABLE"
+  | "REUSE_CURRENT"
   | "MISSING"
-  | "EMPTY"
-  | "STALE"
-  | "STRUCTURALLY_INVALID";
+  | "STALE_SOURCE"
+  | "STRUCTURE_INCOMPATIBLE"
+  | "INVALID_TRANSLATION";
 
 export type WebUiLeafReuseCandidate = {
   readonly source: WebUiLeafReuseSource;
   readonly value: unknown;
   /**
-   * False when a recorded source fingerprint does not match the current
-   * English corpus. Structure alone must not reuse that candidate.
-   * Packaged and bundled catalogs have no per-leaf source version; their
-   * compatibility is the structural contract against the current English leaf.
+   * True only when this candidate's stored English fingerprint equals the
+   * current English leaf. Packaged and bundled candidates are never proven.
    */
-  readonly sourceHashCompatible: boolean;
+  readonly provenCurrent: boolean;
 };
 
 export type WebUiLeafReuseDecision = {
@@ -65,16 +67,24 @@ export function isWebUiLeafStructurallyReusable(english: string, localized: stri
   return describeStructureMismatch(english, localized) == null;
 }
 
+function isInvalidTranslationText(localized: string): boolean {
+  return (
+    localized.trim().length === 0 ||
+    localized.includes(BRAND_MACHINE_SENTINEL) ||
+    localized.includes(PROTECTION_MARK)
+  );
+}
+
 /**
- * First compatible structurally valid candidate wins.
- * Mongo, then packaged, then bundled. Invalid text never blocks a later valid leaf.
+ * First proven, structurally valid candidate wins.
+ * Mongo, then packaged, then bundled. Unproven text never becomes current.
  */
 export function classifyWebUiLeafForReuse(input: {
   readonly english: string;
   readonly candidates: readonly WebUiLeafReuseCandidate[];
 }): WebUiLeafReuseDecision {
-  let sawEmpty = false;
   let sawInvalid = false;
+  let sawStructure = false;
   let sawStale = false;
   let sawValue = false;
 
@@ -83,36 +93,36 @@ export function classifyWebUiLeafForReuse(input: {
       continue;
     }
     sawValue = true;
-    if (candidate.value.trim().length === 0) {
-      sawEmpty = true;
-      continue;
-    }
-    if (!candidate.sourceHashCompatible) {
-      sawStale = true;
-      continue;
-    }
-    if (!isWebUiLeafStructurallyReusable(input.english, candidate.value)) {
+    if (isInvalidTranslationText(candidate.value)) {
       sawInvalid = true;
       continue;
     }
-    return {
-      classification: "VALID_REUSABLE",
-      value: candidate.value,
-      source: candidate.source,
-    };
+    const structureOk = describeStructureMismatch(input.english, candidate.value) == null;
+    if (candidate.provenCurrent && structureOk) {
+      return {
+        classification: "REUSE_CURRENT",
+        value: candidate.value,
+        source: candidate.source,
+      };
+    }
+    if (!structureOk) {
+      sawStructure = true;
+      continue;
+    }
+    sawStale = true;
   }
 
   if (!sawValue) {
     return { classification: "MISSING", value: null, source: null };
   }
-  if (sawInvalid) {
-    return { classification: "STRUCTURALLY_INVALID", value: null, source: null };
+  if (sawStructure) {
+    return { classification: "STRUCTURE_INCOMPATIBLE", value: null, source: null };
   }
-  if (sawEmpty) {
-    return { classification: "EMPTY", value: null, source: null };
+  if (sawInvalid) {
+    return { classification: "INVALID_TRANSLATION", value: null, source: null };
   }
   if (sawStale) {
-    return { classification: "STALE", value: null, source: null };
+    return { classification: "STALE_SOURCE", value: null, source: null };
   }
   return { classification: "MISSING", value: null, source: null };
 }
@@ -120,38 +130,42 @@ export function classifyWebUiLeafForReuse(input: {
 export function classifyWebUiCatalogLeaves(input: {
   readonly englishFlat: Readonly<Record<string, string>>;
   readonly mongo: WebUiMessageTree | null;
-  readonly mongoSourceHashCompatible: boolean;
+  readonly mongoSourceFingerprintsByPath?: Readonly<Record<string, string>> | null;
   readonly packaged: WebUiMessageTree | null;
   readonly bundled: WebUiMessageTree | null;
 }): Map<string, WebUiLeafReuseDecision> {
+  const fingerprints = input.mongoSourceFingerprintsByPath ?? {};
   const decisions = new Map<string, WebUiLeafReuseDecision>();
   for (const pathKey of Object.keys(input.englishFlat).sort()) {
+    const english = input.englishFlat[pathKey] ?? "";
+    const currentFingerprint = fingerprintWebUiEnglishLeaf(english);
+    const storedFingerprint = fingerprints[pathKey];
     const candidates: WebUiLeafReuseCandidate[] = [];
     if (input.mongo) {
       candidates.push({
         source: "MONGO_PUBLISHED",
         value: readWebUiMessagePath(input.mongo, pathKey),
-        sourceHashCompatible: input.mongoSourceHashCompatible,
+        provenCurrent: storedFingerprint != null && storedFingerprint === currentFingerprint,
       });
     }
     if (input.packaged) {
       candidates.push({
         source: "PACKAGED",
         value: readWebUiMessagePath(input.packaged, pathKey),
-        sourceHashCompatible: true,
+        provenCurrent: false,
       });
     }
     if (input.bundled) {
       candidates.push({
         source: "BUNDLED",
         value: readWebUiMessagePath(input.bundled, pathKey),
-        sourceHashCompatible: true,
+        provenCurrent: false,
       });
     }
     decisions.set(
       pathKey,
       classifyWebUiLeafForReuse({
-        english: input.englishFlat[pathKey] ?? "",
+        english,
         candidates,
       }),
     );

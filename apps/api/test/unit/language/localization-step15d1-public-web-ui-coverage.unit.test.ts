@@ -23,6 +23,7 @@ import {
   upsertWebUiActivationCheckpoint,
 } from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import {
+  fingerprintWebUiEnglishLeaf,
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
@@ -47,6 +48,20 @@ const STEP15D1_FAMILIES = [
   "search.",
   "supportPublic.",
 ] as const;
+
+function sourceFingerprintsFor(
+  english: Record<string, unknown>,
+  paths: readonly string[],
+): Record<string, string> {
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of paths) {
+    const value = readPath(english, pathKey);
+    if (typeof value === "string") {
+      fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(value);
+    }
+  }
+  return fingerprints;
+}
 
 function readPath(messages: Record<string, unknown>, dottedPath: string): unknown {
   let current: unknown = messages;
@@ -231,6 +246,7 @@ describe("Step 15D.1 — ordinary public WEB_UI coverage", () => {
       status: "published",
       messages: projectPaths(english, legacyPaths, (value) => `[ka] ${value}`) as never,
       sourceNote: "partial ka pack",
+      sourceFingerprintsByPath: sourceFingerprintsFor(english, legacyPaths),
     });
 
     const corpus = loadPublicWebUiEnglishCorpus();
