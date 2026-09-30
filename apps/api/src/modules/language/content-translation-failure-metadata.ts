@@ -261,8 +261,9 @@ export function resolveLocaleFailureFromMetadata(
 }
 
 /**
- * Same-version structural/semantic failures. These stay terminal even when a
+ * Same-version source/structure failures. These stay terminal even when a
  * fallback reason or a retryable hint is also present.
+ * Provider terminology-protection failures are not in this list.
  */
 export const WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS = [
   "UNCHANGED_SOURCE_PROSE",
@@ -274,7 +275,6 @@ export const WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS = [
   "UNEXPECTED_PATH",
   "STRUCTURE_MISMATCH",
   "TARGET_LANGUAGE_MISMATCH",
-  "TERMINOLOGY_PROTECTION_VIOLATION",
 ] as const;
 
 /**
@@ -408,8 +408,9 @@ function isWarmFailureReasonFallback(reason: string | null | undefined): boolean
 
 /**
  * Canonical same-version retry decision.
- * Structured infrastructure classes and an explicit retryable hint win over
- * UNKNOWN_LEGACY. Validation reason codes stay terminal. Missing evidence stays terminal.
+ * A provider terminology-protection failure stays on the semantic defer.
+ * Version ownership does not make that failure terminal.
+ * Other validation reason codes stay terminal. Missing evidence stays terminal.
  */
 export function decideSameVersionWarmFailureRetry(input: {
   readonly failureClass: string | null;
@@ -417,6 +418,12 @@ export function decideSameVersionWarmFailureRetry(input: {
   readonly retryabilityHint?: string | null;
 }): SameVersionWarmFailureRetryDecision {
   const reason = input.failureReasonCode;
+  // Provider output failed protected-term checks. The source is still the
+  // current identity. Retry uses the existing semantic defer, including a
+  // legacy row whose hint was recorded as terminal and has no retryEligibleAt.
+  if (reason === "TERMINOLOGY_PROTECTION_VIOLATION") {
+    return "retryable";
+  }
   if (
     reason != null &&
     (WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS as readonly string[]).includes(reason)

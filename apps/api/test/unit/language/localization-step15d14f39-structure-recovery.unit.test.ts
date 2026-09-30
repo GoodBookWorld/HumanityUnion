@@ -88,11 +88,13 @@ function echo(request: TranslationProviderRequest, corruptSentinels: boolean) {
   for (const [key, value] of Object.entries(parsed)) {
     if (Array.isArray(value)) {
       const spans = value.map((span) => String(span));
-      if (corruptSentinels) {
-        const index = spans.findIndex((span) => span.length > 0);
-        if (index >= 0) {
-          spans[index] = `${spans[index]} {renamed}`;
-        }
+      // Shape v3 sends every leaf as spans and keeps placeholders out of the
+      // provider text. A multi-span leaf is the protected placeholder case.
+      // An extra span is the same class of retryable structure failure the
+      // test used to produce by renaming a sentinel. A one-span plain leaf
+      // stays valid.
+      if (corruptSentinels && spans.length > 1) {
+        spans.push("extra");
       } else {
         for (let index = 0; index < spans.length; index += 1) {
           if (spans[index]!.length > 0) {
@@ -323,7 +325,7 @@ describe("15D.14.F.3.9 — retryable WEB_UI provider-output structure recovery",
     const callsAfterOk = providerCalls;
 
     job = await processLanguageActivationJob(started.jobId, { webUiTick: true });
-    assert.equal(providerCalls, callsAfterOk + 2);
+    assert.equal(providerCalls, callsAfterOk + 1);
     assert.equal(job.status, "running");
     assert.notEqual(job.status, "failed");
     assert.equal(job.domains.webUi.preparationPhase, "structure_retry");
@@ -411,7 +413,7 @@ describe("15D.14.F.3.9 — retryable WEB_UI provider-output structure recovery",
     const callsAtFirstWait = providerCalls;
     nowMs = Date.parse(firstWake) + 1000;
     job = await processLanguageActivationJob(started.jobId, { webUiTick: true });
-    assert.equal(providerCalls, callsAtFirstWait + 2);
+    assert.equal(providerCalls, callsAtFirstWait + 1);
     assert.equal(job.status, "running");
     assert.equal(job.domains.webUi.preparationPhase, "structure_retry");
     assert.equal(job.domains.webUi.completedBatches, 1);
