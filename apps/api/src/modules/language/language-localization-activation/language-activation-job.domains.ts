@@ -369,6 +369,25 @@ export async function buildWebUiDomainProgress(
       status: "failed",
     };
   }
+  if (previous?.preparationPhase === "ready" && !dataReady) {
+    return {
+      status: "pending",
+      dataReady: false,
+      missingKeyCount: readiness.webUi.missingKeyCount,
+      emptyKeyCount: readiness.webUi.emptyKeyCount,
+      requiredKeyCount: readiness.webUi.requiredKeyCount,
+      effectiveSource: effective?.source ?? previous.effectiveSource,
+      detail: `waiting_for_data missing=${readiness.webUi.missingKeyCount} empty=${readiness.webUi.emptyKeyCount} required=${readiness.webUi.requiredKeyCount} dataReady=false`,
+      preparationPhase: "ready",
+      checkpointId: previous.checkpointId ?? null,
+      sourceHash: previous.sourceHash ?? null,
+      totalBatches: previous.totalBatches ?? 0,
+      completedBatches: previous.completedBatches ?? 0,
+      totalLeaves: previous.totalLeaves ?? readiness.webUi.requiredKeyCount,
+      completedLeaves: previous.completedLeaves ?? 0,
+      providerFailure: false,
+    };
+  }
   if (previous?.preparationPhase === "ready" || dataReady) {
     return {
       status: "ready",

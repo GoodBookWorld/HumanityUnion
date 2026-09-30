@@ -515,12 +515,18 @@ async function startOrResumeLanguageActivationJobCore(input: {
     }
     if (input.automaticRecovery) {
       const neverStarted = active.status === "queued" && active.startedAt == null;
-      if (
-        neverStarted &&
-        input.scheduleProcess !== false &&
-        claimed.status !== "failed"
-      ) {
+      const currentWebUiReady =
+        readiness.webUi.dataReady === true &&
+        readiness.participantWebUi.dataReady === true;
+      const eligible =
+        input.scheduleProcess !== false && claimed.status !== "failed";
+      if (neverStarted && eligible) {
         scheduleLanguageActivationJobProcess(claimed.jobId);
+      } else if (!currentWebUiReady && eligible) {
+        // Measured readiness, not claimed.domains.webUi. Claim may still
+        // project a historical ready checkpoint. The tick rebases that
+        // checkpoint on this same job and generation.
+        scheduleWebUiActivationTick(claimed.jobId);
       }
     } else if (input.scheduleProcess !== false && claimed.status !== "failed") {
       scheduleLanguageActivationJobProcess(claimed.jobId);

@@ -257,14 +257,16 @@ describe("Step 15C.4 — WEB_UI follow-up tick scheduling", () => {
       languageId: record.languageId,
     });
     assert.equal(providerCalls, callsAtReady);
-    assert.equal(status.job?.domains.webUi.status, "ready");
+    assert.equal(status.job?.domains.webUi.status, "pending");
+    assert.equal(status.job?.domains.webUi.dataReady, false);
     const again = await getLanguageActivationAdminView({
       actorUserId: "admin-1",
       languageId: record.languageId,
     });
     assert.equal(providerCalls, callsAtReady);
     assert.equal(again.job?.status, status.job?.status);
-    assert.equal(again.job?.domains.webUi.status, "ready");
+    assert.equal(again.job?.domains.webUi.status, "pending");
+    assert.equal(again.job?.domains.webUi.dataReady, false);
     assert.equal(getWebUiActivationSchedulerSnapshotForTests(job.jobId).followUpRequested, false);
   });
 

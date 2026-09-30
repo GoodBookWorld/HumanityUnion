@@ -289,7 +289,10 @@ describe("Step 15C — durable WEB_UI activation", () => {
     const pack = await getPublishedWebUiMessagePackByLocale("sw");
     assert.ok(pack);
     assert.equal(pack.status, "published");
-    assert.equal(view.job?.domains.webUi.status, "ready");
+    // The subset published here is not the current English catalog, so the
+    // historical ready checkpoint does not report the domain ready.
+    assert.equal(view.job?.domains.webUi.status, "pending");
+    assert.equal(view.job?.domains.webUi.dataReady, false);
 
     const preparation = readFileSync(
       path.join(apiSrc, "modules/web-ui-message-packs/web-ui-activation-preparation.ts"),

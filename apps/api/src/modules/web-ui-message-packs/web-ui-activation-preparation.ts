@@ -466,6 +466,31 @@ export function webUiProgressFromCheckpoint(input: {
   }
 
   if (cp.phase === "ready") {
+    if (!input.readinessDataReady) {
+      return {
+        status: "pending",
+        dataReady: false,
+        missingKeyCount: input.missingKeyCount,
+        emptyKeyCount: input.emptyKeyCount,
+        requiredKeyCount: input.requiredKeyCount,
+        effectiveSource: input.effectiveSource,
+        detail:
+          input.missingKeyCount > 0
+            ? `waiting_for_data missing=${input.missingKeyCount}`
+            : "Preparing public interface…",
+        preparationPhase: "ready",
+        checkpointId: cp.checkpointId,
+        sourceHash: cp.sourceHash,
+        totalBatches: cp.batchCount,
+        completedBatches: cp.completedBatchCount,
+        totalLeaves: cp.leafCount,
+        completedLeaves: input.completedLeaves ?? cp.completedBatchCount,
+        providerFailure: false,
+        nextAttemptAt: null,
+        transientFailureCount: cp.transientFailureCount ?? 0,
+        lastTransientFailure: cp.lastTransientFailure ?? null,
+      };
+    }
     return {
       status: "ready",
       dataReady: true,
