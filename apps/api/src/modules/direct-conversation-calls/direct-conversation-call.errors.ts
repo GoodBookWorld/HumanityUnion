@@ -53,3 +53,10 @@ export class DirectConversationCallPersistenceError extends Error {
     this.name = "DirectConversationCallPersistenceError";
   }
 }
+
+export class LiveKitConfigurationError extends Error {
+  constructor(message = "Call connection is not configured.") {
+    super(message);
+    this.name = "LiveKitConfigurationError";
+  }
+}

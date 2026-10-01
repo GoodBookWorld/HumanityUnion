@@ -5,6 +5,7 @@ export {
   declineDirectConversationCall,
   endDirectConversationCall,
   getCurrentDirectConversationCall,
+  issueDirectConversationCallConnection,
   listDirectConversationCallHistory,
 } from "./direct-conversation-call.service.js";
 export {
@@ -21,6 +22,15 @@ export {
 export {
   deleteDirectConversationCallsByConversationIdForTests,
   findRawDirectConversationCallDocumentForTests,
+  insertDirectConversationCall,
   pruneTerminalDirectConversationCalls,
 } from "./persistence/direct-conversation-call.repository.js";
+export { setLiveKitRoomDeleterForTests } from "./livekit-room.js";
+export { liveKitIdentityForParticipant, liveKitRoomNameForCall } from "./livekit-access.js";
+export {
+  LIVEKIT_FORBIDDEN_PUBLIC_MEDIA_HOST,
+  LIVEKIT_TOKEN_TTL,
+  assertLiveKitDeploymentBoundary,
+  resolveLiveKitConfig,
+} from "../../config/livekit.config.js";
 export * from "./direct-conversation-call.errors.js";

@@ -58,6 +58,7 @@ export type {
 } from "./direct-messaging.js";
 export type {
   DirectConversationCall,
+  DirectConversationCallConnection,
   DirectConversationCallContextType,
   DirectConversationCallCurrentResponse,
   DirectConversationCallHistoryResponse,

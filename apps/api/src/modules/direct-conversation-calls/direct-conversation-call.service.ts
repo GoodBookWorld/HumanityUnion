@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import type { DirectConversation, DirectConversationCall } from "@hu/types";
+import type { DirectConversation, DirectConversationCall, DirectConversationCallConnection } from "@hu/types";
 
 import { requireConversationMembership } from "../direct-messaging/direct-messaging.service.js";
+import { resolveLiveKitConfig } from "../../config/livekit.config.js";
 import {
   DIRECT_CONVERSATION_CALL_HISTORY_LIMIT,
   resolveDirectConversationCallInvitationTtlMs,
@@ -15,6 +16,8 @@ import {
   DirectConversationCallValidationError,
 } from "./direct-conversation-call.errors.js";
 import { assertDirectConversationCallCreateRateLimit } from "./direct-conversation-call.rate-limit.js";
+import { mintLiveKitParticipantToken } from "./livekit-access.js";
+import { releaseLiveKitRoomAfterEnd } from "./livekit-room.js";
 import {
   findDirectConversationCallById,
   findLiveDirectConversationCall,
@@ -280,5 +283,41 @@ export async function endDirectConversationCall(
   }
 
   await pruneTerminalDirectConversationCalls(conversationId);
+  await releaseLiveKitRoomAfterEnd(ended.callId);
   return ended;
+}
+
+/**
+ * Issues a LiveKit connection only after the VC-03 call is accepted.
+ * Room, identity, URL, and grants come from the server. The request body
+ * cannot supply them.
+ */
+export async function issueDirectConversationCallConnection(input: {
+  conversationId: string;
+  callId: string;
+  participantId: string;
+}): Promise<DirectConversationCallConnection> {
+  const conversationId = requireConversationId(input.conversationId);
+  await authorizeConversation(conversationId, input.participantId);
+  const now = new Date().toISOString();
+  await reconcileOverdueInvitations(conversationId, now);
+
+  const call = await requireCallForMember(conversationId, input.callId, input.participantId);
+
+  if (call.status === "missed" || (call.status === "invited" && call.expiresAt <= now)) {
+    throw new DirectConversationCallExpiredError();
+  }
+
+  if (call.status !== "accepted") {
+    throw new DirectConversationCallTransitionError();
+  }
+
+  const config = resolveLiveKitConfig();
+  const token = await mintLiveKitParticipantToken({
+    config,
+    callId: call.callId,
+    participantId: input.participantId,
+  });
+
+  return { token, url: config.url };
 }

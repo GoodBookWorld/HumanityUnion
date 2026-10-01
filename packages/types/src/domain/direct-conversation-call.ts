@@ -40,6 +40,11 @@ export interface DirectConversationCall {
   durationMs?: number;
 }
 
+export interface DirectConversationCallConnection {
+  token: string;
+  url: string;
+}
+
 export interface DirectConversationCallCurrentResponse {
   call: DirectConversationCall | null;
 }

@@ -17,6 +17,7 @@ import {
   DirectConversationCallRateLimitError,
   DirectConversationCallTransitionError,
   DirectConversationCallValidationError,
+  LiveKitConfigurationError,
 } from "./direct-conversation-call.errors.js";
 import {
   acceptDirectConversationCall,
@@ -24,6 +25,7 @@ import {
   declineDirectConversationCall,
   endDirectConversationCall,
   getCurrentDirectConversationCall,
+  issueDirectConversationCallConnection,
   listDirectConversationCallHistory,
 } from "./direct-conversation-call.service.js";
 
@@ -78,7 +80,8 @@ function resolveErrorStatus(error: unknown): number {
 
   if (
     error instanceof DirectConversationCallPersistenceUnavailableError ||
-    error instanceof DirectMessagingPersistenceUnavailableError
+    error instanceof DirectMessagingPersistenceUnavailableError ||
+    error instanceof LiveKitConfigurationError
   ) {
     return 503;
   }
@@ -251,6 +254,29 @@ directConversationCallsRouter.post(
       });
 
       res.json(createSuccessResponse(call, "Call ended."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+directConversationCallsRouter.post(
+  "/conversations/:conversationId/calls/:callId/connection",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    if (!(await requireEligibleParticipant(req, res))) {
+      return;
+    }
+
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const connection = await issueDirectConversationCallConnection({
+        conversationId: resolveParam(req.params.conversationId),
+        callId: resolveParam(req.params.callId),
+        participantId: identity.participantId,
+      });
+
+      res.json(createSuccessResponse(connection, "Call connection issued."));
     } catch (error) {
       handleServiceError(res, error);
     }

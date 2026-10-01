@@ -74,6 +74,7 @@
     "express": "^5.2.1",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "livekit-server-sdk": "^2.19.1",
     "mongodb": "^6.20.0",
     "multer": "^2.0.2",
     "nodemailer": "^9.0.3",
