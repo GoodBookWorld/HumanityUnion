@@ -376,6 +376,9 @@ export async function rebaseWebUiCheckpointForCatalogExpansion(input: {
     ...input.checkpoint,
     sourceHash: input.sourceHash,
     phase: "primary",
+    // Catalog rebase adopts current per-leaf reuse. The marker does not
+    // classify leaves; the seed above already applied the fingerprint contract.
+    preparationContract: WEB_UI_PARTIAL_REUSE_CONTRACT,
     leafCount: input.requiredPaths.length,
     batchCount: batches.length,
     completedBatchCount: seeded.seededBatchCount,
