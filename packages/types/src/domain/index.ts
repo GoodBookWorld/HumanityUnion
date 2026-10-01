@@ -56,6 +56,15 @@ export type {
   DirectMessageStatus,
   DirectMessagingPolicy,
 } from "./direct-messaging.js";
+export type {
+  DirectConversationCall,
+  DirectConversationCallContextType,
+  DirectConversationCallCurrentResponse,
+  DirectConversationCallHistoryResponse,
+  DirectConversationCallLiveStatus,
+  DirectConversationCallStatus,
+  DirectConversationCallTerminalStatus,
+} from "./direct-conversation-call.js";
 export type { ParticipantStatistics, PublicParticipantStatistics } from "./participant-statistics.js";
 export type {
   AccessibilityPreferences,

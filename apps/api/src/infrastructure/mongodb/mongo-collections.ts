@@ -78,6 +78,7 @@ export const MONGO_COLLECTIONS = {
   initiativeDiscussionProposalCandidates: "initiative_discussion_proposal_candidates",
   directConversations: "direct_conversations",
   directMessages: "direct_messages",
+  directConversationCalls: "direct_conversation_calls",
   initiativeCollaborationChannelMessages: "initiative_collaboration_channel_messages",
   initiativeCollaborationChannelReads: "initiative_collaboration_channel_reads",
   initiativeCollaborationSessions: "initiative_collaboration_sessions",

@@ -961,6 +961,30 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // VC-03 — one live (invited or accepted) Direct Conversation call.
+    // The partial unique index is the concurrency authority. Terminal rows
+    // are excluded so history can accumulate up to the latest-20 prune.
+    // Future group calls must not reuse a null conversationId under this index.
+    collectionName: MONGO_COLLECTIONS.directConversationCalls,
+    indexes: [
+      {
+        key: { callId: 1 },
+        unique: true,
+        name: "direct_conversation_calls_call_id_unique",
+      },
+      {
+        key: { conversationId: 1 },
+        unique: true,
+        name: "direct_conversation_calls_one_live_per_conversation",
+        partialFilterExpression: { status: { $in: ["invited", "accepted"] } },
+      },
+      {
+        key: { conversationId: 1, createdAt: -1 },
+        name: "direct_conversation_calls_conversation_created_at",
+      },
+    ],
+  },
+  {
     // Communication UX Pack 03.5 — one persistent Collaboration Channel per
     // Initiative (never a separate "channel" document; the Initiative id
     // itself is the channel's identity). Chronological history and cursor

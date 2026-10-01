@@ -161,6 +161,7 @@ import { initiativeCollaborationChannelRouter } from "./modules/initiative-colla
 import { initiativeCollaborationSessionsRouter } from "./modules/initiative-collaboration-sessions/index.js";
 import { memberProfileRouter, publicMemberProfileRouter } from "./modules/member-profile/index.js";
 import { directMessagingRouter } from "./modules/direct-messaging/index.js";
+import { directConversationCallsRouter } from "./modules/direct-conversation-calls/index.js";
 import { blogRouter, publicBlogRouter } from "./modules/blog/index.js";
 import { adminPublishingRouter } from "./modules/blog/admin-publishing.routes.js";
 import {
@@ -334,6 +335,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/email", emailRouter);
 app.use("/api/v1/member-profile", memberProfileRouter);
 app.use("/api/v1/direct-messages", directMessagingRouter);
+app.use("/api/v1/direct-messages", directConversationCallsRouter);
 app.use("/api/v1/direct-messages", sharedDocumentsDirectMessagesRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/public/blog", publicBlogRouter);
