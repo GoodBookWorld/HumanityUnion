@@ -78,6 +78,7 @@ import { resolveProviderTerminologyContext } from "./terminology-glossary/termin
 import {
   assertRequiredTerminologyProtection,
   loadPublishedTerminologyConcepts,
+  TerminologyProtectionViolationError,
 } from "./terminology-protection-contract.js";
 import {
   buildLocalizationInputVersionFromConcepts,
@@ -614,6 +615,7 @@ export async function getOrCreateContentTranslation(input: {
         : "Required terminology/preferred terms were not honored.",
       "malformed_response",
       inputVersion.localizationInputVersion,
+      error instanceof TerminologyProtectionViolationError ? error.violations : null,
     );
   }
 

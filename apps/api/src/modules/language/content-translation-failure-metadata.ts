@@ -4,6 +4,8 @@
  * Never includes source/translated bodies, prompts, or secrets.
  */
 
+import { createHash } from "node:crypto";
+
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 
 import { TranslationProviderError } from "./translation.config.js";
@@ -51,6 +53,136 @@ export type ContentTranslationLocaleFailureRecord = {
   readonly retryabilityHint: string | null;
 };
 
+/**
+ * F.3.29.4 — privacy-safe terminology diagnostic.
+ * conceptId plus violation type only. No preferred text, canonical text, or prose.
+ */
+export const TERMINOLOGY_VIOLATION_TYPES = ["missing_preferred", "residual_canonical"] as const;
+
+export type TerminologyViolationType = (typeof TERMINOLOGY_VIOLATION_TYPES)[number];
+
+export type TerminologyViolationDescriptor = {
+  readonly conceptId: string;
+  readonly violationType: TerminologyViolationType;
+};
+
+const TERMINOLOGY_CONCEPT_ID_PATTERN = /^[a-z0-9_]{1,64}$/i;
+
+export function isTerminologyViolationType(value: string): value is TerminologyViolationType {
+  return (TERMINOLOGY_VIOLATION_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Sort and dedupe the violation set that caused TERMINOLOGY_PROTECTION_VIOLATION.
+ * Traversal order does not change the result. Prose-like concept ids are dropped.
+ */
+export function normalizeTerminologyViolationDescriptors(
+  violations: readonly {
+    readonly conceptId?: string | null;
+    readonly reason?: string | null;
+    readonly violationType?: string | null;
+  }[],
+): TerminologyViolationDescriptor[] {
+  const seen = new Set<string>();
+  const normalized: TerminologyViolationDescriptor[] = [];
+  for (const row of violations) {
+    const conceptId = row.conceptId?.trim() ?? "";
+    const violationType = (row.violationType ?? row.reason ?? "").trim();
+    if (!TERMINOLOGY_CONCEPT_ID_PATTERN.test(conceptId)) {
+      continue;
+    }
+    if (!isTerminologyViolationType(violationType)) {
+      continue;
+    }
+    const key = `${conceptId}:${violationType}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    normalized.push({ conceptId, violationType });
+  }
+  normalized.sort(
+    (left, right) =>
+      left.conceptId.localeCompare(right.conceptId) ||
+      left.violationType.localeCompare(right.violationType),
+  );
+  return normalized;
+}
+
+/** sha256 of the canonical `conceptId:violationType` lines. Null when the set is empty. */
+export function buildTerminologyViolationFingerprint(
+  violations: readonly {
+    readonly conceptId?: string | null;
+    readonly reason?: string | null;
+    readonly violationType?: string | null;
+  }[],
+): string | null {
+  const normalized = normalizeTerminologyViolationDescriptors(violations);
+  if (normalized.length === 0) {
+    return null;
+  }
+  const canonical = normalized
+    .map((row) => `${row.conceptId}:${row.violationType}`)
+    .join("\n");
+  return createHash("sha256").update(canonical).digest("hex");
+}
+
+/**
+ * Fields persisted only for a terminology-protection failure.
+ * Any other reason clears them so an older fingerprint cannot ride along.
+ */
+export function terminologyFailureDiagnosticForMetadata(input: {
+  readonly failureReasonCode: string;
+  readonly violations?: readonly {
+    readonly conceptId?: string | null;
+    readonly reason?: string | null;
+    readonly violationType?: string | null;
+  }[] | null;
+}): {
+  readonly terminologyViolationFingerprint?: string;
+  readonly terminologyViolations?: readonly TerminologyViolationDescriptor[];
+} {
+  if (input.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION") {
+    return {};
+  }
+  const terminologyViolations = normalizeTerminologyViolationDescriptors(input.violations ?? []);
+  const terminologyViolationFingerprint = buildTerminologyViolationFingerprint(terminologyViolations);
+  if (!terminologyViolationFingerprint) {
+    return {};
+  }
+  return { terminologyViolationFingerprint, terminologyViolations };
+}
+
+/**
+ * Identical terminology failure class for a future exit decision.
+ * A missing fingerprint, source version, or localization input version is not a match.
+ * This does not change retry selection.
+ */
+export function isSameTerminologyFailureIdentity(
+  left: {
+    readonly sourceVersion?: string | null;
+    readonly localizationInputVersion?: string | null;
+    readonly terminologyViolationFingerprint?: string | null;
+  },
+  right: {
+    readonly sourceVersion?: string | null;
+    readonly localizationInputVersion?: string | null;
+    readonly terminologyViolationFingerprint?: string | null;
+  },
+): boolean {
+  const sourceVersion = left.sourceVersion?.trim() ?? "";
+  const localizationInputVersion = left.localizationInputVersion?.trim() ?? "";
+  const fingerprint = left.terminologyViolationFingerprint?.trim() ?? "";
+  if (!sourceVersion || !localizationInputVersion || !fingerprint) {
+    return false;
+  }
+  return (
+    sourceVersion === (right.sourceVersion?.trim() ?? "") &&
+    localizationInputVersion === (right.localizationInputVersion?.trim() ?? "") &&
+    fingerprint === (right.terminologyViolationFingerprint?.trim() ?? "")
+  );
+}
+
 export type ContentTranslationSafeFailureMetadata = {
   readonly schema: "content_translation_failure_meta_v1";
   readonly validationContractVersion: typeof CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION;
@@ -75,6 +207,13 @@ export type ContentTranslationSafeFailureMetadata = {
   readonly retryEligibleAt?: string | null;
   /** Localization input version at the failed attempt, when known. */
   readonly localizationInputVersion?: string | null;
+  /**
+   * F.3.29.4 — sha256 of the normalized conceptId:violationType set.
+   * Present only when failureReasonCode is TERMINOLOGY_PROTECTION_VIOLATION.
+   */
+  readonly terminologyViolationFingerprint?: string | null;
+  /** Same set the fingerprint hashes. No preferred-term or canonical-term text. */
+  readonly terminologyViolations?: readonly TerminologyViolationDescriptor[] | null;
 };
 
 const META_PREFIX = "CT_FAIL_META_V1:";
@@ -84,16 +223,29 @@ export class ContentTranslationValidationError extends TranslationProviderError 
 
   readonly localizationInputVersion: string | null;
 
+  /** Structured terminology violations. Null for every other reason. */
+  readonly terminologyViolations: readonly TerminologyViolationDescriptor[] | null;
+
   constructor(
     reasonCode: ContentTranslationValidationReasonCode,
     message: string,
     providerCode: "bad_request" | "malformed_response" = "bad_request",
     localizationInputVersion: string | null = null,
+    terminologyViolations: readonly {
+      readonly conceptId?: string | null;
+      readonly reason?: string | null;
+      readonly violationType?: string | null;
+    }[] | null = null,
   ) {
     super(providerCode, message);
     this.name = "ContentTranslationValidationError";
     this.reasonCode = reasonCode;
     this.localizationInputVersion = localizationInputVersion;
+    const normalized =
+      reasonCode === "TERMINOLOGY_PROTECTION_VIOLATION"
+        ? normalizeTerminologyViolationDescriptors(terminologyViolations ?? [])
+        : [];
+    this.terminologyViolations = normalized.length > 0 ? normalized : null;
   }
 }
 
@@ -145,10 +297,20 @@ export function encodeContentTranslationFailureMetadata(
     ...row,
     failureReasonCode: normalizeExactValidationReasonCode(row.failureReasonCode),
   }));
+  const diagnostic = terminologyFailureDiagnosticForMetadata({
+    failureReasonCode,
+    violations: meta.terminologyViolations,
+  });
+  const {
+    terminologyViolationFingerprint: _ignoredFingerprint,
+    terminologyViolations: _ignoredViolations,
+    ...rest
+  } = meta;
   const encoded: ContentTranslationSafeFailureMetadata = {
-    ...meta,
+    ...rest,
     failureReasonCode,
     ...(localeFailures?.length ? { localeFailures } : {}),
+    ...diagnostic,
   };
   return `${META_PREFIX}${JSON.stringify(encoded)}`;
 }
@@ -181,6 +343,20 @@ export function parseContentTranslationFailureMetadata(
           }))
           .filter((row) => row.targetLocale.length > 0)
       : undefined;
+    const failureReasonCode =
+      typeof raw.failureReasonCode === "string" ? raw.failureReasonCode : "UNKNOWN_LEGACY";
+    const parsedViolations = Array.isArray(raw.terminologyViolations)
+      ? raw.terminologyViolations
+          .filter((row): row is Record<string, unknown> => !!row && typeof row === "object")
+          .map((row) => ({
+            conceptId: typeof row.conceptId === "string" ? row.conceptId : "",
+            violationType: typeof row.violationType === "string" ? row.violationType : "",
+          }))
+      : [];
+    const diagnostic = terminologyFailureDiagnosticForMetadata({
+      failureReasonCode,
+      violations: parsedViolations,
+    });
     return {
       schema: "content_translation_failure_meta_v1",
       validationContractVersion:
@@ -188,8 +364,7 @@ export function parseContentTranslationFailureMetadata(
           ? (raw.validationContractVersion as typeof CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION)
           : CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION,
       failureClass: typeof raw.failureClass === "string" ? raw.failureClass : "UNKNOWN",
-      failureReasonCode:
-        typeof raw.failureReasonCode === "string" ? raw.failureReasonCode : "UNKNOWN_LEGACY",
+      failureReasonCode,
       sourceKind: typeof raw.sourceKind === "string" ? raw.sourceKind : "unknown",
       sourceRecordId: typeof raw.sourceRecordId === "string" ? raw.sourceRecordId : "",
       sourceVersion: typeof raw.sourceVersion === "string" ? raw.sourceVersion : null,
@@ -203,6 +378,7 @@ export function parseContentTranslationFailureMetadata(
       ...(typeof raw.localizationInputVersion === "string" && raw.localizationInputVersion.length > 0
         ? { localizationInputVersion: raw.localizationInputVersion }
         : {}),
+      ...diagnostic,
     };
   } catch {
     return null;

@@ -423,10 +423,14 @@ export {
   CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION,
   ContentTranslationValidationError,
   classifyLegacyOutboxLastError,
+  buildTerminologyViolationFingerprint,
   encodeContentTranslationFailureMetadata,
   isExplicitlyRetryableModernFailure,
+  isSameTerminologyFailureIdentity,
   normalizeExactValidationReasonCode,
+  normalizeTerminologyViolationDescriptors,
   parseContentTranslationFailureMetadata,
+  terminologyFailureDiagnosticForMetadata,
   resolveLocaleFailureFromMetadata,
   resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
@@ -436,6 +440,8 @@ export type {
   ContentTranslationLocaleFailureRecord,
   ContentTranslationSafeFailureMetadata,
   ContentTranslationValidationReasonCode,
+  TerminologyViolationDescriptor,
+  TerminologyViolationType,
 } from "./content-translation-failure-metadata.js";
 export {
   explainResidualsOnly,
