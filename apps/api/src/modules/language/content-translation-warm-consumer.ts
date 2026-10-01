@@ -40,6 +40,7 @@ import {
   ContentTranslationValidationError,
   SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
   encodeContentTranslationFailureMetadata,
+  terminologyFailureDiagnosticForMetadata,
   isSemanticResidualDeferReason,
   normalizeExactValidationReasonCode,
   resolvePersistedFailureReasonCode,
@@ -96,6 +97,11 @@ export type ContentTranslationWarmLocaleOutcome =
       /** Exact validator reason — never the generic string "VALIDATION_FAILED". */
       readonly failureReasonCode: string;
       readonly localizationInputVersion?: string | null;
+      /** Structured terminology violations. Absent for every other failure. */
+      readonly terminologyViolations?: readonly {
+        readonly conceptId: string;
+        readonly violationType: "missing_preferred" | "residual_canonical";
+      }[] | null;
     };
 
 export interface ContentTranslationWarmProcessResult {
@@ -418,6 +424,10 @@ export async function processContentTranslationWarmRequested(
           error instanceof ContentTranslationValidationError
             ? error.localizationInputVersion
             : null,
+        terminologyViolations:
+          error instanceof ContentTranslationValidationError
+            ? error.terminologyViolations
+            : null,
       };
     }
   });
@@ -537,6 +547,10 @@ export async function processContentTranslationWarmRequested(
       ...(persistedLocaleFailures.length ? { localeFailures: persistedLocaleFailures } : {}),
       ...(retryEligibleAt ? { retryEligibleAt } : {}),
       ...(localizationInputVersion ? { localizationInputVersion } : {}),
+      ...terminologyFailureDiagnosticForMetadata({
+        failureReasonCode: reasonCode,
+        violations: firstFailed?.terminologyViolations ?? null,
+      }),
     });
 
     const err = new TranslationProviderError(
