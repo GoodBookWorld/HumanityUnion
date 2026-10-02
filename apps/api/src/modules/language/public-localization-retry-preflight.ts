@@ -16,13 +16,16 @@ import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
+  countTerminologyAttemptsForCurrentIdentity,
   decideSameVersionWarmFailureRetry,
   isExplicitlyRetryableModernFailure,
+  selectTerminologyMissingTranslationRetry,
   shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 import {
+  listContentTranslationWarmAttempts,
   peekContentTranslationWarmOutboxFailure,
   resolveContentTranslationWarmOutboxDisposition,
   type ContentTranslationWarmAttemptSnapshot,
@@ -400,7 +403,50 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION" &&
       sameVersionRetryDecision === "terminal"
     ) {
-      semanticRetryDeferred = true;
+      const currentSourcePresentationEligible =
+        !currentTranslationAbsent && !liveTranslationInvalid && !liveTranslationStale;
+      let terminologyAttemptCount = 0;
+      if (
+        !currentSourcePresentationEligible &&
+        liveSourceVersion &&
+        liveLocalizationInputVersion &&
+        recordedInput
+      ) {
+        const attempts = await listContentTranslationWarmAttempts({
+          sourceKind: item.sourceKind,
+          sourceRecordId: item.sourceRecordId,
+          limit: 50,
+        });
+        terminologyAttemptCount = countTerminologyAttemptsForCurrentIdentity(
+          attempts.map((attempt) => ({
+            failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+            sourceVersion:
+              attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null,
+            localizationInputVersion:
+              attempt.failureMetadata?.localizationInputVersion ?? null,
+            targetLocale:
+              typeof attempt.failureMetadata?.targetLocale === "string"
+                ? attempt.failureMetadata.targetLocale
+                : null,
+            localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+          })),
+          {
+            liveSourceVersion,
+            liveLocalizationInputVersion,
+            targetLocale: item.targetLanguage,
+          },
+        );
+      }
+      const terminologySelection = selectTerminologyMissingTranslationRetry({
+        currentSourcePresentationEligible,
+        liveSourceVersion,
+        failedSourceVersion,
+        liveLocalizationInputVersion,
+        failedLocalizationInputVersion: recordedInput,
+        retryEligibleAt: peek.failureMetadata?.retryEligibleAt ?? null,
+        terminologyAttemptCount,
+      });
+      semanticRetryDeferred = terminologySelection !== "due";
     }
     if (semanticRetryDeferred) {
       semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
