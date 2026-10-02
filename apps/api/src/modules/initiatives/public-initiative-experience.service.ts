@@ -60,7 +60,6 @@ import { resolvePublicGeography } from "../../shared/format-public-geography.js"
 import { getKnownInitiativeCommunity } from "./initiative-communities.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 import { toWorldInitiativeCardProjection } from "./initiative-world-initiatives.projection.js";
-import { findRelatedInitiativesForInitiative } from "../community-intelligence/index.js";
 import { listInitiatives } from "./initiative.store.js";
 import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
 import { buildCollectiveParticipationJourney } from "../collective-participation-journey/collective-participation-journey.service.js";
@@ -857,9 +856,9 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     revisionHistory: versionHistory,
     relatedCivicRecords: buildRelatedCivicRecords(initiative.initiativeId),
     latestInitiatives: selectLatestInitiatives(initiative),
-    relatedInitiatives: (
-      await findRelatedInitiativesForInitiative(initiative.initiativeId)
-    ).items,
+    // Related discovery is served by the public community-intelligence route
+    // and must not block this primary experience response.
+    relatedInitiatives: [],
     discussion,
     optionalStageDiagnostics,
     lifecycleProfile: resolveInitiativeLifecycleProfile(initiative.lifecycleProfile),

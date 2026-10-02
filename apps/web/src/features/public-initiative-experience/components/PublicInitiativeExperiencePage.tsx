@@ -447,7 +447,6 @@ export function PublicInitiativeExperiencePage({
             statistics={experience.supportStatistics}
             revisionHistory={experience.revisionHistory}
             latestInitiatives={experience.latestInitiatives}
-            relatedInitiatives={experience.relatedInitiatives ?? []}
             onSignalChange={(signal) => void handleSignalChange(signal)}
             onBookmarkToggle={() => void handleBookmarkToggle()}
             onRevisionSelect={handleRevisionSelect}
