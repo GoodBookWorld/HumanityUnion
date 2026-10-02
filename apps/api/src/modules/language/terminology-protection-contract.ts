@@ -6,8 +6,8 @@
  * 2. Admin Terminology preferred terms (domain / workflow_stage with preferred)
  * 3. Ordinary provider translation of remaining prose
  *
- * Prompt advice alone is insufficient for REQUIRED terms: provider output that
- * retains the English canonical (or omits the preferredTerm) must not become READY.
+ * CT persists otherwise presentation-eligible prose and records exact-term
+ * mismatches as quality diagnostics. PLP producers may still reject.
  *
  * No locale-specific branches. No hard-coded "Humanity Union" runtime paths —
  * that string is only a regression fixture via the seeded concept catalog.

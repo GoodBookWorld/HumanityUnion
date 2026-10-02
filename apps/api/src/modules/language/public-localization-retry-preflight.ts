@@ -225,7 +225,8 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       if (validity.presentationEligible && validity.reconciliationState === "READY") {
         currentTranslationAbsent = false;
       } else if (validity.reconciliationState === "INVALID") {
-        // Gate B/C — placeholder / terminology residual: normal reconciliation work.
+        // Structural or placeholder invalidity remains reconciliation work.
+        // Terminology-quality diagnostics do not use this branch.
         liveTranslationInvalid = true;
         currentTranslationAbsent = true;
       } else if (validity.reconciliationState === "STALE") {

@@ -196,7 +196,7 @@ describe("15D.14.B.2 — localization input / terminology / owners", () => {
     );
     assert.match(providerBoundary, /resolveSharedProviderTerminologyContext/);
     assert.match(providerBoundary, /assessRequiredTerminologyProtection/);
-    assert.match(ctService, /assertRequiredTerminologyProtection/);
+    assert.match(ctService, /assessRequiredTerminologyProtection/);
     assert.match(ctService, /localizationInputVersion/);
   });
 
