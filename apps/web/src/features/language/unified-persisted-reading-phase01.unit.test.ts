@@ -83,7 +83,7 @@ describe("Version 5.0 Phase 1 — unified ordinary-reading ownership", () => {
     );
   });
 
-  it("5. ineligible future locale → canonical", () => {
+  it("5. legacy flag false does not close a future locale", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "browser",
@@ -91,7 +91,7 @@ describe("Version 5.0 Phase 1 — unified ordinary-reading ownership", () => {
         sourceKind: "initiative",
         pwaEligibility: { ...eligible, pwaPersistedReadingEnabled: false },
       }),
-      "browser-native",
+      "hu-persisted",
     );
   });
 

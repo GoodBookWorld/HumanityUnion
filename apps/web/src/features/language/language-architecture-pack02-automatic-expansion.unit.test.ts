@@ -55,7 +55,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
     );
   });
 
-  it("3. pwaPersistedReadingEnabled=false → browser-native", () => {
+  it("3. pwaPersistedReadingEnabled=false does not close ordinary reading", () => {
     assert.equal(
       resolveOrdinaryReadingOwner({
         presentationMode: "standalone",
@@ -63,7 +63,7 @@ describe("Language Architecture Pack 02 — ordinary reading ownership", () => {
         sourceKind: "initiative",
         pwaEligibility: { ...eligible, pwaPersistedReadingEnabled: false },
       }),
-      "browser-native",
+      "hu-persisted",
     );
   });
 
