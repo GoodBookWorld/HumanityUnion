@@ -256,31 +256,29 @@ export function resolvePwaPersistedReadingEnabled(
 }
 
 /**
- * Registry activation gates for hu-persisted ordinary reading in standalone PWA.
+ * Registry activation gates for hu-persisted ordinary reading on Web and PWA.
  * Presentation mode and public_news exclusion are applied by the owner resolver.
  *
- * Version 5.0 — `pwaPersistedReadingReady` may be present for Admin/catalog
- * diagnostics but is **not** part of the runtime eligibility decision.
+ * `pwaPersistedReadingEnabled` and `pwaPersistedReadingReady` stay on the
+ * record for compatibility and Admin history. Neither is a runtime read gate.
  */
 export interface PwaPersistedOrdinaryReadingEligibility {
   readonly enabled: boolean;
   readonly contentTranslationEnabled: boolean;
+  /** Stored Registry flag. Ignored by runtime ordinary-reading eligibility. */
   readonly pwaPersistedReadingEnabled: boolean;
   /** Admin/activation corpus signal only — ignored by runtime eligibility. */
   readonly pwaPersistedReadingReady: boolean;
 }
 
 /**
- * Runtime PWA persisted-reading eligibility (Version 5.0).
- * Does **not** require `pwaPersistedReadingReady` — corpus readiness is an
- * activation/administration signal, not a per-read kill switch.
+ * Runtime ordinary-reading eligibility for Web and installed PWA.
+ * Requires Registry `enabled` and `contentTranslationEnabled` only.
+ * Does not consult `pwaPersistedReadingEnabled`, `pwaPersistedReadingReady`,
+ * presentation mode, or corpus readiness.
  */
 export function isPwaPersistedOrdinaryReadingEligible(
   input: PwaPersistedOrdinaryReadingEligibility,
 ): boolean {
-  return (
-    input.enabled === true &&
-    input.contentTranslationEnabled === true &&
-    input.pwaPersistedReadingEnabled === true
-  );
+  return input.enabled === true && input.contentTranslationEnabled === true;
 }

@@ -8,8 +8,8 @@
  * `presentationMode` is not an eligibility gate.
  * Search/SEO flags are not eligibility gates.
  *
- * Version 5.0 invariant: `pwaPersistedReadingReady` is Admin/activation only —
- * it must not gate individual runtime persisted reads.
+ * `pwaPersistedReadingEnabled` and `pwaPersistedReadingReady` stay stored for
+ * compatibility and Admin history. Neither gates a runtime persisted read.
  * Phase 1 keeps the Registry field name `pwaPersistedReadingEnabled`.
  */
 
