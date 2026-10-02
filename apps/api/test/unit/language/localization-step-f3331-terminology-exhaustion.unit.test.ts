@@ -1,8 +1,7 @@
 /**
- * F.3.32.1 — a terminology-only failure does not permanently suppress a
- * current source that still has no presentation-eligible translation.
- * The existing semantic residual streak cap bounds those retries.
- * Deterministic. No provider calls.
+ * F.3.33.1 — terminology-only history does not exhaust the missing-translation
+ * budget. Genuine presentation/provider failures still do.
+ * Deterministic. The translation double is in-memory and is not an external provider.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -16,10 +15,11 @@ process.env.TRANSLATION_PROVIDER = "deterministic";
 process.env.LANGUAGE_REGISTRY_PERSISTENCE = "memory";
 process.env.CONTENT_TRANSLATION_WORKER_CONCURRENCY = "1";
 
-import type { Initiative, TranslatedContentRecord } from "@hu/types";
+import type { Initiative } from "@hu/types";
 
 import {
   SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
+  countGenuineMissingTranslationFailures,
   countTerminologyAttemptsForCurrentIdentity,
   decideSameVersionWarmFailureRetry,
   encodeContentTranslationFailureMetadata,
@@ -29,12 +29,9 @@ import {
   buildLocalizationInputVersionFromConcepts,
   collectSourceTextLeaves,
 } from "../../../src/modules/language/localization-input-contract.js";
+import { findContentTranslation } from "../../../src/modules/language/persistence/content-translation.repository.js";
 import { selectCurrentlyRetryEligibleResiduals } from "../../../src/modules/language/public-localization-residual-retry.js";
 import { loadPublishedTerminologyConcepts } from "../../../src/modules/language/terminology-protection-contract.js";
-import {
-  upsertContentTranslation,
-  findContentTranslation,
-} from "../../../src/modules/language/persistence/content-translation.repository.js";
 import {
   buildPublicLocalizationRetryPreflight,
   enqueueContentTranslationWarmRequested,
@@ -42,6 +39,7 @@ import {
   listLanguageRegistry,
   loadTranslatableSource,
   markContentTranslationWarmMemoryFailedForTests,
+  processContentTranslationWarmMemoryQueueForTests,
   resetContentTranslationMemoryStoreForTests,
   resetContentTranslationWarmMemoryForTests,
   resetLanguageRegistryStoreForTests,
@@ -69,8 +67,8 @@ const WAITING_AT = "2999-01-01T00:00:00.000Z";
 function initiative(suffix: string): Initiative {
   const now = new Date().toISOString();
   return {
-    initiativeId: `initiative-f3321-${suffix}`,
-    stewardId: "member-f3321",
+    initiativeId: `initiative-f3331-${suffix}`,
+    stewardId: "member-f3331",
     createdAt: now,
     updatedAt: now,
     title: "Humanity Union river plan",
@@ -99,7 +97,6 @@ function failureMessage(input: {
   readonly reason?: string;
   readonly failureClass?: string;
   readonly retryEligibleAt?: string;
-  readonly targetLocale?: string;
 }): string {
   return encodeContentTranslationFailureMetadata({
     schema: "content_translation_failure_meta_v1",
@@ -109,7 +106,7 @@ function failureMessage(input: {
     sourceKind: "initiative",
     sourceRecordId: input.sourceRecordId,
     sourceVersion: input.sourceVersion,
-    targetLocale: input.targetLocale ?? "uk",
+    targetLocale: "uk",
     failedAt: "2026-10-02T14:26:59.598Z",
     retryabilityHint: "deferred_semantic_retry",
     ...(input.localizationInputVersion
@@ -118,7 +115,7 @@ function failureMessage(input: {
     ...(input.retryEligibleAt ? { retryEligibleAt: input.retryEligibleAt } : {}),
     localeFailures: [
       {
-        targetLocale: input.targetLocale ?? "uk",
+        targetLocale: "uk",
         failureClass: input.failureClass ?? "VALIDATION_FAILED",
         failureReasonCode: input.reason ?? "TERMINOLOGY_PROTECTION_VIOLATION",
         retryabilityHint: "deferred_semantic_retry",
@@ -185,7 +182,39 @@ function selectedCount(sourceRecordId: string, preflight: PublicLocalizationRetr
   ).length;
 }
 
-describe("F.3.32.1 bounded retry when the current source has no usable translation", () => {
+async function recordFailures(input: {
+  readonly sourceRecordId: string;
+  readonly sourceVersion: string;
+  readonly localizationInputVersion: string;
+  readonly count: number;
+  readonly reason?: string;
+  readonly failureClass?: string;
+  readonly retryEligibleAt?: string;
+}): Promise<void> {
+  for (let index = 0; index < input.count; index += 1) {
+    const enqueued = await enqueueContentTranslationWarmRequested({
+      sourceKind: "initiative",
+      sourceRecordId: input.sourceRecordId,
+      sourceVersion: input.sourceVersion,
+      reason: "reconciliation",
+      targetLocales: ["uk"],
+    });
+    assert.ok(enqueued.eventId);
+    markContentTranslationWarmMemoryFailedForTests(
+      enqueued.eventId,
+      failureMessage({
+        sourceRecordId: input.sourceRecordId,
+        sourceVersion: input.sourceVersion,
+        localizationInputVersion: input.localizationInputVersion,
+        reason: input.reason,
+        failureClass: input.failureClass,
+        retryEligibleAt: input.retryEligibleAt,
+      }),
+    );
+  }
+}
+
+describe("F.3.33.1 terminology diagnostics do not exhaust missing translations", () => {
   const created: string[] = [];
   let providerCalls = 0;
 
@@ -201,9 +230,17 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     setTerminologyGlossaryForceMemoryForTests(true);
     setTranslationProviderForTests({
       providerId: "gemini",
-      async translate() {
+      async translate(request) {
         providerCalls += 1;
-        throw new Error("provider must not be called");
+        const source = JSON.parse(request.text) as Record<string, string>;
+        const translated = Object.fromEntries(
+          Object.entries(source).map(([key, value]) => [key, `Переклад ${key} ${value}`]),
+        );
+        return {
+          translatedText: JSON.stringify(translated),
+          providerId: "gemini",
+          isPlaceholder: false,
+        };
       },
     });
     await ensureLanguageRegistrySeeded();
@@ -235,8 +272,8 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     }
   });
 
-  it("A. an old-source row with a due current-source terminology failure stays retryable", async () => {
-    const row = initiative("missing");
+  it("A. a terminology-only streak above the cap stays selectable", async () => {
+    const row = initiative("historical");
     createInitiative(row);
     created.push(row.initiativeId);
     const source = await loadTranslatableSource({
@@ -245,34 +282,29 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     });
     assert.ok(source);
     const liveInput = await liveInputFor(source);
-    const stored: TranslatedContentRecord = {
-      translationId: "t-old",
+    await recordFailures({
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      localizationInputVersion: liveInput,
+      count: SEMANTIC_RESIDUAL_DEFER_STREAK_CAP + 4,
+      retryEligibleAt: DUE_AT,
+    });
+    const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(preflight.ready, true);
+    assert.equal(preflight.semanticRetryDeferred, false);
+    assert.equal(selectedCount(row.initiativeId, preflight), 1);
+    assert.equal(providerCalls, 0);
+  });
+
+  it("B. structurally eligible output persists when terminology is inexact", async () => {
+    const row = initiative("persist");
+    createInitiative(row);
+    created.push(row.initiativeId);
+    const source = await loadTranslatableSource({
       sourceKind: "initiative",
       sourceRecordId: row.initiativeId,
-      sourceVersion: "v-old-source",
-      sourceLanguage: "en",
-      targetLanguage: "uk",
-      translatedContent: Object.fromEntries(
-        Object.keys(source.fields).map((key) => [key, `Збережений ${key}`]),
-      ),
-      translationProvider: "gemini",
-      translationKind: "machine",
-      createdAt: "2026-06-01T00:00:00.000Z",
-      updatedAt: "2026-06-01T00:00:00.000Z",
-      stale: true,
-      freshness: "stale",
-    };
-    await upsertContentTranslation(stored);
-    assert.equal(
-      await findContentTranslation({
-        sourceKind: "initiative",
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        targetLanguage: "uk",
-      }),
-      null,
-    );
-
+    });
+    assert.ok(source);
     const enqueued = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: row.initiativeId,
@@ -281,39 +313,25 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       targetLocales: ["uk"],
     });
     assert.ok(enqueued.eventId);
-    markContentTranslationWarmMemoryFailedForTests(
-      enqueued.eventId,
-      failureMessage({
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        localizationInputVersion: liveInput,
-        retryEligibleAt: WAITING_AT,
-      }),
-    );
-    const waiting = await preflightFor(row.initiativeId, source.sourceVersion);
-    assert.equal(waiting.ready, true);
-    assert.equal(waiting.semanticRetryDeferred, true);
-    assert.equal(selectedCount(row.initiativeId, waiting), 0);
-
-    markContentTranslationWarmMemoryFailedForTests(
-      enqueued.eventId,
-      failureMessage({
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        localizationInputVersion: liveInput,
-        retryEligibleAt: DUE_AT,
-      }),
-    );
-    const due = await preflightFor(row.initiativeId, source.sourceVersion);
-    assert.equal(due.ready, true);
-    assert.equal(due.readyState, "MISSING_READY_FOR_WARM");
-    assert.equal(due.failureReasonCode, "TERMINOLOGY_PROTECTION_VIOLATION");
-    assert.equal(due.semanticRetryDeferred, false);
-    assert.equal(selectedCount(row.initiativeId, due), 1);
-    assert.equal(providerCalls, 0);
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
+    const stored = await findContentTranslation({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      targetLanguage: "uk",
+    });
+    assert.ok(stored);
+    assert.equal(stored.freshness, "current");
+    assert.notEqual(stored.stale, true);
+    assert.equal(typeof stored.localizationInputVersion, "string");
+    const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(preflight.readyState, "CURRENT");
+    assert.equal(preflight.currentTranslationAbsent, false);
+    assert.equal(selectedCount(row.initiativeId, preflight), 0);
   });
 
-  it("B. a presentation-eligible current-source row stays suppressed", async () => {
+  it("C. an existing presentation-eligible row is not retried for terminology metadata", async () => {
     const row = initiative("usable");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -322,25 +340,6 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       sourceRecordId: row.initiativeId,
     });
     assert.ok(source);
-    const liveInput = await liveInputFor(source);
-    await upsertContentTranslation({
-      translationId: "t-current",
-      sourceKind: "initiative",
-      sourceRecordId: row.initiativeId,
-      sourceVersion: source.sourceVersion,
-      sourceLanguage: "en",
-      targetLanguage: "uk",
-      translatedContent: Object.fromEntries(
-        Object.keys(source.fields).map((key) => [key, `Збережений поточний ${key}`]),
-      ),
-      translationProvider: "gemini",
-      translationKind: "machine",
-      createdAt: "2026-10-01T00:00:00.000Z",
-      updatedAt: "2026-10-01T00:00:00.000Z",
-      stale: false,
-      freshness: "current",
-      localizationInputVersion: "stored-older-input",
-    });
     const enqueued = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: row.initiativeId,
@@ -349,37 +348,17 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       targetLocales: ["uk"],
     });
     assert.ok(enqueued.eventId);
-    markContentTranslationWarmMemoryFailedForTests(
-      enqueued.eventId,
-      failureMessage({
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        localizationInputVersion: liveInput,
-        retryEligibleAt: DUE_AT,
-      }),
-    );
+    await processContentTranslationWarmMemoryQueueForTests();
+    const callsAfterPersist = providerCalls;
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     assert.equal(preflight.ready, false);
     assert.equal(preflight.readyState, "CURRENT");
-    assert.equal(preflight.currentTranslationAbsent, false);
     assert.equal(selectedCount(row.initiativeId, preflight), 0);
-    assert.equal(
-      selectTerminologyMissingTranslationRetry({
-        currentSourcePresentationEligible: true,
-        liveSourceVersion: source.sourceVersion,
-        failedSourceVersion: source.sourceVersion,
-        liveLocalizationInputVersion: liveInput,
-        failedLocalizationInputVersion: liveInput,
-        retryEligibleAt: DUE_AT,
-        genuineFailureCount: 0,
-      }),
-      "suppressed_usable_translation",
-    );
-    assert.equal(providerCalls, 0);
+    assert.equal(providerCalls, callsAfterPersist);
   });
 
-  it("C. a terminology-only streak above the cap does not exhaust missing-translation selection", async () => {
-    const row = initiative("exhaust");
+  it("D. genuine provider failures still exhaust at the streak cap", async () => {
+    const row = initiative("genuine");
     createInitiative(row);
     created.push(row.initiativeId);
     const source = await loadTranslatableSource({
@@ -388,29 +367,19 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     });
     assert.ok(source);
     const liveInput = await liveInputFor(source);
-    for (let index = 0; index < SEMANTIC_RESIDUAL_DEFER_STREAK_CAP; index += 1) {
-      const enqueued = await enqueueContentTranslationWarmRequested({
-        sourceKind: "initiative",
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        reason: "reconciliation",
-        targetLocales: ["uk"],
-      });
-      assert.ok(enqueued.eventId);
-      markContentTranslationWarmMemoryFailedForTests(
-        enqueued.eventId,
-        failureMessage({
-          sourceRecordId: row.initiativeId,
-          sourceVersion: source.sourceVersion,
-          localizationInputVersion: liveInput,
-          retryEligibleAt: DUE_AT,
-        }),
-      );
-    }
+    await recordFailures({
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      localizationInputVersion: liveInput,
+      count: SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
+      reason: "PROVIDER_TIMEOUT",
+      failureClass: "PROVIDER_TIMEOUT",
+      retryEligibleAt: DUE_AT,
+    });
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     assert.equal(preflight.ready, true);
-    assert.equal(preflight.semanticRetryDeferred, false);
-    assert.equal(selectedCount(row.initiativeId, preflight), 1);
+    assert.equal(preflight.semanticRetryDeferred, true);
+    assert.equal(selectedCount(row.initiativeId, preflight), 0);
     assert.equal(
       selectTerminologyMissingTranslationRetry({
         currentSourcePresentationEligible: false,
@@ -423,23 +392,11 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       }),
       "exhausted",
     );
-    assert.equal(
-      selectTerminologyMissingTranslationRetry({
-        currentSourcePresentationEligible: false,
-        liveSourceVersion: source.sourceVersion,
-        failedSourceVersion: source.sourceVersion,
-        liveLocalizationInputVersion: liveInput,
-        failedLocalizationInputVersion: liveInput,
-        retryEligibleAt: DUE_AT,
-        genuineFailureCount: 0,
-      }),
-      "due",
-    );
     assert.equal(providerCalls, 0);
   });
 
-  it("D. a later source version is genuine work", async () => {
-    const row = initiative("source-change");
+  it("E. a changed sourceVersion is fresh work", async () => {
+    const row = initiative("source");
     createInitiative(row);
     created.push(row.initiativeId);
     const before = await loadTranslatableSource({
@@ -447,23 +404,13 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       sourceRecordId: row.initiativeId,
     });
     assert.ok(before);
-    const enqueued = await enqueueContentTranslationWarmRequested({
-      sourceKind: "initiative",
+    await recordFailures({
       sourceRecordId: row.initiativeId,
       sourceVersion: before.sourceVersion,
-      reason: "reconciliation",
-      targetLocales: ["uk"],
+      localizationInputVersion: await liveInputFor(before),
+      count: SEMANTIC_RESIDUAL_DEFER_STREAK_CAP + 4,
+      retryEligibleAt: WAITING_AT,
     });
-    assert.ok(enqueued.eventId);
-    markContentTranslationWarmMemoryFailedForTests(
-      enqueued.eventId,
-      failureMessage({
-        sourceRecordId: row.initiativeId,
-        sourceVersion: before.sourceVersion,
-        localizationInputVersion: await liveInputFor(before),
-        retryEligibleAt: WAITING_AT,
-      }),
-    );
     updateInitiative(row.initiativeId, { title: "Neighborhood river plan" });
     const after = await loadTranslatableSource({
       sourceKind: "initiative",
@@ -475,42 +422,11 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     assert.equal(preflight.ready, true);
     assert.equal(preflight.semanticRetryDeferred, false);
     assert.equal(selectedCount(row.initiativeId, preflight), 1);
-    assert.equal(
-      decideSameVersionWarmFailureRetry({
-        failureClass: "VALIDATION_FAILED",
-        failureReasonCode: "TERMINOLOGY_PROTECTION_VIOLATION",
-        liveSourceVersion: after.sourceVersion,
-        failedSourceVersion: before.sourceVersion,
-        liveLocalizationInputVersion: "input-next",
-        failedLocalizationInputVersion: "input-next",
-      }),
-      "retryable",
-    );
     assert.equal(providerCalls, 0);
   });
 
-  it("E. transient provider failures stay retryable", async () => {
-    for (const failureClass of [
-      "PROVIDER_TIMEOUT",
-      "PROVIDER_INVALID_RESPONSE",
-      "PERSISTENCE_FAILED",
-      "MISSING_AFTER_DISPATCH",
-      "SOURCE_UNAVAILABLE",
-    ]) {
-      assert.equal(
-        decideSameVersionWarmFailureRetry({
-          failureClass,
-          failureReasonCode: null,
-          liveSourceVersion: "v-current",
-          failedSourceVersion: "v-current",
-          liveLocalizationInputVersion: "input-current",
-          failedLocalizationInputVersion: "input-current",
-        }),
-        "retryable",
-      );
-    }
-
-    const row = initiative("transient");
+  it("F. a changed localization input is fresh work", async () => {
+    const row = initiative("input");
     createInitiative(row);
     created.push(row.initiativeId);
     const source = await loadTranslatableSource({
@@ -518,37 +434,52 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       sourceRecordId: row.initiativeId,
     });
     assert.ok(source);
-    const enqueued = await enqueueContentTranslationWarmRequested({
-      sourceKind: "initiative",
+    const beforeInput = await liveInputFor(source);
+    await recordFailures({
       sourceRecordId: row.initiativeId,
       sourceVersion: source.sourceVersion,
-      reason: "reconciliation",
-      targetLocales: ["uk"],
+      localizationInputVersion: beforeInput,
+      count: SEMANTIC_RESIDUAL_DEFER_STREAK_CAP + 4,
+      retryEligibleAt: WAITING_AT,
     });
-    assert.ok(enqueued.eventId);
-    markContentTranslationWarmMemoryFailedForTests(
-      enqueued.eventId,
-      failureMessage({
-        sourceRecordId: row.initiativeId,
-        sourceVersion: source.sourceVersion,
-        failureClass: "PROVIDER_TIMEOUT",
-        reason: "PROVIDER_TIMEOUT",
-      }),
-    );
+    upsertTerminologyGlossaryMemory({
+      conceptId: "humanity_union",
+      canonicalEnglishTerm: "Humanity Union",
+      category: "brand",
+      status: "published",
+      translations: {
+        uk: { preferredTerm: "Союз людства", aliases: [] },
+      },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-10-02T00:00:00.000Z",
+      updatedByParticipantId: null,
+    });
+    const afterInput = await liveInputFor(source);
+    assert.notEqual(afterInput, beforeInput);
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     assert.equal(preflight.ready, true);
     assert.equal(preflight.semanticRetryDeferred, false);
-    assert.equal(preflight.terminalFailureForCurrentVersion, false);
     assert.equal(selectedCount(row.initiativeId, preflight), 1);
+    assert.equal(
+      decideSameVersionWarmFailureRetry({
+        failureClass: "VALIDATION_FAILED",
+        failureReasonCode: "TERMINOLOGY_PROTECTION_VIOLATION",
+        liveSourceVersion: source.sourceVersion,
+        failedSourceVersion: source.sourceVersion,
+        liveLocalizationInputVersion: afterInput,
+        failedLocalizationInputVersion: beforeInput,
+      }),
+      "retryable",
+    );
     assert.equal(providerCalls, 0);
   });
 
-  it("F. the rule has no locale or sourceKind branch", () => {
+  it("G. the rule has no locale or sourceKind branch", () => {
     const metadata = readFileSync(
       path.join(here, "../../../src/modules/language/content-translation-failure-metadata.ts"),
       "utf8",
     );
-    const start = metadata.indexOf("export function countTerminologyAttemptsForCurrentIdentity");
+    const start = metadata.indexOf("function attemptMatchesCurrentTranslationIdentity");
     const end = metadata.indexOf("const WARM_RETRYABLE_INFRASTRUCTURE_CLASSES");
     const body = metadata.slice(start, end);
     assert.equal(body.includes('locale === "he"'), false);
@@ -556,20 +487,8 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
     assert.equal(body.includes("civic_media"), false);
     assert.equal(body.includes("civic-media-center"), false);
     assert.equal(body.includes("sourceKind"), false);
-
-    const preflight = readFileSync(
-      path.join(here, "../../../src/modules/language/public-localization-retry-preflight.ts"),
-      "utf8",
-    );
-    const gateStart = preflight.indexOf('sameVersionRetryDecision === "terminal"');
-    const gate = preflight.slice(gateStart, gateStart + 1800);
-    assert.equal(gate.includes('locale === "he"'), false);
-    assert.equal(gate.includes('locale === "uk"'), false);
-    assert.equal(gate.includes("civic_media"), false);
-    assert.equal(gate.includes("civic-media-center"), false);
-
     assert.equal(
-      countTerminologyAttemptsForCurrentIdentity(
+      countGenuineMissingTranslationFailures(
         [
           {
             failureReasonCode: "TERMINOLOGY_PROTECTION_VIOLATION",
@@ -579,6 +498,7 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
           },
           {
             failureReasonCode: "PROVIDER_TIMEOUT",
+            failureClass: "PROVIDER_TIMEOUT",
             sourceVersion: "v-current",
             localizationInputVersion: "input-current",
             targetLocale: "ar",
@@ -592,5 +512,73 @@ describe("F.3.32.1 bounded retry when the current source has no usable translati
       ),
       1,
     );
+    assert.equal(
+      countTerminologyAttemptsForCurrentIdentity(
+        [
+          {
+            failureReasonCode: "TERMINOLOGY_PROTECTION_VIOLATION",
+            sourceVersion: "v-current",
+            localizationInputVersion: "input-current",
+            targetLocale: "ar",
+          },
+        ],
+        {
+          liveSourceVersion: "v-current",
+          liveLocalizationInputVersion: "input-current",
+          targetLocale: "ar",
+        },
+      ),
+      1,
+    );
+  });
+
+  it("H. terminology diagnostics do not form an immediate or post-persist retry loop", async () => {
+    const row = initiative("loop");
+    createInitiative(row);
+    created.push(row.initiativeId);
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+    });
+    assert.ok(source);
+    const liveInput = await liveInputFor(source);
+    await recordFailures({
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      localizationInputVersion: liveInput,
+      count: SEMANTIC_RESIDUAL_DEFER_STREAK_CAP + 4,
+      retryEligibleAt: WAITING_AT,
+    });
+    const waiting = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(waiting.ready, true);
+    assert.equal(waiting.semanticRetryDeferred, true);
+    assert.equal(selectedCount(row.initiativeId, waiting), 0);
+    assert.equal(
+      selectTerminologyMissingTranslationRetry({
+        currentSourcePresentationEligible: false,
+        liveSourceVersion: source.sourceVersion,
+        failedSourceVersion: source.sourceVersion,
+        liveLocalizationInputVersion: liveInput,
+        failedLocalizationInputVersion: liveInput,
+        retryEligibleAt: WAITING_AT,
+        genuineFailureCount: 0,
+      }),
+      "waiting",
+    );
+
+    const enqueued = await enqueueContentTranslationWarmRequested({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      reason: "reconciliation",
+      targetLocales: ["uk"],
+    });
+    assert.ok(enqueued.eventId);
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
+    const after = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(after.readyState, "CURRENT");
+    assert.equal(selectedCount(row.initiativeId, after), 0);
+    assert.equal(providerCalls, 1);
   });
 });

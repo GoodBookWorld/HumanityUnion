@@ -16,10 +16,11 @@ import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
-  countTerminologyAttemptsForCurrentIdentity,
+  countGenuineMissingTranslationFailures,
   decideSameVersionWarmFailureRetry,
   isExplicitlyRetryableModernFailure,
   selectTerminologyMissingTranslationRetry,
+  SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
   shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
@@ -392,6 +393,39 @@ export async function buildPublicLocalizationRetryPreflight(input: {
 
   let semanticRetryDeferred = false;
   let semanticRetryEligibleAt: string | null = null;
+  let genuineFailureCount = 0;
+  const currentSourcePresentationEligible =
+    !currentTranslationAbsent && !liveTranslationInvalid && !liveTranslationStale;
+  if (
+    ready &&
+    !currentSourcePresentationEligible &&
+    liveSourceVersion &&
+    liveLocalizationInputVersion
+  ) {
+    const attempts = await listContentTranslationWarmAttempts({
+      sourceKind: item.sourceKind,
+      sourceRecordId: item.sourceRecordId,
+      limit: 50,
+    });
+    genuineFailureCount = countGenuineMissingTranslationFailures(
+      attempts.map((attempt) => ({
+        failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+        failureClass: attempt.failureMetadata?.failureClass ?? null,
+        sourceVersion: attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null,
+        localizationInputVersion: attempt.failureMetadata?.localizationInputVersion ?? null,
+        targetLocale:
+          typeof attempt.failureMetadata?.targetLocale === "string"
+            ? attempt.failureMetadata.targetLocale
+            : null,
+        localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+      })),
+      {
+        liveSourceVersion,
+        liveLocalizationInputVersion,
+        targetLocale: item.targetLanguage,
+      },
+    );
+  }
   if (ready) {
     semanticRetryDeferred = shouldDeferResidualSelection({
       ready,
@@ -403,40 +437,6 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION" &&
       sameVersionRetryDecision === "terminal"
     ) {
-      const currentSourcePresentationEligible =
-        !currentTranslationAbsent && !liveTranslationInvalid && !liveTranslationStale;
-      let terminologyAttemptCount = 0;
-      if (
-        !currentSourcePresentationEligible &&
-        liveSourceVersion &&
-        liveLocalizationInputVersion &&
-        recordedInput
-      ) {
-        const attempts = await listContentTranslationWarmAttempts({
-          sourceKind: item.sourceKind,
-          sourceRecordId: item.sourceRecordId,
-          limit: 50,
-        });
-        terminologyAttemptCount = countTerminologyAttemptsForCurrentIdentity(
-          attempts.map((attempt) => ({
-            failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
-            sourceVersion:
-              attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null,
-            localizationInputVersion:
-              attempt.failureMetadata?.localizationInputVersion ?? null,
-            targetLocale:
-              typeof attempt.failureMetadata?.targetLocale === "string"
-                ? attempt.failureMetadata.targetLocale
-                : null,
-            localeFailures: attempt.failureMetadata?.localeFailures ?? null,
-          })),
-          {
-            liveSourceVersion,
-            liveLocalizationInputVersion,
-            targetLocale: item.targetLanguage,
-          },
-        );
-      }
       const terminologySelection = selectTerminologyMissingTranslationRetry({
         currentSourcePresentationEligible,
         liveSourceVersion,
@@ -444,9 +444,11 @@ export async function buildPublicLocalizationRetryPreflight(input: {
         liveLocalizationInputVersion,
         failedLocalizationInputVersion: recordedInput,
         retryEligibleAt: peek.failureMetadata?.retryEligibleAt ?? null,
-        terminologyAttemptCount,
+        genuineFailureCount,
       });
       semanticRetryDeferred = terminologySelection !== "due";
+    } else if (genuineFailureCount >= SEMANTIC_RESIDUAL_DEFER_STREAK_CAP) {
+      semanticRetryDeferred = true;
     }
     if (semanticRetryDeferred) {
       semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;

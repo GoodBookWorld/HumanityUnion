@@ -568,6 +568,7 @@ export function shouldDeferResidualSelection(input: {
 
 export type TerminologyRetryAttemptEvidence = {
   readonly failureReasonCode: string | null;
+  readonly failureClass?: string | null;
   readonly sourceVersion: string | null;
   readonly localizationInputVersion: string | null;
   readonly targetLocale: string | null;
@@ -577,9 +578,52 @@ export type TerminologyRetryAttemptEvidence = {
   }[] | null;
 };
 
+function attemptMatchesCurrentTranslationIdentity(
+  attempt: TerminologyRetryAttemptEvidence,
+  identity: {
+    readonly liveSourceVersion: string;
+    readonly liveLocalizationInputVersion: string;
+    readonly targetLocale: string;
+  },
+): boolean {
+  const source = identity.liveSourceVersion.trim();
+  const inputVersion = identity.liveLocalizationInputVersion.trim();
+  const locale = normalizeLanguageRegistryLocaleKey(identity.targetLocale);
+  if (!source || !inputVersion || !locale) {
+    return false;
+  }
+  if ((attempt.sourceVersion ?? "").trim() !== source) {
+    return false;
+  }
+  const failedInput = (attempt.localizationInputVersion ?? "").trim();
+  if (failedInput && failedInput !== inputVersion) {
+    return false;
+  }
+  const attemptLocale = attempt.targetLocale?.trim() ?? "";
+  if (!attemptLocale || normalizeLanguageRegistryLocaleKey(attemptLocale) !== locale) {
+    return false;
+  }
+  return true;
+}
+
+function isTerminologyOnlyAttempt(attempt: TerminologyRetryAttemptEvidence): boolean {
+  if (attempt.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION") {
+    return false;
+  }
+  const locale = attempt.targetLocale?.trim() ?? "";
+  const localeRows = (attempt.localeFailures ?? []).filter((row) => {
+    if (!locale) {
+      return true;
+    }
+    return normalizeLanguageRegistryLocaleKey(row.targetLocale) ===
+      normalizeLanguageRegistryLocaleKey(locale);
+  });
+  return localeRows.every((row) => row.failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION");
+}
+
 /**
- * Count terminology-only attempts of one current source version, localization
- * input, and locale. Other reasons and other versions do not consume the bound.
+ * Terminology-only attempts of one current source, input, and locale.
+ * They are diagnostics. They do not consume the missing-translation budget.
  */
 export function countTerminologyAttemptsForCurrentIdentity(
   attempts: readonly TerminologyRetryAttemptEvidence[],
@@ -589,31 +633,42 @@ export function countTerminologyAttemptsForCurrentIdentity(
     readonly targetLocale: string;
   },
 ): number {
-  const source = identity.liveSourceVersion.trim();
-  const inputVersion = identity.liveLocalizationInputVersion.trim();
-  const locale = normalizeLanguageRegistryLocaleKey(identity.targetLocale);
-  if (!source || !inputVersion || !locale) {
-    return 0;
-  }
   let count = 0;
   for (const attempt of attempts) {
-    if (attempt.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION") {
+    if (!attemptMatchesCurrentTranslationIdentity(attempt, identity)) {
       continue;
     }
-    if ((attempt.sourceVersion ?? "").trim() !== source) {
+    if (!isTerminologyOnlyAttempt(attempt)) {
       continue;
     }
-    if ((attempt.localizationInputVersion ?? "").trim() !== inputVersion) {
+    count += 1;
+  }
+  return count;
+}
+
+/**
+ * Failures that did not produce a presentation-eligible current-source
+ * translation. Terminology exactness is excluded.
+ */
+export function countGenuineMissingTranslationFailures(
+  attempts: readonly TerminologyRetryAttemptEvidence[],
+  identity: {
+    readonly liveSourceVersion: string;
+    readonly liveLocalizationInputVersion: string;
+    readonly targetLocale: string;
+  },
+): number {
+  let count = 0;
+  for (const attempt of attempts) {
+    if (!attemptMatchesCurrentTranslationIdentity(attempt, identity)) {
       continue;
     }
-    const attemptLocale = attempt.targetLocale?.trim() ?? "";
-    if (!attemptLocale || normalizeLanguageRegistryLocaleKey(attemptLocale) !== locale) {
+    if (isTerminologyOnlyAttempt(attempt)) {
       continue;
     }
-    const localeRows = (attempt.localeFailures ?? []).filter(
-      (row) => normalizeLanguageRegistryLocaleKey(row.targetLocale) === locale,
-    );
-    if (localeRows.some((row) => row.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION")) {
+    const reason = attempt.failureReasonCode?.trim() ?? "";
+    const failureClass = attempt.failureClass?.trim() ?? "";
+    if (!reason && !failureClass) {
       continue;
     }
     count += 1;
@@ -628,11 +683,10 @@ export type TerminologyMissingTranslationRetrySelection =
   | "due";
 
 /**
- * F.3.32.1 — unchanged terminology stays suppressed when the current source
- * already has a presentation-eligible translation. When it does not, the
- * existing semantic residual streak cap is the attempt bound. The recorded
- * retryEligibleAt is the wait between those attempts. Reaching the cap ends
- * selection. It does not start another six-hour cycle.
+ * F.3.33.1 — a presentation-eligible current-source translation stays
+ * suppressed. Terminology-only history does not exhaust the missing-translation
+ * budget. Genuine presentation/provider failures still stop at the semantic
+ * residual streak cap. retryEligibleAt remains the wait before a due attempt.
  */
 export function selectTerminologyMissingTranslationRetry(input: {
   readonly currentSourcePresentationEligible: boolean;
@@ -641,7 +695,7 @@ export function selectTerminologyMissingTranslationRetry(input: {
   readonly liveLocalizationInputVersion: string | null;
   readonly failedLocalizationInputVersion: string | null;
   readonly retryEligibleAt: string | null | undefined;
-  readonly terminologyAttemptCount: number;
+  readonly genuineFailureCount: number;
   readonly nowMs?: number;
 }): TerminologyMissingTranslationRetrySelection {
   if (input.currentSourcePresentationEligible) {
@@ -657,7 +711,7 @@ export function selectTerminologyMissingTranslationRetry(input: {
   if (liveSource !== failedSource || liveInput !== failedInput) {
     return "waiting";
   }
-  if (input.terminologyAttemptCount >= SEMANTIC_RESIDUAL_DEFER_STREAK_CAP) {
+  if (input.genuineFailureCount >= SEMANTIC_RESIDUAL_DEFER_STREAK_CAP) {
     return "exhausted";
   }
   const eligibleAt = input.retryEligibleAt ? Date.parse(input.retryEligibleAt) : Number.NaN;
