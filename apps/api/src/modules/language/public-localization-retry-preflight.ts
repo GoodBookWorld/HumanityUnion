@@ -221,6 +221,15 @@ export async function buildPublicLocalizationRetryPreflight(input: {
         liveSourceVersion,
         originalFields: sourceFields,
         concepts,
+        attemptedCurrentInputFailure: peek.failureMetadata
+          ? {
+              failureReasonCode: peek.failureMetadata.failureReasonCode,
+              sourceVersion: peek.failureMetadata.sourceVersion,
+              localizationInputVersion: peek.failureMetadata.localizationInputVersion,
+              targetLocale: item.targetLanguage,
+              localeFailures: peek.failureMetadata.localeFailures,
+            }
+          : null,
       });
       if (validity.presentationEligible && validity.reconciliationState === "READY") {
         currentTranslationAbsent = false;
