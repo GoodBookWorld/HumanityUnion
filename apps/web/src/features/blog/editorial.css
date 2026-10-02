@@ -87,6 +87,7 @@
 
 .editorial-review__tools {
   grid-area: tools;
+  align-self: start;
   display: grid;
   gap: 1rem;
   align-content: start;

@@ -132,7 +132,6 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     );
     assert.match(editorialCss, /"context preview tools"/);
     assert.match(editorialCss, /\.editorial-review__preview[\s\S]*overflow-y:\s*auto/);
-    assert.match(editorialCss, /\.editorial-review__guidance/);
     assert.doesNotMatch(editorialCss, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
     assert.doesNotMatch(editorialCss, /position:\s*sticky/);
   });

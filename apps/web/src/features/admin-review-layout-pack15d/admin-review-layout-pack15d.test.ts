@@ -45,10 +45,16 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.match(css, /grid-area:\s*tools/);
     assert.match(css, /"context preview tools"/);
     assert.match(css, /\.editorial-review__preview[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/);
-    assert.match(review, /editorial-review__guidance/);
+    assert.match(review, /ref=\{toolsRef\}/);
+    assert.match(review, /observer\.observe\(tools\)/);
+    assert.match(review, /tools\.getBoundingClientRect\(\)/);
     assert.match(review, /ResizeObserver/);
-    assert.match(review, /getBoundingClientRect\(\)/);
+    assert.doesNotMatch(review, /guidanceRef/);
+    assert.match(review, /min-width:\s*1025px/);
+    assert.match(review, /humanity-app--pwa-standalone/);
+    assert.match(review, /previewPane\.style\.height = ""/);
     assert.doesNotMatch(css, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
+    assert.doesNotMatch(css, /\.editorial-review__context\s*\{[^}]*overflow/);
     assert.doesNotMatch(css, /height:\s*\d+px/);
     assert.doesNotMatch(css, /position:\s*sticky/);
     assert.doesNotMatch(css, /3fr\)\s+minmax\(0,\s*4fr\)/);

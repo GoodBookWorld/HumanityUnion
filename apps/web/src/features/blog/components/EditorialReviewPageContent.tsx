@@ -68,7 +68,7 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const noteId = useId();
-  const guidanceRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [detail, setDetail] = useState<BlogEditorialReviewDetail | null>(null);
   const [preview, setPreview] = useState<BlogPreviewProjection | null>(null);
@@ -79,9 +79,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const [declineConfirmOpen, setDeclineConfirmOpen] = useState(false);
 
   useLayoutEffect(() => {
-    const guidance = guidanceRef.current;
+    const tools = toolsRef.current;
     const previewPane = previewRef.current;
-    if (!guidance || !previewPane || typeof ResizeObserver === "undefined") {
+    if (!tools || !previewPane || typeof ResizeObserver === "undefined") {
       return;
     }
 
@@ -94,21 +94,23 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
         previewPane.style.maxHeight = "";
         return;
       }
-      const height = guidance.getBoundingClientRect().height;
+      const height = tools.getBoundingClientRect().height;
       if (height <= 0) {
         previewPane.style.height = "";
         previewPane.style.maxHeight = "";
         return;
       }
       const measured = `${height}px`;
-      previewPane.style.height = measured;
-      previewPane.style.maxHeight = measured;
+      if (previewPane.style.height !== measured) {
+        previewPane.style.height = measured;
+        previewPane.style.maxHeight = measured;
+      }
     };
 
     const observer = new ResizeObserver(() => {
       syncPreviewHeight();
     });
-    observer.observe(guidance);
+    observer.observe(tools);
     const classObserver = new MutationObserver(syncPreviewHeight);
     classObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
     desktopQuery.addEventListener("change", syncPreviewHeight);
@@ -333,8 +335,8 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
         </article>
       </div>
 
-      <aside className="editorial-review__tools" aria-label={t("toolsAria")}>
-        <div className="editorial-review__panel editorial-review__guidance" ref={guidanceRef}>
+      <aside className="editorial-review__tools" aria-label={t("toolsAria")} ref={toolsRef}>
+        <div className="editorial-review__panel editorial-review__guidance">
           <h2 className="hu-heading-3">{t("guidanceHeading")}</h2>
           <ul className="editorial-review__checklist hu-body">
             <li>{t("guidanceClarity")}</li>
