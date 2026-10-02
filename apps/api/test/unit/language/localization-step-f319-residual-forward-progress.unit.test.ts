@@ -75,8 +75,8 @@ function storedInvalid(targetLanguage: "uk" | "ka"): TranslatedContentRecord {
     sourceLanguage: "en",
     targetLanguage,
     translatedContent: {
-      title: "Development of the Humanity Union platform",
-      description: "desc",
+      title: "Розвиток платформи спільноти",
+      description: "опис роботи",
     },
     translationProvider: "gemini",
     translationKind: "machine",
@@ -180,7 +180,7 @@ const MISSING_KINDS = [
 ] as const;
 
 describe("F.3.19 residual forward progress", () => {
-  it("1. a failed terminology replacement leaves the stored row INVALID", () => {
+  it("1. terminology exactness on localized prose is diagnostic, not INVALID work", () => {
     const before = classifyContentTranslationForReconciliation({
       translation: storedInvalid("uk"),
       liveSourceVersion: SOURCE_VERSION,
@@ -190,19 +190,26 @@ describe("F.3.19 residual forward progress", () => {
       },
       concepts: [concept()],
     });
-    assert.equal(before.reconciliationState, "INVALID");
-    assert.ok(before.reasons.includes("terminology_protection_violation"));
+    assert.equal(before.reconciliationState, "READY");
+    assert.equal(before.presentationEligible, true);
+    assert.equal(before.workRemaining, false);
+    assert.ok(
+      before.terminologyQualityDiagnostics?.some(
+        (item) => item.conceptId === "humanity_union" && item.violationType === "missing_preferred",
+      ),
+    );
 
     const service = readFileSync(
       path.join(here, "../../../src/modules/language/content-translation.service.ts"),
       "utf8",
     );
-    const terminology = service.indexOf("TERMINOLOGY_PROTECTION_VIOLATION");
+    const terminology = service.indexOf("assessRequiredTerminologyProtection({");
     const upsert = service.indexOf("await upsertContentTranslation(record)");
     assert.ok(terminology > 0 && upsert > terminology);
+    assert.equal(service.includes("TERMINOLOGY_PROTECTION_VIOLATION"), false);
 
     const after = classifyContentTranslationForReconciliation({
-      translation: storedInvalid("uk"),
+      translation: storedInvalid("ka"),
       liveSourceVersion: SOURCE_VERSION,
       originalFields: {
         title: "Development of the Humanity Union platform",
@@ -210,8 +217,8 @@ describe("F.3.19 residual forward progress", () => {
       },
       concepts: [concept()],
     });
-    assert.equal(after.reconciliationState, "INVALID");
-    assert.equal(after.presentationEligible, false);
+    assert.equal(after.reconciliationState, "READY");
+    assert.equal(after.workRemaining, false);
   });
 
   it("2. a semantic failure is durably deferred and terminal on the first outbox attempt", () => {
@@ -431,8 +438,8 @@ describe("F.3.19 residual forward progress", () => {
       "utf8",
     );
     const paced = service.indexOf("await runLocalizationProviderRequest");
-    const terminologyAssert = service.indexOf("assertRequiredTerminologyProtection({");
-    assert.ok(paced > 0 && terminologyAssert > paced);
+    const terminologyAssess = service.indexOf("assessRequiredTerminologyProtection({");
+    assert.ok(paced > 0 && terminologyAssess > paced);
   });
 
   it("13. Gate 15D.9.1 still refuses CT enqueue when WEB_UI is not READY", () => {

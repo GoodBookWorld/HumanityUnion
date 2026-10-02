@@ -292,7 +292,7 @@ describe("15D.14.B.2.1 — Participant SOURCE_ORIGINAL biography/skills", () => 
     );
     assert.match(providerBoundary, /resolveSharedProviderTerminologyContext/);
     assert.match(providerBoundary, /assessRequiredTerminologyProtection/);
-    assert.match(ctService, /assertRequiredTerminologyProtection/);
+    assert.match(ctService, /assessRequiredTerminologyProtection/);
 
     const ok = assessRequiredTerminologyProtection({
       concepts: [

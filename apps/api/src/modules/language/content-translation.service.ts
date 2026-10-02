@@ -13,6 +13,7 @@ import {
   normalizeLanguageCode,
 } from "@hu/types";
 
+import { logger } from "../../shared/observability/logger.js";
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
@@ -76,9 +77,8 @@ import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
 import {
-  assertRequiredTerminologyProtection,
+  assessRequiredTerminologyProtection,
   loadPublishedTerminologyConcepts,
-  TerminologyProtectionViolationError,
 } from "./terminology-protection-contract.js";
 import {
   buildLocalizationInputVersionFromConcepts,
@@ -599,24 +599,22 @@ export async function getOrCreateContentTranslation(input: {
     concepts,
     sourceText,
   });
-  try {
-    assertRequiredTerminologyProtection({
-      concepts,
-      targetLocale: targetLanguage,
-      sourceText,
-      translatedText,
+  const terminologyAssessment = assessRequiredTerminologyProtection({
+    concepts,
+    targetLocale: targetLanguage,
+    sourceText,
+    translatedText,
+  });
+  if (!terminologyAssessment.ok) {
+    logger.info("content_translation.terminology_quality_diagnostic", {
+      component: "content-translation",
+      sourceKind: source.sourceKind,
+      sourceRecordId: source.sourceRecordId,
+      targetLanguage,
+      diagnostics: terminologyAssessment.violations.map(
+        (violation) => `${violation.conceptId}:${violation.reason}`,
+      ),
     });
-  } catch (error) {
-    // Leave the stored row unchanged. The failed replacement is not Current.
-    throw new ContentTranslationValidationError(
-      "TERMINOLOGY_PROTECTION_VIOLATION",
-      error instanceof Error
-        ? error.message
-        : "Required terminology/preferred terms were not honored.",
-      "malformed_response",
-      inputVersion.localizationInputVersion,
-      error instanceof TerminologyProtectionViolationError ? error.violations : null,
-    );
   }
 
   const record: TranslatedContentRecord = {

@@ -34,6 +34,12 @@ export type ContentTranslationReconciliationState =
   | "BLOCKED"
   | "NOT_APPLICABLE";
 
+/** Privacy-safe terminology quality note. It does not affect presentation or work. */
+export type TerminologyQualityDiagnostic = {
+  readonly conceptId: string;
+  readonly violationType: "missing_preferred" | "residual_canonical";
+};
+
 export type ContentTranslationValidityClassification = {
   readonly identityCurrent: boolean;
   readonly structurallyComplete: boolean | null;
@@ -43,6 +49,7 @@ export type ContentTranslationValidityClassification = {
   readonly localizedCoverage: boolean;
   readonly workRemaining: boolean;
   readonly reasons: readonly string[];
+  readonly terminologyQualityDiagnostics?: readonly TerminologyQualityDiagnostic[];
 };
 
 function localesEqual(a: string, b: string): boolean {
@@ -151,13 +158,28 @@ function translatedFieldsFromRecord(
  * Single CT validity classifier — reuse for readiness, reconciliation planning,
  * and public resolve presentation eligibility.
  */
+function isUntranslatedSourceEquivalent(input: {
+  readonly originalFields: Readonly<Record<string, string>>;
+  readonly localizedFields: Readonly<Record<string, string>>;
+}): boolean {
+  const keys = Object.keys(input.originalFields).filter((key) => {
+    const value = input.originalFields[key];
+    return typeof value === "string" && value.trim().length > 0;
+  });
+  if (keys.length === 0) {
+    return false;
+  }
+  return keys.every((key) => {
+    const localized = input.localizedFields[key];
+    return typeof localized === "string" && localized.trim() === input.originalFields[key]!.trim();
+  });
+}
+
 export function classifyContentTranslationValidity(input: {
   readonly translation: TranslatedContentRecord | null | undefined;
   readonly liveSourceVersion?: string | null;
   readonly liveLocalizationInputVersion?: string | null;
   readonly originalFields?: Readonly<Record<string, string>> | null;
-  /** When true, treat as INVALID even if otherwise READY (producer rejected path). */
-  readonly terminologyProtectionFailed?: boolean;
 }): ContentTranslationValidityClassification {
   const row = input.translation ?? null;
   if (!row) {
@@ -237,18 +259,6 @@ export function classifyContentTranslationValidity(input: {
     }
   }
 
-  if (input.terminologyProtectionFailed === true && identityCurrent) {
-    return {
-      identityCurrent: true,
-      structurallyComplete,
-      presentationEligible: false,
-      reconciliationState: "INVALID",
-      localizedCoverage: false,
-      workRemaining: true,
-      reasons: ["terminology_protection_violation"],
-    };
-  }
-
   if (identityCurrent && placeholder) {
     return {
       identityCurrent: true,
@@ -270,6 +280,25 @@ export function classifyContentTranslationValidity(input: {
       localizedCoverage: false,
       workRemaining: true,
       reasons: ["structurally_incomplete"],
+    };
+  }
+
+  if (
+    identityCurrent &&
+    input.originalFields &&
+    isUntranslatedSourceEquivalent({
+      originalFields: input.originalFields,
+      localizedFields: translatedFieldsFromRecord(row.translatedContent),
+    })
+  ) {
+    return {
+      identityCurrent: true,
+      structurallyComplete,
+      presentationEligible: false,
+      reconciliationState: "INVALID",
+      localizedCoverage: false,
+      workRemaining: true,
+      reasons: ["untranslated_source_equivalent"],
     };
   }
 
@@ -322,12 +351,12 @@ export function isPresentationEligibleTranslation(
 }
 
 /**
- * Gate C — classify using live terminology + localizationInputVersion when
- * concepts and original fields are available. Does not invent currentness:
- * delegates to classifyContentTranslationValidity after assessing B.2 inputs.
+ * Gate C — classify using live localizationInputVersion when concepts and
+ * original fields are available. Exact terminology mismatches on an otherwise
+ * presentation-eligible row are quality diagnostics, not reconciliation work.
  *
  * Historical rows without localizationInputVersion stay legacy_unversioned
- * (not mass-STALE). Terminology residual on identity-current rows → INVALID.
+ * (not mass-STALE). A real terminology-digest change remains STALE work.
  */
 export function classifyContentTranslationForReconciliation(input: {
   readonly translation: TranslatedContentRecord | null | undefined;
@@ -336,8 +365,8 @@ export function classifyContentTranslationForReconciliation(input: {
   readonly concepts?: readonly TerminologyConcept[] | null;
 }): ContentTranslationValidityClassification {
   const row = input.translation ?? null;
-  let terminologyProtectionFailed: boolean | undefined;
   let liveLocalizationInputVersion: string | undefined;
+  let terminologyQualityDiagnostics: readonly TerminologyQualityDiagnostic[] | undefined;
 
   if (row && input.concepts && input.originalFields) {
     const sourceText = collectSourceTextLeaves(input.originalFields);
@@ -350,7 +379,12 @@ export function classifyContentTranslationForReconciliation(input: {
       sourceText,
       translatedText,
     });
-    terminologyProtectionFailed = !assessment.ok;
+    if (!assessment.ok) {
+      terminologyQualityDiagnostics = assessment.violations.map((violation) => ({
+        conceptId: violation.conceptId,
+        violationType: violation.reason,
+      }));
+    }
     liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
       sourceVersion: input.liveSourceVersion ?? row.sourceVersion,
       targetLocale: String(row.targetLanguage),
@@ -359,11 +393,18 @@ export function classifyContentTranslationForReconciliation(input: {
     }).localizationInputVersion;
   }
 
-  return classifyContentTranslationValidity({
+  const validity = classifyContentTranslationValidity({
     translation: row,
     liveSourceVersion: input.liveSourceVersion,
     liveLocalizationInputVersion,
     originalFields: input.originalFields,
-    terminologyProtectionFailed,
   });
+  if (
+    validity.reconciliationState === "READY" &&
+    terminologyQualityDiagnostics &&
+    terminologyQualityDiagnostics.length > 0
+  ) {
+    return { ...validity, terminologyQualityDiagnostics };
+  }
+  return validity;
 }

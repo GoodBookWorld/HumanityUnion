@@ -24,7 +24,6 @@ import {
   isImmediateTerminalOutboxFailure,
   outboxPacingDeferAvailableAt,
 } from "../../../src/infrastructure/outbox/outbox.repository.js";
-import { isActivationProviderTransientError } from "../../../src/modules/language/activation-provider-transient-recovery.js";
 import {
   SEMANTIC_RESIDUAL_DEFER_BASE_MS,
   SEMANTIC_RESIDUAL_DEFER_MAX_MS,
@@ -32,7 +31,6 @@ import {
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   decideSameVersionWarmFailureRetry,
   encodeContentTranslationFailureMetadata,
-  isSemanticResidualDeferActive,
   parseContentTranslationFailureMetadata,
   semanticResidualDeferDelayMs,
 } from "../../../src/modules/language/content-translation-failure-metadata.js";
@@ -358,7 +356,7 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(decision.includes("sourceKind"), false);
   });
 
-  it("defers a same-version terminology failure until retryEligibleAt, without a provider call or Gate E", async () => {
+  it("persists inexact terminology prose and does not call the provider again", async () => {
     const row = initiative("defer", "Humanity Union river plan");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -376,23 +374,8 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       targetLocales: ["uk"],
     });
     assert.ok(enqueued.eventId);
-    await assert.rejects(
-      () => processContentTranslationWarmMemoryQueueForTests(),
-      (error: unknown) => {
-        assert.equal(isImmediateTerminalOutboxFailure(error), true);
-        assert.equal(outboxPacingDeferAvailableAt(error), null);
-        assert.equal(isActivationProviderTransientError(error), false);
-        const message = error instanceof Error ? error.message : "";
-        const meta = parseContentTranslationFailureMetadata(message);
-        assert.equal(meta?.schema, "content_translation_failure_meta_v1");
-        assert.equal(meta?.failureReasonCode, "TERMINOLOGY_PROTECTION_VIOLATION");
-        assert.equal(meta?.sourceVersion, source.sourceVersion);
-        assert.ok(meta?.retryEligibleAt);
-        assert.ok(Date.parse(meta.retryEligibleAt) > Date.now());
-        assert.ok(meta.localizationInputVersion);
-        return true;
-      },
-    );
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
     assert.equal(providerCalls, 1);
     const stored = await findContentTranslation({
       sourceKind: "initiative",
@@ -400,18 +383,19 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       sourceVersion: source.sourceVersion,
       targetLanguage: "uk",
     });
-    assert.equal(stored, null);
+    assert.ok(stored);
+    assert.equal(stored.freshness, "current");
 
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
-    assert.equal(preflight.ready, true);
-    assert.equal(preflight.terminalFailureForCurrentVersion, false);
-    assert.equal(preflight.failureReasonCode, "TERMINOLOGY_PROTECTION_VIOLATION");
-    assert.equal(preflight.semanticRetryDeferred, true);
-    assert.ok(preflight.semanticRetryEligibleAt);
+    assert.equal(preflight.ready, false);
+    assert.equal(preflight.readyState, "CURRENT");
+    assert.equal(preflight.liveTranslationInvalid, false);
 
-    const selected = selectCurrentlyRetryEligibleResiduals([
-      residualFrom("initiative", row.initiativeId, preflight),
-    ]);
+    const selected = selectCurrentlyRetryEligibleResiduals(
+      [residualFrom("initiative", row.initiativeId, preflight)].filter(
+        (candidate) => candidate.retryPreflight.ready,
+      ),
+    );
     assert.equal(selected.length, 0);
     const schedule = selectReadyPresentationsForResidualRetry({
       RETRY_READY_IDENTITIES: 1,
@@ -554,7 +538,7 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(providerCalls, 0);
   });
 
-  it("advances the existing backoff after a repeated semantic failure", async () => {
+  it("does not repeat provider work after inexact terminology prose is stored", async () => {
     const row = initiative("backoff", "Humanity Union river plan");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -571,14 +555,13 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       reason: "reconciliation",
       targetLocales: ["uk"],
     });
-    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
-    const firstMeta = parseContentTranslationFailureMetadata(
+    const firstResult = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(firstResult[0]?.outcome, "completed");
+    assert.equal(providerCalls, 1);
+    assert.equal(
       readContentTranslationWarmMemoryRecordForTests(first.eventId!)?.lastError,
+      null,
     );
-    assert.ok(firstMeta?.retryEligibleAt && firstMeta.failedAt);
-    const firstDelay =
-      Date.parse(firstMeta.retryEligibleAt) - Date.parse(firstMeta.failedAt);
-    assert.ok(Math.abs(firstDelay - 10 * 60 * 1000) < 2_000);
 
     const second = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
@@ -588,27 +571,21 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       targetLocales: ["uk"],
     });
     assert.equal(second.enqueued, true);
-    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
-    const secondMeta = parseContentTranslationFailureMetadata(
-      readContentTranslationWarmMemoryRecordForTests(second.eventId!)?.lastError,
-    );
-    assert.ok(secondMeta?.retryEligibleAt && secondMeta.failedAt);
-    const secondDelay =
-      Date.parse(secondMeta.retryEligibleAt) - Date.parse(secondMeta.failedAt);
-    assert.ok(Math.abs(secondDelay - 20 * 60 * 1000) < 2_000);
-    assert.ok(Date.parse(secondMeta.retryEligibleAt) > Date.parse(firstMeta.retryEligibleAt));
+    const secondResult = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(secondResult[0]?.locales[0]?.status, "skipped_existing");
+    assert.equal(providerCalls, 1);
 
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
-    assert.equal(preflight.semanticRetryDeferred, true);
+    assert.equal(preflight.readyState, "CURRENT");
+    assert.equal(preflight.semanticRetryDeferred, false);
     assert.equal(
-      selectCurrentlyRetryEligibleResiduals([
-        residualFrom("initiative", row.initiativeId, preflight),
-      ]).length,
+      selectCurrentlyRetryEligibleResiduals(
+        [residualFrom("initiative", row.initiativeId, preflight)].filter(
+          (candidate) => candidate.retryPreflight.ready,
+        ),
+      ).length,
       0,
     );
-    const callsAfterBound = providerCalls;
-    await processContentTranslationWarmMemoryQueueForTests();
-    assert.equal(providerCalls, callsAfterBound);
   });
 
   it("becomes eligible immediately when the source version changes", async () => {
@@ -627,19 +604,8 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       reason: "reconciliation",
       targetLocales: ["uk"],
     });
-    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
-    const meta = parseContentTranslationFailureMetadata(
-      readContentTranslationWarmMemoryRecordForTests(enqueued.eventId!)?.lastError,
-    );
-    assert.ok(meta?.retryEligibleAt);
-    assert.equal(
-      isSemanticResidualDeferActive({
-        metadata: meta,
-        liveSourceVersion: before.sourceVersion,
-        nowMs: Date.now(),
-      }),
-      true,
-    );
+    const firstResult = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(firstResult[0]?.outcome, "completed");
 
     updateInitiative(row.initiativeId, { title: "Neighborhood river plan" });
     const after = await loadTranslatableSource({
@@ -648,23 +614,6 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     });
     assert.ok(after);
     assert.notEqual(after.sourceVersion, before.sourceVersion);
-    assert.equal(
-      isSemanticResidualDeferActive({
-        metadata: meta,
-        liveSourceVersion: after.sourceVersion,
-        nowMs: Date.now(),
-      }),
-      false,
-    );
-    assert.equal(
-      isSemanticResidualDeferActive({
-        metadata: meta,
-        liveSourceVersion: before.sourceVersion,
-        liveLocalizationInputVersion: "input-version-changed",
-        nowMs: Date.now(),
-      }),
-      false,
-    );
 
     const preflight = await preflightFor(row.initiativeId, after.sourceVersion);
     assert.equal(preflight.ready, true);
@@ -694,17 +643,17 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       reason: "reconciliation",
       targetLocales: ["uk"],
     });
-    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
-    const meta = parseContentTranslationFailureMetadata(
-      readContentTranslationWarmMemoryRecordForTests(enqueued.eventId!)?.lastError,
-    );
-    assert.ok(meta?.localizationInputVersion);
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
     const unchanged = await preflightFor(row.initiativeId, source.sourceVersion);
-    assert.equal(unchanged.semanticRetryDeferred, true);
+    assert.equal(unchanged.readyState, "CURRENT");
+    assert.equal(unchanged.semanticRetryDeferred, false);
     assert.equal(
-      selectCurrentlyRetryEligibleResiduals([
-        residualFrom("initiative", row.initiativeId, unchanged),
-      ]).length,
+      selectCurrentlyRetryEligibleResiduals(
+        [residualFrom("initiative", row.initiativeId, unchanged)].filter(
+          (candidate) => candidate.retryPreflight.ready,
+        ),
+      ).length,
       0,
     );
 
@@ -810,7 +759,7 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(blog.retryPreflight.semanticRetryEligibleAt, blogAt);
   });
 
-  it("keeps an invalid terminology residual below READY and allows READY once it is current", async () => {
+  it("does not keep terminology-quality prose below READY, and missing work still blocks READY", async () => {
     const row = initiative("readiness", "Humanity Union river plan");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -826,18 +775,35 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
       reason: "reconciliation",
       targetLocales: ["uk"],
     });
-    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     const bucket = classifyLiveResidualIdentity({
-      liveCurrent: false,
-      liveStale: false,
+      liveCurrent: preflight.readyState === "CURRENT",
+      liveStale: preflight.liveTranslationStale === true,
+      liveInvalid: preflight.liveTranslationInvalid === true,
       preflightReady: preflight.ready,
       readyState: preflight.readyState,
       terminalFailureForCurrentVersion: preflight.terminalFailureForCurrentVersion,
     });
-    assert.equal(bucket, "RETRY_READY_MISSING");
-    const open = accumulateLiveResidualCounts([bucket, "CURRENT"]);
-    assert.equal(open.workItemsRequired > 0 || open.missing > 0, true);
+    assert.equal(bucket, "CURRENT");
+    const qualityOnly = accumulateLiveResidualCounts([bucket]);
+    assert.equal(qualityOnly.workItemsRequired, 0);
+    assert.equal(qualityOnly.invalid, 0);
+    assert.equal(
+      deriveLanguageLocalizationReadinessState({
+        enabled: true,
+        contentTranslationEnabled: true,
+        webUiDataReady: true,
+        participantWebUiDataReady: true,
+        controlledVocabularyPresentationReady: true,
+        ct: qualityOnly,
+        plpMedia: emptyLanguageLocalizationCountBucket(),
+      }),
+      "READY",
+    );
+    const open = accumulateLiveResidualCounts([bucket, "RETRY_READY_MISSING"]);
+    assert.equal(open.workItemsRequired > 0, true);
     assert.equal(
       deriveLanguageLocalizationReadinessState({
         enabled: true,

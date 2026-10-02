@@ -260,8 +260,14 @@ describe("15D.14.C — unified localization reconciliation", () => {
       },
       concepts: [HUMANITY_UNION],
     });
-    assert.equal(termFail.reconciliationState, "INVALID");
-    assert.ok(termFail.reasons.includes("terminology_protection_violation"));
+    assert.equal(termFail.reconciliationState, "READY");
+    assert.equal(termFail.presentationEligible, true);
+    assert.equal(termFail.workRemaining, false);
+    assert.ok(
+      termFail.terminologyQualityDiagnostics?.some(
+        (item) => item.violationType === "missing_preferred" || item.violationType === "residual_canonical",
+      ),
+    );
   });
 
   it("I. unrelated terminology change → valid artifact remains READY", () => {
@@ -469,8 +475,9 @@ describe("15D.14.C — unified localization reconciliation", () => {
       },
       concepts: [HUMANITY_UNION],
     });
-    assert.equal(defectA.reconciliationState, "INVALID");
-    assert.notEqual(defectA.reconciliationState, "READY");
+    assert.equal(defectA.reconciliationState, "READY");
+    assert.equal(defectA.workRemaining, false);
+    assert.equal(defectA.presentationEligible, true);
 
     const defectB = classifyContentTranslationForReconciliation({
       translation: baseCt({
@@ -486,7 +493,8 @@ describe("15D.14.C — unified localization reconciliation", () => {
       },
       concepts: [INITIATIVE],
     });
-    assert.equal(defectB.reconciliationState, "INVALID");
+    assert.equal(defectB.reconciliationState, "READY");
+    assert.equal(defectB.workRemaining, false);
     assert.equal(
       planLocalizationReconciliationItem({
         owner: "CT",
@@ -495,7 +503,7 @@ describe("15D.14.C — unified localization reconciliation", () => {
         targetLocale: "zh-Hant",
         reconciliationState: defectB.reconciliationState,
       }).action,
-      "REGENERATE",
+      "PRESERVE",
     );
   });
 

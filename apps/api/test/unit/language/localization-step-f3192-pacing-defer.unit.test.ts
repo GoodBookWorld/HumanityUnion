@@ -29,7 +29,10 @@ import {
 } from "../../../src/infrastructure/outbox/outbox.repository.js";
 import { isActivationProviderTransientError } from "../../../src/modules/language/activation-provider-transient-recovery.js";
 import { parseContentTranslationFailureMetadata } from "../../../src/modules/language/content-translation-failure-metadata.js";
-import { classifyContentTranslationValidity } from "../../../src/modules/language/content-translation-validity.js";
+import {
+  classifyContentTranslationForReconciliation,
+  classifyContentTranslationValidity,
+} from "../../../src/modules/language/content-translation-validity.js";
 import { readContentTranslationWarmMemoryRecordForTests } from "../../../src/modules/language/content-translation-warm-enqueue.js";
 import { isLanguageActivationWebUiReadyForHistoricalEnqueue } from "../../../src/modules/language/language-localization-activation/language-activation-job.domains.js";
 import { accumulateLiveResidualCounts } from "../../../src/modules/language/live-residual-ct-coverage.js";
@@ -619,7 +622,7 @@ describe("F.3.19.2 pacing defer preserves the warm event", () => {
     assert.equal(second[0]?.locales[0]?.status, "skipped_existing");
   });
 
-  it("still records CT_FAIL_META_V1 and retryEligibleAt for a terminology failure", async () => {
+  it("persists terminology-inexact prose without a provider failure or Gate E", async () => {
     providerMode = "terminology";
     const row = initiative("semantic", "Humanity Union river plan");
     createInitiative(row);
@@ -633,29 +636,42 @@ describe("F.3.19.2 pacing defer preserves the warm event", () => {
       targetLocales: ["uk"],
     });
     assert.ok(enqueued.eventId);
-    await assert.rejects(
-      () => processContentTranslationWarmMemoryQueueForTests(),
-      (error: unknown) => {
-        assert.equal(outboxPacingDeferAvailableAt(error), null);
-        assert.equal(isImmediateTerminalOutboxFailure(error), true);
-        assert.equal(isActivationProviderTransientError(error), false);
-        assert.equal(error instanceof Error, true);
-        const message = error instanceof Error ? error.message : "";
-        assert.match(message, /CT_FAIL_META_V1/);
-        const meta = parseContentTranslationFailureMetadata(message);
-        assert.equal(meta?.failureReasonCode, "TERMINOLOGY_PROTECTION_VIOLATION");
-        assert.ok(meta?.retryEligibleAt);
-        return true;
+    const processed = await processContentTranslationWarmMemoryQueueForTests();
+    assert.equal(processed[0]?.outcome, "completed");
+    const published = readContentTranslationWarmMemoryRecordForTests(enqueued.eventId);
+    assert.equal(published?.status, "published");
+    assert.equal(published?.lastError, null);
+    const stored = await findContentTranslation({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+      sourceVersion: (await loadTranslatableSource({
+        sourceKind: "initiative",
+        sourceRecordId: row.initiativeId,
+      }))!.sourceVersion,
+      targetLanguage: "uk",
+    });
+    assert.ok(stored);
+    const validity = classifyContentTranslationForReconciliation({
+      translation: stored,
+      liveSourceVersion: stored.sourceVersion,
+      originalFields: {
+        title: row.title,
+        description: row.description,
       },
-    );
-    const failed = readContentTranslationWarmMemoryRecordForTests(enqueued.eventId);
-    assert.equal(failed?.status, "failed");
-    assert.match(failed?.lastError ?? "", /CT_FAIL_META_V1/);
-    assert.equal(
-      parseContentTranslationFailureMetadata(failed?.lastError)?.failureReasonCode,
-      "TERMINOLOGY_PROTECTION_VIOLATION",
-    );
-    assert.ok(parseContentTranslationFailureMetadata(failed?.lastError)?.retryEligibleAt);
+      concepts: [
+        {
+          conceptId: "humanity_union",
+          canonicalEnglishTerm: "Humanity Union",
+          category: "brand",
+          status: "published",
+          translations: { uk: { preferredTerm: "Союз Людства", aliases: [] } },
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    });
+    assert.equal(validity.presentationEligible, true);
+    assert.equal(validity.workRemaining, false);
     const cooldown = await getThinGeminiCooldownSnapshot(clockMs);
     assert.equal(cooldown.active, false);
     assert.equal(providerCalls, 1);
