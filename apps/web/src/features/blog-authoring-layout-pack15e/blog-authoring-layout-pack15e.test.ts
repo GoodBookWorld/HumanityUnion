@@ -131,7 +131,9 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
       /minmax\(0,\s*2fr\)\s+minmax\(0,\s*3fr\)\s+minmax\(0,\s*var\(--hu-initiative-sidebar-width\)\)/,
     );
     assert.match(editorialCss, /"context preview tools"/);
-    assert.match(editorialCss, /\.editorial-review__tools[\s\S]*overflow-y:\s*auto/);
+    assert.match(editorialCss, /\.editorial-review__preview[\s\S]*overflow-y:\s*auto/);
+    assert.match(editorialCss, /\.editorial-review__guidance/);
+    assert.doesNotMatch(editorialCss, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
     assert.doesNotMatch(editorialCss, /position:\s*sticky/);
   });
 

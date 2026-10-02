@@ -44,8 +44,12 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.match(css, /grid-area:\s*preview/);
     assert.match(css, /grid-area:\s*tools/);
     assert.match(css, /"context preview tools"/);
-    assert.match(css, /\.editorial-review__preview[\s\S]*overflow-y:\s*auto/);
-    assert.match(css, /\.editorial-review__tools[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/);
+    assert.match(css, /\.editorial-review__preview[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/);
+    assert.match(review, /editorial-review__guidance/);
+    assert.match(review, /ResizeObserver/);
+    assert.match(review, /getBoundingClientRect\(\)/);
+    assert.doesNotMatch(css, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
+    assert.doesNotMatch(css, /height:\s*\d+px/);
     assert.doesNotMatch(css, /position:\s*sticky/);
     assert.doesNotMatch(css, /3fr\)\s+minmax\(0,\s*4fr\)/);
     assert.match(css, /overflow-x:\s*hidden/);
@@ -94,8 +98,8 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.match(review, /Admin Publishing/);
 
     const css = readWeb("features/blog/editorial.css");
-    assert.match(css, /\.editorial-review__preview[\s\S]*min-height:\s*0/);
-    assert.match(css, /\.editorial-review__tools[\s\S]*overflow-y:\s*auto/);
+    assert.match(css, /\.editorial-review__preview[\s\S]*overflow-y:\s*auto/);
+    assert.doesNotMatch(css, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
     assert.doesNotMatch(css, /position:\s*sticky/);
     assert.doesNotMatch(css, /100vh/);
   });
@@ -120,6 +124,8 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.match(css, /"context preview"\s*"tools tools"/);
     assert.match(css, /"context"\s*"preview"\s*"tools"/s);
     assert.match(css, /position:\s*static/);
+    assert.match(css, /@media \(max-width:\s*1024px\)[\s\S]*overflow:\s*visible/);
+    assert.match(css, /\.humanity-app--pwa-standalone \.editorial-review__preview[\s\S]*overflow:\s*visible/);
     assert.match(css, /\.humanity-app--pwa-standalone \.editorial-review-header/);
     assert.match(
       css,
