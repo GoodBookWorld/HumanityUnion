@@ -277,14 +277,18 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     }
   });
 
-  it("classifies provider terminology failure as retryable and keeps other validation terminal", () => {
+  it("keeps an unchanged terminology failure terminal and other validation terminal", () => {
     assert.equal(
       decideSameVersionWarmFailureRetry({
         failureClass: "VALIDATION_FAILED",
         failureReasonCode: "TERMINOLOGY_PROTECTION_VIOLATION",
         retryabilityHint: "non_retryable_until_code_or_content_change",
+        liveSourceVersion: "v-current",
+        failedSourceVersion: "v-current",
+        liveLocalizationInputVersion: "input-a",
+        failedLocalizationInputVersion: "input-a",
       }),
-      "retryable",
+      "terminal",
     );
     for (const sourceKind of [
       "improvement_proposal",
@@ -311,8 +315,12 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
           failureClass: parsed?.failureClass ?? null,
           failureReasonCode: parsed?.failureReasonCode ?? null,
           retryabilityHint: parsed?.retryabilityHint ?? null,
+          liveSourceVersion: parsed?.sourceVersion,
+          failedSourceVersion: parsed?.sourceVersion,
+          liveLocalizationInputVersion: parsed?.localizationInputVersion,
+          failedLocalizationInputVersion: parsed?.localizationInputVersion,
         }),
-        "retryable",
+        "terminal",
       );
     }
     for (const reason of WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS) {
@@ -426,7 +434,7 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(isImmediateTerminalOutboxFailure(pacing), false);
   });
 
-  it("selects a due terminology failure and stores CURRENT only after a valid retry", async () => {
+  it("does not select a due unchanged terminology failure", async () => {
     const row = initiative("due", "Humanity Union river plan");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -458,12 +466,12 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
 
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     assert.equal(preflight.ready, true);
-    assert.equal(preflight.semanticRetryDeferred, false);
+    assert.equal(preflight.semanticRetryDeferred, true);
     assert.equal(preflight.terminalFailureForCurrentVersion, false);
     const selected = selectCurrentlyRetryEligibleResiduals([
       residualFrom("initiative", row.initiativeId, preflight),
     ]);
-    assert.equal(selected.length, 1);
+    assert.equal(selected.length, 0);
     assert.equal(providerCalls, 0);
 
     providerMode = "valid";
@@ -501,7 +509,7 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(title.includes("Humanity Union"), false);
   });
 
-  it("adopts a legacy terminal terminology row that has no retryEligibleAt", async () => {
+  it("does not select a legacy unchanged terminology row that has no retryEligibleAt", async () => {
     const row = initiative("legacy", "Humanity Union river plan");
     createInitiative(row);
     created.push(row.initiativeId);
@@ -536,12 +544,12 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     const preflight = await preflightFor(row.initiativeId, source.sourceVersion);
     assert.equal(preflight.ready, true);
     assert.equal(preflight.terminalFailureForCurrentVersion, false);
-    assert.equal(preflight.semanticRetryDeferred, false);
+    assert.equal(preflight.semanticRetryDeferred, true);
     assert.equal(
       selectCurrentlyRetryEligibleResiduals([
         residualFrom("initiative", row.initiativeId, preflight),
       ]).length,
-      1,
+      0,
     );
     assert.equal(providerCalls, 0);
   });
@@ -665,6 +673,60 @@ describe("F.3.23 terminology protection uses the existing semantic defer", () =>
     assert.equal(
       selectCurrentlyRetryEligibleResiduals([
         residualFrom("initiative", row.initiativeId, preflight),
+      ]).length,
+      1,
+    );
+  });
+
+  it("becomes eligible when the localization input version changes", async () => {
+    const row = initiative("input", "Humanity Union river plan");
+    createInitiative(row);
+    created.push(row.initiativeId);
+    const source = await loadTranslatableSource({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+    });
+    assert.ok(source);
+    const enqueued = await enqueueContentTranslationWarmRequested({
+      sourceKind: "initiative",
+      sourceRecordId: row.initiativeId,
+      sourceVersion: source.sourceVersion,
+      reason: "reconciliation",
+      targetLocales: ["uk"],
+    });
+    await assert.rejects(() => processContentTranslationWarmMemoryQueueForTests());
+    const meta = parseContentTranslationFailureMetadata(
+      readContentTranslationWarmMemoryRecordForTests(enqueued.eventId!)?.lastError,
+    );
+    assert.ok(meta?.localizationInputVersion);
+    const unchanged = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(unchanged.semanticRetryDeferred, true);
+    assert.equal(
+      selectCurrentlyRetryEligibleResiduals([
+        residualFrom("initiative", row.initiativeId, unchanged),
+      ]).length,
+      0,
+    );
+
+    upsertTerminologyGlossaryMemory({
+      conceptId: "humanity_union",
+      canonicalEnglishTerm: "Humanity Union",
+      category: "brand",
+      status: "published",
+      translations: {
+        uk: { preferredTerm: "Союз людства", aliases: [] },
+      },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-10-02T00:00:00.000Z",
+      updatedByParticipantId: null,
+    });
+    const changed = await preflightFor(row.initiativeId, source.sourceVersion);
+    assert.equal(changed.ready, true);
+    assert.equal(changed.semanticRetryDeferred, false);
+    assert.equal(changed.terminalFailureForCurrentVersion, false);
+    assert.equal(
+      selectCurrentlyRetryEligibleResiduals([
+        residualFrom("initiative", row.initiativeId, changed),
       ]).length,
       1,
     );

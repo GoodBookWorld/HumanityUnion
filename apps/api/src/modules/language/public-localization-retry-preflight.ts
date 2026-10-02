@@ -16,6 +16,7 @@ import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
+  decideSameVersionWarmFailureRetry,
   isExplicitlyRetryableModernFailure,
   shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
@@ -260,6 +261,32 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     failureClass = legacy.failureClass;
   }
 
+  let liveLocalizationInputVersion: string | null = null;
+  const recordedInput = peek.failureMetadata?.localizationInputVersion ?? null;
+  if (recordedInput && liveSourceVersion && sourceFields) {
+    try {
+      const concepts = await loadPublishedTerminologyConcepts();
+      liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
+        sourceVersion: liveSourceVersion,
+        targetLocale: item.targetLanguage,
+        concepts,
+        sourceText: collectSourceTextLeaves(sourceFields),
+      }).localizationInputVersion;
+    } catch {
+      liveLocalizationInputVersion = null;
+    }
+  }
+  const failedSourceVersion = peek.failureMetadata?.sourceVersion ?? attemptSourceVersion;
+  const sameVersionRetryDecision = decideSameVersionWarmFailureRetry({
+    failureClass,
+    failureReasonCode,
+    retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
+    liveSourceVersion,
+    failedSourceVersion,
+    liveLocalizationInputVersion,
+    failedLocalizationInputVersion: recordedInput,
+  });
+
   let architectureRetryBasis: ContentTranslationArchitectureRetryBasis | null = null;
   let ready = false;
   let readyState: PublicLocalizationRetryPreflight["readyState"] = "BLOCKED";
@@ -304,8 +331,20 @@ export async function buildPublicLocalizationRetryPreflight(input: {
         failureClass,
         failureReasonCode,
         retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
+        liveSourceVersion,
+        failedSourceVersion,
+        liveLocalizationInputVersion,
+        failedLocalizationInputVersion: recordedInput,
       })
     ) {
+      architectureRetryBasis =
+        CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+      ready = true;
+      readyState = "MISSING_READY_FOR_WARM";
+      blockReason = null;
+    } else if (failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION") {
+      // Unchanged source and terminology input stay residual work for coverage.
+      // Provider selection is suppressed after this decision.
       architectureRetryBasis =
         CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
       ready = true;
@@ -341,27 +380,18 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   let semanticRetryDeferred = false;
   let semanticRetryEligibleAt: string | null = null;
   if (ready) {
-    let liveLocalizationInputVersion: string | null = null;
-    const recordedInput = peek.failureMetadata?.localizationInputVersion ?? null;
-    if (recordedInput && liveSourceVersion && sourceFields) {
-      try {
-        const concepts = await loadPublishedTerminologyConcepts();
-        liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
-          sourceVersion: liveSourceVersion,
-          targetLocale: item.targetLanguage,
-          concepts,
-          sourceText: collectSourceTextLeaves(sourceFields),
-        }).localizationInputVersion;
-      } catch {
-        liveLocalizationInputVersion = null;
-      }
-    }
     semanticRetryDeferred = shouldDeferResidualSelection({
       ready,
       metadata: peek.failureMetadata,
       liveSourceVersion,
       liveLocalizationInputVersion,
     });
+    if (
+      failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION" &&
+      sameVersionRetryDecision === "terminal"
+    ) {
+      semanticRetryDeferred = true;
+    }
     if (semanticRetryDeferred) {
       semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
     }
