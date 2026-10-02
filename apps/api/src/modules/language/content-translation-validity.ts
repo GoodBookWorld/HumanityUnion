@@ -175,11 +175,69 @@ function isUntranslatedSourceEquivalent(input: {
   });
 }
 
+/**
+ * Durable proof that the current source and current localization input were
+ * already attempted and failed only as a terminology quality diagnostic.
+ * Does not rewrite the stored row.
+ */
+export type AttemptedCurrentInputFailure = {
+  readonly failureReasonCode: string | null;
+  readonly sourceVersion: string | null;
+  readonly localizationInputVersion?: string | null;
+  readonly targetLocale?: string | null;
+  readonly localeFailures?: readonly {
+    readonly targetLocale: string;
+    readonly failureReasonCode: string;
+  }[];
+};
+
+const TERMINOLOGY_ONLY_FAILURE = "TERMINOLOGY_PROTECTION_VIOLATION";
+
+/**
+ * True only when durable metadata shows this exact live source version and
+ * live localization input were attempted, and every recorded reason for that
+ * attempt is terminology protection. Any other reason, or a missing version,
+ * leaves real input staleness in place.
+ */
+export function isTerminologyOnlyAttemptOfCurrentInput(input: {
+  readonly liveSourceVersion?: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
+  readonly failure?: AttemptedCurrentInputFailure | null;
+}): boolean {
+  const liveSource = input.liveSourceVersion?.trim() ?? "";
+  const liveInput = input.liveLocalizationInputVersion?.trim() ?? "";
+  const failedSource = input.failure?.sourceVersion?.trim() ?? "";
+  const failedInput = input.failure?.localizationInputVersion?.trim() ?? "";
+  if (!liveSource || !liveInput || !failedSource || !failedInput) {
+    return false;
+  }
+  if (liveSource !== failedSource || liveInput !== failedInput) {
+    return false;
+  }
+  if (input.failure?.failureReasonCode !== TERMINOLOGY_ONLY_FAILURE) {
+    return false;
+  }
+  const target = input.failure.targetLocale?.trim() ?? "";
+  const localeReasons = (input.failure.localeFailures ?? []).filter((row) => {
+    if (!target) {
+      return true;
+    }
+    return localesEqual(row.targetLocale, target);
+  });
+  return localeReasons.every((row) => row.failureReasonCode === TERMINOLOGY_ONLY_FAILURE);
+}
+
 export function classifyContentTranslationValidity(input: {
   readonly translation: TranslatedContentRecord | null | undefined;
   readonly liveSourceVersion?: string | null;
   readonly liveLocalizationInputVersion?: string | null;
   readonly originalFields?: Readonly<Record<string, string>> | null;
+  /**
+   * F.3.31C.1 — current source and current input were already attempted and
+   * failed only TERMINOLOGY_PROTECTION_VIOLATION. An otherwise
+   * presentation-eligible stored row is not input-stale work.
+   */
+  readonly terminologyOnlyCurrentInputAttempted?: boolean;
 }): ContentTranslationValidityClassification {
   const row = input.translation ?? null;
   if (!row) {
@@ -247,15 +305,28 @@ export function classifyContentTranslationValidity(input: {
       liveLocalizationInputVersion: input.liveLocalizationInputVersion,
     });
     if (inputState === "stale") {
-      return {
-        identityCurrent: false,
-        structurallyComplete,
-        presentationEligible: false,
-        reconciliationState: "STALE",
-        localizedCoverage: false,
-        workRemaining: true,
-        reasons: ["localization_input_stale"],
-      };
+      const localizedFields = translatedFieldsFromRecord(row.translatedContent);
+      const presentationEligibleDespiteInputDrift =
+        input.terminologyOnlyCurrentInputAttempted === true &&
+        input.originalFields != null &&
+        structurallyComplete === true &&
+        !placeholder &&
+        realProvenance &&
+        !isUntranslatedSourceEquivalent({
+          originalFields: input.originalFields,
+          localizedFields,
+        });
+      if (!presentationEligibleDespiteInputDrift) {
+        return {
+          identityCurrent: false,
+          structurallyComplete,
+          presentationEligible: false,
+          reconciliationState: "STALE",
+          localizedCoverage: false,
+          workRemaining: true,
+          reasons: ["localization_input_stale"],
+        };
+      }
     }
   }
 
@@ -356,13 +427,17 @@ export function isPresentationEligibleTranslation(
  * presentation-eligible row are quality diagnostics, not reconciliation work.
  *
  * Historical rows without localizationInputVersion stay legacy_unversioned
- * (not mass-STALE). A real terminology-digest change remains STALE work.
+ * (not mass-STALE). A real terminology-digest change remains STALE work until
+ * that current source and current input have been attempted. A durable
+ * terminology-only failure of that exact pair does not keep an otherwise
+ * presentation-eligible stored row in work.
  */
 export function classifyContentTranslationForReconciliation(input: {
   readonly translation: TranslatedContentRecord | null | undefined;
   readonly liveSourceVersion?: string | null;
   readonly originalFields?: Readonly<Record<string, string>> | null;
   readonly concepts?: readonly TerminologyConcept[] | null;
+  readonly attemptedCurrentInputFailure?: AttemptedCurrentInputFailure | null;
 }): ContentTranslationValidityClassification {
   const row = input.translation ?? null;
   let liveLocalizationInputVersion: string | undefined;
@@ -398,6 +473,11 @@ export function classifyContentTranslationForReconciliation(input: {
     liveSourceVersion: input.liveSourceVersion,
     liveLocalizationInputVersion,
     originalFields: input.originalFields,
+    terminologyOnlyCurrentInputAttempted: isTerminologyOnlyAttemptOfCurrentInput({
+      liveSourceVersion: input.liveSourceVersion ?? row?.sourceVersion,
+      liveLocalizationInputVersion,
+      failure: input.attemptedCurrentInputFailure,
+    }),
   });
   if (
     validity.reconciliationState === "READY" &&
