@@ -582,23 +582,41 @@ function isWarmFailureReasonFallback(reason: string | null | undefined): boolean
   return reason == null || reason.trim() === "" || reason === "UNKNOWN_LEGACY";
 }
 
+function recordedVersionsDiffer(
+  live: string | null | undefined,
+  failed: string | null | undefined,
+): boolean {
+  const left = live?.trim() ?? "";
+  const right = failed?.trim() ?? "";
+  return left.length > 0 && right.length > 0 && left !== right;
+}
+
 /**
  * Canonical same-version retry decision.
- * A provider terminology-protection failure stays on the semantic defer.
- * Version ownership does not make that failure terminal.
+ * An unchanged terminology-protection failure is not provider work.
+ * A changed sourceVersion or localizationInputVersion makes it work again.
  * Other validation reason codes stay terminal. Missing evidence stays terminal.
  */
 export function decideSameVersionWarmFailureRetry(input: {
   readonly failureClass: string | null;
   readonly failureReasonCode: string | null;
   readonly retryabilityHint?: string | null;
+  readonly liveSourceVersion?: string | null;
+  readonly failedSourceVersion?: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
+  readonly failedLocalizationInputVersion?: string | null;
 }): SameVersionWarmFailureRetryDecision {
   const reason = input.failureReasonCode;
-  // Provider output failed protected-term checks. The source is still the
-  // current identity. Retry uses the existing semantic defer, including a
-  // legacy row whose hint was recorded as terminal and has no retryEligibleAt.
   if (reason === "TERMINOLOGY_PROTECTION_VIOLATION") {
-    return "retryable";
+    const sourceChanged = recordedVersionsDiffer(
+      input.liveSourceVersion,
+      input.failedSourceVersion,
+    );
+    const inputChanged = recordedVersionsDiffer(
+      input.liveLocalizationInputVersion,
+      input.failedLocalizationInputVersion,
+    );
+    return sourceChanged || inputChanged ? "retryable" : "terminal";
   }
   if (
     reason != null &&
@@ -631,6 +649,10 @@ export function isExplicitlyRetryableModernFailure(input: {
   readonly failureClass: string | null;
   readonly failureReasonCode: string | null;
   readonly retryabilityHint?: string | null;
+  readonly liveSourceVersion?: string | null;
+  readonly failedSourceVersion?: string | null;
+  readonly liveLocalizationInputVersion?: string | null;
+  readonly failedLocalizationInputVersion?: string | null;
 }): boolean {
   return decideSameVersionWarmFailureRetry(input) === "retryable";
 }
