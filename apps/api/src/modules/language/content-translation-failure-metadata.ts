@@ -6,7 +6,11 @@
 
 import { createHash } from "node:crypto";
 
-import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
+import {
+  normalizeLanguageRegistryLocaleKey,
+  type ContentTranslationSourceKind,
+  type LanguageCode,
+} from "@hu/types";
 
 import { TranslationProviderError } from "./translation.config.js";
 
@@ -562,6 +566,107 @@ export function shouldDeferResidualSelection(input: {
   return isSemanticResidualDeferActive(input);
 }
 
+export type TerminologyRetryAttemptEvidence = {
+  readonly failureReasonCode: string | null;
+  readonly sourceVersion: string | null;
+  readonly localizationInputVersion: string | null;
+  readonly targetLocale: string | null;
+  readonly localeFailures?: readonly {
+    readonly targetLocale: string;
+    readonly failureReasonCode: string;
+  }[] | null;
+};
+
+/**
+ * Count terminology-only attempts of one current source version, localization
+ * input, and locale. Other reasons and other versions do not consume the bound.
+ */
+export function countTerminologyAttemptsForCurrentIdentity(
+  attempts: readonly TerminologyRetryAttemptEvidence[],
+  identity: {
+    readonly liveSourceVersion: string;
+    readonly liveLocalizationInputVersion: string;
+    readonly targetLocale: string;
+  },
+): number {
+  const source = identity.liveSourceVersion.trim();
+  const inputVersion = identity.liveLocalizationInputVersion.trim();
+  const locale = normalizeLanguageRegistryLocaleKey(identity.targetLocale);
+  if (!source || !inputVersion || !locale) {
+    return 0;
+  }
+  let count = 0;
+  for (const attempt of attempts) {
+    if (attempt.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION") {
+      continue;
+    }
+    if ((attempt.sourceVersion ?? "").trim() !== source) {
+      continue;
+    }
+    if ((attempt.localizationInputVersion ?? "").trim() !== inputVersion) {
+      continue;
+    }
+    const attemptLocale = attempt.targetLocale?.trim() ?? "";
+    if (!attemptLocale || normalizeLanguageRegistryLocaleKey(attemptLocale) !== locale) {
+      continue;
+    }
+    const localeRows = (attempt.localeFailures ?? []).filter(
+      (row) => normalizeLanguageRegistryLocaleKey(row.targetLocale) === locale,
+    );
+    if (localeRows.some((row) => row.failureReasonCode !== "TERMINOLOGY_PROTECTION_VIOLATION")) {
+      continue;
+    }
+    count += 1;
+  }
+  return count;
+}
+
+export type TerminologyMissingTranslationRetrySelection =
+  | "suppressed_usable_translation"
+  | "waiting"
+  | "exhausted"
+  | "due";
+
+/**
+ * F.3.32.1 — unchanged terminology stays suppressed when the current source
+ * already has a presentation-eligible translation. When it does not, the
+ * existing semantic residual streak cap is the attempt bound. The recorded
+ * retryEligibleAt is the wait between those attempts. Reaching the cap ends
+ * selection. It does not start another six-hour cycle.
+ */
+export function selectTerminologyMissingTranslationRetry(input: {
+  readonly currentSourcePresentationEligible: boolean;
+  readonly liveSourceVersion: string | null;
+  readonly failedSourceVersion: string | null;
+  readonly liveLocalizationInputVersion: string | null;
+  readonly failedLocalizationInputVersion: string | null;
+  readonly retryEligibleAt: string | null | undefined;
+  readonly terminologyAttemptCount: number;
+  readonly nowMs?: number;
+}): TerminologyMissingTranslationRetrySelection {
+  if (input.currentSourcePresentationEligible) {
+    return "suppressed_usable_translation";
+  }
+  const liveSource = input.liveSourceVersion?.trim() ?? "";
+  const failedSource = input.failedSourceVersion?.trim() ?? "";
+  const liveInput = input.liveLocalizationInputVersion?.trim() ?? "";
+  const failedInput = input.failedLocalizationInputVersion?.trim() ?? "";
+  if (!liveSource || !failedSource || !liveInput || !failedInput) {
+    return "waiting";
+  }
+  if (liveSource !== failedSource || liveInput !== failedInput) {
+    return "waiting";
+  }
+  if (input.terminologyAttemptCount >= SEMANTIC_RESIDUAL_DEFER_STREAK_CAP) {
+    return "exhausted";
+  }
+  const eligibleAt = input.retryEligibleAt ? Date.parse(input.retryEligibleAt) : Number.NaN;
+  if (!Number.isFinite(eligibleAt) || eligibleAt > (input.nowMs ?? Date.now())) {
+    return "waiting";
+  }
+  return "due";
+}
+
 const WARM_RETRYABLE_INFRASTRUCTURE_CLASSES = new Set([
   "PROVIDER_TIMEOUT",
   "PROVIDER_INVALID_RESPONSE",
@@ -593,7 +698,9 @@ function recordedVersionsDiffer(
 
 /**
  * Canonical same-version retry decision.
- * An unchanged terminology-protection failure is not provider work.
+ * An unchanged terminology-protection failure is not an ordinary same-version
+ * provider retry. Selection may still allow a bounded retry when the current
+ * source has no presentation-eligible translation.
  * A changed sourceVersion or localizationInputVersion makes it work again.
  * Other validation reason codes stay terminal. Missing evidence stays terminal.
  */
