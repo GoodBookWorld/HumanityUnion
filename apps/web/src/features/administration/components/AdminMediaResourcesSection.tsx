@@ -61,7 +61,7 @@ const RESOURCE_TYPE_LABELS: Record<MediaResourceType, string> = {
 };
 
 /** Production Completion Pack 01 — matches API COUNTRY_TRUSTED_MEDIA_MAX. */
-const COUNTRY_TRUSTED_MEDIA_MAX = 6;
+const COUNTRY_TRUSTED_MEDIA_MAX = 12;
 
 function emptyForm(resourceType: MediaResourceType = "TRUSTED_MEDIA"): AdminMediaResourceWriteInput {
   return {

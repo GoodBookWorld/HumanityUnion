@@ -261,7 +261,7 @@ async function assertNoDuplicate(input: {
  * Public projection and create/update enforcement share this constant.
  * Legacy rows above the limit are retained; public lists cap deterministically.
  */
-export const COUNTRY_TRUSTED_MEDIA_MAX = 6;
+export const COUNTRY_TRUSTED_MEDIA_MAX = 12;
 
 function summarizeResource(resource: MediaResource): string {
   return `${resource.resourceType}:${resource.scopeType}:${resource.name}:${resource.active ? "active" : "inactive"}`;
