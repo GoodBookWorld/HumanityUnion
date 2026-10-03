@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { CanonicalInitiativeExperienceLoader } from "../../../../features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader";
-import { loadInitiativeDetailPresentationSeed } from "../../../../features/public-initiative-experience/load-initiative-detail-presentation-seed";
+import {
+  initiativeMetadataFieldsFromPresentationSeed,
+  loadInitiativeDocumentServerData,
+} from "../../../../features/public-initiative-experience/load-initiative-document-server-data";
 import { resolveBrandForMetadata } from "../../../../features/brand-localization/resolve-brand-for-metadata";
-import { getPublicInitiative } from "../../../../features/initiatives/api";
-import { resolveDocumentHtmlLocale } from "../../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
 import { buildPublicPageMetadataForRequest } from "../../../../lib/seo/build-public-page-metadata-for-request";
 import { applyPageSeoOverrideToMetadataInput } from "../../../../lib/seo/apply-page-seo-override";
 import { fetchPublicSeoPageOverride } from "../../../../lib/seo/fetch-public-seo-page-override";
-import { loadInitiativeMetadataTranslationFields } from "../../../../lib/seo/load-initiative-metadata-translation-fields";
 import { resolveLocalizedPublicMetadataCopy } from "../../../../lib/seo/resolve-localized-public-metadata-copy";
 import { JsonLdScript, buildWebPageJsonLd } from "../../../../lib/seo/structured-data";
 
@@ -40,7 +40,8 @@ export async function generateMetadata({
   const brand = await resolveBrandForMetadata(requestLocale);
 
   try {
-    const initiative = await getPublicInitiative(initiativeId);
+    const documentData = await loadInitiativeDocumentServerData(initiativeId);
+    const initiative = documentData.initiative;
     const rawImage =
       initiative.metadata.imageUrl ??
       initiative.metadata.coverMedia?.thumbnailUrl ??
@@ -50,15 +51,15 @@ export async function generateMetadata({
     const description =
       initiative.description.trim() || `${initiative.title} on ${brand.seoSiteName}`;
 
-    const documentLocale = await resolveDocumentHtmlLocale();
-    const translationFields = await loadInitiativeMetadataTranslationFields({
-      initiativeId,
-      language: documentLocale.locale,
+    const translationFields = initiativeMetadataFieldsFromPresentationSeed({
+      canonicalTitle: initiative.title,
+      canonicalDescription: initiative.description,
+      seed: documentData.presentationSeed,
     });
     const localized = resolveLocalizedPublicMetadataCopy({
       title: initiative.title,
       description,
-      locale: documentLocale.locale,
+      locale: documentData.documentLocale,
       translatedTitle: translationFields.translatedTitle,
       translatedDescription: translationFields.translatedDescription,
     });
@@ -118,16 +119,9 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
     | { title: string; description: string }
     | undefined;
   try {
-    const initiative = await getPublicInitiative(initiativeId);
-    const documentLocale = await resolveDocumentHtmlLocale();
-    initialPresentation = await loadInitiativeDetailPresentationSeed({
-      initiativeId,
-      language: documentLocale.locale,
-      canonical: {
-        title: initiative.title,
-        description: initiative.description,
-      },
-    });
+    const documentData = await loadInitiativeDocumentServerData(initiativeId);
+    const initiative = documentData.initiative;
+    initialPresentation = documentData.presentationSeed;
 
     const rawImage =
       initiative.metadata.imageUrl ??
