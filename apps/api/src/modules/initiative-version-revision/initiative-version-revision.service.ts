@@ -672,7 +672,13 @@ export function createInitialInitiativeVersionRevision(
     changes: [],
   };
 
-  return createRevision(revision);
+  const createdRevision = createRevision(revision);
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "initiative_revision",
+    sourceRecordId: createdRevision.revisionId,
+    reason: "public_mutation",
+  });
+  return createdRevision;
 }
 
 export function resolveInitiativeVersionForNewAnalysis(initiativeId: string): number {
