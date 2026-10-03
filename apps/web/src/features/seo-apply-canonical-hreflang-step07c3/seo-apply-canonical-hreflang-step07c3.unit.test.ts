@@ -112,7 +112,7 @@ describe("Step 07C.3 — apply multilingual canonical/hreflang to public metadat
 
   it("4–6. Initiative canonical/hreflang; CT + Admin override wiring preserved", async () => {
     const page = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
-    assert.match(page, /loadInitiativeMetadataTranslationFields/);
+    assert.match(page, /loadInitiativeDocumentServerData/);
     assert.match(page, /resolveLocalizedPublicMetadataCopy/);
     assert.match(page, /fetchPublicSeoPageOverride/);
     assert.match(page, /applyPageSeoOverrideToMetadataInput/);

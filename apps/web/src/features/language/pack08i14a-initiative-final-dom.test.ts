@@ -150,7 +150,7 @@ describe("Pack 08I.14A — final DOM (card / hero / overview)", () => {
 describe("Pack 08I.14A — route/presentation seed integration", () => {
   it("public initiative route seed → presentation DOM uses translated sentinels", async () => {
     const page = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
-    assert.match(page, /loadInitiativeDetailPresentationSeed/);
+    assert.match(page, /loadInitiativeDocumentServerData/);
     assert.match(page, /initialPresentation/);
 
     const seed = await loadInitiativeDetailPresentationSeed({

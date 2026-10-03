@@ -166,8 +166,12 @@ describe("Pack 08I.9 — PIE SSR-first seed + hydration", () => {
       "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
 
-    assert.match(page, /loadInitiativeDetailPresentationSeed/);
-    assert.match(page, /resolveDocumentHtmlLocale/);
+    assert.match(page, /loadInitiativeDocumentServerData/);
+    const documentLoader = readWeb(
+      "features/public-initiative-experience/load-initiative-document-server-data.ts",
+    );
+    assert.match(documentLoader, /loadInitiativeDetailPresentationSeed/);
+    assert.match(documentLoader, /resolveDocumentHtmlLocale/);
     assert.match(page, /initialPresentation/);
     assert.match(loader, /initialPresentation/);
     assert.match(experiencePage, /useInitiativePublicPresentation/);
@@ -349,8 +353,12 @@ describe("Pack 08I.9 — Media SSR-first seed + hydration", () => {
 describe("Pack 08I.9 — locale + raw token guards", () => {
   it("zh-TW alias path uses document locale resolver (SSR_CLIENT_LOCALE_DIVERGENCE=0)", () => {
     const pie = readWeb("app/initiatives/public/[initiativeId]/page.tsx");
+    const pieLoader = readWeb(
+      "features/public-initiative-experience/load-initiative-document-server-data.ts",
+    );
     const media = readWeb("app/media/page.tsx");
-    assert.match(pie, /resolveDocumentHtmlLocale/);
+    assert.match(pie, /loadInitiativeDocumentServerData/);
+    assert.match(pieLoader, /resolveDocumentHtmlLocale/);
     assert.match(media, /resolveDocumentHtmlLocale/);
     // Alias authority lives in Language Registry (zh-TW → zh-Hant) used by document locale.
     const registry = readFileSync(
