@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { WebUiMessagePackPersistenceError } from "./web-ui-message-pack.errors.js";
-import { getPublishedWebUiMessagePackByLocale } from "./web-ui-message-pack.repository.js";
+import { getPublishedWebUiRuntimePayload } from "./web-ui-message-pack.repository.js";
 
 const publicWebUiMessagePackRouter = Router();
 
@@ -35,7 +35,7 @@ publicWebUiMessagePackRouter.get("/", async (req, res: Response) => {
       return;
     }
 
-    const pack = await getPublishedWebUiMessagePackByLocale(locale);
+    const pack = await getPublishedWebUiRuntimePayload(locale);
     if (!pack) {
       res.status(404).json(createFailureResponse("Published WEB_UI message pack not found."));
       return;
@@ -47,7 +47,7 @@ publicWebUiMessagePackRouter.get("/", async (req, res: Response) => {
           locale: pack.locale,
           revision: pack.revision,
           messages: pack.messages,
-          source: "remote" as const,
+          source: pack.source,
         },
         "Published WEB_UI message pack loaded.",
       ),
