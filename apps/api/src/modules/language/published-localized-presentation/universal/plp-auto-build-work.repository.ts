@@ -18,6 +18,7 @@ import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-coll
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   sanitizePlpAutoBuildFailureReason,
+  isLegacyPacingMisclassifiedTerminalFailure,
   isPlpQuotaDeferSafeReason,
   type PlpAutoBuildFailureCode,
   type PlpAutoBuildFailureStage,
@@ -417,6 +418,30 @@ function coalesceUpsert(input: {
       (generation >= PLP_MAX_RECOVERY_GENERATIONS ||
         isLocalizationSourceOriginalEntityType(existing.entityType))
     ) {
+      // ES.05 — one same-row continuation for the pre-repair pacing mislabel.
+      // Does not raise the generation cap and does not reopen other failures.
+      if (
+        input.reopenFailedSameVersion &&
+        !isLocalizationSourceOriginalEntityType(existing.entityType) &&
+        isLegacyPacingMisclassifiedTerminalFailure({
+          failureCode: existing.failureCode,
+          retryable: existing.retryable,
+          safeReason: existing.lastError,
+        })
+      ) {
+        const record: PlpAutoBuildWorkRecord = {
+          ...existing,
+          status: "pending",
+          attempts: Math.max(0, existing.attempts - 1),
+          maxAttempts: input.maxAttempts,
+          claimedAt: null,
+          completedAt: null,
+          updatedAt,
+          nextAttemptAt: updatedAt,
+          recoveryGeneration: existing.recoveryGeneration,
+        };
+        return { accepted: true, deduped: false, record };
+      }
       return { accepted: false, deduped: true, record: existing };
     }
     if (exhausted) {
@@ -1136,6 +1161,27 @@ export function normalizePlpAutoBuildFailureClass(
     return "ADAPTER_OR_SOURCE";
   }
   return "UNKNOWN";
+}
+
+/**
+ * Bounded locale read for activation progress. Not a corpus scan.
+ */
+export async function listPlpAutoBuildWorkForLocale(input: {
+  readonly locale: string;
+  readonly limit: number;
+}): Promise<readonly PlpAutoBuildWorkRecord[]> {
+  const limit = Math.min(Math.max(Math.trunc(input.limit) || 1, 1), 50);
+  const locale = String(input.locale).toLowerCase();
+  if (usePlpAutoBuildWorkMemory()) {
+    return [...memoryByWorkKey.values()]
+      .filter((row) => row.locale === locale)
+      .slice(0, limit);
+  }
+  const docs = await collection()
+    .find({ locale })
+    .limit(limit)
+    .toArray();
+  return docs.map((doc) => mapDoc(doc));
 }
 
 /**

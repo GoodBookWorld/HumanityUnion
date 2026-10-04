@@ -29,10 +29,12 @@ import {
   listLanguageRegistry,
   resolveLanguageRegistryLocale,
 } from "../language-registry/language-registry.repository.js";
+import { listPlpAutoBuildWorkForLocale } from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
 import { activateLanguageLocalization } from "./language-activation-orchestrator.js";
 import type { ActivateLanguageLocalizationInput } from "./language-activation-orchestrator.js";
 import type { LanguageHistoricalBackfillPlannerDeps } from "./language-historical-backfill-planner.js";
 import {
+  ACTIVATION_AUTOMATIC_EXHAUSTED_DETAIL,
   buildControlledVocabularyDomainProgress,
   buildDiagnosticSummary,
   buildHistoricalDomainProgress,
@@ -40,7 +42,9 @@ import {
   brandDomainFromPreparationResult,
   brandDomainPreparing,
   brandDomainProviderConfigFailure,
+  classifyActivationAutomaticProgress,
   deriveActivationJobStatus,
+  type ActivationAutomaticProgress,
   emptyPendingDomains,
   isLanguageActivationWebUiReadyForHistoricalEnqueue,
   terminologyDomainFromPreparationResult,
@@ -264,6 +268,34 @@ async function syncWebUiDomainProgress(
  * Persist explicit Activate/Resume as active work before the Admin response.
  * Same job id and generation. Does not call the translation provider.
  */
+async function automaticProgressForLocale(
+  locale: string,
+  readiness: LanguageLocalizationReadinessReport,
+): Promise<ActivationAutomaticProgress> {
+  const plpWork = await listPlpAutoBuildWorkForLocale({ locale, limit: 50 });
+  return classifyActivationAutomaticProgress({ readiness, plpWork });
+}
+
+function lastErrorForDerivedActivation(input: {
+  readonly status: LanguageActivationJobRecord["status"];
+  readonly automaticProgress: ActivationAutomaticProgress;
+  readonly domains: LanguageActivationJobRecord["domains"];
+  readonly previous: string | null;
+}): string | null {
+  if (input.status !== "failed") {
+    return null;
+  }
+  if (input.automaticProgress === "exhausted") {
+    return ACTIVATION_AUTOMATIC_EXHAUSTED_DETAIL;
+  }
+  return (
+    input.domains.webUi.detail ??
+    input.domains.terminology.detail ??
+    input.domains.brand.detail ??
+    input.previous
+  );
+}
+
 async function claimLanguageActivationJob(
   job: LanguageActivationJobRecord,
   readiness: LanguageLocalizationReadinessReport,
@@ -294,11 +326,13 @@ async function claimLanguageActivationJob(
       },
     };
   }
+  const automaticProgress = await automaticProgressForLocale(job.locale, readiness);
   const derived = deriveActivationJobStatus({
     readiness,
     domains,
     ctEnqueueAttempted: domains.ct.enqueueAttempted,
     plpEnqueueAttempted: domains.plp.enqueueAttempted,
+    automaticProgress,
   });
   const status = derived === "failed" ? "failed" : "running";
   const claimed: LanguageActivationJobRecord = {
@@ -308,7 +342,12 @@ async function claimLanguageActivationJob(
     startedAt: job.startedAt ?? nowIso(),
     completedAt: status === "failed" ? nowIso() : null,
     updatedAt: nowIso(),
-    lastError: status === "failed" ? job.lastError : null,
+    lastError: lastErrorForDerivedActivation({
+      status,
+      automaticProgress,
+      domains,
+      previous: job.lastError,
+    }),
     diagnosticSummary: buildDiagnosticSummary({ status, readiness, domains }),
     searchEnabledSnapshot: job.searchEnabledSnapshot,
     seoIndexingEnabledSnapshot: job.seoIndexingEnabledSnapshot,
@@ -1370,11 +1409,16 @@ export async function processLanguageActivationJob(
       };
     }
 
+    const automaticProgress = await automaticProgressForLocale(
+      canonicalLocale,
+      readiness,
+    );
     const status = deriveActivationJobStatus({
       readiness,
       domains,
       ctEnqueueAttempted: domains.ct.enqueueAttempted,
       plpEnqueueAttempted: domains.plp.enqueueAttempted,
+      automaticProgress,
     });
 
     job = {
@@ -1385,13 +1429,12 @@ export async function processLanguageActivationJob(
       updatedAt: nowIso(),
       completedAt:
         status === "completed" || status === "failed" ? nowIso() : null,
-      lastError:
-        status === "failed"
-          ? domains.webUi.detail ??
-            domains.terminology.detail ??
-            domains.brand.detail ??
-            job.lastError
-          : null,
+      lastError: lastErrorForDerivedActivation({
+        status,
+        automaticProgress,
+        domains,
+        previous: job.lastError,
+      }),
       searchEnabledSnapshot: registry.searchEnabled,
       seoIndexingEnabledSnapshot: registry.seoIndexingEnabled,
     };
@@ -1468,11 +1511,13 @@ export async function getLanguageActivationAdminView(input: {
     const latest = (await getLanguageActivationJobById(job.jobId)) ?? job;
     const claimed = isClaimedActivationStatus(latest.status);
     const domains = await refreshDomains(latest, readiness, { claimed });
+    const automaticProgress = await automaticProgressForLocale(locale, readiness);
     let status = deriveActivationJobStatus({
       readiness,
       domains,
       ctEnqueueAttempted: domains.ct.enqueueAttempted,
       plpEnqueueAttempted: domains.plp.enqueueAttempted,
+      automaticProgress,
     });
     if (
       claimed &&
@@ -1517,6 +1562,12 @@ export async function getLanguageActivationAdminView(input: {
           status === "completed" || status === "failed"
             ? latest.completedAt ?? nowIso()
             : null,
+        lastError: lastErrorForDerivedActivation({
+          status,
+          automaticProgress,
+          domains,
+          previous: latest.lastError,
+        }),
       };
       await saveLanguageActivationJob(job);
     } else {
