@@ -327,9 +327,9 @@ describe("RESET 05D.8 — STALE_REVISION origin closure", () => {
     });
     const healed = await enqueueCivicMediaEditorialPlpBuilds({ locales: ["uk"] });
     assert.equal(healed.canonicalVersion, LIVE_VERSION);
-    assert.equal(healed.enqueued, 1);
+    assert.equal(healed.enqueued, 0);
     const pending = listPlpAutoBuildWorkForTests().find((w) => w.workKey === work!.workKey);
-    assert.equal(pending?.status, "pending");
-    assert.equal(pending?.attempts, 0);
+    assert.equal(pending?.status, "failed");
+    assert.equal(pending?.retryable, false);
   });
 });

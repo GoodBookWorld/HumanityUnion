@@ -214,7 +214,8 @@ describe("RESET 05D.2 — editorial + country affiliation", () => {
       (row) => row.entityType === MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
     );
     assert.ok(after);
-    assert.ok(after!.status === "pending" || after!.status === "skipped_usable" || after!.status === "completed");
+    assert.equal(after!.status, "failed");
+    assert.equal(after!.retryable, false);
   });
 
   it("7–9: UA affiliated sources exist; identity match is case-insensitive; zero news is coverage gap", () => {

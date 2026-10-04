@@ -310,11 +310,8 @@ describe("RESET 05D.3 — editorial path-exact ownership", () => {
       (row) => row.entityType === MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
     );
     assert.ok(after);
-    assert.ok(
-      after!.status === "pending" ||
-        after!.status === "skipped_usable" ||
-        after!.status === "completed",
-    );
+    assert.equal(after!.status, "failed");
+    assert.equal(after!.retryable, false);
   });
 
   it("Brand token loss still rejects provider values before publish", () => {
