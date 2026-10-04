@@ -17,6 +17,7 @@ import {
   textContainsBrandTransportArtifact,
 } from "@hu/types";
 
+import { isLocalizationProviderPacingDeferredError } from "../localization-provider-governor.js";
 import type { TranslationProvider } from "../translation-provider.js";
 import { TranslationProviderError } from "../translation.config.js";
 import { TerminologyGlossaryValidationError } from "../terminology-glossary/terminology-glossary.errors.js";
@@ -78,6 +79,7 @@ export type ProviderBoundaryFailureReason =
   | "PAYLOAD_LIMIT"
   | "PROVIDER_CALL_CAP"
   | "PROVIDER_FAILURE"
+  | "PROVIDER_PACING_DEFERRED"
   | "PARSE_FAILURE"
   | "WRONG_TARGET_LANGUAGE"
   | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
@@ -1093,6 +1095,18 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       },
     };
   } catch (error) {
+    // A governor wait is not a provider response. Do not relabel it as an
+    // unknown shape, and do not attach INVALID forensics from the prior batch.
+    if (isLocalizationProviderPacingDeferredError(error)) {
+      return {
+        ok: false,
+        reason: "PROVIDER_PACING_DEFERRED",
+        PROVIDER_INPUT_BYTES: totalBytes,
+        message: `PROVIDER_PACING_WAIT;PACING_UNTIL=${error.nextAllowedAt}`,
+        PROVIDER_EXECUTION_BOUNDARY: boundary,
+        PROVIDER_TRANSPORT: transport,
+      };
+    }
     const message = error instanceof Error ? error.message : "provider failure";
     const transportMeta =
       error instanceof TranslationProviderError ? error.transport : undefined;

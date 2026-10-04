@@ -12,6 +12,7 @@ import type {
   LanguageActivationWebUiDomainProgress,
   LanguageLocalizationReadinessReport,
 } from "@hu/types";
+import { isLocalizationSourceOriginalEntityType } from "@hu/types";
 
 import type { LanguageOwnerPreparationResult } from "../../language-preparation/language-owner-preparation.js";
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
@@ -19,6 +20,11 @@ import {
   activationProviderCooldownDetail,
   computeActivationCooldownNextAttemptAt,
 } from "../activation-provider-transient-recovery.js";
+import { isLegacyPacingMisclassifiedTerminalFailure } from "../published-localized-presentation/universal/plp-auto-build-failure.js";
+import {
+  parsePlpRecoveryGeneration,
+  PLP_MAX_RECOVERY_GENERATIONS,
+} from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
 import {
   aggregateTerminologyFailureDiagnostics,
   terminologyProviderDiagnosticFromReason,
@@ -562,11 +568,87 @@ export function buildHistoricalDomainProgress(input: {
  * Owner provider failures are not classified as ordinary waiting_for_data.
  * Brand review/publication never forces waiting_for_data.
  */
+export type ActivationAutomaticProgress = "progress" | "exhausted" | "unspecified";
+
+export const ACTIVATION_AUTOMATIC_EXHAUSTED_DETAIL =
+  "Automatic localization cannot progress.";
+
+export type ActivationPlpWorkProgressRow = {
+  readonly status: string;
+  readonly attempts: number;
+  readonly maxAttempts: number;
+  readonly retryable: boolean | null;
+  readonly recoveryGeneration: string | null;
+  readonly nextAttemptAt: string | null;
+  readonly failureCode: string | null;
+  readonly lastError: string | null;
+  readonly entityType: string;
+};
+
+/**
+ * Whether automatic CT/PLP work can still move.
+ * Pending, running, pacing/cooldown, recovery windows, and the legacy
+ * pacing-mislabel adoption stay "progress". A generation-capped real
+ * provider failure with required work left is "exhausted".
+ */
+export function classifyActivationAutomaticProgress(input: {
+  readonly readiness: Pick<LanguageLocalizationReadinessReport, "ct" | "plpMedia">;
+  readonly plpWork: readonly ActivationPlpWorkProgressRow[];
+}): ActivationAutomaticProgress {
+  if (input.readiness.ct.workItemsRequired > 0 || input.readiness.ct.pending > 0) {
+    return "progress";
+  }
+  const plpRequired =
+    input.readiness.plpMedia.workItemsRequired > 0 ||
+    input.readiness.plpMedia.failed > 0 ||
+    input.readiness.plpMedia.pending > 0;
+  if (!plpRequired) {
+    return "unspecified";
+  }
+  if (input.plpWork.length === 0) {
+    return "unspecified";
+  }
+  for (const row of input.plpWork) {
+    if (row.status === "pending" || row.status === "running") {
+      return "progress";
+    }
+    if (row.status !== "failed") {
+      continue;
+    }
+    if (
+      isLegacyPacingMisclassifiedTerminalFailure({
+        failureCode: row.failureCode,
+        retryable: row.retryable,
+        safeReason: row.lastError,
+      })
+    ) {
+      return "progress";
+    }
+    const dueMs = row.nextAttemptAt ? Date.parse(row.nextAttemptAt) : Number.NaN;
+    if (Number.isFinite(dueMs) && dueMs > Date.now()) {
+      return "progress";
+    }
+    if (
+      row.retryable === true &&
+      row.attempts >= row.maxAttempts &&
+      parsePlpRecoveryGeneration(row.recoveryGeneration) < PLP_MAX_RECOVERY_GENERATIONS &&
+      !isLocalizationSourceOriginalEntityType(row.entityType)
+    ) {
+      return "progress";
+    }
+  }
+  if (input.plpWork.some((row) => row.status === "failed")) {
+    return "exhausted";
+  }
+  return "unspecified";
+}
+
 export function deriveActivationJobStatus(input: {
   readonly readiness: LanguageLocalizationReadinessReport;
   readonly domains: LanguageActivationJobDomains;
   readonly ctEnqueueAttempted: boolean;
   readonly plpEnqueueAttempted: boolean;
+  readonly automaticProgress?: ActivationAutomaticProgress;
 }): LanguageActivationJobStatus {
   const { readiness, domains } = input;
   if (!readiness.engineReady) {
@@ -615,6 +697,20 @@ export function deriveActivationJobStatus(input: {
     readiness.plpMedia.pending === 0
   ) {
     return "completed";
+  }
+  const requiredRemains =
+    readiness.ct.workItemsRequired > 0 ||
+    readiness.plpMedia.workItemsRequired > 0 ||
+    readiness.ct.failed > 0 ||
+    readiness.plpMedia.failed > 0;
+  const waitingBucket = readiness.ct.pending > 0 || readiness.plpMedia.pending > 0;
+  if (
+    input.automaticProgress === "exhausted" &&
+    readiness.state !== "READY" &&
+    requiredRemains &&
+    !waitingBucket
+  ) {
+    return "failed";
   }
   if (input.ctEnqueueAttempted || input.plpEnqueueAttempted) {
     const blocked =
