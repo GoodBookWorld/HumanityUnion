@@ -44,6 +44,7 @@ import {
   claimNextPlpAutoBuildWork,
   listPlpAutoBuildWorkForTests,
   markPlpAutoBuildWorkCompleted,
+  persistPlpBatchCheckpointYield,
   markPlpAutoBuildWorkFailed,
   markPlpAutoBuildWorkSkippedUsable,
   markPlpAutoBuildWorkSuperseded,
@@ -445,6 +446,16 @@ async function processClaimedWork(
     const raw = await processor(runningRequest);
     const outcome = normalizeProcessorOutcome(raw);
 
+    if (outcome.status === "BATCH_PROGRESS") {
+      await persistPlpBatchCheckpointYield({
+        workKey: work.workKey,
+        attempts: work.attempts,
+        checkpoint: outcome.checkpoint,
+        pacingUntil: outcome.pacingUntil,
+      });
+      return;
+    }
+
     completed.push({
       ...runningRequest,
       status: outcome.status === "QUEUED" ? "QUEUED" : outcome.status,
@@ -469,6 +480,10 @@ async function processClaimedWork(
       await markPlpAutoBuildWorkCompleted(work.workKey);
       recordPlpAutoBuildSucceeded();
       recordPlpAutoBuildPublish();
+      const { wakeReadinessAfterPlpPublish } = await import(
+        "../../localization-reconciliation-driver.js"
+      );
+      wakeReadinessAfterPlpPublish(work.locale);
       return;
     }
     if (outcome.status === "SKIPPED_USABLE") {
