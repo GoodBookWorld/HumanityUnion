@@ -5,6 +5,7 @@
  * RESET 05D.5 — forensics-first encoding; generic PARTIAL is not retryable.
  */
 
+import type { PlpBatchCheckpoint } from "./plp-batch-checkpoint.js";
 import {
   isProviderPartialSubtypeRetryable,
   type ProviderPartialSubreason,
@@ -66,6 +67,12 @@ export type ProcessPlpBuildRequestResult =
   | {
       readonly status: "FAILED";
       readonly failure: PlpAutoBuildStructuredFailure;
+    }
+  | {
+      readonly status: "BATCH_PROGRESS";
+      readonly checkpoint: PlpBatchCheckpoint;
+      readonly pacingUntil: string | null;
+      readonly failure?: undefined;
     };
 
 const FORENSIC_KEYS = [

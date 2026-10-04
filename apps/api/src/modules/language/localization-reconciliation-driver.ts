@@ -872,6 +872,22 @@ export async function resumeLocalizationReconciliationOnBoot(): Promise<{
  * Activation process wake — call after WEB_UI READY / residual / completed.
  * Does not mutate activation.status.
  */
+/**
+ * PLP publication is forward progress owned by the drain worker.
+ * Wake the existing reconciliation pass and let activation derive READY
+ * from current readiness. Does not translate and does not enqueue here.
+ */
+export function wakeReadinessAfterPlpPublish(locale: string): void {
+  scheduleLocalizationReconciliation({
+    locale,
+    reason: "source_mutation",
+  });
+  void import("./language-localization-activation/language-activation-job.service.js").then(
+    ({ syncRunningActivationAfterPlpPublish }) =>
+      syncRunningActivationAfterPlpPublish(locale),
+  );
+}
+
 export function wakeLocalizationReconciliationAfterActivation(input: {
   readonly locale: string;
   readonly webUiReady: boolean;

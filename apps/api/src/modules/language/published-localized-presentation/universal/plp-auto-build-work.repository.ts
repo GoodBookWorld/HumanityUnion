@@ -24,6 +24,7 @@ import {
   type PlpAutoBuildFailureStage,
   type PlpAutoBuildStructuredFailure,
 } from "./plp-auto-build-failure.js";
+import type { PlpBatchCheckpoint } from "./plp-batch-checkpoint.js";
 import {
   encodePlpStructuredStaleSafeReason,
   isBareStaleRevisionReason,
@@ -76,6 +77,11 @@ export type PlpAutoBuildWorkRecord = {
    * Ordinary same-version coalesce must not clear it. A new canonical version does.
    */
   readonly recoveryGeneration: string | null;
+  /**
+   * Accepted machine segments for this canonical version.
+   * Null when there is no partial progress. Cleared on publish or version change.
+   */
+  readonly batchCheckpoint: PlpBatchCheckpoint | null;
 };
 
 
@@ -107,6 +113,7 @@ interface PlpAutoBuildWorkDocument extends Document {
   lastFailureAt: string | null;
   nextAttemptAt?: string | null;
   recoveryGeneration?: string | null;
+  batchCheckpoint?: PlpBatchCheckpoint | null;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 5;
@@ -344,6 +351,7 @@ function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
     lastFailureAt: doc.lastFailureAt,
     nextAttemptAt: doc.nextAttemptAt ?? null,
     recoveryGeneration: doc.recoveryGeneration ?? null,
+    batchCheckpoint: doc.batchCheckpoint ?? null,
   };
 }
 
@@ -391,6 +399,7 @@ function coalesceUpsert(input: {
       lastFailureAt: null,
       nextAttemptAt: null,
       recoveryGeneration: null,
+      batchCheckpoint: null,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -537,6 +546,7 @@ function coalesceUpsert(input: {
     updatedAt,
     nextAttemptAt: null,
     recoveryGeneration: resetAttempts ? null : existing.recoveryGeneration,
+    batchCheckpoint: resetAttempts ? null : existing.batchCheckpoint ?? null,
     enqueuedAt:
       existing.status === "pending" || existing.status === "running"
         ? existing.enqueuedAt
@@ -740,9 +750,65 @@ async function markTerminal(
           ? { failureStage: patch.failureStage }
           : {}),
         ...(patch.retryable !== undefined ? { retryable: patch.retryable } : {}),
+        ...(patch.batchCheckpoint !== undefined
+          ? { batchCheckpoint: patch.batchCheckpoint }
+          : {}),
       },
     },
   );
+}
+
+export async function getPlpAutoBuildWorkByKey(
+  workKey: string,
+): Promise<PlpAutoBuildWorkRecord | null> {
+  if (usePlpAutoBuildWorkMemory()) {
+    return memoryByWorkKey.get(workKey) ?? null;
+  }
+  const doc = await collection().findOne({ workKey });
+  return doc ? mapDoc(doc) : null;
+}
+
+/**
+ * One accepted batch is durable progress, not a failed attempt.
+ * Refunds the claim increment and does not touch recoveryGeneration.
+ */
+export async function persistPlpBatchCheckpointYield(input: {
+  readonly workKey: string;
+  readonly attempts: number;
+  readonly checkpoint: PlpBatchCheckpoint;
+  readonly pacingUntil: string | null;
+}): Promise<void> {
+  const now = nowIso();
+  let existing: PlpAutoBuildWorkRecord | null = null;
+  if (usePlpAutoBuildWorkMemory()) {
+    existing = memoryByWorkKey.get(input.workKey) ?? null;
+  } else {
+    const doc = await collection().findOne({ workKey: input.workKey });
+    existing = doc ? mapDoc(doc) : null;
+  }
+  if (!existing) {
+    return;
+  }
+  const record: PlpAutoBuildWorkRecord = {
+    ...existing,
+    status: "pending",
+    attempts: Math.max(0, Math.trunc(input.attempts) - 1),
+    lastError: "PROVIDER_PACING_WAIT",
+    failureCode: "PROVIDER_FAILURE",
+    failureStage: "provider",
+    retryable: true,
+    lastFailureAt: now,
+    nextAttemptAt: input.pacingUntil,
+    batchCheckpoint: input.checkpoint,
+    claimedAt: null,
+    completedAt: null,
+    updatedAt: now,
+  };
+  if (usePlpAutoBuildWorkMemory()) {
+    memoryByWorkKey.set(input.workKey, record);
+    return;
+  }
+  await collection().updateOne({ workKey: input.workKey }, { $set: record });
 }
 
 export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<void> {
@@ -752,6 +818,7 @@ export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<vo
     failureCode: null,
     failureStage: null,
     retryable: null,
+    batchCheckpoint: null,
   });
 }
 

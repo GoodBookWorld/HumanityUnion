@@ -17,7 +17,16 @@ import {
   textContainsBrandTransportArtifact,
 } from "@hu/types";
 
-import { isLocalizationProviderPacingDeferredError } from "../localization-provider-governor.js";
+import {
+  isLocalizationProviderPacingDeferredError,
+  localizationProviderNowMs,
+  readLocalizationProviderPacing,
+} from "../localization-provider-governor.js";
+import {
+  buildPlpBatchCheckpoint,
+  resolvePlpBatchResume,
+  type PlpBatchCheckpoint,
+} from "../published-localized-presentation/universal/plp-batch-checkpoint.js";
 import type { TranslationProvider } from "../translation-provider.js";
 import { TranslationProviderError } from "../translation.config.js";
 import { TerminologyGlossaryValidationError } from "../terminology-glossary/terminology-glossary.errors.js";
@@ -80,6 +89,7 @@ export type ProviderBoundaryFailureReason =
   | "PROVIDER_CALL_CAP"
   | "PROVIDER_FAILURE"
   | "PROVIDER_PACING_DEFERRED"
+  | "PROVIDER_BATCH_PROGRESS"
   | "PARSE_FAILURE"
   | "WRONG_TARGET_LANGUAGE"
   | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
@@ -108,6 +118,9 @@ export type ProviderBoundaryResult =
       readonly PROVIDER_TRANSPORT: string;
       readonly pathDiagnostics?: ProviderMachinePathDiagnostics;
       readonly forensics?: ProviderBoundaryForensics;
+      /** Present only for PROVIDER_BATCH_PROGRESS. Normalized segments, not a raw response. */
+      readonly batchCheckpoint?: PlpBatchCheckpoint;
+      readonly pacingUntil?: string | null;
     };
 
 export type ThinProviderImportResult = {
@@ -495,6 +508,13 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   readonly PROVIDER_TRANSPORT?: string;
   /** Optional pre-resolved context; when omitted, live glossary is loaded. */
   readonly terminologyContext?: string;
+  /**
+   * Work-execution mode. After one accepted provider batch, return durable
+   * progress instead of starting the next batch in this call.
+   */
+  readonly yieldAfterAcceptedBatch?: boolean;
+  /** Same-version checkpoint. Ignored when the plan or source version does not match. */
+  readonly batchCheckpoint?: PlpBatchCheckpoint | null;
 }): Promise<ProviderBoundaryResult> {
   const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
   const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
@@ -571,7 +591,12 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 
   const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
   let totalBytes = 0;
-  const flattenedSegments: Record<string, string> = {};
+  const resume = resolvePlpBatchResume({
+    sourceVersion: input.sourceVersion,
+    batches,
+    checkpoint: input.batchCheckpoint ?? null,
+  });
+  const flattenedSegments: Record<string, string> = { ...resume.segments };
   let lastProviderId = "unknown";
   let lastEnvelope: {
     httpStatus?: number | null;
@@ -634,7 +659,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   });
 
   try {
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+    for (let batchIndex = resume.nextBatchIndex; batchIndex < batches.length; batchIndex += 1) {
       const batch = batches[batchIndex]!;
       const batchProviderKeys = Object.keys(batch);
       const contract = encodePlpTranslationsContract(batch);
@@ -854,6 +879,41 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           ),
           messagePrefix: "PARTIAL:MISSING_PATH",
         });
+      }
+
+      if (
+        input.yieldAfterAcceptedBatch === true &&
+        batchIndex + 1 < batches.length
+      ) {
+        const checkpoint = buildPlpBatchCheckpoint({
+          sourceVersion: input.sourceVersion,
+          nextBatchIndex: batchIndex + 1,
+          batches,
+          segments: flattenedSegments,
+        });
+        if (!checkpoint) {
+          return failResult({
+            reason: "PAYLOAD_LIMIT",
+            bytes: totalBytes,
+            transport,
+            forensics: subtypeForensics(
+              PLP_PROVIDER_FAILURE_SUBTYPE.BATCH_INCOMPLETE,
+              batchIndex,
+            ),
+            messagePrefix: "CHECKPOINT_LIMIT",
+          });
+        }
+        const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+        return {
+          ok: false,
+          reason: "PROVIDER_BATCH_PROGRESS",
+          PROVIDER_INPUT_BYTES: totalBytes,
+          message: `PROVIDER_BATCH_PROGRESS;NEXT_BATCH=${checkpoint.nextBatchIndex}`,
+          PROVIDER_EXECUTION_BOUNDARY: boundary,
+          PROVIDER_TRANSPORT: transport,
+          batchCheckpoint: checkpoint,
+          pacingUntil: pacing.blocked ? pacing.nextProviderRequestAt : null,
+        };
       }
     }
 

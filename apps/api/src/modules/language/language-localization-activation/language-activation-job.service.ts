@@ -265,9 +265,77 @@ async function syncWebUiDomainProgress(
 }
 
 /**
- * Persist explicit Activate/Resume as active work before the Admin response.
- * Same job id and generation. Does not call the translation provider.
+ * Project a running activation from readiness the caller already measured.
+ * Does not call the provider and does not enqueue.
  */
+export async function applySuppliedReadinessToRunningActivation(input: {
+  readonly locale: string;
+  readonly readiness: LanguageLocalizationReadinessReport;
+  readonly domains?: LanguageActivationJobRecord["domains"];
+}): Promise<LanguageActivationJobRecord | null> {
+  const job = await getActiveLanguageActivationJobByLocale(input.locale);
+  if (!job || !isClaimedActivationStatus(job.status)) {
+    return null;
+  }
+  const domains =
+    input.domains ?? (await refreshDomains(job, input.readiness, { claimed: true }));
+  const automaticProgress = await automaticProgressForLocale(input.locale, input.readiness);
+  const status = deriveActivationJobStatus({
+    readiness: input.readiness,
+    domains,
+    ctEnqueueAttempted: domains.ct.enqueueAttempted,
+    plpEnqueueAttempted: domains.plp.enqueueAttempted,
+    automaticProgress,
+  });
+  const saved = await saveLanguageActivationJob({
+    ...job,
+    status,
+    domains,
+    diagnosticSummary: buildDiagnosticSummary({ status, readiness: input.readiness, domains }),
+    updatedAt: nowIso(),
+    completedAt: status === "completed" || status === "failed" ? job.completedAt ?? nowIso() : null,
+    lastError: lastErrorForDerivedActivation({
+      status,
+      automaticProgress,
+      domains,
+      previous: job.lastError,
+    }),
+  });
+  return saved;
+}
+
+/**
+ * After a PLP publish, derive the active activation job from live readiness.
+ * Reuses the activation status function. No second readiness algorithm.
+ */
+export async function syncRunningActivationAfterPlpPublish(locale: string): Promise<void> {
+  const job = await getActiveLanguageActivationJobByLocale(locale);
+  if (!job || !isClaimedActivationStatus(job.status)) {
+    return;
+  }
+  const deps = processDeps();
+  const evaluate = deps.evaluateReadiness ?? evaluateLanguageLocalizationReadiness;
+  let registry: LanguageRegistryRecord | null;
+  try {
+    registry = await resolveLanguageRegistryLocale(locale);
+  } catch {
+    return;
+  }
+  if (!registry) {
+    return;
+  }
+  const readiness = await evaluate({
+    locale: registry.locale,
+    registryRecord: registry,
+    plannerDeps: deps.plannerDeps,
+    skipCorpusPlan: deps.skipCorpusInReadiness === true,
+  });
+  await applySuppliedReadinessToRunningActivation({
+    locale: registry.locale,
+    readiness,
+  });
+}
+
 async function automaticProgressForLocale(
   locale: string,
   readiness: LanguageLocalizationReadinessReport,
