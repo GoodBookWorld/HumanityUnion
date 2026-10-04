@@ -90,6 +90,13 @@ export {
   computePlpQuotaDeferNextAttemptAt,
   markPlpAutoBuildWorkCompleted,
   computePlpProviderRetryNextAttemptAt,
+  computePlpRecoveryCooldownNextAttemptAt,
+  parsePlpRecoveryGeneration,
+  PLP_MAX_RECOVERY_GENERATIONS,
+  PLP_RECOVERY_COOLDOWN_GENERATION_1_MS,
+  PLP_RECOVERY_COOLDOWN_GENERATION_2_MS,
+  setPlpAutoBuildNowMsForTests,
+  putPlpAutoBuildWorkForTests,
   PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_DEFAULT_LIMIT,
   PLP_AUTO_BUILD_FAILED_DIAGNOSTIC_MAX_LIMIT,
 } from "./plp-auto-build-work.repository.js";

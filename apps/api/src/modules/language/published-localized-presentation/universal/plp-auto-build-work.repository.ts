@@ -70,8 +70,9 @@ export type PlpAutoBuildWorkRecord = {
   /** RESET 05E — exponential backoff gate for retryable provider failures. */
   readonly nextAttemptAt: string | null;
   /**
-   * RESET 05E.1 — one-shot provider-contract recovery generation (e.g. "05E").
-   * When set, bootstrap heal must not reset attempt budget again for that generation.
+   * Durable attempt-window index for the same canonical version: "0", "1", or "2".
+   * Null means window 0 has not yet exhausted. Historical "05E" is not a window index.
+   * Ordinary same-version coalesce must not clear it. A new canonical version does.
    */
   readonly recoveryGeneration: string | null;
 };
@@ -114,6 +115,41 @@ const PROVIDER_RETRY_BACKOFF_BASE_MS = 5_000;
 const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
 
 /**
+ * Same-version automatic recovery windows after the immediate attempt budget.
+ * Window 0 is the immediate budget. Generations 1 and 2 are delayed recoveries.
+ * Absolute ceiling: 3 windows × maxAttempts.
+ */
+export const PLP_MAX_RECOVERY_GENERATIONS = 2;
+export const PLP_RECOVERY_COOLDOWN_GENERATION_1_MS = 30 * 60 * 1000;
+export const PLP_RECOVERY_COOLDOWN_GENERATION_2_MS = 60 * 60 * 1000;
+
+/** Null and non-numeric stamps (including historical "05E") are window 0. */
+export function parsePlpRecoveryGeneration(
+  value: string | null | undefined,
+): number {
+  if (value === "0" || value === "1" || value === "2") {
+    return Number(value);
+  }
+  return 0;
+}
+
+/** Cooldown before the next recovery window. Null when no further window remains. */
+export function computePlpRecoveryCooldownNextAttemptAt(
+  exhaustedGeneration: number,
+  nowMs: number = Date.now(),
+): string | null {
+  const nextWindow = exhaustedGeneration + 1;
+  if (nextWindow > PLP_MAX_RECOVERY_GENERATIONS) {
+    return null;
+  }
+  const delay =
+    nextWindow === 1
+      ? PLP_RECOVERY_COOLDOWN_GENERATION_1_MS
+      : PLP_RECOVERY_COOLDOWN_GENERATION_2_MS;
+  return new Date(nowMs + delay).toISOString();
+}
+
+/**
  * Bounded exponential backoff with jitter. attempts is the post-claim count.
  * Does not raise maxAttempts.
  * RESET 05E.2 — minimum 5s so drain (3s) cannot reclaim in a tight loop;
@@ -141,14 +177,28 @@ export function computePlpProviderRetryNextAttemptAt(
 }
 
 let forceMemoryForTests = false;
+let nowOverrideMs: number | null = null;
 const memoryByWorkKey = new Map<string, PlpAutoBuildWorkRecord>();
 
 export function setPlpAutoBuildWorkForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
 }
 
+export function setPlpAutoBuildNowMsForTests(ms: number | null): void {
+  nowOverrideMs = ms;
+}
+
 export function resetPlpAutoBuildWorkStoreForTests(): void {
   memoryByWorkKey.clear();
+  nowOverrideMs = null;
+}
+
+/** Memory-store seam for a pre-existing document. Does not write Mongo. */
+export function putPlpAutoBuildWorkForTests(record: PlpAutoBuildWorkRecord): void {
+  if (!forceMemoryForTests) {
+    throw new Error("putPlpAutoBuildWorkForTests requires the memory work store");
+  }
+  memoryByWorkKey.set(record.workKey, record);
 }
 
 export function listPlpAutoBuildWorkForTests(): readonly PlpAutoBuildWorkRecord[] {
@@ -173,8 +223,101 @@ export function resolvePlpAutoBuildMaxAttempts(
   return Math.min(parsed, 20);
 }
 
+function nowMs(): number {
+  return nowOverrideMs ?? Date.now();
+}
+
 function nowIso(): string {
-  return new Date().toISOString();
+  return new Date(nowMs()).toISOString();
+}
+
+function isDueRecoveryWindow(row: PlpAutoBuildWorkRecord, now: string): boolean {
+  if (row.status !== "pending" || row.retryable !== true) {
+    return false;
+  }
+  if (isLocalizationSourceOriginalEntityType(row.entityType)) {
+    return false;
+  }
+  if (row.attempts < row.maxAttempts) {
+    return false;
+  }
+  if (row.nextAttemptAt == null || row.nextAttemptAt > now) {
+    return false;
+  }
+  return parsePlpRecoveryGeneration(row.recoveryGeneration) < PLP_MAX_RECOVERY_GENERATIONS;
+}
+
+/**
+ * When a recovery cooldown is due, open the next window on the same document.
+ * Increments recoveryGeneration once and restores a fresh per-window attempt budget.
+ * Does not call the provider.
+ */
+async function promoteDueRecoveryWindow(now: string): Promise<void> {
+  if (usePlpAutoBuildWorkMemory()) {
+    const due = [...memoryByWorkKey.values()]
+      .filter((row) => isDueRecoveryWindow(row, now))
+      .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
+    const row = due[0];
+    if (!row) {
+      return;
+    }
+    const generation = parsePlpRecoveryGeneration(row.recoveryGeneration);
+    memoryByWorkKey.set(row.workKey, {
+      ...row,
+      status: "pending",
+      attempts: 0,
+      recoveryGeneration: String(generation + 1),
+      nextAttemptAt: null,
+      claimedAt: null,
+      completedAt: null,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  const col = collection();
+  const due = await col.findOne(
+    {
+      status: "pending",
+      retryable: true,
+      nextAttemptAt: { $ne: null, $lte: now },
+      $expr: { $gte: ["$attempts", "$maxAttempts"] },
+      entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
+      $or: [
+        { recoveryGeneration: null },
+        { recoveryGeneration: { $exists: false } },
+        { recoveryGeneration: "0" },
+        { recoveryGeneration: "1" },
+      ],
+    },
+    { sort: { enqueuedAt: 1 } },
+  );
+  if (!due) {
+    return;
+  }
+  const generation = parsePlpRecoveryGeneration(due.recoveryGeneration ?? null);
+  if (generation >= PLP_MAX_RECOVERY_GENERATIONS) {
+    return;
+  }
+  await col.updateOne(
+    {
+      workKey: due.workKey,
+      status: "pending",
+      attempts: due.attempts,
+      nextAttemptAt: due.nextAttemptAt ?? null,
+    },
+    {
+      $set: {
+        status: "pending",
+        attempts: 0,
+        recoveryGeneration: String(generation + 1),
+        nextAttemptAt: null,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt: now,
+      },
+    },
+  );
 }
 
 function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
@@ -259,25 +402,61 @@ function coalesceUpsert(input: {
     return { accepted: false, deduped: true, record: existing };
   }
 
-  // Same-version terminal failed: never reopen via normal coalesce (preserves
-  // forensic row; stops RSS refresh climbing attemptCount past maxAttempts).
-  // RESET 05D / 05E.1 — explicit reopenFailedSameVersion allows one-shot heal.
+  // Same-version failed: ordinary coalesce keeps the forensic row.
+  // A wake may adopt retryable exhaustion into the durable recovery contract.
+  // It must not reset attempts or recoveryGeneration, and it must not reopen
+  // non-retryable or generation-capped failures.
   if (existing.status === "failed" && sameVersion) {
-    if (!input.reopenFailedSameVersion) {
+    if (!input.reopenFailedSameVersion || existing.retryable !== true) {
       return { accepted: false, deduped: true, record: existing };
+    }
+    const generation = parsePlpRecoveryGeneration(existing.recoveryGeneration);
+    const exhausted = existing.attempts >= existing.maxAttempts;
+    if (
+      exhausted &&
+      (generation >= PLP_MAX_RECOVERY_GENERATIONS ||
+        isLocalizationSourceOriginalEntityType(existing.entityType))
+    ) {
+      return { accepted: false, deduped: true, record: existing };
+    }
+    if (exhausted) {
+      const scheduled = computePlpRecoveryCooldownNextAttemptAt(
+        generation,
+        Date.parse(updatedAt),
+      );
+      if (!scheduled) {
+        return { accepted: false, deduped: true, record: existing };
+      }
+      const existingDue = existing.nextAttemptAt
+        ? Date.parse(existing.nextAttemptAt)
+        : Number.NaN;
+      const nextAttemptAt =
+        Number.isFinite(existingDue) && existingDue > Date.parse(updatedAt)
+          ? existing.nextAttemptAt
+          : scheduled;
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: existing.attempts,
+        maxAttempts: input.maxAttempts,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        nextAttemptAt,
+        recoveryGeneration: String(generation),
+      };
+      return { accepted: true, deduped: false, record };
     }
     const record: PlpAutoBuildWorkRecord = {
       ...existing,
       status: "pending",
-      attempts: 0,
+      attempts: existing.attempts,
       maxAttempts: input.maxAttempts,
       claimedAt: null,
       completedAt: null,
       updatedAt,
-      enqueuedAt: updatedAt,
-      nextAttemptAt: null,
-      recoveryGeneration:
-        input.recoveryGeneration ?? existing.recoveryGeneration,
+      nextAttemptAt: existing.nextAttemptAt,
+      recoveryGeneration: existing.recoveryGeneration,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -417,6 +596,8 @@ export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecor
   } catch {
     // Fail open on state-read errors — ordinary claim path continues.
   }
+
+  await promoteDueRecoveryWindow(now);
 
   if (usePlpAutoBuildWorkMemory()) {
     const candidates = [...memoryByWorkKey.values()]
@@ -737,10 +918,44 @@ export async function markPlpAutoBuildWorkFailed(input: {
     (!usePlpAutoBuildWorkMemory() ||
       process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY === "1");
   const nextAttemptAt = applyBackoff
-    ? computePlpProviderRetryNextAttemptAt(input.attempts, Date.now(), {
+    ? computePlpProviderRetryNextAttemptAt(input.attempts, nowMs(), {
         retryAfterSeconds,
       })
     : null;
+
+  const existing = usePlpAutoBuildWorkMemory()
+    ? memoryByWorkKey.get(input.workKey) ?? null
+    : await collection()
+        .findOne({ workKey: input.workKey })
+        .then((doc) => (doc ? mapDoc(doc) : null));
+  if (!existing) {
+    return { requeued: false };
+  }
+
+  const exhaustedRetryable =
+    input.failure.retryable === true && !underCap &&
+    !isLocalizationSourceOriginalEntityType(existing.entityType);
+  const generation = parsePlpRecoveryGeneration(existing.recoveryGeneration);
+  const recoveryCooldownAt = exhaustedRetryable
+    ? computePlpRecoveryCooldownNextAttemptAt(generation, nowMs())
+    : null;
+  const alreadyCooling =
+    recoveryCooldownAt != null &&
+    existing.status === "pending" &&
+    existing.attempts >= existing.maxAttempts &&
+    existing.nextAttemptAt != null &&
+    Date.parse(existing.nextAttemptAt) > nowMs();
+  const durableRecovery =
+    recoveryCooldownAt == null
+      ? null
+      : {
+          status: "pending" as const,
+          attempts: input.attempts,
+          nextAttemptAt: alreadyCooling ? existing.nextAttemptAt : recoveryCooldownAt,
+          recoveryGeneration: String(generation),
+          completedAt: null,
+          claimedAt: null,
+        };
 
   const failurePatch = {
     lastError: safeReason,
@@ -748,64 +963,45 @@ export async function markPlpAutoBuildWorkFailed(input: {
     failureStage: input.failure.stage,
     retryable: input.failure.retryable,
     lastFailureAt: now,
-    nextAttemptAt,
+    nextAttemptAt: durableRecovery?.nextAttemptAt ?? nextAttemptAt,
+    ...(durableRecovery
+      ? {
+          attempts: durableRecovery.attempts,
+          recoveryGeneration: durableRecovery.recoveryGeneration,
+        }
+      : {}),
   };
 
-  if (usePlpAutoBuildWorkMemory()) {
-    const existing = memoryByWorkKey.get(input.workKey);
-    if (!existing) {
-      return { requeued: false };
-    }
-    if (canRetry) {
-      memoryByWorkKey.set(input.workKey, {
-        ...existing,
-        ...failurePatch,
-        status: "pending",
-        updatedAt: now,
-        claimedAt: null,
-        completedAt: null,
-      });
-      return { requeued: true };
-    }
-    memoryByWorkKey.set(input.workKey, {
+  if (canRetry || durableRecovery) {
+    const record: PlpAutoBuildWorkRecord = {
       ...existing,
       ...failurePatch,
-      status: "failed",
+      status: "pending",
       updatedAt: now,
-      completedAt: now,
-      nextAttemptAt: null,
-    });
-    return { requeued: false };
-  }
-
-  if (canRetry) {
-    await collection().updateOne(
-      { workKey: input.workKey },
-      {
-        $set: {
-          status: "pending",
-          ...failurePatch,
-          updatedAt: now,
-          claimedAt: null,
-          completedAt: null,
-        },
-      },
-    );
+      claimedAt: null,
+      completedAt: null,
+    };
+    if (usePlpAutoBuildWorkMemory()) {
+      memoryByWorkKey.set(input.workKey, record);
+    } else {
+      await collection().updateOne({ workKey: input.workKey }, { $set: record });
+    }
     return { requeued: true };
   }
 
-  await collection().updateOne(
-    { workKey: input.workKey },
-    {
-      $set: {
-        status: "failed",
-        ...failurePatch,
-        nextAttemptAt: null,
-        updatedAt: now,
-        completedAt: now,
-      },
-    },
-  );
+  const terminal: PlpAutoBuildWorkRecord = {
+    ...existing,
+    ...failurePatch,
+    status: "failed",
+    updatedAt: now,
+    completedAt: now,
+    nextAttemptAt: null,
+  };
+  if (usePlpAutoBuildWorkMemory()) {
+    memoryByWorkKey.set(input.workKey, terminal);
+  } else {
+    await collection().updateOne({ workKey: input.workKey }, { $set: terminal });
+  }
   return { requeued: false };
 }
 

@@ -295,15 +295,17 @@ describe("RESET 05C.3 — structured failure truth", () => {
       (r) => r.entityId === "editorial-05c3-retry",
     );
     assert.ok(work);
-    assert.equal(work!.status, "failed");
+    assert.equal(work!.status, "pending");
     assert.equal(work!.failureCode, "PROVIDER_TIMEOUT");
     assert.equal(work!.failureStage, "provider");
     assert.equal(work!.retryable, true);
     assert.equal(work!.attempts, 3);
     assert.equal(work!.maxAttempts, 3);
+    assert.equal(work!.recoveryGeneration, "0");
+    assert.ok(work!.nextAttemptAt);
     assert.ok(work!.attempts <= work!.maxAttempts);
 
-    // Re-enqueue same version must not reopen terminal failed.
+    // Same-version coalesce must not reset the recovery cooldown or generation.
     const again = await upsertPendingPlpAutoBuildWork({
       entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
       entityId: "editorial-05c3-retry",
@@ -314,8 +316,10 @@ describe("RESET 05C.3 — structured failure truth", () => {
       maxAttempts: 3,
     });
     assert.equal(again.deduped, true);
-    assert.equal(again.record.status, "failed");
+    assert.equal(again.record.status, "pending");
     assert.equal(again.record.attempts, 3);
+    assert.equal(again.record.recoveryGeneration, "0");
+    assert.equal(again.record.nextAttemptAt, work!.nextAttemptAt);
 
     const claimed = await claimNextPlpAutoBuildWork();
     assert.equal(claimed, null);
