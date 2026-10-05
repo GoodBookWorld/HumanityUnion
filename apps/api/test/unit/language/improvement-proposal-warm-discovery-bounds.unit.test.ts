@@ -26,6 +26,9 @@ describe("Improvement Proposal warm discovery data bounds", () => {
       initiative: false,
       collaborativeAnalysis: false,
       collectiveDecision: false,
+      decisionSession: false,
+      implementationCommitment: false,
+      implementationTracking: false,
     });
     const scope = read(
       "src/modules/language/content-translation-staging-warm-operator-scope.ts",

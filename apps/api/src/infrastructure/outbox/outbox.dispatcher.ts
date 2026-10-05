@@ -10,11 +10,13 @@ import {
   releaseEventProcessingClaim,
 } from "./processed-events.repository.js";
 import {
+  deferOutboxRecordUntilAvailable,
   fetchPendingOutboxRecords,
   findEarliestFutureOutboxAvailableAt,
   getOutboxDispatchStats,
   markOutboxRecordFailed,
   markOutboxRecordPublished,
+  outboxPacingDeferAvailableAt,
   probeOutboxImmediatelyDue,
 } from "./outbox.repository.js";
 import type { OutboxHealthStatus } from "./outbox.types.js";
@@ -313,6 +315,20 @@ export async function dispatchOutboxBatch(): Promise<number> {
           causationId: record.causationId,
         });
       } catch (error) {
+        const pacingAvailableAt = outboxPacingDeferAvailableAt(error);
+        if (pacingAvailableAt) {
+          await deferOutboxRecordUntilAvailable(record.outboxId, pacingAvailableAt);
+          logDomainEvent("deferred", {
+            outboxId: record.outboxId,
+            eventId: record.eventId,
+            eventName: record.eventName,
+            correlationId: record.correlationId,
+            skipReason: "provider_pacing_defer",
+            availableAt: pacingAvailableAt,
+          });
+          continue;
+        }
+
         lastError = error instanceof Error ? error.message : String(error);
 
         logDomainEvent("failed", {

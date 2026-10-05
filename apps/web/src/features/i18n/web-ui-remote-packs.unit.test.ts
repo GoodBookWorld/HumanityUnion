@@ -1,5 +1,5 @@
 /**
- * Web loader — bundled + remote WEB_UI pack resolution.
+ * Web loader — remote-first + bundled bootstrap WEB_UI pack resolution.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -10,12 +10,14 @@ import {
   loadUiMessagesForLocale,
   loadBundledUiMessagePack,
   defaultUiMessagePackSources,
+  bundledUiMessagePackSource,
 } from "./load-ui-messages.js";
+import { remoteUiMessagePackSource } from "./remote-ui-message-pack-source.js";
 import type { UiMessagePackSource } from "./remote-pack-seam.js";
 
 describe("loadUiMessagesForLocale — remote pack support", () => {
-  it("bundled locale still loads bundled messages", async () => {
-    const loaded = await loadUiMessagesForLocale("uk", [defaultUiMessagePackSources[0]!]);
+  it("bundled locale still loads bundled messages when remote is absent", async () => {
+    const loaded = await loadUiMessagesForLocale("uk", [bundledUiMessagePackSource]);
     assert.equal(loaded.packSource, "bundled");
     assert.equal(loaded.locale, "uk");
     const common = (loaded.messages as Record<string, unknown>).common as Record<string, unknown>;
@@ -36,8 +38,8 @@ describe("loadUiMessagesForLocale — remote pack support", () => {
       },
     };
     const loaded = await loadUiMessagesForLocale("ka", [
-      defaultUiMessagePackSources[0]!,
       remote,
+      bundledUiMessagePackSource,
     ]);
     assert.equal(loaded.packSource, "remote");
     assert.equal(loaded.locale, "ka");
@@ -52,19 +54,20 @@ describe("loadUiMessagesForLocale — remote pack support", () => {
       },
     };
     const loaded = await loadUiMessagesForLocale("ka", [
-      defaultUiMessagePackSources[0]!,
       remote,
+      bundledUiMessagePackSource,
     ]);
     assert.equal(loaded.packSource, "english-only");
     assert.equal(loaded.locale, "en");
   });
 
-  it("default sources include remote without shipped-locale allowlist", async () => {
+  it("default sources are remote then bundled without shipped-locale allowlist", async () => {
     assert.equal(defaultUiMessagePackSources.length, 2);
+    assert.equal(defaultUiMessagePackSources[0], remoteUiMessagePackSource);
+    assert.equal(defaultUiMessagePackSources[1], bundledUiMessagePackSource);
     const bundled = await loadBundledUiMessagePack("en");
     assert.ok(bundled);
     assert.equal(bundled?.source, "bundled");
-    // Remote source accepts arbitrary tags — no ka/he/es allowlist in loader.
     const { readFileSync } = await import("node:fs");
     const { fileURLToPath } = await import("node:url");
     const { dirname, join } = await import("node:path");

@@ -20,6 +20,7 @@ import type { Document } from "mongodb";
 import {
   emptyLanguageLocalizationCountBucket,
   emptyPwaCivicCoverageScalars,
+  isAuthoritativeMachineLocalizedPlpEntityType,
   type ContentTranslationSourceKind,
   type LanguageLocalizationCountBucket,
   type PwaCivicCoverageScalars,
@@ -28,6 +29,7 @@ import {
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
+import { assessMediaCarouselPlpPresenceForLocale } from "../assess-media-carousel-plp-presence.js";
 import {
   classifyMediaEditorialLocalizationForLocale,
   type MediaHuLocalizationIntegrityStatus,
@@ -157,7 +159,27 @@ export function buildPwaCivicCtStatusCountsPipeline(
           $sum: {
             $cond: [
               {
-                $and: [{ $eq: ["$freshness", "current"] }, { $ne: ["$stale", true] }],
+                $and: [
+                  { $eq: ["$freshness", "current"] },
+                  { $ne: ["$stale", true] },
+                  // Gate B — deterministic placeholders are not localized CURRENT.
+                  { $ne: [{ $toLower: { $ifNull: ["$translationProvider", ""] } }, "deterministic"] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        invalid: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$freshness", "current"] },
+                  { $ne: ["$stale", true] },
+                  { $eq: [{ $toLower: { $ifNull: ["$translationProvider", ""] } }, "deterministic"] },
+                ],
               },
               1,
               0,
@@ -197,6 +219,7 @@ export function buildPwaCivicCtStatusCountsPipeline(
         targetLanguage: "$_id.targetLanguage",
         sourceKind: "$_id.sourceKind",
         current: 1,
+        invalid: 1,
         stale: 1,
       },
     },
@@ -373,24 +396,57 @@ async function defaultAggregate(
   return collection.aggregate(pipeline, { allowDiskUse: false }).toArray();
 }
 
+function addCountBuckets(
+  left: LanguageLocalizationCountBucket,
+  right: LanguageLocalizationCountBucket,
+): LanguageLocalizationCountBucket {
+  return {
+    current: left.current + right.current,
+    missing: left.missing + right.missing,
+    stale: left.stale + right.stale,
+    invalid: left.invalid + right.invalid,
+    failed: left.failed + right.failed,
+    pending: left.pending + right.pending,
+    activeWork: (left.activeWork ?? 0) + (right.activeWork ?? 0),
+    preflightBlocked: (left.preflightBlocked ?? 0) + (right.preflightBlocked ?? 0),
+    workItemsRequired: left.workItemsRequired + right.workItemsRequired,
+  };
+}
+
 function sumBuckets(
   rows: readonly LanguageLocalizationCountBucket[],
 ): LanguageLocalizationCountBucket {
   let current = 0;
   let missing = 0;
   let stale = 0;
+  let invalid = 0;
   let failed = 0;
   let pending = 0;
+  let activeWork = 0;
+  let preflightBlocked = 0;
   let workItemsRequired = 0;
   for (const row of rows) {
     current += row.current;
     missing += row.missing;
     stale += row.stale;
+    invalid += row.invalid;
     failed += row.failed;
     pending += row.pending;
+    activeWork += row.activeWork ?? 0;
+    preflightBlocked += row.preflightBlocked ?? 0;
     workItemsRequired += row.workItemsRequired;
   }
-  return { current, missing, stale, failed, pending, workItemsRequired };
+  return {
+    current,
+    missing,
+    stale,
+    invalid,
+    failed,
+    pending,
+    activeWork,
+    preflightBlocked,
+    workItemsRequired,
+  };
 }
 
 function unmeasuredReport(locale: string, reason: string): BoundedPwaCivicCoverageReport {
@@ -513,13 +569,42 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
     });
   }
 
+  try {
+    const carousel = await assessMediaCarouselPlpPresenceForLocale({
+      locale,
+      pageSize: 200,
+    });
+    for (const row of carousel.byKind) {
+      if (!isAuthoritativeMachineLocalizedPlpEntityType(row.kindId)) {
+        continue;
+      }
+      if (row.kindId === "civic_media_editorial") {
+        continue;
+      }
+      plpMedia = addCountBuckets(plpMedia, row.counts);
+      measuredKindCount += 1;
+      kindRows.push({
+        kindId: row.kindId,
+        ownership: "PLP_OWNED",
+        status: "measured",
+        counts: row.counts,
+        reason: "PLP HU-owned civic media presentation.",
+      });
+    }
+  } catch {
+    unmeasuredKindCount += 1;
+  }
+
   const ct = live.ct;
   const coverage: PwaCivicCoverageScalars = {
     current: ct.current + plpMedia.current,
     missing: ct.missing + plpMedia.missing,
     stale: ct.stale + plpMedia.stale,
+    invalid: ct.invalid + plpMedia.invalid,
     failed: ct.failed + plpMedia.failed,
     pending: ct.pending + plpMedia.pending,
+    activeWork: (ct.activeWork ?? 0) + (plpMedia.activeWork ?? 0),
+    preflightBlocked: (ct.preflightBlocked ?? 0) + (plpMedia.preflightBlocked ?? 0),
     workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,
     measuredKindCount,
     unmeasuredKindCount,

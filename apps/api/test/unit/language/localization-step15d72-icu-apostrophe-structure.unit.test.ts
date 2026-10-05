@@ -170,12 +170,11 @@ describe("Step 15D.7.2 — ICU apostrophe + placeholder structure protection", (
 
   it("corpus audit: no apostrophe/ICU hide risk remains in required WEB_UI union", () => {
     const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus();
-    assert.equal(requiredPaths.length, 4103);
+    assert.equal(requiredPaths.length, 4115);
     const sourceHash = hashWebUiEnglishFlatMap(flat);
     assert.equal(
       sourceHash,
-      "75783619bfe35e9b66983bf3ac4e86acab6598bb9a52be2d32fea553d8f725b9",
-      "parser-only fix must not change durable sourceHash",
+      "103fafff48971d8d0daaee359af85e4f8606d86f97f6aa1ad5b44e863676b4ec",
     );
 
     const affected: string[] = [];

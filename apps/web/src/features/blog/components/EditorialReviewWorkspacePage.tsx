@@ -18,11 +18,19 @@ export function EditorialReviewWorkspacePage({ postId }: { postId: string }) {
         title={t("title")}
         subtitle={t("subtitle")}
         workspaceNavigation={<WorkspaceNavigation />}
-        assistant={
-          <HumanityUnionAssistantWidget
-            surfaceId="blog"
-            description={t("assistantDescription")}
-          />
+        headerBar={
+          <header className="member-workspace__header editorial-review-header">
+            <div className="editorial-review-header__copy">
+              <h1 className="member-workspace__title">{t("title")}</h1>
+              <p className="member-workspace__subtitle">{t("subtitle")}</p>
+            </div>
+            <div className="editorial-review-header__assistant">
+              <HumanityUnionAssistantWidget
+                surfaceId="blog"
+                description={t("assistantDescription")}
+              />
+            </div>
+          </header>
         }
       >
         <EditorialReviewPageContent postId={postId} />

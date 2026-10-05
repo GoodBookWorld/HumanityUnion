@@ -4,12 +4,12 @@
  * Single contract for PLP candidate construction, provider eligibility,
  * integrity validation, semantic ownership, and rendered carousel closure.
  *
- * Reset 01 Media correction — participant-visible RSS card prose:
- * `title` / `summary` are MACHINE_CONTENT (persisted PLP localization).
- * Canonical RSS source remains immutable; incomplete CURRENT falls back
- * to the coherent original card (no hybrid).
+ * STEP 15D.14.F.2 — publisher headline/summary stay SOURCE_ORIGINAL.
+ * They are not machine-localized, not readiness work, and not provider input.
+ * Canonical RSS source remains the visible card.
  *
  * Still never machine-translated:
+ * - title, summary, and other publisher editorial prose
  * - source/outlet name, URLs, IDs, timestamps, geographicScope
  * - category (CONTROLLED_VOCABULARY via UI dictionary)
  * - external article body (not rendered as Media card prose)
@@ -19,16 +19,17 @@ import type { MediaRegistryCategory } from "./media-registry.js";
 
 export type PublicNewsFieldOwnershipClass =
   | "MACHINE_CONTENT"
+  | "SOURCE_ORIGINAL"
   | "CONTROLLED_VOCABULARY"
   | "PROTECTED_SOURCE_VALUE";
 
 /**
  * Participant-facing public_news semantic fields and their ownership class.
- * MACHINE_CONTENT paths are Gemini / PLP AUTO nodes for carousel cards.
+ * SOURCE_ORIGINAL paths stay in the publisher language and never enter Gemini.
  */
 export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
-  title: "MACHINE_CONTENT",
-  summary: "MACHINE_CONTENT",
+  title: "SOURCE_ORIGINAL",
+  summary: "SOURCE_ORIGINAL",
   category: "CONTROLLED_VOCABULARY",
   sourceName: "PROTECTED_SOURCE_VALUE",
   id: "PROTECTED_SOURCE_VALUE",
@@ -40,10 +41,10 @@ export const PUBLIC_NEWS_FIELD_OWNERSHIP = {
 } as const satisfies Record<string, PublicNewsFieldOwnershipClass>;
 
 /**
- * PLP / Gemini AUTO paths for public_news carousel cards.
- * Bounded to title+summary — the only participant-visible RSS prose on /media.
+ * PLP / Gemini AUTO paths for public_news.
+ * Empty: headline and summary are SOURCE_ORIGINAL, not machine work.
  */
-export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = ["title", "summary"] as const;
+export const PUBLIC_NEWS_MACHINE_CONTENT_PATHS = [] as const;
 
 export type PublicNewsMachineContentPath =
   (typeof PUBLIC_NEWS_MACHINE_CONTENT_PATHS)[number];

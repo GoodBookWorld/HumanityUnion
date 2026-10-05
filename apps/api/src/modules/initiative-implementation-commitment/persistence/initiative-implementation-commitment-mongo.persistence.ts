@@ -7,6 +7,7 @@ import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collect
 import {
   createEmptyInitiativeImplementationCommitmentPersistenceSnapshot,
   type InitiativeImplementationCommitmentPersistenceAdapter,
+  type InitiativeImplementationCommitmentPersistenceSnapshot,
 } from "./initiative-implementation-commitment-persistence.types.js";
 
 const handles = createMongoSnapshotPersistence({
@@ -42,4 +43,11 @@ export async function flushInitiativeImplementationCommitmentMongoPersistence():
   }
 
   await handles.flush();
+}
+
+/** Test-only. Fills the adapter cache the way hydrate() does, without Mongo I/O. */
+export function installHydratedImplementationCommitmentSnapshotForTests(
+  snapshot: InitiativeImplementationCommitmentPersistenceSnapshot,
+): void {
+  handles.installHydratedSnapshotForTests(snapshot);
 }

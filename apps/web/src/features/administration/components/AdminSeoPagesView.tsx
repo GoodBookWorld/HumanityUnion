@@ -28,6 +28,8 @@ interface AdminSeoPagesViewProps {
 const FAMILY_OPTIONS: Array<{ value: "all" | SeoPageFamilyId; label: string }> = [
   { value: "all", label: "All families" },
   { value: "home", label: "Home" },
+  { value: "support", label: "Support" },
+  { value: "volunteer", label: "Volunteer" },
   { value: "country", label: "Countries" },
   { value: "blog", label: "Blog" },
   { value: "initiative", label: "Initiatives" },
@@ -60,9 +62,10 @@ export function AdminSeoPagesView({ rows, loading, error, onRetry }: AdminSeoPag
     <div className="admin-seo-console__panel">
       <ProfileSection title="Pages inventory">
         <p className="hu-caption admin-seo-console__lede">
-          Public SEO inventory from safe enumeration sources. Use Edit SEO for Country, Initiative,
-          Knowledge, and Civic Archive overrides. Blog uses the existing publication optimization
-          editor. Petition SEO editing stays deferred until canonical ownership is resolved.
+          Public SEO inventory from safe enumeration sources. Use Edit SEO for Support, Volunteer,
+          Country, Initiative, Knowledge, and Civic Archive overrides. Blog uses the existing
+          publication optimization editor. Petition SEO editing stays deferred until canonical
+          ownership is resolved.
         </p>
 
         <div className="admin-seo-console__toolbar">

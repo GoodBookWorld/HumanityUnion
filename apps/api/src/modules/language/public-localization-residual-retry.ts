@@ -31,6 +31,78 @@ import {
   type ResidualRetryPresentationSchedule,
 } from "./public-localization-retry-preflight.js";
 import { loadTranslatableSource } from "./content-translation.service.js";
+import {
+  planLocalizationReconciliationItem,
+  type LocalizationReconciliationPlanItem,
+} from "./localization-reconciliation-planner.js";
+import type { ContentTranslationReconciliationState } from "./content-translation-validity.js";
+
+function residualReconciliationState(
+  row: PublicLocalizationResidualWithPreflight,
+): ContentTranslationReconciliationState {
+  if (row.retryPreflight.liveTranslationInvalid) {
+    return "INVALID";
+  }
+  if (row.retryPreflight.liveTranslationStale) {
+    return "STALE";
+  }
+  const state = String(row.translationState).toUpperCase();
+  if (state.includes("STALE")) {
+    return "STALE";
+  }
+  if (state.includes("INVALID")) {
+    return "INVALID";
+  }
+  return "MISSING";
+}
+
+/** Gate C — deterministic INVALID → STALE → MISSING order (language-agnostic). */
+export function sortResidualsByReconciliationPriority(
+  rows: readonly PublicLocalizationResidualWithPreflight[],
+): PublicLocalizationResidualWithPreflight[] {
+  const keyed: Array<{
+    row: PublicLocalizationResidualWithPreflight;
+    plan: LocalizationReconciliationPlanItem;
+  }> = rows.map((row) => ({
+    row,
+    plan: planLocalizationReconciliationItem({
+      owner: "CT",
+      entityType: row.family,
+      entityId: row.presentationIdentity.sourceRecordId,
+      targetLocale: row.targetLocale,
+      reconciliationState: residualReconciliationState(row),
+    }),
+  }));
+  keyed.sort((a, b) => {
+    if (a.plan.priority !== b.plan.priority) {
+      return a.plan.priority - b.plan.priority;
+    }
+    const type = a.plan.entityType.localeCompare(b.plan.entityType);
+    if (type !== 0) {
+      return type;
+    }
+    const id = a.plan.entityId.localeCompare(b.plan.entityId);
+    if (id !== 0) {
+      return id;
+    }
+    return a.plan.targetLocale.localeCompare(b.plan.targetLocale);
+  });
+  return keyed.map((entry) => entry.row);
+}
+
+/**
+ * F.3.19 — priority among identities that may be attempted now.
+ * A semantic defer skips the identity for this pass. It stays residual work
+ * and returns to this order when retryEligibleAt arrives, or sooner when the
+ * source version or localization input version changes.
+ */
+export function selectCurrentlyRetryEligibleResiduals(
+  rows: readonly PublicLocalizationResidualWithPreflight[],
+): PublicLocalizationResidualWithPreflight[] {
+  return sortResidualsByReconciliationPriority(rows).filter(
+    (row) => row.retryPreflight.semanticRetryDeferred !== true,
+  );
+}
 
 export type PublicLocalizationResidualRetryMode = "dry-run" | "execute";
 
@@ -97,6 +169,11 @@ export async function runPublicLocalizationResidualRetry(input: {
   readonly kinds?: readonly StagingWarmSourceKind[];
   readonly deps?: StagingWarmDiscoveryDeps;
   readonly targetLocales?: readonly LanguageCode[];
+  /**
+   * Gate C.2 — bounded enqueue per pass. Remaining ready identities stay
+   * rediscoverable on the next driver continuation.
+   */
+  readonly maxPresentations?: number;
 }): Promise<PublicLocalizationResidualRetryResult> {
   const discovery = await discoverPublicLocalizationCorpus({
     kinds: input.kinds,
@@ -119,8 +196,10 @@ export async function runPublicLocalizationResidualRetry(input: {
   const blocked = explained.selection.blocked;
 
   // Defend against any non-ready sneaking into ready[].
-  const selected = ready.filter((row) => row.retryPreflight.ready === true);
-  if (selected.length !== ready.length) {
+  const priorityOrdered = sortResidualsByReconciliationPriority(
+    ready.filter((row) => row.retryPreflight.ready === true),
+  );
+  if (priorityOrdered.length !== ready.length) {
     return {
       mode: input.execute ? "execute" : "dry-run",
       preAudit,
@@ -143,19 +222,32 @@ export async function runPublicLocalizationResidualRetry(input: {
     };
   }
 
+  // Deferred identities stay in the ready audit and in workRemaining.
+  // They are not enqueued until their bounded retry time, or a version change.
+  const selected = selectCurrentlyRetryEligibleResiduals(priorityOrdered);
+
   const schedule = selectReadyPresentationsForResidualRetry({
     ...explained.selection,
     ready: selected,
   });
 
-  const identityCountFromSchedule = schedule.reduce(
+  const boundedSchedule =
+    input.maxPresentations != null && input.maxPresentations > 0
+      ? schedule.slice(0, input.maxPresentations)
+      : schedule;
+
+  const identityCountFromSchedule = boundedSchedule.reduce(
     (sum, unit) => sum + unit.readyIdentityCount,
     0,
   );
   const presentationGroupingExplained =
-    schedule.length !== selected.length && identityCountFromSchedule === selected.length;
+    boundedSchedule.length !== selected.length &&
+    identityCountFromSchedule <= selected.length;
 
-  if (identityCountFromSchedule !== selected.length) {
+  if (
+    input.maxPresentations == null &&
+    identityCountFromSchedule !== selected.length
+  ) {
     return {
       mode: input.execute ? "execute" : "dry-run",
       preAudit,
@@ -165,8 +257,8 @@ export async function runPublicLocalizationResidualRetry(input: {
       RETRY_SELECTED_IDENTITIES: 0,
       selectedIdentities: [],
       blockedIdentities: blocked.map(summarizeBlocked),
-      schedule,
-      presentationsToEnqueue: schedule.length,
+      schedule: boundedSchedule,
+      presentationsToEnqueue: boundedSchedule.length,
       presentationGroupingExplained: false,
       selectedWorkItems: [],
       presentationsScheduled: 0,
@@ -221,8 +313,8 @@ export async function runPublicLocalizationResidualRetry(input: {
     RETRY_SELECTED_IDENTITIES: selected.length,
     selectedIdentities: selected.map(summarizeIdentity),
     blockedIdentities: blocked.map(summarizeBlocked),
-    schedule,
-    presentationsToEnqueue: schedule.length,
+    schedule: boundedSchedule,
+    presentationsToEnqueue: boundedSchedule.length,
     presentationGroupingExplained,
     selectedWorkItems,
   };
@@ -246,7 +338,7 @@ export async function runPublicLocalizationResidualRetry(input: {
   let presentationsDeduped = 0;
   let presentationsFailed = 0;
 
-  for (const unit of schedule) {
+  for (const unit of boundedSchedule) {
     try {
       const source = await loadTranslatableSource({
         sourceKind: unit.sourceKind,

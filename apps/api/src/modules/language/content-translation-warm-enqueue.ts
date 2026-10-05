@@ -49,6 +49,8 @@ interface MemoryWarmOutboxRecord {
   lastError: string | null;
   /** Pack 08K.2.3 — set when terminal failed for deterministic ordering/diagnostics. */
   failedAt: string | null;
+  /** F.3.19.2 — pending rows are not drained again until this instant. */
+  availableAt: string | null;
 }
 
 let forceMemoryForTests = false;
@@ -67,10 +69,35 @@ export function resetContentTranslationWarmMemoryForTests(): void {
 export function listContentTranslationWarmMemoryPendingForTests(): ReadonlyArray<{
   readonly eventId: string;
   readonly command: ContentTranslationWarmRequestedCommand;
+  readonly availableAt: string | null;
 }> {
   return [...memoryPendingByAggregate.values()]
     .filter((row) => row.status === "pending")
-    .map((row) => ({ eventId: row.eventId, command: row.command }));
+    .map((row) => ({
+      eventId: row.eventId,
+      command: row.command,
+      availableAt: row.availableAt,
+    }));
+}
+
+export function readContentTranslationWarmMemoryRecordForTests(eventId: string): {
+  readonly status: "pending" | "published" | "failed";
+  readonly attempts: number;
+  readonly lastError: string | null;
+  readonly availableAt: string | null;
+  readonly published: boolean;
+} | null {
+  const record = memoryRecordsByEventId.get(eventId);
+  if (!record) {
+    return null;
+  }
+  return {
+    status: record.status,
+    attempts: record.attempts,
+    lastError: record.lastError,
+    availableAt: record.availableAt,
+    published: record.status === "published",
+  };
 }
 
 export function buildContentTranslationWarmAggregateId(input: {
@@ -171,6 +198,7 @@ export async function enqueueContentTranslationWarmRequested(
       attempts: 0,
       lastError: null,
       failedAt: null,
+      availableAt: null,
     };
     memoryPendingByAggregate.set(aggregateId, record);
     memoryRecordsByEventId.set(eventId, record);
@@ -284,6 +312,22 @@ export function markContentTranslationWarmMemoryPublishedForTests(eventId: strin
   if (pending?.eventId === eventId) {
     memoryPendingByAggregate.delete(aggregateId);
   }
+}
+
+/**
+ * Test helper — pacing defer keeps the same pending row.
+ * Does not publish, fail, increment attempts, or write failure metadata.
+ */
+export function deferContentTranslationWarmMemoryForPacingForTests(
+  eventId: string,
+  availableAt: string,
+): void {
+  const record = memoryRecordsByEventId.get(eventId);
+  if (!record || record.status !== "pending") {
+    return;
+  }
+  record.availableAt = availableAt;
+  record.lastError = null;
 }
 
 /** Test helper — mark memory pending row as terminal failed. */

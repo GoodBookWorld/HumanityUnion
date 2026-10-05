@@ -13,6 +13,7 @@ import {
   normalizeLanguageCode,
 } from "@hu/types";
 
+import { logger } from "../../shared/observability/logger.js";
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
@@ -46,6 +47,7 @@ import {
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
 import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
+import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
 import {
   isSearchDiscoveryMappedSourceKind,
   projectFieldsToSearchDiscoveryAllowlist,
@@ -74,8 +76,17 @@ import {
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
+import {
+  assessRequiredTerminologyProtection,
+  terminologyQualityDiagnosticsForPublication,
+  loadPublishedTerminologyConcepts,
+} from "./terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "./localization-input-contract.js";
 import { TranslationProviderError } from "./translation.config.js";
-import { withContentTranslationWorkerSlot } from "./content-translation-worker-concurrency.js";
+import { runLocalizationProviderRequest } from "./localization-provider-governor.js";
 
 export interface LoadedTranslatableSource {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -419,9 +430,25 @@ export async function getOrCreateContentTranslation(input: {
             translatedContent: existing.translatedContent,
           })
         ) {
-          return { source, translation: existing, generated: false };
+          // Gate C — coverage alone is not READY. INVALID / input-STALE must regenerate.
+          let concepts: Awaited<ReturnType<typeof loadPublishedTerminologyConcepts>> =
+            [];
+          try {
+            concepts = await loadPublishedTerminologyConcepts();
+          } catch {
+            concepts = [];
+          }
+          const validity = classifyContentTranslationForReconciliation({
+            translation: existing,
+            liveSourceVersion: source.sourceVersion,
+            originalFields: fullProviderFields,
+            concepts,
+          });
+          if (validity.reconciliationState === "READY") {
+            return { source, translation: existing, generated: false };
+          }
         }
-        // Compact or incomplete — fall through to full regenerate/replace.
+        // Compact, incomplete, INVALID, or STALE — fall through to regenerate/replace.
       } else {
         // on_demand: preserve prior "any current row skips" contract.
         return { source, translation: existing, generated: false };
@@ -466,7 +493,7 @@ export async function getOrCreateContentTranslation(input: {
       sourceLanguage: source.sourceLanguage,
       targetLanguage,
       translatePayload: async (payload) => {
-        const result = await withContentTranslationWorkerSlot(() =>
+        const result = await runLocalizationProviderRequest(() =>
           provider.translate({
             sourceLanguage: source.sourceLanguage,
             targetLanguage,
@@ -505,7 +532,7 @@ export async function getOrCreateContentTranslation(input: {
       translatedFields,
     });
   } else {
-    const result = await withContentTranslationWorkerSlot(() =>
+    const result = await runLocalizationProviderRequest(() =>
       provider.translate({
         sourceLanguage: source.sourceLanguage,
         targetLanguage,
@@ -564,6 +591,36 @@ export async function getOrCreateContentTranslation(input: {
     };
   }
 
+  const concepts = await loadPublishedTerminologyConcepts();
+  const sourceText = collectSourceTextLeaves(providerFields);
+  const translatedText = collectSourceTextLeaves(translatedFields);
+  const inputVersion = buildLocalizationInputVersionFromConcepts({
+    sourceVersion: source.sourceVersion,
+    targetLocale: targetLanguage,
+    concepts,
+    sourceText,
+  });
+  const terminologyAssessment = assessRequiredTerminologyProtection({
+    concepts,
+    targetLocale: targetLanguage,
+    sourceText,
+    translatedText,
+  });
+  const terminologyDiagnostics = terminologyQualityDiagnosticsForPublication(
+    terminologyAssessment,
+  );
+  if (terminologyDiagnostics.length > 0) {
+    logger.info("content_translation.terminology_quality_diagnostic", {
+      component: "content-translation",
+      sourceKind: source.sourceKind,
+      sourceRecordId: source.sourceRecordId,
+      targetLanguage,
+      diagnostics: terminologyDiagnostics.map(
+        (violation) => `${violation.conceptId}:${violation.reason}`,
+      ),
+    });
+  }
+
   const record: TranslatedContentRecord = {
     translationId: existing?.translationId ?? `translation-${randomUUID()}`,
     sourceKind: source.sourceKind,
@@ -578,6 +635,7 @@ export async function getOrCreateContentTranslation(input: {
     updatedAt: new Date().toISOString(),
     stale: false,
     freshness: "current",
+    localizationInputVersion: inputVersion.localizationInputVersion,
   };
 
   await upsertContentTranslation(record);

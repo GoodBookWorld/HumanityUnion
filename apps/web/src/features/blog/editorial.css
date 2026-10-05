@@ -27,18 +27,45 @@
   margin-top: 0.5rem;
 }
 
-/* Pack 15D — explicit 30% | 40% | 30% (context | preview | tools) */
+/*
+ * Review detail — central 2fr/3fr (context 40% / preview 60%) plus the
+ * canonical Workspace right rail. The header uses the same tracks so the
+ * Assistant sits above the tools pane.
+ */
+.editorial-review-header,
 .editorial-review,
 .editorial-review--pack15d {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 3fr);
-  grid-template-areas: "context preview tools";
-  gap: 1.5rem;
-  align-items: start;
+  grid-template-columns:
+    minmax(0, 2fr)
+    minmax(0, 3fr)
+    minmax(0, var(--hu-initiative-sidebar-width));
+  column-gap: var(--hu-space-6);
+  row-gap: var(--hu-space-6);
   width: 100%;
   min-width: 0;
-  overflow-x: hidden;
   box-sizing: border-box;
+}
+
+.editorial-review-header {
+  align-items: start;
+}
+
+.editorial-review-header__copy {
+  grid-column: 1 / 3;
+  min-width: 0;
+}
+
+.editorial-review-header__assistant {
+  grid-column: 3;
+  min-width: 0;
+}
+
+.editorial-review,
+.editorial-review--pack15d {
+  grid-template-areas: "context preview tools";
+  align-items: start;
+  overflow-x: hidden;
 }
 
 .editorial-review__context {
@@ -51,19 +78,20 @@
 
 .editorial-review__preview {
   grid-area: preview;
+  align-self: start;
   min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .editorial-review__tools {
   grid-area: tools;
+  align-self: start;
   display: grid;
   gap: 1rem;
+  align-content: start;
   min-width: 0;
-  position: sticky;
-  top: var(--hu-scroll-margin-top, 6.5rem);
-  max-height: calc(100vh - var(--hu-scroll-margin-top, 6.5rem) - 1rem);
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .editorial-review__meta-list {
@@ -116,6 +144,10 @@
   min-width: 0;
 }
 
+.editorial-review__guidance {
+  min-width: 0;
+}
+
 .editorial-review__checklist {
   margin: 0.5rem 0 0;
   padding-left: 1.1rem;
@@ -141,37 +173,76 @@
   background: transparent;
 }
 
-/* Tablet — 2-column / stacked; no independent sticky trap */
-@media (min-width: 769px) and (max-width: 1099px) {
+/* Workspace rail breakpoint — drop the right track; context and preview stay paired. */
+@media (max-width: 1024px) {
+  .editorial-review-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editorial-review-header__copy,
+  .editorial-review-header__assistant {
+    grid-column: auto;
+  }
+
   .editorial-review,
   .editorial-review--pack15d {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     grid-template-areas:
       "context preview"
       "tools tools";
+    align-items: start;
   }
 
+  .editorial-review__preview,
   .editorial-review__tools {
-    position: static;
+    min-height: auto;
     max-height: none;
     overflow: visible;
+    position: static;
   }
+}
+
+/*
+ * Standalone PWA already drops the MemberWorkspace right rail at every width.
+ * Keep the review detail on the same stacked-rail geometry. The 768px rule
+ * below still stacks context, preview, and tools.
+ */
+.humanity-app--pwa-standalone .editorial-review-header {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.humanity-app--pwa-standalone .editorial-review-header__copy,
+.humanity-app--pwa-standalone .editorial-review-header__assistant {
+  grid-column: auto;
+}
+
+.humanity-app--pwa-standalone .editorial-review,
+.humanity-app--pwa-standalone .editorial-review--pack15d {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-areas:
+    "context preview"
+    "tools tools";
+  align-items: start;
+}
+
+.humanity-app--pwa-standalone .editorial-review__preview,
+.humanity-app--pwa-standalone .editorial-review__tools {
+  min-height: auto;
+  max-height: none;
+  overflow: visible;
+  position: static;
 }
 
 /* Mobile — single column: Context → Publication → Moderation */
 @media (max-width: 768px) {
   .editorial-review,
-  .editorial-review--pack15d {
+  .editorial-review--pack15d,
+  .humanity-app--pwa-standalone .editorial-review,
+  .humanity-app--pwa-standalone .editorial-review--pack15d {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "context"
       "preview"
       "tools";
-  }
-
-  .editorial-review__tools {
-    position: static;
-    max-height: none;
-    overflow: visible;
   }
 }

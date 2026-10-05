@@ -643,19 +643,18 @@ export async function publishInitiativeRevisionStage(
   return result;
 }
 
-export function createInitialInitiativeVersionRevision(
+/** Stable id so two processes materializing the same initiative write one row. */
+export function initialInitiativeVersionRevisionId(initiativeId: string): string {
+  return `initiative-version-revision-initial-${initiativeId}`;
+}
+
+export function buildInitialInitiativeVersionRevision(
   initiative: Initiative,
   authorId: string,
 ): InitiativeVersionRevision {
-  const existing = getLatestRevisionForInitiative(initiative.initiativeId);
-
-  if (existing) {
-    return existing;
-  }
-
   const publishedAt = new Date().toISOString();
-  const revision: InitiativeVersionRevision = {
-    revisionId: `initiative-version-revision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  return {
+    revisionId: initialInitiativeVersionRevisionId(initiative.initiativeId),
     initiativeId: initiative.initiativeId,
     version: 1,
     previousVersion: null,
@@ -671,8 +670,27 @@ export function createInitialInitiativeVersionRevision(
     declinedProposalIds: listDeclinedProposalIds(initiative.initiativeId),
     changes: [],
   };
+}
 
-  return createRevision(revision);
+export function createInitialInitiativeVersionRevision(
+  initiative: Initiative,
+  authorId: string,
+): InitiativeVersionRevision {
+  const existing = getLatestRevisionForInitiative(initiative.initiativeId);
+
+  if (existing) {
+    return existing;
+  }
+
+  const revision = buildInitialInitiativeVersionRevision(initiative, authorId);
+
+  const createdRevision = createRevision(revision);
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "initiative_revision",
+    sourceRecordId: createdRevision.revisionId,
+    reason: "public_mutation",
+  });
+  return createdRevision;
 }
 
 export function resolveInitiativeVersionForNewAnalysis(initiativeId: string): number {

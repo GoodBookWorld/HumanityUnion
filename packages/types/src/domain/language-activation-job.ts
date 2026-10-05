@@ -75,6 +75,8 @@ export type LanguageActivationWebUiDomainProgress = {
     | "ready"
     | "failed"
     | "provider_cooldown"
+    | "structure_retry"
+    | "structure_blocked"
     | null;
   readonly checkpointId: string | null;
   readonly sourceHash: string | null;
@@ -131,11 +133,44 @@ export type LanguageActivationBrandDomainProgress = {
   readonly reviewRequired: boolean;
   readonly providerFailure: boolean;
   readonly detail: string | null;
+  /** Absolute ISO when provider cooldown ends (null when not cooling down). */
+  readonly nextAttemptAt?: string | null;
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?:
+    | "rate_limited"
+    | "unavailable"
+    | "timeout"
+    | null;
 };
 
 /**
  * Terminology Glossary preferredTerm preparation for Controlled Vocabulary readiness.
  */
+export type LanguageActivationTerminologyFailureCode =
+  | "model_not_found"
+  | "rate_limited"
+  | "unavailable"
+  | "timeout"
+  | "network_failure"
+  | "malformed_response"
+  | "validation_parse_failure"
+  | "not_configured"
+  | "safety_rejected"
+  | "unknown";
+
+export type LanguageActivationTerminologyFailureCodeCount = {
+  readonly code: LanguageActivationTerminologyFailureCode;
+  readonly count: number;
+};
+
+/**
+ * Sanitized durable Terminology provider-failure summary.
+ * Allowlisted codes + counts only — never raw provider text or secrets.
+ */
+export type LanguageActivationTerminologyProviderDiagnostic = {
+  readonly failureCodes: readonly LanguageActivationTerminologyFailureCodeCount[];
+};
+
 export type LanguageActivationTerminologyDomainProgress = {
   readonly status: LanguageActivationDomainStatus;
   readonly preparationAttempted: boolean;
@@ -144,6 +179,16 @@ export type LanguageActivationTerminologyDomainProgress = {
   readonly conceptsFailed: number;
   readonly providerFailure: boolean;
   readonly detail: string | null;
+  /** Optional sanitized provider failure classification (observability only). */
+  readonly providerDiagnostic?: LanguageActivationTerminologyProviderDiagnostic | null;
+  /** Absolute ISO when provider cooldown ends (null when not cooling down). */
+  readonly nextAttemptAt?: string | null;
+  readonly transientFailureCount?: number;
+  readonly lastTransientFailure?:
+    | "rate_limited"
+    | "unavailable"
+    | "timeout"
+    | null;
 };
 
 export type LanguageActivationJobDomains = {

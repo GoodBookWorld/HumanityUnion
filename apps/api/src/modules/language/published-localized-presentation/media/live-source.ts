@@ -7,15 +7,12 @@ import type {
   MediaPlpEntityType,
   PublicNewsArticleItem,
   PublicPresentationNode,
-  TrustedMediaCategoryId,
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
 import { FACT_CHECK_RESOURCES } from "../../../civic-media-center/content/fact-checking.js";
 import { PROPAGANDA_ANALYSIS_RESOURCES } from "../../../civic-media-center/content/propaganda-analysis.js";
 import { CIVIC_MEDIA_FAQ, CIVIC_MEDIA_OVERVIEW, CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../../civic-media-center/content/sections.js";
-import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
-import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
@@ -23,9 +20,9 @@ import {
   buildCanonicalPrinciplePresentation,
   buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
-  buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
 } from "./canonical-trees.js";
+import { resolveTrustedMediaEditorialCanonical } from "./trusted-editorial-source.js";
 
 export type MediaPlpLiveCanonicalSource = {
   readonly SOURCE_FOUND: boolean;
@@ -33,10 +30,6 @@ export type MediaPlpLiveCanonicalSource = {
   readonly CANONICAL_VERSION: string | null;
   readonly canonicalPresentation: PublicPresentationNode | null;
 };
-
-function asString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
 
 function empty(): MediaPlpLiveCanonicalSource {
   return {
@@ -71,56 +64,16 @@ function resolvePrinciple(entityId: string): MediaPlpLiveCanonicalSource {
 }
 
 async function resolveTrusted(entityId: string): Promise<MediaPlpLiveCanonicalSource> {
-  const collection = getMongoCollection<Record<string, unknown>>(
-    MONGO_COLLECTIONS.mediaResources,
-  );
-  const cursor = collection.find(
-    { id: entityId },
-    {
-      projection: {
-        id: 1,
-        name: 1,
-        websiteUrl: 1,
-        description: 1,
-        resourceType: 1,
-        active: 1,
-        categoryId: 1,
-        logoLabel: 1,
-        secondaryText: 1,
-        countryCode: 1,
-        sortOrder: 1,
-      },
-      limit: 2,
-    },
-  );
-  const doc = (await cursor.next()) as Record<string, unknown> | null;
-  if (await cursor.next()) {
+  const editorial = await resolveTrustedMediaEditorialCanonical(entityId);
+  if (!editorial.sourceFound || !editorial.canonicalPresentation || !editorial.canonicalVersion) {
     return empty();
   }
-  if (!doc) {
-    return empty();
-  }
-  const sourcePublic =
-    doc.active === true && asString(doc.resourceType) === "TRUSTED_MEDIA";
-  const categoryId = (asString(doc.categoryId) ||
-    "international-wire-service") as TrustedMediaCategoryId;
-  return withTree(
-    asMediaPlpPresentationNode(
-      buildCanonicalTrustedPresentation({
-        id: asString(doc.id) || entityId,
-        name: asString(doc.name),
-        logoLabel: asString(doc.logoLabel) || "?",
-        country:
-          asString(doc.secondaryText) || asString(doc.countryCode) || "International",
-        ...(asString(doc.countryCode) ? { countryCode: asString(doc.countryCode) } : {}),
-        categoryId,
-        explanation: asString(doc.description),
-        websiteUrl: asString(doc.websiteUrl),
-        sortOrder: typeof doc.sortOrder === "number" ? doc.sortOrder : 0,
-      }),
-    ),
-    sourcePublic,
-  );
+  return {
+    SOURCE_FOUND: true,
+    SOURCE_PUBLIC: editorial.sourcePublic,
+    CANONICAL_VERSION: editorial.canonicalVersion,
+    canonicalPresentation: editorial.canonicalPresentation,
+  };
 }
 
 function resolveEditorial(entityId: string): MediaPlpLiveCanonicalSource {

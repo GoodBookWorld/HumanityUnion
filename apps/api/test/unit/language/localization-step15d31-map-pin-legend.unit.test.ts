@@ -19,6 +19,7 @@ import {
   upsertWebUiActivationCheckpoint,
 } from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import {
+  fingerprintWebUiEnglishLeaf,
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
@@ -61,6 +62,20 @@ function getNested(messages: Record<string, unknown>, pathKey: string): unknown 
     cursor = (cursor as Record<string, unknown>)[segment];
   }
   return cursor;
+}
+
+function sourceFingerprintsFor(
+  english: Record<string, unknown>,
+  paths: readonly string[],
+): Record<string, string> {
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of paths) {
+    const value = getNested(english, pathKey);
+    if (typeof value === "string") {
+      fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(value);
+    }
+  }
+  return fingerprints;
 }
 
 function projectPaths(
@@ -205,6 +220,7 @@ describe("Step 15D.3.1 — map pin legend WEB_UI localization", () => {
       status: "published",
       messages: projectPaths(english, withoutLegend, (value) => `[ka] ${value}`) as never,
       sourceNote: "ka pack missing legend keys only",
+      sourceFingerprintsByPath: sourceFingerprintsFor(english, withoutLegend),
     });
     const incomplete = await assessWebUiCatalogReadinessForLocale({
       locale: "ka",

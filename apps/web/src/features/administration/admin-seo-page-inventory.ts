@@ -20,6 +20,8 @@ import {
   buildParticipantProfileFamilyDeferredRow,
   buildParticipantProfileSeoInventoryRow,
   buildPetitionFamilyDeferredRow,
+  buildSupportSeoInventoryRow,
+  buildVolunteerSeoInventoryRow,
   resolveBlogSeoMode,
   type SeoPageInventoryRow,
 } from "./admin-seo-console-model";
@@ -43,6 +45,12 @@ export async function loadAdminSeoPageInventory(): Promise<SeoPageInventoryRow[]
 
   return [
     home,
+    buildSupportSeoInventoryRow({
+      seoMode: customizedPageIds.has("support:support") ? "customized" : "automatic",
+    }),
+    buildVolunteerSeoInventoryRow({
+      seoMode: customizedPageIds.has("volunteer:volunteer") ? "customized" : "automatic",
+    }),
     ...countries,
     ...blogRows,
     ...initiativeRows,

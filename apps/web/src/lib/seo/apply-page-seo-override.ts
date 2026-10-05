@@ -66,3 +66,18 @@ export function resolveSeoModeFromOverrideFields(
 ): "automatic" | "customized" {
   return fields && seoPageOverrideHasCustomFields(fields) ? "customized" : "automatic";
 }
+
+/**
+ * Canonical seo_page_overrides are one document per page, with no locale.
+ * Merge that document only for the locale-free SEO document.
+ * A locale-prefixed SEO document keeps its automatic metadata.
+ */
+export function selectCanonicalEnglishSeoOverrideForDocument(
+  isLocalePrefixedDocument: boolean,
+  override: SeoPageOverrideFields | null | undefined,
+): SeoPageOverrideFields | null {
+  if (isLocalePrefixedDocument) {
+    return null;
+  }
+  return override ?? null;
+}

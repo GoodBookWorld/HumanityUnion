@@ -384,10 +384,8 @@ export async function runMediaPlpMaterializer(
         canonicalPresentation: source.canonicalPresentation!,
         values: translation.values,
       }).ok;
-    // Usable localized snapshot only — identity/version/schema match is insufficient.
-    const alreadyCurrent =
-      plp.EXISTING_PLP_USABILITY === "USABLE_LOCALIZED" ||
-      (plp.EXISTING_PLP_USABILITY == null && plp.PLP_MATCHES_CURRENT_SOURCE);
+    // Gate C — preserve only READY PLP (not merely USABLE_LOCALIZED under INVALID).
+    const alreadyCurrent = plp.PLP_MATCHES_CURRENT_SOURCE === true;
     const wouldCallProvider =
       source.SOURCE_FOUND &&
       source.SOURCE_PUBLIC &&

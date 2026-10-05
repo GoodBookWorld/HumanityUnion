@@ -10,6 +10,10 @@ async function start(): Promise<void> {
   await bootstrapAuthPersistence();
   await bootstrapEventInfrastructure();
   await bootstrapMongoPersistence();
+  const { materializeCanonicalInitialInitiativeRevisions } = await import(
+    "./modules/initiative-version-revision/materialize-canonical-initial-revisions.js"
+  );
+  await materializeCanonicalInitialInitiativeRevisions();
   // Reset 03E.8 — bind HTTP PLP resolve to the same durable Mongo store as
   // materialize/diagnose --mongo (never silent empty memory).
   await bootstrapPublishedLocalizationPersistence();
@@ -26,6 +30,18 @@ async function start(): Promise<void> {
   if (webUiResume.scheduled > 0) {
     console.log(
       `Resumed ${webUiResume.scheduled} incomplete WEB_UI activation checkpoint(s).`,
+    );
+  }
+
+  // Gate C.2 — durable residual reconciliation for completed/running locales
+  // with WEB_UI READY + actionable CT/PLP work (independent of activation.status).
+  const { resumeLocalizationReconciliationOnBoot } = await import(
+    "./modules/language/localization-reconciliation-driver.js"
+  );
+  const reconciliationResume = await resumeLocalizationReconciliationOnBoot();
+  if (reconciliationResume.scheduled > 0) {
+    console.log(
+      `Scheduled localization reconciliation discovery for ${reconciliationResume.scheduled} locale(s).`,
     );
   }
 

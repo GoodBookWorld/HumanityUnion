@@ -41,6 +41,7 @@ import {
   updateLanguageRegistryRecord,
   explainPublicLocalizationResidualsWithPreflight,
 } from "../../../src/modules/language/index.js";
+import { classifyContentTranslationValidity } from "../../../src/modules/language/content-translation-validity.js";
 import { upsertContentTranslation } from "../../../src/modules/language/persistence/content-translation.repository.js";
 import { failedAttemptSuppressesLiveSourceVersion } from "../../../src/modules/language/warm-attempt-version-ownership.js";
 
@@ -231,7 +232,7 @@ describe("live residual version ownership and readiness", () => {
     assert.equal(classifyPreflight(preflight), "RETRY_READY_MISSING");
   });
 
-  it("4–5. CURRENT exact live version is not actionable, including beside a historical stale row", async () => {
+  it("4–5. identity-current deterministic placeholder is INVALID work, including beside a historical stale row", async () => {
     const { initiative, source } = await liveInitiative("current");
     const now = new Date().toISOString();
     await upsertContentTranslation({
@@ -264,16 +265,38 @@ describe("live residual version ownership and readiness", () => {
     });
 
     const preflight = await preflightFor(initiative.initiativeId, source.sourceVersion);
-    assert.equal(preflight.readyState, "CURRENT");
-    assert.equal(preflight.ready, false);
+    const validity = classifyContentTranslationValidity({
+      translation: {
+        translationId: `tr-current-${initiative.initiativeId}`,
+        sourceKind: "initiative",
+        sourceRecordId: initiative.initiativeId,
+        sourceVersion: source.sourceVersion,
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        translatedContent: { title: "[uk] title", description: "[uk] body" },
+        translationProvider: "deterministic",
+        translationKind: "machine",
+        createdAt: now,
+        stale: false,
+        freshness: "current",
+      },
+      liveSourceVersion: source.sourceVersion,
+    });
+    assert.equal(validity.reconciliationState, "INVALID");
+    assert.deepEqual(validity.reasons, ["deterministic_placeholder"]);
+    assert.equal(preflight.readyState, "INVALID_PLACEHOLDER");
+    assert.equal(preflight.ready, true);
+    assert.equal(preflight.liveTranslationInvalid, true);
     assert.equal(preflight.liveTranslationStale, false);
     const bucket = classifyPreflight(preflight);
-    assert.equal(bucket, "CURRENT");
+    assert.equal(bucket, "RETRY_READY_INVALID");
+    assert.equal(isActionableLiveResidualBucket(bucket), true);
     const counts = accumulateLiveResidualCounts([bucket]);
-    assert.equal(counts.current, 1);
+    assert.equal(counts.current, 0);
+    assert.equal(counts.invalid, 1);
     assert.equal(counts.stale, 0);
     assert.equal(counts.missing, 0);
-    assert.equal(counts.workItemsRequired, 0);
+    assert.equal(counts.workItemsRequired, 1);
   });
 
   it("6–8. missing is actionable, blocked is separate, and residual retry uses the same boundary", async () => {
@@ -435,9 +458,29 @@ describe("live residual version ownership and readiness", () => {
       current.initiative.initiativeId,
       current.source.sourceVersion,
     );
-    assert.equal(currentPreflight.readyState, "CURRENT");
-    assert.equal(classifyPreflight(currentPreflight), "CURRENT");
-    assert.equal(isActionableLiveResidualBucket(classifyPreflight(currentPreflight)), false);
+    const currentValidity = classifyContentTranslationValidity({
+      translation: {
+        translationId: `tr-current-${current.initiative.initiativeId}`,
+        sourceKind: "initiative",
+        sourceRecordId: current.initiative.initiativeId,
+        sourceVersion: current.source.sourceVersion,
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        translatedContent: { title: "[uk] title", description: "[uk] body" },
+        translationProvider: "deterministic",
+        translationKind: "machine",
+        createdAt: now,
+        stale: false,
+        freshness: "current",
+      },
+      liveSourceVersion: current.source.sourceVersion,
+    });
+    assert.equal(currentValidity.reconciliationState, "INVALID");
+    assert.deepEqual(currentValidity.reasons, ["deterministic_placeholder"]);
+    assert.equal(currentPreflight.readyState, "INVALID_PLACEHOLDER");
+    assert.equal(currentPreflight.liveTranslationInvalid, true);
+    assert.equal(classifyPreflight(currentPreflight), "RETRY_READY_INVALID");
+    assert.equal(isActionableLiveResidualBucket(classifyPreflight(currentPreflight)), true);
 
     const explained = await explainPublicLocalizationResidualsWithPreflight({
       workItems: [

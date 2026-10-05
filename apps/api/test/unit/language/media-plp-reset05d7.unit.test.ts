@@ -483,13 +483,13 @@ describe("RESET 05D.7 — canonical-version authority", () => {
 
     const healed = await enqueueCivicMediaEditorialPlpBuilds({ locales: ["uk"] });
     assert.equal(healed.canonicalVersion, version);
-    assert.equal(healed.enqueued, 1);
+    assert.equal(healed.enqueued, 0);
     const pending = listPlpAutoBuildWorkForTests().find(
       (w) => w.workKey === work!.workKey,
     );
-    assert.equal(pending?.status, "pending");
+    assert.equal(pending?.status, "failed");
     assert.equal(pending?.canonicalVersion, version);
-    assert.equal(pending?.attempts, 0);
+    assert.equal(pending?.retryable, false);
   });
 
   it("single fingerprint authority: adapter/enqueue/diagnostic share fingerprintMediaPlpCanonicalVersion", () => {

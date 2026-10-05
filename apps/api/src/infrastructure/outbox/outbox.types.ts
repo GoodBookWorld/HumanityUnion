@@ -16,6 +16,11 @@ export interface OutboxRecord {
   causationId: string | null;
   createdAt: string;
   publishedAt: string | null;
+  /**
+   * F.3.19.2 — pending rows stay invisible to the dispatcher until this instant.
+   * Used for provider pacing defer. Not a failure and not a second scheduler.
+   */
+  availableAt?: string | null;
 }
 
 export interface EnqueueOutboxOptions {

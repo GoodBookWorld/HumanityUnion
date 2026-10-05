@@ -28,9 +28,9 @@ const apiRoot = path.resolve(here, "../../..");
 const PARTICIPANT_PUBLIC_POLICY: PlpFieldPolicyMap = {
   profileId: "PROTECTED_CANONICAL",
   displayName: "PROTECTED_CANONICAL",
-  biography: "MACHINE_CONTENT",
+  biography: "SOURCE_ORIGINAL",
   organization: "PROTECTED_CANONICAL",
-  skills: "MACHINE_CONTENT",
+  skills: "SOURCE_ORIGINAL",
 };
 
 describe("participant_public organization integrity (PATH_STATES 1:1:0:0:1)", () => {
@@ -91,8 +91,9 @@ describe("participant_public organization integrity (PATH_STATES 1:1:0:0:1)", ()
       .filter((n) => isCollectedPathMachineEligible(n.path, PARTICIPANT_PUBLIC_POLICY))
       .map((n) => n.path);
     assert.equal(machinePaths.includes("organization"), false);
-    assert.ok(machinePaths.includes("biography"));
-    assert.ok(machinePaths.includes("skills[0]"));
+    assert.equal(machinePaths.includes("biography"), false);
+    assert.equal(machinePaths.includes("skills[0]"), false);
+    assert.deepEqual(machinePaths, []);
 
     const autoValues: Record<string, string> = {};
     for (const node of collectAutoPaths(presentation)) {
@@ -101,16 +102,10 @@ describe("participant_public organization integrity (PATH_STATES 1:1:0:0:1)", ()
       }
     }
     assert.equal("organization" in autoValues, false);
+    assert.equal(Object.keys(autoValues).length, 0);
 
-    const accepted = validateMediaPlpProviderLocalizationValues({
-      locale: "uk",
-      autoValues,
-      translated: {
-        biography: "Українська біографія для локалізації.",
-        "skills[0]": "Навичка Альфа",
-        "skills[1]": "Навичка Бета",
-      },
-    });
-    assert.equal(accepted.ok, true);
+    // No MACHINE_CONTENT auto paths → provider integrity N/A for this owner.
+    assert.match(adapterSrc, /biography:\s*"SOURCE_ORIGINAL"/);
+    assert.match(adapterSrc, /skills:\s*"SOURCE_ORIGINAL"/);
   });
 });

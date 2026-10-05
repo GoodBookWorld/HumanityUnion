@@ -27,6 +27,12 @@ import {
   setMediaPlpConsumptionEnabledForTests,
   setPublishedLocalizationPersistenceModeForTests,
 } from "../../../src/modules/language/published-localized-presentation/index.js";
+import { resetMediaPlpResolveCacheForTests } from "../../../src/modules/language/published-localized-presentation/resolve-cache.js";
+import { resetMediaResourcesMemoryForTests } from "../../../src/modules/media-resources/persistence/media-resource.memory.store.js";
+import {
+  setMediaResourceForceMemoryForTests,
+  upsertMediaResource,
+} from "../../../src/modules/media-resources/persistence/media-resource.repository.js";
 import { parseMediaPlpConsumerAcceptanceArgs } from "../../../src/modules/language/media-plp-consumer-acceptance/run-acceptance.js";
 
 const reuters: TrustedMediaResource = {
@@ -58,17 +64,41 @@ function treeFor(resource: TrustedMediaResource) {
   return asMediaPlpPresentationNode(buildCanonicalTrustedPresentation(resource));
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   resetPublishedLocalizationPersistenceForTests();
+  resetMediaPlpResolveCacheForTests();
   resetMediaPlpInstrumentationForTests();
   setPublishedLocalizationPersistenceModeForTests("memory");
   setMediaPlpConsumptionEnabledForTests(true);
+  setMediaResourceForceMemoryForTests(true);
+  resetMediaResourcesMemoryForTests();
+  for (const resource of [reuters, atlantic]) {
+    await upsertMediaResource({
+      id: resource.id,
+      resourceType: "TRUSTED_MEDIA",
+      scopeType: resource.countryCode ? "COUNTRY" : "WORLD",
+      countryCode: resource.countryCode ?? null,
+      name: resource.name,
+      logoLabel: resource.logoLabel,
+      websiteUrl: resource.websiteUrl,
+      categoryId: resource.categoryId,
+      description: resource.explanation,
+      secondaryText: resource.country,
+      active: true,
+      sortOrder: resource.sortOrder,
+      createdAt: "2026-06-27T00:00:00.000Z",
+      updatedAt: "2026-06-27T00:00:00.000Z",
+    });
+  }
 });
 
 afterEach(() => {
   setMediaPlpConsumptionEnabledForTests(null);
   resetPublishedLocalizationPersistenceForTests();
+  resetMediaPlpResolveCacheForTests();
   resetMediaPlpInstrumentationForTests();
+  resetMediaResourcesMemoryForTests();
+  setMediaResourceForceMemoryForTests(false);
 });
 
 describe("Reset 03C Media PLP consumer gate", () => {
@@ -116,25 +146,24 @@ describe("Reset 03C Media PLP consumer gate", () => {
   });
 
   it("C: stale canonicalVersion → CANONICAL_FALLBACK", async () => {
-    const tree = treeFor(reuters);
-    const version = fingerprintMediaPlpCanonicalVersion(tree);
-    await publishMediaPlpEntity({
-      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
-      entityId: mediaPlpTrustedEntityId(reuters.id),
-      locale: "uk",
-      canonicalVersion: version,
-      contentRevision: 1,
-      canonicalPresentation: tree,
-      layers: [{ source: "MACHINE", values: { explanation: "[uk] x" } }],
-      includeDeterministicMachine: false,
-    });
-
     const staleTree = asMediaPlpPresentationNode(
       buildCanonicalTrustedPresentation({
         ...reuters,
         explanation: `${reuters.explanation} changed`,
       }),
     );
+    const staleVersion = fingerprintMediaPlpCanonicalVersion(staleTree);
+    await publishMediaPlpEntity({
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
+      entityId: mediaPlpTrustedEntityId(reuters.id),
+      locale: "uk",
+      canonicalVersion: staleVersion,
+      contentRevision: 1,
+      canonicalPresentation: staleTree,
+      layers: [{ source: "MACHINE", values: { explanation: "[uk] x" } }],
+      includeDeterministicMachine: false,
+    });
+
     const resolved = await resolveMediaPlpConsumerItem({
       locale: "uk",
       entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
@@ -145,7 +174,7 @@ describe("Reset 03C Media PLP consumer gate", () => {
     assert.equal(resolved.reasonCode, "CANONICAL_VERSION_MISMATCH");
     assert.equal(
       (resolved.presentation as { explanation?: string }).explanation,
-      `${reuters.explanation} changed`,
+      reuters.explanation,
     );
   });
 

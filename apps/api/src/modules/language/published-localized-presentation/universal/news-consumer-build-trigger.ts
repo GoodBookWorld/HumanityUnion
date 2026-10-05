@@ -1,27 +1,14 @@
 /**
- * RESET 04 / 05C / Reset 01 — bounded RSS /media carousel News PLP build trigger.
+ * RSS /media news trigger.
  *
- * After RSS ingest, enqueue PLP only for the currently selected /media news
- * rail (MEDIA_PLP_CAROUSEL_NEWS_LIMIT). Never fan out the full RSS corpus.
- * Durable enqueue only — does not call Gemini.
+ * STEP 15D.14.F.2 — public_news title and summary are SOURCE_ORIGINAL.
+ * Refresh must not enqueue machine translation. Card chrome stays WEB_UI.
  */
 
-import { MEDIA_PLP_ENTITY_TYPE, mediaPlpPublicNewsEntityId } from "@hu/types";
-
-import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "../../media-plp-carousel/constants.js";
-import { selectMediaPlpConsumerNewsArticles } from "../../media-plp-carousel/media-plp-news-selection.js";
-import {
-  fingerprintMediaPlpCanonicalVersion,
-  buildCanonicalPublicNewsPresentation,
-  asMediaPlpPresentationNode,
-} from "../media/canonical-trees.js";
-import { enqueuePlpBuildRequest } from "./build-request-queue.js";
-import { recordPlpAutoBuildCollectionEnqueueAttempt } from "./plp-auto-build-runtime.js";
 import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
 
 /**
- * After RSS ingest / consumer-visible refresh: enqueue missing/stale news
- * localization for the current /media carousel selection × eligible locales.
+ * After RSS ingest: do not schedule public_news provider work.
  */
 export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly locales: readonly string[];
@@ -33,61 +20,13 @@ export async function enqueueConsumerVisibleNewsPlpBuilds(input: {
   readonly deduped: number;
   readonly PROVIDER_CALLS: 0;
 }> {
+  void input;
   ensureMediaPlpAdapterRegistered();
-  recordPlpAutoBuildCollectionEnqueueAttempt();
-  const articles = await selectMediaPlpConsumerNewsArticles({
-    limit: input.limit ?? MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
-  });
-  let enqueued = 0;
-  let skippedUsable = 0;
-  let deduped = 0;
-  for (const article of articles) {
-    const tree = asMediaPlpPresentationNode(
-      buildCanonicalPublicNewsPresentation({
-        id: article.id,
-        title: article.title,
-        summary: article.summary,
-        category: article.category,
-        sourceName: article.sourceName,
-        articleUrl: article.articleUrl,
-        publishedAt: article.publishedAt,
-        verificationStatus: article.verificationStatus,
-        geographicScope: article.geographicScope,
-        language: article.language,
-        imageUrl: article.imageUrl,
-      }),
-    );
-    const canonicalVersion = fingerprintMediaPlpCanonicalVersion(tree);
-    const entityId = mediaPlpPublicNewsEntityId(article.id);
-
-    for (const locale of input.locales) {
-      if (String(locale).toLowerCase() === "en") {
-        continue;
-      }
-
-      const result = await enqueuePlpBuildRequest({
-        entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-        entityId,
-        locale,
-        canonicalVersion,
-        contentRevision: 1,
-        trigger: "CONSUMER_VISIBLE_COLLECTION_REFRESH",
-        canonicalPresentation: tree,
-      });
-      if (result.skippedUsable) {
-        skippedUsable += 1;
-      } else if (result.deduped) {
-        deduped += 1;
-      } else if (result.accepted) {
-        enqueued += 1;
-      }
-    }
-  }
   return {
-    consumerCount: articles.length,
-    enqueued,
-    skippedUsable,
-    deduped,
+    consumerCount: 0,
+    enqueued: 0,
+    skippedUsable: 0,
+    deduped: 0,
     PROVIDER_CALLS: 0,
   };
 }

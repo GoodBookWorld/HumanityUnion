@@ -310,5 +310,15 @@ export async function updateAdminTerminologyConcept(input: {
     afterSummary: afterParts.join(" "),
   });
 
+  // Gate C.2 — terminology / localizationInputVersion mutation may create STALE work.
+  // Schedule only; do not run corpus reconciliation on the Admin request path.
+  void import("../localization-reconciliation-driver.js").then(
+    ({ scheduleLocalizationReconciliationForAutomaticLocales }) => {
+      scheduleLocalizationReconciliationForAutomaticLocales({
+        reason: "terminology_mutation",
+      });
+    },
+  );
+
   return updated;
 }

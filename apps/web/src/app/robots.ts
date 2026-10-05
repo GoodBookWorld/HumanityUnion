@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         "/workspace/",
+        "/admin/",
         "/notifications",
         "/preferences",
         "/login",

@@ -9,6 +9,7 @@ import {
 import { shouldDisallowSearchIndexing } from "../../platform-indexing";
 import { resolvePublicSiteOrigin, toAbsolutePublicUrl } from "../public-site-url";
 import { dedupeSitemapPathEntries } from "./dedupe-sitemap-entries";
+import { buildPublicSeoLocalizedVariantPredicate } from "../public-seo-localized-eligibility-loader";
 import { expandPublicSitemapEntriesForSeoLocales } from "./expand-public-sitemap-for-seo-locales";
 import { listBlogPostSitemapEntries } from "./providers/blog-posts";
 import { listCivicArchiveSitemapEntries } from "./providers/civic-archive";
@@ -101,6 +102,15 @@ export async function collectPublicSitemapPathEntries(options?: {
    * - provided list → use as-is (tests / overrides)
    */
   readonly seoIndexableLocales?: readonly string[];
+  /**
+   * Page-specific eligibility. Production omits this and loads owner evidence.
+   * Explicit `seoIndexableLocales` without this predicate keeps path expansion
+   * for mechanics tests.
+   */
+  readonly isLocalizedVariantEligible?: (
+    localeFreePath: string,
+    locale: string,
+  ) => boolean;
 }): Promise<SitemapPathEntry[]> {
   const includeDynamic = options?.includeDynamicProviders !== false;
 
@@ -123,15 +133,26 @@ export async function collectPublicSitemapPathEntries(options?: {
     canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
   }
 
-  const seoLocales =
-    options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales")
-      ? (options.seoIndexableLocales ?? [])
-      : await resolveSeoIndexableLocalesForSitemap();
+  const explicitLocales = Boolean(
+    options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales"),
+  );
+  const seoLocales = explicitLocales
+    ? (options?.seoIndexableLocales ?? [])
+    : await resolveSeoIndexableLocalesForSitemap();
+
+  let isLocalizedVariantEligible = options?.isLocalizedVariantEligible;
+  if (!isLocalizedVariantEligible && !explicitLocales && seoLocales.length > 0) {
+    isLocalizedVariantEligible = await buildPublicSeoLocalizedVariantPredicate({
+      localeFreePaths: canonical.map((entry) => entry.path),
+      locales: seoLocales,
+    });
+  }
 
   return expandPublicSitemapEntriesForSeoLocales({
     entries: canonical,
     seoIndexableLocales: seoLocales,
     defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
+    ...(isLocalizedVariantEligible ? { isLocalizedVariantEligible } : {}),
   });
 }
 

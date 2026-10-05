@@ -54,6 +54,15 @@ export function expandPublicSitemapEntriesForSeoLocales(input: {
   /** Locales already filtered to enabled && seoIndexingEnabled. */
   readonly seoIndexableLocales: readonly string[];
   readonly defaultLocale?: string;
+  /**
+   * Page-specific localized SEO eligibility. When omitted, every perimeter
+   * path is expanded for the supplied locales (path-mechanics tests).
+   * Production sitemap builds pass the shared eligibility predicate.
+   */
+  readonly isLocalizedVariantEligible?: (
+    localeFreePath: string,
+    locale: string,
+  ) => boolean;
 }): SitemapPathEntry[] {
   const nonDefaultLocales = listNonDefaultSeoLocales(
     input.seoIndexableLocales,
@@ -75,6 +84,12 @@ export function expandPublicSitemapEntriesForSeoLocales(input: {
     }
 
     for (const locale of nonDefaultLocales) {
+      if (
+        input.isLocalizedVariantEligible &&
+        !input.isLocalizedVariantEligible(path, locale)
+      ) {
+        continue;
+      }
       expanded.push({
         path: buildPublicSeoLocalePrefixedPath(path, locale),
         ...(entry.lastModified !== undefined ? { lastModified: entry.lastModified } : {}),

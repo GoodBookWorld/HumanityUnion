@@ -50,11 +50,23 @@ import {
 const TWO_BATCH_PATHS = loadPublicWebUiEnglishCorpus().requiredPaths.slice(0, 12);
 const here = path.dirname(fileURLToPath(import.meta.url));
 
+function prefixProviderValue(value: unknown): unknown {
+  if (typeof value === "string") return `[xx] ${value}`;
+  if (Array.isArray(value)) {
+    return value.map((span) =>
+      typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+    );
+  }
+  return value;
+}
+
 function translate(request: TranslationProviderRequest) {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
   return {
     translatedText: JSON.stringify(
-      Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`])),
+      Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, prefixProviderValue(value)]),
+      ),
     ),
     providerId: "deterministic",
     isPlaceholder: false,
@@ -150,7 +162,9 @@ describe("Step 15C.10 — automatic WEB_UI provider cooldown", () => {
     assert.equal(webUiProviderCooldownSeconds(1), 60);
     assert.equal(webUiProviderCooldownSeconds(2), 120);
     assert.equal(webUiProviderCooldownSeconds(3), 300);
-    assert.equal(webUiProviderCooldownSeconds(99), 300);
+    assert.equal(webUiProviderCooldownSeconds(4), 600);
+    assert.equal(webUiProviderCooldownSeconds(5), 900);
+    assert.equal(webUiProviderCooldownSeconds(99), 900);
     assert.equal(
       isWebUiRateLimitedError(new TranslationProviderError("rate_limited", "Gemini HTTP 429")),
       true,

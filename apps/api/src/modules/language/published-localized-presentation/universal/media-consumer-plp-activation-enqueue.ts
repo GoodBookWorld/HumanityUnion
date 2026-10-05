@@ -33,9 +33,9 @@ import {
   buildCanonicalFactCheckPresentation,
   buildCanonicalPrinciplePresentation,
   buildCanonicalPropagandaPresentation,
-  buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
 } from "../media/canonical-trees.js";
+import { resolveTrustedMediaEditorialCanonical } from "../media/trusted-editorial-source.js";
 import { enqueuePlpBuildRequest } from "./build-request-queue.js";
 import { enqueueCivicMediaEditorialPlpBuilds } from "./editorial-build-trigger.js";
 import { ensureMediaPlpAdapterRegistered } from "./register-defaults.js";
@@ -114,10 +114,16 @@ async function enqueueStaticCarouselEntitiesForLocale(locale: string): Promise<{
     0,
     MEDIA_PLP_CAROUSEL_TRUSTED_WORLD_LIMIT,
   )) {
+    const editorial = await resolveTrustedMediaEditorialCanonical(
+      mediaPlpTrustedEntityId(resource.id),
+    );
+    if (!editorial.sourceFound || !editorial.canonicalPresentation) {
+      continue;
+    }
     await record({
       entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
       entityId: mediaPlpTrustedEntityId(resource.id),
-      tree: asMediaPlpPresentationNode(buildCanonicalTrustedPresentation(resource)),
+      tree: editorial.canonicalPresentation,
     });
   }
 

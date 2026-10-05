@@ -358,8 +358,8 @@ describe("RESET 04 — Universal PLP publication contract", () => {
       limit: 12,
     });
     assert.equal(result.PROVIDER_CALLS, 0);
-    assert.equal(result.consumerCount, 3);
-    assert.equal(result.enqueued, 3);
+    assert.equal(result.consumerCount, 0);
+    assert.equal(result.enqueued, 0);
     assert.ok(
       getPlpDomainAdapter(MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS)
         ?.usesConsumerIdentityAuthority,

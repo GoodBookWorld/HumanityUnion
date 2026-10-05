@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import type { BlogEditorialReviewDetail } from "@hu/types";
 
@@ -68,6 +68,8 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const tBlog = useTranslations("blogPublic");
   const router = useRouter();
   const noteId = useId();
+  const toolsRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [detail, setDetail] = useState<BlogEditorialReviewDetail | null>(null);
   const [preview, setPreview] = useState<BlogPreviewProjection | null>(null);
   const [reviewNote, setReviewNote] = useState("");
@@ -75,6 +77,53 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [safetyConfirmOpen, setSafetyConfirmOpen] = useState(false);
   const [declineConfirmOpen, setDeclineConfirmOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    const tools = toolsRef.current;
+    const previewPane = previewRef.current;
+    if (!tools || !previewPane || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const desktopQuery = window.matchMedia("(min-width: 1025px)");
+
+    const syncPreviewHeight = () => {
+      const standalone = document.body.classList.contains("humanity-app--pwa-standalone");
+      if (!desktopQuery.matches || standalone) {
+        previewPane.style.height = "";
+        previewPane.style.maxHeight = "";
+        return;
+      }
+      const height = tools.getBoundingClientRect().height;
+      if (height <= 0) {
+        previewPane.style.height = "";
+        previewPane.style.maxHeight = "";
+        return;
+      }
+      const measured = `${height}px`;
+      if (previewPane.style.height !== measured) {
+        previewPane.style.height = measured;
+        previewPane.style.maxHeight = measured;
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+      syncPreviewHeight();
+    });
+    observer.observe(tools);
+    const classObserver = new MutationObserver(syncPreviewHeight);
+    classObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    desktopQuery.addEventListener("change", syncPreviewHeight);
+    syncPreviewHeight();
+
+    return () => {
+      observer.disconnect();
+      classObserver.disconnect();
+      desktopQuery.removeEventListener("change", syncPreviewHeight);
+      previewPane.style.height = "";
+      previewPane.style.maxHeight = "";
+    };
+  }, [detail, preview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -254,7 +303,7 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
         </section>
       </aside>
 
-      <div className="editorial-review__preview">
+      <div className="editorial-review__preview" ref={previewRef}>
         <article
           aria-labelledby="editorial-article-heading"
           className="blog-article editorial-review__article"
@@ -286,8 +335,8 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
         </article>
       </div>
 
-      <aside className="editorial-review__tools" aria-label={t("toolsAria")}>
-        <div className="editorial-review__panel">
+      <aside className="editorial-review__tools" aria-label={t("toolsAria")} ref={toolsRef}>
+        <div className="editorial-review__panel editorial-review__guidance">
           <h2 className="hu-heading-3">{t("guidanceHeading")}</h2>
           <ul className="editorial-review__checklist hu-body">
             <li>{t("guidanceClarity")}</li>

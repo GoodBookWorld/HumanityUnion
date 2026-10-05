@@ -8,7 +8,7 @@ import { FACT_CHECK_RESOURCES } from "../civic-media-center/content/fact-checkin
 import { PROPAGANDA_ANALYSIS_RESOURCES } from "../civic-media-center/content/propaganda-analysis.js";
 import { TRUSTED_MEDIA_RESOURCES } from "../civic-media-center/content/trusted-media.js";
 import {
-  getMediaResourceById,
+  getMediaResourceByIdentity,
   upsertMediaResource,
 } from "./persistence/media-resource.repository.js";
 
@@ -119,15 +119,18 @@ export function buildMediaResourceSeedRecords(): MediaResource[] {
 }
 
 /**
- * Idempotent upsert by id. Preserves createdAt when a record already exists;
- * re-applies canonical seed field values on each run.
+ * Idempotent upsert by (resourceType, id). Preserves createdAt for that
+ * concept only. A NEWS_SOURCE row never replaces a TRUSTED_MEDIA row.
  */
 export async function seedMediaResourcesFromCanonicalSources(): Promise<number> {
   const seeds = buildMediaResourceSeedRecords();
   let upserted = 0;
 
   for (const seed of seeds) {
-    const existing = await getMediaResourceById(seed.id);
+    const existing = await getMediaResourceByIdentity({
+      resourceType: seed.resourceType,
+      id: seed.id,
+    });
     const record: MediaResource = existing
       ? { ...seed, createdAt: existing.createdAt, updatedAt: new Date().toISOString() }
       : seed;

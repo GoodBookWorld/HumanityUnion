@@ -97,11 +97,17 @@
   max-width: 16rem;
 }
 
-.admin-glossary__status-row label {
+.admin-glossary__status-row label,
+.admin-glossary__language-row label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.875rem;
+}
+
+.admin-glossary__language-row {
+  margin-bottom: 1rem;
+  max-width: 28rem;
 }
 
 .admin-glossary__locales {

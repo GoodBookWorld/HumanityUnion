@@ -11,7 +11,8 @@ import {
 } from "./media-resource.mongo-document.js";
 import {
   deleteMediaResourceMemory,
-  getMediaResourceByIdMemory,
+  getMediaResourceByIdentityMemory,
+  listMediaResourcesByPublisherIdMemory,
   listMediaResourcesMemory,
   upsertMediaResourceMemory,
 } from "./media-resource.memory.store.js";
@@ -94,14 +95,30 @@ export async function listMediaResources(
   return documents.map(fromMediaResourceMongoDocument);
 }
 
-export async function getMediaResourceById(id: string): Promise<MediaResource | null> {
+export async function getMediaResourceByIdentity(input: {
+  readonly resourceType: MediaResourceType;
+  readonly id: string;
+}): Promise<MediaResource | null> {
   if (shouldUseMemoryAdapter()) {
-    return getMediaResourceByIdMemory(id);
+    return getMediaResourceByIdentityMemory(input.resourceType, input.id);
   }
 
   await ensureMediaResourceMongoReady();
-  const document = await collection().findOne({ id });
+  const document = await collection().findOne({
+    resourceType: input.resourceType,
+    id: input.id,
+  });
   return document ? fromMediaResourceMongoDocument(document) : null;
+}
+
+export async function listMediaResourcesByPublisherId(id: string): Promise<MediaResource[]> {
+  if (shouldUseMemoryAdapter()) {
+    return listMediaResourcesByPublisherIdMemory(id);
+  }
+
+  await ensureMediaResourceMongoReady();
+  const documents = await collection().find({ id }).sort({ resourceType: 1 }).toArray();
+  return documents.map(fromMediaResourceMongoDocument);
 }
 
 export async function upsertMediaResource(resource: MediaResource): Promise<MediaResource> {
@@ -111,19 +128,25 @@ export async function upsertMediaResource(resource: MediaResource): Promise<Medi
 
   await ensureMediaResourceMongoReady();
   await collection().replaceOne(
-    { id: resource.id },
+    { resourceType: resource.resourceType, id: resource.id },
     toMediaResourceMongoDocument(resource),
     { upsert: true },
   );
   return resource;
 }
 
-export async function deleteMediaResource(id: string): Promise<boolean> {
+export async function deleteMediaResource(input: {
+  readonly resourceType: MediaResourceType;
+  readonly id: string;
+}): Promise<boolean> {
   if (shouldUseMemoryAdapter()) {
-    return deleteMediaResourceMemory(id);
+    return deleteMediaResourceMemory(input.resourceType, input.id);
   }
 
   await ensureMediaResourceMongoReady();
-  const result = await collection().deleteOne({ id });
+  const result = await collection().deleteOne({
+    resourceType: input.resourceType,
+    id: input.id,
+  });
   return result.deletedCount === 1;
 }

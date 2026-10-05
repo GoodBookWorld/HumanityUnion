@@ -16,11 +16,17 @@ import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
   classifyLegacyOutboxLastError,
+  countGenuineMissingTranslationFailures,
+  decideSameVersionWarmFailureRetry,
   isExplicitlyRetryableModernFailure,
+  selectTerminologyMissingTranslationRetry,
+  SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
+  shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 import {
+  listContentTranslationWarmAttempts,
   peekContentTranslationWarmOutboxFailure,
   resolveContentTranslationWarmOutboxDisposition,
   type ContentTranslationWarmAttemptSnapshot,
@@ -37,6 +43,12 @@ import {
   fieldsAsPublicPresentation,
   type PublicLocalizationWorkItem,
 } from "./public-localization-corpus.js";
+import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
+import { loadPublishedTerminologyConcepts } from "./terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "./localization-input-contract.js";
 
 export type PublicLocalizationRetryPreflight = {
   readonly sourceResolvable: boolean;
@@ -52,13 +64,24 @@ export type PublicLocalizationRetryPreflight = {
     | "MISSING_READY_FOR_WARM"
     | "BLOCKED"
     | "CURRENT"
+    /** Gate B — identity-current deterministic placeholder; not presentation-eligible. */
+    | "INVALID_PLACEHOLDER"
     | "ACTIVE_WORK"
     | "NOT_APPLICABLE";
   readonly blockReason: string | null;
   /** Exact live sourceVersion row is stale. Historical versions are ignored. */
   readonly liveTranslationStale?: boolean;
+  /** Gate B — identity-current row exists but is not presentation-eligible. */
+  readonly liveTranslationInvalid?: boolean;
   /** Proven attempt sourceVersion, or null when the failure cannot be attributed. */
   readonly attemptSourceVersion?: string | null;
+  /**
+   * F.3.19 — semantic/validity retry is recorded, but this identity is not
+   * selectable until retryEligibleAt. It remains INVALID/STALE/MISSING work.
+   * This is not BLOCKED and not a Gate E cooldown.
+   */
+  readonly semanticRetryDeferred?: boolean;
+  readonly semanticRetryEligibleAt?: string | null;
 };
 
 export type PublicLocalizationResidualWithPreflight = {
@@ -138,6 +161,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   let presentationValid = false;
   let liveSourceVersion: string | null = null;
   let sourceLanguage: LanguageCode | null = null;
+  let sourceFields: Record<string, string> | null = null;
 
   try {
     const source = await loadTranslatableSource({
@@ -148,6 +172,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       sourceResolvable = true;
       sourceLanguage = source.sourceLanguage;
       liveSourceVersion = source.sourceVersion;
+      sourceFields = source.fields;
       const presentation = fieldsAsPublicPresentation(source.fields);
       collectAutoTranslatableNodes(presentation);
       fingerprintPublicPresentation(presentation);
@@ -180,6 +205,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
 
   let currentTranslationAbsent = true;
   let liveTranslationStale = false;
+  let liveTranslationInvalid = false;
   if (liveSourceVersion && liveSourceVersion !== "unloaded") {
     const row = await findContentTranslation({
       sourceKind: item.sourceKind,
@@ -188,7 +214,42 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       targetLanguage: item.targetLanguage,
     });
     if (row && row.freshness === "current" && row.stale !== true) {
-      currentTranslationAbsent = false;
+      let concepts: Awaited<ReturnType<typeof loadPublishedTerminologyConcepts>> = [];
+      try {
+        concepts = await loadPublishedTerminologyConcepts();
+      } catch {
+        concepts = [];
+      }
+      const validity = classifyContentTranslationForReconciliation({
+        translation: row,
+        liveSourceVersion,
+        originalFields: sourceFields,
+        concepts,
+        attemptedCurrentInputFailure: peek.failureMetadata
+          ? {
+              failureReasonCode: peek.failureMetadata.failureReasonCode,
+              sourceVersion: peek.failureMetadata.sourceVersion,
+              localizationInputVersion: peek.failureMetadata.localizationInputVersion,
+              targetLocale: item.targetLanguage,
+              localeFailures: peek.failureMetadata.localeFailures,
+            }
+          : null,
+      });
+      if (validity.presentationEligible && validity.reconciliationState === "READY") {
+        currentTranslationAbsent = false;
+      } else if (validity.reconciliationState === "INVALID") {
+        // Structural or placeholder invalidity remains reconciliation work.
+        // Terminology-quality diagnostics do not use this branch.
+        liveTranslationInvalid = true;
+        currentTranslationAbsent = true;
+      } else if (validity.reconciliationState === "STALE") {
+        liveTranslationStale = true;
+        currentTranslationAbsent = true;
+      } else if (validity.workRemaining) {
+        currentTranslationAbsent = true;
+      } else {
+        currentTranslationAbsent = false;
+      }
     } else if (row && (row.stale === true || row.freshness === "stale")) {
       liveTranslationStale = true;
     }
@@ -214,12 +275,45 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     failureClass = legacy.failureClass;
   }
 
+  let liveLocalizationInputVersion: string | null = null;
+  const recordedInput = peek.failureMetadata?.localizationInputVersion ?? null;
+  if (recordedInput && liveSourceVersion && sourceFields) {
+    try {
+      const concepts = await loadPublishedTerminologyConcepts();
+      liveLocalizationInputVersion = buildLocalizationInputVersionFromConcepts({
+        sourceVersion: liveSourceVersion,
+        targetLocale: item.targetLanguage,
+        concepts,
+        sourceText: collectSourceTextLeaves(sourceFields),
+      }).localizationInputVersion;
+    } catch {
+      liveLocalizationInputVersion = null;
+    }
+  }
+  const failedSourceVersion = peek.failureMetadata?.sourceVersion ?? attemptSourceVersion;
+  const sameVersionRetryDecision = decideSameVersionWarmFailureRetry({
+    failureClass,
+    failureReasonCode,
+    retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
+    liveSourceVersion,
+    failedSourceVersion,
+    liveLocalizationInputVersion,
+    failedLocalizationInputVersion: recordedInput,
+  });
+
   let architectureRetryBasis: ContentTranslationArchitectureRetryBasis | null = null;
   let ready = false;
   let readyState: PublicLocalizationRetryPreflight["readyState"] = "BLOCKED";
   let blockReason: string | null = null;
 
-  if (!currentTranslationAbsent) {
+  if (liveTranslationInvalid) {
+    // Gate C — INVALID presentation-ineligible CURRENT is normal reconciliation work.
+    architectureRetryBasis =
+      CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+    readyState = "INVALID_PLACEHOLDER";
+    ready = true;
+    blockReason = null;
+  } else if (!currentTranslationAbsent) {
     readyState = "CURRENT";
     blockReason = "CURRENT translation already exists for live sourceVersion.";
   } else if (!activeWorkAbsent) {
@@ -251,8 +345,20 @@ export async function buildPublicLocalizationRetryPreflight(input: {
         failureClass,
         failureReasonCode,
         retryabilityHint: peek.failureMetadata?.retryabilityHint ?? null,
+        liveSourceVersion,
+        failedSourceVersion,
+        liveLocalizationInputVersion,
+        failedLocalizationInputVersion: recordedInput,
       })
     ) {
+      architectureRetryBasis =
+        CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+      ready = true;
+      readyState = "MISSING_READY_FOR_WARM";
+      blockReason = null;
+    } else if (failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION") {
+      // Unchanged source and terminology input stay residual work for coverage.
+      // Provider selection is suppressed after this decision.
       architectureRetryBasis =
         CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
       ready = true;
@@ -285,6 +391,70 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     blockReason = null;
   }
 
+  let semanticRetryDeferred = false;
+  let semanticRetryEligibleAt: string | null = null;
+  let genuineFailureCount = 0;
+  const currentSourcePresentationEligible =
+    !currentTranslationAbsent && !liveTranslationInvalid && !liveTranslationStale;
+  if (
+    ready &&
+    !currentSourcePresentationEligible &&
+    liveSourceVersion &&
+    liveLocalizationInputVersion
+  ) {
+    const attempts = await listContentTranslationWarmAttempts({
+      sourceKind: item.sourceKind,
+      sourceRecordId: item.sourceRecordId,
+      limit: 50,
+    });
+    genuineFailureCount = countGenuineMissingTranslationFailures(
+      attempts.map((attempt) => ({
+        failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+        failureClass: attempt.failureMetadata?.failureClass ?? null,
+        sourceVersion: attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null,
+        localizationInputVersion: attempt.failureMetadata?.localizationInputVersion ?? null,
+        targetLocale:
+          typeof attempt.failureMetadata?.targetLocale === "string"
+            ? attempt.failureMetadata.targetLocale
+            : null,
+        localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+      })),
+      {
+        liveSourceVersion,
+        liveLocalizationInputVersion,
+        targetLocale: item.targetLanguage,
+      },
+    );
+  }
+  if (ready) {
+    semanticRetryDeferred = shouldDeferResidualSelection({
+      ready,
+      metadata: peek.failureMetadata,
+      liveSourceVersion,
+      liveLocalizationInputVersion,
+    });
+    if (
+      failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION" &&
+      sameVersionRetryDecision === "terminal"
+    ) {
+      const terminologySelection = selectTerminologyMissingTranslationRetry({
+        currentSourcePresentationEligible,
+        liveSourceVersion,
+        failedSourceVersion,
+        liveLocalizationInputVersion,
+        failedLocalizationInputVersion: recordedInput,
+        retryEligibleAt: peek.failureMetadata?.retryEligibleAt ?? null,
+        genuineFailureCount,
+      });
+      semanticRetryDeferred = terminologySelection !== "due";
+    } else if (genuineFailureCount >= SEMANTIC_RESIDUAL_DEFER_STREAK_CAP) {
+      semanticRetryDeferred = true;
+    }
+    if (semanticRetryDeferred) {
+      semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
+    }
+  }
+
   return {
     sourceResolvable,
     presentationValid,
@@ -298,7 +468,10 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     readyState,
     blockReason,
     liveTranslationStale,
+    liveTranslationInvalid,
     attemptSourceVersion,
+    semanticRetryDeferred,
+    semanticRetryEligibleAt,
   };
 }
 
@@ -454,7 +627,7 @@ export function selectReadyPresentationsForResidualRetry(
   const byPresentation = new Map<string, ResidualRetryPresentationSchedule>();
 
   for (const row of selection.ready) {
-    if (!row.retryPreflight.ready) {
+    if (!row.retryPreflight.ready || row.retryPreflight.semanticRetryDeferred === true) {
       continue;
     }
     const key = `${row.presentationIdentity.sourceKind}::${row.presentationIdentity.sourceRecordId}`;
@@ -485,13 +658,9 @@ export function selectReadyPresentationsForResidualRetry(
     });
   }
 
-  return [...byPresentation.values()].sort((a, b) => {
-    const kind = a.sourceKind.localeCompare(b.sourceKind);
-    if (kind !== 0) {
-      return kind;
-    }
-    return a.sourceRecordId.localeCompare(b.sourceRecordId);
-  });
+  // Preserve caller order. Residual retry already sorts INVALID → STALE → MISSING
+  // and drops identities whose semantic defer has not elapsed.
+  return [...byPresentation.values()];
 }
 
 /**

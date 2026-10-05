@@ -130,8 +130,8 @@ describe("Pack 08I.7 — Blog categories / cards / authors", () => {
     assert.match(chart, /resolveBlogCategoryDisplayName/);
     assert.match(article, /resolveBlogCategoryDisplayName/);
 
-    assert.match(latest, /resolveBlogPostPresentation/);
-    assert.match(authors, /resolveBlogPostPresentation/);
+    assert.match(latest, /useHuPersistedOrdinaryFields/);
+    assert.match(authors, /useHuPersistedOrdinaryFields/);
     assert.match(authors, /entry\.author\.displayName/);
     assert.match(latest, /titleForDisplay/);
   });

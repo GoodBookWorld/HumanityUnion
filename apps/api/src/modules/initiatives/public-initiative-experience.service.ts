@@ -45,7 +45,6 @@ import { listPublicInitiativeImprovementProposals } from "../initiative-improvem
 import { listPublicInitiativePublicImpactsForInitiative } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getPublicInitiativeVersionHistory } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
-import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
 import { getPackageByInitiativeId as getOfficialResponsePackageByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
 import { listResponsesByInitiativeId as listLifecycleOfficialResponsesByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
@@ -60,7 +59,6 @@ import { resolvePublicGeography } from "../../shared/format-public-geography.js"
 import { getKnownInitiativeCommunity } from "./initiative-communities.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 import { toWorldInitiativeCardProjection } from "./initiative-world-initiatives.projection.js";
-import { findRelatedInitiativesForInitiative } from "../community-intelligence/index.js";
 import { listInitiatives } from "./initiative.store.js";
 import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
 import { buildCollectiveParticipationJourney } from "../collective-participation-journey/collective-participation-journey.service.js";
@@ -720,7 +718,6 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   viewerParticipantId?: string | null;
 }): Promise<PublicInitiativeExperienceProjection> {
   const { initiative } = input;
-  createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
 
   if (input.viewerKey) {
     // Fire-and-forget by design (view recording must never delay the
@@ -857,9 +854,9 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     revisionHistory: versionHistory,
     relatedCivicRecords: buildRelatedCivicRecords(initiative.initiativeId),
     latestInitiatives: selectLatestInitiatives(initiative),
-    relatedInitiatives: (
-      await findRelatedInitiativesForInitiative(initiative.initiativeId)
-    ).items,
+    // Related discovery is served by the public community-intelligence route
+    // and must not block this primary experience response.
+    relatedInitiatives: [],
     discussion,
     optionalStageDiagnostics,
     lifecycleProfile: resolveInitiativeLifecycleProfile(initiative.lifecycleProfile),

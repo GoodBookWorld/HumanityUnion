@@ -101,8 +101,8 @@ export type LanguageActivationNoOwnerKindId =
   (typeof LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS)[number];
 
 /**
- * Closure 08 / Reset 01 — PLP-owned Media entity types for public /media.
- * Includes public_news carousel cards (title+summary MACHINE).
+ * Closure 08 / STEP 15D.14.F.2 — PLP-owned Media entity types for public /media.
+ * Humanity Union machine prose only. public_news is SOURCE_ORIGINAL.
  */
 export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_editorial",
@@ -110,8 +110,53 @@ export const LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES = [
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
+] as const;
+
+/**
+ * STEP 15D.14.B.2.1 — Participant-authored public profile prose.
+ * Biography / free-text skills are SOURCE_ORIGINAL — not a translation owner.
+ * Listed for ownership truthfulness; never counted as localization work.
+ */
+export const LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES = [
+  "participant_public",
+] as const;
+
+/**
+ * Entities with no machine-localization obligation.
+ * Historical queue rows do not override this predicate.
+ */
+export const LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES = [
+  ...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
   "public_news",
 ] as const;
+
+export type LanguageLocalizationSourceOriginalEntityType =
+  (typeof LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES)[number];
+
+export function isLocalizationSourceOriginalEntityType(entityType: string): boolean {
+  return (LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES as readonly string[]).includes(
+    entityType,
+  );
+}
+
+export function isAuthoritativeMachineLocalizedPlpEntityType(entityType: string): boolean {
+  return (LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES as readonly string[]).includes(
+    entityType,
+  );
+}
+
+export type LanguageActivationSourceOriginalParticipantEntityType =
+  (typeof LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES)[number];
+
+/**
+ * @deprecated B.2.1 — translation obligation retired; use
+ * LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES.
+ */
+export const LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES =
+  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES;
+
+export type LanguageActivationPlpOwnedParticipantEntityType =
+  LanguageActivationSourceOriginalParticipantEntityType;
 
 export type LanguageActivationPlpOwnedMediaEntityType =
   (typeof LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES)[number];
@@ -126,8 +171,22 @@ export type LanguageLocalizationCountBucket = {
   readonly current: number;
   readonly missing: number;
   readonly stale: number;
+  /**
+   * Gate B — identity-current but not presentation-eligible (e.g. deterministic
+   * placeholder). Counts as reconciliation work, never as localized CURRENT.
+   */
+  readonly invalid: number;
   readonly failed: number;
   readonly pending: number;
+  /**
+   * Translation is already queued or processing. Not residual backfill debt
+   * and not "not actionable".
+   */
+  readonly activeWork?: number;
+  /**
+   * Source cannot currently be translated. Not actionable backfill work.
+   */
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
 };
 
@@ -146,6 +205,12 @@ export type LanguageWebUiReadinessSlice = {
   readonly emptyKeyCount: number;
   readonly englishFallbackKeyCount: number;
   readonly sampleMissingPaths: readonly string[];
+  /**
+   * STEP 15D.14.F.2 — same structural contract as publication
+   * (`validateWebUiMessageTreeAgainstEnglish`). Missing keys can be 0
+   * while this count is still greater than 0.
+   */
+  readonly structuralInvalidCount?: number;
 };
 
 export type LanguageControlledVocabularyReadinessSlice = {
@@ -197,8 +262,12 @@ export type PwaCivicCoverageScalars = {
   readonly current: number;
   readonly missing: number;
   readonly stale: number;
+  /** Gate B — identity-current placeholders; reconciliation work, not coverage. */
+  readonly invalid?: number;
   readonly failed: number;
   readonly pending: number;
+  readonly activeWork?: number;
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
   readonly measuredKindCount: number;
   readonly unmeasuredKindCount: number;
@@ -249,6 +318,11 @@ export type LanguageLocalizationReadinessReport = {
   readonly pwaCivic: LanguagePwaCivicReadinessSlice;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
+  /**
+   * STEP 15D.14.B.2.1 — participant_public is SOURCE_ORIGINAL for biography /
+   * free-text skills. Optional legacy field; never localization work.
+   */
+  readonly plpParticipant?: LanguageLocalizationCountBucket;
   readonly kindRows: readonly LanguageLocalizationKindStatusRow[];
   readonly seoReady: boolean;
   readonly searchLocalizationReady: boolean;
@@ -301,10 +375,21 @@ export function emptyLanguageLocalizationCountBucket(): LanguageLocalizationCoun
     current: 0,
     missing: 0,
     stale: 0,
+    invalid: 0,
     failed: 0,
     pending: 0,
+    activeWork: 0,
+    preflightBlocked: 0,
     workItemsRequired: 0,
   };
+}
+
+function bucketActiveWork(bucket: LanguageLocalizationCountBucket): number {
+  return bucket.activeWork ?? 0;
+}
+
+function bucketPreflightBlocked(bucket: LanguageLocalizationCountBucket): number {
+  return bucket.preflightBlocked ?? 0;
 }
 
 /**
@@ -320,6 +405,11 @@ export function deriveLanguageLocalizationReadinessState(input: {
   readonly controlledVocabularyPresentationReady: boolean;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
+  /**
+   * False until canonical initial revisions for public initiatives exist.
+   * Omitted means already converged (legacy callers and non-Mongo runtimes).
+   */
+  readonly revisionInventoryReady?: boolean;
 }): LanguageLocalizationReadinessState {
   if (!input.enabled || !input.contentTranslationEnabled) {
     return "DISABLED";
@@ -337,30 +427,62 @@ export function deriveLanguageLocalizationReadinessState(input: {
   const work =
     input.ct.workItemsRequired + input.plpMedia.workItemsRequired;
   const pending = input.ct.pending + input.plpMedia.pending;
+  const activeWork = bucketActiveWork(input.ct) + bucketActiveWork(input.plpMedia);
+  const preflightBlocked =
+    bucketPreflightBlocked(input.ct) + bucketPreflightBlocked(input.plpMedia);
   const failed = input.ct.failed + input.plpMedia.failed;
   const current = input.ct.current + input.plpMedia.current;
   const incomplete =
     input.ct.missing +
     input.ct.stale +
+    input.ct.invalid +
     input.plpMedia.missing +
-    input.plpMedia.stale;
+    input.plpMedia.stale +
+    input.plpMedia.invalid;
 
-  if (pending > 0 && work > 0) {
+  const state = deriveMeasuredLocalizationReadiness({
+    work,
+    pending,
+    activeWork,
+    preflightBlocked,
+    failed,
+    current,
+    incomplete,
+  });
+  if (state === "READY" && input.revisionInventoryReady === false) {
+    return "DATA_NOT_READY";
+  }
+  return state;
+}
+
+function deriveMeasuredLocalizationReadiness(input: {
+  readonly work: number;
+  readonly pending: number;
+  readonly activeWork: number;
+  readonly preflightBlocked: number;
+  readonly failed: number;
+  readonly current: number;
+  readonly incomplete: number;
+}): LanguageLocalizationReadinessState {
+  if (input.activeWork > 0 || (input.pending > 0 && input.work > 0)) {
     return "BACKFILL_IN_PROGRESS";
   }
-  if (failed > 0 && current > 0 && incomplete === 0) {
+  if (input.failed > 0 && input.current > 0 && input.incomplete === 0) {
     return "DEGRADED";
   }
-  if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
+  if (input.failed > 0 && input.current === 0 && input.incomplete === 0 && input.work === 0) {
     return "FAILED";
   }
-  if (incomplete > 0 || work > 0) {
+  if (input.incomplete > 0 || input.work > 0) {
     return "BACKFILL_REQUIRED";
   }
-  if (pending > 0) {
-    return "BACKFILL_REQUIRED";
+  if (input.preflightBlocked > 0) {
+    return "DEGRADED";
   }
-  if (current > 0 || (work === 0 && incomplete === 0 && failed === 0)) {
+  if (
+    input.current > 0 ||
+    (input.work === 0 && input.incomplete === 0 && input.failed === 0 && input.pending === 0)
+  ) {
     return "READY";
   }
   return "CONFIGURED";
@@ -380,6 +502,7 @@ export function derivePwaCivicReadinessState(input: {
   readonly contentTranslationEnabled: boolean;
   readonly pwaPersistedReadingEnabled: boolean;
   readonly coverage: PwaCivicCoverageScalars;
+  readonly revisionInventoryReady?: boolean;
 }): PwaCivicReadinessStatus {
   if (
     !input.enabled ||
@@ -390,38 +513,38 @@ export function derivePwaCivicReadinessState(input: {
   }
 
   const { coverage } = input;
-  const incomplete = coverage.missing + coverage.stale;
+  const incomplete =
+    coverage.missing + coverage.stale + (coverage.invalid ?? 0);
   const pending = coverage.pending;
+  const activeWork = coverage.activeWork ?? 0;
+  const preflightBlocked = coverage.preflightBlocked ?? 0;
   const failed = coverage.failed;
   const current = coverage.current;
   const work = coverage.workItemsRequired;
 
-  if (pending > 0 && work > 0) {
-    return "BACKFILL_IN_PROGRESS";
+  let status: PwaCivicReadinessStatus;
+  if (activeWork > 0 || (pending > 0 && work > 0)) {
+    status = "BACKFILL_IN_PROGRESS";
+  } else if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
+    status = "FAILED";
+  } else if (coverage.coverageMeasurement === "partial_unmeasured" || coverage.unmeasuredKindCount > 0) {
+    // Honest: unmeasured kinds in scope must not become READY.
+    status = current > 0 && incomplete === 0 ? "DEGRADED" : "BACKFILL_REQUIRED";
+  } else if (failed > 0 && current > 0 && incomplete === 0) {
+    status = "DEGRADED";
+  } else if (incomplete > 0 || work > 0) {
+    status = current > 0 && incomplete > 0 ? "DEGRADED" : "BACKFILL_REQUIRED";
+  } else if (preflightBlocked > 0) {
+    status = "DEGRADED";
+  } else if (incomplete === 0 && failed === 0 && pending === 0 && activeWork === 0) {
+    status = "READY";
+  } else {
+    status = "DEGRADED";
   }
-  if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
-    return "FAILED";
-  }
-  // Honest: unmeasured kinds in scope must not become READY.
-  if (coverage.coverageMeasurement === "partial_unmeasured" || coverage.unmeasuredKindCount > 0) {
-    if (current > 0 && incomplete === 0) {
-      return "DEGRADED";
-    }
-    return "BACKFILL_REQUIRED";
-  }
-  if (failed > 0 && current > 0 && incomplete === 0) {
+  if (status === "READY" && input.revisionInventoryReady === false) {
     return "DEGRADED";
   }
-  if (incomplete > 0 || work > 0) {
-    if (current > 0 && incomplete > 0) {
-      return "DEGRADED";
-    }
-    return "BACKFILL_REQUIRED";
-  }
-  if (incomplete === 0 && failed === 0 && pending === 0) {
-    return "READY";
-  }
-  return "BACKFILL_REQUIRED";
+  return status;
 }
 
 export function emptyPwaCivicCoverageScalars(): PwaCivicCoverageScalars {
@@ -439,12 +562,14 @@ export function buildLanguagePwaCivicReadinessSlice(input: {
   readonly enabled: boolean;
   readonly contentTranslationEnabled: boolean;
   readonly note?: string | null;
+  readonly revisionInventoryReady?: boolean;
 }): LanguagePwaCivicReadinessSlice {
   const pwaCivicReadinessStatus = derivePwaCivicReadinessState({
     enabled: input.enabled,
     contentTranslationEnabled: input.contentTranslationEnabled,
     pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,
     coverage: input.coverage,
+    revisionInventoryReady: input.revisionInventoryReady,
   });
   return {
     pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,

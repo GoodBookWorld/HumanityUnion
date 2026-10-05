@@ -10,6 +10,7 @@ import {
   MEDIA_PLP_ENTITY_TYPE,
   MEDIA_PLP_EDITORIAL_ENTITY_ID,
   mediaPlpEditorialEntityId,
+  normalizeLanguageRegistryLocaleKey,
   type LanguageCode,
 } from "@hu/types";
 
@@ -127,6 +128,9 @@ export async function classifyMediaEditorialLocalizationForLocale(
   locale: LanguageCode | string,
 ): Promise<MediaHuLocalizationIntegrityStatus> {
   const report = await runMediaHuOwnedLocalizationIntegrityCheck();
-  const row = report.rows.find((entry) => entry.locale === locale);
+  const key = normalizeLanguageRegistryLocaleKey(String(locale));
+  const row = report.rows.find(
+    (entry) => normalizeLanguageRegistryLocaleKey(entry.locale) === key,
+  );
   return row?.status ?? "MISSING";
 }

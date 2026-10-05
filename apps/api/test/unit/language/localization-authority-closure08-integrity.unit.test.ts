@@ -120,7 +120,7 @@ function readyReadiness(
       pwaPersistedReadingReady: false,
       pwaCivicReadinessStatus: "DISABLED",
       coverage: {
-        current: 0, missing: 0, stale: 0, failed: 0, pending: 0, workItemsRequired: 0,
+        current: 0, missing: 0, stale: 0, invalid: 0, failed: 0, pending: 0, workItemsRequired: 0,
         measuredKindCount: 0, unmeasuredKindCount: 0, coverageMeasurement: "partial_unmeasured",
       },
       note: null,
@@ -330,7 +330,7 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
       report.artifacts.map((row) => [row.kindId, row.state]),
     );
     assert.equal(states.initiative, "CURRENT");
-    assert.equal(states.public_news, "CURRENT");
+    assert.equal(states.public_news, "PROTECTED");
     assert.equal(states.knowledge_article, "NO_OWNER");
     assert.equal(report.blocking, false);
   });
@@ -372,6 +372,9 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
         initiative: true,
         collaborativeAnalysis: true,
         collectiveDecision: false,
+        decisionSession: false,
+        implementationCommitment: false,
+        implementationTracking: false,
       },
     );
     const script = readApi("scripts/check-localization-integrity.ts");
@@ -466,7 +469,7 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
     assert.equal(report.blocking, false);
   });
 
-  it("6. Media carousel required discrete PLP types include public_news", async () => {
+  it("6. Media carousel required discrete PLP types exclude source-original public_news", async () => {
     assert.deepEqual(
       [...LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES],
       [
@@ -475,7 +478,6 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
         "civic_media_trusted",
         "civic_media_fact_check",
         "civic_media_propaganda",
-        "public_news",
       ],
     );
     const plan = await planLanguageHistoricalBackfill({
@@ -516,13 +518,12 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
       },
     });
     assert.ok(!plan.excluded.some((row) => row.kindId === "civic_media_principle"));
-    assert.ok(!plan.excluded.some((row) => row.kindId === "public_news"));
+    assert.equal(plan.items.some((item) => item.kindId === "public_news"), false);
     for (const kindId of [
       "civic_media_principle",
       "civic_media_trusted",
       "civic_media_fact_check",
       "civic_media_propaganda",
-      "public_news",
     ]) {
       const row = plan.items.find((item) => item.kindId === kindId);
       assert.ok(row);

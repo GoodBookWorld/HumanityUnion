@@ -15,7 +15,7 @@ export type LocalizationProgress = {
   readonly failed: boolean;
   /**
    * True while orchestration is still active (running / preparing /
-   * provider_cooldown), including automatic cooldown resume.
+   * provider_cooldown / structure_retry), including automatic resume.
    */
   readonly activelyProgressing: boolean;
   /** Absolute ISO retry time while cooling down (Admin formats locally). */
@@ -30,18 +30,27 @@ type Count = {
 type ProgressSource = {
   readonly jobStatus: LanguageActivationJobStatus | null;
   readonly brandStatus: string | null;
+  readonly brandNextAttemptAt: string | null;
+  readonly brandLastTransientFailure: string | null;
   readonly terminologyStatus: string | null;
+  readonly terminologyNextAttemptAt: string | null;
+  readonly terminologyLastTransientFailure: string | null;
   readonly webUi: LanguageActivationWebUiDomainProgress | null;
   readonly cvChecked: number;
   readonly cvMissing: number;
   readonly cvReady: boolean;
   readonly ctCurrent: number;
   readonly ctRemaining: number;
+  readonly ctActiveWork?: number;
+  readonly ctPreflightBlocked?: number;
   readonly plpCurrent: number;
   readonly plpRemaining: number;
+  readonly plpActiveWork?: number;
+  readonly plpPreflightBlocked?: number;
   readonly publishedRequired: number;
   readonly publishedMissing: number;
   readonly publishedDataReady: boolean;
+  readonly readinessState: string | null;
 };
 
 function units(done: number, total: number): Count {
@@ -78,6 +87,7 @@ export function webUiLocalizationUnits(input: {
     phase === "quality" ||
     phase === "validating" ||
     phase === "publishing" ||
+    phase === "structure_retry" ||
     webUi?.status === "in_progress";
   if (
     webUi &&
@@ -112,12 +122,24 @@ function coverage(source: ProgressSource): Count {
     publishedMissing: source.publishedMissing,
     publishedDataReady: source.publishedDataReady,
   });
-  const ct = units(source.ctCurrent, source.ctCurrent + source.ctRemaining);
-  const plp = units(source.plpCurrent, source.plpCurrent + source.plpRemaining);
+  const ct = units(
+    source.ctCurrent,
+    source.ctCurrent +
+      source.ctRemaining +
+      (source.ctActiveWork ?? 0) +
+      (source.ctPreflightBlocked ?? 0),
+  );
+  const plp = units(
+    source.plpCurrent,
+    source.plpCurrent +
+      source.plpRemaining +
+      (source.plpActiveWork ?? 0) +
+      (source.plpPreflightBlocked ?? 0),
+  );
   return add(add(cv, web), add(ct, plp));
 }
 
-function phaseLabel(source: ProgressSource, percent: number): {
+function phaseLabel(source: ProgressSource): {
   label: string;
   failed: boolean;
   nextAttemptAt: string | null;
@@ -146,6 +168,43 @@ function phaseLabel(source: ProgressSource, percent: number): {
       nextAttemptAt: source.webUi.nextAttemptAt ?? null,
     };
   }
+  if (source.webUi?.preparationPhase === "structure_blocked") {
+    return {
+      label: "Automatic translation blocked by a structural defect",
+      failed: false,
+      nextAttemptAt: null,
+    };
+  }
+  if (source.webUi?.preparationPhase === "structure_retry") {
+    return {
+      label: "Automatic retry scheduled",
+      failed: false,
+      nextAttemptAt: source.webUi.nextAttemptAt ?? null,
+    };
+  }
+  const ownerCooldown =
+    (source.brandStatus === "in_progress" && source.brandNextAttemptAt) ||
+    (source.terminologyStatus === "in_progress" && source.terminologyNextAttemptAt);
+  if (ownerCooldown) {
+    const kind =
+      source.brandNextAttemptAt != null
+        ? source.brandLastTransientFailure
+        : source.terminologyLastTransientFailure;
+    let label = "Waiting for translation provider — automatic retry scheduled";
+    if (kind === "rate_limited") {
+      label = "Waiting for translation provider — rate limit";
+    } else if (kind === "unavailable") {
+      label = "Translation provider temporarily unavailable";
+    } else if (kind === "timeout") {
+      label = "Translation provider timed out — retry scheduled";
+    }
+    return {
+      label,
+      failed: false,
+      nextAttemptAt:
+        source.brandNextAttemptAt ?? source.terminologyNextAttemptAt ?? null,
+    };
+  }
   if (source.brandStatus === "in_progress") {
     return { label: "Preparing Brand…", failed: false, nextAttemptAt: null };
   }
@@ -154,7 +213,11 @@ function phaseLabel(source: ProgressSource, percent: number): {
   }
   const phase = source.webUi?.preparationPhase ?? null;
   if (phase === "quality") {
-    return { label: "Checking translation quality…", failed: false, nextAttemptAt: null };
+    return {
+      label: "Checking translation quality…",
+      failed: false,
+      nextAttemptAt: source.webUi?.nextAttemptAt ?? null,
+    };
   }
   if (phase === "validating") {
     return { label: "Validating public interface…", failed: false, nextAttemptAt: null };
@@ -171,7 +234,7 @@ function phaseLabel(source: ProgressSource, percent: number): {
           ? `Translating public interface · ${completed} / ${total} batches`
           : "Translating public interface",
       failed: false,
-      nextAttemptAt: null,
+      nextAttemptAt: source.webUi?.nextAttemptAt ?? null,
     };
   }
   const civicRemaining = source.ctRemaining + source.plpRemaining;
@@ -182,7 +245,7 @@ function phaseLabel(source: ProgressSource, percent: number): {
   ) {
     return { label: "Finishing civic content…", failed: false, nextAttemptAt: null };
   }
-  if (percent >= 100) {
+  if (source.readinessState === "READY") {
     return { label: "Ready", failed: false, nextAttemptAt: null };
   }
   return { label: "Localization", failed: false, nextAttemptAt: null };
@@ -200,6 +263,12 @@ function isLocalizationActivelyProgressing(
     return false;
   }
   if (source.webUi?.preparationPhase === "provider_cooldown") {
+    return true;
+  }
+  if (source.webUi?.preparationPhase === "structure_blocked") {
+    return false;
+  }
+  if (source.webUi?.preparationPhase === "structure_retry") {
     return true;
   }
   if (source.brandStatus === "in_progress" || source.terminologyStatus === "in_progress") {
@@ -225,9 +294,10 @@ function isLocalizationActivelyProgressing(
 
 export function deriveLocalizationProgress(source: ProgressSource): LocalizationProgress {
   const covered = coverage(source);
-  const percent =
-    covered.total <= 0 ? 100 : Math.round((100 * covered.done) / covered.total);
-  const phase = phaseLabel(source, percent);
+  const rounded =
+    covered.total <= 0 ? 0 : Math.round((100 * covered.done) / covered.total);
+  const percent = source.readinessState === "READY" ? 100 : Math.min(99, rounded);
+  const phase = phaseLabel(source);
   return {
     percent,
     phaseLabel: phase.label,
@@ -260,21 +330,31 @@ function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
   return {
     jobStatus: job?.status ?? null,
     brandStatus: job?.domains.brand.status ?? null,
+    brandNextAttemptAt: job?.domains.brand.nextAttemptAt ?? null,
+    brandLastTransientFailure: job?.domains.brand.lastTransientFailure ?? null,
     terminologyStatus: job?.domains.terminology.status ?? null,
+    terminologyNextAttemptAt: job?.domains.terminology.nextAttemptAt ?? null,
+    terminologyLastTransientFailure:
+      job?.domains.terminology.lastTransientFailure ?? null,
     webUi: job?.domains.webUi ?? null,
-    cvChecked: cv?.conceptsChecked ?? readiness.controlledVocabulary.conceptsChecked,
-    cvMissing: cv?.conceptsMissing ?? readiness.controlledVocabulary.conceptsMissingLocalizedLabel,
-    cvReady: cv?.presentationReady ?? readiness.controlledVocabulary.presentationReady,
-    ctCurrent: job?.domains.ct.current ?? readiness.ct.current,
-    ctRemaining: job?.domains.ct.remainingWorkItems ?? readiness.ct.workItemsRequired,
-    plpCurrent: job?.domains.plp.current ?? readiness.plpMedia.current,
-    plpRemaining: job?.domains.plp.remainingWorkItems ?? readiness.plpMedia.workItemsRequired,
+    cvChecked: readiness.controlledVocabulary.conceptsChecked,
+    cvMissing: readiness.controlledVocabulary.conceptsMissingLocalizedLabel,
+    cvReady: readiness.controlledVocabulary.presentationReady,
+    ctCurrent: readiness.ct.current,
+    ctRemaining: readiness.ct.workItemsRequired,
+    ctActiveWork: readiness.ct.activeWork ?? 0,
+    ctPreflightBlocked: readiness.ct.preflightBlocked ?? 0,
+    plpCurrent: readiness.plpMedia.current,
+    plpRemaining: readiness.plpMedia.workItemsRequired,
+    plpActiveWork: readiness.plpMedia.activeWork ?? 0,
+    plpPreflightBlocked: readiness.plpMedia.preflightBlocked ?? 0,
     publishedRequired:
       readiness.webUi.requiredKeyCount + readiness.participantWebUi.requiredKeyCount,
     publishedMissing:
       readiness.webUi.missingKeyCount + readiness.participantWebUi.missingKeyCount,
     publishedDataReady:
       readiness.webUi.dataReady && readiness.participantWebUi.dataReady,
+    readinessState: readiness.state,
   };
 }
 
@@ -290,20 +370,29 @@ export function localizationProgressFromReadiness(
   return deriveLocalizationProgress({
     jobStatus: null,
     brandStatus: null,
+    brandNextAttemptAt: null,
+    brandLastTransientFailure: null,
     terminologyStatus: null,
+    terminologyNextAttemptAt: null,
+    terminologyLastTransientFailure: null,
     webUi: null,
     cvChecked: report.controlledVocabulary.conceptsChecked,
     cvMissing: report.controlledVocabulary.conceptsMissingLocalizedLabel,
     cvReady: report.controlledVocabulary.presentationReady,
     ctCurrent: report.ct.current,
     ctRemaining: report.ct.workItemsRequired,
+    ctActiveWork: report.ct.activeWork ?? 0,
+    ctPreflightBlocked: report.ct.preflightBlocked ?? 0,
     plpCurrent: report.plpMedia.current,
     plpRemaining: report.plpMedia.workItemsRequired,
+    plpActiveWork: report.plpMedia.activeWork ?? 0,
+    plpPreflightBlocked: report.plpMedia.preflightBlocked ?? 0,
     publishedRequired:
       report.webUi.requiredKeyCount + report.participantWebUi.requiredKeyCount,
     publishedMissing:
       report.webUi.missingKeyCount + report.participantWebUi.missingKeyCount,
     publishedDataReady:
       report.webUi.dataReady && report.participantWebUi.dataReady,
+    readinessState: report.state,
   });
 }

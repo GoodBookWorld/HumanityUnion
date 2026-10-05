@@ -69,6 +69,28 @@ const initialState = loadState();
 const trackings = initialState.trackings;
 const updates = initialState.updates;
 
+/**
+ * Re-bind Implementation Tracking records and updates from the Mongo adapter
+ * cache after hydrate. Module import copies the cache once; that copy stays
+ * empty if it ran first. Does not save, so a rebind cannot create or rewrite
+ * durable rows.
+ */
+export function syncInitiativeImplementationTrackingStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const reloaded = loadState();
+  trackings.clear();
+  for (const [trackingId, tracking] of reloaded.trackings) {
+    trackings.set(trackingId, tracking);
+  }
+  updates.clear();
+  for (const [updateId, update] of reloaded.updates) {
+    updates.set(updateId, update);
+  }
+}
+
 export function getTrackingById(trackingId: string): InitiativeImplementationTracking | null {
   const tracking = trackings.get(trackingId);
 

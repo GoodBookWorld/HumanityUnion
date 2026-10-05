@@ -40,18 +40,20 @@ import {
 import { applyParticipantPublicPlpToProjection } from "../language/published-localized-presentation/universal/adapters/apply-participant-public-plp.js";
 import { enqueueParticipantPublicPlpBuilds } from "../language/published-localized-presentation/universal/adapters/enqueue-participant-public-plp.js";
 
+/**
+ * STEP 15D.14.B.2 — enqueue only when MACHINE_CONTENT would change.
+ * B.2.1 — participant_public has no MACHINE_CONTENT; enqueue is a no-op.
+ * Calls remain safe so profile mutations do not need special casing.
+ */
 function profileProseChanged(
   before: MemberProfile,
   after: MemberProfile,
 ): boolean {
   return (
     before.biography !== after.biography ||
-    before.organization !== after.organization ||
     JSON.stringify(before.skills) !== JSON.stringify(after.skills) ||
     before.profileVisibility !== after.profileVisibility ||
-    before.skillsVisibility !== after.skillsVisibility ||
-    before.showOrganization !== after.showOrganization ||
-    before.displayName !== after.displayName
+    before.skillsVisibility !== after.skillsVisibility
   );
 }
 

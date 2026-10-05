@@ -211,33 +211,42 @@ describe("Pack 08I.16 — bounded translation execution", () => {
     });
     setTranslationProviderForTests(provider);
 
-    const results = await Promise.allSettled([
-      getOrCreateContentTranslation({
-        sourceKind: "initiative",
-        sourceRecordId: okA.initiativeId,
-        targetLanguage: "uk",
-        generateIfMissing: true,
-        intent: "automatic_warm",
-      }),
-      getOrCreateContentTranslation({
-        sourceKind: "initiative",
-        sourceRecordId: fail.initiativeId,
-        targetLanguage: "uk",
-        generateIfMissing: true,
-        intent: "automatic_warm",
-      }),
-      getOrCreateContentTranslation({
-        sourceKind: "initiative",
-        sourceRecordId: okB.initiativeId,
-        targetLanguage: "uk",
-        generateIfMissing: true,
-        intent: "automatic_warm",
-      }),
-    ]);
+    const succeeded = await getOrCreateContentTranslation({
+      sourceKind: "initiative",
+      sourceRecordId: okA.initiativeId,
+      targetLanguage: "uk",
+      generateIfMissing: true,
+      intent: "automatic_warm",
+    });
+    assert.ok(succeeded);
 
-    assert.equal(results[0]?.status, "fulfilled");
-    assert.equal(results[1]?.status, "rejected");
-    assert.equal(results[2]?.status, "fulfilled");
+    await assert.rejects(
+      () =>
+        getOrCreateContentTranslation({
+          sourceKind: "initiative",
+          sourceRecordId: fail.initiativeId,
+          targetLanguage: "uk",
+          generateIfMissing: true,
+          intent: "automatic_warm",
+        }),
+      (error: unknown) => error instanceof TranslationProviderError && error.code === "unavailable",
+    );
+
+    await assert.rejects(
+      () =>
+        getOrCreateContentTranslation({
+          sourceKind: "initiative",
+          sourceRecordId: okB.initiativeId,
+          targetLanguage: "uk",
+          generateIfMissing: true,
+          intent: "automatic_warm",
+        }),
+      (error: unknown) =>
+        error instanceof TranslationProviderError &&
+        error.code === "rate_limited" &&
+        error.transport?.errorClass === "PROVIDER_COOLDOWN",
+    );
+    assert.equal(provider.callCount, 2);
     assert.ok(provider.peakInFlight <= 2);
   });
 
@@ -426,7 +435,7 @@ describe("Pack 08I.16 — bounded translation execution", () => {
 
   it("provider slot wraps getOrCreate generate path", () => {
     const service = readApi("src/modules/language/content-translation.service.ts");
-    assert.match(service, /withContentTranslationWorkerSlot/);
+    assert.match(service, /runLocalizationProviderRequest/);
     assert.match(service, /provider\.translate/);
   });
 

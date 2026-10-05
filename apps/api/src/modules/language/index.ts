@@ -77,6 +77,57 @@ export {
 } from "./resolve-translated-display.js";
 export type { ResolveTranslatedDisplayInput } from "./resolve-translated-display.js";
 export {
+  classifyContentTranslationValidity,
+  classifyContentTranslationForReconciliation,
+  hasDeterministicPlaceholderPayloadPattern,
+  hasRealLocalizationProvenance,
+  isDeterministicPlaceholderProvenance,
+  isKnownPlaceholderTranslation,
+  isPresentationEligibleTranslation,
+} from "./content-translation-validity.js";
+export type {
+  ContentTranslationReconciliationState,
+  ContentTranslationValidityClassification,
+} from "./content-translation-validity.js";
+export {
+  isProviderWorkAction,
+  planLocalizationReconciliationItem,
+  planSourceOriginalExclusion,
+  reconciliationActionForState,
+  reconciliationWorkPriority,
+  sortLocalizationReconciliationPlan,
+} from "./localization-reconciliation-planner.js";
+export type {
+  LocalizationReconciliationOwner,
+  LocalizationReconciliationPlanItem,
+  LocalizationReconciliationWorkAction,
+} from "./localization-reconciliation-planner.js";
+export {
+  LOCALIZATION_INPUT_POLICY_VERSION,
+  buildLocalizationInputVersion,
+  buildLocalizationInputVersionFromConcepts,
+  buildTerminologyDigest,
+  classifyLocalizationInputCurrentness,
+  collectSourceTextLeaves,
+  selectEffectiveTerminologyLines,
+  sourceContainsCanonicalTerm,
+} from "./localization-input-contract.js";
+export {
+  TerminologyProtectionViolationError,
+  assessRequiredTerminologyProtection,
+  assertRequiredTerminologyProtection,
+  loadPublishedTerminologyConcepts,
+  resolveSharedProviderTerminologyContext,
+} from "./terminology-protection-contract.js";
+export { classifyPublishedLocalizedPresentationValidity } from "./published-localized-presentation/plp-validity.js";
+export type { PlpReconciliationState, PlpValidityClassification } from "./published-localized-presentation/plp-validity.js";
+export {
+  buildParticipantPublicMachineContentFingerprintInput,
+  participantPublicHasMachineLocalizationObligation,
+  resolveParticipantPublicPresentationSkills,
+  PARTICIPANT_PUBLIC_SOURCE_ORIGINAL_VERSION,
+} from "./published-localized-presentation/universal/adapters/participant-public-adapter.js";
+export {
   applyPublicPresentationTranslations,
   collectAutoTranslatableNodes,
   ensureLocalizedPublicPresentation,
@@ -85,6 +136,28 @@ export {
 } from "./public-localized-presentation.js";
 export type { PublicAutoTranslatableNode } from "./public-localized-presentation.js";
 export { notifyPublicPresentationChanged } from "./public-presentation-changed.js";
+export {
+  LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS,
+  LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS,
+  LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS,
+  LOCALIZATION_RECONCILIATION_NO_PROGRESS_MAX_DELAY_MS,
+  assessLocalizationReconciliationEligibility,
+  classifyLocalizationReconciliationProgress,
+  peekLocalizationReconciliationDriverStateForTests,
+  resetLocalizationReconciliationDriverForTests,
+  resumeLocalizationReconciliationOnBoot,
+  runLocalizationReconciliationPass,
+  scheduleLocalizationReconciliation,
+  scheduleLocalizationReconciliationForAutomaticLocales,
+  setLocalizationReconciliationDriverDepsForTests,
+  wakeLocalizationReconciliationAfterActivation,
+} from "./localization-reconciliation-driver.js";
+export type {
+  LocalizationReconciliationContinuationKind,
+  LocalizationReconciliationEligibility,
+  LocalizationReconciliationPassResult,
+  LocalizationReconciliationWakeReason,
+} from "./localization-reconciliation-driver.js";
 export { translateDraft } from "./translate-draft.js";
 export {
   buildParticipantLanguageContextFromExperience,
@@ -350,10 +423,14 @@ export {
   CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION,
   ContentTranslationValidationError,
   classifyLegacyOutboxLastError,
+  buildTerminologyViolationFingerprint,
   encodeContentTranslationFailureMetadata,
   isExplicitlyRetryableModernFailure,
+  isSameTerminologyFailureIdentity,
   normalizeExactValidationReasonCode,
+  normalizeTerminologyViolationDescriptors,
   parseContentTranslationFailureMetadata,
+  terminologyFailureDiagnosticForMetadata,
   resolveLocaleFailureFromMetadata,
   resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
@@ -363,6 +440,8 @@ export type {
   ContentTranslationLocaleFailureRecord,
   ContentTranslationSafeFailureMetadata,
   ContentTranslationValidationReasonCode,
+  TerminologyViolationDescriptor,
+  TerminologyViolationType,
 } from "./content-translation-failure-metadata.js";
 export {
   explainResidualsOnly,
@@ -464,6 +543,7 @@ export {
   updateAdminLanguage,
   setLanguageRegistryAdminAssertOverrideForTests,
   resetLanguageRegistryStoreForTests,
+  resolveCanonicalRegistryLocale,
   resolveLanguageRegistryLocale,
   setLanguageRegistryForceMemoryForTests,
   updateLanguageRegistryRecord,

@@ -68,6 +68,23 @@ function persistCommitmentsMap(commitments: Map<string, InitiativeImplementation
 
 const commitments = loadCommitmentsMap();
 
+/**
+ * Re-bind the Implementation Commitment store from the Mongo adapter cache after
+ * hydrate. Module import copies the cache once; that copy stays empty if it ran
+ * first. Does not save, so a rebind cannot create or rewrite durable rows.
+ */
+export function syncInitiativeImplementationCommitmentStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const reloaded = loadCommitmentsMap();
+  commitments.clear();
+  for (const [commitmentId, commitment] of reloaded) {
+    commitments.set(commitmentId, commitment);
+  }
+}
+
 export function getCommitmentById(commitmentId: string): InitiativeImplementationCommitment | null {
   const commitment = commitments.get(commitmentId);
 

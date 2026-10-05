@@ -53,6 +53,12 @@ export type PublishedLocalizedPresentationIdentity = {
   readonly locale: LanguageCode | string;
   readonly canonicalVersion: string;
   readonly localizationSchemaVersion: PublishedLocalizationSchemaVersion;
+  /**
+   * STEP 15D.14.B.2 — optional localization input hash (source + locale +
+   * effective terminology + policy). Historical rows omit this field
+   * (legacy_unversioned — not mass-invalidated).
+   */
+  readonly localizationInputVersion?: string;
 };
 
 export type LocalizedNodeProvenance = {

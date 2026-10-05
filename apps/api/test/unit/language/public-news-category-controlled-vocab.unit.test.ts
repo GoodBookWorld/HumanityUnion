@@ -45,10 +45,10 @@ function sampleArticle(
 describe("public_news category CONTROLLED_VOCABULARY policy", () => {
   it("classifies staging category shape as MediaRegistryCategory controlled vocab", () => {
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.category, "CONTROLLED_VOCABULARY");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "SOURCE_ORIGINAL");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "SOURCE_ORIGINAL");
     assert.ok(isMediaRegistryCategory(stagingCategoryShape));
-    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], []);
     assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.public_news], []);
   });
 
@@ -66,7 +66,7 @@ describe("public_news category CONTROLLED_VOCABULARY policy", () => {
     assert.deepEqual(paths, ["summary", "title"]);
   });
 
-  it("category is not a provider AUTO path; title/summary are", () => {
+  it("category is not a provider AUTO path; title/summary stay source strings", () => {
     const tree = buildCanonicalPublicNewsPresentation(sampleArticle());
     const auto = collectAutoPaths(asMediaPlpPresentationNode(tree));
     const autoValues = Object.fromEntries(auto.map((n) => [n.path, n.value]));

@@ -2,21 +2,24 @@
  * Validate remote WEB_UI message trees against bundled English foundation paths.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
   isParticipantWebUiRequiredPath,
   isPublicReaderWebUiRequiredPath,
+  normalizeLanguageRegistryLocaleKey,
   type WebUiMessagePackPreparationScope,
   type WebUiMessagePackValidationReport,
   type WebUiMessageTree,
 } from "@hu/types";
 
+import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
 import { advanceIcuApostropheFriendly } from "./web-ui-icu-apostrophe.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+/** Dev/fallback only — production/Docker prefer packaged API assets. */
 const ENGLISH_MESSAGES_PATH = path.resolve(
   here,
   "../../../../web/src/features/i18n/messages/en.json",
@@ -104,7 +107,7 @@ function sameTokenList(left: readonly string[], right: readonly string[]): boole
   return sortedLeft.every((token, tokenIndex) => token === sortedRight[tokenIndex]);
 }
 
-function describeStructureMismatch(english: string, target: string): string | null {
+export function describeStructureMismatch(english: string, target: string): string | null {
   const source = inspectMessageStructure(english);
   const translated = inspectMessageStructure(target);
   const problems: string[] = [];
@@ -221,19 +224,97 @@ function collectStringPaths(messages: MessagePack, prefix = ""): string[] {
 }
 
 export function loadBundledEnglishWebUiMessagePack(): MessagePack {
+  const packaged = loadPackagedWebUiCatalog("en");
+  if (packaged) {
+    return packaged as MessagePack;
+  }
+  if (!existsSync(ENGLISH_MESSAGES_PATH)) {
+    throw new Error("English WEB_UI foundation catalog is missing from packaged assets.");
+  }
   return JSON.parse(readFileSync(ENGLISH_MESSAGES_PATH, "utf8")) as MessagePack;
 }
 
+/**
+ * Dev/test helper: load a locale message tree from apps/web when present.
+ * Activation adoption must not rely on this path — use packaged API assets instead.
+ *
+ * Gate A — resolve by IDENTITY KEY so `zh-hant` loads `zh-Hant.json` without
+ * inventing Registry spelling. Does not change bundled-vs-published precedence.
+ */
 export function loadBundledWebUiMessagePackFromFs(locale: string): MessagePack | null {
-  try {
-    const filePath = path.resolve(
-      here,
-      `../../../../web/src/features/i18n/messages/${locale}.json`,
-    );
-    return JSON.parse(readFileSync(filePath, "utf8")) as MessagePack;
-  } catch {
+  const trimmed = locale.trim();
+  if (!trimmed) {
     return null;
   }
+  const candidates = resolveBundledWebUiFilenameStems(trimmed);
+  for (const stem of candidates) {
+    try {
+      const filePath = path.resolve(
+        here,
+        `../../../../web/src/features/i18n/messages/${stem}.json`,
+      );
+      if (!existsSync(filePath)) {
+        continue;
+      }
+      return JSON.parse(readFileSync(filePath, "utf8")) as MessagePack;
+    } catch {
+      /* try next stem */
+    }
+  }
+  return null;
+}
+
+/** localeKey → unique on-disk filename stem (preserves casing, e.g. zh-Hant). */
+let bundledStemByLocaleKey: Map<string, string> | null = null;
+
+function bundledMessagesDir(): string {
+  return path.resolve(here, "../../../../web/src/features/i18n/messages");
+}
+
+function getBundledStemIndex(): Map<string, string> {
+  if (bundledStemByLocaleKey) {
+    return bundledStemByLocaleKey;
+  }
+  const index = new Map<string, string>();
+  const dir = bundledMessagesDir();
+  if (!existsSync(dir)) {
+    bundledStemByLocaleKey = index;
+    return index;
+  }
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith(".json")) {
+        continue;
+      }
+      const stem = name.slice(0, -".json".length);
+      const localeKey = normalizeLanguageRegistryLocaleKey(stem);
+      if (!localeKey || index.has(localeKey)) {
+        continue;
+      }
+      index.set(localeKey, stem);
+    }
+  } catch {
+    /* empty index */
+  }
+  bundledStemByLocaleKey = index;
+  return index;
+}
+
+function resolveBundledWebUiFilenameStems(locale: string): readonly string[] {
+  const trimmed = locale.trim();
+  const fromIndex = getBundledStemIndex().get(normalizeLanguageRegistryLocaleKey(trimmed));
+  if (fromIndex && fromIndex !== trimmed) {
+    return [fromIndex, trimmed];
+  }
+  if (fromIndex) {
+    return [fromIndex];
+  }
+  return [trimmed];
+}
+
+/** Test-only — clear bundled stem index after fixture mutation. */
+export function resetBundledWebUiStemIndexForTests(): void {
+  bundledStemByLocaleKey = null;
 }
 
 function englishFoundationPaths(): ReadonlySet<string> {

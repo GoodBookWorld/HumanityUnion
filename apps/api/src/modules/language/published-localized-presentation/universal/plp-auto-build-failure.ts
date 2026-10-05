@@ -5,6 +5,7 @@
  * RESET 05D.5 — forensics-first encoding; generic PARTIAL is not retryable.
  */
 
+import type { PlpBatchCheckpoint } from "./plp-batch-checkpoint.js";
 import {
   isProviderPartialSubtypeRetryable,
   type ProviderPartialSubreason,
@@ -50,6 +51,12 @@ export type PlpAutoBuildStructuredFailure = {
    * RESET 05E.3 — quota/cooldown deferral: keep pending, do not burn attempt budget.
    */
   readonly quotaDefer?: boolean;
+  /**
+   * F.3.12 — global pacing wait. Keep pending and do not burn an attempt.
+   * Not a provider failure and not an HTTP 429.
+   */
+  readonly pacingDefer?: boolean;
+  readonly pacingUntil?: string | null;
 };
 
 export type ProcessPlpBuildRequestResult =
@@ -60,6 +67,12 @@ export type ProcessPlpBuildRequestResult =
   | {
       readonly status: "FAILED";
       readonly failure: PlpAutoBuildStructuredFailure;
+    }
+  | {
+      readonly status: "BATCH_PROGRESS";
+      readonly checkpoint: PlpBatchCheckpoint;
+      readonly pacingUntil: string | null;
+      readonly failure?: undefined;
     };
 
 const FORENSIC_KEYS = [
@@ -153,6 +166,8 @@ export function structuredFailure(input: {
   readonly stage: PlpAutoBuildFailureStage;
   readonly safeReason: string;
   readonly quotaDefer?: boolean;
+  readonly pacingDefer?: boolean;
+  readonly pacingUntil?: string | null;
 }): PlpAutoBuildStructuredFailure {
   return {
     failureCode: input.failureCode,
@@ -160,6 +175,9 @@ export function structuredFailure(input: {
     stage: input.stage,
     safeReason: sanitizePlpAutoBuildFailureReason(input.safeReason),
     ...(input.quotaDefer === true ? { quotaDefer: true } : {}),
+    ...(input.pacingDefer === true
+      ? { pacingDefer: true, pacingUntil: input.pacingUntil ?? null }
+      : {}),
   };
 }
 
@@ -205,12 +223,94 @@ function extractPartialSubreason(
   return null;
 }
 
+/**
+ * ES.05 — legacy rows whose safe forensics are the pre-repair mislabel:
+ * a later-batch pacing deferral stored as an unknown invalid provider shape
+ * after a successful extract, with no transport/HTTP failure.
+ * Does not match locale, entity id, or a bare unknown-shape failure.
+ */
+export function isLegacyPacingMisclassifiedTerminalFailure(input: {
+  readonly failureCode: string | null | undefined;
+  readonly retryable: boolean | null | undefined;
+  readonly safeReason: string | null | undefined;
+}): boolean {
+  if (input.retryable !== true || input.failureCode !== "PROVIDER_FAILURE") {
+    return false;
+  }
+  const text = input.safeReason ?? "";
+  if (!text.startsWith("PROVIDER_FAILURE")) {
+    return false;
+  }
+  if (!text.includes("PROVIDER_FAILURE_SUBTYPE=UNKNOWN_PROVIDER_SHAPE")) {
+    return false;
+  }
+  if (!text.includes("PROVIDER_RESPONSE_SHAPE=INVALID")) {
+    return false;
+  }
+  if (!text.includes("PROVIDER_FINISH_REASON=STOP")) {
+    return false;
+  }
+  if (/PROVIDER_HTTP_CLASS=/.test(text) || /PROVIDER_HTTP_STATUS=/.test(text)) {
+    return false;
+  }
+  if (/PROVIDER_ERROR_CLASS=/.test(text) || text.includes("PARSE_FAILURE")) {
+    return false;
+  }
+  const numberAfter = (key: string): number => {
+    const match = text.match(new RegExp(`${key}=(\\d+)`));
+    return match ? Number(match[1]) : Number.NaN;
+  };
+  const candidates = numberAfter("PROVIDER_CANDIDATE_COUNT");
+  const extracted = numberAfter("PROVIDER_EXTRACTED_LENGTH");
+  const expected = numberAfter("PROVIDER_EXPECTED_KEY_COUNT");
+  const returned = numberAfter("PROVIDER_RETURNED_KEY_COUNT");
+  const missing = numberAfter("PROVIDER_MISSING_KEY_COUNT");
+  const batches = numberAfter("PROVIDER_BATCH_COUNT");
+  return (
+    candidates >= 1 &&
+    extracted >= 1 &&
+    batches >= 2 &&
+    returned >= 1 &&
+    missing >= 1 &&
+    expected > returned
+  );
+}
+
+/**
+ * ES.09 — obsolete exact-surface terminology hard gate.
+ * Matches only PROVIDER_INTEGRITY plus this category. Brand, structural,
+ * and other integrity failures stay terminal.
+ */
+export function isObsoleteTerminologyHardGateFailure(input: {
+  readonly failureCode: string | null | undefined;
+  readonly retryable: boolean | null | undefined;
+  readonly safeReason: string | null | undefined;
+}): boolean {
+  if (input.failureCode !== "PROVIDER_INTEGRITY" || input.retryable !== false) {
+    return false;
+  }
+  const text = input.safeReason ?? "";
+  const marker = "PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION";
+  return text === marker || text.startsWith(`${marker};`) || text.startsWith(`${marker}:`);
+}
+
 export function mapProviderBoundaryReasonToFailure(input: {
   readonly reason: string;
   readonly message: string;
 }): PlpAutoBuildStructuredFailure {
   const reason = input.reason.toUpperCase();
   const msg = input.message.trim();
+  const pacingUntil = msg.match(/PACING_UNTIL=([^;\s]+)/)?.[1] ?? null;
+  if (reason === "PROVIDER_PACING_DEFERRED" || msg.startsWith("PROVIDER_PACING_WAIT")) {
+    return structuredFailure({
+      failureCode: "PROVIDER_FAILURE",
+      retryable: true,
+      stage: "provider",
+      safeReason: "PROVIDER_PACING_WAIT",
+      pacingDefer: true,
+      pacingUntil,
+    });
+  }
   const forensics = extractForensicBlock(msg);
 
   if (reason === "TIMEOUT") {
@@ -289,6 +389,17 @@ export function mapProviderBoundaryReasonToFailure(input: {
       safeReason: forensics
         ? `PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED;${forensics}`
         : "PROVIDER_INTEGRITY:BRAND_TOKEN_PRESERVATION_FAILED;BRAND_TOKEN_PATHS=UNKNOWN:UNMAPPABLE",
+    });
+  }
+
+  if (reason === "TERMINOLOGY_PROTECTION_VIOLATION") {
+    return structuredFailure({
+      failureCode: "PROVIDER_INTEGRITY",
+      retryable: false,
+      stage: "provider",
+      safeReason: forensics
+        ? `PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION;${forensics}`
+        : "PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION",
     });
   }
 

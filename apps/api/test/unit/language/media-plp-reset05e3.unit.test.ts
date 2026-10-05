@@ -370,8 +370,8 @@ describe("RESET 05E.3 — durable cooldown + governor", () => {
 describe("RESET 05E.3 — queue attempt budget", () => {
   it("8+12. 429 does not burn attempts; pending stays deferred", async () => {
     const upsert = await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: "news-quota-1",
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-quota-1",
       locale: "uk",
       canonicalVersion: "cv1",
       contentRevision: 1,
@@ -429,8 +429,8 @@ describe("RESET 05E.3 — queue attempt budget", () => {
   it("9. ordinary HTTP 500 retains ordinary retry semantics (burns attempt)", async () => {
     await clearThinGeminiProviderCooldown();
     const upsert = await upsertPendingPlpAutoBuildWork({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: "news-500",
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-500",
       locale: "uk",
       canonicalVersion: "cv1",
       contentRevision: 1,

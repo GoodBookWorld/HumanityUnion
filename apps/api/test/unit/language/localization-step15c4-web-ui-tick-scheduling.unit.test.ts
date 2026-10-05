@@ -11,6 +11,19 @@ import {
   resetLanguageRegistryStoreForTests,
   setLanguageRegistryForceMemoryForTests,
 } from "../../../src/modules/language/index.js";
+import {
+  ensureTerminologyGlossarySeeded,
+  resetTerminologyGlossaryStoreForTests,
+  setTerminologyGlossaryForceMemoryForTests,
+} from "../../../src/modules/language/terminology-glossary/terminology-glossary.repository.js";
+import {
+  resetBrandLocalizationStoreForTests,
+  setBrandLocalizationForceMemoryForTests,
+} from "../../../src/modules/brand-localization/brand-localization.repository.js";
+import {
+  resetLegalLocalizationStoreForTests,
+  setLegalLocalizationForceMemoryForTests,
+} from "../../../src/modules/legal-localization/legal-localization.repository.js";
 import { TranslationProviderError } from "../../../src/modules/language/translation.config.js";
 import type { TranslationProviderRequest } from "../../../src/modules/language/translation-provider.js";
 import {
@@ -42,11 +55,23 @@ import {
 const FOUR_BATCH_PATHS = loadPublicWebUiEnglishCorpus().requiredPaths.slice(0, 24);
 const TWO_BATCH_PATHS = FOUR_BATCH_PATHS.slice(0, 12);
 
+function prefixProviderValue(value: unknown): unknown {
+  if (typeof value === "string") return `[xx] ${value}`;
+  if (Array.isArray(value)) {
+    return value.map((span) =>
+      typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+    );
+  }
+  return value;
+}
+
 function translate(request: TranslationProviderRequest) {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
   return {
     translatedText: JSON.stringify(
-      Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`])),
+      Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, prefixProviderValue(value)]),
+      ),
     ),
     providerId: "deterministic",
     isPlaceholder: false,
@@ -100,6 +125,13 @@ describe("Step 15C.4 — WEB_UI follow-up tick scheduling", () => {
     setLanguageRegistryForceMemoryForTests(true);
     resetLanguageRegistryStoreForTests();
     await ensureLanguageRegistrySeeded();
+    setTerminologyGlossaryForceMemoryForTests(true);
+    resetTerminologyGlossaryStoreForTests();
+    await ensureTerminologyGlossarySeeded();
+    setBrandLocalizationForceMemoryForTests(true);
+    resetBrandLocalizationStoreForTests();
+    setLegalLocalizationForceMemoryForTests(true);
+    resetLegalLocalizationStoreForTests();
     setWebUiMessagePackForceMemoryForTests(true);
     resetWebUiMessagePackStoreForTests();
     setWebUiActivationCheckpointForceMemoryForTests(true);
@@ -225,14 +257,16 @@ describe("Step 15C.4 — WEB_UI follow-up tick scheduling", () => {
       languageId: record.languageId,
     });
     assert.equal(providerCalls, callsAtReady);
-    assert.equal(status.job?.domains.webUi.status, "ready");
+    assert.equal(status.job?.domains.webUi.status, "pending");
+    assert.equal(status.job?.domains.webUi.dataReady, false);
     const again = await getLanguageActivationAdminView({
       actorUserId: "admin-1",
       languageId: record.languageId,
     });
     assert.equal(providerCalls, callsAtReady);
     assert.equal(again.job?.status, status.job?.status);
-    assert.equal(again.job?.domains.webUi.status, "ready");
+    assert.equal(again.job?.domains.webUi.status, "pending");
+    assert.equal(again.job?.domains.webUi.dataReady, false);
     assert.equal(getWebUiActivationSchedulerSnapshotForTests(job.jobId).followUpRequested, false);
   });
 

@@ -11,17 +11,20 @@ import {
   LANGUAGE_ACTIVATION_CT_OWNED_KINDS,
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
+  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
   buildLanguagePwaCivicReadinessSlice,
   deriveLanguageLocalizationReadinessState,
   emptyLanguageLocalizationCountBucket,
   emptyPwaCivicCoverageScalars,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
+  normalizeLanguageRegistryLocaleKey,
   type LanguageLocalizationKindStatusRow,
   type LanguageLocalizationReadinessReport,
   type LanguageRegistryRecord,
 } from "@hu/types";
 
+import { isCanonicalRevisionInventoryConverged } from "../../initiative-version-revision/materialize-canonical-initial-revisions.js";
 import { listBrandLocalizations } from "../../brand-localization/brand-localization.repository.js";
 import { getLegalLocalization } from "../../legal-localization/legal-localization.repository.js";
 import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
@@ -43,6 +46,8 @@ export type EvaluateLanguageLocalizationReadinessInput = {
   /** Injected count buckets when skipCorpusPlan or tests supply measured state. */
   readonly ctCounts?: ReturnType<typeof emptyLanguageLocalizationCountBucket>;
   readonly plpCounts?: ReturnType<typeof emptyLanguageLocalizationCountBucket>;
+  /** STEP 15D.14.B.2 — participant_public PLP data for Gate F (optional inject). */
+  readonly plpParticipantCounts?: ReturnType<typeof emptyLanguageLocalizationCountBucket>;
   readonly pwaCivicCoverage?: BoundedPwaCivicCoverageReport;
   readonly coverageDeps?: BoundedPwaCivicCoverageDeps;
   /**
@@ -50,7 +55,16 @@ export type EvaluateLanguageLocalizationReadinessInput = {
    * Kept for call-site compatibility; ignored.
    */
   readonly plannerDeps?: unknown;
+  /** Explicit inventory barrier. Omit to use the process materialization flag. */
+  readonly revisionInventoryReady?: boolean;
 };
+
+function brandLocaleMatches(entryLocale: string, canonicalLocale: string): boolean {
+  return (
+    normalizeLanguageRegistryLocaleKey(entryLocale) ===
+    normalizeLanguageRegistryLocaleKey(canonicalLocale)
+  );
+}
 
 async function assessHigherAuthority(locale: string): Promise<{
   brandPublished: boolean | null;
@@ -61,7 +75,7 @@ async function assessHigherAuthority(locale: string): Promise<{
   let legalPublished: boolean | null = null;
   try {
     const brands = await listBrandLocalizations();
-    const row = brands.find((entry) => entry.locale === locale);
+    const row = brands.find((entry) => brandLocaleMatches(entry.locale, locale));
     brandPublished = row ? row.status === "published" : false;
   } catch {
     brandPublished = null;
@@ -100,11 +114,13 @@ async function assessHigherAuthority(locale: string): Promise<{
 export async function evaluateLanguageLocalizationReadiness(
   input: EvaluateLanguageLocalizationReadinessInput,
 ): Promise<LanguageLocalizationReadinessReport> {
-  const locale = input.locale.trim();
+  const requestedLocale = input.locale.trim();
   const record =
     input.registryRecord !== undefined
       ? input.registryRecord
-      : await resolveLanguageRegistryLocale(locale);
+      : await resolveLanguageRegistryLocale(requestedLocale);
+  /** Gate A — owner assessments use Registry CANONICAL LOCALE, not job identity key. */
+  const locale = record?.locale ?? requestedLocale;
 
   const registry = {
     enabled: record?.enabled === true,
@@ -130,6 +146,8 @@ export async function evaluateLanguageLocalizationReadiness(
 
   let ct = input.ctCounts ?? emptyLanguageLocalizationCountBucket();
   let plpMedia = input.plpCounts ?? emptyLanguageLocalizationCountBucket();
+  // Gate F truthfulness — SOURCE_ORIGINAL; never localization work.
+  const plpParticipant = emptyLanguageLocalizationCountBucket();
   let bounded: BoundedPwaCivicCoverageReport | null = input.pwaCivicCoverage ?? null;
 
   if (
@@ -150,11 +168,14 @@ export async function evaluateLanguageLocalizationReadiness(
     plpMedia = input.plpCounts ?? input.pwaCivicCoverage.plpMedia;
   }
 
+  const revisionInventoryReady =
+    input.revisionInventoryReady ?? isCanonicalRevisionInventoryConverged();
   const pwaCoverage = bounded?.coverage ?? emptyPwaCivicCoverageScalars();
   const pwaCivic = buildLanguagePwaCivicReadinessSlice({
     enabled: registry.enabled,
     contentTranslationEnabled: registry.contentTranslationEnabled,
     pwaPersistedReadingEnabled: registry.pwaPersistedReadingEnabled,
+    revisionInventoryReady,
     coverage:
       input.skipCorpusPlan && !bounded
         ? {
@@ -163,8 +184,12 @@ export async function evaluateLanguageLocalizationReadiness(
               current: ct.current + plpMedia.current,
               missing: ct.missing + plpMedia.missing,
               stale: ct.stale + plpMedia.stale,
+              invalid: ct.invalid + plpMedia.invalid,
               failed: ct.failed + plpMedia.failed,
               pending: ct.pending + plpMedia.pending,
+              activeWork: (ct.activeWork ?? 0) + (plpMedia.activeWork ?? 0),
+              preflightBlocked:
+                (ct.preflightBlocked ?? 0) + (plpMedia.preflightBlocked ?? 0),
               workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,
               measuredKindCount: 1,
               unmeasuredKindCount: 0,
@@ -182,6 +207,7 @@ export async function evaluateLanguageLocalizationReadiness(
     controlledVocabularyPresentationReady: controlledVocabulary.presentationReady,
     ct,
     plpMedia,
+    revisionInventoryReady,
   });
 
   const languageDataReady =
@@ -205,12 +231,37 @@ export async function evaluateLanguageLocalizationReadiness(
               : "Outside bounded PWA civic measure set — not counted as complete.",
       };
     }),
+    ...(bounded?.kindRows.some((row) => row.ownership === "PLP_OWNED")
+      ? bounded.kindRows
+          .filter((row) => row.ownership === "PLP_OWNED")
+          .map((row) => ({
+            kindId: row.kindId,
+            ownership: "PLP_OWNED" as const,
+            counts: row.counts,
+            note: row.reason,
+          }))
+      : [
+          {
+            kindId: "civic_media_editorial",
+            ownership: "PLP_OWNED" as const,
+            counts: plpMedia,
+            note: "PLP HU-owned Media editorial",
+          },
+        ]),
     {
-      kindId: "civic_media_editorial",
-      ownership: "PLP_OWNED",
-      counts: plpMedia,
-      note: "PLP HU-owned Media editorial",
+      kindId: "public_news",
+      ownership: "PROTECTED_EXCLUDED" as const,
+      counts: null,
+      note:
+        "SOURCE_ORIGINAL — publisher headline/summary are not localization work (15D.14.F.2).",
     },
+    ...LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES.map((kindId) => ({
+      kindId,
+      ownership: "PROTECTED_EXCLUDED" as const,
+      counts: null,
+      note:
+        "SOURCE_ORIGINAL — Participant biography/free-text skills are authored as-is; not translation completeness work (15D.14.B.2.1).",
+    })),
     ...LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS.map((kindId) => ({
       kindId,
       ownership: "PROTECTED_EXCLUDED" as const,
@@ -294,6 +345,7 @@ export async function evaluateLanguageLocalizationReadiness(
     pwaCivic,
     ct,
     plpMedia,
+    plpParticipant,
     kindRows,
     seoReady: false,
     searchLocalizationReady: false,

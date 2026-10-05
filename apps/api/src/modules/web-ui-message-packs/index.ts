@@ -14,6 +14,7 @@ export {
   collectStringPaths,
   inspectMessageStructure,
   selectEnglishWebUiMessages,
+  resetBundledWebUiStemIndexForTests,
   resetEnglishWebUiPathCacheForTests,
 } from "./web-ui-message-pack.validate.js";
 export {

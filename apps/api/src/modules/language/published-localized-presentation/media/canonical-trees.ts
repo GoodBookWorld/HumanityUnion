@@ -24,7 +24,7 @@ export type MediaPlpPublicNewsTree = {
   readonly publishedAt: ReturnType<typeof protectedTechnical>;
   readonly sourceName: ReturnType<typeof protectedIdentity>;
   readonly verificationStatus: ReturnType<typeof protectedTechnical>;
-  /** RSS card prose — MACHINE_CONTENT (persisted PLP localization). */
+  /** RSS card prose — SOURCE_ORIGINAL publisher language. Not provider input. */
   readonly title: string;
   readonly summary: string;
   /**
@@ -87,7 +87,6 @@ export function buildCanonicalPublicNewsPresentation(
     publishedAt: protectedTechnical(article.publishedAt),
     sourceName: protectedIdentity(article.sourceName),
     verificationStatus: protectedTechnical(article.verificationStatus),
-    // Reset 01 — title/summary are MACHINE_CONTENT plain strings for PLP AUTO.
     title: article.title,
     summary: article.summary,
     category: controlledTerminologyValue(article.category ?? ""),

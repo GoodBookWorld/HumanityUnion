@@ -31,6 +31,14 @@ import {
 } from "../admin-languages-api";
 import { shouldPollLanguageActivationJob, LANGUAGE_ACTIVATION_POLL_INTERVAL_MS } from "../admin-languages-activation-poll";
 import {
+  freshActivationReadinessBinding,
+  runGuardedActivationStatus,
+} from "../admin-languages-activation-status-guard";
+import {
+  formatActivationWaitingGaps,
+  formatOwnerPreparationProgress,
+} from "../admin-languages-activation-status-format";
+import {
   formatLocalizationRetryAt,
   localizationProgressFromActivation,
   localizationProgressFromReadiness,
@@ -281,147 +289,29 @@ function CountSummary({
   current,
   stale,
   missing,
+  invalid = 0,
   failed = 0,
-  pending = 0,
+  activeWork = 0,
+  preflightBlocked = 0,
   workItemsRequired,
 }: {
   readonly current: number;
   readonly stale: number;
   readonly missing: number;
+  readonly invalid?: number;
   readonly failed?: number;
-  readonly pending?: number;
+  readonly activeWork?: number;
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
 }) {
   return (
     <span>
-      Current={current} · Stale={stale} · Missing={missing} · Blocked={failed}
-      {pending > 0 ? ` · Not actionable=${pending}` : ""} · Work remaining=
+      Current={current} · Stale={stale} · Missing={missing} · Invalid={invalid} · Blocked={failed}
+      {activeWork > 0 ? ` · Active work=${activeWork}` : ""}
+      {preflightBlocked > 0 ? ` · Not actionable=${preflightBlocked}` : ""} · Work remaining=
       {workItemsRequired}
     </span>
   );
-}
-
-/**
- * Operator-facing Brand / Terminology / WEB_UI phase lines from the activation job.
- */
-function formatOwnerPreparationProgress(view: LanguageActivationAdminView): string[] {
-  const job = view.job;
-  if (!job) {
-    return [];
-  }
-  const lines: string[] = [];
-  const brand = job.domains.brand;
-  if (brand?.status === "in_progress") {
-    lines.push(brand.detail ?? "Preparing Brand…");
-  } else if (brand?.status === "failed") {
-    lines.push(brand.detail ?? "Brand preparation failed — retry activation");
-  } else if (brand?.status === "ready") {
-    lines.push(
-      brand.reviewRequired
-        ? "Brand prepared — review available"
-        : brand.detail ?? "Brand ready",
-    );
-  }
-  const terminology = job.domains.terminology;
-  if (terminology?.status === "in_progress") {
-    lines.push(terminology.detail ?? "Preparing terminology…");
-  } else if (terminology?.status === "failed") {
-    lines.push(terminology.detail ?? "Terminology preparation failed — retry activation");
-  } else if (terminology?.status === "ready") {
-    lines.push(terminology.detail ?? "Terminology ready");
-  }
-  const webUi = job.domains.webUi;
-  if (webUi.status === "failed" || webUi.providerFailure) {
-    // Detailed WEB_UI failure is shown once in LanguageReadinessDetails.
-  } else if (
-    webUi.status === "pending" &&
-    (job.status === "running" || job.status === "queued") &&
-    job.domains.brand?.status !== "in_progress" &&
-    job.domains.terminology?.status !== "in_progress"
-  ) {
-    lines.push(webUi.detail ?? "Preparing public interface…");
-  } else if (webUi.status === "in_progress" || webUi.preparationPhase) {
-    if (webUi.preparationPhase === "provider_cooldown") {
-      lines.push(webUi.detail ?? "Waiting for translation provider…");
-    } else if (webUi.preparationPhase === "quality") {
-      lines.push(
-        webUi.detail ??
-          `Checking translation quality… ${webUi.completedBatches} / ${webUi.totalBatches}`,
-      );
-    } else if (
-      webUi.preparationPhase === "validating" ||
-      webUi.preparationPhase === "publishing"
-    ) {
-      lines.push(webUi.detail ?? "Validating…");
-    } else if (webUi.preparationPhase === "ready") {
-      lines.push(webUi.detail ?? "Public interface ready");
-    } else if (webUi.preparationPhase === "primary" || webUi.status === "in_progress") {
-      const completed = webUi.completedLeaves || webUi.completedBatches;
-      const total = webUi.totalLeaves || webUi.totalBatches;
-      lines.push(
-        webUi.detail ??
-          (total > 0
-            ? `Preparing public interface… ${completed} / ${total}`
-            : "Preparing public interface…"),
-      );
-    }
-  } else if (webUi.status === "ready" && webUi.dataReady) {
-    lines.push(webUi.detail ?? "Public interface ready");
-  }
-  return lines;
-}
-
-/**
- * Operator-facing blockers when activation is waiting on prepared data.
- * Uses structured job domain progress already measured by readiness.
- */
-function formatActivationWaitingGaps(view: LanguageActivationAdminView): string[] {
-  const lines: string[] = [];
-  const job = view.job;
-  if (!job) {
-    return lines;
-  }
-  if (job.status === "failed") {
-    if (
-      job.domains.brand?.providerFailure ||
-      job.domains.terminology?.providerFailure
-    ) {
-      // WEB_UI failures are already shown by formatOwnerPreparationProgress.
-      lines.push(
-        job.domains.terminology?.providerFailure
-          ? (job.domains.terminology.detail ??
-              "Terminology preparation failed — retry activation")
-          : (job.domains.brand?.detail ??
-              "Localization preparation failed — retry activation after the translation provider is available."),
-      );
-      return lines;
-    }
-    return lines;
-  }
-  if (job.status !== "waiting_for_data") {
-    return lines;
-  }
-  const webUi = job.domains.webUi;
-  if (webUi.status === "waiting_for_data") {
-    lines.push(
-      `Public interface catalog is blocking: missing ${webUi.missingKeyCount} of ${webUi.requiredKeyCount} required strings` +
-        (webUi.emptyKeyCount > 0 ? ` (${webUi.emptyKeyCount} empty).` : "."),
-    );
-  }
-  const cv = job.domains.controlledVocabulary;
-  if (cv.status === "waiting_for_data") {
-    const ids =
-      cv.missingConceptIds.length > 0
-        ? ` Missing concepts: ${cv.missingConceptIds.join(", ")}.`
-        : "";
-    lines.push(
-      `Controlled Vocabulary is blocking: ${cv.conceptsMissing} of ${cv.conceptsChecked} concepts still need a localized label.${ids}`,
-    );
-  }
-  if (lines.length > 0) {
-    lines.push("This is data preparation, not a translation-provider failure.");
-  }
-  return lines;
 }
 
 function LocalizationProgressMeter({
@@ -584,8 +474,10 @@ function LanguageReadinessDetails({
             current={report.ct.current}
             stale={report.ct.stale}
             missing={report.ct.missing}
+            invalid={report.ct.invalid}
             failed={report.ct.failed}
-            pending={report.ct.pending}
+            activeWork={report.ct.activeWork ?? 0}
+            preflightBlocked={report.ct.preflightBlocked ?? 0}
             workItemsRequired={report.ct.workItemsRequired}
           />
         </div>
@@ -598,8 +490,10 @@ function LanguageReadinessDetails({
                   current={row.counts!.current}
                   stale={row.counts!.stale}
                   missing={row.counts!.missing}
+                  invalid={row.counts!.invalid}
                   failed={row.counts!.failed}
-                  pending={row.counts!.pending}
+                  activeWork={row.counts!.activeWork ?? 0}
+                  preflightBlocked={row.counts!.preflightBlocked ?? 0}
                   workItemsRequired={row.counts!.workItemsRequired}
                 />
               </li>
@@ -617,8 +511,10 @@ function LanguageReadinessDetails({
             current={report.pwaCivic.coverage.current}
             stale={report.pwaCivic.coverage.stale}
             missing={report.pwaCivic.coverage.missing}
+            invalid={report.pwaCivic.coverage.invalid ?? 0}
             failed={report.pwaCivic.coverage.failed}
-            pending={report.pwaCivic.coverage.pending}
+            activeWork={report.pwaCivic.coverage.activeWork ?? 0}
+            preflightBlocked={report.pwaCivic.coverage.preflightBlocked ?? 0}
             workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
           />
         </div>
@@ -635,8 +531,10 @@ function LanguageReadinessDetails({
             current={report.plpMedia.current}
             stale={report.plpMedia.stale}
             missing={report.plpMedia.missing}
+            invalid={report.plpMedia.invalid}
             failed={report.plpMedia.failed}
-            pending={report.plpMedia.pending}
+            activeWork={report.plpMedia.activeWork ?? 0}
+            preflightBlocked={report.plpMedia.preflightBlocked ?? 0}
             workItemsRequired={report.plpMedia.workItemsRequired}
           />
         </div>
@@ -654,6 +552,7 @@ function LanguageReadinessDetails({
         <div>Missing={report.webUi.missingKeyCount}</div>
         <div>Empty={report.webUi.emptyKeyCount}</div>
         <div>English fallback={report.webUi.englishFallbackKeyCount}</div>
+        <div>Structural invalid={report.webUi.structuralInvalidCount ?? 0}</div>
         <div>Data ready: {yesNo(report.webUi.dataReady)}</div>
       </section>
 
@@ -667,6 +566,7 @@ function LanguageReadinessDetails({
         <div>Missing={report.participantWebUi.missingKeyCount}</div>
         <div>Empty={report.participantWebUi.emptyKeyCount}</div>
         <div>English fallback={report.participantWebUi.englishFallbackKeyCount}</div>
+        <div>Structural invalid={report.participantWebUi.structuralInvalidCount ?? 0}</div>
         <div>Data ready: {yesNo(report.participantWebUi.dataReady)}</div>
       </section>
 
@@ -693,6 +593,15 @@ function LanguageReadinessDetails({
         <div>
           Presentation ready: {yesNo(report.controlledVocabulary.presentationReady)}
         </div>
+        {job ? (
+          <div>
+            Terminology owner: <code>{job.domains.terminology.status}</code>
+          </div>
+        ) : null}
+        <p className="admin-languages__readiness-note">
+          A catalog fallback can make a concept displayable. That does not mean the
+          Terminology owner has finished preparing preferred terms.
+        </p>
       </section>
 
       <section className="admin-languages__readiness-section">
@@ -715,7 +624,10 @@ function LanguageReadinessDetails({
           Search is independent of the catalog, civic content, and overall presentation.
         </p>
         <div>Search enabled: {yesNo(report.registry.searchEnabled)}</div>
-        <div>Search-ready: {yesNo(report.searchLocalizationReady)}</div>
+        <div>
+          Search-ready:{" "}
+          {yesNo(report.registry.enabled === true && report.registry.searchEnabled === true)}
+        </div>
       </section>
 
       <section className="admin-languages__readiness-section">
@@ -819,20 +731,24 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       return next;
     });
     for (const languageId of languageIds) {
-      void fetchAdminLanguageActivationStatus(languageId)
+      const guarded = runGuardedActivationStatus(languageId, () =>
+        fetchAdminLanguageActivationStatus(languageId),
+      );
+      void guarded.promise
         .then((view) => {
           if (cancelled) {
             return;
           }
+          const bound = freshActivationReadinessBinding(view);
           setActivationById((prev) => ({
             ...prev,
             [languageId]: nextActivationSlotAfterHydrate({
               current: prev[languageId],
-              view,
+              view: bound.activation,
               activateInFlight: activatingIdRef.current === languageId,
             }),
           }));
-          setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
+          setReadinessById((prev) => ({ ...prev, [languageId]: bound.readiness }));
         })
         .catch(() => {
           if (cancelled) {
@@ -873,13 +789,20 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     let cancelled = false;
     const timer = setInterval(() => {
       for (const languageId of languageIds) {
-        void fetchAdminLanguageActivationStatus(languageId)
+        const guarded = runGuardedActivationStatus(languageId, () =>
+          fetchAdminLanguageActivationStatus(languageId),
+        );
+        if (!guarded.started) {
+          continue;
+        }
+        void guarded.promise
           .then((view) => {
             if (cancelled) {
               return;
             }
-            setActivationById((prev) => ({ ...prev, [languageId]: view }));
-            setReadinessById((prev) => ({ ...prev, [languageId]: view.readiness }));
+            const bound = freshActivationReadinessBinding(view);
+            setActivationById((prev) => ({ ...prev, [languageId]: bound.activation }));
+            setReadinessById((prev) => ({ ...prev, [languageId]: bound.readiness }));
           })
           .catch(() => {
             /* Keep the last view. Polling must not call Activate. */
@@ -1001,13 +924,21 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     try {
       const report = await fetchAdminLanguageLocalizationReadiness(row.languageId);
       setReadinessById((prev) => ({ ...prev, [row.languageId]: report }));
-      const view = await fetchAdminLanguageActivationStatus(row.languageId);
-      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
-      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      const guarded = runGuardedActivationStatus(row.languageId, () =>
+        fetchAdminLanguageActivationStatus(row.languageId),
+      );
+      const view = await guarded.promise;
+      const bound = freshActivationReadinessBinding(view);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: bound.activation }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: bound.readiness }));
       setStatus(
         `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
-          `; Search-ready=${report.searchLocalizationReady ? "yes" : "no"}` +
+          `; Search-ready=${
+            report.registry.enabled === true && report.registry.searchEnabled === true
+              ? "yes"
+              : "no"
+          }` +
           `; Overall presentation=${report.state}` +
           `; SEO indexable=${report.seoReady ? "yes" : "no"}`,
       );
@@ -1049,12 +980,16 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
     setActivationById((prev) => ({ ...prev, [row.languageId]: "loading" }));
     setError(null);
     try {
-      const view = await fetchAdminLanguageActivationStatus(row.languageId);
-      setActivationById((prev) => ({ ...prev, [row.languageId]: view }));
-      setReadinessById((prev) => ({ ...prev, [row.languageId]: view.readiness }));
+      const guarded = runGuardedActivationStatus(row.languageId, () =>
+        fetchAdminLanguageActivationStatus(row.languageId),
+      );
+      const view = await guarded.promise;
+      const bound = freshActivationReadinessBinding(view);
+      setActivationById((prev) => ({ ...prev, [row.languageId]: bound.activation }));
+      setReadinessById((prev) => ({ ...prev, [row.languageId]: bound.readiness }));
       setStatus(
         `${row.locale} activation status: ${view.job?.status ?? "none"}` +
-          ` · readiness=${view.readiness.state}`,
+          ` · readiness=${bound.readiness.state}`,
       );
     } catch (statusError) {
       setActivationById((prev) => ({ ...prev, [row.languageId]: "error" }));
@@ -1348,7 +1283,11 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         row.contentTranslationEnabled &&
                         !english &&
                         activationView?.job?.domains.webUi.preparationPhase !==
-                          "provider_cooldown";
+                          "provider_cooldown" &&
+                        activationView?.job?.domains.webUi.preparationPhase !==
+                          "structure_retry" &&
+                        activationView?.job?.domains.webUi.preparationPhase !==
+                          "structure_blocked";
                       const readinessReport =
                         readiness && typeof readiness === "object" ? readiness : null;
                       const progress = activationView

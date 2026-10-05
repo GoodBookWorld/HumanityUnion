@@ -29,8 +29,9 @@ import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiati
 import { listInitiatives } from "../initiatives/initiative.store.js";
 import { listMembers } from "../member/member-access.js";
 import { listResponses as listOfficialResponses } from "../official-response/official-response.store.js";
-import { listActiveParticipationAreas } from "../participation-area/participation-area.store.js";
+import { listParticipationPreferencesByMemberIds } from "../preferences/preferences.repository.js";
 import { listPublishedArchiveRecords } from "../public-civic-archive/public-civic-archive.store.js";
+import { countParticipantPreferenceGeography } from "./platform-statistics-preference-geography.js";
 import { ACTIVE_MEMBER_WINDOW_DAYS } from "./platform-statistics.types.js";
 import {
   readCachedPlatformStatistics,
@@ -96,61 +97,16 @@ async function countAuthors(): Promise<number> {
   return countParticipantsWithBlogAuthorCapability();
 }
 
-function countGeographyFromParticipationAreas(): { countries: number; regions: number } {
-  const activeAreas = listActiveParticipationAreas();
-  const countries = new Set<string>();
-  const regions = new Set<string>();
-
-  for (const area of activeAreas) {
-    if (area.countrySlug.trim()) {
-      countries.add(area.countrySlug.trim().toLowerCase());
-    }
-
-    if (area.countrySlug.trim() && area.regionSlug?.trim()) {
-      regions.add(
-        `${area.countrySlug.trim().toLowerCase()}::${area.regionSlug.trim().toLowerCase()}`,
-      );
-    }
-  }
-
-  return {
-    countries: countries.size,
-    regions: regions.size,
-  };
-}
-
-async function countGeographyFromMembers(): Promise<{ countries: number; regions: number }> {
-  const countries = new Set<string>();
-  const regions = new Set<string>();
-
-  for (const member of await listMembers()) {
-    const country = member.profile.country?.trim();
-
-    if (country) {
-      countries.add(country.toLowerCase());
-    }
-
-    const region = member.profile.region?.trim();
-
-    if (country && region) {
-      regions.add(`${country.toLowerCase()}::${region.toLowerCase()}`);
-    }
-  }
-
-  return {
-    countries: countries.size,
-    regions: regions.size,
-  };
-}
-
 async function countGeography(): Promise<{ countries: number; regions: number }> {
-  const fromParticipationAreas = countGeographyFromParticipationAreas();
+  const eligibleMemberIds = [...(await listActiveAuthUserMemberIds()).keys()];
+  const preferences = await listParticipationPreferencesByMemberIds(eligibleMemberIds);
 
-  if (fromParticipationAreas.countries > 0) {
-    return fromParticipationAreas;
-  }
-
-  return countGeographyFromMembers();
+  return countParticipantPreferenceGeography(
+    preferences.map((participationPreferences) => ({
+      eligible: true,
+      participationPreferences,
+    })),
+  );
 }
 
 async function countActiveMembers(windowStartMs: number): Promise<number> {

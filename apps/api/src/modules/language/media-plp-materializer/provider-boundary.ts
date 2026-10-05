@@ -17,8 +17,30 @@ import {
   textContainsBrandTransportArtifact,
 } from "@hu/types";
 
+import {
+  isLocalizationProviderPacingDeferredError,
+  localizationProviderNowMs,
+  readLocalizationProviderPacing,
+} from "../localization-provider-governor.js";
+import {
+  buildPlpBatchCheckpoint,
+  resolvePlpBatchResume,
+  type PlpBatchCheckpoint,
+} from "../published-localized-presentation/universal/plp-batch-checkpoint.js";
 import type { TranslationProvider } from "../translation-provider.js";
 import { TranslationProviderError } from "../translation.config.js";
+import { TerminologyGlossaryValidationError } from "../terminology-glossary/terminology-glossary.errors.js";
+import {
+  loadPublishedTerminologyConcepts,
+  resolveSharedProviderTerminologyContext,
+  assessRequiredTerminologyProtection,
+  terminologyQualityDiagnosticsForPublication,
+  type RequiredTerminologyViolation,
+} from "../terminology-protection-contract.js";
+import {
+  buildLocalizationInputVersionFromConcepts,
+  collectSourceTextLeaves,
+} from "../localization-input-contract.js";
 import {
   markMaterializerProviderCall,
   markMaterializerProviderImported,
@@ -68,10 +90,13 @@ export type ProviderBoundaryFailureReason =
   | "PAYLOAD_LIMIT"
   | "PROVIDER_CALL_CAP"
   | "PROVIDER_FAILURE"
+  | "PROVIDER_PACING_DEFERRED"
+  | "PROVIDER_BATCH_PROGRESS"
   | "PARSE_FAILURE"
   | "WRONG_TARGET_LANGUAGE"
   | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
   | "BRAND_TOKEN_PRESERVATION_FAILED"
+  | "TERMINOLOGY_PROTECTION_VIOLATION"
   | "PARTIAL"
   | "TIMEOUT";
 
@@ -85,6 +110,8 @@ export type ProviderBoundaryResult =
       readonly PROVIDER_TRANSPORT: string;
       readonly pathDiagnostics: ProviderMachinePathDiagnostics;
       readonly forensics: ProviderBoundaryForensics;
+      /** Surface-form terminology diagnostics. Never a publication failure. */
+      readonly terminologyDiagnostics: readonly RequiredTerminologyViolation[];
     }
   | {
       readonly ok: false;
@@ -95,6 +122,9 @@ export type ProviderBoundaryResult =
       readonly PROVIDER_TRANSPORT: string;
       readonly pathDiagnostics?: ProviderMachinePathDiagnostics;
       readonly forensics?: ProviderBoundaryForensics;
+      /** Present only for PROVIDER_BATCH_PROGRESS. Normalized segments, not a raw response. */
+      readonly batchCheckpoint?: PlpBatchCheckpoint;
+      readonly pacingUntil?: string | null;
     };
 
 export type ThinProviderImportResult = {
@@ -458,6 +488,7 @@ function failResult(input: {
   readonly transport: string;
   readonly forensics: ProviderBoundaryForensics;
   readonly messagePrefix?: string;
+  readonly batchCheckpoint?: PlpBatchCheckpoint;
 }): ProviderBoundaryResult {
   const encoded = formatProviderForensicsSafe(input.forensics);
   return {
@@ -469,6 +500,7 @@ function failResult(input: {
     PROVIDER_TRANSPORT: input.transport,
     pathDiagnostics: toPathDiagnostics(input.forensics),
     forensics: input.forensics,
+    ...(input.batchCheckpoint ? { batchCheckpoint: input.batchCheckpoint } : {}),
   };
 }
 
@@ -480,10 +512,60 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   readonly sourceVersion: string;
   readonly maxInputBytes?: number;
   readonly PROVIDER_TRANSPORT?: string;
+  /** Optional pre-resolved context; when omitted, live glossary is loaded. */
+  readonly terminologyContext?: string;
+  /**
+   * Work-execution mode. After one accepted provider batch, return durable
+   * progress instead of starting the next batch in this call.
+   */
+  readonly yieldAfterAcceptedBatch?: boolean;
+  /** Same-version checkpoint. Ignored when the plan or source version does not match. */
+  readonly batchCheckpoint?: PlpBatchCheckpoint | null;
+  /**
+   * Called after a provider batch is accepted and batch-level Brand safety
+   * passes, and before cross-batch local validation or terminology assessment.
+   * The final batch is stored with nextBatchIndex == batchCount.
+   */
+  readonly persistAcceptedBatchCheckpoint?: (
+    checkpoint: PlpBatchCheckpoint,
+  ) => Promise<void>;
+  /** Fired after assessment. Diagnostics do not reject the candidate. */
+  readonly onTerminologyQualityAssessed?: (
+    diagnostics: readonly RequiredTerminologyViolation[],
+  ) => void;
 }): Promise<ProviderBoundaryResult> {
   const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
   const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
   const expectedPaths = Object.keys(input.autoValues).sort();
+
+  let terminologyContext = input.terminologyContext?.trim() || "";
+  if (!terminologyContext) {
+    try {
+      terminologyContext = await resolveSharedProviderTerminologyContext(input.locale);
+    } catch (error) {
+      if (error instanceof TerminologyGlossaryValidationError) {
+        return failResult({
+          reason: "PROVIDER_FAILURE",
+          bytes: 0,
+          transport,
+          forensics: emptyForensics({ expectedPaths }),
+          messagePrefix: `TERMINOLOGY_CONTEXT_UNAVAILABLE:${error.message}`,
+        });
+      }
+      throw error;
+    }
+  }
+
+  const sourceText = collectSourceTextLeaves(input.autoValues);
+  const concepts = await loadPublishedTerminologyConcepts();
+  // localizationInputVersion computed for callers that stamp identity; digest
+  // also drives required-term enforcement below.
+  void buildLocalizationInputVersionFromConcepts({
+    sourceVersion: input.sourceVersion,
+    targetLocale: input.locale,
+    concepts,
+    sourceText,
+  });
 
   // RESET 05D.6 — extract Brand slots; provider receives MACHINE_TEXT only.
   const { payload: providerOwnedPayload, plans: brandSlotPlans } =
@@ -527,7 +609,12 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
 
   const maxBytes = input.maxInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
   let totalBytes = 0;
-  const flattenedSegments: Record<string, string> = {};
+  const resume = resolvePlpBatchResume({
+    sourceVersion: input.sourceVersion,
+    batches,
+    checkpoint: input.batchCheckpoint ?? null,
+  });
+  const flattenedSegments: Record<string, string> = { ...resume.segments };
   let lastProviderId = "unknown";
   let lastEnvelope: {
     httpStatus?: number | null;
@@ -589,8 +676,11 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
     ...extras,
   });
 
+  const resumeIndex = resume.nextBatchIndex;
+  let durableCheckpoint: PlpBatchCheckpoint | null = null;
+
   try {
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+    for (let batchIndex = resumeIndex; batchIndex < batches.length; batchIndex += 1) {
       const batch = batches[batchIndex]!;
       const batchProviderKeys = Object.keys(batch);
       const contract = encodePlpTranslationsContract(batch);
@@ -643,6 +733,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           contentType: "structured_json",
           sourceRecordId: input.sourceRecordId,
           sourceVersion: input.sourceVersion,
+          terminologyContext,
           safetyCleared: true,
         });
         lastProviderId = result.providerId;
@@ -810,6 +901,60 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
           messagePrefix: "PARTIAL:MISSING_PATH",
         });
       }
+
+      if (
+        input.yieldAfterAcceptedBatch === true &&
+        batchIndex + 1 < batches.length
+      ) {
+        const injectedBeforeYield = Object.entries(flattenedSegments)
+          .filter(([, value]) => textContainsBrandTransportArtifact(value))
+          .map(([key]) => key);
+        if (injectedBeforeYield.length > 0) {
+          return failResult({
+            reason: "BRAND_TOKEN_PRESERVATION_FAILED",
+            bytes: totalBytes,
+            transport,
+            forensics: {
+              ...subtypeForensics(PLP_PROVIDER_FAILURE_SUBTYPE.BRAND_ARTIFACT, batchIndex, {
+                PROVIDER_RESPONSE_SHAPE: "OBJECT",
+              }),
+              PROVIDER_PARTIAL_SUBREASON: "OTHER_STRUCTURAL_FAILURE",
+              RETURNED_MACHINE_PATHS: Object.keys(flattenedSegments).sort(),
+            },
+            messagePrefix:
+              "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_INJECTED_BRAND",
+          });
+        }
+        const checkpoint = buildPlpBatchCheckpoint({
+          sourceVersion: input.sourceVersion,
+          nextBatchIndex: batchIndex + 1,
+          batches,
+          segments: flattenedSegments,
+        });
+        if (!checkpoint) {
+          return failResult({
+            reason: "PAYLOAD_LIMIT",
+            bytes: totalBytes,
+            transport,
+            forensics: subtypeForensics(
+              PLP_PROVIDER_FAILURE_SUBTYPE.BATCH_INCOMPLETE,
+              batchIndex,
+            ),
+            messagePrefix: "CHECKPOINT_LIMIT",
+          });
+        }
+        const pacing = await readLocalizationProviderPacing(localizationProviderNowMs());
+        return {
+          ok: false,
+          reason: "PROVIDER_BATCH_PROGRESS",
+          PROVIDER_INPUT_BYTES: totalBytes,
+          message: `PROVIDER_BATCH_PROGRESS;NEXT_BATCH=${checkpoint.nextBatchIndex}`,
+          PROVIDER_EXECUTION_BOUNDARY: boundary,
+          PROVIDER_TRANSPORT: transport,
+          batchCheckpoint: checkpoint,
+          pacingUntil: pacing.blocked ? pacing.nextProviderRequestAt : null,
+        };
+      }
     }
 
     // Defensive: provider must not inject Brand tokens/sentinels into segments.
@@ -831,6 +976,31 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         messagePrefix:
           "BRAND_TOKEN_PRESERVATION_FAILED:PROVIDER_INJECTED_BRAND",
       });
+    }
+
+    if (resumeIndex < batches.length) {
+      const checkpoint = buildPlpBatchCheckpoint({
+        sourceVersion: input.sourceVersion,
+        nextBatchIndex: batches.length,
+        batches,
+        segments: flattenedSegments,
+      });
+      if (!checkpoint) {
+        return failResult({
+          reason: "PAYLOAD_LIMIT",
+          bytes: totalBytes,
+          transport,
+          forensics: subtypeForensics(
+            PLP_PROVIDER_FAILURE_SUBTYPE.BATCH_INCOMPLETE,
+            Math.max(0, batches.length - 1),
+          ),
+          messagePrefix: "CHECKPOINT_LIMIT",
+        });
+      }
+      durableCheckpoint = checkpoint;
+      if (input.persistAcceptedBatchCheckpoint) {
+        await input.persistAcceptedBatchCheckpoint(checkpoint);
+      }
     }
 
     const reassembled = reassembleBrandSlotPlans({
@@ -872,6 +1042,7 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         transport,
         forensics,
         messagePrefix: "PARTIAL:MISSING_PATH",
+        batchCheckpoint: durableCheckpoint ?? undefined,
       });
     }
 
@@ -1001,8 +1172,20 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         PROVIDER_TRANSPORT: transport,
         pathDiagnostics: toPathDiagnostics(forensics),
         forensics,
+        batchCheckpoint: durableCheckpoint ?? undefined,
       };
     }
+
+    const translatedText = collectSourceTextLeaves(aligned);
+    const terminologyDiagnostics = terminologyQualityDiagnosticsForPublication(
+      assessRequiredTerminologyProtection({
+        concepts,
+        targetLocale: input.locale,
+        sourceText,
+        translatedText,
+      }),
+    );
+    input.onTerminologyQualityAssessed?.(terminologyDiagnostics);
 
     return {
       ok: true,
@@ -1023,8 +1206,21 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         RETURNED_MACHINE_PATHS: validated.pathDiagnostics.RETURNED_MACHINE_PATHS,
         PROVIDER_MISSING_KEY_COUNT: 0,
       },
+      terminologyDiagnostics,
     };
   } catch (error) {
+    // A governor wait is not a provider response. Do not relabel it as an
+    // unknown shape, and do not attach INVALID forensics from the prior batch.
+    if (isLocalizationProviderPacingDeferredError(error)) {
+      return {
+        ok: false,
+        reason: "PROVIDER_PACING_DEFERRED",
+        PROVIDER_INPUT_BYTES: totalBytes,
+        message: `PROVIDER_PACING_WAIT;PACING_UNTIL=${error.nextAllowedAt}`,
+        PROVIDER_EXECUTION_BOUNDARY: boundary,
+        PROVIDER_TRANSPORT: transport,
+      };
+    }
     const message = error instanceof Error ? error.message : "provider failure";
     const transportMeta =
       error instanceof TranslationProviderError ? error.transport : undefined;

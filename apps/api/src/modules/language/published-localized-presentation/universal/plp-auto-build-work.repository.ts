@@ -7,18 +7,28 @@
 
 import type { Document } from "mongodb";
 import type { PlpPublicationTriggerKind } from "@hu/types";
-import { plpBuildWorkKey } from "@hu/types";
+import {
+  isLocalizationSourceOriginalEntityType,
+  LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES,
+  plpBuildWorkKey,
+} from "@hu/types";
 
 import { isMongoConfigured } from "../../../../infrastructure/mongodb/mongo-config.js";
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   sanitizePlpAutoBuildFailureReason,
+  isLegacyPacingMisclassifiedTerminalFailure,
+  isObsoleteTerminologyHardGateFailure,
   isPlpQuotaDeferSafeReason,
   type PlpAutoBuildFailureCode,
   type PlpAutoBuildFailureStage,
   type PlpAutoBuildStructuredFailure,
 } from "./plp-auto-build-failure.js";
+import {
+  isCompatiblePlpBatchCheckpoint,
+  type PlpBatchCheckpoint,
+} from "./plp-batch-checkpoint.js";
 import {
   encodePlpStructuredStaleSafeReason,
   isBareStaleRevisionReason,
@@ -66,10 +76,16 @@ export type PlpAutoBuildWorkRecord = {
   /** RESET 05E — exponential backoff gate for retryable provider failures. */
   readonly nextAttemptAt: string | null;
   /**
-   * RESET 05E.1 — one-shot provider-contract recovery generation (e.g. "05E").
-   * When set, bootstrap heal must not reset attempt budget again for that generation.
+   * Durable attempt-window index for the same canonical version: "0", "1", or "2".
+   * Null means window 0 has not yet exhausted. Historical "05E" is not a window index.
+   * Ordinary same-version coalesce must not clear it. A new canonical version does.
    */
   readonly recoveryGeneration: string | null;
+  /**
+   * Accepted machine segments for this canonical version.
+   * Null when there is no partial progress. Cleared on publish or version change.
+   */
+  readonly batchCheckpoint: PlpBatchCheckpoint | null;
 };
 
 
@@ -101,6 +117,7 @@ interface PlpAutoBuildWorkDocument extends Document {
   lastFailureAt: string | null;
   nextAttemptAt?: string | null;
   recoveryGeneration?: string | null;
+  batchCheckpoint?: PlpBatchCheckpoint | null;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 5;
@@ -130,6 +147,41 @@ const PROVIDER_RETRY_BACKOFF_BASE_MS = 5_000;
 const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
 
 /**
+ * Same-version automatic recovery windows after the immediate attempt budget.
+ * Window 0 is the immediate budget. Generations 1 and 2 are delayed recoveries.
+ * Absolute ceiling: 3 windows × maxAttempts.
+ */
+export const PLP_MAX_RECOVERY_GENERATIONS = 2;
+export const PLP_RECOVERY_COOLDOWN_GENERATION_1_MS = 30 * 60 * 1000;
+export const PLP_RECOVERY_COOLDOWN_GENERATION_2_MS = 60 * 60 * 1000;
+
+/** Null and non-numeric stamps (including historical "05E") are window 0. */
+export function parsePlpRecoveryGeneration(
+  value: string | null | undefined,
+): number {
+  if (value === "0" || value === "1" || value === "2") {
+    return Number(value);
+  }
+  return 0;
+}
+
+/** Cooldown before the next recovery window. Null when no further window remains. */
+export function computePlpRecoveryCooldownNextAttemptAt(
+  exhaustedGeneration: number,
+  nowMs: number = Date.now(),
+): string | null {
+  const nextWindow = exhaustedGeneration + 1;
+  if (nextWindow > PLP_MAX_RECOVERY_GENERATIONS) {
+    return null;
+  }
+  const delay =
+    nextWindow === 1
+      ? PLP_RECOVERY_COOLDOWN_GENERATION_1_MS
+      : PLP_RECOVERY_COOLDOWN_GENERATION_2_MS;
+  return new Date(nowMs + delay).toISOString();
+}
+
+/**
  * Bounded exponential backoff with jitter. attempts is the post-claim count.
  * Does not raise maxAttempts.
  * RESET 05E.2 — minimum 5s so drain (3s) cannot reclaim in a tight loop;
@@ -157,14 +209,28 @@ export function computePlpProviderRetryNextAttemptAt(
 }
 
 let forceMemoryForTests = false;
+let nowOverrideMs: number | null = null;
 const memoryByWorkKey = new Map<string, PlpAutoBuildWorkRecord>();
 
 export function setPlpAutoBuildWorkForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
 }
 
+export function setPlpAutoBuildNowMsForTests(ms: number | null): void {
+  nowOverrideMs = ms;
+}
+
 export function resetPlpAutoBuildWorkStoreForTests(): void {
   memoryByWorkKey.clear();
+  nowOverrideMs = null;
+}
+
+/** Memory-store seam for a pre-existing document. Does not write Mongo. */
+export function putPlpAutoBuildWorkForTests(record: PlpAutoBuildWorkRecord): void {
+  if (!forceMemoryForTests) {
+    throw new Error("putPlpAutoBuildWorkForTests requires the memory work store");
+  }
+  memoryByWorkKey.set(record.workKey, record);
 }
 
 export function listPlpAutoBuildWorkForTests(): readonly PlpAutoBuildWorkRecord[] {
@@ -189,8 +255,101 @@ export function resolvePlpAutoBuildMaxAttempts(
   return Math.min(parsed, 20);
 }
 
+function nowMs(): number {
+  return nowOverrideMs ?? Date.now();
+}
+
 function nowIso(): string {
-  return new Date().toISOString();
+  return new Date(nowMs()).toISOString();
+}
+
+function isDueRecoveryWindow(row: PlpAutoBuildWorkRecord, now: string): boolean {
+  if (row.status !== "pending" || row.retryable !== true) {
+    return false;
+  }
+  if (isLocalizationSourceOriginalEntityType(row.entityType)) {
+    return false;
+  }
+  if (row.attempts < row.maxAttempts) {
+    return false;
+  }
+  if (row.nextAttemptAt == null || row.nextAttemptAt > now) {
+    return false;
+  }
+  return parsePlpRecoveryGeneration(row.recoveryGeneration) < PLP_MAX_RECOVERY_GENERATIONS;
+}
+
+/**
+ * When a recovery cooldown is due, open the next window on the same document.
+ * Increments recoveryGeneration once and restores a fresh per-window attempt budget.
+ * Does not call the provider.
+ */
+async function promoteDueRecoveryWindow(now: string): Promise<void> {
+  if (usePlpAutoBuildWorkMemory()) {
+    const due = [...memoryByWorkKey.values()]
+      .filter((row) => isDueRecoveryWindow(row, now))
+      .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
+    const row = due[0];
+    if (!row) {
+      return;
+    }
+    const generation = parsePlpRecoveryGeneration(row.recoveryGeneration);
+    memoryByWorkKey.set(row.workKey, {
+      ...row,
+      status: "pending",
+      attempts: 0,
+      recoveryGeneration: String(generation + 1),
+      nextAttemptAt: null,
+      claimedAt: null,
+      completedAt: null,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  const col = collection();
+  const due = await col.findOne(
+    {
+      status: "pending",
+      retryable: true,
+      nextAttemptAt: { $ne: null, $lte: now },
+      $expr: { $gte: ["$attempts", "$maxAttempts"] },
+      entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
+      $or: [
+        { recoveryGeneration: null },
+        { recoveryGeneration: { $exists: false } },
+        { recoveryGeneration: "0" },
+        { recoveryGeneration: "1" },
+      ],
+    },
+    { sort: { enqueuedAt: 1 } },
+  );
+  if (!due) {
+    return;
+  }
+  const generation = parsePlpRecoveryGeneration(due.recoveryGeneration ?? null);
+  if (generation >= PLP_MAX_RECOVERY_GENERATIONS) {
+    return;
+  }
+  await col.updateOne(
+    {
+      workKey: due.workKey,
+      status: "pending",
+      attempts: due.attempts,
+      nextAttemptAt: due.nextAttemptAt ?? null,
+    },
+    {
+      $set: {
+        status: "pending",
+        attempts: 0,
+        recoveryGeneration: String(generation + 1),
+        nextAttemptAt: null,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt: now,
+      },
+    },
+  );
 }
 
 function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
@@ -216,6 +375,7 @@ function mapDoc(doc: PlpAutoBuildWorkDocument): PlpAutoBuildWorkRecord {
     lastFailureAt: doc.lastFailureAt,
     nextAttemptAt: doc.nextAttemptAt ?? null,
     recoveryGeneration: doc.recoveryGeneration ?? null,
+    batchCheckpoint: doc.batchCheckpoint ?? null,
   };
 }
 
@@ -235,6 +395,11 @@ function coalesceUpsert(input: {
   readonly reopenFailedSameVersion?: boolean;
   /** RESET 05E.1 — stamp recovery generation when reopening exhausted provider failures. */
   readonly recoveryGeneration?: string | null;
+  /**
+   * Live provider plan. Required before an obsolete terminology row can be
+   * adopted, so the stored fingerprint is the same one resume will accept.
+   */
+  readonly checkpointBatches?: readonly (Readonly<Record<string, string>>)[];
 }): UpsertPlpAutoBuildWorkResult {
   const workKey = plpBuildWorkKey(input);
   const updatedAt = nowIso();
@@ -263,6 +428,7 @@ function coalesceUpsert(input: {
       lastFailureAt: null,
       nextAttemptAt: null,
       recoveryGeneration: null,
+      batchCheckpoint: null,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -275,25 +441,112 @@ function coalesceUpsert(input: {
     return { accepted: false, deduped: true, record: existing };
   }
 
-  // Same-version terminal failed: never reopen via normal coalesce (preserves
-  // forensic row; stops RSS refresh climbing attemptCount past maxAttempts).
-  // RESET 05D / 05E.1 — explicit reopenFailedSameVersion allows one-shot heal.
+  // Same-version failed: ordinary coalesce keeps the forensic row.
+  // A wake may adopt retryable exhaustion into the durable recovery contract.
+  // It must not reset attempts or recoveryGeneration, and it must not reopen
+  // non-retryable or generation-capped failures.
   if (existing.status === "failed" && sameVersion) {
-    if (!input.reopenFailedSameVersion) {
+    if (
+      input.reopenFailedSameVersion &&
+      isObsoleteTerminologyHardGateFailure({
+        failureCode: existing.failureCode,
+        retryable: existing.retryable,
+        safeReason: existing.lastError,
+      }) &&
+      isCompatiblePlpBatchCheckpoint({
+        sourceVersion: input.canonicalVersion,
+        checkpoint: existing.batchCheckpoint,
+        batches: input.checkpointBatches,
+      })
+    ) {
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: Math.max(0, existing.attempts - 1),
+        maxAttempts: input.maxAttempts,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        nextAttemptAt: updatedAt,
+        recoveryGeneration: existing.recoveryGeneration,
+        batchCheckpoint: existing.batchCheckpoint,
+      };
+      return { accepted: true, deduped: false, record };
+    }
+    if (!input.reopenFailedSameVersion || existing.retryable !== true) {
       return { accepted: false, deduped: true, record: existing };
+    }
+    const generation = parsePlpRecoveryGeneration(existing.recoveryGeneration);
+    const exhausted = existing.attempts >= existing.maxAttempts;
+    if (
+      exhausted &&
+      (generation >= PLP_MAX_RECOVERY_GENERATIONS ||
+        isLocalizationSourceOriginalEntityType(existing.entityType))
+    ) {
+      // ES.05 — one same-row continuation for the pre-repair pacing mislabel.
+      // Does not raise the generation cap and does not reopen other failures.
+      if (
+        input.reopenFailedSameVersion &&
+        !isLocalizationSourceOriginalEntityType(existing.entityType) &&
+        isLegacyPacingMisclassifiedTerminalFailure({
+          failureCode: existing.failureCode,
+          retryable: existing.retryable,
+          safeReason: existing.lastError,
+        })
+      ) {
+        const record: PlpAutoBuildWorkRecord = {
+          ...existing,
+          status: "pending",
+          attempts: Math.max(0, existing.attempts - 1),
+          maxAttempts: input.maxAttempts,
+          claimedAt: null,
+          completedAt: null,
+          updatedAt,
+          nextAttemptAt: updatedAt,
+          recoveryGeneration: existing.recoveryGeneration,
+        };
+        return { accepted: true, deduped: false, record };
+      }
+      return { accepted: false, deduped: true, record: existing };
+    }
+    if (exhausted) {
+      const scheduled = computePlpRecoveryCooldownNextAttemptAt(
+        generation,
+        Date.parse(updatedAt),
+      );
+      if (!scheduled) {
+        return { accepted: false, deduped: true, record: existing };
+      }
+      const existingDue = existing.nextAttemptAt
+        ? Date.parse(existing.nextAttemptAt)
+        : Number.NaN;
+      const nextAttemptAt =
+        Number.isFinite(existingDue) && existingDue > Date.parse(updatedAt)
+          ? existing.nextAttemptAt
+          : scheduled;
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: existing.attempts,
+        maxAttempts: input.maxAttempts,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        nextAttemptAt,
+        recoveryGeneration: String(generation),
+      };
+      return { accepted: true, deduped: false, record };
     }
     const record: PlpAutoBuildWorkRecord = {
       ...existing,
       status: "pending",
-      attempts: 0,
+      attempts: existing.attempts,
       maxAttempts: input.maxAttempts,
       claimedAt: null,
       completedAt: null,
       updatedAt,
-      enqueuedAt: updatedAt,
-      nextAttemptAt: null,
-      recoveryGeneration:
-        input.recoveryGeneration ?? existing.recoveryGeneration,
+      nextAttemptAt: existing.nextAttemptAt,
+      recoveryGeneration: existing.recoveryGeneration,
     };
     return { accepted: true, deduped: false, record };
   }
@@ -349,6 +602,7 @@ function coalesceUpsert(input: {
     updatedAt,
     nextAttemptAt: null,
     recoveryGeneration: resetAttempts ? null : existing.recoveryGeneration,
+    batchCheckpoint: resetAttempts ? null : existing.batchCheckpoint ?? null,
     enqueuedAt:
       existing.status === "pending" || existing.status === "running"
         ? existing.enqueuedAt
@@ -367,6 +621,7 @@ export async function upsertPendingPlpAutoBuildWork(input: {
   readonly maxAttempts?: number;
   readonly reopenFailedSameVersion?: boolean;
   readonly recoveryGeneration?: string | null;
+  readonly checkpointBatches?: readonly (Readonly<Record<string, string>>)[];
 }): Promise<UpsertPlpAutoBuildWorkResult> {
   const maxAttempts = input.maxAttempts ?? resolvePlpAutoBuildMaxAttempts();
   const workKey = plpBuildWorkKey(input);
@@ -413,10 +668,9 @@ export async function upsertPendingPlpAutoBuildWork(input: {
 }
 
 /**
- * Read-only thin-Gemini admission. Does not call Gemini and does not write.
+ * Read-only provider admission. Does not call Gemini and does not write.
  * Returns the instant work may be claimed, or null when admission is open.
  * Fail-open on state-read errors, matching the previous claim path.
- * Production main has no localization-provider governor on this path.
  */
 export async function readPlpProviderNotBeforeMs(
   nowMsValue: number = Date.now(),
@@ -424,18 +678,28 @@ export async function readPlpProviderNotBeforeMs(
   plpProviderAdmissionReads += 1;
   try {
     const cooldown = await getThinGeminiCooldownSnapshot(nowMsValue);
-    if (!cooldown.active) {
-      return null;
+    if (cooldown.active) {
+      const until = cooldown.cooldownUntil ? Date.parse(cooldown.cooldownUntil) : Number.NaN;
+      return Number.isFinite(until) ? until : nowMsValue + PLP_PROVIDER_ADMISSION_FALLBACK_MS;
     }
-    const until = cooldown.cooldownUntil ? Date.parse(cooldown.cooldownUntil) : Number.NaN;
-    return Number.isFinite(until) ? until : nowMsValue + PLP_PROVIDER_ADMISSION_FALLBACK_MS;
+    const { readLocalizationProviderPacing } = await import(
+      "../../localization-provider-governor.js"
+    );
+    const pacing = await readLocalizationProviderPacing(nowMsValue);
+    if (pacing.blocked) {
+      const until = pacing.nextProviderRequestAt
+        ? Date.parse(pacing.nextProviderRequestAt)
+        : Number.NaN;
+      return Number.isFinite(until) ? until : nowMsValue + PLP_PROVIDER_ADMISSION_FALLBACK_MS;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 function stuckBeforeIso(): string {
-  return new Date(Date.now() - STUCK_RUNNING_MS).toISOString();
+  return new Date(nowMs() - STUCK_RUNNING_MS).toISOString();
 }
 
 function isImmediatelyClaimablePlpRow(
@@ -443,6 +707,9 @@ function isImmediatelyClaimablePlpRow(
   now: string,
   stuckBefore: string,
 ): boolean {
+  if (isLocalizationSourceOriginalEntityType(row.entityType)) {
+    return false;
+  }
   if (row.attempts >= row.maxAttempts) {
     return false;
   }
@@ -456,14 +723,23 @@ function isImmediatelyClaimablePlpRow(
 }
 
 function isFutureRelevantPlpRow(row: PlpAutoBuildWorkRecord, now: string): boolean {
-  if (row.status !== "pending" || row.nextAttemptAt == null || row.nextAttemptAt <= now) {
+  if (row.status !== "pending" || isLocalizationSourceOriginalEntityType(row.entityType)) {
     return false;
   }
-  return row.attempts < row.maxAttempts;
+  if (row.nextAttemptAt == null || row.nextAttemptAt <= now) {
+    return false;
+  }
+  if (row.attempts < row.maxAttempts) {
+    return true;
+  }
+  return (
+    row.retryable === true &&
+    parsePlpRecoveryGeneration(row.recoveryGeneration) < PLP_MAX_RECOVERY_GENERATIONS
+  );
 }
 
 /**
- * One bounded read: is any PLP row claimable now?
+ * One bounded read: is any PLP row claimable now, including a due recovery window?
  * Completed, failed, superseded, and skipped rows are not matched.
  */
 export async function probePlpAutoBuildImmediatelyDue(
@@ -472,7 +748,7 @@ export async function probePlpAutoBuildImmediatelyDue(
   const stuckBefore = stuckBeforeIso();
   if (usePlpAutoBuildWorkMemory()) {
     for (const row of memoryByWorkKey.values()) {
-      if (isImmediatelyClaimablePlpRow(row, now, stuckBefore)) {
+      if (isImmediatelyClaimablePlpRow(row, now, stuckBefore) || isDueRecoveryWindow(row, now)) {
         return true;
       }
     }
@@ -481,9 +757,11 @@ export async function probePlpAutoBuildImmediatelyDue(
 
   const doc = await collection().findOne(
     {
-      $and: [
-        { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
+      entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
+      $or: [
         {
+          status: "pending",
+          $expr: { $lt: ["$attempts", "$maxAttempts"] },
           $or: [
             { nextAttemptAt: null },
             { nextAttemptAt: { $exists: false } },
@@ -491,10 +769,21 @@ export async function probePlpAutoBuildImmediatelyDue(
           ],
         },
         {
+          status: "pending",
+          retryable: true,
+          nextAttemptAt: { $ne: null, $lte: now },
+          $expr: { $gte: ["$attempts", "$maxAttempts"] },
           $or: [
-            { status: "pending" },
-            { status: "running", claimedAt: { $lt: stuckBefore } },
+            { recoveryGeneration: null },
+            { recoveryGeneration: { $exists: false } },
+            { recoveryGeneration: "0" },
+            { recoveryGeneration: "1" },
           ],
+        },
+        {
+          status: "running",
+          claimedAt: { $lt: stuckBefore },
+          $expr: { $lt: ["$attempts", "$maxAttempts"] },
         },
       ],
     },
@@ -525,8 +814,20 @@ export async function findEarliestPlpFutureDueAt(now: string = nowIso()): Promis
     .find(
       {
         status: "pending",
+        entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
         nextAttemptAt: { $gt: now },
-        $expr: { $lt: ["$attempts", "$maxAttempts"] },
+        $or: [
+          { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
+          {
+            retryable: true,
+            $or: [
+              { recoveryGeneration: null },
+              { recoveryGeneration: { $exists: false } },
+              { recoveryGeneration: "0" },
+              { recoveryGeneration: "1" },
+            ],
+          },
+        ],
       },
       { projection: { nextAttemptAt: 1 } },
     )
@@ -556,13 +857,15 @@ export async function claimNextPlpAutoBuildWork(options?: {
   const stuckBefore = stuckBeforeIso();
 
   // RESET 05E.3 — do not claim while thin_gemini durable cooldown is active.
-  // Prevents attempt churn / request bursts during RESOURCE_EXHAUSTED.
+  // F.3.12 — also wait for the shared global pacing permit. Neither path calls Gemini.
   if (!options?.skipProviderAdmission) {
-    const notBefore = await readPlpProviderNotBeforeMs(Date.now());
-    if (notBefore != null && notBefore > Date.now()) {
+    const notBefore = await readPlpProviderNotBeforeMs(nowMs());
+    if (notBefore != null && notBefore > nowMs()) {
       return null;
     }
   }
+
+  await promoteDueRecoveryWindow(now);
 
   if (usePlpAutoBuildWorkMemory()) {
     const candidates = [...memoryByWorkKey.values()]
@@ -575,6 +878,7 @@ export async function claimNextPlpAutoBuildWork(options?: {
               row.claimedAt != null &&
               row.claimedAt < stuckBefore)),
       )
+      .filter((row) => !isLocalizationSourceOriginalEntityType(row.entityType))
       .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
     const next = candidates[0];
     if (!next) {
@@ -600,6 +904,9 @@ export async function claimNextPlpAutoBuildWork(options?: {
   const claimed = await col.findOneAndUpdate(
     {
       $and: [
+        {
+          entityType: { $nin: [...LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES] },
+        },
         { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
         {
           $or: [
@@ -676,8 +983,92 @@ async function markTerminal(
           ? { failureStage: patch.failureStage }
           : {}),
         ...(patch.retryable !== undefined ? { retryable: patch.retryable } : {}),
+        ...(patch.batchCheckpoint !== undefined
+          ? { batchCheckpoint: patch.batchCheckpoint }
+          : {}),
       },
     },
+  );
+}
+
+export async function getPlpAutoBuildWorkByKey(
+  workKey: string,
+): Promise<PlpAutoBuildWorkRecord | null> {
+  if (usePlpAutoBuildWorkMemory()) {
+    return memoryByWorkKey.get(workKey) ?? null;
+  }
+  const doc = await collection().findOne({ workKey });
+  return doc ? mapDoc(doc) : null;
+}
+
+/**
+ * One accepted batch is durable progress, not a failed attempt.
+ * Refunds the claim increment and does not touch recoveryGeneration.
+ */
+export async function persistPlpBatchCheckpointYield(input: {
+  readonly workKey: string;
+  readonly attempts: number;
+  readonly checkpoint: PlpBatchCheckpoint;
+  readonly pacingUntil: string | null;
+}): Promise<void> {
+  const now = nowIso();
+  let existing: PlpAutoBuildWorkRecord | null = null;
+  if (usePlpAutoBuildWorkMemory()) {
+    existing = memoryByWorkKey.get(input.workKey) ?? null;
+  } else {
+    const doc = await collection().findOne({ workKey: input.workKey });
+    existing = doc ? mapDoc(doc) : null;
+  }
+  if (!existing) {
+    return;
+  }
+  const record: PlpAutoBuildWorkRecord = {
+    ...existing,
+    status: "pending",
+    attempts: Math.max(0, Math.trunc(input.attempts) - 1),
+    lastError: "PROVIDER_PACING_WAIT",
+    failureCode: "PROVIDER_FAILURE",
+    failureStage: "provider",
+    retryable: true,
+    lastFailureAt: now,
+    nextAttemptAt: input.pacingUntil,
+    batchCheckpoint: input.checkpoint,
+    claimedAt: null,
+    completedAt: null,
+    updatedAt: now,
+  };
+  if (usePlpAutoBuildWorkMemory()) {
+    memoryByWorkKey.set(input.workKey, record);
+    return;
+  }
+  await collection().updateOne({ workKey: input.workKey }, { $set: record });
+}
+
+/**
+ * Provider batch accepted and safe to keep. Does not refund attempts, change
+ * status, or start pacing. A later local quality failure must leave this
+ * checkpoint in place.
+ */
+export async function persistPlpProviderSuccessCheckpoint(input: {
+  readonly workKey: string;
+  readonly checkpoint: PlpBatchCheckpoint;
+}): Promise<void> {
+  const now = nowIso();
+  if (usePlpAutoBuildWorkMemory()) {
+    const existing = memoryByWorkKey.get(input.workKey);
+    if (!existing) {
+      return;
+    }
+    memoryByWorkKey.set(input.workKey, {
+      ...existing,
+      batchCheckpoint: input.checkpoint,
+      updatedAt: now,
+    });
+    return;
+  }
+  await collection().updateOne(
+    { workKey: input.workKey },
+    { $set: { batchCheckpoint: input.checkpoint, updatedAt: now } },
   );
 }
 
@@ -688,6 +1079,7 @@ export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<vo
     failureCode: null,
     failureStage: null,
     retryable: null,
+    batchCheckpoint: null,
   });
 }
 
@@ -768,6 +1160,46 @@ export async function markPlpAutoBuildWorkFailed(input: {
     }
   }
   const now = nowIso();
+  if (input.failure.pacingDefer === true && input.failure.pacingUntil) {
+    const restoredAttempts = Math.max(0, Math.trunc(input.attempts) - 1);
+    const failurePatch = {
+      lastError: "PROVIDER_PACING_WAIT",
+      failureCode: input.failure.failureCode,
+      failureStage: input.failure.stage,
+      retryable: true,
+      lastFailureAt: now,
+      nextAttemptAt: input.failure.pacingUntil,
+      attempts: restoredAttempts,
+    };
+    if (usePlpAutoBuildWorkMemory()) {
+      const existing = memoryByWorkKey.get(input.workKey);
+      if (!existing) {
+        return { requeued: false, quotaDeferred: false };
+      }
+      memoryByWorkKey.set(input.workKey, {
+        ...existing,
+        ...failurePatch,
+        status: "pending",
+        updatedAt: now,
+        claimedAt: null,
+        completedAt: null,
+      });
+      return { requeued: true, quotaDeferred: false };
+    }
+    await collection().updateOne(
+      { workKey: input.workKey },
+      {
+        $set: {
+          status: "pending",
+          ...failurePatch,
+          updatedAt: now,
+          claimedAt: null,
+          completedAt: null,
+        },
+      },
+    );
+    return { requeued: true, quotaDeferred: false };
+  }
   const quotaDefer =
     input.failure.quotaDefer === true || isPlpQuotaDeferSafeReason(safeReason);
 
@@ -839,10 +1271,44 @@ export async function markPlpAutoBuildWorkFailed(input: {
     (!usePlpAutoBuildWorkMemory() ||
       process.env.HU_PLP_RETRY_BACKOFF_IN_MEMORY === "1");
   const nextAttemptAt = applyBackoff
-    ? computePlpProviderRetryNextAttemptAt(input.attempts, Date.now(), {
+    ? computePlpProviderRetryNextAttemptAt(input.attempts, nowMs(), {
         retryAfterSeconds,
       })
     : null;
+
+  const existing = usePlpAutoBuildWorkMemory()
+    ? memoryByWorkKey.get(input.workKey) ?? null
+    : await collection()
+        .findOne({ workKey: input.workKey })
+        .then((doc) => (doc ? mapDoc(doc) : null));
+  if (!existing) {
+    return { requeued: false };
+  }
+
+  const exhaustedRetryable =
+    input.failure.retryable === true && !underCap &&
+    !isLocalizationSourceOriginalEntityType(existing.entityType);
+  const generation = parsePlpRecoveryGeneration(existing.recoveryGeneration);
+  const recoveryCooldownAt = exhaustedRetryable
+    ? computePlpRecoveryCooldownNextAttemptAt(generation, nowMs())
+    : null;
+  const alreadyCooling =
+    recoveryCooldownAt != null &&
+    existing.status === "pending" &&
+    existing.attempts >= existing.maxAttempts &&
+    existing.nextAttemptAt != null &&
+    Date.parse(existing.nextAttemptAt) > nowMs();
+  const durableRecovery =
+    recoveryCooldownAt == null
+      ? null
+      : {
+          status: "pending" as const,
+          attempts: input.attempts,
+          nextAttemptAt: alreadyCooling ? existing.nextAttemptAt : recoveryCooldownAt,
+          recoveryGeneration: String(generation),
+          completedAt: null,
+          claimedAt: null,
+        };
 
   const failurePatch = {
     lastError: safeReason,
@@ -850,64 +1316,45 @@ export async function markPlpAutoBuildWorkFailed(input: {
     failureStage: input.failure.stage,
     retryable: input.failure.retryable,
     lastFailureAt: now,
-    nextAttemptAt,
+    nextAttemptAt: durableRecovery?.nextAttemptAt ?? nextAttemptAt,
+    ...(durableRecovery
+      ? {
+          attempts: durableRecovery.attempts,
+          recoveryGeneration: durableRecovery.recoveryGeneration,
+        }
+      : {}),
   };
 
-  if (usePlpAutoBuildWorkMemory()) {
-    const existing = memoryByWorkKey.get(input.workKey);
-    if (!existing) {
-      return { requeued: false };
-    }
-    if (canRetry) {
-      memoryByWorkKey.set(input.workKey, {
-        ...existing,
-        ...failurePatch,
-        status: "pending",
-        updatedAt: now,
-        claimedAt: null,
-        completedAt: null,
-      });
-      return { requeued: true };
-    }
-    memoryByWorkKey.set(input.workKey, {
+  if (canRetry || durableRecovery) {
+    const record: PlpAutoBuildWorkRecord = {
       ...existing,
       ...failurePatch,
-      status: "failed",
+      status: "pending",
       updatedAt: now,
-      completedAt: now,
-      nextAttemptAt: null,
-    });
-    return { requeued: false };
-  }
-
-  if (canRetry) {
-    await collection().updateOne(
-      { workKey: input.workKey },
-      {
-        $set: {
-          status: "pending",
-          ...failurePatch,
-          updatedAt: now,
-          claimedAt: null,
-          completedAt: null,
-        },
-      },
-    );
+      claimedAt: null,
+      completedAt: null,
+    };
+    if (usePlpAutoBuildWorkMemory()) {
+      memoryByWorkKey.set(input.workKey, record);
+    } else {
+      await collection().updateOne({ workKey: input.workKey }, { $set: record });
+    }
     return { requeued: true };
   }
 
-  await collection().updateOne(
-    { workKey: input.workKey },
-    {
-      $set: {
-        status: "failed",
-        ...failurePatch,
-        nextAttemptAt: null,
-        updatedAt: now,
-        completedAt: now,
-      },
-    },
-  );
+  const terminal: PlpAutoBuildWorkRecord = {
+    ...existing,
+    ...failurePatch,
+    status: "failed",
+    updatedAt: now,
+    completedAt: now,
+    nextAttemptAt: null,
+  };
+  if (usePlpAutoBuildWorkMemory()) {
+    memoryByWorkKey.set(input.workKey, terminal);
+  } else {
+    await collection().updateOne({ workKey: input.workKey }, { $set: terminal });
+  }
   return { requeued: false };
 }
 
@@ -1043,6 +1490,27 @@ export function normalizePlpAutoBuildFailureClass(
     return "ADAPTER_OR_SOURCE";
   }
   return "UNKNOWN";
+}
+
+/**
+ * Bounded locale read for activation progress. Not a corpus scan.
+ */
+export async function listPlpAutoBuildWorkForLocale(input: {
+  readonly locale: string;
+  readonly limit: number;
+}): Promise<readonly PlpAutoBuildWorkRecord[]> {
+  const limit = Math.min(Math.max(Math.trunc(input.limit) || 1, 1), 50);
+  const locale = String(input.locale).toLowerCase();
+  if (usePlpAutoBuildWorkMemory()) {
+    return [...memoryByWorkKey.values()]
+      .filter((row) => row.locale === locale)
+      .slice(0, limit);
+  }
+  const docs = await collection()
+    .find({ locale })
+    .limit(limit)
+    .toArray();
+  return docs.map((doc) => mapDoc(doc));
 }
 
 /**

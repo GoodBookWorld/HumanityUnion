@@ -10,7 +10,7 @@ import type {
   MediaPlpEntityType,
   PlpBuildRequest,
 } from "@hu/types";
-import { MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
+import { isLocalizationSourceOriginalEntityType, MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { getPublishedLocalizationPersistenceMode } from "../persistence/repository.js";
@@ -35,6 +35,11 @@ import {
   ensureAllDefaultPlpAdaptersRegistered,
   ensureMediaPlpAdapterRegistered,
 } from "./register-defaults.js";
+import { logger } from "../../../../shared/observability/logger.js";
+import {
+  getPlpAutoBuildWorkByKey,
+  persistPlpProviderSuccessCheckpoint,
+} from "./plp-auto-build-work.repository.js";
 import { PLP_UNIVERSAL_PROVIDER_TIMEOUT_MS } from "./safety.js";
 
 export type ProcessPlpBuildRequestDeps = {
@@ -99,7 +104,7 @@ function withTimeout<T>(
   });
 }
 
-function collectMachineAutoValues(input: {
+export function collectMachineAutoValues(input: {
   readonly presentation: unknown;
   readonly fieldPolicy: Parameters<typeof isCollectedPathMachineEligible>[1];
 }): {
@@ -130,6 +135,9 @@ export async function processPlpBuildRequest(
   request: PlpBuildRequest,
   deps: ProcessPlpBuildRequestDeps = {},
 ): Promise<ProcessPlpBuildRequestResult> {
+  if (isLocalizationSourceOriginalEntityType(request.entityType)) {
+    return { status: "SKIPPED_USABLE" };
+  }
   ensureMediaPlpAdapterRegistered();
   ensureAllDefaultPlpAdaptersRegistered();
 
@@ -292,35 +300,83 @@ export async function processPlpBuildRequest(
 
       const timeoutMs =
         deps.providerTimeoutMs ?? PLP_UNIVERSAL_PROVIDER_TIMEOUT_MS;
-      const callProvider =
-        deps.callProvider ??
-        (async (input) => {
-          const result =
-            await providerModule.callMediaPlpMaterializerProviderOnce({
-              provider: input.provider,
-              locale: input.locale,
-              autoValues: input.autoValues,
-              sourceRecordId: input.sourceRecordId,
-              sourceVersion: input.sourceVersion,
-              PROVIDER_TRANSPORT: input.PROVIDER_TRANSPORT,
-            });
-          if (!result.ok) {
-            return {
-              ok: false as const,
-              message: result.message,
-              reason: result.reason,
-            };
-          }
-          return { ok: true as const, values: result.values };
-        });
+      const stored = await getPlpAutoBuildWorkByKey(request.workKey);
+      const storedCheckpoint =
+        stored?.batchCheckpoint &&
+        stored.batchCheckpoint.sourceVersion === contract.canonicalVersion
+          ? stored.batchCheckpoint
+          : null;
 
       const { recordPlpAutoBuildProviderCall } = await import(
         "./plp-auto-build-runtime.js"
       );
       recordPlpAutoBuildProviderCall();
 
+      if (!deps.callProvider) {
+        const stepped = await withTimeout(
+          providerModule.callMediaPlpMaterializerProviderOnce({
+            provider: imported.provider,
+            locale: request.locale as LanguageCode,
+            autoValues,
+            sourceRecordId: `${request.entityType}:${request.entityId}`,
+            sourceVersion: contract.canonicalVersion,
+            PROVIDER_TRANSPORT: imported.PROVIDER_TRANSPORT,
+            yieldAfterAcceptedBatch: true,
+            batchCheckpoint: storedCheckpoint,
+            persistAcceptedBatchCheckpoint: async (checkpoint) => {
+              await persistPlpProviderSuccessCheckpoint({
+                workKey: request.workKey,
+                checkpoint,
+              });
+            },
+            onTerminologyQualityAssessed: (diagnostics) => {
+              if (diagnostics.length === 0) {
+                return;
+              }
+              logger.info("plp_auto_build.terminology_quality_diagnostic", {
+                component: "plp-auto-build",
+                locale: request.locale,
+                diagnostics: diagnostics.map(
+                  (item) => `${item.conceptId}:${item.reason}`,
+                ),
+              });
+            },
+          }),
+          timeoutMs,
+          "PLP auto-build provider",
+        );
+        if (!stepped.ok && stepped.reason === "PROVIDER_BATCH_PROGRESS") {
+          if (!stepped.batchCheckpoint) {
+            return failed({
+              status: "FAILED",
+              failure: structuredFailure({
+                failureCode: "PROVIDER_FAILURE",
+                retryable: true,
+                stage: "provider",
+                safeReason: "CHECKPOINT_LIMIT",
+              }),
+            });
+          }
+          return {
+            status: "BATCH_PROGRESS",
+            checkpoint: stepped.batchCheckpoint,
+            pacingUntil: stepped.pacingUntil ?? null,
+          };
+        }
+        if (!stepped.ok) {
+          return failed({
+            status: "FAILED",
+            failure: mapProviderBoundaryReasonToFailure({
+              reason: stepped.reason,
+              message: stepped.message,
+            }),
+          });
+        }
+        localizationValues = { ...stepped.values };
+        localizationSource = "PROVIDER";
+      } else {
       const providerResult = await withTimeout(
-        callProvider({
+        deps.callProvider({
           provider: imported.provider,
           locale: request.locale as LanguageCode,
           autoValues,
@@ -343,7 +399,24 @@ export async function processPlpBuildRequest(
       }
       localizationValues = { ...providerResult.values };
       localizationSource = "PROVIDER";
+      }
     } catch (error) {
+      const { isLocalizationProviderPacingDeferredError } = await import(
+        "../../localization-provider-governor.js"
+      );
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return failed({
+          status: "FAILED",
+          failure: structuredFailure({
+            failureCode: "PROVIDER_FAILURE",
+            retryable: true,
+            stage: "provider",
+            safeReason: "PROVIDER_PACING_WAIT",
+            pacingDefer: true,
+            pacingUntil: error.nextAllowedAt,
+          }),
+        });
+      }
       return failed({
         status: "FAILED",
         failure: failureFromTimeoutError(error),

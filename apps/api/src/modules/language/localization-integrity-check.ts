@@ -11,6 +11,7 @@ import {
   LOCALIZATION_INTEGRITY_OWNERSHIP_POLICY,
   buildLocalizationIntegrityReport,
   emptyLanguageLocalizationCountBucket,
+  isLocalizationSourceOriginalEntityType,
   type LanguageCode,
   type LocalizationIntegrityArtifactRow,
   type LocalizationIntegrityReport,
@@ -33,7 +34,6 @@ const HU_CAROUSEL_KINDS = new Set([
   "civic_media_trusted",
   "civic_media_fact_check",
   "civic_media_propaganda",
-  "public_news",
 ]);
 
 function mapMediaStatus(
@@ -58,10 +58,12 @@ function mapMediaStatus(
 function mapCtCounts(input: {
   readonly missing: number;
   readonly stale: number;
+  readonly invalid?: number;
   readonly failed: number;
   readonly current: number;
   readonly workItemsRequired: number;
 }): LocalizationIntegrityArtifactRow["state"] {
+  if ((input.invalid ?? 0) > 0) return "INVALID";
   if (input.failed > 0 && input.current === 0 && input.missing === 0 && input.stale === 0) {
     return "FAILED";
   }
@@ -166,6 +168,7 @@ export async function runLocalizationIntegrityCheck(
       current: row?.CURRENT_TARGET_TRANSLATION_IDENTITIES ?? 0,
       missing: row?.MISSING_TARGET_TRANSLATION_IDENTITIES ?? 0,
       stale: row?.STALE_TARGET_TRANSLATION_IDENTITIES ?? 0,
+      invalid: 0,
       failed: row?.FAILED_TARGET_TRANSLATION_IDENTITIES ?? 0,
       pending: 0,
       workItemsRequired: row?.WORK_ITEMS_REQUIRED ?? 0,
@@ -175,6 +178,7 @@ export async function runLocalizationIntegrityCheck(
       current: ctBucket.current + counts.current,
       missing: ctBucket.missing + counts.missing,
       stale: ctBucket.stale + counts.stale,
+      invalid: ctBucket.invalid + counts.invalid,
       failed: ctBucket.failed + counts.failed,
       pending: ctBucket.pending,
       workItemsRequired: ctBucket.workItemsRequired + counts.workItemsRequired,
@@ -252,6 +256,7 @@ export async function runLocalizationIntegrityCheck(
       current: plpBucket.current + measured.current,
       missing: plpBucket.missing + measured.missing,
       stale: plpBucket.stale + measured.stale,
+      invalid: plpBucket.invalid + measured.invalid,
       failed: plpBucket.failed + measured.failed,
       pending: plpBucket.pending + measured.pending,
       workItemsRequired: plpBucket.workItemsRequired + measured.workItemsRequired,
@@ -292,6 +297,15 @@ export async function runLocalizationIntegrityCheck(
         ownership: "MANUAL_AUTHOR",
         state: "CURRENT",
         detail: "No MANUAL_AUTHOR public kinds after Implementation 01 (Part D is CT-owned)",
+      });
+      continue;
+    }
+    if (isLocalizationSourceOriginalEntityType(kind)) {
+      artifacts.push({
+        kindId: kind,
+        ownership: "PROTECTED_EXCLUDED",
+        state: "PROTECTED",
+        detail: "SOURCE_ORIGINAL. Not a localization unit.",
       });
       continue;
     }

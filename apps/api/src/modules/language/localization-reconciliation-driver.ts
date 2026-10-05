@@ -1,0 +1,938 @@
+/**
+ * STEP 15D.14.C.2 / C.3 / C.3.2 — durable localization reconciliation driver.
+ *
+ * C.2: completed languages with WEB_UI READY + actionable work converge without
+ * Activate/Resume and without reopening activation.status.
+ *
+ * C.3: no-progress / provider-pressure backoff when a pass does not converge.
+ *
+ * C.3.2: usefulProgress requires durable READY/current coverage increase.
+ * Scheduling, dedupe, PLP enqueue-called, truncation, and pending-shift
+ * work-count decreases are observability only — never progress.
+ *
+ * Reuses Gate C residual retry + PLP consumer enqueue + outbox/warm pipeline.
+ * Does not redefine READY/MISSING/STALE/INVALID.
+ *
+ * Read paths must never call schedule/run APIs in this module.
+ */
+
+import type { LanguageCode } from "@hu/types";
+import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
+
+import { logger } from "../../shared/observability/logger.js";
+import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
+import { resolveLanguageRegistryLocale } from "./language-registry/language-registry.repository.js";
+import { assessWebUiCatalogReadinessForLocale } from "./language-localization-activation/assess-web-ui-catalog-readiness.js";
+import { ensureWebUiPreparationForUnreadyLocale } from "./language-localization-activation/language-activation-job.service.js";
+import { stampWebUiLeafSourceFingerprintsIfCatalogUnchanged } from "../web-ui-message-packs/web-ui-leaf-source-stamp.js";
+import type { WebUiPreparationEnsureResult } from "./language-localization-activation/language-activation-job.service.js";
+import { readLocalizationProviderCooldown } from "./localization-provider-governor.js";
+import type { LocalizationProviderCooldownRead } from "./localization-provider-governor.js";
+import { measureLiveActivationCtCoverage } from "./live-residual-ct-coverage.js";
+import { runPublicLocalizationResidualRetry } from "./public-localization-residual-retry.js";
+import {
+  aggregatePlpCountsFromPlan,
+  planLanguageHistoricalBackfill,
+} from "./language-localization-activation/language-historical-backfill-planner.js";
+
+/** Bounded CT residual presentations enqueued per driver pass. */
+export const LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS = 25;
+
+/** Delay after useful progress when work remains (not a hot loop). */
+export const LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS = 60_000;
+
+/** First no-progress / provider-pressure deferred wake. */
+export const LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS = 5 * 60_000;
+
+/** Cap for repeated no-progress backoff. */
+export const LOCALIZATION_RECONCILIATION_NO_PROGRESS_MAX_DELAY_MS = 30 * 60_000;
+
+export type LocalizationReconciliationWakeReason =
+  | "boot"
+  | "activation_web_ui_ready"
+  | "activation_completed_with_work"
+  | "activation_residual_pass"
+  | "continuation"
+  | "cooldown_wake"
+  | "no_progress_backoff"
+  | "source_mutation"
+  | "terminology_mutation"
+  | "test";
+
+export type LocalizationReconciliationContinuationKind =
+  | "none"
+  | "normal"
+  | "no_progress_backoff"
+  | "provider_pressure_backoff"
+  | "provider_cooldown";
+
+export type LocalizationReconciliationEligibility = {
+  readonly eligible: boolean;
+  readonly canonicalLocale: string;
+  readonly reason:
+    | "ok"
+    | "empty_locale"
+    | "source_locale"
+    | "registry_ineligible"
+  | "web_ui_not_ready"
+  | "provider_cooldown"
+  | "no_actionable_work";
+  /** Set only when reason is provider_cooldown. Wake target, not a coverage fact. */
+  readonly cooldownUntil?: string | null;
+  readonly workItemsRequired: number;
+  /** Authoritative CT CURRENT / READY coverage (live residual). */
+  readonly ctCurrent: number;
+  /** Authoritative PLP CURRENT coverage from Gate C planner. */
+  readonly plpCurrent: number;
+  /** ctCurrent + plpCurrent — durable convergence signal. */
+  readonly durableCurrent: number;
+  /** CT pending / ACTIVE_WORK (observability; not progress). */
+  readonly pending: number;
+};
+
+export type LocalizationReconciliationPassResult = {
+  readonly locale: string;
+  readonly ran: boolean;
+  readonly reason: string;
+  readonly presentationsScheduled: number;
+  readonly presentationsDeduped: number;
+  readonly retryReadyIdentities: number;
+  readonly workItemsRequiredBefore: number;
+  readonly workItemsRequiredAfter: number;
+  readonly currentBefore: number;
+  readonly currentAfter: number;
+  readonly ctCurrentBefore: number;
+  readonly ctCurrentAfter: number;
+  readonly plpCurrentBefore: number;
+  readonly plpCurrentAfter: number;
+  readonly pendingBefore: number;
+  readonly pendingAfter: number;
+  readonly usefulProgress: boolean;
+  readonly continuationKind: LocalizationReconciliationContinuationKind;
+  readonly continuationScheduled: boolean;
+  readonly continuationDelayMs: number;
+  readonly noProgressStreak: number;
+  /** When set, a pending wake earlier than this instant is moved out to it. */
+  readonly notBeforeMs?: number;
+};
+
+export type LocalizationReconciliationDriverDeps = {
+  readonly resolveLocale?: typeof resolveLanguageRegistryLocale;
+  readonly assessWebUi?: typeof assessWebUiCatalogReadinessForLocale;
+  readonly measureCtWork?: typeof measureLiveActivationCtCoverage;
+  readonly planBackfill?: typeof planLanguageHistoricalBackfill;
+  readonly runResidual?: typeof runPublicLocalizationResidualRetry;
+  readonly enqueuePlp?: (locales: readonly string[]) => Promise<void>;
+  readonly listTargetLocales?: typeof listAutomaticContentTranslationTargetLocales;
+  readonly continuationDelayMs?: number;
+  readonly noProgressBaseDelayMs?: number;
+  readonly noProgressMaxDelayMs?: number;
+  readonly maxPresentationsPerPass?: number;
+  readonly nowMs?: () => number;
+  readonly readProviderCooldown?: () => Promise<LocalizationProviderCooldownRead>;
+  /**
+   * Idempotent WEB_UI preparation when reconciliation is blocked on WEB_UI.
+   * Production uses the activation job engine. Tests may substitute a fake.
+   */
+  readonly ensureWebUiPreparation?: (input: {
+    readonly locale: string;
+    readonly scheduleProcess?: boolean;
+  }) => Promise<WebUiPreparationEnsureResult>;
+};
+
+let depsOverride: LocalizationReconciliationDriverDeps | null = null;
+
+const inFlight = new Set<string>();
+const pendingWake = new Set<string>();
+const delayedTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const delayedReasons = new Map<string, LocalizationReconciliationWakeReason>();
+const delayedDueAtMs = new Map<string, number>();
+/** Consecutive no-progress passes per locale; reset on useful progress or idle. */
+const noProgressStreakByLocale = new Map<string, number>();
+
+const PROVIDER_PRESSURE_REASON =
+  /rate_limited|timeout|unavailable|network_failure/i;
+
+function canonicalKey(locale: string): string {
+  return normalizeLanguageRegistryLocaleKey(locale.trim());
+}
+
+function activeDeps(): LocalizationReconciliationDriverDeps {
+  return depsOverride ?? {};
+}
+
+function nowMs(): number {
+  return (activeDeps().nowMs ?? Date.now)();
+}
+
+function emptyCoverageFields(): Pick<
+  LocalizationReconciliationEligibility,
+  "workItemsRequired" | "ctCurrent" | "plpCurrent" | "durableCurrent" | "pending"
+> {
+  return {
+    workItemsRequired: 0,
+    ctCurrent: 0,
+    plpCurrent: 0,
+    durableCurrent: 0,
+    pending: 0,
+  };
+}
+
+export function setLocalizationReconciliationDriverDepsForTests(
+  deps: LocalizationReconciliationDriverDeps | null,
+): void {
+  depsOverride = deps;
+}
+
+export function resetLocalizationReconciliationDriverForTests(): void {
+  inFlight.clear();
+  pendingWake.clear();
+  for (const timer of delayedTimers.values()) {
+    clearTimeout(timer);
+  }
+  delayedTimers.clear();
+  delayedReasons.clear();
+  delayedDueAtMs.clear();
+  noProgressStreakByLocale.clear();
+  depsOverride = null;
+}
+
+export function peekLocalizationReconciliationDriverStateForTests(): {
+  readonly inFlight: readonly string[];
+  readonly pendingWake: readonly string[];
+  readonly delayedLocales: readonly string[];
+  readonly delayedDueAtMs: Readonly<Record<string, number>>;
+  readonly noProgressStreakByLocale: Readonly<Record<string, number>>;
+} {
+  return {
+    inFlight: [...inFlight],
+    pendingWake: [...pendingWake],
+    delayedLocales: [...delayedTimers.keys()],
+    delayedDueAtMs: Object.fromEntries(delayedDueAtMs),
+    noProgressStreakByLocale: Object.fromEntries(noProgressStreakByLocale),
+  };
+}
+
+function computeNoProgressDelayMs(streak: number): number {
+  const d = activeDeps();
+  const base =
+    d.noProgressBaseDelayMs ?? LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS;
+  const max =
+    d.noProgressMaxDelayMs ?? LOCALIZATION_RECONCILIATION_NO_PROGRESS_MAX_DELAY_MS;
+  const clampedStreak = Math.max(1, Math.min(streak, 8));
+  const delay = base * 2 ** (clampedStreak - 1);
+  return Math.min(max, delay);
+}
+
+function blockedLooksLikeProviderPressure(
+  residual: Awaited<ReturnType<typeof runPublicLocalizationResidualRetry>>,
+): boolean {
+  if (residual.presentationsFailed > 0) {
+    return true;
+  }
+  if (residual.RETRY_BLOCKED_IDENTITIES > 0) {
+    for (const row of residual.blockedIdentities ?? []) {
+      const reason = String(
+        (row as { blockReason?: unknown }).blockReason ?? "",
+      );
+      if (PROVIDER_PRESSURE_REASON.test(reason)) {
+        return true;
+      }
+    }
+    return residual.presentationsScheduled === 0;
+  }
+  return false;
+}
+
+/**
+ * Registry + WEB_UI 15D.9.1 + actionable CT/PLP work.
+ * Does not consult activation.status.
+ * Exposes authoritative CURRENT coverage for C.3.2 durable progress.
+ */
+export async function assessLocalizationReconciliationEligibility(
+  localeInput: string,
+  deps?: LocalizationReconciliationDriverDeps,
+): Promise<LocalizationReconciliationEligibility> {
+  const d = { ...activeDeps(), ...(deps ?? {}) };
+  const raw = localeInput.trim();
+  if (!raw) {
+    return {
+      eligible: false,
+      canonicalLocale: "",
+      reason: "empty_locale",
+      ...emptyCoverageFields(),
+    };
+  }
+  const resolve = d.resolveLocale ?? resolveLanguageRegistryLocale;
+  const record = await resolve(raw);
+  const canonicalLocale = record?.locale ?? raw;
+  if (canonicalKey(canonicalLocale) === "en") {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "source_locale",
+      ...emptyCoverageFields(),
+    };
+  }
+  if (record?.enabled !== true || record.contentTranslationEnabled !== true) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "registry_ineligible",
+      ...emptyCoverageFields(),
+    };
+  }
+
+  const assess = d.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
+  const publicWebUi = await assess({ locale: canonicalLocale });
+  const participantWebUi = await assess({
+    locale: canonicalLocale,
+    scope: "participant",
+  });
+  if (publicWebUi.dataReady !== true || participantWebUi.dataReady !== true) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "web_ui_not_ready",
+      ...emptyCoverageFields(),
+    };
+  }
+
+  // Shared provider cooldown is after the WEB_UI gate and before corpus work.
+  // An expired cooldownUntil is inactive. Reading does not arm or extend pressure.
+  // A snapshot read failure fails open so a missing client cannot stall convergence.
+  const readCooldown = d.readProviderCooldown ?? readLocalizationProviderCooldown;
+  let cooldown: LocalizationProviderCooldownRead = {
+    active: false,
+    cooldownUntil: null,
+    pressureCategory: null,
+  };
+  try {
+    cooldown = await readCooldown();
+  } catch (error) {
+    if (d.readProviderCooldown) {
+      throw error;
+    }
+  }
+  if (cooldown.active && cooldown.cooldownUntil) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "provider_cooldown",
+      cooldownUntil: cooldown.cooldownUntil,
+      ...emptyCoverageFields(),
+    };
+  }
+
+  const measureCt = d.measureCtWork ?? measureLiveActivationCtCoverage;
+  const ctCoverage = await measureCt({ locale: canonicalLocale });
+  const planBackfill = d.planBackfill ?? planLanguageHistoricalBackfill;
+  const plan = await planBackfill({
+    locale: canonicalLocale,
+    registryEligible: true,
+    mode: "dry-run",
+  });
+  const plpCounts = aggregatePlpCountsFromPlan(plan);
+  const ctCurrent = ctCoverage.ct.current;
+  const plpCurrent = plpCounts.current;
+  const durableCurrent = ctCurrent + plpCurrent;
+  const pending = ctCoverage.ct.pending;
+  const workItemsRequired =
+    ctCoverage.ct.workItemsRequired + plan.summary.plpWorkItems;
+
+  if (workItemsRequired <= 0) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "no_actionable_work",
+      workItemsRequired: 0,
+      ctCurrent,
+      plpCurrent,
+      durableCurrent,
+      pending,
+    };
+  }
+
+  return {
+    eligible: true,
+    canonicalLocale,
+    reason: "ok",
+    workItemsRequired,
+    ctCurrent,
+    plpCurrent,
+    durableCurrent,
+    pending,
+  };
+}
+
+async function enqueuePlpForLocale(
+  locale: string,
+  deps: LocalizationReconciliationDriverDeps,
+): Promise<boolean> {
+  const planBackfill = deps.planBackfill ?? planLanguageHistoricalBackfill;
+  const plan = await planBackfill({
+    locale,
+    registryEligible: true,
+    mode: "execute",
+  });
+  const needsPlp = plan.items.some(
+    (item) => item.owner === "PLP" && item.workItemsRequired > 0,
+  );
+  if (!needsPlp) {
+    return false;
+  }
+  if (deps.enqueuePlp) {
+    await deps.enqueuePlp([locale]);
+    return true;
+  }
+  const { enqueueConsumerVisibleMediaPlpBuildsForLocales } = await import(
+    "./published-localized-presentation/universal/media-consumer-plp-activation-enqueue.js"
+  );
+  await enqueueConsumerVisibleMediaPlpBuildsForLocales({ locales: [locale] });
+  return true;
+}
+
+/**
+ * C.3.2 — durable progress = authoritative READY/current coverage increased.
+ * Scheduling / dedupe / PLP-enqueue-called / pending-shift work drops are NOT progress.
+ */
+export function classifyLocalizationReconciliationProgress(input: {
+  readonly currentBefore: number;
+  readonly currentAfter: number;
+  readonly workItemsRequiredBefore: number;
+  readonly workItemsRequiredAfter: number;
+  readonly pendingBefore: number;
+  readonly pendingAfter: number;
+  readonly presentationsScheduled: number;
+  readonly presentationsDeduped: number;
+  readonly plpEnqueued: boolean;
+  readonly retryReadyIdentities: number;
+  readonly presentationsToEnqueue: number;
+}): {
+  readonly usefulProgress: boolean;
+  readonly durableCurrentIncreased: boolean;
+  readonly workDecreased: boolean;
+  readonly pendingIncreased: boolean;
+  readonly newlyScheduled: boolean;
+  readonly truncatedWithNewSchedule: boolean;
+} {
+  const durableCurrentIncreased = input.currentAfter > input.currentBefore;
+  const workDecreased =
+    input.workItemsRequiredAfter < input.workItemsRequiredBefore;
+  const pendingIncreased = input.pendingAfter > input.pendingBefore;
+  const newlyScheduled =
+    input.presentationsScheduled > 0 || input.plpEnqueued === true;
+  const truncatedWithNewSchedule =
+    input.retryReadyIdentities > input.presentationsToEnqueue &&
+    input.presentationsScheduled > 0;
+  return {
+    usefulProgress: durableCurrentIncreased,
+    durableCurrentIncreased,
+    workDecreased,
+    pendingIncreased,
+    newlyScheduled,
+    truncatedWithNewSchedule,
+  };
+}
+
+function idlePassResult(input: {
+  readonly locale: string;
+  readonly reason: string;
+  readonly before: LocalizationReconciliationEligibility;
+  readonly after?: LocalizationReconciliationEligibility;
+}): LocalizationReconciliationPassResult {
+  const after = input.after ?? input.before;
+  return {
+    locale: input.locale,
+    ran: false,
+    reason: input.reason,
+    presentationsScheduled: 0,
+    presentationsDeduped: 0,
+    retryReadyIdentities: 0,
+    workItemsRequiredBefore: input.before.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    currentBefore: input.before.durableCurrent,
+    currentAfter: after.durableCurrent,
+    ctCurrentBefore: input.before.ctCurrent,
+    ctCurrentAfter: after.ctCurrent,
+    plpCurrentBefore: input.before.plpCurrent,
+    plpCurrentAfter: after.plpCurrent,
+    pendingBefore: input.before.pending,
+    pendingAfter: after.pending,
+    usefulProgress: false,
+    continuationKind: "none",
+    continuationScheduled: false,
+    continuationDelayMs: 0,
+    noProgressStreak: 0,
+  };
+}
+
+/**
+ * One bounded reconciliation pass for a single canonical locale.
+ * Enqueues via Gate C residual + PLP consumer; never calls the provider directly.
+ */
+export async function runLocalizationReconciliationPass(
+  localeInput: string,
+  deps?: LocalizationReconciliationDriverDeps,
+): Promise<LocalizationReconciliationPassResult> {
+  const d = { ...activeDeps(), ...(deps ?? {}) };
+  const stampLocale = localeInput.trim();
+  if (stampLocale && canonicalKey(stampLocale) !== "en") {
+    try {
+      await stampWebUiLeafSourceFingerprintsIfCatalogUnchanged(stampLocale);
+    } catch (error) {
+      logger.warn("localization.reconciliation.web_ui_leaf_stamp_failed", {
+        component: "localization-reconciliation-driver",
+        locale: stampLocale,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  const eligibility = await assessLocalizationReconciliationEligibility(
+    localeInput,
+    d,
+  );
+  if (!eligibility.eligible) {
+    if (eligibility.reason === "no_actionable_work") {
+      const locale = eligibility.canonicalLocale || localeInput;
+      void import("./language-localization-activation/language-activation-job.service.js").then(
+        ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+          convergeFailedActivationWhenAuthoritativeReady(locale),
+      );
+    }
+    if (eligibility.reason === "provider_cooldown" && eligibility.cooldownUntil) {
+      const untilMs = Date.parse(eligibility.cooldownUntil);
+      const delay = Number.isFinite(untilMs) ? Math.max(0, untilMs - nowMs()) : 0;
+      return {
+        ...idlePassResult({
+          locale: eligibility.canonicalLocale || localeInput,
+          reason: "provider_cooldown",
+          before: eligibility,
+        }),
+        continuationKind: "provider_cooldown",
+        continuationScheduled: delay > 0,
+        continuationDelayMs: delay,
+        notBeforeMs: Number.isFinite(untilMs) ? untilMs : undefined,
+        noProgressStreak: noProgressStreakByLocale.get(
+          canonicalKey(eligibility.canonicalLocale || localeInput),
+        ) ?? 0,
+      };
+    }
+    const key = canonicalKey(eligibility.canonicalLocale || localeInput);
+    if (key) {
+      noProgressStreakByLocale.delete(key);
+    }
+    if (eligibility.reason === "web_ui_not_ready") {
+      const locale = eligibility.canonicalLocale || localeInput;
+      const ensure =
+        d.ensureWebUiPreparation ?? ensureWebUiPreparationForUnreadyLocale;
+      try {
+        await ensure({ locale, scheduleProcess: true });
+      } catch (error) {
+        logger.warn("localization.reconciliation.web_ui_recovery_failed", {
+          component: "localization-reconciliation-driver",
+          locale,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      const delay =
+        d.noProgressBaseDelayMs ??
+        LOCALIZATION_RECONCILIATION_NO_PROGRESS_BASE_DELAY_MS;
+      return {
+        ...idlePassResult({
+          locale,
+          reason: "web_ui_not_ready",
+          before: eligibility,
+        }),
+        continuationKind: "no_progress_backoff",
+        continuationScheduled: delay > 0,
+        continuationDelayMs: delay,
+      };
+    }
+    return idlePassResult({
+      locale: eligibility.canonicalLocale || localeInput,
+      reason: eligibility.reason,
+      before: eligibility,
+    });
+  }
+
+  const locale = eligibility.canonicalLocale;
+  const localeKey = canonicalKey(locale);
+  const maxPresentations =
+    d.maxPresentationsPerPass ??
+    LOCALIZATION_RECONCILIATION_MAX_PRESENTATIONS_PER_PASS;
+  const runResidual = d.runResidual ?? runPublicLocalizationResidualRetry;
+
+  const residual = await runResidual({
+    execute: true,
+    targetLocales: [locale as LanguageCode],
+    maxPresentations,
+  });
+
+  let plpEnqueued = false;
+  try {
+    plpEnqueued = await enqueuePlpForLocale(locale, d);
+  } catch (error) {
+    logger.warn("localization.reconciliation.plp_enqueue_failed", {
+      component: "localization-reconciliation-driver",
+      locale,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  const after = await assessLocalizationReconciliationEligibility(locale, d);
+  const progress = classifyLocalizationReconciliationProgress({
+    currentBefore: eligibility.durableCurrent,
+    currentAfter: after.durableCurrent,
+    workItemsRequiredBefore: eligibility.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    pendingBefore: eligibility.pending,
+    pendingAfter: after.pending,
+    presentationsScheduled: residual.presentationsScheduled,
+    presentationsDeduped: residual.presentationsDeduped,
+    plpEnqueued,
+    retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
+    presentationsToEnqueue: residual.presentationsToEnqueue,
+  });
+
+  const baseFields = {
+    locale,
+    ran: true as const,
+    presentationsScheduled: residual.presentationsScheduled,
+    presentationsDeduped: residual.presentationsDeduped,
+    retryReadyIdentities: residual.RETRY_READY_IDENTITIES,
+    workItemsRequiredBefore: eligibility.workItemsRequired,
+    workItemsRequiredAfter: after.workItemsRequired,
+    currentBefore: eligibility.durableCurrent,
+    currentAfter: after.durableCurrent,
+    ctCurrentBefore: eligibility.ctCurrent,
+    ctCurrentAfter: after.ctCurrent,
+    plpCurrentBefore: eligibility.plpCurrent,
+    plpCurrentAfter: after.plpCurrent,
+    pendingBefore: eligibility.pending,
+    pendingAfter: after.pending,
+  };
+
+  const workRemains = after.eligible && after.workItemsRequired > 0;
+
+  if (!workRemains) {
+    noProgressStreakByLocale.delete(localeKey);
+    void import("./language-localization-activation/language-activation-job.service.js").then(
+      ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+        convergeFailedActivationWhenAuthoritativeReady(locale),
+    );
+    return {
+      ...baseFields,
+      reason: "ok",
+      usefulProgress: progress.usefulProgress,
+      continuationKind: "none" as const,
+      continuationScheduled: false,
+      continuationDelayMs: 0,
+      noProgressStreak: 0,
+    };
+  }
+
+  if (progress.usefulProgress) {
+    noProgressStreakByLocale.delete(localeKey);
+    const delay =
+      d.continuationDelayMs ?? LOCALIZATION_RECONCILIATION_CONTINUATION_DELAY_MS;
+    return {
+      ...baseFields,
+      reason: "ok",
+      usefulProgress: true,
+      continuationKind: "normal" as const,
+      continuationScheduled: true,
+      continuationDelayMs: delay,
+      noProgressStreak: 0,
+    };
+  }
+
+  const streak = (noProgressStreakByLocale.get(localeKey) ?? 0) + 1;
+  noProgressStreakByLocale.set(localeKey, streak);
+  const providerPressure = blockedLooksLikeProviderPressure(residual);
+  const delay = computeNoProgressDelayMs(streak);
+  const continuationKind: LocalizationReconciliationContinuationKind =
+    providerPressure ? "provider_pressure_backoff" : "no_progress_backoff";
+
+  return {
+    ...baseFields,
+    reason: continuationKind,
+    usefulProgress: false,
+    continuationKind,
+    continuationScheduled: true,
+    continuationDelayMs: delay,
+    noProgressStreak: streak,
+  };
+}
+
+function clearDelayed(localeKey: string): void {
+  const timer = delayedTimers.get(localeKey);
+  if (timer) {
+    clearTimeout(timer);
+  }
+  delayedTimers.delete(localeKey);
+  delayedReasons.delete(localeKey);
+  delayedDueAtMs.delete(localeKey);
+}
+
+function wakeReasonForContinuation(
+  kind: LocalizationReconciliationContinuationKind,
+): LocalizationReconciliationWakeReason {
+  if (kind === "provider_pressure_backoff" || kind === "provider_cooldown") {
+    return "cooldown_wake";
+  }
+  if (kind === "no_progress_backoff") {
+    return "no_progress_backoff";
+  }
+  return "continuation";
+}
+
+/**
+ * Idempotent wake. Coalesces duplicate schedules for one locale.
+ * Never performs provider work synchronously.
+ */
+export function scheduleLocalizationReconciliation(input: {
+  readonly locale: string;
+  readonly reason: LocalizationReconciliationWakeReason;
+  readonly delayMs?: number;
+  /**
+   * Cooldown deferral: do not keep a wake earlier than this instant.
+   * An existing wake at or after it is reused. One timer per locale.
+   */
+  readonly notBeforeMs?: number;
+}): { readonly accepted: boolean; readonly localeKey: string } {
+  const localeKey = canonicalKey(input.locale);
+  if (!localeKey || localeKey === "en") {
+    return { accepted: false, localeKey };
+  }
+
+  const delayMs = input.delayMs ?? 0;
+  const notBeforeMs = input.notBeforeMs;
+
+  if (delayMs > 0 || (notBeforeMs != null && notBeforeMs > nowMs())) {
+    const dueAt = Math.max(nowMs() + Math.max(0, delayMs), notBeforeMs ?? 0);
+    const existingDue = delayedDueAtMs.get(localeKey);
+    if (existingDue != null && delayedTimers.has(localeKey)) {
+      if (notBeforeMs != null) {
+        if (existingDue >= dueAt) {
+          return { accepted: true, localeKey };
+        }
+      } else if (existingDue <= dueAt) {
+        // Keep earlier (or equal) wake — do not accumulate timers.
+        return { accepted: true, localeKey };
+      }
+    }
+    clearDelayed(localeKey);
+    delayedReasons.set(localeKey, input.reason);
+    delayedDueAtMs.set(localeKey, dueAt);
+    const waitMs = Math.max(0, dueAt - nowMs());
+    const timer = setTimeout(() => {
+      delayedTimers.delete(localeKey);
+      delayedReasons.delete(localeKey);
+      delayedDueAtMs.delete(localeKey);
+      scheduleLocalizationReconciliation({
+        locale: localeKey,
+        reason: "continuation",
+        delayMs: 0,
+      });
+    }, waitMs);
+    if (typeof timer.unref === "function") {
+      timer.unref();
+    }
+    delayedTimers.set(localeKey, timer);
+    return { accepted: true, localeKey };
+  }
+
+  // Immediate wake while a deferred backoff/continuation is pending: coalesce
+  // onto that timer so mutations/duplicates cannot recreate a short-cycle loop.
+  if (delayedTimers.has(localeKey)) {
+    return { accepted: true, localeKey };
+  }
+
+  if (inFlight.has(localeKey)) {
+    pendingWake.add(localeKey);
+    return { accepted: true, localeKey };
+  }
+
+  inFlight.add(localeKey);
+  queueMicrotask(() => {
+    void (async () => {
+      try {
+        const passResult = await runLocalizationReconciliationPass(localeKey);
+        logger.info("localization.reconciliation.pass", {
+          component: "localization-reconciliation-driver",
+          locale: localeKey,
+          wakeReason: input.reason,
+          ran: passResult.ran,
+          reason: passResult.reason,
+          presentationsScheduled: passResult.presentationsScheduled,
+          presentationsDeduped: passResult.presentationsDeduped,
+          retryReadyIdentities: passResult.retryReadyIdentities,
+          workItemsRequiredBefore: passResult.workItemsRequiredBefore,
+          workItemsRequiredAfter: passResult.workItemsRequiredAfter,
+          currentBefore: passResult.currentBefore,
+          currentAfter: passResult.currentAfter,
+          ctCurrentBefore: passResult.ctCurrentBefore,
+          ctCurrentAfter: passResult.ctCurrentAfter,
+          plpCurrentBefore: passResult.plpCurrentBefore,
+          plpCurrentAfter: passResult.plpCurrentAfter,
+          pendingBefore: passResult.pendingBefore,
+          pendingAfter: passResult.pendingAfter,
+          usefulProgress: passResult.usefulProgress,
+          continuationKind: passResult.continuationKind,
+          continuationScheduled: passResult.continuationScheduled,
+          continuationDelayMs: passResult.continuationDelayMs,
+          noProgressStreak: passResult.noProgressStreak,
+        });
+        if (passResult.continuationScheduled) {
+          scheduleLocalizationReconciliation({
+            locale: localeKey,
+            reason: wakeReasonForContinuation(passResult.continuationKind),
+            delayMs: passResult.continuationDelayMs,
+            notBeforeMs: passResult.notBeforeMs,
+          });
+        }
+      } catch (error) {
+        logger.warn("localization.reconciliation.pass_failed", {
+          component: "localization-reconciliation-driver",
+          locale: localeKey,
+          wakeReason: input.reason,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        const streak = (noProgressStreakByLocale.get(localeKey) ?? 0) + 1;
+        noProgressStreakByLocale.set(localeKey, streak);
+        scheduleLocalizationReconciliation({
+          locale: localeKey,
+          reason: "cooldown_wake",
+          delayMs: computeNoProgressDelayMs(streak),
+        });
+      } finally {
+        inFlight.delete(localeKey);
+        if (pendingWake.has(localeKey)) {
+          pendingWake.delete(localeKey);
+          if (delayedTimers.has(localeKey)) {
+            // Coalesce onto deferred wake already scheduled by this pass.
+          } else {
+            scheduleLocalizationReconciliation({
+              locale: localeKey,
+              reason: input.reason,
+              delayMs: 0,
+            });
+          }
+        }
+      }
+    })();
+  });
+
+  return { accepted: true, localeKey };
+}
+
+/**
+ * Lightweight wake for all automatic CT target locales (mutations / terminology).
+ * Schedules only — no synchronous corpus work.
+ */
+export function scheduleLocalizationReconciliationForAutomaticLocales(input: {
+  readonly reason: LocalizationReconciliationWakeReason;
+}): void {
+  void (async () => {
+    try {
+      const list =
+        activeDeps().listTargetLocales ??
+        listAutomaticContentTranslationTargetLocales;
+      const locales = await list();
+      for (const locale of locales) {
+        scheduleLocalizationReconciliation({
+          locale,
+          reason: input.reason,
+        });
+      }
+    } catch (error) {
+      logger.warn("localization.reconciliation.broadcast_wake_failed", {
+        component: "localization-reconciliation-driver",
+        reason: input.reason,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  })();
+}
+
+/**
+ * API boot: schedule reconciliation for CT-enabled locales.
+ * Does not synchronously hydrate/translate the corpus.
+ */
+export async function resumeLocalizationReconciliationOnBoot(): Promise<{
+  readonly scheduled: number;
+}> {
+  const list =
+    activeDeps().listTargetLocales ?? listAutomaticContentTranslationTargetLocales;
+  const locales = await list();
+  let scheduled = 0;
+  for (const locale of locales) {
+    const result = scheduleLocalizationReconciliation({
+      locale,
+      reason: "boot",
+    });
+    if (result.accepted) {
+      scheduled += 1;
+    }
+  }
+  return { scheduled };
+}
+
+/**
+ * Activation process wake — call after WEB_UI READY / residual / completed.
+ * Does not mutate activation.status.
+ */
+/**
+ * PLP publication is forward progress owned by the drain worker.
+ * Wake the existing reconciliation pass and let activation derive READY
+ * from current readiness. Does not translate and does not enqueue here.
+ */
+export function wakeReadinessAfterPlpPublish(locale: string): void {
+  scheduleLocalizationReconciliation({
+    locale,
+    reason: "source_mutation",
+  });
+  void import("./language-localization-activation/language-activation-job.service.js").then(
+    ({ syncRunningActivationAfterPlpPublish, convergeFailedActivationWhenAuthoritativeReady }) => {
+      void syncRunningActivationAfterPlpPublish(locale);
+      return convergeFailedActivationWhenAuthoritativeReady(locale);
+    },
+  );
+}
+
+/** CT publication wake. Reuses reconciliation; does not add a timer. */
+export function wakeReadinessAfterContentTranslationPublish(locales: readonly string[]): void {
+  for (const locale of locales) {
+    scheduleLocalizationReconciliation({
+      locale,
+      reason: "source_mutation",
+    });
+    void import("./language-localization-activation/language-activation-job.service.js").then(
+      ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+        convergeFailedActivationWhenAuthoritativeReady(locale),
+    );
+  }
+}
+
+export function wakeLocalizationReconciliationAfterActivation(input: {
+  readonly locale: string;
+  readonly webUiReady: boolean;
+  readonly activationStatus: string;
+  readonly workItemsRequired: number;
+}): void {
+  if (!input.webUiReady) {
+    return;
+  }
+  if (input.workItemsRequired <= 0) {
+    return;
+  }
+  const reason: LocalizationReconciliationWakeReason =
+    input.activationStatus === "completed"
+      ? "activation_completed_with_work"
+      : "activation_web_ui_ready";
+  scheduleLocalizationReconciliation({
+    locale: input.locale,
+    reason,
+  });
+}

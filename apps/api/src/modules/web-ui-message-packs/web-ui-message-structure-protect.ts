@@ -57,11 +57,96 @@ export function webUiProtectionSentinelInstructions(batchContainsProtectionSenti
   return "These values contain no protection tokens. Do not invent tokens such as ⟦w0⟧.";
 }
 
+/**
+ * Provider-facing copy for the span contract.
+ * Every leaf is an ordered array of non-empty human spans.
+ * Empty spans, placeholders, ICU grammar, and Brand sentinels stay local.
+ */
+export function webUiProviderSpanInstructions(): string {
+  return [
+    "Every catalog key is independent.",
+    "Return one JSON object with the same keys.",
+    "Each value must be a JSON array of strings.",
+    "Do not return a scalar string for any key, including a key with one fragment.",
+    "Do not flatten arrays across keys.",
+    "Each key has its own array length. Do not copy one key's length onto another.",
+    "Preserve fragment order.",
+    "Do not merge, split, add, or omit fragments.",
+    "Do not insert placeholders, tags, or brace expressions.",
+    "Empty structural spans are not included in this request. Do not add empty strings.",
+  ].join("\n");
+}
+
+/**
+ * Exact integer length for each requested leaf, in request order.
+ * The lines name the count only. They do not repeat fragment text.
+ */
+export function webUiProviderCardinalityLines(input: {
+  readonly keys: readonly string[];
+  readonly payload: Readonly<Record<string, readonly string[]>>;
+}): string {
+  return input.keys
+    .map((key) => {
+      const count = input.payload[key]?.length ?? 0;
+      return [
+        `${key} expects exactly ${count} translated strings.`,
+        `Return one JSON array of length ${count}.`,
+        "Preserve order.",
+        "Do not merge, split, add, or omit fragments.",
+        "Do not convert the array into a scalar string.",
+      ].join(" ");
+    })
+    .join("\n");
+}
+
 export class WebUiMessageStructureError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "WebUiMessageStructureError";
   }
+}
+
+/** Provider JSON shape did not match the span contract. Not a reconstructed-structure failure. */
+export class WebUiProviderPayloadShapeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebUiProviderPayloadShapeError";
+  }
+}
+
+/**
+ * One leaf returned an array of the wrong length.
+ * catalogKey is the first leaf rejected in request order.
+ * The message carries counts only, never translated text.
+ */
+export class WebUiProviderSpanCountError extends WebUiProviderPayloadShapeError {
+  readonly catalogKey: string | null;
+  readonly expectedSpanCount: number;
+  readonly actualSpanCount: number;
+
+  constructor(input: {
+    readonly catalogKey?: string | null;
+    readonly expectedSpanCount: number;
+    readonly actualSpanCount: number;
+  }) {
+    super(
+      `Provider span count ${input.actualSpanCount} does not match ${input.expectedSpanCount}.`,
+    );
+    this.name = "WebUiProviderSpanCountError";
+    this.catalogKey = input.catalogKey ?? null;
+    this.expectedSpanCount = input.expectedSpanCount;
+    this.actualSpanCount = input.actualSpanCount;
+  }
+}
+
+export interface WebUiProviderSegmentPlan {
+  readonly plain: boolean;
+  /** Human spans in source order, including empty spans that are not sent. */
+  readonly spans: readonly string[];
+  /** Original protected elements in source order. Not sent to the provider. */
+  readonly slots: readonly string[];
+  /** Indexes of non-empty spans, in source order. */
+  readonly providerSpanIndexes: readonly number[];
 }
 
 export interface ProtectedWebUiMessage {
@@ -295,6 +380,82 @@ export function protectWebUiMessageForProvider(english: string): ProtectedWebUiM
   const slots: string[] = [];
   const parsed = parseMessage(brandProtected, 0, slots, false);
   return { text: parsed.text, slots };
+}
+
+const SENTINEL_SPLIT = /⟦w\d+⟧/;
+
+/**
+ * Split a message into human spans and protected slots.
+ * The provider receives only non-empty human spans. Slots stay in application memory.
+ */
+export function segmentWebUiMessageForProvider(english: string): WebUiProviderSegmentPlan {
+  const protectedMessage = protectWebUiMessageForProvider(english);
+  if (protectedMessage.slots.length === 0) {
+    return {
+      plain: true,
+      spans: [english],
+      slots: [],
+      providerSpanIndexes: [],
+    };
+  }
+  const spans = protectedMessage.text.split(SENTINEL_SPLIT);
+  if (spans.length !== protectedMessage.slots.length + 1) {
+    throw new WebUiMessageStructureError("Protection extraction did not cover the message.");
+  }
+  return {
+    plain: false,
+    spans,
+    slots: protectedMessage.slots,
+    providerSpanIndexes: spans.flatMap((span, index) => (span.length > 0 ? [index] : [])),
+  };
+}
+
+/**
+ * Value placed under one catalog key in the batch JSON request.
+ * Plain and structured leaves use the same array grammar.
+ */
+export function webUiProviderPayloadValue(english: string): readonly string[] {
+  const plan = segmentWebUiMessageForProvider(english);
+  if (plan.plain) {
+    return [english];
+  }
+  return plan.providerSpanIndexes.map((index) => plan.spans[index] ?? "");
+}
+
+/**
+ * Interleave translated human spans with the original slots in source order.
+ * Brand machine sentinels are restored to `{siteName}` here. Placeholder movement is not accepted.
+ */
+export function reconstructWebUiMessageFromProviderSpans(
+  english: string,
+  providerValue: string | readonly string[],
+): string {
+  const plan = segmentWebUiMessageForProvider(english);
+  const expectedCount = plan.plain ? 1 : plan.providerSpanIndexes.length;
+  if (!Array.isArray(providerValue) || providerValue.some((span) => typeof span !== "string")) {
+    throw new WebUiProviderPayloadShapeError("Provider span list must be an array of strings.");
+  }
+  if (providerValue.length !== expectedCount) {
+    throw new WebUiProviderSpanCountError({
+      expectedSpanCount: expectedCount,
+      actualSpanCount: providerValue.length,
+    });
+  }
+  if (plan.plain) {
+    return providerValue[0] ?? "";
+  }
+  const translated = [...plan.spans];
+  plan.providerSpanIndexes.forEach((spanIndex, providerIndex) => {
+    translated[spanIndex] = providerValue[providerIndex] ?? "";
+  });
+  let text = "";
+  for (let index = 0; index < translated.length; index += 1) {
+    text += translated[index] ?? "";
+    if (index < plan.slots.length) {
+      text += plan.slots[index] ?? "";
+    }
+  }
+  return restoreBrandTokensAfterMachineTranslation(text);
 }
 
 /** Restore sentinels produced from the canonical English string. Rejects drift.

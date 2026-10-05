@@ -257,8 +257,14 @@ async function verifyServiceMetrics(): Promise<void> {
     firstPayload.data.users >= 2,
     "Users count must include seeded members when auth store is unavailable",
   );
-  assert(firstPayload.data.countries >= 1, "Countries must reflect participation areas");
-  assert(firstPayload.data.regions >= 2, "Regions must use country + region identity");
+  assert(
+    firstPayload.data.countries === 0,
+    "Countries must stay 0 when no eligible auth users have preference geography",
+  );
+  assert(
+    firstPayload.data.regions === 0,
+    "Regions must stay 0 when participation areas and profiles are the only geography present",
+  );
 
   const serialized = JSON.stringify(firstPayload).toLowerCase();
   for (const key of PRIVATE_FIELD_KEYS) {

@@ -82,6 +82,7 @@ export function evaluateLocalizationContentIntegrity(input: {
     const ownership = resolveCollectedPathOwnership(n.path, input.fieldPolicy);
     return (
       ownership === "PROTECTED_CANONICAL" ||
+      ownership === "SOURCE_ORIGINAL" ||
       ownership === "NON_LOCALIZABLE_DATA"
     );
   }).length;

@@ -91,8 +91,16 @@ describe("SEO Pack 02 — static and excluded routes", () => {
     assert.ok(paths.includes("/institutions"));
     assert.ok(paths.includes("/knowledge"));
     assert.ok(paths.includes("/media"));
+    assert.ok(paths.includes("/volunteer"));
     assert.ok(paths.includes("/civic-archive"));
     assert.ok(paths.includes("/membership"));
+    assert.ok(paths.includes("/contact"));
+    assert.ok(paths.includes("/privacy"));
+    assert.ok(paths.includes("/terms"));
+    assert.ok(paths.includes("/support"));
+    assert.ok(paths.includes("/search"));
+    assert.ok(!paths.includes("/civic-activity"));
+    assert.ok(!paths.includes("/knowledge/media"));
     assert.ok(!paths.includes("/about"));
     assert.equal(STATIC_PUBLIC_SITEMAP_PATHS.length, paths.length);
   });
@@ -109,6 +117,34 @@ describe("SEO Pack 02 — static and excluded routes", () => {
     assert.doesNotMatch(joined, /^\/password-reset/m);
     assert.doesNotMatch(joined, /^\/member$/m);
     assert.doesNotMatch(joined, /preview/);
+  });
+
+  it("keeps Volunteer in the static inventory and out of workspace/redirect paths", async () => {
+    const entries = await collectPublicSitemapPathEntries({
+      includeDynamicProviders: false,
+      seoIndexableLocales: ["en", "zz-FUTURE"],
+    });
+    const paths = entries.map((entry) => entry.path);
+    assert.ok(paths.includes("/volunteer"));
+    assert.ok(paths.includes("/zz-future/volunteer"));
+    assert.ok(paths.includes("/media"));
+    assert.ok(paths.includes("/zz-future/media"));
+    assert.ok(paths.includes("/blog"));
+    assert.ok(paths.includes("/initiatives"));
+    assert.ok(paths.includes("/institutions"));
+    assert.ok(paths.includes("/knowledge"));
+    assert.ok(paths.includes("/civic-archive"));
+    assert.ok(paths.includes("/countries/CA"));
+    assert.ok(!paths.includes("/civic-activity"));
+    assert.ok(!paths.includes("/knowledge/media"));
+    assert.ok(!paths.some((entry) => entry.startsWith("/en/")));
+
+    const builder = readWeb("lib/seo/sitemap/build-public-sitemap.ts");
+    assert.match(builder, /listBlogPostSitemapEntries/);
+    assert.match(builder, /listInitiativeSitemapEntries/);
+    assert.match(builder, /listKnowledgeArticleSitemapEntries/);
+    assert.match(builder, /listCivicArchiveSitemapEntries/);
+    assert.match(builder, /listParticipantProfileSitemapEntries/);
   });
 });
 

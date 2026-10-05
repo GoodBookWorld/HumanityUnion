@@ -1,6 +1,7 @@
 /**
  * Effective WEB_UI message tree for a locale — same source for readiness, CV labels, and public API.
- * Order: bundled filesystem pack → published remote/Admin Mongo pack → null.
+ * Order (Gate D): published remote/Admin Mongo pack → bundled filesystem pack → null.
+ * Draft Mongo packs and activation checkpoints are never authority.
  * Side-effect free (no provider).
  */
 
@@ -28,16 +29,6 @@ export async function resolveEffectiveWebUiMessagePack(
     return null;
   }
 
-  const bundled = loadBundledWebUiMessagePackFromFs(tag);
-  if (bundled) {
-    return {
-      locale: tag,
-      messages: bundled as WebUiMessageTree,
-      source: "bundled",
-      revision: null,
-    };
-  }
-
   const remote = await getPublishedWebUiMessagePackByLocale(tag);
   if (remote) {
     return {
@@ -45,6 +36,16 @@ export async function resolveEffectiveWebUiMessagePack(
       messages: remote.messages,
       source: "remote",
       revision: remote.revision,
+    };
+  }
+
+  const bundled = loadBundledWebUiMessagePackFromFs(tag);
+  if (bundled) {
+    return {
+      locale: tag,
+      messages: bundled as WebUiMessageTree,
+      source: "bundled",
+      revision: null,
     };
   }
 

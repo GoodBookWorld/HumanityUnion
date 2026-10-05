@@ -73,7 +73,7 @@ function report(
       pwaPersistedReadingReady: false,
       pwaCivicReadinessStatus: "DISABLED",
       coverage: {
-        current: 0, missing: 0, stale: 0, failed: 0, pending: 0, workItemsRequired: 0,
+        current: 0, missing: 0, stale: 0, invalid: 0, failed: 0, pending: 0, workItemsRequired: 0,
         measuredKindCount: 0, unmeasuredKindCount: 0, coverageMeasurement: "partial_unmeasured",
       },
       note: null,

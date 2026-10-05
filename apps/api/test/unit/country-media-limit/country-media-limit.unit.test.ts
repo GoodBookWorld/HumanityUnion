@@ -1,5 +1,5 @@
 /**
- * Production Completion Pack 01 — country trusted media max 6.
+ * Production Completion Pack 01 — country trusted media max 12.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -17,10 +17,10 @@ function readRepo(relativePath: string): string {
   return readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
-describe("Production Completion Pack 01 — country media max 6", () => {
-  it("public projection and create/update share max 6", () => {
-    assert.equal(COUNTRY_MEDIA_LIMIT, 6);
-    assert.equal(COUNTRY_TRUSTED_MEDIA_MAX, 6);
+describe("Production Completion Pack 01 — country media max 12", () => {
+  it("public projection and create/update share max 12 for COUNTRY TRUSTED_MEDIA only", () => {
+    assert.equal(COUNTRY_MEDIA_LIMIT, 12);
+    assert.equal(COUNTRY_TRUSTED_MEDIA_MAX, 12);
   });
 
   it("create/update paths enforce capacity without deleting legacy over-limit rows", () => {
@@ -31,11 +31,21 @@ describe("Production Completion Pack 01 — country media max 6", () => {
     assert.doesNotMatch(service, /deleteMany.*TRUSTED_MEDIA|slice\(0,\s*6\).*delete/);
   });
 
-  it("Admin UI communicates max 6", () => {
+  it("Admin UI communicates max 12 for COUNTRY trusted media only", () => {
     const section = readRepo(
       "apps/web/src/features/administration/components/AdminMediaResourcesSection.tsx",
     );
-    assert.match(section, /COUNTRY_TRUSTED_MEDIA_MAX\s*=\s*6/);
+    const service = readRepo("apps/api/src/modules/media-resources/media-resource.service.ts");
+    assert.match(section, /COUNTRY_TRUSTED_MEDIA_MAX\s*=\s*12/);
     assert.match(section, /Country trusted media/);
+    assert.match(service, /resourceType === "TRUSTED_MEDIA" && input\.scopeType === "COUNTRY"/);
+    assert.match(
+      service,
+      /existing\.resourceType === "TRUSTED_MEDIA" && scopeType === "COUNTRY"/,
+    );
+    assert.doesNotMatch(
+      service,
+      /COUNTRY_TRUSTED_MEDIA_MAX[\s\S]{0,240}(?:NEWS_SOURCE|FACT_CHECKING|PROPAGANDA_ANALYSIS)/,
+    );
   });
 });

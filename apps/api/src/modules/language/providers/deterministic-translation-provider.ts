@@ -81,11 +81,17 @@ export class DeterministicTranslationProvider implements TranslationProvider {
 
         const translated: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(parsed)) {
-          if (typeof value !== "string") {
-            translated[key] = value;
+          if (typeof value === "string") {
+            translated[key] = translateString(value);
             continue;
           }
-          translated[key] = translateString(value);
+          if (Array.isArray(value) && value.every((span) => typeof span === "string")) {
+            translated[key] = value.map((span) =>
+              span.length === 0 ? span : translateString(span),
+            );
+            continue;
+          }
+          translated[key] = value;
         }
         return {
           translatedText: JSON.stringify(translated),

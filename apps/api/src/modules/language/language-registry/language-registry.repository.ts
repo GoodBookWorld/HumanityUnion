@@ -245,6 +245,27 @@ export async function resolveLanguageRegistryLocale(
   }
 }
 
+/**
+ * Gate A — Registry-authoritative CANONICAL LOCALE for owner reads/writes.
+ *
+ * IDENTITY KEY (normalizeLanguageRegistryLocaleKey) may be used for comparison
+ * and indexes. Durable localization ownership uses this Registry spelling.
+ * Unknown/unregistered input → null (no invented casing).
+ */
+export async function resolveCanonicalRegistryLocale(
+  localeOrAlias: string | null | undefined,
+): Promise<string | null> {
+  if (typeof localeOrAlias !== "string") {
+    return null;
+  }
+  const trimmed = localeOrAlias.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const record = await resolveLanguageRegistryLocale(trimmed);
+  return record?.locale ?? null;
+}
+
 export async function createLanguageRegistryRecord(
   input: LanguageRegistryCreateInput,
 ): Promise<LanguageRegistryRecord> {

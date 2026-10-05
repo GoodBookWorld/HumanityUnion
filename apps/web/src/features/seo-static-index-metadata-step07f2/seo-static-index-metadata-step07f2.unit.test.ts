@@ -2,14 +2,18 @@
  * Step 07F.2 — static/index public SEO metadata via WEB_UI / Brand + ForRequest.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { isPublicSeoLocalePath } from "@hu/types";
+
 import { loadUiMessagesForLocale } from "../i18n/load-ui-messages";
+import { shouldDisallowSearchIndexing } from "../../lib/platform-indexing";
 import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 import { normalizeMetaDescription } from "../../lib/seo/normalize-seo-text";
+import { STATIC_PUBLIC_SITEMAP_PATHS } from "../../lib/seo/sitemap/providers/static-public-pages";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(dir, "../..");
@@ -333,6 +337,90 @@ describe("Step 07F.2 — static/index public SEO metadata", () => {
         /content.?translation|ContentTranslation|resolveTranslatedContent|preferTranslation/i,
       );
       assert.doesNotMatch(src, /isExtendedLocalizationReady|seoReadiness|readinessGate/i);
+    }
+  });
+});
+
+describe("Support public metadata contract", () => {
+  it("uses supportPublic title/subtitle through the shared builder without a locale route", () => {
+    const page = readWeb("app/support/page.tsx");
+    assert.match(page, /generateMetadata/);
+    assert.match(page, /buildPublicPageMetadataForRequest/);
+    assert.match(page, /getTranslations\(["']supportPublic["']\)/);
+    assert.match(page, /t\(["']title["']/);
+    assert.match(page, /t\(["']subtitle["']\)/);
+    assert.match(page, /titleBrandSuffix:\s*""/);
+    assert.match(page, /canonicalPath:\s*"\/support"/);
+    assert.match(page, /localeFreeCanonicalPath:\s*"\/support"/);
+    assert.doesNotMatch(page, /indexable:\s*false/);
+    assert.doesNotMatch(page, /https?:\/\/(staging\.)?huws\.org/);
+    assert.doesNotMatch(page, /PUBLIC_SEO_LOCALE_PATH_PATTERNS|hreflang/);
+    assert.equal(existsSync(path.join(webSrc, "app/[locale]/support/page.tsx")), false);
+    assert.equal(isPublicSeoLocalePath("/support"), false);
+    assert.ok(STATIC_PUBLIC_SITEMAP_PATHS.includes("/support"));
+    assert.ok(!STATIC_PUBLIC_SITEMAP_PATHS.some((entry) => entry !== "/support" && entry.endsWith("/support")));
+  });
+
+  it("emits an unsuffixed title, subtitle description, canonical, and indexability gate", async () => {
+    const { messages } = await loadUiMessagesForLocale("en");
+    const support = nest(messages as Nested, "supportPublic");
+    const siteName = "Humanity Union";
+    const title = interpolateSiteName(str(support, "title"), siteName);
+    const description = str(support, "subtitle");
+    assert.equal(title, "Support Humanity Union");
+    assert.equal(description, "Help build better conditions for thoughtful collective action.");
+
+    const prevMode = process.env.NEXT_PUBLIC_PLATFORM_MODE;
+    const prevPlatform = process.env.PLATFORM_MODE;
+    const prevSite = process.env.NEXT_PUBLIC_SITE_URL;
+    const input = {
+      title,
+      description,
+      canonicalPath: "/support",
+      localeFreeCanonicalPath: "/support",
+      catalog: CATALOG,
+      pathname: "/support",
+      urlLocaleSegment: null,
+      openGraphSiteName: siteName,
+      titleBrandSuffix: "",
+    };
+
+    process.env.NEXT_PUBLIC_PLATFORM_MODE = "production";
+    delete process.env.PLATFORM_MODE;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://huws.org";
+    try {
+      assert.equal(shouldDisallowSearchIndexing(), false);
+      const meta = await buildPublicPageMetadataForRequest(input);
+      assert.equal(meta.title, "Support Humanity Union");
+      assert.equal(meta.description, normalizeMetaDescription(description));
+      assert.equal(meta.alternates?.canonical, "https://huws.org/support");
+      assert.equal(meta.alternates?.languages, undefined);
+      assert.equal(meta.openGraph?.title, "Support Humanity Union");
+      assert.equal(meta.openGraph?.description, description);
+      assert.equal(meta.openGraph?.url, "https://huws.org/support");
+      assert.equal(meta.openGraph?.siteName, siteName);
+      assert.equal(meta.openGraph?.images, undefined);
+      const twitter = meta.twitter as { card?: string; title?: string; description?: string; images?: unknown };
+      assert.equal(twitter.card, "summary");
+      assert.equal(twitter.title, "Support Humanity Union");
+      assert.equal(twitter.description, description);
+      assert.equal(twitter.images, undefined);
+      assert.equal((meta.robots as { index?: boolean }).index, true);
+
+      process.env.NEXT_PUBLIC_PLATFORM_MODE = "staging";
+      process.env.NEXT_PUBLIC_SITE_URL = "https://staging.huws.org";
+      assert.equal(shouldDisallowSearchIndexing(), true);
+      const staging = await buildPublicPageMetadataForRequest(input);
+      assert.equal(staging.alternates?.canonical, "https://staging.huws.org/support");
+      assert.equal(staging.alternates?.languages, undefined);
+      assert.deepEqual(staging.robots, { index: false, follow: false, nocache: true });
+    } finally {
+      if (prevMode === undefined) delete process.env.NEXT_PUBLIC_PLATFORM_MODE;
+      else process.env.NEXT_PUBLIC_PLATFORM_MODE = prevMode;
+      if (prevPlatform === undefined) delete process.env.PLATFORM_MODE;
+      else process.env.PLATFORM_MODE = prevPlatform;
+      if (prevSite === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = prevSite;
     }
   });
 });

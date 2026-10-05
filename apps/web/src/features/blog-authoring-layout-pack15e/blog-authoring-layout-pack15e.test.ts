@@ -126,9 +126,14 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(review, /detail\.publishedAt \?\? preview\.publishedAt/);
 
     const editorialCss = readWeb("features/blog/editorial.css");
-    assert.match(editorialCss, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(
+      editorialCss,
+      /minmax\(0,\s*2fr\)\s+minmax\(0,\s*3fr\)\s+minmax\(0,\s*var\(--hu-initiative-sidebar-width\)\)/,
+    );
     assert.match(editorialCss, /"context preview tools"/);
-    assert.match(editorialCss, /top:\s*var\(--hu-scroll-margin-top/);
+    assert.match(editorialCss, /\.editorial-review__preview[\s\S]*overflow-y:\s*auto/);
+    assert.doesNotMatch(editorialCss, /\.editorial-review__tools\s*\{[^}]*overflow-y:\s*auto/);
+    assert.doesNotMatch(editorialCss, /position:\s*sticky/);
   });
 
   it("12–17 /blog 25/50/25, Search span, thumbs, pagination, widgets (15C/16E)", () => {

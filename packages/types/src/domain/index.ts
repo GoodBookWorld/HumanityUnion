@@ -137,6 +137,9 @@ export {
   LANGUAGE_ACTIVATION_MANUAL_AUTHOR_PUBLIC_KINDS,
   LANGUAGE_ACTIVATION_NO_OWNER_KIND_IDS,
   LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES,
+  LANGUAGE_ACTIVATION_PLP_OWNED_PARTICIPANT_ENTITY_TYPES,
+  LANGUAGE_ACTIVATION_SOURCE_ORIGINAL_PARTICIPANT_ENTITY_TYPES,
+  LANGUAGE_LOCALIZATION_SOURCE_ORIGINAL_ENTITY_TYPES,
   LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS,
   LANGUAGE_LOCALIZATION_READINESS_STATES,
   PWA_CIVIC_READINESS_STATUSES,
@@ -145,7 +148,9 @@ export {
   derivePwaCivicReadinessState,
   emptyLanguageLocalizationCountBucket,
   emptyPwaCivicCoverageScalars,
+  isAuthoritativeMachineLocalizedPlpEntityType,
   isLanguageLocalizationReadinessState,
+  isLocalizationSourceOriginalEntityType,
   isLocalizationReadyForSearch,
   isLocalizationReadyForSeo,
   isPwaCivicReadinessStatus,
@@ -198,6 +203,9 @@ export type {
   LanguageActivationJobRecord,
   LanguageActivationJobStatus,
   LanguageActivationTerminologyDomainProgress,
+  LanguageActivationTerminologyFailureCode,
+  LanguageActivationTerminologyFailureCodeCount,
+  LanguageActivationTerminologyProviderDiagnostic,
   LanguageActivationWebUiDomainProgress,
 } from "./language-activation-job.js";
 export type {
@@ -207,7 +215,13 @@ export type {
   WebUiActivationCheckpointPhase,
   WebUiActivationCheckpointRecord,
   WebUiActivationTransientFailure,
+  WebUiBatchPreparationProvenance,
+  WebUiLeafReuseSource,
+  WebUiPreparationContract,
+  WebUiStructureFailureClass,
+  WebUiStructureFailureDiagnostic,
 } from "./web-ui-activation-checkpoint.js";
+export { WEB_UI_STRUCTURE_FAILURE_CLASSES } from "./web-ui-activation-checkpoint.js";
 export {
   LANGUAGE_ACTIVATION_DOMAIN_STATUSES,
   LANGUAGE_ACTIVATION_JOB_STATUSES,

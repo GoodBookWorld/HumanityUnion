@@ -210,7 +210,7 @@ describe("Language Architecture Pack 02 — Registry PWA gate", () => {
         pwaPersistedReadingEnabled: false,
         pwaPersistedReadingReady: true,
       }),
-      false,
+      true,
     );
     // Version 5.0 — readiness false must not block runtime eligibility.
     assert.equal(

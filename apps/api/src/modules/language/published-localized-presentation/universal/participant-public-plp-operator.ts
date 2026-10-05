@@ -357,6 +357,7 @@ function buildContract(
     biography: profile.biography,
     organization: profile.organization,
     skills: profile.skills,
+    skillsVisibility: profile.skillsVisibility,
   });
   const fieldPolicy = participantPublicPlpDomainAdapter.fieldPolicyFor(
     PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,

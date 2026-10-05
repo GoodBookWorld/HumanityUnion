@@ -64,11 +64,23 @@ const webSrc = path.resolve(here, "../../../../web/src");
 const INCLUDE_PATHS = loadPublicWebUiEnglishCorpus().requiredPaths.slice(0, 24);
 const TWO_BATCH_PATHS = INCLUDE_PATHS.slice(0, 12);
 
+function prefixProviderValue(value: unknown): unknown {
+  if (typeof value === "string") return `[xx] ${value}`;
+  if (Array.isArray(value)) {
+    return value.map((span) =>
+      typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+    );
+  }
+  return value;
+}
+
 function translateAll(request: TranslationProviderRequest): TranslationProviderResult {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
   return {
     translatedText: JSON.stringify(
-      Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`])),
+      Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, prefixProviderValue(value)]),
+      ),
     ),
     providerId: "deterministic",
     isPlaceholder: false,
@@ -222,7 +234,7 @@ describe("Step 15C.8 — safe unexpected WEB_UI provider keys", () => {
           keys: ["x.a"],
           terminologyContext: "LIVE",
           translator: async () => ({
-            translatedText: JSON.stringify({ "x.a": "Hello" }),
+            translatedText: JSON.stringify({ "x.a": ["Hello {other} "] }),
             providerId: "deterministic",
             isPlaceholder: false,
           }),
@@ -237,7 +249,7 @@ describe("Step 15C.8 — safe unexpected WEB_UI provider keys", () => {
           keys: ["x.b"],
           terminologyContext: "LIVE",
           translator: async () => ({
-            translatedText: JSON.stringify({ "x.b": "Click here" }),
+            translatedText: JSON.stringify({ "x.b": ["Click <i>", "here"] }),
             providerId: "deterministic",
             isPlaceholder: false,
           }),
@@ -252,7 +264,7 @@ describe("Step 15C.8 — safe unexpected WEB_UI provider keys", () => {
           keys: ["x.c"],
           terminologyContext: "LIVE",
           translator: async () => ({
-            translatedText: JSON.stringify({ "x.c": "items" }),
+            translatedText: JSON.stringify({ "x.c": [" item {", " items"] }),
             providerId: "deterministic",
             isPlaceholder: false,
           }),
@@ -363,7 +375,7 @@ describe("Step 15C.8 — safe unexpected WEB_UI provider keys", () => {
             const wrong = Object.fromEntries(
               Object.entries(parsed)
                 .slice(0, -1)
-                .map(([key, value]) => [key, `[xx] ${value}`]),
+                .map(([key, value]) => [key, prefixProviderValue(value)]),
             );
             const missing = keys[keys.length - 1]!;
             return {
@@ -423,9 +435,13 @@ describe("Step 15C.8 — safe unexpected WEB_UI provider keys", () => {
       path.join(webSrc, "features/administration/components/AdminLanguagesSection.tsx"),
       "utf8",
     );
-    const owner = section.slice(
-      section.indexOf("function formatOwnerPreparationProgress"),
-      section.indexOf("function formatActivationWaitingGaps"),
+    const ownerSource = readFileSync(
+      path.join(webSrc, "features/administration/admin-languages-activation-status-format.ts"),
+      "utf8",
+    );
+    const owner = ownerSource.slice(
+      ownerSource.indexOf("function formatOwnerPreparationProgress"),
+      ownerSource.indexOf("function formatActivationWaitingGaps"),
     );
     assert.match(owner, /Detailed WEB_UI failure is shown once/);
     assert.match(

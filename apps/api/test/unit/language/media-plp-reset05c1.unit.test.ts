@@ -218,22 +218,14 @@ describe("RESET 05C.1 — durable automatic localization", () => {
       limit: 12,
     });
     assert.equal(enqueued.PROVIDER_CALLS, 0);
-    assert.ok(enqueued.enqueued >= 1);
+    assert.equal(enqueued.enqueued, 0);
+    assert.equal(enqueued.consumerCount, 0);
 
     const durable = listPlpAutoBuildWorkForTests().filter(
       (w) => w.entityId === mediaPlpPublicNewsEntityId(article.id),
     );
-    assert.ok(durable.length >= 1);
-    assert.equal(durable[0]?.canonicalVersion, version);
-
-    await waitForQueueIdle();
-    assert.ok(
-      listPlpBuildRequestsCompletedForTests().some(
-        (r) =>
-          r.entityId === mediaPlpPublicNewsEntityId(article.id) &&
-          (r.status === "COMPLETED" || r.status === "SKIPPED_USABLE"),
-      ),
-    );
+    assert.equal(durable.length, 0);
+    assert.equal(version.length > 0, true);
 
     const resolved = await resolveMediaPlpConsumerItem({
       locale: "uk",
@@ -254,10 +246,10 @@ describe("RESET 05C.1 — durable automatic localization", () => {
         }),
       ),
     });
-    assert.equal(resolved.mode, "PUBLISHED_LOCALIZED");
+    assert.equal(resolved.mode, "CANONICAL_FALLBACK");
   });
 
-  it("G: restart simulation — drain recovers durable pending work", async () => {
+  it("G: restart simulation — historical public_news stays unclaimed", async () => {
     const article = makeNews(2);
     await upsertPublicNewsRecords([article]);
     ensureMediaPlpAdapterRegistered();
@@ -285,7 +277,11 @@ describe("RESET 05C.1 — durable automatic localization", () => {
 
     wireFakeProcessor();
     kickPlpAutoBuildDrain();
-    await waitForQueueIdle();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal(
+      listPlpAutoBuildWorkForTests().filter((w) => w.status === "pending").length,
+      1,
+    );
 
     const resolved = await resolveMediaPlpConsumerItem({
       locale: "uk",
@@ -306,10 +302,10 @@ describe("RESET 05C.1 — durable automatic localization", () => {
         }),
       ),
     });
-    assert.equal(resolved.mode, "PUBLISHED_LOCALIZED");
+    assert.equal(resolved.mode, "CANONICAL_FALLBACK");
   });
 
-  it("H: duplicate refresh coalesces / skip usable without provider", async () => {
+  it("H: RSS refresh does not enqueue public_news provider work", async () => {
     const article = makeNews(3);
     await upsertPublicNewsRecords([article]);
     ensureMediaPlpAdapterRegistered();
@@ -320,15 +316,13 @@ describe("RESET 05C.1 — durable automatic localization", () => {
       limit: 12,
     });
     assert.equal(first.PROVIDER_CALLS, 0);
-    assert.ok(first.enqueued >= 1);
-    await waitForQueueIdle();
+    assert.equal(first.enqueued, 0);
 
     const again = await enqueueConsumerVisibleNewsPlpBuilds({
       locales: ["uk"],
       limit: 12,
     });
     assert.equal(again.PROVIDER_CALLS, 0);
-    assert.ok(again.skippedUsable + again.deduped >= 1);
     assert.equal(again.enqueued, 0);
   });
 
@@ -361,8 +355,8 @@ describe("RESET 05C.1 — durable automatic localization", () => {
         }),
       },
     );
-    assert.equal(status.status, "FAILED");
-    assert.ok(fake.getRequestCountForTests() >= 1);
+    assert.equal(status.status, "SKIPPED_USABLE");
+    assert.equal(fake.getRequestCountForTests(), 0);
 
     const resolved = await resolveMediaPlpConsumerItem({
       locale: "uk",
@@ -410,10 +404,7 @@ describe("RESET 05C.1 — durable automatic localization", () => {
         },
       },
     );
-    assert.equal(status.status, "FAILED");
-    assert.equal(status.failure?.failureCode, "STALE_CANONICAL_VERSION");
-    assert.match(status.failure?.safeReason ?? "", /STALE_WORK_VERSION=/);
-    assert.match(status.failure?.safeReason ?? "", /STALE_CURRENT_SOURCE_VERSION=/);
+    assert.equal(status.status, "SKIPPED_USABLE");
 
     const resolveSrc = readFileSync(
       join(plpRoot, "resolve-published-presentation.ts"),
@@ -455,8 +446,8 @@ describe("RESET 05C.1 — durable automatic localization", () => {
   it("dormant without processor leaves durable pending (no spin)", async () => {
     setPlpBuildRequestProcessorForTests(null);
     await enqueuePlpBuildRequest({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
-      entityId: "news-dormant-05c1",
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: "editorial-dormant-05c1",
       locale: "uk",
       canonicalVersion: "v1",
       contentRevision: 1,

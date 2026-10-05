@@ -12,9 +12,23 @@ import type {
   LanguageActivationWebUiDomainProgress,
   LanguageLocalizationReadinessReport,
 } from "@hu/types";
+import { isLocalizationSourceOriginalEntityType } from "@hu/types";
 
 import type { LanguageOwnerPreparationResult } from "../../language-preparation/language-owner-preparation.js";
 import { resolveEffectiveWebUiMessagePack } from "../../web-ui-message-packs/resolve-effective-web-ui-message-pack.js";
+import {
+  activationProviderCooldownDetail,
+  computeActivationCooldownNextAttemptAt,
+} from "../activation-provider-transient-recovery.js";
+import { isLegacyPacingMisclassifiedTerminalFailure } from "../published-localized-presentation/universal/plp-auto-build-failure.js";
+import {
+  parsePlpRecoveryGeneration,
+  PLP_MAX_RECOVERY_GENERATIONS,
+} from "../published-localized-presentation/universal/plp-auto-build-work.repository.js";
+import {
+  aggregateTerminologyFailureDiagnostics,
+  terminologyProviderDiagnosticFromReason,
+} from "./terminology-activation-failure-diagnostic.js";
 
 function emptyBrandDomain(): LanguageActivationBrandDomainProgress {
   return {
@@ -39,6 +53,7 @@ function emptyTerminologyDomain(): LanguageActivationTerminologyDomainProgress {
     conceptsFailed: 0,
     providerFailure: false,
     detail: null,
+    providerDiagnostic: null,
   };
 }
 
@@ -109,11 +124,14 @@ export function terminologyDomainPreparing(): LanguageActivationTerminologyDomai
 
 export function brandDomainFromPreparationResult(
   result: LanguageOwnerPreparationResult,
+  options?: {
+    readonly previous?: LanguageActivationBrandDomainProgress | null;
+    readonly nowIso?: string;
+  },
 ): LanguageActivationBrandDomainProgress {
   const preserved = result.brand.outcomes.filter((row) => row.outcome === "preserved").length;
   const generated = result.brand.outcomes.filter((row) => row.outcome === "generated").length;
   const failed = result.brand.outcomes.filter((row) => row.outcome === "failed").length;
-  const providerFailure = failed > 0;
   const brandStatus =
     result.brand.status === "draft" ||
     result.brand.status === "approved" ||
@@ -121,6 +139,50 @@ export function brandDomainFromPreparationResult(
       ? result.brand.status
       : null;
   const reviewRequired = brandStatus === "draft" || brandStatus === "approved";
+
+  if (
+    result.pacingDeferredUntil &&
+    result.brand.outcomes.some((row) => row.outcome === "gap")
+  ) {
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      fieldsPreserved: preserved,
+      fieldsGenerated: generated,
+      fieldsFailed: 0,
+      brandStatus,
+      reviewRequired: false,
+      providerFailure: false,
+      detail: "Preparing Brand…",
+      nextAttemptAt: result.pacingDeferredUntil,
+      transientFailureCount: options?.previous?.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
+
+  if (result.transientFailure && result.brand.outcomes.some((row) => row.outcome === "gap")) {
+    const streak = (options?.previous?.transientFailureCount ?? 0) + 1;
+    const nowIso = options?.nowIso ?? new Date().toISOString();
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      fieldsPreserved: preserved,
+      fieldsGenerated: generated,
+      fieldsFailed: 0,
+      brandStatus,
+      reviewRequired: false,
+      providerFailure: false,
+      detail: activationProviderCooldownDetail(result.transientFailure.kind),
+      nextAttemptAt: computeActivationCooldownNextAttemptAt({
+        nowIso,
+        transientFailureCount: streak,
+      }),
+      transientFailureCount: streak,
+      lastTransientFailure: result.transientFailure.kind,
+    };
+  }
+
+  const providerFailure = failed > 0;
   if (providerFailure) {
     return {
       status: "failed",
@@ -132,6 +194,9 @@ export function brandDomainFromPreparationResult(
       reviewRequired: false,
       providerFailure: true,
       detail: "Brand preparation failed — retry activation after the translation provider is available.",
+      nextAttemptAt: null,
+      transientFailureCount: 0,
+      lastTransientFailure: null,
     };
   }
   return {
@@ -148,15 +213,67 @@ export function brandDomainFromPreparationResult(
       : brandStatus === "published"
         ? "Brand ready (published)."
         : "Brand ready.",
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
   };
 }
 
 export function terminologyDomainFromPreparationResult(
   result: LanguageOwnerPreparationResult,
+  options?: {
+    readonly previous?: LanguageActivationTerminologyDomainProgress | null;
+    readonly nowIso?: string;
+  },
 ): LanguageActivationTerminologyDomainProgress {
   const preserved = result.terminology.outcomes.filter((row) => row.outcome === "preserved").length;
   const generated = result.terminology.outcomes.filter((row) => row.outcome === "generated").length;
   const failed = result.terminology.outcomes.filter((row) => row.outcome === "failed").length;
+  const remainingGaps = result.terminology.outcomes.filter((row) => row.outcome === "gap").length;
+
+  if (result.pacingDeferredUntil && remainingGaps > 0) {
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      conceptsPreserved: preserved,
+      conceptsGenerated: generated,
+      conceptsFailed: failed,
+      providerFailure: false,
+      detail: "Preparing terminology…",
+      providerDiagnostic: null,
+      nextAttemptAt: result.pacingDeferredUntil,
+      transientFailureCount: options?.previous?.transientFailureCount ?? 0,
+      lastTransientFailure: null,
+    };
+  }
+
+  if (result.transientFailure && remainingGaps > 0) {
+    const streak = (options?.previous?.transientFailureCount ?? 0) + 1;
+    const nowIso = options?.nowIso ?? new Date().toISOString();
+    const diagnosticFromFailed = aggregateTerminologyFailureDiagnostics(
+      result.terminology.outcomes,
+    );
+    const diagnostic =
+      diagnosticFromFailed ??
+      terminologyProviderDiagnosticFromReason(result.transientFailure.reason);
+    return {
+      status: "in_progress",
+      preparationAttempted: true,
+      conceptsPreserved: preserved,
+      conceptsGenerated: generated,
+      conceptsFailed: failed,
+      providerFailure: false,
+      detail: activationProviderCooldownDetail(result.transientFailure.kind),
+      providerDiagnostic: diagnostic,
+      nextAttemptAt: computeActivationCooldownNextAttemptAt({
+        nowIso,
+        transientFailureCount: streak,
+      }),
+      transientFailureCount: streak,
+      lastTransientFailure: result.transientFailure.kind,
+    };
+  }
+
   if (failed > 0) {
     return {
       status: "failed",
@@ -165,7 +282,12 @@ export function terminologyDomainFromPreparationResult(
       conceptsGenerated: generated,
       conceptsFailed: failed,
       providerFailure: true,
+      // Stable operator retry copy — do not replace; diagnostics live in providerDiagnostic.
       detail: "Terminology preparation failed — retry activation",
+      providerDiagnostic: aggregateTerminologyFailureDiagnostics(result.terminology.outcomes),
+      nextAttemptAt: null,
+      transientFailureCount: 0,
+      lastTransientFailure: null,
     };
   }
   return {
@@ -176,6 +298,10 @@ export function terminologyDomainFromPreparationResult(
     conceptsFailed: 0,
     providerFailure: false,
     detail: "Terminology ready",
+    providerDiagnostic: null,
+    nextAttemptAt: null,
+    transientFailureCount: 0,
+    lastTransientFailure: null,
   };
 }
 
@@ -206,6 +332,7 @@ export function terminologyDomainProviderConfigFailure(
     conceptsFailed: 0,
     providerFailure: true,
     detail: `Terminology preparation failed — ${message}`,
+    providerDiagnostic: terminologyProviderDiagnosticFromReason(message),
   };
 }
 
@@ -223,7 +350,9 @@ export async function buildWebUiDomainProgress(
       previous.preparationPhase === "quality" ||
       previous.preparationPhase === "validating" ||
       previous.preparationPhase === "publishing" ||
-      previous.preparationPhase === "provider_cooldown")
+      previous.preparationPhase === "provider_cooldown" ||
+      previous.preparationPhase === "structure_retry" ||
+      previous.preparationPhase === "structure_blocked")
   ) {
     return {
       ...previous,
@@ -244,6 +373,25 @@ export async function buildWebUiDomainProgress(
       effectiveSource: effective?.source ?? previous.effectiveSource,
       dataReady: false,
       status: "failed",
+    };
+  }
+  if (previous?.preparationPhase === "ready" && !dataReady) {
+    return {
+      status: "pending",
+      dataReady: false,
+      missingKeyCount: readiness.webUi.missingKeyCount,
+      emptyKeyCount: readiness.webUi.emptyKeyCount,
+      requiredKeyCount: readiness.webUi.requiredKeyCount,
+      effectiveSource: effective?.source ?? previous.effectiveSource,
+      detail: `waiting_for_data missing=${readiness.webUi.missingKeyCount} empty=${readiness.webUi.emptyKeyCount} required=${readiness.webUi.requiredKeyCount} dataReady=false`,
+      preparationPhase: "ready",
+      checkpointId: previous.checkpointId ?? null,
+      sourceHash: previous.sourceHash ?? null,
+      totalBatches: previous.totalBatches ?? 0,
+      completedBatches: previous.completedBatches ?? 0,
+      totalLeaves: previous.totalLeaves ?? readiness.webUi.requiredKeyCount,
+      completedLeaves: previous.completedLeaves ?? 0,
+      providerFailure: false,
     };
   }
   if (previous?.preparationPhase === "ready" || dataReady) {
@@ -381,7 +529,17 @@ export function buildHistoricalDomainProgress(input: {
   let status: LanguageActivationHistoricalDomainProgress["status"] = "pending";
   let detail: string | null = null;
 
-  if (remaining === 0 && bucket.failed === 0) {
+  if ((bucket.activeWork ?? 0) > 0 && remaining === 0 && bucket.failed === 0) {
+    status = "in_progress";
+    detail = `${owner} translations already queued or processing: ${bucket.activeWork}.`;
+  } else if (
+    (bucket.preflightBlocked ?? 0) > 0 &&
+    remaining === 0 &&
+    bucket.failed === 0
+  ) {
+    status = "pending";
+    detail = `${owner} sources cannot currently be translated: ${bucket.preflightBlocked}.`;
+  } else if (remaining === 0 && bucket.failed === 0) {
     status = enqueueAttempted ? "ready" : "skipped";
     detail =
       remaining === 0 && bucket.current > 0
@@ -398,7 +556,7 @@ export function buildHistoricalDomainProgress(input: {
     detail = `${owner} blocked current-version translation failures: ${bucket.failed}.`;
   } else if (bucket.pending > 0) {
     status = "in_progress";
-    detail = `${owner} live identities are not actionable: ${bucket.pending}.`;
+    detail = `${owner} translations already queued or processing: ${bucket.pending}.`;
   }
 
   return {
@@ -420,11 +578,91 @@ export function buildHistoricalDomainProgress(input: {
  * Owner provider failures are not classified as ordinary waiting_for_data.
  * Brand review/publication never forces waiting_for_data.
  */
+export type ActivationAutomaticProgress = "progress" | "exhausted" | "unspecified";
+
+export const ACTIVATION_AUTOMATIC_EXHAUSTED_DETAIL =
+  "Automatic localization cannot progress.";
+
+export type ActivationPlpWorkProgressRow = {
+  readonly status: string;
+  readonly attempts: number;
+  readonly maxAttempts: number;
+  readonly retryable: boolean | null;
+  readonly recoveryGeneration: string | null;
+  readonly nextAttemptAt: string | null;
+  readonly failureCode: string | null;
+  readonly lastError: string | null;
+  readonly entityType: string;
+};
+
+/**
+ * Whether automatic CT/PLP work can still move.
+ * Pending, running, pacing/cooldown, recovery windows, and the legacy
+ * pacing-mislabel adoption stay "progress". A generation-capped real
+ * provider failure with required work left is "exhausted".
+ */
+export function classifyActivationAutomaticProgress(input: {
+  readonly readiness: Pick<LanguageLocalizationReadinessReport, "ct" | "plpMedia">;
+  readonly plpWork: readonly ActivationPlpWorkProgressRow[];
+}): ActivationAutomaticProgress {
+  if (
+    input.readiness.ct.workItemsRequired > 0 ||
+    input.readiness.ct.pending > 0 ||
+    (input.readiness.ct.activeWork ?? 0) > 0
+  ) {
+    return "progress";
+  }
+  const plpRequired =
+    input.readiness.plpMedia.workItemsRequired > 0 ||
+    input.readiness.plpMedia.failed > 0 ||
+    input.readiness.plpMedia.pending > 0;
+  if (!plpRequired) {
+    return "unspecified";
+  }
+  if (input.plpWork.length === 0) {
+    return "unspecified";
+  }
+  for (const row of input.plpWork) {
+    if (row.status === "pending" || row.status === "running") {
+      return "progress";
+    }
+    if (row.status !== "failed") {
+      continue;
+    }
+    if (
+      isLegacyPacingMisclassifiedTerminalFailure({
+        failureCode: row.failureCode,
+        retryable: row.retryable,
+        safeReason: row.lastError,
+      })
+    ) {
+      return "progress";
+    }
+    const dueMs = row.nextAttemptAt ? Date.parse(row.nextAttemptAt) : Number.NaN;
+    if (Number.isFinite(dueMs) && dueMs > Date.now()) {
+      return "progress";
+    }
+    if (
+      row.retryable === true &&
+      row.attempts >= row.maxAttempts &&
+      parsePlpRecoveryGeneration(row.recoveryGeneration) < PLP_MAX_RECOVERY_GENERATIONS &&
+      !isLocalizationSourceOriginalEntityType(row.entityType)
+    ) {
+      return "progress";
+    }
+  }
+  if (input.plpWork.some((row) => row.status === "failed")) {
+    return "exhausted";
+  }
+  return "unspecified";
+}
+
 export function deriveActivationJobStatus(input: {
   readonly readiness: LanguageLocalizationReadinessReport;
   readonly domains: LanguageActivationJobDomains;
   readonly ctEnqueueAttempted: boolean;
   readonly plpEnqueueAttempted: boolean;
+  readonly automaticProgress?: ActivationAutomaticProgress;
 }): LanguageActivationJobStatus {
   const { readiness, domains } = input;
   if (!readiness.engineReady) {
@@ -470,16 +708,42 @@ export function deriveActivationJobStatus(input: {
     readiness.ct.failed === 0 &&
     readiness.plpMedia.failed === 0 &&
     readiness.ct.pending === 0 &&
-    readiness.plpMedia.pending === 0
+    readiness.plpMedia.pending === 0 &&
+    (readiness.ct.activeWork ?? 0) === 0 &&
+    (readiness.plpMedia.activeWork ?? 0) === 0 &&
+    (readiness.ct.preflightBlocked ?? 0) === 0 &&
+    (readiness.plpMedia.preflightBlocked ?? 0) === 0
   ) {
     return "completed";
+  }
+  const requiredRemains =
+    readiness.ct.workItemsRequired > 0 ||
+    readiness.plpMedia.workItemsRequired > 0 ||
+    readiness.ct.failed > 0 ||
+    readiness.plpMedia.failed > 0;
+  const waitingBucket =
+    readiness.ct.pending > 0 ||
+    readiness.plpMedia.pending > 0 ||
+    (readiness.ct.activeWork ?? 0) > 0 ||
+    (readiness.plpMedia.activeWork ?? 0) > 0;
+  if (
+    input.automaticProgress === "exhausted" &&
+    readiness.state !== "READY" &&
+    requiredRemains &&
+    !waitingBucket
+  ) {
+    return "failed";
   }
   if (input.ctEnqueueAttempted || input.plpEnqueueAttempted) {
     const blocked =
       readiness.ct.failed > 0 ||
       readiness.plpMedia.failed > 0 ||
       readiness.ct.pending > 0 ||
-      readiness.plpMedia.pending > 0;
+      readiness.plpMedia.pending > 0 ||
+      (readiness.ct.activeWork ?? 0) > 0 ||
+      (readiness.plpMedia.activeWork ?? 0) > 0 ||
+      (readiness.ct.preflightBlocked ?? 0) > 0 ||
+      (readiness.plpMedia.preflightBlocked ?? 0) > 0;
     return readiness.state === "BACKFILL_IN_PROGRESS" ||
       readiness.ct.workItemsRequired > 0 ||
       readiness.plpMedia.workItemsRequired > 0 ||

@@ -12,6 +12,7 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { incompleteWebUiActivationCheckpointMongoFilter } from "./web-ui-provider-output-structure.js";
 import {
   getWebUiActivationBatchMemory,
   getWebUiActivationCheckpointByJobMemory,
@@ -121,9 +122,7 @@ export async function listIncompleteWebUiActivationCheckpoints(): Promise<
   }
   await ensureMongoReady();
   const docs = await checkpointCollection()
-    .find({
-      phase: { $in: ["primary", "quality", "validating", "publishing", "provider_cooldown"] },
-    })
+    .find(incompleteWebUiActivationCheckpointMongoFilter())
     .toArray();
   return docs.map((doc) => {
     const { _id: _ignored, ...rest } = doc;

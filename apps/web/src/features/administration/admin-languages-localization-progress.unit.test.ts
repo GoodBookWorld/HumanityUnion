@@ -80,8 +80,15 @@ function view(input: {
       pwaPersistedReadingEnabled: false,
     },
     engineReady: true,
-    languageDataReady: dataReady,
-    state: dataReady ? "READY" : "DATA_NOT_READY",
+    languageDataReady: dataReady && (input.cvReady === true) && ((input.ctRemaining ?? 0) + (input.plpRemaining ?? 0) === 0),
+    state:
+      dataReady &&
+      input.cvReady === true &&
+      (input.ctRemaining ?? 0) + (input.plpRemaining ?? 0) === 0
+        ? "READY"
+        : dataReady
+          ? "BACKFILL_REQUIRED"
+          : "DATA_NOT_READY",
     webUi: {
       engineReady: true,
       dataReady,
@@ -131,6 +138,7 @@ function view(input: {
       current: input.ctCurrent ?? 0,
       missing: input.ctRemaining ?? 0,
       stale: 0,
+      invalid: 0,
       failed: 0,
       pending: 0,
       workItemsRequired: input.ctRemaining ?? 0,
@@ -139,6 +147,7 @@ function view(input: {
       current: input.plpCurrent ?? 0,
       missing: input.plpRemaining ?? 0,
       stale: 0,
+      invalid: 0,
       failed: 0,
       pending: 0,
       workItemsRequired: input.plpRemaining ?? 0,
@@ -416,6 +425,123 @@ describe("Step 15C.5 localization live progress", () => {
     assert.doesNotMatch(withCooldown.phaseLabel, /Failed/);
   });
 
+  it("structure_retry shows automatic retry, not Failed and not a rate limit", () => {
+    const waiting = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 52,
+          totalBatches: 702,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 52,
+              totalBatches: 702,
+              preparationPhase: "structure_retry",
+              providerFailure: false,
+            }),
+            status: "in_progress",
+            nextAttemptAt: "2026-09-27T08:00:00.000Z",
+            transientFailureCount: 0,
+            lastTransientFailure: null,
+            detail: "Automatic retry scheduled. No operator action required.",
+          },
+        },
+      },
+    });
+    assert.equal(waiting.phaseLabel, "Automatic retry scheduled");
+    assert.equal(waiting.failed, false);
+    assert.equal(waiting.activelyProgressing, true);
+    assert.equal(waiting.nextAttemptAt, "2026-09-27T08:00:00.000Z");
+    assert.doesNotMatch(waiting.phaseLabel, /Failed/);
+    assert.doesNotMatch(waiting.phaseLabel, /rate limit/i);
+  });
+
+  it("structure_blocked is a structural defect, not Failed and not a rate limit", () => {
+    const blocked = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 52,
+          totalBatches: 702,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 52,
+              totalBatches: 702,
+              preparationPhase: "structure_blocked",
+              providerFailure: false,
+            }),
+            status: "in_progress",
+            nextAttemptAt: null,
+            detail:
+              "Automatic translation is blocked by a structural defect. Invalid output was not published. No operator retry is required.",
+          },
+        },
+      },
+    });
+    assert.equal(blocked.phaseLabel, "Automatic translation blocked by a structural defect");
+    assert.equal(blocked.failed, false);
+    assert.equal(blocked.activelyProgressing, false);
+    assert.equal(blocked.nextAttemptAt ?? null, null);
+    assert.doesNotMatch(blocked.phaseLabel, /Failed/);
+    assert.doesNotMatch(blocked.phaseLabel, /rate limit/i);
+  });
+
+  it("primary pacing wait shows the retry time and not Failed", () => {
+    const waiting = localizationProgressFromActivation({
+      ...view({
+        status: "running",
+        web: {
+          status: "in_progress",
+          preparationPhase: "primary",
+          completedBatches: 53,
+          totalBatches: 702,
+        },
+      }),
+      job: {
+        ...view({ status: "running" }).job!,
+        status: "running",
+        domains: {
+          ...view({ status: "running" }).job!.domains,
+          webUi: {
+            ...webUi({
+              completedBatches: 53,
+              totalBatches: 702,
+              preparationPhase: "primary",
+              providerFailure: false,
+            }),
+            status: "in_progress",
+            nextAttemptAt: "2026-09-28T01:20:00.000Z",
+            transientFailureCount: 6,
+            lastTransientFailure: null,
+          },
+        },
+      },
+    });
+    assert.equal(waiting.failed, false);
+    assert.equal(waiting.nextAttemptAt, "2026-09-28T01:20:00.000Z");
+    assert.match(waiting.phaseLabel, /Translating public interface/);
+    assert.doesNotMatch(waiting.phaseLabel, /Failed/);
+    assert.doesNotMatch(waiting.phaseLabel, /rate limit/i);
+  });
+
   it("11–16 polling stays provider-free and the row shows progress plus readiness detail", () => {
     assert.equal(shouldPollLanguageActivationJob("queued"), true);
     assert.equal(shouldPollLanguageActivationJob("running"), true);
@@ -450,5 +576,72 @@ describe("Step 15C.5 localization live progress", () => {
     assert.doesNotMatch(load, /activateAdminLanguageLocalization/);
     assert.match(load, /nextActivationSlotAfterHydrate/);
     assert.doesNotMatch(load, /if \(current && current !== "error"\)/);
+  });
+
+  it("18–20 incomplete authoritative work cannot display 100% or Ready", () => {
+    const uk = localizationProgressFromActivation(
+      view({
+        status: "running",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 46,
+        ctRemaining: 19,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          requiredKeyCount: 4142,
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(uk.percent, 99);
+    assert.notEqual(uk.phaseLabel, "Ready");
+
+    const completed = localizationProgressFromActivation(
+      view({
+        status: "completed",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 46,
+        ctRemaining: 19,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          requiredKeyCount: 4142,
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(completed.percent, 99);
+    assert.notEqual(completed.phaseLabel, "Ready");
+  });
+
+  it("28 terminology fallback does not complete the terminology owner", () => {
+    const progress = localizationProgressFromActivation(
+      view({
+        status: "running",
+        terminologyStatus: "in_progress",
+        cvReady: true,
+        cvMissing: 0,
+        ctCurrent: 10,
+        ctRemaining: 0,
+        plpCurrent: 1,
+        plpRemaining: 0,
+        web: {
+          status: "ready",
+          dataReady: true,
+          preparationPhase: "ready",
+          missingKeyCount: 0,
+        },
+      }),
+    );
+    assert.equal(progress.phaseLabel, "Preparing terminology…");
+    assert.notEqual(progress.phaseLabel, "Ready");
   });
 });

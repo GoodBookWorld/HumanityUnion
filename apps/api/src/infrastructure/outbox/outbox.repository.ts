@@ -55,6 +55,7 @@ function mapDocument(document: OutboxMongoDocument): OutboxRecord {
     causationId: document.causationId,
     createdAt: document.createdAt,
     publishedAt: document.publishedAt,
+    availableAt: document.availableAt ?? null,
   };
 }
 
@@ -115,6 +116,46 @@ export async function enqueueDomainEvent(
   return record;
 }
 
+/**
+ * Pending work is due when it has no pacing hold, or the hold has elapsed.
+ * ISO timestamps compare in order. Missing availableAt stays immediately due.
+ */
+export function isOutboxPendingDispatchDue(input: {
+  readonly status: OutboxRecord["status"];
+  readonly availableAt?: string | null;
+  readonly nowMs: number;
+}): boolean {
+  if (input.status !== "pending") {
+    return false;
+  }
+  if (!input.availableAt) {
+    return true;
+  }
+  const dueMs = Date.parse(input.availableAt);
+  if (!Number.isFinite(dueMs)) {
+    return true;
+  }
+  return dueMs <= input.nowMs;
+}
+
+/**
+ * Pacing defer is not a translation failure. The error is recognized by shape
+ * so infrastructure does not import the localization governor.
+ */
+export function outboxPacingDeferAvailableAt(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+  const candidate = error as { name?: unknown; nextAllowedAt?: unknown };
+  if (candidate.name !== "LocalizationProviderPacingDeferredError") {
+    return null;
+  }
+  if (typeof candidate.nextAllowedAt !== "string" || candidate.nextAllowedAt.length === 0) {
+    return null;
+  }
+  return candidate.nextAllowedAt;
+}
+
 export async function fetchPendingOutboxRecords(limit: number): Promise<OutboxRecord[]> {
   assertMongoAvailable();
 
@@ -138,7 +179,7 @@ export async function fetchPendingOutboxRecords(limit: number): Promise<OutboxRe
 
 /**
  * One bounded read. Pending rows with a future availableAt are not due.
- * Rows without availableAt stay immediately due. Published and failed rows are excluded.
+ * Published and failed rows are excluded by status.
  */
 export async function probeOutboxImmediatelyDue(
   nowIso: string = new Date().toISOString(),
@@ -177,7 +218,28 @@ export async function findEarliestFutureOutboxAvailableAt(
     .sort({ availableAt: 1 })
     .limit(1)
     .next();
-  return typeof document?.availableAt === "string" ? document.availableAt : null;
+  return document?.availableAt ?? null;
+}
+
+/**
+ * Keep a pending outbox row retryable until the provider pacing permit opens.
+ * Does not publish, fail, increment attempts, or write failure metadata.
+ */
+export async function deferOutboxRecordUntilAvailable(
+  outboxId: string,
+  availableAt: string,
+): Promise<void> {
+  assertMongoAvailable();
+
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  await collection.updateOne(
+    { _id: outboxId, status: "pending" },
+    {
+      $set: {
+        availableAt,
+      },
+    },
+  );
 }
 
 export async function markOutboxRecordPublished(outboxId: string): Promise<void> {
@@ -196,6 +258,31 @@ export async function markOutboxRecordPublished(outboxId: string): Promise<void>
   );
 }
 
+/**
+ * Semantic residual defer marks the outbox row terminal on the first failure
+ * so the dispatcher does not redeliver it as a provider retry. The lastError
+ * still carries the durable retryEligibleAt.
+ */
+export function isImmediateTerminalOutboxFailure(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { immediateTerminalOutboxFailure?: unknown }).immediateTerminalOutboxFailure ===
+      true
+  );
+}
+
+export function resolveOutboxFailureStatus(input: {
+  readonly attempts: number;
+  readonly maxAttempts: number;
+  readonly immediateTerminal: boolean;
+}): OutboxRecord["status"] {
+  if (input.immediateTerminal || input.attempts >= input.maxAttempts) {
+    return "failed";
+  }
+  return "pending";
+}
+
 export async function markOutboxRecordFailed(
   outboxId: string,
   error: unknown,
@@ -212,7 +299,11 @@ export async function markOutboxRecordFailed(
   }
 
   const attempts = existing.attempts + 1;
-  const status: OutboxRecord["status"] = attempts >= maxAttempts ? "failed" : "pending";
+  const status = resolveOutboxFailureStatus({
+    attempts,
+    maxAttempts,
+    immediateTerminal: isImmediateTerminalOutboxFailure(error),
+  });
 
   await collection.updateOne(
     { _id: outboxId },

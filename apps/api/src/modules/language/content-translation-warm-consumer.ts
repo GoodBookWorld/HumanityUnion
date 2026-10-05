@@ -37,12 +37,19 @@ import {
   classifyContentTranslationWarmFailure,
 } from "./content-translation-warm-failure.js";
 import {
+  ContentTranslationValidationError,
+  SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
   encodeContentTranslationFailureMetadata,
+  terminologyFailureDiagnosticForMetadata,
+  isSemanticResidualDeferReason,
   normalizeExactValidationReasonCode,
   resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
+  semanticResidualRetryEligibleAtIso,
 } from "./content-translation-failure-metadata.js";
 import {
+  deferContentTranslationWarmMemoryForPacingForTests,
+  listContentTranslationWarmAttempts,
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryFailedForTests,
   markContentTranslationWarmMemoryPublishedForTests,
@@ -53,6 +60,12 @@ import {
   buildContentTranslationWorkIdentity,
   buildContentTranslationWorkIdentityKey,
 } from "./content-translation-work-identity.js";
+import {
+  LocalizationProviderPacingDeferredError,
+  isLocalizationProviderPacingDeferredError,
+  laterLocalizationInstant,
+  localizationProviderNowMs,
+} from "./localization-provider-governor.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 export const CONTENT_TRANSLATION_WARM_CONSUMER_ID = "content-translation-warm-v1" as const;
@@ -64,7 +77,14 @@ export type ContentTranslationWarmLocaleOutcome =
   | {
       readonly targetLanguage: LanguageCode;
       readonly workIdentityKey: string;
-      readonly status: "skipped_existing" | "skipped_source_language" | "generated" | "skipped_ineligible";
+      readonly status:
+        | "skipped_existing"
+        | "skipped_source_language"
+        | "generated"
+        | "skipped_ineligible"
+        | "deferred_pacing";
+      /** Set only for deferred_pacing. The provider permit time, not a failure. */
+      readonly pacingNextAllowedAt?: string;
     }
   | {
       readonly targetLanguage: LanguageCode;
@@ -76,6 +96,12 @@ export type ContentTranslationWarmLocaleOutcome =
       readonly errorCode: string;
       /** Exact validator reason — never the generic string "VALIDATION_FAILED". */
       readonly failureReasonCode: string;
+      readonly localizationInputVersion?: string | null;
+      /** Structured terminology violations. Absent for every other failure. */
+      readonly terminologyViolations?: readonly {
+        readonly conceptId: string;
+        readonly violationType: "missing_preferred" | "residual_canonical";
+      }[] | null;
     };
 
 export interface ContentTranslationWarmProcessResult {
@@ -89,7 +115,9 @@ export interface ContentTranslationWarmProcessResult {
     | "skipped_ineligible"
     | "failed_retryable"
     /** Pack 08I.14B.3 — locale failure without CURRENT; must not mark warm success. */
-    | "failed_terminal";
+    | "failed_terminal"
+    /** Global pacing permit is closed. Not a provider failure. */
+    | "deferred_pacing";
   readonly locales: readonly ContentTranslationWarmLocaleOutcome[];
 }
 
@@ -344,6 +372,14 @@ export async function processContentTranslationWarmRequested(
 
       return { targetLanguage, workIdentityKey, status };
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        return {
+          targetLanguage,
+          workIdentityKey,
+          status: "deferred_pacing" as const,
+          pacingNextAllowedAt: error.nextAllowedAt,
+        };
+      }
       const materialization = classifyContentTranslationMaterializationFailure(error);
       const failureClass = classifyContentTranslationWarmFailure(error);
       const errorCode =
@@ -384,6 +420,14 @@ export async function processContentTranslationWarmRequested(
         materializationFailureClass: materialization.failureClass,
         errorCode,
         failureReasonCode,
+        localizationInputVersion:
+          error instanceof ContentTranslationValidationError
+            ? error.localizationInputVersion
+            : null,
+        terminologyViolations:
+          error instanceof ContentTranslationValidationError
+            ? error.terminologyViolations
+            : null,
       };
     }
   });
@@ -394,6 +438,25 @@ export async function processContentTranslationWarmRequested(
       locale.status === "skipped_existing" ||
       locale.status === "skipped_source_language",
   );
+
+  if (
+    !sawRetryableFailure &&
+    !sawNonRetryableFailure &&
+    locales.some((locale) => locale.status === "deferred_pacing")
+  ) {
+    // Pacing closed the permit before Gemini. This is not delivery, not a
+    // semantic failure, and not Gate E. The same outbox event stays pending.
+    let nextAllowedAt: string | null = null;
+    for (const locale of locales) {
+      if (locale.status !== "deferred_pacing") {
+        continue;
+      }
+      nextAllowedAt = laterLocalizationInstant(nextAllowedAt, locale.pacingNextAllowedAt);
+    }
+    throw new LocalizationProviderPacingDeferredError(
+      nextAllowedAt ?? new Date(Date.now() + 10_000).toISOString(),
+    );
+  }
 
   if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
     const outcome = sawRetryableFailure ? "failed_retryable" : "failed_terminal";
@@ -423,6 +486,53 @@ export async function processContentTranslationWarmRequested(
         ? "PROVIDER_INVALID_RESPONSE"
         : "VALIDATION_FAILED");
 
+    // Semantic/validity rejection is not a provider outage. Do not redeliver
+    // it as unavailable, and do not arm Gate E. Record a bounded defer instead.
+    const semanticOnly =
+      !sawRetryableFailure &&
+      failedLocales.length > 0 &&
+      failedLocales.every((locale) => isSemanticResidualDeferReason(locale.failureReasonCode));
+
+    let retryEligibleAt: string | null = null;
+    let localizationInputVersion: string | null = null;
+    if (semanticOnly) {
+      const failedAtMs = Date.now();
+      let streak = 1;
+      try {
+        const prior = await listContentTranslationWarmAttempts({
+          sourceKind: source.sourceKind,
+          sourceRecordId: source.sourceRecordId,
+        });
+        streak =
+          prior.filter((attempt) => {
+            const attemptVersion =
+              attempt.failureMetadata?.sourceVersion ?? attempt.sourceVersion ?? null;
+            return (
+              isSemanticResidualDeferReason(attempt.failureMetadata?.failureReasonCode) &&
+              attemptVersion === source.sourceVersion
+            );
+          }).length + 1;
+      } catch {
+        streak = 1;
+      }
+      retryEligibleAt = semanticResidualRetryEligibleAtIso({ failedAtMs, streak });
+      localizationInputVersion =
+        failedLocales.find((locale) => locale.localizationInputVersion)?.localizationInputVersion ??
+        null;
+    }
+
+    const persistedHint = semanticOnly
+      ? SEMANTIC_RESIDUAL_DEFER_RETRY_HINT
+      : firstFailed?.failureClass === "retryable"
+        ? "retryable"
+        : "non_retryable_until_code_or_content_change";
+    const persistedLocaleFailures = semanticOnly
+      ? localeFailures.map((row) => ({
+          ...row,
+          retryabilityHint: SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
+        }))
+      : localeFailures;
+
     const metaMessage = encodeContentTranslationFailureMetadata({
       schema: "content_translation_failure_meta_v1",
       validationContractVersion: "v1",
@@ -433,17 +543,24 @@ export async function processContentTranslationWarmRequested(
       sourceVersion: source.sourceVersion,
       targetLocale: firstFailed?.targetLanguage ?? null,
       failedAt: new Date().toISOString(),
-      retryabilityHint:
-        firstFailed?.failureClass === "retryable"
-          ? "retryable"
-          : "non_retryable_until_code_or_content_change",
-      ...(localeFailures.length ? { localeFailures } : {}),
+      retryabilityHint: persistedHint,
+      ...(persistedLocaleFailures.length ? { localeFailures: persistedLocaleFailures } : {}),
+      ...(retryEligibleAt ? { retryEligibleAt } : {}),
+      ...(localizationInputVersion ? { localizationInputVersion } : {}),
+      ...terminologyFailureDiagnosticForMetadata({
+        failureReasonCode: reasonCode,
+        violations: firstFailed?.terminologyViolations ?? null,
+      }),
     });
 
     const err = new TranslationProviderError(
       sawRetryableFailure ? "unavailable" : "bad_request",
       metaMessage,
     );
+    if (semanticOnly) {
+      (err as Error & { immediateTerminalOutboxFailure?: boolean }).immediateTerminalOutboxFailure =
+        true;
+    }
     logger.warn(
       sawRetryableFailure
         ? "content_translation.warm.consume_retryable"
@@ -480,6 +597,13 @@ export async function processContentTranslationWarmRequested(
     warmTargetLocales: targets,
     localeCount: locales.length,
   });
+
+  if (targets.length > 0) {
+    void import("./localization-reconciliation-driver.js").then(
+      ({ wakeReadinessAfterContentTranslationPublish }) =>
+        wakeReadinessAfterContentTranslationPublish(targets),
+    );
+  }
 
   return {
     sourceKind: source.sourceKind,
@@ -520,12 +644,23 @@ export async function processContentTranslationWarmMemoryQueueForTests(): Promis
 > {
   const pending = listContentTranslationWarmMemoryPendingForTests();
   const results: ContentTranslationWarmProcessResult[] = [];
+  const nowMs = localizationProviderNowMs();
   for (const row of pending) {
+    if (row.availableAt) {
+      const dueMs = Date.parse(row.availableAt);
+      if (Number.isFinite(dueMs) && dueMs > nowMs) {
+        continue;
+      }
+    }
     try {
       const result = await processContentTranslationWarmRequested(row.command);
       markContentTranslationWarmMemoryPublishedForTests(row.eventId);
       results.push(result);
     } catch (error) {
+      if (isLocalizationProviderPacingDeferredError(error)) {
+        deferContentTranslationWarmMemoryForPacingForTests(row.eventId, error.nextAllowedAt);
+        continue;
+      }
       markContentTranslationWarmMemoryFailedForTests(
         row.eventId,
         error instanceof Error ? error.message : "warm memory drain failure",

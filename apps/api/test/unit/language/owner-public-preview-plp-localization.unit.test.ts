@@ -11,16 +11,13 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import type { MemberProfile } from "@hu/types";
-import { PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION } from "@hu/types";
 
 import {
   resetPublishedLocalizationPersistenceForTests,
   setPublishedLocalizationPersistenceModeForTests,
 } from "../../../src/modules/language/published-localized-presentation/persistence/repository.js";
-import { publishPublishedLocalizedPresentation } from "../../../src/modules/language/published-localized-presentation/publish-atomic.js";
 import { applyParticipantPublicPlpToProjection } from "../../../src/modules/language/published-localized-presentation/universal/adapters/apply-participant-public-plp.js";
 import {
-  buildParticipantPublicCanonicalPresentation,
   PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
   participantPublicPlpDomainAdapter,
   resetParticipantPublicPlpStoreForTests,
@@ -30,7 +27,6 @@ import {
   getPlpDomainAdapter,
   registerPlpDomainAdapter,
 } from "../../../src/modules/language/published-localized-presentation/universal/domain-adapter-registry.js";
-import { mergeLocalizedLayersByProvenance } from "../../../src/modules/language/published-localized-presentation/validate-build-result.js";
 import {
   resolvePublicMemberProfileHiddenSections,
   toPublicMemberProfile,
@@ -136,7 +132,7 @@ describe("/me/public-preview owner-preview PLP localization", () => {
     assert.doesNotMatch(service, /locale\s*===\s*["'](?:uk|ar|zh-Hant)["']/);
   });
 
-  it("members_only + usable CURRENT: localized Biography/Skills; privacy still hides organization; en stays canonical", async () => {
+  it("members_only + any locale: SOURCE_ORIGINAL Biography/Skills; privacy still hides organization", async () => {
     const profile = sampleMembersOnlyProfile();
 
     seedParticipantPublicPlpForTests({
@@ -148,54 +144,13 @@ describe("/me/public-preview owner-preview PLP localization", () => {
       visibility: "members_only",
     });
 
-    const full = buildParticipantPublicCanonicalPresentation({
-      profileId: PROFILE_ID,
-      displayName: profile.displayName,
-      biography: profile.biography,
-      organization: profile.organization,
-      skills: profile.skills,
-    });
-
-    const merged = mergeLocalizedLayersByProvenance({
-      canonicalPresentation: full.presentation,
-      fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
-        PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-      ),
-      layers: [
-        {
-          source: "MACHINE",
-          values: {
-            biography: "Localized biography for xx-Future.",
-            "skills[0]": "Localized Alpha",
-            "skills[1]": "Localized Beta",
-          },
-        },
-      ],
-    });
-
-    const published = await publishPublishedLocalizedPresentation({
-      entityType: PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-      entityId: PROFILE_ID,
-      locale: FUTURE_LOCALE,
-      canonicalVersion: full.canonicalVersion,
-      contentRevision: 1,
-      localizationSchemaVersion: PLP_UNIVERSAL_DEFAULT_SCHEMA_VERSION,
-      canonicalPresentation: full.presentation,
-      localizedCandidate: merged.presentation,
-      provenance: merged.provenance,
-      fieldPolicy: participantPublicPlpDomainAdapter.fieldPolicyFor(
-        PARTICIPANT_PUBLIC_PLP_ENTITY_TYPE,
-      ),
-    });
-    assert.equal(published.ok, true);
-
     const localized = await runOwnerPublicPreviewPipeline({
       profile,
       locale: FUTURE_LOCALE,
     });
 
-    assert.equal(localized.profile.biography, "Localized biography for xx-Future.");
-    assert.deepEqual(localized.profile.skills, ["Localized Alpha", "Localized Beta"]);
+    assert.equal(localized.profile.biography, "Canonical English biography.");
+    assert.deepEqual(localized.profile.skills, ["Skill Alpha", "Skill Beta"]);
     // Privacy: showOrganization false + non-owner → organization omitted.
     assert.equal(localized.profile.organization, undefined);
     assert.equal(localized.hiddenSections.skills, false);

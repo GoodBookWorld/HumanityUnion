@@ -1,9 +1,10 @@
 /**
- * Pack 08I.16 — global bounded concurrency for TranslationProvider work.
+ * Pack 08I.16 — process-local concurrency mutex for localization provider work.
  *
- * Universal coverage (08I.15) means eligible content is discoverable; it does
- * NOT mean unbounded parallel Gemini calls. One shared slot pool caps peak
- * memory on small staging instances.
+ * Gate E: this mutex is acquired only inside `runLocalizationProviderRequest`.
+ * Owners must not acquire it around a prepare/tick that also calls the governor.
+ * Default concurrency is 1. `CONTENT_TRANSLATION_WORKER_CONCURRENCY` caps at 4.
+ * The bound is per API process. Cross-process pressure is the durable cooldown.
  */
 
 const DEFAULT_WORKER_CONCURRENCY = 1;

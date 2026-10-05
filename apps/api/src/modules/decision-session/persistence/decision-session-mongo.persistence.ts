@@ -7,6 +7,7 @@ import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collect
 import {
   createEmptyDecisionSessionPersistenceSnapshot,
   type DecisionSessionPersistenceAdapter,
+  type DecisionSessionPersistenceSnapshot,
 } from "./decision-session-persistence.types.js";
 
 const handles = createMongoSnapshotPersistence({
@@ -42,4 +43,11 @@ export async function flushDecisionSessionMongoPersistence(): Promise<void> {
   }
 
   await handles.flush();
+}
+
+/** Test-only. Fills the adapter cache the way hydrate() does, without Mongo I/O. */
+export function installHydratedDecisionSessionSnapshotForTests(
+  snapshot: DecisionSessionPersistenceSnapshot,
+): void {
+  handles.installHydratedSnapshotForTests(snapshot);
 }

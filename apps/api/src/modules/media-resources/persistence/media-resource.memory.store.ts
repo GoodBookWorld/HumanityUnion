@@ -1,27 +1,41 @@
-import type { MediaResource } from "@hu/types";
+import type { MediaResource, MediaResourceType } from "@hu/types";
 
-const resourcesById = new Map<string, MediaResource>();
+const resourcesByIdentity = new Map<string, MediaResource>();
+
+function identityKey(resourceType: MediaResourceType, id: string): string {
+  return `${resourceType}\0${id}`;
+}
 
 export function resetMediaResourcesMemoryForTests(): void {
-  resourcesById.clear();
+  resourcesByIdentity.clear();
 }
 
 export function listMediaResourcesMemory(): MediaResource[] {
-  return [...resourcesById.values()].sort(
+  return [...resourcesByIdentity.values()].sort(
     (left, right) =>
       left.sortOrder - right.sortOrder || left.name.localeCompare(right.name),
   );
 }
 
-export function getMediaResourceByIdMemory(id: string): MediaResource | null {
-  return resourcesById.get(id) ?? null;
+export function getMediaResourceByIdentityMemory(
+  resourceType: MediaResourceType,
+  id: string,
+): MediaResource | null {
+  return resourcesByIdentity.get(identityKey(resourceType, id)) ?? null;
+}
+
+export function listMediaResourcesByPublisherIdMemory(id: string): MediaResource[] {
+  return listMediaResourcesMemory().filter((resource) => resource.id === id);
 }
 
 export function upsertMediaResourceMemory(resource: MediaResource): MediaResource {
-  resourcesById.set(resource.id, resource);
+  resourcesByIdentity.set(identityKey(resource.resourceType, resource.id), resource);
   return resource;
 }
 
-export function deleteMediaResourceMemory(id: string): boolean {
-  return resourcesById.delete(id);
+export function deleteMediaResourceMemory(
+  resourceType: MediaResourceType,
+  id: string,
+): boolean {
+  return resourcesByIdentity.delete(identityKey(resourceType, id));
 }

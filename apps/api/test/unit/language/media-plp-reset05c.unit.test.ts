@@ -206,7 +206,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       }),
     );
 
-    enqueuePlpBuildRequest({
+    const queued = enqueuePlpBuildRequest({
       entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
       entityId: mediaPlpPublicNewsEntityId(article.id),
       locale: "uk",
@@ -214,15 +214,11 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       contentRevision: 1,
       trigger: "DYNAMIC_SOURCE_REFRESH",
     });
-
-    await waitForQueueIdle();
-    const completed = listPlpBuildRequestsCompletedForTests();
-    assert.ok(completed.length >= 1);
-    // Reset 01 — title/summary are MACHINE; no longer blocked by no_machine_auto_paths.
-    assert.doesNotMatch(
-      String(completed.map((r) => r.status).join(",")),
-      /no_machine_auto_paths/,
-    );
+    const accepted = await queued;
+    assert.equal(accepted.accepted, false);
+    assert.equal(accepted.skippedUsable, true);
+    assert.equal(fake.getRequestCountForTests(), 0);
+    assert.equal(getPlpBuildRequestQueueStats().pending, 0);
 
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -256,7 +252,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
 
   it("4: duplicate build events coalesce", () => {
     enqueuePlpBuildRequest({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
       entityId: "news-dup",
       locale: "uk",
       canonicalVersion: "v1",
@@ -264,7 +260,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
       trigger: "DYNAMIC_SOURCE_REFRESH",
     });
     enqueuePlpBuildRequest({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
       entityId: "news-dup",
       locale: "uk",
       canonicalVersion: "v2",
@@ -299,14 +295,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         },
       },
     );
-    assert.equal(status.status, "FAILED");
-    assert.equal(status.failure?.failureCode, "STALE_CANONICAL_VERSION");
-    assert.match(status.failure?.safeReason ?? "", /STALE_WORK_VERSION=stale-old-version/);
-    assert.match(
-      status.failure?.safeReason ?? "",
-      new RegExp(`STALE_CURRENT_SOURCE_VERSION=${liveVersion}`),
-    );
-    assert.match(status.failure?.safeReason ?? "", /STALE_BOUNDARY=claim_source_reload/);
+    assert.equal(status.status, "SKIPPED_USABLE");
     assert.notEqual(liveVersion, "stale-old-version");
   });
 
@@ -364,9 +353,8 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
     }
 
     const enqueued = await enqueueConsumerVisibleNewsPlpBuilds({ locales: ["uk"] });
-    // Reset 01 — bounded /media-12 carousel selection enqueues PLP for selected cards.
-    assert.equal(enqueued.consumerCount, 12);
-    assert.equal(enqueued.enqueued, 12);
+    assert.equal(enqueued.consumerCount, 0);
+    assert.equal(enqueued.enqueued, 0);
     assert.equal(enqueued.PROVIDER_CALLS, 0);
   });
 
@@ -397,7 +385,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         }),
       },
     );
-    assert.equal(status.status, "FAILED");
+    assert.equal(status.status, "SKIPPED_USABLE");
 
     const tree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation({
@@ -459,14 +447,9 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
         verifyDurability: async () => ({ ok: true }),
       },
     );
-    assert.ok(
-      status.status === "COMPLETED" || status.status === "FAILED",
-      status.status,
-    );
-    if (status.status === "COMPLETED") {
-      assert.ok(hooked >= 1);
-      assert.ok(fake.getRequestCountForTests() >= 1);
-    }
+    assert.equal(status.status, "SKIPPED_USABLE");
+    assert.equal(hooked, 0);
+    assert.equal(fake.getRequestCountForTests(), 0);
   });
 
   it("processor registration respects Registry CT targets + env kill switch", async () => {
@@ -528,7 +511,7 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
 
   it("setPlpBuildRequestProcessor kicks drain of dormant work", async () => {
     enqueuePlpBuildRequest({
-      entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
       entityId: "news-dormant",
       locale: "uk",
       canonicalVersion: "v1",

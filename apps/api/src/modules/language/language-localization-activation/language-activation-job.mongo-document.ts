@@ -14,6 +14,7 @@ import {
 } from "@hu/types";
 
 import { LanguageActivationJobValidationError } from "./language-activation-job.errors.js";
+import { sanitizeTerminologyProviderDiagnostic } from "./terminology-activation-failure-diagnostic.js";
 
 export interface LanguageActivationJobMongoDocument extends Document {
   jobId: string;
@@ -77,6 +78,7 @@ function defaultTerminologyDomain(): LanguageActivationTerminologyDomainProgress
     conceptsFailed: 0,
     providerFailure: false,
     detail: null,
+    providerDiagnostic: null,
   };
 }
 
@@ -92,6 +94,18 @@ function normalizeOwnerSlice<T extends { status: unknown }>(
     return fallback;
   }
   return { ...fallback, ...slice };
+}
+
+function normalizeTerminologyDomain(value: unknown): LanguageActivationTerminologyDomainProgress {
+  const base = normalizeOwnerSlice(value, defaultTerminologyDomain());
+  const raw =
+    value != null && typeof value === "object"
+      ? (value as { providerDiagnostic?: unknown }).providerDiagnostic
+      : undefined;
+  return {
+    ...base,
+    providerDiagnostic: sanitizeTerminologyProviderDiagnostic(raw),
+  };
 }
 
 function assertDomains(value: unknown): LanguageActivationJobDomains {
@@ -112,7 +126,7 @@ function assertDomains(value: unknown): LanguageActivationJobDomains {
   return {
     ...domains,
     brand: normalizeOwnerSlice(domains.brand, defaultBrandDomain()),
-    terminology: normalizeOwnerSlice(domains.terminology, defaultTerminologyDomain()),
+    terminology: normalizeTerminologyDomain(domains.terminology),
     webUi: normalizeOwnerSlice(domains.webUi, defaultWebUiDomain()),
     controlledVocabulary: {
       ...cv,

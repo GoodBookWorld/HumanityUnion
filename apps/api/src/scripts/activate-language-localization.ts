@@ -95,6 +95,9 @@ try {
       initiative: true,
       collaborativeAnalysis: true,
       collectiveDecision: true,
+      decisionSession: true,
+      implementationCommitment: true,
+      implementationTracking: true,
     },
   });
   // Same Mongo PLP bind as API HTTP resolve — planner/integrity PLP reads must

@@ -24,7 +24,7 @@ import { listInitiatives } from "../initiatives/initiative.store.js";
 const COUNTRY_INITIATIVES_LIMIT = 12;
 const COUNTRY_INITIATIVES_MAX_LIMIT = 18;
 /** Production Completion Pack 01 — public country media projection max. */
-export const COUNTRY_MEDIA_LIMIT = 6;
+export const COUNTRY_MEDIA_LIMIT = 12;
 
 export interface CountryDiscoveryQuery {
   regionCode?: string;

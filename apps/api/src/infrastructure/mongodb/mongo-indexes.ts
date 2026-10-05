@@ -169,9 +169,9 @@ const MODULE_INDEXES: ReadonlyArray<{
     collectionName: MONGO_COLLECTIONS.mediaResources,
     indexes: [
       {
-        key: { id: 1 },
+        key: { resourceType: 1, id: 1 },
         unique: true,
-        name: "media_resources_id_unique",
+        name: "media_resources_type_id_unique",
       },
       {
         key: { resourceType: 1, scopeType: 1, countryCode: 1, active: 1 },
@@ -1704,6 +1704,31 @@ async function dropLegacyDecisionParticipantUniqueIndex(): Promise<void> {
   }
 }
 
+/**
+ * F.3.17.1 — publisher slug is not a global identity. TRUSTED_MEDIA and
+ * NEWS_SOURCE may share `id`. Drop the legacy unique `{ id: 1 }` index so
+ * the compound `{ resourceType, id }` unique index can admit both rows.
+ * Idempotent: a missing index or collection is not an error.
+ */
+async function dropLegacyMediaResourcesIdUniqueIndex(): Promise<void> {
+  try {
+    await getMongoCollection(MONGO_COLLECTIONS.mediaResources).dropIndex("media_resources_id_unique");
+  } catch (error) {
+    const mongoError = error as { code?: number; codeName?: string };
+
+    if (
+      mongoError.code === 27 ||
+      mongoError.codeName === "IndexNotFound" ||
+      mongoError.code === 26 ||
+      mongoError.codeName === "NamespaceNotFound"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 export async function ensureMongoIndexes(): Promise<void> {
   // Pack 26A.1 — DDL writes can fail during Atlas primary elections; retry
   // only transient replica-set errors at this startup boundary.
@@ -1718,6 +1743,10 @@ export async function ensureMongoIndexes(): Promise<void> {
   await withMongoStartupIndexRetry(
     "reconcileLanguageRegistryAliasKeysUniqueIndex",
     reconcileLanguageRegistryAliasKeysUniqueIndex,
+  );
+  await withMongoStartupIndexRetry(
+    "dropLegacyMediaResourcesIdUniqueIndex",
+    dropLegacyMediaResourcesIdUniqueIndex,
   );
 
   for (const entry of MODULE_INDEXES) {

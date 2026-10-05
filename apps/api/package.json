@@ -9,6 +9,7 @@
     "start:prod": "node dist/index.js",
     "start:src": "tsx src/index.ts",
     "test": "tsx ./scripts/run-tests-recursively.ts",
+    "sync:packaged-web-ui-catalogs": "node ./scripts/sync-packaged-web-ui-catalogs.mjs",
     "test:smtp": "tsx scripts/test-smtp.ts",
     "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
     "provision:staging-admin": "tsx src/scripts/provision-staging-admin.ts",

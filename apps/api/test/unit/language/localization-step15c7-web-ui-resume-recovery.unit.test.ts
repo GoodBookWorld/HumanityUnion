@@ -62,11 +62,23 @@ const webSrc = path.resolve(here, "../../../../web/src");
 const INCLUDE_PATHS = loadPublicWebUiEnglishCorpus().requiredPaths.slice(0, 24);
 const TWO_BATCH_PATHS = INCLUDE_PATHS.slice(0, 12);
 
+function prefixProviderValue(value: unknown): unknown {
+  if (typeof value === "string") return `[xx] ${value}`;
+  if (Array.isArray(value)) {
+    return value.map((span) =>
+      typeof span === "string" && span.length > 0 ? `[xx] ${span}` : span,
+    );
+  }
+  return value;
+}
+
 function translateAll(request: TranslationProviderRequest): TranslationProviderResult {
-  const parsed = JSON.parse(request.text) as Record<string, string>;
+  const parsed = JSON.parse(request.text) as Record<string, unknown>;
   return {
     translatedText: JSON.stringify(
-      Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, `[xx] ${value}`])),
+      Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, prefixProviderValue(value)]),
+      ),
     ),
     providerId: "deterministic",
     isPlaceholder: false,
@@ -368,7 +380,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
           return {
             translatedText: JSON.stringify(
               Object.fromEntries(
-                Object.entries(partial).map(([key, value]) => [key, `[xx] ${value}`]),
+                Object.entries(partial).map(([key, value]) => [key, prefixProviderValue(value)]),
               ),
             ),
             providerId: "deterministic",
@@ -384,7 +396,12 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
     assert.deepEqual(requested[1], [omit]);
     assert.equal(Object.keys(result.values).sort().join("|"), keys.join("|"));
     for (const key of keys) {
-      assert.match(result.values[key]!, /^\[xx\] /);
+      const value = result.values[key] ?? "";
+      assert.match(value, /\[xx\] /);
+      const english = corpus.flat[key] ?? "";
+      if (english.includes("{siteName}")) {
+        assert.match(value, /\{siteName\}/);
+      }
     }
 
     let failCalls = 0;
@@ -403,7 +420,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
             return {
               translatedText: JSON.stringify(
                 Object.fromEntries(
-                  Object.entries(partial).map(([key, value]) => [key, `[xx] ${value}`]),
+                  Object.entries(partial).map(([key, value]) => [key, prefixProviderValue(value)]),
                 ),
               ),
               providerId: "deterministic",
@@ -439,7 +456,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
             return {
               translatedText: JSON.stringify(
                 Object.fromEntries(
-                  Object.entries(partial).map(([key, value]) => [key, `[xx] ${value}`]),
+                  Object.entries(partial).map(([key, value]) => [key, prefixProviderValue(value)]),
                 ),
               ),
               providerId: "deterministic",
@@ -479,7 +496,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
           const partial = Object.fromEntries(
             Object.entries(parsed)
               .slice(0, -1)
-              .map(([key, value]) => [key, `[xx] ${value}`]),
+              .map(([key, value]) => [key, prefixProviderValue(value)]),
           );
           return {
             translatedText: JSON.stringify({
@@ -506,7 +523,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
           keys: ["x.a"],
           terminologyContext: "LIVE",
           translator: async () => ({
-            translatedText: JSON.stringify({ "x.a": "Hello" }),
+            translatedText: JSON.stringify({ "x.a": ["Hello {other} "] }),
             providerId: "deterministic",
             isPlaceholder: false,
           }),
@@ -522,7 +539,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
           keys: ["x.b"],
           terminologyContext: "LIVE",
           translator: async () => ({
-            translatedText: JSON.stringify({ "x.b": "Click here" }),
+            translatedText: JSON.stringify({ "x.b": ["Click <i>", "here"] }),
             providerId: "deterministic",
             isPlaceholder: false,
           }),
@@ -539,7 +556,7 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
           terminologyContext: "LIVE",
           translator: async () => ({
             translatedText: JSON.stringify({
-              "x.c": "Welcome to Other Brand, name",
+              "x.c": ["Welcome to Other Brand, {extra} "],
             }),
             providerId: "deterministic",
             isPlaceholder: false,
@@ -594,14 +611,11 @@ describe("Step 15C.7 — durable WEB_UI resume + missing-key recovery", () => {
       path.join(webSrc, "features/administration/components/AdminLanguagesSection.tsx"),
       "utf8",
     );
-    const gaps = section.slice(
-      section.indexOf("function formatActivationWaitingGaps"),
-      section.indexOf("function LocalizationProgressMeter"),
+    const formatSrc = readFileSync(
+      path.join(webSrc, "features/administration/admin-languages-activation-status-format.ts"),
+      "utf8",
     );
-    assert.match(
-      gaps,
-      /WEB_UI failures are already shown by formatOwnerPreparationProgress|Detailed WEB_UI failure is shown once/,
-    );
+    assert.match(formatSrc, /Detailed WEB_UI failure is shown once/);
     assert.match(section, /formatOwnerPreparationProgress/);
 
     const completed = await createQueuedJob("cy");

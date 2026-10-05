@@ -21,6 +21,7 @@ import {
   assertCivicTitleFieldsTranslatedFromSource,
   assertTranslatedProseChangedFromSource,
   classifyContentTranslationMaterializationFailure,
+  classifyContentTranslationValidity,
   encodeContentTranslationFailureMetadata,
   ensureLanguageRegistrySeeded,
   enqueueContentTranslationWarmRequested,
@@ -237,17 +238,19 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
     assert.equal(explained.residuals[0]?.failureReasonCode, "UNCHANGED_CIVIC_TITLE");
   });
 
-  it("C. EMPTY_TRANSLATION survives end-to-end", async () => {
+  it("C. empty provider payload is MISSING_REQUIRED_PATH end-to-end", async () => {
     const initiative = sampleInitiative("empty");
     createInitiative(initiative);
     createdInitiativeIds.push(initiative.initiativeId);
 
+    // Field coverage runs before the prose check, so an empty object for a
+    // source that still has eligible fields is an omitted required path.
     const { meta } = await warmAndCaptureMeta({
       initiative,
       targetLocale: "ar",
       script: () => ({}),
     });
-    assert.equal(meta.failureReasonCode, "EMPTY_TRANSLATION");
+    assert.equal(meta.failureReasonCode, "MISSING_REQUIRED_PATH");
 
     const explained = await explainResidualsOnly({
       identitiesForTests: [
@@ -258,7 +261,7 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
         },
       ],
     });
-    assert.equal(explained.residuals[0]?.failureReasonCode, "EMPTY_TRANSLATION");
+    assert.equal(explained.residuals[0]?.failureReasonCode, "MISSING_REQUIRED_PATH");
   });
 
   it("D. MISSING_REQUIRED_PATH survives end-to-end", async () => {
@@ -427,20 +430,33 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
       sourceRecordId: initiative.initiativeId,
     });
     assert.ok(source);
-    await upsertContentTranslation({
+    const stored = await upsertContentTranslation({
       translationId: "tr-current-08k25",
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
       sourceVersion: source.sourceVersion,
       sourceLanguage: "en",
       targetLanguage: "uk",
-      translatedContent: { title: "[uk] OK", description: "[uk] OK" },
-      translationProvider: "deterministic",
+      translatedContent: {
+        title: "Ініціатива Pack08K25 з поточною версією",
+        description: "Канонічний український переклад точної причини.",
+      },
+      translationProvider: "gemini",
       translationKind: "machine",
       createdAt: new Date().toISOString(),
       stale: false,
       freshness: "current",
     });
+    const validity = classifyContentTranslationValidity({
+      translation: stored,
+      liveSourceVersion: source.sourceVersion,
+      originalFields: {
+        title: initiative.title,
+        description: initiative.description,
+      },
+    });
+    assert.equal(validity.presentationEligible, true);
+    assert.equal(validity.reconciliationState, "READY");
     const enqueued = await enqueueContentTranslationWarmRequested({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
@@ -623,7 +639,16 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
 
     const reconcile = readApi("src/scripts/reconcile-public-localization.ts");
     assert.match(reconcile, /--residual/);
-    assert.match(reconcile, /parseResidualIdentityArgs/);
+    assert.match(reconcile, /runThinLocalizationResidualDiagnostic/);
+    assert.doesNotMatch(reconcile, /parseResidualIdentityArgs/);
+
+    const thinParser = readApi(
+      "src/modules/language/thin-localization-diagnostic/parse-residual-args.ts",
+    );
+    assert.match(thinParser, /export function parseThinResidualIdentityArgs/);
+    assert.doesNotMatch(thinParser, /content-translation\.service/);
+    assert.doesNotMatch(thinParser, /getOrCreateContentTranslation\(/);
+    assert.doesNotMatch(thinParser, /enqueueContentTranslationWarmRequested\(/);
   });
 
   it("R. bounded discovery labelled BOUNDED_CANDIDATES (not complete corpus)", async () => {
@@ -654,6 +679,19 @@ describe("Pack 08K.2.5 — exact reasons + true residual selection", () => {
       (error: unknown) =>
         error instanceof ContentTranslationValidationError &&
         error.reasonCode === "UNCHANGED_SOURCE_PROSE",
+    );
+    assert.throws(
+      () =>
+        assertTranslatedProseChangedFromSource({
+          sourceKind: "initiative",
+          sourceLanguage: "en",
+          targetLanguage: "ar",
+          sourceFields: { title: "Title", description: "Body" },
+          translatedFields: {},
+        }),
+      (error: unknown) =>
+        error instanceof ContentTranslationValidationError &&
+        error.reasonCode === "EMPTY_TRANSLATION",
     );
     assert.throws(
       () =>

@@ -21,6 +21,8 @@ import {
   type LanguageRegistryPublicListResponse,
 } from "@hu/types";
 
+import { resolveCanonicalPublicSeoLocalePathname } from "./lib/seo/public-seo-locale-canonical-redirect";
+
 import { API_BASE_URL } from "./lib/api-base-url";
 import {
   HU_PATHNAME_HEADER,
@@ -106,6 +108,18 @@ export async function proxy(request: NextRequest) {
           decision.locale,
         ),
       );
+    }
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      const canonicalPath = resolveCanonicalPublicSeoLocalePathname({
+        pathname,
+        catalog,
+      });
+      if (canonicalPath) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = canonicalPath;
+        return NextResponse.redirect(redirectUrl, 308);
+      }
     }
   }
 

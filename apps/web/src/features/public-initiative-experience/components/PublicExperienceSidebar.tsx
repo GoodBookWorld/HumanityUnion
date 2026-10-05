@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 
 import type {
   CollectiveParticipationJourney,
-  CommunityInitiativeRelationshipProjection,
   InitiativeLifecycleProfile,
   PublicInitiativeSupportStatistics as PublicInitiativeSupportStatisticsModel,
   PublicInitiativeWithVersionHistory,
@@ -14,7 +13,7 @@ import type {
 import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
-import { RelatedInitiativesWidget } from "../../community-intelligence/components/RelatedInitiativesWidget";
+import { DeferredRelatedInitiatives } from "../../community-intelligence/components/DeferredRelatedInitiatives";
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
 import {
   publicChoiceSidebarAllows,
@@ -32,7 +31,6 @@ interface PublicExperienceSidebarProps {
   statistics: PublicInitiativeSupportStatisticsModel;
   revisionHistory: PublicInitiativeWithVersionHistory;
   latestInitiatives: WorldInitiativeCardProjection[];
-  relatedInitiatives?: readonly CommunityInitiativeRelationshipProjection[];
   onSignalChange: ComponentProps<typeof PublicInitiativeSupportStatistics>["onSignalChange"];
   onBookmarkToggle: () => void;
   onRevisionSelect: (version: number) => void;
@@ -53,7 +51,6 @@ export function PublicExperienceSidebar({
   statistics,
   revisionHistory,
   latestInitiatives,
-  relatedInitiatives = [],
   onSignalChange,
   onBookmarkToggle,
   onRevisionSelect,
@@ -89,7 +86,7 @@ export function PublicExperienceSidebar({
           />
         ) : null}
         {publicChoiceSidebarAllows(allowlist, "related_initiatives") ? (
-          <RelatedInitiativesWidget items={relatedInitiatives} />
+          <DeferredRelatedInitiatives initiativeId={initiativeId} />
         ) : null}
       </>
     );
@@ -123,7 +120,7 @@ export function PublicExperienceSidebar({
         history={revisionHistory}
         onRevisionSelect={onRevisionSelect}
       />
-      <RelatedInitiativesWidget items={relatedInitiatives} />
+      <DeferredRelatedInitiatives initiativeId={initiativeId} />
       {latestInitiativesSlot ?? (
         <PublicInitiativeLatestInitiatives initiatives={latestInitiatives} />
       )}

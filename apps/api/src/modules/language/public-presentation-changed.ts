@@ -50,4 +50,13 @@ export function notifyPublicPresentationChanged(input: {
     sourceRecordId: input.sourceRecordId,
     canonicalVersion: input.canonicalVersion,
   });
+  // Gate C.2 — lightweight wake; eligibility + residual rediscovery happen async.
+  // Prefer schedule over synchronous corpus work on the mutation path.
+  void import("./localization-reconciliation-driver.js").then(
+    ({ scheduleLocalizationReconciliationForAutomaticLocales }) => {
+      scheduleLocalizationReconciliationForAutomaticLocales({
+        reason: "source_mutation",
+      });
+    },
+  );
 }

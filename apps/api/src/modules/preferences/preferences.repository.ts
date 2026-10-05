@@ -1,4 +1,4 @@
-import type { MemberPreferences } from "@hu/types";
+import type { MemberPreferences, ParticipationPreferences } from "@hu/types";
 
 import { sanitizeParticipationGeography, normalizeParticipationGeographyLegacy } from "@hu/geography";
 
@@ -216,6 +216,68 @@ export async function applyPreferencesPatchAtomically(
   const record = migrateLegacyPreferences(next as unknown as MemberPreferences);
   memoryStore.set(memberId, structuredClone(record));
   return record;
+}
+
+function readStoredParticipationPreferences(
+  value: Partial<ParticipationPreferences> | undefined,
+): ParticipationPreferences {
+  const defaults = buildDefaultMemberPreferences({
+    memberId: "preference-geography-read",
+  }).participationPreferences;
+
+  return {
+    ...defaults,
+    ...value,
+    preferredCountryIds: Array.isArray(value?.preferredCountryIds)
+      ? value.preferredCountryIds.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    preferredRegions: Array.isArray(value?.preferredRegions)
+      ? value.preferredRegions.filter((entry): entry is string => typeof entry === "string")
+      : [],
+    preferredCityCommunityIds: Array.isArray(value?.preferredCityCommunityIds)
+      ? value.preferredCityCommunityIds.filter((entry): entry is string => typeof entry === "string")
+      : [],
+  };
+}
+
+/**
+ * Home statistics read. Returns preference documents for the supplied member
+ * ids without sanitizing incomplete geography arrays, so a valid region or
+ * city id can still imply its parent country.
+ */
+export async function listParticipationPreferencesByMemberIds(
+  memberIds: readonly string[],
+): Promise<ParticipationPreferences[]> {
+  const uniqueMemberIds = [...new Set(memberIds.map((memberId) => memberId.trim()).filter(Boolean))];
+
+  if (uniqueMemberIds.length === 0) {
+    return [];
+  }
+
+  if (!shouldUseMemoryAdapter()) {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberPreferencesDocument>(
+      MONGO_COLLECTIONS.memberPreferences,
+    );
+    const documents = await collection
+      .find(
+        { memberId: { $in: uniqueMemberIds } },
+        { projection: { _id: 0, participationPreferences: 1 } },
+      )
+      .toArray();
+
+    return documents.map((document) =>
+      readStoredParticipationPreferences(document.participationPreferences),
+    );
+  }
+
+  return uniqueMemberIds.flatMap((memberId) => {
+    const stored = memoryStore.get(memberId);
+
+    return stored
+      ? [readStoredParticipationPreferences(stored.participationPreferences)]
+      : [];
+  });
 }
 
 export async function listAllPreferencesRecords(): Promise<MemberPreferences[]> {

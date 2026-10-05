@@ -36,20 +36,33 @@ export {
   resetLanguageActivationJobSchedulerForTests,
   resumeIncompleteWebUiActivationJobsOnBoot,
   scheduleLanguageActivationJobProcess,
+  scheduleLanguageActivationJobProcessAt,
   scheduleWebUiActivationTick,
   scheduleWebUiActivationTickAt,
   setLanguageActivationJobAdminAssertOverrideForTests,
   setLanguageActivationJobProcessDepsForTests,
   startAndProcessLanguageActivationJobForTests,
   startOrResumeLanguageActivationJob,
+  ensureWebUiPreparationForUnreadyLocale,
 } from "./language-activation-job.service.js";
+export type { WebUiPreparationEnsureResult } from "./language-activation-job.service.js";
 export type { LanguageActivationJobProcessDeps } from "./language-activation-job.service.js";
 export {
+  brandDomainFromPreparationResult,
   buildWebUiDomainProgress,
   deriveActivationJobStatus,
   emptyPendingDomains,
   isLanguageActivationWebUiReadyForHistoricalEnqueue,
+  terminologyDomainFromPreparationResult,
+  terminologyDomainProviderConfigFailure,
 } from "./language-activation-job.domains.js";
+export {
+  aggregateTerminologyFailureDiagnostics,
+  classifyTerminologyActivationFailureReason,
+  formatTerminologyProviderDiagnosticSummary,
+  sanitizeTerminologyProviderDiagnostic,
+  terminologyProviderDiagnosticFromReason,
+} from "./terminology-activation-failure-diagnostic.js";
 export {
   resetLanguageActivationJobStoreForTests,
   setLanguageActivationJobForceMemoryForTests,

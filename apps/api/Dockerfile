@@ -31,6 +31,7 @@ COPY apps/api/package.json apps/api/
 COPY packages/types/package.json packages/types/
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/apps/api/assets ./apps/api/assets
 COPY --from=build /app/packages/types ./packages/types
 
 USER hu

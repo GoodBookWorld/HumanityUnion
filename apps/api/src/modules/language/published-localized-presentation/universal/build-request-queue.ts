@@ -15,7 +15,16 @@ import type {
   PlpPublicationTriggerKind,
   PublicPresentationNode,
 } from "@hu/types";
-import { plpBuildWorkKey, PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
+import {
+  buildProviderOwnedMachinePayload,
+  isLocalizationSourceOriginalEntityType,
+  plpBuildWorkKey,
+  PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+} from "@hu/types";
+
+import { planPlpProviderBatches } from "../../media-plp-materializer/provider-response-contract.js";
+import { collectMachineAutoValues } from "./process-plp-build-request.js";
+import { resolveFieldPolicyForEntityType } from "./resolve-field-policy.js";
 
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { classifyUsableLocalizedPresentation } from "../usability.js";
@@ -47,6 +56,7 @@ import {
   probePlpAutoBuildImmediatelyDue,
   readPlpProviderNotBeforeMs,
   markPlpAutoBuildWorkCompleted,
+  persistPlpBatchCheckpointYield,
   markPlpAutoBuildWorkFailed,
   markPlpAutoBuildWorkSkippedUsable,
   markPlpAutoBuildWorkSuperseded,
@@ -265,6 +275,23 @@ function skippedUsableResult(input: EnqueueInput): EnqueuePlpBuildRequestResult 
   };
 }
 
+function checkpointBatchesForEnqueue(
+  input: EnqueueInput,
+): readonly (Readonly<Record<string, string>>)[] | undefined {
+  if (input.canonicalPresentation == null) {
+    return undefined;
+  }
+  const { autoValues } = collectMachineAutoValues({
+    presentation: input.canonicalPresentation,
+    fieldPolicy: resolveFieldPolicyForEntityType(input.entityType),
+  });
+  if (Object.keys(autoValues).length === 0) {
+    return undefined;
+  }
+  const { payload } = buildProviderOwnedMachinePayload(autoValues);
+  return planPlpProviderBatches(payload);
+}
+
 /**
  * Enqueue or coalesce into durable work. Never starts Gemini here — only schedules.
  * Always returns a Promise so callers can await durable upserts (RSS refresh).
@@ -274,6 +301,24 @@ function skippedUsableResult(input: EnqueueInput): EnqueuePlpBuildRequestResult 
 export function enqueuePlpBuildRequest(
   input: EnqueueInput,
 ): Promise<EnqueuePlpBuildRequestResult> {
+  if (isLocalizationSourceOriginalEntityType(input.entityType)) {
+    return Promise.resolve({
+      request: {
+        workKey: plpBuildWorkKey(input),
+        entityType: input.entityType,
+        entityId: input.entityId,
+        locale: String(input.locale).toLowerCase(),
+        canonicalVersion: input.canonicalVersion,
+        contentRevision: input.contentRevision,
+        trigger: input.trigger,
+        enqueuedAt: new Date().toISOString(),
+        status: "SKIPPED_USABLE",
+      },
+      accepted: false,
+      deduped: false,
+      skippedUsable: true,
+    });
+  }
   const needsUsableProbe =
     input.skipUsableCheck !== false && input.canonicalPresentation != null;
 
@@ -288,6 +333,7 @@ export function enqueuePlpBuildRequest(
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
       recoveryGeneration: input.recoveryGeneration,
+      checkpointBatches: checkpointBatchesForEnqueue(input),
     }).then(finalizeUpsertResult);
   }
 
@@ -311,6 +357,7 @@ export function enqueuePlpBuildRequest(
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
       recoveryGeneration: input.recoveryGeneration,
+      checkpointBatches: checkpointBatchesForEnqueue(input),
     });
     return finalizeUpsertResult(upsert);
   })();
@@ -352,7 +399,7 @@ export async function settlePlpAutoBuildDrainForTests(): Promise<void> {
 }
 
 /**
- * Idle safety: one due probe. No cooldown read, no claim, no write, no status group
+ * Idle safety: one due probe. No governor read, no claim, no write, no status group
  * when nothing is due.
  */
 export async function runPlpSafetySweep(): Promise<void> {
@@ -514,6 +561,16 @@ async function processClaimedWork(
     const raw = await processor(runningRequest);
     const outcome = normalizeProcessorOutcome(raw);
 
+    if (outcome.status === "BATCH_PROGRESS") {
+      await persistPlpBatchCheckpointYield({
+        workKey: work.workKey,
+        attempts: work.attempts,
+        checkpoint: outcome.checkpoint,
+        pacingUntil: outcome.pacingUntil,
+      });
+      return;
+    }
+
     completed.push({
       ...runningRequest,
       status: outcome.status === "QUEUED" ? "QUEUED" : outcome.status,
@@ -538,6 +595,10 @@ async function processClaimedWork(
       await markPlpAutoBuildWorkCompleted(work.workKey);
       recordPlpAutoBuildSucceeded();
       recordPlpAutoBuildPublish();
+      const { wakeReadinessAfterPlpPublish } = await import(
+        "../../localization-reconciliation-driver.js"
+      );
+      wakeReadinessAfterPlpPublish(work.locale);
       return;
     }
     if (outcome.status === "SKIPPED_USABLE") {
@@ -563,6 +624,25 @@ async function processClaimedWork(
       failure,
     });
   } catch (error) {
+    const { isLocalizationProviderPacingDeferredError } = await import(
+      "../../localization-provider-governor.js"
+    );
+    if (isLocalizationProviderPacingDeferredError(error)) {
+      await markPlpAutoBuildWorkFailed({
+        workKey: work.workKey,
+        attempts: work.attempts,
+        maxAttempts: work.maxAttempts,
+        failure: structuredFailure({
+          failureCode: "PROVIDER_FAILURE",
+          retryable: true,
+          stage: "provider",
+          safeReason: "PROVIDER_PACING_WAIT",
+          pacingDefer: true,
+          pacingUntil: error.nextAllowedAt,
+        }),
+      });
+      return;
+    }
     const failure = structuredFailure({
       failureCode: "UNKNOWN",
       retryable: true,

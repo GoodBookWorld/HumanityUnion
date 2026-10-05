@@ -31,6 +31,7 @@ import {
   upsertWebUiActivationCheckpoint,
 } from "../../../src/modules/web-ui-message-packs/web-ui-activation-checkpoint.repository.js";
 import {
+  fingerprintWebUiEnglishLeaf,
   hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   planWebUiDraftBatches,
@@ -68,6 +69,20 @@ function readPath(messages: Record<string, unknown>, dottedPath: string): unknow
     current = (current as Record<string, unknown>)[segment];
   }
   return current;
+}
+
+function sourceFingerprintsFor(
+  english: Record<string, unknown>,
+  paths: readonly string[],
+): Record<string, string> {
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of paths) {
+    const value = readPath(english, pathKey);
+    if (typeof value === "string") {
+      fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(value);
+    }
+  }
+  return fingerprints;
 }
 
 function projectPaths(
@@ -186,8 +201,13 @@ describe("Step 15D.7 — universal localization coverage guard", () => {
     const uk = new Set(collectStringPaths(loadBundledWebUiMessagePackFromFs("uk")!));
     const ar = new Set(collectStringPaths(loadBundledWebUiMessagePackFromFs("ar")!));
     const zh = new Set(collectStringPaths(loadBundledWebUiMessagePackFromFs("zh-Hant")!));
+    const missingFromBundled = all.filter(
+      (pathKey) => !(uk.has(pathKey) && ar.has(pathKey) && zh.has(pathKey)),
+    );
+    assert.deepEqual(missingFromBundled, ["common.interfaceNote"]);
+    assert.equal(classifyWebUiCoveragePath("common.interfaceNote").unknown, false);
+    assert.equal(classifyWebUiCoveragePath("common.interfaceNote").kind, "public_required");
     const common = all.filter((pathKey) => uk.has(pathKey) && ar.has(pathKey) && zh.has(pathKey));
-    assert.equal(common.length, all.length);
 
     const unknown = listUnknownWebUiCoveragePaths(common);
     assert.deepEqual(unknown, []);
@@ -321,6 +341,7 @@ describe("Step 15D.7 — universal localization coverage guard", () => {
       status: "published",
       messages: projectPaths(english, legacy481, (value) => `[nl] ${value}`) as never,
       sourceNote: "simulated pre-expansion pack",
+      sourceFingerprintsByPath: sourceFingerprintsFor(english, legacy481),
     });
     const incomplete = await assessWebUiCatalogReadinessForLocale({
       locale: "newlang",

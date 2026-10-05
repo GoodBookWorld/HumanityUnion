@@ -104,19 +104,20 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
     );
     assert.match(groups, /"news-carousel"/);
     assert.match(groups, /"public_news"/);
-    assert.ok(
+    assert.equal(
       (LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES as readonly string[]).includes(
         "public_news",
       ),
+      false,
     );
   });
 
-  it("2. public_news title+summary are PLP MACHINE paths", () => {
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "MACHINE_CONTENT");
-    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "MACHINE_CONTENT");
+  it("2. public_news title+summary are SOURCE_ORIGINAL, not PLP machine paths", () => {
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.title, "SOURCE_ORIGINAL");
+    assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.summary, "SOURCE_ORIGINAL");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.sourceName, "PROTECTED_SOURCE_VALUE");
     assert.equal(PUBLIC_NEWS_FIELD_OWNERSHIP.articleUrl, "PROTECTED_SOURCE_VALUE");
-    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], ["title", "summary"]);
+    assert.deepEqual([...PUBLIC_NEWS_MACHINE_CONTENT_PATHS], []);
     assert.equal(LANGUAGE_ACTIVATION_PROTECTED_EXCLUDED_KINDS.length, 0);
 
     const tree = buildCanonicalPublicNewsPresentation(sampleArticle);
@@ -125,7 +126,7 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
     assert.equal(tree.title, sampleArticle.title);
   });
 
-  it("3. incomplete localized RSS card is NOT_READY (whole-entity title+summary)", () => {
+  it("3. title/summary are not required machine paths", () => {
     const newsTree = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation(sampleArticle),
     );
@@ -139,8 +140,9 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
       includeDeterministicMachine: false,
       layers: [{ source: "MACHINE", values: { title: "[uk] Civic shoreline restoration expands" } }],
     });
-    assert.equal(partial.validation.status, "NOT_READY");
-    assert.ok(partial.validation.missingPaths.includes("summary"));
+    assert.equal(partial.validation.status, "READY_TO_PUBLISH");
+    assert.equal(partial.validation.missingPaths.includes("summary"), false);
+    assert.equal(partial.validation.missingPaths.includes("title"), false);
   });
 
   it("4. complete title+summary MACHINE bag is READY_TO_PUBLISH", () => {
@@ -185,7 +187,7 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
       "utf8",
     );
     assert.match(cardHook, /resolvePublicNewsCardFieldsFromPlp/);
-    assert.match(cardHook, /Whole-entity RSS card/);
+    assert.match(cardHook, /plpPresentation: null/);
 
     const treeA = asMediaPlpPresentationNode(
       buildCanonicalPublicNewsPresentation(sampleArticle),
@@ -204,8 +206,8 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
       path.join(webRoot, "src/features/public-news/use-localized-public-news-card.ts"),
       "utf8",
     );
-    assert.match(hook, /presentationMode: "canonical"/);
-    assert.match(hook, /!title \|\| !summary/);
+    assert.match(hook, /plpPresentation: null/);
+    assert.match(hook, /source-original|source\/original/i);
     assert.doesNotMatch(hook, /original-language-only/);
 
     const inventory = readFileSync(
@@ -249,10 +251,8 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
       locales: ["uk", "en"],
     });
     assert.equal(result.PROVIDER_CALLS, 0);
-    assert.equal(result.consumerCount, MEDIA_PLP_CAROUSEL_NEWS_LIMIT);
-    // uk only (en skipped) × 12 selected cards
-    assert.equal(result.enqueued, MEDIA_PLP_CAROUSEL_NEWS_LIMIT);
-    assert.ok(result.enqueued < records.length);
+    assert.equal(result.consumerCount, 0);
+    assert.equal(result.enqueued, 0);
 
     const triggerSrc = readFileSync(
       path.join(
@@ -261,8 +261,7 @@ describe("Reset 01 Media correction — public_news carousel PLP", () => {
       ),
       "utf8",
     );
-    assert.match(triggerSrc, /selectMediaPlpConsumerNewsArticles/);
-    assert.match(triggerSrc, /MEDIA_PLP_CAROUSEL_NEWS_LIMIT/);
+    assert.match(triggerSrc, /SOURCE_ORIGINAL/);
     assert.doesNotMatch(triggerSrc, /selectConsumerVisibleNewsArticlesForAutoBuild/);
   });
 });

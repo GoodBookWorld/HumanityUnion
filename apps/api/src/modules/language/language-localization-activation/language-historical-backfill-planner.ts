@@ -41,6 +41,7 @@ function bucketFromLocaleAudit(
     current: row.CURRENT_TARGET_TRANSLATION_IDENTITIES,
     missing: row.MISSING_TARGET_TRANSLATION_IDENTITIES,
     stale: row.STALE_TARGET_TRANSLATION_IDENTITIES,
+    invalid: 0,
     failed: row.FAILED_TARGET_TRANSLATION_IDENTITIES,
     pending: 0,
     workItemsRequired: row.WORK_ITEMS_REQUIRED,
@@ -177,8 +178,7 @@ export async function planLanguageHistoricalBackfill(input: {
     action: plpAction,
   });
 
-  // Closure 08 / Reset 01 — public /media carousel discrete PLP entity types
-  // (including public_news title+summary MACHINE) are required backfill scope.
+  // Authoritative PLP carousel entities only. public_news is SOURCE_ORIGINAL.
   const carousel = await assessCarousel({ locale, pageSize: 50 });
   let plpCarouselWork = 0;
   const carouselEntityTypes = LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES.filter(
@@ -246,6 +246,7 @@ export function aggregateCtCountsFromPlan(
     current,
     missing,
     stale,
+    invalid: 0,
     failed,
     pending: 0,
     workItemsRequired,
@@ -272,6 +273,7 @@ export function aggregatePlpCountsFromPlan(
     current,
     missing,
     stale,
+    invalid: 0,
     failed,
     pending: 0,
     workItemsRequired,

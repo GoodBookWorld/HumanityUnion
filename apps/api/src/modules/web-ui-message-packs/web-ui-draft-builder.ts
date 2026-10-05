@@ -32,11 +32,11 @@ import {
   classifyEnglishIdenticalWebUiTree,
 } from "./web-ui-identical-classification.js";
 import {
-  batchProtectedPayloadContainsSentinels,
-  protectWebUiMessageForProvider,
-  restoreWebUiMessageFromProvider,
-  webUiProtectionSentinelInstructions,
-  WebUiMessageStructureError,
+  reconstructWebUiMessageFromProviderSpans,
+  webUiProviderPayloadValue,
+  WebUiProviderSpanCountError,
+  webUiProviderCardinalityLines,
+  webUiProviderSpanInstructions,
 } from "./web-ui-message-structure-protect.js";
 
 export {
@@ -243,6 +243,32 @@ export function hashWebUiEnglishFlatMap(flat: Readonly<Record<string, string>>):
   return hashFlat(flat);
 }
 
+/**
+ * Fingerprint of one authoritative English WEB_UI leaf.
+ * The value alone: no path, locale, translation, timestamp, or job id.
+ * The same English string always hashes the same way.
+ */
+export function fingerprintWebUiEnglishLeaf(englishValue: string): string {
+  return createHash("sha256").update(englishValue, "utf8").digest("hex");
+}
+
+/** Fingerprints for the given required paths. Paths absent from the flat map are omitted. */
+export function buildWebUiSourceFingerprintsByPath(
+  englishFlat: Readonly<Record<string, string>>,
+  paths?: readonly string[],
+): Record<string, string> {
+  const selected = paths ?? Object.keys(englishFlat);
+  const fingerprints: Record<string, string> = {};
+  for (const pathKey of selected) {
+    const englishValue = englishFlat[pathKey];
+    if (typeof englishValue !== "string") {
+      continue;
+    }
+    fingerprints[pathKey] = fingerprintWebUiEnglishLeaf(englishValue);
+  }
+  return fingerprints;
+}
+
 function unflatten(flat: Readonly<Record<string, string>>): WebUiMessageTree {
   const root: Record<string, unknown> = {};
   for (const [pathKey, value] of Object.entries(flat)) {
@@ -344,7 +370,7 @@ function buildTerminologyContext(input: {
     `Text direction: ${input.textDirection}.`,
     "The user message is one flat JSON object.",
     "Each JSON key is a stable catalog path. Copy every JSON key exactly.",
-    "Translate only the string values. Every returned value must remain a string.",
+    "Every value is an array of human-language fragments. Each key's exact array length is stated below.",
     "Return one JSON object with exactly those keys. Do not wrap, nest, or rename them.",
     "Short interface labels may stay identical to English when that is the natural form.",
     "Glossary:",
@@ -352,7 +378,19 @@ function buildTerminologyContext(input: {
   ].join("\n");
 }
 
-function parseTranslations(raw: string): Map<string, string> {
+function parseProviderLeaf(value: unknown, key: string): string | readonly string[] {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (Array.isArray(value) && value.every((span) => typeof span === "string")) {
+    return value;
+  }
+  throw new WebUiDraftBatchError(
+    `Provider translation value for ${key} must be a string or an array of strings.`,
+  );
+}
+
+function parseTranslations(raw: string): Map<string, string | readonly string[]> {
   const extracted = extractJsonObjectText(raw);
   if (!extracted.ok) {
     throw new WebUiDraftBatchError("Provider response was not a JSON object.");
@@ -371,29 +409,26 @@ function parseTranslations(raw: string): Map<string, string> {
   // string values. A translations-array row is accepted only when it already
   // matches that string contract; non-string rows stay rejected.
   if (Array.isArray(root.translations)) {
-    const map = new Map<string, string>();
+    const map = new Map<string, string | readonly string[]>();
     for (const row of root.translations) {
       if (row == null || typeof row !== "object" || Array.isArray(row)) {
         throw new WebUiDraftBatchError("Provider translation row was not an object.");
       }
       const key = (row as { key?: unknown }).key;
       const value = (row as { value?: unknown }).value;
-      if (typeof key !== "string" || typeof value !== "string") {
+      if (typeof key !== "string") {
         throw new WebUiDraftBatchError("Provider translation row must have string key and value.");
       }
       if (map.has(key)) {
         throw new WebUiDraftBatchError(`Provider returned duplicate key ${key}.`);
       }
-      map.set(key, value);
+      map.set(key, parseProviderLeaf(value, key));
     }
     return map;
   }
-  const map = new Map<string, string>();
+  const map = new Map<string, string | readonly string[]>();
   for (const [key, value] of Object.entries(root)) {
-    if (typeof value !== "string") {
-      throw new WebUiDraftBatchError(`Provider translation value for ${key} must be a string.`);
-    }
-    map.set(key, value);
+    map.set(key, parseProviderLeaf(value, key));
   }
   return map;
 }
@@ -423,14 +458,18 @@ async function requestWebUiProviderTranslations(input: {
   readonly keys: readonly string[];
   readonly terminologyContext: string;
   readonly translator: (request: TranslationProviderRequest) => Promise<TranslationProviderResult>;
-}): Promise<Map<string, string>> {
-  const payloadObject: Record<string, string> = {};
+}): Promise<Map<string, string | readonly string[]>> {
+  const payloadObject: Record<string, readonly string[]> = {};
   for (const key of input.keys) {
-    payloadObject[key] = protectWebUiMessageForProvider(input.englishFlat[key] ?? "").text;
+    payloadObject[key] = webUiProviderPayloadValue(input.englishFlat[key] ?? "");
   }
   const terminologyContext = [
     input.terminologyContext,
-    webUiProtectionSentinelInstructions(batchProtectedPayloadContainsSentinels(payloadObject)),
+    webUiProviderSpanInstructions(),
+    webUiProviderCardinalityLines({
+      keys: input.keys,
+      payload: payloadObject,
+    }),
   ].join("\n");
   const result = await input.translator({
     sourceLanguage: "en",
@@ -445,10 +484,22 @@ async function requestWebUiProviderTranslations(input: {
 
 function restoreValidatedWebUiKey(input: {
   readonly key: string;
-  readonly providerValue: string;
+  readonly providerValue: string | readonly string[];
   readonly english: string;
 }): string {
-  const restored = restoreWebUiMessageFromProvider(input.providerValue, input.english);
+  let restored: string;
+  try {
+    restored = reconstructWebUiMessageFromProviderSpans(input.english, input.providerValue);
+  } catch (error) {
+    if (error instanceof WebUiProviderSpanCountError && error.catalogKey == null) {
+      throw new WebUiProviderSpanCountError({
+        catalogKey: input.key,
+        expectedSpanCount: error.expectedSpanCount,
+        actualSpanCount: error.actualSpanCount,
+      });
+    }
+    throw error;
+  }
   assertStructureMatches(input.english, restored);
   return restored;
 }
@@ -459,16 +510,16 @@ function restoreValidatedWebUiKey(input: {
  */
 function partitionExpectedProviderKeys(input: {
   readonly expected: readonly string[];
-  readonly returned: ReadonlyMap<string, string>;
+  readonly returned: ReadonlyMap<string, string | readonly string[]>;
 }): {
-  readonly expectedValues: ReadonlyMap<string, string>;
+  readonly expectedValues: ReadonlyMap<string, string | readonly string[]>;
   readonly discardedUnexpectedKeys: readonly string[];
 } {
   const expectedSet = new Set(input.expected);
   const discardedUnexpectedKeys = [...input.returned.keys()]
     .filter((key) => !expectedSet.has(key))
     .sort();
-  const expectedValues = new Map<string, string>();
+  const expectedValues = new Map<string, string | readonly string[]>();
   for (const key of input.expected) {
     if (input.returned.has(key)) {
       expectedValues.set(key, input.returned.get(key) ?? "");

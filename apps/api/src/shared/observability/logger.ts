@@ -76,7 +76,7 @@ export const logger = {
 };
 
 export function logDomainEvent(
-  phase: "enqueued" | "dispatched" | "processed" | "failed" | "skipped_duplicate",
+  phase: "enqueued" | "dispatched" | "processed" | "failed" | "skipped_duplicate" | "deferred",
   fields: LogFields,
 ): void {
   logger.info(`domain_event.${phase}`, {

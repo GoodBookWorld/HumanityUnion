@@ -122,5 +122,21 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     "../../modules/initiative-collective-decision/initiative-collective-decision.store.js"
   );
   syncInitiativeCollectiveDecisionStoreAfterMongoHydrate();
+  const { syncInitiativeVersionRevisionStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-version-revision/initiative-version-revision.store.js"
+  );
+  syncInitiativeVersionRevisionStoreAfterMongoHydrate();
+  const { syncDecisionSessionStoreAfterMongoHydrate } = await import(
+    "../../modules/decision-session/decision-session.store.js"
+  );
+  syncDecisionSessionStoreAfterMongoHydrate();
+  const { syncInitiativeImplementationCommitmentStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-implementation-commitment/initiative-implementation-commitment.store.js"
+  );
+  syncInitiativeImplementationCommitmentStoreAfterMongoHydrate();
+  const { syncInitiativeImplementationTrackingStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-implementation-tracking/initiative-implementation-tracking.store.js"
+  );
+  syncInitiativeImplementationTrackingStoreAfterMongoHydrate();
   await flushInitiativeMongoPersistence();
 }

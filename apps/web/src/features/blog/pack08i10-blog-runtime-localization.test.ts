@@ -80,7 +80,7 @@ describe("Pack 08I.10 — Authors / cards / latest mini", () => {
     assert.match(authors, /t\("latestLabel"\)/);
     assert.match(authors, /t\("empty"\)/);
     assert.match(authors, /entry\.author\.displayName/);
-    assert.match(authors, /resolveBlogPostPresentation/);
+    assert.match(authors, /useHuPersistedOrdinaryFields|AuthorLatestPublicationTitle/);
     assert.doesNotMatch(authors, /AuthorLatestPublicationTitle[\s\S]*post\.title/);
   });
 
@@ -91,10 +91,9 @@ describe("Pack 08I.10 — Authors / cards / latest mini", () => {
     assert.notEqual(presented.title, EN_TITLE);
 
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
-    assert.match(card, /blog-post-card__content/);
-    assert.match(card, /resolveBlogPostPresentation/);
-    assert.match(card, /displayTitle/);
-    assert.match(card, /displayExcerpt/);
+    assert.match(card, /blog-post-card__/);
+    assert.match(card, /useHuPersistedOrdinaryFields/);
+    assert.match(card, /sourceKind:\s*"blog_post"/);
     assert.match(card, /titleForDisplay/);
     assert.match(card, /resolveBlogCategoryDisplayName/);
     assert.match(card, /formatBlogPublishedDate\(post\.publishedAt, locale\)/);
@@ -107,7 +106,7 @@ describe("Pack 08I.10 — Authors / cards / latest mini", () => {
     const latest = readWeb("features/blog/components/BlogLatestMiniCards.tsx");
     assert.match(latest, /blog-latest-mini__list/);
     assert.match(latest, /blog-latest-mini__body/);
-    assert.match(latest, /resolveBlogPostPresentation/);
+    assert.match(latest, /useHuPersistedOrdinaryFields/);
     assert.match(latest, /resolveBlogCategoryDisplayName/);
     assert.match(latest, /useLocale/);
     assert.match(latest, /formatBlogPublishedDate\(post\.publishedAt, locale\)/);
@@ -151,10 +150,10 @@ describe("Pack 08I.10 — Category / article meta / body", () => {
 
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const body = readWeb("features/blog/components/BlogArticleBody.tsx");
-    // Ordinary reading uses stable canonical post.content — not post-mount CT HTML.
+    // Ordinary reading: hu-persisted CURRENT when available; else canonical.
     assert.match(article, /BlogArticleBody html=\{bodyHtml\}/);
-    assert.match(article, /const bodyHtml = post\.content/);
-    assert.match(article, /data-hu-reading-owner="browser-native"/);
+    assert.match(article, /useHuPersistedOrdinaryFields/);
+    assert.match(article, /data-hu-reading-owner=\{readingOwner\}/);
     assert.doesNotMatch(article, /resolveBlogPostPresentation/);
     assert.doesNotMatch(article, /setDisplayContentHtml/);
     assert.match(body, /blog-article-body hu-prose/);
@@ -200,7 +199,7 @@ describe("Pack 08I.10 — SSR seed + locale + raw keys", () => {
     assert.match(policy, /translationPreference/);
     assert.match(policy, /preferTranslation: false/);
     assert.match(article, /initialPresentation/);
-    assert.match(article, /data-hu-reading-owner="browser-native"/);
+    assert.match(article, /data-hu-reading-owner=\{readingOwner\}/);
     assert.doesNotMatch(article, /resolveBlogPostPresentation/);
     assert.doesNotMatch(article, /setDisplayContentHtml/);
     assert.match(index, /getTranslations\("blogPublic"\)/);

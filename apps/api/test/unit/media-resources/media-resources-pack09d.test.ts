@@ -25,10 +25,9 @@ import {
 import { buildMediaResourceSeedRecords } from "../../../src/modules/media-resources/media-resource.seed.js";
 import { resetMediaResourcesMemoryForTests } from "../../../src/modules/media-resources/persistence/media-resource.memory.store.js";
 import {
-  getMediaResourceById,
+  getMediaResourceByIdentity,
   listMediaResources,
   setMediaResourceForceMemoryForTests,
-  upsertMediaResource,
 } from "../../../src/modules/media-resources/persistence/media-resource.repository.js";
 import { resetApprovedNewsSourcesCacheForTests } from "../../../src/modules/public-news/public-news.config.js";
 import { projectFactCheckResources } from "../../../src/modules/media-resources/media-resource.projections.js";
@@ -79,16 +78,25 @@ describe("Media Resources Pack 09D", () => {
     const second = await listMediaResources();
     assert.equal(second.length, first.length);
 
-    const reuters = await getMediaResourceById("reuters");
+    const reuters = await getMediaResourceByIdentity({
+      resourceType: "TRUSTED_MEDIA",
+      id: "reuters",
+    });
     assert.ok(reuters);
     assert.equal(reuters.resourceType, "TRUSTED_MEDIA");
     assert.equal(reuters.scopeType, "WORLD");
 
-    const snopes = await getMediaResourceById("snopes");
+    const snopes = await getMediaResourceByIdentity({
+      resourceType: "FACT_CHECKING",
+      id: "snopes",
+    });
     assert.ok(snopes);
     assert.equal(snopes.resourceType, "FACT_CHECKING");
 
-    const cbc = await getMediaResourceById("cbc");
+    const cbc = await getMediaResourceByIdentity({
+      resourceType: "TRUSTED_MEDIA",
+      id: "cbc",
+    });
     assert.ok(cbc);
     assert.equal(cbc.scopeType, "COUNTRY");
     assert.equal(cbc.countryCode, "CA");
@@ -253,7 +261,9 @@ describe("Media Resources Pack 09D", () => {
 
     assert.match(appSource, /\/api\/v1\/admin\/media-resources/);
     assert.match(collections, /mediaResources:\s*"media_resources"/);
-    assert.match(indexes, /media_resources_id_unique/);
+    assert.match(indexes, /media_resources_type_id_unique/);
+    assert.match(indexes, /dropIndex\(\s*"media_resources_id_unique"\s*\)/);
+    assert.doesNotMatch(indexes, /name:\s*"media_resources_id_unique"/);
     assert.match(service, /role !== "admin"/);
   });
 });

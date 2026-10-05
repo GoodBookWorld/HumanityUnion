@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type {
   AuthUserPublic,
@@ -21,6 +21,10 @@ import {
   fetchAdminTerminologyGlossary,
   updateAdminTerminologyConcept,
 } from "../admin-terminology-glossary-api";
+import {
+  formatGlossaryLanguageOptionLabel,
+  resolveGlossaryEditorLocale,
+} from "../admin-terminology-glossary-locale";
 import {
   buildTerminologyRemoveLocalePatch,
   buildTerminologySavePatch,
@@ -115,6 +119,9 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** Registry locale shown in the editor. Survives concept changes and Close. */
+  const [selectedGlossaryLocale, setSelectedGlossaryLocale] = useState<string | null>(null);
+  const languageSelectId = useId();
   const [statusDraft, setStatusDraft] = useState<TerminologyConceptStatus>("published");
   const [localeDrafts, setLocaleDrafts] = useState<Record<string, LocaleDraft>>({});
   const [baselineStatus, setBaselineStatus] = useState<TerminologyConceptStatus>("published");
@@ -155,6 +162,17 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
     () => concepts.find((concept) => concept.conceptId === selectedId) ?? null,
     [concepts, selectedId],
   );
+
+  const activeGlossaryLocale = useMemo(
+    () =>
+      resolveGlossaryEditorLocale({
+        languages,
+        selectedLocale: selectedGlossaryLocale,
+      }),
+    [languages, selectedGlossaryLocale],
+  );
+  const activeLanguage =
+    languages.find((language) => language.locale === activeGlossaryLocale) ?? null;
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -473,111 +491,139 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
               </label>
             </div>
 
-            <div className="admin-glossary__locales" data-locale-editor="true">
-              {languages.map((language) => {
-                const draft = localeDrafts[language.locale] ?? {
-                  preferredTerm: "",
-                  aliasesText: "",
-                  guidance: "",
-                };
-                const hasStoredTranslation = Boolean(
-                  baselineLocales[language.locale]?.preferredTerm.trim(),
-                );
-                const isRemoving = removingLocale === language.locale;
-                return (
-                  <section
-                    key={language.locale}
-                    className={`admin-glossary__locale-card${
-                      language.enabled ? "" : " admin-glossary__locale-card--disabled"
-                    }`}
-                    aria-label={`Locale ${language.locale}`}
-                    data-locale={language.locale}
-                    data-registry-enabled={language.enabled ? "true" : "false"}
-                    data-has-stored-translation={hasStoredTranslation ? "true" : "false"}
+            {activeLanguage ? (
+              <div className="admin-glossary__language-row">
+                <label htmlFor={languageSelectId}>
+                  Language
+                  <select
+                    id={languageSelectId}
+                    className="admin-panel__input"
+                    value={activeLanguage.locale}
+                    onChange={(event) => setSelectedGlossaryLocale(event.target.value)}
+                    data-glossary-language-select=""
                   >
-                    <div className="admin-glossary__locale-header">
-                      <h4 className="admin-glossary__locale-title">
-                        {language.englishName} / {language.nativeName}
-                      </h4>
-                      <p className="admin-glossary__locale-meta">
-                        Canonical locale: <code>{language.locale}</code>
-                      </p>
-                      <span
-                        className={`admin-glossary__locale-badge${
-                          language.enabled ? "" : " admin-glossary__locale-badge--disabled"
+                    {languages.map((registryLanguage) => (
+                      <option key={registryLanguage.locale} value={registryLanguage.locale}>
+                        {formatGlossaryLanguageOptionLabel(registryLanguage)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : (
+              <p className="hu-caption admin-glossary__note" data-glossary-language-empty="">
+                No registry languages are available.
+              </p>
+            )}
+
+            <div className="admin-glossary__locales" data-locale-editor="true">
+              {activeLanguage
+                ? (() => {
+                    const language = activeLanguage;
+                    const draft = localeDrafts[language.locale] ?? {
+                      preferredTerm: "",
+                      aliasesText: "",
+                      guidance: "",
+                    };
+                    const hasStoredTranslation = Boolean(
+                      baselineLocales[language.locale]?.preferredTerm.trim(),
+                    );
+                    const isRemoving = removingLocale === language.locale;
+                    return (
+                      <section
+                        key={language.locale}
+                        className={`admin-glossary__locale-card${
+                          language.enabled ? "" : " admin-glossary__locale-card--disabled"
                         }`}
+                        aria-label={`Locale ${language.locale}`}
+                        data-locale={language.locale}
+                        data-registry-enabled={language.enabled ? "true" : "false"}
+                        data-has-stored-translation={hasStoredTranslation ? "true" : "false"}
                       >
-                        Registry: {language.enabled ? "enabled" : "disabled"}
-                      </span>
-                    </div>
-                    {!language.enabled ? (
-                      <p className="hu-caption admin-glossary__note">
-                        Registry language disabled for runtime selection. Glossary translations may
-                        still be edited and stored. Language enablement is managed only under
-                        Languages — not from this screen.
-                      </p>
-                    ) : null}
-                    <div className="admin-glossary__locale-grid">
-                      <label>
-                        Preferred term
-                        <input
-                          className="admin-panel__input"
-                          value={draft.preferredTerm}
-                          onChange={(event) =>
-                            updateLocaleDraft(language.locale, {
-                              preferredTerm: event.target.value,
-                            })
-                          }
-                          disabled={saving || Boolean(removingLocale)}
-                          data-editable="preferredTerm"
-                        />
-                      </label>
-                      <label>
-                        Terminology aliases (one per line)
-                        <textarea
-                          className="admin-panel__input"
-                          value={draft.aliasesText}
-                          onChange={(event) =>
-                            updateLocaleDraft(language.locale, {
-                              aliasesText: event.target.value,
-                            })
-                          }
-                          disabled={saving || Boolean(removingLocale)}
-                          data-editable="aliases"
-                          placeholder={"Synonyms for this concept\nNot Language Registry locale aliases"}
-                        />
-                      </label>
-                      <label>
-                        Guidance
-                        <textarea
-                          className="admin-panel__input"
-                          value={draft.guidance}
-                          onChange={(event) =>
-                            updateLocaleDraft(language.locale, {
-                              guidance: event.target.value,
-                            })
-                          }
-                          disabled={saving || Boolean(removingLocale)}
-                          data-editable="guidance"
-                        />
-                      </label>
-                    </div>
-                    {hasStoredTranslation ? (
-                      <div className="admin-glossary__locale-actions">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          disabled={saving || Boolean(removingLocale)}
-                          onClick={() => void handleRemoveLocaleTranslation(language.locale)}
-                          data-glossary-remove-locale={language.locale}
-                        >
-                          {isRemoving ? "Removing…" : "Remove translation"}
-                        </Button>
-                      </div>
-                    ) : null}
-                  </section>
-                );
-              })}
+                        <div className="admin-glossary__locale-header">
+                          <h4 className="admin-glossary__locale-title">
+                            {language.englishName} / {language.nativeName}
+                          </h4>
+                          <p className="admin-glossary__locale-meta">
+                            Canonical locale: <code>{language.locale}</code>
+                          </p>
+                          <span
+                            className={`admin-glossary__locale-badge${
+                              language.enabled ? "" : " admin-glossary__locale-badge--disabled"
+                            }`}
+                          >
+                            Registry: {language.enabled ? "enabled" : "disabled"}
+                          </span>
+                        </div>
+                        {!language.enabled ? (
+                          <p className="hu-caption admin-glossary__note">
+                            Registry language disabled for runtime selection. Glossary translations may
+                            still be edited and stored. Language enablement is managed only under
+                            Languages — not from this screen.
+                          </p>
+                        ) : null}
+                        <div className="admin-glossary__locale-grid">
+                          <label>
+                            Preferred term
+                            <input
+                              className="admin-panel__input"
+                              value={draft.preferredTerm}
+                              onChange={(event) =>
+                                updateLocaleDraft(language.locale, {
+                                  preferredTerm: event.target.value,
+                                })
+                              }
+                              disabled={saving || Boolean(removingLocale)}
+                              data-editable="preferredTerm"
+                            />
+                          </label>
+                          <label>
+                            Terminology aliases (one per line)
+                            <textarea
+                              className="admin-panel__input"
+                              value={draft.aliasesText}
+                              onChange={(event) =>
+                                updateLocaleDraft(language.locale, {
+                                  aliasesText: event.target.value,
+                                })
+                              }
+                              disabled={saving || Boolean(removingLocale)}
+                              data-editable="aliases"
+                              placeholder={"Synonyms for this concept\nNot Language Registry locale aliases"}
+                            />
+                          </label>
+                          <label>
+                            Guidance
+                            <textarea
+                              className="admin-panel__input"
+                              value={draft.guidance}
+                              onChange={(event) =>
+                                updateLocaleDraft(language.locale, {
+                                  guidance: event.target.value,
+                                })
+                              }
+                              disabled={saving || Boolean(removingLocale)}
+                              data-editable="guidance"
+                            />
+                          </label>
+                        </div>
+                        {hasStoredTranslation ? (
+                          <div className="admin-glossary__locale-actions">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              disabled={saving || Boolean(removingLocale)}
+                              onClick={() => void handleRemoveLocaleTranslation(language.locale)}
+                              data-glossary-remove-locale={language.locale}
+                            >
+                              {isRemoving ? "Removing…" : "Remove translation"}
+                            </Button>
+                          </div>
+                        ) : null}
+                      </section>
+                    );
+                  })()
+                : null}
             </div>
 
             <div className="admin-glossary__form-actions">
