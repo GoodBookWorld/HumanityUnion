@@ -4,6 +4,7 @@
  */
 
 import {
+  countPendingPlpAutoBuildWork,
   countPlpAutoBuildWorkByStatus,
   usePlpAutoBuildWorkMemory,
 } from "./plp-auto-build-work.repository.js";
@@ -179,9 +180,9 @@ export function setPlpAutoBuildStartupStatus(
 }
 
 export async function refreshPlpAutoBuildQueueDepthFromStore(): Promise<number> {
-  const counts = await countPlpAutoBuildWorkByStatus();
-  state.queueDepth = counts.pending;
-  return counts.pending;
+  const pending = await countPendingPlpAutoBuildWork();
+  state.queueDepth = pending;
+  return pending;
 }
 
 export async function getPlpAutoBuildRuntimeSnapshot(): Promise<{

@@ -105,6 +105,26 @@ interface PlpAutoBuildWorkDocument extends Document {
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const STUCK_RUNNING_MS = 10 * 60 * 1000;
+const PLP_PROVIDER_ADMISSION_FALLBACK_MS = 60_000;
+
+let plpProviderAdmissionReads = 0;
+let plpStatusAggregationReads = 0;
+
+export function resetPlpProviderAdmissionReadsForTests(): void {
+  plpProviderAdmissionReads = 0;
+}
+
+export function plpProviderAdmissionReadsForTests(): number {
+  return plpProviderAdmissionReads;
+}
+
+export function resetPlpStatusAggregationReadsForTests(): void {
+  plpStatusAggregationReads = 0;
+}
+
+export function plpStatusAggregationReadsForTests(): number {
+  return plpStatusAggregationReads;
+}
 /** RESET 05E — base backoff for retryable provider failures (ms). */
 const PROVIDER_RETRY_BACKOFF_BASE_MS = 5_000;
 const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
@@ -392,19 +412,156 @@ export async function upsertPendingPlpAutoBuildWork(input: {
   return result;
 }
 
-export async function claimNextPlpAutoBuildWork(): Promise<PlpAutoBuildWorkRecord | null> {
+/**
+ * Read-only thin-Gemini admission. Does not call Gemini and does not write.
+ * Returns the instant work may be claimed, or null when admission is open.
+ * Fail-open on state-read errors, matching the previous claim path.
+ * Production main has no localization-provider governor on this path.
+ */
+export async function readPlpProviderNotBeforeMs(
+  nowMsValue: number = Date.now(),
+): Promise<number | null> {
+  plpProviderAdmissionReads += 1;
+  try {
+    const cooldown = await getThinGeminiCooldownSnapshot(nowMsValue);
+    if (!cooldown.active) {
+      return null;
+    }
+    const until = cooldown.cooldownUntil ? Date.parse(cooldown.cooldownUntil) : Number.NaN;
+    return Number.isFinite(until) ? until : nowMsValue + PLP_PROVIDER_ADMISSION_FALLBACK_MS;
+  } catch {
+    return null;
+  }
+}
+
+function stuckBeforeIso(): string {
+  return new Date(Date.now() - STUCK_RUNNING_MS).toISOString();
+}
+
+function isImmediatelyClaimablePlpRow(
+  row: PlpAutoBuildWorkRecord,
+  now: string,
+  stuckBefore: string,
+): boolean {
+  if (row.attempts >= row.maxAttempts) {
+    return false;
+  }
+  if (row.nextAttemptAt != null && row.nextAttemptAt > now) {
+    return false;
+  }
+  if (row.status === "pending") {
+    return true;
+  }
+  return row.status === "running" && row.claimedAt != null && row.claimedAt < stuckBefore;
+}
+
+function isFutureRelevantPlpRow(row: PlpAutoBuildWorkRecord, now: string): boolean {
+  if (row.status !== "pending" || row.nextAttemptAt == null || row.nextAttemptAt <= now) {
+    return false;
+  }
+  return row.attempts < row.maxAttempts;
+}
+
+/**
+ * One bounded read: is any PLP row claimable now?
+ * Completed, failed, superseded, and skipped rows are not matched.
+ */
+export async function probePlpAutoBuildImmediatelyDue(
+  now: string = nowIso(),
+): Promise<boolean> {
+  const stuckBefore = stuckBeforeIso();
+  if (usePlpAutoBuildWorkMemory()) {
+    for (const row of memoryByWorkKey.values()) {
+      if (isImmediatelyClaimablePlpRow(row, now, stuckBefore)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const doc = await collection().findOne(
+    {
+      $and: [
+        { $expr: { $lt: ["$attempts", "$maxAttempts"] } },
+        {
+          $or: [
+            { nextAttemptAt: null },
+            { nextAttemptAt: { $exists: false } },
+            { nextAttemptAt: { $lte: now } },
+          ],
+        },
+        {
+          $or: [
+            { status: "pending" },
+            { status: "running", claimedAt: { $lt: stuckBefore } },
+          ],
+        },
+      ],
+    },
+    { projection: { _id: 1 } },
+  );
+  return doc != null;
+}
+
+/**
+ * Earliest future nextAttemptAt among pending rows that can still run.
+ * Does not match completed history. Not used by the idle safety probe.
+ */
+export async function findEarliestPlpFutureDueAt(now: string = nowIso()): Promise<string | null> {
+  if (usePlpAutoBuildWorkMemory()) {
+    let earliest: string | null = null;
+    for (const row of memoryByWorkKey.values()) {
+      if (!isFutureRelevantPlpRow(row, now) || row.nextAttemptAt == null) {
+        continue;
+      }
+      if (earliest == null || row.nextAttemptAt < earliest) {
+        earliest = row.nextAttemptAt;
+      }
+    }
+    return earliest;
+  }
+
+  const doc = await collection()
+    .find(
+      {
+        status: "pending",
+        nextAttemptAt: { $gt: now },
+        $expr: { $lt: ["$attempts", "$maxAttempts"] },
+      },
+      { projection: { nextAttemptAt: 1 } },
+    )
+    .sort({ nextAttemptAt: 1 })
+    .limit(1)
+    .next();
+  return doc?.nextAttemptAt ?? null;
+}
+
+export async function countPendingPlpAutoBuildWork(): Promise<number> {
+  if (usePlpAutoBuildWorkMemory()) {
+    let pending = 0;
+    for (const row of memoryByWorkKey.values()) {
+      if (row.status === "pending") {
+        pending += 1;
+      }
+    }
+    return pending;
+  }
+  return collection().countDocuments({ status: "pending" });
+}
+
+export async function claimNextPlpAutoBuildWork(options?: {
+  readonly skipProviderAdmission?: boolean;
+}): Promise<PlpAutoBuildWorkRecord | null> {
   const now = nowIso();
-  const stuckBefore = new Date(Date.now() - STUCK_RUNNING_MS).toISOString();
+  const stuckBefore = stuckBeforeIso();
 
   // RESET 05E.3 — do not claim while thin_gemini durable cooldown is active.
   // Prevents attempt churn / request bursts during RESOURCE_EXHAUSTED.
-  try {
-    const cooldown = await getThinGeminiCooldownSnapshot();
-    if (cooldown.active) {
+  if (!options?.skipProviderAdmission) {
+    const notBefore = await readPlpProviderNotBeforeMs(Date.now());
+    if (notBefore != null && notBefore > Date.now()) {
       return null;
     }
-  } catch {
-    // Fail open on state-read errors — ordinary claim path continues.
   }
 
   if (usePlpAutoBuildWorkMemory()) {
@@ -762,6 +919,7 @@ export async function countPlpAutoBuildWorkByStatus(): Promise<{
   readonly superseded: number;
   readonly skipped_usable: number;
 }> {
+  plpStatusAggregationReads += 1;
   const empty = {
     pending: 0,
     running: 0,

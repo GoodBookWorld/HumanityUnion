@@ -3,6 +3,7 @@ import { dispatchEnvelopeToHandlers } from "../integration/event-handler-registr
 import { logDomainEvent, logger } from "../../shared/observability/logger.js";
 import { isMongoConfigured } from "../mongodb/mongo-config.js";
 import { resolveOutboxConfig } from "./outbox.config.js";
+import { registerOutboxDispatcherWake } from "./outbox-wake.js";
 import {
   claimEventForProcessing,
   markEventProcessingCompleted,
@@ -10,16 +11,198 @@ import {
 } from "./processed-events.repository.js";
 import {
   fetchPendingOutboxRecords,
+  findEarliestFutureOutboxAvailableAt,
   getOutboxDispatchStats,
   markOutboxRecordFailed,
   markOutboxRecordPublished,
+  probeOutboxImmediatelyDue,
 } from "./outbox.repository.js";
 import type { OutboxHealthStatus } from "./outbox.types.js";
 
-let dispatchTimer: NodeJS.Timeout | null = null;
+/** Idle multi-process/crash recovery. Not a 2s poll. */
+export const OUTBOX_SAFETY_SWEEP_MS = 60_000;
+
+export type OutboxDueSnapshot = {
+  readonly immediatelyDue: boolean;
+  readonly earliestFutureDueAt: string | null;
+  readonly includeFuture: boolean;
+};
+
+let dispatcherStarted = false;
 let dispatchInProgress = false;
+let cycleInProgress = false;
+let followUp = false;
+let cyclePromise: Promise<void> | null = null;
 let lastDispatchAt: string | null = null;
 let lastError: string | null = null;
+let dueTimer: NodeJS.Timeout | null = null;
+let dueTimerAtMs: number | null = null;
+let dueFire: (() => void) | null = null;
+let safetyTimer: NodeJS.Timeout | null = null;
+let safetyArmed = false;
+let manualTimers = false;
+let nowOverrideMs: number | null = null;
+let scheduleReads = 0;
+let lastScheduleRead: OutboxDueSnapshot | null = null;
+let dueReaderOverride: ((input: { readonly includeFuture: boolean }) => Promise<OutboxDueSnapshot>) | null =
+  null;
+let batchOverride: (() => Promise<number>) | null = null;
+
+function schedulerNowMs(): number {
+  return nowOverrideMs ?? Date.now();
+}
+
+function clearOutboxDueTimer(): void {
+  if (dueTimer) {
+    clearTimeout(dueTimer);
+    dueTimer = null;
+  }
+  dueTimerAtMs = null;
+  dueFire = null;
+}
+
+function armOutboxDueTimer(dueAtMs: number): void {
+  if (!Number.isFinite(dueAtMs)) {
+    return;
+  }
+  clearOutboxDueTimer();
+  dueTimerAtMs = dueAtMs;
+  const fire = () => {
+    if (dueTimerAtMs !== dueAtMs) {
+      return;
+    }
+    clearOutboxDueTimer();
+    wakeOutboxDispatcher();
+  };
+  dueFire = fire;
+  if (manualTimers) {
+    return;
+  }
+  const delay = Math.max(0, dueAtMs - schedulerNowMs());
+  dueTimer = setTimeout(fire, delay);
+  dueTimer.unref?.();
+}
+
+async function readOutboxSchedule(input: {
+  readonly includeFuture: boolean;
+}): Promise<OutboxDueSnapshot> {
+  scheduleReads += 1;
+  const snapshot = dueReaderOverride
+    ? await dueReaderOverride(input)
+    : await readOutboxScheduleFromStore(input.includeFuture);
+  lastScheduleRead = snapshot;
+  return snapshot;
+}
+
+async function readOutboxScheduleFromStore(includeFuture: boolean): Promise<OutboxDueSnapshot> {
+  const nowIso = new Date(schedulerNowMs()).toISOString();
+  const immediatelyDue = await probeOutboxImmediatelyDue(nowIso);
+  if (!includeFuture || immediatelyDue) {
+    return { immediatelyDue, earliestFutureDueAt: null, includeFuture };
+  }
+  const earliestFutureDueAt = await findEarliestFutureOutboxAvailableAt(nowIso);
+  return { immediatelyDue, earliestFutureDueAt, includeFuture };
+}
+
+async function runOutboxBatch(): Promise<number> {
+  if (batchOverride) {
+    return batchOverride();
+  }
+  return dispatchOutboxBatch();
+}
+
+async function reconcileOutboxDueTimer(): Promise<void> {
+  const snapshot = await readOutboxSchedule({ includeFuture: true });
+  if (snapshot.immediatelyDue) {
+    const gap = resolveOutboxConfig().dispatchIntervalMs;
+    const delay = Number.isFinite(gap) && gap > 0 ? gap : 0;
+    armOutboxDueTimer(schedulerNowMs() + delay);
+    return;
+  }
+  if (!snapshot.earliestFutureDueAt) {
+    clearOutboxDueTimer();
+    return;
+  }
+  const at = Date.parse(snapshot.earliestFutureDueAt);
+  if (Number.isFinite(at)) {
+    armOutboxDueTimer(at);
+  }
+}
+
+function wakeOutboxDispatcher(): void {
+  if (!dispatcherStarted) {
+    return;
+  }
+  if (cycleInProgress) {
+    followUp = true;
+    return;
+  }
+  cycleInProgress = true;
+  cyclePromise = (async () => {
+    try {
+      do {
+        followUp = false;
+        clearOutboxDueTimer();
+        await runOutboxBatch();
+      } while (followUp);
+      await reconcileOutboxDueTimer();
+    } finally {
+      cycleInProgress = false;
+      const again = followUp;
+      followUp = false;
+      cyclePromise = null;
+      if (again) {
+        wakeOutboxDispatcher();
+      }
+    }
+  })();
+}
+
+registerOutboxDispatcherWake(() => {
+  wakeOutboxDispatcher();
+});
+
+async function bootOutboxRecovery(): Promise<void> {
+  const snapshot = await readOutboxSchedule({ includeFuture: true });
+  if (snapshot.immediatelyDue) {
+    wakeOutboxDispatcher();
+    return;
+  }
+  if (!snapshot.earliestFutureDueAt) {
+    clearOutboxDueTimer();
+    return;
+  }
+  const at = Date.parse(snapshot.earliestFutureDueAt);
+  if (Number.isFinite(at)) {
+    armOutboxDueTimer(at);
+  }
+}
+
+function startOutboxSafetySweep(): void {
+  if (safetyArmed) {
+    return;
+  }
+  safetyArmed = true;
+  if (manualTimers) {
+    return;
+  }
+  safetyTimer = setInterval(() => {
+    void runOutboxSafetySweep();
+  }, OUTBOX_SAFETY_SWEEP_MS);
+  safetyTimer.unref?.();
+}
+
+/** One due-only probe. No batch, write, or provider call when nothing is due. */
+export async function runOutboxSafetySweep(): Promise<void> {
+  if (!dispatcherStarted) {
+    return;
+  }
+  const snapshot = await readOutboxSchedule({ includeFuture: false });
+  if (!snapshot.immediatelyDue) {
+    return;
+  }
+  wakeOutboxDispatcher();
+}
 
 export async function dispatchOutboxBatch(): Promise<number> {
   if (!isMongoConfigured()) {
@@ -163,30 +346,31 @@ export function startOutboxDispatcher(): void {
     return;
   }
 
-  if (dispatchTimer) {
+  if (dispatcherStarted) {
     return;
   }
 
+  dispatcherStarted = true;
+
   logger.info("outbox.dispatcher.started", {
     component: "outbox",
-    intervalMs: config.dispatchIntervalMs,
+    safetySweepMs: OUTBOX_SAFETY_SWEEP_MS,
     batchSize: config.dispatchBatchSize,
   });
 
-  void dispatchOutboxBatch();
-
-  dispatchTimer = setInterval(() => {
-    void dispatchOutboxBatch();
-  }, config.dispatchIntervalMs);
-
-  dispatchTimer.unref?.();
+  startOutboxSafetySweep();
+  void bootOutboxRecovery();
 }
 
 export function stopOutboxDispatcher(): void {
-  if (dispatchTimer) {
-    clearInterval(dispatchTimer);
-    dispatchTimer = null;
+  dispatcherStarted = false;
+  clearOutboxDueTimer();
+  if (safetyTimer) {
+    clearInterval(safetyTimer);
+    safetyTimer = null;
   }
+  safetyArmed = false;
+  followUp = false;
 }
 
 export async function getOutboxHealthStatus(): Promise<OutboxHealthStatus> {
@@ -210,7 +394,7 @@ export async function getOutboxHealthStatus(): Promise<OutboxHealthStatus> {
   return {
     enabled: config.dispatchEnabled,
     configured: true,
-    running: dispatchTimer !== null,
+    running: dispatcherStarted,
     dispatchIntervalMs: config.dispatchIntervalMs,
     stats,
     lastDispatchAt,
@@ -228,4 +412,83 @@ export function resetOutboxDispatcherStateForTests(): void {
   lastDispatchAt = null;
   lastError = null;
   dispatchInProgress = false;
+  cycleInProgress = false;
+  followUp = false;
+  cyclePromise = null;
+  manualTimers = false;
+  nowOverrideMs = null;
+  scheduleReads = 0;
+  lastScheduleRead = null;
+  dueReaderOverride = null;
+  batchOverride = null;
+}
+
+export function useOutboxSchedulerManualTimersForTests(enabled: boolean): void {
+  manualTimers = enabled;
+}
+
+export function setOutboxSchedulerNowMsForTests(ms: number | null): void {
+  nowOverrideMs = ms;
+}
+
+export function setOutboxDueReaderForTests(
+  reader: ((input: { readonly includeFuture: boolean }) => Promise<OutboxDueSnapshot>) | null,
+): void {
+  dueReaderOverride = reader;
+}
+
+export function setOutboxBatchOverrideForTests(runner: (() => Promise<number>) | null): void {
+  batchOverride = runner;
+}
+
+export function outboxScheduleReadsForTests(): number {
+  return scheduleReads;
+}
+
+export function lastOutboxScheduleReadForTests(): OutboxDueSnapshot | null {
+  return lastScheduleRead;
+}
+
+export function outboxDueTimerAtMsForTests(): number | null {
+  return dueTimerAtMs;
+}
+
+export function outboxDueTimerCountForTests(): number {
+  return dueTimerAtMs == null ? 0 : 1;
+}
+
+export function outboxSafetySweepArmedForTests(): boolean {
+  return safetyArmed;
+}
+
+export function outboxCycleInProgressForTests(): boolean {
+  return cycleInProgress;
+}
+
+export function fireOutboxDueTimerForTests(): void {
+  dueFire?.();
+}
+
+export async function settleOutboxDispatcherForTests(): Promise<void> {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const current = cyclePromise;
+    if (current) {
+      await current;
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+    if (!cycleInProgress && !followUp) {
+      return;
+    }
+  }
+}
+
+/** Test boot path. Does not require Mongo when a due reader is installed. */
+export async function startOutboxDispatcherForTests(): Promise<void> {
+  if (dispatcherStarted) {
+    return;
+  }
+  dispatcherStarted = true;
+  startOutboxSafetySweep();
+  await bootOutboxRecovery();
+  await settleOutboxDispatcherForTests();
 }

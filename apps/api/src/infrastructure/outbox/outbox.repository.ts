@@ -15,6 +15,7 @@ import {
   assertSingleOutboxId,
   OutboxRecoveryNotFoundError,
 } from "./outbox-recovery.errors.js";
+import { requestOutboxDispatcherWake } from "./outbox-wake.js";
 
 interface OutboxMongoDocument extends Document {
   _id: string;
@@ -30,6 +31,7 @@ interface OutboxMongoDocument extends Document {
   causationId: string | null;
   createdAt: string;
   publishedAt: string | null;
+  availableAt?: string | null;
 }
 
 function assertMongoAvailable(): void {
@@ -96,6 +98,7 @@ export async function enqueueDomainEvent(
 
   const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
   await collection.insertOne(document, { session: options.session });
+  requestOutboxDispatcherWake(options.session);
 
   const record = mapDocument(document);
 
@@ -115,14 +118,66 @@ export async function enqueueDomainEvent(
 export async function fetchPendingOutboxRecords(limit: number): Promise<OutboxRecord[]> {
   assertMongoAvailable();
 
+  const now = new Date().toISOString();
   const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
   const documents = await collection
-    .find({ status: "pending" })
+    .find({
+      status: "pending",
+      $or: [
+        { availableAt: { $exists: false } },
+        { availableAt: null },
+        { availableAt: { $lte: now } },
+      ],
+    })
     .sort({ createdAt: 1 })
     .limit(limit)
     .toArray();
 
   return documents.map(mapDocument);
+}
+
+/**
+ * One bounded read. Pending rows with a future availableAt are not due.
+ * Rows without availableAt stay immediately due. Published and failed rows are excluded.
+ */
+export async function probeOutboxImmediatelyDue(
+  nowIso: string = new Date().toISOString(),
+): Promise<boolean> {
+  if (!isMongoConfigured()) {
+    return false;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection.findOne(
+    {
+      status: "pending",
+      $or: [
+        { availableAt: { $exists: false } },
+        { availableAt: null },
+        { availableAt: { $lte: nowIso } },
+      ],
+    },
+    { projection: { _id: 1 } },
+  );
+  return document != null;
+}
+
+/** Earliest future availableAt among pending rows. Not used by the idle safety probe. */
+export async function findEarliestFutureOutboxAvailableAt(
+  nowIso: string = new Date().toISOString(),
+): Promise<string | null> {
+  if (!isMongoConfigured()) {
+    return null;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection
+    .find(
+      { status: "pending", availableAt: { $gt: nowIso } },
+      { projection: { availableAt: 1 } },
+    )
+    .sort({ availableAt: 1 })
+    .limit(1)
+    .next();
+  return typeof document?.availableAt === "string" ? document.availableAt : null;
 }
 
 export async function markOutboxRecordPublished(outboxId: string): Promise<void> {
@@ -274,6 +329,7 @@ export async function requeueFailedOutboxRecordById(
     recovery: "requeued_failed",
   });
 
+  requestOutboxDispatcherWake();
   return mapDocument(updated as OutboxMongoDocument);
 }
 
