@@ -1,7 +1,6 @@
 import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
-import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 import { getInitiativeById } from "./initiative.store.js";
 import {
   canExposePublicInitiativeProjection,
@@ -32,8 +31,6 @@ publicInitiativeRouter.get("/:initiativeId", async (req, res) => {
     res.status(404).json(createFailureResponse("Initiative not found."));
     return;
   }
-
-  createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
 
   res.json(
     createSuccessResponse(await toPublicInitiativeProjection(initiative), "Public initiative loaded."),

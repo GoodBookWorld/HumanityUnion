@@ -122,5 +122,9 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     "../../modules/initiative-collective-decision/initiative-collective-decision.store.js"
   );
   syncInitiativeCollectiveDecisionStoreAfterMongoHydrate();
+  const { syncInitiativeVersionRevisionStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-version-revision/initiative-version-revision.store.js"
+  );
+  syncInitiativeVersionRevisionStoreAfterMongoHydrate();
   await flushInitiativeMongoPersistence();
 }

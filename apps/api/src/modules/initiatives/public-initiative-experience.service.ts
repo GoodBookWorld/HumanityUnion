@@ -45,7 +45,6 @@ import { listPublicInitiativeImprovementProposals } from "../initiative-improvem
 import { listPublicInitiativePublicImpactsForInitiative } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getPublicInitiativeVersionHistory } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
-import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
 import { getPackageByInitiativeId as getOfficialResponsePackageByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
 import { listResponsesByInitiativeId as listLifecycleOfficialResponsesByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
@@ -719,7 +718,6 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   viewerParticipantId?: string | null;
 }): Promise<PublicInitiativeExperienceProjection> {
   const { initiative } = input;
-  createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
 
   if (input.viewerKey) {
     // Fire-and-forget by design (view recording must never delay the

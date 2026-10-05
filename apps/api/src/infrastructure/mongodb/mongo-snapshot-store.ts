@@ -1,5 +1,6 @@
 import type { Document, Filter, IndexDescription } from "mongodb";
 
+import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 
 export function entityIdToMongoId(id: string): string {
@@ -30,11 +31,51 @@ export async function loadRecordMap<T extends object>(
   return records;
 }
 
+/**
+ * Insert or replace the given ids only.
+ * Never deletes documents that are absent from `records`.
+ * An empty map is a no-op so a cold in-memory snapshot cannot wipe a collection.
+ */
+export async function upsertRecordMap<T extends object>(
+  collectionName: string,
+  records: Record<string, T>,
+  idField: string,
+): Promise<void> {
+  const ids = Object.keys(records);
+  if (ids.length === 0) {
+    return;
+  }
+
+  const collection = getMongoCollection(collectionName);
+  const operations = ids.map((id) => {
+    const entity = records[id] as Record<string, unknown>;
+    return {
+      replaceOne: {
+        filter: { _id: id } as unknown as Filter<Document>,
+        replacement: {
+          _id: id,
+          ...entity,
+          [idField]: id,
+        } as Document,
+        upsert: true,
+      },
+    };
+  });
+  await collection.bulkWrite(operations, { ordered: false });
+}
+
 export async function replaceRecordMap<T extends object>(
   collectionName: string,
   records: Record<string, T>,
   idField: string,
 ): Promise<void> {
+  // Initiative revisions are append-only history. A startup map that was copied
+  // empty (or only partially hydrated) must not delete durable rows via $nin.
+  if (collectionName === MONGO_COLLECTIONS.initiativeVersionRevisions) {
+    await upsertRecordMap(collectionName, records, idField);
+    return;
+  }
+
   const collection = getMongoCollection(collectionName);
   const ids = Object.keys(records);
 

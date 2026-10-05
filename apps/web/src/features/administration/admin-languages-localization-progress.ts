@@ -41,8 +41,12 @@ type ProgressSource = {
   readonly cvReady: boolean;
   readonly ctCurrent: number;
   readonly ctRemaining: number;
+  readonly ctActiveWork?: number;
+  readonly ctPreflightBlocked?: number;
   readonly plpCurrent: number;
   readonly plpRemaining: number;
+  readonly plpActiveWork?: number;
+  readonly plpPreflightBlocked?: number;
   readonly publishedRequired: number;
   readonly publishedMissing: number;
   readonly publishedDataReady: boolean;
@@ -118,8 +122,20 @@ function coverage(source: ProgressSource): Count {
     publishedMissing: source.publishedMissing,
     publishedDataReady: source.publishedDataReady,
   });
-  const ct = units(source.ctCurrent, source.ctCurrent + source.ctRemaining);
-  const plp = units(source.plpCurrent, source.plpCurrent + source.plpRemaining);
+  const ct = units(
+    source.ctCurrent,
+    source.ctCurrent +
+      source.ctRemaining +
+      (source.ctActiveWork ?? 0) +
+      (source.ctPreflightBlocked ?? 0),
+  );
+  const plp = units(
+    source.plpCurrent,
+    source.plpCurrent +
+      source.plpRemaining +
+      (source.plpActiveWork ?? 0) +
+      (source.plpPreflightBlocked ?? 0),
+  );
   return add(add(cv, web), add(ct, plp));
 }
 
@@ -326,8 +342,12 @@ function sourceFromView(view: LanguageActivationAdminView): ProgressSource {
     cvReady: readiness.controlledVocabulary.presentationReady,
     ctCurrent: readiness.ct.current,
     ctRemaining: readiness.ct.workItemsRequired,
+    ctActiveWork: readiness.ct.activeWork ?? 0,
+    ctPreflightBlocked: readiness.ct.preflightBlocked ?? 0,
     plpCurrent: readiness.plpMedia.current,
     plpRemaining: readiness.plpMedia.workItemsRequired,
+    plpActiveWork: readiness.plpMedia.activeWork ?? 0,
+    plpPreflightBlocked: readiness.plpMedia.preflightBlocked ?? 0,
     publishedRequired:
       readiness.webUi.requiredKeyCount + readiness.participantWebUi.requiredKeyCount,
     publishedMissing:
@@ -361,8 +381,12 @@ export function localizationProgressFromReadiness(
     cvReady: report.controlledVocabulary.presentationReady,
     ctCurrent: report.ct.current,
     ctRemaining: report.ct.workItemsRequired,
+    ctActiveWork: report.ct.activeWork ?? 0,
+    ctPreflightBlocked: report.ct.preflightBlocked ?? 0,
     plpCurrent: report.plpMedia.current,
     plpRemaining: report.plpMedia.workItemsRequired,
+    plpActiveWork: report.plpMedia.activeWork ?? 0,
+    plpPreflightBlocked: report.plpMedia.preflightBlocked ?? 0,
     publishedRequired:
       report.webUi.requiredKeyCount + report.participantWebUi.requiredKeyCount,
     publishedMissing:

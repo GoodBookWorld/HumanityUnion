@@ -407,6 +407,8 @@ function addCountBuckets(
     invalid: left.invalid + right.invalid,
     failed: left.failed + right.failed,
     pending: left.pending + right.pending,
+    activeWork: (left.activeWork ?? 0) + (right.activeWork ?? 0),
+    preflightBlocked: (left.preflightBlocked ?? 0) + (right.preflightBlocked ?? 0),
     workItemsRequired: left.workItemsRequired + right.workItemsRequired,
   };
 }
@@ -420,6 +422,8 @@ function sumBuckets(
   let invalid = 0;
   let failed = 0;
   let pending = 0;
+  let activeWork = 0;
+  let preflightBlocked = 0;
   let workItemsRequired = 0;
   for (const row of rows) {
     current += row.current;
@@ -428,9 +432,21 @@ function sumBuckets(
     invalid += row.invalid;
     failed += row.failed;
     pending += row.pending;
+    activeWork += row.activeWork ?? 0;
+    preflightBlocked += row.preflightBlocked ?? 0;
     workItemsRequired += row.workItemsRequired;
   }
-  return { current, missing, stale, invalid, failed, pending, workItemsRequired };
+  return {
+    current,
+    missing,
+    stale,
+    invalid,
+    failed,
+    pending,
+    activeWork,
+    preflightBlocked,
+    workItemsRequired,
+  };
 }
 
 function unmeasuredReport(locale: string, reason: string): BoundedPwaCivicCoverageReport {
@@ -587,6 +603,8 @@ async function measureBoundedPwaCivicCoverageConnected(input: {
     invalid: ct.invalid + plpMedia.invalid,
     failed: ct.failed + plpMedia.failed,
     pending: ct.pending + plpMedia.pending,
+    activeWork: (ct.activeWork ?? 0) + (plpMedia.activeWork ?? 0),
+    preflightBlocked: (ct.preflightBlocked ?? 0) + (plpMedia.preflightBlocked ?? 0),
     workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,
     measuredKindCount,
     unmeasuredKindCount,

@@ -24,6 +24,7 @@ import {
   type LanguageRegistryRecord,
 } from "@hu/types";
 
+import { isCanonicalRevisionInventoryConverged } from "../../initiative-version-revision/materialize-canonical-initial-revisions.js";
 import { listBrandLocalizations } from "../../brand-localization/brand-localization.repository.js";
 import { getLegalLocalization } from "../../legal-localization/legal-localization.repository.js";
 import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
@@ -54,6 +55,8 @@ export type EvaluateLanguageLocalizationReadinessInput = {
    * Kept for call-site compatibility; ignored.
    */
   readonly plannerDeps?: unknown;
+  /** Explicit inventory barrier. Omit to use the process materialization flag. */
+  readonly revisionInventoryReady?: boolean;
 };
 
 function brandLocaleMatches(entryLocale: string, canonicalLocale: string): boolean {
@@ -165,11 +168,14 @@ export async function evaluateLanguageLocalizationReadiness(
     plpMedia = input.plpCounts ?? input.pwaCivicCoverage.plpMedia;
   }
 
+  const revisionInventoryReady =
+    input.revisionInventoryReady ?? isCanonicalRevisionInventoryConverged();
   const pwaCoverage = bounded?.coverage ?? emptyPwaCivicCoverageScalars();
   const pwaCivic = buildLanguagePwaCivicReadinessSlice({
     enabled: registry.enabled,
     contentTranslationEnabled: registry.contentTranslationEnabled,
     pwaPersistedReadingEnabled: registry.pwaPersistedReadingEnabled,
+    revisionInventoryReady,
     coverage:
       input.skipCorpusPlan && !bounded
         ? {
@@ -181,6 +187,9 @@ export async function evaluateLanguageLocalizationReadiness(
               invalid: ct.invalid + plpMedia.invalid,
               failed: ct.failed + plpMedia.failed,
               pending: ct.pending + plpMedia.pending,
+              activeWork: (ct.activeWork ?? 0) + (plpMedia.activeWork ?? 0),
+              preflightBlocked:
+                (ct.preflightBlocked ?? 0) + (plpMedia.preflightBlocked ?? 0),
               workItemsRequired: ct.workItemsRequired + plpMedia.workItemsRequired,
               measuredKindCount: 1,
               unmeasuredKindCount: 0,
@@ -198,6 +207,7 @@ export async function evaluateLanguageLocalizationReadiness(
     controlledVocabularyPresentationReady: controlledVocabulary.presentationReady,
     ct,
     plpMedia,
+    revisionInventoryReady,
   });
 
   const languageDataReady =

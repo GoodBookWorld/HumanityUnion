@@ -529,7 +529,17 @@ export function buildHistoricalDomainProgress(input: {
   let status: LanguageActivationHistoricalDomainProgress["status"] = "pending";
   let detail: string | null = null;
 
-  if (remaining === 0 && bucket.failed === 0) {
+  if ((bucket.activeWork ?? 0) > 0 && remaining === 0 && bucket.failed === 0) {
+    status = "in_progress";
+    detail = `${owner} translations already queued or processing: ${bucket.activeWork}.`;
+  } else if (
+    (bucket.preflightBlocked ?? 0) > 0 &&
+    remaining === 0 &&
+    bucket.failed === 0
+  ) {
+    status = "pending";
+    detail = `${owner} sources cannot currently be translated: ${bucket.preflightBlocked}.`;
+  } else if (remaining === 0 && bucket.failed === 0) {
     status = enqueueAttempted ? "ready" : "skipped";
     detail =
       remaining === 0 && bucket.current > 0
@@ -546,7 +556,7 @@ export function buildHistoricalDomainProgress(input: {
     detail = `${owner} blocked current-version translation failures: ${bucket.failed}.`;
   } else if (bucket.pending > 0) {
     status = "in_progress";
-    detail = `${owner} live identities are not actionable: ${bucket.pending}.`;
+    detail = `${owner} translations already queued or processing: ${bucket.pending}.`;
   }
 
   return {
@@ -595,7 +605,11 @@ export function classifyActivationAutomaticProgress(input: {
   readonly readiness: Pick<LanguageLocalizationReadinessReport, "ct" | "plpMedia">;
   readonly plpWork: readonly ActivationPlpWorkProgressRow[];
 }): ActivationAutomaticProgress {
-  if (input.readiness.ct.workItemsRequired > 0 || input.readiness.ct.pending > 0) {
+  if (
+    input.readiness.ct.workItemsRequired > 0 ||
+    input.readiness.ct.pending > 0 ||
+    (input.readiness.ct.activeWork ?? 0) > 0
+  ) {
     return "progress";
   }
   const plpRequired =
@@ -694,7 +708,11 @@ export function deriveActivationJobStatus(input: {
     readiness.ct.failed === 0 &&
     readiness.plpMedia.failed === 0 &&
     readiness.ct.pending === 0 &&
-    readiness.plpMedia.pending === 0
+    readiness.plpMedia.pending === 0 &&
+    (readiness.ct.activeWork ?? 0) === 0 &&
+    (readiness.plpMedia.activeWork ?? 0) === 0 &&
+    (readiness.ct.preflightBlocked ?? 0) === 0 &&
+    (readiness.plpMedia.preflightBlocked ?? 0) === 0
   ) {
     return "completed";
   }
@@ -703,7 +721,11 @@ export function deriveActivationJobStatus(input: {
     readiness.plpMedia.workItemsRequired > 0 ||
     readiness.ct.failed > 0 ||
     readiness.plpMedia.failed > 0;
-  const waitingBucket = readiness.ct.pending > 0 || readiness.plpMedia.pending > 0;
+  const waitingBucket =
+    readiness.ct.pending > 0 ||
+    readiness.plpMedia.pending > 0 ||
+    (readiness.ct.activeWork ?? 0) > 0 ||
+    (readiness.plpMedia.activeWork ?? 0) > 0;
   if (
     input.automaticProgress === "exhausted" &&
     readiness.state !== "READY" &&
@@ -717,7 +739,11 @@ export function deriveActivationJobStatus(input: {
       readiness.ct.failed > 0 ||
       readiness.plpMedia.failed > 0 ||
       readiness.ct.pending > 0 ||
-      readiness.plpMedia.pending > 0;
+      readiness.plpMedia.pending > 0 ||
+      (readiness.ct.activeWork ?? 0) > 0 ||
+      (readiness.plpMedia.activeWork ?? 0) > 0 ||
+      (readiness.ct.preflightBlocked ?? 0) > 0 ||
+      (readiness.plpMedia.preflightBlocked ?? 0) > 0;
     return readiness.state === "BACKFILL_IN_PROGRESS" ||
       readiness.ct.workItemsRequired > 0 ||
       readiness.plpMedia.workItemsRequired > 0 ||

@@ -493,6 +493,13 @@ export async function runLocalizationReconciliationPass(
     d,
   );
   if (!eligibility.eligible) {
+    if (eligibility.reason === "no_actionable_work") {
+      const locale = eligibility.canonicalLocale || localeInput;
+      void import("./language-localization-activation/language-activation-job.service.js").then(
+        ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+          convergeFailedActivationWhenAuthoritativeReady(locale),
+      );
+    }
     if (eligibility.reason === "provider_cooldown" && eligibility.cooldownUntil) {
       const untilMs = Date.parse(eligibility.cooldownUntil);
       const delay = Number.isFinite(untilMs) ? Math.max(0, untilMs - nowMs()) : 0;
@@ -610,6 +617,10 @@ export async function runLocalizationReconciliationPass(
 
   if (!workRemains) {
     noProgressStreakByLocale.delete(localeKey);
+    void import("./language-localization-activation/language-activation-job.service.js").then(
+      ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+        convergeFailedActivationWhenAuthoritativeReady(locale),
+    );
     return {
       ...baseFields,
       reason: "ok",
@@ -883,9 +894,25 @@ export function wakeReadinessAfterPlpPublish(locale: string): void {
     reason: "source_mutation",
   });
   void import("./language-localization-activation/language-activation-job.service.js").then(
-    ({ syncRunningActivationAfterPlpPublish }) =>
-      syncRunningActivationAfterPlpPublish(locale),
+    ({ syncRunningActivationAfterPlpPublish, convergeFailedActivationWhenAuthoritativeReady }) => {
+      void syncRunningActivationAfterPlpPublish(locale);
+      return convergeFailedActivationWhenAuthoritativeReady(locale);
+    },
   );
+}
+
+/** CT publication wake. Reuses reconciliation; does not add a timer. */
+export function wakeReadinessAfterContentTranslationPublish(locales: readonly string[]): void {
+  for (const locale of locales) {
+    scheduleLocalizationReconciliation({
+      locale,
+      reason: "source_mutation",
+    });
+    void import("./language-localization-activation/language-activation-job.service.js").then(
+      ({ convergeFailedActivationWhenAuthoritativeReady }) =>
+        convergeFailedActivationWhenAuthoritativeReady(locale),
+    );
+  }
 }
 
 export function wakeLocalizationReconciliationAfterActivation(input: {

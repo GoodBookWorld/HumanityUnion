@@ -178,6 +178,15 @@ export type LanguageLocalizationCountBucket = {
   readonly invalid: number;
   readonly failed: number;
   readonly pending: number;
+  /**
+   * Translation is already queued or processing. Not residual backfill debt
+   * and not "not actionable".
+   */
+  readonly activeWork?: number;
+  /**
+   * Source cannot currently be translated. Not actionable backfill work.
+   */
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
 };
 
@@ -257,6 +266,8 @@ export type PwaCivicCoverageScalars = {
   readonly invalid?: number;
   readonly failed: number;
   readonly pending: number;
+  readonly activeWork?: number;
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
   readonly measuredKindCount: number;
   readonly unmeasuredKindCount: number;
@@ -367,8 +378,18 @@ export function emptyLanguageLocalizationCountBucket(): LanguageLocalizationCoun
     invalid: 0,
     failed: 0,
     pending: 0,
+    activeWork: 0,
+    preflightBlocked: 0,
     workItemsRequired: 0,
   };
+}
+
+function bucketActiveWork(bucket: LanguageLocalizationCountBucket): number {
+  return bucket.activeWork ?? 0;
+}
+
+function bucketPreflightBlocked(bucket: LanguageLocalizationCountBucket): number {
+  return bucket.preflightBlocked ?? 0;
 }
 
 /**
@@ -384,6 +405,11 @@ export function deriveLanguageLocalizationReadinessState(input: {
   readonly controlledVocabularyPresentationReady: boolean;
   readonly ct: LanguageLocalizationCountBucket;
   readonly plpMedia: LanguageLocalizationCountBucket;
+  /**
+   * False until canonical initial revisions for public initiatives exist.
+   * Omitted means already converged (legacy callers and non-Mongo runtimes).
+   */
+  readonly revisionInventoryReady?: boolean;
 }): LanguageLocalizationReadinessState {
   if (!input.enabled || !input.contentTranslationEnabled) {
     return "DISABLED";
@@ -401,6 +427,9 @@ export function deriveLanguageLocalizationReadinessState(input: {
   const work =
     input.ct.workItemsRequired + input.plpMedia.workItemsRequired;
   const pending = input.ct.pending + input.plpMedia.pending;
+  const activeWork = bucketActiveWork(input.ct) + bucketActiveWork(input.plpMedia);
+  const preflightBlocked =
+    bucketPreflightBlocked(input.ct) + bucketPreflightBlocked(input.plpMedia);
   const failed = input.ct.failed + input.plpMedia.failed;
   const current = input.ct.current + input.plpMedia.current;
   const incomplete =
@@ -411,22 +440,49 @@ export function deriveLanguageLocalizationReadinessState(input: {
     input.plpMedia.stale +
     input.plpMedia.invalid;
 
-  if (pending > 0 && work > 0) {
+  const state = deriveMeasuredLocalizationReadiness({
+    work,
+    pending,
+    activeWork,
+    preflightBlocked,
+    failed,
+    current,
+    incomplete,
+  });
+  if (state === "READY" && input.revisionInventoryReady === false) {
+    return "DATA_NOT_READY";
+  }
+  return state;
+}
+
+function deriveMeasuredLocalizationReadiness(input: {
+  readonly work: number;
+  readonly pending: number;
+  readonly activeWork: number;
+  readonly preflightBlocked: number;
+  readonly failed: number;
+  readonly current: number;
+  readonly incomplete: number;
+}): LanguageLocalizationReadinessState {
+  if (input.activeWork > 0 || (input.pending > 0 && input.work > 0)) {
     return "BACKFILL_IN_PROGRESS";
   }
-  if (failed > 0 && current > 0 && incomplete === 0) {
+  if (input.failed > 0 && input.current > 0 && input.incomplete === 0) {
     return "DEGRADED";
   }
-  if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
+  if (input.failed > 0 && input.current === 0 && input.incomplete === 0 && input.work === 0) {
     return "FAILED";
   }
-  if (incomplete > 0 || work > 0) {
+  if (input.incomplete > 0 || input.work > 0) {
     return "BACKFILL_REQUIRED";
   }
-  if (pending > 0) {
-    return "BACKFILL_REQUIRED";
+  if (input.preflightBlocked > 0) {
+    return "DEGRADED";
   }
-  if (current > 0 || (work === 0 && incomplete === 0 && failed === 0)) {
+  if (
+    input.current > 0 ||
+    (input.work === 0 && input.incomplete === 0 && input.failed === 0 && input.pending === 0)
+  ) {
     return "READY";
   }
   return "CONFIGURED";
@@ -446,6 +502,7 @@ export function derivePwaCivicReadinessState(input: {
   readonly contentTranslationEnabled: boolean;
   readonly pwaPersistedReadingEnabled: boolean;
   readonly coverage: PwaCivicCoverageScalars;
+  readonly revisionInventoryReady?: boolean;
 }): PwaCivicReadinessStatus {
   if (
     !input.enabled ||
@@ -459,36 +516,35 @@ export function derivePwaCivicReadinessState(input: {
   const incomplete =
     coverage.missing + coverage.stale + (coverage.invalid ?? 0);
   const pending = coverage.pending;
+  const activeWork = coverage.activeWork ?? 0;
+  const preflightBlocked = coverage.preflightBlocked ?? 0;
   const failed = coverage.failed;
   const current = coverage.current;
   const work = coverage.workItemsRequired;
 
-  if (pending > 0 && work > 0) {
-    return "BACKFILL_IN_PROGRESS";
+  let status: PwaCivicReadinessStatus;
+  if (activeWork > 0 || (pending > 0 && work > 0)) {
+    status = "BACKFILL_IN_PROGRESS";
+  } else if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
+    status = "FAILED";
+  } else if (coverage.coverageMeasurement === "partial_unmeasured" || coverage.unmeasuredKindCount > 0) {
+    // Honest: unmeasured kinds in scope must not become READY.
+    status = current > 0 && incomplete === 0 ? "DEGRADED" : "BACKFILL_REQUIRED";
+  } else if (failed > 0 && current > 0 && incomplete === 0) {
+    status = "DEGRADED";
+  } else if (incomplete > 0 || work > 0) {
+    status = current > 0 && incomplete > 0 ? "DEGRADED" : "BACKFILL_REQUIRED";
+  } else if (preflightBlocked > 0) {
+    status = "DEGRADED";
+  } else if (incomplete === 0 && failed === 0 && pending === 0 && activeWork === 0) {
+    status = "READY";
+  } else {
+    status = "DEGRADED";
   }
-  if (failed > 0 && current === 0 && incomplete === 0 && work === 0) {
-    return "FAILED";
-  }
-  // Honest: unmeasured kinds in scope must not become READY.
-  if (coverage.coverageMeasurement === "partial_unmeasured" || coverage.unmeasuredKindCount > 0) {
-    if (current > 0 && incomplete === 0) {
-      return "DEGRADED";
-    }
-    return "BACKFILL_REQUIRED";
-  }
-  if (failed > 0 && current > 0 && incomplete === 0) {
+  if (status === "READY" && input.revisionInventoryReady === false) {
     return "DEGRADED";
   }
-  if (incomplete > 0 || work > 0) {
-    if (current > 0 && incomplete > 0) {
-      return "DEGRADED";
-    }
-    return "BACKFILL_REQUIRED";
-  }
-  if (incomplete === 0 && failed === 0 && pending === 0) {
-    return "READY";
-  }
-  return "BACKFILL_REQUIRED";
+  return status;
 }
 
 export function emptyPwaCivicCoverageScalars(): PwaCivicCoverageScalars {
@@ -506,12 +562,14 @@ export function buildLanguagePwaCivicReadinessSlice(input: {
   readonly enabled: boolean;
   readonly contentTranslationEnabled: boolean;
   readonly note?: string | null;
+  readonly revisionInventoryReady?: boolean;
 }): LanguagePwaCivicReadinessSlice {
   const pwaCivicReadinessStatus = derivePwaCivicReadinessState({
     enabled: input.enabled,
     contentTranslationEnabled: input.contentTranslationEnabled,
     pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,
     coverage: input.coverage,
+    revisionInventoryReady: input.revisionInventoryReady,
   });
   return {
     pwaPersistedReadingEnabled: input.pwaPersistedReadingEnabled,
