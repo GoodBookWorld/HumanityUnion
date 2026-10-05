@@ -15,6 +15,7 @@ import {
   assertSingleOutboxId,
   OutboxRecoveryNotFoundError,
 } from "./outbox-recovery.errors.js";
+import { requestOutboxDispatcherWake } from "./outbox-wake.js";
 
 interface OutboxMongoDocument extends Document {
   _id: string;
@@ -98,6 +99,7 @@ export async function enqueueDomainEvent(
 
   const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
   await collection.insertOne(document, { session: options.session });
+  requestOutboxDispatcherWake(options.session);
 
   const record = mapDocument(document);
 
@@ -173,6 +175,50 @@ export async function fetchPendingOutboxRecords(limit: number): Promise<OutboxRe
     .toArray();
 
   return documents.map(mapDocument);
+}
+
+/**
+ * One bounded read. Pending rows with a future availableAt are not due.
+ * Published and failed rows are excluded by status.
+ */
+export async function probeOutboxImmediatelyDue(
+  nowIso: string = new Date().toISOString(),
+): Promise<boolean> {
+  if (!isMongoConfigured()) {
+    return false;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection.findOne(
+    {
+      status: "pending",
+      $or: [
+        { availableAt: { $exists: false } },
+        { availableAt: null },
+        { availableAt: { $lte: nowIso } },
+      ],
+    },
+    { projection: { _id: 1 } },
+  );
+  return document != null;
+}
+
+/** Earliest future availableAt among pending rows. Not used by the idle safety probe. */
+export async function findEarliestFutureOutboxAvailableAt(
+  nowIso: string = new Date().toISOString(),
+): Promise<string | null> {
+  if (!isMongoConfigured()) {
+    return null;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection
+    .find(
+      { status: "pending", availableAt: { $gt: nowIso } },
+      { projection: { availableAt: 1 } },
+    )
+    .sort({ availableAt: 1 })
+    .limit(1)
+    .next();
+  return document?.availableAt ?? null;
 }
 
 /**
@@ -374,6 +420,7 @@ export async function requeueFailedOutboxRecordById(
     recovery: "requeued_failed",
   });
 
+  requestOutboxDispatcherWake();
   return mapDocument(updated as OutboxMongoDocument);
 }
 
