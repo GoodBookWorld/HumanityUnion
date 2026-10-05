@@ -6,8 +6,10 @@
  * 2. Admin Terminology preferred terms (domain / workflow_stage with preferred)
  * 3. Ordinary provider translation of remaining prose
  *
- * CT persists otherwise presentation-eligible prose and records exact-term
- * mismatches as quality diagnostics. PLP producers may still reject.
+ * CT and PLP share one publication policy for natural-language prose:
+ * exact surface-form mismatches are quality diagnostics. They do not block
+ * an otherwise structurally valid publication. Brand tokens and structural
+ * completeness stay hard failures in their own checks.
  *
  * No locale-specific branches. No hard-coded "Humanity Union" runtime paths —
  * that string is only a regression fixture via the seeded concept catalog.
@@ -54,8 +56,11 @@ export async function loadPublishedTerminologyConcepts(): Promise<
 }
 
 /**
- * Validate provider output against REQUIRED preferred/protected terms present
- * in the source. Reject (do not silently READY); do not rewrite strings.
+ * Diagnose required preferred terms in natural-language prose.
+ * `ok` is false when the exact surface form is absent or the English
+ * canonical term remains. Publication policy is separate and does not
+ * reject prose for that diagnostic. This matcher does not fold case,
+ * morphology, or locale.
  */
 export function assessRequiredTerminologyProtection(input: {
   readonly concepts: readonly TerminologyConcept[];
@@ -107,6 +112,17 @@ export function assessRequiredTerminologyProtection(input: {
     violations,
     ok: violations.length === 0,
   };
+}
+
+/**
+ * Shared CT + PLP publication policy.
+ * Surface-form mismatches stay visible as diagnostics and do not reject
+ * otherwise valid natural-language prose. No locale-specific morphology.
+ */
+export function terminologyQualityDiagnosticsForPublication(
+  assessment: TerminologyProtectionAssessment,
+): readonly RequiredTerminologyViolation[] {
+  return assessment.violations;
 }
 
 export function assertRequiredTerminologyProtection(input: {

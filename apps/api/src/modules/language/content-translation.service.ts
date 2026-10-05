@@ -78,6 +78,7 @@ import { TerminologyGlossaryValidationError } from "./terminology-glossary/termi
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
 import {
   assessRequiredTerminologyProtection,
+  terminologyQualityDiagnosticsForPublication,
   loadPublishedTerminologyConcepts,
 } from "./terminology-protection-contract.js";
 import {
@@ -605,13 +606,16 @@ export async function getOrCreateContentTranslation(input: {
     sourceText,
     translatedText,
   });
-  if (!terminologyAssessment.ok) {
+  const terminologyDiagnostics = terminologyQualityDiagnosticsForPublication(
+    terminologyAssessment,
+  );
+  if (terminologyDiagnostics.length > 0) {
     logger.info("content_translation.terminology_quality_diagnostic", {
       component: "content-translation",
       sourceKind: source.sourceKind,
       sourceRecordId: source.sourceRecordId,
       targetLanguage,
-      diagnostics: terminologyAssessment.violations.map(
+      diagnostics: terminologyDiagnostics.map(
         (violation) => `${violation.conceptId}:${violation.reason}`,
       ),
     });

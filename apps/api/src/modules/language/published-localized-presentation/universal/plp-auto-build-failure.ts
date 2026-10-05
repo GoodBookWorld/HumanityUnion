@@ -276,6 +276,24 @@ export function isLegacyPacingMisclassifiedTerminalFailure(input: {
   );
 }
 
+/**
+ * ES.09 — obsolete exact-surface terminology hard gate.
+ * Matches only PROVIDER_INTEGRITY plus this category. Brand, structural,
+ * and other integrity failures stay terminal.
+ */
+export function isObsoleteTerminologyHardGateFailure(input: {
+  readonly failureCode: string | null | undefined;
+  readonly retryable: boolean | null | undefined;
+  readonly safeReason: string | null | undefined;
+}): boolean {
+  if (input.failureCode !== "PROVIDER_INTEGRITY" || input.retryable !== false) {
+    return false;
+  }
+  const text = input.safeReason ?? "";
+  const marker = "PROVIDER_INTEGRITY:TERMINOLOGY_PROTECTION_VIOLATION";
+  return text === marker || text.startsWith(`${marker};`) || text.startsWith(`${marker}:`);
+}
+
 export function mapProviderBoundaryReasonToFailure(input: {
   readonly reason: string;
   readonly message: string;

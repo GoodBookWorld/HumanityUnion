@@ -16,10 +16,15 @@ import type {
   PublicPresentationNode,
 } from "@hu/types";
 import {
+  buildProviderOwnedMachinePayload,
   isLocalizationSourceOriginalEntityType,
   plpBuildWorkKey,
   PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
 } from "@hu/types";
+
+import { planPlpProviderBatches } from "../../media-plp-materializer/provider-response-contract.js";
+import { collectMachineAutoValues } from "./process-plp-build-request.js";
+import { resolveFieldPolicyForEntityType } from "./resolve-field-policy.js";
 
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { classifyUsableLocalizedPresentation } from "../usability.js";
@@ -261,6 +266,23 @@ function skippedUsableResult(input: EnqueueInput): EnqueuePlpBuildRequestResult 
   };
 }
 
+function checkpointBatchesForEnqueue(
+  input: EnqueueInput,
+): readonly (Readonly<Record<string, string>>)[] | undefined {
+  if (input.canonicalPresentation == null) {
+    return undefined;
+  }
+  const { autoValues } = collectMachineAutoValues({
+    presentation: input.canonicalPresentation,
+    fieldPolicy: resolveFieldPolicyForEntityType(input.entityType),
+  });
+  if (Object.keys(autoValues).length === 0) {
+    return undefined;
+  }
+  const { payload } = buildProviderOwnedMachinePayload(autoValues);
+  return planPlpProviderBatches(payload);
+}
+
 /**
  * Enqueue or coalesce into durable work. Never starts Gemini here — only schedules.
  * Always returns a Promise so callers can await durable upserts (RSS refresh).
@@ -302,6 +324,7 @@ export function enqueuePlpBuildRequest(
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
       recoveryGeneration: input.recoveryGeneration,
+      checkpointBatches: checkpointBatchesForEnqueue(input),
     }).then(finalizeUpsertResult);
   }
 
@@ -325,6 +348,7 @@ export function enqueuePlpBuildRequest(
       trigger: input.trigger,
       reopenFailedSameVersion: input.reopenFailedSameVersion === true,
       recoveryGeneration: input.recoveryGeneration,
+      checkpointBatches: checkpointBatchesForEnqueue(input),
     });
     return finalizeUpsertResult(upsert);
   })();

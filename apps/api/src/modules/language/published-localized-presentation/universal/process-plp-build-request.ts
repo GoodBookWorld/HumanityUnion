@@ -35,7 +35,11 @@ import {
   ensureAllDefaultPlpAdaptersRegistered,
   ensureMediaPlpAdapterRegistered,
 } from "./register-defaults.js";
-import { getPlpAutoBuildWorkByKey } from "./plp-auto-build-work.repository.js";
+import { logger } from "../../../../shared/observability/logger.js";
+import {
+  getPlpAutoBuildWorkByKey,
+  persistPlpProviderSuccessCheckpoint,
+} from "./plp-auto-build-work.repository.js";
 import { PLP_UNIVERSAL_PROVIDER_TIMEOUT_MS } from "./safety.js";
 
 export type ProcessPlpBuildRequestDeps = {
@@ -100,7 +104,7 @@ function withTimeout<T>(
   });
 }
 
-function collectMachineAutoValues(input: {
+export function collectMachineAutoValues(input: {
   readonly presentation: unknown;
   readonly fieldPolicy: Parameters<typeof isCollectedPathMachineEligible>[1];
 }): {
@@ -319,6 +323,24 @@ export async function processPlpBuildRequest(
             PROVIDER_TRANSPORT: imported.PROVIDER_TRANSPORT,
             yieldAfterAcceptedBatch: true,
             batchCheckpoint: storedCheckpoint,
+            persistAcceptedBatchCheckpoint: async (checkpoint) => {
+              await persistPlpProviderSuccessCheckpoint({
+                workKey: request.workKey,
+                checkpoint,
+              });
+            },
+            onTerminologyQualityAssessed: (diagnostics) => {
+              if (diagnostics.length === 0) {
+                return;
+              }
+              logger.info("plp_auto_build.terminology_quality_diagnostic", {
+                component: "plp-auto-build",
+                locale: request.locale,
+                diagnostics: diagnostics.map(
+                  (item) => `${item.conceptId}:${item.reason}`,
+                ),
+              });
+            },
           }),
           timeoutMs,
           "PLP auto-build provider",
