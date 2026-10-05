@@ -39,6 +39,23 @@ function persistSessionsMap(sessions: Map<string, DecisionSession>): void {
 
 const sessions = loadSessionsMap();
 
+/**
+ * Re-bind the Decision Session store from the Mongo adapter cache after hydrate.
+ * Module import copies the cache once; that copy stays empty if it ran first.
+ * Does not save, so a rebind cannot create or rewrite durable rows.
+ */
+export function syncDecisionSessionStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const reloaded = loadSessionsMap();
+  sessions.clear();
+  for (const [sessionId, session] of reloaded) {
+    sessions.set(sessionId, session);
+  }
+}
+
 export function getSessionById(sessionId: string): DecisionSession | null {
   const session = sessions.get(sessionId);
 

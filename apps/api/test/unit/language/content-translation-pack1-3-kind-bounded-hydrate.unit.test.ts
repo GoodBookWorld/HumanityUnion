@@ -81,6 +81,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
       initiative: true,
       collaborativeAnalysis: false,
       collectiveDecision: false,
+      decisionSession: false,
+      implementationCommitment: false,
+      implementationTracking: false,
     });
 
     const bootstrap = readApi(
@@ -96,6 +99,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
       initiative: true,
       collaborativeAnalysis: true,
       collectiveDecision: true,
+      decisionSession: true,
+      implementationCommitment: true,
+      implementationTracking: true,
     });
     assert.equal(parseStagingWarmKindsFromArgv(["node", "script.ts"]), undefined);
   });
@@ -121,6 +127,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
       initiative: false,
       collaborativeAnalysis: false,
       collectiveDecision: false,
+      decisionSession: false,
+      implementationCommitment: false,
+      implementationTracking: false,
     });
     assert.deepEqual(
       resolveContentTranslationOperatorHydrateScopes(["civic_media", "public_news"]),
@@ -128,6 +137,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
         initiative: false,
         collaborativeAnalysis: false,
         collectiveDecision: false,
+        decisionSession: false,
+        implementationCommitment: false,
+        implementationTracking: false,
       },
     );
     assert.deepEqual(
@@ -136,6 +148,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
         initiative: false,
         collaborativeAnalysis: false,
         collectiveDecision: false,
+        decisionSession: false,
+        implementationCommitment: false,
+        implementationTracking: false,
       },
     );
   });
@@ -147,6 +162,9 @@ describe("Pack 1.3 — staging warm kind-bounded hydrate", () => {
         initiative: true,
         collaborativeAnalysis: true,
         collectiveDecision: false,
+        decisionSession: false,
+        implementationCommitment: false,
+        implementationTracking: false,
       },
     );
   });

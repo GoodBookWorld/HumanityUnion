@@ -8,6 +8,8 @@ export interface MongoSnapshotPersistenceHandles<TSnapshot extends { version: 1 
   };
   hydrate(): Promise<void>;
   flush(): Promise<void>;
+  /** Test-only. Replaces the adapter cache without scheduling a Mongo write. */
+  installHydratedSnapshotForTests(snapshot: TSnapshot): void;
 }
 
 interface RecordMapBinding<TSnapshot extends { version: 1 }> {
@@ -84,6 +86,9 @@ export function createMongoSnapshotPersistence<TSnapshot extends { version: 1 }>
         lastPersistError = null;
         throw error;
       }
+    },
+    installHydratedSnapshotForTests(snapshot: TSnapshot): void {
+      cache = structuredClone(snapshot);
     },
   };
 }

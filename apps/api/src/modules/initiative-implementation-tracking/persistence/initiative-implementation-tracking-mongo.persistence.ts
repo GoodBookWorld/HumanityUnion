@@ -7,6 +7,7 @@ import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collect
 import {
   createEmptyInitiativeImplementationTrackingPersistenceSnapshot,
   type InitiativeImplementationTrackingPersistenceAdapter,
+  type InitiativeImplementationTrackingPersistenceSnapshot,
 } from "./initiative-implementation-tracking-persistence.types.js";
 
 const handles = createMongoSnapshotPersistence({
@@ -51,4 +52,11 @@ export async function flushInitiativeImplementationTrackingMongoPersistence(): P
   }
 
   await handles.flush();
+}
+
+/** Test-only. Fills the adapter cache the way hydrate() does, without Mongo I/O. */
+export function installHydratedImplementationTrackingSnapshotForTests(
+  snapshot: InitiativeImplementationTrackingPersistenceSnapshot,
+): void {
+  handles.installHydratedSnapshotForTests(snapshot);
 }

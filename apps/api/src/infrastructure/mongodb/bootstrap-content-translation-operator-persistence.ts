@@ -15,6 +15,10 @@
  * hydrate+sync here, reconcile can enqueue CD warms while the warm consumer
  * loads null (`skipped_missing_source`) and leaves identities MISSING.
  *
+ * Decision Session, Implementation Commitment, and Implementation Tracking use
+ * the same import-time map. Hydrate without sync leaves those maps empty, so
+ * warm discovery and reconciliation never see durable public rows.
+ *
  * Pack 1.3 — `--kinds` can narrow which snapshot maps are hydrated:
  *   initiative-scoped kinds → Initiative store
  *   collaborative_analysis → CA store (+ Initiative when scoped)
@@ -31,8 +35,11 @@
  */
 
 import { shouldBootstrapMongoPersistence } from "../../config/production-persistence-contract.js";
+import { hydrateDecisionSessionMongoPersistence } from "../../modules/decision-session/persistence/decision-session-mongo.persistence.js";
 import { hydrateInitiativeCollaborativeAnalysisMongoPersistence } from "../../modules/initiative-collaborative-analysis/persistence/initiative-collaborative-analysis-mongo.persistence.js";
 import { hydrateInitiativeCollectiveDecisionMongoPersistence } from "../../modules/initiative-collective-decision/persistence/initiative-collective-decision-mongo.persistence.js";
+import { hydrateInitiativeImplementationCommitmentMongoPersistence } from "../../modules/initiative-implementation-commitment/persistence/initiative-implementation-commitment-mongo.persistence.js";
+import { hydrateInitiativeImplementationTrackingMongoPersistence } from "../../modules/initiative-implementation-tracking/persistence/initiative-implementation-tracking-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
 import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/language-registry.repository.js";
 import {
@@ -87,6 +94,15 @@ export async function bootstrapContentTranslationOperatorPersistence(input?: {
   if (hydrateScopes.collectiveDecision) {
     hydrateTasks.push(hydrateInitiativeCollectiveDecisionMongoPersistence());
   }
+  if (hydrateScopes.decisionSession) {
+    hydrateTasks.push(hydrateDecisionSessionMongoPersistence());
+  }
+  if (hydrateScopes.implementationCommitment) {
+    hydrateTasks.push(hydrateInitiativeImplementationCommitmentMongoPersistence());
+  }
+  if (hydrateScopes.implementationTracking) {
+    hydrateTasks.push(hydrateInitiativeImplementationTrackingMongoPersistence());
+  }
   if (hydrateTasks.length > 0) {
     await Promise.all(hydrateTasks);
   }
@@ -110,6 +126,27 @@ export async function bootstrapContentTranslationOperatorPersistence(input?: {
       "../../modules/initiative-collective-decision/initiative-collective-decision.store.js"
     );
     syncInitiativeCollectiveDecisionStoreAfterMongoHydrate();
+  }
+
+  if (hydrateScopes.decisionSession) {
+    const { syncDecisionSessionStoreAfterMongoHydrate } = await import(
+      "../../modules/decision-session/decision-session.store.js"
+    );
+    syncDecisionSessionStoreAfterMongoHydrate();
+  }
+
+  if (hydrateScopes.implementationCommitment) {
+    const { syncInitiativeImplementationCommitmentStoreAfterMongoHydrate } = await import(
+      "../../modules/initiative-implementation-commitment/initiative-implementation-commitment.store.js"
+    );
+    syncInitiativeImplementationCommitmentStoreAfterMongoHydrate();
+  }
+
+  if (hydrateScopes.implementationTracking) {
+    const { syncInitiativeImplementationTrackingStoreAfterMongoHydrate } = await import(
+      "../../modules/initiative-implementation-tracking/initiative-implementation-tracking.store.js"
+    );
+    syncInitiativeImplementationTrackingStoreAfterMongoHydrate();
   }
 
   return { mode: "lightweight_discovery", hydrateScopes };
