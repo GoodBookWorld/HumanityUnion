@@ -624,7 +624,10 @@ function LanguageReadinessDetails({
           Search is independent of the catalog, civic content, and overall presentation.
         </p>
         <div>Search enabled: {yesNo(report.registry.searchEnabled)}</div>
-        <div>Search-ready: {yesNo(report.searchLocalizationReady)}</div>
+        <div>
+          Search-ready:{" "}
+          {yesNo(report.registry.enabled === true && report.registry.searchEnabled === true)}
+        </div>
       </section>
 
       <section className="admin-languages__readiness-section">
@@ -931,7 +934,11 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
       setStatus(
         `${row.locale}: Enabled=${report.registry.enabled ? "yes" : "no"}` +
           `; Search flag=${report.registry.searchEnabled ? "on" : "off"}` +
-          `; Search-ready=${report.searchLocalizationReady ? "yes" : "no"}` +
+          `; Search-ready=${
+            report.registry.enabled === true && report.registry.searchEnabled === true
+              ? "yes"
+              : "no"
+          }` +
           `; Overall presentation=${report.state}` +
           `; SEO indexable=${report.seoReady ? "yes" : "no"}`,
       );

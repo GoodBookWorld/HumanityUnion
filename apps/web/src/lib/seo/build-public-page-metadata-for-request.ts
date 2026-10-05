@@ -30,6 +30,7 @@ import {
   resolvePublicSeoSelfCanonicalPath,
   toNextMetadataLanguageAlternates,
 } from "./hreflang-policy";
+import { buildPublicSeoLocalizedVariantPredicate } from "./public-seo-localized-eligibility-loader";
 import {
   normalizeCanonicalPath,
   resolvePublicSiteOrigin,
@@ -44,6 +45,15 @@ export type ResolvePublicSeoMetadataDocumentPathsInput = {
   /** Optional document overrides for deterministic tests. */
   readonly urlLocaleSegment?: string | null;
   readonly pathname?: string | null;
+  /**
+   * Page-specific localized eligibility. Production (no catalog override)
+   * loads owner evidence. Tests that pass `catalog` keep route-level alternates
+   * unless they supply this predicate.
+   */
+  readonly isLocalizedVariantEligible?: (
+    localeFreePath: string,
+    locale: string,
+  ) => boolean;
 };
 
 export type ResolvedPublicSeoMetadataDocumentPaths = {
@@ -51,6 +61,12 @@ export type ResolvedPublicSeoMetadataDocumentPaths = {
   readonly selfCanonicalPath: string;
   /** Null when alternates must not be emitted (outside perimeter / empty / failure). */
   readonly languageAlternates: Readonly<Record<string, string>> | null;
+  /**
+   * Locale-prefixed request whose page has no authoritative localized
+   * representation. Canonical collapses to the locale-free document and the
+   * response must not be indexed as its own localized document.
+   */
+  readonly suppressLocalizedIndexing: boolean;
 };
 
 function listSeoIndexableLocales(
@@ -98,6 +114,7 @@ export async function resolvePublicSeoMetadataDocumentPaths(
         localeFreePath,
         selfCanonicalPath: localeFreePath,
         languageAlternates: null,
+        suppressLocalizedIndexing: false,
       };
     }
 
@@ -111,14 +128,45 @@ export async function resolvePublicSeoMetadataDocumentPaths(
         : {}),
     });
 
-    const seoLocales = listSeoIndexableLocales(catalog);
+    let seoLocales = listSeoIndexableLocales(catalog);
+    let suppressLocalizedIndexing = false;
 
-    const selfCanonicalPath = resolvePublicSeoSelfCanonicalPath({
-      localeFreePath,
-      isLocalePrefixedDocument: document.isLocalePrefixedDocument === true,
-      documentLocale: document.normalizedLocale,
-      defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
-    });
+    const explicitEligibility = Object.prototype.hasOwnProperty.call(
+      input,
+      "isLocalizedVariantEligible",
+    );
+    const eligibility = explicitEligibility
+      ? input.isLocalizedVariantEligible
+      : hasCatalogOverride
+        ? undefined
+        : await buildPublicSeoLocalizedVariantPredicate({
+            localeFreePaths: [localeFreePath],
+            locales: seoLocales,
+          });
+
+    if (eligibility) {
+      seoLocales = seoLocales.filter((locale) => eligibility(localeFreePath, locale));
+      const documentLocaleKey = document.normalizedLocale
+        ? normalizeLanguageRegistryLocaleKey(document.normalizedLocale)
+        : "";
+      const documentEligible =
+        documentLocaleKey.length > 0 &&
+        seoLocales.some(
+          (locale) => normalizeLanguageRegistryLocaleKey(locale) === documentLocaleKey,
+        );
+      if (document.isLocalePrefixedDocument === true && !documentEligible) {
+        suppressLocalizedIndexing = true;
+      }
+    }
+
+    const selfCanonicalPath = suppressLocalizedIndexing
+      ? localeFreePath
+      : resolvePublicSeoSelfCanonicalPath({
+          localeFreePath,
+          isLocalePrefixedDocument: document.isLocalePrefixedDocument === true,
+          documentLocale: document.normalizedLocale,
+          defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
+        });
 
     const hreflang = resolvePublicSeoHreflangPaths({
       localeFreePath,
@@ -131,6 +179,7 @@ export async function resolvePublicSeoMetadataDocumentPaths(
         localeFreePath,
         selfCanonicalPath,
         languageAlternates: null,
+        suppressLocalizedIndexing,
       };
     }
 
@@ -143,12 +192,14 @@ export async function resolvePublicSeoMetadataDocumentPaths(
       localeFreePath,
       selfCanonicalPath,
       languageAlternates,
+      suppressLocalizedIndexing,
     };
   } catch {
     return {
       localeFreePath,
       selfCanonicalPath: localeFreePath,
       languageAlternates: null,
+      suppressLocalizedIndexing: false,
     };
   }
 }
@@ -163,6 +214,10 @@ export async function buildPublicPageMetadataForRequest(
     readonly catalog?: readonly PublicSeoLocaleRoutingCatalogEntry[];
     readonly urlLocaleSegment?: string | null;
     readonly pathname?: string | null;
+    readonly isLocalizedVariantEligible?: (
+      localeFreePath: string,
+      locale: string,
+    ) => boolean;
   },
 ): Promise<Metadata> {
   const localeFreeCanonicalPath = normalizeCanonicalPath(
@@ -180,11 +235,15 @@ export async function buildPublicPageMetadataForRequest(
     ...(Object.prototype.hasOwnProperty.call(input, "pathname")
       ? { pathname: input.pathname }
       : {}),
+    ...(Object.prototype.hasOwnProperty.call(input, "isLocalizedVariantEligible")
+      ? { isLocalizedVariantEligible: input.isLocalizedVariantEligible }
+      : {}),
   });
 
   return buildPublicPageMetadata({
     ...input,
     canonicalPath: resolved.selfCanonicalPath,
     languageAlternates: resolved.languageAlternates,
+    ...(resolved.suppressLocalizedIndexing ? { indexable: false } : {}),
   });
 }

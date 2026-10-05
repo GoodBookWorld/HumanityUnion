@@ -99,7 +99,8 @@ describe("Admin Languages readiness details", () => {
     assert.match(details, /<h4[^>]*>Search<\/h4>/);
     assert.match(details, /<h4[^>]*>SEO<\/h4>/);
     assert.match(details, /report\.registry\.searchEnabled/);
-    assert.match(details, /report\.searchLocalizationReady/);
+    assert.match(details, /report\.registry\.enabled === true && report\.registry\.searchEnabled === true/);
+    assert.doesNotMatch(details, /searchLocalizationReady/);
     assert.match(details, /report\.seoReady/);
     assert.match(details, /independent of the catalog/);
     assert.match(details, /independent of localization completeness/);
