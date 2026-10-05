@@ -320,7 +320,7 @@ describe("Pack 08I.16.1 — lightweight discovery regression", () => {
     const bootstrap = readApi(
       "src/infrastructure/mongodb/bootstrap-content-translation-operator-persistence.ts",
     );
-    assert.doesNotMatch(bootstrap, /hydrateDecisionSessionMongoPersistence/);
+    assert.match(bootstrap, /hydrateScopes\.decisionSession/);
     assert.doesNotMatch(bootstrap, /hydrateCivicActionPackageMongoPersistence/);
     assert.doesNotMatch(bootstrap, /hydratePublicCivicArchiveMongoPersistence/);
     assert.doesNotMatch(bootstrap, /ensureTerminologyGlossarySeeded/);

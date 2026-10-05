@@ -372,6 +372,9 @@ describe("Localization Authority Closure 08 — integrity contract", () => {
         initiative: true,
         collaborativeAnalysis: true,
         collectiveDecision: false,
+        decisionSession: false,
+        implementationCommitment: false,
+        implementationTracking: false,
       },
     );
     const script = readApi("scripts/check-localization-integrity.ts");

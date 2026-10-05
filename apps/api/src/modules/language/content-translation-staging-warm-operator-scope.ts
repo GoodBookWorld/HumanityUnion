@@ -59,6 +59,9 @@ export type ContentTranslationOperatorHydrateScopes = {
   readonly initiative: boolean;
   readonly collaborativeAnalysis: boolean;
   readonly collectiveDecision: boolean;
+  readonly decisionSession: boolean;
+  readonly implementationCommitment: boolean;
+  readonly implementationTracking: boolean;
 };
 
 export function isStagingWarmHelpRequested(
@@ -160,6 +163,9 @@ export function resolveContentTranslationOperatorHydrateScopes(
       initiative: true,
       collaborativeAnalysis: true,
       collectiveDecision: true,
+      decisionSession: true,
+      implementationCommitment: true,
+      implementationTracking: true,
     };
   }
 
@@ -172,6 +178,9 @@ export function resolveContentTranslationOperatorHydrateScopes(
     initiative: needsInitiative,
     collaborativeAnalysis: allowed.has("collaborative_analysis"),
     collectiveDecision: allowed.has("collective_decision"),
+    decisionSession: allowed.has("decision_session"),
+    implementationCommitment: allowed.has("implementation_commitment"),
+    implementationTracking: allowed.has("implementation_tracking"),
   };
 }
 

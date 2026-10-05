@@ -14,6 +14,7 @@ import { auditContentTranslationMaterialization } from "./content-translation-st
 import {
   StagingWarmCliValidationError,
   isWarmRecoveryKind,
+  type ContentTranslationOperatorHydrateScopes,
   type StagingWarmSourceKind,
 } from "./content-translation-staging-warm-operator-scope.js";
 import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
@@ -157,15 +158,16 @@ export function parseStagingWarmExactForceFromArgv(
 /**
  * Exact-record hydrate: only the store needed to load that kind — never Initiative walk.
  */
-export function resolveExactRecordHydrateScopes(sourceKind: StagingWarmSourceKind): {
-  readonly initiative: boolean;
-  readonly collaborativeAnalysis: boolean;
-  readonly collectiveDecision: boolean;
-} {
+export function resolveExactRecordHydrateScopes(
+  sourceKind: StagingWarmSourceKind,
+): ContentTranslationOperatorHydrateScopes {
   return {
     initiative: sourceKind === "initiative",
     collaborativeAnalysis: sourceKind === "collaborative_analysis",
     collectiveDecision: sourceKind === "collective_decision",
+    decisionSession: sourceKind === "decision_session",
+    implementationCommitment: sourceKind === "implementation_commitment",
+    implementationTracking: sourceKind === "implementation_tracking",
   };
 }
 
