@@ -21,7 +21,12 @@ import {
   QUEUE_ACTIVE_PROVIDER_DORMANT,
   setMediaLocalizationBuildHookStatus,
 } from "../media/publication-hook.js";
-import { kickPlpAutoBuildDrain, setPlpBuildRequestProcessor } from "./build-request-queue.js";
+import {
+  kickPlpAutoBuildDrain,
+  recoverPlpScheduleOnBoot,
+  runPlpSafetySweep,
+  setPlpBuildRequestProcessor,
+} from "./build-request-queue.js";
 import { processPlpBuildRequest } from "./process-plp-build-request.js";
 import {
   refreshPlpAutoBuildQueueDepthFromStore,
@@ -29,11 +34,13 @@ import {
   setPlpAutoBuildProcessorRegistered,
   setPlpAutoBuildStartupStatus,
 } from "./plp-auto-build-runtime.js";
+import {
+  resetPlpAutoBuildSchedulerForTests,
+  setPlpSchedulerHandlers,
+  startPlpSafetySweep,
+  stopPlpAutoBuildScheduler,
+} from "./plp-auto-build-scheduler.js";
 import { resolvePlpAutoBuildLocales } from "./public-source-mutation-bridge.js";
-
-const DRAIN_INTERVAL_MS = 3_000;
-
-let drainTimer: NodeJS.Timeout | null = null;
 
 export type RegisterPlpAutoBuildProcessorResult = {
   readonly registered: boolean;
@@ -46,20 +53,19 @@ export type RegisterPlpAutoBuildProcessorResult = {
 };
 
 function stopPlpAutoBuildDrainInterval(): void {
-  if (drainTimer) {
-    clearInterval(drainTimer);
-    drainTimer = null;
-  }
+  stopPlpAutoBuildScheduler();
 }
 
-function startPlpAutoBuildDrainInterval(): void {
-  if (drainTimer) {
-    return;
-  }
-  drainTimer = setInterval(() => {
-    kickPlpAutoBuildDrain();
-  }, DRAIN_INTERVAL_MS);
-  drainTimer.unref?.();
+function startPlpAutoBuildScheduler(): void {
+  setPlpSchedulerHandlers({
+    onDue: () => {
+      kickPlpAutoBuildDrain();
+    },
+    onSafety: () => {
+      void runPlpSafetySweep();
+    },
+  });
+  startPlpSafetySweep();
 }
 
 function applyRegistration(
@@ -132,7 +138,7 @@ export type BootstrapPlpAutoBuildRuntimeResult = RegisterPlpAutoBuildProcessorRe
 };
 
 /**
- * Deterministic API startup: Registry locales → persistence → register → drain interval + kick.
+ * Deterministic API startup: Registry locales → persistence → register → one boot recovery.
  */
 export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBuildRuntimeResult> {
   const queueBackend = resolvePlpAutoBuildQueueBackend();
@@ -201,8 +207,8 @@ export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBu
     });
   }
 
-  startPlpAutoBuildDrainInterval();
-  kickPlpAutoBuildDrain();
+  startPlpAutoBuildScheduler();
+  await recoverPlpScheduleOnBoot();
 
   setPlpAutoBuildStartupStatus({
     registered: true,
@@ -227,9 +233,10 @@ export async function bootstrapPlpAutoBuildRuntime(): Promise<BootstrapPlpAutoBu
   };
 }
 
-/** Test helper — stop drain interval between cases. */
+/** Test helper — stop the due timer and safety sweep between cases. */
 export function stopPlpAutoBuildRuntimeForTests(): void {
   stopPlpAutoBuildDrainInterval();
+  resetPlpAutoBuildSchedulerForTests();
   setPlpBuildRequestProcessor(null);
   setPlpAutoBuildProcessorRegistered(false);
   setMediaLocalizationBuildHookStatus(QUEUE_ACTIVE_PROVIDER_DORMANT);

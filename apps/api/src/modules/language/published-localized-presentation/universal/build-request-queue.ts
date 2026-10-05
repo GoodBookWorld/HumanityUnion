@@ -38,16 +38,23 @@ import {
   recordPlpAutoBuildWorkAccepted,
   recordPlpAutoBuildWorkDeduped,
   recordPlpAutoBuildWorkSkippedUsable,
-  refreshPlpAutoBuildQueueDepthFromStore,
   setPlpAutoBuildProcessorRunning,
 } from "./plp-auto-build-runtime.js";
+import {
+  armPlpDueTimer,
+  clearPlpDueTimer,
+  plpSchedulerNowMs,
+} from "./plp-auto-build-scheduler.js";
 import {
   structuredFailure,
   type ProcessPlpBuildRequestResult,
 } from "./plp-auto-build-failure.js";
 import {
   claimNextPlpAutoBuildWork,
+  findEarliestPlpFutureDueAt,
   listPlpAutoBuildWorkForTests,
+  probePlpAutoBuildImmediatelyDue,
+  readPlpProviderNotBeforeMs,
   markPlpAutoBuildWorkCompleted,
   persistPlpBatchCheckpointYield,
   markPlpAutoBuildWorkFailed,
@@ -70,6 +77,7 @@ let running = 0;
 let processor: ProcessorFn | null = null;
 let drainInProgress = false;
 let drainKickPending = false;
+let drainPromise: Promise<void> | null = null;
 
 /**
  * Production (and test) processor wiring. Sets the handler and kicks drain
@@ -97,6 +105,8 @@ export function resetPlpBuildRequestQueueForTests(): void {
   processor = null;
   drainInProgress = false;
   drainKickPending = false;
+  drainPromise = null;
+  clearPlpDueTimer();
   resetPlpAutoBuildWorkStoreForTests();
 }
 
@@ -236,7 +246,6 @@ function finalizeUpsertResult(
   } else {
     recordPlpAutoBuildWorkAccepted();
   }
-  void refreshPlpAutoBuildQueueDepthFromStore();
   kickPlpAutoBuildDrain();
   return {
     request: workToRequest(upsert.record),
@@ -354,22 +363,97 @@ export function enqueuePlpBuildRequest(
   })();
 }
 
-/** Kick bounded drain (non-blocking). */
+/** Kick bounded drain (non-blocking). Overlapping wakes coalesce to one follow-up. */
 export function kickPlpAutoBuildDrain(): void {
-  if (drainInProgress) {
+  if (drainInProgress || running > 0) {
     drainKickPending = true;
     return;
   }
-  void drainPlpBuildQueue();
+  drainKickPending = false;
+  drainInProgress = true;
+  drainPromise = drainPlpBuildQueue().finally(() => {
+    drainInProgress = false;
+    const again = drainKickPending;
+    drainKickPending = false;
+    if (again) {
+      kickPlpAutoBuildDrain();
+    }
+  });
+}
+
+export function plpDrainInProgressForTests(): boolean {
+  return drainInProgress;
+}
+
+export async function settlePlpAutoBuildDrainForTests(): Promise<void> {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const current = drainPromise;
+    if (current) {
+      await current;
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+    if (!drainInProgress && !drainKickPending && running === 0) {
+      return;
+    }
+  }
+}
+
+/**
+ * Idle safety: one due probe. No governor read, no claim, no write, no status group
+ * when nothing is due.
+ */
+export async function runPlpSafetySweep(): Promise<void> {
+  const due = await probePlpAutoBuildImmediatelyDue();
+  if (!due) {
+    return;
+  }
+  kickPlpAutoBuildDrain();
+}
+
+/** One boot scan: process due work, otherwise arm the earliest future due time. */
+export async function recoverPlpScheduleOnBoot(): Promise<void> {
+  const due = await probePlpAutoBuildImmediatelyDue();
+  if (due) {
+    kickPlpAutoBuildDrain();
+    return;
+  }
+  const future = await findEarliestPlpFutureDueAt();
+  if (!future) {
+    clearPlpDueTimer();
+    return;
+  }
+  const at = Date.parse(future);
+  if (Number.isFinite(at)) {
+    armPlpDueTimer(at);
+  }
+}
+
+async function reconcilePlpDueTimer(): Promise<void> {
+  if (processor == null) {
+    return;
+  }
+  const due = await probePlpAutoBuildImmediatelyDue();
+  if (due) {
+    const notBefore = await readPlpProviderNotBeforeMs(plpSchedulerNowMs());
+    if (notBefore != null && notBefore > plpSchedulerNowMs()) {
+      armPlpDueTimer(notBefore);
+    }
+    return;
+  }
+  const future = await findEarliestPlpFutureDueAt();
+  if (!future) {
+    clearPlpDueTimer();
+    return;
+  }
+  const at = Date.parse(future);
+  if (Number.isFinite(at)) {
+    armPlpDueTimer(at);
+  }
 }
 
 async function drainPlpBuildQueue(): Promise<void> {
-  if (drainInProgress) {
-    drainKickPending = true;
-    return;
-  }
-  drainInProgress = true;
   setPlpAutoBuildProcessorRunning(true);
+  let admissionHold = false;
   try {
     const concurrency = resolvePlpProviderConcurrency();
     while (running < concurrency) {
@@ -377,7 +461,17 @@ async function drainPlpBuildQueue(): Promise<void> {
         // Leave durable pending until processor registers — no spin.
         break;
       }
-      const claimed = await claimNextPlpAutoBuildWork();
+      const due = await probePlpAutoBuildImmediatelyDue();
+      if (!due) {
+        break;
+      }
+      const notBefore = await readPlpProviderNotBeforeMs(plpSchedulerNowMs());
+      if (notBefore != null && notBefore > plpSchedulerNowMs()) {
+        armPlpDueTimer(notBefore);
+        admissionHold = true;
+        break;
+      }
+      const claimed = await claimNextPlpAutoBuildWork({ skipProviderAdmission: true });
       if (!claimed) {
         break;
       }
@@ -390,13 +484,10 @@ async function drainPlpBuildQueue(): Promise<void> {
       });
     }
   } finally {
-    drainInProgress = false;
     setPlpAutoBuildProcessorRunning(running > 0);
-    if (drainKickPending) {
-      drainKickPending = false;
-      kickPlpAutoBuildDrain();
+    if (!admissionHold && running === 0) {
+      await reconcilePlpDueTimer();
     }
-    await refreshPlpAutoBuildQueueDepthFromStore();
   }
 }
 
