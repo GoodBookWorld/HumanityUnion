@@ -598,6 +598,13 @@ export async function processContentTranslationWarmRequested(
     localeCount: locales.length,
   });
 
+  if (targets.length > 0) {
+    void import("./localization-reconciliation-driver.js").then(
+      ({ wakeReadinessAfterContentTranslationPublish }) =>
+        wakeReadinessAfterContentTranslationPublish(targets),
+    );
+  }
+
   return {
     sourceKind: source.sourceKind,
     sourceRecordId: source.sourceRecordId,

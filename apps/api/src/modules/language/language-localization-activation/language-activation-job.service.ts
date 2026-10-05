@@ -308,6 +308,119 @@ export async function applySuppliedReadinessToRunningActivation(input: {
  * After a PLP publish, derive the active activation job from live readiness.
  * Reuses the activation status function. No second readiness algorithm.
  */
+export function isAuthoritativeLocalizationReady(
+  readiness: Pick<
+    LanguageLocalizationReadinessReport,
+    "state" | "languageDataReady" | "ct" | "plpMedia"
+  >,
+): boolean {
+  if (readiness.state !== "READY" || readiness.languageDataReady !== true) {
+    return false;
+  }
+  return [readiness.ct, readiness.plpMedia].every(
+    (bucket) =>
+      bucket.workItemsRequired === 0 &&
+      bucket.missing === 0 &&
+      bucket.stale === 0 &&
+      bucket.invalid === 0 &&
+      bucket.failed === 0 &&
+      bucket.pending === 0 &&
+      (bucket.activeWork ?? 0) === 0 &&
+      (bucket.preflightBlocked ?? 0) === 0,
+  );
+}
+
+/**
+ * Same locale and generation, failed only because automatic localization
+ * could not progress, and the live readiness result is authoritative READY.
+ * Does not open a new generation and does not call a provider.
+ */
+export function isEligibleFailedActivationConvergence(
+  job: LanguageActivationJobRecord,
+  readiness: Pick<
+    LanguageLocalizationReadinessReport,
+    "state" | "languageDataReady" | "ct" | "plpMedia"
+  >,
+  locale: string,
+): boolean {
+  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+  if (!localeKey || normalizeLanguageRegistryLocaleKey(job.locale) !== localeKey) {
+    return false;
+  }
+  if (job.status !== "failed") {
+    return false;
+  }
+  if (job.lastError !== ACTIVATION_AUTOMATIC_EXHAUSTED_DETAIL) {
+    return false;
+  }
+  if (
+    job.domains.brand.status === "failed" ||
+    job.domains.brand.providerFailure ||
+    job.domains.terminology.status === "failed" ||
+    job.domains.terminology.providerFailure ||
+    job.domains.webUi.status === "failed" ||
+    job.domains.webUi.providerFailure
+  ) {
+    return false;
+  }
+  return isAuthoritativeLocalizationReady(readiness);
+}
+
+/**
+ * failed → completed exactly once for the current generation.
+ * A completed job is returned unchanged and is not written again.
+ */
+export async function convergeFailedActivationWhenAuthoritativeReady(
+  locale: string,
+  readiness?: LanguageLocalizationReadinessReport,
+): Promise<LanguageActivationJobRecord | null> {
+  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+  if (!localeKey) {
+    return null;
+  }
+  const job = await getLatestLanguageActivationJobByLocale(localeKey);
+  if (!job || job.status !== "failed") {
+    return job?.status === "completed" ? job : null;
+  }
+  let measured = readiness;
+  if (!measured) {
+    let registry: LanguageRegistryRecord | null;
+    try {
+      registry = await resolveLanguageRegistryLocale(localeKey);
+    } catch {
+      return null;
+    }
+    if (!registry) {
+      return null;
+    }
+    const evaluate = processDeps().evaluateReadiness ?? evaluateLanguageLocalizationReadiness;
+    measured = await evaluate({
+      locale: registry.locale,
+      registryRecord: registry,
+    });
+  }
+  if (!isEligibleFailedActivationConvergence(job, measured, localeKey)) {
+    return null;
+  }
+  const completedAt = nowIso();
+  return saveLanguageActivationJob({
+    ...job,
+    status: "completed",
+    updatedAt: completedAt,
+    completedAt,
+    lastError: job.lastError,
+    diagnosticSummary: [
+      "job=completed",
+      "converged_from=failed",
+      `generation=${job.generation}`,
+      `priorError=${job.lastError ?? ""}`,
+      job.diagnosticSummary ?? "",
+    ]
+      .filter((part) => part.length > 0)
+      .join(" · "),
+  });
+}
+
 export async function syncRunningActivationAfterPlpPublish(locale: string): Promise<void> {
   const job = await getActiveLanguageActivationJobByLocale(locale);
   if (!job || !isClaimedActivationStatus(job.status)) {

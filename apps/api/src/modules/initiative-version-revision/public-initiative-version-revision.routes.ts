@@ -6,7 +6,6 @@ import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { setInitiativeRevisionReaction } from "../initiative-revision-reactions/index.js";
-import { createInitialInitiativeVersionRevision } from "./initiative-version-revision.service.js";
 import {
   getPublicInitiativeVersionHistory,
   getPublicInitiativeVersionRevision,
@@ -42,7 +41,6 @@ publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions", async (req
     return;
   }
 
-  createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
   const history = await getPublicInitiativeVersionHistory(req.params.initiativeId);
 
   res.json(createSuccessResponse(history, "Public initiative version history loaded."));
@@ -68,7 +66,6 @@ publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions/:version", a
     return;
   }
 
-  createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
   const revision = await getPublicInitiativeVersionRevision(
     req.params.initiativeId,
     version,

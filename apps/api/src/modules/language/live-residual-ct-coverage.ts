@@ -37,6 +37,8 @@ type MutableBucket = {
   invalid: number;
   failed: number;
   pending: number;
+  activeWork: number;
+  preflightBlocked: number;
   workItemsRequired: number;
 };
 
@@ -48,6 +50,8 @@ function emptyMutable(): MutableBucket {
     invalid: 0,
     failed: 0,
     pending: 0,
+    activeWork: 0,
+    preflightBlocked: 0,
     workItemsRequired: 0,
   };
 }
@@ -80,8 +84,10 @@ export function applyLiveResidualBucket(
       bucket.failed += 1;
       return;
     case "ACTIVE_WORK":
+      bucket.activeWork += 1;
+      return;
     case "SOURCE_OR_PREFLIGHT_BLOCKED":
-      bucket.pending += 1;
+      bucket.preflightBlocked += 1;
       return;
     default: {
       const _exhaustive: never = classification;

@@ -82,6 +82,34 @@ export function createRevision(revision: InitiativeVersionRevision): InitiativeV
   return structuredClone(revision);
 }
 
+/**
+ * Adopt a revision that was already written to the durable collection.
+ * Does not call save(), so a partial memory map cannot replace historical rows.
+ */
+export function rememberRevisionWithoutPersist(revision: InitiativeVersionRevision): void {
+  revisions.set(revision.revisionId, structuredClone(revision));
+}
+
+/**
+ * Re-bind the revision store from the Mongo adapter cache after hydrate.
+ * Module import copies the cache once; that copy stays empty if it ran first.
+ */
+export function syncInitiativeVersionRevisionStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const snapshot = persistence.load();
+  revisions.clear();
+  for (const [revisionId, revision] of Object.entries(snapshot.revisions)) {
+    revisions.set(revisionId, structuredClone(revision));
+  }
+  drafts.clear();
+  for (const [initiativeId, draft] of Object.entries(snapshot.drafts)) {
+    drafts.set(initiativeId, structuredClone(draft));
+  }
+}
+
 export function getRevisionDraftByInitiativeId(
   initiativeId: string,
 ): InitiativeRevisionDraft | null {

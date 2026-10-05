@@ -291,7 +291,8 @@ function CountSummary({
   missing,
   invalid = 0,
   failed = 0,
-  pending = 0,
+  activeWork = 0,
+  preflightBlocked = 0,
   workItemsRequired,
 }: {
   readonly current: number;
@@ -299,13 +300,15 @@ function CountSummary({
   readonly missing: number;
   readonly invalid?: number;
   readonly failed?: number;
-  readonly pending?: number;
+  readonly activeWork?: number;
+  readonly preflightBlocked?: number;
   readonly workItemsRequired: number;
 }) {
   return (
     <span>
       Current={current} · Stale={stale} · Missing={missing} · Invalid={invalid} · Blocked={failed}
-      {pending > 0 ? ` · Not actionable=${pending}` : ""} · Work remaining=
+      {activeWork > 0 ? ` · Active work=${activeWork}` : ""}
+      {preflightBlocked > 0 ? ` · Not actionable=${preflightBlocked}` : ""} · Work remaining=
       {workItemsRequired}
     </span>
   );
@@ -473,7 +476,8 @@ function LanguageReadinessDetails({
             missing={report.ct.missing}
             invalid={report.ct.invalid}
             failed={report.ct.failed}
-            pending={report.ct.pending}
+            activeWork={report.ct.activeWork ?? 0}
+            preflightBlocked={report.ct.preflightBlocked ?? 0}
             workItemsRequired={report.ct.workItemsRequired}
           />
         </div>
@@ -488,7 +492,8 @@ function LanguageReadinessDetails({
                   missing={row.counts!.missing}
                   invalid={row.counts!.invalid}
                   failed={row.counts!.failed}
-                  pending={row.counts!.pending}
+                  activeWork={row.counts!.activeWork ?? 0}
+                  preflightBlocked={row.counts!.preflightBlocked ?? 0}
                   workItemsRequired={row.counts!.workItemsRequired}
                 />
               </li>
@@ -508,7 +513,8 @@ function LanguageReadinessDetails({
             missing={report.pwaCivic.coverage.missing}
             invalid={report.pwaCivic.coverage.invalid ?? 0}
             failed={report.pwaCivic.coverage.failed}
-            pending={report.pwaCivic.coverage.pending}
+            activeWork={report.pwaCivic.coverage.activeWork ?? 0}
+            preflightBlocked={report.pwaCivic.coverage.preflightBlocked ?? 0}
             workItemsRequired={report.pwaCivic.coverage.workItemsRequired}
           />
         </div>
@@ -527,7 +533,8 @@ function LanguageReadinessDetails({
             missing={report.plpMedia.missing}
             invalid={report.plpMedia.invalid}
             failed={report.plpMedia.failed}
-            pending={report.plpMedia.pending}
+            activeWork={report.plpMedia.activeWork ?? 0}
+            preflightBlocked={report.plpMedia.preflightBlocked ?? 0}
             workItemsRequired={report.plpMedia.workItemsRequired}
           />
         </div>
