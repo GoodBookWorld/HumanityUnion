@@ -112,6 +112,54 @@ export function resolvePlpBatchResume(input: {
   };
 }
 
+/**
+ * A checkpoint can continue only when its identity matches this source
+ * version and, when the live plan is known, the same fingerprint and keys
+ * `resolvePlpBatchResume` would accept. `nextBatchIndex == batchCount` is a
+ * complete provider checkpoint, not a corrupt one.
+ */
+export function isCompatiblePlpBatchCheckpoint(input: {
+  readonly sourceVersion: string;
+  readonly checkpoint: PlpBatchCheckpoint | null | undefined;
+  readonly batches?: readonly (Readonly<Record<string, string>>)[];
+}): boolean {
+  const checkpoint = input.checkpoint;
+  if (!checkpoint) {
+    return false;
+  }
+  if (checkpoint.sourceVersion !== input.sourceVersion) {
+    return false;
+  }
+  if (!/^[a-f0-9]{32}$/.test(checkpoint.planFingerprint)) {
+    return false;
+  }
+  if (!Number.isInteger(checkpoint.batchCount) || checkpoint.batchCount < 1) {
+    return false;
+  }
+  if (
+    !Number.isInteger(checkpoint.nextBatchIndex) ||
+    checkpoint.nextBatchIndex < 1 ||
+    checkpoint.nextBatchIndex > checkpoint.batchCount
+  ) {
+    return false;
+  }
+  if (Object.keys(checkpoint.segments).length === 0) {
+    return false;
+  }
+  if (!plpBatchCheckpointWithinBounds(checkpoint.segments)) {
+    return false;
+  }
+  if (!input.batches) {
+    return false;
+  }
+  const resume = resolvePlpBatchResume({
+    sourceVersion: input.sourceVersion,
+    batches: input.batches,
+    checkpoint,
+  });
+  return resume.nextBatchIndex === checkpoint.nextBatchIndex && resume.nextBatchIndex > 0;
+}
+
 export function buildPlpBatchCheckpoint(input: {
   readonly sourceVersion: string;
   readonly nextBatchIndex: number;

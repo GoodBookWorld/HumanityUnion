@@ -19,12 +19,16 @@ import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-dat
 import {
   sanitizePlpAutoBuildFailureReason,
   isLegacyPacingMisclassifiedTerminalFailure,
+  isObsoleteTerminologyHardGateFailure,
   isPlpQuotaDeferSafeReason,
   type PlpAutoBuildFailureCode,
   type PlpAutoBuildFailureStage,
   type PlpAutoBuildStructuredFailure,
 } from "./plp-auto-build-failure.js";
-import type { PlpBatchCheckpoint } from "./plp-batch-checkpoint.js";
+import {
+  isCompatiblePlpBatchCheckpoint,
+  type PlpBatchCheckpoint,
+} from "./plp-batch-checkpoint.js";
 import {
   encodePlpStructuredStaleSafeReason,
   isBareStaleRevisionReason,
@@ -371,6 +375,11 @@ function coalesceUpsert(input: {
   readonly reopenFailedSameVersion?: boolean;
   /** RESET 05E.1 — stamp recovery generation when reopening exhausted provider failures. */
   readonly recoveryGeneration?: string | null;
+  /**
+   * Live provider plan. Required before an obsolete terminology row can be
+   * adopted, so the stored fingerprint is the same one resume will accept.
+   */
+  readonly checkpointBatches?: readonly (Readonly<Record<string, string>>)[];
 }): UpsertPlpAutoBuildWorkResult {
   const workKey = plpBuildWorkKey(input);
   const updatedAt = nowIso();
@@ -417,6 +426,33 @@ function coalesceUpsert(input: {
   // It must not reset attempts or recoveryGeneration, and it must not reopen
   // non-retryable or generation-capped failures.
   if (existing.status === "failed" && sameVersion) {
+    if (
+      input.reopenFailedSameVersion &&
+      isObsoleteTerminologyHardGateFailure({
+        failureCode: existing.failureCode,
+        retryable: existing.retryable,
+        safeReason: existing.lastError,
+      }) &&
+      isCompatiblePlpBatchCheckpoint({
+        sourceVersion: input.canonicalVersion,
+        checkpoint: existing.batchCheckpoint,
+        batches: input.checkpointBatches,
+      })
+    ) {
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: Math.max(0, existing.attempts - 1),
+        maxAttempts: input.maxAttempts,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        nextAttemptAt: updatedAt,
+        recoveryGeneration: existing.recoveryGeneration,
+        batchCheckpoint: existing.batchCheckpoint,
+      };
+      return { accepted: true, deduped: false, record };
+    }
     if (!input.reopenFailedSameVersion || existing.retryable !== true) {
       return { accepted: false, deduped: true, record: existing };
     }
@@ -565,6 +601,7 @@ export async function upsertPendingPlpAutoBuildWork(input: {
   readonly maxAttempts?: number;
   readonly reopenFailedSameVersion?: boolean;
   readonly recoveryGeneration?: string | null;
+  readonly checkpointBatches?: readonly (Readonly<Record<string, string>>)[];
 }): Promise<UpsertPlpAutoBuildWorkResult> {
   const maxAttempts = input.maxAttempts ?? resolvePlpAutoBuildMaxAttempts();
   const workKey = plpBuildWorkKey(input);
@@ -809,6 +846,34 @@ export async function persistPlpBatchCheckpointYield(input: {
     return;
   }
   await collection().updateOne({ workKey: input.workKey }, { $set: record });
+}
+
+/**
+ * Provider batch accepted and safe to keep. Does not refund attempts, change
+ * status, or start pacing. A later local quality failure must leave this
+ * checkpoint in place.
+ */
+export async function persistPlpProviderSuccessCheckpoint(input: {
+  readonly workKey: string;
+  readonly checkpoint: PlpBatchCheckpoint;
+}): Promise<void> {
+  const now = nowIso();
+  if (usePlpAutoBuildWorkMemory()) {
+    const existing = memoryByWorkKey.get(input.workKey);
+    if (!existing) {
+      return;
+    }
+    memoryByWorkKey.set(input.workKey, {
+      ...existing,
+      batchCheckpoint: input.checkpoint,
+      updatedAt: now,
+    });
+    return;
+  }
+  await collection().updateOne(
+    { workKey: input.workKey },
+    { $set: { batchCheckpoint: input.checkpoint, updatedAt: now } },
+  );
 }
 
 export async function markPlpAutoBuildWorkCompleted(workKey: string): Promise<void> {
