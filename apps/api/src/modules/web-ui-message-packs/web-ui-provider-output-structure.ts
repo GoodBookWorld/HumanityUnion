@@ -23,8 +23,11 @@ import {
  * 2 sends every leaf as an ordered span array and reopens checkpoints
  * blocked under an older shape.
  * 3 states the exact span count for each key and records that count on mismatch.
+ * 4 also sends that count as Gemini responseSchema minItems/maxItems.
+ * A structure_blocked checkpoint from an older shape reopens once under this
+ * version. Its completed batches stay. A terminal block on this version does not.
  */
-export const WEB_UI_PROVIDER_SHAPE_VERSION = 3;
+export const WEB_UI_PROVIDER_SHAPE_VERSION = 4;
 
 const WEB_UI_ACTIVE_CHECKPOINT_PHASES = [
   "primary",

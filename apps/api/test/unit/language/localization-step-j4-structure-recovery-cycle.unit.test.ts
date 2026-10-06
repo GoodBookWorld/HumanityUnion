@@ -571,7 +571,7 @@ describe("J.4 bounded structure_blocked recovery", () => {
       updatedAt: stamp,
       nextAttemptAt: null,
       structureRetryCount: 6,
-      providerShapeVersion: 3,
+      providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
       providerShapeFailureCount: 6,
       preparationContract: "partial_reuse_v1",
     });

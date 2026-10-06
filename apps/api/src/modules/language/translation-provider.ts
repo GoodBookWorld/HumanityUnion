@@ -21,6 +21,11 @@ export interface TranslationProviderRequest {
    * Private Direct Messages must not be sent through this seam.
    */
   readonly safetyCleared: boolean;
+  /**
+   * Optional generateContent responseSchema (OpenAPI 3.0 subset).
+   * WEB_UI span batches set per-key minItems/maxItems. Other callers omit it.
+   */
+  readonly responseSchema?: Readonly<Record<string, unknown>>;
 }
 
 export interface TranslationProviderResult {
