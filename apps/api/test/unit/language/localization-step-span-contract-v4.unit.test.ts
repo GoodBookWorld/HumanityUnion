@@ -16,7 +16,9 @@ import {
   setLanguageActivationJobForceMemoryForTests,
   setLanguageActivationJobProcessDepsForTests,
 } from "../../../src/modules/language/language-localization-activation/index.js";
+import { getWebUiActivationSchedulerSnapshotForTests } from "../../../src/modules/language/language-localization-activation/language-activation-job.service.js";
 import {
+  getLanguageActivationJobById,
   resetLanguageActivationJobStoreForTests,
   saveLanguageActivationJob,
 } from "../../../src/modules/language/language-localization-activation/language-activation-job.repository.js";
@@ -27,6 +29,7 @@ import {
   setLanguageRegistryForceMemoryForTests,
 } from "../../../src/modules/language/index.js";
 import {
+  runLocalizationProviderRequest,
   setLocalizationProviderClockForTests,
   setLocalizationProviderPacingIntervalMsForTests,
 } from "../../../src/modules/language/localization-provider-governor.js";
@@ -290,20 +293,31 @@ describe("shape 4 reopens an obsolete terminal block once", () => {
         now: () => new Date(nowMs).toISOString(),
         loadLiveTerminology: async () => "",
         readProviderCooldown: async () => ({ active: false, cooldownUntil: null }),
-        translator: async (request) => {
-          calls += 1;
-          const parsed = JSON.parse(request.text) as Record<string, unknown>;
-          seenKeys = Object.keys(parsed);
-          const schema = request.responseSchema as {
-            properties: Record<string, { minItems: number; maxItems: number }>;
-          };
-          for (const key of Object.keys(parsed)) {
-            const count = (parsed[key] as unknown[]).length;
-            assert.equal(schema.properties[key]?.minItems, count);
-            assert.equal(schema.properties[key]?.maxItems, count);
-          }
-          return echoRequest(request, shorten ? second.keys[0] : undefined);
-        },
+        translator: (request) =>
+          runLocalizationProviderRequest(async () => {
+            calls += 1;
+            const parsed = JSON.parse(request.text) as Record<string, unknown>;
+            seenKeys = Object.keys(parsed);
+            const schema = request.responseSchema as {
+              properties: Record<string, { minItems: number; maxItems: number }>;
+            };
+            for (const key of Object.keys(parsed)) {
+              const count = (parsed[key] as unknown[]).length;
+              assert.equal(schema.properties[key]?.minItems, count);
+              assert.equal(schema.properties[key]?.maxItems, count);
+            }
+            const during = await getWebUiActivationCheckpointByJobId(jobId);
+            assert.equal(during?.locale, "eo");
+            assert.equal(during?.phase, "primary");
+            assert.equal(during?.completedBatchCount, 617);
+            assert.equal(during?.batchCount, 702);
+            assert.equal(during?.providerShapeVersion, WEB_UI_PROVIDER_SHAPE_VERSION);
+            assert.equal(during?.providerShapeFailureCount, 0);
+            assert.equal(during?.structureRecoveryCycleCount, 0);
+            assert.equal(during?.structureFailure ?? null, null);
+            assert.equal(during?.structureRecoveryBlockedBatchId ?? null, null);
+            return echoRequest(request, shorten ? second.keys[0] : undefined);
+          }),
       },
     });
     await upsertWebUiActivationBatch({
@@ -357,6 +371,13 @@ describe("shape 4 reopens an obsolete terminal block once", () => {
       providerShapeFailureCount: 6,
       structureRecoveryCycleCount: input.structureRecoveryCycleCount,
       structureRecoveryBlockedBatchId: second.id,
+      structureFailure: {
+        failureClass: "provider_span_count_mismatch",
+        code: "provider_span_count_mismatch",
+        catalogKey: second.keys[0] ?? "",
+        expectedSpanCount: 2,
+        actualSpanCount: 1,
+      },
       preparationContract: "partial_reuse_v1",
     });
     const domains = emptyPendingDomains();
@@ -407,13 +428,47 @@ describe("shape 4 reopens an obsolete terminal block once", () => {
       providerShapeVersion: 3,
       structureRecoveryCycleCount: 2,
     });
-    const job = await processLanguageActivationJob(seeded.jobId, { webUiTick: true });
-    resetLanguageActivationJobSchedulerForTests();
+    const listed = await listIncompleteWebUiActivationCheckpoints();
+    assert.equal(listed.some((row) => row.checkpointId === seeded.checkpointId), true);
+    assert.equal(
+      listed.find((row) => row.checkpointId === seeded.checkpointId)?.providerShapeVersion,
+      3,
+    );
+    const boot = await resumeIncompleteWebUiActivationJobsOnBoot();
+    assert.equal(boot.scheduled, 1);
+    const queued = getWebUiActivationSchedulerSnapshotForTests(seeded.jobId);
+    assert.equal(queued.inFlight, true);
+    assert.equal(queued.delayedPending, false);
+    let checkpoint = await getWebUiActivationCheckpointByJobId(seeded.jobId);
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      checkpoint = await getWebUiActivationCheckpointByJobId(seeded.jobId);
+      const snap = getWebUiActivationSchedulerSnapshotForTests(seeded.jobId);
+      if (
+        calls === 1 &&
+        checkpoint?.completedBatchCount === 618 &&
+        snap.delayedPending &&
+        !snap.inFlight
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     assert.equal(calls, 1);
     assert.deepEqual(seenKeys.sort(), [...seeded.second.keys].sort());
     assert.equal(seenKeys.includes(seeded.first.keys[0] ?? ""), false);
-    assert.equal(job.status, "running");
-    const checkpoint = await getWebUiActivationCheckpointByJobId(seeded.jobId);
+    const job = await getLanguageActivationJobById(seeded.jobId);
+    assert.equal(job?.status, "running");
+    assert.equal(job?.locale, "eo");
+    assert.equal(checkpoint?.locale, "eo");
+    const paced = getWebUiActivationSchedulerSnapshotForTests(seeded.jobId);
+    assert.equal(paced.delayedPending, true);
+    assert.equal(paced.inFlight, false);
+    assert.equal(paced.delayedNextAttemptAt, new Date(nowMs + 10_000).toISOString());
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.equal(calls, 1);
+    checkpoint = await getWebUiActivationCheckpointByJobId(seeded.jobId);
     assert.equal(checkpoint?.providerShapeVersion, 4);
     assert.equal(checkpoint?.completedBatchCount, 618);
     assert.equal(checkpoint?.batchCount, 702);
@@ -436,8 +491,18 @@ describe("shape 4 reopens an obsolete terminal block once", () => {
       providerShapeVersion: 3,
       structureRecoveryCycleCount: 2,
     });
-    await processLanguageActivationJob(seeded.jobId, { webUiTick: true });
-    resetLanguageActivationJobSchedulerForTests();
+    const boot = await resumeIncompleteWebUiActivationJobsOnBoot();
+    assert.equal(boot.scheduled, 1);
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const snap = getWebUiActivationSchedulerSnapshotForTests(seeded.jobId);
+      if (calls === 1 && !snap.inFlight) {
+        break;
+      }
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     assert.equal(calls, 1);
     const blocked = (await listWebUiActivationBatches(seeded.checkpointId, "primary")).find(
       (row) => row.batchId === seeded.second.id,
@@ -471,8 +536,10 @@ describe("shape 4 reopens an obsolete terminal block once", () => {
     const listed = await listIncompleteWebUiActivationCheckpoints();
     assert.equal(listed.some((row) => row.checkpointId === seeded.checkpointId), false);
     const boot = await resumeIncompleteWebUiActivationJobsOnBoot();
+    const bootAgain = await resumeIncompleteWebUiActivationJobsOnBoot();
     resetLanguageActivationJobSchedulerForTests();
     assert.equal(boot.scheduled, 0);
+    assert.equal(bootAgain.scheduled, 0);
     await processLanguageActivationJob(seeded.jobId, { webUiTick: true });
     resetLanguageActivationJobSchedulerForTests();
     assert.equal(calls, 0);
