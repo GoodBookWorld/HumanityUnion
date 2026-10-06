@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toGeographyCountryOptions } from "@hu/geography";
 import type {
@@ -115,6 +115,8 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<AdminMediaResourceWriteInput>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const editFormRef = useRef<HTMLDivElement>(null);
+  const pendingEditScrollRef = useRef(false);
 
   const countryOptions = useMemo(
     () => [...toGeographyCountryOptions()].sort((a, b) => a.label.localeCompare(b.label)),
@@ -160,6 +162,22 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!pendingEditScrollRef.current || !formOpen || !editingId) {
+      return;
+    }
+    const formElement = editFormRef.current;
+    if (!formElement) {
+      return;
+    }
+    pendingEditScrollRef.current = false;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    formElement.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [editingId, formOpen]);
+
   function openCreate() {
     setEditingId(null);
     setForm(emptyForm(resourceTypeFilter || "TRUSTED_MEDIA"));
@@ -172,6 +190,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     setForm(toForm(resource));
     setFormOpen(true);
     setStatus(null);
+    pendingEditScrollRef.current = true;
   }
 
   async function handleSave() {
@@ -331,7 +350,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
         </div>
 
         {formOpen ? (
-          <div className="admin-media-resources__form">
+          <div className="admin-media-resources__form" ref={editFormRef}>
             <h3>{editingId ? "Edit media resource" : "Add media resource"}</h3>
             <div className="admin-media-resources__form-grid">
               <label>
@@ -563,14 +582,14 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
             <table className="admin-initiatives-table admin-media-resources-table">
               <thead>
                 <tr>
-                  <th>Logo</th>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Scope</th>
-                  <th>Website</th>
-                  <th>RSS</th>
-                  <th>State</th>
-                  <th>Actions</th>
+                  <th className="admin-media-resources__col-logo">Logo</th>
+                  <th className="admin-media-resources__col-name">Name</th>
+                  <th className="admin-media-resources__col-type">Type</th>
+                  <th className="admin-media-resources__col-scope">Scope</th>
+                  <th className="admin-media-resources__col-website">Website</th>
+                  <th className="admin-media-resources__col-rss">RSS</th>
+                  <th className="admin-media-resources__col-state">State</th>
+                  <th className="admin-media-resources__col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -578,7 +597,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                   const logoSrc = resolveMediaUrl(resource.logoUrl) ?? resource.logoUrl;
                   return (
                     <tr key={resource.id}>
-                      <td>
+                      <td className="admin-media-resources__col-logo">
                         {logoSrc ? (
                           <img
                             className="admin-media-resources__logo"
@@ -593,16 +612,18 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td className="admin-media-resources__col-name">
                         <p className="admin-initiatives-table__title">{resource.name}</p>
                         <p className="admin-initiatives-table__meta">{resource.id}</p>
                       </td>
-                      <td>{RESOURCE_TYPE_LABELS[resource.resourceType]}</td>
-                      <td>
+                      <td className="admin-media-resources__col-type">
+                        {RESOURCE_TYPE_LABELS[resource.resourceType]}
+                      </td>
+                      <td className="admin-media-resources__col-scope">
                         {resource.scopeType}
                         {resource.countryCode ? ` · ${resource.countryCode}` : ""}
                       </td>
-                      <td>
+                      <td className="admin-media-resources__col-website">
                         <a
                           className="admin-panel__link"
                           href={resource.websiteUrl}
@@ -612,15 +633,17 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                           {resource.websiteUrl.replace(/^https?:\/\//, "").slice(0, 36)}
                         </a>
                       </td>
-                      <td>
+                      <td className="admin-media-resources__col-rss">
                         {resource.resourceType === "NEWS_SOURCE"
                           ? resource.rssUrl
                             ? "Configured"
                             : "Missing"
                           : "—"}
                       </td>
-                      <td>{resource.active ? "Active" : "Inactive"}</td>
-                      <td>
+                      <td className="admin-media-resources__col-state">
+                        {resource.active ? "Active" : "Inactive"}
+                      </td>
+                      <td className="admin-media-resources__col-actions">
                         <div className="admin-media-resources__row-actions">
                           <Button type="button" variant="secondary" onClick={() => openEdit(resource)}>
                             Edit

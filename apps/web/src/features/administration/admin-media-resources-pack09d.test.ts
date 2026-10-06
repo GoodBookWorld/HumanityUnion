@@ -42,6 +42,24 @@ describe("Administration Pack 09D — Media Resources", () => {
     assert.match(css, /overflow|admin-media-resources-table|min-width/);
   });
 
+  it("Edit scrolls the media resource form into view without scrolling on create", () => {
+    const section = read("features/administration/components/AdminMediaResourcesSection.tsx");
+    const css = read("features/administration/components/admin-media-resources.css");
+    const openCreate = section.slice(section.indexOf("function openCreate"), section.indexOf("function openEdit"));
+    const openEdit = section.slice(section.indexOf("function openEdit"), section.indexOf("async function handleSave"));
+
+    assert.equal(openCreate.includes("pendingEditScrollRef"), false);
+    assert.match(openEdit, /pendingEditScrollRef\.current = true/);
+    assert.match(section, /ref=\{editFormRef\}/);
+    assert.match(section, /scrollIntoView\(\{/);
+    assert.match(section, /prefers-reduced-motion: reduce/);
+    assert.match(css, /admin-media-resources__col-state/);
+    assert.match(css, /admin-media-resources__col-rss/);
+    assert.match(css, /white-space:\s*nowrap/);
+    assert.match(css, /scroll-margin-top/);
+    assert.match(css, /\.admin-initiatives-table__meta[\s\S]*overflow-wrap:\s*anywhere/);
+  });
+
   it("Pack 09B / Pack 09C regressions remain available", () => {
     assert.ok(
       existsSync(

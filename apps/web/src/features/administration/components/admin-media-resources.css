@@ -8,6 +8,7 @@
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
+  scroll-margin-top: var(--humanity-header-offset, var(--hu-scroll-margin-top, 5rem));
 }
 
 .admin-media-resources__form h3 {
@@ -65,7 +66,66 @@
 }
 
 .admin-media-resources-table {
-  min-width: 72rem;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 78rem;
+}
+
+.admin-media-resources-table th,
+.admin-media-resources-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.admin-media-resources__col-logo {
+  width: 4.75rem;
+}
+
+.admin-media-resources__col-name {
+  width: 16rem;
+}
+
+.admin-media-resources__col-type {
+  width: 11.5rem;
+  white-space: nowrap;
+}
+
+.admin-media-resources__col-scope {
+  width: 8.5rem;
+  white-space: nowrap;
+}
+
+.admin-media-resources__col-website {
+  width: 12rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-media-resources__col-rss {
+  width: 7.75rem;
+  white-space: nowrap;
+}
+
+.admin-media-resources__col-state {
+  width: 6.5rem;
+  white-space: nowrap;
+}
+
+.admin-media-resources__col-actions {
+  width: 15rem;
+  white-space: normal;
+}
+
+.admin-media-resources-table .admin-initiatives-table__title {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.admin-media-resources-table .admin-initiatives-table__meta {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-media-resources__logo {
