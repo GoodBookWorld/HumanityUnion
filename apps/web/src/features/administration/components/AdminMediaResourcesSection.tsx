@@ -27,6 +27,7 @@ import {
   updateAdminMediaResource,
   type AdminMediaResourceWriteInput,
 } from "../admin-media-resources-api";
+import { mediaResourceAdminIdSubtitle } from "../admin-media-resource-id-display";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -595,6 +596,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
               <tbody>
                 {items.map((resource) => {
                   const logoSrc = resolveMediaUrl(resource.logoUrl) ?? resource.logoUrl;
+                  const idSubtitle = mediaResourceAdminIdSubtitle(resource.id);
                   return (
                     <tr key={resource.id}>
                       <td className="admin-media-resources__col-logo">
@@ -614,7 +616,9 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                       </td>
                       <td className="admin-media-resources__col-name">
                         <p className="admin-initiatives-table__title">{resource.name}</p>
-                        <p className="admin-initiatives-table__meta">{resource.id}</p>
+                        {idSubtitle ? (
+                          <p className="admin-initiatives-table__meta">{idSubtitle}</p>
+                        ) : null}
                       </td>
                       <td className="admin-media-resources__col-type">
                         {RESOURCE_TYPE_LABELS[resource.resourceType]}

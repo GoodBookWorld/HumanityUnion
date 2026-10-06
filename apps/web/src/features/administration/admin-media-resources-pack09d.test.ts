@@ -8,6 +8,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { ADMIN_PANEL_SECTIONS } from "../administration/admin-panel-sections.js";
+import { mediaResourceAdminIdSubtitle } from "./admin-media-resource-id-display.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -58,6 +59,31 @@ describe("Administration Pack 09D — Media Resources", () => {
     assert.match(css, /white-space:\s*nowrap/);
     assert.match(css, /scroll-margin-top/);
     assert.match(css, /\.admin-initiatives-table__meta[\s\S]*overflow-wrap:\s*anywhere/);
+  });
+
+  it("shows authored media resource ids and hides generated UUID ids", () => {
+    const section = read("features/administration/components/AdminMediaResourcesSection.tsx");
+
+    assert.equal(mediaResourceAdminIdSubtitle("ukrinform-ukraine"), "ukrinform-ukraine");
+    assert.equal(mediaResourceAdminIdSubtitle("european-pravda"), "european-pravda");
+    assert.equal(mediaResourceAdminIdSubtitle("kyiv-independent"), "kyiv-independent");
+    assert.equal(
+      mediaResourceAdminIdSubtitle("media-resource-33685da5-8bb4-4312-8c47-b6a12fc4c7b3"),
+      null,
+    );
+    assert.equal(mediaResourceAdminIdSubtitle("media-resource-ukrinform"), "media-resource-ukrinform");
+    assert.equal(
+      mediaResourceAdminIdSubtitle("media-resource-33685da5-8bb4-4312-8c47-b6a12fc4c7b3-extra"),
+      "media-resource-33685da5-8bb4-4312-8c47-b6a12fc4c7b3-extra",
+    );
+
+    assert.match(section, /mediaResourceAdminIdSubtitle\(resource\.id\)/);
+    assert.match(section, /admin-initiatives-table__title">\{resource\.name\}/);
+    assert.match(section, /\{idSubtitle \? \([\s\S]*admin-initiatives-table__meta">\{idSubtitle\}/);
+    assert.doesNotMatch(
+      section,
+      /admin-initiatives-table__meta">\{resource\.id\}/,
+    );
   });
 
   it("Pack 09B / Pack 09C regressions remain available", () => {
