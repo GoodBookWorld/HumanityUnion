@@ -2568,6 +2568,8 @@ export async function processWebUiActivationTick(input: {
     };
   }
   if (checkpoint.phase === "structure_blocked") {
+    // An older shape, including a terminal cycle-2 block, reopens once.
+    // completedBatchCount and stored ok batches are left in place.
     if ((checkpoint.providerShapeVersion ?? 0) < WEB_UI_PROVIDER_SHAPE_VERSION) {
       const reopened: WebUiActivationCheckpointRecord = {
         ...checkpoint,

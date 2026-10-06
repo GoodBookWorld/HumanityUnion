@@ -66,7 +66,7 @@ function mixedPayload(): Record<string, readonly string[]> {
 
 describe("F.3.18E explicit span cardinality", () => {
   it("states count 1 for a one-span leaf and count 3 for a three-span leaf", () => {
-    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 3);
+    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 4);
     const one = webUiProviderPayloadValue(ONE);
     const three = webUiProviderPayloadValue(THREE);
     assert.deepEqual(one, [ONE]);
@@ -238,32 +238,32 @@ describe("F.3.18E explicit span cardinality", () => {
     );
   });
 
-  it("reopens a version-2 structure block under version 3 and keeps version 3 closed", () => {
-    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 3);
+  it("reopens an older structure block and keeps the current shape closed", () => {
+    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 4);
     assert.equal(
       isRecoverableWebUiActivationCheckpoint({
         phase: "structure_blocked",
-        providerShapeVersion: 2,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION - 1,
       }),
       true,
     );
     assert.equal(
       isRecoverableWebUiActivationCheckpoint({
         phase: "structure_blocked",
-        providerShapeVersion: 3,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
       }),
       false,
     );
     assert.equal(
       webUiProviderShapeFailureCountForBound({
-        providerShapeVersion: 2,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION - 1,
         providerShapeFailureCount: 6,
       }),
       0,
     );
     assert.equal(
       webUiProviderShapeFailureCountForBound({
-        providerShapeVersion: 3,
+        providerShapeVersion: WEB_UI_PROVIDER_SHAPE_VERSION,
         providerShapeFailureCount: 6,
       }),
       6,

@@ -36,6 +36,7 @@ import {
   webUiProviderPayloadValue,
   WebUiProviderSpanCountError,
   webUiProviderCardinalityLines,
+  webUiProviderResponseSchema,
   webUiProviderSpanInstructions,
 } from "./web-ui-message-structure-protect.js";
 
@@ -478,6 +479,10 @@ async function requestWebUiProviderTranslations(input: {
     contentType: "structured_json",
     terminologyContext,
     safetyCleared: true,
+    responseSchema: webUiProviderResponseSchema({
+      keys: input.keys,
+      payload: payloadObject,
+    }),
   });
   return parseTranslations(result.translatedText);
 }

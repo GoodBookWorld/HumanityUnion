@@ -122,6 +122,35 @@ export function buildGeminiTranslationSystemInstruction(input: {
   ].join("\n");
 }
 
+/**
+ * generateContent generationConfig for this REST client.
+ * responseSchema is the OpenAPI 3.0 subset already used by civic-media PLP.
+ * It is attached only when the caller supplies one, so other structured_json
+ * requests keep their previous unconstrained JSON contract.
+ */
+export function buildGeminiGenerationConfig(input: {
+  readonly maxOutputTokens: number;
+  readonly responseSchema?: TranslationProviderRequest["responseSchema"];
+}): {
+  readonly temperature: number;
+  readonly maxOutputTokens: number;
+  readonly responseMimeType?: "application/json";
+  readonly responseSchema?: TranslationProviderRequest["responseSchema"];
+} {
+  if (!input.responseSchema) {
+    return {
+      temperature: 0.2,
+      maxOutputTokens: input.maxOutputTokens,
+    };
+  }
+  return {
+    temperature: 0.2,
+    maxOutputTokens: input.maxOutputTokens,
+    responseMimeType: "application/json",
+    responseSchema: input.responseSchema,
+  };
+}
+
 /** @deprecated Pack 02F compatibility — prefer buildGeminiTranslationSystemInstruction. */
 export function buildGeminiTranslationSystemInstructionForTests(
   request: TranslationProviderRequest & {
@@ -208,10 +237,10 @@ export class GeminiTranslationProvider implements TranslationProvider {
                 parts: [{ text: request.text }],
               },
             ],
-            generationConfig: {
-              temperature: 0.2,
+            generationConfig: buildGeminiGenerationConfig({
               maxOutputTokens: this.config.maxOutputTokens,
-            },
+              responseSchema: request.responseSchema,
+            }),
           }),
           signal: controller.signal,
         });

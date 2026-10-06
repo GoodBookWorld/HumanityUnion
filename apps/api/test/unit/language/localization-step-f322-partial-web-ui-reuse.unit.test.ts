@@ -472,7 +472,7 @@ describe("STEP F.3.22 partial WEB_UI reuse", () => {
       false,
     );
     assert.equal(LOCALIZATION_PROVIDER_MIN_INTERVAL_MS_DEFAULT, 10_000);
-    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 3);
+    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 4);
     const progress = readFileSync(
       path.resolve(
         here,

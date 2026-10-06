@@ -99,6 +99,51 @@ export function webUiProviderCardinalityLines(input: {
     .join("\n");
 }
 
+/**
+ * One array property in the Gemini generateContent responseSchema.
+ * minItems and maxItems are the OpenAPI 3.0 array bounds that REST schema accepts.
+ * Equal bounds are the exact span count. prefixItems is not part of that subset.
+ */
+export type WebUiProviderSpanArraySchema = {
+  readonly type: "array";
+  readonly minItems: number;
+  readonly maxItems: number;
+  readonly items: { readonly type: "string" };
+};
+
+/**
+ * Per-batch response contract. Each catalog key keeps its own array length.
+ * Keys are the same object properties sent in the user JSON.
+ */
+export type WebUiProviderResponseSchema = {
+  readonly type: "object";
+  readonly properties: Readonly<Record<string, WebUiProviderSpanArraySchema>>;
+  readonly required: readonly string[];
+  readonly propertyOrdering: readonly string[];
+};
+
+export function webUiProviderResponseSchema(input: {
+  readonly keys: readonly string[];
+  readonly payload: Readonly<Record<string, readonly string[]>>;
+}): WebUiProviderResponseSchema {
+  const properties: Record<string, WebUiProviderSpanArraySchema> = {};
+  for (const key of input.keys) {
+    const count = input.payload[key]?.length ?? 0;
+    properties[key] = {
+      type: "array",
+      minItems: count,
+      maxItems: count,
+      items: { type: "string" },
+    };
+  }
+  return {
+    type: "object",
+    properties,
+    required: [...input.keys],
+    propertyOrdering: [...input.keys],
+  };
+}
+
 export class WebUiMessageStructureError extends Error {
   constructor(message: string) {
     super(message);

@@ -610,7 +610,7 @@ describe("STEP F.3.21 automatic WEB_UI no-job recovery", () => {
 
   it("M/N/O. pacing, shape version, and 99 percent semantics stay in place", () => {
     assert.equal(LOCALIZATION_PROVIDER_MIN_INTERVAL_MS_DEFAULT, 10_000);
-    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 3);
+    assert.equal(WEB_UI_PROVIDER_SHAPE_VERSION, 4);
     const progress = readFileSync(
       path.resolve(
         here,
