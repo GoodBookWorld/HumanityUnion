@@ -8,6 +8,11 @@ import { FACT_CHECK_RESOURCES } from "../civic-media-center/content/fact-checkin
 import { PROPAGANDA_ANALYSIS_RESOURCES } from "../civic-media-center/content/propaganda-analysis.js";
 import { TRUSTED_MEDIA_RESOURCES } from "../civic-media-center/content/trusted-media.js";
 import {
+  continueTrustedMediaPlpIfCanonicalChanged,
+  trustedCanonicalVersionBeforeWrite,
+} from "../language/published-localized-presentation/universal/trusted-canonical-plp-continuation.js";
+import { trustedExplanationCanonicalVersion } from "../language/published-localized-presentation/media/trusted-editorial-source.js";
+import {
   getMediaResourceByIdentity,
   upsertMediaResource,
 } from "./persistence/media-resource.repository.js";
@@ -125,18 +130,46 @@ export function buildMediaResourceSeedRecords(): MediaResource[] {
 export async function seedMediaResourcesFromCanonicalSources(): Promise<number> {
   const seeds = buildMediaResourceSeedRecords();
   let upserted = 0;
+  const canonicalChanges: Array<{
+    entityId: string;
+    beforeVersion: string | null;
+    afterVersion: string | null;
+  }> = [];
 
   for (const seed of seeds) {
     const existing = await getMediaResourceByIdentity({
       resourceType: seed.resourceType,
       id: seed.id,
     });
+    const beforeVersion =
+      seed.resourceType === "TRUSTED_MEDIA"
+        ? trustedCanonicalVersionBeforeWrite({
+            hadTrustedRow: existing != null,
+            entityId: seed.id,
+            description: existing?.description,
+          })
+        : null;
+    const afterVersion =
+      seed.resourceType === "TRUSTED_MEDIA"
+        ? trustedExplanationCanonicalVersion(seed.description)
+        : null;
     const record: MediaResource = existing
       ? { ...seed, createdAt: existing.createdAt, updatedAt: new Date().toISOString() }
       : seed;
 
     await upsertMediaResource(record);
     upserted += 1;
+    if (seed.resourceType === "TRUSTED_MEDIA" && beforeVersion !== afterVersion) {
+      canonicalChanges.push({
+        entityId: seed.id,
+        beforeVersion,
+        afterVersion,
+      });
+    }
+  }
+
+  for (const change of canonicalChanges) {
+    await continueTrustedMediaPlpIfCanonicalChanged(change);
   }
 
   return upserted;

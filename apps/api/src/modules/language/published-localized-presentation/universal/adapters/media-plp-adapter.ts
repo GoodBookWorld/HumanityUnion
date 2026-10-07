@@ -40,7 +40,12 @@ export const mediaPlpDomainAdapter: PlpDomainAdapter = {
       entityType: input.entityType as never,
       entityId: input.entityId,
     });
-    if (!live.SOURCE_FOUND || !live.canonicalPresentation || !live.CANONICAL_VERSION) {
+    if (
+      !live.SOURCE_FOUND ||
+      live.CANONICAL_USABLE === false ||
+      !live.canonicalPresentation ||
+      !live.CANONICAL_VERSION
+    ) {
       return null;
     }
     return {
