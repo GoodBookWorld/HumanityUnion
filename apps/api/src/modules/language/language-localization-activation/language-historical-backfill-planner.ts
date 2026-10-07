@@ -63,6 +63,8 @@ function plpBucketFromStatus(
       return { ...empty, failed: 1, workItemsRequired: 1 };
     case "PENDING":
       return { ...empty, pending: 1, workItemsRequired: 1 };
+    case "INVALID":
+      return { ...empty, invalid: 1, workItemsRequired: 1 };
     default:
       return empty;
   }
@@ -175,11 +177,12 @@ export async function planLanguageHistoricalBackfill(input: {
     stale: plpCounts.stale,
     failed: plpCounts.failed,
     current: plpCounts.current,
+    invalid: plpCounts.invalid,
     action: plpAction,
   });
 
   // Authoritative PLP carousel entities only. public_news is SOURCE_ORIGINAL.
-  const carousel = await assessCarousel({ locale, pageSize: 50 });
+  const carousel = await assessCarousel({ locale, pageSize: 200 });
   let plpCarouselWork = 0;
   const carouselEntityTypes = LANGUAGE_ACTIVATION_PLP_OWNED_MEDIA_ENTITY_TYPES.filter(
     (entityType) => entityType !== "civic_media_editorial",
@@ -205,6 +208,7 @@ export async function planLanguageHistoricalBackfill(input: {
       stale: counts.stale,
       failed: counts.failed,
       current: counts.current,
+      invalid: counts.invalid,
       action,
     });
   }
@@ -259,6 +263,7 @@ export function aggregatePlpCountsFromPlan(
   let current = 0;
   let missing = 0;
   let stale = 0;
+  let invalid = 0;
   let failed = 0;
   let workItemsRequired = 0;
   for (const item of plan.items) {
@@ -266,6 +271,7 @@ export function aggregatePlpCountsFromPlan(
     current += item.current;
     missing += item.missing;
     stale += item.stale;
+    invalid += item.invalid ?? 0;
     failed += item.failed;
     workItemsRequired += item.workItemsRequired;
   }
@@ -273,7 +279,7 @@ export function aggregatePlpCountsFromPlan(
     current,
     missing,
     stale,
-    invalid: 0,
+    invalid,
     failed,
     pending: 0,
     workItemsRequired,

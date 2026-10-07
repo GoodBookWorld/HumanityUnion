@@ -32,7 +32,8 @@ export type MediaHuLocalizationIntegrityStatus =
   | "MISSING"
   | "STALE"
   | "FAILED"
-  | "PENDING";
+  | "PENDING"
+  | "INVALID";
 
 export type MediaHuLocalizationIntegrityRow = {
   readonly locale: string;
@@ -94,6 +95,10 @@ export async function runMediaHuOwnedLocalizationIntegrityCheck(): Promise<Media
       status = "MISSING";
     } else if (usability.allowPublishedLocalized) {
       status = "CURRENT_PUBLISHED_COMPLETE";
+    } else if (
+      usability.contentIntegrityReasonCodes.includes("DETERMINISTIC_PLACEHOLDER")
+    ) {
+      status = "INVALID";
     } else if (usability.rebuildRequired) {
       status =
         snapshot.contentIntegrity?.status === "FAILED" ||

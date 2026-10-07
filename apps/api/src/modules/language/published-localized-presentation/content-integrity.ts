@@ -13,6 +13,7 @@ import type {
 } from "@hu/types";
 import { isPublicProtectedValue } from "@hu/types";
 
+import { isDeterministicPlaceholderForCanonicalSource } from "../content-translation-validity.js";
 import {
   collectAutoPaths,
   getPresentationValueAtPath,
@@ -60,6 +61,7 @@ export type LocalizationContentIntegrityPathReport =
   LocalizationContentIntegrityReport & {
     readonly CANONICAL_IDENTICAL_PATHS: readonly string[];
     readonly EMPTY_OR_MISSING_PATHS: readonly string[];
+    readonly DETERMINISTIC_PLACEHOLDER_PATHS: readonly string[];
   };
 
 /**
@@ -100,6 +102,7 @@ export function evaluateLocalizationContentIntegrity(input: {
       evaluatedAt,
       CANONICAL_IDENTICAL_PATHS: [],
       EMPTY_OR_MISSING_PATHS: [],
+      DETERMINISTIC_PLACEHOLDER_PATHS: [],
     };
   }
 
@@ -109,6 +112,7 @@ export function evaluateLocalizationContentIntegrity(input: {
   let emptyOrMissing = 0;
   const identicalPaths: string[] = [];
   const emptyPaths: string[] = [];
+  const placeholderPaths: string[] = [];
   const reasonCodes = new Set<LocalizationContentIntegritySubreason>();
 
   for (const node of autos) {
@@ -135,6 +139,17 @@ export function evaluateLocalizationContentIntegrity(input: {
       reasonCodes.add("CANONICAL_IDENTICAL_TRANSLATABLE_VALUE");
       continue;
     }
+    if (
+      isDeterministicPlaceholderForCanonicalSource({
+        locale: input.locale,
+        localized: raw,
+        canonical: node.value,
+      })
+    ) {
+      placeholderPaths.push(node.path);
+      reasonCodes.add("DETERMINISTIC_PLACEHOLDER");
+      continue;
+    }
     localized += 1;
   }
 
@@ -153,6 +168,7 @@ export function evaluateLocalizationContentIntegrity(input: {
   const failed =
     emptyOrMissing > 0 ||
     identical > 0 ||
+    placeholderPaths.length > 0 ||
     reasonCodes.has("STRUCTURAL_TRANSLATION_MISMATCH");
 
   return {
@@ -167,6 +183,7 @@ export function evaluateLocalizationContentIntegrity(input: {
     evaluatedAt,
     CANONICAL_IDENTICAL_PATHS: identicalPaths,
     EMPTY_OR_MISSING_PATHS: emptyPaths,
+    DETERMINISTIC_PLACEHOLDER_PATHS: placeholderPaths,
   };
 }
 

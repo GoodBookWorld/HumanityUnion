@@ -12,6 +12,7 @@ import type {
 } from "@hu/types";
 import { isLocalizationSourceOriginalEntityType, MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 
+import { omitDeterministicPlaceholderValues } from "../../content-translation-validity.js";
 import { loadMediaPlpLiveCanonicalSource } from "../media/live-source.js";
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { getPublishedLocalizationPersistenceMode } from "../persistence/repository.js";
@@ -72,6 +73,7 @@ export type ProcessPlpBuildRequestDeps = {
     readonly locale: LanguageCode;
     readonly autoPaths: readonly string[];
     readonly expectedSourceVersion?: string | null;
+    readonly canonicalValues?: Readonly<Record<string, string>>;
   }) => Promise<{
     readonly EXISTING_TRANSLATION_COMPLETE: boolean;
     readonly values: Readonly<Record<string, string>>;
@@ -249,10 +251,21 @@ export async function processPlpBuildRequest(
         locale: request.locale as LanguageCode,
         autoPaths,
         expectedSourceVersion: contract.canonicalVersion,
+        canonicalValues: autoValues,
       });
       if (translation.EXISTING_TRANSLATION_COMPLETE) {
-        localizationValues = { ...translation.values };
-        localizationSource = "EXISTING_CURRENT";
+        const usableValues = omitDeterministicPlaceholderValues({
+          locale: request.locale,
+          values: translation.values,
+          canonicalValues: autoValues,
+        });
+        const stillComplete = autoPaths.every((path) =>
+          Boolean(usableValues[path]?.trim()),
+        );
+        if (stillComplete) {
+          localizationValues = { ...usableValues };
+          localizationSource = "EXISTING_CURRENT";
+        }
       }
     } catch {
       // Memory / unbound CT store — fall through to provider.
@@ -411,8 +424,12 @@ export async function processPlpBuildRequest(
     }
   }
 
+  const repairRevision =
+    existing && !usability.allowPublishedLocalized
+      ? existing.contentRevision + 1
+      : contract.contentRevision;
   const built = await runUniversalPlpBuild({
-    contract,
+    contract: { ...contract, contentRevision: repairRevision },
     liveCanonicalVersion: contract.canonicalVersion,
     layers: [
       {

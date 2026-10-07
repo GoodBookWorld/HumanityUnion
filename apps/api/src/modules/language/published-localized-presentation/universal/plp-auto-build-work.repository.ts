@@ -444,6 +444,27 @@ function coalesceUpsert(input: {
     (existing.status === "completed" || existing.status === "skipped_usable") &&
     sameVersion
   ) {
+    // A completed row can still point at a placeholder snapshot. Consumer
+    // enqueue only reaches this branch after the usable-presentation check
+    // rejected that snapshot. Reopen once under the same attempt cap.
+    if (input.reopenFailedSameVersion) {
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: 0,
+        maxAttempts: input.maxAttempts,
+        trigger: input.trigger,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        lastError: null,
+        failureCode: null,
+        failureStage: null,
+        retryable: null,
+        nextAttemptAt: null,
+      };
+      return { accepted: true, deduped: false, record };
+    }
     return { accepted: false, deduped: true, record: existing };
   }
 

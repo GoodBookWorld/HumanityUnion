@@ -230,6 +230,12 @@ export function validatePublishedBuildResult(
           partialAutoPaths.push(path);
         }
       }
+      for (const path of integrity.DETERMINISTIC_PLACEHOLDER_PATHS ?? []) {
+        integrityFailedPaths.push(path);
+        if (!partialAutoPaths.includes(path)) {
+          partialAutoPaths.push(path);
+        }
+      }
     }
 
     const structural = evaluateLocalizationStructuralIntegrity({

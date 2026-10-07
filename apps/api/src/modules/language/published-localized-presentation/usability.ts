@@ -45,6 +45,7 @@ export type UsableLocalizedPresentationClassification = {
   readonly rebuildRequired: boolean;
   readonly contentIntegrityStatus: string | null;
   readonly structuralIntegrityStatus: string | null;
+  readonly contentIntegrityReasonCodes: readonly string[];
 };
 
 function rebuild(
@@ -53,6 +54,7 @@ function rebuild(
   integrity?: {
     readonly contentIntegrityStatus?: string | null;
     readonly structuralIntegrityStatus?: string | null;
+    readonly contentIntegrityReasonCodes?: readonly string[];
   },
 ): UsableLocalizedPresentationClassification {
   return {
@@ -63,6 +65,7 @@ function rebuild(
     rebuildRequired: true,
     contentIntegrityStatus: integrity?.contentIntegrityStatus ?? null,
     structuralIntegrityStatus: integrity?.structuralIntegrityStatus ?? null,
+    contentIntegrityReasonCodes: integrity?.contentIntegrityReasonCodes ?? [],
   };
 }
 
@@ -122,6 +125,7 @@ export function classifyUsableLocalizedPresentation(input: {
       rebuildRequired: false,
       contentIntegrityStatus: "NOT_APPLICABLE_EN",
       structuralIntegrityStatus: "NOT_APPLICABLE_EN",
+      contentIntegrityReasonCodes: [],
     };
   }
 
@@ -156,6 +160,7 @@ export function classifyUsableLocalizedPresentation(input: {
           ? "UNKNOWN_LEGACY"
           : content.report.status,
       structuralIntegrityStatus: snapshot.structuralIntegrity?.status ?? null,
+      contentIntegrityReasonCodes: content.report.reasonCodes,
     });
   }
 
@@ -178,6 +183,7 @@ export function classifyUsableLocalizedPresentation(input: {
         structural.reasonCode === "LOCALIZATION_STRUCTURAL_INTEGRITY_MISSING"
           ? "UNKNOWN_LEGACY"
           : structural.report.status,
+      contentIntegrityReasonCodes: content.report.reasonCodes,
     });
   }
 
@@ -189,6 +195,7 @@ export function classifyUsableLocalizedPresentation(input: {
     rebuildRequired: false,
     contentIntegrityStatus: content.report.status,
     structuralIntegrityStatus: structural.report.status,
+    contentIntegrityReasonCodes: content.report.reasonCodes,
   };
 }
 

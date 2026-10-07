@@ -12,6 +12,7 @@ import {
   CIVIC_MEDIA_CT_RECORD_ID,
   CIVIC_MEDIA_CT_SOURCE_KIND,
 } from "./constants.js";
+import { omitDeterministicPlaceholderValues } from "../content-translation-validity.js";
 import { markMaterializerTranslationLookup } from "./counters.js";
 
 export type ExistingTranslationState =
@@ -89,6 +90,21 @@ async function loadContentTranslationRow(input: {
   );
 }
 
+function valuesWithoutPlaceholders(
+  locale: LanguageCode,
+  values: Readonly<Record<string, string>>,
+  canonicalValues: Readonly<Record<string, string>> | undefined,
+): Record<string, string> {
+  if (!canonicalValues) {
+    return { ...values };
+  }
+  return omitDeterministicPlaceholderValues({
+    locale,
+    values,
+    canonicalValues,
+  });
+}
+
 function completeIfAllPaths(
   autoPaths: readonly string[],
   values: Readonly<Record<string, string>>,
@@ -106,6 +122,8 @@ export async function lookupExistingMediaPlpTranslation(input: {
   readonly autoPaths: readonly string[];
   /** Live semantic version for public_news rows (when known). */
   readonly expectedSourceVersion?: string | null;
+  /** Canonical machine leaves. Prefixed copies of these are not reusable. */
+  readonly canonicalValues?: Readonly<Record<string, string>>;
 }): Promise<MediaPlpExistingTranslationLookup> {
   const autoPaths = input.autoPaths;
 
@@ -135,11 +153,16 @@ export async function lookupExistingMediaPlpTranslation(input: {
         values[path] = fields[path]!;
       }
     }
-    const complete = completeIfAllPaths(autoPaths, values);
+    const reusable = valuesWithoutPlaceholders(
+      input.locale,
+      values,
+      input.canonicalValues,
+    );
+    const complete = completeIfAllPaths(autoPaths, reusable);
     return {
       EXISTING_TRANSLATION_STATE: complete ? "COMPLETE" : "INCOMPLETE",
       EXISTING_TRANSLATION_COMPLETE: complete,
-      values,
+      values: reusable,
     };
   }
 
@@ -214,10 +237,15 @@ export async function lookupExistingMediaPlpTranslation(input: {
     }
   }
 
-  const complete = completeIfAllPaths(autoPaths, values);
+  const reusable = valuesWithoutPlaceholders(
+    input.locale,
+    values,
+    input.canonicalValues,
+  );
+  const complete = completeIfAllPaths(autoPaths, reusable);
   return {
     EXISTING_TRANSLATION_STATE: complete ? "COMPLETE" : "INCOMPLETE",
     EXISTING_TRANSLATION_COMPLETE: complete,
-    values,
+    values: reusable,
   };
 }

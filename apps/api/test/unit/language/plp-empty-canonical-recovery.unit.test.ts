@@ -86,6 +86,25 @@ const MISSING_ID = "plp-empty-canonical-missing";
 
 let providerCalls = 0;
 
+/** Real machine text. The deterministic `[locale] ` prefix is not a translation. */
+function realMachineTranslationPayload(requestText: string): string {
+  const parsed = JSON.parse(requestText) as {
+    translations?: Array<{ key: string; value: string }>;
+  } & Record<string, string>;
+  if (Array.isArray(parsed.translations)) {
+    return JSON.stringify({
+      translations: parsed.translations.map((row) => ({
+        key: row.key,
+        value: `Локал ${row.value}`,
+      })),
+    });
+  }
+  const translations = Object.entries(parsed)
+    .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+    .map(([key, value]) => ({ key, value: `Локал ${value}` }));
+  return JSON.stringify({ translations });
+}
+
 function trustedRow(id: string, description: string | null): MediaResource {
   const now = "2026-10-06T18:51:15.000Z";
   return {
@@ -208,7 +227,10 @@ beforeEach(async () => {
       importProvider: async () => {
         providerCalls += 1;
         return {
-          provider: new FakeLocalMediaPlpTransport({ maxRequests: 4 }),
+          provider: new FakeLocalMediaPlpTransport({
+            maxRequests: 4,
+            responseText: (request) => realMachineTranslationPayload(request.text),
+          }),
           PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
         };
       },
