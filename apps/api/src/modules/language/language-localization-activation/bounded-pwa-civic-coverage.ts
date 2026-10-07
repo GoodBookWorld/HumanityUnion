@@ -266,6 +266,8 @@ function plpBucketFromStatus(
       return { ...empty, failed: 1, workItemsRequired: 1 };
     case "PENDING":
       return { ...empty, pending: 1, workItemsRequired: 1 };
+    case "INVALID":
+      return { ...empty, invalid: 1, workItemsRequired: 1 };
     default:
       return empty;
   }

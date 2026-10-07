@@ -50,6 +50,8 @@ function mapMediaStatus(
       return "FAILED";
     case "PENDING":
       return "PENDING";
+    case "INVALID":
+      return "INVALID";
     default:
       return "MISSING";
   }

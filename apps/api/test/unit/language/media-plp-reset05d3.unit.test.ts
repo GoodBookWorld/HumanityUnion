@@ -3,7 +3,32 @@
  */
 
 import assert from "node:assert/strict";
+
+function localizedProviderPayload(requestText: string): string {
+  const parsed = JSON.parse(requestText) as {
+    translations?: Array<{ key: string; value: string }>;
+  } & Record<string, string>;
+  if (Array.isArray(parsed.translations)) {
+    return JSON.stringify({
+      translations: parsed.translations.map((row) => ({
+        key: row.key,
+        value: `Локал ${row.value}`,
+      })),
+    });
+  }
+  return JSON.stringify({
+    translations: Object.entries(parsed)
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+      .map(([key, value]) => ({ key, value: `Локал ${value}` })),
+  });
+}
 import { afterEach, beforeEach, describe, it } from "node:test";
+
+import {
+  ensureLanguageRegistrySeeded,
+  setLanguageRegistryForceMemoryForTests,
+  updateLanguageRegistryRecord,
+} from "../../../src/modules/language/language-registry/language-registry.repository.js";
 
 import {
   MEDIA_PLP_ENTITY_TYPE,
@@ -51,7 +76,13 @@ import {
   enqueuePlpBuildRequest,
 } from "../../../src/modules/language/published-localized-presentation/index.js";
 
-beforeEach(() => {
+beforeEach(async () => {
+  setLanguageRegistryForceMemoryForTests(true);
+  await ensureLanguageRegistrySeeded();
+  await updateLanguageRegistryRecord("lang-uk", {
+    enabled: true,
+    contentTranslationEnabled: true,
+  });
   setPlpAutoBuildWorkForceMemoryForTests(true);
   resetPlpAutoBuildWorkStoreForTests();
   resetPublishedLocalizationPersistenceForTests();
@@ -63,6 +94,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLanguageRegistryForceMemoryForTests(false);
   resetPlpAutoBuildWorkStoreForTests();
   setPlpAutoBuildWorkForceMemoryForTests(false);
   resetPublishedLocalizationPersistenceForTests();
@@ -143,7 +175,20 @@ describe("RESET 05D.3 — editorial path-exact ownership", () => {
         `missing IDENTICAL path ${path}`,
       );
     }
-    assert.equal(validation.pathDiagnostics.PARTIAL_AUTO_PATHS.length, 16);
+    assert.equal(validation.pathDiagnostics.PARTIAL_AUTO_PATHS.length, 18);
+    assert.ok(validation.reasonCodes.includes("DETERMINISTIC_PLACEHOLDER"));
+    for (const path of ["overviewTitle", "overviewSummary"]) {
+      assert.ok(validation.pathDiagnostics.PARTIAL_AUTO_PATHS.includes(path), path);
+      assert.ok(
+        validation.pathDiagnostics.INTEGRITY_FAILED_PATHS.includes(path),
+        path,
+      );
+      assert.equal(
+        validation.pathDiagnostics.CANONICAL_IDENTICAL_TRANSLATABLE_PATHS.includes(path),
+        false,
+        path,
+      );
+    }
   });
 
   it("inventory: every semantic leaf classified; ids protected; FAQ brand tokens tagged", () => {
@@ -187,6 +232,13 @@ describe("RESET 05D.3 — editorial path-exact ownership", () => {
       MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
     );
     const version = fingerprintMediaPlpCanonicalVersion(tree);
+    const values: Record<string, string> = {};
+    for (const node of collectAutoPaths(tree)) {
+      if (!isCollectedPathMachineEligible(node.path, fieldPolicy)) {
+        continue;
+      }
+      values[node.path] = `Локал ${node.value}`;
+    }
     const result = await processPlpBuildRequest(
       {
         entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
@@ -198,21 +250,16 @@ describe("RESET 05D.3 — editorial path-exact ownership", () => {
       },
       {
         importProvider: async () => ({
-          provider: new FakeLocalMediaPlpTransport({}),
+          provider: new FakeLocalMediaPlpTransport({
+            responseText: (request) => localizedProviderPayload(request.text),
+          }),
           PROVIDER_TRANSPORT: MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
         }),
+        callProvider: async () => ({ ok: true, values }),
         verifyDurability: async () => ({ ok: true }),
       },
     );
     assert.equal(result.status, "COMPLETED");
-
-    const values: Record<string, string> = {};
-    for (const node of collectAutoPaths(tree)) {
-      if (!isCollectedPathMachineEligible(node.path, fieldPolicy)) {
-        continue;
-      }
-      values[node.path] = `[uk] ${node.value}`;
-    }
     const merged = mergeLocalizedLayersByProvenance({
       canonicalPresentation: tree,
       layers: [

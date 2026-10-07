@@ -102,6 +102,63 @@ export function hasDeterministicPlaceholderPayloadPattern(
   return values.every((value) => prefixes.some((prefix) => value.startsWith(prefix)));
 }
 
+function normalizePlaceholderCompareValue(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+/**
+ * One machine leaf is the deterministic placeholder contract:
+ * `[locale] ` plus the canonical source, using the raw locale or its
+ * registry key. A locale token anywhere else in a real translation does not match.
+ */
+export function isDeterministicPlaceholderForCanonicalSource(input: {
+  readonly locale: string;
+  readonly localized: string;
+  readonly canonical: string;
+}): boolean {
+  const localized = normalizePlaceholderCompareValue(input.localized);
+  const canonical = normalizePlaceholderCompareValue(input.canonical);
+  if (!localized || !canonical) {
+    return false;
+  }
+  const target = String(input.locale);
+  const prefixes = new Set([
+    `[${target}] `,
+    `[${normalizeLanguageRegistryLocaleKey(target)}] `,
+  ]);
+  for (const prefix of prefixes) {
+    const expected = normalizePlaceholderCompareValue(`${prefix}${canonical}`);
+    if (localized === expected) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Drop machine leaves that are only `[locale] ` plus their canonical source. */
+export function omitDeterministicPlaceholderValues(input: {
+  readonly locale: string;
+  readonly values: Readonly<Record<string, string>>;
+  readonly canonicalValues: Readonly<Record<string, string>>;
+}): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [path, value] of Object.entries(input.values)) {
+    const canonical = input.canonicalValues[path];
+    if (
+      typeof canonical === "string" &&
+      isDeterministicPlaceholderForCanonicalSource({
+        locale: input.locale,
+        localized: value,
+        canonical,
+      })
+    ) {
+      continue;
+    }
+    out[path] = value;
+  }
+  return out;
+}
+
 /**
  * Known placeholder artifact (provider-agnostic real translations are not).
  * Same-locale passthrough is not a cross-locale placeholder.

@@ -134,7 +134,7 @@ function fixtureDeps(input?: {
       EXISTING_TRANSLATION_STATE: translationState,
       EXISTING_TRANSLATION_COMPLETE: translationComplete,
       values: translationComplete
-        ? { explanation: `[uk] ${trusted.explanation}` }
+        ? { explanation: `Локал ${trusted.explanation}` }
         : translationState === "INCOMPLETE"
           ? {}
           : {},
@@ -158,7 +158,7 @@ function fixtureDeps(input?: {
             const parsed = JSON.parse(request.text) as Record<string, string>;
             const out: Record<string, string> = {};
             for (const [k, v] of Object.entries(parsed)) {
-              out[k] = `[${request.targetLanguage}] ${v}`;
+              out[k] = `Локал ${v}`;
             }
             return {
               translatedText: JSON.stringify(out),

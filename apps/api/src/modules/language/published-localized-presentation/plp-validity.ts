@@ -141,7 +141,10 @@ export function classifyPublishedLocalizedPresentationValidity(input: {
     };
   }
 
-  if (isDeterministicPlpProvider(input.snapshot) && usability.allowPublishedLocalized) {
+  if (
+    usability.contentIntegrityReasonCodes.includes("DETERMINISTIC_PLACEHOLDER") ||
+    (isDeterministicPlpProvider(input.snapshot) && usability.allowPublishedLocalized)
+  ) {
     return {
       reconciliationState: "INVALID",
       presentationEligible: false,

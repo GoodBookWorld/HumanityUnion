@@ -591,6 +591,8 @@ export type LanguageHistoricalBackfillPlanItem = {
   readonly stale: number;
   readonly failed: number;
   readonly current: number;
+  /** Placeholder or other unusable PLP rows. Omitted on older CT plan rows. */
+  readonly invalid?: number;
   readonly action:
     | "enqueue_ct_warm"
     | "enqueue_plp_editorial"

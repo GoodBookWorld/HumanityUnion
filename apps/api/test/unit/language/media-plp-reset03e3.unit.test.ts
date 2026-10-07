@@ -110,7 +110,20 @@ describe("Reset 03E.3 — localization structural integrity", () => {
       canonicalVersion: version,
       contentRevision: 1,
       canonicalPresentation: editorialCanonical,
-      includeDeterministicMachine: true,
+      includeDeterministicMachine: false,
+      layers: [
+        {
+          source: "MACHINE",
+          values: {
+            overviewTitle: "Огляд",
+            overviewSummary: "Резюме",
+            "overviewPoints[0].heading": "Пункт",
+            "overviewPoints[0].body": "Тіло",
+            "faq[0].question": "Питання?",
+            "faq[0].answer": "Відповідь",
+          },
+        },
+      ],
     });
     assert.equal(published.ok, true);
     if (!published.ok) return;
@@ -153,14 +166,14 @@ describe("Reset 03E.3 — localization structural integrity", () => {
         {
           source: "MACHINE",
           values: {
-            overviewTitle: "[uk] Overview title EN",
-            overviewSummary: "[uk] Overview summary EN",
+            overviewTitle: "Огляд",
+            overviewSummary: "Резюме",
             "overviewPoints[0].id": "p1",
-            "overviewPoints[0].heading": "[uk] H1",
-            "overviewPoints[0].body": "[uk] B1",
+            "overviewPoints[0].heading": "Пункт",
+            "overviewPoints[0].body": "Тіло",
             "faq[0].id": "faq-1",
-            "faq[0].question": "[uk] Q?",
-            "faq[0].answer": "[uk] A",
+            "faq[0].question": "Питання?",
+            "faq[0].answer": "Відповідь",
           },
         },
       ],
