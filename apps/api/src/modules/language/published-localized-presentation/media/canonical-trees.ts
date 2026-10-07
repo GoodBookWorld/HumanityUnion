@@ -15,7 +15,10 @@ import type {
 } from "@hu/types";
 import { controlledTerminologyValue, protectedIdentity, protectedTechnical } from "@hu/types";
 
-import { fingerprintPublicPresentation } from "../../public-localized-presentation.js";
+import {
+  collectAutoTranslatableNodes,
+  fingerprintPublicPresentation,
+} from "../../public-localized-presentation.js";
 
 export type MediaPlpPublicNewsTree = {
   readonly id: ReturnType<typeof protectedTechnical>;
@@ -172,4 +175,17 @@ export function fingerprintMediaPlpCanonicalVersion(
   tree: PublicPresentationNode,
 ): string {
   return fingerprintPublicPresentation(tree);
+}
+
+/**
+ * Usable only when the tree has auto-translatable text.
+ * Zero nodes hash to `[]` and must not be treated as a canonical version.
+ */
+export function isUsablePlpCanonicalPresentation(
+  tree: PublicPresentationNode | null | undefined,
+): boolean {
+  if (tree == null) {
+    return false;
+  }
+  return collectAutoTranslatableNodes(tree).length > 0;
 }

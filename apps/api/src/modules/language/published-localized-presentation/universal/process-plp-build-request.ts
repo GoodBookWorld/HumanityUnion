@@ -12,6 +12,7 @@ import type {
 } from "@hu/types";
 import { isLocalizationSourceOriginalEntityType, MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 
+import { loadMediaPlpLiveCanonicalSource } from "../media/live-source.js";
 import { findCurrentPublishedPresentation } from "../persistence/repository.js";
 import { getPublishedLocalizationPersistenceMode } from "../persistence/repository.js";
 import { collectAutoPaths } from "../presentation-paths.js";
@@ -27,10 +28,6 @@ import {
   structuredFailure,
   type ProcessPlpBuildRequestResult,
 } from "./plp-auto-build-failure.js";
-import {
-  encodePlpStructuredStaleSafeReason,
-  PLP_STALE_ORIGIN,
-} from "./plp-stale-result.js";
 import {
   ensureAllDefaultPlpAdaptersRegistered,
   ensureMediaPlpAdapterRegistered,
@@ -160,6 +157,9 @@ export async function processPlpBuildRequest(
     locale: request.locale as LanguageCode,
   });
   if (!contract) {
+    if (await liveMediaCanonicalUnusable(request)) {
+      return { status: "SOURCE_DEFERRED" };
+    }
     return failed({
       status: "FAILED",
       failure: structuredFailure({
@@ -177,24 +177,11 @@ export async function processPlpBuildRequest(
       liveCanonicalVersion: contract.canonicalVersion,
     })
   ) {
-    return failed({
-      status: "FAILED",
-      failure: structuredFailure({
-        failureCode: "STALE_CANONICAL_VERSION",
-        retryable: false,
-        stage: "validate",
-        safeReason: encodePlpStructuredStaleSafeReason({
-          code: "STALE_CANONICAL_VERSION",
-          reason: "STALE_REVISION",
-          originId: PLP_STALE_ORIGIN.CLAIM_SOURCE_RELOAD,
-          boundary: PLP_STALE_ORIGIN.CLAIM_SOURCE_RELOAD,
-          authority: "adapter.resolveCanonicalEntity",
-          workCanonicalVersion: request.canonicalVersion,
-          currentSourceCanonicalVersion: contract.canonicalVersion,
-          candidateCanonicalVersion: request.canonicalVersion,
-        }),
-      }),
-    });
+    return {
+      status: "RESCHEDULED",
+      canonicalVersion: contract.canonicalVersion,
+      contentRevision: contract.contentRevision,
+    };
   }
 
   // Closure 05 — Media HU-owned PLP builds require Registry CT eligibility.
@@ -493,6 +480,19 @@ export async function processPlpBuildRequest(
   }
 
   return { status: "COMPLETED" };
+}
+
+async function liveMediaCanonicalUnusable(
+  request: PlpBuildRequest,
+): Promise<boolean> {
+  if (!(MEDIA_PLP_ENTITY_TYPES as readonly string[]).includes(request.entityType)) {
+    return false;
+  }
+  const live = await loadMediaPlpLiveCanonicalSource({
+    entityType: request.entityType as MediaPlpEntityType,
+    entityId: request.entityId,
+  });
+  return live.SOURCE_FOUND && live.CANONICAL_USABLE === false;
 }
 
 function sanitizeSafe(value: string | undefined): string {

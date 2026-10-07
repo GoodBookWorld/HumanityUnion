@@ -17,6 +17,7 @@ import {
   asMediaPlpPresentationNode,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
+  isUsablePlpCanonicalPresentation,
 } from "./canonical-trees.js";
 
 export type TrustedMediaEditorialAuthority =
@@ -28,6 +29,11 @@ export type TrustedMediaEditorialCanonical = {
   readonly sourceFound: boolean;
   readonly sourcePublic: boolean;
   readonly authority: TrustedMediaEditorialAuthority;
+  /**
+   * False when the row or catalog entry has no auto-translatable explanation.
+   * That state is not a canonical version and is not a missing entity.
+   */
+  readonly canonicalUsable: boolean;
   readonly canonicalVersion: string | null;
   readonly canonicalPresentation: PublicPresentationNode | null;
   readonly resource: TrustedMediaResource | null;
@@ -38,6 +44,7 @@ function missing(): TrustedMediaEditorialCanonical {
     sourceFound: false,
     sourcePublic: false,
     authority: "missing",
+    canonicalUsable: false,
     canonicalVersion: null,
     canonicalPresentation: null,
     resource: null,
@@ -52,14 +59,52 @@ function fromResource(
   const canonicalPresentation = asMediaPlpPresentationNode(
     buildCanonicalTrustedPresentation(resource),
   );
+  if (!isUsablePlpCanonicalPresentation(canonicalPresentation)) {
+    return {
+      sourceFound: true,
+      sourcePublic,
+      authority,
+      canonicalUsable: false,
+      canonicalVersion: null,
+      canonicalPresentation: null,
+      resource,
+    };
+  }
   return {
     sourceFound: true,
     sourcePublic,
     authority,
+    canonicalUsable: true,
     canonicalVersion: fingerprintMediaPlpCanonicalVersion(canonicalPresentation),
     canonicalPresentation,
     resource,
   };
+}
+
+/** Fingerprint of a trusted explanation. Null when it has no auto-translatable text. */
+export function trustedExplanationCanonicalVersion(
+  explanation: string | null | undefined,
+): string | null {
+  const text = typeof explanation === "string" ? explanation.trim() : "";
+  if (!text) {
+    return null;
+  }
+  const presentation = asMediaPlpPresentationNode(
+    buildCanonicalTrustedPresentation({
+      id: "version",
+      name: "version",
+      logoLabel: "v",
+      country: "International",
+      categoryId: "international-wire-service",
+      explanation: text,
+      websiteUrl: "https://example.com/",
+      sortOrder: 0,
+    }),
+  );
+  if (!isUsablePlpCanonicalPresentation(presentation)) {
+    return null;
+  }
+  return fingerprintMediaPlpCanonicalVersion(presentation);
 }
 
 export async function resolveTrustedMediaEditorialCanonical(

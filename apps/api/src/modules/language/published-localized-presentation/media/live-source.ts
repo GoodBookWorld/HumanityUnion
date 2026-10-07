@@ -27,6 +27,8 @@ import { resolveTrustedMediaEditorialCanonical } from "./trusted-editorial-sourc
 export type MediaPlpLiveCanonicalSource = {
   readonly SOURCE_FOUND: boolean;
   readonly SOURCE_PUBLIC: boolean;
+  /** False when the entity exists but its explanation cannot be a version. */
+  readonly CANONICAL_USABLE: boolean;
   readonly CANONICAL_VERSION: string | null;
   readonly canonicalPresentation: PublicPresentationNode | null;
 };
@@ -35,6 +37,7 @@ function empty(): MediaPlpLiveCanonicalSource {
   return {
     SOURCE_FOUND: false,
     SOURCE_PUBLIC: false,
+    CANONICAL_USABLE: false,
     CANONICAL_VERSION: null,
     canonicalPresentation: null,
   };
@@ -47,6 +50,7 @@ function withTree(
   return {
     SOURCE_FOUND: true,
     SOURCE_PUBLIC: sourcePublic,
+    CANONICAL_USABLE: true,
     CANONICAL_VERSION: fingerprintMediaPlpCanonicalVersion(presentation),
     canonicalPresentation: presentation,
   };
@@ -65,12 +69,26 @@ function resolvePrinciple(entityId: string): MediaPlpLiveCanonicalSource {
 
 async function resolveTrusted(entityId: string): Promise<MediaPlpLiveCanonicalSource> {
   const editorial = await resolveTrustedMediaEditorialCanonical(entityId);
-  if (!editorial.sourceFound || !editorial.canonicalPresentation || !editorial.canonicalVersion) {
+  if (!editorial.sourceFound) {
     return empty();
+  }
+  if (
+    !editorial.canonicalUsable ||
+    !editorial.canonicalPresentation ||
+    !editorial.canonicalVersion
+  ) {
+    return {
+      SOURCE_FOUND: true,
+      SOURCE_PUBLIC: editorial.sourcePublic,
+      CANONICAL_USABLE: false,
+      CANONICAL_VERSION: null,
+      canonicalPresentation: null,
+    };
   }
   return {
     SOURCE_FOUND: true,
     SOURCE_PUBLIC: editorial.sourcePublic,
+    CANONICAL_USABLE: true,
     CANONICAL_VERSION: editorial.canonicalVersion,
     canonicalPresentation: editorial.canonicalPresentation,
   };

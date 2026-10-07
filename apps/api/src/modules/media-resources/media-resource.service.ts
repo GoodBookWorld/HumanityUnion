@@ -497,6 +497,13 @@ export async function createAdminMediaResource(
   };
 
   await upsertMediaResource(resource);
+  await notifyTrustedCanonicalChange({
+    entityId: resource.id,
+    resourceType: resource.resourceType,
+    hadTrustedRow: false,
+    beforeDescription: null,
+    afterDescription: resource.description,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.create",
@@ -637,6 +644,13 @@ export async function updateAdminMediaResource(
   };
 
   await upsertMediaResource(resource);
+  await notifyTrustedCanonicalChange({
+    entityId: resource.id,
+    resourceType: resource.resourceType,
+    hadTrustedRow: existing.resourceType === "TRUSTED_MEDIA",
+    beforeDescription: existing.description,
+    afterDescription: resource.description,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.update",
@@ -849,4 +863,34 @@ export async function listActiveNewsSourceMediaResources(): Promise<MediaResourc
 export async function listProjectedActiveApprovedNewsSources() {
   const resources = await listActiveNewsSourceMediaResources();
   return projectApprovedNewsSources(resources);
+}
+
+async function notifyTrustedCanonicalChange(input: {
+  readonly entityId: string;
+  readonly resourceType: MediaResourceType;
+  readonly hadTrustedRow: boolean;
+  readonly beforeDescription: string | null | undefined;
+  readonly afterDescription: string | null | undefined;
+}): Promise<void> {
+  if (input.resourceType !== "TRUSTED_MEDIA") {
+    return;
+  }
+  const {
+    continueTrustedMediaPlpIfCanonicalChanged,
+    trustedCanonicalVersionBeforeWrite,
+  } = await import(
+    "../language/published-localized-presentation/universal/trusted-canonical-plp-continuation.js"
+  );
+  const { trustedExplanationCanonicalVersion } = await import(
+    "../language/published-localized-presentation/media/trusted-editorial-source.js"
+  );
+  await continueTrustedMediaPlpIfCanonicalChanged({
+    entityId: input.entityId,
+    beforeVersion: trustedCanonicalVersionBeforeWrite({
+      hadTrustedRow: input.hadTrustedRow,
+      entityId: input.entityId,
+      description: input.beforeDescription,
+    }),
+    afterVersion: trustedExplanationCanonicalVersion(input.afterDescription),
+  });
 }

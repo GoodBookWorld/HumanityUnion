@@ -51,6 +51,7 @@ import {
 } from "./plp-auto-build-failure.js";
 import {
   claimNextPlpAutoBuildWork,
+  deferPlpAutoBuildWorkForUnusableCanonical,
   findEarliestPlpFutureDueAt,
   listPlpAutoBuildWorkForTests,
   probePlpAutoBuildImmediatelyDue,
@@ -560,6 +561,27 @@ async function processClaimedWork(
 
     const raw = await processor(runningRequest);
     const outcome = normalizeProcessorOutcome(raw);
+
+    if (outcome.status === "SOURCE_DEFERRED") {
+      await deferPlpAutoBuildWorkForUnusableCanonical({
+        workKey: work.workKey,
+        attempts: work.attempts,
+      });
+      return;
+    }
+
+    if (outcome.status === "RESCHEDULED") {
+      await upsertPendingPlpAutoBuildWork({
+        entityType: work.entityType,
+        entityId: work.entityId,
+        locale: work.locale,
+        canonicalVersion: outcome.canonicalVersion,
+        contentRevision: outcome.contentRevision,
+        trigger: "CANONICAL_CONTENT_UPDATED",
+        reopenFailedSameVersion: true,
+      });
+      return;
+    }
 
     if (outcome.status === "BATCH_PROGRESS") {
       await persistPlpBatchCheckpointYield({

@@ -73,6 +73,21 @@ export type ProcessPlpBuildRequestResult =
       readonly checkpoint: PlpBatchCheckpoint;
       readonly pacingUntil: string | null;
       readonly failure?: undefined;
+    }
+  | {
+      /** Live explanation has no auto-translatable text. Not a stale version. */
+      readonly status: "SOURCE_DEFERRED";
+      readonly failure?: undefined;
+    }
+  | {
+      /**
+       * Usable live canonical version differs from the claimed work.
+       * The drain replaces the row with that live version. Version A is not published.
+       */
+      readonly status: "RESCHEDULED";
+      readonly canonicalVersion: string;
+      readonly contentRevision: number;
+      readonly failure?: undefined;
     };
 
 const FORENSIC_KEYS = [

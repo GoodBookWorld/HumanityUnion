@@ -142,6 +142,12 @@ export function resetPlpStatusAggregationReadsForTests(): void {
 export function plpStatusAggregationReadsForTests(): number {
   return plpStatusAggregationReads;
 }
+/** Empty canonical explanation is deferred, not failed. Matches the LOAD.03 due sweep. */
+export const PLP_UNUSABLE_CANONICAL_DEFER_MS = 60_000;
+export const PLP_CANONICAL_SOURCE_UNUSABLE_REASON = "CANONICAL_SOURCE_UNUSABLE";
+/** One reopen of a false same-version stale row. Not a provider recovery window. */
+export const PLP_SAME_VERSION_STALE_RECOVERY_GENERATION = "stale-same-version";
+
 /** RESET 05E — base backoff for retryable provider failures (ms). */
 const PROVIDER_RETRY_BACKOFF_BASE_MS = 5_000;
 const PROVIDER_RETRY_BACKOFF_MAX_MS = 60_000;
@@ -445,7 +451,28 @@ function coalesceUpsert(input: {
   // A wake may adopt retryable exhaustion into the durable recovery contract.
   // It must not reset attempts or recoveryGeneration, and it must not reopen
   // non-retryable or generation-capped failures.
+  // Exception: one reopen when a STALE_CANONICAL_VERSION row now matches the
+  // usable live version and no newer attempt has already used that reopen.
   if (existing.status === "failed" && sameVersion) {
+    if (
+      input.reopenFailedSameVersion &&
+      existing.failureCode === "STALE_CANONICAL_VERSION" &&
+      existing.retryable === false &&
+      existing.recoveryGeneration !== PLP_SAME_VERSION_STALE_RECOVERY_GENERATION
+    ) {
+      const record: PlpAutoBuildWorkRecord = {
+        ...existing,
+        status: "pending",
+        attempts: Math.max(0, existing.attempts - 1),
+        maxAttempts: input.maxAttempts,
+        claimedAt: null,
+        completedAt: null,
+        updatedAt,
+        nextAttemptAt: null,
+        recoveryGeneration: PLP_SAME_VERSION_STALE_RECOVERY_GENERATION,
+      };
+      return { accepted: true, deduped: false, record };
+    }
     if (
       input.reopenFailedSameVersion &&
       isObsoleteTerminologyHardGateFailure({
@@ -557,14 +584,29 @@ function coalesceUpsert(input: {
     (existing.status === "pending" || existing.status === "running")
   ) {
     const newerRevision = Math.max(input.contentRevision, existing.contentRevision);
+    const releaseUnusableDeferral =
+      existing.lastError === PLP_CANONICAL_SOURCE_UNUSABLE_REASON;
     const record: PlpAutoBuildWorkRecord = {
       ...existing,
       contentRevision: newerRevision,
       trigger: input.trigger,
       maxAttempts: input.maxAttempts,
       updatedAt,
+      ...(releaseUnusableDeferral
+        ? {
+            nextAttemptAt: null,
+            lastError: null,
+            failureCode: null,
+            failureStage: null,
+            retryable: null,
+          }
+        : {}),
     };
-    return { accepted: false, deduped: true, record };
+    return {
+      accepted: releaseUnusableDeferral,
+      deduped: !releaseUnusableDeferral,
+      record,
+    };
   }
 
   const reopen =
@@ -1089,6 +1131,40 @@ export async function markPlpAutoBuildWorkSuperseded(workKey: string): Promise<v
 
 export async function markPlpAutoBuildWorkSkippedUsable(workKey: string): Promise<void> {
   await markTerminal(workKey, "skipped_usable");
+}
+
+/**
+ * Claim found a real entity whose explanation is not a canonical version.
+ * Keep the stored version pending and wait for the source, without a tight loop.
+ */
+export async function deferPlpAutoBuildWorkForUnusableCanonical(input: {
+  readonly workKey: string;
+  readonly attempts: number;
+}): Promise<void> {
+  const now = nowIso();
+  const nextAttemptAt = new Date(nowMs() + PLP_UNUSABLE_CANONICAL_DEFER_MS).toISOString();
+  const restoredAttempts = Math.max(0, Math.trunc(input.attempts) - 1);
+  const patch = {
+    status: "pending" as const,
+    attempts: restoredAttempts,
+    lastError: PLP_CANONICAL_SOURCE_UNUSABLE_REASON,
+    failureCode: null,
+    failureStage: null,
+    retryable: null,
+    nextAttemptAt,
+    claimedAt: null,
+    completedAt: null,
+    updatedAt: now,
+  };
+  if (usePlpAutoBuildWorkMemory()) {
+    const existing = memoryByWorkKey.get(input.workKey);
+    if (!existing) {
+      return;
+    }
+    memoryByWorkKey.set(input.workKey, { ...existing, ...patch });
+    return;
+  }
+  await collection().updateOne({ workKey: input.workKey }, { $set: patch });
 }
 
 /**
