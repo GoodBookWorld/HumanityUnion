@@ -18,6 +18,12 @@ import { TranslationProviderError } from "./translation.config.js";
 export const CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION = "v1" as const;
 
 /**
+ * Marker on failures encoded after structured CT responseSchema was required.
+ * Historical lastError rows lack this field and stay pre-contract.
+ */
+export const CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT = "schema_v1" as const;
+
+/**
  * Architecture basis strings that may unlock historical retries.
  * Do not invent bases without a matching code condition.
  */
@@ -28,6 +34,11 @@ export const CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS = {
   COLLECTIVE_DECISION_HYDRATE_SYNC_08K2: "COLLECTIVE_DECISION_HYDRATE_SYNC_08K2",
   /** Pack 08K.2.6 — one-time diagnostic retry of pre-08K.2.5 collapsed VALIDATION_FAILED. */
   EXACT_FAILURE_REASON_PROPAGATION_08K25: "EXACT_FAILURE_REASON_PROPAGATION_08K25",
+  /**
+   * One recovery enqueue for a same-version INVALID_PROVIDER_PAYLOAD identity
+   * that already reached the streak cap before structured responseSchema.
+   */
+  CT_STRUCTURED_OUTPUT_SCHEMA_v1: "CT_STRUCTURED_OUTPUT_SCHEMA_v1",
 } as const;
 
 export type ContentTranslationArchitectureRetryBasis =
@@ -218,6 +229,11 @@ export type ContentTranslationSafeFailureMetadata = {
   readonly terminologyViolationFingerprint?: string | null;
   /** Same set the fingerprint hashes. No preferred-term or canonical-term text. */
   readonly terminologyViolations?: readonly TerminologyViolationDescriptor[] | null;
+  /**
+   * Present on failures encoded after the structured CT responseSchema contract.
+   * Absent on historical rows.
+   */
+  readonly structuredOutputContract?: typeof CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT | null;
 };
 
 const META_PREFIX = "CT_FAIL_META_V1:";
@@ -313,6 +329,7 @@ export function encodeContentTranslationFailureMetadata(
   const encoded: ContentTranslationSafeFailureMetadata = {
     ...rest,
     failureReasonCode,
+    structuredOutputContract: CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT,
     ...(localeFailures?.length ? { localeFailures } : {}),
     ...diagnostic,
   };
@@ -381,6 +398,9 @@ export function parseContentTranslationFailureMetadata(
         : {}),
       ...(typeof raw.localizationInputVersion === "string" && raw.localizationInputVersion.length > 0
         ? { localizationInputVersion: raw.localizationInputVersion }
+        : {}),
+      ...(raw.structuredOutputContract === CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT
+        ? { structuredOutputContract: CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT }
         : {}),
       ...diagnostic,
     };

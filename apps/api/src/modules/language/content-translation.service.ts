@@ -46,6 +46,7 @@ import {
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { contentTranslationStructuredResponseSchema } from "./content-translation-structured-response.js";
 import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
 import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
 import {
@@ -532,6 +533,7 @@ export async function getOrCreateContentTranslation(input: {
       translatedFields,
     });
   } else {
+    const responseSchema = contentTranslationStructuredResponseSchema(providerFields);
     const result = await runLocalizationProviderRequest(() =>
       provider.translate({
         sourceLanguage: source.sourceLanguage,
@@ -542,6 +544,7 @@ export async function getOrCreateContentTranslation(input: {
         sourceVersion: source.sourceVersion,
         terminologyContext,
         safetyCleared: true,
+        ...(responseSchema ? { responseSchema } : {}),
       }),
     );
     translationProviderId = result.providerId;

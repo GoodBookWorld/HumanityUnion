@@ -11,6 +11,7 @@
 
 import type { LanguageCode } from "@hu/types";
 
+import { CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS } from "./content-translation-failure-metadata.js";
 import {
   enqueueContentTranslationWarmRequested,
   type ContentTranslationWarmEnqueueResult,
@@ -345,12 +346,20 @@ export async function runPublicLocalizationResidualRetry(input: {
         sourceRecordId: unit.sourceRecordId,
       });
       const sourceVersion = source?.sourceVersion?.trim();
+      const recoveryBasis =
+        CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.CT_STRUCTURED_OUTPUT_SCHEMA_v1;
+      const unitBases = unit.architectureRetryBases;
+      const passRecoveryBasis =
+        unitBases.includes(recoveryBasis) &&
+        (unit.targetLocales.length === 1 ||
+          unitBases.every((basis) => basis === recoveryBasis));
       const result = await enqueueContentTranslationWarmRequested({
         sourceKind: unit.sourceKind,
         sourceRecordId: unit.sourceRecordId,
         reason: "operator_residual_retry",
         targetLocales: unit.targetLocales,
         ...(sourceVersion && sourceVersion !== "unloaded" ? { sourceVersion } : {}),
+        ...(passRecoveryBasis ? { architectureRetryBasis: recoveryBasis } : {}),
       });
       enqueueResults.push(result);
       if (result.enqueued) {
