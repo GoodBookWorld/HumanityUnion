@@ -11,14 +11,15 @@ import {
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { fetchWorldInitiativesProjection } from "../../initiatives/world-initiatives-api";
-import {
-  buildPwaFeedItemPresentation,
-} from "../../language/adapters/pwa-feed-presentation";
+import { buildPwaFeedItemPresentation } from "../../language/adapters/pwa-feed-presentation";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
+import { resolveInitiativeCardStatusLabel } from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 import { getWorkspaceHome } from "../../workspace-home/workspace-home-api";
 
 interface FeedItem {
   initiativeId: string;
   title: string;
+  summary?: string;
   href: string;
   context?: string;
   explanation?: string;
@@ -46,13 +47,75 @@ function preferenceMatches(
 async function loadNewestPublicInitiatives(): Promise<FeedItem[]> {
   const world = await fetchWorldInitiativesProjection(12);
   return (world.initiatives ?? []).map((item) => ({
+      initiativeId: item.initiativeId,
+      title: item.title,
+      summary: item.summary,
+      href: item.publicInitiativeHref || `/initiatives/public/${item.initiativeId}`,
+      context: [item.activityArea, item.geographyLabel].filter(Boolean).join(" · ") || undefined,
+      explanation: item.currentStageLabel || undefined,
+      source: "newest" as const,
+    }));
+}
+
+/**
+ * Cache-only title. English and browser-native owners stay on the canonical
+ * title, which remains a source-language island. A distinct CURRENT title
+ * follows the document locale and is not marked browser-native English.
+ */
+function PwaInitiativeFeedCard({ item }: { item: FeedItem }) {
+  const tExperience = useTranslations("initiativeExperience");
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: item.initiativeId,
+    canonicalTitle: item.title,
+    canonicalSummary: item.summary,
+  });
+  const presentation = buildPwaFeedItemPresentation({
     initiativeId: item.initiativeId,
     title: item.title,
-    href: item.publicInitiativeHref || `/initiatives/public/${item.initiativeId}`,
-    context: [item.activityArea, item.geographyLabel].filter(Boolean).join(" · ") || undefined,
-    explanation: item.currentStageLabel || undefined,
-    source: "newest" as const,
-  }));
+    context: item.context,
+    explanation: item.explanation,
+  });
+  const titleUsesCanonicalIsland = displayTitle === item.title;
+  const statusLabel =
+    item.source === "newest"
+      ? resolveInitiativeCardStatusLabel(item.explanation, tExperience)
+      : "";
+  const canonicalExplanation = item.source === "preference" ? presentation.explanation : "";
+
+  return (
+    <li className="hu-pwa-initiative-feed__item">
+      <Link className="hu-pwa-initiative-feed__card" href={item.href}>
+        <h3
+          className="hu-pwa-initiative-feed__title"
+          {...(titleUsesCanonicalIsland
+            ? {
+                lang: DEFAULT_PLATFORM_LANGUAGE,
+                "data-hu-content-lang": DEFAULT_PLATFORM_LANGUAGE,
+                "data-hu-reading-owner": "browser-native" as const,
+              }
+            : {})}
+        >
+          {displayTitle}
+        </h3>
+        {statusLabel ? <p className="hu-pwa-initiative-feed__why">{statusLabel}</p> : null}
+        {presentation.context || canonicalExplanation ? (
+          <div
+            className="hu-pwa-initiative-feed__canonical-reading"
+            lang={DEFAULT_PLATFORM_LANGUAGE}
+            data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
+            data-hu-reading-owner="browser-native"
+          >
+            {presentation.context ? (
+              <p className="hu-pwa-initiative-feed__context">{presentation.context}</p>
+            ) : null}
+            {canonicalExplanation ? (
+              <p className="hu-pwa-initiative-feed__why">{canonicalExplanation}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </Link>
+    </li>
+  );
 }
 
 /**
@@ -63,8 +126,9 @@ async function loadNewestPublicInitiatives(): Promise<FeedItem[]> {
  * Private `/workspace/home` is fetched only after canonical auth is authenticated.
  * Guests/pending never trigger that private projection (or Preferences-style refresh noise).
  *
- * Pack 08K — chrome via `pwa.feed.*`; semantic titles/explanations via
- * `buildPwaFeedItemPresentation` → PublicLocalizedPresentation boundary.
+ * Pack 08K — chrome via `pwa.feed.*`. Titles use the cache-only initiative
+ * card presentation. Activity/geography context and preference explanations
+ * stay canonical English; they are not Content Translation fields.
  */
 export function PwaInitiativeFeed() {
   const t = useTranslations("pwa");
@@ -132,35 +196,9 @@ export function PwaInitiativeFeed() {
 
       {items.length > 0 ? (
         <ul className="hu-pwa-initiative-feed__list" aria-label={t("feed.carouselAria")}>
-          {items.map((item) => {
-            // Pack 08K — semantic titles via PublicPresentationNode adapter.
-            const presentation = buildPwaFeedItemPresentation({
-              initiativeId: item.initiativeId,
-              title: item.title,
-              context: item.context,
-              explanation: item.explanation,
-            });
-            return (
-            <li key={item.initiativeId} className="hu-pwa-initiative-feed__item">
-              <Link className="hu-pwa-initiative-feed__card" href={item.href}>
-                <div
-                  className="hu-pwa-initiative-feed__canonical-reading"
-                  lang={DEFAULT_PLATFORM_LANGUAGE}
-                  data-hu-content-lang={DEFAULT_PLATFORM_LANGUAGE}
-                  data-hu-reading-owner="browser-native"
-                >
-                  <h3 className="hu-pwa-initiative-feed__title">{presentation.title}</h3>
-                  {presentation.context ? (
-                    <p className="hu-pwa-initiative-feed__context">{presentation.context}</p>
-                  ) : null}
-                  {presentation.explanation ? (
-                    <p className="hu-pwa-initiative-feed__why">{presentation.explanation}</p>
-                  ) : null}
-                </div>
-              </Link>
-            </li>
-            );
-          })}
+          {items.map((item) => (
+            <PwaInitiativeFeedCard key={item.initiativeId} item={item} />
+          ))}
         </ul>
       ) : null}
 
