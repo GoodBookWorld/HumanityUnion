@@ -19,7 +19,6 @@ import {
 import { AuditService } from "../administration/audit.service.js";
 import {
   MediaResourceConflictError,
-  MediaResourceForbiddenDeleteError,
   MediaResourceNotFoundError,
   MediaResourceValidationError,
 } from "./media-resource.errors.js";
@@ -778,17 +777,6 @@ export async function deleteAdminMediaResource(input: {
     });
     await refreshNewsSourceCacheBestEffort();
     return { resource, softDeactivated: true };
-  }
-
-  if (existing.resourceType === "NEWS_SOURCE" || existing.providerId) {
-    throw new MediaResourceForbiddenDeleteError(
-      "Hard delete is not allowed for NEWS_SOURCE resources; deactivate instead.",
-    );
-  }
-  if (existing.active) {
-    throw new MediaResourceForbiddenDeleteError(
-      "Hard delete requires the resource to be inactive first.",
-    );
   }
 
   await recordMediaResourceTombstone({

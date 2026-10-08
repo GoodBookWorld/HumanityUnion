@@ -13,8 +13,13 @@ export const APPROVED_NEWS_SOURCES: readonly ApprovedNewsSource[] = deriveApprov
 
 export const PUBLIC_NEWS_CATEGORIES = MEDIA_REGISTRY_CATEGORIES;
 
-/** Runtime cache populated from MediaResource NEWS_SOURCE after seed/admin mutations. */
+/**
+ * Runtime cache populated from MediaResource NEWS_SOURCE after seed/admin mutations.
+ * Once loaded, an empty list means no active sources. It must not fall back to the
+ * static registry, or a removed source would be ingested again.
+ */
 let approvedNewsSourcesFromMediaResources: ApprovedNewsSource[] = [];
+let newsSourceCatalogLoaded = false;
 
 export interface PublicNewsRuntimeConfig {
   enabled: boolean;
@@ -116,16 +121,18 @@ export async function refreshApprovedNewsSourcesFromMediaResources(): Promise<vo
     active: true,
   });
   approvedNewsSourcesFromMediaResources = projectApprovedNewsSources(resources);
+  newsSourceCatalogLoaded = true;
 }
 
 export function resetApprovedNewsSourcesCacheForTests(): void {
   approvedNewsSourcesFromMediaResources = [];
+  newsSourceCatalogLoaded = false;
 }
 
 export function listActiveApprovedNewsSources(
   language: string = resolveMediaRegistryConfig().defaultLanguage,
 ): ApprovedNewsSource[] {
-  if (approvedNewsSourcesFromMediaResources.length > 0) {
+  if (newsSourceCatalogLoaded) {
     return filterSourcesByLanguage(approvedNewsSourcesFromMediaResources, language);
   }
 
@@ -136,7 +143,7 @@ export function listActiveApprovedNewsSources(
  * Allow-list check: active MediaResource NEWS_SOURCE rssUrl OR registry feed allow-list.
  */
 export function isApprovedNewsFeedUrl(feedUrl: string): boolean {
-  if (isApprovedMediaRegistryFeedUrl(feedUrl)) {
+  if (!newsSourceCatalogLoaded && isApprovedMediaRegistryFeedUrl(feedUrl)) {
     return true;
   }
 

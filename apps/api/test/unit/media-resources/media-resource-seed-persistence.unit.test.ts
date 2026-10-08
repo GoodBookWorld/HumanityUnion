@@ -36,7 +36,6 @@ import {
   resetPlpAutoBuildWorkStoreForTests,
   setPlpAutoBuildWorkForceMemoryForTests,
 } from "../../../src/modules/language/published-localized-presentation/universal/plp-auto-build-work.repository.js";
-import { MediaResourceForbiddenDeleteError } from "../../../src/modules/media-resources/media-resource.errors.js";
 import {
   buildMediaResourceSeedRecords,
   seedMediaResourcesFromCanonicalSources,
@@ -304,41 +303,48 @@ describe("media resource seed persistence", () => {
     );
     assert.match(
       section,
-      /Deactivate this resource before permanently removing it\. Deactivate keeps it in the list as inactive\./,
+      /Permanently remove this resource from Media Resources\? It will not be restored on restart\./,
     );
-    assert.match(section, /resourceType !== "NEWS_SOURCE" && resource\.active/);
-    assert.match(section, /hard: resource\.resourceType !== "NEWS_SOURCE"/);
-    assert.match(section, /Deactivate this news source\? Historical articles will be kept\./);
+    assert.match(
+      section,
+      /Permanently remove this news source from Media Resources\? Published articles and their source attribution stay\. RSS ingestion for this source stops\./,
+    );
+    assert.match(section, /hard: true/);
+    assert.match(section, /Remove did not delete this resource\. It is still in the list\./);
     assert.match(section, /await load\(\)/);
   });
 
-  it("still refuses to hard-delete a news source", async () => {
+  it("removes a news source without tombstoning a trusted row that shares the id", async () => {
     await seedMediaResourcesFromCanonicalSources();
-    const news = (await listMediaResources()).find((row) => row.resourceType === "NEWS_SOURCE");
+    const rows = await listMediaResources();
+    const trustedIds = new Set(
+      rows.filter((row) => row.resourceType === "TRUSTED_MEDIA").map((row) => row.id),
+    );
+    const news = rows.find(
+      (row) => row.resourceType === "NEWS_SOURCE" && row.rssUrl && trustedIds.has(row.id),
+    );
     assert.ok(news);
 
-    await assert.rejects(
-      () =>
-        deleteAdminMediaResource({
-          actorUserId: "admin-stage-b",
-          id: news.id,
-          resourceType: "NEWS_SOURCE",
-          hard: true,
-        }),
-      (error: unknown) => {
-        assert.ok(error instanceof MediaResourceForbiddenDeleteError);
-        assert.match(error.message, /NEWS_SOURCE/);
-        return true;
-      },
-    );
-
-    const stored = await getMediaResourceByIdentity({
-      resourceType: "NEWS_SOURCE",
+    const removed = await deleteAdminMediaResource({
+      actorUserId: "admin-stage-b",
       id: news.id,
+      resourceType: "NEWS_SOURCE",
+      hard: true,
     });
-    assert.deepEqual(stored, news);
+    assert.equal(removed.resource, null);
+    assert.equal(removed.softDeactivated, false);
     assert.equal(
+      await getMediaResourceByIdentity({ resourceType: "NEWS_SOURCE", id: news.id }),
+      null,
+    );
+    assert.ok(
       await getMediaResourceTombstone({ resourceType: "NEWS_SOURCE", id: news.id }),
+    );
+    assert.ok(
+      await getMediaResourceByIdentity({ resourceType: "TRUSTED_MEDIA", id: news.id }),
+    );
+    assert.equal(
+      await getMediaResourceTombstone({ resourceType: "TRUSTED_MEDIA", id: news.id }),
       null,
     );
   });

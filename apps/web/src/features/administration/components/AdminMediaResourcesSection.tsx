@@ -14,7 +14,7 @@ import type {
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
-import { formatAuthFormError } from "../../../lib/api-client";
+import { formatAuthFormError, isNotFoundError } from "../../../lib/api-client";
 import { PersonImageUploadField } from "../../media-upload/components/PersonImageUploadField";
 import { uploadMediaResourceLogo } from "../../media-upload/media-upload-api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
@@ -23,6 +23,7 @@ import {
   createAdminMediaResource,
   deactivateAdminMediaResource,
   deleteAdminMediaResource,
+  getAdminMediaResource,
   listAdminMediaResources,
   updateAdminMediaResource,
   type AdminMediaResourceWriteInput,
@@ -248,30 +249,33 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
   }
 
   async function handleRemove(resource: MediaResource) {
-    if (resource.resourceType !== "NEWS_SOURCE" && resource.active) {
-      setStatus(null);
-      setError(
-        "Deactivate this resource before permanently removing it. Deactivate keeps it in the list as inactive.",
-      );
-      return;
-    }
     const confirmMessage =
       resource.resourceType === "NEWS_SOURCE"
-        ? "Deactivate this news source? Historical articles will be kept."
-        : "Permanently remove this inactive resource?";
+        ? "Permanently remove this news source from Media Resources? Published articles and their source attribution stay. RSS ingestion for this source stops."
+        : "Permanently remove this resource from Media Resources? It will not be restored on restart.";
     if (!window.confirm(confirmMessage)) {
       return;
     }
     setError(null);
     try {
-      await deleteAdminMediaResource(resource.id, resource.resourceType, {
-        hard: resource.resourceType !== "NEWS_SOURCE",
-      });
-      setStatus(
-        resource.resourceType === "NEWS_SOURCE" ? "Resource deactivated." : "Resource removed.",
-      );
+      await deleteAdminMediaResource(resource.id, resource.resourceType, { hard: true });
+      try {
+        await getAdminMediaResource(resource.id, resource.resourceType);
+        setStatus(null);
+        await load();
+        setError("Remove did not delete this resource. It is still in the list.");
+        return;
+      } catch (verifyError) {
+        if (!isNotFoundError(verifyError)) {
+          setStatus(null);
+          setError(formatAuthFormError(verifyError));
+          return;
+        }
+      }
+      setStatus("Resource removed.");
       await load();
     } catch (removeError) {
+      setStatus(null);
       setError(formatAuthFormError(removeError));
     }
   }
