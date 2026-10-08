@@ -26,6 +26,10 @@ import {
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 import {
+  INVALID_PROVIDER_PAYLOAD_REASON,
+  selectInvalidProviderPayloadRetry,
+} from "./content-translation-provider-payload-retry.js";
+import {
   listContentTranslationWarmAttempts,
   peekContentTranslationWarmOutboxFailure,
   resolveContentTranslationWarmOutboxDisposition,
@@ -452,6 +456,53 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     }
     if (semanticRetryDeferred) {
       semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
+    }
+    if (
+      failureReasonCode === INVALID_PROVIDER_PAYLOAD_REASON &&
+      liveSourceVersion &&
+      liveSourceVersion !== "unloaded"
+    ) {
+      try {
+        const payloadAttempts = await listContentTranslationWarmAttempts({
+          sourceKind: item.sourceKind,
+          sourceRecordId: item.sourceRecordId,
+          limit: 50,
+        });
+        const payloadDecision = selectInvalidProviderPayloadRetry({
+          sourceKind: item.sourceKind,
+          sourceRecordId: item.sourceRecordId,
+          targetLocale: item.targetLanguage,
+          sourceVersion: liveSourceVersion,
+          attempts: payloadAttempts.map((attempt) => ({
+            status: attempt.status,
+            architectureRetryBasis: attempt.architectureRetryBasis,
+            sourceVersion: attempt.sourceVersion ?? attempt.failureMetadata?.sourceVersion ?? null,
+            targetLocales: attempt.targetLocales,
+            attemptAt: attempt.attemptAt,
+            failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+            failureTargetLocale:
+              typeof attempt.failureMetadata?.targetLocale === "string"
+                ? attempt.failureMetadata.targetLocale
+                : null,
+            localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+            structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
+          })),
+        });
+        if (payloadDecision.outcome === "exhausted" || payloadDecision.outcome === "waiting") {
+          semanticRetryDeferred = true;
+          semanticRetryEligibleAt =
+            payloadDecision.outcome === "waiting" ? payloadDecision.retryEligibleAt : null;
+        } else if (payloadDecision.outcome === "recover_once") {
+          semanticRetryDeferred = false;
+          semanticRetryEligibleAt = null;
+          architectureRetryBasis = payloadDecision.architectureRetryBasis;
+        } else if (payloadDecision.outcome === "due") {
+          semanticRetryDeferred = false;
+          semanticRetryEligibleAt = null;
+        }
+      } catch {
+        // Listing failure leaves the existing ready decision. The next pass recounts.
+      }
     }
   }
 
