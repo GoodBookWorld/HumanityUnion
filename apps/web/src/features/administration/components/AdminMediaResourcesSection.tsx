@@ -248,24 +248,27 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
   }
 
   async function handleRemove(resource: MediaResource) {
+    if (resource.resourceType !== "NEWS_SOURCE" && resource.active) {
+      setStatus(null);
+      setError(
+        "Deactivate this resource before permanently removing it. Deactivate keeps it in the list as inactive.",
+      );
+      return;
+    }
     const confirmMessage =
       resource.resourceType === "NEWS_SOURCE"
         ? "Deactivate this news source? Historical articles will be kept."
-        : resource.active
-          ? "Deactivate this resource?"
-          : "Permanently remove this inactive resource?";
+        : "Permanently remove this inactive resource?";
     if (!window.confirm(confirmMessage)) {
       return;
     }
     setError(null);
     try {
       await deleteAdminMediaResource(resource.id, resource.resourceType, {
-        hard: !resource.active && resource.resourceType !== "NEWS_SOURCE",
+        hard: resource.resourceType !== "NEWS_SOURCE",
       });
       setStatus(
-        resource.resourceType === "NEWS_SOURCE" || resource.active
-          ? "Resource deactivated."
-          : "Resource removed.",
+        resource.resourceType === "NEWS_SOURCE" ? "Resource deactivated." : "Resource removed.",
       );
       await load();
     } catch (removeError) {

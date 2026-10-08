@@ -184,6 +184,16 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.mediaResourceTombstones,
+    indexes: [
+      {
+        key: { resourceType: 1, id: 1 },
+        unique: true,
+        name: "media_resource_tombstones_type_id_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.countryAffiliations,
     indexes: [
       {
