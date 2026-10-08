@@ -7,14 +7,10 @@ import {
 import { FACT_CHECK_RESOURCES } from "../civic-media-center/content/fact-checking.js";
 import { PROPAGANDA_ANALYSIS_RESOURCES } from "../civic-media-center/content/propaganda-analysis.js";
 import { TRUSTED_MEDIA_RESOURCES } from "../civic-media-center/content/trusted-media.js";
+import { getMediaResourceTombstone } from "./persistence/media-resource-tombstone.repository.js";
 import {
-  continueTrustedMediaPlpIfCanonicalChanged,
-  trustedCanonicalVersionBeforeWrite,
-} from "../language/published-localized-presentation/universal/trusted-canonical-plp-continuation.js";
-import { trustedExplanationCanonicalVersion } from "../language/published-localized-presentation/media/trusted-editorial-source.js";
-import {
-  getMediaResourceByIdentity,
-  upsertMediaResource,
+  deleteMediaResource,
+  insertMediaResourceIfAbsent,
 } from "./persistence/media-resource.repository.js";
 
 const SEED_TIMESTAMP = "2026-06-27T00:00:00.000Z";
@@ -124,53 +120,28 @@ export function buildMediaResourceSeedRecords(): MediaResource[] {
 }
 
 /**
- * Idempotent upsert by (resourceType, id). Preserves createdAt for that
- * concept only. A NEWS_SOURCE row never replaces a TRUSTED_MEDIA row.
+ * Inserts canonical defaults only when (resourceType, id) is absent and has
+ * not been hard-deleted. Existing rows are never replaced, reactivated, or
+ * timestamped. A NEWS_SOURCE seed never replaces a TRUSTED_MEDIA row.
+ * Startup does not schedule civic_media translation or trusted PLP work.
  */
 export async function seedMediaResourcesFromCanonicalSources(): Promise<number> {
   const seeds = buildMediaResourceSeedRecords();
-  let upserted = 0;
-  const canonicalChanges: Array<{
-    entityId: string;
-    beforeVersion: string | null;
-    afterVersion: string | null;
-  }> = [];
+  let inserted = 0;
 
   for (const seed of seeds) {
-    const existing = await getMediaResourceByIdentity({
-      resourceType: seed.resourceType,
-      id: seed.id,
-    });
-    const beforeVersion =
-      seed.resourceType === "TRUSTED_MEDIA"
-        ? trustedCanonicalVersionBeforeWrite({
-            hadTrustedRow: existing != null,
-            entityId: seed.id,
-            description: existing?.description,
-          })
-        : null;
-    const afterVersion =
-      seed.resourceType === "TRUSTED_MEDIA"
-        ? trustedExplanationCanonicalVersion(seed.description)
-        : null;
-    const record: MediaResource = existing
-      ? { ...seed, createdAt: existing.createdAt, updatedAt: new Date().toISOString() }
-      : seed;
+    const identity = { resourceType: seed.resourceType, id: seed.id };
+    if (await getMediaResourceTombstone(identity)) continue;
 
-    await upsertMediaResource(record);
-    upserted += 1;
-    if (seed.resourceType === "TRUSTED_MEDIA" && beforeVersion !== afterVersion) {
-      canonicalChanges.push({
-        entityId: seed.id,
-        beforeVersion,
-        afterVersion,
-      });
+    const outcome = await insertMediaResourceIfAbsent(seed);
+    if (outcome !== "inserted") continue;
+
+    if (await getMediaResourceTombstone(identity)) {
+      await deleteMediaResource(identity);
+      continue;
     }
+    inserted += 1;
   }
 
-  for (const change of canonicalChanges) {
-    await continueTrustedMediaPlpIfCanonicalChanged(change);
-  }
-
-  return upserted;
+  return inserted;
 }

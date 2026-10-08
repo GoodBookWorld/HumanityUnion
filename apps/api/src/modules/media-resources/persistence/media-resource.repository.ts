@@ -12,6 +12,7 @@ import {
 import {
   deleteMediaResourceMemory,
   getMediaResourceByIdentityMemory,
+  insertMediaResourceIfAbsentMemory,
   listMediaResourcesByPublisherIdMemory,
   listMediaResourcesMemory,
   upsertMediaResourceMemory,
@@ -41,8 +42,12 @@ export function setMediaResourceForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
 }
 
-function shouldUseMemoryAdapter(): boolean {
+export function mediaResourcePersistenceUsesMemory(): boolean {
   return forceMemoryForTests || !isMongoConfigured();
+}
+
+function shouldUseMemoryAdapter(): boolean {
+  return mediaResourcePersistenceUsesMemory();
 }
 
 function matchesFilter(resource: MediaResource, filter: ListMediaResourcesFilter): boolean {
@@ -133,6 +138,36 @@ export async function upsertMediaResource(resource: MediaResource): Promise<Medi
     { upsert: true },
   );
   return resource;
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
+
+/**
+ * Insert a catalog default only when (resourceType, id) is absent.
+ * Existing rows, including inactive and administrator-edited rows, stay unchanged.
+ */
+export async function insertMediaResourceIfAbsent(
+  resource: MediaResource,
+): Promise<"inserted" | "exists"> {
+  if (shouldUseMemoryAdapter()) {
+    return insertMediaResourceIfAbsentMemory(resource);
+  }
+
+  await ensureMediaResourceMongoReady();
+  try {
+    await collection().insertOne(toMediaResourceMongoDocument(resource));
+    return "inserted";
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return "exists";
+    throw error;
+  }
 }
 
 export async function deleteMediaResource(input: {

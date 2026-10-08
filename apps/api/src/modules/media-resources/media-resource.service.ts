@@ -30,6 +30,7 @@ import {
   projectTrustedMediaResources,
 } from "./media-resource.projections.js";
 import { seedMediaResourcesFromCanonicalSources } from "./media-resource.seed.js";
+import { recordMediaResourceTombstone } from "./persistence/media-resource-tombstone.repository.js";
 import {
   deleteMediaResource,
   getMediaResourceByIdentity,
@@ -790,6 +791,12 @@ export async function deleteAdminMediaResource(input: {
     );
   }
 
+  await recordMediaResourceTombstone({
+    resourceType: existing.resourceType,
+    id: existing.id,
+    deletedAt: new Date().toISOString(),
+    deletedByParticipantId: admin.memberId,
+  });
   await deleteMediaResource({
     resourceType: existing.resourceType,
     id: existing.id,

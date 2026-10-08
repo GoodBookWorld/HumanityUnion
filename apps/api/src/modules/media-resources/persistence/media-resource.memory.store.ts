@@ -1,5 +1,7 @@
 import type { MediaResource, MediaResourceType } from "@hu/types";
 
+import { resetMediaResourceTombstoneMemoryForTests } from "./media-resource-tombstone.memory.js";
+
 const resourcesByIdentity = new Map<string, MediaResource>();
 
 function identityKey(resourceType: MediaResourceType, id: string): string {
@@ -8,6 +10,7 @@ function identityKey(resourceType: MediaResourceType, id: string): string {
 
 export function resetMediaResourcesMemoryForTests(): void {
   resourcesByIdentity.clear();
+  resetMediaResourceTombstoneMemoryForTests();
 }
 
 export function listMediaResourcesMemory(): MediaResource[] {
@@ -31,6 +34,16 @@ export function listMediaResourcesByPublisherIdMemory(id: string): MediaResource
 export function upsertMediaResourceMemory(resource: MediaResource): MediaResource {
   resourcesByIdentity.set(identityKey(resource.resourceType, resource.id), resource);
   return resource;
+}
+
+/** Synchronous check-and-set so concurrent seed calls cannot insert the same identity twice. */
+export function insertMediaResourceIfAbsentMemory(
+  resource: MediaResource,
+): "inserted" | "exists" {
+  const key = identityKey(resource.resourceType, resource.id);
+  if (resourcesByIdentity.has(key)) return "exists";
+  resourcesByIdentity.set(key, resource);
+  return "inserted";
 }
 
 export function deleteMediaResourceMemory(
