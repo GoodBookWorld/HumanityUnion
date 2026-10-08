@@ -72,16 +72,22 @@ describe("Workspace canonical reading language islands", () => {
     assert.ok(whyIdx > islandClose, "why/catalog chrome must follow the English island close");
   });
 
-  it("PwaInitiativeFeed marks canonical feed prose as browser-native English", () => {
+  it("PwaInitiativeFeed keeps only non-CT prose in the English island", () => {
     const feed = readWeb("features/pwa/components/PwaInitiativeFeed.tsx");
     for (const pattern of CANONICAL_ISLAND) {
       assert.match(feed, pattern);
     }
-    assert.match(feed, /hu-pwa-initiative-feed__canonical-reading/);
-    assert.match(
+    assert.match(feed, /useInitiativeCardTitlePresentation/);
+    assert.match(feed, /\{displayTitle\}/);
+    const titleIdx = feed.indexOf("{displayTitle}");
+    const islandIdx = feed.indexOf("hu-pwa-initiative-feed__canonical-reading");
+    assert.ok(titleIdx > 0 && islandIdx > titleIdx, "translated title must precede the English island");
+    assert.doesNotMatch(
       feed,
-      /hu-pwa-initiative-feed__canonical-reading[\s\S]*?presentation\.title/,
+      /hu-pwa-initiative-feed__canonical-reading[\s\S]*?\{displayTitle\}/,
     );
+    assert.match(feed, /presentation\.context/);
+    assert.match(feed, /canonicalExplanation/);
 
     // Feed chrome remains Preferred Reading catalog.
     assert.match(feed, /t\("feed\.title"\)/);
