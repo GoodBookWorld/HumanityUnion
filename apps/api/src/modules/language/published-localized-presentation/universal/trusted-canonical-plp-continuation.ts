@@ -56,3 +56,22 @@ export async function continueTrustedMediaPlpIfCanonicalChanged(input: {
     });
   }
 }
+
+/**
+ * After a trusted row is gone, PLP authority falls back to the static catalog
+ * when that id is still required. Continue only when that fallback fingerprint
+ * differs from the removed row. Deactivation keeps the row, so it does not use
+ * this path.
+ */
+export async function continueTrustedPlpAfterTrustedRowRemoved(input: {
+  readonly entityId: string;
+  readonly removedDescription: string | null | undefined;
+}): Promise<void> {
+  const beforeVersion = trustedExplanationCanonicalVersion(input.removedDescription);
+  const editorial = await resolveTrustedMediaEditorialCanonical(input.entityId);
+  await continueTrustedMediaPlpIfCanonicalChanged({
+    entityId: input.entityId,
+    beforeVersion,
+    afterVersion: editorial.canonicalVersion,
+  });
+}

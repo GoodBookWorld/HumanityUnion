@@ -406,8 +406,10 @@ export async function loadCivicArchiveTranslationSource(
  * excluded; trusted explanations ARE included as semantic participant-facing copy.
  * Fact-check missions stay in UI dictionaries (FactCheckCard) — not this bag.
  *
- * Pack 08J.1 — static seed only (no mutation API); schedule warm via recovery
- * discovery (`discoverCivicMediaTranslationRecordIds`), not post-mutation enqueue.
+ * Active trusted explanations are part of this bag. Admin and editor mutations
+ * schedule recovery through scheduleCivicMediaTranslationRecovery when that
+ * bag changes. Recovery discovery still finds this single record without a
+ * new edit.
  */
 export async function loadCivicMediaTranslationSource(
   sourceRecordId: string,

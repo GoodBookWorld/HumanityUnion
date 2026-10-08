@@ -504,6 +504,10 @@ export async function createAdminMediaResource(
     beforeDescription: null,
     afterDescription: resource.description,
   });
+  await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+    before: null,
+    after: resource,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.create",
@@ -651,6 +655,10 @@ export async function updateAdminMediaResource(
     beforeDescription: existing.description,
     afterDescription: resource.description,
   });
+  await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+    before: existing,
+    after: resource,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.update",
@@ -686,6 +694,10 @@ export async function activateAdminMediaResource(input: {
     updatedAt: new Date().toISOString(),
   };
   await upsertMediaResource(resource);
+  await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+    before: existing,
+    after: resource,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.activate",
@@ -715,6 +727,10 @@ export async function deactivateAdminMediaResource(input: {
     updatedAt: new Date().toISOString(),
   };
   await upsertMediaResource(resource);
+  await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+    before: existing,
+    after: resource,
+  });
   await AuditService.record({
     actorParticipantId: admin.memberId,
     action: "media_resource.deactivate",
@@ -747,6 +763,10 @@ export async function deleteAdminMediaResource(input: {
       updatedAt: new Date().toISOString(),
     };
     await upsertMediaResource(resource);
+    await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+      before: existing,
+      after: resource,
+    });
     await AuditService.record({
       actorParticipantId: admin.memberId,
       action: "media_resource.deactivate",
@@ -773,6 +793,19 @@ export async function deleteAdminMediaResource(input: {
   await deleteMediaResource({
     resourceType: existing.resourceType,
     id: existing.id,
+  });
+  if (existing.resourceType === "TRUSTED_MEDIA") {
+    const { continueTrustedPlpAfterTrustedRowRemoved } = await import(
+      "../language/published-localized-presentation/universal/trusted-canonical-plp-continuation.js"
+    );
+    await continueTrustedPlpAfterTrustedRowRemoved({
+      entityId: existing.id,
+      removedDescription: existing.description,
+    });
+  }
+  await scheduleCivicMediaRecoveryIfTranslationInputChanged({
+    before: existing,
+    after: null,
   });
   await AuditService.record({
     actorParticipantId: admin.memberId,
@@ -863,6 +896,20 @@ export async function listActiveNewsSourceMediaResources(): Promise<MediaResourc
 export async function listProjectedActiveApprovedNewsSources() {
   const resources = await listActiveNewsSourceMediaResources();
   return projectApprovedNewsSources(resources);
+}
+
+async function scheduleCivicMediaRecoveryIfTranslationInputChanged(input: {
+  readonly before: MediaResource | null;
+  readonly after: MediaResource | null;
+}): Promise<void> {
+  const {
+    scheduleCivicMediaTranslationRecovery,
+    trustedMediaTranslationInputChanged,
+  } = await import("../language/civic-media-translation-recovery.js");
+  if (!trustedMediaTranslationInputChanged(input.before, input.after)) {
+    return;
+  }
+  scheduleCivicMediaTranslationRecovery();
 }
 
 async function notifyTrustedCanonicalChange(input: {
