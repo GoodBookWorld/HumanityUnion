@@ -596,6 +596,17 @@ export async function getOrCreateContentTranslation(input: {
     };
   }
 
+  const liveSource = await loadTranslatableSource({
+    sourceKind: source.sourceKind,
+    sourceRecordId: source.sourceRecordId,
+  });
+  if (!liveSource || liveSource.sourceVersion !== source.sourceVersion) {
+    throw new TranslationProviderError(
+      "unavailable",
+      "Content translation source version changed during generation.",
+    );
+  }
+
   const concepts = await loadPublishedTerminologyConcepts();
   const sourceText = collectSourceTextLeaves(providerFields);
   const translatedText = collectSourceTextLeaves(translatedFields);

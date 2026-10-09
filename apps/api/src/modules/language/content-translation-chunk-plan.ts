@@ -5,16 +5,47 @@
  * Oversized maps are split into ordered segments that fit a conservative
  * output budget. HTML tags, attributes, entities, and URLs are never split.
  * No locale branches and no new environment variables.
+ *
+ * Output-budget policy:
+ * - One output character counts as one token, so dense target scripts stay
+ *   inside the configured maxOutputTokens ceiling. Latin text is over-estimated.
+ * - Translatable prose is expanded by 2× before that conversion.
+ * - JSON escaping is measured with JSON.stringify, including quotes and
+ *   backslashes, rather than raw character length.
+ * - Each provider request reserves a fixed structured-response margin plus
+ *   object framing. A 3/4 headroom keeps the estimate off the token ceiling.
+ * - maxOutputTokens itself is not raised.
  */
 
+import type { ContentTranslationIntent, ContentTranslationSourceKind } from "@hu/types";
+import { buildProviderOwnedLifecycleMachinePayload } from "@hu/types";
+
+import { sanitizeFieldsForAutomaticTranslation } from "./content-translation-eligibility.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { projectFieldsToSearchDiscoveryAllowlist } from "./content-translation-search-discovery-fields.js";
+import {
+  isLocalizationProviderPacingDeferredError,
+  waitForLocalizationProviderPacingWindow,
+} from "./localization-provider-governor.js";
 import { resolveTranslationConfig } from "./translation.config.js";
 
-/** Output characters assumed per token. Conservative for every target language. */
-export const CONTENT_TRANSLATION_OUTPUT_CHARS_PER_TOKEN = 2;
+/**
+ * Dense-script ceiling: one output character per token.
+ * Replaces the earlier two-characters-per-token estimate.
+ */
+export const CONTENT_TRANSLATION_OUTPUT_TOKENS_PER_CHAR = 1;
 
-/** Source prose may grow this much in the target language, plus JSON wrapping. */
+/** Source prose may grow this much in the target language. */
 export const CONTENT_TRANSLATION_EXPANSION_FACTOR = 2;
+
+/**
+ * Tokens held back inside each structured response for schema framing
+ * beyond the JSON object itself.
+ */
+export const CONTENT_TRANSLATION_STRUCTURED_RESPONSE_RESERVE_TOKENS = 64;
+
+/** How many times one segment may wait for the global pacing window. */
+const MAX_SEGMENT_PACING_WAITS = 3;
 
 /** Leave headroom under maxOutputTokens so a chunk does not finish on the ceiling. */
 export const CONTENT_TRANSLATION_OUTPUT_HEADROOM_NUMERATOR = 3;
@@ -51,12 +82,18 @@ export type ContentTranslationRequestPlan = {
   readonly assembly: readonly FieldAssembly[] | null;
 };
 
-export function contentTranslationUsableOutputChars(maxOutputTokens: number): number {
+/** Conservative output-token budget for one provider response. */
+export function contentTranslationUsableOutputTokens(maxOutputTokens: number): number {
   const tokens = Math.floor(maxOutputTokens);
   return Math.floor(
-    (tokens * CONTENT_TRANSLATION_OUTPUT_CHARS_PER_TOKEN * CONTENT_TRANSLATION_OUTPUT_HEADROOM_NUMERATOR) /
+    (tokens * CONTENT_TRANSLATION_OUTPUT_HEADROOM_NUMERATOR) /
       CONTENT_TRANSLATION_OUTPUT_HEADROOM_DENOMINATOR,
   );
+}
+
+/** @deprecated Use contentTranslationUsableOutputTokens. The unit is tokens. */
+export function contentTranslationUsableOutputChars(maxOutputTokens: number): number {
+  return contentTranslationUsableOutputTokens(maxOutputTokens);
 }
 
 export function resolveContentTranslationMaxOutputTokens(explicit?: number): number {
@@ -75,6 +112,45 @@ export function resolveContentTranslationMaxOutputTokens(explicit?: number): num
  * structured response. A single in-budget request does not release the
  * truncation hold. An unsplittable atom does not either.
  */
+/**
+ * Field map the warm executor will send to the chunk planner.
+ * Collaborative-analysis automatic translation uses the lifecycle machine
+ * payload. Search discovery uses the search projection. A null result means
+ * the execution payload cannot be built, so the truncation hold stays.
+ */
+export function resolveContentTranslationExecutableFields(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly intent: ContentTranslationIntent;
+  readonly sanitizedFields: Readonly<Record<string, string>>;
+}): Record<string, string> | null {
+  if (
+    input.sourceKind === "collaborative_analysis" &&
+    input.intent !== "search_discovery"
+  ) {
+    try {
+      return {
+        ...buildProviderOwnedLifecycleMachinePayload(input.sanitizedFields).payload,
+      };
+    } catch {
+      return null;
+    }
+  }
+  if (input.intent === "search_discovery") {
+    const projected = projectFieldsToSearchDiscoveryAllowlist({
+      sourceKind: input.sourceKind,
+      fields: input.sanitizedFields,
+    });
+    if (!projected) {
+      return null;
+    }
+    return sanitizeFieldsForAutomaticTranslation({
+      sourceKind: input.sourceKind,
+      fields: projected,
+    });
+  }
+  return { ...input.sanitizedFields };
+}
+
 export function contentTranslationChunkPlanReleasesTruncationHold(
   fields: Readonly<Record<string, string>>,
   maxOutputTokens?: number,
@@ -87,7 +163,7 @@ export function planContentTranslationRequests(
   fields: Readonly<Record<string, string>>,
   maxOutputTokens?: number,
 ): ContentTranslationRequestPlan {
-  const usable = contentTranslationUsableOutputChars(
+  const usable = contentTranslationUsableOutputTokens(
     resolveContentTranslationMaxOutputTokens(maxOutputTokens),
   );
   const entries = Object.entries(fields).filter(
@@ -102,7 +178,13 @@ export function planContentTranslationRequests(
     };
   }
 
-  const maxSourceChars = Math.max(1, Math.floor((usable - 48) / CONTENT_TRANSLATION_EXPANSION_FACTOR));
+  const maxSourceChars = Math.max(
+    1,
+    Math.floor(
+      (usable - requestOverhead() - jsonKeyFraming("chunk23")) /
+        CONTENT_TRANSLATION_EXPANSION_FACTOR,
+    ),
+  );
   const assembly: FieldAssembly[] = [];
   const packed: Array<{ id: string; value: string; estimate: number }> = [];
   let segmentIndex = 0;
@@ -113,7 +195,7 @@ export function planContentTranslationRequests(
       continue;
     }
     const wholeEstimate = estimateWholeFieldOutput(key, value);
-    if (wholeEstimate <= usable) {
+    if (requestOverhead() + wholeEstimate <= usable) {
       assembly.push({
         key,
         pieces: [{ kind: "slot", id: key, value, entry: "whole" }],
@@ -135,7 +217,7 @@ export function planContentTranslationRequests(
         continue;
       }
       const estimate = estimateSegment(piece.id, piece.value);
-      if (estimate > usable) {
+      if (requestOverhead() + estimate > usable) {
         return unsplittable();
       }
       packed.push({ id: piece.id, value: piece.value, estimate });
@@ -144,7 +226,7 @@ export function planContentTranslationRequests(
 
   const requests: Record<string, string>[] = [];
   let batch: Record<string, string> = {};
-  let used = 2;
+  let used = requestOverhead();
   let count = 0;
   const flush = () => {
     if (count === 0) {
@@ -152,7 +234,7 @@ export function planContentTranslationRequests(
     }
     requests.push(batch);
     batch = {};
-    used = 2;
+    used = requestOverhead();
     count = 0;
   };
   for (const entry of packed) {
@@ -203,7 +285,22 @@ export async function translateContentTranslationFieldMap(input: {
 
   const translated = new Map<string, string>();
   for (const request of plan.requests) {
-    const response = await input.translate(request);
+    let response: Readonly<Record<string, string>> | null = null;
+    let pacingWaits = 0;
+    while (!response) {
+      try {
+        response = await input.translate(request);
+      } catch (error) {
+        if (
+          !isLocalizationProviderPacingDeferredError(error) ||
+          pacingWaits >= MAX_SEGMENT_PACING_WAITS
+        ) {
+          throw error;
+        }
+        pacingWaits += 1;
+        await waitForLocalizationProviderPacingWindow(error.nextAllowedAt);
+      }
+    }
     for (const key of Object.keys(request)) {
       const value = response[key];
       if (typeof value !== "string" || value.trim().length === 0) {
@@ -250,8 +347,25 @@ function unsplittable(): ContentTranslationRequestPlan {
   return { capable: false, mode: "unsplittable", requests: [], assembly: null };
 }
 
+function requestOverhead(): number {
+  return CONTENT_TRANSLATION_STRUCTURED_RESPONSE_RESERVE_TOKENS + 2;
+}
+
+/** JSON string contents, so quotes and backslashes count as their escaped size. */
+function jsonContentLength(value: string): number {
+  if (value.length === 0) {
+    return 0;
+  }
+  return JSON.stringify(value).length - 2;
+}
+
+/** `"key":` plus a separating comma, measured from the encoded key. */
+function jsonKeyFraming(key: string): number {
+  return JSON.stringify(key).length + 2;
+}
+
 function estimateDocument(entries: readonly [string, string][]): number {
-  let total = 2;
+  let total = requestOverhead();
   for (const [key, value] of entries) {
     total += estimateWholeFieldOutput(key, value);
   }
@@ -260,42 +374,66 @@ function estimateDocument(entries: readonly [string, string][]): number {
 
 function estimateWholeFieldOutput(key: string, value: string): number {
   const measured = measureCopiedAndProse(value);
-  return key.length + 12 + measured.copied + Math.ceil(measured.prose * CONTENT_TRANSLATION_EXPANSION_FACTOR);
+  return (
+    jsonKeyFraming(key) +
+    measured.copied +
+    Math.ceil(measured.proseEscaped * CONTENT_TRANSLATION_EXPANSION_FACTOR * CONTENT_TRANSLATION_OUTPUT_TOKENS_PER_CHAR)
+  );
 }
 
 function estimateSegment(id: string, value: string): number {
-  return id.length + 8 + Math.ceil(value.length * CONTENT_TRANSLATION_EXPANSION_FACTOR);
+  return (
+    jsonKeyFraming(id) +
+    Math.ceil(
+      jsonContentLength(value) *
+        CONTENT_TRANSLATION_EXPANSION_FACTOR *
+        CONTENT_TRANSLATION_OUTPUT_TOKENS_PER_CHAR,
+    )
+  );
 }
 
-function measureCopiedAndProse(value: string): { copied: number; prose: number } {
+export function estimateContentTranslationRequestOutputTokens(
+  fields: Readonly<Record<string, string>>,
+): number {
+  let total = requestOverhead();
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    total += estimateSegment(key, value);
+  }
+  return total;
+}
+
+function measureCopiedAndProse(value: string): { copied: number; proseEscaped: number } {
   if (!looksLikeHtml(value)) {
     let copied = 0;
-    let prose = 0;
+    let proseEscaped = 0;
     for (const atom of splitAtoms(value)) {
       if (atom.translatable) {
-        prose += atom.value.length;
+        proseEscaped += jsonContentLength(atom.value);
       } else {
-        copied += atom.value.length;
+        copied += jsonContentLength(atom.value);
       }
     }
-    return { copied, prose };
+    return { copied, proseEscaped };
   }
   let copied = 0;
-  let prose = 0;
+  let proseEscaped = 0;
   for (const token of tokenizeHtml(value)) {
     if (token.kind === "raw") {
-      copied += token.value.length;
+      copied += jsonContentLength(token.value);
       continue;
     }
     for (const atom of splitAtoms(token.value)) {
       if (atom.translatable) {
-        prose += atom.value.length;
+        proseEscaped += jsonContentLength(atom.value);
       } else {
-        copied += atom.value.length;
+        copied += jsonContentLength(atom.value);
       }
     }
   }
-  return { copied, prose };
+  return { copied, proseEscaped };
 }
 
 function looksLikeHtml(value: string): boolean {
@@ -425,11 +563,13 @@ function groupAtoms(
       }
       continue;
     }
-    if (atom.value.length > maxSourceChars) {
+    if (jsonContentLength(atom.value) > maxSourceChars) {
       return null;
     }
-    const pendingLength = pendingWhitespace.length;
-    if (slot && slot.length + pendingLength + atom.value.length > maxSourceChars) {
+    if (
+      slot &&
+      jsonContentLength(slot + pendingWhitespace + atom.value) > maxSourceChars
+    ) {
       flushSlot();
       flushWhitespace();
     }

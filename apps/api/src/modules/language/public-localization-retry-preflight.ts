@@ -15,6 +15,9 @@ import {
   assertCanonicalSourceEligibleForTranslation,
   sanitizeFieldsForAutomaticTranslation,
 } from "./content-translation-eligibility.js";
+import { resolveContentTranslationExecutableFields } from "./content-translation-chunk-plan.js";
+import { isSearchDiscoveryMappedSourceKind } from "./content-translation-search-discovery-fields.js";
+import { resolveAutomaticContentTranslationWarmTargets } from "./content-translation-warm-targets.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
@@ -537,9 +540,24 @@ export async function buildPublicLocalizationRetryPreflight(input: {
         let chunkFields: Record<string, string> | null = null;
         if (sourceFields) {
           try {
-            chunkFields = sanitizeFieldsForAutomaticTranslation({
+            const sanitized = sanitizeFieldsForAutomaticTranslation({
               sourceKind: item.sourceKind,
               fields: sourceFields,
+            });
+            const automatic = await resolveAutomaticContentTranslationWarmTargets(
+              sourceLanguage
+                ? { excludeSourceLanguage: sourceLanguage }
+                : undefined,
+            );
+            const intent = automatic.warmTargetLocales.includes(item.targetLanguage)
+              ? "automatic_warm"
+              : isSearchDiscoveryMappedSourceKind(item.sourceKind)
+                ? "search_discovery"
+                : "automatic_warm";
+            chunkFields = resolveContentTranslationExecutableFields({
+              sourceKind: item.sourceKind,
+              intent,
+              sanitizedFields: sanitized,
             });
           } catch {
             chunkFields = null;
