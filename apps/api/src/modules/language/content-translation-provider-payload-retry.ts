@@ -23,6 +23,7 @@ import {
   SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
   semanticResidualDeferDelayMs,
 } from "./content-translation-failure-metadata.js";
+import type { ContentTranslationProviderPayloadKind } from "./content-translation-provider-payload.js";
 
 export const INVALID_PROVIDER_PAYLOAD_REASON = "INVALID_PROVIDER_PAYLOAD" as const;
 
@@ -50,6 +51,8 @@ export type InvalidProviderPayloadRetryAttempt = {
     readonly failureReasonCode: string;
   }[] | null;
   readonly structuredOutputContract: string | null;
+  /** Allowlisted payload diagnostic. Absent on historical rows. */
+  readonly providerPayloadKind?: ContentTranslationProviderPayloadKind | null;
 };
 
 export type InvalidProviderPayloadRetryDecision =
@@ -179,6 +182,73 @@ function recoveryAlreadyGranted(
   }
   const locales = attempt.targetLocales ?? [];
   return locales.some((locale) => sameLocale(locale, targetLocale));
+}
+
+/**
+ * Content Translation still submits each source version as one structured
+ * response. The chunked translator releases this safety gate by returning
+ * false. Historical attempt rows stay unchanged, and the same source version
+ * becomes selectable on the next reconciliation pass.
+ */
+export function contentTranslationUsesUnsplitSingleResponse(): boolean {
+  return true;
+}
+
+function latestCountedPayloadAttempt(
+  attempts: readonly InvalidProviderPayloadRetryAttempt[],
+  sourceVersion: string,
+  targetLocale: string,
+): InvalidProviderPayloadRetryAttempt | null {
+  const version = sourceVersion.trim();
+  const matching = attempts.filter(
+    (attempt) =>
+      attempt.status === "failed" &&
+      (attempt.sourceVersion?.trim() ?? "") === version &&
+      countsTowardPayloadBudget(attempt, targetLocale),
+  );
+  let latest: InvalidProviderPayloadRetryAttempt | null = null;
+  for (const attempt of matching) {
+    if (!latest) {
+      latest = attempt;
+      continue;
+    }
+    const previous = Date.parse(latest.attemptAt);
+    const current = Date.parse(attempt.attemptAt);
+    if (!Number.isFinite(previous) || (Number.isFinite(current) && current >= previous)) {
+      latest = attempt;
+    }
+  }
+  return latest;
+}
+
+/**
+ * Skip automatic re-enqueue when the latest counted failure was truncated and
+ * the pipeline would send the same unsplit request again.
+ * Waiting and exhausted decisions are left to the existing budget.
+ * empty_candidate, malformed_json, and every other kind stay on that budget.
+ */
+export function shouldHoldAutomaticRetryForUnsplitTruncation(input: {
+  readonly sourceVersion: string;
+  readonly targetLocale: string;
+  readonly attempts: readonly InvalidProviderPayloadRetryAttempt[];
+  readonly retryOutcome: InvalidProviderPayloadRetryDecision["outcome"];
+  /** Test seam. Production uses contentTranslationUsesUnsplitSingleResponse. */
+  readonly singleResponseActive?: boolean;
+}): boolean {
+  const singleResponseActive =
+    input.singleResponseActive ?? contentTranslationUsesUnsplitSingleResponse();
+  if (!singleResponseActive) {
+    return false;
+  }
+  if (input.retryOutcome !== "due" && input.retryOutcome !== "recover_once") {
+    return false;
+  }
+  const latest = latestCountedPayloadAttempt(
+    input.attempts,
+    input.sourceVersion,
+    input.targetLocale,
+  );
+  return latest?.providerPayloadKind === "truncated";
 }
 
 /**
