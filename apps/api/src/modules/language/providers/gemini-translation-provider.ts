@@ -108,8 +108,11 @@ export function buildGeminiTranslationSystemInstruction(input: {
     "Preserve paragraph structure, lists, links, URLs, numeric/statistical values, IDs, enum tokens, routes, and JSON keys.",
     // Pack 02G Task 07D — civic titles vs genuine invariants vs glossary tokens
     "Civic content titles and human-readable headings (including JSON fields such as `title`, `subject`, `question`, `overviewTitle`, and `initiativeFlowTitle`) are translatable content — translate them into the target language normally.",
-    "For cross-language structured requests, designated civic title/heading field values must not remain identical to the source.",
-    "Do not preserve a civic artifact title merely because it resembles a proper name, campaign name, alliance name, or capitalized phrase.",
+    "Preserve proper names and unfamiliar terms in their original spelling when translation would be unreliable.",
+    "Translate the surrounding prose.",
+    "Do not invent meanings or transliterations.",
+    "Do not leave an entire translatable document unchanged.",
+    "Do not leave a whole title, heading, or field in the source language merely because one proper name or unfamiliar term appears inside it.",
     "Preserve genuine registered organization names, person names, established product/brand names, URLs, IDs, routes, enum tokens, acronyms, and similar invariant identifiers where appropriate; still translate surrounding prose into the target language.",
     "Do not alter voting or signature counts.",
     "Do not remove uncertainty markers.",

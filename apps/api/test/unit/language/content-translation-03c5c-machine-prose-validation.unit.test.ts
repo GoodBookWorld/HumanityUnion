@@ -219,31 +219,26 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
     assert.doesNotMatch(assertFn, /isAllowedIdentical/);
   });
 
-  it("G. civic-title machine prose unchanged still fails (existing title gate)", async () => {
-    await assert.rejects(
-      () =>
-        translateCollaborativeAnalysisFieldsWithLifecycleSlots({
-          sanitizedFields: {
-            ...CA_FIELDS,
-            summary: `Review ${DISCUSSION} signals carefully.`,
-          },
-          sourceLanguage: "en",
-          targetLanguage: "uk",
-          translatePayload: async (payload) => {
-            const out: Record<string, string> = {};
-            for (const [key, value] of Object.entries(payload)) {
-              out[key] =
-                key === "title" || key.startsWith("title#m")
-                  ? value
-                  : `[uk] ${value}`;
-            }
-            return out;
-          },
-        }),
-      (error: unknown) =>
-        error instanceof ContentTranslationValidationError &&
-        error.reasonCode === "UNCHANGED_CIVIC_TITLE",
-    );
+  it("G. unchanged civic-title machine prose is allowed when another segment changed", async () => {
+    const translated = await translateCollaborativeAnalysisFieldsWithLifecycleSlots({
+      sanitizedFields: {
+        ...CA_FIELDS,
+        summary: `Review ${DISCUSSION} signals carefully.`,
+      },
+      sourceLanguage: "en",
+      targetLanguage: "uk",
+      translatePayload: async (payload) => {
+        const out: Record<string, string> = {};
+        for (const [key, value] of Object.entries(payload)) {
+          out[key] =
+            key === "title" || key.startsWith("title#m")
+              ? value
+              : `[uk] ${value}`;
+        }
+        return out;
+      },
+    });
+    assert.match(translated.summary, /\[uk\]/);
 
     assert.throws(
       () =>
@@ -312,14 +307,24 @@ describe("Localization Closure 03C.5C — CA machine prose before reassembly", (
         error.reasonCode === "UNCHANGED_SOURCE_PROSE",
     );
 
+    assert.doesNotThrow(() =>
+      assertCivicTitleFieldsTranslatedFromSource({
+        sourceKind: "initiative",
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        sourceFields: { title: "Hello", description: "World" },
+        translatedFields: { title: "Hello", description: "World changed" },
+      }),
+    );
+
     assert.throws(
       () =>
         assertCivicTitleFieldsTranslatedFromSource({
           sourceKind: "initiative",
           sourceLanguage: "en",
           targetLanguage: "uk",
-          sourceFields: { title: "Hello", description: "World changed" },
-          translatedFields: { title: "Hello", description: "World changed" },
+          sourceFields: { title: "Hello" },
+          translatedFields: { title: "Hello" },
         }),
       (error: unknown) =>
         error instanceof ContentTranslationValidationError &&

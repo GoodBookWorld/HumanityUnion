@@ -17,7 +17,7 @@ describe("Production Completion Pack 02G Task 07D — civic title prompt contrac
     contentType: "structured_json",
   });
 
-  it("requires normal translation of civic titles/headings including JSON title", () => {
+  it("requires normal translation of civic titles while allowing an original proper name", () => {
     assert.match(
       prompt,
       /Civic content titles and human-readable headings \(including JSON fields such as `title`/,
@@ -25,14 +25,17 @@ describe("Production Completion Pack 02G Task 07D — civic title prompt contrac
     assert.match(prompt, /translate them into the target language normally/);
     assert.match(
       prompt,
-      /designated civic title\/heading field values must not remain identical to the source/,
+      /Preserve proper names and unfamiliar terms in their original spelling when translation would be unreliable/,
     );
+    assert.match(prompt, /Translate the surrounding prose/);
+    assert.match(prompt, /Do not invent meanings or transliterations/);
+    assert.match(prompt, /Do not leave an entire translatable document unchanged/);
   });
 
-  it("rejects treating campaign/alliance-like titles as automatically invariant", () => {
+  it("does not treat one proper name as permission to leave the whole field unchanged", () => {
     assert.match(
       prompt,
-      /Do not preserve a civic artifact title merely because it resembles a proper name, campaign name, alliance name, or capitalized phrase/,
+      /Do not leave a whole title, heading, or field in the source language merely because one proper name or unfamiliar term appears inside it/,
     );
   });
 

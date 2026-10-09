@@ -155,7 +155,7 @@ describe("Production Completion Pack 02G Task 07C — target-language enforcemen
       assert.match(prompt, /Civic content titles and human-readable headings/);
       assert.match(
         prompt,
-        /Do not preserve a civic artifact title merely because it resembles a proper name, campaign name, alliance name/,
+        /Preserve proper names and unfamiliar terms in their original spelling when translation would be unreliable/,
       );
     });
 
