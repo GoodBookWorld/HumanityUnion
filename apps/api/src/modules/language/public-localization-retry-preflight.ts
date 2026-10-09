@@ -30,6 +30,7 @@ import {
   HISTORICAL_EMPTY_PROVIDER_REASON,
   INVALID_PROVIDER_PAYLOAD_REASON,
   selectInvalidProviderPayloadRetry,
+  shouldHoldAutomaticRetryForUnsplitTruncation,
 } from "./content-translation-provider-payload-retry.js";
 import {
   listContentTranslationWarmAttempts,
@@ -485,26 +486,28 @@ export async function buildPublicLocalizationRetryPreflight(input: {
           sourceRecordId: item.sourceRecordId,
           limit: 50,
         });
+        const mappedPayloadAttempts = payloadAttempts.map((attempt) => ({
+          status: attempt.status,
+          architectureRetryBasis: attempt.architectureRetryBasis,
+          sourceVersion: attempt.sourceVersion ?? attempt.failureMetadata?.sourceVersion ?? null,
+          targetLocales: attempt.targetLocales,
+          attemptAt: attempt.attemptAt,
+          failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+          failureTargetLocale:
+            typeof attempt.failureMetadata?.targetLocale === "string"
+              ? attempt.failureMetadata.targetLocale
+              : null,
+          retryabilityHint: attempt.failureMetadata?.retryabilityHint ?? null,
+          localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+          structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
+          providerPayloadKind: attempt.failureMetadata?.providerPayloadKind ?? null,
+        }));
         const payloadDecision = selectInvalidProviderPayloadRetry({
           sourceKind: item.sourceKind,
           sourceRecordId: item.sourceRecordId,
           targetLocale: item.targetLanguage,
           sourceVersion: liveSourceVersion,
-          attempts: payloadAttempts.map((attempt) => ({
-            status: attempt.status,
-            architectureRetryBasis: attempt.architectureRetryBasis,
-            sourceVersion: attempt.sourceVersion ?? attempt.failureMetadata?.sourceVersion ?? null,
-            targetLocales: attempt.targetLocales,
-            attemptAt: attempt.attemptAt,
-            failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
-            failureTargetLocale:
-              typeof attempt.failureMetadata?.targetLocale === "string"
-                ? attempt.failureMetadata.targetLocale
-                : null,
-            retryabilityHint: attempt.failureMetadata?.retryabilityHint ?? null,
-            localeFailures: attempt.failureMetadata?.localeFailures ?? null,
-            structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
-          })),
+          attempts: mappedPayloadAttempts,
         });
         if (payloadDecision.outcome === "exhausted") {
           semanticRetryDeferred = true;
@@ -526,6 +529,17 @@ export async function buildPublicLocalizationRetryPreflight(input: {
           architectureRetryBasis = payloadDecision.architectureRetryBasis;
         } else if (payloadDecision.outcome === "due") {
           semanticRetryDeferred = false;
+          semanticRetryEligibleAt = null;
+        }
+        if (
+          shouldHoldAutomaticRetryForUnsplitTruncation({
+            sourceVersion: liveSourceVersion,
+            targetLocale: item.targetLanguage,
+            attempts: mappedPayloadAttempts,
+            retryOutcome: payloadDecision.outcome,
+          })
+        ) {
+          semanticRetryDeferred = true;
           semanticRetryEligibleAt = null;
         }
       } catch {

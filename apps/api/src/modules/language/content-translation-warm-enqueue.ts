@@ -334,6 +334,7 @@ export function deferContentTranslationWarmMemoryForPacingForTests(
 export function markContentTranslationWarmMemoryFailedForTests(
   eventId: string,
   lastError = "terminal warm failure",
+  failedAt?: string,
 ): void {
   const record = memoryRecordsByEventId.get(eventId);
   if (!record) {
@@ -341,7 +342,7 @@ export function markContentTranslationWarmMemoryFailedForTests(
   }
   record.status = "failed";
   record.lastError = lastError;
-  record.failedAt = new Date().toISOString();
+  record.failedAt = failedAt ?? new Date().toISOString();
   const aggregateId = buildContentTranslationWarmAggregateId(record.command);
   const pending = memoryPendingByAggregate.get(aggregateId);
   if (pending?.eventId === eventId) {
