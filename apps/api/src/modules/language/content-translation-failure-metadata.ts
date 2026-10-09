@@ -13,6 +13,10 @@ import {
 } from "@hu/types";
 
 import { TranslationProviderError } from "./translation.config.js";
+import {
+  isContentTranslationProviderPayloadKind,
+  type ContentTranslationProviderPayloadKind,
+} from "./content-translation-provider-payload.js";
 
 /** Bumped when validation/diagnostics contract changes in a retry-relevant way. */
 export const CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION = "v1" as const;
@@ -234,6 +238,11 @@ export type ContentTranslationSafeFailureMetadata = {
    * Absent on historical rows.
    */
   readonly structuredOutputContract?: typeof CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT | null;
+  /**
+   * Allowlisted provider-payload diagnostic.
+   * Never provider text, finish-reason prose, or secrets.
+   */
+  readonly providerPayloadKind?: ContentTranslationProviderPayloadKind | null;
 };
 
 const META_PREFIX = "CT_FAIL_META_V1:";
@@ -246,6 +255,9 @@ export class ContentTranslationValidationError extends TranslationProviderError 
   /** Structured terminology violations. Null for every other reason. */
   readonly terminologyViolations: readonly TerminologyViolationDescriptor[] | null;
 
+  /** Allowlisted payload diagnostic. Null for every other failure. */
+  readonly providerPayloadKind: ContentTranslationProviderPayloadKind | null;
+
   constructor(
     reasonCode: ContentTranslationValidationReasonCode,
     message: string,
@@ -256,6 +268,7 @@ export class ContentTranslationValidationError extends TranslationProviderError 
       readonly reason?: string | null;
       readonly violationType?: string | null;
     }[] | null = null,
+    providerPayloadKind: ContentTranslationProviderPayloadKind | null = null,
   ) {
     super(providerCode, message);
     this.name = "ContentTranslationValidationError";
@@ -266,7 +279,25 @@ export class ContentTranslationValidationError extends TranslationProviderError 
         ? normalizeTerminologyViolationDescriptors(terminologyViolations ?? [])
         : [];
     this.terminologyViolations = normalized.length > 0 ? normalized : null;
+    this.providerPayloadKind = isContentTranslationProviderPayloadKind(providerPayloadKind)
+      ? providerPayloadKind
+      : null;
   }
+}
+
+export function resolveContentTranslationProviderPayloadKind(
+  error: unknown,
+): ContentTranslationProviderPayloadKind | null {
+  if (error instanceof ContentTranslationValidationError) {
+    return error.providerPayloadKind;
+  }
+  if (
+    error instanceof TranslationProviderError &&
+    isContentTranslationProviderPayloadKind(error.providerFailureSubtype)
+  ) {
+    return error.providerFailureSubtype;
+  }
+  return null;
 }
 
 /**
@@ -401,6 +432,13 @@ export function parseContentTranslationFailureMetadata(
         : {}),
       ...(raw.structuredOutputContract === CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT
         ? { structuredOutputContract: CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT }
+        : {}),
+      ...(isContentTranslationProviderPayloadKind(
+        typeof raw.providerPayloadKind === "string" ? raw.providerPayloadKind : null,
+      )
+        ? {
+            providerPayloadKind: raw.providerPayloadKind as ContentTranslationProviderPayloadKind,
+          }
         : {}),
       ...diagnostic,
     };

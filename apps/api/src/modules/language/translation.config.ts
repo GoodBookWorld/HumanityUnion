@@ -41,11 +41,25 @@ export class TranslationProviderError extends Error {
     readonly providerFailureSubtype?: string,
     /** RESET 05E.2 — safe transport forensics only (no secrets/content). */
     readonly transport?: TranslationProviderTransportMeta,
+    /** Safe response envelope. Absent for local validation errors. */
+    readonly responseEnvelope?: TranslationProviderResponseEnvelope,
   ) {
     super(message);
     this.name = "TranslationProviderError";
   }
 }
+
+/**
+ * Safe generateContent envelope. Counts and finish reason only.
+ * Never candidate text, prompts, or secrets.
+ */
+export type TranslationProviderResponseEnvelope = {
+  readonly finishReason?: string | null;
+  readonly candidateCount?: number;
+  readonly textPartCount?: number;
+  readonly extractedLength?: number;
+  readonly failureSubtype?: string | null;
+};
 
 /** Safe Gemini/HTTP transport metadata — never keys, URLs with keys, or bodies. */
 export type TranslationProviderTransportMeta = {
