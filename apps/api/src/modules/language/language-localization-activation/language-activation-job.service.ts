@@ -1687,7 +1687,8 @@ export async function getLanguageActivationAdminView(input: {
     input.refreshJob !== false &&
     (job.status === "waiting_for_data" ||
       job.status === "running" ||
-      job.status === "queued")
+      job.status === "queued" ||
+      job.status === "failed")
   ) {
     const latest = (await getLanguageActivationJobById(job.jobId)) ?? job;
     const claimed = isClaimedActivationStatus(latest.status);

@@ -20,12 +20,14 @@ import {
   decideSameVersionWarmFailureRetry,
   isExplicitlyRetryableModernFailure,
   selectTerminologyMissingTranslationRetry,
+  SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
   SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
   shouldDeferResidualSelection,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 import {
+  HISTORICAL_EMPTY_PROVIDER_REASON,
   INVALID_PROVIDER_PAYLOAD_REASON,
   selectInvalidProviderPayloadRetry,
 } from "./content-translation-provider-payload-retry.js";
@@ -360,6 +362,17 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       ready = true;
       readyState = "MISSING_READY_FOR_WARM";
       blockReason = null;
+    } else if (
+      failureReasonCode === HISTORICAL_EMPTY_PROVIDER_REASON &&
+      peek.failureMetadata?.retryabilityHint === SEMANTIC_RESIDUAL_DEFER_RETRY_HINT
+    ) {
+      // Stored empty-candidate failures share the payload retry budget.
+      // Genuine EMPTY_TRANSLATION without this hint stays terminal below.
+      architectureRetryBasis =
+        CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
+      ready = true;
+      readyState = "MISSING_READY_FOR_WARM";
+      blockReason = null;
     } else if (failureReasonCode === "TERMINOLOGY_PROTECTION_VIOLATION") {
       // Unchanged source and terminology input stay residual work for coverage.
       // Provider selection is suppressed after this decision.
@@ -457,8 +470,12 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     if (semanticRetryDeferred) {
       semanticRetryEligibleAt = peek.failureMetadata?.retryEligibleAt ?? null;
     }
+    const historicalEmptyProviderFailure =
+      failureReasonCode === HISTORICAL_EMPTY_PROVIDER_REASON &&
+      peek.failureMetadata?.retryabilityHint === SEMANTIC_RESIDUAL_DEFER_RETRY_HINT;
     if (
-      failureReasonCode === INVALID_PROVIDER_PAYLOAD_REASON &&
+      (failureReasonCode === INVALID_PROVIDER_PAYLOAD_REASON ||
+        historicalEmptyProviderFailure) &&
       liveSourceVersion &&
       liveSourceVersion !== "unloaded"
     ) {
@@ -484,14 +501,25 @@ export async function buildPublicLocalizationRetryPreflight(input: {
               typeof attempt.failureMetadata?.targetLocale === "string"
                 ? attempt.failureMetadata.targetLocale
                 : null,
+            retryabilityHint: attempt.failureMetadata?.retryabilityHint ?? null,
             localeFailures: attempt.failureMetadata?.localeFailures ?? null,
             structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
           })),
         });
-        if (payloadDecision.outcome === "exhausted" || payloadDecision.outcome === "waiting") {
+        if (payloadDecision.outcome === "exhausted") {
           semanticRetryDeferred = true;
-          semanticRetryEligibleAt =
-            payloadDecision.outcome === "waiting" ? payloadDecision.retryEligibleAt : null;
+          semanticRetryEligibleAt = null;
+          if (historicalEmptyProviderFailure) {
+            ready = false;
+            readyState = "BLOCKED";
+            blockReason =
+              "Same-version empty provider response retry budget is exhausted.";
+            architectureRetryBasis = null;
+            terminalFailureForCurrentVersion = true;
+          }
+        } else if (payloadDecision.outcome === "waiting") {
+          semanticRetryDeferred = true;
+          semanticRetryEligibleAt = payloadDecision.retryEligibleAt;
         } else if (payloadDecision.outcome === "recover_once") {
           semanticRetryDeferred = false;
           semanticRetryEligibleAt = null;

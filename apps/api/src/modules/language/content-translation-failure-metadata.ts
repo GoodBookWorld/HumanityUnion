@@ -861,6 +861,12 @@ export function resolveValidationReasonCodeFromError(
     if (message.includes("unchanged source")) {
       return "UNCHANGED_SOURCE_PROSE";
     }
+    // Empty Gemini candidate text is a provider payload failure. Genuine
+    // content validation throws ContentTranslationValidationError and is
+    // returned above, including EMPTY_TRANSLATION for empty translated fields.
+    if (message.includes("gemini returned empty translation")) {
+      return "INVALID_PROVIDER_PAYLOAD";
+    }
     if (message.includes("empty")) {
       return "EMPTY_TRANSLATION";
     }
