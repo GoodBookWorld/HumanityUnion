@@ -113,9 +113,9 @@ export function assertTranslatedProseChangedFromSource(input: {
 }
 
 /**
- * Pack 02G Task 07E.1 — designated civic title/heading fields must differ
- * from source for cross-language machine translation. Additive to 07C.
- * No acronym/shape exemptions; field map is authoritative.
+ * Designated civic titles may stay in the original spelling when another
+ * eligible field changed. An unchanged title is rejected when it is the only
+ * eligible field. No locale-specific exceptions.
  */
 export function assertCivicTitleFieldsTranslatedFromSource(input: {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -127,6 +127,25 @@ export function assertCivicTitleFieldsTranslatedFromSource(input: {
   if (input.sourceLanguage === input.targetLanguage) {
     return;
   }
+
+  const eligibleKeys = resolveAutomaticTranslationFieldKeys({
+    sourceFields: input.sourceFields,
+    compatibilityAllowlist:
+      CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+  }).filter((key) => {
+    const sourceValue = input.sourceFields[key];
+    return typeof sourceValue === "string" && sourceValue.trim().length > 0;
+  });
+  const changedKeys = new Set(
+    eligibleKeys.filter((key) => {
+      const sourceValue = input.sourceFields[key]!.trim();
+      const translatedValue =
+        typeof input.translatedFields[key] === "string"
+          ? input.translatedFields[key]!.trim()
+          : "";
+      return translatedValue.length > 0 && translatedValue !== sourceValue;
+    }),
+  );
 
   const titleKeys = CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS[input.sourceKind] as readonly string[];
   for (const key of titleKeys) {
@@ -146,6 +165,12 @@ export function assertCivicTitleFieldsTranslatedFromSource(input: {
       );
     }
     if (translatedValue === sourceValue.trim()) {
+      const anotherEligibleFieldChanged = eligibleKeys.some(
+        (other) => other !== key && changedKeys.has(other),
+      );
+      if (anotherEligibleFieldChanged) {
+        continue;
+      }
       throw new ContentTranslationValidationError(
         "UNCHANGED_CIVIC_TITLE",
         `Translation provider left civic title/heading field "${key}" unchanged.`,

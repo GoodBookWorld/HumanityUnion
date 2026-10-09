@@ -122,8 +122,8 @@ export function assertCollaborativeAnalysisMachineProseTranslated(input: {
 }
 
 /**
- * 03C.5C — civic title machine prose must change independently of lifecycle-slot
- * glossary substitution.
+ * Civic title machine prose may stay unchanged when another eligible machine
+ * segment changed. A title that is the only eligible segment must still change.
  */
 export function assertCollaborativeAnalysisMachineCivicTitleTranslated(input: {
   readonly sourceLanguage: LanguageCode | string;
@@ -135,9 +135,8 @@ export function assertCollaborativeAnalysisMachineCivicTitleTranslated(input: {
     return;
   }
 
-  const titleKeys = eligibleMachineKeys(input.machinePayload).filter(
-    isCollaborativeAnalysisTitleMachineKey,
-  );
+  const eligibleKeys = eligibleMachineKeys(input.machinePayload);
+  const titleKeys = eligibleKeys.filter(isCollaborativeAnalysisTitleMachineKey);
 
   for (const key of titleKeys) {
     const sourceValue = input.machinePayload[key]!.trim();
@@ -151,7 +150,18 @@ export function assertCollaborativeAnalysisMachineCivicTitleTranslated(input: {
         "malformed_response",
       );
     }
-    if (translatedValue === sourceValue) {
+    if (translatedValue !== sourceValue) {
+      continue;
+    }
+    const anotherEligibleFieldChanged = eligibleKeys.some((other) => {
+      if (other === key) {
+        return false;
+      }
+      const otherRaw = input.translatedSegments[other];
+      const otherValue = typeof otherRaw === "string" ? otherRaw.trim() : "";
+      return otherValue.length > 0 && otherValue !== input.machinePayload[other]!.trim();
+    });
+    if (!anotherEligibleFieldChanged) {
       throw new ContentTranslationValidationError(
         "UNCHANGED_CIVIC_TITLE",
         `Translation provider left Collaborative Analysis civic title machine prose unchanged ("${key}").`,

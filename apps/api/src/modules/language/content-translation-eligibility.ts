@@ -128,9 +128,9 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /**
- * Pack 02G Task 07E.1 — civic display titles/headings that must differ from
- * source when sourceLanguage !== targetLanguage (non-empty source values).
- * Strict subset of CONTENT_TRANSLATION_FIELD_ALLOWLIST per sourceKind.
+ * Civic display titles and headings. An unchanged title is allowed when
+ * another eligible field changed, including a proper name kept in its
+ * original spelling. It is rejected when that title is the only eligible field.
  */
 export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
   initiative: ["title"],

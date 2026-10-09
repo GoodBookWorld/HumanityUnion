@@ -20,7 +20,6 @@ import {
   assertTranslatedProseChangedFromSource,
   ensureLanguageRegistrySeeded,
   getOrCreateContentTranslation,
-  loadTranslatableSource,
   resetContentTranslationMemoryStoreForTests,
   resetLanguageRegistryStoreForTests,
   resetTranslationProviderForTests,
@@ -31,7 +30,6 @@ import {
   type TranslationProviderRequest,
   type TranslationProviderResult,
 } from "../../../src/modules/language/index.js";
-import { findContentTranslation } from "../../../src/modules/language/persistence/content-translation.repository.js";
 import {
   createInitiative,
   deleteInitiative,
@@ -138,7 +136,7 @@ describe("Production Completion Pack 02G Task 07E.1 — civic title must-differ"
     }
   });
 
-  it("a. identical title + translated description => malformed_response, not persisted", async () => {
+  it("a. identical title + translated description is accepted and source stays unchanged", async () => {
     setTranslationProviderForTests(
       new ScriptedStructuredTranslationProvider(() => ({
         title: initiative.title,
@@ -146,34 +144,16 @@ describe("Production Completion Pack 02G Task 07E.1 — civic title must-differ"
       })),
     );
 
-    await assert.rejects(
-      () =>
-        getOrCreateContentTranslation({
-          sourceKind: "initiative",
-          sourceRecordId: initiative.initiativeId,
-          targetLanguage: "uk",
-          generateIfMissing: true,
-        }),
-      (error: unknown) => {
-        assert.ok(error instanceof TranslationProviderError);
-        assert.equal(error.code, "malformed_response");
-        assert.match(error.message, /title/);
-        return true;
-      },
-    );
-
-    const source = await loadTranslatableSource({
+    const result = await getOrCreateContentTranslation({
       sourceKind: "initiative",
       sourceRecordId: initiative.initiativeId,
-    });
-    assert.ok(source);
-    const stored = await findContentTranslation({
-      sourceKind: "initiative",
-      sourceRecordId: initiative.initiativeId,
-      sourceVersion: source.sourceVersion,
       targetLanguage: "uk",
+      generateIfMissing: true,
     });
-    assert.equal(stored, null);
+    assert.equal(result.generated, true);
+    assert.equal(result.translation?.translatedContent.title, initiative.title);
+    assert.equal(result.translation?.translatedContent.description, "Учасники відновлюють громадянську довіру.");
+    assert.equal(initiative.title, "The Mind-Safe Alliance");
   });
 
   it("b. translated title + translated description => accepted", async () => {
@@ -282,51 +262,23 @@ describe("Production Completion Pack 02G Task 07E.1 — civic title must-differ"
     );
   });
 
-  it("g. civic_media enforces each non-empty designated heading independently", () => {
-    assert.throws(
-      () =>
-        assertCivicTitleFieldsTranslatedFromSource({
-          sourceKind: "civic_media",
-          sourceLanguage: "en",
-          targetLanguage: "uk",
-          sourceFields: {
-            overviewTitle: "Overview",
-            initiativeFlowTitle: "Flow",
-            overviewSummary: "Summary",
-          },
-          translatedFields: {
-            overviewTitle: "Огляд",
-            initiativeFlowTitle: "Flow",
-            overviewSummary: "Підсумок",
-          },
-        }),
-      (error: unknown) => {
-        assert.ok(error instanceof TranslationProviderError);
-        assert.match(String(error), /initiativeFlowTitle/);
-        return true;
-      },
-    );
-
-    assert.throws(
-      () =>
-        assertCivicTitleFieldsTranslatedFromSource({
-          sourceKind: "civic_media",
-          sourceLanguage: "en",
-          targetLanguage: "uk",
-          sourceFields: {
-            overviewTitle: "Overview",
-            initiativeFlowTitle: "Flow",
-          },
-          translatedFields: {
-            overviewTitle: "Overview",
-            initiativeFlowTitle: "Потік",
-          },
-        }),
-      (error: unknown) => {
-        assert.ok(error instanceof TranslationProviderError);
-        assert.match(String(error), /overviewTitle/);
-        return true;
-      },
+  it("g. an unchanged civic heading is allowed when another eligible field changed", () => {
+    assert.doesNotThrow(() =>
+      assertCivicTitleFieldsTranslatedFromSource({
+        sourceKind: "civic_media",
+        sourceLanguage: "en",
+        targetLanguage: "uk",
+        sourceFields: {
+          overviewTitle: "Overview",
+          initiativeFlowTitle: "Flow",
+          overviewSummary: "Summary",
+        },
+        translatedFields: {
+          overviewTitle: "Огляд",
+          initiativeFlowTitle: "Flow",
+          overviewSummary: "Підсумок",
+        },
+      }),
     );
 
     assert.doesNotThrow(() =>
@@ -336,13 +288,33 @@ describe("Production Completion Pack 02G Task 07E.1 — civic title must-differ"
         targetLanguage: "uk",
         sourceFields: {
           overviewTitle: "Overview",
-          initiativeFlowTitle: "",
+          initiativeFlowTitle: "Flow",
         },
         translatedFields: {
-          overviewTitle: "Огляд",
-          initiativeFlowTitle: "",
+          overviewTitle: "Overview",
+          initiativeFlowTitle: "Потік",
         },
       }),
+    );
+
+    assert.throws(
+      () =>
+        assertCivicTitleFieldsTranslatedFromSource({
+          sourceKind: "civic_media",
+          sourceLanguage: "en",
+          targetLanguage: "uk",
+          sourceFields: {
+            overviewTitle: "Overview",
+          },
+          translatedFields: {
+            overviewTitle: "Overview",
+          },
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof TranslationProviderError);
+        assert.match(String(error), /overviewTitle/);
+        return true;
+      },
     );
   });
 
