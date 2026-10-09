@@ -1,10 +1,12 @@
 import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "../hu-terminology-glossary.js";
 import { resolveLanguageRegistryLocale } from "../language-registry/language-registry.repository.js";
+import { truncatedPayloadKindFromFinishReason } from "../content-translation-provider-payload.js";
 import {
   assertGeminiTranslationConfigured,
   resolveTranslationConfig,
   TranslationProviderError,
   type TranslationConfig,
+  type TranslationProviderResponseEnvelope,
 } from "../translation.config.js";
 import type {
   TranslationContentType,
@@ -151,6 +153,24 @@ export function buildGeminiGenerationConfig(input: {
   };
 }
 
+function safeGeminiResponseEnvelope(
+  body: GeminiGenerateContentResponse,
+  extractedText: string,
+): TranslationProviderResponseEnvelope {
+  const candidates = body.candidates ?? [];
+  const parts = candidates[0]?.content?.parts ?? [];
+  const finishReason = candidates[0]?.finishReason ?? null;
+  return {
+    finishReason,
+    candidateCount: candidates.length,
+    textPartCount: parts.filter(
+      (part) => typeof part.text === "string" && part.text.length > 0,
+    ).length,
+    extractedLength: extractedText.length,
+    failureSubtype: truncatedPayloadKindFromFinishReason(finishReason),
+  };
+}
+
 /** @deprecated Pack 02F compatibility — prefer buildGeminiTranslationSystemInstruction. */
 export function buildGeminiTranslationSystemInstructionForTests(
   request: TranslationProviderRequest & {
@@ -265,17 +285,30 @@ export class GeminiTranslationProvider implements TranslationProvider {
         throw classifyGeminiHttpFailure(response.status, body);
       }
 
+      const joined =
+        body.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+      const trimmed = joined.trim();
+      const envelope = safeGeminiResponseEnvelope(body, trimmed);
+
       if (body.promptFeedback?.blockReason) {
         throw new TranslationProviderError(
           "safety_rejected",
           "Gemini blocked the translation request",
+          undefined,
+          undefined,
+          { ...envelope, failureSubtype: null },
         );
       }
 
-      const text = body.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
-      const trimmed = text.trim();
       if (!trimmed) {
-        throw new TranslationProviderError("malformed_response", "Gemini returned empty translation");
+        const kind = truncatedPayloadKindFromFinishReason(envelope.finishReason) ?? "empty_candidate";
+        throw new TranslationProviderError(
+          "malformed_response",
+          "Gemini returned empty translation",
+          kind,
+          undefined,
+          { ...envelope, failureSubtype: kind, extractedLength: 0 },
+        );
       }
 
       const cleaned = trimmed
@@ -287,6 +320,11 @@ export class GeminiTranslationProvider implements TranslationProvider {
         translatedText: cleaned,
         providerId: this.providerId,
         isPlaceholder: false,
+        envelope: {
+          ...envelope,
+          extractedLength: cleaned.length,
+          failureSubtype: null,
+        },
       };
     } finally {
       clearTimeout(timeout);

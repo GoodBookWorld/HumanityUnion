@@ -45,8 +45,10 @@ import {
   normalizeExactValidationReasonCode,
   resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
+  resolveContentTranslationProviderPayloadKind,
   semanticResidualRetryEligibleAtIso,
 } from "./content-translation-failure-metadata.js";
+import { isContentTranslationProviderPayloadKind, isImmediateTerminalProviderPayloadKind } from "./content-translation-provider-payload.js";
 import {
   deferContentTranslationWarmMemoryForPacingForTests,
   listContentTranslationWarmAttempts,
@@ -97,6 +99,8 @@ export type ContentTranslationWarmLocaleOutcome =
       /** Exact validator reason — never the generic string "VALIDATION_FAILED". */
       readonly failureReasonCode: string;
       readonly localizationInputVersion?: string | null;
+      /** Allowlisted payload diagnostic. Absent for every other failure. */
+      readonly providerPayloadKind?: string | null;
       /** Structured terminology violations. Absent for every other failure. */
       readonly terminologyViolations?: readonly {
         readonly conceptId: string;
@@ -424,6 +428,7 @@ export async function processContentTranslationWarmRequested(
           error instanceof ContentTranslationValidationError
             ? error.localizationInputVersion
             : null,
+        providerPayloadKind: resolveContentTranslationProviderPayloadKind(error),
         terminologyViolations:
           error instanceof ContentTranslationValidationError
             ? error.terminologyViolations
@@ -526,6 +531,11 @@ export async function processContentTranslationWarmRequested(
       : firstFailed?.failureClass === "retryable"
         ? "retryable"
         : "non_retryable_until_code_or_content_change";
+    const providerPayloadKind = isContentTranslationProviderPayloadKind(
+      firstFailed?.providerPayloadKind,
+    )
+      ? firstFailed.providerPayloadKind
+      : null;
     const persistedLocaleFailures = semanticOnly
       ? localeFailures.map((row) => ({
           ...row,
@@ -547,6 +557,7 @@ export async function processContentTranslationWarmRequested(
       ...(persistedLocaleFailures.length ? { localeFailures: persistedLocaleFailures } : {}),
       ...(retryEligibleAt ? { retryEligibleAt } : {}),
       ...(localizationInputVersion ? { localizationInputVersion } : {}),
+      ...(providerPayloadKind ? { providerPayloadKind } : {}),
       ...terminologyFailureDiagnosticForMetadata({
         failureReasonCode: reasonCode,
         violations: firstFailed?.terminologyViolations ?? null,
@@ -557,7 +568,7 @@ export async function processContentTranslationWarmRequested(
       sawRetryableFailure ? "unavailable" : "bad_request",
       metaMessage,
     );
-    if (semanticOnly) {
+    if (semanticOnly || isImmediateTerminalProviderPayloadKind(providerPayloadKind)) {
       (err as Error & { immediateTerminalOutboxFailure?: boolean }).immediateTerminalOutboxFailure =
         true;
     }

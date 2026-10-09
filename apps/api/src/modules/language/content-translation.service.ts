@@ -46,6 +46,7 @@ import {
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
+import { malformedStructuredPayloadKind } from "./content-translation-provider-payload.js";
 import { contentTranslationStructuredResponseSchema } from "./content-translation-structured-response.js";
 import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
 import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
@@ -87,6 +88,7 @@ import {
   collectSourceTextLeaves,
 } from "./localization-input-contract.js";
 import { TranslationProviderError } from "./translation.config.js";
+import type { TranslationProviderResult } from "./translation-provider.js";
 import { runLocalizationProviderRequest } from "./localization-provider-governor.js";
 
 export interface LoadedTranslatableSource {
@@ -303,6 +305,20 @@ function parseStructuredTranslation(text: string): Record<string, string> {
   return fields;
 }
 
+function throwMalformedStructuredProviderPayload(result: TranslationProviderResult): never {
+  throw new ContentTranslationValidationError(
+    "INVALID_PROVIDER_PAYLOAD",
+    "Translation provider returned malformed structured content.",
+    "malformed_response",
+    null,
+    null,
+    malformedStructuredPayloadKind({
+      finishReason: result.envelope?.finishReason,
+      failureSubtype: result.envelope?.failureSubtype,
+    }),
+  );
+}
+
 /**
  * Idempotent: same sourceKind + sourceRecordId + sourceVersion + targetLanguage
  * returns the existing record without a second provider call when coverage is met.
@@ -510,11 +526,7 @@ export async function getOrCreateContentTranslation(input: {
         try {
           return parseStructuredTranslation(result.translatedText);
         } catch {
-          throw new ContentTranslationValidationError(
-            "INVALID_PROVIDER_PAYLOAD",
-            "Translation provider returned malformed structured content.",
-            "malformed_response",
-          );
+          throwMalformedStructuredProviderPayload(result);
         }
       },
     });
@@ -552,11 +564,7 @@ export async function getOrCreateContentTranslation(input: {
     try {
       translatedFields = parseStructuredTranslation(result.translatedText);
     } catch {
-      throw new ContentTranslationValidationError(
-        "INVALID_PROVIDER_PAYLOAD",
-        "Translation provider returned malformed structured content.",
-        "malformed_response",
-      );
+      throwMalformedStructuredProviderPayload(result);
     }
 
     // Pack 02G Task 07C / 07E.1 / 08J / Pack 1.2 — keep AUTO_TRANSLATABLE projection
