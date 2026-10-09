@@ -16,6 +16,7 @@
 
 import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
 
+import { contentTranslationChunkPlanReleasesTruncationHold } from "./content-translation-chunk-plan.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT,
@@ -185,10 +186,10 @@ function recoveryAlreadyGranted(
 }
 
 /**
- * Content Translation still submits each source version as one structured
- * response. The chunked translator releases this safety gate by returning
- * false. Historical attempt rows stay unchanged, and the same source version
- * becomes selectable on the next reconciliation pass.
+ * Documents that fit the output budget still use one structured response.
+ * The truncation hold is released per identity by
+ * contentTranslationChunkPlanReleasesTruncationHold, only when that identity
+ * has a capable multi-segment plan. Historical attempt rows stay unchanged.
  */
 export function contentTranslationUsesUnsplitSingleResponse(): boolean {
   return true;
@@ -234,7 +235,22 @@ export function shouldHoldAutomaticRetryForUnsplitTruncation(input: {
   readonly retryOutcome: InvalidProviderPayloadRetryDecision["outcome"];
   /** Test seam. Production uses contentTranslationUsesUnsplitSingleResponse. */
   readonly singleResponseActive?: boolean;
+  /**
+   * Sanitized source fields for this identity. When present, a capable
+   * chunk plan releases the hold. Absent fields keep the unsplit hold.
+   */
+  readonly sourceFields?: Readonly<Record<string, string>> | null;
+  readonly maxOutputTokens?: number;
 }): boolean {
+  if (
+    input.sourceFields &&
+    contentTranslationChunkPlanReleasesTruncationHold(
+      input.sourceFields,
+      input.maxOutputTokens,
+    )
+  ) {
+    return false;
+  }
   const singleResponseActive =
     input.singleResponseActive ?? contentTranslationUsesUnsplitSingleResponse();
   if (!singleResponseActive) {

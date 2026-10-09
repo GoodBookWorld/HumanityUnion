@@ -11,7 +11,10 @@ import type {
   LanguageCode,
 } from "@hu/types";
 
-import { assertCanonicalSourceEligibleForTranslation } from "./content-translation-eligibility.js";
+import {
+  assertCanonicalSourceEligibleForTranslation,
+  sanitizeFieldsForAutomaticTranslation,
+} from "./content-translation-eligibility.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
@@ -531,12 +534,24 @@ export async function buildPublicLocalizationRetryPreflight(input: {
           semanticRetryDeferred = false;
           semanticRetryEligibleAt = null;
         }
+        let chunkFields: Record<string, string> | null = null;
+        if (sourceFields) {
+          try {
+            chunkFields = sanitizeFieldsForAutomaticTranslation({
+              sourceKind: item.sourceKind,
+              fields: sourceFields,
+            });
+          } catch {
+            chunkFields = null;
+          }
+        }
         if (
           shouldHoldAutomaticRetryForUnsplitTruncation({
             sourceVersion: liveSourceVersion,
             targetLocale: item.targetLanguage,
             attempts: mappedPayloadAttempts,
             retryOutcome: payloadDecision.outcome,
+            sourceFields: chunkFields,
           })
         ) {
           semanticRetryDeferred = true;
