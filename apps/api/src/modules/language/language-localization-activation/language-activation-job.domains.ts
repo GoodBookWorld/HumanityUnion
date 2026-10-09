@@ -600,6 +600,8 @@ export type ActivationPlpWorkProgressRow = {
  * Pending, running, pacing/cooldown, recovery windows, and the legacy
  * pacing-mislabel adoption stay "progress". A generation-capped real
  * provider failure with required work left is "exhausted".
+ * CT failed with no actionable, pending, or active CT work is exhausted
+ * when PLP has nothing left to run.
  */
 export function classifyActivationAutomaticProgress(input: {
   readonly readiness: Pick<LanguageLocalizationReadinessReport, "ct" | "plpMedia">;
@@ -612,12 +614,13 @@ export function classifyActivationAutomaticProgress(input: {
   ) {
     return "progress";
   }
+  const ctTerminalOnly = input.readiness.ct.failed > 0;
   const plpRequired =
     input.readiness.plpMedia.workItemsRequired > 0 ||
     input.readiness.plpMedia.failed > 0 ||
     input.readiness.plpMedia.pending > 0;
   if (!plpRequired) {
-    return "unspecified";
+    return ctTerminalOnly ? "exhausted" : "unspecified";
   }
   if (input.plpWork.length === 0) {
     return "unspecified";

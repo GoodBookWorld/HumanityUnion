@@ -9,6 +9,9 @@
  * cap before the structured-output contract shipped receive one recovery
  * enqueue. A later schema-era failure, or an attempt already stamped with
  * the recovery basis, does not grant another.
+ *
+ * EMPTY_TRANSLATION rows stored with deferred_semantic_retry share this
+ * identity budget. They do not receive the pre-contract recovery enqueue.
  */
 
 import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
@@ -16,11 +19,18 @@ import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT,
+  SEMANTIC_RESIDUAL_DEFER_RETRY_HINT,
   SEMANTIC_RESIDUAL_DEFER_STREAK_CAP,
   semanticResidualDeferDelayMs,
 } from "./content-translation-failure-metadata.js";
 
 export const INVALID_PROVIDER_PAYLOAD_REASON = "INVALID_PROVIDER_PAYLOAD" as const;
+
+/**
+ * Stored code for a Gemini empty-candidate response that was mapped to a
+ * semantic terminal failure. Counted in this budget only with the defer hint.
+ */
+export const HISTORICAL_EMPTY_PROVIDER_REASON = "EMPTY_TRANSLATION" as const;
 
 export const CT_STRUCTURED_OUTPUT_SCHEMA_RETRY_BASIS =
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.CT_STRUCTURED_OUTPUT_SCHEMA_v1;
@@ -33,6 +43,8 @@ export type InvalidProviderPayloadRetryAttempt = {
   readonly attemptAt: string;
   readonly failureReasonCode: string | null;
   readonly failureTargetLocale: string | null;
+  /** Set on stored EMPTY_TRANSLATION rows that may share this budget. */
+  readonly retryabilityHint?: string | null;
   readonly localeFailures?: readonly {
     readonly targetLocale: string;
     readonly failureReasonCode: string;
@@ -99,6 +111,53 @@ function payloadAttributedToLocale(
   return false;
 }
 
+/**
+ * Gemini empty-candidate failures persisted as EMPTY_TRANSLATION plus the
+ * semantic defer hint. Other EMPTY_TRANSLATION rows stay outside this budget.
+ */
+function historicalEmptyProviderAttributed(
+  attempt: InvalidProviderPayloadRetryAttempt,
+  targetLocale: string,
+): boolean {
+  if (attempt.retryabilityHint !== SEMANTIC_RESIDUAL_DEFER_RETRY_HINT) {
+    return false;
+  }
+  if (
+    attempt.failureReasonCode === HISTORICAL_EMPTY_PROVIDER_REASON &&
+    sameLocale(attempt.failureTargetLocale, targetLocale)
+  ) {
+    return true;
+  }
+  if (
+    attempt.localeFailures?.some(
+      (row) =>
+        row.failureReasonCode === HISTORICAL_EMPTY_PROVIDER_REASON &&
+        sameLocale(row.targetLocale, targetLocale),
+    )
+  ) {
+    return true;
+  }
+  if (
+    attempt.failureReasonCode === HISTORICAL_EMPTY_PROVIDER_REASON &&
+    !attempt.failureTargetLocale &&
+    (!attempt.localeFailures || attempt.localeFailures.length === 0)
+  ) {
+    const locales = attempt.targetLocales ?? [];
+    return locales.length === 1 && sameLocale(locales[0], targetLocale);
+  }
+  return false;
+}
+
+function countsTowardPayloadBudget(
+  attempt: InvalidProviderPayloadRetryAttempt,
+  targetLocale: string,
+): boolean {
+  return (
+    payloadAttributedToLocale(attempt, targetLocale) ||
+    historicalEmptyProviderAttributed(attempt, targetLocale)
+  );
+}
+
 function isSchemaEraAttempt(attempt: InvalidProviderPayloadRetryAttempt): boolean {
   return (
     attempt.structuredOutputContract === CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT ||
@@ -147,10 +206,16 @@ export function selectInvalidProviderPayloadRetry(input: {
     (attempt) =>
       attempt.status === "failed" &&
       (attempt.sourceVersion?.trim() ?? "") === sourceVersion &&
-      payloadAttributedToLocale(attempt, targetLocale),
+      countsTowardPayloadBudget(attempt, targetLocale),
   );
   const historical = matching.filter((attempt) => !isSchemaEraAttempt(attempt));
   const schemaEra = matching.filter((attempt) => isSchemaEraAttempt(attempt));
+  const historicalPayload = historical.filter((attempt) =>
+    payloadAttributedToLocale(attempt, targetLocale),
+  );
+  const historicalEmptyProvider = historical.filter((attempt) =>
+    historicalEmptyProviderAttributed(attempt, targetLocale),
+  );
   const countedFailures = historical.length + schemaEra.length;
   const recoveryGranted = input.attempts.some((attempt) =>
     recoveryAlreadyGranted(attempt, targetLocale, sourceVersion),
@@ -162,9 +227,12 @@ export function selectInvalidProviderPayloadRetry(input: {
 
   const cap = SEMANTIC_RESIDUAL_DEFER_STREAK_CAP;
   if (schemaEra.length >= cap || countedFailures >= cap) {
-    const historicalOnlyExhausted =
-      historical.length >= cap && schemaEra.length === 0 && !recoveryGranted;
-    if (historicalOnlyExhausted) {
+    const historicalPayloadOnlyExhausted =
+      historicalPayload.length >= cap &&
+      historicalEmptyProvider.length === 0 &&
+      schemaEra.length === 0 &&
+      !recoveryGranted;
+    if (historicalPayloadOnlyExhausted) {
       return {
         outcome: "recover_once",
         countedFailures,
