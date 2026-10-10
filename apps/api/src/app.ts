@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { resolveCorsOriginOption } from "./config/web-origins.js";
 import { browserOriginGuardMiddleware } from "./modules/auth/auth-browser-origin.middleware.js";
 import authRouter from "./modules/auth/auth.routes.js";
+import externalAuthorLinkRouter from "./modules/external-author-link/external-author-link.routes.js";
 import { emailRouter } from "./modules/email/index.js";
 import {
   collaborativeAnalysisRouter,
@@ -332,6 +333,7 @@ app.use("/api/v1/admin/country-people", adminCountryAffiliationRouter);
 app.use("/api/v1/admin/analytics", adminTrafficAnalyticsRouter);
 app.use("/api/v1/public/analytics", publicTrafficAnalyticsRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/integrity-media/link", externalAuthorLinkRouter);
 app.use("/api/v1/email", emailRouter);
 app.use("/api/v1/member-profile", memberProfileRouter);
 app.use("/api/v1/direct-messages", directMessagingRouter);

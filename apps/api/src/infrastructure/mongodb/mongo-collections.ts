@@ -176,6 +176,10 @@ export const MONGO_COLLECTIONS = {
   platformSupportLinks: "platform_support_links",
   // SEO Pack 07 — sparse Admin page SEO overrides (non-Blog public pages).
   seoPageOverrides: "seo_page_overrides",
+  // Integrity Media author ↔ Humanity Union member confirmation. Not profile data.
+  externalAuthorLinks: "external_author_links",
+  externalAuthorLinkResults: "external_author_link_results",
+  externalAuthorLinkAudit: "external_author_link_audit",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];
