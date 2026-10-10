@@ -38,6 +38,29 @@ export type {
 /** How many times one segment may wait for the global pacing window. */
 const MAX_SEGMENT_PACING_WAITS = 3;
 
+async function translateSegmentOnce(
+  fields: Readonly<Record<string, string>>,
+  translate: (
+    fields: Readonly<Record<string, string>>,
+  ) => Promise<Readonly<Record<string, string>>>,
+): Promise<Readonly<Record<string, string>>> {
+  let pacingWaits = 0;
+  while (true) {
+    try {
+      return await translate(fields);
+    } catch (error) {
+      if (
+        !isLocalizationProviderPacingDeferredError(error) ||
+        pacingWaits >= MAX_SEGMENT_PACING_WAITS
+      ) {
+        throw error;
+      }
+      pacingWaits += 1;
+      await waitForLocalizationProviderPacingWindow(error.nextAllowedAt);
+    }
+  }
+}
+
 export async function translateContentTranslationFieldMap(input: {
   readonly fields: Readonly<Record<string, string>>;
   readonly maxOutputTokens?: number;
@@ -60,27 +83,12 @@ export async function translateContentTranslationFieldMap(input: {
     if (plan.requests.length === 0) {
       return {};
     }
-    return { ...(await input.translate(input.fields)) };
+    return { ...(await translateSegmentOnce(input.fields, input.translate)) };
   }
 
   const translated = new Map<string, string>();
   for (const request of plan.requests) {
-    let response: Readonly<Record<string, string>> | null = null;
-    let pacingWaits = 0;
-    while (!response) {
-      try {
-        response = await input.translate(request);
-      } catch (error) {
-        if (
-          !isLocalizationProviderPacingDeferredError(error) ||
-          pacingWaits >= MAX_SEGMENT_PACING_WAITS
-        ) {
-          throw error;
-        }
-        pacingWaits += 1;
-        await waitForLocalizationProviderPacingWindow(error.nextAllowedAt);
-      }
-    }
+    const response = await translateSegmentOnce(request, input.translate);
     for (const key of Object.keys(request)) {
       const value = response[key];
       if (typeof value !== "string" || value.trim().length === 0) {

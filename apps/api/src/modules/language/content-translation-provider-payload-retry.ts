@@ -16,7 +16,6 @@
 
 import { normalizeLanguageRegistryLocaleKey } from "@hu/types";
 
-import { contentTranslationChunkPlanReleasesTruncationHold } from "./content-translation-chunk-plan.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   CONTENT_TRANSLATION_STRUCTURED_OUTPUT_CONTRACT,
@@ -187,9 +186,8 @@ function recoveryAlreadyGranted(
 
 /**
  * Documents that fit the output budget still use one structured response.
- * The truncation hold is released per identity by
- * contentTranslationChunkPlanReleasesTruncationHold, only when that identity
- * has a capable multi-segment plan. Historical attempt rows stay unchanged.
+ * A capable chunk plan does not release a truncated identity. Explicit
+ * one-time authorization is the only release, and it does not rewrite history.
  */
 export function contentTranslationUsesUnsplitSingleResponse(): boolean {
   return true;
@@ -223,10 +221,10 @@ function latestCountedPayloadAttempt(
 }
 
 /**
- * Skip automatic re-enqueue when the latest counted failure was truncated and
- * the pipeline would send the same unsplit request again.
- * Waiting and exhausted decisions are left to the existing budget.
- * empty_candidate, malformed_json, and every other kind stay on that budget.
+ * Skip automatic re-enqueue when the latest counted failure was truncated.
+ * A capable chunk plan does not open this gate. Waiting and exhausted
+ * decisions stay with the existing budget. empty_candidate, malformed_json,
+ * and every other kind stay on that budget.
  */
 export function shouldHoldAutomaticRetryForUnsplitTruncation(input: {
   readonly sourceVersion: string;
@@ -235,22 +233,7 @@ export function shouldHoldAutomaticRetryForUnsplitTruncation(input: {
   readonly retryOutcome: InvalidProviderPayloadRetryDecision["outcome"];
   /** Test seam. Production uses contentTranslationUsesUnsplitSingleResponse. */
   readonly singleResponseActive?: boolean;
-  /**
-   * Sanitized source fields for this identity. When present, a capable
-   * chunk plan releases the hold. Absent fields keep the unsplit hold.
-   */
-  readonly sourceFields?: Readonly<Record<string, string>> | null;
-  readonly maxOutputTokens?: number;
 }): boolean {
-  if (
-    input.sourceFields &&
-    contentTranslationChunkPlanReleasesTruncationHold(
-      input.sourceFields,
-      input.maxOutputTokens,
-    )
-  ) {
-    return false;
-  }
   const singleResponseActive =
     input.singleResponseActive ?? contentTranslationUsesUnsplitSingleResponse();
   if (!singleResponseActive) {

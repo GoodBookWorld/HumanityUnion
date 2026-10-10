@@ -355,7 +355,7 @@ describe("content translation chunk plan diagnostic", () => {
     }
   });
 
-  it("releases the truncation hold only for a capable chunk plan", () => {
+  it("keeps the truncation hold closed when a chunk plan is capable", () => {
     assert.equal(contentTranslationUsesUnsplitSingleResponse(), true);
     const attempt = truncatedAttempt(EXPECTED_VERSION);
     const selection = {
@@ -405,10 +405,8 @@ describe("content translation chunk plan diagnostic", () => {
         targetLocale: "he",
         attempts: [attempt],
         retryOutcome: "due",
-        sourceFields: executable,
-        maxOutputTokens: 4096,
       }),
-      false,
+      true,
     );
     const shortFields = { title: "Harbor", excerpt: "Short", content: "<p>Short</p>" };
     assert.equal(contentTranslationChunkPlanReleasesTruncationHold(shortFields, 4096), false);
@@ -418,8 +416,6 @@ describe("content translation chunk plan diagnostic", () => {
         targetLocale: "he",
         attempts: [attempt],
         retryOutcome: "due",
-        sourceFields: shortFields,
-        maxOutputTokens: 4096,
       }),
       true,
     );
@@ -431,8 +427,8 @@ describe("content translation chunk plan diagnostic", () => {
       resolve(API_ROOT, "src/modules/language/content-translation-provider-payload-retry.ts"),
       "utf8",
     );
-    assert.equal(holdSource.includes('from "./content-translation-chunk-plan.js"'), true);
-    assert.equal(holdSource.includes("sourceFields"), true);
+    assert.equal(holdSource.includes("content-translation-chunk-plan"), false);
+    assert.equal(holdSource.includes("sourceFields"), false);
     assert.equal(holdSource.includes("content-translation-chunk-plan-diagnostic"), false);
   });
 });

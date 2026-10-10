@@ -11,13 +11,7 @@ import type {
   LanguageCode,
 } from "@hu/types";
 
-import {
-  assertCanonicalSourceEligibleForTranslation,
-  sanitizeFieldsForAutomaticTranslation,
-} from "./content-translation-eligibility.js";
-import { resolveContentTranslationExecutableFields } from "./content-translation-chunk-plan.js";
-import { isSearchDiscoveryMappedSourceKind } from "./content-translation-search-discovery-fields.js";
-import { resolveAutomaticContentTranslationWarmTargets } from "./content-translation-warm-targets.js";
+import { assertCanonicalSourceEligibleForTranslation } from "./content-translation-eligibility.js";
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   WARM_SAME_VERSION_TERMINAL_VALIDATION_REASONS,
@@ -537,39 +531,50 @@ export async function buildPublicLocalizationRetryPreflight(input: {
           semanticRetryDeferred = false;
           semanticRetryEligibleAt = null;
         }
-        let chunkFields: Record<string, string> | null = null;
-        if (sourceFields) {
-          try {
-            const sanitized = sanitizeFieldsForAutomaticTranslation({
-              sourceKind: item.sourceKind,
-              fields: sourceFields,
-            });
-            const automatic = await resolveAutomaticContentTranslationWarmTargets(
-              sourceLanguage
-                ? { excludeSourceLanguage: sourceLanguage }
-                : undefined,
-            );
-            const intent = automatic.warmTargetLocales.includes(item.targetLanguage)
-              ? "automatic_warm"
-              : isSearchDiscoveryMappedSourceKind(item.sourceKind)
-                ? "search_discovery"
-                : "automatic_warm";
-            chunkFields = resolveContentTranslationExecutableFields({
-              sourceKind: item.sourceKind,
-              intent,
-              sanitizedFields: sanitized,
-            });
-          } catch {
-            chunkFields = null;
-          }
-        }
         if (
           shouldHoldAutomaticRetryForUnsplitTruncation({
             sourceVersion: liveSourceVersion,
             targetLocale: item.targetLanguage,
             attempts: mappedPayloadAttempts,
             retryOutcome: payloadDecision.outcome,
-            sourceFields: chunkFields,
+          })
+        ) {
+          semanticRetryDeferred = true;
+          semanticRetryEligibleAt = null;
+        }
+      } catch {
+        // Listing failure leaves the existing ready decision. The next pass recounts.
+      }
+    }
+    if (liveSourceVersion && liveSourceVersion !== "unloaded") {
+      try {
+        const history = await listContentTranslationWarmAttempts({
+          sourceKind: item.sourceKind,
+          sourceRecordId: item.sourceRecordId,
+          limit: 50,
+        });
+        const mappedHistory = history.map((attempt) => ({
+          status: attempt.status,
+          architectureRetryBasis: attempt.architectureRetryBasis,
+          sourceVersion: attempt.sourceVersion ?? attempt.failureMetadata?.sourceVersion ?? null,
+          targetLocales: attempt.targetLocales,
+          attemptAt: attempt.attemptAt,
+          failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+          failureTargetLocale:
+            typeof attempt.failureMetadata?.targetLocale === "string"
+              ? attempt.failureMetadata.targetLocale
+              : null,
+          retryabilityHint: attempt.failureMetadata?.retryabilityHint ?? null,
+          localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+          structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
+          providerPayloadKind: attempt.failureMetadata?.providerPayloadKind ?? null,
+        }));
+        if (
+          shouldHoldAutomaticRetryForUnsplitTruncation({
+            sourceVersion: liveSourceVersion,
+            targetLocale: item.targetLanguage,
+            attempts: mappedHistory,
+            retryOutcome: "due",
           })
         ) {
           semanticRetryDeferred = true;

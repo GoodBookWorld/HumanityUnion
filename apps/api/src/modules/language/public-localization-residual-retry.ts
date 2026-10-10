@@ -96,8 +96,9 @@ export function sortResidualsByReconciliationPriority(
  * A semantic defer skips the identity for this pass. It stays residual work
  * and returns to this order when retryEligibleAt arrives, or sooner when the
  * source version or localization input version changes.
- * An unsplit truncation hold uses the same flag with no eligible time. The
- * chunked translator clears that hold without rewriting attempt history.
+ * An unsplit truncation hold uses the same flag with no eligible time.
+ * A capable chunk plan does not clear it. Only an explicit one-time
+ * authorization can start the provider, and that path does not rewrite history.
  */
 export function selectCurrentlyRetryEligibleResiduals(
   rows: readonly PublicLocalizationResidualWithPreflight[],

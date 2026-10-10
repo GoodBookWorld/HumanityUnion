@@ -50,6 +50,7 @@ import {
 } from "./content-translation-failure-metadata.js";
 import { isContentTranslationProviderPayloadKind, isImmediateTerminalProviderPayloadKind } from "./content-translation-provider-payload.js";
 import {
+  consumeTruncationReleaseOnce,
   deferContentTranslationWarmMemoryForPacingForTests,
   listContentTranslationWarmAttempts,
   listContentTranslationWarmMemoryPendingForTests,
@@ -68,6 +69,7 @@ import {
   laterLocalizationInstant,
   localizationProviderNowMs,
 } from "./localization-provider-governor.js";
+import { truncationReleaseDecision, truncationReleaseMatchesLive } from "./content-translation-truncation-release.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 export const CONTENT_TRANSLATION_WARM_CONSUMER_ID = "content-translation-warm-v1" as const;
@@ -84,6 +86,7 @@ export type ContentTranslationWarmLocaleOutcome =
         | "skipped_source_language"
         | "generated"
         | "skipped_ineligible"
+        | "authorization_withheld"
         | "deferred_pacing";
       /** Set only for deferred_pacing. The provider permit time, not a failure. */
       readonly pacingNextAllowedAt?: string;
@@ -174,6 +177,9 @@ function parseWarmCommand(
     reason: (typeof reason === "string" ? reason : "public_mutation") as ContentTranslationWarmReason,
     ...(targetLocales?.length ? { targetLocales } : {}),
     ...(architectureRetryBasis ? { architectureRetryBasis } : {}),
+    ...(typeof payload.sourceVersion === "string" && payload.sourceVersion.trim()
+      ? { sourceVersion: payload.sourceVersion.trim() }
+      : {}),
   };
 }
 
@@ -201,6 +207,7 @@ async function withWorkIdentityLock<T>(
  */
 export async function processContentTranslationWarmRequested(
   input: ContentTranslationWarmRequestedCommand | Record<string, unknown>,
+  options?: { readonly eventId?: string | null },
 ): Promise<ContentTranslationWarmProcessResult> {
   const command =
     "commandName" in input && input.commandName === CONTENT_TRANSLATION_WARM_REQUESTED
@@ -342,6 +349,62 @@ export async function processContentTranslationWarmRequested(
       : "search_discovery";
 
     try {
+      const releaseAttempts = await listContentTranslationWarmAttempts({
+        sourceKind: source.sourceKind,
+        sourceRecordId: source.sourceRecordId,
+        limit: 50,
+      });
+      const release = truncationReleaseDecision({
+        sourceKind: source.sourceKind,
+        sourceRecordId: source.sourceRecordId,
+        targetLocale: targetLanguage,
+        sourceVersion: source.sourceVersion,
+        attempts: releaseAttempts.map((attempt) => ({
+          status: attempt.status,
+          architectureRetryBasis: attempt.architectureRetryBasis,
+          sourceVersion: attempt.sourceVersion ?? attempt.failureMetadata?.sourceVersion ?? null,
+          targetLocales: attempt.targetLocales,
+          attemptAt: attempt.attemptAt,
+          failureReasonCode: attempt.failureMetadata?.failureReasonCode ?? null,
+          failureTargetLocale:
+            typeof attempt.failureMetadata?.targetLocale === "string"
+              ? attempt.failureMetadata.targetLocale
+              : null,
+          retryabilityHint: attempt.failureMetadata?.retryabilityHint ?? null,
+          localeFailures: attempt.failureMetadata?.localeFailures ?? null,
+          structuredOutputContract: attempt.failureMetadata?.structuredOutputContract ?? null,
+          providerPayloadKind: attempt.failureMetadata?.providerPayloadKind ?? null,
+        })),
+      });
+      if (release.required) {
+        const eventId = options?.eventId?.trim() ?? "";
+        const authorized =
+          !release.exhausted &&
+          truncationReleaseMatchesLive(command, {
+            sourceKind: source.sourceKind,
+            sourceRecordId: source.sourceRecordId,
+            targetLocale: targetLanguage,
+            sourceVersion: source.sourceVersion,
+          });
+        const spent =
+          authorized && eventId ? await consumeTruncationReleaseOnce(eventId) : null;
+        if (spent !== "consumed") {
+          logger.info("content_translation.warm.authorization_withheld", {
+            component: "content-translation-warm",
+            sourceKind: source.sourceKind,
+            sourceRecordId: source.sourceRecordId,
+            sourceVersion: source.sourceVersion,
+            targetLanguage,
+            exhausted: release.exhausted,
+          });
+          return {
+            targetLanguage,
+            workIdentityKey,
+            status: "authorization_withheld" as const,
+          };
+        }
+      }
+
       const result = await withWorkIdentityLock(workIdentityKey, () =>
         getOrCreateContentTranslation({
           sourceKind: source.sourceKind,
@@ -441,7 +504,8 @@ export async function processContentTranslationWarmRequested(
     (locale) =>
       locale.status === "generated" ||
       locale.status === "skipped_existing" ||
-      locale.status === "skipped_source_language",
+      locale.status === "skipped_source_language" ||
+      locale.status === "authorization_withheld",
   );
 
   if (
@@ -632,7 +696,9 @@ export async function handleContentTranslationWarmRequestedEvent(
   if (envelope.eventName !== CATALOGUE_EVENTS.contentTranslationWarmRequested) {
     return;
   }
-  await processContentTranslationWarmRequested(envelope.payload);
+  await processContentTranslationWarmRequested(envelope.payload, {
+    eventId: envelope.eventId,
+  });
 }
 
 export function registerContentTranslationWarmHandlers(): void {
@@ -664,7 +730,9 @@ export async function processContentTranslationWarmMemoryQueueForTests(): Promis
       }
     }
     try {
-      const result = await processContentTranslationWarmRequested(row.command);
+      const result = await processContentTranslationWarmRequested(row.command, {
+        eventId: row.eventId,
+      });
       markContentTranslationWarmMemoryPublishedForTests(row.eventId);
       results.push(result);
     } catch (error) {

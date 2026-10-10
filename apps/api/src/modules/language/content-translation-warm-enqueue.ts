@@ -51,6 +51,8 @@ interface MemoryWarmOutboxRecord {
   failedAt: string | null;
   /** F.3.19.2 — pending rows are not drained again until this instant. */
   availableAt: string | null;
+  /** Spent before the provider call so a crash cannot replay the release. */
+  truncationReleaseConsumed: boolean;
 }
 
 let forceMemoryForTests = false;
@@ -61,9 +63,18 @@ export function setContentTranslationWarmForceMemoryForTests(enabled: boolean): 
   forceMemoryForTests = enabled;
 }
 
+let truncationReleaseConsumeDelayForTests: Promise<void> | null = null;
+const truncationReleaseConsumeInFlight = new Map<string, Promise<void>>();
+
+export function setTruncationReleaseConsumeDelayForTests(delay: Promise<void> | null): void {
+  truncationReleaseConsumeDelayForTests = delay;
+}
+
 export function resetContentTranslationWarmMemoryForTests(): void {
   memoryPendingByAggregate.clear();
   memoryRecordsByEventId.clear();
+  truncationReleaseConsumeInFlight.clear();
+  truncationReleaseConsumeDelayForTests = null;
 }
 
 export function listContentTranslationWarmMemoryPendingForTests(): ReadonlyArray<{
@@ -78,6 +89,75 @@ export function listContentTranslationWarmMemoryPendingForTests(): ReadonlyArray
       command: row.command,
       availableAt: row.availableAt,
     }));
+}
+
+/**
+ * Atomically spend a one-time truncation release.
+ * The first caller receives "consumed". A concurrent caller, a restarted
+ * worker, or a stale reclaim receives "already_consumed" and must not call
+ * the provider. Missing rows do not create an authorization.
+ */
+export async function consumeTruncationReleaseOnce(
+  eventId: string,
+): Promise<"consumed" | "already_consumed" | "missing"> {
+  const trimmed = eventId.trim();
+  if (!trimmed) {
+    return "missing";
+  }
+  if (useMemoryWarmOutbox()) {
+    return consumeMemoryTruncationRelease(trimmed);
+  }
+  const collection = getMongoCollection<{
+    eventId: string;
+    truncationReleaseConsumed?: boolean;
+  }>(MONGO_COLLECTIONS.outbox);
+  const updated = await collection.updateOne(
+    { eventId: trimmed, truncationReleaseConsumed: { $ne: true } },
+    { $set: { truncationReleaseConsumed: true } },
+  );
+  if (updated.modifiedCount === 1) {
+    return "consumed";
+  }
+  const existing = await collection.findOne({ eventId: trimmed });
+  if (!existing) {
+    return "missing";
+  }
+  return "already_consumed";
+}
+
+async function consumeMemoryTruncationRelease(
+  eventId: string,
+): Promise<"consumed" | "already_consumed" | "missing"> {
+  const record = memoryRecordsByEventId.get(eventId);
+  if (!record) {
+    return "missing";
+  }
+  if (record.truncationReleaseConsumed) {
+    return "already_consumed";
+  }
+  const existing = truncationReleaseConsumeInFlight.get(eventId);
+  if (existing) {
+    await existing;
+    return record.truncationReleaseConsumed ? "already_consumed" : "missing";
+  }
+  let resolveFlight: () => void = () => undefined;
+  const flight = new Promise<void>((resolve) => {
+    resolveFlight = resolve;
+  });
+  truncationReleaseConsumeInFlight.set(eventId, flight);
+  try {
+    if (truncationReleaseConsumeDelayForTests) {
+      await truncationReleaseConsumeDelayForTests;
+    }
+    if (record.truncationReleaseConsumed) {
+      return "already_consumed";
+    }
+    record.truncationReleaseConsumed = true;
+    return "consumed";
+  } finally {
+    resolveFlight();
+    truncationReleaseConsumeInFlight.delete(eventId);
+  }
 }
 
 export function readContentTranslationWarmMemoryRecordForTests(eventId: string): {
@@ -199,6 +279,7 @@ export async function enqueueContentTranslationWarmRequested(
       lastError: null,
       failedAt: null,
       availableAt: null,
+      truncationReleaseConsumed: false,
     };
     memoryPendingByAggregate.set(aggregateId, record);
     memoryRecordsByEventId.set(eventId, record);

@@ -253,7 +253,7 @@ describe("content translation chunk plan", () => {
     assert.equal(calls, 2);
   });
 
-  it("releases the truncation hold only for a capable chunk plan", () => {
+  it("keeps the truncation hold when a chunk plan is capable", () => {
     assert.equal(SEMANTIC_RESIDUAL_DEFER_STREAK_CAP, 8);
     const attempt = truncatedAttempt("v-source");
     const identity = {
@@ -261,21 +261,18 @@ describe("content translation chunk plan", () => {
       targetLocale: "uk",
       attempts: [attempt],
       retryOutcome: "due" as const,
-      maxOutputTokens: TOKENS,
     };
     assert.equal(
       shouldHoldAutomaticRetryForUnsplitTruncation({
         ...identity,
-        sourceFields: { title: "Short", excerpt: "Also short" },
       }),
       true,
     );
     assert.equal(
       shouldHoldAutomaticRetryForUnsplitTruncation({
         ...identity,
-        sourceFields: { title: "Archive title", implementationStory: longProse("story") },
       }),
-      false,
+      true,
     );
     const decision = selectInvalidProviderPayloadRetry({
       sourceKind: "civic_archive",
@@ -413,8 +410,6 @@ describe("content translation chunk plan", () => {
         targetLocale: "uk",
         attempts: [truncatedAttempt("v-source")],
         retryOutcome: "due",
-        maxOutputTokens: TOKENS,
-        sourceFields: { body: token },
       }),
       true,
     );
@@ -460,8 +455,6 @@ describe("content translation chunk plan", () => {
         targetLocale: "uk",
         attempts: [truncatedAttempt("v-source")],
         retryOutcome: "due",
-        maxOutputTokens: TOKENS,
-        sourceFields: search!,
       }),
       true,
     );
@@ -495,8 +488,6 @@ describe("content translation chunk plan", () => {
         targetLocale: "uk",
         attempts,
         retryOutcome: decision.outcome,
-        maxOutputTokens: TOKENS,
-        sourceFields: { content: longHtml() },
       }),
       false,
     );
@@ -658,7 +649,7 @@ describe("chunked content translation persistence", () => {
     assert.equal(SEMANTIC_RESIDUAL_DEFER_STREAK_CAP, 8);
   });
 
-  it("releases a due truncated identity only when its own fields chunk", async () => {
+  it("keeps a due truncated identity deferred when its fields can chunk", async () => {
     const initiative = createInitiative(sampleInitiative("release", longProse("release")));
     createdIds.push(initiative.initiativeId);
     const source = await loadTranslatableSource({
@@ -710,7 +701,7 @@ describe("chunked content translation persistence", () => {
     assert.equal(preflight.ready, true);
     assert.equal(preflight.readyState, "MISSING_READY_FOR_WARM");
     assert.equal(preflight.currentTranslationAbsent, true);
-    assert.equal(preflight.semanticRetryDeferred, false);
+    assert.equal(preflight.semanticRetryDeferred, true);
     assert.equal(preflight.terminalFailureForCurrentVersion, false);
     const attempts = await listContentTranslationWarmAttempts({
       sourceKind: "initiative",
