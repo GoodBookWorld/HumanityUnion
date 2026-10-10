@@ -14,21 +14,42 @@
  *     --source-version <version>
  */
 
-export {};
+import { pathToFileURL } from "node:url";
 
-function usage(): never {
-  process.stderr.write(
-    "usage: authorize-content-translation-truncation-release --source-kind <kind> --source-record-id <id> --target-locale <locale> --source-version <version>\n",
-  );
-  process.exit(2);
-}
-
-function readFlags(argv: readonly string[]): {
+export type TruncationReleaseCliFlags = {
   sourceKind: string;
   sourceRecordId: string;
   targetLocale: string;
   sourceVersion: string;
-} {
+};
+
+export type TruncationReleaseAuthorizationDependencies = {
+  loadApiEnvironment: () => void;
+  connectMongoClient: () => Promise<unknown>;
+  disconnectMongoClient: () => Promise<void>;
+  enqueueTruncationReleaseOnce: (
+    flags: TruncationReleaseCliFlags,
+  ) => Promise<{
+    enqueued: boolean;
+    deduped: boolean;
+    eventId: string | null;
+  }>;
+};
+
+type CliIo = {
+  stdout: (chunk: string) => void;
+  stderr: (chunk: string) => void;
+  exit: (code: number) => never;
+};
+
+function usage(io: CliIo): never {
+  io.stderr(
+    "usage: authorize-content-translation-truncation-release --source-kind <kind> --source-record-id <id> --target-locale <locale> --source-version <version>\n",
+  );
+  return io.exit(2);
+}
+
+function readFlags(argv: readonly string[], io: CliIo): TruncationReleaseCliFlags {
   const allowed = new Set([
     "--source-kind",
     "--source-record-id",
@@ -40,15 +61,15 @@ function readFlags(argv: readonly string[]): {
     const flag = argv[index];
     const value = argv[index + 1];
     if (!flag || !allowed.has(flag) || !value || value.startsWith("--")) {
-      usage();
+      usage(io);
     }
     if (values.has(flag)) {
-      usage();
+      usage(io);
     }
     values.set(flag, value);
   }
   if (values.size !== allowed.size) {
-    usage();
+    usage(io);
   }
   return {
     sourceKind: values.get("--source-kind") ?? "",
@@ -58,38 +79,91 @@ function readFlags(argv: readonly string[]): {
   };
 }
 
-const flags = readFlags(process.argv.slice(2));
-
-const { loadApiEnvironment } = await import("../config/load-api-environment.js");
-const writeStdout = process.stdout.write.bind(process.stdout);
-process.stdout.write = (() => true) as typeof process.stdout.write;
-try {
-  loadApiEnvironment();
-} finally {
-  process.stdout.write = writeStdout;
+function defaultIo(): CliIo {
+  return {
+    stdout: (chunk) => {
+      process.stdout.write(chunk);
+    },
+    stderr: (chunk) => {
+      process.stderr.write(chunk);
+    },
+    exit: (code) => process.exit(code),
+  };
 }
 
-const { disconnectMongoClient } = await import("../infrastructure/mongodb/mongo-connection.js");
-const { enqueueTruncationReleaseOnce } = await import(
-  "../modules/language/content-translation-truncation-release.js"
-);
+/**
+ * Connects MongoDB, then enqueues one truncation release.
+ * A connection failure is caught before enqueue. Disconnect always runs.
+ */
+export async function runTruncationReleaseAuthorization(
+  argv: readonly string[],
+  deps: TruncationReleaseAuthorizationDependencies,
+  io: CliIo = defaultIo(),
+): Promise<number> {
+  const flags = readFlags(argv, io);
 
-try {
-  const result = await enqueueTruncationReleaseOnce(flags);
-  process.stdout.write(
-    `${JSON.stringify({
-      enqueued: result.enqueued,
-      deduped: result.deduped,
-      eventId: result.eventId,
-      sourceKind: flags.sourceKind,
-      sourceRecordId: flags.sourceRecordId,
-      targetLocale: flags.targetLocale,
-      sourceVersion: flags.sourceVersion,
-    })}\n`,
+  const writeStdout = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (() => true) as typeof process.stdout.write;
+  try {
+    deps.loadApiEnvironment();
+  } finally {
+    process.stdout.write = writeStdout;
+  }
+
+  let exitCode = 0;
+  try {
+    await deps.connectMongoClient();
+    const result = await deps.enqueueTruncationReleaseOnce(flags);
+    io.stdout(
+      `${JSON.stringify({
+        enqueued: result.enqueued,
+        deduped: result.deduped,
+        eventId: result.eventId,
+        sourceKind: flags.sourceKind,
+        sourceRecordId: flags.sourceRecordId,
+        targetLocale: flags.targetLocale,
+        sourceVersion: flags.sourceVersion,
+      })}\n`,
+    );
+  } catch {
+    io.stderr("content translation truncation release authorization failed\n");
+    exitCode = 1;
+  } finally {
+    await deps.disconnectMongoClient();
+  }
+  return exitCode;
+}
+
+async function productionDependencies(): Promise<TruncationReleaseAuthorizationDependencies> {
+  const { loadApiEnvironment } = await import("../config/load-api-environment.js");
+  const { connectMongoClient, disconnectMongoClient } = await import(
+    "../infrastructure/mongodb/mongo-connection.js"
   );
-} catch {
-  process.stderr.write("content translation truncation release authorization failed\n");
-  process.exitCode = 1;
-} finally {
-  await disconnectMongoClient();
+  const { enqueueTruncationReleaseOnce } = await import(
+    "../modules/language/content-translation-truncation-release.js"
+  );
+  return {
+    loadApiEnvironment,
+    connectMongoClient,
+    disconnectMongoClient,
+    enqueueTruncationReleaseOnce,
+  };
+}
+
+function isDirectCliProcess(): boolean {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isDirectCliProcess()) {
+  const code = await runTruncationReleaseAuthorization(
+    process.argv.slice(2),
+    await productionDependencies(),
+  );
+  if (code !== 0) {
+    process.exitCode = code;
+  }
 }
