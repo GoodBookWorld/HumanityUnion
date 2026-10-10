@@ -1,5 +1,9 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
+import {
+  ensureBlogAuthorCapability,
+  type BlogAuthorCapabilityEnsureResult,
+} from "../blog/blog-author-capability.js";
 import { getMemberById } from "../member/application/member-read.service.js";
 import { buildIntegrityMediaReturnUrl } from "./external-author-link.config.js";
 import {
@@ -70,6 +74,28 @@ export function setIntegrityMediaDisplayNameResolverForTests(
   resolver: DisplayNameResolver | null,
 ): void {
   displayNameResolverOverride = resolver;
+}
+
+type BlogAuthorCapabilityEnsurer = (
+  participantId: string,
+) => Promise<BlogAuthorCapabilityEnsureResult>;
+
+let blogAuthorCapabilityEnsurerOverride: BlogAuthorCapabilityEnsurer | null = null;
+
+export function setIntegrityMediaAuthorCapabilityEnsurerForTests(
+  ensurer: BlogAuthorCapabilityEnsurer | null,
+): void {
+  blogAuthorCapabilityEnsurerOverride = ensurer;
+}
+
+async function ensureLinkedBlogAuthorCapability(
+  participantId: string,
+): Promise<BlogAuthorCapabilityEnsureResult> {
+  if (blogAuthorCapabilityEnsurerOverride) {
+    return blogAuthorCapabilityEnsurerOverride(participantId);
+  }
+
+  return ensureBlogAuthorCapability(participantId);
 }
 
 export async function previewIntegrityMediaLink(input: {
@@ -296,6 +322,25 @@ export async function redeemIntegrityMediaLink(input: {
     return failure(409, established.conflict, conflictMessage(established.conflict));
   }
 
+  let authorCapability: BlogAuthorCapabilityEnsureResult;
+  try {
+    authorCapability = await ensureLinkedBlogAuthorCapability(claimed.record.memberId);
+  } catch {
+    await recordAudit(store, {
+      action: "author_capability_failed",
+      memberId: claimed.record.memberId,
+      externalAuthorId: input.externalAuthorId,
+      attemptState: null,
+      reason: "author_setup_failed",
+      now,
+    });
+    return failure(
+      503,
+      "author_setup_failed",
+      "Integrity Media author setup did not finish. The same account can be confirmed again.",
+    );
+  }
+
   await recordAudit(store, {
     action: "result_redeemed",
     memberId: claimed.record.memberId,
@@ -304,6 +349,17 @@ export async function redeemIntegrityMediaLink(input: {
     reason: established.reason,
     now,
   });
+
+  if (authorCapability.changed) {
+    await recordAudit(store, {
+      action: "author_capability_ensured",
+      memberId: claimed.record.memberId,
+      externalAuthorId: input.externalAuthorId,
+      attemptState: null,
+      reason: "author",
+      now,
+    });
+  }
 
   return {
     ok: true,

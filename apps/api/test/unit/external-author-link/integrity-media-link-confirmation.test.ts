@@ -9,10 +9,18 @@ import { fileURLToPath } from "node:url";
 import cookieParser from "cookie-parser";
 import express from "express";
 
+import type { BlogCapabilityGrant } from "@hu/types";
+
 import { resolveAuthConfig } from "../../../src/config/auth.config.js";
 import { setAuthUserLookupOverrideForTests } from "../../../src/modules/auth/auth-active-account-gate.js";
 import { createAccessToken } from "../../../src/modules/auth/auth-tokens.js";
 import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.types.js";
+import { ensureBlogAuthorCapability } from "../../../src/modules/blog/blog-author-capability.js";
+import {
+  canCreateBlogDraft,
+  canDirectPublish,
+  canEditorialPublish,
+} from "../../../src/modules/blog/blog-permissions.js";
 import { buildIntegrityMediaReturnUrl } from "../../../src/modules/external-author-link/external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV,
@@ -32,6 +40,7 @@ import {
   confirmIntegrityMediaLink,
   disableIntegrityMediaAuthorLink,
   redeemIntegrityMediaLink,
+  setIntegrityMediaAuthorCapabilityEnsurerForTests,
   setIntegrityMediaDisplayNameResolverForTests,
 } from "../../../src/modules/external-author-link/external-author-link.service.js";
 import {
@@ -59,6 +68,16 @@ interface ApiBody {
 let server: Server;
 let baseUrl = "";
 let store: ExternalAuthorLinkStore;
+let grants = new Map<string, BlogCapabilityGrant>();
+let grantWrites = 0;
+let ensureFailuresRemaining = 0;
+const blogPosts = [
+  { postId: "post-existing", authorParticipantId: MEMBER_A, title: "Existing post" },
+];
+const authRoles = new Map<string, "member">([
+  [MEMBER_A, "member"],
+  [MEMBER_B, "member"],
+]);
 
 describe("Integrity Media identity confirmation", () => {
   before(async () => {
@@ -82,6 +101,7 @@ describe("Integrity Media identity confirmation", () => {
     setAuthUserLookupOverrideForTests(null);
     setExternalAuthorLinkStoreForTests(null);
     setIntegrityMediaDisplayNameResolverForTests(null);
+    setIntegrityMediaAuthorCapabilityEnsurerForTests(null);
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
@@ -92,6 +112,10 @@ describe("Integrity Media identity confirmation", () => {
     setExternalAuthorLinkStoreForTests(store);
     resetIntegrityMediaRedeemReplayCacheForTests();
     setIntegrityMediaDisplayNameResolverForTests(async (memberId) => `Profile ${memberId}`);
+    grants = new Map();
+    grantWrites = 0;
+    ensureFailuresRemaining = 0;
+    installAuthorCapabilityEnsurer();
     process.env[INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV] = SECRET;
     process.env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV] = "https://integrity.example";
     delete process.env[INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV];
@@ -472,8 +496,245 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal(linkSource.includes("registerAuthUser"), false);
     assert.equal(linkSource.includes("blog.routes"), false);
     assert.equal(INTEGRITY_MEDIA_SOURCE, "integrity-media");
+    assert.equal(
+      readRepo("apps/api/src/modules/blog/blog-author-capability.ts").includes("AuthRole"),
+      false,
+    );
+    assert.equal(
+      readRepo("apps/api/src/modules/language/content-translation-validity.ts").includes(
+        "ensureBlogAuthorCapability",
+      ),
+      false,
+    );
+    assert.equal(
+      readRepo("apps/api/src/modules/global-search/global-search.index.ts").includes(
+        "ensureBlogAuthorCapability",
+      ),
+      false,
+    );
+    assert.equal(
+      readRepo("apps/web/src/lib/seo/sitemap/providers/blog-posts.ts").includes(
+        "integrity-media",
+      ),
+      false,
+    );
+    assert.equal(
+      readRepo("apps/api/src/modules/direct-conversation-calls/index.ts").includes(
+        "ensureBlogAuthorCapability",
+      ),
+      false,
+    );
+  });
+
+  it("establishes the durable link and Blog author capability on first redemption", async () => {
+    const postsBefore = structuredClone(blogPosts);
+    const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const grant = grants.get(MEMBER_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(redeemed.status, 200);
+    assert.equal(redeemed.body.success, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.deepEqual(grant?.capabilities, ["author"]);
+    assert.equal(grantWrites, 1);
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(
+      (await store.listAudits()).filter((event) => event.action === "author_capability_ensured")
+        .length,
+      1,
+    );
+  });
+
+  it("does not grant Blog author from Confirm before trusted redemption", async () => {
+    await confirmCode(MEMBER_A);
+
+    assert.equal((await store.listLinks()).length, 0);
+    assert.equal(grants.size, 0);
+    assert.equal(grantWrites, 0);
+    assert.equal(
+      (await store.listAudits()).some((event) => event.action === "author_capability_ensured"),
+      false,
+    );
+  });
+
+  it("gives an ordinary member only Blog author and no stronger publishing power", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const grant = grants.get(MEMBER_A);
+    const capabilities = new Set(grant?.capabilities ?? []);
+
+    assert.deepEqual(grant?.capabilities, ["author"]);
+    assert.equal(grant?.publishWithoutManualReview, undefined);
+    assert.equal(canCreateBlogDraft(capabilities), true);
+    assert.equal(canDirectPublish(capabilities), false);
+    assert.equal(canEditorialPublish(capabilities), false);
+    assert.equal(publishingWorkspaceHref(grant), "/workspace/publishing");
+    assert.equal(authRoles.get(MEMBER_A), "member");
+    assert.equal(capabilities.has("trusted_author"), false);
+    assert.equal(capabilities.has("editor"), false);
+    assert.equal(capabilities.has("administrator"), false);
+  });
+
+  it("preserves an existing stronger Blog grant without a second write", async () => {
+    const existing: BlogCapabilityGrant = {
+      participantId: MEMBER_A,
+      capabilities: ["editor"],
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      publishWithoutManualReview: true,
+      grantedByParticipantId: "33333333-3333-4333-8333-333333333333",
+    };
+    grants.set(MEMBER_A, existing);
+
+    const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+
+    assert.equal(redeemed.status, 200);
+    assert.equal(grants.get(MEMBER_A), existing);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["editor"]);
+    assert.equal(grants.get(MEMBER_A)?.publishWithoutManualReview, true);
+    assert.equal(grantWrites, 0);
+    assert.equal(
+      (await store.listAudits()).some((event) => event.action === "author_capability_ensured"),
+      false,
+    );
+    assert.equal(canDirectPublish(new Set(existing.capabilities)), true);
+  });
+
+  it("repeats redemption and reconnect without another grant or identity change", async () => {
+    const postsBefore = structuredClone(blogPosts);
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const firstLink = (await store.listLinks())[0];
+    const again = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+
+    assert.equal(again.status, 200);
+    assert.equal(again.body.data?.reconnected, false);
+    assert.equal(grantWrites, 1);
+    assert.equal(grants.size, 1);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+
+    const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(disabled, "disabled");
+    assert.equal(reconnect.status, 200);
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.memberId, firstLink?.memberId);
+    assert.equal(link?.externalAuthorId, firstLink?.externalAuthorId);
+    assert.equal(link?.state, "linked");
+    assert.equal(grantWrites, 1);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(
+      (await store.listAudits()).filter((event) => event.action === "author_capability_ensured")
+        .length,
+      1,
+    );
+  });
+
+  it("keeps a different-member conflict from granting or remapping", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const conflict = await redeem(await confirmCode(MEMBER_B), AUTHOR_A);
+
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.meta.code, "external_author_already_linked");
+    assert.equal(conflict.body.success, false);
+    assert.equal(grants.has(MEMBER_B), false);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+  });
+
+  it("does not report success when author setup fails and completes on a later redemption", async () => {
+    ensureFailuresRemaining = 1;
+    const postsBefore = structuredClone(blogPosts);
+    const failed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const failedAudits = await store.listAudits();
+    const failedLink = (await store.listLinks())[0];
+
+    assert.equal(failed.status, 503);
+    assert.equal(failed.body.success, false);
+    assert.equal(failed.body.meta.code, "author_setup_failed");
+    assert.equal(grants.size, 0);
+    assert.equal(failedLink?.state, "linked");
+    assert.equal(failedLink?.memberId, MEMBER_A);
+    assert.equal(failedLink?.externalAuthorId, AUTHOR_A);
+    assert.equal(
+      failedAudits.some((event) => event.action === "author_capability_failed"),
+      true,
+    );
+    assert.equal(
+      failedAudits.some((event) => event.action === "result_redeemed"),
+      false,
+    );
+    assert.equal(JSON.stringify(failedAudits).includes("author capability store unavailable"), false);
+
+    const retried = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(retried.status, 200);
+    assert.equal(retried.body.success, true);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal(grantWrites, 1);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(publishingWorkspaceHref(grants.get(MEMBER_A)), "/workspace/publishing");
+    assert.equal(canDirectPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(authRoles.get(MEMBER_A), "member");
+  });
+
+  it("leaves the Blog author capability in place when the link is disconnected", async () => {
+    const postsBefore = structuredClone(blogPosts);
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
+
+    assert.equal(disabled, "disabled");
+    assert.equal((await store.listLinks())[0]?.state, "disabled");
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal(grantWrites, 1);
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(publishingWorkspaceHref(grants.get(MEMBER_A)), "/workspace/publishing");
   });
 });
+
+function installAuthorCapabilityEnsurer(): void {
+  setIntegrityMediaAuthorCapabilityEnsurerForTests(async (participantId) => {
+    if (ensureFailuresRemaining > 0) {
+      ensureFailuresRemaining -= 1;
+      throw new Error("author capability store unavailable");
+    }
+
+    return ensureBlogAuthorCapability(participantId, {
+      findGrant: async (id) => grants.get(id) ?? null,
+      saveGrant: async (grant) => {
+        grantWrites += 1;
+        const saved: BlogCapabilityGrant = {
+          ...grant,
+          capabilities: [...grant.capabilities],
+        };
+        grants.set(grant.participantId, saved);
+        return saved;
+      },
+    });
+  });
+}
+
+function publishingWorkspaceHref(grant: BlogCapabilityGrant | undefined): string | null {
+  const capabilities = new Set(grant?.capabilities ?? []);
+  const hasAuthor =
+    capabilities.has("author") ||
+    capabilities.has("trusted_author") ||
+    capabilities.has("editor") ||
+    capabilities.has("administrator");
+  const blockedAuthorOnly =
+    grant?.administrativelyBlocked === true &&
+    !capabilities.has("editor") &&
+    !capabilities.has("administrator");
+
+  return hasAuthor && !blockedAuthorOnly ? "/workspace/publishing" : null;
+}
 
 function attemptState(): string {
   return `state-${randomBytes(12).toString("hex")}`;

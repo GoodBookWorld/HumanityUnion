@@ -30,7 +30,9 @@ export type ExternalAuthorLinkAuditAction =
   | "link_rejected"
   | "link_expired"
   | "link_conflict"
-  | "result_redeemed";
+  | "result_redeemed"
+  | "author_capability_ensured"
+  | "author_capability_failed";
 
 export interface ExternalAuthorLinkAuditRecord {
   eventId: string;
