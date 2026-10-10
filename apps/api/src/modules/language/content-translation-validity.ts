@@ -179,13 +179,23 @@ export function isKnownPlaceholderTranslation(
 }
 
 /**
+ * Corpus Planner and activation readiness share this authority.
+ * Machine rows are excluded and stay subject to unchanged-prose validation.
+ */
+export function isAuthoritativeManualTranslation(
+  row: Pick<TranslatedContentRecord, "translationKind">,
+): boolean {
+  return row.translationKind === "human" || row.translationKind === "author-approved";
+}
+
+/**
  * Provenance represents real localization (machine non-deterministic, or human).
  * Do NOT require provider === "gemini".
  */
 export function hasRealLocalizationProvenance(
   row: Pick<TranslatedContentRecord, "translationProvider" | "translationKind">,
 ): boolean {
-  if (row.translationKind === "human" || row.translationKind === "author-approved") {
+  if (isAuthoritativeManualTranslation(row)) {
     return true;
   }
   if (isDeterministicPlaceholderProvenance(row)) {
@@ -411,23 +421,26 @@ export function classifyContentTranslationValidity(input: {
     };
   }
 
+  const localizedFields = translatedFieldsFromRecord(row.translatedContent);
   if (
     identityCurrent &&
     input.originalFields &&
     isUntranslatedSourceEquivalent({
       originalFields: input.originalFields,
-      localizedFields: translatedFieldsFromRecord(row.translatedContent),
+      localizedFields,
     })
   ) {
-    return {
-      identityCurrent: true,
-      structurallyComplete,
-      presentationEligible: false,
-      reconciliationState: "INVALID",
-      localizedCoverage: false,
-      workRemaining: true,
-      reasons: ["untranslated_source_equivalent"],
-    };
+    if (!isAuthoritativeManualTranslation(row)) {
+      return {
+        identityCurrent: true,
+        structurallyComplete,
+        presentationEligible: false,
+        reconciliationState: "INVALID",
+        localizedCoverage: false,
+        workRemaining: true,
+        reasons: ["untranslated_source_equivalent"],
+      };
+    }
   }
 
   if (identityCurrent && realProvenance && structurallyComplete !== false) {

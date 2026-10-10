@@ -81,6 +81,7 @@ export {
   classifyContentTranslationForReconciliation,
   hasDeterministicPlaceholderPayloadPattern,
   hasRealLocalizationProvenance,
+  isAuthoritativeManualTranslation,
   isDeterministicPlaceholderProvenance,
   isKnownPlaceholderTranslation,
   isPresentationEligibleTranslation,

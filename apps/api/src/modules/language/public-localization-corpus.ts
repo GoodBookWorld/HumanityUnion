@@ -29,7 +29,10 @@ import {
   type TranslatedContentRecord,
 } from "@hu/types";
 
-import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
+import {
+  classifyContentTranslationForReconciliation,
+  isAuthoritativeManualTranslation,
+} from "./content-translation-validity.js";
 import { loadPublishedTerminologyConcepts } from "./terminology-protection-contract.js";
 
 import {
@@ -203,10 +206,6 @@ export function buildPublicPresentationIdentity(input: {
     sourceRecordId: input.sourceRecordId,
     presentationSchemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
   };
-}
-
-function isAuthoritativeManualTranslation(row: TranslatedContentRecord): boolean {
-  return row.translationKind === "human" || row.translationKind === "author-approved";
 }
 
 /**
