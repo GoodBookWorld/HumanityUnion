@@ -150,6 +150,35 @@ export async function markEventProcessingCompleted(input: {
   );
 }
 
+const PROCESSING_CLAIM_HEARTBEAT_MS = 60_000;
+
+/**
+ * Slide the processing claim forward while a handler is still working.
+ * The stale window is five minutes; a multi-segment translation waits
+ * between provider permits and must not be reclaimed mid-run.
+ */
+export async function renewEventProcessingClaim(input: {
+  consumerId: string;
+  eventId: string;
+}): Promise<void> {
+  if (!isMongoConfigured()) {
+    return;
+  }
+  const collection = getMongoCollection<ProcessedEventDocument>(
+    MONGO_COLLECTIONS.processedEvents,
+  );
+  await collection.updateOne(
+    {
+      consumerId: input.consumerId,
+      eventId: input.eventId,
+      status: "processing",
+    },
+    { $set: { claimedAt: new Date().toISOString() } },
+  );
+}
+
+export { PROCESSING_CLAIM_HEARTBEAT_MS };
+
 export async function releaseEventProcessingClaim(input: {
   consumerId: string;
   eventId: string;

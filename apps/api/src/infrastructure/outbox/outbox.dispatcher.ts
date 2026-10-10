@@ -7,7 +7,9 @@ import { registerOutboxDispatcherWake } from "./outbox-wake.js";
 import {
   claimEventForProcessing,
   markEventProcessingCompleted,
+  PROCESSING_CLAIM_HEARTBEAT_MS,
   releaseEventProcessingClaim,
+  renewEventProcessingClaim,
 } from "./processed-events.repository.js";
 import {
   deferOutboxRecordUntilAvailable,
@@ -267,6 +269,13 @@ export async function dispatchOutboxBatch(): Promise<number> {
             return;
           }
 
+          const claimHeartbeat = setInterval(() => {
+            void renewEventProcessingClaim({
+              consumerId: handler.consumerId,
+              eventId: eventEnvelope.eventId,
+            }).catch(() => undefined);
+          }, PROCESSING_CLAIM_HEARTBEAT_MS);
+          claimHeartbeat.unref?.();
           try {
             await handler.handle(eventEnvelope);
             await markEventProcessingCompleted({
@@ -290,6 +299,8 @@ export async function dispatchOutboxBatch(): Promise<number> {
             });
 
             throw handlerError;
+          } finally {
+            clearInterval(claimHeartbeat);
           }
         });
 

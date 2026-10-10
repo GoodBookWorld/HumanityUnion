@@ -59,6 +59,7 @@ const FORBIDDEN_MODULES = [
   "content-translation-warm-consumer.ts",
   "content-translation-warm-targets.ts",
   "content-translation.service.ts",
+  "content-translation-chunk-plan.ts",
   "localization-reconciliation-driver.ts",
   "outbox.dispatcher.ts",
   "content-translation.repository.ts",
@@ -330,32 +331,45 @@ describe("content translation chunk plan diagnostic", () => {
       "utf8",
     );
     assert.equal(service.includes("return buildBlogPostTranslatableSource(post);"), true);
+    const executor = readFileSync(
+      resolve(API_ROOT, "src/modules/language/content-translation-chunk-plan.ts"),
+      "utf8",
+    );
+    assert.equal(
+      executor.includes('from "./content-translation-chunk-plan-core.js"'),
+      true,
+    );
+    assert.equal(executor.includes("function planContentTranslationRequests"), false);
     for (const relativePath of [
       "src/index.ts",
       "src/modules/language/content-translation-warm-consumer.ts",
-      "src/modules/language/content-translation-provider-payload-retry.ts",
       "src/modules/language/localization-reconciliation-driver.ts",
       "src/infrastructure/outbox/outbox.dispatcher.ts",
+      "src/scripts/diagnose-content-translation-chunk-plan.ts",
+      "src/modules/language/content-translation-chunk-plan-diagnostic.ts",
+      "src/modules/language/content-translation-chunk-plan-diagnostic-read.ts",
     ]) {
       const text = readFileSync(resolve(API_ROOT, relativePath), "utf8");
-      assert.equal(text.includes("content-translation-chunk-plan"), false, relativePath);
+      assert.equal(text.includes("content-translation-chunk-plan.ts"), false, relativePath);
+      assert.equal(text.includes('content-translation-chunk-plan.js"'), false, relativePath);
     }
   });
 
-  it("leaves the HE.21A truncation hold active", () => {
+  it("releases the truncation hold only for a capable chunk plan", () => {
     assert.equal(contentTranslationUsesUnsplitSingleResponse(), true);
     const attempt = truncatedAttempt(EXPECTED_VERSION);
-    assert.deepEqual(
-      selectInvalidProviderPayloadRetry({
-        sourceKind: "blog_post",
-        sourceRecordId: RECORD_ID,
-        targetLocale: "he",
-        sourceVersion: EXPECTED_VERSION,
-        attempts: [attempt],
-        nowMs: Date.parse("2030-01-01T00:00:00.000Z"),
-      }),
-      { outcome: "due", countedFailures: 1 },
-    );
+    const selection = {
+      sourceKind: "blog_post" as const,
+      sourceRecordId: RECORD_ID,
+      targetLocale: "he",
+      sourceVersion: EXPECTED_VERSION,
+      attempts: [attempt],
+      nowMs: Date.parse("2030-01-01T00:00:00.000Z"),
+    };
+    assert.deepEqual(selectInvalidProviderPayloadRetry(selection), {
+      outcome: "due",
+      countedFailures: 1,
+    });
     assert.equal(
       shouldHoldAutomaticRetryForUnsplitTruncation({
         sourceVersion: EXPECTED_VERSION,
@@ -374,11 +388,51 @@ describe("content translation chunk plan diagnostic", () => {
       }),
       true,
     );
+    const source = buildBlogPostTranslatableSource(blogPost(longHtml()));
+    const executable = resolveContentTranslationExecutableFields({
+      sourceKind: "blog_post",
+      intent: "automatic_warm",
+      sanitizedFields: sanitizeFieldsForAutomaticTranslation({
+        sourceKind: "blog_post",
+        fields: source.fields,
+      }),
+    });
+    assert.ok(executable);
+    assert.equal(contentTranslationChunkPlanReleasesTruncationHold(executable, 4096), true);
+    assert.equal(
+      shouldHoldAutomaticRetryForUnsplitTruncation({
+        sourceVersion: EXPECTED_VERSION,
+        targetLocale: "he",
+        attempts: [attempt],
+        retryOutcome: "due",
+        sourceFields: executable,
+        maxOutputTokens: 4096,
+      }),
+      false,
+    );
+    const shortFields = { title: "Harbor", excerpt: "Short", content: "<p>Short</p>" };
+    assert.equal(contentTranslationChunkPlanReleasesTruncationHold(shortFields, 4096), false);
+    assert.equal(
+      shouldHoldAutomaticRetryForUnsplitTruncation({
+        sourceVersion: EXPECTED_VERSION,
+        targetLocale: "he",
+        attempts: [attempt],
+        retryOutcome: "due",
+        sourceFields: shortFields,
+        maxOutputTokens: 4096,
+      }),
+      true,
+    );
+    assert.deepEqual(selectInvalidProviderPayloadRetry(selection), {
+      outcome: "due",
+      countedFailures: 1,
+    });
     const holdSource = readFileSync(
       resolve(API_ROOT, "src/modules/language/content-translation-provider-payload-retry.ts"),
       "utf8",
     );
-    assert.equal(holdSource.includes("content-translation-chunk-plan"), false);
-    assert.equal(holdSource.includes("sourceFields"), false);
+    assert.equal(holdSource.includes('from "./content-translation-chunk-plan.js"'), true);
+    assert.equal(holdSource.includes("sourceFields"), true);
+    assert.equal(holdSource.includes("content-translation-chunk-plan-diagnostic"), false);
   });
 });

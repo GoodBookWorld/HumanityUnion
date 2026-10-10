@@ -48,6 +48,7 @@ import {
 } from "./content-translation-output-validation.js";
 import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
 import { malformedStructuredPayloadKind } from "./content-translation-provider-payload.js";
+import { translateContentTranslationFieldMap } from "./content-translation-chunk-plan.js";
 import { contentTranslationStructuredResponseSchema } from "./content-translation-structured-response.js";
 import { contentTranslationCoversRequiredSourceFields } from "./content-translation-coverage.js";
 import { classifyContentTranslationForReconciliation } from "./content-translation-validity.js";
@@ -478,12 +479,37 @@ export async function getOrCreateContentTranslation(input: {
   }
 
   let translatedFields: Record<string, string>;
-  let translationProviderId: string;
+  let translationProviderId = provider.providerId;
 
   // Discovery uses the generic structured path even for CA — Search fields are
   // title/summary only and must not pull the full lifecycle-slot hop.
   const useCaLifecycleHop =
     source.sourceKind === "collaborative_analysis" && intent !== "search_discovery";
+
+  const translateStructuredPayload = async (
+    payload: Readonly<Record<string, string>>,
+  ): Promise<Record<string, string>> => {
+    const responseSchema = contentTranslationStructuredResponseSchema(payload);
+    const result = await runLocalizationProviderRequest(() =>
+      provider.translate({
+        sourceLanguage: source.sourceLanguage,
+        targetLanguage,
+        text: JSON.stringify(payload),
+        contentType: "structured_json",
+        sourceRecordId: source.sourceRecordId,
+        sourceVersion: source.sourceVersion,
+        terminologyContext,
+        safetyCleared: true,
+        ...(responseSchema ? { responseSchema } : {}),
+      }),
+    );
+    translationProviderId = result.providerId;
+    try {
+      return parseStructuredTranslation(result.translatedText);
+    } catch {
+      throwMalformedStructuredProviderPayload(result);
+    }
+  };
 
   if (useCaLifecycleHop) {
     // 03C.5 / 03C.5C — extract lifecycle slots; validate machine prose before
@@ -493,26 +519,11 @@ export async function getOrCreateContentTranslation(input: {
       sanitizedFields: providerFields,
       sourceLanguage: source.sourceLanguage,
       targetLanguage,
-      translatePayload: async (payload) => {
-        const result = await runLocalizationProviderRequest(() =>
-          provider.translate({
-            sourceLanguage: source.sourceLanguage,
-            targetLanguage,
-            text: JSON.stringify(payload),
-            contentType: "structured_json",
-            sourceRecordId: source.sourceRecordId,
-            sourceVersion: source.sourceVersion,
-            terminologyContext,
-            safetyCleared: true,
-          }),
-        );
-        translationProviderId = result.providerId;
-        try {
-          return parseStructuredTranslation(result.translatedText);
-        } catch {
-          throwMalformedStructuredProviderPayload(result);
-        }
-      },
+      translatePayload: (payload) =>
+        translateContentTranslationFieldMap({
+          fields: payload,
+          translate: translateStructuredPayload,
+        }),
     });
 
     // Final bag: allowlist / key shape only. Machine prose + civic title already
@@ -529,27 +540,10 @@ export async function getOrCreateContentTranslation(input: {
       translatedFields,
     });
   } else {
-    const responseSchema = contentTranslationStructuredResponseSchema(providerFields);
-    const result = await runLocalizationProviderRequest(() =>
-      provider.translate({
-        sourceLanguage: source.sourceLanguage,
-        targetLanguage,
-        text: JSON.stringify(providerFields),
-        contentType: "structured_json",
-        sourceRecordId: source.sourceRecordId,
-        sourceVersion: source.sourceVersion,
-        terminologyContext,
-        safetyCleared: true,
-        ...(responseSchema ? { responseSchema } : {}),
-      }),
-    );
-    translationProviderId = result.providerId;
-
-    try {
-      translatedFields = parseStructuredTranslation(result.translatedText);
-    } catch {
-      throwMalformedStructuredProviderPayload(result);
-    }
+    translatedFields = await translateContentTranslationFieldMap({
+      fields: providerFields,
+      translate: translateStructuredPayload,
+    });
 
     // Pack 02G Task 07C / 07E.1 / 08J / Pack 1.2 — keep AUTO_TRANSLATABLE projection
     // keys; require full eligible coverage; reject all-unchanged prose; require civic titles.
@@ -584,6 +578,17 @@ export async function getOrCreateContentTranslation(input: {
       ...translatedFields,
       content: sanitizeBlogHtml(translatedFields.content),
     };
+  }
+
+  const liveSource = await loadTranslatableSource({
+    sourceKind: source.sourceKind,
+    sourceRecordId: source.sourceRecordId,
+  });
+  if (!liveSource || liveSource.sourceVersion !== source.sourceVersion) {
+    throw new TranslationProviderError(
+      "unavailable",
+      "Content translation source version changed during generation.",
+    );
   }
 
   const concepts = await loadPublishedTerminologyConcepts();

@@ -38,9 +38,17 @@ const LOCALIZATION_PROVIDER_MIN_INTERVAL_MS_MAX = 900_000;
  * value falls back to the 10 second default.
  */
 let pacingIntervalOverrideMs: number | null = null;
+let sleepOverrideForTests: ((ms: number) => Promise<void>) | null = null;
 
 export function setLocalizationProviderPacingIntervalMsForTests(ms: number | null): void {
   pacingIntervalOverrideMs = ms;
+}
+
+/** Test seam. Production sleeps on the real clock. */
+export function setLocalizationProviderSleepForTests(
+  sleep: ((ms: number) => Promise<void>) | null,
+): void {
+  sleepOverrideForTests = sleep;
 }
 
 export function resolveLocalizationProviderMinIntervalMs(
@@ -127,6 +135,40 @@ export function setLocalizationProviderClockForTests(clock: (() => number) | nul
 
 export function localizationProviderNowMs(): number {
   return nowMs();
+}
+
+async function sleepLocalizationProvider(ms: number): Promise<void> {
+  if (ms <= 0) {
+    return;
+  }
+  if (sleepOverrideForTests) {
+    await sleepOverrideForTests(ms);
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Wait until the governor's current pacing instant.
+ * One wait is capped at the configured interval so a distant timestamp
+ * cannot park the worker. The caller still has to acquire the permit.
+ */
+export async function waitForLocalizationProviderPacingWindow(
+  nextAllowedAt: string,
+): Promise<void> {
+  const target = Date.parse(nextAllowedAt);
+  if (!Number.isFinite(target)) {
+    return;
+  }
+  const started = localizationProviderNowMs();
+  const cap = resolveLocalizationProviderMinIntervalMs();
+  while (localizationProviderNowMs() < target) {
+    if (localizationProviderNowMs() - started >= cap) {
+      return;
+    }
+    const remaining = target - localizationProviderNowMs();
+    await sleepLocalizationProvider(Math.min(remaining, 250));
+  }
 }
 
 export function localizationProviderPressureError(remainingSeconds: number): TranslationProviderError {
