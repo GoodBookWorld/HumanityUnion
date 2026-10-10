@@ -20,6 +20,7 @@ import { getAnalysisById } from "../initiative-collaborative-analysis/initiative
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
 import { sanitizeBlogHtml } from "../blog/blog-content-sanitize.js";
+import { buildBlogPostTranslatableSource } from "./content-translation-blog-source.js";
 import {
   loadCivicArchiveTranslationSource,
   loadCivicMediaTranslationSource,
@@ -215,24 +216,7 @@ export async function loadTranslatableSource(input: {
     }
     // Pack 08I.5 — content remains sanitized HTML for translation + presentation.
     // Canonical blog_posts.content is never overwritten by translation persistence.
-    const fields = {
-      title: post.title,
-      excerpt: post.excerpt,
-      content: sanitizeBlogHtml(post.content),
-    };
-    return {
-      sourceKind: "blog_post",
-      sourceRecordId: post.postId,
-      sourceVersion: buildContentTranslationSourceVersion({
-        fields,
-        versionStamp: post.updatedAt,
-        publishedVersion: post.publishedVersion,
-      }),
-      sourceLanguage: normalizeLanguageCode(post.originalLanguage, DEFAULT_PLATFORM_LANGUAGE),
-      fields,
-      authorParticipantId: post.authorParticipantId,
-      isPublished: post.status === "published",
-    };
+    return buildBlogPostTranslatableSource(post);
   }
 
   if (input.sourceKind === "discussion_comment") {
