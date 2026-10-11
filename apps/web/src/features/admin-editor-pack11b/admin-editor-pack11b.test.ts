@@ -177,6 +177,7 @@ describe("Pack 11B — regression anchors", () => {
         "initiatives",
         "public-choice",
         "publishing",
+        "integrity-media",
         "media-resources",
         "country-people",
         "seo",
@@ -184,6 +185,9 @@ describe("Pack 11B — regression anchors", () => {
         "beta-access",
         "platform",
         "languages",
+        "brand-localization",
+        "legal-localization",
+        "terminology-glossary",
         "audit",
       ],
     );

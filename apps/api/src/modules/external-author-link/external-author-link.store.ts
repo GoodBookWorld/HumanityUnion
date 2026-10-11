@@ -7,6 +7,8 @@ import type {
   ExternalAuthorLinkResultRecord,
 } from "./external-author-link.types.js";
 
+export type ExternalAuthorLinkAdminListState = "all" | "linked" | "disabled" | "setup_pending";
+
 export type ClaimExternalAuthorLinkResult =
   | { status: "claimed"; record: ExternalAuthorLinkResultRecord }
   | { status: "missing" }
@@ -33,6 +35,12 @@ export interface ExternalAuthorLinkStore {
   }): Promise<ExternalAuthorLinkRecord | null>;
   appendAudit(record: ExternalAuthorLinkAuditRecord): Promise<void>;
   listLinks(): Promise<ExternalAuthorLinkRecord[]>;
+  listForAdmin(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    state: ExternalAuthorLinkAdminListState;
+    limit: number;
+    offset: number;
+  }): Promise<{ items: ExternalAuthorLinkRecord[]; total: number }>;
   listResults(): Promise<ExternalAuthorLinkResultRecord[]>;
   listAudits(): Promise<ExternalAuthorLinkAuditRecord[]>;
 }
@@ -137,6 +145,16 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
 
     async listLinks() {
       return [...byAuthor.values()].map((record) => ({ ...record }));
+    },
+
+    async listForAdmin(input) {
+      const items = [...byAuthor.values()]
+        .filter((record) => matchesAdminLinkList(record, input.source, input.state))
+        .sort(compareAdminLinks);
+      return {
+        total: items.length,
+        items: items.slice(input.offset, input.offset + input.limit).map((record) => ({ ...record })),
+      };
     },
 
     async listResults() {
@@ -267,6 +285,21 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       return documents.map((document) => withoutId(document));
     },
 
+    async listForAdmin(input) {
+      const filter = adminLinkListFilter(input.source, input.state);
+      const collection = links();
+      const [total, documents] = await Promise.all([
+        collection.countDocuments(filter),
+        collection
+          .find(filter)
+          .sort({ createdAt: -1, memberId: 1 })
+          .skip(input.offset)
+          .limit(input.limit)
+          .toArray(),
+      ]);
+      return { total, items: documents.map((document) => withoutId(document)) };
+    },
+
     async listResults() {
       const documents = await results().find({}).toArray();
       return documents.map((document) => withoutId(document));
@@ -327,6 +360,62 @@ function isPendingAuthorActivationEligible(
 
   const attemptAt = record.authorActivationAttemptAt;
   return attemptAt == null || attemptAt <= eligibleBeforeIso;
+}
+
+function matchesAdminLinkList(
+  record: ExternalAuthorLinkRecord,
+  source: typeof INTEGRITY_MEDIA_SOURCE,
+  state: ExternalAuthorLinkAdminListState,
+): boolean {
+  if (record.source !== source) {
+    return false;
+  }
+
+  if (state === "disabled") {
+    return record.state === "disabled";
+  }
+
+  if (state === "setup_pending") {
+    return record.state === "linked" && record.authorActivationPending === true;
+  }
+
+  if (state === "linked") {
+    return record.state === "linked" && record.authorActivationPending !== true;
+  }
+
+  return true;
+}
+
+function adminLinkListFilter(
+  source: typeof INTEGRITY_MEDIA_SOURCE,
+  state: ExternalAuthorLinkAdminListState,
+): Record<string, unknown> {
+  if (state === "disabled") {
+    return { source, state: "disabled" };
+  }
+
+  if (state === "setup_pending") {
+    return { source, state: "linked", authorActivationPending: true };
+  }
+
+  if (state === "linked") {
+    return {
+      source,
+      state: "linked",
+      authorActivationPending: { $ne: true },
+    };
+  }
+
+  return { source };
+}
+
+function compareAdminLinks(left: ExternalAuthorLinkRecord, right: ExternalAuthorLinkRecord): number {
+  const created = right.createdAt.localeCompare(left.createdAt);
+  if (created !== 0) {
+    return created;
+  }
+
+  return left.memberId.localeCompare(right.memberId);
 }
 
 function linkKey(source: string, id: string): string {

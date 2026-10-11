@@ -6,11 +6,69 @@ import {
   AdministrationUnauthorizedError,
 } from "../administration/administration.errors.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { listIntegrityMediaAuthors } from "./integrity-media-author-directory.service.js";
 import { sendIntegrityMediaAuthorMessage } from "./integrity-media-author-message.service.js";
 
 const MESSAGE_FIELDS = new Set(["title", "body", "cta"]);
 
+const LIST_QUERY = new Set(["limit", "offset", "state"]);
+const DIRECTORY_STATES = new Set(["all", "linked", "disabled", "setup_pending"]);
+
 const integrityMediaAuthorMessageRouter = Router();
+
+integrityMediaAuthorMessageRouter.get(
+  "/",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    if (unexpectedListQuery(req)) {
+      sendFailure(res, 400, "The author list request is not valid.", "unexpected_field");
+      return;
+    }
+
+    const state = readQueryString(req.query.state);
+    const limit = readQueryInt(req.query.limit);
+    const offset = readQueryInt(req.query.offset);
+
+    if (
+      state === "invalid" ||
+      (state !== undefined && !DIRECTORY_STATES.has(state)) ||
+      limit === "invalid" ||
+      offset === "invalid"
+    ) {
+      sendFailure(res, 400, "The author list request is not valid.", "invalid_request");
+      return;
+    }
+
+    try {
+      const result = await listIntegrityMediaAuthors({
+        actorUserId: req.auth?.id ?? "",
+        actorMemberId: req.auth?.memberId ?? "",
+        ...(state !== undefined ? { state } : {}),
+        ...(limit !== undefined ? { limit } : {}),
+        ...(offset !== undefined ? { offset } : {}),
+      });
+
+      if (!result.ok) {
+        sendFailure(res, result.status, result.message, result.code);
+        return;
+      }
+
+      res.status(200).json(createSuccessResponse(result.data, "Integrity authors loaded."));
+    } catch (error) {
+      if (error instanceof AdministrationUnauthorizedError) {
+        sendFailure(res, 401, "Authentication is required.", "authentication_required");
+        return;
+      }
+
+      if (error instanceof AdministrationForbiddenError) {
+        sendFailure(res, 403, "Administrator access is required.", "administrator_required");
+        return;
+      }
+
+      sendFailure(res, 500, "Integrity authors could not be loaded.", "unavailable");
+    }
+  },
+);
 
 integrityMediaAuthorMessageRouter.post(
   "/:memberId/messages",
@@ -81,6 +139,36 @@ function unexpectedField(
   }
 
   return null;
+}
+
+function unexpectedListQuery(req: Request): boolean {
+  for (const key of Object.keys(req.query)) {
+    if (!LIST_QUERY.has(key)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function readQueryString(value: unknown): string | undefined | "invalid" {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return typeof value === "string" ? value : "invalid";
+}
+
+function readQueryInt(value: unknown): number | undefined | "invalid" {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string" || !/^\d+$/.test(value)) {
+    return "invalid";
+  }
+
+  return Number(value);
 }
 
 function unexpectedQuery(req: Request): string | null {
