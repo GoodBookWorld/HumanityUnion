@@ -120,6 +120,87 @@
   display: none;
 }
 
+/*
+ * Election cards size to their content. The shared rail card is height:100%
+ * inside a stretched carousel slide, and a square fallback image can expand
+ * the media box because percentage height does not resolve there. Lock a
+ * short frame and let the image cover or contain inside it.
+ */
+.horizontal-rail__slide > a.country-election-rail-card,
+.media-horizontal-rail__slide > a.country-election-rail-card {
+  height: auto;
+  min-height: 0;
+}
+
+.country-election-rail-card {
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.country-election-rail-card .country-initiative-rail-card__media {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 5 / 2;
+  max-height: 9rem;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--hu-color-bg-muted, #f0f0f0);
+}
+
+.country-election-rail-card .country-initiative-rail-card__media img,
+.country-election-rail-card .country-initiative-rail-card__media .initiative-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
+}
+
+.country-election-rail-card .country-initiative-rail-card__media img.country-election-rail-card__fallback {
+  object-fit: contain;
+  padding: var(--hu-space-3);
+  box-sizing: border-box;
+}
+
+.country-election-rail-card .country-initiative-rail-card__body {
+  flex: 0 0 auto;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-3);
+  min-width: 0;
+}
+
+.country-election-rail-card .country-initiative-rail-card__title {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 1rem;
+  font-weight: var(--hu-font-weight-semibold, 600);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.country-election-rail-card .country-initiative-rail-card__meta {
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  line-height: 1.35;
+}
+
+.country-election-rail-card .country-initiative-rail-card__footer {
+  margin-top: var(--hu-space-1, 0.25rem);
+}
+
+.country-election-rail-card .country-initiative-rail-card__cta {
+  margin-top: var(--hu-space-2);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+}
+
 /* Pack 09G — reinforce compact election rail body on tablet/mobile */
 @media (max-width: 1024px) {
   .country-election-rail-card .country-initiative-rail-card__body {
@@ -130,10 +211,16 @@
   .country-election-rail-card .country-initiative-rail-card__title {
     font-size: 1rem;
     line-height: 1.3;
+    overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .country-election-rail-card .country-initiative-rail-card__media {
+    aspect-ratio: 5 / 2;
+    max-height: 8rem;
   }
 }
 

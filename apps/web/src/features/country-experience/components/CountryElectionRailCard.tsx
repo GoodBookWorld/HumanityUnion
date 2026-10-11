@@ -96,6 +96,7 @@ export function CountryElectionRailCard({
           />
         ) : (
           <img
+            className="country-election-rail-card__fallback"
             src={PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE}
             alt=""
             aria-hidden="true"
