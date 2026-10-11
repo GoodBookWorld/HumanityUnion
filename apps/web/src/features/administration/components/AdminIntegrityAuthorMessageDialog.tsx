@@ -153,91 +153,95 @@ export function AdminIntegrityAuthorMessageDialog({
         aria-describedby={descriptionId}
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id={titleId} className="hu-heading-3">
-          Send Message
-        </h2>
-        <p id={descriptionId} className="hu-body">
-          Send to the Integrity Media author linked with Humanity Union Participant{" "}
-          {participantDisplayName}. Delivery status comes from the server.
-        </p>
+        <header className="admin-integrity-author-message-dialog__header">
+          <h2 id={titleId} className="hu-heading-3">
+            Send Message
+          </h2>
+          <p id={descriptionId} className="hu-body">
+            Send to the Integrity Media author linked with Humanity Union Participant{" "}
+            {participantDisplayName}. Delivery status comes from the server.
+          </p>
+        </header>
         <form className="admin-integrity-author-message-dialog__form" onSubmit={(event) => {
           void handleSubmit(event);
         }}>
-          <label htmlFor="integrity-author-message-title">
-            Title
-            <input
-              id="integrity-author-message-title"
-              value={title}
-              maxLength={200}
-              onChange={(event) => setTitle(event.target.value)}
-              aria-invalid={fieldErrors.title ? true : undefined}
-              aria-describedby={fieldErrors.title ? "integrity-author-message-title-error" : undefined}
-            />
-          </label>
-          {fieldErrors.title ? (
-            <p id="integrity-author-message-title-error" className="hu-caption" role="alert">
-              {fieldErrors.title}
-            </p>
-          ) : null}
+          <div className="admin-integrity-author-message-dialog__body">
+            <label htmlFor="integrity-author-message-title">
+              Title
+              <input
+                id="integrity-author-message-title"
+                value={title}
+                maxLength={200}
+                onChange={(event) => setTitle(event.target.value)}
+                aria-invalid={fieldErrors.title ? true : undefined}
+                aria-describedby={fieldErrors.title ? "integrity-author-message-title-error" : undefined}
+              />
+            </label>
+            {fieldErrors.title ? (
+              <p id="integrity-author-message-title-error" className="hu-caption" role="alert">
+                {fieldErrors.title}
+              </p>
+            ) : null}
 
-          <label htmlFor="integrity-author-message-body">
-            Body
-            <textarea
-              id="integrity-author-message-body"
-              value={body}
-              rows={6}
-              maxLength={8000}
-              onChange={(event) => setBody(event.target.value)}
-              aria-invalid={fieldErrors.body ? true : undefined}
-              aria-describedby={fieldErrors.body ? "integrity-author-message-body-error" : undefined}
-            />
-          </label>
-          {fieldErrors.body ? (
-            <p id="integrity-author-message-body-error" className="hu-caption" role="alert">
-              {fieldErrors.body}
-            </p>
-          ) : null}
+            <label htmlFor="integrity-author-message-body">
+              Body
+              <textarea
+                id="integrity-author-message-body"
+                value={body}
+                rows={6}
+                maxLength={8000}
+                onChange={(event) => setBody(event.target.value)}
+                aria-invalid={fieldErrors.body ? true : undefined}
+                aria-describedby={fieldErrors.body ? "integrity-author-message-body-error" : undefined}
+              />
+            </label>
+            {fieldErrors.body ? (
+              <p id="integrity-author-message-body-error" className="hu-caption" role="alert">
+                {fieldErrors.body}
+              </p>
+            ) : null}
 
-          <label htmlFor="integrity-author-message-cta-label">
-            Link label
-            <input
-              id="integrity-author-message-cta-label"
-              value={ctaLabel}
-              maxLength={120}
-              onChange={(event) => setCtaLabel(event.target.value)}
-              aria-invalid={fieldErrors.ctaLabel ? true : undefined}
-              aria-describedby={
-                fieldErrors.ctaLabel ? "integrity-author-message-cta-label-error" : undefined
-              }
-            />
-          </label>
-          {fieldErrors.ctaLabel ? (
-            <p id="integrity-author-message-cta-label-error" className="hu-caption" role="alert">
-              {fieldErrors.ctaLabel}
-            </p>
-          ) : null}
+            <label htmlFor="integrity-author-message-cta-label">
+              Link label
+              <input
+                id="integrity-author-message-cta-label"
+                value={ctaLabel}
+                maxLength={120}
+                onChange={(event) => setCtaLabel(event.target.value)}
+                aria-invalid={fieldErrors.ctaLabel ? true : undefined}
+                aria-describedby={
+                  fieldErrors.ctaLabel ? "integrity-author-message-cta-label-error" : undefined
+                }
+              />
+            </label>
+            {fieldErrors.ctaLabel ? (
+              <p id="integrity-author-message-cta-label-error" className="hu-caption" role="alert">
+                {fieldErrors.ctaLabel}
+              </p>
+            ) : null}
 
-          <label htmlFor="integrity-author-message-cta-url">
-            Link URL
-            <input
-              id="integrity-author-message-cta-url"
-              value={ctaUrl}
-              inputMode="url"
-              maxLength={2000}
-              onChange={(event) => setCtaUrl(event.target.value)}
-              aria-invalid={fieldErrors.ctaUrl ? true : undefined}
-              aria-describedby={fieldErrors.ctaUrl ? "integrity-author-message-cta-url-error" : undefined}
-            />
-          </label>
-          {fieldErrors.ctaUrl ? (
-            <p id="integrity-author-message-cta-url-error" className="hu-caption" role="alert">
-              {fieldErrors.ctaUrl}
-            </p>
-          ) : null}
+            <label htmlFor="integrity-author-message-cta-url">
+              Link URL
+              <input
+                id="integrity-author-message-cta-url"
+                value={ctaUrl}
+                inputMode="url"
+                maxLength={2000}
+                onChange={(event) => setCtaUrl(event.target.value)}
+                aria-invalid={fieldErrors.ctaUrl ? true : undefined}
+                aria-describedby={fieldErrors.ctaUrl ? "integrity-author-message-cta-url-error" : undefined}
+              />
+            </label>
+            {fieldErrors.ctaUrl ? (
+              <p id="integrity-author-message-cta-url-error" className="hu-caption" role="alert">
+                {fieldErrors.ctaUrl}
+              </p>
+            ) : null}
 
-          {resultTitle && resultMessage ? (
-            <StatusBanner title={resultTitle} message={resultMessage} />
-          ) : null}
+            {resultTitle && resultMessage ? (
+              <StatusBanner title={resultTitle} message={resultMessage} />
+            ) : null}
+          </div>
 
           <div className="admin-integrity-author-message-dialog__actions">
             <Button type="button" disabled={submitting} onClick={onClose}>
