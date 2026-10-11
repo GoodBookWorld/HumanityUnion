@@ -64,6 +64,11 @@ async function start(): Promise<void> {
   );
   startBlogScheduledPublishScheduler();
 
+  const { startIntegrityMediaAuthorActivationScheduler } = await import(
+    "./modules/external-author-link/external-author-link.scheduler.js"
+  );
+  startIntegrityMediaAuthorActivationScheduler();
+
   const { startAuthorApplicationReconciliationOnce } = await import(
     "./modules/blog/blog-author-application-reconciliation.js"
   );

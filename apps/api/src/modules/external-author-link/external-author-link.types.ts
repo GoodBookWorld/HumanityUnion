@@ -18,6 +18,8 @@ export interface ExternalAuthorLinkRecord {
    * has not finished. Absent or false once that capability is effective.
    */
   authorActivationPending?: boolean;
+  /** Last automatic or exhausted activation attempt. Used only to space retries. */
+  authorActivationAttemptAt?: string | null;
 }
 
 export interface ExternalAuthorLinkResultRecord {

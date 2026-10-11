@@ -26,6 +26,11 @@ export interface ExternalAuthorLinkStore {
   ): Promise<ExternalAuthorLinkRecord | null>;
   insertLink(record: ExternalAuthorLinkRecord): Promise<"inserted" | "duplicate">;
   updateLink(record: ExternalAuthorLinkRecord): Promise<"updated" | "missing" | "refused">;
+  claimNextPendingAuthorActivation(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    nowIso: string;
+    eligibleBeforeIso: string;
+  }): Promise<ExternalAuthorLinkRecord | null>;
   appendAudit(record: ExternalAuthorLinkAuditRecord): Promise<void>;
   listLinks(): Promise<ExternalAuthorLinkRecord[]>;
   listResults(): Promise<ExternalAuthorLinkResultRecord[]>;
@@ -110,6 +115,20 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       byAuthor.set(authorKey, stored);
       byMember.set(linkKey(record.source, record.memberId), stored);
       return "updated";
+    },
+
+    async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
+      for (const record of byAuthor.values()) {
+        if (!isPendingAuthorActivationEligible(record, source, eligibleBeforeIso)) {
+          continue;
+        }
+
+        record.authorActivationAttemptAt = nowIso;
+        record.updatedAt = nowIso;
+        return copyLink(record);
+      }
+
+      return null;
     },
 
     async appendAudit(record) {
@@ -208,11 +227,35 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
             confirmedAt: record.confirmedAt,
             disconnectedAt: record.disconnectedAt,
             authorActivationPending: record.authorActivationPending === true,
+            authorActivationAttemptAt: record.authorActivationAttemptAt ?? null,
           },
         },
       );
 
       return result.matchedCount === 0 ? "missing" : "updated";
+    },
+
+    async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
+      const candidate = await links().findOne(
+        pendingAuthorActivationFilter(source, eligibleBeforeIso),
+        { sort: { updatedAt: 1 } },
+      );
+
+      if (!candidate) {
+        return null;
+      }
+
+      const claimed = await links().findOneAndUpdate(
+        {
+          ...pendingAuthorActivationFilter(source, eligibleBeforeIso),
+          externalAuthorId: candidate.externalAuthorId,
+          memberId: candidate.memberId,
+        },
+        { $set: { authorActivationAttemptAt: nowIso, updatedAt: nowIso } },
+        { returnDocument: "after" },
+      );
+
+      return claimed ? withoutId(claimed) : null;
     },
 
     async appendAudit(record) {
@@ -255,6 +298,35 @@ export function getExternalAuthorLinkStore(): ExternalAuthorLinkStore {
   }
 
   return storeSingleton;
+}
+
+function pendingAuthorActivationFilter(
+  source: typeof INTEGRITY_MEDIA_SOURCE,
+  eligibleBeforeIso: string,
+) {
+  return {
+    source,
+    state: "linked" as const,
+    authorActivationPending: true,
+    $or: [
+      { authorActivationAttemptAt: null },
+      { authorActivationAttemptAt: { $exists: false } },
+      { authorActivationAttemptAt: { $lte: eligibleBeforeIso } },
+    ],
+  };
+}
+
+function isPendingAuthorActivationEligible(
+  record: ExternalAuthorLinkRecord,
+  source: typeof INTEGRITY_MEDIA_SOURCE,
+  eligibleBeforeIso: string,
+): boolean {
+  if (record.source !== source || record.state !== "linked" || record.authorActivationPending !== true) {
+    return false;
+  }
+
+  const attemptAt = record.authorActivationAttemptAt;
+  return attemptAt == null || attemptAt <= eligibleBeforeIso;
 }
 
 function linkKey(source: string, id: string): string {

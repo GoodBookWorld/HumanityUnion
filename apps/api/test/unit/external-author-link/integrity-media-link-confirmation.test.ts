@@ -24,11 +24,18 @@ import {
 import { buildIntegrityMediaReturnUrl } from "../../../src/modules/external-author-link/external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS,
+  INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS,
+  INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_INTERVAL_MS,
   INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV,
   INTEGRITY_MEDIA_SOURCE,
 } from "../../../src/modules/external-author-link/external-author-link.constants.js";
+import { reconcilePendingIntegrityMediaAuthorActivations } from "../../../src/modules/external-author-link/external-author-link.reconciliation.js";
+import {
+  startIntegrityMediaAuthorActivationScheduler,
+  stopIntegrityMediaAuthorActivationScheduler,
+} from "../../../src/modules/external-author-link/external-author-link.scheduler.js";
 import {
   buildIntegrityMediaLinkRedeemPayload,
   integrityMediaLinkSignaturesEqual,
@@ -40,6 +47,7 @@ import externalAuthorLinkRouter from "../../../src/modules/external-author-link/
 import {
   confirmIntegrityMediaLink,
   disableIntegrityMediaAuthorLink,
+  isIntegrityMediaAuthorLinkOperational,
   recoverProvenIntegrityMediaAuthorLink,
   redeemIntegrityMediaLink,
   setIntegrityMediaAuthorCapabilityEnsurerForTests,
@@ -72,7 +80,9 @@ let baseUrl = "";
 let store: ExternalAuthorLinkStore;
 let grants = new Map<string, BlogCapabilityGrant>();
 let grantWrites = 0;
+let ensureCalls = 0;
 let ensureFailuresRemaining = 0;
+let ensureDelayMs = 0;
 const blogPosts = [
   { postId: "post-existing", authorParticipantId: MEMBER_A, title: "Existing post" },
 ];
@@ -104,6 +114,7 @@ describe("Integrity Media identity confirmation", () => {
     setExternalAuthorLinkStoreForTests(null);
     setIntegrityMediaDisplayNameResolverForTests(null);
     setIntegrityMediaAuthorCapabilityEnsurerForTests(null);
+    stopIntegrityMediaAuthorActivationScheduler();
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
@@ -116,7 +127,9 @@ describe("Integrity Media identity confirmation", () => {
     setIntegrityMediaDisplayNameResolverForTests(async (memberId) => `Profile ${memberId}`);
     grants = new Map();
     grantWrites = 0;
+    ensureCalls = 0;
     ensureFailuresRemaining = 0;
+    ensureDelayMs = 0;
     installAuthorCapabilityEnsurer();
     process.env[INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV] = SECRET;
     process.env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV] = "https://integrity.example";
@@ -532,6 +545,25 @@ describe("Integrity Media identity confirmation", () => {
       ).includes("recoverProvenIntegrityMediaAuthorLink"),
       false,
     );
+    assert.match(
+      readRepo("apps/api/src/index.ts"),
+      /startIntegrityMediaAuthorActivationScheduler\(\)/,
+    );
+    assert.match(
+      readRepo("apps/api/src/modules/external-author-link/external-author-link.scheduler.ts"),
+      /setInterval/,
+    );
+    assert.match(
+      readRepo("apps/api/src/modules/external-author-link/external-author-link.reconciliation.ts"),
+      /recoverProvenIntegrityMediaAuthorLink/,
+    );
+    assert.equal(
+      readRepo("apps/api/src/modules/external-author-link/external-author-link.scheduler.ts").includes(
+        "console.",
+      ),
+      false,
+    );
+    assert.ok(INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_INTERVAL_MS >= 60_000);
   });
 
   it("establishes the durable link and Blog author capability on first redemption", async () => {
@@ -813,6 +845,153 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal(audits.some((event) => event.action === "author_capability_ensured"), false);
   });
 
+  it("recovers two transient author-setup failures inside the original redemption", async () => {
+    ensureFailuresRemaining = 2;
+    const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+
+    assert.equal(redeemed.status, 200);
+    assert.equal(redeemed.body.success, true);
+    assert.equal(ensureCalls, 3);
+    assert.equal(grantWrites, 1);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal((await store.listLinks())[0]?.authorActivationPending === true, false);
+  });
+
+  it("finishes durable pending activation from reconciliation without another Confirm", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
+    const postsBefore = structuredClone(blogPosts);
+    const code = await confirmCode(MEMBER_A);
+    const pending = await redeem(code, AUTHOR_A);
+    const pair = (await store.listLinks())[0];
+    const tooSoon = await reconcilePendingIntegrityMediaAuthorActivations({
+      now: new Date(),
+    });
+
+    assert.equal(pending.status, 503);
+    assert.equal(pending.body.meta.code, "author_setup_pending");
+    assert.equal(isIntegrityMediaAuthorLinkOperational(pair!), false);
+    assert.equal(tooSoon.examined, 0);
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listResults()).length, 1);
+
+    const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
+    const recovered = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
+    const repeated = await reconcilePendingIntegrityMediaAuthorActivations({
+      now: new Date(later.getTime() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000),
+    });
+    const link = (await store.listLinks())[0];
+    const audits = await store.listAudits();
+
+    assert.equal(recovered.examined, 1);
+    assert.equal(recovered.recovered, 1);
+    assert.equal(repeated.examined, 0);
+    assert.equal(link?.memberId, pair?.memberId);
+    assert.equal(link?.externalAuthorId, pair?.externalAuthorId);
+    assert.equal(link?.authorActivationPending, false);
+    assert.equal(isIntegrityMediaAuthorLinkOperational(link!), true);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal(grants.get(MEMBER_A)?.publishWithoutManualReview, undefined);
+    assert.equal(grantWrites, 1);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.equal((await store.listResults()).length, 1);
+    assert.equal(audits.filter((event) => event.action === "author_capability_recovered").length, 1);
+    assert.equal(audits.filter((event) => event.action === "author_capability_ensured").length, 1);
+    assert.equal(canDirectPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
+    assert.equal(publishingWorkspaceHref(grants.get(MEMBER_A)), "/workspace/publishing");
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(authRoles.get(MEMBER_A), "member");
+    assert.equal(JSON.stringify(audits).includes(code), false);
+    assert.equal(JSON.stringify(audits).includes(SECRET), false);
+  });
+
+  it("leaves a failed reconciliation pending for a later automatic attempt", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS * 2;
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
+    const failed = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
+    const immediate = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
+
+    assert.equal(failed.examined, 1);
+    assert.equal(failed.recovered, 0);
+    assert.equal(failed.pending, 1);
+    assert.equal(immediate.examined, 0);
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listLinks())[0]?.authorActivationPending, true);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+    assert.equal(
+      (await store.listAudits()).some((event) => event.action === "author_capability_recovered"),
+      false,
+    );
+
+    const afterward = new Date(later.getTime() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
+    const recovered = await reconcilePendingIntegrityMediaAuthorActivations({ now: afterward });
+
+    assert.equal(recovered.recovered, 1);
+    assert.equal(grantWrites, 1);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal((await store.listLinks())[0]?.authorActivationPending, false);
+    assert.equal((await store.listLinks()).length, 1);
+  });
+
+  it("lets only one overlapping reconciliation write the author grant", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    ensureDelayMs = 40;
+    const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
+    const [first, second] = await Promise.all([
+      reconcilePendingIntegrityMediaAuthorActivations({ now: later }),
+      reconcilePendingIntegrityMediaAuthorActivations({ now: later }),
+    ]);
+
+    assert.equal(first.examined + second.examined, 1);
+    assert.equal(first.recovered + second.recovered, 1);
+    assert.equal(grantWrites, 1);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+  });
+
+  it("does not activate a disconnected pending link and resumes on reconnect", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
+    const postsBefore = structuredClone(blogPosts);
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
+    const skipped = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
+
+    assert.equal(disabled, "disabled");
+    assert.equal(skipped.examined, 0);
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listLinks())[0]?.state, "disabled");
+    assert.equal((await store.listLinks())[0]?.authorActivationPending, true);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+    assert.deepEqual(blogPosts, postsBefore);
+
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(reconnect.status, 200);
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(link?.authorActivationPending, false);
+    assert.equal(isIntegrityMediaAuthorLinkOperational(link!), true);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal(grantWrites, 1);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.deepEqual(blogPosts, postsBefore);
+  });
+
+  it("starts one bounded scheduler and can stop it", async () => {
+    startIntegrityMediaAuthorActivationScheduler();
+    startIntegrityMediaAuthorActivationScheduler();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    stopIntegrityMediaAuthorActivationScheduler();
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listLinks()).length, 0);
+  });
+
   it("leaves the Blog author capability in place when the link is disconnected", async () => {
     const postsBefore = structuredClone(blogPosts);
     await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
@@ -830,9 +1009,14 @@ describe("Integrity Media identity confirmation", () => {
 
 function installAuthorCapabilityEnsurer(): void {
   setIntegrityMediaAuthorCapabilityEnsurerForTests(async (participantId) => {
+    ensureCalls += 1;
     if (ensureFailuresRemaining > 0) {
       ensureFailuresRemaining -= 1;
       throw new Error("author capability store unavailable");
+    }
+
+    if (ensureDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, ensureDelayMs));
     }
 
     return ensureBlogAuthorCapability(participantId, {

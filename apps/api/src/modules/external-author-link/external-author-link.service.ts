@@ -135,8 +135,34 @@ async function setAuthorActivationPending(
   await store.updateLink({
     ...existing,
     authorActivationPending: input.pending,
+    authorActivationAttemptAt: input.pending ? input.now.toISOString() : null,
     updatedAt: input.now.toISOString(),
   });
+}
+
+async function findOperationalAuthorLink(
+  store: ExternalAuthorLinkStore,
+  input: { externalAuthorId: string; memberId: string },
+): Promise<ExternalAuthorLinkRecord | null> {
+  const current = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
+
+  if (
+    !current ||
+    current.memberId !== input.memberId ||
+    current.externalAuthorId !== input.externalAuthorId ||
+    !isIntegrityMediaAuthorLinkOperational(current)
+  ) {
+    return null;
+  }
+
+  return current;
+}
+
+export function isIntegrityMediaAuthorLinkOperational(link: {
+  state: ExternalAuthorLinkRecord["state"];
+  authorActivationPending?: boolean;
+}): boolean {
+  return link.state === "linked" && link.authorActivationPending !== true;
 }
 
 export async function previewIntegrityMediaLink(input: {
@@ -422,11 +448,24 @@ export async function redeemIntegrityMediaLink(input: {
     });
   }
 
+  const operational = await findOperationalAuthorLink(store, {
+    externalAuthorId: input.externalAuthorId,
+    memberId: claimed.record.memberId,
+  });
+
+  if (!operational) {
+    return failure(
+      503,
+      "author_setup_pending",
+      "Integrity Media author setup is still finishing.",
+    );
+  }
+
   return {
     ok: true,
-    memberId: claimed.record.memberId,
+    memberId: operational.memberId,
     source: INTEGRITY_MEDIA_SOURCE,
-    externalAuthorId: input.externalAuthorId,
+    externalAuthorId: operational.externalAuthorId,
     reconnected: established.reconnected,
   };
 }
@@ -449,6 +488,14 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
 
   if (!link) {
     return failure(404, "link_not_found", "No proven Integrity Media author link exists.");
+  }
+
+  if (link.state === "disabled") {
+    return failure(
+      409,
+      "link_disabled",
+      "This Integrity Media author link is disconnected.",
+    );
   }
 
   const wasPending = link.authorActivationPending === true;
@@ -515,11 +562,24 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
     });
   }
 
+  const operational = await findOperationalAuthorLink(store, {
+    externalAuthorId: link.externalAuthorId,
+    memberId: link.memberId,
+  });
+
+  if (!operational) {
+    return failure(
+      503,
+      "author_setup_pending",
+      "Integrity Media author setup is still finishing.",
+    );
+  }
+
   return {
     ok: true,
-    memberId: link.memberId,
+    memberId: operational.memberId,
     source: INTEGRITY_MEDIA_SOURCE,
-    externalAuthorId: link.externalAuthorId,
+    externalAuthorId: operational.externalAuthorId,
     reconnected: false,
   };
 }
