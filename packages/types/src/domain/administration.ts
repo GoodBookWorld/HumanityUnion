@@ -1,3 +1,5 @@
+import type { PublicInitiativeExperienceProjection } from "./public-initiative-experience.js";
+
 /**
  * Admin Foundation Pack 02 — Canonical capability & audit types.
  *
@@ -490,6 +492,17 @@ export interface AdminInitiativeDetail {
   readonly administrativelyBlocked: boolean;
   readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
   readonly blockLabel?: string | null;
+}
+
+/**
+ * Administrator-only full-page read.
+ * `administrativeBlockReason` is the stored internal reason, or null when none was recorded.
+ * It is not part of the public Initiative projection.
+ */
+export interface AdminInitiativeExperienceView {
+  readonly experience: PublicInitiativeExperienceProjection;
+  readonly administrativelyBlocked: boolean;
+  readonly administrativeBlockReason: string | null;
 }
 
 export interface AdminInitiativeVisibilityCommandResult {

@@ -390,6 +390,12 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
                               className="admin-panel__link"
                               href={`/admin/initiatives/${encodeURIComponent(row.initiativeId)}`}
                             >
+                              Inspect
+                            </Link>
+                            <Link
+                              className="admin-panel__link"
+                              href={`/admin/initiatives/${encodeURIComponent(row.initiativeId)}/view`}
+                            >
                               View
                             </Link>
                             {row.publiclyProjected ? (

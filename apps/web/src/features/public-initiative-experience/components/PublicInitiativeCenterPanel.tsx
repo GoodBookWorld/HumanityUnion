@@ -65,6 +65,10 @@ import { LifecycleTranslatedRecordCard } from "./LifecycleTranslatedRecordCard";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
 import { PublicChoiceOverviewCandidateIntake } from "../../public-choice-candidate/components/PublicChoiceOverviewCandidateIntake";
+import {
+  AdminReadOnlyElectionBallotView,
+  type AdminReadOnlyElectionBallot,
+} from "./AdminReadOnlyElectionBallot";
 import { PublicChoiceCollectiveDecisionStage } from "../../public-choice-candidate/components/PublicChoiceCollectiveDecisionStage";
 import { InitiativeAuthorIdentity } from "../../initiative-active-allies/components/InitiativeAuthorIdentity";
 import {
@@ -157,6 +161,7 @@ function PublicInitiativeOverview({
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
   presentationDescription,
+  readOnlyElection = null,
 }: {
   initiative: PublicInitiativeProjection;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
@@ -165,6 +170,7 @@ function PublicInitiativeOverview({
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
   presentationDescription?: string;
+  readOnlyElection?: AdminReadOnlyElectionBallot | null;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -206,7 +212,9 @@ function PublicInitiativeOverview({
         stageId={currentStageId}
         stageLabel={localizedStageLabel}
       />
-      {showCandidateIntake ? (
+      {readOnlyElection ? (
+        <AdminReadOnlyElectionBallotView ballot={readOnlyElection} />
+      ) : showCandidateIntake ? (
         <PublicChoiceOverviewCandidateIntake
           initiativeId={initiative.initiativeId}
           openSubmitInitially={openCandidateSubmit}
@@ -347,6 +355,8 @@ function DiscussionPanel({
   discussionStageState,
   onDiscussionCompleted,
   lifecycleProfile,
+  readOnly = false,
+  readOnlyElection = null,
 }: {
   initiativeId: string;
   discussion: PublicInitiativeExperienceProjection["discussion"];
@@ -357,6 +367,8 @@ function DiscussionPanel({
   discussionStageState?: string;
   onDiscussionCompleted: () => void;
   lifecycleProfile?: PublicInitiativeExperienceProjection["lifecycleProfile"];
+  readOnly?: boolean;
+  readOnlyElection?: AdminReadOnlyElectionBallot | null;
 }) {
   const discussionCompleted =
     discussionStageState === "completed" || discussionStageState === "published";
@@ -382,6 +394,8 @@ function DiscussionPanel({
         focusCommentId={focusCommentId}
         focusCollaborationParticipantId={focusCollaborationParticipantId}
         lifecycleProfile={lifecycleProfile}
+        readOnly={readOnly}
+        readOnlyBallot={readOnlyElection}
       />
     </>
   );
@@ -429,6 +443,8 @@ interface PublicInitiativeCenterPanelProps {
    */
   presentationTitle?: string;
   presentationDescription?: string;
+  readOnly?: boolean;
+  readOnlyElection?: AdminReadOnlyElectionBallot | null;
 }
 
 export function PublicInitiativeCenterPanel({
@@ -452,6 +468,8 @@ export function PublicInitiativeCenterPanel({
   onOpenCandidateSubmitConsumed,
   presentationTitle,
   presentationDescription,
+  readOnly = false,
+  readOnlyElection = null,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -558,7 +576,11 @@ export function PublicInitiativeCenterPanel({
             className="pie-center__panel"
             aria-label={t("common.electionResultsAria")}
           >
-            <PublicChoiceCollectiveDecisionStage initiativeId={experience.initiativeId} />
+            {readOnlyElection ? (
+              <AdminReadOnlyElectionBallotView ballot={readOnlyElection} />
+            ) : (
+              <PublicChoiceCollectiveDecisionStage initiativeId={experience.initiativeId} />
+            )}
           </section>
         ) : null}
 
@@ -821,6 +843,7 @@ export function PublicInitiativeCenterPanel({
                   openCandidateSubmit={openCandidateSubmit}
                   onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
                   presentationDescription={presentationDescription}
+                  readOnlyElection={readOnlyElection}
                 />
               );
             })()}
@@ -851,6 +874,8 @@ export function PublicInitiativeCenterPanel({
                 void experienceRefresh?.refresh();
               }}
               lifecycleProfile={experience.lifecycleProfile}
+              readOnly={readOnly}
+              readOnlyElection={readOnlyElection}
             />
           </section>
         ) : null}

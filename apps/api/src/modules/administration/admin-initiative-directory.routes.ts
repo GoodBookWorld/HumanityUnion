@@ -18,6 +18,7 @@ import {
 import {
   AdminInitiativeDirectoryValidationError,
   getAdminInitiativeDetail,
+  getAdminInitiativeExperience,
   listAdminInitiatives,
 } from "./admin-initiative-directory.service.js";
 import {
@@ -147,6 +148,29 @@ adminInitiativeDirectoryRouter.get(
       });
 
       res.json(createSuccessResponse(result, "Admin Initiative directory loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminInitiativeDirectoryRouter.get(
+  "/:initiativeId/experience",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const initiativeId = String(req.params.initiativeId ?? "").trim();
+      if (!initiativeId) {
+        throw new AdminInitiativeDirectoryValidationError("initiativeId is required.");
+      }
+
+      const result = await getAdminInitiativeExperience({
+        actorUserId: req.auth!.id,
+        initiativeId,
+      });
+
+      res.json(createSuccessResponse(result, "Admin Initiative experience loaded."));
     } catch (error) {
       handleError(res, error);
     }

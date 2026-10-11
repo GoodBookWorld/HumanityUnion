@@ -49,7 +49,7 @@ function formatCompactDate(value?: string): string {
 }
 
 function adminInitiativeViewHref(initiativeId: string): string {
-  return `/admin/initiatives/${encodeURIComponent(initiativeId)}`;
+  return `/admin/initiatives/${encodeURIComponent(initiativeId)}/view`;
 }
 
 /**
