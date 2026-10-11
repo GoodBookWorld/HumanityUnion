@@ -534,9 +534,7 @@ export function PublicInitiativeCenterPanel({
                 experience.initiative.metadata.coverMedia?.thumbnailUrl ??
                 experience.initiative.metadata.coverMedia?.url,
               optionalText:
-                presentationDescription?.trim() ||
-                experience.hero.summary ||
-                experience.initiative.description,
+                experience.hero.summary.trim() || experience.initiative.description,
             })}
             ariaLabel={t("common.shareInitiative", {
               title:
