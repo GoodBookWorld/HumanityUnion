@@ -582,5 +582,9 @@ export interface AdminPublicChoiceDetail {
   readonly resultSummary: {
     readonly ballotMode: string;
     readonly totalEffectiveVoters: number | null;
+    /** Present only for support/oppose ballots whose aggregates were read. */
+    readonly supportCount: number | null;
+    readonly oppositionCount: number | null;
+    readonly abstainCount: number | null;
   };
 }

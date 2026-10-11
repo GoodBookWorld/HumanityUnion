@@ -274,6 +274,9 @@ export async function getAdminPublicChoiceDetail(
   const candidates = await listPublicChoiceCandidatesByInitiative(initiative.initiativeId);
   const voteCounts = new Map<string, number>();
   let totalEffectiveVoters: number | null = null;
+  let supportCount: number | null = null;
+  let oppositionCount: number | null = null;
+  let abstainCount: number | null = null;
   let ballotMode = String(initiative.metadata.ballotMode ?? "SELECT_ONE_CANDIDATE");
 
   if (decision) {
@@ -290,6 +293,9 @@ export async function getAdminPublicChoiceDetail(
         }
       } else {
         totalEffectiveVoters = aggregates.total.totalVotes;
+        supportCount = aggregates.total.support;
+        oppositionCount = aggregates.total.doNotSupport;
+        abstainCount = aggregates.total.abstain;
       }
     } catch {
       totalEffectiveVoters = null;
@@ -340,6 +346,9 @@ export async function getAdminPublicChoiceDetail(
     resultSummary: {
       ballotMode,
       totalEffectiveVoters,
+      supportCount,
+      oppositionCount,
+      abstainCount,
     },
   };
 }

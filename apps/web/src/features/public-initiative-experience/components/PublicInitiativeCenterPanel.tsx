@@ -162,6 +162,8 @@ function PublicInitiativeOverview({
   onOpenCandidateSubmitConsumed,
   presentationDescription,
   readOnlyElection = null,
+  readOnly = false,
+  stageStatusLabel,
 }: {
   initiative: PublicInitiativeProjection;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
@@ -171,6 +173,8 @@ function PublicInitiativeOverview({
   onOpenCandidateSubmitConsumed?: () => void;
   presentationDescription?: string;
   readOnlyElection?: AdminReadOnlyElectionBallot | null;
+  readOnly?: boolean;
+  stageStatusLabel?: string;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -211,6 +215,8 @@ function PublicInitiativeOverview({
         initiativeId={initiative.initiativeId}
         stageId={currentStageId}
         stageLabel={localizedStageLabel}
+        readOnly={readOnly}
+        statusLabel={stageStatusLabel}
       />
       {readOnlyElection ? (
         <AdminReadOnlyElectionBallotView ballot={readOnlyElection} />
@@ -309,11 +315,25 @@ function PublicInitiativeOverview({
   );
 }
 
-function LifecycleRecordCard({ record }: { record: PublicInitiativeLifecycleRecordItem }) {
-  return <LifecycleTranslatedRecordCard record={record} />;
+function LifecycleRecordCard({
+  record,
+  suppressPublicLinks = false,
+}: {
+  record: PublicInitiativeLifecycleRecordItem;
+  suppressPublicLinks?: boolean;
+}) {
+  return (
+    <LifecycleTranslatedRecordCard record={record} suppressPublicLinks={suppressPublicLinks} />
+  );
 }
 
-function LifecycleStagePanel({ stage }: { stage: PublicInitiativeLifecycleStageContent }) {
+function LifecycleStagePanel({
+  stage,
+  suppressPublicLinks = false,
+}: {
+  stage: PublicInitiativeLifecycleStageContent;
+  suppressPublicLinks?: boolean;
+}) {
   const t = useTranslations("initiativeExperience");
 
   if (stage.records.length === 0) {
@@ -339,7 +359,11 @@ function LifecycleStagePanel({ stage }: { stage: PublicInitiativeLifecycleStageC
   return (
     <div className="pie-stage-panel">
       {stage.records.map((record) => (
-        <LifecycleRecordCard key={record.recordId} record={record} />
+        <LifecycleRecordCard
+          key={record.recordId}
+          record={record}
+          suppressPublicLinks={suppressPublicLinks}
+        />
       ))}
     </div>
   );
@@ -373,6 +397,7 @@ function DiscussionPanel({
   const discussionCompleted =
     discussionStageState === "completed" || discussionStageState === "published";
   const canComplete =
+    !readOnly &&
     isOwnerRoute &&
     !discussionCompleted &&
     (discussionStageState === "in_progress" || discussionStageState === "not_started");
@@ -584,7 +609,7 @@ export function PublicInitiativeCenterPanel({
           </section>
         ) : null}
 
-        {showLifecyclePanel && activeStage && showLifecycleWorkspaceShell && onNavigateStage && returnToInitiativeHref ? (
+        {showLifecyclePanel && activeStage && showLifecycleWorkspaceShell && !readOnly && onNavigateStage && returnToInitiativeHref ? (
           <section
             className="pie-center__panel"
             aria-label={t("common.lifecycleStageAria", {
@@ -786,7 +811,7 @@ export function PublicInitiativeCenterPanel({
           </section>
         ) : null}
 
-        {showLifecyclePanel && activeStage && !showLifecycleWorkspaceShell ? (
+        {showLifecyclePanel && activeStage && (readOnly || !showLifecycleWorkspaceShell) ? (
           <section
             className="pie-center__panel"
             aria-labelledby={`pie-stage-${activeStage.stageId}`}
@@ -800,7 +825,7 @@ export function PublicInitiativeCenterPanel({
                 { locale },
               )}
             </h2>
-            <LifecycleStagePanel stage={activeStage} />
+            <LifecycleStagePanel stage={activeStage} suppressPublicLinks={readOnly} />
           </section>
         ) : null}
 
@@ -827,11 +852,13 @@ export function PublicInitiativeCenterPanel({
                 experience.currentStageId,
                 experience.lifecycleProfile,
               );
+              const facingStage = experience.lifecycleStages.find(
+                (stage) => stage.stageId === facingStageId,
+              );
               const facingLabel = resolveLifecycleStageDisplayLabel(
                 facingStageId,
                 t,
-                experience.lifecycleStages.find((stage) => stage.stageId === facingStageId)
-                  ?.label,
+                facingStage?.label,
                 { locale },
               );
               return (
@@ -844,6 +871,8 @@ export function PublicInitiativeCenterPanel({
                   onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
                   presentationDescription={presentationDescription}
                   readOnlyElection={readOnlyElection}
+                  readOnly={readOnly}
+                  stageStatusLabel={facingStage?.stateLabel}
                 />
               );
             })()}

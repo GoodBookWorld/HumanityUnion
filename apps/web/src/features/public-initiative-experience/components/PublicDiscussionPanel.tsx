@@ -537,6 +537,7 @@ function DiscussionCommentCard({
   onReactionUpdated,
   onCollaborationChanged,
   showStandardParticipationActions = true,
+  actionsEnabled = true,
 }: {
   initiativeId: string;
   comment: PublicInitiativeDiscussionComment;
@@ -546,6 +547,7 @@ function DiscussionCommentCard({
   onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
   onCollaborationChanged: () => void;
   showStandardParticipationActions?: boolean;
+  actionsEnabled?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -604,15 +606,17 @@ function DiscussionCommentCard({
           ))}
         </p>
       ) : null}
-      <CommentActions
-        initiativeId={initiativeId}
-        comment={comment}
-        authStatus={authStatus}
-        returnTo={returnTo}
-        onReactionUpdated={onReactionUpdated}
-        onCollaborationChanged={onCollaborationChanged}
-        showStandardParticipationActions={showStandardParticipationActions}
-      />
+      {actionsEnabled ? (
+        <CommentActions
+          initiativeId={initiativeId}
+          comment={comment}
+          authStatus={authStatus}
+          returnTo={returnTo}
+          onReactionUpdated={onReactionUpdated}
+          onCollaborationChanged={onCollaborationChanged}
+          showStandardParticipationActions={showStandardParticipationActions}
+        />
+      ) : null}
     </li>
   );
 }
@@ -633,12 +637,14 @@ function CollaborationParticipantList({
   isViewerInitiativeSteward,
   viewerParticipantId,
   onChanged,
+  mutationsEnabled = true,
 }: {
   initiativeId: string;
   participants: readonly PublicInitiativeCollaborationParticipant[];
   isViewerInitiativeSteward: boolean;
   viewerParticipantId: string | null;
   onChanged: () => void;
+  mutationsEnabled?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
   const [busyParticipantId, setBusyParticipantId] = useState<string | null>(null);
@@ -750,7 +756,7 @@ function CollaborationParticipantList({
               {statusLabelKey ? (
                 <span className="pie-collab-list__status">{chromeLabel(t, statusLabelKey)}</span>
               ) : null}
-              {invitationAcceptState.visible ? (
+              {mutationsEnabled && invitationAcceptState.visible ? (
                 <button
                   type="button"
                   className="hu-button hu-button--primary pie-collab-list__review-button"
@@ -763,7 +769,7 @@ function CollaborationParticipantList({
                 </button>
               ) : null}
             </span>
-            {reviewState.visible ? (
+            {mutationsEnabled && reviewState.visible ? (
               <span className="pie-collab-list__review-actions">
                 <button
                   type="button"
@@ -905,6 +911,9 @@ export function PublicDiscussionPanel({
   }, [authStatus, readOnly, t]);
 
   const handleLoadMore = async () => {
+    if (readOnly) {
+      return;
+    }
     setLoadingMore(true);
     setFeedback(null);
 
@@ -951,6 +960,9 @@ export function PublicDiscussionPanel({
    * per-comment patching, and the list is bounded (default 40).
    */
   const handleCollaborationChanged = async (): Promise<void> => {
+    if (readOnly) {
+      return;
+    }
     try {
       const response = await fetchInitiativeComments(initiativeId, 0, Math.max(comments.length, 40));
       setComments(response.comments);
@@ -1074,6 +1086,9 @@ export function PublicDiscussionPanel({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (readOnly) {
+      return;
+    }
     setFeedback(null);
 
     if (!draft.trim()) {
@@ -1201,6 +1216,7 @@ export function PublicDiscussionPanel({
               participants={collaborationData.participants}
               isViewerInitiativeSteward={collaborationData.isViewerInitiativeSteward}
               viewerParticipantId={collaborationData.viewerParticipantId}
+              mutationsEnabled={!readOnly}
               onChanged={() => void handleCollaborationListChanged()}
             />
           ) : (
@@ -1228,6 +1244,7 @@ export function PublicDiscussionPanel({
                   showStandardParticipationActions={
                     presentation.discussionShowsStandardParticipationActions
                   }
+                  actionsEnabled={!readOnly}
                   onReactionUpdated={(updated) => {
                     setComments((current) =>
                       current.map((entry) =>
@@ -1253,7 +1270,11 @@ export function PublicDiscussionPanel({
         </p>
       )}
 
-      {hasMore ? (
+      {readOnly && hasMore ? (
+        <p className="pie-discussion__feedback-note" role="note">
+          Additional comments exist and are not loaded in this administrator view.
+        </p>
+      ) : hasMore ? (
         <button
           type="button"
           className="hu-button hu-button--secondary pie-discussion__load-more"

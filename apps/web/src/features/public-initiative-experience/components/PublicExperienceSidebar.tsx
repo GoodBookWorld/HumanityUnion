@@ -132,12 +132,18 @@ export function PublicExperienceSidebar({
       ) : null}
       <InitiativeActiveAlliesWidget
         initiativeId={initiativeId}
-        reviewCollaborationRequestsHref={`/initiatives/public/${encodeURIComponent(initiativeId)}?filter=collaboration#discussion`}
+        messagingEnabled={!readOnly}
+        reviewCollaborationRequestsHref={
+          readOnly
+            ? undefined
+            : `/initiatives/public/${encodeURIComponent(initiativeId)}?filter=collaboration#discussion`
+        }
       />
       <PublicInitiativeRevisionHistory
         initiativeId={initiativeId}
         history={revisionHistory}
         onRevisionSelect={onRevisionSelect}
+        readOnly={readOnly}
       />
       <DeferredRelatedInitiatives initiativeId={initiativeId} />
       {latestInitiativesSlot ?? (
