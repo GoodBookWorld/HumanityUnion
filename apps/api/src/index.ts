@@ -69,6 +69,11 @@ async function start(): Promise<void> {
   );
   startIntegrityMediaAuthorActivationScheduler();
 
+  const { startIntegrityMediaAuthorMessageScheduler } = await import(
+    "./modules/integrity-media-author-messages/integrity-media-author-message.scheduler.js"
+  );
+  startIntegrityMediaAuthorMessageScheduler();
+
   const { startAuthorApplicationReconciliationOnce } = await import(
     "./modules/blog/blog-author-application-reconciliation.js"
   );
