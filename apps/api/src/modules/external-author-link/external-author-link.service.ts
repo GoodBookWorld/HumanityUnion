@@ -8,6 +8,7 @@ import { getMemberById } from "../member/application/member-read.service.js";
 import { buildIntegrityMediaReturnUrl } from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN,
+  INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS,
   INTEGRITY_MEDIA_AUTHOR_ID_PATTERN,
   INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE,
   INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS,
@@ -96,6 +97,46 @@ async function ensureLinkedBlogAuthorCapability(
   }
 
   return ensureBlogAuthorCapability(participantId);
+}
+
+async function ensureProvenBlogAuthor(
+  participantId: string,
+): Promise<{ ok: true; capability: BlogAuthorCapabilityEnsureResult } | { ok: false }> {
+  for (let attempt = 0; attempt < INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS; attempt += 1) {
+    try {
+      return { ok: true, capability: await ensureLinkedBlogAuthorCapability(participantId) };
+    } catch {
+      // The proven pair stays. The next attempt is the same idempotent ensure.
+    }
+  }
+
+  return { ok: false };
+}
+
+async function setAuthorActivationPending(
+  store: ExternalAuthorLinkStore,
+  input: {
+    externalAuthorId: string;
+    memberId: string;
+    pending: boolean;
+    now: Date;
+  },
+): Promise<void> {
+  const existing = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
+
+  if (!existing || existing.memberId !== input.memberId) {
+    return;
+  }
+
+  if ((existing.authorActivationPending === true) === input.pending) {
+    return;
+  }
+
+  await store.updateLink({
+    ...existing,
+    authorActivationPending: input.pending,
+    updatedAt: input.now.toISOString(),
+  });
 }
 
 export async function previewIntegrityMediaLink(input: {
@@ -322,24 +363,44 @@ export async function redeemIntegrityMediaLink(input: {
     return failure(409, established.conflict, conflictMessage(established.conflict));
   }
 
-  let authorCapability: BlogAuthorCapabilityEnsureResult;
-  try {
-    authorCapability = await ensureLinkedBlogAuthorCapability(claimed.record.memberId);
-  } catch {
+  const activated = await ensureProvenBlogAuthor(claimed.record.memberId);
+
+  if (!activated.ok) {
+    await setAuthorActivationPending(store, {
+      externalAuthorId: input.externalAuthorId,
+      memberId: claimed.record.memberId,
+      pending: true,
+      now,
+    });
     await recordAudit(store, {
       action: "author_capability_failed",
       memberId: claimed.record.memberId,
       externalAuthorId: input.externalAuthorId,
       attemptState: null,
-      reason: "author_setup_failed",
+      reason: "author_setup_pending",
+      now,
+    });
+    await recordAudit(store, {
+      action: "author_activation_pending",
+      memberId: claimed.record.memberId,
+      externalAuthorId: input.externalAuthorId,
+      attemptState: null,
+      reason: "author_setup_pending",
       now,
     });
     return failure(
       503,
-      "author_setup_failed",
-      "Integrity Media author setup did not finish. The same account can be confirmed again.",
+      "author_setup_pending",
+      "Integrity Media author setup is still finishing.",
     );
   }
+
+  await setAuthorActivationPending(store, {
+    externalAuthorId: input.externalAuthorId,
+    memberId: claimed.record.memberId,
+    pending: false,
+    now,
+  });
 
   await recordAudit(store, {
     action: "result_redeemed",
@@ -350,7 +411,7 @@ export async function redeemIntegrityMediaLink(input: {
     now,
   });
 
-  if (authorCapability.changed) {
+  if (activated.capability.changed) {
     await recordAudit(store, {
       action: "author_capability_ensured",
       memberId: claimed.record.memberId,
@@ -367,6 +428,99 @@ export async function redeemIntegrityMediaLink(input: {
     source: INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: input.externalAuthorId,
     reconnected: established.reconnected,
+  };
+}
+
+/**
+ * Finish ordinary Blog author setup for a pair that was already proven.
+ * Does not accept a browser member id, result code, or redemption signature.
+ */
+export async function recoverProvenIntegrityMediaAuthorLink(input: {
+  externalAuthorId: string;
+  now?: Date;
+}): Promise<IntegrityMediaRedeemSuccess | IntegrityMediaLinkFailure> {
+  if (!INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(input.externalAuthorId)) {
+    return failure(400, "invalid_author", "The Integrity Media author id is not valid.");
+  }
+
+  const now = input.now ?? new Date();
+  const store = getExternalAuthorLinkStore();
+  const link = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
+
+  if (!link) {
+    return failure(404, "link_not_found", "No proven Integrity Media author link exists.");
+  }
+
+  const wasPending = link.authorActivationPending === true;
+  const activated = await ensureProvenBlogAuthor(link.memberId);
+
+  if (!activated.ok) {
+    await setAuthorActivationPending(store, {
+      externalAuthorId: link.externalAuthorId,
+      memberId: link.memberId,
+      pending: true,
+      now,
+    });
+    await recordAudit(store, {
+      action: "author_capability_failed",
+      memberId: link.memberId,
+      externalAuthorId: link.externalAuthorId,
+      attemptState: null,
+      reason: "author_setup_pending",
+      now,
+    });
+    if (!wasPending) {
+      await recordAudit(store, {
+        action: "author_activation_pending",
+        memberId: link.memberId,
+        externalAuthorId: link.externalAuthorId,
+        attemptState: null,
+        reason: "author_setup_pending",
+        now,
+      });
+    }
+    return failure(
+      503,
+      "author_setup_pending",
+      "Integrity Media author setup is still finishing.",
+    );
+  }
+
+  await setAuthorActivationPending(store, {
+    externalAuthorId: link.externalAuthorId,
+    memberId: link.memberId,
+    pending: false,
+    now,
+  });
+
+  if (activated.capability.changed) {
+    await recordAudit(store, {
+      action: "author_capability_ensured",
+      memberId: link.memberId,
+      externalAuthorId: link.externalAuthorId,
+      attemptState: null,
+      reason: "author",
+      now,
+    });
+  }
+
+  if (wasPending || activated.capability.changed) {
+    await recordAudit(store, {
+      action: "author_capability_recovered",
+      memberId: link.memberId,
+      externalAuthorId: link.externalAuthorId,
+      attemptState: null,
+      reason: "author",
+      now,
+    });
+  }
+
+  return {
+    ok: true,
+    memberId: link.memberId,
+    source: INTEGRITY_MEDIA_SOURCE,
+    externalAuthorId: link.externalAuthorId,
+    reconnected: false,
   };
 }
 
