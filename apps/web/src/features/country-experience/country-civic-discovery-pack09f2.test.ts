@@ -146,7 +146,9 @@ describe("Country Civic Discovery Pack 09F2 — rails and context", () => {
     assert.match(card, /resolvePublicChoiceElectionVotingStatusDisplayLabel/);
     assert.doesNotMatch(card, /electionVotingStatusLabel/);
     assert.match(card, /candidateCount/);
-    assert.match(card, /administrativelyBlocked/);
+    assert.match(card, /administrativelyBlocked === true/);
+    assert.match(card, /return null/);
+    assert.doesNotMatch(card, /blockedUnavailable/);
   });
 });
 

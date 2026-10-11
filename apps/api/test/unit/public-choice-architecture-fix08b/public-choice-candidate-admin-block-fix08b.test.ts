@@ -271,13 +271,9 @@ describe("Public Choice Fix 08B — block contract + admin authority", () => {
     assert.ok(blocked.administrativelyBlockedAt);
 
     const listed = await listPublicChoiceCandidatesForInitiative(initiativeId, steward);
-    const publicRow = listed.find((row) => row.candidateId === created.candidateId);
-    assert.equal(publicRow?.isBlocked, true);
-    assert.equal(publicRow?.viewerCanManage, undefined);
     assert.equal(
-      "administrativelyBlockedByParticipantId" in (publicRow ?? {}) ||
-        "administrativeBlockReason" in (publicRow ?? {}),
-      false,
+      listed.find((row) => row.candidateId === created.candidateId),
+      undefined,
     );
 
     const unblocked = await unblockPublicChoiceCandidateAsAdmin({

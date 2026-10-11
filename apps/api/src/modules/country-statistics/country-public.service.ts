@@ -7,6 +7,7 @@ import type {
 } from "@hu/types";
 import {
   isInitiativeAdministrativelyBlocked,
+  isPublicChoiceCandidateAdministrativelyBlocked,
   publicChoiceElectionVotingStatusLabel,
   resolveInitiativeCoverMedia,
   resolveInitiativeLifecycleProfile,
@@ -227,7 +228,9 @@ export async function listCountryInitiativeCardProjections(
 
       try {
         const candidates = await listPublicChoiceCandidatesByInitiative(card.initiativeId);
-        card.candidateCount = candidates.length;
+        card.candidateCount = candidates.filter(
+          (candidate) => !isPublicChoiceCandidateAdministrativelyBlocked(candidate),
+        ).length;
       } catch {
         card.candidateCount = undefined;
       }
