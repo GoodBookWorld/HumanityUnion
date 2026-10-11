@@ -156,7 +156,19 @@
   font: inherit;
 }
 
+.admin-initiative-description {
+  margin: 0;
+  max-width: 48rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
 @media (max-width: 720px) {
+  .admin-initiative-description {
+    max-width: 100%;
+  }
+
   .admin-initiative-lifecycle__item {
     grid-template-columns: 1.1rem 1fr;
   }

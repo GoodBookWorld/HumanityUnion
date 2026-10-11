@@ -150,9 +150,6 @@ export function AdminInitiativeDetailSection({
                 },
               ]}
             />
-            <p className="hu-body" style={{ marginTop: "0.85rem" }}>
-              {detail.descriptionPreview}
-            </p>
             <details
               className="admin-panel__tech-details"
               open={techOpen}
@@ -174,6 +171,10 @@ export function AdminInitiativeDetailSection({
                 </div>
               </dl>
             </details>
+          </ProfileSection>
+
+          <ProfileSection title="Description">
+            <p className="admin-initiative-description">{detail.description}</p>
           </ProfileSection>
 
           <ProfileSection title="Lifecycle">
@@ -207,12 +208,30 @@ export function AdminInitiativeDetailSection({
                   value: <WorkspaceStatusBadge status={detail.visibility} />,
                 },
                 {
-                  label: "Public projection",
-                  value: detail.publiclyProjected ? "Eligible and exposed" : "Not publicly projected",
+                  label: "Status",
+                  value: <WorkspaceStatusBadge status={detail.status} />,
                 },
                 {
                   label: "Lifecycle phase",
                   value: <WorkspaceStatusBadge status={detail.lifecyclePhase} />,
+                },
+                ...(detail.lifecycleProfile
+                  ? [
+                      {
+                        label: "Lifecycle profile",
+                        value: detail.lifecycleProfile,
+                      },
+                    ]
+                  : []),
+                {
+                  label: "Administrative block",
+                  value: detail.administrativelyBlocked
+                    ? detail.blockLabel || "Blocked"
+                    : "Not blocked",
+                },
+                {
+                  label: "Public projection",
+                  value: detail.publiclyProjected ? "Eligible and exposed" : "Not publicly projected",
                 },
                 {
                   label: "Public URL",

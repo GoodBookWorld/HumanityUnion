@@ -48,8 +48,8 @@ function formatCompactDate(value?: string): string {
   }
 }
 
-function publicElectionHref(initiativeId: string): string {
-  return `/initiatives/public/${encodeURIComponent(initiativeId)}`;
+function adminInitiativeViewHref(initiativeId: string): string {
+  return `/admin/initiatives/${encodeURIComponent(initiativeId)}`;
 }
 
 /**
@@ -291,7 +291,7 @@ export function AdminPublicChoiceSection({ user: _user }: AdminPublicChoiceSecti
                           <div className="admin-public-choice-actions">
                             <Link
                               className="admin-panel__link"
-                              href={publicElectionHref(row.initiativeId)}
+                              href={adminInitiativeViewHref(row.initiativeId)}
                             >
                               View
                             </Link>
