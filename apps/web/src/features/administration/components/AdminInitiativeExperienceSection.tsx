@@ -33,6 +33,9 @@ function ballotFromAdminDetail(
       votingStatus: "",
       decisionId: null,
       effectiveVoterCount: null,
+      supportCount: null,
+      oppositionCount: null,
+      abstainCount: null,
       candidates: [],
       unavailable,
     };
@@ -44,6 +47,9 @@ function ballotFromAdminDetail(
     votingStatus: detail.votingStatus,
     decisionId: detail.decisionId,
     effectiveVoterCount: detail.effectiveVoterCount,
+    supportCount: detail.resultSummary.supportCount,
+    oppositionCount: detail.resultSummary.oppositionCount,
+    abstainCount: detail.resultSummary.abstainCount,
     unavailable: false,
     candidates: detail.candidates.map((candidate) => ({
       candidateId: candidate.candidateId,

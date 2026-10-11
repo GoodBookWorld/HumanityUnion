@@ -19,7 +19,41 @@ import "./current-lifecycle-stage-banner.css";
  * Lifecycle UX Correction Pack 01 Part 2 — "Current Lifecycle Stage" UI element.
  * Pack 02G Task 08B.1 — localized chrome + presentation status labels.
  */
-export function CurrentLifecycleStageBanner({
+function CurrentLifecycleStageBannerFrame({
+  stageId,
+  stageLabel,
+  publicationLine,
+}: {
+  stageId: string;
+  stageLabel: string;
+  publicationLine: string | null;
+}) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useControlledLifecyclePreferredTermsLocale();
+  const localizedStageLabel = resolveLifecycleStageDisplayLabel(
+    stageId,
+    t,
+    stageLabel,
+    { locale },
+  );
+
+  return (
+    <section
+      className="pie-current-stage"
+      aria-label={t("overview.currentLifecycleStageAria")}
+      data-hu-semantic-owner="UI_DICTIONARY"
+      data-hu-semantic-path="lifecycleStage"
+      data-hu-semantic-result="LOCALIZED_DICTIONARY"
+      data-hu-stage-id={stageId}
+    >
+      <h3 className="pie-current-stage__label">{t("overview.currentLifecycleStage")}</h3>
+      <p className="pie-current-stage__value">{localizedStageLabel}</p>
+      {publicationLine ? <p className="pie-current-stage__meta">{publicationLine}</p> : null}
+    </section>
+  );
+}
+
+function CurrentLifecycleStageBannerLive({
   initiativeId,
   stageId,
   stageLabel,
@@ -64,25 +98,45 @@ export function CurrentLifecycleStageBanner({
       ? resolvePresentationStatusDisplayLabel(metadata.presentationStatus, t)
       : null;
 
-  const localizedStageLabel = resolveLifecycleStageDisplayLabel(
-    stageId,
-    t,
-    stageLabel,
-    { locale },
+  return (
+    <CurrentLifecycleStageBannerFrame
+      stageId={stageId}
+      stageLabel={stageLabel}
+      publicationLine={publicationLine}
+    />
   );
+}
+
+export function CurrentLifecycleStageBanner({
+  initiativeId,
+  stageId,
+  stageLabel,
+  readOnly = false,
+  statusLabel,
+}: {
+  initiativeId: string;
+  stageId: string;
+  stageLabel: string;
+  /** Administrator inspection uses experience data and does not call the public stage route. */
+  readOnly?: boolean;
+  /** Stage status already present on the experience payload. */
+  statusLabel?: string;
+}) {
+  if (readOnly) {
+    return (
+      <CurrentLifecycleStageBannerFrame
+        stageId={stageId}
+        stageLabel={stageLabel}
+        publicationLine={statusLabel?.trim() ? statusLabel.trim() : null}
+      />
+    );
+  }
 
   return (
-    <section
-      className="pie-current-stage"
-      aria-label={t("overview.currentLifecycleStageAria")}
-      data-hu-semantic-owner="UI_DICTIONARY"
-      data-hu-semantic-path="lifecycleStage"
-      data-hu-semantic-result="LOCALIZED_DICTIONARY"
-      data-hu-stage-id={stageId}
-    >
-      <h3 className="pie-current-stage__label">{t("overview.currentLifecycleStage")}</h3>
-      <p className="pie-current-stage__value">{localizedStageLabel}</p>
-      {publicationLine ? <p className="pie-current-stage__meta">{publicationLine}</p> : null}
-    </section>
+    <CurrentLifecycleStageBannerLive
+      initiativeId={initiativeId}
+      stageId={stageId}
+      stageLabel={stageLabel}
+    />
   );
 }

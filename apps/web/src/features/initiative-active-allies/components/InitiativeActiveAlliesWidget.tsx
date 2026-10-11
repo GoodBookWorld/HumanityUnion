@@ -66,7 +66,13 @@ function ActiveAllyMessageButton({ entry }: { entry: InitiativeActiveAllyEntry }
  * Communication UX Pack 03.8 Part 6 — simplified to avatar + name + Message
  * only; role, shared Initiatives, and statistics are never rendered here.
  */
-function ActiveAllyRow({ entry }: { entry: InitiativeActiveAllyEntry }) {
+function ActiveAllyRow({
+  entry,
+  messagingEnabled,
+}: {
+  entry: InitiativeActiveAllyEntry;
+  messagingEnabled: boolean;
+}) {
   return (
     <li className="iaa-widget__row">
       <InitiativeAuthorIdentity
@@ -74,7 +80,7 @@ function ActiveAllyRow({ entry }: { entry: InitiativeActiveAllyEntry }) {
         avatarUrl={entry.avatarUrl}
         profileUrl={entry.profileUrl}
       />
-      {entry.canMessage ? <ActiveAllyMessageButton entry={entry} /> : null}
+      {messagingEnabled && entry.canMessage ? <ActiveAllyMessageButton entry={entry} /> : null}
     </li>
   );
 }
@@ -88,6 +94,8 @@ interface InitiativeActiveAlliesWidgetProps {
    * invents its own destination.
    */
   reviewCollaborationRequestsHref?: string;
+  /** Administrator inspection keeps ally names and hides conversation actions. */
+  messagingEnabled?: boolean;
 }
 
 /**
@@ -108,6 +116,7 @@ interface InitiativeActiveAlliesWidgetProps {
 export function InitiativeActiveAlliesWidget({
   initiativeId,
   reviewCollaborationRequestsHref,
+  messagingEnabled = true,
 }: InitiativeActiveAlliesWidgetProps) {
   const t = useTranslations("initiativeExperience");
   const [team, setTeam] = useState<Awaited<ReturnType<typeof getInitiativeActiveAlliesTeam>> | null>(
@@ -156,9 +165,13 @@ export function InitiativeActiveAlliesWidget({
       </div>
 
       <ul className="iaa-widget__list" aria-label={t("sidebar.allies.listAria")}>
-        <ActiveAllyRow entry={team.author} />
+        <ActiveAllyRow entry={team.author} messagingEnabled={messagingEnabled} />
         {team.allies.map((entry, index) => (
-          <ActiveAllyRow key={entry.participantId ?? `${entry.displayName}-${index}`} entry={entry} />
+          <ActiveAllyRow
+            key={entry.participantId ?? `${entry.displayName}-${index}`}
+            entry={entry}
+            messagingEnabled={messagingEnabled}
+          />
         ))}
       </ul>
 

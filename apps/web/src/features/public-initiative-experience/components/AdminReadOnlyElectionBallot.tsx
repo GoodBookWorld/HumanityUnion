@@ -15,6 +15,9 @@ export interface AdminReadOnlyElectionBallot {
   readonly votingStatus: string;
   readonly decisionId: string | null;
   readonly effectiveVoterCount: number | null;
+  readonly supportCount: number | null;
+  readonly oppositionCount: number | null;
+  readonly abstainCount: number | null;
   readonly candidates: readonly AdminReadOnlyElectionCandidate[];
   /** The administrator detail read failed. Do not fall back to public endpoints. */
   readonly unavailable?: boolean;
@@ -80,6 +83,24 @@ export function AdminReadOnlyElectionBallotView({
           })}
         </ol>
       )}
+      {ballot.supportCount !== null &&
+      ballot.oppositionCount !== null &&
+      ballot.abstainCount !== null ? (
+        <ul className="pie-election__ranking" aria-label={t("sidebar.election.resultsAria")}>
+          <li>
+            <span>{t("sidebar.election.support")}</span>
+            <strong>{ballot.supportCount}</strong>
+          </li>
+          <li>
+            <span>{t("sidebar.election.doNotSupport")}</span>
+            <strong>{ballot.oppositionCount}</strong>
+          </li>
+          <li>
+            <span>{t("sidebar.election.abstain")}</span>
+            <strong>{ballot.abstainCount}</strong>
+          </li>
+        </ul>
+      ) : null}
       {ballot.effectiveVoterCount !== null ? (
         <p className="pie-election__status">
           {t("sidebar.election.resultsAria")}: {ballot.effectiveVoterCount}

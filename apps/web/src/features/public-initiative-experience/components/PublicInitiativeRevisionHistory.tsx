@@ -10,12 +10,15 @@ interface PublicInitiativeRevisionHistoryProps {
   initiativeId: string;
   history: PublicInitiativeWithVersionHistory;
   onRevisionSelect: (version: number) => void;
+  /** Keep summaries visible without opening public revision documents. */
+  readOnly?: boolean;
 }
 
 export function PublicInitiativeRevisionHistory({
   initiativeId,
   history,
   onRevisionSelect,
+  readOnly = false,
 }: PublicInitiativeRevisionHistoryProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -25,7 +28,7 @@ export function PublicInitiativeRevisionHistory({
     <section className="pie-revisions" aria-labelledby="pie-revisions-title">
       <div className="pie-revisions__header">
         <h2 id="pie-revisions-title">{t("sidebar.revisions.title")}</h2>
-        {history.revisions.length > 0 ? (
+        {history.revisions.length > 0 && !readOnly ? (
           <button
             type="button"
             className="pie-revisions__view-all"
@@ -42,41 +45,66 @@ export function PublicInitiativeRevisionHistory({
         <ol className="pie-revisions__list">
           {history.revisions.map((revision) => (
             <li key={revision.revisionId}>
-              <button
-                type="button"
-                className="pie-revisions__item"
-                onClick={() => onRevisionSelect(revision.version)}
-              >
-                <span className="pie-revisions__version">
-                  {t("common.versionN", { version: revision.version })}
-                  {revision.isCurrent ? t("common.currentSuffix") : ""}
-                  {revision.version === originalVersion
-                    ? t("sidebar.revisions.originalSuffix")
-                    : ""}
-                </span>
-                <span className="pie-revisions__date">
-                  {formatInitiativeExperienceDate(locale, revision.publishedAt, {
-                    month: "short",
-                  })}
-                </span>
-                <span className="pie-revisions__summary">
-                  <InitiativeRevisionSummaryText
-                    revisionId={revision.revisionId}
-                    canonicalSummary={revision.revisionSummary}
-                  />
-                </span>
-              </button>
+              {readOnly ? (
+                <div className="pie-revisions__item">
+                  <span className="pie-revisions__version">
+                    {t("common.versionN", { version: revision.version })}
+                    {revision.isCurrent ? t("common.currentSuffix") : ""}
+                    {revision.version === originalVersion
+                      ? t("sidebar.revisions.originalSuffix")
+                      : ""}
+                  </span>
+                  <span className="pie-revisions__date">
+                    {formatInitiativeExperienceDate(locale, revision.publishedAt, {
+                      month: "short",
+                    })}
+                  </span>
+                  <span className="pie-revisions__summary">
+                    <InitiativeRevisionSummaryText
+                      revisionId={revision.revisionId}
+                      canonicalSummary={revision.revisionSummary}
+                    />
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="pie-revisions__item"
+                  onClick={() => onRevisionSelect(revision.version)}
+                >
+                  <span className="pie-revisions__version">
+                    {t("common.versionN", { version: revision.version })}
+                    {revision.isCurrent ? t("common.currentSuffix") : ""}
+                    {revision.version === originalVersion
+                      ? t("sidebar.revisions.originalSuffix")
+                      : ""}
+                  </span>
+                  <span className="pie-revisions__date">
+                    {formatInitiativeExperienceDate(locale, revision.publishedAt, {
+                      month: "short",
+                    })}
+                  </span>
+                  <span className="pie-revisions__summary">
+                    <InitiativeRevisionSummaryText
+                      revisionId={revision.revisionId}
+                      canonicalSummary={revision.revisionSummary}
+                    />
+                  </span>
+                </button>
+              )}
             </li>
           ))}
         </ol>
       )}
 
-      <p className="pie-revisions__route-note">
-        {t.rich("sidebar.revisions.routeNote", {
-          initiativeId,
-          id: (chunks) => <span className="pie-revisions__initiative-id">{chunks}</span>,
-        })}
-      </p>
+      {readOnly ? null : (
+        <p className="pie-revisions__route-note">
+          {t.rich("sidebar.revisions.routeNote", {
+            initiativeId,
+            id: (chunks) => <span className="pie-revisions__initiative-id">{chunks}</span>,
+          })}
+        </p>
+      )}
     </section>
   );
 }

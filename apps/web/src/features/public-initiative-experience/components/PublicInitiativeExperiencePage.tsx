@@ -129,6 +129,9 @@ export function PublicInitiativeExperiencePage({
   const returnToInitiativeHref = buildInitiativeExperienceHref(experience.initiativeId);
 
   const refreshExperience = useCallback(async () => {
+    if (readOnly) {
+      return;
+    }
     if (onExperienceRefetch) {
       await onExperienceRefetch();
       return;
@@ -137,7 +140,7 @@ export function PublicInitiativeExperiencePage({
     const { getPublicInitiativeExperience } = await import("../api");
     const next = await getPublicInitiativeExperience(experience.initiativeId);
     setExperience(next);
-  }, [experience.initiativeId, onExperienceRefetch]);
+  }, [experience.initiativeId, onExperienceRefetch, readOnly]);
 
   useEffect(() => {
     setExperience(initialExperience);
@@ -299,6 +302,9 @@ export function PublicInitiativeExperiencePage({
   };
 
   const handleRevisionSelect = (version: number) => {
+    if (readOnly) {
+      return;
+    }
     const href = `${returnToInitiativeHref}/revisions/${version}`;
     window.location.assign(href);
   };

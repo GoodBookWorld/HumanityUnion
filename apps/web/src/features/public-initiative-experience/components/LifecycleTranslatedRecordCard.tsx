@@ -176,8 +176,10 @@ function resolveRecordDetail(
 
 export function LifecycleTranslatedRecordCard({
   record,
+  suppressPublicLinks = false,
 }: {
   record: PublicInitiativeLifecycleRecordItem;
+  suppressPublicLinks?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -337,7 +339,7 @@ export function LifecycleTranslatedRecordCard({
     );
   }
 
-  if (record.publicHref) {
+  if (record.publicHref && !suppressPublicLinks) {
     return (
       <article className="pie-record" data-source-kind={sourceKind ?? "synthetic"}>
         <Link href={record.publicHref}>{body}</Link>
