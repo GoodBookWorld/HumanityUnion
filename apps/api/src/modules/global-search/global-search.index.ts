@@ -11,6 +11,7 @@ import { listTrackings } from "../initiative-implementation-tracking/initiative-
 import { listProposals } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
 import { listImpacts } from "../initiative-public-impact/initiative-public-impact.store.js";
 import { listRevisionsByInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
+import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiative-public-projection.access.js";
 import { getInitiativeById, listInitiatives } from "../initiatives/initiative.store.js";
 import { listResponses } from "../official-response/official-response.store.js";
 import { listPublishedArchiveRecords } from "../public-civic-archive/public-civic-archive.store.js";
@@ -35,9 +36,9 @@ function normalizeField(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function isPublicInitiative(initiativeId: string): boolean {
+export function isPublicInitiative(initiativeId: string): boolean {
   const initiative = getInitiativeById(initiativeId);
-  return initiative !== undefined && initiative !== null && initiative.lifecyclePhase !== "draft";
+  return initiative != null && isInitiativeEligibleForPublicProjection(initiative);
 }
 
 function buildNormalizedMultilingualMaps(metadata: CivicSearchMetadata): {
@@ -117,7 +118,7 @@ async function collectSearchEntityRefs(): Promise<SearchEntityRef[]> {
   const refs: SearchEntityRef[] = [];
 
   for (const initiative of listInitiatives()) {
-    if (initiative.lifecyclePhase === "draft") {
+    if (!isPublicInitiative(initiative.initiativeId)) {
       continue;
     }
 

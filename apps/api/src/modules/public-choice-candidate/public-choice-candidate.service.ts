@@ -171,6 +171,9 @@ export async function listPublicChoiceCandidatesForInitiative(
   viewerIdentity?: RequestIdentity | null,
 ): Promise<PublicChoiceCandidatePublicProjection[]> {
   const initiative = assertPublicChoiceInitiative(initiativeId);
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error("Initiative not found.");
+  }
   // Fix 06 — ensure voting substrate exists when the public roster is read.
   try {
     const { ensurePublicChoiceElectionVotingDecision } = await import(
@@ -182,9 +185,9 @@ export async function listPublicChoiceCandidatesForInitiative(
   }
   const viewerParticipantId = viewerIdentity?.participantId?.trim() || null;
   const candidates = await listPublicChoiceCandidatesByInitiative(initiativeId);
-  return candidates.map((candidate) =>
-    projectCandidate(candidate, initiative, viewerParticipantId),
-  );
+  return candidates
+    .filter((candidate) => !isPublicChoiceCandidateAdministrativelyBlocked(candidate))
+    .map((candidate) => projectCandidate(candidate, initiative, viewerParticipantId));
 }
 
 /**

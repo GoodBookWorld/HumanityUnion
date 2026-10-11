@@ -53,10 +53,13 @@ export function CountryElectionRailCard({
       ? plpPresentation?.reasonCode ?? "NO_PUBLISHED_SNAPSHOT"
       : undefined;
 
+  if (initiative.administrativelyBlocked === true) {
+    return null;
+  }
+
   const href =
     initiative.publicInitiativeHref ||
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
-  const blocked = initiative.administrativelyBlocked === true;
   const statusLabel = initiative.electionVotingStatus
     ? resolvePublicChoiceElectionVotingStatusDisplayLabel(
         initiative.electionVotingStatus,
@@ -132,10 +135,9 @@ export function CountryElectionRailCard({
           {typeof initiative.candidateCount === "number" ? (
             <span>{t("candidatesCount", { count: initiative.candidateCount })}</span>
           ) : null}
-          {blocked ? <span role="status">{t("blockedUnavailable")}</span> : null}
         </div>
         <span className="country-initiative-rail-card__cta" aria-hidden="true">
-          {blocked ? t("viewDetails") : t("viewElection")}
+          {t("viewElection")}
         </span>
       </div>
     </Link>
