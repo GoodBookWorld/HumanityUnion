@@ -5,6 +5,10 @@ import {
   EXTERNAL_AUTHOR_LINK_INDEXES,
   EXTERNAL_AUTHOR_LINK_RESULT_INDEXES,
 } from "../../modules/external-author-link/external-author-link.indexes.js";
+import {
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_AUDIT_INDEXES,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES,
+} from "../../modules/integrity-media-author-messages/integrity-media-author-message.indexes.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -1636,6 +1640,14 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     collectionName: MONGO_COLLECTIONS.externalAuthorLinkAudit,
     indexes: EXTERNAL_AUTHOR_LINK_AUDIT_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.integrityMediaAuthorMessages,
+    indexes: INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.integrityMediaAuthorMessageAudit,
+    indexes: INTEGRITY_MEDIA_AUTHOR_MESSAGE_AUDIT_INDEXES,
   },
 ];
 

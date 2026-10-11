@@ -179,6 +179,9 @@ export const MONGO_COLLECTIONS = {
   externalAuthorLinks: "external_author_links",
   externalAuthorLinkResults: "external_author_link_results",
   externalAuthorLinkAudit: "external_author_link_audit",
+  // Integrity Media author-message delivery. Not the localization outbox.
+  integrityMediaAuthorMessages: "integrity_media_author_messages",
+  integrityMediaAuthorMessageAudit: "integrity_media_author_message_audit",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];
