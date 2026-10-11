@@ -68,7 +68,10 @@ export interface GetAdminInitiativeDetailInput {
   initiativeId: string;
 }
 
-async function assertAdminUser(userId: string): Promise<{
+async function assertAdminUser(
+  userId: string,
+  findUser: typeof findAuthUserById = findAuthUserById,
+): Promise<{
   userId: string;
   memberId: string;
 }> {
@@ -76,7 +79,7 @@ async function assertAdminUser(userId: string): Promise<{
     throw new AdministrationUnauthorizedError("Authentication is required.");
   }
 
-  const user = await findAuthUserById(userId);
+  const user = await findUser(userId);
 
   if (!user || user.role !== "admin") {
     throw new AdministrationForbiddenError("Administrator access is required.");
@@ -99,12 +102,15 @@ function clampOffset(offset: number | undefined): number {
   return Math.trunc(offset);
 }
 
-async function resolveStewardDisplay(stewardId: string): Promise<{
+async function resolveStewardDisplay(
+  stewardId: string,
+  findMember: typeof findAuthUserByMemberId = findAuthUserByMemberId,
+): Promise<{
   displayName: string;
   uniqueName?: string;
   missing: boolean;
 }> {
-  const authUser = await findAuthUserByMemberId(stewardId);
+  const authUser = await findMember(stewardId);
   if (!authUser) {
     return { displayName: "Unknown steward", missing: true };
   }
@@ -558,11 +564,12 @@ function buildIntegrityFindings(input: {
 
 async function buildRelationships(
   initiativeId: string,
+  loadPetition: typeof getPetitionByInitiativeId = getPetitionByInitiativeId,
 ): Promise<AdminInitiativeCivicRelationships> {
   const analyses = listAnalysesByInitiative(initiativeId);
   const proposals = listPublicProposalsByInitiative(initiativeId);
   const revisions = listRevisionsByInitiative(initiativeId);
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  const petition = await loadPetition(initiativeId);
   const sessions = listSessionsByInitiative(initiativeId);
   const commitments = listCommitmentsByInitiative(initiativeId);
   const trackings = listTrackingsByInitiative(initiativeId);
@@ -587,16 +594,24 @@ async function buildRelationships(
 
 export async function getAdminInitiativeDetail(
   input: GetAdminInitiativeDetailInput,
+  deps: {
+    readonly findAuthUserById?: typeof findAuthUserById;
+    readonly findAuthUserByMemberId?: typeof findAuthUserByMemberId;
+    readonly getPetitionByInitiativeId?: typeof getPetitionByInitiativeId;
+  } = {},
 ): Promise<AdminInitiativeDetail> {
-  await assertAdminUser(input.actorUserId);
+  const findUser = deps.findAuthUserById ?? findAuthUserById;
+  const findMember = deps.findAuthUserByMemberId ?? findAuthUserByMemberId;
+  const loadPetition = deps.getPetitionByInitiativeId ?? getPetitionByInitiativeId;
+  await assertAdminUser(input.actorUserId, findUser);
 
   const initiative = getInitiativeById(input.initiativeId);
   if (!initiative) {
     throw new AdminInitiativeDirectoryValidationError("Initiative not found.");
   }
 
-  const steward = await resolveStewardDisplay(initiative.stewardId);
-  const relationships = await buildRelationships(initiative.initiativeId);
+  const steward = await resolveStewardDisplay(initiative.stewardId, findMember);
+  const relationships = await buildRelationships(initiative.initiativeId, loadPetition);
   const discussionStatuses: InitiativeStatus[] = [
     "discussion",
     "revision",
@@ -616,13 +631,15 @@ export async function getAdminInitiativeDetail(
     initiative.lifecyclePhase === "projected" &&
     initiative.visibility.policy === "steward_only";
 
+  const description = initiative.description;
+  const lifecycleProfile = initiative.lifecycleProfile?.trim();
+
   return {
     initiativeId: initiative.initiativeId,
     title: initiative.title,
-    descriptionPreview:
-      initiative.description.length > 280
-        ? `${initiative.description.slice(0, 277)}…`
-        : initiative.description,
+    description,
+    descriptionPreview: description,
+    ...(lifecycleProfile ? { lifecycleProfile } : {}),
     stewardId: initiative.stewardId,
     stewardDisplayName: steward.displayName,
     ...(steward.uniqueName ? { stewardUniqueName: steward.uniqueName } : {}),

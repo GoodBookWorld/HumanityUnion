@@ -461,7 +461,10 @@ export interface AdminInitiativeCivicRelationships {
 export interface AdminInitiativeDetail {
   readonly initiativeId: string;
   readonly title: string;
+  /** Full stored description. Admin detail must not summarize this field. */
+  readonly description: string;
   readonly descriptionPreview: string;
+  readonly lifecycleProfile?: string;
   readonly stewardId: string;
   readonly stewardDisplayName: string;
   readonly stewardUniqueName?: string;
