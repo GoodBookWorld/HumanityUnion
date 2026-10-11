@@ -27,6 +27,7 @@ import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeC
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import { selectInitiativeDetailDescription } from "../select-initiative-detail-description";
 import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
 
 import "../public-initiative-experience.css";
@@ -344,7 +345,7 @@ export function PublicInitiativeExperiencePage({
     initiativeId: experience.initiativeId,
     canonical: {
       title: experience.hero.title,
-      description: experience.hero.summary || experience.initiative.description,
+      description: selectInitiativeDetailDescription(experience.initiative.description),
     },
     initialPresentation,
   });
