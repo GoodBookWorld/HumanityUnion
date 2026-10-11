@@ -6,6 +6,7 @@ export type AdminPanelSectionId =
   | "initiatives"
   | "public-choice"
   | "publishing"
+  | "integrity-media"
   | "media-resources"
   | "country-people"
   | "seo"
@@ -33,6 +34,7 @@ export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "initiatives", label: "Initiatives", href: "/admin/initiatives" },
   { id: "public-choice", label: "Public Choice", href: "/admin/public-choice" },
   { id: "publishing", label: "Publishing", href: "/admin/publishing" },
+  { id: "integrity-media", label: "Integrity Media", href: "/admin/integrity-media" },
   { id: "media-resources", label: "Media Resources", href: "/admin/media-resources" },
   { id: "country-people", label: "Country Team & Partners", href: "/admin/country-people" },
   { id: "seo", label: "SEO", href: "/admin/seo" },

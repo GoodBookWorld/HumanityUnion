@@ -251,6 +251,13 @@ export async function performRemoteDelivery(
   await markRetryable(claimed.messageId, now, classified.errorCode);
 }
 
+export async function requireIntegrityMediaAuthorMessageAdmin(
+  actorUserId: string,
+  actorMemberId: string,
+): Promise<string> {
+  return assertAdminActor(actorUserId, actorMemberId);
+}
+
 async function assertAdminActor(actorUserId: string, actorMemberId: string): Promise<string> {
   if (!actorUserId.trim() || !actorMemberId.trim()) {
     throw new AdministrationUnauthorizedError("Authentication is required.");

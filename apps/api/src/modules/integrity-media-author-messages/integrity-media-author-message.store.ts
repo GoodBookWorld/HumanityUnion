@@ -2,9 +2,15 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { IntegrityMediaAuthorMessageErrorCode } from "./integrity-media-author-message.constants.js";
 import type {
+  IntegrityMediaAuthorLatestMessageView,
   IntegrityMediaAuthorMessageAuditRecord,
   IntegrityMediaAuthorMessageRecord,
 } from "./integrity-media-author-message.types.js";
+
+export interface IntegrityMediaAuthorMessageRecipientSummary {
+  messageCount: number;
+  latest: IntegrityMediaAuthorLatestMessageView | null;
+}
 
 export interface IntegrityMediaAuthorMessageClaimInput {
   nowIso: string;
@@ -35,6 +41,9 @@ export interface IntegrityMediaAuthorMessageStore {
     errorCode: IntegrityMediaAuthorMessageErrorCode;
   }): Promise<IntegrityMediaAuthorMessageRecord | null>;
   list(): Promise<IntegrityMediaAuthorMessageRecord[]>;
+  summarizeForRecipients(
+    recipientMemberIds: readonly string[],
+  ): Promise<Map<string, IntegrityMediaAuthorMessageRecipientSummary>>;
   appendAudit(record: IntegrityMediaAuthorMessageAuditRecord): Promise<void>;
   listAudits(): Promise<IntegrityMediaAuthorMessageAuditRecord[]>;
 }
@@ -95,6 +104,10 @@ export function createMemoryIntegrityMediaAuthorMessageStore(): IntegrityMediaAu
 
     async list() {
       return [...messages.values()].map((record) => copyMessage(record)!);
+    },
+
+    async summarizeForRecipients(recipientMemberIds) {
+      return summarizeMessages([...messages.values()], recipientMemberIds);
     },
 
     async appendAudit(record) {
@@ -218,6 +231,60 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
       return documents.map((document) => withoutId(document));
     },
 
+    async summarizeForRecipients(recipientMemberIds) {
+      const ids = [...new Set(recipientMemberIds.filter((id) => id.trim().length > 0))];
+      if (ids.length === 0) {
+        return new Map();
+      }
+
+      const documents = await messages()
+        .aggregate<IntegrityMediaAuthorMessageSummaryDocument>([
+          { $match: { recipientMemberId: { $in: ids } } },
+          {
+            $project: {
+              recipientMemberId: 1,
+              messageId: 1,
+              title: 1,
+              status: 1,
+              lastErrorCode: 1,
+              createdAt: 1,
+              deliveredAt: 1,
+            },
+          },
+          { $sort: { createdAt: -1, messageId: -1 } },
+          {
+            $group: {
+              _id: "$recipientMemberId",
+              messageCount: { $sum: 1 },
+              messageId: { $first: "$messageId" },
+              title: { $first: "$title" },
+              status: { $first: "$status" },
+              lastErrorCode: { $first: "$lastErrorCode" },
+              createdAt: { $first: "$createdAt" },
+              deliveredAt: { $first: "$deliveredAt" },
+            },
+          },
+        ])
+        .toArray();
+
+      return new Map(
+        documents.map((document) => [
+          document._id,
+          {
+            messageCount: document.messageCount,
+            latest: {
+              messageId: document.messageId,
+              title: document.title,
+              status: document.status,
+              lastErrorCode: document.lastErrorCode,
+              createdAt: document.createdAt,
+              deliveredAt: document.deliveredAt,
+            },
+          },
+        ]),
+      );
+    },
+
     async appendAudit(record) {
       await audits().insertOne(record);
     },
@@ -311,6 +378,64 @@ function pendingEligibility(nowIso: string) {
     status: "pending" as const,
     $or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: nowIso } }],
   };
+}
+
+interface IntegrityMediaAuthorMessageSummaryDocument {
+  _id: string;
+  messageCount: number;
+  messageId: string;
+  title: string;
+  status: IntegrityMediaAuthorMessageRecord["status"];
+  lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
+  createdAt: string;
+  deliveredAt: string | null;
+}
+
+function summarizeMessages(
+  records: readonly IntegrityMediaAuthorMessageRecord[],
+  recipientMemberIds: readonly string[],
+): Map<string, IntegrityMediaAuthorMessageRecipientSummary> {
+  const ids = new Set(recipientMemberIds.filter((id) => id.trim().length > 0));
+  const grouped = new Map<string, IntegrityMediaAuthorMessageRecord[]>();
+
+  for (const record of records) {
+    if (!ids.has(record.recipientMemberId)) {
+      continue;
+    }
+
+    const current = grouped.get(record.recipientMemberId) ?? [];
+    current.push(record);
+    grouped.set(record.recipientMemberId, current);
+  }
+
+  const summaries = new Map<string, IntegrityMediaAuthorMessageRecipientSummary>();
+
+  for (const [recipientMemberId, group] of grouped) {
+    const latest = [...group].sort((left, right) => {
+      const created = right.createdAt.localeCompare(left.createdAt);
+      if (created !== 0) {
+        return created;
+      }
+
+      return right.messageId.localeCompare(left.messageId);
+    })[0];
+
+    summaries.set(recipientMemberId, {
+      messageCount: group.length,
+      latest: latest
+        ? {
+            messageId: latest.messageId,
+            title: latest.title,
+            status: latest.status,
+            lastErrorCode: latest.lastErrorCode,
+            createdAt: latest.createdAt,
+            deliveredAt: latest.deliveredAt,
+          }
+        : null,
+    });
+  }
+
+  return summaries;
 }
 
 function copyCta(

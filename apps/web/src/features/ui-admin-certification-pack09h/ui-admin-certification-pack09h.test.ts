@@ -24,15 +24,17 @@ function readApi(relativePath: string): string {
 }
 
 describe("Pack 09H — series certification contracts", () => {
-  it("Admin navigation order includes Media Resources then Country Team & Partners after Publishing", () => {
+  it("Admin navigation order includes Integrity Media after Publishing, then Media Resources and Country Team", () => {
     const labels = ADMIN_PANEL_SECTIONS.map((section) => section.label);
     const publishing = labels.indexOf("Publishing");
+    const integrityMedia = labels.indexOf("Integrity Media");
     const media = labels.indexOf("Media Resources");
     const people = labels.indexOf("Country Team & Partners");
     const initiatives = labels.indexOf("Initiatives");
     const publicChoice = labels.indexOf("Public Choice");
     assert.ok(initiatives >= 0 && publicChoice === initiatives + 1);
-    assert.ok(publishing >= 0 && media === publishing + 1);
+    assert.ok(publishing >= 0 && integrityMedia === publishing + 1);
+    assert.ok(media === integrityMedia + 1);
     assert.ok(people === media + 1);
   });
 

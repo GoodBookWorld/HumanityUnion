@@ -17,11 +17,13 @@ function read(relativePath: string): string {
 }
 
 describe("Administration Pack 09D — Media Resources", () => {
-  it("Admin Panel includes Media Resources after Publishing", () => {
+  it("Admin Panel includes Media Resources after Integrity Media", () => {
     const labels = ADMIN_PANEL_SECTIONS.map((section) => section.label);
     const publishing = labels.indexOf("Publishing");
+    const integrityMedia = labels.indexOf("Integrity Media");
     const media = labels.indexOf("Media Resources");
-    assert.ok(publishing >= 0 && media === publishing + 1);
+    assert.ok(publishing >= 0 && integrityMedia === publishing + 1);
+    assert.ok(media === integrityMedia + 1);
     assert.ok(existsSync(path.resolve(webSrc, "app/admin/media-resources/page.tsx")));
     assert.match(read("app/admin/media-resources/page.tsx"), /AdminAccessGate/);
     assert.match(read("app/admin/media-resources/page.tsx"), /AdminMediaResourcesSection/);

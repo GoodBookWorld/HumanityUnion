@@ -39,6 +39,10 @@ import {
   signIntegrityMediaAuthorMessage,
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.hmac.js";
 import { reconcilePendingIntegrityMediaAuthorMessages } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.reconciliation.js";
+import {
+  deriveIntegrityMediaAuthorParticipantDisplay,
+  setIntegrityMediaAuthorParticipantResolverForTests,
+} from "../../../src/modules/integrity-media-author-messages/integrity-media-author-directory.service.js";
 import integrityMediaAuthorMessageRouter from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.routes.js";
 import {
   startIntegrityMediaAuthorMessageScheduler,
@@ -49,6 +53,7 @@ import {
   setIntegrityMediaAuthorMessageStoreForTests,
   type IntegrityMediaAuthorMessageStore,
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.store.js";
+import type { IntegrityMediaAuthorMessageRecord } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.types.js";
 import {
   setIntegrityMediaAuthorMessageFetchForTests,
   setIntegrityMediaAuthorMessageTransportForTests,
@@ -62,6 +67,10 @@ const RECIPIENT_MEMBER = "22222222-2222-4222-8222-222222222222";
 const OTHER_MEMBER = "33333333-3333-4333-8333-333333333333";
 const AUTHOR = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const OTHER_AUTHOR = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const DISABLED_MEMBER = "44444444-4444-4444-8444-444444444444";
+const PENDING_MEMBER = "55555555-5555-4555-8555-555555555555";
+const DISABLED_AUTHOR = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const PENDING_AUTHOR = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const SECRET = "hu-test-hmac-secret-04c2c-value";
 const ORIGIN = "https://integrity.example";
 const BODY_MARKER = "plain-body-marker-04c2c";
@@ -115,6 +124,7 @@ describe("Integrity Media outbound author messages", () => {
   after(async () => {
     stopIntegrityMediaAuthorMessageScheduler();
     setAuthUserLookupOverrideForTests(null);
+    setIntegrityMediaAuthorParticipantResolverForTests(null);
     setExternalAuthorLinkStoreForTests(null);
     setIntegrityMediaAuthorMessageStoreForTests(null);
     setIntegrityMediaAuthorMessageTransportForTests(null);
@@ -140,6 +150,19 @@ describe("Integrity Media outbound author messages", () => {
       return transportResult(request);
     });
     setIntegrityMediaAuthorMessageFetchForTests(null);
+    setIntegrityMediaAuthorParticipantResolverForTests(async (memberIds) => {
+      const displays = new Map();
+      for (const memberId of memberIds) {
+        displays.set(
+          memberId,
+          deriveIntegrityMediaAuthorParticipantDisplay({
+            memberId,
+            authDisplayName: "Test User",
+          }),
+        );
+      }
+      return displays;
+    });
     process.env[INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV] = SECRET;
     process.env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV] = ORIGIN;
     rememberUser("admin-user", ADMIN_MEMBER, "admin");
@@ -775,6 +798,113 @@ describe("Integrity Media outbound author messages", () => {
     assert.equal(INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS, 60_000);
   });
 
+  it("rejects an unauthenticated author list", async () => {
+    const response = await listAuthors(null);
+    assert.equal(response.status, 401);
+  });
+
+  it("rejects an ordinary member from the author list", async () => {
+    const response = await listAuthors(tokenFor("member-user", OTHER_MEMBER, "member"));
+    assert.equal(response.status, 403);
+    assert.equal(response.body.meta.code, "administrator_required");
+  });
+
+  it("rejects a moderator from the author list", async () => {
+    const response = await listAuthors(tokenFor("moderator-user", OTHER_MEMBER, "moderator"));
+    assert.equal(response.status, 403);
+  });
+
+  it("lists linked, disabled, and setup-pending collaborations for an admin", async () => {
+    await seedDirectory();
+    const response = await listAuthors(adminToken(), { state: "all", limit: "25", offset: "0" });
+    assert.equal(response.status, 200);
+    const authors = directoryAuthors(response.body);
+    assert.equal(authors.length, 3);
+    assert.equal(response.body.data?.total, 3);
+    assert.equal(response.body.data?.hasMore, false);
+    assert.deepEqual(
+      authors.map((row) => row.memberId),
+      [RECIPIENT_MEMBER, PENDING_MEMBER, DISABLED_MEMBER],
+    );
+    assert.equal(authors[0]?.canSend, true);
+    assert.equal(authors[1]?.authorActivationPending, true);
+    assert.equal(authors[1]?.canSend, false);
+    assert.equal(authors[2]?.state, "disabled");
+    assert.equal(authors[2]?.canSend, false);
+    assert.equal(authors[0]?.messageCount, 2);
+    assert.equal(authors[0]?.latestMessage?.title, "Newer note");
+    assert.equal(authors[0]?.latestMessage?.status, "delivered");
+    const serialized = JSON.stringify(response.body);
+    assert.equal(serialized.includes(BODY_MARKER), false);
+    assert.equal(serialized.includes("\"cta\""), false);
+    assert.equal(serialized.includes("\"email\""), false);
+    assert.equal(serialized.includes(SECRET), false);
+    assert.equal(serialized.includes("signature"), false);
+    assert.equal(serialized.includes("passwordHash"), false);
+  });
+
+  it("filters the author list by connection state", async () => {
+    await seedDirectory();
+    const linked = directoryAuthors((await listAuthors(adminToken(), { state: "linked" })).body);
+    const disabled = directoryAuthors((await listAuthors(adminToken(), { state: "disabled" })).body);
+    const pending = directoryAuthors(
+      (await listAuthors(adminToken(), { state: "setup_pending" })).body,
+    );
+    assert.deepEqual(linked.map((row) => row.memberId), [RECIPIENT_MEMBER]);
+    assert.equal(linked[0]?.canSend, true);
+    assert.deepEqual(disabled.map((row) => row.memberId), [DISABLED_MEMBER]);
+    assert.deepEqual(pending.map((row) => row.memberId), [PENDING_MEMBER]);
+  });
+
+  it("paginates the author list with total and hasMore", async () => {
+    await seedDirectory();
+    const first = await listAuthors(adminToken(), { limit: "1", offset: "0" });
+    const last = await listAuthors(adminToken(), { limit: "1", offset: "2" });
+    assert.equal(first.body.data?.total, 3);
+    assert.equal(first.body.data?.hasMore, true);
+    assert.equal(directoryAuthors(first.body)[0]?.memberId, RECIPIENT_MEMBER);
+    assert.equal(last.body.data?.hasMore, false);
+    assert.equal(directoryAuthors(last.body)[0]?.memberId, DISABLED_MEMBER);
+  });
+
+  it("derives participant display data without email", async () => {
+    const display = deriveIntegrityMediaAuthorParticipantDisplay({
+      memberId: RECIPIENT_MEMBER,
+      authDisplayName: "admin@example.com",
+      profileDisplayName: "Ada Lovelace",
+      publicName: "ada",
+      avatarUrl: "https://cdn.example/ada.png",
+    });
+    assert.equal(display.participantDisplayName, "Ada Lovelace");
+    assert.equal(display.participantAvatarUrl, "https://cdn.example/ada.png");
+    assert.equal(
+      display.participantProfileHref,
+      `/admin/participants/${RECIPIENT_MEMBER}/public-profile`,
+    );
+    assert.equal(JSON.stringify(display).includes("@"), false);
+
+    const emailOnly = deriveIntegrityMediaAuthorParticipantDisplay({
+      memberId: RECIPIENT_MEMBER,
+      authDisplayName: "person@example.com",
+    });
+    assert.equal(emailOnly.participantDisplayName, "Participant");
+    assert.equal(emailOnly.participantProfileHref, undefined);
+
+    setIntegrityMediaAuthorParticipantResolverForTests(async () => {
+      return new Map([[RECIPIENT_MEMBER, display]]);
+    });
+    await seedLink({
+      externalAuthorId: AUTHOR,
+      memberId: RECIPIENT_MEMBER,
+      createdAt: "2026-03-01T00:00:00.000Z",
+    });
+    const response = await listAuthors(adminToken());
+    const row = directoryAuthors(response.body)[0];
+    assert.equal(row?.participantDisplayName, "Ada Lovelace");
+    assert.equal(row?.participantAvatarUrl, "https://cdn.example/ada.png");
+    assert.equal(JSON.stringify(response.body).includes("email"), false);
+  });
+
   it("starts the message scheduler without starting a second timer", () => {
     startIntegrityMediaAuthorMessageScheduler();
     startIntegrityMediaAuthorMessageScheduler();
@@ -831,6 +961,118 @@ function rememberUser(userId: string, memberId: string, role: string): void {
     createdAt: now,
     updatedAt: now,
   });
+}
+
+interface DirectoryAuthorRow {
+  memberId?: string;
+  state?: string;
+  authorActivationPending?: boolean;
+  canSend?: boolean;
+  participantDisplayName?: string;
+  participantAvatarUrl?: string;
+  messageCount?: number;
+  latestMessage?: { title?: string; status?: string } | null;
+}
+
+interface DirectoryBody {
+  success: boolean;
+  data: {
+    authors?: DirectoryAuthorRow[];
+    total?: number;
+    hasMore?: boolean;
+  } | null;
+  meta: { code?: string };
+  message: string;
+}
+
+async function seedDirectory(): Promise<void> {
+  await seedLink({
+    externalAuthorId: AUTHOR,
+    memberId: RECIPIENT_MEMBER,
+    state: "linked",
+    createdAt: "2026-03-03T00:00:00.000Z",
+    confirmedAt: "2026-03-03T00:00:00.000Z",
+  });
+  await seedLink({
+    externalAuthorId: PENDING_AUTHOR,
+    memberId: PENDING_MEMBER,
+    state: "linked",
+    authorActivationPending: true,
+    createdAt: "2026-03-02T00:00:00.000Z",
+    confirmedAt: "2026-03-02T00:00:00.000Z",
+  });
+  await seedLink({
+    externalAuthorId: DISABLED_AUTHOR,
+    memberId: DISABLED_MEMBER,
+    state: "disabled",
+    disconnectedAt: "2026-03-04T00:00:00.000Z",
+    createdAt: "2026-03-01T00:00:00.000Z",
+    confirmedAt: "2026-03-01T00:00:00.000Z",
+  });
+  await seedMessage({
+    messageId: "11111111-1111-4111-8111-111111111111",
+    recipientMemberId: RECIPIENT_MEMBER,
+    recipientExternalAuthorId: AUTHOR,
+    title: "Older note",
+    status: "failed",
+    lastErrorCode: "link_ineligible",
+    createdAt: "2026-03-03T01:00:00.000Z",
+  });
+  await seedMessage({
+    messageId: "22222222-2222-4222-8222-222222222222",
+    recipientMemberId: RECIPIENT_MEMBER,
+    recipientExternalAuthorId: AUTHOR,
+    title: "Newer note",
+    status: "delivered",
+    deliveredAt: "2026-03-03T02:00:00.000Z",
+    createdAt: "2026-03-03T02:00:00.000Z",
+  });
+}
+
+async function seedMessage(
+  overrides: Partial<IntegrityMediaAuthorMessageRecord> &
+    Pick<
+      IntegrityMediaAuthorMessageRecord,
+      "messageId" | "recipientMemberId" | "recipientExternalAuthorId" | "title" | "createdAt"
+    >,
+): Promise<void> {
+  const inserted = await messageStore.insert({
+    destination: INTEGRITY_MEDIA_SOURCE,
+    actorMemberId: ADMIN_MEMBER,
+    category: "notification",
+    body: BODY_MARKER,
+    cta: { label: "Open", url: "https://example.com/cta" },
+    status: "pending",
+    attemptCount: 1,
+    lastAttemptAt: overrides.createdAt,
+    nextAttemptAt: null,
+    deliveredAt: null,
+    lastErrorCode: null,
+    updatedAt: overrides.createdAt,
+    ...overrides,
+  });
+  assert.equal(inserted, "inserted");
+}
+
+async function listAuthors(
+  token: string | null,
+  query: Record<string, string> = {},
+): Promise<{ status: number; body: DirectoryBody }> {
+  const params = new URLSearchParams(query);
+  const suffix = params.toString();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(
+    `${baseUrl}/api/v1/admin/integrity-media/authors${suffix ? `?${suffix}` : ""}`,
+    { headers },
+  );
+  return { status: response.status, body: (await response.json()) as DirectoryBody };
+}
+
+function directoryAuthors(body: DirectoryBody): DirectoryAuthorRow[] {
+  return body.data?.authors ?? [];
 }
 
 async function seedLink(

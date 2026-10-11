@@ -46,6 +46,40 @@ export interface IntegrityMediaAuthorMessageAuditRecord {
   createdAt: string;
 }
 
+/** Latest outbound message shown on an Integrity Authors row. No body or CTA. */
+export interface IntegrityMediaAuthorLatestMessageView {
+  messageId: string;
+  title: string;
+  status: IntegrityMediaAuthorMessageStatus;
+  lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
+  createdAt: string;
+  deliveredAt: string | null;
+}
+
+export interface IntegrityMediaAuthorDirectoryRow {
+  memberId: string;
+  externalAuthorId: string;
+  state: "linked" | "disabled";
+  authorActivationPending: boolean;
+  canSend: boolean;
+  createdAt: string;
+  confirmedAt: string;
+  disconnectedAt: string | null;
+  participantDisplayName: string;
+  participantAvatarUrl?: string;
+  participantProfileHref?: string;
+  messageCount: number;
+  latestMessage: IntegrityMediaAuthorLatestMessageView | null;
+}
+
+export interface IntegrityMediaAuthorDirectoryPage {
+  authors: IntegrityMediaAuthorDirectoryRow[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
 /** Safe admin response. No body, recipient author id, secret, or signature. */
 export interface IntegrityMediaAuthorMessageDeliveryView {
   messageId: string;
