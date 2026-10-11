@@ -1,34 +1,102 @@
+/*
+ * IM-HU.04C.2D.3 — keeps the dialog usable at constrained viewport heights.
+ * Mirrors the already-shipped `admin-seo-editor` responsive modal pattern
+ * (`admin-seo-console.css`): the dialog itself becomes a viewport-bounded
+ * flex column (`max-height` + `overflow: hidden`), the scrollable form body
+ * grows/shrinks with `flex: 1; min-height: 0; overflow-y: auto`, and the
+ * action row stays pinned and fully visible with `flex: 0 0 auto`.
+ */
 .admin-integrity-author-message-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  padding: 0;
+}
+
+.admin-integrity-author-message-dialog__header {
+  flex: 0 0 auto;
+  padding: 1.25rem 1.35rem 0.85rem;
+}
+
+.admin-integrity-author-message-dialog__header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.admin-integrity-author-message-dialog__header p {
+  margin: 0;
 }
 
 .admin-integrity-author-message-dialog__form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.admin-integrity-author-message-dialog__form label {
+.admin-integrity-author-message-dialog__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 1.35rem 0.75rem;
+}
+
+.admin-integrity-author-message-dialog__body label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   font-weight: 600;
 }
 
-.admin-integrity-author-message-dialog__form input,
-.admin-integrity-author-message-dialog__form textarea {
+.admin-integrity-author-message-dialog__body input,
+.admin-integrity-author-message-dialog__body textarea {
   font: inherit;
   font-weight: 400;
   padding: 0.45rem 0.55rem;
   border: 1px solid rgba(26, 77, 109, 0.28);
   border-radius: 0.3rem;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .admin-integrity-author-message-dialog__actions {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
+  margin: 0;
+  padding: 0.85rem 1.35rem 1.25rem;
+  border-top: 1px solid rgba(26, 77, 109, 0.14);
+  background: var(--hu-color-surface, #fff);
+}
+
+/*
+ * Scoped to this dialog only (does not affect other `hu-confirm-dialog`
+ * backdrops): keeps desktop centering but gives narrow viewports usable
+ * edge margins instead of the default centered-card padding.
+ */
+.hu-confirm-dialog__backdrop:has(.admin-integrity-author-message-dialog) {
+  padding: 1rem;
+}
+
+@media (max-width: 640px) {
+  .hu-confirm-dialog__backdrop:has(.admin-integrity-author-message-dialog) {
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+
+  .admin-integrity-author-message-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 1.5rem);
+  }
 }
 
 .admin-integrity-authors .admin-panel__label {

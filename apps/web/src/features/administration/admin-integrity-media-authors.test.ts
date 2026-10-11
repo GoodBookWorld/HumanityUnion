@@ -303,4 +303,52 @@ describe("Integrity Authors admin", () => {
     assert.match(dialog, /onRefresh\(\)/);
     assert.match(dialog, /interpretIntegrityMediaAuthorDelivery/);
   });
+
+  it("IM-HU.04C.2D.3 — splits the dialog into a scrollable body and a pinned action footer", () => {
+    const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
+    // Header (title/description) stays outside the scroll region.
+    assert.match(dialog, /<header className="admin-integrity-author-message-dialog__header">/);
+    // Fields and the delivery-result banner live inside the scrollable body,
+    // not as direct children of the dialog, so they can never push the
+    // footer off-screen.
+    assert.match(dialog, /<div className="admin-integrity-author-message-dialog__body">/);
+    const bodyOpenIndex = dialog.indexOf(
+      '<div className="admin-integrity-author-message-dialog__body">',
+    );
+    const bodyCloseIndex = dialog.indexOf("</div>", bodyOpenIndex);
+    const actionsIndex = dialog.indexOf(
+      '<div className="admin-integrity-author-message-dialog__actions">',
+    );
+    assert.ok(bodyOpenIndex > -1 && bodyCloseIndex > bodyOpenIndex);
+    assert.ok(actionsIndex > bodyCloseIndex, "actions footer must follow the closed body region");
+    const resultBannerIndex = dialog.indexOf("<StatusBanner title={resultTitle}");
+    assert.ok(
+      resultBannerIndex > bodyOpenIndex && resultBannerIndex < bodyCloseIndex,
+      "the delivery result banner must render inside the scrollable body, not after it",
+    );
+    // Close/Send remain reachable in a footer that never scrolls away.
+    assert.match(dialog, /<div className="admin-integrity-author-message-dialog__actions">/);
+  });
+
+  it("IM-HU.04C.2D.3 — bounds the dialog to the viewport instead of a fixed desktop height", () => {
+    const css = read(
+      "features/administration/components/admin-integrity-author-message-dialog.css",
+    );
+    assert.doesNotMatch(css, /height:\s*\d+px/);
+    assert.match(css, /\.admin-integrity-author-message-dialog\s*\{[^}]*max-height:\s*calc\(100dvh/);
+    assert.match(css, /\.admin-integrity-author-message-dialog\s*\{[^}]*overflow:\s*hidden/);
+    assert.match(
+      css,
+      /\.admin-integrity-author-message-dialog__body\s*\{[^}]*overflow-y:\s*auto/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-author-message-dialog__body\s*\{[^}]*min-height:\s*0/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-author-message-dialog__actions\s*\{[^}]*flex:\s*0 0 auto/,
+    );
+    assert.match(css, /@media \(max-width: 640px\)/);
+  });
 });
