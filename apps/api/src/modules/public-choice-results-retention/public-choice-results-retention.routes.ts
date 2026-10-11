@@ -10,6 +10,7 @@ import {
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import { generatePublicChoiceResultsPdfBuffer } from "./public-choice-results-pdf-export.service.js";
@@ -52,7 +53,7 @@ publicChoiceResultsRetentionRouter.get(
       const decisionIdParam = typeof req.query.decisionId === "string" ? req.query.decisionId : "";
 
       const initiative = getInitiativeById(initiativeId);
-      if (!initiative) {
+      if (!initiative || !canExposePublicInitiativeProjection(initiative)) {
         res.status(404).json(createFailureResponse("Initiative not found."));
         return;
       }
@@ -147,7 +148,7 @@ publicChoiceResultsRetentionRouter.get(
     try {
       const initiativeId = getParam(req.params.initiativeId);
       const initiative = getInitiativeById(initiativeId);
-      if (!initiative) {
+      if (!initiative || !canExposePublicInitiativeProjection(initiative)) {
         res.status(404).json(createFailureResponse("Initiative not found."));
         return;
       }

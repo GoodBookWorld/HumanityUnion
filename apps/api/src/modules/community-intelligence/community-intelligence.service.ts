@@ -151,9 +151,13 @@ export async function findRelatedInitiativesForInitiative(
 
   const cached = getCommunityIntelligenceCacheEntry(initiativeId);
   if (!options.bypassCache && isCommunityIntelligenceCacheEntryFresh(cached)) {
+    const items = cached.items.filter((item) => {
+      const related = getInitiativeById(item.initiativeId);
+      return related != null && isInitiativeEligibleForPublicProjection(related);
+    });
     return {
       sourceInitiativeId: initiativeId,
-      items: cached.items,
+      items,
       emptyMessage: COMMUNITY_INTELLIGENCE_EMPTY_RELATED,
       audience: "public",
       providerId: cached.providerId,

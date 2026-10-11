@@ -16,15 +16,25 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import type { BlogPost, Initiative } from "@hu/types";
 
+import type { GlobalSearchIndexEntry } from "../../../src/modules/global-search/global-search.types.js";
 import { createAccessToken } from "../../../src/modules/auth/auth-tokens.js";
 import { isBlogPostPubliclyDeliverable } from "../../../src/modules/blog/blog-publication-delivery.service.js";
+import { COMMUNITY_SIMILARITY_ALGORITHM_VERSION } from "../../../src/modules/community-intelligence/community-intelligence.constants.js";
+import {
+  getCommunityIntelligenceCacheEntry,
+  setCommunityIntelligenceCacheEntry,
+} from "../../../src/modules/community-intelligence/community-intelligence-cache.js";
 import { selectCandidateInitiatives } from "../../../src/modules/community-intelligence/community-intelligence-matching.js";
 import { findRelatedInitiativesForInitiative } from "../../../src/modules/community-intelligence/community-intelligence.service.js";
 import { listCountryInitiativeCardProjections } from "../../../src/modules/country-statistics/country-public.service.js";
+import { searchPublicCivicRecords } from "../../../src/modules/global-search/global-search.service.js";
 import {
+  getGlobalSearchIndex,
   isPublicInitiative,
   resetGlobalSearchIndexForTests,
+  setGlobalSearchIndexForTests,
 } from "../../../src/modules/global-search/global-search.index.js";
+import { invalidateOrdinaryPublicInitiativeCaches } from "../../../src/modules/initiatives/invalidate-ordinary-public-initiative-caches.js";
 import { buildCommunityLatestInitiativesProjection } from "../../../src/modules/initiatives/initiative-public-projection.access.js";
 import { isInitiativeEligibleForPublicProjection } from "../../../src/modules/initiatives/initiative-public-projection.access.js";
 import { listWorldInitiativeCardProjections } from "../../../src/modules/initiatives/initiative-world-initiatives.projection.js";
@@ -35,6 +45,7 @@ import {
   updateInitiative,
 } from "../../../src/modules/initiatives/initiative.store.js";
 import publicInitiativeExperienceRouter from "../../../src/modules/initiatives/public-initiative-experience.routes.js";
+import { publicChoiceResultsRetentionRouter } from "../../../src/modules/public-choice-results-retention/public-choice-results-retention.routes.js";
 import publicInitiativeRouter from "../../../src/modules/initiatives/public-initiative.routes.js";
 import { publicChoiceCandidateRouter } from "../../../src/modules/public-choice-candidate/public-choice-candidate.routes.js";
 import { listPublicChoiceCandidatesForInitiative } from "../../../src/modules/public-choice-candidate/public-choice-candidate.service.js";
@@ -275,15 +286,35 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
   });
 
   it("returns the same 404 for blocked public reads, including with an admin token", async () => {
-    track(initiative("hu04a-http-blocked", { administrativelyBlocked: true }));
+    const blockedTitle = "HU04B-SECRET-BLOCKED-TITLE";
+    const blockedDescription = "HU04B-SECRET-BLOCKED-DESCRIPTION";
+    const blockedCandidate = "HU04B-SECRET-CANDIDATE";
+    track(
+      initiative("hu04a-http-blocked", {
+        administrativelyBlocked: true,
+        title: blockedTitle,
+        description: blockedDescription,
+      }),
+    );
     track(initiative("hu04a-http-hidden", { visibility: { policy: "steward_only" } }));
     track(initiative("hu04a-http-open"));
     track(
       initiative("hu04a-http-election", {
         lifecycleProfile: "PUBLIC_CHOICE",
         administrativelyBlocked: true,
+        title: blockedTitle,
+        description: blockedDescription,
       }),
     );
+    const now = "2026-10-11T00:00:00.000Z";
+    await insertPublicChoiceCandidate({
+      candidateId: "hu04a-http-secret-candidate",
+      initiativeId: "hu04a-http-election",
+      name: blockedCandidate,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     const adminToken = createAccessToken({
       sub: "hu04a-admin-user",
@@ -296,6 +327,7 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
     app.use("/public/initiatives", publicInitiativeRouter);
     app.use("/public/initiatives", publicInitiativeExperienceRouter);
     app.use("/public/initiatives", publicChoiceCandidateRouter);
+    app.use("/public/initiatives", publicChoiceResultsRetentionRouter);
     const server: Server = createServer(app);
     await new Promise<void>((resolve) => {
       server.listen(0, "127.0.0.1", () => resolve());
@@ -303,38 +335,159 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
 
     try {
       const port = (server.address() as AddressInfo).port;
-      const headers = { Authorization: `Bearer ${adminToken}` };
+      const adminHeaders = { Authorization: `Bearer ${adminToken}` };
 
-      async function read(path: string) {
+      async function read(path: string, headers?: Record<string, string>) {
         const response = await fetch(`http://127.0.0.1:${port}${path}`, { headers });
-        return { status: response.status, body: await response.json() };
+        const text = await response.text();
+        return { status: response.status, text, body: JSON.parse(text) as { message?: string } };
       }
 
-      const blockedGet = await read("/public/initiatives/hu04a-http-blocked");
-      const hiddenGet = await read("/public/initiatives/hu04a-http-hidden");
-      const blockedExperience = await read("/public/initiatives/hu04a-http-blocked/experience");
-      const hiddenExperience = await read("/public/initiatives/hu04a-http-hidden/experience");
-      const blockedRoster = await read("/public/initiatives/hu04a-http-election/candidates");
-      const openResponse = await fetch(
-        `http://127.0.0.1:${port}/public/initiatives/hu04a-http-open`,
-        { headers },
-      );
+      const paths = [
+        "/public/initiatives/hu04a-http-blocked",
+        "/public/initiatives/hu04a-http-blocked/experience",
+        "/public/initiatives/hu04a-http-election/candidates",
+        "/public/initiatives/hu04a-http-election/public-choice-results/status",
+        "/public/initiatives/hu04a-http-election/public-choice-results/download",
+      ];
 
-      assert.equal(blockedGet.status, 404);
-      assert.equal(hiddenGet.status, 404);
+      for (const path of paths) {
+        const anonymous = await read(path);
+        const admin = await read(path, adminHeaders);
+        assert.equal(anonymous.status, 404, path);
+        assert.equal(admin.status, 404, path);
+        assert.equal(anonymous.text, admin.text, path);
+        assert.equal(anonymous.body.message, "Initiative not found.");
+        assert.equal(anonymous.text.includes(blockedTitle), false, path);
+        assert.equal(anonymous.text.includes(blockedDescription), false, path);
+        assert.equal(anonymous.text.includes(blockedCandidate), false, path);
+      }
+
+      const hiddenGet = await read("/public/initiatives/hu04a-http-hidden", adminHeaders);
+      const blockedGet = await read("/public/initiatives/hu04a-http-blocked", adminHeaders);
+      const hiddenExperience = await read(
+        "/public/initiatives/hu04a-http-hidden/experience",
+        adminHeaders,
+      );
+      const blockedExperience = await read(
+        "/public/initiatives/hu04a-http-blocked/experience",
+        adminHeaders,
+      );
       assert.deepEqual(blockedGet.body, hiddenGet.body);
-      assert.equal(blockedGet.body.message, "Initiative not found.");
-      assert.notEqual(openResponse.status, 404);
-      assert.equal(blockedExperience.status, 404);
-      assert.equal(hiddenExperience.status, 404);
       assert.deepEqual(blockedExperience.body, hiddenExperience.body);
-      assert.equal(blockedRoster.status, 404);
-      assert.equal(blockedRoster.body.message, "Initiative not found.");
+
+      const openResponse = await fetch(`http://127.0.0.1:${port}/public/initiatives/hu04a-http-open`, {
+        headers: adminHeaders,
+      });
+      assert.notEqual(openResponse.status, 404);
+      const openStatus = await read(
+        "/public/initiatives/hu04a-http-open/public-choice-results/status",
+        adminHeaders,
+      );
+      assert.equal(openStatus.status, 200);
+      assert.equal(openStatus.text.includes(blockedTitle), false);
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
       });
     }
+  });
+
+  it("drops a warm search index entry and a cached related title after a block", async () => {
+    track(initiative("hu04a-search-open", { title: "HU04B Open Search Title" }));
+    track(
+      initiative("hu04a-search-blocked", {
+        administrativelyBlocked: true,
+        title: "HU04B Secret Search Title",
+        description: "HU04B Secret Search Description",
+      }),
+    );
+    track(initiative("hu04a-related-cache-source", { title: "HU04B Related Source" }));
+
+    const blockedEntry = searchEntry("hu04a-search-blocked", "HU04B Secret Search Title");
+    const openEntry = searchEntry("hu04a-search-open", "HU04B Open Search Title");
+    const childEntry = searchEntry("analysis-of-blocked", "HU04B Secret Analysis Title");
+    childEntry.entityType = "analysis";
+    childEntry.initiativeId = "hu04a-search-blocked";
+    childEntry.normalizedEntityType = "analysis";
+    setGlobalSearchIndexForTests([openEntry, blockedEntry, childEntry]);
+
+    const results = await searchPublicCivicRecords({ q: "HU04B", limit: 10, offset: 0 });
+    const serialized = JSON.stringify(results);
+    assert.match(serialized, /HU04B Open Search Title/);
+    assert.equal(serialized.includes("HU04B Secret Search Title"), false);
+    assert.equal(serialized.includes("HU04B Secret Analysis Title"), false);
+    assert.equal(serialized.includes("HU04B Secret Search Description"), false);
+
+    setCommunityIntelligenceCacheEntry("hu04a-related-cache-source", {
+      expiresAt: Date.now() + 60_000,
+      providerId: "hu04b-test",
+      algorithmVersion: COMMUNITY_SIMILARITY_ALGORITHM_VERSION,
+      items: [
+        {
+          initiativeId: "hu04a-search-blocked",
+          title: "HU04B Secret Search Title",
+          relationshipType: "related",
+          score: 1,
+          reasons: [],
+          sharedTopics: [],
+          sharedParticipationAreas: [],
+          sharedPriorities: [],
+          keyDifferences: [],
+          publicUrl: "/initiatives/public/hu04a-search-blocked",
+        },
+      ],
+    });
+    const related = await findRelatedInitiativesForInitiative("hu04a-related-cache-source");
+    assert.deepEqual(related.items, []);
+    assert.equal(JSON.stringify(related).includes("HU04B Secret Search Title"), false);
+
+    setGlobalSearchIndexForTests([blockedEntry]);
+    setCommunityIntelligenceCacheEntry("hu04a-related-cache-source", {
+      expiresAt: Date.now() + 60_000,
+      providerId: "hu04b-test",
+      algorithmVersion: COMMUNITY_SIMILARITY_ALGORITHM_VERSION,
+      items: [
+        {
+          initiativeId: "hu04a-search-blocked",
+          title: "HU04B Secret Search Title",
+          relationshipType: "related",
+          score: 1,
+          reasons: [],
+          sharedTopics: [],
+          sharedParticipationAreas: [],
+          sharedPriorities: [],
+          keyDifferences: [],
+          publicUrl: "/initiatives/public/hu04a-search-blocked",
+        },
+      ],
+    });
+    invalidateOrdinaryPublicInitiativeCaches("hu04a-search-blocked");
+    await assert.rejects(() => getGlobalSearchIndex(), /MongoDB skipped in NODE_TEST_ENV/);
+    assert.equal(getCommunityIntelligenceCacheEntry("hu04a-related-cache-source"), undefined);
+    const adminModeration = readFileSync(
+      fileURLToPath(
+        new URL(
+          "../../../src/modules/administration/admin-initiative-moderation.service.ts",
+          import.meta.url,
+        ),
+      ),
+      "utf8",
+    );
+    const editorModeration = readFileSync(
+      fileURLToPath(
+        new URL("../../../src/modules/editor-grants/editor-moderation.service.ts", import.meta.url),
+      ),
+      "utf8",
+    );
+    assert.equal(
+      adminModeration.match(/invalidateOrdinaryPublicInitiativeCaches\(/g)?.length,
+      2,
+    );
+    assert.equal(
+      editorModeration.match(/invalidateOrdinaryPublicInitiativeCaches\(/g)?.length,
+      2,
+    );
   });
 
   it("leaves Blog public delivery blocked and does not treat a block as a lifecycle change", () => {
@@ -352,5 +505,56 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
 
     assert.equal(isBlogPostPubliclyDeliverable(blockedPost), false);
     assert.equal(isBlogPostPubliclyDeliverable(openPost), true);
+
+    const blogService = readFileSync(
+      fileURLToPath(new URL("../../../src/modules/blog/blog.service.ts", import.meta.url)),
+      "utf8",
+    );
+    const blogRepository = readFileSync(
+      fileURLToPath(
+        new URL("../../../src/modules/blog/persistence/blog.repository.ts", import.meta.url),
+      ),
+      "utf8",
+    );
+    const publicSlug = blogService.slice(
+      blogService.indexOf("export async function getPublicBlogPostBySlug"),
+      blogService.indexOf("export async function getPublicBlogPostBySlug") + 1200,
+    );
+    assert.match(publicSlug, /post\.administrativelyBlocked === true/);
+    assert.match(publicSlug, /BlogNotFoundError/);
+    assert.match(blogRepository, /administrativelyBlocked: \{ \$ne: true \}/);
   });
 });
+
+function searchEntry(entityId: string, title: string): GlobalSearchIndexEntry {
+  const normalizedTitle = title.trim().toLowerCase();
+  return {
+    entityType: "initiative",
+    entityId,
+    title,
+    summary: "",
+    country: "",
+    region: "",
+    community: "",
+    activityArea: "",
+    status: "",
+    publicUrl: `/initiatives/public/${entityId}`,
+    updatedAt: "2026-10-11T00:00:00.000Z",
+    initiativeId: entityId,
+    normalizedTitle,
+    normalizedSummary: "",
+    normalizedCountry: "",
+    normalizedRegion: "",
+    normalizedCommunity: "",
+    normalizedActivityArea: "",
+    normalizedStatus: "",
+    normalizedEntityType: "initiative",
+    normalizedCountryLabel: "",
+    normalizedRegionLabel: "",
+    normalizedCountryCode: "",
+    normalizedRegionCode: "",
+    normalizedTranslatedTitles: {},
+    normalizedTranslatedSummaries: {},
+    normalizedTerminologyAliasesByLanguage: {},
+  };
+}
