@@ -299,6 +299,20 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
     track(initiative("hu04a-http-hidden", { visibility: { policy: "steward_only" } }));
     track(initiative("hu04a-http-open"));
     track(
+      initiative("hu04a-http-roster-open", {
+        lifecycleProfile: "PUBLIC_CHOICE",
+        title: "HU04C Open Election",
+      }),
+    );
+    await insertPublicChoiceCandidate({
+      candidateId: "hu04a-http-open-candidate",
+      initiativeId: "hu04a-http-roster-open",
+      name: "HU04C Open Candidate",
+      sortOrder: 0,
+      createdAt: "2026-10-11T00:00:00.000Z",
+      updatedAt: "2026-10-11T00:00:00.000Z",
+    });
+    track(
       initiative("hu04a-http-election", {
         lifecycleProfile: "PUBLIC_CHOICE",
         administrativelyBlocked: true,
@@ -340,7 +354,12 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
       async function read(path: string, headers?: Record<string, string>) {
         const response = await fetch(`http://127.0.0.1:${port}${path}`, { headers });
         const text = await response.text();
-        return { status: response.status, text, body: JSON.parse(text) as { message?: string } };
+        return {
+          status: response.status,
+          text,
+          cacheControl: response.headers.get("cache-control"),
+          body: JSON.parse(text) as { message?: string },
+        };
       }
 
       const paths = [
@@ -361,6 +380,8 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
         assert.equal(anonymous.text.includes(blockedTitle), false, path);
         assert.equal(anonymous.text.includes(blockedDescription), false, path);
         assert.equal(anonymous.text.includes(blockedCandidate), false, path);
+        assert.equal(anonymous.cacheControl, "no-store", path);
+        assert.equal(admin.cacheControl, "no-store", path);
       }
 
       const hiddenGet = await read("/public/initiatives/hu04a-http-hidden", adminHeaders);
@@ -380,12 +401,25 @@ describe("HU-INIT-04A ordinary-public eligibility", () => {
         headers: adminHeaders,
       });
       assert.notEqual(openResponse.status, 404);
+      assert.equal(openResponse.headers.get("cache-control"), "no-store");
       const openStatus = await read(
         "/public/initiatives/hu04a-http-open/public-choice-results/status",
         adminHeaders,
       );
       assert.equal(openStatus.status, 200);
+      assert.equal(openStatus.cacheControl, "no-store");
       assert.equal(openStatus.text.includes(blockedTitle), false);
+      const openRoster = await read("/public/initiatives/hu04a-http-roster-open/candidates");
+      const adminRoster = await read(
+        "/public/initiatives/hu04a-http-roster-open/candidates",
+        adminHeaders,
+      );
+      assert.equal(openRoster.status, 200);
+      assert.equal(adminRoster.status, 200);
+      assert.equal(openRoster.cacheControl, "no-store");
+      assert.equal(adminRoster.cacheControl, "no-store");
+      assert.match(openRoster.text, /HU04C Open Candidate/);
+      assert.equal(openRoster.text.includes(blockedCandidate), false);
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

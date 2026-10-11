@@ -8,6 +8,7 @@ import {
 } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { ordinaryPublicNoStore } from "../../shared/ordinary-public-no-store.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
@@ -18,6 +19,8 @@ import { ensurePublicChoiceResultsFrozenForClosedDecision } from "./public-choic
 import { findPublicChoiceResultsSnapshotByDecision } from "./public-choice-results-snapshot.repository.js";
 
 export const publicChoiceResultsRetentionRouter = Router();
+
+publicChoiceResultsRetentionRouter.use(ordinaryPublicNoStore);
 
 function createFailureResponse(message: string) {
   return {

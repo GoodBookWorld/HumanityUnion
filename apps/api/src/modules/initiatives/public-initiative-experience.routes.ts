@@ -2,6 +2,7 @@ import { Router, type Request } from "express";
 import cookieParser from "cookie-parser";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { ordinaryPublicNoStore } from "../../shared/ordinary-public-no-store.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { getInitiativeById } from "./initiative.store.js";
 import { canExposePublicInitiativeProjection } from "./public-initiative.projection.js";
@@ -10,6 +11,7 @@ import { buildPublicInitiativeExperienceProjection } from "./public-initiative-e
 export const publicInitiativeExperienceRouter = Router();
 
 publicInitiativeExperienceRouter.use(cookieParser());
+publicInitiativeExperienceRouter.use(ordinaryPublicNoStore);
 
 const VISITOR_COOKIE = "hu_initiative_visitor";
 
