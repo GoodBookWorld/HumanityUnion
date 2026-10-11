@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { ordinaryPublicNoStore } from "../../shared/ordinary-public-no-store.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
@@ -62,12 +63,14 @@ async function handleListCandidates(req: Request, res: Response): Promise<void> 
 
 publicChoiceCandidateRouter.get(
   "/:initiativeId/candidates",
+  ordinaryPublicNoStore,
   optionalAuthenticationMiddleware,
   handleListCandidates,
 );
 
 publicChoiceCandidatesByInitiativeRouter.get(
   "/:initiativeId/candidates",
+  ordinaryPublicNoStore,
   optionalAuthenticationMiddleware,
   handleListCandidates,
 );

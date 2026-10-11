@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { ordinaryPublicNoStore } from "../../shared/ordinary-public-no-store.js";
 import { getInitiativeById } from "./initiative.store.js";
 import {
   canExposePublicInitiativeProjection,
@@ -8,6 +9,8 @@ import {
 } from "./public-initiative.projection.js";
 
 const publicInitiativeRouter = Router();
+
+publicInitiativeRouter.use(ordinaryPublicNoStore);
 
 function createFailureResponse(message: string) {
   return {
