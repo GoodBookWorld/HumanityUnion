@@ -1,6 +1,7 @@
 import type {
   AdminInitiativeDetail,
   AdminInitiativeDirectoryResponse,
+  AdminInitiativeExperienceView,
   AdminInitiativeVisibilityCommandResult,
   InitiativeLifecyclePhase,
   InitiativeStatus,
@@ -69,6 +70,14 @@ export async function getAdminInitiativeDetail(
 ): Promise<AdminInitiativeDetail> {
   return apiRequest<AdminInitiativeDetail>(
     `/api/v1/admin/initiatives/${encodeURIComponent(initiativeId)}`,
+  );
+}
+
+export async function getAdminInitiativeExperience(
+  initiativeId: string,
+): Promise<AdminInitiativeExperienceView> {
+  return apiRequest<AdminInitiativeExperienceView>(
+    `/api/v1/admin/initiatives/${encodeURIComponent(initiativeId)}/experience`,
   );
 }
 

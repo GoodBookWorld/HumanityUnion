@@ -1984,6 +1984,7 @@ export type {
   AdminAuditBrowserResponse,
   AdminInitiativeCivicRelationships,
   AdminInitiativeDetail,
+  AdminInitiativeExperienceView,
   AdminInitiativeDirectoryAggregates,
   AdminInitiativeDirectoryItem,
   AdminInitiativeDirectoryResponse,

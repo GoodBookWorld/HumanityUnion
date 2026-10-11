@@ -19,6 +19,10 @@ import {
   publicChoiceSidebarAllows,
   resolvePublicChoiceSidebarAllowlist,
 } from "../public-choice-sidebar-allowlist";
+import {
+  AdminReadOnlyElectionBallotView,
+  type AdminReadOnlyElectionBallot,
+} from "./AdminReadOnlyElectionBallot";
 import { PublicChoiceElectionSidebarWidget } from "./PublicChoiceElectionSidebarWidget";
 import { PublicInitiativeLatestInitiatives } from "./PublicInitiativeLatestInitiatives";
 import { PublicInitiativeRevisionHistory } from "./PublicInitiativeRevisionHistory";
@@ -43,6 +47,10 @@ interface PublicExperienceSidebarProps {
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
   /** Pack 04 — reserved; Initiative Support hidden for all PUBLIC_CHOICE. */
   ballotMode?: string | null;
+  /** Administrator full-page read. Hides support and bookmark actions. */
+  readOnly?: boolean;
+  /** Preloaded election read. Skips the public candidate and results widget. */
+  readOnlyElection?: AdminReadOnlyElectionBallot | null;
 }
 
 export function PublicExperienceSidebar({
@@ -60,6 +68,8 @@ export function PublicExperienceSidebar({
   viewerIsSteward = false,
   lifecycleProfile = null,
   ballotMode: _ballotMode = null,
+  readOnly = false,
+  readOnlyElection = null,
 }: PublicExperienceSidebarProps) {
   const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
@@ -74,10 +84,14 @@ export function PublicExperienceSidebar({
     return (
       <>
         {publicChoiceSidebarAllows(allowlist, "candidates") ? (
-          <PublicChoiceElectionSidebarWidget
-            initiativeId={initiativeId}
-            lifecycleProfile={lifecycleProfile}
-          />
+          readOnlyElection ? (
+            <AdminReadOnlyElectionBallotView ballot={readOnlyElection} />
+          ) : (
+            <PublicChoiceElectionSidebarWidget
+              initiativeId={initiativeId}
+              lifecycleProfile={lifecycleProfile}
+            />
+          )
         ) : null}
         {publicChoiceSidebarAllows(allowlist, "your_participation") && participationJourney ? (
           <YourParticipationPanel
@@ -100,11 +114,16 @@ export function PublicExperienceSidebar({
         onBookmarkToggle={onBookmarkToggle}
         busy={supportBusy}
         title={resolvedSupportLabel}
+        interactive={!readOnly}
       />
-      <PublicChoiceElectionSidebarWidget
-        initiativeId={initiativeId}
-        lifecycleProfile={lifecycleProfile}
-      />
+      {readOnlyElection ? (
+        <AdminReadOnlyElectionBallotView ballot={readOnlyElection} />
+      ) : (
+        <PublicChoiceElectionSidebarWidget
+          initiativeId={initiativeId}
+          lifecycleProfile={lifecycleProfile}
+        />
+      )}
       {participationJourney ? (
         <YourParticipationPanel
           journey={participationJourney}

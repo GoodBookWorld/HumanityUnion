@@ -23,6 +23,7 @@ import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperience
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
 import { PublicExperienceSidebarOrChannel } from "./PublicExperienceSidebarOrChannel";
 import type { CollaborationTab } from "./InitiativeCollaborationWorkspace";
+import type { AdminReadOnlyElectionBallot } from "./AdminReadOnlyElectionBallot";
 import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeCenterPanel";
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
@@ -44,6 +45,12 @@ interface PublicInitiativeExperiencePageProps {
     readonly title: string;
     readonly description: string;
   };
+  /**
+   * Administrator full-page read. Hides participation controls and supplies
+   * preloaded election data so public candidate and decision endpoints are not called.
+   */
+  readOnly?: boolean;
+  readOnlyElection?: AdminReadOnlyElectionBallot | null;
 }
 
 export function PublicInitiativeExperiencePage({
@@ -52,6 +59,8 @@ export function PublicInitiativeExperiencePage({
   onManageInitiativeUpdated,
   onExperienceRefetch,
   initialPresentation,
+  readOnly = false,
+  readOnlyElection = null,
 }: PublicInitiativeExperiencePageProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -297,6 +306,9 @@ export function PublicInitiativeExperiencePage({
   const handleSignalChange = async (
     signal: Parameters<typeof updateInitiativeSupportSignal>[1],
   ) => {
+    if (readOnly) {
+      return;
+    }
     setSupportBusy(true);
 
     try {
@@ -315,6 +327,9 @@ export function PublicInitiativeExperiencePage({
   };
 
   const handleBookmarkToggle = async () => {
+    if (readOnly) {
+      return;
+    }
     setSupportBusy(true);
 
     try {
@@ -427,6 +442,8 @@ export function PublicInitiativeExperiencePage({
               onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
               openCandidateSubmit={openCandidateSubmit}
               onOpenCandidateSubmitConsumed={() => setOpenCandidateSubmit(false)}
+              readOnly={readOnly}
+              readOnlyElection={readOnlyElection}
             />
           </>
         }
@@ -450,6 +467,8 @@ export function PublicInitiativeExperiencePage({
             latestInitiatives={experience.latestInitiatives}
             onSignalChange={(signal) => void handleSignalChange(signal)}
             onBookmarkToggle={() => void handleBookmarkToggle()}
+            readOnly={readOnly}
+            readOnlyElection={readOnlyElection}
             onRevisionSelect={handleRevisionSelect}
             supportBusy={supportBusy}
             participationJourney={experience.participationJourney ?? null}

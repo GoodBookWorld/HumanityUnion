@@ -14,6 +14,8 @@ interface PublicInitiativeSupportStatisticsProps {
   busy?: boolean;
   className?: string;
   title?: string;
+  /** When false, counts stay visible and support or bookmark actions are not offered. */
+  interactive?: boolean;
 }
 
 function BreakdownRow({
@@ -84,6 +86,7 @@ export function PublicInitiativeSupportStatistics({
   busy = false,
   className,
   title,
+  interactive = true,
 }: PublicInitiativeSupportStatisticsProps) {
   const t = useTranslations("initiativeExperience");
   const rootClass = className ? `pie-support ${className}` : "pie-support";
@@ -98,38 +101,40 @@ export function PublicInitiativeSupportStatistics({
       </h2>
       <p className="pie-support__subtitle">{t("sidebar.support.subtitle")}</p>
 
-      <div className="pie-support__actions">
-        <button
-          type="button"
-          className={`pie-support__signal${statistics.currentUserSignal === "like" ? " pie-support__signal--active" : ""}`}
-          aria-pressed={statistics.currentUserSignal === "like"}
-          aria-label={t("sidebar.support.supportAria")}
-          disabled={busy}
-          onClick={() => onSignalChange(statistics.currentUserSignal === "like" ? "none" : "like")}
-        >
-          <img src="/icons/workspace/like.svg" alt="" aria-hidden="true" width={32} height={32} />
-          {t("sidebar.support.support")}
-        </button>
-        <button
-          type="button"
-          className={`pie-support__signal${statistics.currentUserSignal === "dislike" ? " pie-support__signal--active" : ""}`}
-          aria-pressed={statistics.currentUserSignal === "dislike"}
-          aria-label={t("sidebar.support.doNotSupportAria")}
-          disabled={busy}
-          onClick={() =>
-            onSignalChange(statistics.currentUserSignal === "dislike" ? "none" : "dislike")
-          }
-        >
-          <img
-            src="/icons/workspace/dislike.svg"
-            alt=""
-            aria-hidden="true"
-            width={32}
-            height={32}
-          />
-          {t("sidebar.support.doNotSupport")}
-        </button>
-      </div>
+      {interactive ? (
+        <div className="pie-support__actions">
+          <button
+            type="button"
+            className={`pie-support__signal${statistics.currentUserSignal === "like" ? " pie-support__signal--active" : ""}`}
+            aria-pressed={statistics.currentUserSignal === "like"}
+            aria-label={t("sidebar.support.supportAria")}
+            disabled={busy}
+            onClick={() => onSignalChange(statistics.currentUserSignal === "like" ? "none" : "like")}
+          >
+            <img src="/icons/workspace/like.svg" alt="" aria-hidden="true" width={32} height={32} />
+            {t("sidebar.support.support")}
+          </button>
+          <button
+            type="button"
+            className={`pie-support__signal${statistics.currentUserSignal === "dislike" ? " pie-support__signal--active" : ""}`}
+            aria-pressed={statistics.currentUserSignal === "dislike"}
+            aria-label={t("sidebar.support.doNotSupportAria")}
+            disabled={busy}
+            onClick={() =>
+              onSignalChange(statistics.currentUserSignal === "dislike" ? "none" : "dislike")
+            }
+          >
+            <img
+              src="/icons/workspace/dislike.svg"
+              alt=""
+              aria-hidden="true"
+              width={32}
+              height={32}
+            />
+            {t("sidebar.support.doNotSupport")}
+          </button>
+        </div>
+      ) : null}
 
       <BreakdownRow
         label={t("sidebar.support.support")}
@@ -149,15 +154,21 @@ export function PublicInitiativeSupportStatistics({
       />
 
       <div className="pie-support__metrics">
-        <button
-          type="button"
-          className={`pie-support__bookmark${statistics.currentUserBookmarked ? " pie-support__bookmark--active" : ""}`}
-          aria-pressed={statistics.currentUserBookmarked}
-          disabled={busy}
-          onClick={onBookmarkToggle}
-        >
-          {t("sidebar.support.bookmarks")} <strong>{statistics.bookmarks.total}</strong>
-        </button>
+        {interactive ? (
+          <button
+            type="button"
+            className={`pie-support__bookmark${statistics.currentUserBookmarked ? " pie-support__bookmark--active" : ""}`}
+            aria-pressed={statistics.currentUserBookmarked}
+            disabled={busy}
+            onClick={onBookmarkToggle}
+          >
+            {t("sidebar.support.bookmarks")} <strong>{statistics.bookmarks.total}</strong>
+          </button>
+        ) : (
+          <p>
+            {t("sidebar.support.bookmarks")} <strong>{statistics.bookmarks.total}</strong>
+          </p>
+        )}
         <p>
           {t("sidebar.support.views")}{" "}
           <strong>

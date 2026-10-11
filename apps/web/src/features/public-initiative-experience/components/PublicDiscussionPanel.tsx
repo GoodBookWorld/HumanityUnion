@@ -59,6 +59,7 @@ import {
   type DiscussionChromeLabelKey,
   type DiscussionFilter,
 } from "./discussion-comment-presentation";
+import type { AdminReadOnlyElectionBallot } from "./AdminReadOnlyElectionBallot";
 import { PublicChoiceDiscussionVotePanel } from "./PublicChoiceDiscussionVotePanel";
 
 /** @deprecated Prefer importing from discussion-comment-deep-link. */
@@ -92,6 +93,9 @@ interface PublicDiscussionPanelProps {
   focusCollaborationParticipantId?: string;
   /** Public Choice Experience Pack 01 — profile-aware Discussion presentation. */
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /** Administrator read. Disables comment submission and public ballot fetches. */
+  readOnly?: boolean;
+  readOnlyBallot?: AdminReadOnlyElectionBallot | null;
 }
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
@@ -803,6 +807,8 @@ export function PublicDiscussionPanel({
   focusCommentId,
   focusCollaborationParticipantId,
   lifecycleProfile,
+  readOnly = false,
+  readOnlyBallot = null,
 }: PublicDiscussionPanelProps) {
   const t = useTranslations("initiativeExperience");
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
@@ -857,7 +863,7 @@ export function PublicDiscussionPanel({
   }, [draftStorageKey]);
 
   useEffect(() => {
-    if (authStatus !== "authenticated") {
+    if (readOnly || authStatus !== "authenticated") {
       setCanComment(false);
       setRestrictedMessage(null);
       return;
@@ -896,7 +902,7 @@ export function PublicDiscussionPanel({
     return () => {
       cancelled = true;
     };
-  }, [authStatus, t]);
+  }, [authStatus, readOnly, t]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
@@ -1131,7 +1137,10 @@ export function PublicDiscussionPanel({
       </p>
 
       {presentation.discussionShowsVoteBallot ? (
-        <PublicChoiceDiscussionVotePanel initiativeId={initiativeId} />
+        <PublicChoiceDiscussionVotePanel
+          initiativeId={initiativeId}
+          readOnlyBallot={readOnlyBallot}
+        />
       ) : null}
 
       {/*

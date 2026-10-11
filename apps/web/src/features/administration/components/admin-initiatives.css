@@ -156,6 +156,14 @@
   font: inherit;
 }
 
+.admin-initiative-block-reason {
+  margin: 0 0 1rem;
+  max-width: 48rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
 .admin-initiative-description {
   margin: 0;
   max-width: 48rem;
@@ -165,6 +173,7 @@
 }
 
 @media (max-width: 720px) {
+  .admin-initiative-block-reason,
   .admin-initiative-description {
     max-width: 100%;
   }

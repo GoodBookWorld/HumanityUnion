@@ -1,6 +1,7 @@
 import type {
   AdminInitiativeCivicRelationships,
   AdminInitiativeDetail,
+  AdminInitiativeExperienceView,
   AdminInitiativeDirectoryAggregates,
   AdminInitiativeDirectoryItem,
   AdminInitiativeDirectoryResponse,
@@ -31,6 +32,7 @@ import { listImpactsByInitiative } from "../initiative-public-impact/initiative-
 import { listRevisionsByInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { listSessionsByInitiative } from "../decision-session/decision-session.store.js";
 import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiative-public-projection.access.js";
+import { buildPublicInitiativeExperienceProjection } from "../initiatives/public-initiative-experience.service.js";
 import { getInitiativeById, listInitiatives } from "../initiatives/initiative.store.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import { resolvePublicAuthorIdentity } from "../member-profile/public-author-identity.projection.js";
@@ -693,6 +695,40 @@ export async function getAdminInitiativeDetail(
       return resolved.isBlocked ? resolved.authority : null;
     })(),
     blockLabel: formatModerationBlockLabel(initiative),
+  };
+}
+
+/**
+ * Read-only administrator view of the canonical Initiative experience.
+ * Does not record a public view, and does not publish, unblock, or create voting decisions.
+ */
+export async function getAdminInitiativeExperience(
+  input: GetAdminInitiativeDetailInput,
+  deps: {
+    readonly findAuthUserById?: typeof findAuthUserById;
+    readonly buildExperience?: (
+      initiative: Initiative,
+    ) => Promise<AdminInitiativeExperienceView["experience"]>;
+  } = {},
+): Promise<AdminInitiativeExperienceView> {
+  const findUser = deps.findAuthUserById ?? findAuthUserById;
+  await assertAdminUser(input.actorUserId, findUser);
+
+  const initiative = getInitiativeById(input.initiativeId);
+  if (!initiative) {
+    throw new AdminInitiativeDirectoryValidationError("Initiative not found.");
+  }
+
+  const buildExperience =
+    deps.buildExperience ??
+    ((record: Initiative) => buildPublicInitiativeExperienceProjection({ initiative: record }));
+  const experience = await buildExperience(initiative);
+  const administrativeBlockReason = initiative.administrativeBlockReason?.trim() || null;
+
+  return {
+    experience,
+    administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
+    administrativeBlockReason,
   };
 }
 

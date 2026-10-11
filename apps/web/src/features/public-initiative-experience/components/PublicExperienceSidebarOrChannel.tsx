@@ -136,7 +136,7 @@ export function PublicExperienceSidebarOrChannel({
    * Fix 07B — PUBLIC_CHOICE Overview always uses the public allowlisted sidebar.
    * Author must not enter Working Sidebar or icw-tabs / Channel on PC.
    */
-  if (isPublicChoice) {
+  if (sidebarProps.readOnly || isPublicChoice) {
     return <PublicExperienceSidebar {...sidebarProps} lifecycleProfile={lifecycleProfile} />;
   }
 

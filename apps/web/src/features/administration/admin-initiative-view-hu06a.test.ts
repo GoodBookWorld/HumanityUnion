@@ -34,22 +34,29 @@ describe("HU-INIT-06A admin Initiative view", () => {
     assert.match(css, /@media \(max-width:\s*720px\)/);
   });
 
-  it("uses one protected View action on Admin Initiatives", () => {
+  it("keeps Inspect and adds a separate protected View", () => {
     const directory = readWeb("features/administration/components/AdminInitiativesSection.tsx");
     assert.match(
       directory,
       /href=\{`\/admin\/initiatives\/\$\{encodeURIComponent\(row\.initiativeId\)\}`\}/,
     );
+    assert.match(
+      directory,
+      /href=\{`\/admin\/initiatives\/\$\{encodeURIComponent\(row\.initiativeId\)\}\/view`\}/,
+    );
+    assert.match(directory, />\s*Inspect\s*</);
     assert.match(directory, />\s*View\s*</);
-    assert.doesNotMatch(directory, />\s*Inspect\s*</);
     assert.match(directory, />\s*Block\s*</);
     assert.match(directory, />\s*Unblock\s*</);
   });
 
-  it("sends Public Choice View to the admin Initiative route and keeps Manage", () => {
+  it("sends Public Choice View to the admin experience route and keeps Manage", () => {
     const section = readWeb("features/administration/components/AdminPublicChoiceSection.tsx");
     assert.match(section, /function adminInitiativeViewHref/);
-    assert.match(section, /\/admin\/initiatives\/\$\{encodeURIComponent\(initiativeId\)\}/);
+    assert.match(
+      section,
+      /\/admin\/initiatives\/\$\{encodeURIComponent\(initiativeId\)\}\/view/,
+    );
     assert.match(section, /href=\{adminInitiativeViewHref\(row\.initiativeId\)\}/);
     assert.match(section, />\s*View\s*</);
     assert.match(

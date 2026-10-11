@@ -32,6 +32,10 @@ import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { resolveParticipationScopeDisplayLabel } from "../initiative-experience-i18n";
+import {
+  AdminReadOnlyElectionBallotView,
+  type AdminReadOnlyElectionBallot,
+} from "./AdminReadOnlyElectionBallot";
 
 /**
  * Public Choice Architecture Pack 02A — Discussion-stage voting control.
@@ -40,7 +44,21 @@ import { resolveParticipationScopeDisplayLabel } from "../initiative-experience-
  * SELECT_ONE_CANDIDATE: pointer to Collective Decision (voting lives there).
  * Visitors may vote without sign-in (credentials/cookies).
  */
-export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId: string }) {
+export function PublicChoiceDiscussionVotePanel({
+  initiativeId,
+  readOnlyBallot = null,
+}: {
+  initiativeId: string;
+  readOnlyBallot?: AdminReadOnlyElectionBallot | null;
+}) {
+  if (readOnlyBallot) {
+    return <AdminReadOnlyElectionBallotView ballot={readOnlyBallot} />;
+  }
+
+  return <PublicChoiceDiscussionVotePanelLive initiativeId={initiativeId} />;
+}
+
+function PublicChoiceDiscussionVotePanelLive({ initiativeId }: { initiativeId: string }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const authStatus = useClientAuthStatus();
