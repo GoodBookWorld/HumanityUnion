@@ -207,6 +207,7 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
             updatedAt: record.updatedAt,
             confirmedAt: record.confirmedAt,
             disconnectedAt: record.disconnectedAt,
+            authorActivationPending: record.authorActivationPending === true,
           },
         },
       );

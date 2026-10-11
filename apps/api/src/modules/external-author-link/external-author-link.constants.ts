@@ -14,6 +14,12 @@ export const DEFAULT_INTEGRITY_MEDIA_RETURN_PATH = "/api/author/humanity-union-l
 export const INTEGRITY_MEDIA_RESULT_TTL_MS = 5 * 60 * 1000;
 export const INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS = 5 * 60;
 
+/**
+ * Synchronous attempts to finish Blog author setup after the identity pair
+ * is already durable. A later server-side recovery uses the same budget.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS = 3;
+
 export const INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN = /^[A-Za-z0-9_-]{16,200}$/;
 export const INTEGRITY_MEDIA_RESULT_CODE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 export const INTEGRITY_MEDIA_AUTHOR_ID_PATTERN =

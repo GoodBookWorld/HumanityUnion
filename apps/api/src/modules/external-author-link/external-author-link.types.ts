@@ -13,6 +13,11 @@ export interface ExternalAuthorLinkRecord {
   updatedAt: string;
   confirmedAt: string;
   disconnectedAt: string | null;
+  /**
+   * True only while the proven pair exists and ordinary Blog author setup
+   * has not finished. Absent or false once that capability is effective.
+   */
+  authorActivationPending?: boolean;
 }
 
 export interface ExternalAuthorLinkResultRecord {
@@ -32,7 +37,9 @@ export type ExternalAuthorLinkAuditAction =
   | "link_conflict"
   | "result_redeemed"
   | "author_capability_ensured"
-  | "author_capability_failed";
+  | "author_capability_failed"
+  | "author_activation_pending"
+  | "author_capability_recovered";
 
 export interface ExternalAuthorLinkAuditRecord {
   eventId: string;

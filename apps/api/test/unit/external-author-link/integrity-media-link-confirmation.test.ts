@@ -23,6 +23,7 @@ import {
 } from "../../../src/modules/blog/blog-permissions.js";
 import { buildIntegrityMediaReturnUrl } from "../../../src/modules/external-author-link/external-author-link.config.js";
 import {
+  INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS,
   INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV,
@@ -39,6 +40,7 @@ import externalAuthorLinkRouter from "../../../src/modules/external-author-link/
 import {
   confirmIntegrityMediaLink,
   disableIntegrityMediaAuthorLink,
+  recoverProvenIntegrityMediaAuthorLink,
   redeemIntegrityMediaLink,
   setIntegrityMediaAuthorCapabilityEnsurerForTests,
   setIntegrityMediaDisplayNameResolverForTests,
@@ -524,6 +526,12 @@ describe("Integrity Media identity confirmation", () => {
       ),
       false,
     );
+    assert.equal(
+      readRepo(
+        "apps/api/src/modules/external-author-link/external-author-link.routes.ts",
+      ).includes("recoverProvenIntegrityMediaAuthorLink"),
+      false,
+    );
   });
 
   it("establishes the durable link and Blog author capability on first redemption", async () => {
@@ -644,44 +652,165 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
   });
 
-  it("does not report success when author setup fails and completes on a later redemption", async () => {
+  it("finishes author setup after one transient failure without another Confirm", async () => {
     ensureFailuresRemaining = 1;
     const postsBefore = structuredClone(blogPosts);
-    const failed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
-    const failedAudits = await store.listAudits();
-    const failedLink = (await store.listLinks())[0];
-
-    assert.equal(failed.status, 503);
-    assert.equal(failed.body.success, false);
-    assert.equal(failed.body.meta.code, "author_setup_failed");
-    assert.equal(grants.size, 0);
-    assert.equal(failedLink?.state, "linked");
-    assert.equal(failedLink?.memberId, MEMBER_A);
-    assert.equal(failedLink?.externalAuthorId, AUTHOR_A);
-    assert.equal(
-      failedAudits.some((event) => event.action === "author_capability_failed"),
-      true,
-    );
-    assert.equal(
-      failedAudits.some((event) => event.action === "result_redeemed"),
-      false,
-    );
-    assert.equal(JSON.stringify(failedAudits).includes("author capability store unavailable"), false);
-
-    const retried = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const code = await confirmCode(MEMBER_A);
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const payload = buildIntegrityMediaLinkRedeemPayload({
+      timestamp,
+      resultCode: code,
+      externalAuthorId: AUTHOR_A,
+    });
+    const signature = signIntegrityMediaLinkRedeem(SECRET, payload);
+    const redeemed = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const replay = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const reusedResult = await redeem(code, AUTHOR_A, {
+      timestamp: String(Number(timestamp) + 1),
+    });
     const link = (await store.listLinks())[0];
 
-    assert.equal(retried.status, 200);
-    assert.equal(retried.body.success, true);
+    assert.equal((await store.listResults()).length, 1);
+    assert.equal(redeemed.status, 200);
+    assert.equal(redeemed.body.success, true);
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(link?.authorActivationPending === true, false);
     assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
     assert.equal(grantWrites, 1);
     assert.equal((await store.listLinks()).length, 1);
-    assert.equal(link?.memberId, MEMBER_A);
-    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(replay.status, 401);
+    assert.equal(replay.body.meta.code, "replayed");
+    assert.equal(reusedResult.status, 409);
+    assert.equal(reusedResult.body.meta.code, "result_already_used");
     assert.equal(publishingWorkspaceHref(grants.get(MEMBER_A)), "/workspace/publishing");
     assert.equal(canDirectPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
+    assert.equal(canEditorialPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
     assert.deepEqual(blogPosts, postsBefore);
     assert.equal(authRoles.get(MEMBER_A), "member");
+    assert.equal(
+      (await store.listAudits()).filter((event) => event.action === "author_capability_ensured")
+        .length,
+      1,
+    );
+    assert.equal(
+      (await store.listAudits()).some((event) => event.action === "author_capability_failed"),
+      false,
+    );
+  });
+
+  it("finishes a pending proven pair without a new confirmation result", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
+    const postsBefore = structuredClone(blogPosts);
+    const code = await confirmCode(MEMBER_A);
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const payload = buildIntegrityMediaLinkRedeemPayload({
+      timestamp,
+      resultCode: code,
+      externalAuthorId: AUTHOR_A,
+    });
+    const signature = signIntegrityMediaLinkRedeem(SECRET, payload);
+    const pending = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const pendingAudits = await store.listAudits();
+    const pendingSerialized = JSON.stringify(pendingAudits);
+    const tampered = await redeem(code, AUTHOR_A, { timestamp, signature: "0".repeat(64) });
+    const replay = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const reusedResult = await redeem(code, AUTHOR_A, {
+      timestamp: String(Number(timestamp) + 1),
+    });
+
+    assert.equal(pending.status, 503);
+    assert.equal(pending.body.success, false);
+    assert.equal(pending.body.meta.code, "author_setup_pending");
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.equal((await store.listLinks())[0]?.authorActivationPending, true);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+    assert.equal((await store.listLinks())[0]?.externalAuthorId, AUTHOR_A);
+    assert.equal((await store.listResults()).length, 1);
+    assert.equal(
+      pendingAudits.filter((event) => event.action === "author_capability_failed").length,
+      1,
+    );
+    assert.equal(
+      pendingAudits.filter((event) => event.action === "author_activation_pending").length,
+      1,
+    );
+    assert.equal(
+      pendingAudits.some((event) => event.action === "result_redeemed"),
+      false,
+    );
+    assert.equal(pendingSerialized.includes(code), false);
+    assert.equal(pendingSerialized.includes(SECRET), false);
+    assert.equal(pendingSerialized.includes(signature), false);
+    assert.equal(pendingSerialized.includes("author capability store unavailable"), false);
+    assert.equal(tampered.status, 401);
+    assert.equal(tampered.body.meta.code, "invalid_signature");
+    assert.equal(replay.status, 401);
+    assert.equal(replay.body.meta.code, "replayed");
+    assert.equal(reusedResult.status, 409);
+    assert.equal(reusedResult.body.meta.code, "result_already_used");
+    assert.equal(grants.size, 0);
+
+    const recovered = await recoverProvenIntegrityMediaAuthorLink({
+      externalAuthorId: AUTHOR_A,
+    });
+    const again = await recoverProvenIntegrityMediaAuthorLink({
+      externalAuthorId: AUTHOR_A,
+    });
+    const link = (await store.listLinks())[0];
+    const audits = await store.listAudits();
+
+    assert.equal(recovered.ok, true);
+    assert.equal(again.ok, true);
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.authorActivationPending, false);
+    assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
+    assert.equal(grants.get(MEMBER_A)?.publishWithoutManualReview, undefined);
+    assert.equal(grantWrites, 1);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.equal((await store.listResults()).length, 1);
+    assert.equal(audits.filter((event) => event.action === "author_capability_ensured").length, 1);
+    assert.equal(
+      audits.filter((event) => event.action === "author_capability_recovered").length,
+      1,
+    );
+    assert.equal(publishingWorkspaceHref(grants.get(MEMBER_A)), "/workspace/publishing");
+    assert.equal(canDirectPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
+    assert.equal(canEditorialPublish(new Set(grants.get(MEMBER_A)?.capabilities ?? [])), false);
+    assert.deepEqual(blogPosts, postsBefore);
+    assert.equal(authRoles.get(MEMBER_A), "member");
+    assert.equal(JSON.stringify(audits).includes(code), false);
+    assert.equal(JSON.stringify(audits).includes(signature), false);
+  });
+
+  it("does not report success while automatic author recovery is still pending", async () => {
+    ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS * 2;
+    const pending = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const recovered = await recoverProvenIntegrityMediaAuthorLink({
+      externalAuthorId: AUTHOR_A,
+    });
+    const audits = await store.listAudits();
+
+    assert.equal(pending.status, 503);
+    assert.equal(pending.body.success, false);
+    assert.equal(pending.body.meta.code, "author_setup_pending");
+    assert.equal(recovered.ok, false);
+    if (!recovered.ok) {
+      assert.equal(recovered.status, 503);
+      assert.equal(recovered.code, "author_setup_pending");
+    }
+    assert.equal(grants.size, 0);
+    assert.equal((await store.listLinks()).length, 1);
+    assert.equal((await store.listLinks())[0]?.authorActivationPending, true);
+    assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
+    assert.equal(audits.filter((event) => event.action === "author_capability_failed").length, 2);
+    assert.equal(audits.filter((event) => event.action === "author_activation_pending").length, 1);
+    assert.equal(audits.some((event) => event.action === "result_redeemed"), false);
+    assert.equal(audits.some((event) => event.action === "author_capability_recovered"), false);
+    assert.equal(audits.some((event) => event.action === "author_capability_ensured"), false);
   });
 
   it("leaves the Blog author capability in place when the link is disconnected", async () => {
