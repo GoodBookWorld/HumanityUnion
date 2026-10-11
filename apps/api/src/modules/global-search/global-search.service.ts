@@ -8,7 +8,10 @@ import { normalizeCountryInput } from "@hu/geography";
 
 import { buildSearchFacets, buildGroupedSearchFacets } from "./global-search.facets.js";
 import { buildGroupedSearchPage } from "./global-search.grouping.js";
-import { getGlobalSearchIndex } from "./global-search.index.js";
+import {
+  getGlobalSearchIndex,
+  isSearchIndexEntryOrdinaryPublic,
+} from "./global-search.index.js";
 import {
   matchGlobalSearchIndex,
   resolvePreferredSearchLocale,
@@ -134,7 +137,7 @@ export async function searchPublicCivicRecords(
 ): Promise<CivicSearchResponse> {
   const view = query.view ?? "flat";
   const normalizedQuery: CivicSearchQuery = { ...query, view };
-  const index = await getGlobalSearchIndex();
+  const index = (await getGlobalSearchIndex()).filter(isSearchIndexEntryOrdinaryPublic);
   const preferredLocale = await resolvePreferredSearchLocale(normalizedQuery.locale);
   const matched = await matchGlobalSearchIndex(normalizedQuery, index);
   const allResults = matched.map((match) => toSearchResult(match, preferredLocale));

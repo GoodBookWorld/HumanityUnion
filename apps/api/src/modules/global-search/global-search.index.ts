@@ -41,6 +41,38 @@ export function isPublicInitiative(initiativeId: string): boolean {
   return initiative != null && isInitiativeEligibleForPublicProjection(initiative);
 }
 
+const INITIATIVE_OWNED_SEARCH_TYPES = new Set<CivicEntityType>([
+  "initiative",
+  "analysis",
+  "improvement_proposal",
+  "initiative_revision",
+  "petition",
+  "decision_session",
+  "collective_decision",
+  "civic_action_package",
+  "official_response",
+  "civic_accountability",
+  "implementation_commitment",
+  "implementation_tracking",
+  "public_impact",
+  "civic_archive",
+]);
+
+/**
+ * Read-time gate for a warm search index. Index build also uses this rule,
+ * and a block drops the cache, but a stale entry must not be returned.
+ */
+export function isSearchIndexEntryOrdinaryPublic(
+  entry: Pick<GlobalSearchIndexEntry, "entityType" | "entityId" | "initiativeId">,
+): boolean {
+  if (!INITIATIVE_OWNED_SEARCH_TYPES.has(entry.entityType)) {
+    return true;
+  }
+
+  const initiativeId = entry.entityType === "initiative" ? entry.entityId : entry.initiativeId;
+  return typeof initiativeId === "string" && isPublicInitiative(initiativeId);
+}
+
 function buildNormalizedMultilingualMaps(metadata: CivicSearchMetadata): {
   normalizedTranslatedTitles: Record<string, string>;
   normalizedTranslatedSummaries: Record<string, string>;
@@ -303,6 +335,10 @@ export async function getGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> 
 
 export function resetGlobalSearchIndexForTests(): void {
   cachedIndex = null;
+}
+
+export function setGlobalSearchIndexForTests(entries: GlobalSearchIndexEntry[]): void {
+  cachedIndex = entries;
 }
 
 export function invalidateGlobalSearchIndex(): void {

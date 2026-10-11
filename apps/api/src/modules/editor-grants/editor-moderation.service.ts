@@ -19,6 +19,7 @@ import {
 } from "../administration/administration.errors.js";
 import { record } from "../administration/audit.service.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
+import { invalidateOrdinaryPublicInitiativeCaches } from "../initiatives/invalidate-ordinary-public-initiative-caches.js";
 import { getInitiativeById, updateInitiative } from "../initiatives/initiative.store.js";
 import {
   getPublicChoiceCandidateById,
@@ -134,6 +135,8 @@ export async function blockInitiativeAsEditor(input: {
     throw new AdministrationValidationError("Initiative not found.");
   }
 
+  invalidateOrdinaryPublicInitiativeCaches(initiative.initiativeId);
+
   const audit = await record({
     actorParticipantId: actor.participantId,
     action: "editor.moderation.block",
@@ -187,6 +190,8 @@ export async function unblockInitiativeAsEditor(input: {
   if (!updated) {
     throw new AdministrationValidationError("Initiative not found.");
   }
+
+  invalidateOrdinaryPublicInitiativeCaches(initiative.initiativeId);
 
   const audit = await record({
     actorParticipantId: actor.participantId,

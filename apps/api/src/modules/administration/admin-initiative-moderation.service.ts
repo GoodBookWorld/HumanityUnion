@@ -6,6 +6,7 @@ import type { AdminInitiativeBlockCommandResult, Initiative } from "@hu/types";
 import { resolveEffectiveModerationBlock } from "@hu/types";
 
 import { findAuthUserById } from "../auth/auth-user.repository.js";
+import { invalidateOrdinaryPublicInitiativeCaches } from "../initiatives/invalidate-ordinary-public-initiative-caches.js";
 import { getInitiativeById, updateInitiative } from "../initiatives/initiative.store.js";
 import {
   AdministrationForbiddenError,
@@ -82,6 +83,8 @@ export async function blockAdminInitiative(
     throw new AdminInitiativeModerationValidationError("Initiative not found.");
   }
 
+  invalidateOrdinaryPublicInitiativeCaches(initiative.initiativeId);
+
   const audit = await record({
     actorParticipantId: admin.memberId,
     action: "initiative.administrative.block",
@@ -123,6 +126,8 @@ export async function unblockAdminInitiative(
   if (!updated) {
     throw new AdminInitiativeModerationValidationError("Initiative not found.");
   }
+
+  invalidateOrdinaryPublicInitiativeCaches(initiative.initiativeId);
 
   const audit = await record({
     actorParticipantId: admin.memberId,
