@@ -1,9 +1,12 @@
-import type { Filter } from "mongodb";
+import type { ClientSession, Filter } from "mongodb";
+
+import { runIntegrityMediaLinkCriticalSection } from "../integrity-media-author-messages/integrity-media-author-reply.section.js";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
-import { linkRevisionMatches } from "./external-author-link.revision.js";
+import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
+import { assignedLinkRevision, linkRevisionMatches } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorDisconnectEventRecord,
   ExternalAuthorLinkAuditRecord,
@@ -25,7 +28,20 @@ export interface ExternalAuthorLinkStore {
   findLinkByAuthor(
     source: typeof INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: string,
+    options?: { session?: ClientSession },
   ): Promise<ExternalAuthorLinkRecord | null>;
+  /**
+   * Re-read the link and, on Mongo, write it only while the reply is still
+   * eligible. The stored generation, member, and state stay the same.
+   * A concurrent disconnect conflicts with that write.
+   */
+  holdAuthorReplyLink(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    externalAuthorId: string;
+    memberId: string;
+    linkRevision: number;
+    session?: ClientSession;
+  }): Promise<ExternalAuthorLinkRecord | null>;
   findLinkByMember(
     source: typeof INTEGRITY_MEDIA_SOURCE,
     memberId: string,
@@ -148,26 +164,38 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
 
     async compareAndDisableLink(input) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const authorKey = linkKey(input.source, input.externalAuthorId);
+        const current = byAuthor.get(authorKey);
+        if (!current || current.memberId !== input.memberId) {
+          return "missing" as const;
+        }
+
+        if (!linkRevisionMatches(current.linkRevision, input.linkRevision)) {
+          return "stale" as const;
+        }
+
+        const stored: ExternalAuthorLinkRecord = {
+          ...current,
+          state: "disabled",
+          linkRevision: input.linkRevision,
+          disconnectedAt: input.nowIso,
+          updatedAt: input.nowIso,
+        };
+        byAuthor.set(authorKey, stored);
+        byMember.set(linkKey(input.source, input.memberId), stored);
+        return "disabled" as const;
+      });
+    },
+
+    async holdAuthorReplyLink(input) {
       const authorKey = linkKey(input.source, input.externalAuthorId);
       const current = byAuthor.get(authorKey);
-      if (!current || current.memberId !== input.memberId) {
-        return "missing";
+      if (!current || !authorReplyLinkIsEligible(current, input)) {
+        return null;
       }
 
-      if (!linkRevisionMatches(current.linkRevision, input.linkRevision)) {
-        return "stale";
-      }
-
-      const stored: ExternalAuthorLinkRecord = {
-        ...current,
-        state: "disabled",
-        linkRevision: input.linkRevision,
-        disconnectedAt: input.nowIso,
-        updatedAt: input.nowIso,
-      };
-      byAuthor.set(authorKey, stored);
-      byMember.set(linkKey(input.source, input.memberId), stored);
-      return "disabled";
+      return copyLink(current);
     },
 
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
@@ -275,8 +303,11 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       return { status: "consumed" };
     },
 
-    async findLinkByAuthor(source, externalAuthorId) {
-      const document = await links().findOne({ source, externalAuthorId });
+    async findLinkByAuthor(source, externalAuthorId, options) {
+      const document = await links().findOne(
+        { source, externalAuthorId },
+        options?.session ? { session: options.session } : {},
+      );
       return document ? withoutId(document) : null;
     },
 
@@ -314,34 +345,48 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
 
     async compareAndDisableLink(input) {
-      const existing = await links().findOne({
-        source: input.source,
-        externalAuthorId: input.externalAuthorId,
-        memberId: input.memberId,
-      });
-      if (!existing) {
-        return "missing";
-      }
-
-      const updated = await links().findOneAndUpdate(
-        {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const existing = await links().findOne({
           source: input.source,
           externalAuthorId: input.externalAuthorId,
           memberId: input.memberId,
-          ...integrityMediaDisconnectRevisionFilter(input.linkRevision),
-        },
-        {
-          $set: {
-            state: "disabled",
-            linkRevision: input.linkRevision,
-            disconnectedAt: input.nowIso,
-            updatedAt: input.nowIso,
-          },
-        },
-        { returnDocument: "after" },
-      );
+        });
+        if (!existing) {
+          return "missing" as const;
+        }
 
-      return updated ? "disabled" : "stale";
+        const updated = await links().findOneAndUpdate(
+          {
+            source: input.source,
+            externalAuthorId: input.externalAuthorId,
+            memberId: input.memberId,
+            ...integrityMediaDisconnectRevisionFilter(input.linkRevision),
+          },
+          {
+            $set: {
+              state: "disabled",
+              linkRevision: input.linkRevision,
+              disconnectedAt: input.nowIso,
+              updatedAt: input.nowIso,
+            },
+          },
+          { returnDocument: "after" },
+        );
+
+        return updated ? ("disabled" as const) : ("stale" as const);
+      });
+    },
+
+    async holdAuthorReplyLink(input) {
+      const updated = await links().findOneAndUpdate(
+        authorReplyLinkFilter(input),
+        [{ $set: { updatedAt: "$updatedAt" } }],
+        {
+          returnDocument: "after",
+          ...(input.session ? { session: input.session } : {}),
+        },
+      );
+      return updated ? withoutId(updated) : null;
     },
 
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
@@ -431,6 +476,10 @@ let storeSingleton: ExternalAuthorLinkStore | null = null;
 
 export function setExternalAuthorLinkStoreForTests(store: ExternalAuthorLinkStore | null): void {
   storeOverride = store;
+}
+
+export function externalAuthorLinkStoreUsesOverride(): boolean {
+  return storeOverride !== null;
 }
 
 export function getExternalAuthorLinkStore(): ExternalAuthorLinkStore {
@@ -575,6 +624,39 @@ function linkUpdateFields(record: ExternalAuthorLinkRecord): {
     record.linkRevision >= 1
       ? { linkRevision: record.linkRevision }
       : {}),
+  };
+}
+
+function authorReplyLinkIsEligible(
+  link: ExternalAuthorLinkRecord,
+  input: { memberId: string; linkRevision: number },
+): boolean {
+  return (
+    link.memberId === input.memberId &&
+    link.state === "linked" &&
+    assignedLinkRevision(link.linkRevision) === input.linkRevision &&
+    isOrdinaryIntegrityMediaCollaborationAllowed(link)
+  );
+}
+
+function authorReplyLinkFilter(input: {
+  source: typeof INTEGRITY_MEDIA_SOURCE;
+  externalAuthorId: string;
+  memberId: string;
+  linkRevision: number;
+}): Filter<ExternalAuthorLinkRecord> {
+  return {
+    source: input.source,
+    externalAuthorId: input.externalAuthorId,
+    memberId: input.memberId,
+    state: "linked",
+    linkRevision: input.linkRevision,
+    authorActivationPending: { $ne: true },
+    $or: [
+      { collaborationStatus: "active" },
+      { collaborationStatus: { $exists: false } },
+      { collaborationStatus: { $type: "null" } },
+    ],
   };
 }
 

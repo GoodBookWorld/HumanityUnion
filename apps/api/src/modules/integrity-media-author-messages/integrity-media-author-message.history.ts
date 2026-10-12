@@ -113,6 +113,7 @@ export function toHistoryItem(
     title: record.title,
     cta: record.cta ? { label: record.cta.label, url: record.cta.url } : null,
     actorMemberId: record.actorMemberId,
+    replyToMessageId: record.replyToMessageId ?? null,
     delivery:
       direction === "hu_to_im"
         ? {

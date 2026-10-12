@@ -1,4 +1,4 @@
-import type { Filter } from "mongodb";
+import type { ClientSession, Filter } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
@@ -29,8 +29,12 @@ export interface IntegrityMediaAuthorMessageClaimInput {
 export interface IntegrityMediaAuthorMessageStore {
   insert(
     record: IntegrityMediaAuthorMessageRecord,
+    options?: { session?: ClientSession },
   ): Promise<"inserted" | "duplicate">;
-  findByMessageId(messageId: string): Promise<IntegrityMediaAuthorMessageRecord | null>;
+  findByMessageId(
+    messageId: string,
+    options?: { session?: ClientSession },
+  ): Promise<IntegrityMediaAuthorMessageRecord | null>;
   claimNext(
     input: IntegrityMediaAuthorMessageClaimInput,
   ): Promise<IntegrityMediaAuthorMessageRecord | null>;
@@ -149,9 +153,9 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
     );
 
   return {
-    async insert(record) {
+    async insert(record, options) {
       try {
-        await messages().insertOne(record);
+        await messages().insertOne(record, options?.session ? { session: options.session } : {});
         return "inserted";
       } catch (error) {
         if (isDuplicateKeyError(error)) {
@@ -162,8 +166,11 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
       }
     },
 
-    async findByMessageId(messageId) {
-      const document = await messages().findOne({ messageId });
+    async findByMessageId(messageId, options) {
+      const document = await messages().findOne(
+        { messageId },
+        options?.session ? { session: options.session } : {},
+      );
       return document ? withoutId(document) : null;
     },
 

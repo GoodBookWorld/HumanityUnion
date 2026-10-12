@@ -20,6 +20,15 @@ export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PATH =
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER = "x-im-hu-timestamp";
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER = "x-im-hu-signature";
 
+/**
+ * IM → HU author reply. A disconnect or redeem signature cannot authorize a reply.
+ * Same shared link secret. The signed string starts with this purpose.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_REPLY_PURPOSE = "integrity-media-author-reply";
+
+export const INTEGRITY_MEDIA_AUTHOR_REPLY_PATH =
+  "/api/v1/integrations/integrity-media/author-reply";
+
 export const INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV = "INTEGRITY_MEDIA_LINK_HMAC_SECRET";
 export const INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV = "INTEGRITY_MEDIA_LINK_RETURN_ORIGIN";
 export const INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV = "INTEGRITY_MEDIA_LINK_RETURN_PATH";
