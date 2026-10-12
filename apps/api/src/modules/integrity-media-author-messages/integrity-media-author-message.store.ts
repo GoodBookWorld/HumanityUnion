@@ -1,3 +1,5 @@
+import type { Filter } from "mongodb";
+
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { IntegrityMediaAuthorMessageErrorCode } from "./integrity-media-author-message.constants.js";
@@ -6,6 +8,12 @@ import type {
   IntegrityMediaAuthorMessageAuditRecord,
   IntegrityMediaAuthorMessageRecord,
 } from "./integrity-media-author-message.types.js";
+import {
+  compareIntegrityMediaAuthorMessagesNewestFirst,
+  isBeforeIntegrityMediaAuthorMessageCursor,
+  isIntegrityMediaOutboundAuthorMessage,
+  type IntegrityMediaAuthorMessageCursor,
+} from "./integrity-media-author-message.contract.js";
 
 export interface IntegrityMediaAuthorMessageRecipientSummary {
   messageCount: number;
@@ -41,6 +49,12 @@ export interface IntegrityMediaAuthorMessageStore {
     errorCode: IntegrityMediaAuthorMessageErrorCode;
   }): Promise<IntegrityMediaAuthorMessageRecord | null>;
   list(): Promise<IntegrityMediaAuthorMessageRecord[]>;
+  listHistory(input: {
+    recipientMemberId: string;
+    recipientExternalAuthorId: string;
+    limit: number;
+    before: IntegrityMediaAuthorMessageCursor | null;
+  }): Promise<{ records: IntegrityMediaAuthorMessageRecord[]; hasMore: boolean }>;
   summarizeForRecipients(
     recipientMemberIds: readonly string[],
   ): Promise<Map<string, IntegrityMediaAuthorMessageRecipientSummary>>;
@@ -104,6 +118,10 @@ export function createMemoryIntegrityMediaAuthorMessageStore(): IntegrityMediaAu
 
     async list() {
       return [...messages.values()].map((record) => copyMessage(record)!);
+    },
+
+    async listHistory(input) {
+      return listPairHistory([...messages.values()], input);
     },
 
     async summarizeForRecipients(recipientMemberIds) {
@@ -231,6 +249,33 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
       return documents.map((document) => withoutId(document));
     },
 
+    async listHistory(input) {
+      const filter: Filter<IntegrityMediaAuthorMessageRecord> = {
+        recipientMemberId: input.recipientMemberId,
+        recipientExternalAuthorId: input.recipientExternalAuthorId,
+        ...(input.before
+          ? {
+              $or: [
+                { createdAt: { $lt: input.before.createdAt } },
+                {
+                  createdAt: input.before.createdAt,
+                  messageId: { $lt: input.before.messageId },
+                },
+              ],
+            }
+          : {}),
+      };
+      const documents = await messages()
+        .find(filter)
+        .sort({ createdAt: -1, messageId: -1 })
+        .limit(input.limit + 1)
+        .toArray();
+      return {
+        records: documents.slice(0, input.limit).map((document) => withoutId(document)),
+        hasMore: documents.length > input.limit,
+      };
+    },
+
     async summarizeForRecipients(recipientMemberIds) {
       const ids = [...new Set(recipientMemberIds.filter((id) => id.trim().length > 0))];
       if (ids.length === 0) {
@@ -347,6 +392,10 @@ function isPendingEligible(
   record: IntegrityMediaAuthorMessageRecord,
   input: IntegrityMediaAuthorMessageClaimInput,
 ): boolean {
+  if (!isIntegrityMediaOutboundAuthorMessage(record)) {
+    return false;
+  }
+
   if (record.status !== "pending") {
     return false;
   }
@@ -376,6 +425,7 @@ function transitionMessage(
 function pendingEligibility(nowIso: string) {
   return {
     status: "pending" as const,
+    direction: { $ne: "im_to_hu" as const },
     $or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: nowIso } }],
   };
 }
@@ -389,6 +439,29 @@ interface IntegrityMediaAuthorMessageSummaryDocument {
   lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
   createdAt: string;
   deliveredAt: string | null;
+}
+
+function listPairHistory(
+  records: readonly IntegrityMediaAuthorMessageRecord[],
+  input: {
+    recipientMemberId: string;
+    recipientExternalAuthorId: string;
+    limit: number;
+    before: IntegrityMediaAuthorMessageCursor | null;
+  },
+): { records: IntegrityMediaAuthorMessageRecord[]; hasMore: boolean } {
+  const matched = records
+    .filter(
+      (record) =>
+        record.recipientMemberId === input.recipientMemberId &&
+        record.recipientExternalAuthorId === input.recipientExternalAuthorId &&
+        (input.before === null || isBeforeIntegrityMediaAuthorMessageCursor(record, input.before)),
+    )
+    .sort(compareIntegrityMediaAuthorMessagesNewestFirst);
+  return {
+    records: matched.slice(0, input.limit).map((record) => copyMessage(record)!),
+    hasMore: matched.length > input.limit,
+  };
 }
 
 function summarizeMessages(

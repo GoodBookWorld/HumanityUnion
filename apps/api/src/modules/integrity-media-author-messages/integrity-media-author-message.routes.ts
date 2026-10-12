@@ -7,11 +7,13 @@ import {
 } from "../administration/administration.errors.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { listIntegrityMediaAuthors } from "./integrity-media-author-directory.service.js";
+import { listIntegrityMediaAuthorMessageHistory } from "./integrity-media-author-message.history.js";
 import { sendIntegrityMediaAuthorMessage } from "./integrity-media-author-message.service.js";
 
 const MESSAGE_FIELDS = new Set(["title", "body", "cta"]);
 
 const LIST_QUERY = new Set(["limit", "offset", "state"]);
+const HISTORY_QUERY = new Set(["limit", "cursor"]);
 const DIRECTORY_STATES = new Set(["all", "linked", "disabled", "setup_pending"]);
 
 const integrityMediaAuthorMessageRouter = Router();
@@ -66,6 +68,54 @@ integrityMediaAuthorMessageRouter.get(
       }
 
       sendFailure(res, 500, "Integrity authors could not be loaded.", "unavailable");
+    }
+  },
+);
+
+integrityMediaAuthorMessageRouter.get(
+  "/:memberId/messages",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    if (unexpectedHistoryQuery(req)) {
+      sendFailure(res, 400, "The message history request is not valid.", "unexpected_field");
+      return;
+    }
+
+    const limit = readQueryInt(req.query.limit);
+    const cursor = readQueryString(req.query.cursor);
+
+    if (limit === "invalid" || cursor === "invalid") {
+      sendFailure(res, 400, "The message history request is not valid.", "invalid_request");
+      return;
+    }
+
+    try {
+      const result = await listIntegrityMediaAuthorMessageHistory({
+        actorUserId: req.auth?.id ?? "",
+        actorMemberId: req.auth?.memberId ?? "",
+        recipientMemberId: String(req.params.memberId ?? ""),
+        ...(limit !== undefined ? { limit } : {}),
+        ...(cursor !== undefined ? { cursor } : {}),
+      });
+
+      if (!result.ok) {
+        sendFailure(res, result.status, result.message, result.code);
+        return;
+      }
+
+      res.status(200).json(createSuccessResponse(result.data, "Integrity author messages loaded."));
+    } catch (error) {
+      if (error instanceof AdministrationUnauthorizedError) {
+        sendFailure(res, 401, "Authentication is required.", "authentication_required");
+        return;
+      }
+
+      if (error instanceof AdministrationForbiddenError) {
+        sendFailure(res, 403, "Administrator access is required.", "administrator_required");
+        return;
+      }
+
+      sendFailure(res, 500, "Integrity author messages could not be loaded.", "unavailable");
     }
   },
 );
@@ -139,6 +189,16 @@ function unexpectedField(
   }
 
   return null;
+}
+
+function unexpectedHistoryQuery(req: Request): boolean {
+  for (const key of Object.keys(req.query)) {
+    if (!HISTORY_QUERY.has(key)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function unexpectedListQuery(req: Request): boolean {

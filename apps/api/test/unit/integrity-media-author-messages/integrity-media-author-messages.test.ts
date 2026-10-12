@@ -28,6 +28,12 @@ import {
   type ExternalAuthorLinkStore,
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
 import type { ExternalAuthorLinkRecord } from "../../../src/modules/external-author-link/external-author-link.types.js";
+import {
+  parseIntegrityMediaAuthorMessageDirection,
+  parseIntegrityMediaAuthorMessageKind,
+  resolveIntegrityMediaAuthorMessageDirection,
+  resolveIntegrityMediaAuthorMessageKind,
+} from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.contract.js";
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.indexes.js";
 import {
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE,
@@ -962,6 +968,305 @@ describe("Integrity Media outbound author messages", () => {
     stopIntegrityMediaAuthorMessageScheduler();
   });
 
+  it("normalizes a legacy notification to hu_to_im system without rewriting it", async () => {
+    await seedLink();
+    const messageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
+    await seedMessage({
+      messageId,
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Legacy title",
+      body: "Legacy body",
+      cta: { label: "Read", url: "https://example.com/legacy" },
+      actorMemberId: ADMIN_MEMBER,
+      status: "delivered",
+      deliveredAt: "2026-04-01T00:00:01.000Z",
+      createdAt: "2026-04-01T00:00:01.000Z",
+    });
+    const stored = await messageStore.findByMessageId(messageId);
+    assert.equal(stored?.direction, undefined);
+    assert.equal(stored?.kind, undefined);
+    assert.equal(stored?.messageId, messageId);
+    assert.equal(resolveIntegrityMediaAuthorMessageDirection(stored?.direction), "hu_to_im");
+    assert.equal(resolveIntegrityMediaAuthorMessageKind(stored?.kind), "system");
+
+    const response = await getHistory(RECIPIENT_MEMBER, adminToken());
+    assert.equal(response.status, 200);
+    const message = response.body.data?.messages?.[0];
+    assert.equal(message?.messageId, messageId);
+    assert.equal(message?.direction, "hu_to_im");
+    assert.equal(message?.kind, "system");
+    assert.equal(message?.title, "Legacy title");
+    assert.equal(message?.body, "Legacy body");
+    assert.deepEqual(message?.cta, { label: "Read", url: "https://example.com/legacy" });
+    assert.equal(message?.actorMemberId, ADMIN_MEMBER);
+    assert.equal(message?.createdAt, "2026-04-01T00:00:01.000Z");
+    assert.equal(message?.delivery?.status, "delivered");
+    assert.equal(message?.delivery?.deliveredAt, "2026-04-01T00:00:01.000Z");
+    assert.equal(JSON.stringify(response.body).includes(SECRET), false);
+    const after = await messageStore.findByMessageId(messageId);
+    assert.equal(after?.direction, undefined);
+    assert.equal(after?.title, "Legacy title");
+  });
+
+  it("accepts only the direction and kind values and rejects anything else", () => {
+    assert.equal(parseIntegrityMediaAuthorMessageDirection("hu_to_im"), "hu_to_im");
+    assert.equal(parseIntegrityMediaAuthorMessageDirection("im_to_hu"), "im_to_hu");
+    assert.equal(parseIntegrityMediaAuthorMessageDirection("chat"), null);
+    assert.equal(parseIntegrityMediaAuthorMessageDirection(undefined), null);
+    assert.equal(parseIntegrityMediaAuthorMessageKind("chat"), "chat");
+    assert.equal(parseIntegrityMediaAuthorMessageKind("system"), "system");
+    assert.equal(parseIntegrityMediaAuthorMessageKind("notification"), null);
+  });
+
+  it("returns one identity pair in oldest-to-newest order and does not leak another author", async () => {
+    await seedLink();
+    await seedLink({
+      memberId: OTHER_MEMBER,
+      externalAuthorId: OTHER_AUTHOR,
+    });
+    await seedMessage({
+      messageId: historyId(1),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "First",
+      body: "one",
+      createdAt: historyTime(1),
+    });
+    await seedMessage({
+      messageId: historyId(2),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Second",
+      body: "two",
+      createdAt: historyTime(2),
+    });
+    await seedMessage({
+      messageId: historyId(3),
+      recipientMemberId: OTHER_MEMBER,
+      recipientExternalAuthorId: OTHER_AUTHOR,
+      title: "Other",
+      body: "secret-other-body",
+      createdAt: historyTime(3),
+    });
+
+    const response = await getHistory(RECIPIENT_MEMBER, adminToken());
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      response.body.data?.messages?.map((message) => message.messageId),
+      [historyId(1), historyId(2)],
+    );
+    assert.equal(JSON.stringify(response.body).includes("secret-other-body"), false);
+    assert.equal(JSON.stringify(response.body).includes(OTHER_AUTHOR), false);
+  });
+
+  it("pages the newest 20 without duplicating or skipping, including equal timestamps", async () => {
+    await seedLink();
+    for (let index = 1; index <= 25; index += 1) {
+      await seedMessage({
+        messageId: historyId(index),
+        recipientMemberId: RECIPIENT_MEMBER,
+        recipientExternalAuthorId: AUTHOR,
+        title: `Note ${index}`,
+        body: `body-${index}`,
+        createdAt: historyTime(index),
+      });
+    }
+
+    const first = await getHistory(RECIPIENT_MEMBER, adminToken());
+    assert.equal(first.status, 200);
+    assert.equal(first.body.data?.messages?.length, 20);
+    assert.equal(first.body.data?.pageInfo?.hasMore, true);
+    assert.deepEqual(
+      first.body.data?.messages?.map((message) => message.messageId),
+      Array.from({ length: 20 }, (_, index) => historyId(index + 6)),
+    );
+    const cursor = first.body.data?.pageInfo?.nextCursor;
+    assert.equal(typeof cursor, "string");
+    const second = await getHistory(RECIPIENT_MEMBER, adminToken(), { cursor: cursor ?? "" });
+    assert.equal(second.body.data?.pageInfo?.hasMore, false);
+    assert.equal(second.body.data?.pageInfo?.nextCursor, null);
+    assert.deepEqual(
+      second.body.data?.messages?.map((message) => message.messageId),
+      [historyId(1), historyId(2), historyId(3), historyId(4), historyId(5)],
+    );
+    const combined = [
+      ...(second.body.data?.messages ?? []),
+      ...(first.body.data?.messages ?? []),
+    ].map((message) => message.messageId);
+    assert.deepEqual(
+      combined,
+      Array.from({ length: 25 }, (_, index) => historyId(index + 1)),
+    );
+
+    const sameTime = "2026-05-01T00:00:00.000Z";
+    for (const id of [historyId(31), historyId(32), historyId(33)]) {
+      await seedMessage({
+        messageId: id,
+        recipientMemberId: RECIPIENT_MEMBER,
+        recipientExternalAuthorId: AUTHOR,
+        title: "Tie",
+        body: id,
+        createdAt: sameTime,
+      });
+    }
+    const ties = await getHistory(RECIPIENT_MEMBER, adminToken(), { limit: "2" });
+    assert.deepEqual(
+      ties.body.data?.messages?.map((message) => message.messageId),
+      [historyId(32), historyId(33)],
+    );
+    const olderTies = await getHistory(RECIPIENT_MEMBER, adminToken(), {
+      limit: "2",
+      cursor: ties.body.data?.pageInfo?.nextCursor ?? "",
+    });
+    assert.deepEqual(
+      olderTies.body.data?.messages?.map((message) => message.messageId),
+      [historyId(25), historyId(31)],
+    );
+  });
+
+  it("keeps history readable when the link is disabled, blocked, or archived", async () => {
+    await seedMessage({
+      messageId: historyId(41),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Still here",
+      body: "kept",
+      createdAt: historyTime(1),
+    });
+    await seedLink({ state: "disabled", disconnectedAt: historyTime(2) });
+    const disabled = await getHistory(RECIPIENT_MEMBER, adminToken());
+    assert.equal(disabled.status, 200);
+    assert.equal(disabled.body.data?.messages?.[0]?.messageId, historyId(41));
+
+    await seedLink({
+      memberId: OTHER_MEMBER,
+      externalAuthorId: OTHER_AUTHOR,
+      collaborationStatus: "blocked",
+    });
+    await seedMessage({
+      messageId: historyId(42),
+      recipientMemberId: OTHER_MEMBER,
+      recipientExternalAuthorId: OTHER_AUTHOR,
+      title: "Blocked",
+      body: "blocked-body",
+      createdAt: historyTime(2),
+    });
+    const blocked = await getHistory(OTHER_MEMBER, adminToken());
+    assert.equal(blocked.status, 200);
+    assert.equal(blocked.body.data?.messages?.[0]?.body, "blocked-body");
+
+    const archivedMember = "66666666-6666-4666-8666-666666666666";
+    const archivedAuthor = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    await seedLink({
+      memberId: archivedMember,
+      externalAuthorId: archivedAuthor,
+      collaborationStatus: "archived",
+    });
+    await seedMessage({
+      messageId: historyId(43),
+      recipientMemberId: archivedMember,
+      recipientExternalAuthorId: archivedAuthor,
+      title: "Archived",
+      body: "archived-body",
+      createdAt: historyTime(3),
+    });
+    const archived = await getHistory(archivedMember, adminToken());
+    assert.equal(archived.status, 200);
+    assert.equal(archived.body.data?.messages?.[0]?.body, "archived-body");
+  });
+
+  it("keeps admin send on hu_to_im system and rejects a browser-supplied inbound direction", async () => {
+    await seedLink();
+    transportResult = (request) => accepted(request, false);
+    const sent = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(sent.status, 200);
+    const stored = (await messageStore.list())[0];
+    assert.equal(stored?.direction, "hu_to_im");
+    assert.equal(stored?.kind, "system");
+    assert.equal(requests[0]?.body.includes("direction"), false);
+    assert.equal(requests[0]?.body.includes("im_to_hu"), false);
+
+    const spoofed = await post(
+      RECIPIENT_MEMBER,
+      { ...validBody(), direction: "im_to_hu", kind: "chat" },
+      adminToken(),
+    );
+    assert.equal(spoofed.status, 400);
+    assert.equal(spoofed.body.meta.code, "unexpected_field");
+    assert.equal((await messageStore.list()).length, 1);
+    assert.equal((await messageStore.list())[0]?.direction, "hu_to_im");
+  });
+
+  it("does not let the outbound scheduler claim an inbound message", async () => {
+    await seedLink();
+    await seedMessage({
+      messageId: historyId(51),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Inbound",
+      body: "from-im",
+      createdAt: historyTime(1),
+      direction: "im_to_hu",
+      kind: "chat",
+      status: "pending",
+      attemptCount: 0,
+      nextAttemptAt: null,
+    });
+    await seedMessage({
+      messageId: historyId(52),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Outbound",
+      body: "from-hu",
+      createdAt: historyTime(2),
+      direction: "hu_to_im",
+      kind: "system",
+      status: "pending",
+      attemptCount: 0,
+      nextAttemptAt: null,
+    });
+    transportResult = () => ({ kind: "timeout" });
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: new Date(historyTime(10)) });
+    assert.equal(requests.length, 1);
+    const inbound = await messageStore.findByMessageId(historyId(51));
+    const outbound = await messageStore.findByMessageId(historyId(52));
+    assert.equal(inbound?.attemptCount, 0);
+    assert.equal(inbound?.status, "pending");
+    assert.equal(outbound?.attemptCount, 1);
+    const history = await getHistory(RECIPIENT_MEMBER, adminToken());
+    const inboundView = history.body.data?.messages?.find((message) => message.messageId === historyId(51));
+    assert.equal(inboundView?.direction, "im_to_hu");
+    assert.equal(inboundView?.kind, "chat");
+    assert.equal(inboundView?.delivery, null);
+  });
+
+  it("requires an administrator to read message history", async () => {
+    await seedLink();
+    const missing = await getHistory(RECIPIENT_MEMBER, null);
+    assert.equal(missing.status, 401);
+    const member = await getHistory(
+      RECIPIENT_MEMBER,
+      tokenFor("member-user", OTHER_MEMBER, "member"),
+    );
+    assert.equal(member.status, 403);
+    assert.equal(member.body.meta.code, "administrator_required");
+    const spoofedAuthor = await getHistory(RECIPIENT_MEMBER, adminToken(), {
+      externalAuthorId: OTHER_AUTHOR,
+    });
+    assert.equal(spoofedAuthor.status, 400);
+    assert.equal(spoofedAuthor.body.meta.code, "unexpected_field");
+    assert.equal(
+      INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES.some(
+        (index) =>
+          index.name === "integrity_media_author_messages_pair_history" &&
+          index.key.recipientExternalAuthorId === 1 &&
+          index.key.messageId === -1,
+      ),
+      true,
+    );
+  });
+
   async function assertPermanentRemoteFailure(status: number, code: string): Promise<void> {
     await seedLink();
     transportResult = () => ({
@@ -982,6 +1287,74 @@ describe("Integrity Media outbound author messages", () => {
 
 function validBody(): { title: string; body: string } {
   return { title: TITLE, body: BODY_MARKER };
+}
+
+function historyId(index: number): string {
+  return `00000000-0000-4000-8000-${index.toString(16).padStart(12, "0")}`;
+}
+
+function historyTime(index: number): string {
+  return new Date(Date.UTC(2026, 3, 1, 0, 0, index)).toISOString();
+}
+
+async function getHistory(
+  memberId: string,
+  token: string | null,
+  query: Record<string, string> = {},
+): Promise<{
+  status: number;
+  body: {
+    success: boolean;
+    data: {
+      memberId?: string;
+      messages?: Array<{
+        messageId: string;
+        direction?: string;
+        kind?: string;
+        title?: string | null;
+        body?: string;
+        createdAt?: string;
+        actorMemberId?: string | null;
+        cta?: { label: string; url: string } | null;
+        delivery?: { status?: string; deliveredAt?: string | null } | null;
+      }>;
+      pageInfo?: { hasMore?: boolean; nextCursor?: string | null };
+    } | null;
+    meta: { code?: string };
+  };
+}> {
+  const params = new URLSearchParams(query);
+  const suffix = params.toString();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(
+    `${baseUrl}/api/v1/admin/integrity-media/authors/${memberId}/messages${suffix ? `?${suffix}` : ""}`,
+    { headers },
+  );
+  return {
+    status: response.status,
+    body: (await response.json()) as {
+      success: boolean;
+      data: {
+        memberId?: string;
+        messages?: Array<{
+          messageId: string;
+          direction?: string;
+          kind?: string;
+          title?: string | null;
+          body?: string;
+          createdAt?: string;
+          actorMemberId?: string | null;
+          cta?: { label: string; url: string } | null;
+          delivery?: { status?: string; deliveredAt?: string | null } | null;
+        }>;
+        pageInfo?: { hasMore?: boolean; nextCursor?: string | null };
+      } | null;
+      meta: { code?: string };
+    },
+  };
 }
 
 function adminToken(): string {
