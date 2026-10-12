@@ -3,7 +3,7 @@ import type { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-au
 import type { INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY } from "./integrity-media-author-message.constants.js";
 import type { IntegrityMediaAuthorMessageErrorCode } from "./integrity-media-author-message.constants.js";
 
-export type IntegrityMediaAuthorMessageStatus = "pending" | "delivered" | "failed";
+export type IntegrityMediaAuthorMessageStatus = "pending" | "delivered" | "failed" | "recorded";
 
 export type IntegrityMediaAuthorMessageDirection = "hu_to_im" | "im_to_hu";
 
@@ -35,6 +35,10 @@ export interface IntegrityMediaAuthorMessageRecord {
   title: string;
   body: string;
   cta: IntegrityMediaAuthorMessageCta | null;
+  /** Present on an accepted IM reply. Absent on outbound and legacy rows. */
+  replyToMessageId?: string;
+  /** Generation frozen by the sender. Used to recognize an identical retry. */
+  linkRevision?: number;
   status: IntegrityMediaAuthorMessageStatus;
   attemptCount: number;
   lastAttemptAt: string | null;
@@ -48,7 +52,9 @@ export interface IntegrityMediaAuthorMessageRecord {
 export type IntegrityMediaAuthorMessageAuditAction =
   | "integrity_media_message_requested"
   | "integrity_media_message_delivered"
-  | "integrity_media_message_failed";
+  | "integrity_media_message_failed"
+  | "integrity_media_author_reply_accepted"
+  | "integrity_media_author_reply_rejected";
 
 export interface IntegrityMediaAuthorMessageAuditRecord {
   eventId: string;
@@ -58,6 +64,8 @@ export interface IntegrityMediaAuthorMessageAuditRecord {
   recipientMemberId: string;
   recipientExternalAuthorId: string;
   errorCode: IntegrityMediaAuthorMessageErrorCode | null;
+  /** Allowlisted reply outcome. Absent on outbound delivery audits. */
+  reason?: string | null;
   createdAt: string;
 }
 
@@ -118,6 +126,7 @@ export interface IntegrityMediaAuthorMessageHistoryItem {
   title: string | null;
   cta: IntegrityMediaAuthorMessageCta | null;
   actorMemberId: string | null;
+  replyToMessageId: string | null;
   delivery: {
     status: IntegrityMediaAuthorMessageStatus;
     deliveredAt: string | null;
