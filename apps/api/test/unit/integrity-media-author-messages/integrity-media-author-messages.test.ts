@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import express from "express";
 
+import { MONGO_COLLECTIONS } from "../../../src/infrastructure/mongodb/mongo-collections.js";
 import { setAuthUserLookupOverrideForTests } from "../../../src/modules/auth/auth-active-account-gate.js";
 import { createAccessToken } from "../../../src/modules/auth/auth-tokens.js";
 import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.types.js";
@@ -36,7 +37,9 @@ import {
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.contract.js";
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.indexes.js";
 import {
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_BODY_MAX_LENGTH,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_SIGNATURE_HEADER,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_TIMESTAMP_HEADER,
@@ -44,6 +47,7 @@ import {
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.constants.js";
 import {
   buildIntegrityMediaAuthorMessageCanonicalString,
+  buildIntegrityMediaAuthorMessageCanonicalStringV2,
   buildIntegrityMediaAuthorMessageContentPayload,
   hashIntegrityMediaAuthorMessageContent,
   signIntegrityMediaAuthorMessage,
@@ -1267,6 +1271,356 @@ describe("Integrity Media outbound author messages", () => {
     );
   });
 
+  it("builds the v2 canonical string without putting kind in the content hash", () => {
+    const content = buildIntegrityMediaAuthorMessageContentPayload({
+      body: "Chat line",
+      category: "notification",
+      ctaLabel: "",
+      ctaUrl: "",
+      title: "",
+    });
+    assert.equal(
+      content,
+      JSON.stringify({
+        body: "Chat line",
+        category: "notification",
+        ctaLabel: "",
+        ctaUrl: "",
+        title: "",
+      }),
+    );
+    assert.equal(content.includes("kind"), false);
+    const hash = hashIntegrityMediaAuthorMessageContent({
+      body: "Chat line",
+      category: "notification",
+      ctaLabel: "",
+      ctaUrl: "",
+      title: "",
+    });
+    const canonical = buildIntegrityMediaAuthorMessageCanonicalStringV2({
+      timestamp: "1700000000",
+      messageId: "11111111-1111-4111-8111-111111111111",
+      recipientAuthorId: AUTHOR,
+      kind: "chat",
+      contentSha256: hash,
+    });
+    assert.equal(
+      canonical,
+      [
+        "humanity-union-author-message-v2",
+        "1700000000",
+        "11111111-1111-4111-8111-111111111111",
+        AUTHOR,
+        "chat",
+        hash,
+      ].join("\n"),
+    );
+    assert.equal(canonical.split("\n")[0], INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2);
+    assert.equal(canonical.split("\n").length, 6);
+    assert.notEqual(canonical.split("\n")[0], INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE);
+  });
+
+  it("rejects chat from an unauthenticated caller and from a non-admin", async () => {
+    await seedLink();
+    const anonymous = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, null);
+    assert.equal(anonymous.status, 401);
+    const member = await postChat(
+      RECIPIENT_MEMBER,
+      { body: "Hello author" },
+      tokenFor("member-user", OTHER_MEMBER, "member"),
+    );
+    assert.equal(member.status, 403);
+    assert.equal(member.body.meta.code, "administrator_required");
+    assert.equal((await messageStore.list()).length, 0);
+    assert.equal(requests.length, 0);
+  });
+
+  it("requires a non-empty chat body and does not require a title or CTA", async () => {
+    await seedLink();
+    transportResult = (request) => accepted(request, false);
+    const missing = await postChat(RECIPIENT_MEMBER, {}, adminToken());
+    assert.equal(missing.status, 400);
+    assert.equal(missing.body.meta.code, "invalid_request");
+    const blank = await postChat(RECIPIENT_MEMBER, { body: " \n\t " }, adminToken());
+    assert.equal(blank.status, 400);
+    assert.equal(blank.body.meta.code, "invalid_request");
+    const markup = await postChat(RECIPIENT_MEMBER, { body: "<b>hello</b>" }, adminToken());
+    assert.equal(markup.status, 400);
+    const tooLong = await postChat(
+      RECIPIENT_MEMBER,
+      { body: "a".repeat(INTEGRITY_MEDIA_AUTHOR_MESSAGE_BODY_MAX_LENGTH + 1) },
+      adminToken(),
+    );
+    assert.equal(tooLong.status, 400);
+    assert.equal(tooLong.body.meta.code, "payload_too_large");
+    assert.equal((await messageStore.list()).length, 0);
+    const created = await postChat(RECIPIENT_MEMBER, { body: "  Hello author  " }, adminToken());
+    assert.equal(created.status, 200);
+    assert.equal(created.body.data?.status, "delivered");
+    const stored = (await messageStore.list())[0];
+    assert.equal(stored?.title, "");
+    assert.equal(stored?.cta, null);
+    assert.equal(stored?.body, "Hello author");
+    assert.equal(stored?.direction, "hu_to_im");
+    assert.equal(stored?.kind, "chat");
+    assert.equal(stored?.category, "notification");
+    const remote = JSON.parse(requests[0]?.body ?? "{}") as {
+      title?: string;
+      kind?: string;
+      cta?: unknown;
+      category?: string;
+      recipientAuthorId?: string;
+    };
+    assert.equal(remote.title, "");
+    assert.equal(remote.kind, "chat");
+    assert.equal(remote.cta, undefined);
+    assert.equal(remote.category, "notification");
+    assert.equal(remote.recipientAuthorId, AUTHOR);
+  });
+
+  it("rejects a browser attempt to choose direction, kind, or the recipient author", async () => {
+    await seedLink();
+    const spoofed = await postChat(
+      RECIPIENT_MEMBER,
+      {
+        body: "Hello author",
+        direction: "im_to_hu",
+        kind: "system",
+        authorId: OTHER_AUTHOR,
+        recipientAuthorId: OTHER_AUTHOR,
+        linkRevision: 2,
+        status: "delivered",
+      },
+      adminToken(),
+    );
+    assert.equal(spoofed.status, 400);
+    assert.equal(spoofed.body.meta.code, "unexpected_field");
+    assert.equal((await messageStore.list()).length, 0);
+    assert.equal(requests.length, 0);
+  });
+
+  it("signs chat with HMAC v2 and leaves the notification payload on v1", async () => {
+    await seedLink();
+    transportResult = (request) => accepted(request, false);
+    const chat = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(chat.status, 200);
+    const chatRequest = requests[0]!;
+    const chatRemote = JSON.parse(chatRequest.body) as {
+      messageId: string;
+      recipientAuthorId: string;
+      title: string;
+      body: string;
+      kind?: string;
+      category: string;
+    };
+    assert.equal(chatRemote.kind, "chat");
+    assert.equal(
+      chatRequest.signature,
+      chatSignature({
+        timestamp: chatRequest.timestamp,
+        messageId: chatRemote.messageId,
+        recipientAuthorId: chatRemote.recipientAuthorId,
+        body: chatRemote.body,
+        title: chatRemote.title,
+      }),
+    );
+    assert.notEqual(
+      chatRequest.signature,
+      independentSignature({
+        timestamp: chatRequest.timestamp,
+        messageId: chatRemote.messageId,
+        recipientAuthorId: chatRemote.recipientAuthorId,
+        title: chatRemote.title,
+        body: chatRemote.body,
+        ctaLabel: "",
+        ctaUrl: "",
+      }),
+    );
+    const notification = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(notification.status, 200);
+    const notificationRequest = requests[1]!;
+    const notificationRemote = JSON.parse(notificationRequest.body) as {
+      messageId: string;
+      recipientAuthorId: string;
+      title: string;
+      body: string;
+      kind?: string;
+    };
+    assert.equal(notificationRemote.kind, undefined);
+    assert.equal(notificationRequest.body.includes('"kind"'), false);
+    assert.equal(
+      notificationRequest.signature,
+      independentSignature({
+        timestamp: notificationRequest.timestamp,
+        messageId: notificationRemote.messageId,
+        recipientAuthorId: notificationRemote.recipientAuthorId,
+        title: notificationRemote.title,
+        body: notificationRemote.body,
+        ctaLabel: "",
+        ctaUrl: "",
+      }),
+    );
+    const rows = await messageStore.list();
+    assert.equal(rows.length, 2);
+    assert.equal(MONGO_COLLECTIONS.integrityMediaAuthorMessages, "integrity_media_author_messages");
+    const storeSource = readFileSync(
+      path.join(
+        here,
+        "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.store.ts",
+      ),
+      "utf8",
+    );
+    assert.match(storeSource, /MONGO_COLLECTIONS\.integrityMediaAuthorMessages/);
+    assert.doesNotMatch(storeSource, /integrity_media_author_chats|author_conversations/);
+  });
+
+  it("retries chat with the same message id and still signs notifications as v1 after a later block", async () => {
+    await seedLink();
+    transportResult = () => ({ kind: "timeout" });
+    const chat = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    const chatId = chat.body.data?.messageId ?? "";
+    assert.match(chatId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    assert.equal(requests.length, 1);
+    transportResult = (request) => accepted(request, true);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 2);
+    const retried = JSON.parse(requests[1]?.body ?? "{}") as { messageId?: string; kind?: string };
+    assert.equal(retried.messageId, chatId);
+    assert.equal(retried.kind, "chat");
+    assert.equal((await messageStore.findByMessageId(chatId))?.status, "delivered");
+
+    transportResult = () => ({ kind: "timeout" });
+    const notification = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    const notificationId = notification.body.data?.messageId ?? "";
+    assert.equal(requests.length, 3);
+    await updateCurrentLink({ collaborationStatus: "blocked" });
+    transportResult = (request) => accepted(request, false);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 4);
+    const legacy = JSON.parse(requests[3]?.body ?? "{}") as {
+      messageId?: string;
+      kind?: string;
+      title?: string;
+      body?: string;
+      recipientAuthorId?: string;
+    };
+    assert.equal(legacy.messageId, notificationId);
+    assert.equal(legacy.kind, undefined);
+    assert.equal(requests[3]?.body.includes('"kind"'), false);
+    assert.equal(
+      requests[3]?.signature,
+      independentSignature({
+        timestamp: requests[3]?.timestamp ?? "",
+        messageId: legacy.messageId ?? "",
+        recipientAuthorId: legacy.recipientAuthorId ?? "",
+        title: legacy.title ?? "",
+        body: legacy.body ?? "",
+        ctaLabel: "",
+        ctaUrl: "",
+      }),
+    );
+    assert.equal((await messageStore.findByMessageId(notificationId))?.kind, "system");
+    assert.equal((await messageStore.findByMessageId(notificationId))?.status, "delivered");
+    assert.equal((await messageStore.findByMessageId(chatId))?.kind, "chat");
+  });
+
+  it("does not deliver a queued chat after block, disconnect, or pending activation", async () => {
+    await seedLink();
+    transportResult = () => ({ kind: "timeout" });
+    const blocked = await postChat(RECIPIENT_MEMBER, { body: "Before block" }, adminToken());
+    const blockedId = blocked.body.data?.messageId ?? "";
+    await updateCurrentLink({ collaborationStatus: "blocked" });
+    transportResult = (request) => accepted(request, false);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 1);
+    assert.equal((await messageStore.findByMessageId(blockedId))?.status, "failed");
+    assert.equal((await messageStore.findByMessageId(blockedId))?.lastErrorCode, "collaboration_blocked");
+    assert.equal((await messageStore.findByMessageId(blockedId))?.messageId, blockedId);
+
+    await updateCurrentLink({ collaborationStatus: "active" });
+    transportResult = () => ({ kind: "timeout" });
+    const disconnected = await postChat(RECIPIENT_MEMBER, { body: "Before disconnect" }, adminToken());
+    const disconnectedId = disconnected.body.data?.messageId ?? "";
+    assert.equal(requests.length, 2);
+    await updateCurrentLink({ state: "disabled", disconnectedAt: new Date().toISOString() });
+    transportResult = (request) => accepted(request, false);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 2);
+    assert.equal((await messageStore.findByMessageId(disconnectedId))?.status, "failed");
+    assert.equal((await messageStore.findByMessageId(disconnectedId))?.lastErrorCode, "link_disabled");
+
+    await updateCurrentLink({
+      state: "linked",
+      disconnectedAt: null,
+      collaborationStatus: "active",
+      authorActivationPending: false,
+    });
+    transportResult = () => ({ kind: "timeout" });
+    const pending = await postChat(RECIPIENT_MEMBER, { body: "Before activation stalls" }, adminToken());
+    const pendingId = pending.body.data?.messageId ?? "";
+    assert.equal(requests.length, 3);
+    await updateCurrentLink({ authorActivationPending: true });
+    transportResult = (request) => accepted(request, false);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 3);
+    assert.equal((await messageStore.findByMessageId(pendingId))?.status, "failed");
+    assert.equal((await messageStore.findByMessageId(pendingId))?.lastErrorCode, "author_activation_pending");
+  });
+
+  it("rejects chat while the collaboration is blocked, archived, disconnected, or awaiting activation", async () => {
+    await seedLink({ collaborationStatus: "blocked" });
+    const blocked = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.body.meta.code, "collaboration_blocked");
+    await replaceLink({ collaborationStatus: "archived" });
+    const archived = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(archived.status, 409);
+    assert.equal(archived.body.meta.code, "collaboration_archived");
+    await replaceLink({ state: "disabled", disconnectedAt: new Date().toISOString() });
+    const disabled = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(disabled.status, 409);
+    assert.equal(disabled.body.meta.code, "link_disabled");
+    await replaceLink({ state: "linked", disconnectedAt: null, authorActivationPending: true });
+    const pending = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(pending.status, 409);
+    assert.equal(pending.body.meta.code, "author_activation_pending");
+    assert.equal(requests.length, 0);
+    assert.equal((await messageStore.list()).length, 0);
+  });
+
+  it("shows chat in the existing history page and keeps the scheduler off inbound rows", async () => {
+    await seedLink();
+    transportResult = (request) => accepted(request, false);
+    const created = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    const chatId = created.body.data?.messageId ?? "";
+    await seedMessage({
+      messageId: historyId(91),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Inbound",
+      createdAt: historyTime(1),
+      direction: "im_to_hu",
+      kind: "chat",
+      status: "pending",
+      nextAttemptAt: null,
+    });
+    transportResult = () => ({ kind: "timeout" });
+    const before = requests.length;
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, before);
+    assert.equal((await messageStore.findByMessageId(historyId(91)))?.attemptCount, 1);
+    const history = await getHistory(RECIPIENT_MEMBER, adminToken());
+    const chat = history.body.data?.messages?.find((message) => message.messageId === chatId);
+    assert.equal(chat?.direction, "hu_to_im");
+    assert.equal(chat?.kind, "chat");
+    assert.equal(chat?.body, "Hello author");
+    assert.equal(chat?.title, "");
+    assert.equal(chat?.delivery?.status, "delivered");
+    const inbound = history.body.data?.messages?.find((message) => message.messageId === historyId(91));
+    assert.equal(inbound?.direction, "im_to_hu");
+    assert.equal(inbound?.delivery ?? null, null);
+  });
+
   async function assertPermanentRemoteFailure(status: number, code: string): Promise<void> {
     await seedLink();
     transportResult = () => ({
@@ -1538,6 +1892,65 @@ function accepted(
 
 function later(): Date {
   return new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS + 5_000);
+}
+
+async function updateCurrentLink(patch: Partial<ExternalAuthorLinkRecord>): Promise<void> {
+  const current = (await linkStore.listLinks()).find((link) => link.memberId === RECIPIENT_MEMBER);
+  assert.ok(current);
+  const updated = await linkStore.updateLink({
+    ...current,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  });
+  assert.equal(updated, "updated");
+}
+
+async function replaceLink(patch: Partial<ExternalAuthorLinkRecord>): Promise<void> {
+  await updateCurrentLink(patch);
+}
+
+function chatSignature(input: {
+  timestamp: string;
+  messageId: string;
+  recipientAuthorId: string;
+  body: string;
+  title: string;
+}): string {
+  const hash = hashIntegrityMediaAuthorMessageContent({
+    body: input.body,
+    category: "notification",
+    ctaLabel: "",
+    ctaUrl: "",
+    title: input.title,
+  });
+  const canonical = buildIntegrityMediaAuthorMessageCanonicalStringV2({
+    timestamp: input.timestamp,
+    messageId: input.messageId,
+    recipientAuthorId: input.recipientAuthorId,
+    kind: "chat",
+    contentSha256: hash,
+  });
+  return signIntegrityMediaAuthorMessage(SECRET, canonical);
+}
+
+async function postChat(
+  memberId: string,
+  body: Record<string, unknown>,
+  token: string | null,
+): Promise<{ status: number; body: ApiBody }> {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(`${baseUrl}/api/v1/admin/integrity-media/authors/${memberId}/chat`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  return {
+    status: response.status,
+    body: (await response.json()) as ApiBody,
+  };
 }
 
 function signed(timestamp: string, title: string): { signature: string; hash: string; canonical: string } {
