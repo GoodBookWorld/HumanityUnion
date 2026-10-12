@@ -49,7 +49,8 @@ export type ExternalAuthorLinkAuditAction =
   | "author_capability_ensured"
   | "author_capability_failed"
   | "author_activation_pending"
-  | "author_capability_recovered";
+  | "author_capability_recovered"
+  | "integrity_media_disconnect_accepted";
 
 export interface ExternalAuthorLinkAuditRecord {
   eventId: string;
@@ -63,3 +64,11 @@ export interface ExternalAuthorLinkAuditRecord {
 }
 
 export type ExternalAuthorLinkConflict = "external_author_already_linked" | "member_already_linked";
+
+/** Accepted IM → HU disconnect. The signature is never stored. */
+export interface ExternalAuthorDisconnectEventRecord {
+  eventId: string;
+  externalAuthorId: string;
+  memberId: string;
+  createdAt: string;
+}

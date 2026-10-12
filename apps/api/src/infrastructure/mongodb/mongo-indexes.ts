@@ -1,6 +1,7 @@
 import type { Document, IndexDescription } from "mongodb";
 
 import {
+  EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES,
   EXTERNAL_AUTHOR_LINK_AUDIT_INDEXES,
   EXTERNAL_AUTHOR_LINK_INDEXES,
   EXTERNAL_AUTHOR_LINK_RESULT_INDEXES,
@@ -1664,6 +1665,10 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     collectionName: MONGO_COLLECTIONS.externalAuthorLinkAudit,
     indexes: EXTERNAL_AUTHOR_LINK_AUDIT_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.externalAuthorDisconnectEvents,
+    indexes: EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES,
   },
   {
     collectionName: MONGO_COLLECTIONS.integrityMediaAuthorMessages,
