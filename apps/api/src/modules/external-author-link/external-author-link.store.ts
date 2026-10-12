@@ -2,6 +2,7 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import type {
+  ExternalAuthorDisconnectEventRecord,
   ExternalAuthorLinkAuditRecord,
   ExternalAuthorLinkRecord,
   ExternalAuthorLinkResultRecord,
@@ -34,6 +35,11 @@ export interface ExternalAuthorLinkStore {
     eligibleBeforeIso: string;
   }): Promise<ExternalAuthorLinkRecord | null>;
   appendAudit(record: ExternalAuthorLinkAuditRecord): Promise<void>;
+  findDisconnectEvent(eventId: string): Promise<ExternalAuthorDisconnectEventRecord | null>;
+  insertDisconnectEvent(
+    record: ExternalAuthorDisconnectEventRecord,
+  ): Promise<"inserted" | "duplicate">;
+  listDisconnectEvents(): Promise<ExternalAuthorDisconnectEventRecord[]>;
   listLinks(): Promise<ExternalAuthorLinkRecord[]>;
   listForAdmin(input: {
     source: typeof INTEGRITY_MEDIA_SOURCE;
@@ -47,6 +53,7 @@ export interface ExternalAuthorLinkStore {
 
 export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
   const results = new Map<string, ExternalAuthorLinkResultRecord>();
+  const disconnectEvents = new Map<string, ExternalAuthorDisconnectEventRecord>();
   const byAuthor = new Map<string, ExternalAuthorLinkRecord>();
   const byMember = new Map<string, ExternalAuthorLinkRecord>();
   const audits: ExternalAuthorLinkAuditRecord[] = [];
@@ -143,6 +150,24 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       audits.push({ ...record });
     },
 
+    async findDisconnectEvent(eventId) {
+      const found = disconnectEvents.get(eventId);
+      return found ? { ...found } : null;
+    },
+
+    async insertDisconnectEvent(record) {
+      if (disconnectEvents.has(record.eventId)) {
+        return "duplicate";
+      }
+
+      disconnectEvents.set(record.eventId, { ...record });
+      return "inserted";
+    },
+
+    async listDisconnectEvents() {
+      return [...disconnectEvents.values()].map((record) => ({ ...record }));
+    },
+
     async listLinks() {
       return [...byAuthor.values()].map((record) => ({ ...record }));
     },
@@ -174,6 +199,10 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     getMongoCollection<ExternalAuthorLinkResultRecord>(MONGO_COLLECTIONS.externalAuthorLinkResults);
   const audits = () =>
     getMongoCollection<ExternalAuthorLinkAuditRecord>(MONGO_COLLECTIONS.externalAuthorLinkAudit);
+  const disconnectEvents = () =>
+    getMongoCollection<ExternalAuthorDisconnectEventRecord>(
+      MONGO_COLLECTIONS.externalAuthorDisconnectEvents,
+    );
 
   return {
     async insertResult(record) {
@@ -271,6 +300,29 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
 
     async appendAudit(record) {
       await audits().insertOne(record);
+    },
+
+    async findDisconnectEvent(eventId) {
+      const document = await disconnectEvents().findOne({ eventId });
+      return document ? withoutId(document) : null;
+    },
+
+    async insertDisconnectEvent(record) {
+      try {
+        await disconnectEvents().insertOne(record);
+        return "inserted";
+      } catch (error) {
+        if (isDuplicateKeyError(error)) {
+          return "duplicate";
+        }
+
+        throw error;
+      }
+    },
+
+    async listDisconnectEvents() {
+      const documents = await disconnectEvents().find({}).toArray();
+      return documents.map((document) => withoutId(document));
     },
 
     async listLinks() {

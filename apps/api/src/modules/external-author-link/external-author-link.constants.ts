@@ -4,6 +4,15 @@ export const INTEGRITY_MEDIA_SOURCE = "integrity-media" as const;
 /** Domain separation: a link-completion signature cannot authorize publication delivery. */
 export const INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE = "integrity-media-link-redeem";
 
+/** Domain separation: an IM disconnect signature cannot redeem a link or send a message. */
+export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE = "integrity-media-author-disconnect";
+
+export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PATH =
+  "/api/v1/integrations/integrity-media/author-disconnect";
+
+export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER = "x-im-hu-timestamp";
+export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER = "x-im-hu-signature";
+
 export const INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV = "INTEGRITY_MEDIA_LINK_HMAC_SECRET";
 export const INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV = "INTEGRITY_MEDIA_LINK_RETURN_ORIGIN";
 export const INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV = "INTEGRITY_MEDIA_LINK_RETURN_PATH";
