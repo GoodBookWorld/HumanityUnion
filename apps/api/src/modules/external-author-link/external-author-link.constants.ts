@@ -7,6 +7,13 @@ export const INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE = "integrity-media-link-redeem"
 /** Domain separation: an IM disconnect signature cannot redeem a link or send a message. */
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE = "integrity-media-author-disconnect";
 
+/**
+ * Legacy connections that never received a HU revision. This purpose cannot
+ * authorize a numbered generation, and the numbered purpose cannot authorize it.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_INITIAL_PURPOSE =
+  "integrity-media-author-disconnect-initial";
+
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PATH =
   "/api/v1/integrations/integrity-media/author-disconnect";
 

@@ -28,6 +28,13 @@ export interface ExternalAuthorLinkRecord {
   authorActivationPending?: boolean;
   /** Last automatic or exhausted activation attempt. Used only to space retries. */
   authorActivationAttemptAt?: string | null;
+  /**
+   * Confirmed connection generation for this identity pair. Absent on rows
+   * stored before revisions existed. Absence is not generation zero.
+   * The initial generation is assigned as 1. Reconnect advances it and
+   * never resets it.
+   */
+  linkRevision?: number;
 }
 
 export interface ExternalAuthorLinkResultRecord {
@@ -66,9 +73,14 @@ export interface ExternalAuthorLinkAuditRecord {
 export type ExternalAuthorLinkConflict = "external_author_already_linked" | "member_already_linked";
 
 /** Accepted IM → HU disconnect. The signature is never stored. */
+export type ExternalAuthorDisconnectOutcome = "disabled" | "superseded";
+
 export interface ExternalAuthorDisconnectEventRecord {
   eventId: string;
   externalAuthorId: string;
   memberId: string;
+  /** Null means the initial-generation protocol, which carries no numeric revision. */
+  linkRevision: number | null;
+  outcome: ExternalAuthorDisconnectOutcome;
   createdAt: string;
 }

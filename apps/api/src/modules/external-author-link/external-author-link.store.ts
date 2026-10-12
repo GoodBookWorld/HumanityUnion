@@ -1,6 +1,9 @@
+import type { Filter } from "mongodb";
+
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
+import { linkRevisionMatches } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorDisconnectEventRecord,
   ExternalAuthorLinkAuditRecord,
@@ -29,6 +32,18 @@ export interface ExternalAuthorLinkStore {
   ): Promise<ExternalAuthorLinkRecord | null>;
   insertLink(record: ExternalAuthorLinkRecord): Promise<"inserted" | "duplicate">;
   updateLink(record: ExternalAuthorLinkRecord): Promise<"updated" | "missing" | "refused">;
+  /**
+   * Disable only while the stored generation still equals the expected one.
+   * Expected generation 1 also matches a row that has never been assigned.
+   * The write and the comparison are one operation.
+   */
+  compareAndDisableLink(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    externalAuthorId: string;
+    memberId: string;
+    linkRevision: number;
+    nowIso: string;
+  }): Promise<"disabled" | "stale" | "missing">;
   claimNextPendingAuthorActivation(input: {
     source: typeof INTEGRITY_MEDIA_SOURCE;
     nowIso: string;
@@ -130,6 +145,29 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       byAuthor.set(authorKey, stored);
       byMember.set(linkKey(record.source, record.memberId), stored);
       return "updated";
+    },
+
+    async compareAndDisableLink(input) {
+      const authorKey = linkKey(input.source, input.externalAuthorId);
+      const current = byAuthor.get(authorKey);
+      if (!current || current.memberId !== input.memberId) {
+        return "missing";
+      }
+
+      if (!linkRevisionMatches(current.linkRevision, input.linkRevision)) {
+        return "stale";
+      }
+
+      const stored: ExternalAuthorLinkRecord = {
+        ...current,
+        state: "disabled",
+        linkRevision: input.linkRevision,
+        disconnectedAt: input.nowIso,
+        updatedAt: input.nowIso,
+      };
+      byAuthor.set(authorKey, stored);
+      byMember.set(linkKey(input.source, input.memberId), stored);
+      return "disabled";
     },
 
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
@@ -273,6 +311,37 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       );
 
       return result.matchedCount === 0 ? "missing" : "updated";
+    },
+
+    async compareAndDisableLink(input) {
+      const existing = await links().findOne({
+        source: input.source,
+        externalAuthorId: input.externalAuthorId,
+        memberId: input.memberId,
+      });
+      if (!existing) {
+        return "missing";
+      }
+
+      const updated = await links().findOneAndUpdate(
+        {
+          source: input.source,
+          externalAuthorId: input.externalAuthorId,
+          memberId: input.memberId,
+          ...integrityMediaDisconnectRevisionFilter(input.linkRevision),
+        },
+        {
+          $set: {
+            state: "disabled",
+            linkRevision: input.linkRevision,
+            disconnectedAt: input.nowIso,
+            updatedAt: input.nowIso,
+          },
+        },
+        { returnDocument: "after" },
+      );
+
+      return updated ? "disabled" : "stale";
     },
 
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
@@ -467,6 +536,22 @@ function linkKey(source: string, id: string): string {
   return `${source}\0${id}`;
 }
 
+export function integrityMediaDisconnectRevisionFilter(
+  linkRevision: number,
+): Filter<ExternalAuthorLinkRecord> {
+  if (linkRevision === 1) {
+    return {
+      $or: [
+        { linkRevision: 1 },
+        { linkRevision: { $exists: false } },
+        { linkRevision: { $type: "null" } },
+      ],
+    };
+  }
+
+  return { linkRevision };
+}
+
 function linkUpdateFields(record: ExternalAuthorLinkRecord): {
   state: ExternalAuthorLinkRecord["state"];
   updatedAt: string;
@@ -475,6 +560,7 @@ function linkUpdateFields(record: ExternalAuthorLinkRecord): {
   authorActivationPending: boolean;
   authorActivationAttemptAt: string | null;
   collaborationStatus?: ExternalAuthorLinkRecord["collaborationStatus"];
+  linkRevision?: number;
 } {
   return {
     state: record.state,
@@ -484,6 +570,11 @@ function linkUpdateFields(record: ExternalAuthorLinkRecord): {
     authorActivationPending: record.authorActivationPending === true,
     authorActivationAttemptAt: record.authorActivationAttemptAt ?? null,
     ...(record.collaborationStatus ? { collaborationStatus: record.collaborationStatus } : {}),
+    ...(typeof record.linkRevision === "number" &&
+    Number.isInteger(record.linkRevision) &&
+    record.linkRevision >= 1
+      ? { linkRevision: record.linkRevision }
+      : {}),
   };
 }
 

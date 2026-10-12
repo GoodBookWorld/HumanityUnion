@@ -14,6 +14,7 @@ import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.types.j
 import { ensureBlogAuthorCapability } from "../../../src/modules/blog/blog-author-capability.js";
 import { resolveIntegrityMediaLinkConfig } from "../../../src/modules/external-author-link/external-author-link.config.js";
 import {
+  INTEGRITY_MEDIA_AUTHOR_DISCONNECT_INITIAL_PURPOSE,
   INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE,
   INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER,
   INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER,
@@ -40,6 +41,7 @@ import {
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-directory.service.js";
 import {
   createMemoryExternalAuthorLinkStore,
+  integrityMediaDisconnectRevisionFilter,
   setExternalAuthorLinkStoreForTests,
   type ExternalAuthorLinkStore,
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
@@ -66,6 +68,8 @@ interface ApiBody {
     authorId?: string;
     state?: string;
     idempotent?: boolean;
+    superseded?: boolean;
+    linkRevision?: number;
     reconnected?: boolean;
     redirectUrl?: string;
     authors?: Array<{
@@ -190,6 +194,7 @@ describe("Integrity Media author disconnect", () => {
     assert.equal(link?.collaborationStatus, "active");
     assert.equal(link?.memberId, MEMBER_A);
     assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(link?.linkRevision, 1);
     assert.equal((await store.listLinks()).length, 1);
     assert.equal((await messageStore.list()).length, 1);
     assert.equal(ensureCalls, grantsBefore);
@@ -331,6 +336,206 @@ describe("Integrity Media author disconnect", () => {
     assert.equal((await store.listLinks()).filter((link) => link.externalAuthorId === author).length, 1);
     assert.equal(INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(author), true);
   });
+
+  it("assigns generation 1 on the first confirmation and does not increment a duplicate redeem", async () => {
+    const first = await redeemLink(MEMBER_A, AUTHOR_A);
+    assert.equal(first.body.data?.linkRevision, 1);
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    const duplicate = await redeemLink(MEMBER_A, AUTHOR_A);
+    assert.equal(duplicate.body.data?.reconnected, false);
+    assert.equal(duplicate.body.data?.linkRevision, 1);
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listLinks()).length, 1);
+  });
+
+  it("materializes a legacy linked row as generation 1 without treating absence as zero", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const current = (await store.listLinks())[0];
+    assert.ok(current);
+    const { linkRevision: _revision, ...legacy } = current;
+    assert.equal(await store.updateLink(legacy), "updated");
+    assert.equal((await store.listLinks())[0]?.linkRevision, undefined);
+    const duplicate = await redeemLink(MEMBER_A, AUTHOR_A);
+    assert.equal(duplicate.body.data?.linkRevision, 1);
+    assert.equal(duplicate.body.data?.reconnected, false);
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+  });
+
+  it("advances a legacy disabled row to generation 2 on reconnect", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const current = (await store.listLinks())[0];
+    assert.ok(current);
+    const { linkRevision: _revision, ...legacy } = current;
+    assert.equal(
+      await store.updateLink({
+        ...legacy,
+        state: "disabled",
+        disconnectedAt: new Date().toISOString(),
+      }),
+      "updated",
+    );
+    const restored = await redeemLink(MEMBER_A, AUTHOR_A);
+    assert.equal(restored.body.data?.reconnected, true);
+    assert.equal(restored.body.data?.linkRevision, 2);
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, "active");
+  });
+
+  it("rejects an unversioned disconnect after verifying it and does not change the link", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const response = await disconnect(AUTHOR_A, { linkRevision: null });
+    assert.equal(response.status, 503);
+    assert.equal(response.body.meta.code, "revision_required");
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listDisconnectEvents()).length, 0);
+  });
+
+  it("records an older revision as superseded and leaves the newer connection linked", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const current = (await store.listLinks())[0];
+    assert.ok(current);
+    assert.equal(await store.updateLink({ ...current, linkRevision: 2 }), "updated");
+    const response = await disconnect(AUTHOR_A, { linkRevision: 1 });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data?.state, "linked");
+    assert.equal(response.body.data?.superseded, true);
+    assert.equal(response.body.data?.idempotent, false);
+    assert.equal(response.body.data?.linkRevision, 2);
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+    assert.equal((await store.listLinks())[0]?.linkRevision, 2);
+    assert.equal((await store.listDisconnectEvents())[0]?.outcome, "superseded");
+    const listed = await listAuthors("linked");
+    assert.equal(listed[0]?.canSend, true);
+    assert.equal(listed[0]?.state, "linked");
+  });
+
+  it("rejects a future revision without changing the link or storing the event", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const response = await disconnect(AUTHOR_A, { linkRevision: 9 });
+    assert.equal(response.status, 409);
+    assert.equal(response.body.meta.code, "revision_conflict");
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listDisconnectEvents()).length, 0);
+  });
+
+  it("returns the current linked state when an accepted event is retried after reconnect", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const eventId = randomUUID();
+    const first = await disconnect(AUTHOR_A, { eventId, linkRevision: 1 });
+    assert.equal(first.status, 200);
+    assert.equal(first.body.data?.state, "disabled");
+    const restored = await redeemLink(MEMBER_A, AUTHOR_A);
+    assert.equal(restored.body.data?.linkRevision, 2);
+    resetIntegrityMediaAuthorDisconnectReplayCacheForTests();
+    const again = await disconnect(AUTHOR_A, {
+      eventId,
+      linkRevision: 1,
+      timestamp: String(Math.floor(Date.now() / 1000) + 1),
+    });
+    assert.equal(again.status, 200);
+    assert.equal(again.body.data?.idempotent, true);
+    assert.equal(again.body.data?.state, "linked");
+    assert.equal(again.body.data?.superseded, true);
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+    assert.equal((await store.listLinks())[0]?.linkRevision, 2);
+    assert.equal((await store.listDisconnectEvents()).length, 1);
+    assert.equal(
+      (await store.listAudits()).filter((event) => event.action === "integrity_media_disconnect_accepted")
+        .length,
+      1,
+    );
+  });
+
+  it("conflicts when the same event id is reused with a different revision", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const eventId = randomUUID();
+    const first = await disconnect(AUTHOR_A, { eventId, linkRevision: 1 });
+    assert.equal(first.status, 200);
+    resetIntegrityMediaAuthorDisconnectReplayCacheForTests();
+    const conflict = await disconnect(AUTHOR_A, {
+      eventId,
+      linkRevision: 2,
+      timestamp: String(Math.floor(Date.now() / 1000) + 1),
+    });
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.meta.code, "event_conflict");
+    assert.equal((await store.listLinks())[0]?.state, "disabled");
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listDisconnectEvents()).length, 1);
+  });
+
+  it("disables a legacy initial generation and does not disable a newer one", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const current = (await store.listLinks())[0];
+    assert.ok(current);
+    const { linkRevision: _revision, ...legacy } = current;
+    assert.equal(await store.updateLink(legacy), "updated");
+    const accepted = await disconnect(AUTHOR_A, { generation: "initial" });
+    assert.equal(accepted.status, 200);
+    assert.equal(accepted.body.data?.state, "disabled");
+    assert.equal(accepted.body.data?.superseded, false);
+    assert.equal((await store.listLinks())[0]?.linkRevision, 1);
+    assert.equal((await store.listDisconnectEvents())[0]?.linkRevision, null);
+
+    await redeemLink(MEMBER_B, AUTHOR_B);
+    const newer = (await store.listLinks()).find((link) => link.externalAuthorId === AUTHOR_B);
+    assert.ok(newer);
+    assert.equal(await store.updateLink({ ...newer, linkRevision: 2 }), "updated");
+    const superseded = await disconnect(AUTHOR_B, { generation: "initial" });
+    assert.equal(superseded.status, 200);
+    assert.equal(superseded.body.data?.state, "linked");
+    assert.equal(superseded.body.data?.superseded, true);
+    assert.equal(
+      (await store.listLinks()).find((link) => link.externalAuthorId === AUTHOR_B)?.state,
+      "linked",
+    );
+  });
+
+  it("retries a disable when the event write fails after the link write", async () => {
+    await redeemLink(MEMBER_A, AUTHOR_A);
+    const original = store.insertDisconnectEvent.bind(store);
+    let fail = true;
+    store.insertDisconnectEvent = async (record) => {
+      if (fail) {
+        fail = false;
+        throw new Error("crash");
+      }
+      return original(record);
+    };
+    const eventId = randomUUID();
+    const first = await disconnect(AUTHOR_A, { eventId, linkRevision: 1 });
+    assert.equal(first.status, 503);
+    assert.equal((await store.listLinks())[0]?.state, "disabled");
+    assert.equal((await store.listDisconnectEvents()).length, 0);
+    const retry = await disconnect(AUTHOR_A, {
+      eventId,
+      linkRevision: 1,
+      timestamp: String(Math.floor(Date.now() / 1000) + 1),
+    });
+    store.insertDisconnectEvent = original;
+    assert.equal(retry.status, 200);
+    assert.equal(retry.body.data?.state, "disabled");
+    assert.equal(retry.body.data?.idempotent, false);
+    assert.equal((await store.listDisconnectEvents()).length, 1);
+    assert.equal(
+      (await store.listAudits()).filter((event) => event.action === "integrity_media_disconnect_accepted")
+        .length,
+      1,
+    );
+  });
+
+  it("matches generation 1 against an unassigned revision and an exact later generation", () => {
+    const initial = integrityMediaDisconnectRevisionFilter(1);
+    assert.deepEqual(initial.$or, [
+      { linkRevision: 1 },
+      { linkRevision: { $exists: false } },
+      { linkRevision: { $type: "null" } },
+    ]);
+    assert.deepEqual(integrityMediaDisconnectRevisionFilter(2), { linkRevision: 2 });
+  });
 });
 
 async function assertReconnectPreserves(
@@ -355,6 +560,7 @@ async function assertReconnectPreserves(
   assert.equal(link?.state, "linked");
   assert.equal(link?.collaborationStatus, collaborationStatus);
   assert.equal(link?.memberId, memberId);
+  assert.equal(link?.linkRevision, 2);
   assert.equal((await store.listLinks()).filter((item) => item.memberId === memberId).length, 1);
 }
 
@@ -399,13 +605,33 @@ async function redeemLink(
 
 async function disconnect(
   authorId: string,
-  override: { eventId?: string; timestamp?: string; signature?: string } = {},
-): Promise<{ status: number; body: ApiBody; timestamp: string; signature: string }> {
+  override: {
+    eventId?: string;
+    timestamp?: string;
+    signature?: string;
+    linkRevision?: number | null;
+    generation?: "initial";
+  } = {},
+): Promise<{ status: number; body: ApiBody; timestamp: string; signature: string; eventId: string }> {
   const eventId = override.eventId ?? randomUUID();
   const timestamp = override.timestamp ?? String(Math.floor(Date.now() / 1000));
-  const canonical = [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE, timestamp, eventId, authorId].join("\n");
+  const revision = override.linkRevision === undefined ? 1 : override.linkRevision;
+  const canonical =
+    override.generation === "initial"
+      ? [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_INITIAL_PURPOSE, timestamp, eventId, authorId].join("\n")
+      : revision === null
+        ? [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE, timestamp, eventId, authorId].join("\n")
+        : [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE, timestamp, eventId, authorId, String(revision)].join(
+            "\n",
+          );
   const signature =
     override.signature ?? createHmac("sha256", SECRET).update(canonical).digest("hex");
+  const payload =
+    override.generation === "initial"
+      ? { eventId, authorId, generation: "initial" }
+      : revision === null
+        ? { eventId, authorId }
+        : { eventId, authorId, linkRevision: revision };
   const response = await fetch(`${baseUrl}/api/v1/integrations/integrity-media/author-disconnect`, {
     method: "POST",
     headers: {
@@ -413,13 +639,14 @@ async function disconnect(
       [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER]: timestamp,
       [INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER]: signature,
     },
-    body: JSON.stringify({ eventId, authorId }),
+    body: JSON.stringify(payload),
   });
   return {
     status: response.status,
     body: (await response.json()) as ApiBody,
     timestamp,
     signature,
+    eventId,
   };
 }
 
