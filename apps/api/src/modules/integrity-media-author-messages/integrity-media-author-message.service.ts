@@ -5,6 +5,10 @@ import {
   AdministrationUnauthorizedError,
 } from "../administration/administration.errors.js";
 import { loadAuthUserForActiveGate } from "../auth/auth-active-account-gate.js";
+import {
+  isOrdinaryIntegrityMediaCollaborationAllowed,
+  resolveIntegrityMediaCollaborationStatus,
+} from "../external-author-link/external-author-link.collaboration.js";
 import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
 import { isIntegrityMediaAuthorLinkOperational } from "../external-author-link/external-author-link.service.js";
 import { getExternalAuthorLinkStore } from "../external-author-link/external-author-link.store.js";
@@ -308,6 +312,22 @@ async function resolveOperationalRecipient(
 
   if (link.memberId !== trimmed || !link.externalAuthorId) {
     return failure(409, "link_ineligible", "This Integrity Media collaboration is not eligible.");
+  }
+
+  if (!isOrdinaryIntegrityMediaCollaborationAllowed(link)) {
+    const collaborationStatus = resolveIntegrityMediaCollaborationStatus(link);
+
+    if (collaborationStatus === "blocked") {
+      return failure(409, "collaboration_blocked", "This Integrity Media collaboration is blocked.");
+    }
+
+    if (collaborationStatus === "archived") {
+      return failure(
+        409,
+        "collaboration_archived",
+        "This Integrity Media collaboration is archived.",
+      );
+    }
   }
 
   return {

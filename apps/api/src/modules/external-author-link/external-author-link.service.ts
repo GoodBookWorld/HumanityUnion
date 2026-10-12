@@ -23,6 +23,7 @@ import {
   noteIntegrityMediaRedeemSignature,
   signIntegrityMediaLinkRedeem,
 } from "./external-author-link.hmac.js";
+import { resolveIntegrityMediaCollaborationStatus } from "./external-author-link.collaboration.js";
 import {
   getExternalAuthorLinkStore,
   type ExternalAuthorLinkStore,
@@ -633,6 +634,7 @@ async function establishLink(
       disconnectedAt: null,
       confirmedAt: input.now.toISOString(),
       updatedAt: input.now.toISOString(),
+      collaborationStatus: resolveIntegrityMediaCollaborationStatus(decision.existing),
     });
 
     if (updated !== "updated") {
@@ -651,6 +653,7 @@ async function establishLink(
     updatedAt: input.now.toISOString(),
     confirmedAt: input.now.toISOString(),
     disconnectedAt: null,
+    collaborationStatus: "active",
   };
   const inserted = await store.insertLink(record);
 

@@ -1,6 +1,9 @@
 import { findAuthUsersByMemberIds } from "../auth/auth-user.repository.js";
+import {
+  isOrdinaryIntegrityMediaCollaborationAllowed,
+  resolveIntegrityMediaCollaborationStatus,
+} from "../external-author-link/external-author-link.collaboration.js";
 import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
-import { isIntegrityMediaAuthorLinkOperational } from "../external-author-link/external-author-link.service.js";
 import {
   getExternalAuthorLinkStore,
   type ExternalAuthorLinkAdminListState,
@@ -172,7 +175,8 @@ function toDirectoryRow(
     externalAuthorId: link.externalAuthorId,
     state: link.state,
     authorActivationPending: link.authorActivationPending === true,
-    canSend: isIntegrityMediaAuthorLinkOperational(link),
+    collaborationStatus: resolveIntegrityMediaCollaborationStatus(link),
+    canSend: isOrdinaryIntegrityMediaCollaborationAllowed(link),
     createdAt: link.createdAt,
     confirmedAt: link.confirmedAt,
     disconnectedAt: link.disconnectedAt,

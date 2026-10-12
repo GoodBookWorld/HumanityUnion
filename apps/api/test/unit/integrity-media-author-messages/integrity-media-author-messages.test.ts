@@ -17,6 +17,10 @@ import {
   INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV,
   INTEGRITY_MEDIA_SOURCE,
 } from "../../../src/modules/external-author-link/external-author-link.constants.js";
+import {
+  isOrdinaryIntegrityMediaCollaborationAllowed,
+  resolveIntegrityMediaCollaborationStatus,
+} from "../../../src/modules/external-author-link/external-author-link.collaboration.js";
 import { isIntegrityMediaAuthorLinkOperational } from "../../../src/modules/external-author-link/external-author-link.service.js";
 import {
   createMemoryExternalAuthorLinkStore,
@@ -255,6 +259,50 @@ describe("Integrity Media outbound author messages", () => {
     assert.equal(response.body.meta.code, "author_activation_pending");
     assert.equal(requests.length, 0);
     assert.equal((await messageStore.list()).length, 0);
+  });
+
+  it("treats a legacy linked row without collaborationStatus as active", async () => {
+    await seedLink();
+    const stored = (await linkStore.listLinks())[0];
+    assert.equal(stored?.collaborationStatus, undefined);
+    assert.equal(resolveIntegrityMediaCollaborationStatus(stored ?? {}), "active");
+    assert.equal(isOrdinaryIntegrityMediaCollaborationAllowed(stored!), true);
+    transportResult = (request) => accepted(request, false);
+    const response = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data?.status, "delivered");
+    assert.equal(requests.length, 1);
+    const listed = directoryAuthors((await listAuthors(adminToken())).body)[0];
+    assert.equal(listed?.collaborationStatus, "active");
+    assert.equal(listed?.canSend, true);
+    assert.equal(listed?.state, "linked");
+  });
+
+  it("rejects a blocked collaboration before creating a row or calling Integrity Media", async () => {
+    await seedLink({ collaborationStatus: "blocked" });
+    const response = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(response.status, 409);
+    assert.equal(response.body.meta.code, "collaboration_blocked");
+    assert.equal(requests.length, 0);
+    assert.equal((await messageStore.list()).length, 0);
+    const listed = directoryAuthors((await listAuthors(adminToken())).body)[0];
+    assert.equal(listed?.collaborationStatus, "blocked");
+    assert.equal(listed?.canSend, false);
+    assert.equal(listed?.state, "linked");
+    assert.equal(listed?.authorActivationPending, false);
+  });
+
+  it("rejects an archived collaboration before creating a row or calling Integrity Media", async () => {
+    await seedLink({ collaborationStatus: "archived" });
+    const response = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(response.status, 409);
+    assert.equal(response.body.meta.code, "collaboration_archived");
+    assert.equal(requests.length, 0);
+    assert.equal((await messageStore.list()).length, 0);
+    const listed = directoryAuthors((await listAuthors(adminToken())).body)[0];
+    assert.equal(listed?.collaborationStatus, "archived");
+    assert.equal(listed?.canSend, false);
+    assert.equal(listed?.state, "linked");
   });
 
   it("rejects a browser-supplied external author id", async () => {
@@ -827,10 +875,13 @@ describe("Integrity Media outbound author messages", () => {
       [RECIPIENT_MEMBER, PENDING_MEMBER, DISABLED_MEMBER],
     );
     assert.equal(authors[0]?.canSend, true);
+    assert.equal(authors[0]?.collaborationStatus, "active");
     assert.equal(authors[1]?.authorActivationPending, true);
     assert.equal(authors[1]?.canSend, false);
+    assert.equal(authors[1]?.collaborationStatus, "active");
     assert.equal(authors[2]?.state, "disabled");
     assert.equal(authors[2]?.canSend, false);
+    assert.equal(authors[2]?.collaborationStatus, "active");
     assert.equal(authors[0]?.messageCount, 2);
     assert.equal(authors[0]?.latestMessage?.title, "Newer note");
     assert.equal(authors[0]?.latestMessage?.status, "delivered");
@@ -967,6 +1018,7 @@ interface DirectoryAuthorRow {
   memberId?: string;
   state?: string;
   authorActivationPending?: boolean;
+  collaborationStatus?: string;
   canSend?: boolean;
   participantDisplayName?: string;
   participantAvatarUrl?: string;

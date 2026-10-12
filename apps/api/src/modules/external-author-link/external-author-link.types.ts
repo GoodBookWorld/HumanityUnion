@@ -4,6 +4,9 @@ export type IntegrityMediaSource = typeof INTEGRITY_MEDIA_SOURCE;
 
 export type ExternalAuthorLinkState = "linked" | "disabled";
 
+/** HU↔IM collaboration control. Distinct from link state and author setup. */
+export type IntegrityMediaCollaborationStatus = "active" | "blocked" | "archived";
+
 export interface ExternalAuthorLinkRecord {
   source: IntegrityMediaSource;
   externalAuthorId: string;
@@ -13,6 +16,11 @@ export interface ExternalAuthorLinkRecord {
   updatedAt: string;
   confirmedAt: string;
   disconnectedAt: string | null;
+  /**
+   * Absent on links stored before this field existed. Callers must use
+   * resolveIntegrityMediaCollaborationStatus, which treats absence as active.
+   */
+  collaborationStatus?: IntegrityMediaCollaborationStatus;
   /**
    * True only while the proven pair exists and ordinary Blog author setup
    * has not finished. Absent or false once that capability is effective.
