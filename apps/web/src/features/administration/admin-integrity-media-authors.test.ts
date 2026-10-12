@@ -634,6 +634,42 @@ describe("Integrity Authors admin", () => {
       340,
     );
   });
+
+  it("keeps Integrity Authors headers and status labels on one line inside a scrolling table", () => {
+    const css = read(
+      "features/administration/components/admin-integrity-author-message-dialog.css",
+    );
+    const panel = read("features/administration/components/AdminIntegrityAuthorsPanel.tsx");
+    assert.match(panel, /admin-participants-table-wrap/);
+    assert.match(panel, /admin-integrity-authors-table/);
+    assert.match(panel, /Connection/);
+    assert.match(panel, /Messages/);
+    assert.match(css, /\.admin-integrity-authors \.admin-participants-table-wrap\s*\{[^}]*overflow-x:\s*auto/);
+    assert.match(css, /\.admin-integrity-authors \.admin-participants-table-wrap\s*\{[^}]*min-width:\s*0/);
+    assert.match(
+      css,
+      /\.admin-integrity-authors \.admin-integrity-authors-table\s*\{[^}]*min-width:\s*64rem/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-authors \.admin-integrity-authors-table\s*\{[^}]*overflow-wrap:\s*normal/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-authors \.admin-integrity-authors-table\s*\{[^}]*word-break:\s*normal/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-authors \.admin-integrity-authors-table th,\s*\.admin-integrity-authors \.admin-integrity-authors-table \.workspace-badge,\s*\.admin-integrity-authors \.admin-integrity-authors-table \.hu-button\s*\{[^}]*white-space:\s*nowrap/,
+    );
+    assert.match(css, /th:nth-child\(2\)[\s\S]*min-width:\s*10rem/);
+    assert.match(css, /th:nth-child\(4\)[\s\S]*min-width:\s*8rem/);
+    assert.match(css, /\.admin-participants-table__actions\s*\{[^}]*flex-wrap:\s*nowrap/);
+    assert.doesNotMatch(
+      css,
+      /\.admin-integrity-authors-table[\s\S]*text-overflow:\s*ellipsis/,
+    );
+  });
 });
 
 function historyMessage(

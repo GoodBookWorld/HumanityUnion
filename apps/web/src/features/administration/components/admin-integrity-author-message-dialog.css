@@ -150,6 +150,76 @@
   }
 }
 
+/*
+ * The workspace shell sets overflow-wrap: anywhere on the main column.
+ * That lets the shared participants table treat "CONNECTION", "MESSAGES",
+ * and short badges such as "Disabled" as breakable, then gives the long
+ * author reference the spare width. Keep those labels intact and scroll
+ * the table inside its own container when the viewport is narrower.
+ */
+.admin-integrity-authors .admin-participants-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table {
+  width: max-content;
+  min-width: 64rem;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th,
+.admin-integrity-authors .admin-integrity-authors-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th,
+.admin-integrity-authors .admin-integrity-authors-table .workspace-badge,
+.admin-integrity-authors .admin-integrity-authors-table .hu-button {
+  white-space: nowrap;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(1),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(1) {
+  min-width: 16rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(2),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(2) {
+  min-width: 10rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(3),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(3) {
+  min-width: 9rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(4),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(4) {
+  min-width: 8rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(5),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(5) {
+  min-width: 12rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table th:nth-child(6),
+.admin-integrity-authors .admin-integrity-authors-table td:nth-child(6) {
+  min-width: 9rem;
+}
+
+.admin-integrity-authors .admin-integrity-authors-table .admin-participants-table__actions {
+  flex-wrap: nowrap;
+}
+
 .admin-integrity-authors .admin-panel__label {
   display: flex;
   flex-direction: column;
