@@ -4,10 +4,14 @@ export type IntegrityMediaAuthorCollaborationStatus = "active" | "blocked" | "ar
 
 export type IntegrityMediaAuthorDeliveryStatus = "delivered" | "pending" | "failed";
 
+export type IntegrityMediaAuthorDirectoryDeliveryStatus =
+  | IntegrityMediaAuthorDeliveryStatus
+  | "recorded";
+
 export interface IntegrityMediaAuthorLatestMessage {
   messageId: string;
   title: string;
-  status: IntegrityMediaAuthorDeliveryStatus;
+  status: IntegrityMediaAuthorDirectoryDeliveryStatus;
   lastErrorCode: string | null;
   createdAt: string;
   deliveredAt: string | null;
@@ -54,6 +58,7 @@ export interface IntegrityMediaAuthorMessageRequest {
 }
 
 export const INTEGRITY_MEDIA_AUTHORS_PAGE_SIZE = 25;
+export const INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE = 20;
 export const INTEGRITY_MEDIA_AUTHOR_TITLE_MAX = 200;
 export const INTEGRITY_MEDIA_AUTHOR_BODY_MAX = 8000;
 export const INTEGRITY_MEDIA_AUTHOR_CTA_LABEL_MAX = 120;
@@ -223,6 +228,211 @@ export function integrityMediaAuthorConnectionLabel(row: {
     return "Setup pending";
   }
   return "Linked";
+}
+
+export type IntegrityMediaAuthorHistoryDirection = "hu_to_im" | "im_to_hu";
+export type IntegrityMediaAuthorHistoryKind = "chat" | "system";
+
+export interface IntegrityMediaAuthorHistoryMessage {
+  messageId: string;
+  memberId: string;
+  externalAuthorId: string;
+  direction: IntegrityMediaAuthorHistoryDirection;
+  kind: IntegrityMediaAuthorHistoryKind;
+  body: string;
+  createdAt: string;
+  title: string | null;
+  cta: { label: string; url: string } | null;
+  actorMemberId: string | null;
+  replyToMessageId: string | null;
+  delivery: {
+    status: IntegrityMediaAuthorDirectoryDeliveryStatus;
+    deliveredAt: string | null;
+    attemptCount: number;
+    lastErrorCode: string | null;
+  } | null;
+}
+
+export interface IntegrityMediaAuthorHistoryPage {
+  memberId: string;
+  messages: IntegrityMediaAuthorHistoryMessage[];
+  pageInfo: {
+    hasMore: boolean;
+    nextCursor: string | null;
+  };
+}
+
+export function buildAdminIntegrityMediaAuthorHistoryPath(
+  memberId: string,
+  query: { limit?: number; cursor?: string } = {},
+): string {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.cursor) {
+    params.set("cursor", query.cursor);
+  }
+  const suffix = params.toString();
+  return `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/messages${suffix ? `?${suffix}` : ""}`;
+}
+
+export function buildIntegrityMediaAuthorChatRequest(body: string): { body: string } {
+  return { body: body.trim() };
+}
+
+export function validateIntegrityMediaAuthorChatForm(body: string): string | null {
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return "Message is required.";
+  }
+  if (trimmed.length > INTEGRITY_MEDIA_AUTHOR_BODY_MAX) {
+    return `Message must be ${INTEGRITY_MEDIA_AUTHOR_BODY_MAX} characters or fewer.`;
+  }
+  if (containsMarkup(trimmed)) {
+    return "Message must be plain text.";
+  }
+  return null;
+}
+
+export function mergeIntegrityMediaAuthorHistory(
+  older: readonly IntegrityMediaAuthorHistoryMessage[],
+  current: readonly IntegrityMediaAuthorHistoryMessage[],
+): IntegrityMediaAuthorHistoryMessage[] {
+  const byId = new Map<string, IntegrityMediaAuthorHistoryMessage>();
+  for (const message of older) {
+    byId.set(message.messageId, message);
+  }
+  for (const message of current) {
+    byId.set(message.messageId, message);
+  }
+  return [...byId.values()].sort(compareIntegrityMediaAuthorHistory);
+}
+
+export function restoredTranscriptScrollTop(input: {
+  previousScrollHeight: number;
+  previousScrollTop: number;
+  nextScrollHeight: number;
+}): number {
+  const distanceFromBottom = input.previousScrollHeight - input.previousScrollTop;
+  return Math.max(0, input.nextScrollHeight - distanceFromBottom);
+}
+
+export function integrityMediaAuthorHistorySenderLabel(input: {
+  direction: IntegrityMediaAuthorHistoryDirection;
+  participantDisplayName: string;
+}): string {
+  return input.direction === "im_to_hu" ? input.participantDisplayName : "Humanity Union";
+}
+
+export function integrityMediaAuthorHistoryKindLabel(
+  kind: IntegrityMediaAuthorHistoryKind,
+): string {
+  return kind === "chat" ? "Chat" : "System";
+}
+
+export function integrityMediaAuthorHistoryDeliveryLabel(status: string): string | null {
+  if (status === "delivered") {
+    return "Delivered";
+  }
+  if (status === "pending") {
+    return "Pending";
+  }
+  if (status === "recorded") {
+    return "Recorded";
+  }
+  if (status === "failed") {
+    return "Not delivered";
+  }
+  return null;
+}
+
+export function integrityMediaAuthorLatestTitle(title: string): string {
+  const trimmed = title.trim();
+  return trimmed.length > 0 ? trimmed : "Chat message";
+}
+
+export function integrityMediaAuthorLatestStatusLabel(status: string): string {
+  if (status === "delivered") {
+    return "Delivered";
+  }
+  if (status === "pending") {
+    return "Pending";
+  }
+  if (status === "recorded") {
+    return "Recorded";
+  }
+  if (status === "failed") {
+    return "Failed";
+  }
+  return "Unknown";
+}
+
+export function integrityMediaAuthorComposeBlockedCopy(input: {
+  canSend: boolean;
+  linkState: "linked" | "disabled";
+  authorActivationPending: boolean;
+  collaborationStatus: IntegrityMediaAuthorCollaborationStatus;
+}): string | null {
+  if (input.canSend) {
+    return null;
+  }
+  if (input.linkState === "disabled") {
+    return "This collaboration is disconnected. History remains available. New messages are turned off.";
+  }
+  if (input.authorActivationPending) {
+    return "Author setup is still finishing. History remains available. New messages are turned off.";
+  }
+  if (input.collaborationStatus === "blocked") {
+    return "This collaboration is blocked. History remains available. New messages are turned off.";
+  }
+  if (input.collaborationStatus === "archived") {
+    return "This collaboration is archived. History remains available. New messages are turned off.";
+  }
+  return "New messages are unavailable. History remains available.";
+}
+
+const INTEGRITY_MEDIA_AUTHOR_ERROR_COPY: Record<string, string> = {
+  link_missing: "This member is not linked to Integrity Media.",
+  link_disabled: "This Integrity Media connection is disabled.",
+  author_activation_pending: "Integrity Media author setup is still finishing.",
+  collaboration_blocked: "This Integrity Media collaboration is blocked.",
+  collaboration_archived: "This Integrity Media collaboration is archived.",
+  link_ineligible: "This Integrity Media collaboration is not eligible for new messages.",
+  administrator_required: "Administrator access is required.",
+  authentication_required: "Authentication is required.",
+  invalid_request: "This message is not valid.",
+  payload_too_large: `Message must be ${INTEGRITY_MEDIA_AUTHOR_BODY_MAX} characters or fewer.`,
+};
+
+export function integrityMediaAuthorSafeError(code: string | undefined, fallback: string): string {
+  if (!code || !Object.prototype.hasOwnProperty.call(INTEGRITY_MEDIA_AUTHOR_ERROR_COPY, code)) {
+    return fallback;
+  }
+  return INTEGRITY_MEDIA_AUTHOR_ERROR_COPY[code] ?? fallback;
+}
+
+export function integrityMediaAuthorSafeHttpUrl(value: string): string | null {
+  return isHttpUrl(value) ? value : null;
+}
+
+function compareIntegrityMediaAuthorHistory(
+  left: IntegrityMediaAuthorHistoryMessage,
+  right: IntegrityMediaAuthorHistoryMessage,
+): number {
+  if (left.createdAt < right.createdAt) {
+    return -1;
+  }
+  if (left.createdAt > right.createdAt) {
+    return 1;
+  }
+  if (left.messageId < right.messageId) {
+    return -1;
+  }
+  if (left.messageId > right.messageId) {
+    return 1;
+  }
+  return 0;
 }
 
 function containsMarkup(value: string): boolean {

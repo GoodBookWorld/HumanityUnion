@@ -10,18 +10,31 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { ADMIN_PANEL_SECTIONS, resolveAdminPanelSectionId } from "./admin-panel-sections";
 import {
+  INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE,
+  buildAdminIntegrityMediaAuthorHistoryPath,
   buildAdminIntegrityMediaAuthorsPath,
+  buildIntegrityMediaAuthorChatRequest,
   buildIntegrityMediaAuthorMessageRequest,
+  integrityMediaAuthorComposeBlockedCopy,
   integrityMediaAuthorDeliveryCopy,
+  integrityMediaAuthorLatestStatusLabel,
+  integrityMediaAuthorLatestTitle,
+  integrityMediaAuthorSafeError,
   integrityMediaAuthorsNextOffset,
   integrityMediaAuthorsPreviousOffset,
   integrityMediaAuthorsQueryAfterFilter,
   interpretIntegrityMediaAuthorDelivery,
+  mergeIntegrityMediaAuthorHistory,
+  restoredTranscriptScrollTop,
+  validateIntegrityMediaAuthorChatForm,
   validateIntegrityMediaAuthorMessageForm,
+  type IntegrityMediaAuthorHistoryMessage,
   type IntegrityMediaAuthorRow,
 } from "./admin-integrity-media-authors-model";
 import {
   AdminIntegrityAuthorDeliveryNotice,
+  AdminIntegrityAuthorHistoryMessage,
+  AdminIntegrityAuthorMessageDialog,
   AdminIntegrityAuthorSendButton,
 } from "./components/AdminIntegrityAuthorMessageDialog";
 import { AdminIntegrityAuthorsPanel } from "./components/AdminIntegrityAuthorsPanel";
@@ -150,8 +163,9 @@ describe("Integrity Authors admin", () => {
     assert.match(html, /Setup pending/);
     assert.match(html, /Former Author/);
     assert.match(html, /Disabled/);
-    assert.equal((html.match(/Send Message/g) ?? []).length, 1);
-    assert.match(html, /Send unavailable/);
+    assert.equal((html.match(/Chat/g) ?? []).length, 1);
+    assert.equal((html.match(/History/g) ?? []).length, 2);
+    assert.doesNotMatch(html, /Send unavailable/);
     assert.match(html, /href="\/admin\/publishing"/);
     assert.doesNotMatch(html, /plain-body-marker|ctaUrl|@example\.com/);
   });
@@ -212,7 +226,7 @@ describe("Integrity Authors admin", () => {
     assert.match(html, /disabled/);
     assert.match(html, /Sending…/);
     const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
-    assert.match(dialog, /if \(submittingRef\.current\)/);
+    assert.equal((dialog.match(/if \(submittingRef\.current \|\| !canSend\)/g) ?? []).length, 2);
     assert.match(dialog, /submittingRef\.current = true/);
   });
 
@@ -305,30 +319,25 @@ describe("Integrity Authors admin", () => {
     assert.match(dialog, /interpretIntegrityMediaAuthorDelivery/);
   });
 
-  it("IM-HU.04C.2D.3 — splits the dialog into a scrollable body and a pinned action footer", () => {
+  it("IM-HU.04C.2D.3 — splits the dialog into a scrollable transcript and a pinned composer", () => {
     const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
-    // Header (title/description) stays outside the scroll region.
     assert.match(dialog, /<header className="admin-integrity-author-message-dialog__header">/);
-    // Fields and the delivery-result banner live inside the scrollable body,
-    // not as direct children of the dialog, so they can never push the
-    // footer off-screen.
-    assert.match(dialog, /<div className="admin-integrity-author-message-dialog__body">/);
-    const bodyOpenIndex = dialog.indexOf(
-      '<div className="admin-integrity-author-message-dialog__body">',
+    assert.match(dialog, /className="admin-integrity-author-message-dialog__transcript"/);
+    const transcriptIndex = dialog.indexOf('className="admin-integrity-author-message-dialog__transcript"');
+    const footerIndex = dialog.indexOf(
+      '<footer className="admin-integrity-author-message-dialog__footer">',
     );
-    const bodyCloseIndex = dialog.indexOf("</div>", bodyOpenIndex);
+    const composerIndex = dialog.indexOf(
+      'className="admin-integrity-author-message-dialog__composer"',
+    );
     const actionsIndex = dialog.indexOf(
       '<div className="admin-integrity-author-message-dialog__actions">',
     );
-    assert.ok(bodyOpenIndex > -1 && bodyCloseIndex > bodyOpenIndex);
-    assert.ok(actionsIndex > bodyCloseIndex, "actions footer must follow the closed body region");
-    const resultBannerIndex = dialog.indexOf("<StatusBanner title={resultTitle}");
-    assert.ok(
-      resultBannerIndex > bodyOpenIndex && resultBannerIndex < bodyCloseIndex,
-      "the delivery result banner must render inside the scrollable body, not after it",
-    );
-    // Close/Send remain reachable in a footer that never scrolls away.
-    assert.match(dialog, /<div className="admin-integrity-author-message-dialog__actions">/);
+    assert.ok(transcriptIndex > -1 && footerIndex > transcriptIndex);
+    assert.ok(composerIndex > footerIndex, "the chat composer stays in the pinned footer");
+    assert.ok(actionsIndex > composerIndex, "chat actions stay with the composer");
+    assert.match(dialog, /System notification/);
+    assert.match(dialog, /sendAdminIntegrityMediaAuthorMessage/);
   });
 
   it("IM-HU.04C.2D.3 — bounds the dialog to the viewport instead of a fixed desktop height", () => {
@@ -340,11 +349,19 @@ describe("Integrity Authors admin", () => {
     assert.match(css, /\.admin-integrity-author-message-dialog\s*\{[^}]*overflow:\s*hidden/);
     assert.match(
       css,
-      /\.admin-integrity-author-message-dialog__body\s*\{[^}]*overflow-y:\s*auto/,
+      /\.admin-integrity-author-message-dialog__transcript\s*\{[^}]*overflow-y:\s*auto/,
     );
     assert.match(
       css,
-      /\.admin-integrity-author-message-dialog__body\s*\{[^}]*min-height:\s*0/,
+      /\.admin-integrity-author-message-dialog__transcript\s*\{[^}]*min-height:\s*0/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-author-message-dialog__footer\s*\{[^}]*flex:\s*0 0 auto/,
+    );
+    assert.match(
+      css,
+      /\.admin-integrity-author-message-dialog__composer\s*\{[^}]*flex:\s*0 0 auto/,
     );
     assert.match(
       css,
@@ -352,4 +369,289 @@ describe("Integrity Authors admin", () => {
     );
     assert.match(css, /@media \(max-width: 640px\)/);
   });
+
+  it("loads the latest 20 messages and older pages through the existing cursor", () => {
+    assert.equal(INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE, 20);
+    const memberId = "22222222-2222-4222-8222-222222222222";
+    assert.equal(
+      buildAdminIntegrityMediaAuthorHistoryPath(memberId, { limit: 20 }),
+      `/api/v1/admin/integrity-media/authors/${memberId}/messages?limit=20`,
+    );
+    assert.equal(
+      buildAdminIntegrityMediaAuthorHistoryPath(memberId, { limit: 20, cursor: "cursor+1" }),
+      `/api/v1/admin/integrity-media/authors/${memberId}/messages?limit=20&cursor=cursor%2B1`,
+    );
+    const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
+    const api = read("features/administration/admin-integrity-media-authors-api.ts");
+    assert.match(dialog, /limit: INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE/);
+    assert.match(dialog, /cursor: nextCursor/);
+    assert.match(dialog, /mergeIntegrityMediaAuthorHistory\(page\.messages, current\)/);
+    assert.match(dialog, /restoredTranscriptScrollTop/);
+    assert.match(api, /buildAdminIntegrityMediaAuthorHistoryPath/);
+    assert.doesNotMatch(api, /externalAuthorId|hmac|signature/);
+  });
+
+  it("prepends older history in chronological order without duplicates", () => {
+    const older = [
+      historyMessage({ messageId: "m-1", createdAt: "2026-03-01T00:00:00.000Z", body: "First" }),
+      historyMessage({ messageId: "m-2", createdAt: "2026-03-02T00:00:00.000Z", body: "Second" }),
+    ];
+    const current = [
+      historyMessage({ messageId: "m-2", createdAt: "2026-03-02T00:00:00.000Z", body: "Second" }),
+      historyMessage({ messageId: "m-3", createdAt: "2026-03-03T00:00:00.000Z", body: "Third" }),
+    ];
+    const merged = mergeIntegrityMediaAuthorHistory(older, current);
+    assert.deepEqual(
+      merged.map((message) => message.messageId),
+      ["m-1", "m-2", "m-3"],
+    );
+    assert.equal(merged.length, 3);
+  });
+
+  it("shows both directions and Chat versus System without a blank chat title", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        "div",
+        null,
+        createElement(AdminIntegrityAuthorHistoryMessage, {
+          participantDisplayName: "Ada Lovelace",
+          message: historyMessage({
+            direction: "hu_to_im",
+            kind: "system",
+            title: "Connection test",
+            body: "System body",
+            delivery: {
+              status: "delivered",
+              deliveredAt: "2026-03-03T02:00:00.000Z",
+              attemptCount: 1,
+              lastErrorCode: null,
+            },
+          }),
+        }),
+        createElement(AdminIntegrityAuthorHistoryMessage, {
+          participantDisplayName: "Ada Lovelace",
+          message: historyMessage({
+            messageId: "44444444-4444-4444-8444-444444444444",
+            direction: "im_to_hu",
+            kind: "chat",
+            title: "",
+            body: "Reply body",
+            createdAt: "2026-03-03T03:00:00.000Z",
+            delivery: {
+              status: "recorded",
+              deliveredAt: null,
+              attemptCount: 0,
+              lastErrorCode: null,
+            },
+          }),
+        }),
+        createElement(AdminIntegrityAuthorHistoryMessage, {
+          participantDisplayName: "Ada Lovelace",
+          message: historyMessage({
+            messageId: "55555555-5555-4555-8555-555555555555",
+            direction: "hu_to_im",
+            kind: "chat",
+            title: "   ",
+            body: "Untitled chat",
+            delivery: null,
+          }),
+        }),
+      ),
+    );
+    assert.match(html, /Humanity Union/);
+    assert.match(html, /Ada Lovelace/);
+    assert.match(html, /System/);
+    assert.match(html, /Chat/);
+    assert.match(html, /Connection test/);
+    assert.match(html, /System body/);
+    assert.match(html, /Reply body/);
+    assert.match(html, /Untitled chat/);
+    assert.match(html, /Delivered/);
+    assert.match(html, /Recorded/);
+    assert.doesNotMatch(html, /Failed/);
+    assert.equal((html.match(/admin-integrity-author-message-dialog__message-title/g) ?? []).length, 1);
+  });
+
+  it("sends chat as body only and keeps the notification request", () => {
+    const chat = buildIntegrityMediaAuthorChatRequest("  Hello from admin  ");
+    assert.deepEqual(chat, { body: "Hello from admin" });
+    assert.deepEqual(Object.keys(chat), ["body"]);
+    assert.equal(validateIntegrityMediaAuthorChatForm("   "), "Message is required.");
+    assert.equal(validateIntegrityMediaAuthorChatForm("<b>no</b>"), "Message must be plain text.");
+    assert.match(
+      validateIntegrityMediaAuthorChatForm("x".repeat(8001)) ?? "",
+      /8000 characters or fewer/,
+    );
+    assert.equal(validateIntegrityMediaAuthorChatForm("Hello"), null);
+
+    const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
+    const api = read("features/administration/admin-integrity-media-authors-api.ts");
+    assert.match(dialog, /buildIntegrityMediaAuthorChatRequest\(chatBody\)/);
+    assert.match(dialog, /sendAdminIntegrityMediaAuthorChat\(memberId, payload\)/);
+    assert.match(dialog, /sendAdminIntegrityMediaAuthorMessage\(memberId, payload\)/);
+    assert.match(api, /\/chat`,/);
+    assert.match(api, /JSON\.stringify\(input\)/);
+    assert.doesNotMatch(dialog, /author_setup_pending/);
+  });
+
+  it("keeps history readable and disables sending for ineligible authors", () => {
+    assert.match(
+      integrityMediaAuthorComposeBlockedCopy({
+        canSend: false,
+        linkState: "disabled",
+        authorActivationPending: false,
+        collaborationStatus: "active",
+      }) ?? "",
+      /disconnected/,
+    );
+    assert.match(
+      integrityMediaAuthorComposeBlockedCopy({
+        canSend: false,
+        linkState: "linked",
+        authorActivationPending: false,
+        collaborationStatus: "blocked",
+      }) ?? "",
+      /blocked/,
+    );
+    assert.match(
+      integrityMediaAuthorComposeBlockedCopy({
+        canSend: false,
+        linkState: "linked",
+        authorActivationPending: false,
+        collaborationStatus: "archived",
+      }) ?? "",
+      /archived/,
+    );
+    assert.equal(
+      integrityMediaAuthorComposeBlockedCopy({
+        canSend: true,
+        linkState: "linked",
+        authorActivationPending: false,
+        collaborationStatus: "active",
+      }),
+      null,
+    );
+
+    const blocked = renderPanel({
+      authors: [
+        row({
+          canSend: false,
+          collaborationStatus: "blocked",
+          participantDisplayName: "Blocked Author",
+        }),
+        row({
+          memberId: "66666666-6666-4666-8666-666666666666",
+          canSend: false,
+          collaborationStatus: "archived",
+          participantDisplayName: "Archived Author",
+        }),
+      ],
+      total: 2,
+    });
+    assert.match(blocked, /Blocked Author/);
+    assert.match(blocked, /Archived Author/);
+    assert.equal((blocked.match(/History/g) ?? []).length, 2);
+    assert.doesNotMatch(blocked, />Chat</);
+
+    const dialog = renderToStaticMarkup(
+      createElement(AdminIntegrityAuthorMessageDialog, {
+        memberId: "22222222-2222-4222-8222-222222222222",
+        participantDisplayName: "Former Author",
+        canSend: false,
+        linkState: "disabled",
+        authorActivationPending: false,
+        collaborationStatus: "active",
+        isOpen: true,
+        onClose: () => undefined,
+        onRefresh: () => undefined,
+      }),
+    );
+    assert.match(dialog, /Loading messages…/);
+    assert.match(dialog, /disconnected/);
+    assert.match(dialog, /History remains available/);
+    assert.match(dialog, /disabled=""/);
+    assert.match(dialog, /System notification/);
+  });
+
+  it("labels recorded replies and untitled chat in the directory", () => {
+    const html = renderPanel({
+      authors: [
+        row({
+          latestMessage: {
+            messageId: "77777777-7777-4777-8777-777777777777",
+            title: "",
+            status: "recorded",
+            lastErrorCode: null,
+            createdAt: "2026-03-05T00:00:00.000Z",
+            deliveredAt: null,
+          },
+        }),
+      ],
+    });
+    assert.match(html, /Chat message/);
+    assert.match(html, /Recorded/);
+    assert.doesNotMatch(html, /Failed/);
+    assert.equal(integrityMediaAuthorLatestTitle("  "), "Chat message");
+    assert.equal(integrityMediaAuthorLatestTitle("Hello"), "Hello");
+    assert.equal(integrityMediaAuthorLatestStatusLabel("recorded"), "Recorded");
+    assert.equal(integrityMediaAuthorLatestStatusLabel("failed"), "Failed");
+    assert.equal(interpretIntegrityMediaAuthorDelivery("recorded").ok, false);
+    assert.equal(interpretIntegrityMediaAuthorDelivery("pending").ok, true);
+  });
+
+  it("maps known collaboration errors and hides raw backend text", () => {
+    assert.equal(
+      integrityMediaAuthorSafeError("author_activation_pending", "fallback"),
+      "Integrity Media author setup is still finishing.",
+    );
+    assert.equal(
+      integrityMediaAuthorSafeError("collaboration_blocked", "fallback"),
+      "This Integrity Media collaboration is blocked.",
+    );
+    assert.equal(
+      integrityMediaAuthorSafeError("collaboration_archived", "fallback"),
+      "This Integrity Media collaboration is archived.",
+    );
+    assert.equal(
+      integrityMediaAuthorSafeError("link_ineligible", "fallback"),
+      "This Integrity Media collaboration is not eligible for new messages.",
+    );
+    assert.equal(integrityMediaAuthorSafeError("author_setup_pending", "fallback"), "fallback");
+    assert.equal(
+      integrityMediaAuthorSafeError("internal_stack_trace", "This message could not be sent."),
+      "This message could not be sent.",
+    );
+    const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
+    assert.match(dialog, /integrityMediaAuthorSafeError/);
+    assert.doesNotMatch(dialog, /formatAuthFormError/);
+    assert.doesNotMatch(dialog, /author_setup_pending/);
+    assert.equal(
+      restoredTranscriptScrollTop({
+        previousScrollHeight: 400,
+        previousScrollTop: 40,
+        nextScrollHeight: 700,
+      }),
+      340,
+    );
+  });
 });
+
+function historyMessage(
+  overrides: Partial<IntegrityMediaAuthorHistoryMessage> = {},
+): IntegrityMediaAuthorHistoryMessage {
+  return {
+    messageId: "33333333-3333-4333-8333-333333333333",
+    memberId: "22222222-2222-4222-8222-222222222222",
+    externalAuthorId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    direction: "hu_to_im",
+    kind: "chat",
+    body: "Hello",
+    createdAt: "2026-03-03T02:00:00.000Z",
+    title: null,
+    cta: null,
+    actorMemberId: "22222222-2222-4222-8222-222222222222",
+    replyToMessageId: null,
+    delivery: null,
+    ...overrides,
+  };
+}

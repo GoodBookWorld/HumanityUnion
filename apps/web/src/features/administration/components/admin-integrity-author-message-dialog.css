@@ -29,16 +29,8 @@
   margin: 0;
 }
 
-.admin-integrity-author-message-dialog__form {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.admin-integrity-author-message-dialog__body {
-  flex: 1;
+.admin-integrity-author-message-dialog__transcript {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -48,15 +40,75 @@
   padding: 0 1.35rem 0.75rem;
 }
 
-.admin-integrity-author-message-dialog__body label {
+.admin-integrity-author-message-dialog__message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(26, 77, 109, 0.16);
+  border-radius: 0.4rem;
+  background: rgba(26, 77, 109, 0.04);
+}
+
+.admin-integrity-author-message-dialog__message--im_to_hu {
+  background: rgba(26, 77, 109, 0.1);
+}
+
+.admin-integrity-author-message-dialog__message p {
+  margin: 0;
+}
+
+.admin-integrity-author-message-dialog__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-integrity-author-message-dialog__message-title {
+  font-weight: 700;
+}
+
+.admin-integrity-author-message-dialog__footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1.35rem 1.25rem;
+  border-top: 1px solid rgba(26, 77, 109, 0.14);
+  background: var(--hu-color-surface, #fff);
+}
+
+.admin-integrity-author-message-dialog__notification[open] {
+  max-height: min(12rem, 30dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.admin-integrity-author-message-dialog__notification-form,
+.admin-integrity-author-message-dialog__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-integrity-author-message-dialog__composer {
+  flex: 0 0 auto;
+}
+
+.admin-integrity-author-message-dialog__notification-form label,
+.admin-integrity-author-message-dialog__composer label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   font-weight: 600;
 }
 
-.admin-integrity-author-message-dialog__body input,
-.admin-integrity-author-message-dialog__body textarea {
+.admin-integrity-author-message-dialog__notification-form input,
+.admin-integrity-author-message-dialog__notification-form textarea,
+.admin-integrity-author-message-dialog__composer textarea {
   font: inherit;
   font-weight: 400;
   padding: 0.45rem 0.55rem;
@@ -73,8 +125,7 @@
   gap: 0.5rem;
   justify-content: flex-end;
   margin: 0;
-  padding: 0.85rem 1.35rem 1.25rem;
-  border-top: 1px solid rgba(26, 77, 109, 0.14);
+  padding: 0;
   background: var(--hu-color-surface, #fff);
 }
 

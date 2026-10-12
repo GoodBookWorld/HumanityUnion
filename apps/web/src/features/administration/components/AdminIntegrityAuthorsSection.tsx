@@ -112,6 +112,10 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
         <AdminIntegrityAuthorMessageDialog
           memberId={sendTarget.memberId}
           participantDisplayName={sendTarget.participantDisplayName}
+          canSend={sendTarget.canSend}
+          linkState={sendTarget.state}
+          authorActivationPending={sendTarget.authorActivationPending}
+          collaborationStatus={sendTarget.collaborationStatus}
           isOpen={sendTarget !== null}
           onClose={() => setSendTarget(null)}
           onRefresh={() => {
