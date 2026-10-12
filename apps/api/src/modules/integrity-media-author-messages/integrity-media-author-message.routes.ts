@@ -8,9 +8,13 @@ import {
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { listIntegrityMediaAuthors } from "./integrity-media-author-directory.service.js";
 import { listIntegrityMediaAuthorMessageHistory } from "./integrity-media-author-message.history.js";
-import { sendIntegrityMediaAuthorMessage } from "./integrity-media-author-message.service.js";
+import {
+  sendIntegrityMediaAuthorChat,
+  sendIntegrityMediaAuthorMessage,
+} from "./integrity-media-author-message.service.js";
 
 const MESSAGE_FIELDS = new Set(["title", "body", "cta"]);
+const CHAT_FIELDS = new Set(["body"]);
 
 const LIST_QUERY = new Set(["limit", "offset", "state"]);
 const HISTORY_QUERY = new Set(["limit", "cursor"]);
@@ -140,6 +144,48 @@ integrityMediaAuthorMessageRouter.post(
         title: body.title,
         body: body.body,
         cta: body.cta,
+      });
+
+      if (!result.ok) {
+        sendFailure(res, result.status, result.message, result.code);
+        return;
+      }
+
+      res.status(result.status).json(createSuccessResponse(result.data, result.message));
+    } catch (error) {
+      if (error instanceof AdministrationUnauthorizedError) {
+        sendFailure(res, 401, "Authentication is required.", "authentication_required");
+        return;
+      }
+
+      if (error instanceof AdministrationForbiddenError) {
+        sendFailure(res, 403, "Administrator access is required.", "administrator_required");
+        return;
+      }
+
+      sendFailure(res, 500, "The message could not be sent.", "unavailable");
+    }
+  },
+);
+
+integrityMediaAuthorMessageRouter.post(
+  "/:memberId/chat",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    const body = readObject(req);
+    const unexpected = unexpectedField(body, CHAT_FIELDS) ?? unexpectedQuery(req);
+
+    if (!body || unexpected) {
+      sendFailure(res, 400, "The message request is not valid.", "unexpected_field");
+      return;
+    }
+
+    try {
+      const result = await sendIntegrityMediaAuthorChat({
+        actorUserId: req.auth?.id ?? "",
+        actorMemberId: req.auth?.memberId ?? "",
+        recipientMemberId: String(req.params.memberId ?? ""),
+        body: body.body,
       });
 
       if (!result.ok) {

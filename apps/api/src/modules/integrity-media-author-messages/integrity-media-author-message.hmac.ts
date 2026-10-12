@@ -1,6 +1,9 @@
 import { createHash, createHmac } from "node:crypto";
 
-import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE } from "./integrity-media-author-message.constants.js";
+import {
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2,
+} from "./integrity-media-author-message.constants.js";
 
 export interface IntegrityMediaAuthorMessageContentInput {
   body: string;
@@ -46,6 +49,27 @@ export function buildIntegrityMediaAuthorMessageCanonicalString(input: {
     input.timestamp,
     input.messageId,
     input.recipientAuthorId,
+    input.contentSha256,
+  ].join("\n");
+}
+
+/**
+ * Six newline-joined lines. `kind` is authenticated here and is not part of contentSha256.
+ * Matches Integrity Media `buildHuAuthorMessageCanonicalStringV2`.
+ */
+export function buildIntegrityMediaAuthorMessageCanonicalStringV2(input: {
+  timestamp: string;
+  messageId: string;
+  recipientAuthorId: string;
+  kind: "chat";
+  contentSha256: string;
+}): string {
+  return [
+    INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2,
+    input.timestamp,
+    input.messageId,
+    input.recipientAuthorId,
+    input.kind,
     input.contentSha256,
   ].join("\n");
 }

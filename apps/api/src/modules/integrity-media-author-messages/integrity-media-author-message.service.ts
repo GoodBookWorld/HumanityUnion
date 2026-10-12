@@ -21,6 +21,7 @@ import {
 } from "./integrity-media-author-message.constants.js";
 import {
   buildIntegrityMediaAuthorMessageCanonicalString,
+  buildIntegrityMediaAuthorMessageCanonicalStringV2,
   hashIntegrityMediaAuthorMessageContent,
   integrityMediaAuthorMessageTimestamp,
   signIntegrityMediaAuthorMessage,
@@ -34,10 +35,15 @@ import {
 } from "./integrity-media-author-message.transport.js";
 import type {
   IntegrityMediaAuthorMessageAuditRecord,
+  IntegrityMediaAuthorMessageCta,
   IntegrityMediaAuthorMessageDeliveryView,
+  IntegrityMediaAuthorMessageKind,
   IntegrityMediaAuthorMessageRecord,
 } from "./integrity-media-author-message.types.js";
-import { validateIntegrityMediaAuthorMessageContent } from "./integrity-media-author-message.validation.js";
+import {
+  validateIntegrityMediaAuthorChatContent,
+  validateIntegrityMediaAuthorMessageContent,
+} from "./integrity-media-author-message.validation.js";
 
 export interface IntegrityMediaAuthorMessageFailure {
   ok: false;
@@ -85,58 +91,54 @@ export async function sendIntegrityMediaAuthorMessage(input: {
     return link;
   }
 
-  const now = input.now ?? new Date();
-  const nowIso = now.toISOString();
-  const record: IntegrityMediaAuthorMessageRecord = {
-    messageId: randomUUID(),
-    destination: INTEGRITY_MEDIA_SOURCE,
+  return enqueueOutboundAuthorMessage({
     actorMemberId,
     recipientMemberId: link.memberId,
     recipientExternalAuthorId: link.externalAuthorId,
-    direction: "hu_to_im",
     kind: "system",
     category: validated.value.category,
     title: validated.value.title,
     body: validated.value.body,
     cta: validated.value.cta,
-    status: "pending",
-    attemptCount: 0,
-    lastAttemptAt: null,
-    nextAttemptAt: null,
-    deliveredAt: null,
-    lastErrorCode: null,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  };
-  const inserted = await getIntegrityMediaAuthorMessageStore().insert(record);
-
-  if (inserted !== "inserted") {
-    return failure(503, "unavailable", "The message could not be saved.");
-  }
-
-  await appendAudit({
-    action: "integrity_media_message_requested",
-    messageId: record.messageId,
-    actorMemberId: record.actorMemberId,
-    recipientMemberId: record.recipientMemberId,
-    recipientExternalAuthorId: record.recipientExternalAuthorId,
-    errorCode: null,
-    createdAt: nowIso,
+    now: input.now,
   });
+}
 
-  try {
-    await deliverClaimedMessage(record.messageId, now);
-  } catch {
-    // The pending row remains. Reconciliation sends it again.
+/**
+ * Admin chat. Direction, kind, author id, and HMAC version are fixed here.
+ * The browser supplies only the message body.
+ */
+export async function sendIntegrityMediaAuthorChat(input: {
+  actorUserId: string;
+  actorMemberId: string;
+  recipientMemberId: string;
+  body: unknown;
+  now?: Date;
+}): Promise<IntegrityMediaAuthorMessageSuccess | IntegrityMediaAuthorMessageFailure> {
+  const actorMemberId = await assertAdminActor(input.actorUserId, input.actorMemberId);
+  const validated = validateIntegrityMediaAuthorChatContent({ body: input.body });
+
+  if (!validated.ok) {
+    return failure(400, validated.code, validated.message);
   }
 
-  const current = await getIntegrityMediaAuthorMessageStore().findByMessageId(record.messageId);
+  const link = await resolveOperationalRecipient(input.recipientMemberId);
 
-  if (!current) {
-    return failure(503, "unavailable", "The message could not be saved.");
+  if (!link.ok) {
+    return link;
   }
 
-  return success(current);
+  return enqueueOutboundAuthorMessage({
+    actorMemberId,
+    recipientMemberId: link.memberId,
+    recipientExternalAuthorId: link.externalAuthorId,
+    kind: "chat",
+    category: validated.value.category,
+    title: "",
+    body: validated.value.body,
+    cta: null,
+    now: input.now,
+  });
 }
 
 export async function deliverClaimedMessage(messageId: string, now: Date): Promise<void> {
@@ -156,6 +158,15 @@ export async function performRemoteDelivery(
   claimed: IntegrityMediaAuthorMessageRecord,
   now: Date,
 ): Promise<void> {
+  if (claimed.kind === "chat") {
+    const gate = await assertChatStillDeliverable(claimed);
+
+    if (!gate.ok) {
+      await recordPermanentFailure(claimed.messageId, now, gate.code);
+      return;
+    }
+  }
+
   const endpoint = resolveIntegrityMediaAuthorMessageEndpoint();
 
   if (!endpoint) {
@@ -177,15 +188,22 @@ export async function performRemoteDelivery(
     ctaUrl,
     title: claimed.title,
   });
-  const signature = signIntegrityMediaAuthorMessage(
-    endpoint.secret,
-    buildIntegrityMediaAuthorMessageCanonicalString({
-      timestamp,
-      messageId: claimed.messageId,
-      recipientAuthorId: claimed.recipientExternalAuthorId,
-      contentSha256,
-    }),
-  );
+  const canonical =
+    claimed.kind === "chat"
+      ? buildIntegrityMediaAuthorMessageCanonicalStringV2({
+          timestamp,
+          messageId: claimed.messageId,
+          recipientAuthorId: claimed.recipientExternalAuthorId,
+          kind: "chat",
+          contentSha256,
+        })
+      : buildIntegrityMediaAuthorMessageCanonicalString({
+          timestamp,
+          messageId: claimed.messageId,
+          recipientAuthorId: claimed.recipientExternalAuthorId,
+          contentSha256,
+        });
+  const signature = signIntegrityMediaAuthorMessage(endpoint.secret, canonical);
   const requestBody = buildRemoteBody(claimed);
   let result: IntegrityMediaAuthorMessageHttpResult;
 
@@ -233,24 +251,7 @@ export async function performRemoteDelivery(
   }
 
   if (classified.outcome === "failed") {
-    const failed = await getIntegrityMediaAuthorMessageStore().markFailed({
-      messageId: claimed.messageId,
-      nowIso: now.toISOString(),
-      errorCode: classified.errorCode,
-    });
-
-    if (failed) {
-      await appendAudit({
-        action: "integrity_media_message_failed",
-        messageId: failed.messageId,
-        actorMemberId: failed.actorMemberId,
-        recipientMemberId: failed.recipientMemberId,
-        recipientExternalAuthorId: failed.recipientExternalAuthorId,
-        errorCode: classified.errorCode,
-        createdAt: now.toISOString(),
-      });
-    }
-
+    await recordPermanentFailure(claimed.messageId, now, classified.errorCode);
     return;
   }
 
@@ -280,6 +281,132 @@ async function assertAdminActor(actorUserId: string, actorMemberId: string): Pro
   }
 
   return user.memberId;
+}
+
+async function enqueueOutboundAuthorMessage(input: {
+  actorMemberId: string;
+  recipientMemberId: string;
+  recipientExternalAuthorId: string;
+  kind: IntegrityMediaAuthorMessageKind;
+  category: typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY;
+  title: string;
+  body: string;
+  cta: IntegrityMediaAuthorMessageCta | null;
+  now?: Date;
+}): Promise<IntegrityMediaAuthorMessageSuccess | IntegrityMediaAuthorMessageFailure> {
+  const now = input.now ?? new Date();
+  const nowIso = now.toISOString();
+  const record: IntegrityMediaAuthorMessageRecord = {
+    messageId: randomUUID(),
+    destination: INTEGRITY_MEDIA_SOURCE,
+    actorMemberId: input.actorMemberId,
+    recipientMemberId: input.recipientMemberId,
+    recipientExternalAuthorId: input.recipientExternalAuthorId,
+    direction: "hu_to_im",
+    kind: input.kind,
+    category: input.category,
+    title: input.title,
+    body: input.body,
+    cta: input.cta,
+    status: "pending",
+    attemptCount: 0,
+    lastAttemptAt: null,
+    nextAttemptAt: null,
+    deliveredAt: null,
+    lastErrorCode: null,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  const inserted = await getIntegrityMediaAuthorMessageStore().insert(record);
+
+  if (inserted !== "inserted") {
+    return failure(503, "unavailable", "The message could not be saved.");
+  }
+
+  await appendAudit({
+    action: "integrity_media_message_requested",
+    messageId: record.messageId,
+    actorMemberId: record.actorMemberId,
+    recipientMemberId: record.recipientMemberId,
+    recipientExternalAuthorId: record.recipientExternalAuthorId,
+    errorCode: null,
+    createdAt: nowIso,
+  });
+
+  try {
+    await deliverClaimedMessage(record.messageId, now);
+  } catch {
+    // The pending row remains. Reconciliation sends it again.
+  }
+
+  const current = await getIntegrityMediaAuthorMessageStore().findByMessageId(record.messageId);
+
+  if (!current) {
+    return failure(503, "unavailable", "The message could not be saved.");
+  }
+
+  return success(current);
+}
+
+/**
+ * Chat only. A notification queued before a later block or disconnect keeps
+ * the existing v1 retry behavior.
+ */
+async function assertChatStillDeliverable(
+  record: IntegrityMediaAuthorMessageRecord,
+): Promise<{ ok: true } | { ok: false; code: IntegrityMediaAuthorMessageErrorCode }> {
+  const link = await resolveOperationalRecipient(record.recipientMemberId);
+
+  if (!link.ok) {
+    return { ok: false, code: deliveryStopCode(link.code) };
+  }
+
+  if (link.externalAuthorId !== record.recipientExternalAuthorId) {
+    return { ok: false, code: "link_ineligible" };
+  }
+
+  return { ok: true };
+}
+
+function deliveryStopCode(code: string): IntegrityMediaAuthorMessageErrorCode {
+  if (
+    code === "link_missing" ||
+    code === "link_disabled" ||
+    code === "author_activation_pending" ||
+    code === "collaboration_blocked" ||
+    code === "collaboration_archived" ||
+    code === "link_ineligible"
+  ) {
+    return code;
+  }
+
+  return "link_ineligible";
+}
+
+async function recordPermanentFailure(
+  messageId: string,
+  now: Date,
+  errorCode: IntegrityMediaAuthorMessageErrorCode,
+): Promise<void> {
+  const failed = await getIntegrityMediaAuthorMessageStore().markFailed({
+    messageId,
+    nowIso: now.toISOString(),
+    errorCode,
+  });
+
+  if (!failed) {
+    return;
+  }
+
+  await appendAudit({
+    action: "integrity_media_message_failed",
+    messageId: failed.messageId,
+    actorMemberId: failed.actorMemberId,
+    recipientMemberId: failed.recipientMemberId,
+    recipientExternalAuthorId: failed.recipientExternalAuthorId,
+    errorCode,
+    createdAt: now.toISOString(),
+  });
 }
 
 async function resolveOperationalRecipient(
@@ -346,6 +473,7 @@ function buildRemoteBody(record: IntegrityMediaAuthorMessageRecord): string {
     category: typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY;
     title: string;
     body: string;
+    kind?: "chat";
     cta?: { label: string; url: string };
   } = {
     messageId: record.messageId,
@@ -354,6 +482,10 @@ function buildRemoteBody(record: IntegrityMediaAuthorMessageRecord): string {
     title: record.title,
     body: record.body,
   };
+
+  if (record.kind === "chat") {
+    payload.kind = "chat";
+  }
 
   if (record.cta) {
     payload.cta = { label: record.cta.label, url: record.cta.url };

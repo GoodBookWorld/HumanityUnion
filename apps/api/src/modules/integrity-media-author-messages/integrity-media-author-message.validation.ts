@@ -30,6 +30,39 @@ export function isIntegrityMediaAuthorMessageCtaUrl(url: string): boolean {
   }
 }
 
+/** Ordinary chat. Title and CTA are not part of this contract. */
+export function validateIntegrityMediaAuthorChatContent(input: {
+  body: unknown;
+}):
+  | { ok: true; value: { body: string; category: typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY } }
+  | IntegrityMediaAuthorMessageValidationFailure {
+  if (typeof input.body !== "string") {
+    return failure("invalid_request", "Message is required.");
+  }
+
+  const body = input.body.trim();
+
+  if (body.length === 0) {
+    return failure("invalid_request", "Message is required.");
+  }
+
+  if (containsMarkup(body)) {
+    return failure("invalid_request", "Message must be plain text.");
+  }
+
+  if (body.length > INTEGRITY_MEDIA_AUTHOR_MESSAGE_BODY_MAX_LENGTH) {
+    return failure("payload_too_large", "Message is too long.");
+  }
+
+  return {
+    ok: true,
+    value: {
+      body,
+      category: INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY,
+    },
+  };
+}
+
 export function validateIntegrityMediaAuthorMessageContent(input: {
   title: unknown;
   body: unknown;

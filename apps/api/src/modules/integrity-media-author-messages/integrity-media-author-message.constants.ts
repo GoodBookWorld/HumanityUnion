@@ -1,6 +1,12 @@
 /** Purpose separation from identity-link redemption. Same shared secret, different signed string. */
 export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE = "humanity-union-author-message";
 
+/**
+ * Classified chat. `kind` is its own canonical line and is not part of the content hash.
+ * A v1 signature cannot authorize this purpose.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2 = "humanity-union-author-message-v2";
+
 export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PATH =
   "/api/integrations/humanity-union/author-messages";
 
@@ -55,12 +61,28 @@ export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PERMANENT_ERROR_CODES = [
   "remote_rejected",
 ] as const;
 
+/**
+ * Local chat-delivery stops. A queued chat is not sent after the live link
+ * becomes ineligible. These codes are not remote HMAC classifications.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_CHAT_DELIVERY_STOP_CODES = [
+  "link_missing",
+  "link_disabled",
+  "author_activation_pending",
+  "collaboration_blocked",
+  "collaboration_archived",
+] as const;
+
 export type IntegrityMediaAuthorMessageRetryableErrorCode =
   (typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_RETRYABLE_ERROR_CODES)[number];
 
 export type IntegrityMediaAuthorMessagePermanentErrorCode =
   (typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_PERMANENT_ERROR_CODES)[number];
 
+export type IntegrityMediaAuthorChatDeliveryStopCode =
+  (typeof INTEGRITY_MEDIA_AUTHOR_CHAT_DELIVERY_STOP_CODES)[number];
+
 export type IntegrityMediaAuthorMessageErrorCode =
   | IntegrityMediaAuthorMessageRetryableErrorCode
-  | IntegrityMediaAuthorMessagePermanentErrorCode;
+  | IntegrityMediaAuthorMessagePermanentErrorCode
+  | IntegrityMediaAuthorChatDeliveryStopCode;
