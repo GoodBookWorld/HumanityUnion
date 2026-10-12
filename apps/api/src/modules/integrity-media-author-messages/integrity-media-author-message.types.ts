@@ -5,6 +5,10 @@ import type { IntegrityMediaAuthorMessageErrorCode } from "./integrity-media-aut
 
 export type IntegrityMediaAuthorMessageStatus = "pending" | "delivered" | "failed";
 
+export type IntegrityMediaAuthorMessageDirection = "hu_to_im" | "im_to_hu";
+
+export type IntegrityMediaAuthorMessageKind = "chat" | "system";
+
 export interface IntegrityMediaAuthorMessageCta {
   label: string;
   url: string;
@@ -17,6 +21,16 @@ export interface IntegrityMediaAuthorMessageRecord {
   actorMemberId: string;
   recipientMemberId: string;
   recipientExternalAuthorId: string;
+  /**
+   * Absent on rows stored before directions existed. Read normalization
+   * treats absence as hu_to_im. It is not rewritten in place.
+   */
+  direction?: IntegrityMediaAuthorMessageDirection;
+  /**
+   * Absent on rows stored before kinds existed. Read normalization
+   * treats absence as system, so historical notifications stay notifications.
+   */
+  kind?: IntegrityMediaAuthorMessageKind;
   category: typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY;
   title: string;
   body: string;
@@ -90,4 +104,33 @@ export interface IntegrityMediaAuthorMessageDeliveryView {
   attemptCount: number;
   lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
   deliveredAt: string | null;
+}
+
+/** One normalized row in an admin history page. No signature, secret, or participant profile. */
+export interface IntegrityMediaAuthorMessageHistoryItem {
+  messageId: string;
+  memberId: string;
+  externalAuthorId: string;
+  direction: IntegrityMediaAuthorMessageDirection;
+  kind: IntegrityMediaAuthorMessageKind;
+  body: string;
+  createdAt: string;
+  title: string | null;
+  cta: IntegrityMediaAuthorMessageCta | null;
+  actorMemberId: string | null;
+  delivery: {
+    status: IntegrityMediaAuthorMessageStatus;
+    deliveredAt: string | null;
+    attemptCount: number;
+    lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
+  } | null;
+}
+
+export interface IntegrityMediaAuthorMessageHistoryPage {
+  memberId: string;
+  messages: IntegrityMediaAuthorMessageHistoryItem[];
+  pageInfo: {
+    hasMore: boolean;
+    nextCursor: string | null;
+  };
 }

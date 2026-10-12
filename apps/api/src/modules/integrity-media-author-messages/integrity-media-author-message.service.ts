@@ -93,6 +93,8 @@ export async function sendIntegrityMediaAuthorMessage(input: {
     actorMemberId,
     recipientMemberId: link.memberId,
     recipientExternalAuthorId: link.externalAuthorId,
+    direction: "hu_to_im",
+    kind: "system",
     category: validated.value.category,
     title: validated.value.title,
     body: validated.value.body,
