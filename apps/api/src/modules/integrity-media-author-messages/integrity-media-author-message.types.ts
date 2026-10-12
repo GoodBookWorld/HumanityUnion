@@ -1,3 +1,4 @@
+import type { IntegrityMediaCollaborationStatus } from "../external-author-link/external-author-link.types.js";
 import type { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
 import type { INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY } from "./integrity-media-author-message.constants.js";
 import type { IntegrityMediaAuthorMessageErrorCode } from "./integrity-media-author-message.constants.js";
@@ -61,6 +62,7 @@ export interface IntegrityMediaAuthorDirectoryRow {
   externalAuthorId: string;
   state: "linked" | "disabled";
   authorActivationPending: boolean;
+  collaborationStatus: IntegrityMediaCollaborationStatus;
   canSend: boolean;
   createdAt: string;
   confirmedAt: string;

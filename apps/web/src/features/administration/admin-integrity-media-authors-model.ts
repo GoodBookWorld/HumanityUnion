@@ -1,5 +1,7 @@
 export type IntegrityMediaAuthorListState = "all" | "linked" | "disabled" | "setup_pending";
 
+export type IntegrityMediaAuthorCollaborationStatus = "active" | "blocked" | "archived";
+
 export type IntegrityMediaAuthorDeliveryStatus = "delivered" | "pending" | "failed";
 
 export interface IntegrityMediaAuthorLatestMessage {
@@ -16,6 +18,7 @@ export interface IntegrityMediaAuthorRow {
   externalAuthorId: string;
   state: "linked" | "disabled";
   authorActivationPending: boolean;
+  collaborationStatus: IntegrityMediaAuthorCollaborationStatus;
   canSend: boolean;
   createdAt: string;
   confirmedAt: string;

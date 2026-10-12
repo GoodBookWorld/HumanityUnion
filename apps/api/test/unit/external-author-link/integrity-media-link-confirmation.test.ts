@@ -42,6 +42,7 @@ import {
   resetIntegrityMediaRedeemReplayCacheForTests,
   signIntegrityMediaLinkRedeem,
 } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
+import { resolveIntegrityMediaCollaborationStatus } from "../../../src/modules/external-author-link/external-author-link.collaboration.js";
 import { EXTERNAL_AUTHOR_LINK_INDEXES } from "../../../src/modules/external-author-link/external-author-link.indexes.js";
 import externalAuthorLinkRouter from "../../../src/modules/external-author-link/external-author-link.routes.js";
 import {
@@ -418,6 +419,102 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal((await store.listLinks())[0]?.state, "linked");
     assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
     assert.equal((await store.listLinks()).length, 1);
+  });
+
+  it("initializes a new link as an active collaboration", async () => {
+    const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(redeemed.status, 200);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.collaborationStatus, "active");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(
+      EXTERNAL_AUTHOR_LINK_INDEXES.some((index) =>
+        Object.keys(index.key ?? {}).includes("collaborationStatus"),
+      ),
+      false,
+    );
+  });
+
+  it("keeps an active collaboration active across reconnect", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, "active");
+
+    const again = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    assert.equal(again.body.data?.reconnected, false);
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, "active");
+
+    await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.collaborationStatus, "active");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+  });
+
+  it("does not clear a blocked collaboration on redeem or reconnect", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await setStoredCollaborationStatus(AUTHOR_A, "blocked");
+
+    const again = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    assert.equal(again.body.data?.reconnected, false);
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, "blocked");
+    assert.equal((await store.listLinks())[0]?.state, "linked");
+
+    await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.collaborationStatus, "blocked");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(resolveIntegrityMediaCollaborationStatus(link!), "blocked");
+  });
+
+  it("does not clear an archived collaboration on redeem or reconnect", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await setStoredCollaborationStatus(AUTHOR_A, "archived");
+
+    const again = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    assert.equal(again.body.data?.reconnected, false);
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, "archived");
+
+    await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.collaborationStatus, "archived");
+    assert.equal(link?.memberId, MEMBER_A);
+    assert.equal(link?.externalAuthorId, AUTHOR_A);
+    assert.equal(resolveIntegrityMediaCollaborationStatus(link!), "archived");
+  });
+
+  it("normalizes a legacy reconnect that has no collaborationStatus to active", async () => {
+    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await setStoredCollaborationStatus(AUTHOR_A, undefined);
+    assert.equal((await store.listLinks())[0]?.collaborationStatus, undefined);
+    assert.equal(
+      resolveIntegrityMediaCollaborationStatus((await store.listLinks())[0]!),
+      "active",
+    );
+
+    await disableIntegrityMediaAuthorLink(AUTHOR_A);
+    const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(link?.state, "linked");
+    assert.equal(link?.collaborationStatus, "active");
+    assert.equal(link?.memberId, MEMBER_A);
   });
 
   it("shows the profile display name and records audit events without secrets", async () => {
@@ -1078,6 +1175,21 @@ function activeLookupUser(): AuthUserRecord {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+async function setStoredCollaborationStatus(
+  authorId: string,
+  collaborationStatus: "active" | "blocked" | "archived" | undefined,
+): Promise<void> {
+  const link = (await store.listLinks()).find((item) => item.externalAuthorId === authorId);
+  assert.ok(link);
+  const next = { ...link };
+  if (collaborationStatus === undefined) {
+    delete next.collaborationStatus;
+  } else {
+    next.collaborationStatus = collaborationStatus;
+  }
+  assert.equal(await store.updateLink(next), "updated");
 }
 
 async function confirmCode(memberId: string): Promise<string> {

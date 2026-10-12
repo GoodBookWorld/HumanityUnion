@@ -239,14 +239,7 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
           memberId: record.memberId,
         },
         {
-          $set: {
-            state: record.state,
-            updatedAt: record.updatedAt,
-            confirmedAt: record.confirmedAt,
-            disconnectedAt: record.disconnectedAt,
-            authorActivationPending: record.authorActivationPending === true,
-            authorActivationAttemptAt: record.authorActivationAttemptAt ?? null,
-          },
+          $set: linkUpdateFields(record),
         },
       );
 
@@ -420,6 +413,26 @@ function compareAdminLinks(left: ExternalAuthorLinkRecord, right: ExternalAuthor
 
 function linkKey(source: string, id: string): string {
   return `${source}\0${id}`;
+}
+
+function linkUpdateFields(record: ExternalAuthorLinkRecord): {
+  state: ExternalAuthorLinkRecord["state"];
+  updatedAt: string;
+  confirmedAt: string;
+  disconnectedAt: string | null;
+  authorActivationPending: boolean;
+  authorActivationAttemptAt: string | null;
+  collaborationStatus?: ExternalAuthorLinkRecord["collaborationStatus"];
+} {
+  return {
+    state: record.state,
+    updatedAt: record.updatedAt,
+    confirmedAt: record.confirmedAt,
+    disconnectedAt: record.disconnectedAt,
+    authorActivationPending: record.authorActivationPending === true,
+    authorActivationAttemptAt: record.authorActivationAttemptAt ?? null,
+    ...(record.collaborationStatus ? { collaborationStatus: record.collaborationStatus } : {}),
+  };
 }
 
 function copyLink(record: ExternalAuthorLinkRecord | undefined): ExternalAuthorLinkRecord | null {

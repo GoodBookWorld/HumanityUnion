@@ -38,6 +38,7 @@ function row(overrides: Partial<IntegrityMediaAuthorRow> = {}): IntegrityMediaAu
     externalAuthorId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     state: "linked",
     authorActivationPending: false,
+    collaborationStatus: "active",
     canSend: true,
     createdAt: "2026-03-03T00:00:00.000Z",
     confirmedAt: "2026-03-03T00:00:00.000Z",
