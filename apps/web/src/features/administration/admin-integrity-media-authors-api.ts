@@ -1,7 +1,9 @@
 import { apiRequest } from "../../lib/api-client";
 import {
+  buildAdminIntegrityMediaAuthorHistoryPath,
   buildAdminIntegrityMediaAuthorsPath,
   type IntegrityMediaAuthorDirectoryPage,
+  type IntegrityMediaAuthorHistoryPage,
   type IntegrityMediaAuthorListState,
   type IntegrityMediaAuthorMessageDelivery,
   type IntegrityMediaAuthorMessageRequest,
@@ -19,12 +21,35 @@ export async function listAdminIntegrityMediaAuthors(
   return apiRequest<IntegrityMediaAuthorDirectoryPage>(buildAdminIntegrityMediaAuthorsPath(query));
 }
 
+export async function listAdminIntegrityMediaAuthorHistory(
+  memberId: string,
+  query: { limit: number; cursor?: string },
+): Promise<IntegrityMediaAuthorHistoryPage> {
+  return apiRequest<IntegrityMediaAuthorHistoryPage>(
+    buildAdminIntegrityMediaAuthorHistoryPath(memberId, query),
+  );
+}
+
 export async function sendAdminIntegrityMediaAuthorMessage(
   memberId: string,
   input: IntegrityMediaAuthorMessageRequest,
 ): Promise<IntegrityMediaAuthorMessageDelivery> {
   return apiRequest<IntegrityMediaAuthorMessageDelivery>(
     `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/messages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function sendAdminIntegrityMediaAuthorChat(
+  memberId: string,
+  input: { body: string },
+): Promise<IntegrityMediaAuthorMessageDelivery> {
+  return apiRequest<IntegrityMediaAuthorMessageDelivery>(
+    `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/chat`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

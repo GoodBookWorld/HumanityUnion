@@ -5,7 +5,9 @@ import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import {
   integrityMediaAuthorConnectionLabel,
-  type IntegrityMediaAuthorDeliveryStatus,
+  integrityMediaAuthorLatestStatusLabel,
+  integrityMediaAuthorLatestTitle,
+  integrityMediaAuthorSafeError,
   type IntegrityMediaAuthorListState,
   type IntegrityMediaAuthorRow,
 } from "../admin-integrity-media-authors-model";
@@ -143,18 +145,25 @@ export function AdminIntegrityAuthorsPanel({
                       <td>
                         {latest ? (
                           <div>
-                            <p className="admin-participants-table__name">{latest.title}</p>
+                            <p className="admin-participants-table__name">
+                              {integrityMediaAuthorLatestTitle(latest.title)}
+                            </p>
                             <WorkspaceStatusBadge
                               status={latest.status}
-                              label={deliveryLabel(latest.status)}
+                              label={integrityMediaAuthorLatestStatusLabel(latest.status)}
                             />
                             <p className="hu-caption">
                               <time dateTime={latest.deliveredAt ?? latest.createdAt}>
                                 {formatCompactDate(latest.deliveredAt ?? latest.createdAt)}
                               </time>
                             </p>
-                            {latest.lastErrorCode ? (
-                              <p className="hu-caption">Error {latest.lastErrorCode}</p>
+                            {latest.status === "failed" && latest.lastErrorCode ? (
+                              <p className="hu-caption">
+                                {integrityMediaAuthorSafeError(
+                                  latest.lastErrorCode,
+                                  "This message was not delivered.",
+                                )}
+                              </p>
                             ) : null}
                           </div>
                         ) : (
@@ -163,18 +172,18 @@ export function AdminIntegrityAuthorsPanel({
                       </td>
                       <td>
                         <div className="admin-participants-table__actions">
-                          {row.canSend ? (
-                            <Button
-                              type="button"
-                              variant="primary"
-                              aria-label={`Send message to ${row.participantDisplayName}`}
-                              onClick={() => onSend(row)}
-                            >
-                              Send Message
-                            </Button>
-                          ) : (
-                            <span className="hu-caption">Send unavailable</span>
-                          )}
+                          <Button
+                            type="button"
+                            variant={row.canSend ? "primary" : "secondary"}
+                            aria-label={
+                              row.canSend
+                                ? `Open chat with ${row.participantDisplayName}`
+                                : `Open history for ${row.participantDisplayName}`
+                            }
+                            onClick={() => onSend(row)}
+                          >
+                            {row.canSend ? "Chat" : "History"}
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -200,16 +209,6 @@ export function AdminIntegrityAuthorsPanel({
       ) : null}
     </div>
   );
-}
-
-function deliveryLabel(status: IntegrityMediaAuthorDeliveryStatus): string {
-  if (status === "delivered") {
-    return "Delivered";
-  }
-  if (status === "pending") {
-    return "Pending";
-  }
-  return "Failed";
 }
 
 function formatCompactDate(value: string): string {
