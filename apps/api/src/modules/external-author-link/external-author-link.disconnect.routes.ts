@@ -8,7 +8,7 @@ import {
 } from "./external-author-link.constants.js";
 import { acceptIntegrityMediaAuthorDisconnect } from "./external-author-link.disconnect.js";
 
-const DISCONNECT_FIELDS = new Set(["eventId", "authorId"]);
+const DISCONNECT_FIELDS = new Set(["eventId", "authorId", "linkRevision", "generation"]);
 
 const integrityMediaAuthorDisconnectRouter = Router();
 
@@ -21,6 +21,12 @@ integrityMediaAuthorDisconnectRouter.post("/author-disconnect", async (req, res)
     return;
   }
 
+  const protocol = readProtocol(body);
+  if (!protocol) {
+    sendFailure(res, 400, "The disconnect request is not valid.", "invalid_request");
+    return;
+  }
+
   const config = resolveIntegrityMediaLinkConfig();
   const result = await acceptIntegrityMediaAuthorDisconnect({
     eventId: typeof body.eventId === "string" ? body.eventId : "",
@@ -28,6 +34,7 @@ integrityMediaAuthorDisconnectRouter.post("/author-disconnect", async (req, res)
     timestamp: headerValue(req, INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER),
     signature: headerValue(req, INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER),
     secret: config.hmacSecret,
+    protocol,
   });
 
   if (!result.ok) {
@@ -42,6 +49,8 @@ integrityMediaAuthorDisconnectRouter.post("/author-disconnect", async (req, res)
         authorId: result.authorId,
         state: result.state,
         idempotent: result.idempotent,
+        superseded: result.superseded,
+        linkRevision: result.linkRevision,
       },
       "Integrity Media author disconnected.",
     ),
@@ -49,6 +58,31 @@ integrityMediaAuthorDisconnectRouter.post("/author-disconnect", async (req, res)
 });
 
 export default integrityMediaAuthorDisconnectRouter;
+
+function readProtocol(
+  body: Record<string, unknown>,
+): { kind: "legacy" } | { kind: "initial" } | { kind: "numbered"; linkRevision: number } | null {
+  const hasRevision = Object.prototype.hasOwnProperty.call(body, "linkRevision");
+  const hasGeneration = Object.prototype.hasOwnProperty.call(body, "generation");
+
+  if (hasRevision && hasGeneration) {
+    return null;
+  }
+
+  if (hasGeneration) {
+    return body.generation === "initial" ? { kind: "initial" } : null;
+  }
+
+  if (!hasRevision) {
+    return { kind: "legacy" };
+  }
+
+  if (typeof body.linkRevision !== "number" || !Number.isInteger(body.linkRevision) || body.linkRevision < 1) {
+    return null;
+  }
+
+  return { kind: "numbered", linkRevision: body.linkRevision };
+}
 
 function readObject(req: Request): Record<string, unknown> | null {
   if (typeof req.body !== "object" || req.body === null || Array.isArray(req.body)) {

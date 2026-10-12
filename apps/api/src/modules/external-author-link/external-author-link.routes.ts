@@ -141,6 +141,7 @@ externalAuthorLinkRouter.post("/redeem", async (req, res) => {
         source: result.source,
         externalAuthorId: result.externalAuthorId,
         reconnected: result.reconnected,
+        linkRevision: result.linkRevision,
       },
       "Integrity Media link redeemed.",
     ),

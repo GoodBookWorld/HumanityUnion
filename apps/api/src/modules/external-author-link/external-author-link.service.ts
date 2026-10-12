@@ -17,6 +17,12 @@ import {
   INTEGRITY_MEDIA_SOURCE,
 } from "./external-author-link.constants.js";
 import {
+  assignedLinkRevision,
+  revisionForDuplicateRedeem,
+  revisionForNewLink,
+  revisionForReconnect,
+} from "./external-author-link.revision.js";
+import {
   buildIntegrityMediaLinkRedeemPayload,
   hasIntegrityMediaRedeemSignature,
   integrityMediaLinkSignaturesEqual,
@@ -66,6 +72,7 @@ export interface IntegrityMediaRedeemSuccess {
   source: typeof INTEGRITY_MEDIA_SOURCE;
   externalAuthorId: string;
   reconnected: boolean;
+  linkRevision: number;
 }
 
 type DisplayNameResolver = (memberId: string, email: string) => Promise<string>;
@@ -462,12 +469,22 @@ export async function redeemIntegrityMediaLink(input: {
     );
   }
 
+  const linkRevision = assignedLinkRevision(operational.linkRevision);
+  if (linkRevision === null) {
+    return failure(
+      503,
+      "revision_unavailable",
+      "Integrity Media connection generation is not available.",
+    );
+  }
+
   return {
     ok: true,
     memberId: operational.memberId,
     source: INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: operational.externalAuthorId,
     reconnected: established.reconnected,
+    linkRevision,
   };
 }
 
@@ -576,12 +593,22 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
     );
   }
 
+  const linkRevision = assignedLinkRevision(operational.linkRevision);
+  if (linkRevision === null) {
+    return failure(
+      503,
+      "revision_unavailable",
+      "Integrity Media connection generation is not available.",
+    );
+  }
+
   return {
     ok: true,
     memberId: operational.memberId,
     source: INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: operational.externalAuthorId,
     reconnected: false,
+    linkRevision,
   };
 }
 
@@ -614,7 +641,7 @@ async function establishLink(
   store: ExternalAuthorLinkStore,
   input: { externalAuthorId: string; memberId: string; now: Date },
 ): Promise<
-  | { ok: true; reconnected: boolean; reason: "confirmed" | "already_linked" | "reconnected" }
+  | { ok: true; reconnected: boolean; linkRevision: number; reason: "confirmed" | "already_linked" | "reconnected" }
   | { ok: false; conflict: ExternalAuthorLinkConflict }
 > {
   const decision = await classifyLink(store, input);
@@ -625,9 +652,22 @@ async function establishLink(
 
   if (decision.existing) {
     if (decision.existing.state !== "disabled") {
-      return { ok: true, reconnected: false, reason: "already_linked" };
+      const linkRevision = revisionForDuplicateRedeem(decision.existing.linkRevision);
+      if (assignedLinkRevision(decision.existing.linkRevision) === null) {
+        const materialized = await store.updateLink({
+          ...decision.existing,
+          linkRevision,
+          updatedAt: input.now.toISOString(),
+        });
+        if (materialized !== "updated") {
+          return { ok: false, conflict: "external_author_already_linked" };
+        }
+      }
+
+      return { ok: true, reconnected: false, linkRevision, reason: "already_linked" };
     }
 
+    const linkRevision = revisionForReconnect(decision.existing.linkRevision);
     const updated = await store.updateLink({
       ...decision.existing,
       state: "linked",
@@ -635,15 +675,17 @@ async function establishLink(
       confirmedAt: input.now.toISOString(),
       updatedAt: input.now.toISOString(),
       collaborationStatus: resolveIntegrityMediaCollaborationStatus(decision.existing),
+      linkRevision,
     });
 
     if (updated !== "updated") {
       return { ok: false, conflict: "external_author_already_linked" };
     }
 
-    return { ok: true, reconnected: true, reason: "reconnected" };
+    return { ok: true, reconnected: true, linkRevision, reason: "reconnected" };
   }
 
+  const linkRevision = revisionForNewLink();
   const record: ExternalAuthorLinkRecord = {
     source: INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: input.externalAuthorId,
@@ -654,11 +696,12 @@ async function establishLink(
     confirmedAt: input.now.toISOString(),
     disconnectedAt: null,
     collaborationStatus: "active",
+    linkRevision,
   };
   const inserted = await store.insertLink(record);
 
   if (inserted === "inserted") {
-    return { ok: true, reconnected: false, reason: "confirmed" };
+    return { ok: true, reconnected: false, linkRevision, reason: "confirmed" };
   }
 
   const raced = await classifyLink(store, input);
@@ -668,7 +711,8 @@ async function establishLink(
   }
 
   if (raced.existing && raced.existing.memberId === input.memberId) {
-    return { ok: true, reconnected: false, reason: "already_linked" };
+    const linkRevision = revisionForDuplicateRedeem(raced.existing.linkRevision);
+    return { ok: true, reconnected: false, linkRevision, reason: "already_linked" };
   }
 
   return { ok: false, conflict: "external_author_already_linked" };
