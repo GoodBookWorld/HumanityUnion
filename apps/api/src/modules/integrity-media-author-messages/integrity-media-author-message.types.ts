@@ -47,6 +47,11 @@ export interface IntegrityMediaAuthorMessageRecord {
   lastErrorCode: IntegrityMediaAuthorMessageErrorCode | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Set when an admin transcript presents this inbound chat. Absent means unread.
+   * One value is shared by every authorized admin.
+   */
+  adminReadAt?: string;
 }
 
 export type IntegrityMediaAuthorMessageAuditAction =
@@ -93,6 +98,7 @@ export interface IntegrityMediaAuthorDirectoryRow {
   participantAvatarUrl?: string;
   participantProfileHref?: string;
   messageCount: number;
+  unreadCount: number;
   latestMessage: IntegrityMediaAuthorLatestMessageView | null;
 }
 
@@ -102,6 +108,8 @@ export interface IntegrityMediaAuthorDirectoryPage {
   limit: number;
   offset: number;
   hasMore: boolean;
+  /** Inbound chat rows with no adminReadAt, independent of the current page. */
+  unreadMessageCount: number;
 }
 
 /** Safe admin response. No body, recipient author id, secret, or signature. */

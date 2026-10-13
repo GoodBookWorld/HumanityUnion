@@ -893,6 +893,8 @@ describe("Integrity Media outbound author messages", () => {
     assert.equal(authors[2]?.canSend, false);
     assert.equal(authors[2]?.collaborationStatus, "active");
     assert.equal(authors[0]?.messageCount, 2);
+    assert.equal(authors[0]?.unreadCount, 0);
+    assert.equal(response.body.data?.unreadMessageCount, 0);
     assert.equal(authors[0]?.latestMessage?.title, "Newer note");
     assert.equal(authors[0]?.latestMessage?.status, "delivered");
     const serialized = JSON.stringify(response.body);
@@ -1621,6 +1623,204 @@ describe("Integrity Media outbound author messages", () => {
     assert.equal(inbound?.delivery ?? null, null);
   });
 
+  it("counts only unread inbound author chat", async () => {
+    await seedLink();
+    await seedMessage({
+      messageId: historyId(1),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Outbound chat",
+      createdAt: historyTime(1),
+      direction: "hu_to_im",
+      kind: "chat",
+      status: "delivered",
+    });
+    await seedMessage({
+      messageId: historyId(2),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "System note",
+      createdAt: historyTime(2),
+      direction: "hu_to_im",
+      kind: "system",
+      status: "delivered",
+    });
+    await seedMessage({
+      messageId: historyId(3),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Legacy note",
+      createdAt: historyTime(3),
+      status: "delivered",
+    });
+    await seedMessage({
+      messageId: historyId(4),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "",
+      createdAt: historyTime(4),
+      direction: "im_to_hu",
+      kind: "chat",
+      status: "recorded",
+      attemptCount: 0,
+    });
+    const duplicate = await messageStore.insert({
+      ...(await messageStore.findByMessageId(historyId(4)))!,
+    });
+    assert.equal(duplicate, "duplicate");
+    transportResult = () => ({ kind: "timeout" });
+    await seedMessage({
+      messageId: historyId(5),
+      recipientMemberId: RECIPIENT_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      title: "Retry me",
+      createdAt: historyTime(5),
+      direction: "hu_to_im",
+      kind: "chat",
+      status: "pending",
+      attemptCount: 0,
+      nextAttemptAt: null,
+    });
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal((await messageStore.findByMessageId(historyId(4)))?.attemptCount, 0);
+    const listed = await listAuthors(adminToken());
+    assert.equal(listed.body.data?.unreadMessageCount, 1);
+    assert.equal(directoryAuthors(listed.body)[0]?.unreadCount, 1);
+    assert.equal(directoryAuthors(listed.body)[0]?.messageCount, 5);
+    const history = await getHistory(RECIPIENT_MEMBER, adminToken());
+    assert.equal(history.status, 200);
+    assert.equal((await messageStore.findByMessageId(historyId(4)))?.adminReadAt, undefined);
+    assert.equal(
+      INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES.some(
+        (index) =>
+          index.name === "integrity_media_author_messages_inbound_chat_recipient" &&
+          index.key.direction === 1 &&
+          index.key.kind === 1 &&
+          index.key.recipientMemberId === 1,
+      ),
+      true,
+    );
+  });
+
+  it("marks only presented inbound chat ids and keeps the rest unread", async () => {
+    await seedLink({
+      externalAuthorId: AUTHOR,
+      memberId: RECIPIENT_MEMBER,
+      createdAt: "2026-03-03T00:00:00.000Z",
+    });
+    await seedLink({
+      externalAuthorId: OTHER_AUTHOR,
+      memberId: OTHER_MEMBER,
+      createdAt: "2026-03-02T00:00:00.000Z",
+    });
+    await seedLink({
+      externalAuthorId: DISABLED_AUTHOR,
+      memberId: DISABLED_MEMBER,
+      state: "disabled",
+      collaborationStatus: "archived",
+      createdAt: "2026-03-01T00:00:00.000Z",
+    });
+    await seedLink({
+      externalAuthorId: PENDING_AUTHOR,
+      memberId: PENDING_MEMBER,
+      collaborationStatus: "blocked",
+      createdAt: "2026-03-04T00:00:00.000Z",
+    });
+    await seedInboundChat(historyId(11), RECIPIENT_MEMBER, AUTHOR, historyTime(11));
+    await seedInboundChat(historyId(12), RECIPIENT_MEMBER, AUTHOR, historyTime(12));
+    await seedInboundChat(historyId(13), OTHER_MEMBER, OTHER_AUTHOR, historyTime(13));
+    await seedInboundChat(historyId(14), DISABLED_MEMBER, DISABLED_AUTHOR, historyTime(14));
+    await seedInboundChat(historyId(15), PENDING_MEMBER, PENDING_AUTHOR, historyTime(15));
+    await seedMessage({
+      messageId: historyId(16),
+      recipientMemberId: DISABLED_MEMBER,
+      recipientExternalAuthorId: DISABLED_AUTHOR,
+      title: "Outbound after disconnect",
+      createdAt: historyTime(16),
+      direction: "hu_to_im",
+      kind: "system",
+      status: "failed",
+    });
+
+    const unread = await listAuthors(adminToken(), { state: "unread", limit: "1", offset: "0" });
+    assert.equal(unread.status, 200);
+    assert.equal(unread.body.data?.unreadMessageCount, 5);
+    assert.equal(unread.body.data?.total, 4);
+    assert.equal(unread.body.data?.hasMore, true);
+    assert.equal(directoryAuthors(unread.body)[0]?.memberId, PENDING_MEMBER);
+    assert.equal(directoryAuthors(unread.body)[0]?.unreadCount, 1);
+    const disabledPage = await listAuthors(adminToken(), { state: "unread", limit: "10", offset: "0" });
+    const unreadIds = directoryAuthors(disabledPage.body).map((row) => row.memberId);
+    assert.deepEqual(unreadIds, [PENDING_MEMBER, RECIPIENT_MEMBER, OTHER_MEMBER, DISABLED_MEMBER]);
+    assert.equal(directoryAuthors(disabledPage.body)[1]?.unreadCount, 2);
+
+    const denied = await markPresented(RECIPIENT_MEMBER, tokenFor("member-user", OTHER_MEMBER, "member"), [
+      historyId(11),
+    ]);
+    assert.equal(denied.status, 403);
+    assert.equal(denied.body.meta.code, "administrator_required");
+    const anonymous = await markPresented(RECIPIENT_MEMBER, null, [historyId(11)]);
+    assert.equal(anonymous.status, 401);
+
+    const first = await markPresented(RECIPIENT_MEMBER, adminToken(), [historyId(11), historyId(16), historyId(13)]);
+    assert.equal(first.status, 200);
+    assert.equal(first.body.data?.markedCount, 1);
+    assert.equal(first.body.data?.unreadMessageCount, 4);
+    assert.equal(typeof (await messageStore.findByMessageId(historyId(11)))?.adminReadAt, "string");
+    assert.equal((await messageStore.findByMessageId(historyId(12)))?.adminReadAt, undefined);
+    assert.equal((await messageStore.findByMessageId(historyId(13)))?.adminReadAt, undefined);
+    assert.equal((await messageStore.findByMessageId(historyId(16)))?.adminReadAt, undefined);
+
+    const second = await markPresented(RECIPIENT_MEMBER, adminToken(), [historyId(11)]);
+    assert.equal(second.status, 200);
+    assert.equal(second.body.data?.markedCount, 0);
+    assert.equal(second.body.data?.unreadMessageCount, 4);
+    const readAt = (await messageStore.findByMessageId(historyId(11)))?.adminReadAt;
+
+    const omitted = await markPresented(RECIPIENT_MEMBER, adminToken(), [historyId(11)]);
+    assert.equal(omitted.body.data?.markedCount, 0);
+    assert.equal((await messageStore.findByMessageId(historyId(12)))?.adminReadAt, undefined);
+    assert.equal((await messageStore.findByMessageId(historyId(11)))?.adminReadAt, readAt);
+
+    const remaining = await listAuthors(adminToken(), { state: "unread" });
+    assert.equal(remaining.body.data?.unreadMessageCount, 4);
+    assert.deepEqual(
+      directoryAuthors(remaining.body).map((row) => row.memberId),
+      [PENDING_MEMBER, RECIPIENT_MEMBER, OTHER_MEMBER, DISABLED_MEMBER],
+    );
+    const presentedRest = await markPresented(RECIPIENT_MEMBER, adminToken(), [historyId(12)]);
+    assert.equal(presentedRest.body.data?.markedCount, 1);
+    assert.equal(presentedRest.body.data?.unreadMessageCount, 3);
+    const afterAuthor = await listAuthors(adminToken(), { state: "unread" });
+    assert.deepEqual(
+      directoryAuthors(afterAuthor.body).map((row) => row.memberId),
+      [PENDING_MEMBER, OTHER_MEMBER, DISABLED_MEMBER],
+    );
+    const history = await getHistory(DISABLED_MEMBER, adminToken());
+    assert.equal(history.status, 200);
+    assert.equal(history.body.data?.messages?.some((message) => message.messageId === historyId(14)), true);
+
+    const tooMany = await markPresented(
+      RECIPIENT_MEMBER,
+      adminToken(),
+      Array.from({ length: 21 }, (_, index) => historyId(index + 1)),
+    );
+    assert.equal(tooMany.status, 400);
+    assert.equal(tooMany.body.meta.code, "invalid_request");
+    const unknownField = await fetch(
+      `${baseUrl}/api/v1/admin/integrity-media/authors/${RECIPIENT_MEMBER}/messages/read`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${adminToken()}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ messageIds: [historyId(12)], readAt: "2026-03-01T00:00:00.000Z" }),
+      },
+    );
+    assert.equal(unknownField.status, 400);
+  });
+
   async function assertPermanentRemoteFailure(status: number, code: string): Promise<void> {
     await seedLink();
     transportResult = () => ({
@@ -1750,16 +1950,18 @@ interface DirectoryAuthorRow {
   participantDisplayName?: string;
   participantAvatarUrl?: string;
   messageCount?: number;
+  unreadCount?: number;
   latestMessage?: { title?: string; status?: string } | null;
 }
 
 interface DirectoryBody {
   success: boolean;
-  data: {
-    authors?: DirectoryAuthorRow[];
-    total?: number;
-    hasMore?: boolean;
-  } | null;
+    data: {
+      authors?: DirectoryAuthorRow[];
+      total?: number;
+      hasMore?: boolean;
+      unreadMessageCount?: number;
+    } | null;
   meta: { code?: string };
   message: string;
 }
@@ -1831,6 +2033,60 @@ async function seedMessage(
     ...overrides,
   });
   assert.equal(inserted, "inserted");
+}
+
+async function seedInboundChat(
+  messageId: string,
+  recipientMemberId: string,
+  recipientExternalAuthorId: string,
+  createdAt: string,
+): Promise<void> {
+  await seedMessage({
+    messageId,
+    recipientMemberId,
+    recipientExternalAuthorId,
+    title: "",
+    createdAt,
+    direction: "im_to_hu",
+    kind: "chat",
+    status: "recorded",
+    attemptCount: 0,
+    body: "Author reply",
+  });
+}
+
+async function markPresented(
+  memberId: string,
+  token: string | null,
+  messageIds: string[],
+): Promise<{
+  status: number;
+  body: {
+    success: boolean;
+    data: { markedCount?: number; unreadMessageCount?: number } | null;
+    meta: { code?: string };
+  };
+}> {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(
+    `${baseUrl}/api/v1/admin/integrity-media/authors/${memberId}/messages/read`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ messageIds }),
+    },
+  );
+  return {
+    status: response.status,
+    body: (await response.json()) as {
+      success: boolean;
+      data: { markedCount?: number; unreadMessageCount?: number } | null;
+      meta: { code?: string };
+    },
+  };
 }
 
 async function listAuthors(

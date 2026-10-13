@@ -21,6 +21,21 @@
   overflow-wrap: anywhere;
 }
 
+.profile-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: var(--hu-space-4);
+  min-width: 0;
+}
+
+.profile-section__heading .profile-section__title {
+  margin-bottom: 0;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 .profile-section__placeholder {
   color: var(--hu-color-text-muted);
   font-style: italic;

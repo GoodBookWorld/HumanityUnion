@@ -1,6 +1,7 @@
 import { apiRequest } from "../../lib/api-client";
 import {
   buildAdminIntegrityMediaAuthorHistoryPath,
+  buildAdminIntegrityMediaAuthorReadPath,
   buildAdminIntegrityMediaAuthorsPath,
   type IntegrityMediaAuthorDirectoryPage,
   type IntegrityMediaAuthorHistoryPage,
@@ -40,6 +41,20 @@ export async function sendAdminIntegrityMediaAuthorMessage(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function markAdminIntegrityMediaAuthorMessagesRead(
+  memberId: string,
+  messageIds: readonly string[],
+): Promise<{ markedCount: number; unreadMessageCount: number }> {
+  return apiRequest<{ markedCount: number; unreadMessageCount: number }>(
+    buildAdminIntegrityMediaAuthorReadPath(memberId),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageIds }),
     },
   );
 }

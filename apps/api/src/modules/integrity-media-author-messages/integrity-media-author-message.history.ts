@@ -96,6 +96,54 @@ export async function listIntegrityMediaAuthorMessageHistory(input: {
   };
 }
 
+/**
+ * Records that this page of inbound chats was presented. Other ids, outbound
+ * rows, and system rows stay unchanged. A second call for the same ids does
+ * not write again.
+ */
+export async function acknowledgePresentedIntegrityMediaAuthorChats(input: {
+  actorUserId: string;
+  actorMemberId: string;
+  recipientMemberId: string;
+  messageIds: readonly string[];
+}): Promise<
+  | { ok: true; data: { markedCount: number; unreadMessageCount: number } }
+  | IntegrityMediaAuthorMessageHistoryFailure
+> {
+  await requireIntegrityMediaAuthorMessageAdmin(input.actorUserId, input.actorMemberId);
+
+  const memberId = input.recipientMemberId.trim();
+  if (!memberId || /\s/.test(memberId)) {
+    return failure(400, "invalid_request", "The selected member is not valid.");
+  }
+
+  if (
+    input.messageIds.length < 1 ||
+    input.messageIds.length > INTEGRITY_MEDIA_AUTHOR_MESSAGE_HISTORY_PAGE_SIZE
+  ) {
+    return failure(400, "invalid_request", "The message history request is not valid.");
+  }
+
+  const link = await getExternalAuthorLinkStore().findLinkByMember(INTEGRITY_MEDIA_SOURCE, memberId);
+  if (!link || link.memberId !== memberId || !link.externalAuthorId) {
+    return failure(404, "link_missing", "This member is not linked to Integrity Media.");
+  }
+
+  const messageStore = getIntegrityMediaAuthorMessageStore();
+  const markedCount = await messageStore.markPresentedInboundChats({
+    recipientMemberId: link.memberId,
+    recipientExternalAuthorId: link.externalAuthorId,
+    messageIds: input.messageIds,
+    readAt: new Date().toISOString(),
+  });
+  const unreadMessageCount = await messageStore.countUnreadInboundChats();
+
+  return {
+    ok: true,
+    data: { markedCount, unreadMessageCount },
+  };
+}
+
 export function toHistoryItem(
   record: IntegrityMediaAuthorMessageRecord,
 ): IntegrityMediaAuthorMessageHistoryItem {

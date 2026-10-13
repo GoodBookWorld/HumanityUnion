@@ -78,6 +78,12 @@ export interface ExternalAuthorLinkStore {
     limit: number;
     offset: number;
   }): Promise<{ items: ExternalAuthorLinkRecord[]; total: number }>;
+  listForAdminByMemberIds(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    memberIds: readonly string[];
+    limit: number;
+    offset: number;
+  }): Promise<{ items: ExternalAuthorLinkRecord[]; total: number }>;
   listResults(): Promise<ExternalAuthorLinkResultRecord[]>;
   listAudits(): Promise<ExternalAuthorLinkAuditRecord[]>;
 }
@@ -246,6 +252,10 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         total: items.length,
         items: items.slice(input.offset, input.offset + input.limit).map((record) => ({ ...record })),
       };
+    },
+
+    async listForAdminByMemberIds(input) {
+      return pageAdminLinksByMemberIds([...byAuthor.values()], input);
     },
 
     async listResults() {
@@ -459,6 +469,25 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       return { total, items: documents.map((document) => withoutId(document)) };
     },
 
+    async listForAdminByMemberIds(input) {
+      const memberIds = uniqueMemberIds(input.memberIds);
+      if (memberIds.length === 0) {
+        return { items: [], total: 0 };
+      }
+      const filter = { source: input.source, memberId: { $in: memberIds } };
+      const collection = links();
+      const [total, documents] = await Promise.all([
+        collection.countDocuments(filter),
+        collection
+          .find(filter)
+          .sort({ createdAt: -1, memberId: 1 })
+          .skip(input.offset)
+          .limit(input.limit)
+          .toArray(),
+      ]);
+      return { total, items: documents.map((document) => withoutId(document)) };
+    },
+
     async listResults() {
       const documents = await results().find({}).toArray();
       return documents.map((document) => withoutId(document));
@@ -579,6 +608,32 @@ function compareAdminLinks(left: ExternalAuthorLinkRecord, right: ExternalAuthor
   }
 
   return left.memberId.localeCompare(right.memberId);
+}
+
+function uniqueMemberIds(memberIds: readonly string[]): string[] {
+  return [...new Set(memberIds.filter((memberId) => memberId.trim().length > 0))];
+}
+
+function pageAdminLinksByMemberIds(
+  records: readonly ExternalAuthorLinkRecord[],
+  input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    memberIds: readonly string[];
+    limit: number;
+    offset: number;
+  },
+): { items: ExternalAuthorLinkRecord[]; total: number } {
+  const allowed = new Set(uniqueMemberIds(input.memberIds));
+  if (allowed.size === 0) {
+    return { items: [], total: 0 };
+  }
+  const items = records
+    .filter((record) => record.source === input.source && allowed.has(record.memberId))
+    .sort(compareAdminLinks);
+  return {
+    total: items.length,
+    items: items.slice(input.offset, input.offset + input.limit).map((record) => ({ ...record })),
+  };
 }
 
 function linkKey(source: string, id: string): string {

@@ -11,7 +11,10 @@ import {
 import type { ExternalAuthorLinkRecord } from "../external-author-link/external-author-link.types.js";
 import { findMemberProfilesByUserIds } from "../member-profile/member-profile.repository.js";
 import { requireIntegrityMediaAuthorMessageAdmin } from "./integrity-media-author-message.service.js";
-import { getIntegrityMediaAuthorMessageStore } from "./integrity-media-author-message.store.js";
+import {
+  getIntegrityMediaAuthorMessageStore,
+  type IntegrityMediaAuthorMessageRecipientSummary,
+} from "./integrity-media-author-message.store.js";
 import type {
   IntegrityMediaAuthorDirectoryPage,
   IntegrityMediaAuthorDirectoryRow,
@@ -30,12 +33,15 @@ export interface IntegrityMediaAuthorParticipantDisplay {
   participantProfileHref?: string;
 }
 
-const DIRECTORY_STATES = new Set<ExternalAuthorLinkAdminListState>([
+const DIRECTORY_STATES = new Set([
   "all",
   "linked",
   "disabled",
   "setup_pending",
+  "unread",
 ]);
+
+type IntegrityMediaAuthorDirectoryState = ExternalAuthorLinkAdminListState | "unread";
 
 type ParticipantResolver = (
   memberIds: readonly string[],
@@ -72,16 +78,27 @@ export async function listIntegrityMediaAuthors(input: {
 
   const limit = clampLimit(input.limit);
   const offset = clampOffset(input.offset);
-  const page = await getExternalAuthorLinkStore().listForAdmin({
-    source: INTEGRITY_MEDIA_SOURCE,
-    state,
-    limit,
-    offset,
-  });
+  const messageStore = getIntegrityMediaAuthorMessageStore();
+  const linkStore = getExternalAuthorLinkStore();
+  const page =
+    state === "unread"
+      ? await linkStore.listForAdminByMemberIds({
+          source: INTEGRITY_MEDIA_SOURCE,
+          memberIds: await messageStore.listUnreadInboundChatRecipientIds(),
+          limit,
+          offset,
+        })
+      : await linkStore.listForAdmin({
+          source: INTEGRITY_MEDIA_SOURCE,
+          state,
+          limit,
+          offset,
+        });
   const memberIds = page.items.map((item) => item.memberId);
-  const [displays, summaries] = await Promise.all([
+  const [displays, summaries, unreadMessageCount] = await Promise.all([
     resolveIntegrityMediaAuthorParticipants(memberIds),
-    getIntegrityMediaAuthorMessageStore().summarizeForRecipients(memberIds),
+    messageStore.summarizeForRecipients(memberIds),
+    messageStore.countUnreadInboundChats(),
   ]);
 
   const authors = page.items.map((link) =>
@@ -96,6 +113,7 @@ export async function listIntegrityMediaAuthors(input: {
       limit,
       offset,
       hasMore: offset + authors.length < page.total,
+      unreadMessageCount,
     },
   };
 }
@@ -162,7 +180,7 @@ export async function resolveIntegrityMediaAuthorParticipants(
 function toDirectoryRow(
   link: ExternalAuthorLinkRecord,
   display: IntegrityMediaAuthorParticipantDisplay | undefined,
-  summary: { messageCount: number; latest: IntegrityMediaAuthorDirectoryRow["latestMessage"] } | undefined,
+  summary: IntegrityMediaAuthorMessageRecipientSummary | undefined,
 ): IntegrityMediaAuthorDirectoryRow {
   const identity =
     display ??
@@ -188,6 +206,7 @@ function toDirectoryRow(
       ? { participantProfileHref: identity.participantProfileHref }
       : {}),
     messageCount: summary?.messageCount ?? 0,
+    unreadCount: summary?.unreadCount ?? 0,
     latestMessage: summary?.latest ?? null,
   };
 }
@@ -201,8 +220,8 @@ function readableName(value: string | null | undefined): string {
   return trimmed;
 }
 
-function isDirectoryState(value: string): value is ExternalAuthorLinkAdminListState {
-  return DIRECTORY_STATES.has(value as ExternalAuthorLinkAdminListState);
+function isDirectoryState(value: string): value is IntegrityMediaAuthorDirectoryState {
+  return DIRECTORY_STATES.has(value);
 }
 
 function clampLimit(limit: number | undefined): number {

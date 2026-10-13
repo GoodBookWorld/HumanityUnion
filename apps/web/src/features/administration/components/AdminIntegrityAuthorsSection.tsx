@@ -35,10 +35,14 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
   const [phase, setPhase] = useState<"loading" | "error" | "ready">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sendTarget, setSendTarget] = useState<IntegrityMediaAuthorRow | null>(null);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
-  const loadAuthors = useCallback(async () => {
-    setPhase("loading");
-    setErrorMessage(null);
+  const loadAuthors = useCallback(async (mode?: { silent?: boolean }) => {
+    const silent = mode?.silent === true;
+    if (!silent) {
+      setPhase("loading");
+      setErrorMessage(null);
+    }
     try {
       const page = await listAdminIntegrityMediaAuthors({
         state,
@@ -48,11 +52,16 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
       setAuthors(page.authors);
       setTotal(page.total);
       setHasMore(page.hasMore);
+      setUnreadMessageCount(page.unreadMessageCount);
       setPhase("ready");
     } catch (error: unknown) {
+      if (silent) {
+        return;
+      }
       setAuthors([]);
       setTotal(0);
       setHasMore(false);
+      setUnreadMessageCount(0);
       setPhase("error");
       setErrorMessage(
         isForbiddenError(error)
@@ -90,10 +99,32 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
     }
   }
 
+  const handleUnreadCount = useCallback(
+    (count: number | null) => {
+      if (count !== null) {
+        setUnreadMessageCount(count);
+      }
+      void loadAuthors({ silent: true });
+    },
+    [loadAuthors],
+  );
+
+  const unreadBadge =
+    unreadMessageCount > 0 ? (
+      <button
+        type="button"
+        className="admin-integrity-authors__unread-badge"
+        aria-label={`${unreadMessageCount} unread author messages. Show authors with unread messages.`}
+        onClick={() => handleStateChange("unread")}
+      >
+        {unreadMessageCount}
+      </button>
+    ) : null;
+
   return (
     <div className="admin-panel">
       <AdminPanelNavigation />
-      <ProfileSection title="Integrity Authors">
+      <ProfileSection title="Integrity Authors" headingAccessory={unreadBadge}>
         <AdminIntegrityAuthorsPanel
           phase={phase}
           errorMessage={errorMessage}
@@ -121,6 +152,7 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
           onRefresh={() => {
             void loadAuthors();
           }}
+          onUnreadCount={handleUnreadCount}
         />
       ) : null}
     </div>

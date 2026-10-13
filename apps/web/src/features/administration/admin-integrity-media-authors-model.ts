@@ -1,4 +1,4 @@
-export type IntegrityMediaAuthorListState = "all" | "linked" | "disabled" | "setup_pending";
+export type IntegrityMediaAuthorListState = "all" | "linked" | "disabled" | "setup_pending" | "unread";
 
 export type IntegrityMediaAuthorCollaborationStatus = "active" | "blocked" | "archived";
 
@@ -31,6 +31,7 @@ export interface IntegrityMediaAuthorRow {
   participantAvatarUrl?: string;
   participantProfileHref?: string;
   messageCount: number;
+  unreadCount: number;
   latestMessage: IntegrityMediaAuthorLatestMessage | null;
 }
 
@@ -40,6 +41,7 @@ export interface IntegrityMediaAuthorDirectoryPage {
   limit: number;
   offset: number;
   hasMore: boolean;
+  unreadMessageCount: number;
 }
 
 export interface IntegrityMediaAuthorMessageDelivery {
@@ -275,6 +277,23 @@ export function buildAdminIntegrityMediaAuthorHistoryPath(
   }
   const suffix = params.toString();
   return `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/messages${suffix ? `?${suffix}` : ""}`;
+}
+
+export function buildAdminIntegrityMediaAuthorReadPath(memberId: string): string {
+  return `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/messages/read`;
+}
+
+export function inboundIntegrityMediaAuthorChatIds(
+  messages: readonly IntegrityMediaAuthorHistoryMessage[],
+): string[] {
+  const ids: string[] = [];
+  for (const message of messages) {
+    if (message.direction !== "im_to_hu" || message.kind !== "chat" || ids.includes(message.messageId)) {
+      continue;
+    }
+    ids.push(message.messageId);
+  }
+  return ids;
 }
 
 export function buildIntegrityMediaAuthorChatRequest(body: string): { body: string } {
