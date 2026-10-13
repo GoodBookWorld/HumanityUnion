@@ -18,6 +18,10 @@ export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES: IndexDescription[] = [
     key: { recipientMemberId: 1, recipientExternalAuthorId: 1, createdAt: -1, messageId: -1 },
     name: "integrity_media_author_messages_pair_history",
   },
+  {
+    key: { direction: 1, kind: 1, recipientMemberId: 1, createdAt: -1 },
+    name: "integrity_media_author_messages_inbound_chat_recipient",
+  },
 ];
 
 export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_AUDIT_INDEXES: IndexDescription[] = [

@@ -17,6 +17,7 @@ import {
 
 export interface IntegrityMediaAuthorMessageRecipientSummary {
   messageCount: number;
+  unreadCount: number;
   latest: IntegrityMediaAuthorLatestMessageView | null;
 }
 
@@ -62,6 +63,14 @@ export interface IntegrityMediaAuthorMessageStore {
   summarizeForRecipients(
     recipientMemberIds: readonly string[],
   ): Promise<Map<string, IntegrityMediaAuthorMessageRecipientSummary>>;
+  countUnreadInboundChats(): Promise<number>;
+  listUnreadInboundChatRecipientIds(): Promise<string[]>;
+  markPresentedInboundChats(input: {
+    recipientMemberId: string;
+    recipientExternalAuthorId: string;
+    messageIds: readonly string[];
+    readAt: string;
+  }): Promise<number>;
   appendAudit(record: IntegrityMediaAuthorMessageAuditRecord): Promise<void>;
   listAudits(): Promise<IntegrityMediaAuthorMessageAuditRecord[]>;
 }
@@ -130,6 +139,41 @@ export function createMemoryIntegrityMediaAuthorMessageStore(): IntegrityMediaAu
 
     async summarizeForRecipients(recipientMemberIds) {
       return summarizeMessages([...messages.values()], recipientMemberIds);
+    },
+
+    async countUnreadInboundChats() {
+      return [...messages.values()].filter(isUnreadInboundChat).length;
+    },
+
+    async listUnreadInboundChatRecipientIds() {
+      return [
+        ...new Set(
+          [...messages.values()]
+            .filter(isUnreadInboundChat)
+            .map((record) => record.recipientMemberId),
+        ),
+      ];
+    },
+
+    async markPresentedInboundChats(input) {
+      const ids = new Set(input.messageIds);
+      let marked = 0;
+      for (const messageId of ids) {
+        const current = messages.get(messageId);
+        if (!current || !isUnreadInboundChat(current)) {
+          continue;
+        }
+        if (
+          current.recipientMemberId !== input.recipientMemberId ||
+          current.recipientExternalAuthorId !== input.recipientExternalAuthorId
+        ) {
+          continue;
+        }
+        current.adminReadAt = input.readAt;
+        current.updatedAt = input.readAt;
+        marked += 1;
+      }
+      return marked;
     },
 
     async appendAudit(record) {
@@ -283,6 +327,32 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
       };
     },
 
+    async countUnreadInboundChats() {
+      return messages().countDocuments(unreadInboundChatQuery());
+    },
+
+    async listUnreadInboundChatRecipientIds() {
+      const ids = await messages().distinct("recipientMemberId", unreadInboundChatQuery());
+      return ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0);
+    },
+
+    async markPresentedInboundChats(input) {
+      const ids = [...new Set(input.messageIds)];
+      if (ids.length === 0) {
+        return 0;
+      }
+      const result = await messages().updateMany(
+        {
+          messageId: { $in: ids },
+          recipientMemberId: input.recipientMemberId,
+          recipientExternalAuthorId: input.recipientExternalAuthorId,
+          ...unreadInboundChatQuery(),
+        },
+        { $set: { adminReadAt: input.readAt, updatedAt: input.readAt } },
+      );
+      return result.modifiedCount;
+    },
+
     async summarizeForRecipients(recipientMemberIds) {
       const ids = [...new Set(recipientMemberIds.filter((id) => id.trim().length > 0))];
       if (ids.length === 0) {
@@ -301,6 +371,9 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
               lastErrorCode: 1,
               createdAt: 1,
               deliveredAt: 1,
+              direction: 1,
+              kind: 1,
+              adminReadAt: 1,
             },
           },
           { $sort: { createdAt: -1, messageId: -1 } },
@@ -308,6 +381,7 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
             $group: {
               _id: "$recipientMemberId",
               messageCount: { $sum: 1 },
+              unreadCount: { $sum: unreadInboundChatCountExpression() },
               messageId: { $first: "$messageId" },
               title: { $first: "$title" },
               status: { $first: "$status" },
@@ -324,6 +398,7 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
           document._id,
           {
             messageCount: document.messageCount,
+            unreadCount: document.unreadCount,
             latest: {
               messageId: document.messageId,
               title: document.title,
@@ -437,9 +512,42 @@ function pendingEligibility(nowIso: string) {
   };
 }
 
+function isUnreadInboundChat(record: IntegrityMediaAuthorMessageRecord): boolean {
+  return (
+    record.direction === "im_to_hu" &&
+    record.kind === "chat" &&
+    typeof record.adminReadAt !== "string"
+  );
+}
+
+function unreadInboundChatQuery(): Filter<IntegrityMediaAuthorMessageRecord> {
+  return {
+    direction: "im_to_hu",
+    kind: "chat",
+    adminReadAt: { $exists: false },
+  };
+}
+
+function unreadInboundChatCountExpression(): Record<string, unknown> {
+  return {
+    $cond: [
+      {
+        $and: [
+          { $eq: ["$direction", "im_to_hu"] },
+          { $eq: ["$kind", "chat"] },
+          { $eq: [{ $type: "$adminReadAt" }, "missing"] },
+        ],
+      },
+      1,
+      0,
+    ],
+  };
+}
+
 interface IntegrityMediaAuthorMessageSummaryDocument {
   _id: string;
   messageCount: number;
+  unreadCount: number;
   messageId: string;
   title: string;
   status: IntegrityMediaAuthorMessageRecord["status"];
@@ -502,6 +610,7 @@ function summarizeMessages(
 
     summaries.set(recipientMemberId, {
       messageCount: group.length,
+      unreadCount: group.filter(isUnreadInboundChat).length,
       latest: latest
         ? {
             messageId: latest.messageId,

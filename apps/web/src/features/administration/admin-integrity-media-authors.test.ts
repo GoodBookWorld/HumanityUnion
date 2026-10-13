@@ -26,6 +26,8 @@ import {
   interpretIntegrityMediaAuthorDelivery,
   mergeIntegrityMediaAuthorHistory,
   restoredTranscriptScrollTop,
+  inboundIntegrityMediaAuthorChatIds,
+  buildAdminIntegrityMediaAuthorReadPath,
   validateIntegrityMediaAuthorChatForm,
   validateIntegrityMediaAuthorMessageForm,
   type IntegrityMediaAuthorHistoryMessage,
@@ -60,6 +62,7 @@ function row(overrides: Partial<IntegrityMediaAuthorRow> = {}): IntegrityMediaAu
     participantProfileHref:
       "/admin/participants/22222222-2222-4222-8222-222222222222/public-profile",
     messageCount: 1,
+    unreadCount: 0,
     latestMessage: {
       messageId: "33333333-3333-4333-8333-333333333333",
       title: "Connection test",
@@ -564,6 +567,7 @@ describe("Integrity Authors admin", () => {
         isOpen: true,
         onClose: () => undefined,
         onRefresh: () => undefined,
+        onUnreadCount: () => undefined,
       }),
     );
     assert.match(dialog, /Loading messages…/);
@@ -669,6 +673,72 @@ describe("Integrity Authors admin", () => {
       css,
       /\.admin-integrity-authors-table[\s\S]*text-overflow:\s*ellipsis/,
     );
+  });
+
+  it("shows an unread badge, highlights inbound authors, and marks only a presented page", () => {
+    assert.equal(inboundIntegrityMediaAuthorChatIds([]).length, 0);
+    const ids = inboundIntegrityMediaAuthorChatIds([
+      historyMessage({ messageId: "m-out", direction: "hu_to_im", kind: "chat" }),
+      historyMessage({ messageId: "m-system", direction: "hu_to_im", kind: "system" }),
+      historyMessage({ messageId: "m-in", direction: "im_to_hu", kind: "chat" }),
+      historyMessage({ messageId: "m-in", direction: "im_to_hu", kind: "chat" }),
+      historyMessage({ messageId: "m-note", direction: "im_to_hu", kind: "system" }),
+    ]);
+    assert.deepEqual(ids, ["m-in"]);
+    const memberId = "22222222-2222-4222-8222-222222222222";
+    assert.equal(
+      buildAdminIntegrityMediaAuthorReadPath(memberId),
+      `/api/v1/admin/integrity-media/authors/${memberId}/messages/read`,
+    );
+    assert.deepEqual(integrityMediaAuthorsQueryAfterFilter("unread"), {
+      state: "unread",
+      offset: 0,
+      limit: 25,
+    });
+
+    const quiet = renderPanel({ authors: [row({ unreadCount: 0 })] });
+    assert.doesNotMatch(quiet, /admin-integrity-authors-table__unread/);
+    assert.match(quiet, /value="unread"/);
+    const highlighted = renderPanel({
+      authors: [row({ unreadCount: 2, participantDisplayName: "Ada Lovelace" })],
+    });
+    assert.match(highlighted, /admin-integrity-authors-table__unread/);
+    assert.match(highlighted, /Open chat with Ada Lovelace/);
+
+    const section = read("features/administration/components/AdminIntegrityAuthorsSection.tsx");
+    assert.match(section, /ProfileSection title="Integrity Authors"/);
+    assert.match(section, /unreadMessageCount > 0/);
+    assert.match(section, /admin-integrity-authors__unread-badge/);
+    assert.match(section, /handleStateChange\("unread"\)/);
+    assert.match(section, /onUnreadCount=\{handleUnreadCount\}/);
+    assert.doesNotMatch(section, /setInterval|WebSocket|EventSource/);
+
+    const dialog = read("features/administration/components/AdminIntegrityAuthorMessageDialog.tsx");
+    const layoutStart = dialog.indexOf("useLayoutEffect(() => {");
+    const layout = dialog.slice(layoutStart, dialog.indexOf("if (!isOpen)", layoutStart));
+    assert.match(layout, /historyPhase !== "ready"/);
+    assert.match(layout, /markAdminIntegrityMediaAuthorMessagesRead/);
+    assert.match(layout, /presentedIds\.length === 0/);
+    const load = dialog.slice(
+      dialog.indexOf("void (async () => {"),
+      dialog.indexOf("}, [isOpen, memberId]"),
+    );
+    assert.ok(load.indexOf("if (cancelled)") < load.indexOf("presentInboundChatPage(page.messages)"));
+    assert.equal(dialog.split("presentInboundChatPage(page.messages)").length - 1, 3);
+    const olderCatch = dialog.slice(dialog.indexOf("async function loadOlder"), dialog.indexOf("async function refreshHistory"));
+    assert.doesNotMatch(olderCatch.slice(olderCatch.indexOf("} catch")), /presentInboundChatPage/);
+    const refresh = dialog.slice(dialog.indexOf("async function refreshHistory"), dialog.indexOf("async function handleChatSubmit"));
+    assert.ok(refresh.indexOf("await listAdminIntegrityMediaAuthorHistory") < refresh.indexOf("presentInboundChatPage"));
+    assert.doesNotMatch(dialog, /formatAuthFormError/);
+
+    const css = read("features/administration/components/admin-integrity-author-message-dialog.css");
+    const heading = read("components/member/profile-section.css");
+    assert.match(css, /\.admin-integrity-authors__unread-badge\s*\{[^}]*white-space:\s*nowrap/);
+    assert.match(
+      heading,
+      /\.profile-section__heading \.profile-section__title\s*\{[^}]*white-space:\s*nowrap/,
+    );
+    assert.match(heading, /overflow-wrap:\s*normal/);
   });
 });
 

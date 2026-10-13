@@ -8,6 +8,7 @@ import { trapTabKey } from "../../../design-system/focus-trap";
 import { ApiRequestError } from "../../../lib/api-client";
 import {
   listAdminIntegrityMediaAuthorHistory,
+  markAdminIntegrityMediaAuthorMessagesRead,
   sendAdminIntegrityMediaAuthorChat,
   sendAdminIntegrityMediaAuthorMessage,
 } from "../admin-integrity-media-authors-api";
@@ -16,6 +17,7 @@ import {
   INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE,
   buildIntegrityMediaAuthorChatRequest,
   buildIntegrityMediaAuthorMessageRequest,
+  inboundIntegrityMediaAuthorChatIds,
   integrityMediaAuthorComposeBlockedCopy,
   integrityMediaAuthorDeliveryCopy,
   integrityMediaAuthorHistoryDeliveryLabel,
@@ -47,6 +49,7 @@ interface AdminIntegrityAuthorMessageDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onRefresh: () => void;
+  onUnreadCount: (count: number | null) => void;
 }
 
 type FieldName = "title" | "body" | "ctaLabel" | "ctaUrl";
@@ -62,6 +65,7 @@ export function AdminIntegrityAuthorMessageDialog({
   isOpen,
   onClose,
   onRefresh,
+  onUnreadCount,
 }: AdminIntegrityAuthorMessageDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -71,6 +75,8 @@ export function AdminIntegrityAuthorMessageDialog({
   const submittingRef = useRef(false);
   const scrollModeRef = useRef<ScrollMode>("latest");
   const loadedOlderRef = useRef(false);
+  const pendingReadIdsRef = useRef<readonly string[] | null>(null);
+  const readGenerationRef = useRef(0);
   const preserveAnchorRef = useRef<{ previousScrollHeight: number; previousScrollTop: number } | null>(
     null,
   );
@@ -146,6 +152,7 @@ export function AdminIntegrityAuthorMessageDialog({
 
     let cancelled = false;
     loadedOlderRef.current = false;
+    pendingReadIdsRef.current = null;
     scrollModeRef.current = "latest";
     setHistoryPhase("loading");
     setHistoryError(null);
@@ -161,6 +168,7 @@ export function AdminIntegrityAuthorMessageDialog({
         if (cancelled) {
           return;
         }
+        presentInboundChatPage(page.messages);
         setMessages(page.messages);
         setNextCursor(page.pageInfo.nextCursor);
         setHasMore(page.pageInfo.hasMore);
@@ -179,6 +187,10 @@ export function AdminIntegrityAuthorMessageDialog({
     };
   }, [isOpen, memberId]);
 
+  function presentInboundChatPage(pageMessages: readonly IntegrityMediaAuthorHistoryMessage[]) {
+    pendingReadIdsRef.current = inboundIntegrityMediaAuthorChatIds(pageMessages);
+  }
+
   useLayoutEffect(() => {
     const transcript = transcriptRef.current;
     if (!transcript || historyPhase !== "ready") {
@@ -192,14 +204,27 @@ export function AdminIntegrityAuthorMessageDialog({
       });
       preserveAnchorRef.current = null;
       scrollModeRef.current = "none";
-      return;
-    }
-
-    if (scrollModeRef.current === "latest") {
+    } else if (scrollModeRef.current === "latest") {
       transcript.scrollTop = transcript.scrollHeight;
       scrollModeRef.current = "none";
     }
-  }, [historyPhase, messages]);
+
+    const presentedIds = pendingReadIdsRef.current;
+    if (!presentedIds) {
+      return;
+    }
+    pendingReadIdsRef.current = null;
+    if (presentedIds.length === 0) {
+      return;
+    }
+
+    const generation = ++readGenerationRef.current;
+    void markAdminIntegrityMediaAuthorMessagesRead(memberId, presentedIds)
+      .then((result) => {
+        onUnreadCount(generation === readGenerationRef.current ? result.unreadMessageCount : null);
+      })
+      .catch(() => undefined);
+  }, [historyPhase, memberId, messages, onUnreadCount]);
 
   if (!isOpen) {
     return null;
@@ -225,6 +250,7 @@ export function AdminIntegrityAuthorMessageDialog({
         cursor: nextCursor,
       });
       loadedOlderRef.current = true;
+      presentInboundChatPage(page.messages);
       setMessages((current) => mergeIntegrityMediaAuthorHistory(page.messages, current));
       setNextCursor(page.pageInfo.nextCursor);
       setHasMore(page.pageInfo.hasMore);
@@ -242,6 +268,7 @@ export function AdminIntegrityAuthorMessageDialog({
     const page = await listAdminIntegrityMediaAuthorHistory(memberId, {
       limit: INTEGRITY_MEDIA_AUTHOR_HISTORY_PAGE_SIZE,
     });
+    presentInboundChatPage(page.messages);
     if (loadedOlderRef.current) {
       setMessages((current) => mergeIntegrityMediaAuthorHistory(current, page.messages));
     } else {

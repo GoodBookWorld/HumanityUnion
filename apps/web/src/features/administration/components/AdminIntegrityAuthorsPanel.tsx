@@ -63,6 +63,7 @@ export function AdminIntegrityAuthorsPanel({
           <option value="linked">Linked</option>
           <option value="setup_pending">Setup pending</option>
           <option value="disabled">Disabled</option>
+          <option value="unread">Unread</option>
         </select>
       </label>
 
@@ -100,7 +101,12 @@ export function AdminIntegrityAuthorsPanel({
                   const latest = row.latestMessage;
 
                   return (
-                    <tr key={row.memberId}>
+                    <tr
+                      key={row.memberId}
+                      className={
+                        row.unreadCount > 0 ? "admin-integrity-authors-table__unread" : undefined
+                      }
+                    >
                       <td>
                         <div className="admin-participants-table__identity">
                           {row.participantAvatarUrl ? (

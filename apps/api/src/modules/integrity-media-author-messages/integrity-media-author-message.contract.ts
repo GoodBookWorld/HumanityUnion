@@ -5,6 +5,10 @@ import type {
 
 const MESSAGE_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export function isIntegrityMediaAuthorMessageId(value: unknown): value is string {
+  return typeof value === "string" && MESSAGE_ID_PATTERN.test(value);
+}
 const CREATED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 export interface IntegrityMediaAuthorMessageCursor {
