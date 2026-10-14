@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, before, after, beforeEach } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -599,12 +599,11 @@ describe("Integrity Media identity confirmation", () => {
       false,
     );
     assert.equal(readRepo("apps/web/src/lib/seo/index.ts").includes("integrity-media"), false);
-    assert.equal(
-      readRepo("apps/api/src/modules/direct-conversation-calls/index.ts").includes(
-        "integrity-media",
-      ),
-      false,
-    );
+    const callModulePath = "apps/api/src/modules/direct-conversation-calls/index.ts";
+    const callModule = existsSync(path.join(repoRoot, callModulePath))
+      ? readRepo(callModulePath)
+      : "";
+    assert.equal(callModule.includes("integrity-media"), false);
     assert.equal(linkSource.includes("registerAuthUser"), false);
     assert.equal(linkSource.includes("blog.routes"), false);
     assert.equal(INTEGRITY_MEDIA_SOURCE, "integrity-media");
@@ -630,12 +629,7 @@ describe("Integrity Media identity confirmation", () => {
       ),
       false,
     );
-    assert.equal(
-      readRepo("apps/api/src/modules/direct-conversation-calls/index.ts").includes(
-        "ensureBlogAuthorCapability",
-      ),
-      false,
-    );
+    assert.equal(callModule.includes("ensureBlogAuthorCapability"), false);
     assert.equal(
       readRepo(
         "apps/api/src/modules/external-author-link/external-author-link.routes.ts",
