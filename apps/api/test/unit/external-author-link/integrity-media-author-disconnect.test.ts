@@ -28,6 +28,8 @@ import integrityMediaAuthorDisconnectRouter from "../../../src/modules/external-
 import { EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES } from "../../../src/modules/external-author-link/external-author-link.indexes.js";
 import externalAuthorLinkRouter from "../../../src/modules/external-author-link/external-author-link.routes.js";
 import {
+  buildIntegrityMediaLinkAcknowledgePayload,
+  resetIntegrityMediaAcknowledgeReplayCacheForTests,
   resetIntegrityMediaRedeemReplayCacheForTests,
   signIntegrityMediaLinkRedeem,
 } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
@@ -129,6 +131,7 @@ describe("Integrity Media author disconnect", () => {
     setExternalAuthorLinkStoreForTests(store);
     setIntegrityMediaAuthorMessageStoreForTests(messageStore);
     resetIntegrityMediaRedeemReplayCacheForTests();
+    resetIntegrityMediaAcknowledgeReplayCacheForTests();
     resetIntegrityMediaAuthorDisconnectReplayCacheForTests();
     grants = new Map();
     ensureCalls = 0;
@@ -352,9 +355,15 @@ describe("Integrity Media author disconnect", () => {
     await redeemLink(MEMBER_A, AUTHOR_A);
     const current = (await store.listLinks())[0];
     assert.ok(current);
-    const { linkRevision: _revision, ...legacy } = current;
+    const {
+      linkRevision: _revision,
+      linkFinalization: _finalization,
+      linkInstanceId: _instance,
+      ...legacy
+    } = current;
     assert.equal(await store.updateLink(legacy), "updated");
     assert.equal((await store.listLinks())[0]?.linkRevision, undefined);
+    assert.equal((await store.listLinks())[0]?.linkFinalization, undefined);
     const duplicate = await redeemLink(MEMBER_A, AUTHOR_A);
     assert.equal(duplicate.body.data?.linkRevision, 1);
     assert.equal(duplicate.body.data?.reconnected, false);
@@ -366,7 +375,12 @@ describe("Integrity Media author disconnect", () => {
     await redeemLink(MEMBER_A, AUTHOR_A);
     const current = (await store.listLinks())[0];
     assert.ok(current);
-    const { linkRevision: _revision, ...legacy } = current;
+    const {
+      linkRevision: _revision,
+      linkFinalization: _finalization,
+      linkInstanceId: _instance,
+      ...legacy
+    } = current;
     assert.equal(
       await store.updateLink({
         ...legacy,
@@ -600,6 +614,42 @@ async function redeemLink(
   });
   const body = (await response.json()) as ApiBody;
   assert.equal(response.status, 200);
+  const linkInstanceId = body.data?.linkInstanceId;
+  if (typeof linkInstanceId !== "string" || linkInstanceId.length === 0) {
+    return { status: response.status, body };
+  }
+  const eventId = randomUUID();
+  const ackTimestamp = String(Math.floor(Date.now() / 1000));
+  const externalAuthorId = String(body.data?.externalAuthorId ?? authorId);
+  const linkedMemberId = String(body.data?.memberId ?? memberId);
+  const linkRevision = Number(body.data?.linkRevision);
+  const ackSignature = signIntegrityMediaLinkRedeem(
+    SECRET,
+    buildIntegrityMediaLinkAcknowledgePayload({
+      timestamp: ackTimestamp,
+      eventId,
+      externalAuthorId,
+      memberId: linkedMemberId,
+      linkRevision,
+      linkInstanceId,
+    }),
+  );
+  const acknowledged = await fetch(`${baseUrl}/api/v1/integrity-media/link/acknowledge`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-hu-integrity-media-timestamp": ackTimestamp,
+      "x-hu-integrity-media-signature": ackSignature,
+    },
+    body: JSON.stringify({
+      eventId,
+      externalAuthorId,
+      memberId: linkedMemberId,
+      linkRevision,
+      linkInstanceId,
+    }),
+  });
+  assert.equal(acknowledged.status, 200);
   return { status: response.status, body };
 }
 

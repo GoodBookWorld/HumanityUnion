@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import {
+  INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE,
   INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE,
   INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS,
 } from "./external-author-link.constants.js";
@@ -69,4 +70,57 @@ export function noteIntegrityMediaRedeemSignature(signature: string, nowMs: numb
   }
 
   seenRedeemSignatures.set(signature, nowMs);
+}
+
+const seenAcknowledgeSignatures = new Map<string, number>();
+
+/** purpose, timestamp, eventId, externalAuthorId, memberId, linkRevision, linkInstanceId */
+export function buildIntegrityMediaLinkAcknowledgePayload(input: {
+  timestamp: string;
+  eventId: string;
+  externalAuthorId: string;
+  memberId: string;
+  linkRevision: number;
+  linkInstanceId: string;
+}): string {
+  return [
+    INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE,
+    input.timestamp,
+    input.eventId,
+    input.externalAuthorId,
+    input.memberId,
+    String(input.linkRevision),
+    input.linkInstanceId,
+  ].join("\n");
+}
+
+export function resetIntegrityMediaAcknowledgeReplayCacheForTests(): void {
+  seenAcknowledgeSignatures.clear();
+}
+
+export function hasIntegrityMediaAcknowledgeSignature(signature: string, nowMs: number): boolean {
+  const seenAt = seenAcknowledgeSignatures.get(signature);
+
+  if (seenAt === undefined) {
+    return false;
+  }
+
+  if (nowMs - seenAt > INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS * 1000) {
+    seenAcknowledgeSignatures.delete(signature);
+    return false;
+  }
+
+  return true;
+}
+
+export function noteIntegrityMediaAcknowledgeSignature(signature: string, nowMs: number): void {
+  const cutoff = nowMs - INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS * 1000;
+
+  for (const [key, seenAt] of seenAcknowledgeSignatures) {
+    if (seenAt < cutoff) {
+      seenAcknowledgeSignatures.delete(key);
+    }
+  }
+
+  seenAcknowledgeSignatures.set(signature, nowMs);
 }

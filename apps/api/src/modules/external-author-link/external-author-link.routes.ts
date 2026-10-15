@@ -5,6 +5,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveIntegrityMediaLinkConfig } from "./external-author-link.config.js";
 import {
   cancelIntegrityMediaLink,
+  acknowledgeIntegrityMediaLink,
   confirmIntegrityMediaLink,
   previewIntegrityMediaLink,
   redeemIntegrityMediaLink,
@@ -13,6 +14,13 @@ import {
 
 const CONFIRM_FIELDS = new Set(["state"]);
 const REDEEM_FIELDS = new Set(["resultCode", "externalAuthorId"]);
+const ACKNOWLEDGE_FIELDS = new Set([
+  "eventId",
+  "externalAuthorId",
+  "memberId",
+  "linkRevision",
+  "linkInstanceId",
+]);
 
 const externalAuthorLinkRouter = Router();
 
@@ -142,8 +150,51 @@ externalAuthorLinkRouter.post("/redeem", async (req, res) => {
         externalAuthorId: result.externalAuthorId,
         reconnected: result.reconnected,
         linkRevision: result.linkRevision,
+        ...(result.linkInstanceId ? { linkInstanceId: result.linkInstanceId } : {}),
       },
       "Integrity Media link redeemed.",
+    ),
+  );
+});
+
+externalAuthorLinkRouter.post("/acknowledge", async (req, res) => {
+  const body = readObject(req);
+  const unexpected = unexpectedField(body, ACKNOWLEDGE_FIELDS) ?? unexpectedQuery(req, new Set());
+
+  if (!body || unexpected) {
+    sendFailure(res, 400, "The acknowledgement request is not valid.", "invalid_request");
+    return;
+  }
+
+  const config = resolveIntegrityMediaLinkConfig();
+  const result = await acknowledgeIntegrityMediaLink({
+    eventId: typeof body.eventId === "string" ? body.eventId : "",
+    externalAuthorId: typeof body.externalAuthorId === "string" ? body.externalAuthorId : "",
+    memberId: typeof body.memberId === "string" ? body.memberId : "",
+    linkRevision: typeof body.linkRevision === "number" ? body.linkRevision : Number.NaN,
+    linkInstanceId: typeof body.linkInstanceId === "string" ? body.linkInstanceId : "",
+    timestamp: headerValue(req, "x-hu-integrity-media-timestamp"),
+    signature: headerValue(req, "x-hu-integrity-media-signature"),
+    secret: config.hmacSecret,
+  });
+
+  if (!result.ok) {
+    sendFailure(res, result.status, result.message, result.code);
+    return;
+  }
+
+  res.json(
+    createSuccessResponse(
+      {
+        source: result.source,
+        externalAuthorId: result.externalAuthorId,
+        memberId: result.memberId,
+        linkRevision: result.linkRevision,
+        linkInstanceId: result.linkInstanceId,
+        finalization: result.finalization,
+        idempotent: result.idempotent,
+      },
+      "Integrity Media link acknowledged.",
     ),
   );
 });

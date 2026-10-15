@@ -4,6 +4,13 @@ export type IntegrityMediaSource = typeof INTEGRITY_MEDIA_SOURCE;
 
 export type ExternalAuthorLinkState = "linked" | "disabled";
 
+/**
+ * Finalization of a link created under the acknowledgement protocol.
+ * Absent on rows stored before the protocol. Absence is legacy unknown:
+ * those rows keep their existing operational behavior and are not migrated.
+ */
+export type ExternalAuthorLinkFinalization = "provisional" | "confirmed";
+
 /** HU↔IM collaboration control. Distinct from link state and author setup. */
 export type IntegrityMediaCollaborationStatus = "active" | "blocked" | "archived";
 
@@ -35,6 +42,13 @@ export interface ExternalAuthorLinkRecord {
    * never resets it.
    */
   linkRevision?: number;
+  /**
+   * Server-minted id of this link instance. A reconnect of a protocol row
+   * mints another one. Absent on legacy rows.
+   */
+  linkInstanceId?: string;
+  /** Absent on legacy rows. Those rows are not provisional and are not backfilled. */
+  linkFinalization?: ExternalAuthorLinkFinalization;
 }
 
 export interface ExternalAuthorLinkResultRecord {
@@ -57,7 +71,8 @@ export type ExternalAuthorLinkAuditAction =
   | "author_capability_failed"
   | "author_activation_pending"
   | "author_capability_recovered"
-  | "integrity_media_disconnect_accepted";
+  | "integrity_media_disconnect_accepted"
+  | "link_acknowledged";
 
 export interface ExternalAuthorLinkAuditRecord {
   eventId: string;

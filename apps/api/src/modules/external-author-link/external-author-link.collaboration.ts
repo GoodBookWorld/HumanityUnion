@@ -1,4 +1,5 @@
 import type {
+  ExternalAuthorLinkFinalization,
   ExternalAuthorLinkState,
   IntegrityMediaCollaborationStatus,
 } from "./external-author-link.types.js";
@@ -23,17 +24,19 @@ export function resolveIntegrityMediaCollaborationStatus(link: {
 
 /**
  * Ordinary HU→IM collaboration. Identity link and author setup stay separate:
- * this is false while the link is disabled, setup is pending, or collaboration
- * is blocked or archived.
+ * this is false while the link is disabled, provisional, setup is pending, or
+ * collaboration is blocked or archived. A missing finalization field stays allowed.
  */
 export function isOrdinaryIntegrityMediaCollaborationAllowed(link: {
   state: ExternalAuthorLinkState;
   authorActivationPending?: boolean;
   collaborationStatus?: IntegrityMediaCollaborationStatus | null;
+  linkFinalization?: ExternalAuthorLinkFinalization | null;
 }): boolean {
   return (
     link.state === "linked" &&
     link.authorActivationPending !== true &&
+    link.linkFinalization !== "provisional" &&
     resolveIntegrityMediaCollaborationStatus(link) === "active"
   );
 }

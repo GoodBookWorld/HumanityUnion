@@ -23,9 +23,12 @@ import {
   revisionForReconnect,
 } from "./external-author-link.revision.js";
 import {
+  buildIntegrityMediaLinkAcknowledgePayload,
   buildIntegrityMediaLinkRedeemPayload,
+  hasIntegrityMediaAcknowledgeSignature,
   hasIntegrityMediaRedeemSignature,
   integrityMediaLinkSignaturesEqual,
+  noteIntegrityMediaAcknowledgeSignature,
   noteIntegrityMediaRedeemSignature,
   signIntegrityMediaLinkRedeem,
 } from "./external-author-link.hmac.js";
@@ -73,6 +76,18 @@ export interface IntegrityMediaRedeemSuccess {
   externalAuthorId: string;
   reconnected: boolean;
   linkRevision: number;
+  linkInstanceId?: string;
+}
+
+export interface IntegrityMediaAcknowledgeSuccess {
+  ok: true;
+  source: typeof INTEGRITY_MEDIA_SOURCE;
+  externalAuthorId: string;
+  memberId: string;
+  linkRevision: number;
+  linkInstanceId: string;
+  finalization: "confirmed";
+  idempotent: boolean;
 }
 
 type DisplayNameResolver = (memberId: string, email: string) => Promise<string>;
@@ -169,8 +184,13 @@ async function findOperationalAuthorLink(
 export function isIntegrityMediaAuthorLinkOperational(link: {
   state: ExternalAuthorLinkRecord["state"];
   authorActivationPending?: boolean;
+  linkFinalization?: ExternalAuthorLinkRecord["linkFinalization"];
 }): boolean {
-  return link.state === "linked" && link.authorActivationPending !== true;
+  return (
+    link.state === "linked" &&
+    link.authorActivationPending !== true &&
+    link.linkFinalization !== "provisional"
+  );
 }
 
 export async function previewIntegrityMediaLink(input: {
@@ -397,6 +417,41 @@ export async function redeemIntegrityMediaLink(input: {
     return failure(409, established.conflict, conflictMessage(established.conflict));
   }
 
+  const stored = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
+  if (
+    stored &&
+    stored.memberId === claimed.record.memberId &&
+    isProtocolLink(stored)
+  ) {
+    const linkRevision = assignedLinkRevision(stored.linkRevision);
+    if (linkRevision === null || !stored.linkInstanceId) {
+      return failure(
+        503,
+        "revision_unavailable",
+        "Integrity Media connection generation is not available.",
+      );
+    }
+
+    await recordAudit(store, {
+      action: "result_redeemed",
+      memberId: stored.memberId,
+      externalAuthorId: stored.externalAuthorId,
+      attemptState: claimed.record.attemptState,
+      reason: established.reason,
+      now,
+    });
+
+    return {
+      ok: true,
+      memberId: stored.memberId,
+      source: INTEGRITY_MEDIA_SOURCE,
+      externalAuthorId: stored.externalAuthorId,
+      reconnected: established.reconnected,
+      linkRevision,
+      linkInstanceId: stored.linkInstanceId,
+    };
+  }
+
   const activated = await ensureProvenBlogAuthor(claimed.record.memberId);
 
   if (!activated.ok) {
@@ -506,6 +561,10 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
 
   if (!link) {
     return failure(404, "link_not_found", "No proven Integrity Media author link exists.");
+  }
+
+  if (link.linkFinalization === "provisional") {
+    return failure(409, "link_provisional", "This Integrity Media link is not confirmed.");
   }
 
   if (link.state === "disabled") {
@@ -653,7 +712,10 @@ async function establishLink(
   if (decision.existing) {
     if (decision.existing.state !== "disabled") {
       const linkRevision = revisionForDuplicateRedeem(decision.existing.linkRevision);
-      if (assignedLinkRevision(decision.existing.linkRevision) === null) {
+      if (
+        !isProtocolLink(decision.existing) &&
+        assignedLinkRevision(decision.existing.linkRevision) === null
+      ) {
         const materialized = await store.updateLink({
           ...decision.existing,
           linkRevision,
@@ -668,6 +730,7 @@ async function establishLink(
     }
 
     const linkRevision = revisionForReconnect(decision.existing.linkRevision);
+    const protocolReconnect = isProtocolLink(decision.existing);
     const updated = await store.updateLink({
       ...decision.existing,
       state: "linked",
@@ -676,6 +739,14 @@ async function establishLink(
       updatedAt: input.now.toISOString(),
       collaborationStatus: resolveIntegrityMediaCollaborationStatus(decision.existing),
       linkRevision,
+      ...(protocolReconnect
+        ? {
+            linkFinalization: "provisional" as const,
+            linkInstanceId: randomUUID(),
+            authorActivationPending: false,
+            authorActivationAttemptAt: null,
+          }
+        : {}),
     });
 
     if (updated !== "updated") {
@@ -697,6 +768,8 @@ async function establishLink(
     disconnectedAt: null,
     collaborationStatus: "active",
     linkRevision,
+    linkFinalization: "provisional",
+    linkInstanceId: randomUUID(),
   };
   const inserted = await store.insertLink(record);
 
@@ -784,6 +857,188 @@ async function recordAudit(
 
 function hashAttemptState(attemptState: string): string {
   return createHash("sha256").update(attemptState).digest("hex");
+}
+
+function isProtocolLink(link: ExternalAuthorLinkRecord): boolean {
+  return link.linkFinalization === "provisional" || link.linkFinalization === "confirmed";
+}
+
+export async function acknowledgeIntegrityMediaLink(input: {
+  eventId: string;
+  externalAuthorId: string;
+  memberId: string;
+  linkRevision: number;
+  linkInstanceId: string;
+  timestamp: string;
+  signature: string;
+  secret: string | null;
+  now?: Date;
+}): Promise<IntegrityMediaAcknowledgeSuccess | IntegrityMediaLinkFailure> {
+  if (
+    !INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(input.eventId) ||
+    !INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(input.externalAuthorId) ||
+    !INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(input.memberId) ||
+    !INTEGRITY_MEDIA_AUTHOR_ID_PATTERN.test(input.linkInstanceId) ||
+    !Number.isInteger(input.linkRevision) ||
+    input.linkRevision < 1 ||
+    !/^\d{10}$/.test(input.timestamp)
+  ) {
+    return failure(400, "invalid_request", "The acknowledgement request is not valid.");
+  }
+
+  if (!input.secret) {
+    return failure(503, "unavailable", "Integrity Media acknowledgement is not configured.");
+  }
+
+  const now = input.now ?? new Date();
+  const expected = signIntegrityMediaLinkRedeem(
+    input.secret,
+    buildIntegrityMediaLinkAcknowledgePayload({
+      timestamp: input.timestamp,
+      eventId: input.eventId,
+      externalAuthorId: input.externalAuthorId,
+      memberId: input.memberId,
+      linkRevision: input.linkRevision,
+      linkInstanceId: input.linkInstanceId,
+    }),
+  );
+
+  if (!integrityMediaLinkSignaturesEqual(expected, input.signature)) {
+    return failure(401, "invalid_signature", "The acknowledgement signature is not valid.");
+  }
+
+  const timestampSeconds = Number(input.timestamp);
+  const nowSeconds = Math.floor(now.getTime() / 1000);
+  if (Math.abs(nowSeconds - timestampSeconds) > INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS) {
+    return failure(401, "stale_timestamp", "The acknowledgement timestamp is outside the allowed window.");
+  }
+
+  if (hasIntegrityMediaAcknowledgeSignature(input.signature, now.getTime())) {
+    return failure(401, "replayed", "This acknowledgement request was already used.");
+  }
+
+  noteIntegrityMediaAcknowledgeSignature(input.signature, now.getTime());
+
+  const store = getExternalAuthorLinkStore();
+  const confirmed = await store.compareAndConfirmLink({
+    source: INTEGRITY_MEDIA_SOURCE,
+    externalAuthorId: input.externalAuthorId,
+    memberId: input.memberId,
+    linkRevision: input.linkRevision,
+    linkInstanceId: input.linkInstanceId,
+    nowIso: now.toISOString(),
+  });
+
+  if (confirmed.status === "missing") {
+    return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
+  }
+
+  if (confirmed.status === "legacy") {
+    return failure(
+      409,
+      "acknowledgement_unavailable",
+      "This Integrity Media link has no acknowledgement state.",
+    );
+  }
+
+  if (confirmed.status === "mismatch") {
+    return failure(
+      409,
+      "acknowledgement_mismatch",
+      "This acknowledgement does not match the Integrity Media link.",
+    );
+  }
+
+  if (confirmed.status === "disabled") {
+    return failure(409, "link_disabled", "This Integrity Media author link is disconnected.");
+  }
+
+  if (confirmed.status === "confirmed") {
+    await recordAudit(store, {
+      action: "link_acknowledged",
+      memberId: confirmed.record.memberId,
+      externalAuthorId: confirmed.record.externalAuthorId,
+      attemptState: null,
+      reason: "confirmed",
+      now,
+    });
+  }
+
+  const granted = await grantBlogAuthorForConfirmedLink(store, confirmed.record, now);
+  if (!granted.ok) {
+    return granted;
+  }
+
+  return {
+    ok: true,
+    source: INTEGRITY_MEDIA_SOURCE,
+    externalAuthorId: confirmed.record.externalAuthorId,
+    memberId: confirmed.record.memberId,
+    linkRevision: input.linkRevision,
+    linkInstanceId: input.linkInstanceId,
+    finalization: "confirmed",
+    idempotent: confirmed.status === "already_confirmed",
+  };
+}
+
+async function grantBlogAuthorForConfirmedLink(
+  store: ExternalAuthorLinkStore,
+  link: ExternalAuthorLinkRecord,
+  now: Date,
+): Promise<{ ok: true } | IntegrityMediaLinkFailure> {
+  const activated = await ensureProvenBlogAuthor(link.memberId);
+
+  if (!activated.ok) {
+    await setAuthorActivationPending(store, {
+      externalAuthorId: link.externalAuthorId,
+      memberId: link.memberId,
+      pending: true,
+      now,
+    });
+    await recordAudit(store, {
+      action: "author_capability_failed",
+      memberId: link.memberId,
+      externalAuthorId: link.externalAuthorId,
+      attemptState: null,
+      reason: "author_setup_pending",
+      now,
+    });
+    if (link.authorActivationPending !== true) {
+      await recordAudit(store, {
+        action: "author_activation_pending",
+        memberId: link.memberId,
+        externalAuthorId: link.externalAuthorId,
+        attemptState: null,
+        reason: "author_setup_pending",
+        now,
+      });
+    }
+    return failure(
+      503,
+      "author_setup_pending",
+      "Integrity Media author setup is still finishing.",
+    );
+  }
+
+  await setAuthorActivationPending(store, {
+    externalAuthorId: link.externalAuthorId,
+    memberId: link.memberId,
+    pending: false,
+    now,
+  });
+
+  if (activated.capability.changed) {
+    await recordAudit(store, {
+      action: "author_capability_ensured",
+      memberId: link.memberId,
+      externalAuthorId: link.externalAuthorId,
+      attemptState: null,
+      reason: "author",
+      now,
+    });
+  }
+
+  return { ok: true };
 }
 
 function isSessionMemberId(memberId: string): boolean {

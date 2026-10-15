@@ -4,6 +4,12 @@ export const INTEGRITY_MEDIA_SOURCE = "integrity-media" as const;
 /** Domain separation: a link-completion signature cannot authorize publication delivery. */
 export const INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE = "integrity-media-link-redeem";
 
+/**
+ * Domain separation: an acknowledgement cannot redeem, disconnect, reply, or release.
+ * Integrity Media sends it only after its own connected write.
+ */
+export const INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE = "integrity-media-link-acknowledge";
+
 /** Domain separation: an IM disconnect signature cannot redeem a link or send a message. */
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE = "integrity-media-author-disconnect";
 
