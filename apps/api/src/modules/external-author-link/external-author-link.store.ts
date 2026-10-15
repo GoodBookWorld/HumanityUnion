@@ -60,6 +60,25 @@ export interface ExternalAuthorLinkStore {
     linkRevision: number;
     nowIso: string;
   }): Promise<"disabled" | "stale" | "missing">;
+  /**
+   * Move one linked provisional instance to confirmed, or report that the
+   * same linked instance is already confirmed. A disabled row is unchanged.
+   */
+  compareAndConfirmLink(input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    externalAuthorId: string;
+    memberId: string;
+    linkRevision: number;
+    linkInstanceId: string;
+    nowIso: string;
+  }): Promise<
+    | { status: "confirmed"; record: ExternalAuthorLinkRecord }
+    | { status: "already_confirmed"; record: ExternalAuthorLinkRecord }
+    | { status: "missing" }
+    | { status: "mismatch" }
+    | { status: "legacy" }
+    | { status: "disabled" }
+  >;
   claimNextPendingAuthorActivation(input: {
     source: typeof INTEGRITY_MEDIA_SOURCE;
     nowIso: string;
@@ -191,6 +210,32 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         byAuthor.set(authorKey, stored);
         byMember.set(linkKey(input.source, input.memberId), stored);
         return "disabled" as const;
+      });
+    },
+
+    async compareAndConfirmLink(input) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const authorKey = linkKey(input.source, input.externalAuthorId);
+        const current = byAuthor.get(authorKey);
+        if (!current) {
+          return { status: "missing" as const };
+        }
+
+        const decision = classifyConfirmCandidate(current, input);
+        if (decision !== "provisional") {
+          return decision === "already_confirmed"
+            ? { status: "already_confirmed" as const, record: copyLink(current)! }
+            : { status: decision };
+        }
+
+        const stored: ExternalAuthorLinkRecord = {
+          ...current,
+          linkFinalization: "confirmed",
+          updatedAt: input.nowIso,
+        };
+        byAuthor.set(authorKey, stored);
+        byMember.set(linkKey(input.source, input.memberId), stored);
+        return { status: "confirmed" as const, record: copyLink(stored)! };
       });
     },
 
@@ -387,6 +432,46 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       });
     },
 
+    async compareAndConfirmLink(input) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const updated = await links().findOneAndUpdate(
+          {
+            source: input.source,
+            externalAuthorId: input.externalAuthorId,
+            memberId: input.memberId,
+            linkRevision: input.linkRevision,
+            linkInstanceId: input.linkInstanceId,
+            state: "linked",
+            linkFinalization: "provisional",
+          },
+          { $set: { linkFinalization: "confirmed", updatedAt: input.nowIso } },
+          { returnDocument: "after" },
+        );
+        if (updated) {
+          return { status: "confirmed" as const, record: withoutId(updated) };
+        }
+
+        const current = await links().findOne({
+          source: input.source,
+          externalAuthorId: input.externalAuthorId,
+        });
+        if (!current) {
+          return { status: "missing" as const };
+        }
+
+        const decision = classifyConfirmCandidate(withoutId(current), input);
+        if (decision === "already_confirmed") {
+          return { status: "already_confirmed" as const, record: withoutId(current) };
+        }
+
+        if (decision === "legacy" || decision === "mismatch" || decision === "disabled") {
+          return { status: decision };
+        }
+
+        return { status: "mismatch" as const };
+      });
+    },
+
     async holdAuthorReplyLink(input) {
       const updated = await links().findOneAndUpdate(
         authorReplyLinkFilter(input),
@@ -533,6 +618,7 @@ function pendingAuthorActivationFilter(
     source,
     state: "linked" as const,
     authorActivationPending: true,
+    linkFinalization: { $ne: "provisional" as const },
     $or: [
       { authorActivationAttemptAt: null },
       { authorActivationAttemptAt: { $exists: false } },
@@ -546,7 +632,12 @@ function isPendingAuthorActivationEligible(
   source: typeof INTEGRITY_MEDIA_SOURCE,
   eligibleBeforeIso: string,
 ): boolean {
-  if (record.source !== source || record.state !== "linked" || record.authorActivationPending !== true) {
+  if (
+    record.source !== source ||
+    record.state !== "linked" ||
+    record.authorActivationPending !== true ||
+    record.linkFinalization === "provisional"
+  ) {
     return false;
   }
 
@@ -665,6 +756,8 @@ function linkUpdateFields(record: ExternalAuthorLinkRecord): {
   authorActivationAttemptAt: string | null;
   collaborationStatus?: ExternalAuthorLinkRecord["collaborationStatus"];
   linkRevision?: number;
+  linkFinalization?: ExternalAuthorLinkRecord["linkFinalization"];
+  linkInstanceId?: string;
 } {
   return {
     state: record.state,
@@ -679,7 +772,41 @@ function linkUpdateFields(record: ExternalAuthorLinkRecord): {
     record.linkRevision >= 1
       ? { linkRevision: record.linkRevision }
       : {}),
+    ...(record.linkFinalization ? { linkFinalization: record.linkFinalization } : {}),
+    ...(record.linkInstanceId ? { linkInstanceId: record.linkInstanceId } : {}),
   };
+}
+
+function classifyConfirmCandidate(
+  current: ExternalAuthorLinkRecord,
+  input: {
+    source: typeof INTEGRITY_MEDIA_SOURCE;
+    externalAuthorId: string;
+    memberId: string;
+    linkRevision: number;
+    linkInstanceId: string;
+  },
+): "provisional" | "already_confirmed" | "legacy" | "mismatch" | "disabled" {
+  if (current.linkFinalization !== "provisional" && current.linkFinalization !== "confirmed") {
+    return "legacy";
+  }
+
+  const revision = assignedLinkRevision(current.linkRevision);
+  if (
+    current.source !== input.source ||
+    current.externalAuthorId !== input.externalAuthorId ||
+    current.memberId !== input.memberId ||
+    revision !== input.linkRevision ||
+    current.linkInstanceId !== input.linkInstanceId
+  ) {
+    return "mismatch";
+  }
+
+  if (current.state !== "linked") {
+    return "disabled";
+  }
+
+  return current.linkFinalization === "confirmed" ? "already_confirmed" : "provisional";
 }
 
 function authorReplyLinkIsEligible(
@@ -707,6 +834,7 @@ function authorReplyLinkFilter(input: {
     state: "linked",
     linkRevision: input.linkRevision,
     authorActivationPending: { $ne: true },
+    linkFinalization: { $ne: "provisional" as const },
     $or: [
       { collaborationStatus: "active" },
       { collaborationStatus: { $exists: false } },

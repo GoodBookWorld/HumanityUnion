@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -37,8 +37,10 @@ import {
   stopIntegrityMediaAuthorActivationScheduler,
 } from "../../../src/modules/external-author-link/external-author-link.scheduler.js";
 import {
+  buildIntegrityMediaLinkAcknowledgePayload,
   buildIntegrityMediaLinkRedeemPayload,
   integrityMediaLinkSignaturesEqual,
+  resetIntegrityMediaAcknowledgeReplayCacheForTests,
   resetIntegrityMediaRedeemReplayCacheForTests,
   signIntegrityMediaLinkRedeem,
 } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
@@ -125,6 +127,7 @@ describe("Integrity Media identity confirmation", () => {
     store = createMemoryExternalAuthorLinkStore();
     setExternalAuthorLinkStoreForTests(store);
     resetIntegrityMediaRedeemReplayCacheForTests();
+    resetIntegrityMediaAcknowledgeReplayCacheForTests();
     setIntegrityMediaDisplayNameResolverForTests(async (memberId) => `Profile ${memberId}`);
     grants = new Map();
     grantWrites = 0;
@@ -660,12 +663,23 @@ describe("Integrity Media identity confirmation", () => {
   it("establishes the durable link and Blog author capability on first redemption", async () => {
     const postsBefore = structuredClone(blogPosts);
     const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
-    const grant = grants.get(MEMBER_A);
-    const link = (await store.listLinks())[0];
+    const provisional = (await store.listLinks())[0];
 
     assert.equal(redeemed.status, 200);
     assert.equal(redeemed.body.success, true);
+    assert.equal(typeof redeemed.body.data?.linkInstanceId, "string");
+    assert.equal(provisional?.linkFinalization, "provisional");
+    assert.equal(isIntegrityMediaAuthorLinkOperational(provisional!), false);
+    assert.equal(grants.size, 0);
+
+    const acknowledged = await acknowledgeBody(redeemed.body);
+    const grant = grants.get(MEMBER_A);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(acknowledged.status, 200);
+    assert.equal(acknowledged.body.data?.idempotent, false);
     assert.equal(link?.state, "linked");
+    assert.equal(link?.linkFinalization, "confirmed");
     assert.equal(link?.memberId, MEMBER_A);
     assert.equal(link?.externalAuthorId, AUTHOR_A);
     assert.deepEqual(grant?.capabilities, ["author"]);
@@ -691,7 +705,7 @@ describe("Integrity Media identity confirmation", () => {
   });
 
   it("gives an ordinary member only Blog author and no stronger publishing power", async () => {
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     const grant = grants.get(MEMBER_A);
     const capabilities = new Set(grant?.capabilities ?? []);
 
@@ -718,8 +732,10 @@ describe("Integrity Media identity confirmation", () => {
     grants.set(MEMBER_A, existing);
 
     const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const acknowledged = await acknowledgeBody(redeemed.body);
 
     assert.equal(redeemed.status, 200);
+    assert.equal(acknowledged.status, 200);
     assert.equal(grants.get(MEMBER_A), existing);
     assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["editor"]);
     assert.equal(grants.get(MEMBER_A)?.publishWithoutManualReview, true);
@@ -733,7 +749,8 @@ describe("Integrity Media identity confirmation", () => {
 
   it("repeats redemption and reconnect without another grant or identity change", async () => {
     const postsBefore = structuredClone(blogPosts);
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const firstRedeem = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody(firstRedeem.body);
     const firstLink = (await store.listLinks())[0];
     const again = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
 
@@ -745,11 +762,15 @@ describe("Integrity Media identity confirmation", () => {
 
     const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
     const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const reacknowledged = await acknowledgeBody(reconnect.body);
     const link = (await store.listLinks())[0];
 
     assert.equal(disabled, "disabled");
     assert.equal(reconnect.status, 200);
     assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal(reacknowledged.status, 200);
+    assert.notEqual(link?.linkInstanceId, firstLink?.linkInstanceId);
+    assert.equal(link?.linkFinalization, "confirmed");
     assert.equal(link?.memberId, firstLink?.memberId);
     assert.equal(link?.externalAuthorId, firstLink?.externalAuthorId);
     assert.equal(link?.state, "linked");
@@ -764,7 +785,7 @@ describe("Integrity Media identity confirmation", () => {
   });
 
   it("keeps a different-member conflict from granting or remapping", async () => {
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     const conflict = await redeem(await confirmCode(MEMBER_B), AUTHOR_A);
 
     assert.equal(conflict.status, 409);
@@ -787,6 +808,7 @@ describe("Integrity Media identity confirmation", () => {
     });
     const signature = signIntegrityMediaLinkRedeem(SECRET, payload);
     const redeemed = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const acknowledged = await acknowledgeBody(redeemed.body);
     const replay = await redeem(code, AUTHOR_A, { timestamp, signature });
     const reusedResult = await redeem(code, AUTHOR_A, {
       timestamp: String(Number(timestamp) + 1),
@@ -796,6 +818,7 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal((await store.listResults()).length, 1);
     assert.equal(redeemed.status, 200);
     assert.equal(redeemed.body.success, true);
+    assert.equal(acknowledged.status, 200);
     assert.equal(link?.memberId, MEMBER_A);
     assert.equal(link?.externalAuthorId, AUTHOR_A);
     assert.equal(link?.authorActivationPending === true, false);
@@ -833,7 +856,8 @@ describe("Integrity Media identity confirmation", () => {
       externalAuthorId: AUTHOR_A,
     });
     const signature = signIntegrityMediaLinkRedeem(SECRET, payload);
-    const pending = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const redeemed = await redeem(code, AUTHOR_A, { timestamp, signature });
+    const pending = await acknowledgeBody(redeemed.body);
     const pendingAudits = await store.listAudits();
     const pendingSerialized = JSON.stringify(pendingAudits);
     const tampered = await redeem(code, AUTHOR_A, { timestamp, signature: "0".repeat(64) });
@@ -861,7 +885,7 @@ describe("Integrity Media identity confirmation", () => {
     );
     assert.equal(
       pendingAudits.some((event) => event.action === "result_redeemed"),
-      false,
+      true,
     );
     assert.equal(pendingSerialized.includes(code), false);
     assert.equal(pendingSerialized.includes(SECRET), false);
@@ -911,7 +935,8 @@ describe("Integrity Media identity confirmation", () => {
 
   it("does not report success while automatic author recovery is still pending", async () => {
     ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS * 2;
-    const pending = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const pending = await acknowledgeBody(redeemed.body);
     const recovered = await recoverProvenIntegrityMediaAuthorLink({
       externalAuthorId: AUTHOR_A,
     });
@@ -931,7 +956,7 @@ describe("Integrity Media identity confirmation", () => {
     assert.equal((await store.listLinks())[0]?.memberId, MEMBER_A);
     assert.equal(audits.filter((event) => event.action === "author_capability_failed").length, 2);
     assert.equal(audits.filter((event) => event.action === "author_activation_pending").length, 1);
-    assert.equal(audits.some((event) => event.action === "result_redeemed"), false);
+    assert.equal(audits.some((event) => event.action === "result_redeemed"), true);
     assert.equal(audits.some((event) => event.action === "author_capability_recovered"), false);
     assert.equal(audits.some((event) => event.action === "author_capability_ensured"), false);
   });
@@ -939,9 +964,11 @@ describe("Integrity Media identity confirmation", () => {
   it("recovers two transient author-setup failures inside the original redemption", async () => {
     ensureFailuresRemaining = 2;
     const redeemed = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    const acknowledged = await acknowledgeBody(redeemed.body);
 
     assert.equal(redeemed.status, 200);
-    assert.equal(redeemed.body.success, true);
+    assert.equal(acknowledged.status, 200);
+    assert.equal(acknowledged.body.success, true);
     assert.equal(ensureCalls, 3);
     assert.equal(grantWrites, 1);
     assert.deepEqual(grants.get(MEMBER_A)?.capabilities, ["author"]);
@@ -952,7 +979,8 @@ describe("Integrity Media identity confirmation", () => {
     ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
     const postsBefore = structuredClone(blogPosts);
     const code = await confirmCode(MEMBER_A);
-    const pending = await redeem(code, AUTHOR_A);
+    const redeemed = await redeem(code, AUTHOR_A);
+    const pending = await acknowledgeBody(redeemed.body);
     const pair = (await store.listLinks())[0];
     const tooSoon = await reconcilePendingIntegrityMediaAuthorActivations({
       now: new Date(),
@@ -997,7 +1025,7 @@ describe("Integrity Media identity confirmation", () => {
 
   it("leaves a failed reconciliation pending for a later automatic attempt", async () => {
     ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS * 2;
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
     const failed = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
     const immediate = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
@@ -1026,7 +1054,7 @@ describe("Integrity Media identity confirmation", () => {
 
   it("lets only one overlapping reconciliation write the author grant", async () => {
     ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     ensureDelayMs = 40;
     const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
     const [first, second] = await Promise.all([
@@ -1045,7 +1073,7 @@ describe("Integrity Media identity confirmation", () => {
   it("does not activate a disconnected pending link and resumes on reconnect", async () => {
     ensureFailuresRemaining = INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS;
     const postsBefore = structuredClone(blogPosts);
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
     const later = new Date(Date.now() + INTEGRITY_MEDIA_AUTHOR_ACTIVATION_RECONCILE_BACKOFF_MS + 1000);
     const skipped = await reconcilePendingIntegrityMediaAuthorActivations({ now: later });
@@ -1059,11 +1087,17 @@ describe("Integrity Media identity confirmation", () => {
     assert.deepEqual(blogPosts, postsBefore);
 
     const reconnect = await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
-    const link = (await store.listLinks())[0];
-
     assert.equal(reconnect.status, 200);
     assert.equal(reconnect.body.data?.reconnected, true);
+    assert.equal((await store.listLinks())[0]?.linkFinalization, "provisional");
+    assert.equal(isIntegrityMediaAuthorLinkOperational((await store.listLinks())[0]!), false);
+
+    const acknowledged = await acknowledgeBody(reconnect.body);
+    const link = (await store.listLinks())[0];
+
+    assert.equal(acknowledged.status, 200);
     assert.equal(link?.state, "linked");
+    assert.equal(link?.linkFinalization, "confirmed");
     assert.equal(link?.memberId, MEMBER_A);
     assert.equal(link?.externalAuthorId, AUTHOR_A);
     assert.equal(link?.authorActivationPending, false);
@@ -1085,7 +1119,7 @@ describe("Integrity Media identity confirmation", () => {
 
   it("leaves the Blog author capability in place when the link is disconnected", async () => {
     const postsBefore = structuredClone(blogPosts);
-    await redeem(await confirmCode(MEMBER_A), AUTHOR_A);
+    await acknowledgeBody((await redeem(await confirmCode(MEMBER_A), AUTHOR_A)).body);
     const disabled = await disableIntegrityMediaAuthorLink(AUTHOR_A);
 
     assert.equal(disabled, "disabled");
@@ -1217,6 +1251,42 @@ async function redeem(
     "x-hu-integrity-media-timestamp": timestamp,
     "x-hu-integrity-media-signature": signature,
   });
+}
+
+async function acknowledgeBody(
+  body: ApiBody,
+  override: { timestamp?: string; signature?: string; eventId?: string } = {},
+): Promise<{ status: number; body: ApiBody }> {
+  const data = body.data ?? {};
+  const eventId = override.eventId ?? randomUUID();
+  const timestamp = override.timestamp ?? String(Math.floor(Date.now() / 1000));
+  const externalAuthorId = String(data.externalAuthorId ?? "");
+  const memberId = String(data.memberId ?? "");
+  const linkRevision = Number(data.linkRevision);
+  const linkInstanceId = String(data.linkInstanceId ?? "");
+  const signature =
+    override.signature ??
+    signIntegrityMediaLinkRedeem(
+      SECRET,
+      buildIntegrityMediaLinkAcknowledgePayload({
+        timestamp,
+        eventId,
+        externalAuthorId,
+        memberId,
+        linkRevision,
+        linkInstanceId,
+      }),
+    );
+
+  return post(
+    "/acknowledge",
+    { eventId, externalAuthorId, memberId, linkRevision, linkInstanceId },
+    undefined,
+    {
+      "x-hu-integrity-media-timestamp": timestamp,
+      "x-hu-integrity-media-signature": signature,
+    },
+  );
 }
 
 async function redeemAtTime(code: string, authorId: string, now: Date) {
