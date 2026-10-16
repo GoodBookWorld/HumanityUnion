@@ -257,10 +257,7 @@ describe("Diagnostics Pack 01 — Mongo / Email / Outbox / Integrity rendering h
     const lifecycle = snapshot.integrity.find((row) => row.id === "lifecycle-reconciliation");
     assert.equal(lifecycle?.status, "not_available");
     assert.match(lifecycle?.summary ?? "", /CLI-only/);
-    assert.equal(
-      formatDiagnosticSeverityLabel("not_available"),
-      "Not available",
-    );
+    assert.equal(formatDiagnosticSeverityLabel("not_available"), "Not available");
   });
 
   it("treats lifecycle not_available as neutral (excluded from overall health)", () => {
@@ -294,11 +291,15 @@ describe("Diagnostics Pack 01 — Mongo / Email / Outbox / Integrity rendering h
 
 describe("Diagnostics Pack 01 — refresh and read-only safety", () => {
   it("refresh only uses read-only health endpoints", () => {
-    assert.deepEqual([...DIAGNOSTICS_READ_ONLY_PATHS], [
-      "/api/v1/admin/diagnostics/health",
-      "/api/v1/health/ready",
-      "/api/v1/admin/initiatives",
-    ]);
+    assert.deepEqual(
+      [...DIAGNOSTICS_READ_ONLY_PATHS],
+      [
+        "/api/v1/admin/diagnostics/health",
+        "/api/v1/admin/diagnostics/outbox-failures",
+        "/api/v1/health/ready",
+        "/api/v1/admin/initiatives",
+      ],
+    );
 
     const api = readWeb("features/administration/admin-diagnostics-api.ts");
     const section = readWeb("features/administration/components/AdminDiagnosticsSection.tsx");
@@ -313,7 +314,10 @@ describe("Diagnostics Pack 01 — refresh and read-only safety", () => {
 
   it("does not expose destructive outbox or email actions", () => {
     const section = readWeb("features/administration/components/AdminDiagnosticsSection.tsx");
-    assert.doesNotMatch(section, /retryAll|retry-all|onRetry|onPurge|onReplay|markPublished|Send test email/i);
+    assert.doesNotMatch(
+      section,
+      /retryAll|retry-all|onRetry|onPurge|onReplay|markPublished|Send test email/i,
+    );
     assert.doesNotMatch(section, /MONGODB_URI|SMTP_PASSWORD|API_KEY|connectionString/i);
     assert.doesNotMatch(section, /method:\s*"(POST|DELETE|PATCH|PUT)"/);
   });

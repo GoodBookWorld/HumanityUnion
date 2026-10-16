@@ -8,20 +8,27 @@ import { resolvePlatformMode } from "../../config/platform.config.js";
 import { checkMongoConnection } from "../../infrastructure/mongodb/mongo-health.js";
 import { getOutboxHealthStatus } from "../../infrastructure/outbox/outbox.dispatcher.js";
 import {
-  AdministrationForbiddenError,
-  AdministrationUnauthorizedError,
-} from "../administration/administration.errors.js";
+  findFailedOutboxEnqueueBounds,
+  scanOldestFailedOutboxRows,
+} from "../../infrastructure/outbox/outbox.repository.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
+import { buildPlatformReadinessChecklist } from "../closed-beta/closed-beta.service.js";
 import { getEmailProviderHealth } from "../email/email.service.js";
+import {
+  assertAdminDiagnosticsActor,
+  assessAdminDiagnosticsHealth,
+  type AdminDiagnosticsDegradedReason,
+  type EmailUnhealthyReason,
+} from "./admin-diagnostics-root-cause.js";
+import {
+  assembleAdminOutboxFailureSummary,
+  FAILED_OUTBOX_SCAN_CAP,
+  type AdminOutboxFailureSummary,
+} from "./admin-diagnostics-outbox-failure-summary.js";
 
-async function assertAdminActor(userId: string): Promise<void> {
-  if (!userId.trim()) {
-    throw new AdministrationUnauthorizedError("Authentication is required.");
-  }
-  const user = await findAuthUserById(userId);
-  if (!user || user.status !== "active" || user.role !== "admin") {
-    throw new AdministrationForbiddenError("Administrator access is required.");
-  }
+export async function requireAdminDiagnosticsActor(userId: string): Promise<void> {
+  const user = userId.trim() ? await findAuthUserById(userId) : null;
+  assertAdminDiagnosticsActor({ userId, user });
 }
 
 function sanitizeProbeMessage(message: string | null | undefined): string | null {
@@ -40,6 +47,11 @@ export interface AdminDiagnosticsHealthPayload {
   ready: boolean;
   platformMode: ReturnType<typeof resolvePlatformMode>;
   environment: string;
+  degradedReasons: AdminDiagnosticsDegradedReason[];
+  emailUnhealthyReason: EmailUnhealthyReason | null;
+  outboxFailedCountReason: "OUTBOX_FAILED_COUNT" | null;
+  failedReadinessCheckIds: string[];
+  mongodbDisconnectedReason: "MONGODB_DISCONNECTED" | null;
   mongodb: {
     connected: boolean;
     latencyMs: number | null;
@@ -72,26 +84,34 @@ export interface AdminDiagnosticsHealthPayload {
 export async function getAdminDiagnosticsHealth(input: {
   actorUserId: string;
 }): Promise<AdminDiagnosticsHealthPayload> {
-  await assertAdminActor(input.actorUserId);
+  await requireAdminDiagnosticsActor(input.actorUserId);
 
   const mongo = await checkMongoConnection();
   const email = await getEmailProviderHealth();
   const outbox = await getOutboxHealthStatus();
-
-  const outboxDegraded =
-    outbox.configured && outbox.enabled && outbox.stats !== null && outbox.stats.failed > 0;
-  const status: "healthy" | "degraded" = mongo.connected
-    ? email.healthy && !outboxDegraded
-      ? "healthy"
-      : "degraded"
-    : "degraded";
+  const checklist = await buildPlatformReadinessChecklist();
+  const assessment = assessAdminDiagnosticsHealth({
+    mongoConnected: mongo.connected,
+    emailHealthy: email.healthy,
+    emailConfigured: email.configured,
+    emailLastFailureCategory: email.lastFailureCategory,
+    outboxConfigured: outbox.configured,
+    outboxEnabled: outbox.enabled,
+    outboxStats: outbox.stats,
+    readiness: checklist,
+  });
 
   return {
-    status,
+    status: assessment.status,
     liveness: "alive",
     ready: mongo.connected,
     platformMode: resolvePlatformMode(),
     environment: environment.nodeEnv,
+    degradedReasons: assessment.degradedReasons,
+    emailUnhealthyReason: assessment.emailUnhealthyReason,
+    outboxFailedCountReason: assessment.outboxFailedCountReason,
+    failedReadinessCheckIds: assessment.failedReadinessCheckIds,
+    mongodbDisconnectedReason: assessment.mongodbDisconnectedReason,
     mongodb: {
       connected: mongo.connected,
       latencyMs: mongo.latencyMs,
@@ -121,4 +141,29 @@ export async function getAdminDiagnosticsHealth(input: {
       lastError: sanitizeProbeMessage(outbox.lastError),
     },
   };
+}
+
+export async function getAdminOutboxFailureSummary(input: {
+  actorUserId: string;
+}): Promise<AdminOutboxFailureSummary> {
+  await requireAdminDiagnosticsActor(input.actorUserId);
+  const outbox = await getOutboxHealthStatus();
+  return assembleAdminOutboxFailureSummary({
+    health: {
+      enabled: outbox.enabled,
+      configured: outbox.configured,
+      running: outbox.running,
+      stats: outbox.stats
+        ? {
+            pending: outbox.stats.pending,
+            published: outbox.stats.published,
+            failed: outbox.stats.failed,
+          }
+        : null,
+      lastDispatchAt: outbox.lastDispatchAt,
+    },
+    scanCap: FAILED_OUTBOX_SCAN_CAP,
+    readOldestFailedRows: (limit) => scanOldestFailedOutboxRows(limit),
+    readEnqueueBounds: () => findFailedOutboxEnqueueBounds(),
+  });
 }

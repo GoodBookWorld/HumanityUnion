@@ -11,6 +11,7 @@ import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
   countAdminInitiativeIntegrityWarnings,
+  fetchAdminOutboxFailureSummary,
   fetchApiHealth,
   fetchApiReady,
 } from "../admin-diagnostics-api";
@@ -21,6 +22,11 @@ import {
   type DiagnosticCheck,
   type DiagnosticSeverity,
 } from "../admin-diagnostics-model";
+import {
+  formatOutboxFailureSummaryLines,
+  type AdminOutboxFailureSummaryView,
+  type DiagnosticRootCause,
+} from "../admin-diagnostics-root-cause";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -35,6 +41,8 @@ interface DiagnosticsViewModel {
   services: DiagnosticCheck[];
   outbox: DiagnosticCheck;
   integrity: DiagnosticCheck[];
+  outboxFailures: AdminOutboxFailureSummaryView | null;
+  outboxFailuresError: string | null;
   checkedAt: string;
 }
 
@@ -45,11 +53,13 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
   const [refreshing, setRefreshing] = useState(false);
 
   const loadDiagnostics = useCallback(async () => {
-    const [healthResult, readyResult, integrityResult] = await Promise.allSettled([
-      fetchApiHealth(),
-      fetchApiReady(),
-      countAdminInitiativeIntegrityWarnings(),
-    ]);
+    const [healthResult, readyResult, integrityResult, outboxFailuresResult] =
+      await Promise.allSettled([
+        fetchApiHealth(),
+        fetchApiReady(),
+        countAdminInitiativeIntegrityWarnings(),
+        fetchAdminOutboxFailureSummary(),
+      ]);
 
     const health = healthResult.status === "fulfilled" ? healthResult.value : null;
     const healthError =
@@ -62,8 +72,12 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
     const initiativeSamples =
       integrityResult.status === "fulfilled" ? integrityResult.value.samples : null;
     const initiativeError =
-      integrityResult.status === "rejected"
-        ? formatAuthFormError(integrityResult.reason)
+      integrityResult.status === "rejected" ? formatAuthFormError(integrityResult.reason) : null;
+    const outboxFailures =
+      outboxFailuresResult.status === "fulfilled" ? outboxFailuresResult.value : null;
+    const outboxFailuresError =
+      outboxFailuresResult.status === "rejected"
+        ? formatAuthFormError(outboxFailuresResult.reason)
         : null;
 
     const snapshot = buildTechnicalHealthSnapshot({
@@ -74,10 +88,13 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
       initiativeWarningCount,
       initiativeError,
       initiativeSamples,
+      outboxFailures,
     });
 
     setView({
       ...snapshot,
+      outboxFailures,
+      outboxFailuresError,
       checkedAt: new Date().toISOString(),
     });
     setError(null);
@@ -185,13 +202,19 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
 
       <ProfileSection title="Event Infrastructure">
         {view ? (
-          <DiagnosticStatusCard check={view.outbox} />
+          <>
+            <DiagnosticStatusCard check={view.outbox} />
+            <OutboxFailureSummaryPanel
+              summary={view.outboxFailures}
+              unavailableMessage={view.outboxFailuresError}
+            />
+          </>
         ) : (
           <p className="hu-body">Outbox summary appears after the first health check.</p>
         )}
         <p className="hu-caption admin-panel__note">
-          Published historical totals are informational and do not mark the platform unhealthy.
-          This page is diagnosis-only and does not offer event repair controls.
+          Published historical totals are informational and do not mark the platform unhealthy. This
+          page is diagnosis-only and does not offer event repair controls.
         </p>
       </ProfileSection>
 
@@ -232,8 +255,90 @@ function DiagnosticStatusCard({ check }: { check: DiagnosticCheck }) {
         </span>
       </header>
       <p className="admin-diagnostics__card-summary">{check.summary}</p>
-      {check.detail ? <p className="hu-caption admin-diagnostics__card-detail">{check.detail}</p> : null}
+      {check.detail ? (
+        <p className="hu-caption admin-diagnostics__card-detail">{check.detail}</p>
+      ) : null}
+      {check.rootCauses?.map((cause) => (
+        <RootCauseFacts key={`${check.id}-${cause.failingCheck}`} cause={cause} />
+      ))}
     </article>
+  );
+}
+
+function RootCauseFacts({ cause }: { cause: DiagnosticRootCause }) {
+  return (
+    <dl className="admin-diagnostics__facts">
+      <div>
+        <dt>Failing check</dt>
+        <dd>{cause.failingCheck}</dd>
+      </div>
+      <div>
+        <dt>Failure category</dt>
+        <dd>{cause.failureCategory}</dd>
+      </div>
+      {cause.evidence.map((item) => (
+        <div key={`${item.kind}-${item.label}-${item.at ?? "none"}`}>
+          <dt>{item.label}</dt>
+          <dd>{item.at ?? "unavailable"}</dd>
+        </div>
+      ))}
+      <div>
+        <dt>Operational impact</dt>
+        <dd>{cause.operationalImpact}</dd>
+      </div>
+      <div>
+        <dt>Next action</dt>
+        <dd>{cause.recommendedAction}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function OutboxFailureSummaryPanel({
+  summary,
+  unavailableMessage,
+}: {
+  summary: AdminOutboxFailureSummaryView | null;
+  unavailableMessage: string | null;
+}) {
+  if (!summary) {
+    return (
+      <p className="hu-caption admin-diagnostics__note">
+        {unavailableMessage
+          ? `Failed-outbox summary is unavailable. ${unavailableMessage}`
+          : "Failed-outbox summary is unavailable. Failed counts are not shown as zero."}
+      </p>
+    );
+  }
+
+  const lines = formatOutboxFailureSummaryLines(summary);
+  const facts = [
+    lines.failedCount,
+    lines.pending,
+    lines.dispatcher,
+    lines.sampleLabel,
+    lines.eventTypes,
+    lines.aggregateTypes,
+    lines.categories,
+    lines.oldestEnqueue,
+    lines.newestEnqueue,
+    lines.actualFailure,
+    lines.lastDispatch,
+    lines.attempts,
+    lines.impact,
+  ];
+  return (
+    <section className="admin-diagnostics__outbox-summary" aria-label="Failed outbox summary">
+      <ul className="admin-diagnostics__summary-list">
+        {facts.map((fact) => (
+          <li key={fact}>{fact}</li>
+        ))}
+      </ul>
+      {lines.coverageNote ? (
+        <p className="hu-caption admin-diagnostics__note">{lines.coverageNote}</p>
+      ) : null}
+      <p className="hu-caption admin-diagnostics__note">{lines.limitNote}</p>
+    </section>
   );
 }
 

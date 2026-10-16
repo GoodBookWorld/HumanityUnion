@@ -1,20 +1,27 @@
 import { apiRequest } from "../../lib/api-client";
 import { listAdminInitiatives } from "./admin-initiative-directory-api";
+import type { AdminOutboxFailureSummaryView } from "./admin-diagnostics-root-cause";
 import type { ApiHealthPayload, ApiReadyPayload } from "./admin-diagnostics-model";
 
 /** Authenticated Admin detailed health — never the public redacted /health surface. */
 const ADMIN_DIAGNOSTICS_HEALTH_PATH = "/api/v1/admin/diagnostics/health";
+const ADMIN_DIAGNOSTICS_OUTBOX_FAILURES_PATH = "/api/v1/admin/diagnostics/outbox-failures";
 const READY_PATH = "/api/v1/health/ready";
 
 /** Read-only paths used by Diagnostics Refresh — never mutate. */
 export const DIAGNOSTICS_READ_ONLY_PATHS = [
   ADMIN_DIAGNOSTICS_HEALTH_PATH,
+  ADMIN_DIAGNOSTICS_OUTBOX_FAILURES_PATH,
   READY_PATH,
   "/api/v1/admin/initiatives",
 ] as const;
 
 export async function fetchApiHealth(): Promise<ApiHealthPayload> {
   return apiRequest<ApiHealthPayload>(ADMIN_DIAGNOSTICS_HEALTH_PATH);
+}
+
+export async function fetchAdminOutboxFailureSummary(): Promise<AdminOutboxFailureSummaryView> {
+  return apiRequest<AdminOutboxFailureSummaryView>(ADMIN_DIAGNOSTICS_OUTBOX_FAILURES_PATH);
 }
 
 export async function fetchApiReady(): Promise<ApiReadyPayload> {

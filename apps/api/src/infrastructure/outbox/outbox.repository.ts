@@ -453,3 +453,89 @@ export async function deleteInitiativeDecisionVoteOutboxForDecision(
 
   return result.deletedCount ?? 0;
 }
+
+/**
+ * Fields read for the Admin failed-outbox summary.
+ * lastError is classified server-side and is not part of the Admin response.
+ * Payloads, aggregate ids, and envelopes are not projected.
+ */
+export const FAILED_OUTBOX_DIAGNOSTIC_PROJECTION = {
+  eventName: 1,
+  aggregateType: 1,
+  attempts: 1,
+  createdAt: 1,
+  lastError: 1,
+} as const;
+
+export interface FailedOutboxDiagnosticSourceRow {
+  eventName: string;
+  aggregateType: string;
+  attempts: number | null;
+  createdAt: string | null;
+  lastError: string | null;
+}
+
+function mapFailedOutboxDiagnosticSource(document: {
+  eventName?: unknown;
+  aggregateType?: unknown;
+  attempts?: unknown;
+  createdAt?: unknown;
+  lastError?: unknown;
+}): FailedOutboxDiagnosticSourceRow {
+  return {
+    eventName: typeof document.eventName === "string" ? document.eventName : "",
+    aggregateType: typeof document.aggregateType === "string" ? document.aggregateType : "",
+    attempts:
+      typeof document.attempts === "number" && Number.isFinite(document.attempts)
+        ? document.attempts
+        : null,
+    createdAt: typeof document.createdAt === "string" ? document.createdAt : null,
+    lastError: typeof document.lastError === "string" ? document.lastError : null,
+  };
+}
+
+/** Oldest failed rows first. Read-only; does not requeue or mutate. */
+export async function scanOldestFailedOutboxRows(
+  limit: number,
+): Promise<FailedOutboxDiagnosticSourceRow[]> {
+  assertMongoAvailable();
+  const bounded = Math.max(0, Math.floor(limit));
+  if (bounded === 0) {
+    return [];
+  }
+
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const documents = await collection
+    .find({ status: "failed" }, { projection: FAILED_OUTBOX_DIAGNOSTIC_PROJECTION })
+    .sort({ createdAt: 1 })
+    .limit(bounded)
+    .toArray();
+
+  return documents.map((document) => mapFailedOutboxDiagnosticSource(document));
+}
+
+/** Enqueue timestamps of the oldest and newest failed rows. Not failure times. */
+export async function findFailedOutboxEnqueueBounds(): Promise<{
+  oldestCreatedAt: string | null;
+  newestCreatedAt: string | null;
+}> {
+  assertMongoAvailable();
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const [oldest, newest] = await Promise.all([
+    collection
+      .find({ status: "failed" }, { projection: { createdAt: 1 } })
+      .sort({ createdAt: 1 })
+      .limit(1)
+      .next(),
+    collection
+      .find({ status: "failed" }, { projection: { createdAt: 1 } })
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .next(),
+  ]);
+
+  return {
+    oldestCreatedAt: typeof oldest?.createdAt === "string" ? oldest.createdAt : null,
+    newestCreatedAt: typeof newest?.createdAt === "string" ? newest.createdAt : null,
+  };
+}

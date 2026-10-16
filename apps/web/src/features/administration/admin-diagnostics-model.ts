@@ -3,12 +3,13 @@
  * Does not invent health scores; maps authoritative API fields to Admin statuses.
  */
 
-export type DiagnosticSeverity =
-  | "healthy"
-  | "warning"
-  | "critical"
-  | "unknown"
-  | "not_available";
+import { deriveComponentRootCauses } from "./admin-diagnostics-root-cause";
+import type {
+  AdminOutboxFailureSummaryView,
+  DiagnosticRootCause,
+} from "./admin-diagnostics-root-cause";
+
+export type DiagnosticSeverity = "healthy" | "warning" | "critical" | "unknown" | "not_available";
 
 export interface DiagnosticCheck {
   readonly id: string;
@@ -16,6 +17,7 @@ export interface DiagnosticCheck {
   readonly status: DiagnosticSeverity;
   readonly summary: string;
   readonly detail?: string;
+  readonly rootCauses?: readonly DiagnosticRootCause[];
 }
 
 export interface ApiHealthPayload {
@@ -51,6 +53,11 @@ export interface ApiHealthPayload {
     readonly lastDispatchAt?: string | null;
     readonly lastError?: string | null;
   };
+  readonly degradedReasons?: readonly string[];
+  readonly emailUnhealthyReason?: string | null;
+  readonly outboxFailedCountReason?: string | null;
+  readonly failedReadinessCheckIds?: readonly string[];
+  readonly mongodbDisconnectedReason?: string | null;
   readonly readiness?: {
     readonly failedChecks?: number;
     readonly checklist?: ReadonlyArray<{
@@ -74,9 +81,7 @@ export interface ApiReadyPayload {
  * - Unknown never becomes Healthy; Unknown alone → Unknown; Unknown + Healthy → Warning
  * - not_available is capability metadata and is excluded from overall health
  */
-export function aggregateOverallStatus(
-  checks: readonly DiagnosticSeverity[],
-): DiagnosticSeverity {
+export function aggregateOverallStatus(checks: readonly DiagnosticSeverity[]): DiagnosticSeverity {
   const relevant = checks.filter((status) => status !== "not_available");
   if (relevant.length === 0) {
     return "unknown";
@@ -190,7 +195,9 @@ export function deriveMongoStatus(health: ApiHealthPayload | null): DiagnosticCh
 
   if (health.mongodb.connected) {
     const latency =
-      typeof health.mongodb.latencyMs === "number" ? `${health.mongodb.latencyMs}ms ping` : undefined;
+      typeof health.mongodb.latencyMs === "number"
+        ? `${health.mongodb.latencyMs}ms ping`
+        : undefined;
     return {
       id: "mongodb",
       label: "MongoDB",
@@ -205,8 +212,7 @@ export function deriveMongoStatus(health: ApiHealthPayload | null): DiagnosticCh
     label: "MongoDB",
     status: "critical",
     summary: "Unavailable",
-    detail:
-      sanitizeOperatorMessage(health.mongodb.error) ?? "MongoDB is not connected.",
+    detail: sanitizeOperatorMessage(health.mongodb.error) ?? "MongoDB is not connected.",
   };
 }
 
@@ -401,8 +407,7 @@ export function lifecycleReconciliationDeferredCheck(): DiagnosticCheck {
     label: "Lifecycle reconciliation",
     status: "not_available",
     summary: "CLI-only / staging reconciliation tooling",
-    detail:
-      "Not available via Admin API. Conflict counts are not safely exposed at runtime.",
+    detail: "Not available via Admin API. Conflict counts are not safely exposed at runtime.",
   };
 }
 
@@ -432,6 +437,7 @@ export function buildTechnicalHealthSnapshot(input: {
   initiativeWarningCount: number | null;
   initiativeError: string | null;
   initiativeSamples?: readonly { initiativeId: string; title: string }[] | null;
+  outboxFailures?: AdminOutboxFailureSummaryView | null;
 }): {
   overall: DiagnosticSeverity;
   services: DiagnosticCheck[];
@@ -455,8 +461,20 @@ export function buildTechnicalHealthSnapshot(input: {
   });
   const lifecycle = deriveLifecycleReconciliationStatus();
 
-  const services = [web, api, mongo, email];
+  const healthForCauses = input.healthError ? null : input.health;
+  const outboxFailures = input.outboxFailures ?? null;
+  const withCauses = (check: DiagnosticCheck): DiagnosticCheck => {
+    const rootCauses = deriveComponentRootCauses({
+      check,
+      health: healthForCauses,
+      outboxFailures,
+    });
+    return rootCauses.length > 0 ? { ...check, rootCauses } : check;
+  };
+
+  const services = [web, api, mongo, email].map(withCauses);
   const integrity = [initiativeIntegrity, lifecycle];
+  const outboxWithCauses = withCauses(outbox);
 
   // Overall uses platform-required services + outbox + initiative integrity.
   // Lifecycle not_available is capability metadata and is excluded from overall.
@@ -470,7 +488,7 @@ export function buildTechnicalHealthSnapshot(input: {
     lifecycle.status,
   ]);
 
-  return { overall, services, outbox, integrity };
+  return { overall, services, outbox: outboxWithCauses, integrity };
 }
 
 export function formatDiagnosticSeverityLabel(status: DiagnosticSeverity): string {

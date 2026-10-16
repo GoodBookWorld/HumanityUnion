@@ -125,6 +125,50 @@
   margin: 0.35rem 0 0;
 }
 
+.admin-diagnostics__facts {
+  margin: 0.65rem 0 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-diagnostics__facts div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 11rem) minmax(0, 1fr);
+  gap: 0.2rem 0.65rem;
+  align-items: baseline;
+}
+
+.admin-diagnostics__facts dt,
+.admin-diagnostics__facts dd {
+  margin: 0;
+}
+
+.admin-diagnostics__facts dt {
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.admin-diagnostics__facts dd {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-diagnostics__outbox-summary {
+  margin-top: 0.75rem;
+}
+
+.admin-diagnostics__summary-list {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.admin-diagnostics__note {
+  margin: 0.45rem 0 0;
+}
+
 .admin-diagnostics__badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -165,6 +209,10 @@
 
 @media (max-width: 720px) {
   .admin-diagnostics__service-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-diagnostics__facts div {
     grid-template-columns: 1fr;
   }
 

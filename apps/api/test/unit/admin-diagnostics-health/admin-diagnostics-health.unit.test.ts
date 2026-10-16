@@ -37,7 +37,11 @@ describe("Production Completion Pack 01 — Admin diagnostics health", () => {
     assert.match(service, /checkMongoConnection/);
     assert.match(service, /getEmailProviderHealth/);
     assert.match(service, /getOutboxHealthStatus/);
-    assert.match(service, /assertAdminActor|role !== "admin"/);
+    assert.match(service, /requireAdminDiagnosticsActor|assertAdminDiagnosticsActor/);
+    const rootCause = readRepo(
+      "apps/api/src/modules/administration/admin-diagnostics-root-cause.ts",
+    );
+    assert.match(rootCause, /role !== "admin"/);
     assert.doesNotMatch(service, /MONGODB_URI\s*:/);
     assert.match(service, /databaseConfigured/);
     assert.match(service, /sanitizeProbeMessage|redacted/);
