@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { ClientSession } from "mongodb";
 import type { MemberProfile } from "@hu/types";
 
 import { normalizeCountryInput } from "@hu/geography";
@@ -102,11 +103,14 @@ export function buildDefaultMemberProfile(input: {
   };
 }
 
-export async function insertMemberProfile(profile: MemberProfile): Promise<MemberProfile> {
+export async function insertMemberProfile(
+  profile: MemberProfile,
+  options: { session?: ClientSession } = {},
+): Promise<MemberProfile> {
   await ensureMemberProfileMongoReady();
 
   const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);
-  await collection.insertOne(profile);
+  await collection.insertOne(profile, options.session ? { session: options.session } : {});
 
   return profile;
 }

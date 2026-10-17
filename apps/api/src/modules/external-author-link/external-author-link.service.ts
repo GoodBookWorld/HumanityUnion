@@ -33,6 +33,7 @@ import {
   signIntegrityMediaLinkRedeem,
 } from "./external-author-link.hmac.js";
 import { resolveIntegrityMediaCollaborationStatus } from "./external-author-link.collaboration.js";
+import { findProvisionRedeemOutcome } from "./external-author-link.provision.service.js";
 import {
   getExternalAuthorLinkStore,
   type ExternalAuthorLinkStore,
@@ -77,6 +78,7 @@ export interface IntegrityMediaRedeemSuccess {
   reconnected: boolean;
   linkRevision: number;
   linkInstanceId?: string;
+  provisionOutcome?: "NEW_AUTHOR" | "CONFIRMED_MAPPING_EXISTS";
 }
 
 export interface IntegrityMediaAcknowledgeSuccess {
@@ -449,6 +451,10 @@ export async function redeemIntegrityMediaLink(input: {
       reconnected: established.reconnected,
       linkRevision,
       linkInstanceId: stored.linkInstanceId,
+      ...(await findProvisionRedeemOutcome(
+        claimed.record.attemptState,
+        stored.linkFinalization,
+      )),
     };
   }
 
@@ -540,6 +546,10 @@ export async function redeemIntegrityMediaLink(input: {
     externalAuthorId: operational.externalAuthorId,
     reconnected: established.reconnected,
     linkRevision,
+    ...(await findProvisionRedeemOutcome(
+      claimed.record.attemptState,
+      operational.linkFinalization,
+    )),
   };
 }
 

@@ -5,7 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "../../design-system/components/Button";
-import { ApiRequestError, apiRequest, isAuthenticationRequiredError } from "../../lib/api-client";
+import {
+  ApiRequestError,
+  apiRequest,
+  isAuthenticationRequiredError,
+  isNotFoundError,
+} from "../../lib/api-client";
 
 const ATTEMPT_STATE_PATTERN = /^[A-Za-z0-9_-]{16,200}$/;
 
@@ -17,7 +22,16 @@ type Phase =
   | "submitting"
   | "confirmed"
   | "cancelled"
-  | "error";
+  | "error"
+  | "provision"
+  | "provision-submitting"
+  | "provision-blocked";
+
+const PROVISION_SENTENCE =
+  "Confirmation creates an account on the Humanity Union social education and civic participation platform.";
+
+const PROVISION_COLLISION_NOTICE =
+  "This Integrity Media account cannot be linked automatically. No Humanity Union account was created.";
 
 interface Preview {
   displayName: string;
@@ -46,6 +60,7 @@ export function IntegrityMediaLinkConfirm() {
   const attemptState = params.get("state") ?? "";
   const [phase, setPhase] = useState<Phase>("loading");
   const [displayName, setDisplayName] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -56,7 +71,7 @@ export function IntegrityMediaLinkConfirm() {
 
     let cancelled = false;
 
-    async function loadPreview() {
+    async function loadSessionPreview() {
       try {
         const preview = await apiRequest<Preview>(
           `/api/v1/integrity-media/link/preview?state=${encodeURIComponent(attemptState)}`,
@@ -85,6 +100,36 @@ export function IntegrityMediaLinkConfirm() {
       }
     }
 
+    async function loadPreview() {
+      try {
+        const consent = await apiRequest<{ displayName: string; email: string }>(
+          `/api/v1/integrity-media/link/provision-consent?state=${encodeURIComponent(attemptState)}`,
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        setDisplayName(consent.displayName);
+        setAccountEmail(consent.email);
+        setPhase("provision");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        if (isNotFoundError(error)) {
+          await loadSessionPreview();
+          return;
+        }
+
+        setMessage(
+          error instanceof ApiRequestError ? error.message : "Confirmation could not be loaded.",
+        );
+        setPhase("error");
+      }
+    }
+
     void loadPreview();
 
     return () => {
@@ -99,6 +144,46 @@ export function IntegrityMediaLinkConfirm() {
 
     window.location.assign(loginPath(attemptState));
   }, [phase, attemptState]);
+
+  async function confirmProvision() {
+    setPhase("provision-submitting");
+    setMessage("");
+
+    try {
+      const result = await apiRequest<{ redirectUrl: string | null }>(
+        "/api/v1/integrity-media/link/provision-confirm",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: attemptState }),
+        },
+      );
+
+      if (result.redirectUrl && isNavigableHttpUrl(result.redirectUrl)) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+
+      setMessage(
+        "Humanity Union confirmed this account. Returning to Integrity Media is not configured yet.",
+      );
+      setPhase("confirmed");
+    } catch (error) {
+      if (
+        error instanceof ApiRequestError &&
+        error.meta?.code === "existing_email_collision"
+      ) {
+        setAccountEmail("");
+        setDisplayName("");
+        setMessage(PROVISION_COLLISION_NOTICE);
+        setPhase("provision-blocked");
+        return;
+      }
+
+      setMessage(error instanceof ApiRequestError ? error.message : "Confirmation failed.");
+      setPhase("error");
+    }
+  }
 
   async function confirmConnection() {
     setPhase("submitting");
@@ -167,6 +252,24 @@ export function IntegrityMediaLinkConfirm() {
   return (
     <section className="auth-form" aria-live="polite">
       <h1 className="auth-page__title">Connect your Humanity Union account to Integrity Media?</h1>
+      {phase === "provision" || phase === "provision-submitting" ? (
+        <>
+          <p>{PROVISION_SENTENCE}</p>
+          <p>
+            You are creating an account for <strong>{displayName}</strong> ({accountEmail}).
+          </p>
+          <div className="auth-form__actions">
+            <Button
+              variant="primary"
+              disabled={phase === "provision-submitting"}
+              onClick={() => void confirmProvision()}
+            >
+              Confirm & Create Account
+            </Button>
+          </div>
+        </>
+      ) : null}
+      {phase === "provision-blocked" ? <p>{message}</p> : null}
       {phase === "ready" || phase === "submitting" ? (
         <p>
           You are signed in as <strong>{displayName}</strong>. Confirm only if this is the Humanity
@@ -177,7 +280,7 @@ export function IntegrityMediaLinkConfirm() {
         <p>This confirmation link is incomplete. Start again from Integrity Media.</p>
       ) : null}
       {phase === "anonymous" ? <p>Redirecting to Humanity Union sign in.</p> : null}
-      {message ? <p className="auth-feedback">{message}</p> : null}
+      {phase !== "provision-blocked" && message ? <p className="auth-feedback">{message}</p> : null}
       {phase === "ready" || phase === "submitting" ? (
         <div className="auth-form__actions">
           <Button
@@ -197,11 +300,13 @@ export function IntegrityMediaLinkConfirm() {
           <a href={loginPath(attemptState)}>Sign in</a>
         </p>
       ) : null}
-      <p>
-        If you do not have a Humanity Union account, use the normal{" "}
-        <Link href="/register">registration</Link> process. This confirmation will not be kept
-        through registration. After you can sign in, start again from Integrity Media.
-      </p>
+      {phase === "provision" || phase === "provision-submitting" || phase === "provision-blocked" ? null : (
+        <p>
+          If you do not have a Humanity Union account, use the normal{" "}
+          <Link href="/register">registration</Link> process. This confirmation will not be kept
+          through registration. After you can sign in, start again from Integrity Media.
+        </p>
+      )}
     </section>
   );
 }

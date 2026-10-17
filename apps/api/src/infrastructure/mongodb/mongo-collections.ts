@@ -180,6 +180,7 @@ export const MONGO_COLLECTIONS = {
   externalAuthorLinkResults: "external_author_link_results",
   externalAuthorLinkAudit: "external_author_link_audit",
   externalAuthorDisconnectEvents: "external_author_disconnect_events",
+  externalAuthorProvisionAttempts: "external_author_provision_attempts",
   // Integrity Media author-message delivery. Not the localization outbox.
   integrityMediaAuthorMessages: "integrity_media_author_messages",
   integrityMediaAuthorMessageAudit: "integrity_media_author_message_audit",

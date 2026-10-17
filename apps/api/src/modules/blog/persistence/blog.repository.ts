@@ -281,9 +281,13 @@ export async function upsertBlogCapabilityGrant(
 
 export async function findBlogCapabilityGrant(
   participantId: string,
+  options: RepositorySessionOptions = {},
 ): Promise<BlogCapabilityGrant | null> {
   await ensureBlogMongoReady();
-  const doc = await grantsCollection().findOne({ participantId });
+  const doc = await grantsCollection().findOne(
+    { participantId },
+    options.session ? { session: options.session } : {},
+  );
   return doc ? fromBlogCapabilityGrantMongoDocument(doc) : null;
 }
 
