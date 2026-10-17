@@ -2,6 +2,7 @@ import type { ClientSession, Filter } from "mongodb";
 
 import { runIntegrityMediaLinkCriticalSection } from "../integrity-media-author-messages/integrity-media-author-reply.section.js";
 
+import { isExplicitIsolatedMongoTest } from "../../infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
@@ -597,6 +598,7 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
 
 let storeOverride: ExternalAuthorLinkStore | null = null;
 let storeSingleton: ExternalAuthorLinkStore | null = null;
+let storeSingletonUsesMongo = false;
 
 export function setExternalAuthorLinkStoreForTests(store: ExternalAuthorLinkStore | null): void {
   storeOverride = store;
@@ -611,8 +613,17 @@ export function getExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     return storeOverride;
   }
 
+  if (isExplicitIsolatedMongoTest()) {
+    if (!storeSingletonUsesMongo || !storeSingleton) {
+      storeSingleton = createMongoExternalAuthorLinkStore();
+      storeSingletonUsesMongo = true;
+    }
+    return storeSingleton;
+  }
+
   if (!storeSingleton) {
-    storeSingleton = process.env.MONGODB_URI?.trim()
+    storeSingletonUsesMongo = Boolean(process.env.MONGODB_URI?.trim());
+    storeSingleton = storeSingletonUsesMongo
       ? createMongoExternalAuthorLinkStore()
       : createMemoryExternalAuthorLinkStore();
   }

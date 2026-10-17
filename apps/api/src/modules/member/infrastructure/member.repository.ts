@@ -1,5 +1,6 @@
 import type { ClientSession } from "mongodb";
 
+import { isExplicitIsolatedMongoTest } from "../../../infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../../infrastructure/mongodb/mongo-connection.js";
@@ -40,7 +41,14 @@ export async function findMemberById(
   memberId: string,
   options: { session?: ClientSession } = {},
 ): Promise<PersistedMemberRecord | null> {
-  await ensureMemberMongoReady();
+  if (process.env.NODE_TEST_ENV === "true") {
+    if (!isExplicitIsolatedMongoTest()) {
+      throw new MemberRegistrationUnavailableError();
+    }
+    await connectMongoClient();
+  } else {
+    await ensureMemberMongoReady();
+  }
 
   const collection = getMongoCollection<MemberMongoDocument>(MONGO_COLLECTIONS.members);
   const document = await collection.findOne({ memberId }, { session: options.session });
