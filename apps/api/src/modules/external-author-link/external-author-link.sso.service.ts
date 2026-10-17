@@ -38,6 +38,10 @@ import type { ExternalAuthorLinkRecord } from "./external-author-link.types.js";
 
 const SSO_GRANT_PATH = "/connect/integrity-media/sso";
 const SSO_GRANT_ID_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const SSO_WEB_ORIGIN_BY_RAW_PLATFORM_MODE: Readonly<Record<string, string>> = {
+  staging: "https://staging.huws.org",
+  production: "https://huws.org",
+};
 const WORKSPACE_DESTINATION = "/workspace";
 const CONFIRMATION_DESTINATION = "/confirm-email";
 const CONFIRMATION_PURPOSE = "registration_email_confirmation" as const;
@@ -550,37 +554,14 @@ function normalizeGrantId(body: unknown): string {
 }
 
 function resolveHuWebOrigin(env: NodeJS.ProcessEnv = process.env): string {
-  const configured = env.WEB_ORIGIN?.trim() || firstCorsOrigin(env.CORS_ORIGIN);
+  const expected = SSO_WEB_ORIGIN_BY_RAW_PLATFORM_MODE[readRawPlatformMode(env)];
+  const configured = env.WEB_ORIGIN?.trim() ?? "";
 
-  if (!configured) {
+  if (!expected || configured !== expected) {
     fail(503, "sso_not_configured", "Integrity Media sign-in is not configured.");
   }
 
-  let url: URL;
-  try {
-    url = new URL(configured);
-  } catch {
-    fail(503, "sso_not_configured", "Integrity Media sign-in is not configured.");
-  }
-
-  if (
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    (url.pathname !== "/" && url.pathname !== "")
-  ) {
-    fail(503, "sso_not_configured", "Integrity Media sign-in is not configured.");
-  }
-
-  const production = (env.NODE_ENV ?? "development") === "production";
-  const allowed = url.protocol === "https:" || (url.protocol === "http:" && !production);
-
-  if (!allowed) {
-    fail(503, "sso_not_configured", "Integrity Media sign-in is not configured.");
-  }
-
-  return url.origin;
+  return expected;
 }
 
 function buildGrantUrl(origin: string, grantId: string): string {
@@ -647,15 +628,6 @@ function isMemberId(value: string): boolean {
 
 function isTarget(value: string): boolean {
   return value.length > 0 && value.length <= 64 && value.trim() === value && !/\s/.test(value);
-}
-
-function firstCorsOrigin(raw: string | undefined): string {
-  return (
-    raw
-      ?.split(",")
-      .map((part) => part.trim())
-      .find((part) => part.length > 0) ?? ""
-  );
 }
 
 function unixSeconds(now: Date): number {
