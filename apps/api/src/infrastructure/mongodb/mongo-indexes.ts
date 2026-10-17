@@ -6,6 +6,7 @@ import {
   EXTERNAL_AUTHOR_LINK_INDEXES,
   EXTERNAL_AUTHOR_LINK_RESULT_INDEXES,
   EXTERNAL_AUTHOR_PROVISION_ATTEMPT_INDEXES,
+  EXTERNAL_AUTHOR_SSO_GRANT_INDEXES,
 } from "../../modules/external-author-link/external-author-link.indexes.js";
 import {
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_AUDIT_INDEXES,
@@ -1656,6 +1657,10 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     collectionName: MONGO_COLLECTIONS.externalAuthorProvisionAttempts,
     indexes: EXTERNAL_AUTHOR_PROVISION_ATTEMPT_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.externalAuthorSsoGrants,
+    indexes: EXTERNAL_AUTHOR_SSO_GRANT_INDEXES,
   },
   {
     collectionName: MONGO_COLLECTIONS.integrityMediaAuthorMessages,

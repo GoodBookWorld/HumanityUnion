@@ -18,6 +18,19 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+type AuthUserByIdLookup = (userId: string) => Promise<AuthUserRecord | null>;
+
+let findAuthUserByIdForTests: AuthUserByIdLookup | null = null;
+
+/** Unit tests only. Production always reads `auth_users`. */
+export function setFindAuthUserByIdForTests(lookup: AuthUserByIdLookup | null): void {
+  if (lookup && process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Auth user test lookup is unavailable.");
+  }
+
+  findAuthUserByIdForTests = lookup;
+}
+
 async function ensureAuthMongoReady(): Promise<void> {
   if (!isMongoConfigured()) {
     throw new AuthPersistenceUnavailableError();
@@ -40,11 +53,21 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUserRecord
   return record;
 }
 
-export async function findAuthUserById(userId: string): Promise<AuthUserRecord | null> {
+export async function findAuthUserById(
+  userId: string,
+  options: { session?: ClientSession } = {},
+): Promise<AuthUserRecord | null> {
+  if (findAuthUserByIdForTests) {
+    return findAuthUserByIdForTests(userId);
+  }
+
   await ensureAuthMongoReady();
 
   const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
-  const document = await collection.findOne({ userId });
+  const document = await collection.findOne(
+    { userId },
+    options.session ? { session: options.session } : {},
+  );
 
   if (!document) {
     return null;

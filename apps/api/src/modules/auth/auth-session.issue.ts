@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { ClientSession } from "mongodb";
 import type { AuthTokenPair, AuthUserPublic } from "@hu/types";
 
 import { createAuthSession } from "./auth-session.repository.js";
@@ -45,17 +46,21 @@ function buildTokenPair(user: AuthUserRecord, sessionId: string): AuthTokenPair 
 export async function issueAuthSession(
   user: AuthUserRecord,
   userAgent?: string,
+  options: { session?: ClientSession } = {},
 ): Promise<AuthLoginResult> {
   const sessionId = randomUUID();
   const tokens = buildTokenPair(user, sessionId);
 
-  await createAuthSession({
-    sessionId,
-    userId: user.userId,
-    refreshToken: tokens.refreshToken,
-    expiresAt: resolveRefreshExpiryIso(),
-    userAgent,
-  });
+  await createAuthSession(
+    {
+      sessionId,
+      userId: user.userId,
+      refreshToken: tokens.refreshToken,
+      expiresAt: resolveRefreshExpiryIso(),
+      userAgent,
+    },
+    { session: options.session },
+  );
 
   return {
     kind: "session",

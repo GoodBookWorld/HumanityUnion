@@ -8,6 +8,7 @@ import authRouter from "./modules/auth/auth.routes.js";
 import integrityMediaAuthorDisconnectRouter from "./modules/external-author-link/external-author-link.disconnect.routes.js";
 import integrityMediaAuthorReplyRouter from "./modules/integrity-media-author-messages/integrity-media-author-reply.routes.js";
 import externalAuthorLinkRouter from "./modules/external-author-link/external-author-link.routes.js";
+import integrityMediaAccountSsoRouter from "./modules/external-author-link/external-author-link.sso.routes.js";
 import integrityMediaAuthorMessageRouter from "./modules/integrity-media-author-messages/integrity-media-author-message.routes.js";
 import { emailRouter } from "./modules/email/index.js";
 import {
@@ -342,6 +343,7 @@ app.use("/api/v1/admin/analytics", adminTrafficAnalyticsRouter);
 app.use("/api/v1/public/analytics", publicTrafficAnalyticsRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/integrity-media/link", externalAuthorLinkRouter);
+app.use("/api/v1/integrity-media/account", integrityMediaAccountSsoRouter);
 app.use("/api/v1/integrations/integrity-media", integrityMediaAuthorDisconnectRouter);
 app.use("/api/v1/integrations/integrity-media", integrityMediaAuthorReplyRouter);
 app.use("/api/v1/admin/integrity-media/authors", integrityMediaAuthorMessageRouter);

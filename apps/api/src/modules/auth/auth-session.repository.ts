@@ -5,8 +5,23 @@ import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js"
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { AuthPersistenceUnavailableError } from "./auth.errors.js";
+import type { ClientSession } from "mongodb";
+
 import type { AuthSessionRecord, CreateAuthSessionInput } from "./auth-session.types.js";
 import { hashRefreshToken } from "./auth-password.js";
+
+type AuthSessionTestWriter = (input: CreateAuthSessionInput) => Promise<AuthSessionRecord>;
+
+let authSessionTestWriter: AuthSessionTestWriter | null = null;
+
+/** Unit tests only. Production leaves this unset and writes `auth_sessions`. */
+export function setAuthSessionWriterForTests(writer: AuthSessionTestWriter | null): void {
+  if (writer && process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Auth session test writer is unavailable.");
+  }
+
+  authSessionTestWriter = writer;
+}
 
 interface AuthSessionDocument extends AuthSessionRecord {
   _id?: string;
@@ -20,9 +35,10 @@ async function ensureAuthMongoReady(): Promise<void> {
   await connectMongoClient();
 }
 
-export async function createAuthSession(input: CreateAuthSessionInput): Promise<AuthSessionRecord> {
-  await ensureAuthMongoReady();
-
+export async function createAuthSession(
+  input: CreateAuthSessionInput,
+  options: { session?: ClientSession } = {},
+): Promise<AuthSessionRecord> {
   const record: AuthSessionRecord = {
     sessionId: input.sessionId ?? randomUUID(),
     userId: input.userId,
@@ -32,8 +48,14 @@ export async function createAuthSession(input: CreateAuthSessionInput): Promise<
     userAgent: input.userAgent,
   };
 
+  if (authSessionTestWriter) {
+    return authSessionTestWriter(input);
+  }
+
+  await ensureAuthMongoReady();
+
   const collection = getMongoCollection<AuthSessionDocument>(MONGO_COLLECTIONS.authSessions);
-  await collection.insertOne(record);
+  await collection.insertOne(record, options.session ? { session: options.session } : {});
 
   return record;
 }
