@@ -235,30 +235,30 @@ describe("Integrity Media account SSO", () => {
     assert.equal(otherTarget.status, 403);
     assert.equal(otherTarget.body.meta?.code, "target_mismatch");
 
-    process.env.WEB_ORIGIN = "";
-    process.env.CORS_ORIGIN = "";
-    const missingOrigin = await register();
-    assert.equal(missingOrigin.status, 503);
-    assert.equal(missingOrigin.body.meta?.code, "sso_not_configured");
+    await assertOriginRejected({ WEB_ORIGIN: "" });
+    await assertOriginRejected({ WEB_ORIGIN: undefined, CORS_ORIGIN: "https://staging.huws.org" });
+    await assertOriginRejected({ WEB_ORIGIN: "https://huws.org" });
+    await assertOriginRejected({ WEB_ORIGIN: "https://staging.huws.org/app" });
+    await assertOriginRejected({ WEB_ORIGIN: "https://user:secret@staging.huws.org" });
+    await assertOriginRejected({ WEB_ORIGIN: "http://staging.huws.org" });
+    await assertOriginRejected({ WEB_ORIGIN: "https://staging.huws.org/" });
+    await assertOriginRejected({ PLATFORM_MODE: "beta", WEB_ORIGIN: "https://staging.huws.org" });
+    await assertOriginRejected({ PLATFORM_MODE: "development", WEB_ORIGIN: "http://localhost:3000" });
 
-    process.env.WEB_ORIGIN = "";
-    process.env.CORS_ORIGIN = "https://alt.huws.org,https://other.example";
-    const corsOrigin = await register();
-    assert.equal(corsOrigin.status, 200);
-    assert.equal(new URL(corsOrigin.body.grantUrl ?? "").origin, "https://alt.huws.org");
+    process.env.PLATFORM_MODE = "production";
+    process.env.WEB_ORIGIN = "https://huws.org";
+    const production = await register({ target: "production", requestId: requestId() });
+    assert.equal(production.status, 200);
+    assert.equal(new URL(production.body.grantUrl ?? "").origin, "https://huws.org");
+    assert.equal(new URL(production.body.grantUrl ?? "").pathname, "/connect/integrity-media/sso");
 
-    process.env.WEB_ORIGIN = "https://staging.huws.org/app";
-    const pathOrigin = await register({ requestId: requestId() });
-    assert.equal(pathOrigin.status, 503);
-    assert.equal(pathOrigin.body.meta?.code, "sso_not_configured");
-
-    process.env.NODE_ENV = "production";
-    process.env.WEB_ORIGIN = "http://staging.huws.org";
-    const insecure = await register({ requestId: requestId() });
-    assert.equal(insecure.status, 503);
-    process.env.NODE_ENV = previousNodeEnv;
+    process.env.PLATFORM_MODE = "staging";
+    process.env.WEB_ORIGIN = WEB_ORIGIN;
+    const staging = await register({ requestId: requestId() });
+    assert.equal(staging.status, 200);
+    assert.equal(new URL(staging.body.grantUrl ?? "").origin, "https://staging.huws.org");
     assert.equal(memory.sessionCount, 0);
-    assert.equal(memory.grants().every((grant) => grant.target === "staging"), true);
+    assert.equal(memory.grants().length, 2);
   });
 
   it("rejects unknown, provisional, disabled, mismatched, and inactive accounts", async () => {
@@ -339,8 +339,10 @@ describe("Integrity Media account SSO", () => {
     assert.equal(changedAuthor.body.meta?.code, "request_conflict");
 
     process.env.PLATFORM_MODE = "production";
+    process.env.WEB_ORIGIN = "https://huws.org";
     const changedTarget = await register({ ...fields, target: "production" });
     process.env.PLATFORM_MODE = "staging";
+    process.env.WEB_ORIGIN = WEB_ORIGIN;
     assert.equal(changedTarget.status, 409);
     assert.equal(changedTarget.body.meta?.code, "request_conflict");
     assert.equal(memory.grants().length, 1);
@@ -638,6 +640,36 @@ async function request(
 
 function cookieNames(cookies: string[]): string[] {
   return cookies.map((cookie) => cookie.split("=", 1)[0] ?? "");
+}
+
+async function assertOriginRejected(env: {
+  WEB_ORIGIN?: string;
+  CORS_ORIGIN?: string;
+  PLATFORM_MODE?: string;
+}): Promise<void> {
+  const before = memory.grants().length;
+  if (env.PLATFORM_MODE !== undefined) {
+    process.env.PLATFORM_MODE = env.PLATFORM_MODE;
+  }
+  if (env.WEB_ORIGIN === undefined) {
+    delete process.env.WEB_ORIGIN;
+  } else {
+    process.env.WEB_ORIGIN = env.WEB_ORIGIN;
+  }
+  if (env.CORS_ORIGIN !== undefined) {
+    process.env.CORS_ORIGIN = env.CORS_ORIGIN;
+  }
+  const rejected = await register({
+    requestId: requestId(),
+    target: env.PLATFORM_MODE ?? "staging",
+  });
+  assert.equal(rejected.status, 503);
+  assert.equal(rejected.body.meta?.code, "sso_not_configured");
+  assert.equal(rejected.body.grantUrl, undefined);
+  assert.equal(memory.grants().length, before);
+  process.env.PLATFORM_MODE = "staging";
+  process.env.WEB_ORIGIN = WEB_ORIGIN;
+  process.env.CORS_ORIGIN = WEB_ORIGIN;
 }
 
 function grantId(grantUrl: string | undefined): string {
