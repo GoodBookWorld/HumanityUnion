@@ -11,6 +11,13 @@ import {
   redeemIntegrityMediaLink,
   rejectIntegrityMediaLinkRequest,
 } from "./external-author-link.service.js";
+import {
+  confirmProvisionAttempt,
+  ProvisionRequestError,
+  readProvisionConsent,
+  registerProvisionAttempt,
+} from "./external-author-link.provision.service.js";
+import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
 
 const CONFIRM_FIELDS = new Set(["state"]);
 const REDEEM_FIELDS = new Set(["resultCode", "externalAuthorId"]);
@@ -151,6 +158,7 @@ externalAuthorLinkRouter.post("/redeem", async (req, res) => {
         reconnected: result.reconnected,
         linkRevision: result.linkRevision,
         ...(result.linkInstanceId ? { linkInstanceId: result.linkInstanceId } : {}),
+        ...(result.provisionOutcome ? { provisionOutcome: result.provisionOutcome } : {}),
       },
       "Integrity Media link redeemed.",
     ),
@@ -199,7 +207,63 @@ externalAuthorLinkRouter.post("/acknowledge", async (req, res) => {
   );
 });
 
+externalAuthorLinkRouter.post("/provision-attempt", async (req, res) => {
+  try {
+    const result = await registerProvisionAttempt({
+      body: readObject(req),
+      timestamp: headerValue(req, "x-hu-integrity-media-timestamp"),
+      signature: headerValue(req, "x-hu-integrity-media-signature"),
+    });
+    res.status(200).json(
+      createSuccessResponse(result, "Integrity Media provision attempt stored."),
+    );
+  } catch (error) {
+    sendProvisionError(res, error);
+  }
+});
+
+externalAuthorLinkRouter.get("/provision-consent", async (req, res) => {
+  const unexpected = unexpectedQuery(req, new Set(["state"]));
+
+  if (unexpected) {
+    sendFailure(res, 400, "The confirmation request is not valid.", "unexpected_field");
+    return;
+  }
+
+  try {
+    const result = await readProvisionConsent({
+      attemptState: typeof req.query.state === "string" ? req.query.state : "",
+    });
+    res.json(createSuccessResponse(result, "Integrity Media provision consent loaded."));
+  } catch (error) {
+    sendProvisionError(res, error);
+  }
+});
+
+externalAuthorLinkRouter.post("/provision-confirm", async (req, res) => {
+  try {
+    const result = await confirmProvisionAttempt({ body: readObject(req) });
+    res.json(createSuccessResponse(result, "Humanity Union account provision confirmed."));
+  } catch (error) {
+    sendProvisionError(res, error);
+  }
+});
+
 export default externalAuthorLinkRouter;
+
+function sendProvisionError(res: Response, error: unknown): void {
+  if (error instanceof ProvisionRequestError) {
+    sendFailure(res, error.status, error.message, error.code);
+    return;
+  }
+
+  if (error instanceof MongoTransactionUnavailableError) {
+    sendFailure(res, 503, "Integrity Media account provisioning is not available.", "unavailable");
+    return;
+  }
+
+  sendFailure(res, 503, "Integrity Media account provisioning is not available.", "unavailable");
+}
 
 function sessionMemberId(req: Request): string {
   return req.auth?.memberId ?? "";

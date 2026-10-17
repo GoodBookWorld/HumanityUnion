@@ -1,0 +1,531 @@
+import type { BlogCapabilityGrant, MemberProfile } from "@hu/types";
+import type { ClientSession } from "mongodb";
+
+import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
+import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
+import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import {
+  MongoTransactionUnavailableError,
+  runMongoTransaction,
+} from "../../infrastructure/mongodb/mongo-transaction.js";
+import type { AuthUserRecord } from "../auth/auth-user.types.js";
+import { upsertBlogCapabilityGrant, findBlogCapabilityGrant } from "../blog/persistence/blog.repository.js";
+import { insertMember } from "../member/infrastructure/member.repository.js";
+import type { PersistedMemberRecord } from "../member/domain/member.types.js";
+import { insertMemberProfile } from "../member-profile/member-profile.repository.js";
+import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
+import {
+  getExternalAuthorLinkStore,
+  type ExternalAuthorLinkStore,
+} from "./external-author-link.store.js";
+import type {
+  ExternalAuthorLinkRecord,
+  ExternalAuthorLinkResultRecord,
+} from "./external-author-link.types.js";
+
+export interface ProvisionAttemptRecord {
+  attemptId: string;
+  externalAuthorId: string;
+  email: string;
+  displayName: string;
+  target: string;
+  expiresAt: number;
+  returnPath: string;
+  emailVerification: "pending";
+  memberId: string | null;
+  userId: string | null;
+  createdMember: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProvisionUserView {
+  userId: string;
+  memberId: string;
+  email: string;
+  emailVerificationStatus: AuthUserRecord["emailVerificationStatus"];
+  passwordHash: string;
+}
+
+export interface ProvisionGrantView {
+  capabilities: readonly string[];
+  publishWithoutManualReview: boolean;
+}
+
+export interface ProvisionDatabase {
+  findAttempt(attemptId: string): Promise<ProvisionAttemptRecord | null>;
+  insertAttempt(record: ProvisionAttemptRecord): Promise<"inserted" | "duplicate">;
+  saveAttempt(record: ProvisionAttemptRecord): Promise<void>;
+  findUserByEmail(email: string): Promise<ProvisionUserView | null>;
+  findUserByMemberId(memberId: string): Promise<ProvisionUserView | null>;
+  insertUser(record: AuthUserRecord): Promise<void>;
+  insertProfile(profile: MemberProfile): Promise<void>;
+  insertParticipant(record: PersistedMemberRecord): Promise<void>;
+  findGrant(participantId: string): Promise<ProvisionGrantView | null>;
+  insertGrant(grant: BlogCapabilityGrant): Promise<void>;
+  findLinkByAuthor(
+    source: typeof INTEGRITY_MEDIA_SOURCE,
+    externalAuthorId: string,
+  ): Promise<ExternalAuthorLinkRecord | null>;
+  insertLink(record: ExternalAuthorLinkRecord): Promise<"inserted" | "duplicate">;
+  listResultsForAttempt(attemptState: string): Promise<ExternalAuthorLinkResultRecord[]>;
+  insertResult(record: ExternalAuthorLinkResultRecord): Promise<void>;
+}
+
+export class ProvisionDuplicateKeyError extends Error {
+  readonly code = 11000;
+
+  constructor() {
+    super("Duplicate provision identity.");
+    this.name = "ProvisionDuplicateKeyError";
+  }
+}
+
+export function isProvisionDuplicateKeyError(error: unknown): boolean {
+  return (
+    error instanceof ProvisionDuplicateKeyError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: number }).code === 11000)
+  );
+}
+
+interface MemorySnapshot {
+  attempts: Map<string, ProvisionAttemptRecord>;
+  users: Map<string, AuthUserRecord>;
+  profiles: Map<string, MemberProfile>;
+  participants: Map<string, PersistedMemberRecord>;
+  grants: Map<string, BlogCapabilityGrant>;
+  links: Map<string, ExternalAuthorLinkRecord>;
+  results: Map<string, ExternalAuthorLinkResultRecord>;
+}
+
+export interface MemoryProvisionState {
+  readonly mutationCount: number;
+  failNextLinkInsert: boolean;
+  transaction<T>(work: (db: ProvisionDatabase) => Promise<T>): Promise<T>;
+  exclusive<T>(work: () => Promise<T>): Promise<T>;
+  view(): ProvisionDatabase;
+  users(): AuthUserRecord[];
+  links(): ExternalAuthorLinkRecord[];
+  grants(): BlogCapabilityGrant[];
+  results(): ExternalAuthorLinkResultRecord[];
+  attempts(): ProvisionAttemptRecord[];
+  participants(): PersistedMemberRecord[];
+}
+
+let memoryState: MemoryProvisionState | null = null;
+let memoryQueue: Promise<unknown> = Promise.resolve();
+
+export function setProvisionMemoryForTests(state: MemoryProvisionState | null): void {
+  memoryState = state;
+  memoryQueue = Promise.resolve();
+}
+
+export function getProvisionMemoryForTests(): MemoryProvisionState | null {
+  return memoryState;
+}
+
+export function createMemoryProvisionState(): MemoryProvisionState {
+  let attempts = new Map<string, ProvisionAttemptRecord>();
+  let users = new Map<string, AuthUserRecord>();
+  let profiles = new Map<string, MemberProfile>();
+  let participants = new Map<string, PersistedMemberRecord>();
+  let grants = new Map<string, BlogCapabilityGrant>();
+  let links = new Map<string, ExternalAuthorLinkRecord>();
+  let results = new Map<string, ExternalAuthorLinkResultRecord>();
+  let mutationCount = 0;
+  let failNextLinkInsert = false;
+
+  function snapshot(): MemorySnapshot {
+    return {
+      attempts: cloneMap(attempts),
+      users: cloneMap(users),
+      profiles: cloneMap(profiles),
+      participants: cloneMap(participants),
+      grants: cloneMap(grants),
+      links: cloneMap(links),
+      results: cloneMap(results),
+    };
+  }
+
+  function restore(saved: MemorySnapshot): void {
+    attempts = saved.attempts;
+    users = saved.users;
+    profiles = saved.profiles;
+    participants = saved.participants;
+    grants = saved.grants;
+    links = saved.links;
+    results = saved.results;
+  }
+
+  const database = createMemoryDatabaseView(() => ({
+    attempts,
+    users,
+    profiles,
+    participants,
+    grants,
+    links,
+    results,
+    noteMutation() {
+      mutationCount += 1;
+    },
+    consumeLinkFailure() {
+      if (!failNextLinkInsert) {
+        return false;
+      }
+
+      failNextLinkInsert = false;
+      return true;
+    },
+  }));
+
+  const state: MemoryProvisionState = {
+    get mutationCount() {
+      return mutationCount;
+    },
+    get failNextLinkInsert() {
+      return failNextLinkInsert;
+    },
+    set failNextLinkInsert(value: boolean) {
+      failNextLinkInsert = value;
+    },
+    transaction(work) {
+      return enqueue(async () => {
+        const saved = snapshot();
+
+        try {
+          return await work(database);
+        } catch (error) {
+          restore(saved);
+          throw error;
+        }
+      });
+    },
+    exclusive(work) {
+      return enqueue(work);
+    },
+    view: () => database,
+    users: () => [...users.values()].map((user) => ({ ...user })),
+    links: () => [...links.values()].map((link) => ({ ...link })),
+    grants: () => [...grants.values()].map((grant) => ({ ...grant, capabilities: [...grant.capabilities] })),
+    results: () => [...results.values()].map((result) => ({ ...result })),
+    attempts: () => [...attempts.values()].map((attempt) => ({ ...attempt })),
+    participants: () => [...participants.values()].map((participant) => ({ ...participant })),
+  };
+
+  return state;
+}
+
+export async function runProvisionTransaction<T>(
+  work: (db: ProvisionDatabase) => Promise<T>,
+): Promise<T> {
+  if (memoryState) {
+    return memoryState.transaction(work);
+  }
+
+  if (!isMongoConfigured()) {
+    throw new MongoTransactionUnavailableError();
+  }
+
+  return runMongoTransaction((session) => work(createMongoProvisionDatabase(session)));
+}
+
+export async function withProvisionLock<T>(work: () => Promise<T>): Promise<T> {
+  if (!memoryState) {
+    return work();
+  }
+
+  return memoryState.exclusive(work);
+}
+
+export function currentProvisionDatabase(): ProvisionDatabase {
+  if (memoryState) {
+    return memoryState.view();
+  }
+
+  return createMongoProvisionDatabase();
+}
+
+export async function findCommittedProvisionAttempt(
+  attemptId: string,
+): Promise<ProvisionAttemptRecord | null> {
+  if (memoryState) {
+    return memoryState.view().findAttempt(attemptId);
+  }
+
+  if (!isMongoConfigured()) {
+    return null;
+  }
+
+  return createMongoProvisionDatabase().findAttempt(attemptId);
+}
+
+function enqueue<T>(work: () => Promise<T>): Promise<T> {
+  const run = memoryQueue.then(work, work);
+  memoryQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+function cloneMap<T>(source: Map<string, T>): Map<string, T> {
+  return new Map([...source].map(([key, value]) => [key, structuredClone(value)]));
+}
+
+interface MemoryTables {
+  attempts: Map<string, ProvisionAttemptRecord>;
+  users: Map<string, AuthUserRecord>;
+  profiles: Map<string, MemberProfile>;
+  participants: Map<string, PersistedMemberRecord>;
+  grants: Map<string, BlogCapabilityGrant>;
+  links: Map<string, ExternalAuthorLinkRecord>;
+  results: Map<string, ExternalAuthorLinkResultRecord>;
+  noteMutation(): void;
+  consumeLinkFailure(): boolean;
+}
+
+function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
+  return {
+    async findAttempt(attemptId) {
+      return copy(read().attempts.get(attemptId));
+    },
+    async insertAttempt(record) {
+      const tables = read();
+      if (tables.attempts.has(record.attemptId)) {
+        return "duplicate";
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(record.attemptId, { ...record });
+      return "inserted";
+    },
+    async saveAttempt(record) {
+      const tables = read();
+      if (!tables.attempts.has(record.attemptId)) {
+        throw new Error("Provision attempt is missing.");
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(record.attemptId, { ...record });
+    },
+    async findUserByEmail(email) {
+      const user = [...read().users.values()].find((candidate) => candidate.email === email);
+      return user ? toUserView(user) : null;
+    },
+    async findUserByMemberId(memberId) {
+      const user = [...read().users.values()].find((candidate) => candidate.memberId === memberId);
+      return user ? toUserView(user) : null;
+    },
+    async insertUser(record) {
+      const tables = read();
+      if ([...tables.users.values()].some((user) => user.email === record.email)) {
+        throw new ProvisionDuplicateKeyError();
+      }
+
+      tables.noteMutation();
+      tables.users.set(record.userId, { ...record });
+    },
+    async insertProfile(profile) {
+      const tables = read();
+      tables.noteMutation();
+      tables.profiles.set(profile.userId, structuredClone(profile));
+    },
+    async insertParticipant(record) {
+      const tables = read();
+      if (
+        [...tables.participants.values()].some(
+          (participant) =>
+            participant.memberId === record.memberId ||
+            participant.identityId === record.identityId ||
+            participant.uniqueName === record.uniqueName,
+        )
+      ) {
+        throw new ProvisionDuplicateKeyError();
+      }
+
+      tables.noteMutation();
+      tables.participants.set(record.memberId, { ...record });
+    },
+    async findGrant(participantId) {
+      const grant = read().grants.get(participantId);
+      return grant
+        ? {
+            capabilities: [...grant.capabilities],
+            publishWithoutManualReview: grant.publishWithoutManualReview === true,
+          }
+        : null;
+    },
+    async insertGrant(grant) {
+      const tables = read();
+      if (tables.grants.has(grant.participantId)) {
+        throw new ProvisionDuplicateKeyError();
+      }
+
+      tables.noteMutation();
+      tables.grants.set(grant.participantId, {
+        ...grant,
+        capabilities: [...grant.capabilities],
+      });
+    },
+    async findLinkByAuthor(_source, externalAuthorId) {
+      return copy(read().links.get(externalAuthorId));
+    },
+    async insertLink(record) {
+      const tables = read();
+      if (tables.consumeLinkFailure()) {
+        tables.noteMutation();
+        throw new Error("Forced provision link failure.");
+      }
+
+      if (
+        tables.links.has(record.externalAuthorId) ||
+        [...tables.links.values()].some((link) => link.memberId === record.memberId)
+      ) {
+        return "duplicate";
+      }
+
+      tables.noteMutation();
+      tables.links.set(record.externalAuthorId, { ...record });
+      return "inserted";
+    },
+    async listResultsForAttempt(attemptState) {
+      return [...read().results.values()]
+        .filter((result) => result.attemptState === attemptState)
+        .map((result) => ({ ...result }));
+    },
+    async insertResult(record) {
+      const tables = read();
+      if (tables.results.has(record.resultCode)) {
+        throw new ProvisionDuplicateKeyError();
+      }
+
+      tables.noteMutation();
+      tables.results.set(record.resultCode, { ...record });
+    },
+  };
+}
+
+function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabase {
+  const attempts = () =>
+    getMongoCollection<ProvisionAttemptRecord>(MONGO_COLLECTIONS.externalAuthorProvisionAttempts);
+  const users = () => getMongoCollection<AuthUserRecord>(MONGO_COLLECTIONS.authUsers);
+  const sessionOptions = session ? { session } : {};
+  const linkStore = (): ExternalAuthorLinkStore => getExternalAuthorLinkStore();
+
+  return {
+    async findAttempt(attemptId) {
+      await ensureMongo();
+      const document = await attempts().findOne({ attemptId }, sessionOptions);
+      return document ? withoutId(document) : null;
+    },
+    async insertAttempt(record) {
+      await ensureMongo();
+
+      try {
+        await attempts().insertOne(record, sessionOptions);
+        return "inserted";
+      } catch (error) {
+        if (isProvisionDuplicateKeyError(error)) {
+          return "duplicate";
+        }
+
+        throw error;
+      }
+    },
+    async saveAttempt(record) {
+      await ensureMongo();
+      await attempts().replaceOne({ attemptId: record.attemptId }, record, sessionOptions);
+    },
+    async findUserByEmail(email) {
+      await ensureMongo();
+      const document = await users().findOne({ email }, sessionOptions);
+      return document ? toUserView(withoutId(document)) : null;
+    },
+    async findUserByMemberId(memberId) {
+      await ensureMongo();
+      const document = await users().findOne({ memberId }, sessionOptions);
+      return document ? toUserView(withoutId(document)) : null;
+    },
+    async insertUser(record) {
+      await ensureMongo();
+      await users().insertOne(record, sessionOptions);
+    },
+    async insertProfile(profile) {
+      await insertMemberProfile(profile, { session });
+    },
+    async insertParticipant(record) {
+      await insertMember(toMemberInput(record), { session });
+    },
+    async findGrant(participantId) {
+      const grant = await findBlogCapabilityGrant(participantId, { session });
+      return grant
+        ? {
+            capabilities: [...grant.capabilities],
+            publishWithoutManualReview: grant.publishWithoutManualReview === true,
+          }
+        : null;
+    },
+    async insertGrant(grant) {
+      await upsertBlogCapabilityGrant(grant, { session });
+    },
+    async findLinkByAuthor(source, externalAuthorId) {
+      return linkStore().findLinkByAuthor(source, externalAuthorId, { session });
+    },
+    async insertLink(record) {
+      return linkStore().insertLink(record, { session });
+    },
+    async listResultsForAttempt(attemptState) {
+      await ensureMongo();
+      const documents = await getMongoCollection<ExternalAuthorLinkResultRecord>(
+        MONGO_COLLECTIONS.externalAuthorLinkResults,
+      )
+        .find({ attemptState }, sessionOptions)
+        .toArray();
+      return documents.map((document) => withoutId(document));
+    },
+    async insertResult(record) {
+      await linkStore().insertResult(record, { session });
+    },
+  };
+}
+
+function toMemberInput(record: PersistedMemberRecord) {
+  return {
+    memberId: record.memberId,
+    identityId: record.identityId,
+    displayName: record.displayName,
+    uniqueName: record.uniqueName,
+    verificationLevel: record.verificationLevel,
+  };
+}
+
+function toUserView(user: AuthUserRecord): ProvisionUserView {
+  return {
+    userId: user.userId,
+    memberId: user.memberId,
+    email: user.email,
+    emailVerificationStatus: user.emailVerificationStatus,
+    passwordHash: user.passwordHash,
+  };
+}
+
+function copy<T>(value: T | undefined): T | null {
+  return value === undefined ? null : structuredClone(value);
+}
+
+function withoutId<T extends { _id?: unknown }>(document: T): Omit<T, "_id"> {
+  const { _id: _ignored, ...record } = document;
+  return record;
+}
+
+async function ensureMongo(): Promise<void> {
+  if (!isMongoConfigured()) {
+    throw new MongoTransactionUnavailableError();
+  }
+
+  await connectMongoClient();
+}

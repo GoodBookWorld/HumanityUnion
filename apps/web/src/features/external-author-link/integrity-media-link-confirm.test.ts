@@ -22,6 +22,18 @@ describe("Integrity Media confirmation page", () => {
     assert.match(page, /href="\/register"/);
     assert.match(page, />\s*Confirm\s*</);
     assert.match(page, />\s*Cancel\s*</);
+    assert.match(page, /provision-consent\?state=/);
+    assert.match(page, /provision-confirm/);
+    assert.match(page, /Confirm & Create Account/);
+    assert.match(
+      page,
+      /Confirmation creates an account on the Humanity Union social education and civic participation platform\./,
+    );
+    assert.match(
+      page,
+      /This Integrity Media account cannot be linked automatically\. No Humanity Union account was created\./,
+    );
+    assert.match(page, /isNotFoundError/);
     assert.equal(page.includes("memberId"), false);
     assert.equal(page.includes("returnUrl"), false);
     assert.equal(resolveSafeReturnTo(confirmationPath, "/workspace"), confirmationPath);

@@ -10,6 +10,13 @@ export const INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE = "integrity-media-link-redeem"
  */
 export const INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE = "integrity-media-link-acknowledge";
 
+/**
+ * IM → HU account provision attempt. A redeem or acknowledgement signature
+ * cannot register an attempt, and this purpose cannot redeem or confirm.
+ */
+export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_ATTEMPT_PURPOSE =
+  "integrity-media-account-provision-attempt";
+
 /** Domain separation: an IM disconnect signature cannot redeem a link or send a message. */
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE = "integrity-media-author-disconnect";
 

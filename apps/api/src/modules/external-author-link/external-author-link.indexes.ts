@@ -33,6 +33,14 @@ export const EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES: IndexDescription[] = [
   },
 ];
 
+export const EXTERNAL_AUTHOR_PROVISION_ATTEMPT_INDEXES: IndexDescription[] = [
+  {
+    key: { attemptId: 1 },
+    unique: true,
+    name: "external_author_provision_attempts_attempt_id_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_LINK_AUDIT_INDEXES: IndexDescription[] = [
   { key: { createdAt: -1 }, name: "external_author_link_audit_created_at" },
   { key: { action: 1, createdAt: -1 }, name: "external_author_link_audit_action_created" },

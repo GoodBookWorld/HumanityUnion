@@ -23,7 +23,10 @@ export type ClaimExternalAuthorLinkResult =
   | { status: "expired" };
 
 export interface ExternalAuthorLinkStore {
-  insertResult(record: ExternalAuthorLinkResultRecord): Promise<void>;
+  insertResult(
+    record: ExternalAuthorLinkResultRecord,
+    options?: { session?: ClientSession },
+  ): Promise<void>;
   claimResult(resultCode: string, nowIso: string): Promise<ClaimExternalAuthorLinkResult>;
   findLinkByAuthor(
     source: typeof INTEGRITY_MEDIA_SOURCE,
@@ -45,8 +48,12 @@ export interface ExternalAuthorLinkStore {
   findLinkByMember(
     source: typeof INTEGRITY_MEDIA_SOURCE,
     memberId: string,
+    options?: { session?: ClientSession },
   ): Promise<ExternalAuthorLinkRecord | null>;
-  insertLink(record: ExternalAuthorLinkRecord): Promise<"inserted" | "duplicate">;
+  insertLink(
+    record: ExternalAuthorLinkRecord,
+    options?: { session?: ClientSession },
+  ): Promise<"inserted" | "duplicate">;
   updateLink(record: ExternalAuthorLinkRecord): Promise<"updated" | "missing" | "refused">;
   /**
    * Disable only while the stored generation still equals the expected one.
@@ -326,8 +333,8 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     );
 
   return {
-    async insertResult(record) {
-      await results().insertOne(record);
+    async insertResult(record, options) {
+      await results().insertOne(record, options?.session ? { session: options.session } : {});
     },
 
     async claimResult(resultCode, nowIso) {
@@ -366,14 +373,17 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       return document ? withoutId(document) : null;
     },
 
-    async findLinkByMember(source, memberId) {
-      const document = await links().findOne({ source, memberId });
+    async findLinkByMember(source, memberId, options) {
+      const document = await links().findOne(
+        { source, memberId },
+        options?.session ? { session: options.session } : {},
+      );
       return document ? withoutId(document) : null;
     },
 
-    async insertLink(record) {
+    async insertLink(record, options) {
       try {
-        await links().insertOne(record);
+        await links().insertOne(record, options?.session ? { session: options.session } : {});
         return "inserted";
       } catch (error) {
         if (isDuplicateKeyError(error)) {
