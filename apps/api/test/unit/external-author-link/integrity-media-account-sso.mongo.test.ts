@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 
+import type { Db } from "mongodb";
+
 import {
   assertExplicitIsolatedMongoTestTarget,
+  isExplicitIsolatedMongoTest,
   lockExplicitIsolatedMongoTestConfig,
 } from "../../../src/infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../../src/infrastructure/mongodb/mongo-collections.js";
 import { connectMongoClient, disconnectMongoClient, getMongoClient } from "../../../src/infrastructure/mongodb/mongo-connection.js";
+import { getLockedMongoConfigForTests } from "../../../src/infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection, getMongoDatabase } from "../../../src/infrastructure/mongodb/mongo-database.js";
 import { setAuthSessionWriterForTests } from "../../../src/modules/auth/auth-session.repository.js";
 import { setFindAuthUserByIdForTests } from "../../../src/modules/auth/auth-user.repository.js";
@@ -56,7 +60,8 @@ describe("real MongoDB SSO transactions", () => {
   const authorId = randomUUID();
   const otherAuthorId = randomUUID();
   const uniqueName = `ssotest${RUN}`;
-  let validatorApplied = false;
+  let sessionCollectionReplaced = false;
+  let preservedSessionIndex: PreservedSessionIndex | null = null;
   let envCaptured = false;
   let previousSecret: string | undefined;
   let previousMode: string | undefined;
@@ -84,22 +89,28 @@ describe("real MongoDB SSO transactions", () => {
   });
 
   after(async () => {
-    if (validatorApplied) {
-      await disableSessionInsertFailure();
+    try {
+      if (sessionCollectionReplaced) {
+        await disableSessionInsertFailure();
+      }
+    } finally {
+      try {
+        if (mongoIsConnected()) {
+          await deleteSyntheticRecords();
+        }
+      } finally {
+        await disconnectMongoClient();
+        if (envCaptured) {
+          restoreEnv(INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV, previousSecret);
+          restoreEnv("PLATFORM_MODE", previousMode);
+          restoreEnv("WEB_ORIGIN", previousOrigin);
+        }
+        setSsoMemoryForTests(null);
+        setFindAuthUserByIdForTests(null);
+        setAuthSessionWriterForTests(null);
+        setExternalAuthorLinkStoreForTests(null);
+      }
     }
-    if (mongoIsConnected()) {
-      await deleteSyntheticRecords();
-    }
-    await disconnectMongoClient();
-    if (envCaptured) {
-      restoreEnv(INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV, previousSecret);
-      restoreEnv("PLATFORM_MODE", previousMode);
-      restoreEnv("WEB_ORIGIN", previousOrigin);
-    }
-    setSsoMemoryForTests(null);
-    setFindAuthUserByIdForTests(null);
-    setAuthSessionWriterForTests(null);
-    setExternalAuthorLinkStoreForTests(null);
   });
 
   it("lets one of two concurrent completions create the only session", async () => {
@@ -130,38 +141,45 @@ describe("real MongoDB SSO transactions", () => {
     const requestId = `sso-rollback-${RUN}-cd`;
     const grant = await registerGrant(requestId, authorId, memberId, 4, "staging");
     await deleteSessions();
-    await enableSessionInsertFailure();
 
     try {
-      await complete(grant);
-      throw new Error("Session insert failure did not abort completion.");
-    } catch (error) {
-      if (error instanceof Error && error.message === "Session insert failure did not abort completion.") {
-        throw error;
+      await enableSessionInsertFailure();
+
+      try {
+        await complete(grant);
+        throw new Error("Session insert failure did not abort completion.");
+      } catch (error) {
+        if (error instanceof Error && error.message === "Session insert failure did not abort completion.") {
+          throw error;
+        }
+        if (mongoErrorCode(error) !== 121) {
+          throw new Error("Session insert failure did not abort the transaction.");
+        }
       }
-      if (mongoErrorCode(error) !== 121) {
-        throw new Error("Session insert failure did not abort the transaction.");
+
+      if ((await countOpenGrants(requestId)) !== 1) {
+        throw new Error("Grant consumption was not rolled back.");
       }
-    }
+      if ((await countSessions()) !== 0) {
+        throw new Error("A failed session insert left a session behind.");
+      }
 
-    if ((await countOpenGrants(requestId)) !== 1) {
-      throw new Error("Grant consumption was not rolled back.");
-    }
-    if ((await countSessions()) !== 0) {
-      throw new Error("A failed session insert left a session behind.");
-    }
+      await disableSessionInsertFailure();
+      assertSessionCompletion(await complete(grant));
+      if ((await countSessions()) !== 1 || (await countOpenGrants(requestId)) !== 0) {
+        throw new Error("The retry did not consume the grant into one session.");
+      }
 
-    await disableSessionInsertFailure();
-    assertSessionCompletion(await complete(grant));
-    if ((await countSessions()) !== 1 || (await countOpenGrants(requestId)) !== 0) {
-      throw new Error("The retry did not consume the grant into one session.");
-    }
-
-    await assert.rejects(() => complete(grant), (error: unknown) => {
-      return error instanceof SsoRequestError && error.code === "grant_consumed";
-    });
-    if ((await countSessions()) !== 1 || (await countGrants(requestId)) !== 1) {
-      throw new Error("A second retry created another session or grant.");
+      await assert.rejects(() => complete(grant), (error: unknown) => {
+        return error instanceof SsoRequestError && error.code === "grant_consumed";
+      });
+      if ((await countSessions()) !== 1 || (await countGrants(requestId)) !== 1) {
+        throw new Error("A second retry created another session or grant.");
+      }
+    } finally {
+      if (sessionCollectionReplaced) {
+        await disableSessionInsertFailure();
+      }
     }
   });
 
@@ -284,14 +302,30 @@ describe("real MongoDB SSO transactions", () => {
   }
 
   async function enableSessionInsertFailure(): Promise<void> {
-    const db = getMongoDatabase();
     const name = MONGO_COLLECTIONS.authSessions;
-    const existing = await db.listCollections({ name }).toArray();
-    if (existing.length === 0) {
-      await db.createCollection(name);
+    const inspected = requireIsolatedSessionDatabase();
+    const existing = await inspected.listCollections({ name }).toArray();
+    if (existing.length !== 1) {
+      throw new Error("Refusing to replace auth_sessions because its unique session index is missing.");
     }
-    await db.command({
-      collMod: name,
+    const indexes = await inspected.collection(name).indexes();
+    const sessionIndex = indexes.find(
+      (index) =>
+        index.name === "auth_session_id_unique" &&
+        index.unique === true &&
+        isExactSessionIdIndex(index.key),
+    );
+    if (!sessionIndex) {
+      throw new Error("Refusing to replace auth_sessions because its unique session index is missing.");
+    }
+    preservedSessionIndex = { name: "auth_session_id_unique", key: { sessionId: 1 } };
+    const documentCount = await inspected.collection(name).countDocuments();
+    if (documentCount !== 0) {
+      throw new Error("Refusing to drop auth_sessions because it contains documents.");
+    }
+    sessionCollectionReplaced = true;
+    await requireIsolatedSessionDatabase().collection(name).drop();
+    await requireIsolatedSessionDatabase().createCollection(name, {
       validator: {
         $jsonSchema: {
           bsonType: "object",
@@ -301,16 +335,54 @@ describe("real MongoDB SSO transactions", () => {
       validationLevel: "strict",
       validationAction: "error",
     });
-    validatorApplied = true;
+    await recreateUniqueSessionIndex();
   }
 
   async function disableSessionInsertFailure(): Promise<void> {
-    await getMongoDatabase().command({
-      collMod: MONGO_COLLECTIONS.authSessions,
-      validator: {},
-      validationLevel: "off",
-    });
-    validatorApplied = false;
+    if (!preservedSessionIndex) {
+      throw new Error("Refusing to restore auth_sessions because its unique session index was not preserved.");
+    }
+    const name = MONGO_COLLECTIONS.authSessions;
+    const inspected = requireIsolatedSessionDatabase();
+    const existing = await inspected.listCollections({ name }).toArray();
+    if (existing.length > 0) {
+      const documentCount = await inspected.collection(name).countDocuments();
+      if (documentCount !== 0) {
+        throw new Error("Refusing to drop auth_sessions because it contains documents.");
+      }
+      await requireIsolatedSessionDatabase().collection(name).drop();
+    }
+    await requireIsolatedSessionDatabase().createCollection(name);
+    await recreateUniqueSessionIndex();
+    sessionCollectionReplaced = false;
+  }
+
+  async function recreateUniqueSessionIndex(): Promise<void> {
+    if (!preservedSessionIndex) {
+      throw new Error("Refusing to restore auth_sessions because its unique session index was not preserved.");
+    }
+    await requireIsolatedSessionDatabase().collection(MONGO_COLLECTIONS.authSessions).createIndex(
+      preservedSessionIndex.key,
+      { unique: true, name: preservedSessionIndex.name },
+    );
+  }
+
+  function requireIsolatedSessionDatabase(): Db {
+    if (!isExplicitIsolatedMongoTest()) {
+      throw new Error("Refusing to modify auth_sessions outside an explicit isolated MongoDB test.");
+    }
+    const locked = getLockedMongoConfigForTests();
+    const selected = getMongoDatabase();
+    if (
+      locked?.database !== database ||
+      selected.databaseName !== database ||
+      selected.databaseName !== locked.database
+    ) {
+      throw new Error(
+        "Refusing to modify auth_sessions because the selected database is not the locked isolated test database.",
+      );
+    }
+    return selected;
   }
 
   async function deleteSyntheticRecords(): Promise<void> {
@@ -386,6 +458,19 @@ describe("real MongoDB SSO transactions", () => {
     return completeSsoGrant({ body: { grant } });
   }
 });
+
+type PreservedSessionIndex = {
+  name: "auth_session_id_unique";
+  key: { sessionId: 1 };
+};
+
+function isExactSessionIdIndex(key: unknown): boolean {
+  if (!key || typeof key !== "object" || Array.isArray(key)) {
+    return false;
+  }
+  const record = key as Record<string, unknown>;
+  return Object.keys(record).length === 1 && record.sessionId === 1;
+}
 
 function opaqueGrant(grantUrl: string, origin: string): string {
   let url: URL;
