@@ -17,6 +17,15 @@ export const INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE = "integrity-media-link-ac
 export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_ATTEMPT_PURPOSE =
   "integrity-media-account-provision-attempt";
 
+/**
+ * IM → HU passwordless sign-in. A provision, redeem, or acknowledgement
+ * signature cannot mint an SSO grant, and this purpose cannot create an account.
+ */
+export const INTEGRITY_MEDIA_ACCOUNT_SSO_PURPOSE = "integrity-media-account-sso";
+
+/** Browser grant lifetime. Shorter than the signature replay window. */
+export const INTEGRITY_MEDIA_SSO_GRANT_TTL_MS = 60 * 1000;
+
 /** Domain separation: an IM disconnect signature cannot redeem a link or send a message. */
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PURPOSE = "integrity-media-author-disconnect";
 

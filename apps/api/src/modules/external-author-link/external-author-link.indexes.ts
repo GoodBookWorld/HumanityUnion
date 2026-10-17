@@ -41,6 +41,19 @@ export const EXTERNAL_AUTHOR_PROVISION_ATTEMPT_INDEXES: IndexDescription[] = [
   },
 ];
 
+export const EXTERNAL_AUTHOR_SSO_GRANT_INDEXES: IndexDescription[] = [
+  {
+    key: { grantId: 1 },
+    unique: true,
+    name: "external_author_sso_grants_grant_id_unique",
+  },
+  {
+    key: { requestId: 1 },
+    unique: true,
+    name: "external_author_sso_grants_request_id_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_LINK_AUDIT_INDEXES: IndexDescription[] = [
   { key: { createdAt: -1 }, name: "external_author_link_audit_created_at" },
   { key: { action: 1, createdAt: -1 }, name: "external_author_link_audit_action_created" },
