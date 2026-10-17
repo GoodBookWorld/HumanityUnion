@@ -436,6 +436,153 @@ describe("Auth Recovery Hotfix — bounded refresh / guest settle", () => {
     assert.match(gate, /\/login\?returnTo=/);
   });
 
+  it("14 — verified SSO acceptance clears a guest latch and ignores a stale probe", async () => {
+    const {
+      __testOnly_resetClientAuthStatusResolver,
+      acceptAuthenticatedClientAuthStatus,
+      getClientAuthStatusSnapshot,
+      invalidateClientAuthStatusResolution,
+      resolveClientAuthStatus,
+    } = await import("./client-auth-status-resolver.js");
+
+    __testOnly_resetClientAuthStatusResolver();
+    resetAuthRefreshState();
+
+    let releaseFirstSession: (response: Response) => void = () => {};
+    const firstSession = new Promise<Response>((resolve) => {
+      releaseFirstSession = resolve;
+    });
+    let sessionCalls = 0;
+
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, method: (init?.method || "GET").toUpperCase() });
+
+      if (url.includes("/api/v1/auth/session")) {
+        sessionCalls += 1;
+        if (sessionCalls === 1) {
+          return firstSession;
+        }
+
+        const authenticated = sessionCalls === 2;
+        return jsonResponse(200, {
+          success: true,
+          data: authenticated
+            ? { authenticated: true, user: { id: "member-1" }, authSource: "cookie" }
+            : { authenticated: false, user: null, authSource: "none" },
+          meta: {},
+          links: {},
+          message: authenticated ? "Authenticated session." : "Guest session.",
+        });
+      }
+
+      if (url.includes("/api/v1/auth/refresh") || url.includes("/api/v1/auth/me")) {
+        return jsonResponse(401, {
+          success: false,
+          data: null,
+          meta: {},
+          links: {},
+          message: "Authentication required.",
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+
+    const staleProbe = resolveClientAuthStatus();
+    assert.equal(sessionCalls, 1);
+
+    acceptAuthenticatedClientAuthStatus();
+    assert.equal(getClientAuthStatusSnapshot(), "authenticated");
+
+    releaseFirstSession(
+      jsonResponse(200, {
+        success: true,
+        data: { authenticated: false, user: null, authSource: "none" },
+        meta: {},
+        links: {},
+        message: "Guest session.",
+      }),
+    );
+
+    assert.equal(await staleProbe, "authenticated");
+    assert.equal(getClientAuthStatusSnapshot(), "authenticated");
+    assert.equal(__testOnly_hasRefreshDefinitivelyFailed(), false);
+    assert.equal(calls.filter((call) => call.url.includes("/auth/refresh")).length, 0);
+
+    const gate = read("features/auth/components/WorkspaceAuthGate.tsx");
+    assert.match(gate, /authStatus === "unauthenticated" && !isBootstrapUiAllowed\(\)/);
+    assert.equal(getClientAuthStatusSnapshot() === "unauthenticated", false);
+
+    assert.equal(await resolveClientAuthStatus(), "authenticated");
+    assert.equal(sessionCalls, 2);
+
+    invalidateClientAuthStatusResolution();
+    assert.equal(await resolveClientAuthStatus(), "unauthenticated");
+    assert.equal(getClientAuthStatusSnapshot(), "unauthenticated");
+    const sessionsAfterGuest = calls.filter((call) => call.url.includes("/auth/session")).length;
+    assert.equal(await resolveClientAuthStatus(), "unauthenticated");
+    assert.equal(
+      calls.filter((call) => call.url.includes("/auth/session")).length,
+      sessionsAfterGuest,
+    );
+  });
+
+  it("15 — a settled guest remains gated until session acceptance", async () => {
+    const {
+      __testOnly_resetClientAuthStatusResolver,
+      acceptAuthenticatedClientAuthStatus,
+      getClientAuthStatusSnapshot,
+      resolveClientAuthStatus,
+    } = await import("./client-auth-status-resolver.js");
+
+    __testOnly_resetClientAuthStatusResolver();
+    resetAuthRefreshState();
+
+    let sessionCalls = 0;
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, method: (init?.method || "GET").toUpperCase() });
+
+      if (url.includes("/api/v1/auth/session")) {
+        sessionCalls += 1;
+        const authenticated = sessionCalls >= 2;
+        return jsonResponse(200, {
+          success: true,
+          data: authenticated
+            ? { authenticated: true, user: { id: "member-1" }, authSource: "cookie" }
+            : { authenticated: false, user: null, authSource: "none" },
+          meta: {},
+          links: {},
+          message: authenticated ? "Authenticated session." : "Guest session.",
+        });
+      }
+
+      if (url.includes("/api/v1/auth/refresh")) {
+        return jsonResponse(401, {
+          success: false,
+          data: null,
+          meta: {},
+          links: {},
+          message: "Authentication required.",
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+
+    assert.equal(await resolveClientAuthStatus(), "unauthenticated");
+    assert.equal(getClientAuthStatusSnapshot(), "unauthenticated");
+    assert.equal(await resolveClientAuthStatus(), "unauthenticated");
+    assert.equal(sessionCalls, 1);
+
+    acceptAuthenticatedClientAuthStatus();
+    assert.equal(getClientAuthStatusSnapshot(), "authenticated");
+    assert.equal(await resolveClientAuthStatus(), "authenticated");
+    assert.equal(sessionCalls, 2);
+    assert.equal(calls.filter((call) => call.url.includes("/auth/refresh")).length, 1);
+  });
+
   it("refresh exclusion covers bootstrap auth routes", () => {
     assert.equal(isAuthRefreshExemptPath("/api/v1/auth/refresh"), true);
     assert.equal(isAuthRefreshExemptPath("/api/v1/auth/login"), true);

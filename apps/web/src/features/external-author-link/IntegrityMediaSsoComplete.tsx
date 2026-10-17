@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 
+import { acceptAuthenticatedClientAuthStatus } from "../auth/client-auth-status-resolver";
 import { AuthFeedbackMessage } from "../auth/components/AuthFeedbackMessage";
 import { API_BASE_URL } from "../../lib/api-base-url";
 import {
@@ -28,6 +29,10 @@ export function IntegrityMediaSsoComplete() {
 
     let cancelled = false;
     void completeSsoGrantOnce(assessment.grant, { apiBaseUrl: API_BASE_URL }).then((result) => {
+      if (result.kind === "verified") {
+        acceptAuthenticatedClientAuthStatus();
+      }
+
       if (cancelled) {
         return;
       }

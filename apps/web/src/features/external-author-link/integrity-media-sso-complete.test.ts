@@ -212,6 +212,15 @@ describe("Integrity Media SSO completion", () => {
     assert.match(component, /stripSsoGrantFromBrowserUrl/);
     assert.match(component, /useLayoutEffect/);
     assert.match(component, /router\.replace\(result\.destination\)/);
+    assert.match(
+      component,
+      /if \(result\.kind === "verified"\) \{\s*acceptAuthenticatedClientAuthStatus\(\);\s*\}/,
+    );
+    const acceptAt = component.indexOf("acceptAuthenticatedClientAuthStatus()");
+    const replaceAt = component.indexOf("router.replace(result.destination)");
+    assert.equal(acceptAt >= 0 && replaceAt > acceptAt, true);
+    assert.equal(component.split("acceptAuthenticatedClientAuthStatus()").length, 2);
+    assert.equal(completion.includes("acceptAuthenticatedClientAuthStatus"), false);
     assert.match(completion, /credentials: "include"/);
     assert.match(completion, /referrerPolicy: "no-referrer"/);
     assert.equal(component.includes("apiRequest"), false);

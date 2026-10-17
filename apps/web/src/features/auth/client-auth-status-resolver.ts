@@ -22,6 +22,11 @@ interface ResolverState {
    * login/logout/successful refresh invalidates via AUTH_STATE_CHANGED_EVENT.
    */
   guestSettled: boolean;
+  /**
+   * Bumped when a browser session is accepted. A probe captures this at start
+   * and must not publish a guest result after a newer acceptance.
+   */
+  epoch: number;
   browserBound: boolean;
 }
 
@@ -36,6 +41,7 @@ function getState(): ResolverState {
       inFlight: null,
       listeners: new Set(),
       guestSettled: false,
+      epoch: 0,
       browserBound: false,
     };
   }
@@ -80,14 +86,33 @@ function ensureBrowserBinding(): void {
   });
 }
 
-async function settleAuthenticated(): Promise<ResolvedClientAuthStatus> {
+function isCurrentEpoch(epoch: number): boolean {
+  return getState().epoch === epoch;
+}
+
+/** Status already published by a newer acceptance or settlement. */
+function adoptedStatus(): ResolvedClientAuthStatus {
+  return getState().latest === "authenticated" ? "authenticated" : "unauthenticated";
+}
+
+async function settleAuthenticated(epoch: number): Promise<ResolvedClientAuthStatus> {
+  if (!isCurrentEpoch(epoch)) {
+    return adoptedStatus();
+  }
+
   const state = getState();
   state.guestSettled = false;
   publish("authenticated");
   return "authenticated";
 }
 
-async function settleGuest(): Promise<ResolvedClientAuthStatus> {
+async function settleGuest(epoch: number): Promise<ResolvedClientAuthStatus> {
+  if (!isCurrentEpoch(epoch)) {
+    // The stale probe's refresh failure must not stick after session acceptance.
+    resetAuthRefreshState();
+    return adoptedStatus();
+  }
+
   const state = getState();
   markAuthRefreshDefinitivelyFailed();
   state.guestSettled = true;
@@ -115,54 +140,80 @@ export async function resolveClientAuthStatus(): Promise<ResolvedClientAuthStatu
     return state.inFlight;
   }
 
-  state.inFlight = (async () => {
+  const epoch = state.epoch;
+  const flight = (async () => {
     clearLegacyAuthTokenStorage();
 
     try {
       const session = await fetchAuthSession();
 
+      if (!isCurrentEpoch(epoch)) {
+        return adoptedStatus();
+      }
+
       if (session.authenticated && session.user) {
-        return settleAuthenticated();
+        return settleAuthenticated(epoch);
       }
 
       // Guest probe may still have a valid refresh cookie (expired access).
       const refreshed = await refreshAuthSessionOnce({ notifyOnSuccess: false });
 
+      if (!isCurrentEpoch(epoch)) {
+        resetAuthRefreshState();
+        return adoptedStatus();
+      }
+
       if (refreshed) {
         const nextSession = await fetchAuthSession();
 
+        if (!isCurrentEpoch(epoch)) {
+          return adoptedStatus();
+        }
+
         if (nextSession.authenticated && nextSession.user) {
-          return settleAuthenticated();
+          return settleAuthenticated(epoch);
         }
 
         try {
           await getMe();
-          return settleAuthenticated();
+          return settleAuthenticated(epoch);
         } catch {
-          return settleGuest();
+          return settleGuest(epoch);
         }
       }
 
-      return settleGuest();
+      return settleGuest(epoch);
     } catch (sessionError) {
+      if (!isCurrentEpoch(epoch)) {
+        return adoptedStatus();
+      }
+
       if (process.env.NODE_ENV !== "production") {
         console.warn("[hu-auth] session probe failed; falling back to /me", sessionError);
       }
     }
 
+    if (!isCurrentEpoch(epoch)) {
+      return adoptedStatus();
+    }
+
     // Older deployments without /session — one bounded /me (+ api-client refresh).
     try {
       await getMe();
-      return settleAuthenticated();
+      return settleAuthenticated(epoch);
     } catch {
       clearLegacyAuthTokenStorage();
-      return settleGuest();
+      return settleGuest(epoch);
     }
-  })().finally(() => {
-    state.inFlight = null;
-  });
+  })();
 
-  return state.inFlight;
+  const tracked = flight.finally(() => {
+    if (state.inFlight === tracked) {
+      state.inFlight = null;
+    }
+  });
+  state.inFlight = tracked;
+  return tracked;
 }
 
 /**
@@ -176,13 +227,14 @@ export function invalidateClientAuthStatusResolution(): void {
 
 export function acceptAuthenticatedClientAuthStatus(): void {
   const state = getState();
+  state.epoch += 1;
   state.guestSettled = false;
   resetAuthRefreshState();
   publish("authenticated");
 }
 
 export function acceptGuestClientAuthStatus(): void {
-  void settleGuest();
+  void settleGuest(getState().epoch);
 }
 
 export function getClientAuthStatusSnapshot(): ResolvedClientAuthStatus | "pending" {
@@ -209,6 +261,7 @@ export function __testOnly_resetClientAuthStatusResolver(): void {
   state.latest = "pending";
   state.inFlight = null;
   state.guestSettled = false;
+  state.epoch = 0;
   state.listeners.clear();
   // Keep browserBound — re-binding would duplicate window listeners in tests/HMR.
 }
