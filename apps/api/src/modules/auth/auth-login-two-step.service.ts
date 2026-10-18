@@ -280,6 +280,10 @@ export async function resendLoginTwoStepCode(input: {
     throw new AuthValidationError("Login verification session is invalid.");
   }
 
+  if (user.status === "disabled") {
+    throw new UserDisabledError();
+  }
+
   const activeCode = await findActiveEmailConfirmationCode({
     userId: user.userId,
     purpose: LOGIN_TWO_STEP_PURPOSE,
