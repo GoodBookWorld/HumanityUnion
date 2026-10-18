@@ -22,7 +22,11 @@ import {
   buildProvisionSnapshotPayload,
   resetProvisionSnapshotReplayCacheForTests,
 } from "../../../src/modules/external-author-link/external-author-link.provision-snapshot.hmac.js";
-import { MAX_PROVISION_SNAPSHOT_BYTES } from "../../../src/modules/external-author-link/external-author-link.provision-snapshot.schema.js";
+import {
+  MAX_PROVISION_SNAPSHOT_BYTES,
+  parseApprovedProvisionSnapshot,
+  readImportableSnapshotPhoto,
+} from "../../../src/modules/external-author-link/external-author-link.provision-snapshot.schema.js";
 import externalAuthorLinkRouter from "../../../src/modules/external-author-link/external-author-link.routes.js";
 import {
   createMemoryProvisionState,
@@ -547,6 +551,77 @@ describe("Integrity Media provision profile snapshot", () => {
       "userId",
     ]);
   });
+
+  it("accepts SHA-256 and sha256 spellings and keeps the signed snapshot bytes", async () => {
+    const full = imWebpSnapshot("SHA-256");
+    const parsed = parseApprovedProvisionSnapshot(full);
+    assert.equal(parsed.ok, true);
+    if (parsed.ok) {
+      assert.equal(parsed.fields.displayName, "Ada");
+      assert.equal(parsed.fields.biography, "Bio");
+      assert.equal(parsed.fields.facebookUrl, "https://www.facebook.com/example");
+    }
+    assert.deepEqual(readImportableSnapshotPhoto(full), {
+      mediaType: "image/webp",
+      byteLength: 12,
+      digest: "cd".repeat(32),
+    });
+
+    const lowercase = imWebpSnapshot("sha256");
+    assert.equal(parseApprovedProvisionSnapshot(lowercase).ok, true);
+    assert.equal(readImportableSnapshotPhoto(lowercase)?.digest, "cd".repeat(32));
+
+    for (const algorithm of ["SHA256", "sha-256", "md5"]) {
+      const rejected = parseApprovedProvisionSnapshot(imWebpSnapshot(algorithm));
+      assert.equal(rejected.ok, false);
+      if (!rejected.ok) {
+        assert.equal(rejected.code, "invalid_snapshot");
+      }
+      assert.equal(readImportableSnapshotPhoto(imWebpSnapshot(algorithm)), null);
+    }
+
+    const attemptId = "webpMetaAttemptTok001";
+    assert.equal((await registerAttempt(attemptBody({ attemptId }))).status, 200);
+    const unsupported = await registerSnapshot(imWebpSnapshot("SHA256"), {}, { attemptId });
+    assert.equal(unsupported.status, 400);
+    assert.equal(unsupported.body.meta.code, "invalid_snapshot");
+    assert.equal(memory.attempts()[0]?.profileSnapshot, undefined);
+
+    const stored = await registerSnapshot(full, {}, { attemptId });
+    assert.equal(stored.status, 200);
+    assert.equal(memory.attempts()[0]?.profileSnapshot, full);
+    assert.equal(memory.attempts()[0]?.profileSnapshotDigest, createHash("sha256").update(full, "utf8").digest("hex"));
+
+    const confirmed = await request("POST", "/api/v1/integrity-media/link/provision-confirm", {
+      state: attemptId,
+    });
+    assert.equal(confirmed.status, 200);
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(memory.users()[0]?.displayName, "Example Author");
+    assert.equal(memory.participants()[0]?.displayName, "Ada");
+    assert.equal(memory.profiles()[0]?.biography, "Bio");
+    assert.equal(memory.profiles()[0]?.facebookUrl, "https://www.facebook.com/example");
+    assert.equal(memory.profiles()[0]?.avatarUrl, undefined);
+    assert.equal(memory.attempts()[0]?.profileSnapshot, full);
+  });
+
+  it("accepts a valid snapshot at the byte ceiling and rejects one byte more", async () => {
+    const attemptId = "byteLimitAttemptTok01";
+    assert.equal((await registerAttempt(attemptBody({ attemptId }))).status, 200);
+    const exact = snapshotAtByteLength(MAX_PROVISION_SNAPSHOT_BYTES);
+    assert.equal(Buffer.byteLength(exact, "utf8"), MAX_PROVISION_SNAPSHOT_BYTES);
+    assert.equal(parseApprovedProvisionSnapshot(exact).ok, true);
+    const accepted = await registerSnapshot(exact, {}, { attemptId });
+    assert.equal(accepted.status, 200);
+    assert.equal(memory.attempts()[0]?.profileSnapshot, exact);
+
+    const oversized = `${exact} `;
+    assert.equal(Buffer.byteLength(oversized, "utf8"), MAX_PROVISION_SNAPSHOT_BYTES + 1);
+    const rejected = await registerSnapshot(oversized, {}, { attemptId });
+    assert.equal(rejected.status, 413);
+    assert.equal(rejected.body.meta.code, "payload_too_large");
+    assert.equal(memory.attempts()[0]?.profileSnapshot, exact);
+  });
 });
 
 function restoreEnv(name: string, value: string | undefined): void {
@@ -609,6 +684,59 @@ function snapshotText(
   override: Partial<{ displayName: string; biography: string; linkedinUrl: string }> = {},
 ): string {
   return JSON.stringify(snapshotFields(override));
+}
+
+function imWebpSnapshot(digestAlgorithm: string): string {
+  return `{"version":2,"displayName":"Ada","biography":"Bio","photo":{"mediaType":"image/webp","width":512,"height":512,"byteLength":12,"digestAlgorithm":${JSON.stringify(digestAlgorithm)},"digest":"${"cd".repeat(32)}"},"facebookUrl":"https://www.facebook.com/example"}`;
+}
+
+function snapshotAtByteLength(targetBytes: number): string {
+  const digest = "cd".repeat(32);
+  const cjk = "\u4e00";
+  const urls = {
+    facebookUrl: "https://www.facebook.com/",
+    youtubeUrl: "https://www.youtube.com/",
+    linkedinUrl: "https://www.linkedin.com/",
+    xUrl: "https://x.com/",
+    website: "https://example.com/",
+  };
+  let biography = "";
+  const build = (): string =>
+    JSON.stringify({
+      version: 2,
+      displayName: "Ada",
+      biography,
+      photo: {
+        mediaType: "image/webp",
+        width: 512,
+        height: 512,
+        byteLength: 12,
+        digestAlgorithm: "SHA-256",
+        digest,
+      },
+      ...urls,
+    });
+
+  let text = build();
+  while (Buffer.byteLength(text, "utf8") + 3 <= targetBytes) {
+    if (biography.length < 2000) {
+      biography += cjk;
+      text = build();
+      continue;
+    }
+    const next = (Object.keys(urls) as Array<keyof typeof urls>).find((name) => urls[name].length < 2048);
+    if (!next) {
+      break;
+    }
+    urls[next] += cjk;
+    text = build();
+  }
+
+  if (Buffer.byteLength(text, "utf8") !== targetBytes) {
+    throw new Error(`Snapshot builder stopped at ${Buffer.byteLength(text, "utf8")} bytes.`);
+  }
+
+  return text;
 }
 
 async function registerAttempt(

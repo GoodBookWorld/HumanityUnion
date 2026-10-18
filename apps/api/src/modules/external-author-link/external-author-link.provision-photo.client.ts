@@ -14,6 +14,7 @@ const TRANSPORT_ATTEMPTS = 2;
 export type ProvisionPhotoFailureCode =
   | "timeout"
   | "missing"
+  | "conflict"
   | "expired"
   | "invalid_response"
   | "unavailable";
@@ -81,7 +82,13 @@ export async function fetchProvisionPhoto(input: {
       timestamp: String(baseSeconds + attempt),
     });
 
-    if (last.ok || last.code === "missing" || last.code === "expired" || last.code === "unavailable") {
+    if (
+      last.ok ||
+      last.code === "missing" ||
+      last.code === "conflict" ||
+      last.code === "expired" ||
+      last.code === "unavailable"
+    ) {
       return last;
     }
   }
@@ -129,8 +136,16 @@ async function fetchOnce(input: {
       return { ok: false, code: "missing" };
     }
 
-    if (response.status === 409 || response.status === 410) {
+    if (response.status === 409) {
+      return { ok: false, code: "conflict" };
+    }
+
+    if (response.status === 410) {
       return { ok: false, code: "expired" };
+    }
+
+    if (response.status === 503) {
+      return { ok: false, code: "unavailable" };
     }
 
     if (!response.ok) {

@@ -69,7 +69,7 @@ const AUTHOR = "11111111-1111-4111-8111-111111111111";
 const RETURN_PATH = "/api/author/humanity-union-link/complete";
 const ATTEMPT_ID = "exampleAttemptToken_12";
 
-type PhotoMode = "ok" | "bad-digest" | "short" | "png" | "missing" | "expired" | "timeout";
+type PhotoMode = "ok" | "bad-digest" | "short" | "png" | "missing" | "expired" | "conflict" | "unavailable" | "timeout";
 
 interface ApiBody {
   success: boolean;
@@ -279,6 +279,59 @@ describe("Integrity Media provision photo import", () => {
     if (!expired.ok) {
       assert.equal(expired.code, "expired");
     }
+  });
+
+  it("classifies photo 409, 410, and 503 and still creates the Participant", async () => {
+    photoMode = "conflict";
+    const conflictStart = photoRequests;
+    const conflict = await fetchProvisionPhoto({
+      attemptId: ATTEMPT_ID,
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.equal(conflict.ok, false);
+    if (!conflict.ok) {
+      assert.equal(conflict.code, "conflict");
+    }
+    assert.equal(photoRequests, conflictStart + 1);
+
+    photoMode = "expired";
+    const expiredStart = photoRequests;
+    const expired = await fetchProvisionPhoto({
+      attemptId: ATTEMPT_ID,
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.equal(expired.ok, false);
+    if (!expired.ok) {
+      assert.equal(expired.code, "expired");
+    }
+    assert.equal(photoRequests, expiredStart + 1);
+
+    photoMode = "unavailable";
+    const unavailableStart = photoRequests;
+    const unavailable = await fetchProvisionPhoto({
+      attemptId: ATTEMPT_ID,
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.equal(unavailable.ok, false);
+    if (!unavailable.ok) {
+      assert.equal(unavailable.code, "unavailable");
+    }
+    assert.equal(photoRequests, unavailableStart + 1);
+
+    photoMode = "conflict";
+    photoRequests = 0;
+    await provisionNew("conflictAttemptToken1");
+    const confirmed = await confirm("conflictAttemptToken1");
+    assert.equal(confirmed.status, 200);
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(memory.users().length, 1);
+    assert.equal(memory.profiles()[0]?.avatarUrl, undefined);
+    assert.equal(memory.attempts()[0]?.photoImportStatus, "failed");
+    assert.ok(photoRequests >= 1);
+    assert.ok(photoRequests <= 2);
   });
 
   it("does not import a photo for an existing Participant or a version-1 attempt", async () => {
@@ -617,6 +670,18 @@ async function handlePhoto(request: IncomingMessage, response: ServerResponse): 
 
   if (photoMode === "expired") {
     response.writeHead(410);
+    response.end();
+    return;
+  }
+
+  if (photoMode === "conflict") {
+    response.writeHead(409);
+    response.end();
+    return;
+  }
+
+  if (photoMode === "unavailable") {
+    response.writeHead(503);
     response.end();
     return;
   }
