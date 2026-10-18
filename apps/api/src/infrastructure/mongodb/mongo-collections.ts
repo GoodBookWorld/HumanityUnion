@@ -186,6 +186,8 @@ export const MONGO_COLLECTIONS = {
   // Integrity Media author-message delivery. Not the localization outbox.
   integrityMediaAuthorMessages: "integrity_media_author_messages",
   integrityMediaAuthorMessageAudit: "integrity_media_author_message_audit",
+  // HU-MEM-04B — Web critical health events. Seven-day TTL plus a 100-document cap.
+  webSystemHealthEvents: "web_system_health_events",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];

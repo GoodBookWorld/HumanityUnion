@@ -22,6 +22,7 @@ import {
   type DiagnosticSeverity,
 } from "../admin-diagnostics-model";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
+import { AdminWebMemoryCriticalLoads } from "./AdminSystemHealthSection";
 
 import "./admin-panel.css";
 import "./admin-diagnostics.css";
@@ -215,6 +216,8 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
           <p className="hu-body">Integrity checks appear after the first health check.</p>
         )}
       </ProfileSection>
+
+      <AdminWebMemoryCriticalLoads />
     </div>
   );
 }
