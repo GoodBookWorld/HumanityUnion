@@ -16,6 +16,7 @@ import {
   ProvisionRequestError,
   readProvisionConsent,
   registerProvisionAttempt,
+  registerProvisionSnapshot,
 } from "./external-author-link.provision.service.js";
 import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
 
@@ -216,6 +217,21 @@ externalAuthorLinkRouter.post("/provision-attempt", async (req, res) => {
     });
     res.status(200).json(
       createSuccessResponse(result, "Integrity Media provision attempt stored."),
+    );
+  } catch (error) {
+    sendProvisionError(res, error);
+  }
+});
+
+externalAuthorLinkRouter.post("/provision-snapshot", async (req, res) => {
+  try {
+    const result = await registerProvisionSnapshot({
+      body: readObject(req),
+      timestamp: headerValue(req, "x-hu-integrity-media-timestamp"),
+      signature: headerValue(req, "x-hu-integrity-media-signature"),
+    });
+    res.status(200).json(
+      createSuccessResponse(result, "Integrity Media provision snapshot stored."),
     );
   } catch (error) {
     sendProvisionError(res, error);

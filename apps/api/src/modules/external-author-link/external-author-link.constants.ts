@@ -18,6 +18,16 @@ export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_ATTEMPT_PURPOSE =
   "integrity-media-account-provision-attempt";
 
 /**
+ * IM → HU public profile snapshot. A provision-attempt signature cannot
+ * register a snapshot, and this purpose cannot create an account by itself.
+ */
+export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_SNAPSHOT_PURPOSE =
+  "integrity-media-account-provision-snapshot";
+
+/** Closed version accepted by the snapshot registration endpoint. */
+export const INTEGRITY_MEDIA_PROVISION_SNAPSHOT_VERSION = 2;
+
+/**
  * IM → HU passwordless sign-in. A provision, redeem, or acknowledgement
  * signature cannot mint an SSO grant, and this purpose cannot create an account.
  */
