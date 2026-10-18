@@ -18,6 +18,10 @@ import {
 } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
 import { buildProvisionAttemptPayload, resetProvisionAttemptReplayCacheForTests } from "../../../src/modules/external-author-link/external-author-link.provision.hmac.js";
 import {
+  buildProvisionVersionPayload,
+  resetProvisionVersionReplayCacheForTests,
+} from "../../../src/modules/external-author-link/external-author-link.provision-version.hmac.js";
+import {
   buildProvisionSnapshotPayload,
   resetProvisionSnapshotReplayCacheForTests,
 } from "../../../src/modules/external-author-link/external-author-link.provision-snapshot.hmac.js";
@@ -140,6 +144,7 @@ describe("Integrity Media provision photo import", () => {
     process.env.MEDIA_STORAGE_PROVIDER = "r2";
     resetProvisionAttemptReplayCacheForTests();
     resetProvisionSnapshotReplayCacheForTests();
+    resetProvisionVersionReplayCacheForTests();
     resetMediaUploadMemoryStoreForTests();
     setProvisionPhotoTimeoutForTests(null);
     setProvisionPhotoBeforeAvatarWriteForTests(null);
@@ -325,7 +330,10 @@ describe("Integrity Media provision photo import", () => {
       undefined,
     );
 
-    assert.equal((await registerAttempt({ attemptId: "versionOneAttemptTok1" })).status, 200);
+    assert.equal(
+      (await registerAttempt({ attemptId: "versionOneAttemptTok1" }, { version2: false })).status,
+      200,
+    );
     const plain = await confirm("versionOneAttemptTok1");
     assert.equal(plain.status, 200);
     assert.equal(plain.body.data?.provisionOutcome, "NEW_AUTHOR");
@@ -590,6 +598,7 @@ async function registerAttempt(
     email: string;
     displayName: string;
   }> = {},
+  options: { version2?: boolean } = { version2: true },
 ) {
   const body = {
     attemptId: ATTEMPT_ID,
@@ -617,9 +626,23 @@ async function registerAttempt(
       emailVerification: body.emailVerification,
     }),
   );
+  const versionSignature = signIntegrityMediaLinkRedeem(
+    SECRET,
+    buildProvisionVersionPayload({
+      timestamp,
+      attemptId: body.attemptId,
+      target: body.target,
+    }),
+  );
   return request("POST", "/api/v1/integrity-media/link/provision-attempt", body, {
     "x-hu-integrity-media-timestamp": timestamp,
     "x-hu-integrity-media-signature": signature,
+    ...(options.version2 === false
+      ? {}
+      : {
+          "x-hu-integrity-media-version-timestamp": timestamp,
+          "x-hu-integrity-media-version-signature": versionSignature,
+        }),
   });
 }
 
