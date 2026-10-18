@@ -30,7 +30,10 @@ import {
   fetchProvisionPhoto,
   setProvisionPhotoTimeoutForTests,
 } from "../../../src/modules/external-author-link/external-author-link.provision-photo.client.js";
-import { setProvisionPhotoBeforeAvatarWriteForTests } from "../../../src/modules/external-author-link/external-author-link.provision-photo.import.js";
+import {
+  setProvisionPhotoAfterPrefetchForTests,
+  setProvisionPhotoBeforeAvatarWriteForTests,
+} from "../../../src/modules/external-author-link/external-author-link.provision-photo.import.js";
 import externalAuthorLinkRouter from "../../../src/modules/external-author-link/external-author-link.routes.js";
 import { setIntegrityMediaAuthorCapabilityEnsurerForTests } from "../../../src/modules/external-author-link/external-author-link.service.js";
 import {
@@ -93,6 +96,8 @@ let previousServer: string | undefined;
 let previousProvider: string | undefined;
 const webp = buildWebp("frozen-webp");
 const webpDigest = createHash("sha256").update(webp).digest("hex");
+const otherWebp = buildWebp("other-frozen-webp");
+const otherDigest = createHash("sha256").update(otherWebp).digest("hex");
 
 describe("Integrity Media provision photo import", () => {
   before(async () => {
@@ -127,6 +132,7 @@ describe("Integrity Media provision photo import", () => {
     setIntegrityMediaAuthorCapabilityEnsurerForTests(null);
     setProvisionPhotoTimeoutForTests(null);
     setProvisionPhotoBeforeAvatarWriteForTests(null);
+    setProvisionPhotoAfterPrefetchForTests(null);
     setMediaObjectStorageForTests(null);
     __testOnly_resetMediaObjectStorage();
     restoreEnv("PLATFORM_MODE", previousMode);
@@ -148,6 +154,7 @@ describe("Integrity Media provision photo import", () => {
     resetMediaUploadMemoryStoreForTests();
     setProvisionPhotoTimeoutForTests(null);
     setProvisionPhotoBeforeAvatarWriteForTests(null);
+    setProvisionPhotoAfterPrefetchForTests(null);
     memory = createMemoryProvisionState();
     setProvisionMemoryForTests(memory);
     linkStore = createMemoryExternalAuthorLinkStore();
@@ -175,7 +182,7 @@ describe("Integrity Media provision photo import", () => {
     assert.equal(confirmed.status, 200);
     assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
     assert.equal(typeof confirmed.body.data?.redirectUrl, "string");
-    assert.equal(photoRequests >= 1, true);
+    assert.equal(photoRequests, 1);
     assert.equal(uploads, 1);
     assert.equal(storage.objects.size, 1);
 
@@ -468,6 +475,81 @@ describe("Integrity Media provision photo import", () => {
     assert.equal(expired.body.meta.code, "attempt_expired");
     assert.equal(uploads, beforeUploads);
   });
+
+  it("fetches the committed snapshot when prefetch ran before registration", async () => {
+    const attemptId = "racePrefetchAttempt01";
+    assert.equal(
+      (
+        await registerAttempt({
+          attemptId,
+          externalAuthorId: "99999999-9999-4999-8999-999999999991",
+          email: "race@example.com",
+        })
+      ).status,
+      200,
+    );
+    setProvisionPhotoAfterPrefetchForTests(async () => {
+      assert.equal(photoRequests, 0);
+      assert.equal((await registerSnapshot(snapshotText(), { attemptId })).status, 200);
+    });
+    const confirmed = await confirm(attemptId);
+    assert.equal(confirmed.status, 200);
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(typeof confirmed.body.data?.redirectUrl, "string");
+    assert.equal(photoRequests, 1);
+    assert.equal(uploads, 1);
+    assert.equal(memory.users().length, 1);
+    assert.equal(memory.attempts()[0]?.photoImportStatus, "applied");
+    assert.equal(memory.attempts()[0]?.photoImportAttempts, 1);
+    assert.equal(memory.profiles()[0]?.avatarUrl?.endsWith(`${attemptId}.webp`), true);
+    assert.equal(storage.objects.get(`avatars/integrity-media/${attemptId}.webp`)?.equals(webp), true);
+  });
+
+  it("fetches again when prefetched bytes do not match the committed snapshot", async () => {
+    const attemptId = "mismatchPhotoAttempt1";
+    await provisionNew({
+      attemptId,
+      externalAuthorId: "99999999-9999-4999-8999-999999999993",
+      email: "mismatch@example.com",
+    });
+    setProvisionPhotoAfterPrefetchForTests(async () => {
+      assert.equal(photoRequests, 1);
+      memory.patchAttempt(attemptId, { profileSnapshot: snapshotFor(otherDigest, otherWebp.length) });
+    });
+    const confirmed = await confirm(attemptId);
+    assert.equal(confirmed.status, 200);
+    assert.equal(photoRequests, 2);
+    assert.equal(uploads, 1);
+    assert.equal(memory.attempts()[0]?.photoImportStatus, "applied");
+    assert.equal(
+      storage.objects.get(`avatars/integrity-media/${attemptId}.webp`)?.equals(otherWebp),
+      true,
+    );
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+  });
+
+  it("does not fetch or consume an import when version-2 Confirm is waiting for a snapshot", async () => {
+    const attemptId = "waitingSnapshotTok01";
+    assert.equal(
+      (
+        await registerAttempt({
+          attemptId,
+          externalAuthorId: "99999999-9999-4999-8999-999999999992",
+          email: "waiting@example.com",
+        })
+      ).status,
+      200,
+    );
+    const blocked = await confirm(attemptId);
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.body.meta.code, "snapshot_required");
+    assert.equal(photoRequests, 0);
+    assert.equal(uploads, 0);
+    assert.equal(memory.users().length, 0);
+    assert.equal(memory.attempts()[0]?.memberId, null);
+    assert.equal(memory.attempts()[0]?.photoImportStatus, undefined);
+    assert.equal(memory.attempts()[0]?.photoImportAttempts, undefined);
+  });
 });
 
 function countingStorage(inner: MemoryMediaObjectStorage): MediaObjectStorage {
@@ -546,7 +628,7 @@ async function handlePhoto(request: IncomingMessage, response: ServerResponse): 
       return;
     }
 
-    const bytes = photoMode === "bad-digest" ? Buffer.from(webp) : webp;
+    const bytes = Buffer.from(fixtureFor(body.digest, body.byteLength));
     if (photoMode === "bad-digest" && bytes.length > 12) {
       bytes[12] ^= 0xff;
     }
@@ -561,6 +643,14 @@ async function handlePhoto(request: IncomingMessage, response: ServerResponse): 
   }
 }
 
+function fixtureFor(digest: string | undefined, byteLength: number | undefined): Buffer {
+  if (digest === otherDigest && byteLength === otherWebp.length) {
+    return otherWebp;
+  }
+
+  return webp;
+}
+
 function buildWebp(seed: string): Buffer {
   const payload = Buffer.from(seed);
   const size = Buffer.alloc(4);
@@ -569,6 +659,10 @@ function buildWebp(seed: string): Buffer {
 }
 
 function snapshotText(): string {
+  return snapshotFor(webpDigest, webp.length);
+}
+
+function snapshotFor(digest: string, byteLength: number): string {
   return JSON.stringify({
     version: 2,
     displayName: "Snapshot Public",
@@ -576,9 +670,9 @@ function snapshotText(): string {
       mediaType: "image/webp",
       width: 32,
       height: 32,
-      byteLength: webp.length,
+      byteLength,
       digestAlgorithm: "sha256",
-      digest: webpDigest,
+      digest,
     },
   });
 }

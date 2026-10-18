@@ -54,6 +54,7 @@ import {
   establishNewParticipantPhotoEligibility,
   finishProvisionPhoto,
   prepareProvisionPhoto,
+  runAfterProvisionPhotoPrefetchForTests,
 } from "./external-author-link.provision-photo.import.js";
 import { revisionForNewLink } from "./external-author-link.revision.js";
 import type {
@@ -240,6 +241,7 @@ export async function confirmProvisionAttempt(input: {
   const now = input.now ?? new Date();
   const attemptId = readConfirmState(input.body);
   const preparedPhoto = await prepareProvisionPhoto(attemptId, now);
+  await runAfterProvisionPhotoPrefetchForTests();
 
   let result: ProvisionConfirmResult;
   try {
