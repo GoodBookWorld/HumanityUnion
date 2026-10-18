@@ -2,8 +2,8 @@ import { MemberProfileValidationError } from "../member-profile/member-profile.e
 import { validateMemberProfilePatch } from "../member-profile/member-profile.validators.js";
 import { INTEGRITY_MEDIA_PROVISION_SNAPSHOT_VERSION } from "./external-author-link.constants.js";
 
-/** Matches the avatar upload ceiling. The photograph itself is not transferred. */
-const SNAPSHOT_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+/** Matches the avatar upload ceiling. The photograph itself is not transferred here. */
+export const SNAPSHOT_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 const SNAPSHOT_PHOTO_MAX_DIMENSION = 8000;
 const SNAPSHOT_PHOTO_MAX_PIXELS = 40_000_000;
 const SNAPSHOT_PHOTO_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -46,6 +46,61 @@ export type SnapshotSchemaFailure = "unexpected_field" | "unsupported_snapshot_v
 export type SnapshotSchemaResult =
   | { ok: true; fields: ApprovedProvisionSnapshot }
   | { ok: false; code: SnapshotSchemaFailure };
+
+/** Frozen WEBP metadata that can be retrieved from Integrity Media. No URL is accepted. */
+export interface ImportableSnapshotPhoto {
+  mediaType: "image/webp";
+  byteLength: number;
+  digest: string;
+}
+
+export function readImportableSnapshotPhoto(
+  snapshot: string | undefined,
+): ImportableSnapshotPhoto | null {
+  if (!snapshot) {
+    return null;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(snapshot);
+  } catch {
+    return null;
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const photo = (parsed as Record<string, unknown>).photo;
+  if (!photo || typeof photo !== "object" || Array.isArray(photo)) {
+    return null;
+  }
+
+  const record = photo as Record<string, unknown>;
+  if (record.mediaType !== "image/webp" || record.digestAlgorithm !== "sha256") {
+    return null;
+  }
+
+  if (typeof record.digest !== "string" || !/^[0-9a-f]{64}$/.test(record.digest)) {
+    return null;
+  }
+
+  if (
+    typeof record.byteLength !== "number" ||
+    !Number.isInteger(record.byteLength) ||
+    record.byteLength < 1 ||
+    record.byteLength > SNAPSHOT_PHOTO_MAX_BYTES
+  ) {
+    return null;
+  }
+
+  return {
+    mediaType: "image/webp",
+    byteLength: record.byteLength,
+    digest: record.digest,
+  };
+}
 
 export function parseApprovedProvisionSnapshot(snapshot: string): SnapshotSchemaResult {
   let parsed: unknown;

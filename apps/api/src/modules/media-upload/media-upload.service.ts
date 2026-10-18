@@ -121,6 +121,16 @@ export async function deleteMediaRecordDurable(
   return structuredClone(existing);
 }
 
+export function findMediaRecordByStorageKey(storageKey: string): StoredMediaRecord | undefined {
+  for (const record of mediaRecords.values()) {
+    if (record.storageKey === storageKey) {
+      return structuredClone(record);
+    }
+  }
+
+  return undefined;
+}
+
 export function findMediaRecordByUrl(mediaUrl: string): StoredMediaRecord | undefined {
   for (const record of mediaRecords.values()) {
     if (record.mediaUrl === mediaUrl) {

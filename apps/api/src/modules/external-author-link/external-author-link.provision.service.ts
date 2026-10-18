@@ -45,6 +45,11 @@ import {
   parseApprovedProvisionSnapshot,
   type ApprovedProvisionSnapshot,
 } from "./external-author-link.provision-snapshot.schema.js";
+import {
+  establishNewParticipantPhotoEligibility,
+  finishProvisionPhoto,
+  prepareProvisionPhoto,
+} from "./external-author-link.provision-photo.import.js";
 import { revisionForNewLink } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorLinkFinalization,
@@ -220,20 +225,25 @@ export async function confirmProvisionAttempt(input: {
 }): Promise<ProvisionConfirmResult> {
   const now = input.now ?? new Date();
   const attemptId = readConfirmState(input.body);
+  const preparedPhoto = await prepareProvisionPhoto(attemptId, now);
 
+  let result: ProvisionConfirmResult;
   try {
-    return await confirmOnce(attemptId, now);
+    result = await confirmOnce(attemptId, now);
   } catch (error) {
     if (!isProvisionDuplicateKeyError(error)) {
       throw mapTransactionError(error);
     }
+
+    try {
+      result = await confirmOnce(attemptId, now);
+    } catch (retryError) {
+      throw mapTransactionError(retryError);
+    }
   }
 
-  try {
-    return await confirmOnce(attemptId, now);
-  } catch (error) {
-    throw mapTransactionError(error);
-  }
+  await finishProvisionPhoto(attemptId, now, preparedPhoto);
+  return result;
 }
 
 async function confirmOnce(attemptId: string, now: Date): Promise<ProvisionConfirmResult> {
@@ -313,6 +323,13 @@ async function confirmInTransaction(
       createdMember,
       updatedAt: now.toISOString(),
     });
+  }
+
+  if (createdNewMember) {
+    const stored = await db.findAttempt(attemptId);
+    if (stored) {
+      await establishNewParticipantPhotoEligibility(db, stored, now.toISOString());
+    }
   }
 
   const redirectUrl = await resultRedirect(db, {
@@ -452,6 +469,9 @@ async function createProvisionedIdentity(
   }
   if (approved?.xUrl !== undefined) {
     profile.xUrl = approved.xUrl;
+  }
+  if (profile.avatarUrl === undefined) {
+    delete profile.avatarUrl;
   }
 
   await db.insertUser(user);
