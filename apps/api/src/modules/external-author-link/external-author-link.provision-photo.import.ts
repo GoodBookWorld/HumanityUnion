@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+
+import { detectImageSignature } from "../media-upload/image-signature.js";
 import { findMediaRecordByStorageKey, saveMediaRecordDurable } from "../media-upload/media-upload.service.js";
 import { resolveMediaStorageProviderName } from "../media-upload/media-object-storage.js";
 import { resolveMediaObjectStorage } from "../media-upload/resolve-media-object-storage.js";
@@ -9,7 +12,10 @@ import {
   type ProvisionAttemptRecord,
   type ProvisionDatabase,
 } from "./external-author-link.provision.database.js";
-import { readImportableSnapshotPhoto } from "./external-author-link.provision-snapshot.schema.js";
+import {
+  readImportableSnapshotPhoto,
+  type ImportableSnapshotPhoto,
+} from "./external-author-link.provision-snapshot.schema.js";
 
 const PHOTO_IMPORT_MAX_ATTEMPTS = 2;
 const PHOTO_IMPORT_LEASE_MS = 15_000;
@@ -21,6 +27,7 @@ export interface PreparedProvisionPhoto {
 }
 
 let beforeAvatarWrite: (() => Promise<void>) | null = null;
+let afterPrefetch: (() => Promise<void>) | null = null;
 
 /** Unit tests only. Runs after the object is stored and before the avatar compare-and-set. */
 export function setProvisionPhotoBeforeAvatarWriteForTests(
@@ -31,6 +38,23 @@ export function setProvisionPhotoBeforeAvatarWriteForTests(
   }
 
   beforeAvatarWrite = hook;
+}
+
+/** Unit tests only. Runs after prefetch and before the Confirm transaction. */
+export function setProvisionPhotoAfterPrefetchForTests(
+  hook: (() => Promise<void>) | null,
+): void {
+  if (hook && process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Provision photo test hook is unavailable.");
+  }
+
+  afterPrefetch = hook;
+}
+
+export async function runAfterProvisionPhotoPrefetchForTests(): Promise<void> {
+  if (afterPrefetch) {
+    await afterPrefetch();
+  }
 }
 
 export async function prepareProvisionPhoto(
@@ -138,7 +162,7 @@ async function finishUnlocked(
 ): Promise<void> {
   const db = currentProvisionDatabase();
   const attempt = await db.findAttempt(attemptId);
-  if (!attempt || attempt.expiresAt <= unixSeconds(now)) {
+  if (!attempt || attempt.createdMember !== true || attempt.expiresAt <= unixSeconds(now)) {
     return;
   }
 
@@ -146,12 +170,22 @@ async function finishUnlocked(
     return;
   }
 
-  if (prepared.prefetch === "failed") {
-    await settleFailure(db, attempt.attemptId, now, prepared.terminalFailure);
+  const attempts = attempt.photoImportAttempts ?? 0;
+  if (attempts >= PHOTO_IMPORT_MAX_ATTEMPTS) {
     return;
   }
 
-  if (prepared.prefetch !== "ready" || !prepared.bytes) {
+  const leaseBeforeIso = new Date(now.getTime() - PHOTO_IMPORT_LEASE_MS).toISOString();
+  const leaseHeld =
+    attempt.photoImportStatus === "in_progress" &&
+    typeof attempt.photoImportClaimedAt === "string" &&
+    attempt.photoImportClaimedAt >= leaseBeforeIso;
+  if (leaseHeld) {
+    return;
+  }
+
+  const photo = readImportableSnapshotPhoto(attempt.profileSnapshot);
+  if (!photo) {
     return;
   }
 
@@ -160,11 +194,17 @@ async function finishUnlocked(
     return;
   }
 
+  const resolved = await resolveCommittedPhoto(attempt, photo, prepared, now);
+  if (!resolved.ok) {
+    await settleFailure(db, attempt.attemptId, now, resolved.terminalFailure);
+    return;
+  }
+
   const claimed = await db.claimPhotoImport({
     attemptId,
     nowSeconds: unixSeconds(now),
     nowIso: now.toISOString(),
-    leaseBeforeIso: new Date(now.getTime() - PHOTO_IMPORT_LEASE_MS).toISOString(),
+    leaseBeforeIso,
     maxAttempts: PHOTO_IMPORT_MAX_ATTEMPTS,
   });
   if (claimed !== "claimed") {
@@ -172,7 +212,7 @@ async function finishUnlocked(
   }
 
   try {
-    const avatarUrl = await storePhoto(attempt, prepared.bytes);
+    const avatarUrl = await storePhoto(attempt, resolved.bytes);
     if (beforeAvatarWrite) {
       await beforeAvatarWrite();
     }
@@ -196,6 +236,44 @@ async function finishUnlocked(
   } catch {
     await releaseCurrentClaim(db, attemptId, now, false);
   }
+}
+
+async function resolveCommittedPhoto(
+  attempt: ProvisionAttemptRecord,
+  photo: ImportableSnapshotPhoto,
+  prepared: PreparedProvisionPhoto,
+  now: Date,
+): Promise<{ ok: true; bytes: Buffer } | { ok: false; terminalFailure: boolean }> {
+  if (prepared.prefetch === "ready" && prepared.bytes && photoBytesMatch(prepared.bytes, photo)) {
+    return { ok: true, bytes: prepared.bytes };
+  }
+
+  const fetched = await fetchProvisionPhoto({
+    attemptId: attempt.attemptId,
+    digest: photo.digest,
+    byteLength: photo.byteLength,
+    now,
+  });
+  if (!fetched.ok) {
+    return {
+      ok: false,
+      terminalFailure: fetched.code === "missing" || fetched.code === "expired",
+    };
+  }
+
+  if (!photoBytesMatch(fetched.bytes, photo)) {
+    return { ok: false, terminalFailure: false };
+  }
+
+  return { ok: true, bytes: fetched.bytes };
+}
+
+function photoBytesMatch(bytes: Buffer, photo: ImportableSnapshotPhoto): boolean {
+  return (
+    bytes.length === photo.byteLength &&
+    detectImageSignature(bytes) === "image/webp" &&
+    createHash("sha256").update(bytes).digest("hex") === photo.digest
+  );
 }
 
 async function storePhoto(attempt: ProvisionAttemptRecord, bytes: Buffer): Promise<string> {
