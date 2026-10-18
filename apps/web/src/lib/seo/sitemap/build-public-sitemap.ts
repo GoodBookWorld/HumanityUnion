@@ -7,6 +7,13 @@ import {
 } from "@hu/types";
 
 import { shouldDisallowSearchIndexing } from "../../platform-indexing";
+import { countSitemapEntityResolves } from "../../system-health/sitemap-entity-resolve-count";
+import {
+  closeSitemapBuildObservation,
+  emitSitemapBuildDiagnostic,
+  openSitemapBuildObservation,
+  readCurrentSitemapMemory,
+} from "../../system-health/sitemap-build-diagnostic";
 import { resolvePublicSiteOrigin, toAbsolutePublicUrl } from "../public-site-url";
 import { dedupeSitemapPathEntries } from "./dedupe-sitemap-entries";
 import { buildPublicSeoLocalizedVariantPredicate } from "../public-seo-localized-eligibility-loader";
@@ -34,20 +41,20 @@ export class SitemapProviderError extends Error {
 /**
  * Failure-isolation policy (Pack 02):
  * - Static + Country providers are local and always collected first.
- * - Each remote/dynamic provider is isolated: a failure omits that domain only
- *   and is reported via console.error (no fabricated private URLs).
+ * - Each remote/dynamic provider is isolated: a failure omits that domain only.
+ * - The completion diagnostic records the provider id. Exception text is not logged.
  * - Empty results from a successful provider are allowed (honest empty domain).
  */
 async function collectProviderEntries(
   providerId: string,
   provider: SitemapProvider,
+  failedProviderIds: string[],
 ): Promise<SitemapPathEntry[]> {
   try {
     const entries = await provider();
     return [...entries];
-  } catch (error) {
-    const wrapped = new SitemapProviderError(providerId, error);
-    console.error(wrapped.message);
+  } catch {
+    failedProviderIds.push(providerId);
     return [];
   }
 }
@@ -112,48 +119,100 @@ export async function collectPublicSitemapPathEntries(options?: {
     locale: string,
   ) => boolean;
 }): Promise<SitemapPathEntry[]> {
-  const includeDynamic = options?.includeDynamicProviders !== false;
+  const observation = openSitemapBuildObservation();
+  const failedProviderIds: string[] = [];
+  let canonicalPathCount = 0;
+  let seoLocaleCount = 0;
+  let entityResolveCount = 0;
+  let outcome: "completed" | "provider_failure" | "build_failure" = "completed";
+  const memoryAtStart = readCurrentSitemapMemory();
+  let memoryAfterInventory: ReturnType<typeof readCurrentSitemapMemory> | null = null;
+  let memoryAfterEligibility: ReturnType<typeof readCurrentSitemapMemory> | null = null;
 
-  const localEntries: SitemapPathEntry[] = [
-    ...listStaticPublicSitemapEntries(),
-    ...listCountrySitemapEntries(),
-  ];
+  try {
+    const includeDynamic = options?.includeDynamicProviders !== false;
 
-  let canonical: SitemapPathEntry[];
-  if (!includeDynamic) {
-    canonical = dedupeSitemapPathEntries(localEntries);
-  } else {
-    const dynamicBatches = await Promise.all([
-      collectProviderEntries("blog-posts", listBlogPostSitemapEntries),
-      collectProviderEntries("initiatives", listInitiativeSitemapEntries),
-      collectProviderEntries("knowledge-articles", listKnowledgeArticleSitemapEntries),
-      collectProviderEntries("civic-archive", listCivicArchiveSitemapEntries),
-      collectProviderEntries("participant-profiles", listParticipantProfileSitemapEntries),
-    ]);
-    canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
-  }
+    const localEntries: SitemapPathEntry[] = [
+      ...listStaticPublicSitemapEntries(),
+      ...listCountrySitemapEntries(),
+    ];
 
-  const explicitLocales = Boolean(
-    options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales"),
-  );
-  const seoLocales = explicitLocales
-    ? (options?.seoIndexableLocales ?? [])
-    : await resolveSeoIndexableLocalesForSitemap();
+    let canonical: SitemapPathEntry[];
+    if (!includeDynamic) {
+      canonical = dedupeSitemapPathEntries(localEntries);
+    } else {
+      const dynamicBatches = await Promise.all([
+        collectProviderEntries("blog-posts", listBlogPostSitemapEntries, failedProviderIds),
+        collectProviderEntries("initiatives", listInitiativeSitemapEntries, failedProviderIds),
+        collectProviderEntries(
+          "knowledge-articles",
+          listKnowledgeArticleSitemapEntries,
+          failedProviderIds,
+        ),
+        collectProviderEntries("civic-archive", listCivicArchiveSitemapEntries, failedProviderIds),
+        collectProviderEntries(
+          "participant-profiles",
+          listParticipantProfileSitemapEntries,
+          failedProviderIds,
+        ),
+      ]);
+      canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
+    }
+    memoryAfterInventory = readCurrentSitemapMemory();
 
-  let isLocalizedVariantEligible = options?.isLocalizedVariantEligible;
-  if (!isLocalizedVariantEligible && !explicitLocales && seoLocales.length > 0) {
-    isLocalizedVariantEligible = await buildPublicSeoLocalizedVariantPredicate({
-      localeFreePaths: canonical.map((entry) => entry.path),
-      locales: seoLocales,
+    const explicitLocales = Boolean(
+      options && Object.prototype.hasOwnProperty.call(options, "seoIndexableLocales"),
+    );
+    const seoLocales = explicitLocales
+      ? (options?.seoIndexableLocales ?? [])
+      : await resolveSeoIndexableLocalesForSitemap();
+
+    let isLocalizedVariantEligible = options?.isLocalizedVariantEligible;
+    const loaderWillRun =
+      !isLocalizedVariantEligible && !explicitLocales && seoLocales.length > 0;
+    if (loaderWillRun) {
+      isLocalizedVariantEligible = await buildPublicSeoLocalizedVariantPredicate({
+        localeFreePaths: canonical.map((entry) => entry.path),
+        locales: seoLocales,
+      });
+    }
+    memoryAfterEligibility = readCurrentSitemapMemory();
+    canonicalPathCount = canonical.length;
+    seoLocaleCount = seoLocales.length;
+    entityResolveCount = loaderWillRun
+      ? countSitemapEntityResolves(
+          canonical.map((entry) => entry.path),
+          seoLocales,
+        )
+      : 0;
+    if (failedProviderIds.length > 0) {
+      outcome = "provider_failure";
+    }
+
+    return expandPublicSitemapEntriesForSeoLocales({
+      entries: canonical,
+      seoIndexableLocales: seoLocales,
+      defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
+      ...(isLocalizedVariantEligible ? { isLocalizedVariantEligible } : {}),
     });
+  } catch (error) {
+    outcome = "build_failure";
+    throw error;
+  } finally {
+    emitSitemapBuildDiagnostic({
+      observation,
+      outcome,
+      failedProviderIds,
+      partialProviderIds: [],
+      canonicalPathCount,
+      seoLocaleCount,
+      entityResolveCount,
+      memoryAtStart,
+      memoryAfterInventory,
+      memoryAfterEligibility,
+    });
+    closeSitemapBuildObservation();
   }
-
-  return expandPublicSitemapEntriesForSeoLocales({
-    entries: canonical,
-    seoIndexableLocales: seoLocales,
-    defaultLocale: DEFAULT_PLATFORM_LANGUAGE,
-    ...(isLocalizedVariantEligible ? { isLocalizedVariantEligible } : {}),
-  });
 }
 
 export function toMetadataRouteSitemap(
@@ -175,6 +234,28 @@ export function toMetadataRouteSitemap(
   });
 }
 
+function emitShortCircuitSitemapDiagnostic(
+  outcome: "indexing_disallowed" | "origin_missing",
+): void {
+  const observation = openSitemapBuildObservation();
+  try {
+    emitSitemapBuildDiagnostic({
+      observation,
+      outcome,
+      failedProviderIds: [],
+      partialProviderIds: [],
+      canonicalPathCount: 0,
+      seoLocaleCount: 0,
+      entityResolveCount: 0,
+      memoryAtStart: readCurrentSitemapMemory(),
+      memoryAfterInventory: null,
+      memoryAfterEligibility: null,
+    });
+  } finally {
+    closeSitemapBuildObservation();
+  }
+}
+
 /**
  * Build the production sitemap inventory.
  *
@@ -189,11 +270,13 @@ export async function buildPublicSitemap(options?: {
   readonly seoIndexableLocales?: readonly string[];
 }): Promise<MetadataRoute.Sitemap> {
   if (shouldDisallowSearchIndexing()) {
+    emitShortCircuitSitemapDiagnostic("indexing_disallowed");
     return [];
   }
 
   const origin = resolvePublicSiteOrigin();
   if (!origin) {
+    emitShortCircuitSitemapDiagnostic("origin_missing");
     return [];
   }
 

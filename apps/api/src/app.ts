@@ -210,6 +210,10 @@ import closedBetaRouter from "./modules/closed-beta/closed-beta.routes.js";
 import adminPlatformReadinessRouter from "./modules/closed-beta/admin-platform-readiness.routes.js";
 import adminDiagnosticsHealthRouter from "./modules/administration/admin-diagnostics-health.routes.js";
 import {
+  adminWebSystemHealthRouter,
+  internalWebSystemHealthRouter,
+} from "./modules/system-health/web-system-health.routes.js";
+import {
   adminPlatformSupportLinksRouter,
   publicPlatformSupportLinksRouter,
 } from "./modules/platform-support-links/index.js";
@@ -316,6 +320,8 @@ app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/platform/support-links", adminPlatformSupportLinksRouter);
 app.use("/api/v1/admin/diagnostics", adminDiagnosticsHealthRouter);
+app.use("/api/v1/admin/system-health", adminWebSystemHealthRouter);
+app.use("/api/v1/internal/system-health", internalWebSystemHealthRouter);
 app.use("/api/v1/admin/seo/page-overrides", adminSeoPageOverridesRouter);
 app.use("/api/v1/public/seo/page-overrides", publicSeoPageOverridesRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
