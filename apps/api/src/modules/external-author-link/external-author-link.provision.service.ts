@@ -41,6 +41,11 @@ import {
   snapshotDigest,
 } from "./external-author-link.provision-snapshot.hmac.js";
 import {
+  buildProvisionVersionPayload,
+  hasProvisionVersionSignature,
+  noteProvisionVersionSignature,
+} from "./external-author-link.provision-version.hmac.js";
+import {
   MAX_PROVISION_SNAPSHOT_BYTES,
   parseApprovedProvisionSnapshot,
   type ApprovedProvisionSnapshot,
@@ -107,6 +112,7 @@ interface NormalizedAttempt {
   expiresAt: number;
   returnPath: string;
   emailVerification: "pending";
+  snapshotRequired: boolean;
 }
 
 export function readRawPlatformMode(env: NodeJS.ProcessEnv = process.env): string {
@@ -135,6 +141,8 @@ export async function registerProvisionAttempt(input: {
   body: unknown;
   timestamp: string;
   signature: string;
+  versionTimestamp?: string;
+  versionSignature?: string;
   now?: Date;
 }): Promise<ProvisionRegistrationResult> {
   const now = input.now ?? new Date();
@@ -143,6 +151,12 @@ export async function registerProvisionAttempt(input: {
     normalized,
     timestamp: input.timestamp,
     signature: input.signature,
+    now,
+  });
+  normalized.snapshotRequired = verifyVersionDeclaration({
+    normalized,
+    timestamp: input.versionTimestamp ?? "",
+    signature: input.versionSignature ?? "",
     now,
   });
 
@@ -277,6 +291,14 @@ async function confirmInTransaction(
   let createdMember = attempt.createdMember;
   let createdNewMember = false;
 
+  if (!memberId && attempt.snapshotRequired === true && !hasAcceptedSnapshot(attempt)) {
+    throw new ProvisionRequestError(
+      409,
+      "snapshot_required",
+      "This provision attempt is waiting for its profile snapshot.",
+    );
+  }
+
   if (!memberId) {
     const created = await createProvisionedIdentity(db, attempt, now);
     memberId = created.memberId;
@@ -356,13 +378,15 @@ async function storeProvisionAttempt(
     return registrationResult(existing, await mappingFor(db, existing.externalAuthorId), true);
   }
 
+  const { snapshotRequired, ...attemptFields } = normalized;
   const record: ProvisionAttemptRecord = {
-    ...normalized,
+    ...attemptFields,
     memberId: null,
     userId: null,
     createdMember: false,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
+    ...(snapshotRequired ? { snapshotRequired: true } : {}),
   };
   const inserted = await db.insertAttempt(record);
 
@@ -416,6 +440,14 @@ function assertSameAttempt(existing: ProvisionAttemptRecord, normalized: Normali
       409,
       "attempt_conflict",
       "This provision attempt does not match the stored attempt.",
+    );
+  }
+
+  if ((existing.snapshotRequired === true) !== normalized.snapshotRequired) {
+    throw new ProvisionRequestError(
+      409,
+      "version_conflict",
+      "This provision attempt does not match the stored version.",
     );
   }
 }
@@ -676,6 +708,12 @@ function snapshotAttachError(result: Exclude<
         "target_mismatch",
         "This provision attempt is for a different Humanity Union environment.",
       );
+    case "not_required":
+      return new ProvisionRequestError(
+        409,
+        "snapshot_not_required",
+        "This provision attempt does not accept a profile snapshot.",
+      );
     default:
       return new ProvisionRequestError(
         503,
@@ -864,7 +902,90 @@ function normalizeAttemptBody(body: unknown): NormalizedAttempt {
     expiresAt: record.expiresAt as number,
     returnPath,
     emailVerification: "pending",
+    snapshotRequired: false,
   };
+}
+
+function verifyVersionDeclaration(input: {
+  normalized: NormalizedAttempt;
+  timestamp: string;
+  signature: string;
+  now: Date;
+}): boolean {
+  const timestampPresent = input.timestamp.length > 0;
+  const signaturePresent = input.signature.length > 0;
+  if (!timestampPresent && !signaturePresent) {
+    return false;
+  }
+
+  if (!timestampPresent || !signaturePresent) {
+    throw new ProvisionRequestError(
+      400,
+      "incomplete_version",
+      "The provision version declaration is incomplete.",
+    );
+  }
+
+  if (!/^\d{10}$/.test(input.timestamp)) {
+    throw new ProvisionRequestError(
+      400,
+      "invalid_version_timestamp",
+      "The provision version timestamp is not valid.",
+    );
+  }
+
+  const config = resolveIntegrityMediaLinkConfig();
+  if (!config.hmacSecret) {
+    throw new ProvisionRequestError(
+      503,
+      "provision_not_configured",
+      "Integrity Media account provisioning is not configured.",
+    );
+  }
+
+  const payload = buildProvisionVersionPayload({
+    timestamp: input.timestamp,
+    attemptId: input.normalized.attemptId,
+    target: input.normalized.target,
+  });
+  const expected = signIntegrityMediaLinkRedeem(config.hmacSecret, payload);
+  if (!integrityMediaLinkSignaturesEqual(expected, input.signature)) {
+    throw new ProvisionRequestError(
+      401,
+      "invalid_version_signature",
+      "The provision version signature is not valid.",
+    );
+  }
+
+  const timestampSeconds = Number(input.timestamp);
+  if (Math.abs(unixSeconds(input.now) - timestampSeconds) > INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS) {
+    throw new ProvisionRequestError(
+      401,
+      "stale_version_timestamp",
+      "The provision version timestamp is outside the allowed window.",
+    );
+  }
+
+  if (hasProvisionVersionSignature(input.signature, input.now.getTime())) {
+    throw new ProvisionRequestError(401, "replayed", "This provision request was already used.");
+  }
+
+  noteProvisionVersionSignature(input.signature, input.now.getTime());
+
+  const rawPlatformMode = readRawPlatformMode();
+  if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
+    throw new ProvisionRequestError(
+      403,
+      "target_mismatch",
+      "This provision attempt is for a different Humanity Union environment.",
+    );
+  }
+
+  return true;
+}
+
+function hasAcceptedSnapshot(attempt: ProvisionAttemptRecord): boolean {
+  return typeof attempt.profileSnapshot === "string" && attempt.profileSnapshot.length > 0;
 }
 
 function readConfirmState(body: unknown): string {

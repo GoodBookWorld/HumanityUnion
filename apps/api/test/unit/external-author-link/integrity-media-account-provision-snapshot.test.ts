@@ -15,6 +15,10 @@ import {
 import { signIntegrityMediaLinkRedeem } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
 import { buildProvisionAttemptPayload, resetProvisionAttemptReplayCacheForTests } from "../../../src/modules/external-author-link/external-author-link.provision.hmac.js";
 import {
+  buildProvisionVersionPayload,
+  resetProvisionVersionReplayCacheForTests,
+} from "../../../src/modules/external-author-link/external-author-link.provision-version.hmac.js";
+import {
   buildProvisionSnapshotPayload,
   resetProvisionSnapshotReplayCacheForTests,
 } from "../../../src/modules/external-author-link/external-author-link.provision-snapshot.hmac.js";
@@ -112,6 +116,7 @@ describe("Integrity Media provision profile snapshot", () => {
     process.env.WEB_ORIGIN = WEB_ORIGIN;
     resetProvisionAttemptReplayCacheForTests();
     resetProvisionSnapshotReplayCacheForTests();
+    resetProvisionVersionReplayCacheForTests();
     memory = createMemoryProvisionState();
     setProvisionMemoryForTests(memory);
     linkStore = createMemoryExternalAuthorLinkStore();
@@ -136,7 +141,7 @@ describe("Integrity Media provision profile snapshot", () => {
     assert.equal(payload.endsWith("\n"), false);
     assert.equal(signIntegrityMediaLinkRedeem(SECRET, payload), PROVISION_DIGEST);
 
-    const created = await registerAttempt(attemptBody());
+    const created = await registerAttempt(attemptBody(), { version2: false });
     assert.equal(created.status, 200);
     assert.equal(created.body.data?.idempotent, false);
     assert.equal(memory.attempts()[0]?.profileSnapshot, undefined);
@@ -295,7 +300,7 @@ describe("Integrity Media provision profile snapshot", () => {
     assert.equal(expired.body.meta.code, "attempt_expired");
     assert.equal(memory.attempts().find((attempt) => attempt.attemptId === "expiredAttemptToken01")?.expiresAt, expiresAt);
 
-    assert.equal((await registerAttempt(attemptBody())).status, 200);
+    assert.equal((await registerAttempt(attemptBody(), { version2: false })).status, 200);
     assert.equal(
       (
         await request("POST", "/api/v1/integrity-media/link/provision-confirm", {
@@ -606,7 +611,10 @@ function snapshotText(
   return JSON.stringify(snapshotFields(override));
 }
 
-async function registerAttempt(body: ReturnType<typeof attemptBody>) {
+async function registerAttempt(
+  body: ReturnType<typeof attemptBody>,
+  options: { version2?: boolean } = { version2: true },
+) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const signature = signIntegrityMediaLinkRedeem(
     SECRET,
@@ -622,9 +630,23 @@ async function registerAttempt(body: ReturnType<typeof attemptBody>) {
       emailVerification: body.emailVerification,
     }),
   );
+  const versionSignature = signIntegrityMediaLinkRedeem(
+    SECRET,
+    buildProvisionVersionPayload({
+      timestamp,
+      attemptId: body.attemptId,
+      target: body.target,
+    }),
+  );
   return request("POST", "/api/v1/integrity-media/link/provision-attempt", body, {
     "x-hu-integrity-media-timestamp": timestamp,
     "x-hu-integrity-media-signature": signature,
+    ...(options.version2 === false
+      ? {}
+      : {
+          "x-hu-integrity-media-version-timestamp": timestamp,
+          "x-hu-integrity-media-version-signature": versionSignature,
+        }),
   });
 }
 

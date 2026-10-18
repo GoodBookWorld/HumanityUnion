@@ -18,6 +18,20 @@ export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_ATTEMPT_PURPOSE =
   "integrity-media-account-provision-attempt";
 
 /**
+ * IM → HU declaration that this attempt requires a version-2 snapshot.
+ * A ten-field signature cannot make this declaration, and this purpose
+ * cannot register an attempt by itself.
+ */
+export const INTEGRITY_MEDIA_ACCOUNT_PROVISION_VERSION_PURPOSE =
+  "integrity-media-account-provision-version";
+
+export const INTEGRITY_MEDIA_PROVISION_VERSION_TIMESTAMP_HEADER =
+  "x-hu-integrity-media-version-timestamp";
+
+export const INTEGRITY_MEDIA_PROVISION_VERSION_SIGNATURE_HEADER =
+  "x-hu-integrity-media-version-signature";
+
+/**
  * IM → HU public profile snapshot. A provision-attempt signature cannot
  * register a snapshot, and this purpose cannot create an account by itself.
  */

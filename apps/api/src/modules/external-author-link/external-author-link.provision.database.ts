@@ -38,6 +38,11 @@ export interface ProvisionAttemptRecord {
   createdMember: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Set only by a valid version-2 declaration on the original insert.
+   * Absent or false is a legacy attempt. Snapshot absence does not imply either.
+   */
+  snapshotRequired?: boolean;
   /** Exact version-2 snapshot string. Absent until a snapshot is registered. */
   profileSnapshot?: string;
   /** Lowercase SHA-256 hex of `profileSnapshot`. Never returned by the API. */
@@ -82,7 +87,8 @@ export type SnapshotAttachResult =
   | "expired"
   | "consumed"
   | "conflict"
-  | "target_mismatch";
+  | "target_mismatch"
+  | "not_required";
 
 export interface SnapshotAttachInput {
   attemptId: string;
@@ -428,6 +434,10 @@ function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
         return "consumed";
       }
 
+      if (current.snapshotRequired !== true) {
+        return "not_required";
+      }
+
       if (current.profileSnapshot === undefined || current.profileSnapshot === null) {
         tables.noteMutation();
         tables.attempts.set(input.attemptId, {
@@ -691,6 +701,7 @@ function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabas
         expiresAt: { $gt: input.nowSeconds },
         memberId: null,
         createdMember: false,
+        snapshotRequired: true,
         profileSnapshot: { $exists: false },
       };
       const claimed = await collection.findOneAndUpdate(
@@ -724,6 +735,10 @@ function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabas
 
       if (current.memberId !== null || current.createdMember) {
         return "consumed";
+      }
+
+      if (current.snapshotRequired !== true) {
+        return "not_required";
       }
 
       if (current.profileSnapshot === input.snapshot) {

@@ -4,6 +4,10 @@ import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveIntegrityMediaLinkConfig } from "./external-author-link.config.js";
 import {
+  INTEGRITY_MEDIA_PROVISION_VERSION_SIGNATURE_HEADER,
+  INTEGRITY_MEDIA_PROVISION_VERSION_TIMESTAMP_HEADER,
+} from "./external-author-link.constants.js";
+import {
   cancelIntegrityMediaLink,
   acknowledgeIntegrityMediaLink,
   confirmIntegrityMediaLink,
@@ -214,6 +218,8 @@ externalAuthorLinkRouter.post("/provision-attempt", async (req, res) => {
       body: readObject(req),
       timestamp: headerValue(req, "x-hu-integrity-media-timestamp"),
       signature: headerValue(req, "x-hu-integrity-media-signature"),
+      versionTimestamp: headerValue(req, INTEGRITY_MEDIA_PROVISION_VERSION_TIMESTAMP_HEADER),
+      versionSignature: headerValue(req, INTEGRITY_MEDIA_PROVISION_VERSION_SIGNATURE_HEADER),
     });
     res.status(200).json(
       createSuccessResponse(result, "Integrity Media provision attempt stored."),
