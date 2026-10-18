@@ -38,6 +38,28 @@ export interface ProvisionAttemptRecord {
   createdMember: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Exact version-2 snapshot string. Absent until a snapshot is registered. */
+  profileSnapshot?: string;
+  /** Lowercase SHA-256 hex of `profileSnapshot`. Never returned by the API. */
+  profileSnapshotDigest?: string;
+}
+
+export type SnapshotAttachResult =
+  | "stored"
+  | "idempotent"
+  | "missing"
+  | "expired"
+  | "consumed"
+  | "conflict"
+  | "target_mismatch";
+
+export interface SnapshotAttachInput {
+  attemptId: string;
+  target: string;
+  snapshot: string;
+  digest: string;
+  nowSeconds: number;
+  updatedAt: string;
 }
 
 export interface ProvisionUserView {
@@ -57,6 +79,7 @@ export interface ProvisionDatabase {
   findAttempt(attemptId: string): Promise<ProvisionAttemptRecord | null>;
   insertAttempt(record: ProvisionAttemptRecord): Promise<"inserted" | "duplicate">;
   saveAttempt(record: ProvisionAttemptRecord): Promise<void>;
+  attachProfileSnapshot(input: SnapshotAttachInput): Promise<SnapshotAttachResult>;
   findUserByEmail(email: string): Promise<ProvisionUserView | null>;
   findUserByMemberId(memberId: string): Promise<ProvisionUserView | null>;
   insertUser(record: AuthUserRecord): Promise<void>;
@@ -114,6 +137,7 @@ export interface MemoryProvisionState {
   results(): ExternalAuthorLinkResultRecord[];
   attempts(): ProvisionAttemptRecord[];
   participants(): PersistedMemberRecord[];
+  profiles(): MemberProfile[];
 }
 
 let memoryState: MemoryProvisionState | null = null;
@@ -214,6 +238,7 @@ export function createMemoryProvisionState(): MemoryProvisionState {
     results: () => [...results.values()].map((result) => ({ ...result })),
     attempts: () => [...attempts.values()].map((attempt) => ({ ...attempt })),
     participants: () => [...participants.values()].map((participant) => ({ ...participant })),
+    profiles: () => [...profiles.values()].map((profile) => structuredClone(profile)),
   };
 
   return state;
@@ -305,12 +330,55 @@ function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
     },
     async saveAttempt(record) {
       const tables = read();
-      if (!tables.attempts.has(record.attemptId)) {
+      const current = tables.attempts.get(record.attemptId);
+      if (!current) {
         throw new Error("Provision attempt is missing.");
       }
 
       tables.noteMutation();
-      tables.attempts.set(record.attemptId, { ...record });
+      tables.attempts.set(record.attemptId, {
+        ...current,
+        memberId: record.memberId,
+        userId: record.userId,
+        createdMember: record.createdMember,
+        updatedAt: record.updatedAt,
+      });
+    },
+    async attachProfileSnapshot(input) {
+      const tables = read();
+      const current = tables.attempts.get(input.attemptId);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.target !== input.target) {
+        return "target_mismatch";
+      }
+
+      if (current.expiresAt <= input.nowSeconds) {
+        return "expired";
+      }
+
+      if (current.memberId !== null || current.createdMember) {
+        return "consumed";
+      }
+
+      if (current.profileSnapshot === undefined || current.profileSnapshot === null) {
+        tables.noteMutation();
+        tables.attempts.set(input.attemptId, {
+          ...current,
+          profileSnapshot: input.snapshot,
+          profileSnapshotDigest: input.digest,
+          updatedAt: input.updatedAt,
+        });
+        return "stored";
+      }
+
+      if (current.profileSnapshot === input.snapshot) {
+        return "idempotent";
+      }
+
+      return "conflict";
     },
     async findUserByEmail(email) {
       const user = [...read().users.values()].find((candidate) => candidate.email === email);
@@ -438,7 +506,83 @@ function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabas
     },
     async saveAttempt(record) {
       await ensureMongo();
-      await attempts().replaceOne({ attemptId: record.attemptId }, record, sessionOptions);
+      await attempts().updateOne(
+        { attemptId: record.attemptId },
+        {
+          $set: {
+            memberId: record.memberId,
+            userId: record.userId,
+            createdMember: record.createdMember,
+            updatedAt: record.updatedAt,
+          },
+        },
+        sessionOptions,
+      );
+    },
+    async attachProfileSnapshot(input) {
+      await ensureMongo();
+      const collection = attempts();
+      const claim = {
+        attemptId: input.attemptId,
+        target: input.target,
+        expiresAt: { $gt: input.nowSeconds },
+        memberId: null,
+        createdMember: false,
+        profileSnapshot: { $exists: false },
+      };
+      const claimed = await collection.findOneAndUpdate(
+        claim,
+        {
+          $set: {
+            profileSnapshot: input.snapshot,
+            profileSnapshotDigest: input.digest,
+            updatedAt: input.updatedAt,
+          },
+        },
+        { returnDocument: "after", ...sessionOptions },
+      );
+
+      if (claimed) {
+        return "stored";
+      }
+
+      const current = await collection.findOne({ attemptId: input.attemptId }, sessionOptions);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.target !== input.target) {
+        return "target_mismatch";
+      }
+
+      if (current.expiresAt <= input.nowSeconds) {
+        return "expired";
+      }
+
+      if (current.memberId !== null || current.createdMember) {
+        return "consumed";
+      }
+
+      if (current.profileSnapshot === input.snapshot) {
+        return "idempotent";
+      }
+
+      if (typeof current.profileSnapshot === "string") {
+        return "conflict";
+      }
+
+      const raced = await collection.findOneAndUpdate(
+        claim,
+        {
+          $set: {
+            profileSnapshot: input.snapshot,
+            profileSnapshotDigest: input.digest,
+            updatedAt: input.updatedAt,
+          },
+        },
+        { returnDocument: "after", ...sessionOptions },
+      );
+      return raced ? "stored" : "conflict";
     },
     async findUserByEmail(email) {
       await ensureMongo();

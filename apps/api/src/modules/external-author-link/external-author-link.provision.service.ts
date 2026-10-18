@@ -34,6 +34,17 @@ import {
   hasProvisionAttemptSignature,
   noteProvisionAttemptSignature,
 } from "./external-author-link.provision.hmac.js";
+import {
+  buildProvisionSnapshotPayload,
+  hasProvisionSnapshotSignature,
+  noteProvisionSnapshotSignature,
+  snapshotDigest,
+} from "./external-author-link.provision-snapshot.hmac.js";
+import {
+  MAX_PROVISION_SNAPSHOT_BYTES,
+  parseApprovedProvisionSnapshot,
+  type ApprovedProvisionSnapshot,
+} from "./external-author-link.provision-snapshot.schema.js";
 import { revisionForNewLink } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorLinkFinalization,
@@ -64,6 +75,12 @@ export interface ProvisionRegistrationResult {
   expiresAt: number;
   idempotent: boolean;
   mapping: ProvisionMapping;
+}
+
+export interface ProvisionSnapshotRegistrationResult {
+  attemptId: string;
+  target: string;
+  idempotent: boolean;
 }
 
 export interface ProvisionConsentResult {
@@ -129,6 +146,48 @@ export async function registerProvisionAttempt(input: {
   }
 
   return withProvisionLock(() => storeProvisionAttempt(normalized, now));
+}
+
+export async function registerProvisionSnapshot(input: {
+  body: unknown;
+  timestamp: string;
+  signature: string;
+  now?: Date;
+}): Promise<ProvisionSnapshotRegistrationResult> {
+  const now = input.now ?? new Date();
+  const normalized = normalizeSnapshotBody(input.body);
+  await verifySnapshotSignature({
+    normalized,
+    timestamp: input.timestamp,
+    signature: input.signature,
+    now,
+  });
+  const parsed = parseApprovedProvisionSnapshot(normalized.snapshot);
+
+  if (!parsed.ok) {
+    throw new ProvisionRequestError(400, parsed.code, "The provision snapshot is not valid.");
+  }
+
+  const attached = await withProvisionLock(() =>
+    currentProvisionDatabase().attachProfileSnapshot({
+      attemptId: normalized.attemptId,
+      target: normalized.target,
+      snapshot: normalized.snapshot,
+      digest: snapshotDigest(normalized.snapshot),
+      nowSeconds: unixSeconds(now),
+      updatedAt: now.toISOString(),
+    }),
+  );
+
+  if (attached === "stored" || attached === "idempotent") {
+    return {
+      attemptId: normalized.attemptId,
+      target: normalized.target,
+      idempotent: attached === "idempotent",
+    };
+  }
+
+  throw snapshotAttachError(attached);
 }
 
 export async function readProvisionConsent(input: {
@@ -234,13 +293,13 @@ async function confirmInTransaction(
     }
   }
 
-  const link =
-    existingLink ??
-    (await insertProvisionalLink(db, {
+  if (!existingLink) {
+    await insertProvisionalLink(db, {
       externalAuthorId: attempt.externalAuthorId,
       memberId,
       now,
-    }));
+    });
+  }
 
   if (
     attempt.memberId !== memberId ||
@@ -354,6 +413,8 @@ async function createProvisionedIdentity(
   const password = randomBytes(32).toString("base64url");
   const passwordHash = await hashPassword(password);
   const timestamp = now.toISOString();
+  const approved = approvedSnapshotFields(attempt.profileSnapshot);
+  const participantName = approved?.displayName ?? attempt.displayName;
   const user: AuthUserRecord = {
     userId,
     email: attempt.email,
@@ -366,20 +427,41 @@ async function createProvisionedIdentity(
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+  const profile = buildDefaultMemberProfile({
+    userId,
+    displayName: participantName,
+  });
+
+  if (approved?.biography !== undefined) {
+    profile.biography = approved.biography;
+  }
+  if (approved?.website !== undefined) {
+    profile.website = approved.website;
+  }
+  if (approved?.linkedinUrl !== undefined) {
+    profile.linkedinUrl = approved.linkedinUrl;
+  }
+  if (approved?.facebookUrl !== undefined) {
+    profile.facebookUrl = approved.facebookUrl;
+  }
+  if (approved?.youtubeUrl !== undefined) {
+    profile.youtubeUrl = approved.youtubeUrl;
+  }
+  if (approved?.instagramUrl !== undefined) {
+    profile.instagramUrl = approved.instagramUrl;
+  }
+  if (approved?.xUrl !== undefined) {
+    profile.xUrl = approved.xUrl;
+  }
 
   await db.insertUser(user);
-  await db.insertProfile(
-    buildDefaultMemberProfile({
-      userId,
-      displayName: attempt.displayName,
-    }),
-  );
+  await db.insertProfile(profile);
   await db.insertParticipant(
     buildNewPersistedMember({
       memberId,
       identityId: userId,
-      displayName: attempt.displayName,
-      uniqueName: participantUniqueName(attempt.displayName, memberId),
+      displayName: participantName,
+      uniqueName: participantUniqueName(participantName, memberId),
       verificationLevel: "none",
     }),
   );
@@ -523,6 +605,154 @@ async function verifyProvisionSignature(input: {
   }
 
   noteProvisionAttemptSignature(input.signature, input.now.getTime());
+
+  const rawPlatformMode = readRawPlatformMode();
+  if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
+    throw new ProvisionRequestError(
+      403,
+      "target_mismatch",
+      "This provision attempt is for a different Humanity Union environment.",
+    );
+  }
+}
+
+function approvedSnapshotFields(snapshot: string | undefined): ApprovedProvisionSnapshot | null {
+  if (!snapshot) {
+    return null;
+  }
+
+  const parsed = parseApprovedProvisionSnapshot(snapshot);
+  if (!parsed.ok) {
+    throw new ProvisionRequestError(400, parsed.code, "The provision snapshot is not valid.");
+  }
+
+  return parsed.fields;
+}
+
+function snapshotAttachError(result: Exclude<
+  Awaited<ReturnType<ProvisionDatabase["attachProfileSnapshot"]>>,
+  "stored" | "idempotent"
+>): ProvisionRequestError {
+  switch (result) {
+    case "missing":
+      return new ProvisionRequestError(404, "attempt_not_found", "This provision attempt is incomplete.");
+    case "expired":
+      return new ProvisionRequestError(410, "attempt_expired", "This provision attempt has expired.");
+    case "consumed":
+      return new ProvisionRequestError(
+        409,
+        "attempt_consumed",
+        "This provision attempt has already been confirmed.",
+      );
+    case "conflict":
+      return new ProvisionRequestError(
+        409,
+        "snapshot_conflict",
+        "This provision attempt already has a different profile snapshot.",
+      );
+    case "target_mismatch":
+      return new ProvisionRequestError(
+        403,
+        "target_mismatch",
+        "This provision attempt is for a different Humanity Union environment.",
+      );
+    default:
+      return new ProvisionRequestError(
+        503,
+        "unavailable",
+        "Integrity Media account provisioning is not available.",
+      );
+  }
+}
+
+interface NormalizedSnapshot {
+  attemptId: string;
+  target: string;
+  snapshot: string;
+}
+
+function normalizeSnapshotBody(body: unknown): NormalizedSnapshot {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new ProvisionRequestError(400, "invalid_request", "The provision snapshot request is not valid.");
+  }
+
+  const record = body as Record<string, unknown>;
+  const allowed = new Set(["attemptId", "target", "snapshot"]);
+
+  for (const key of Object.keys(record)) {
+    if (!allowed.has(key)) {
+      throw new ProvisionRequestError(400, "unexpected_field", "The provision snapshot request is not valid.");
+    }
+  }
+
+  const attemptId = requiredString(record.attemptId);
+  const target = requiredString(record.target);
+  const snapshot = requiredString(record.snapshot);
+
+  if (!INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN.test(attemptId)) {
+    throw new ProvisionRequestError(400, "invalid_request", "The provision attempt id is not valid.");
+  }
+
+  if (target !== "staging") {
+    throw new ProvisionRequestError(
+      403,
+      "target_mismatch",
+      "This provision attempt is for a different Humanity Union environment.",
+    );
+  }
+
+  if (Buffer.byteLength(snapshot, "utf8") > MAX_PROVISION_SNAPSHOT_BYTES) {
+    throw new ProvisionRequestError(413, "payload_too_large", "The provision snapshot is too large.");
+  }
+
+  return { attemptId, target, snapshot };
+}
+
+async function verifySnapshotSignature(input: {
+  normalized: NormalizedSnapshot;
+  timestamp: string;
+  signature: string;
+  now: Date;
+}): Promise<void> {
+  if (!/^\d{10}$/.test(input.timestamp)) {
+    throw new ProvisionRequestError(400, "invalid_timestamp", "The provision timestamp is not valid.");
+  }
+
+  const config = resolveIntegrityMediaLinkConfig();
+  if (!config.hmacSecret) {
+    throw new ProvisionRequestError(
+      503,
+      "provision_not_configured",
+      "Integrity Media account provisioning is not configured.",
+    );
+  }
+
+  const payload = buildProvisionSnapshotPayload({
+    timestamp: input.timestamp,
+    attemptId: input.normalized.attemptId,
+    target: input.normalized.target,
+    snapshot: input.normalized.snapshot,
+  });
+  const expected = signIntegrityMediaLinkRedeem(config.hmacSecret, payload);
+
+  if (!integrityMediaLinkSignaturesEqual(expected, input.signature)) {
+    throw new ProvisionRequestError(401, "invalid_signature", "The provision signature is not valid.");
+  }
+
+  const timestampSeconds = Number(input.timestamp);
+  if (Math.abs(unixSeconds(input.now) - timestampSeconds) > INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS) {
+    throw new ProvisionRequestError(
+      401,
+      "stale_timestamp",
+      "The provision timestamp is outside the allowed window.",
+    );
+  }
+
+  if (hasProvisionSnapshotSignature(input.signature, input.now.getTime())) {
+    throw new ProvisionRequestError(401, "replayed", "This provision request was already used.");
+  }
+
+  noteProvisionSnapshotSignature(input.signature, input.now.getTime());
 
   const rawPlatformMode = readRawPlatformMode();
   if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
