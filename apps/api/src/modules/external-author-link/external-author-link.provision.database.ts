@@ -1,5 +1,5 @@
 import type { BlogCapabilityGrant, MemberProfile } from "@hu/types";
-import type { ClientSession } from "mongodb";
+import type { ClientSession, Filter } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
@@ -42,6 +42,37 @@ export interface ProvisionAttemptRecord {
   profileSnapshot?: string;
   /** Lowercase SHA-256 hex of `profileSnapshot`. Never returned by the API. */
   profileSnapshotDigest?: string;
+  /** Absent means the attempt is not eligible for photo import. */
+  photoImportStatus?: PhotoImportStatus;
+  photoImportAttempts?: number;
+  photoImportClaimedAt?: string;
+  photoImportDigest?: string;
+  photoImportByteLength?: number;
+}
+
+export type PhotoImportStatus = "pending" | "in_progress" | "applied" | "skipped" | "failed";
+
+export interface PhotoImportEligibility {
+  digest: string;
+  byteLength: number;
+}
+
+export type PhotoImportEstablishResult = "established" | "already_set" | "missing" | "ineligible";
+
+export type PhotoImportClaimResult =
+  | "claimed"
+  | "busy"
+  | "expired"
+  | "terminal"
+  | "missing"
+  | "ineligible";
+
+export interface PhotoImportClaimInput {
+  attemptId: string;
+  nowSeconds: number;
+  nowIso: string;
+  leaseBeforeIso: string;
+  maxAttempts: number;
 }
 
 export type SnapshotAttachResult =
@@ -80,6 +111,22 @@ export interface ProvisionDatabase {
   insertAttempt(record: ProvisionAttemptRecord): Promise<"inserted" | "duplicate">;
   saveAttempt(record: ProvisionAttemptRecord): Promise<void>;
   attachProfileSnapshot(input: SnapshotAttachInput): Promise<SnapshotAttachResult>;
+  establishPhotoImportEligibility(
+    attemptId: string,
+    photo: PhotoImportEligibility,
+    updatedAt: string,
+  ): Promise<PhotoImportEstablishResult>;
+  claimPhotoImport(input: PhotoImportClaimInput): Promise<PhotoImportClaimResult>;
+  settlePhotoImport(
+    attemptId: string,
+    status: Exclude<PhotoImportStatus, "in_progress">,
+    updatedAt: string,
+  ): Promise<void>;
+  claimEmptyAvatar(input: {
+    userId: string;
+    avatarUrl: string;
+    updatedAt: string;
+  }): Promise<"applied" | "occupied" | "missing">;
   findUserByEmail(email: string): Promise<ProvisionUserView | null>;
   findUserByMemberId(memberId: string): Promise<ProvisionUserView | null>;
   insertUser(record: AuthUserRecord): Promise<void>;
@@ -138,6 +185,8 @@ export interface MemoryProvisionState {
   attempts(): ProvisionAttemptRecord[];
   participants(): PersistedMemberRecord[];
   profiles(): MemberProfile[];
+  patchAttempt(attemptId: string, patch: Partial<ProvisionAttemptRecord>): void;
+  patchProfile(userId: string, patch: Partial<MemberProfile>): void;
 }
 
 let memoryState: MemoryProvisionState | null = null;
@@ -239,6 +288,22 @@ export function createMemoryProvisionState(): MemoryProvisionState {
     attempts: () => [...attempts.values()].map((attempt) => ({ ...attempt })),
     participants: () => [...participants.values()].map((participant) => ({ ...participant })),
     profiles: () => [...profiles.values()].map((profile) => structuredClone(profile)),
+    patchAttempt(attemptId, patch) {
+      const current = attempts.get(attemptId);
+      if (!current) {
+        throw new Error("Provision attempt is missing.");
+      }
+
+      attempts.set(attemptId, { ...current, ...patch });
+    },
+    patchProfile(userId, patch) {
+      const current = profiles.get(userId);
+      if (!current) {
+        throw new Error("Provision profile is missing.");
+      }
+
+      Object.assign(current, patch);
+    },
   };
 
   return state;
@@ -379,6 +444,104 @@ function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
       }
 
       return "conflict";
+    },
+    async establishPhotoImportEligibility(attemptId, photo, updatedAt) {
+      const tables = read();
+      const current = tables.attempts.get(attemptId);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.createdMember !== true) {
+        return "ineligible";
+      }
+
+      if (current.photoImportStatus) {
+        return "already_set";
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(attemptId, {
+        ...current,
+        photoImportStatus: "pending",
+        photoImportAttempts: 0,
+        photoImportDigest: photo.digest,
+        photoImportByteLength: photo.byteLength,
+        updatedAt,
+      });
+      return "established";
+    },
+    async claimPhotoImport(input) {
+      const tables = read();
+      const current = tables.attempts.get(input.attemptId);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.expiresAt <= input.nowSeconds) {
+        return "expired";
+      }
+
+      const attempts = current.photoImportAttempts ?? 0;
+      const status = current.photoImportStatus;
+      if (status === "applied" || status === "skipped" || status === "failed") {
+        return "terminal";
+      }
+
+      if (status !== "pending" && status !== "in_progress") {
+        return "ineligible";
+      }
+
+      if (attempts >= input.maxAttempts) {
+        return "terminal";
+      }
+
+      const leaseHeld =
+        status === "in_progress" &&
+        typeof current.photoImportClaimedAt === "string" &&
+        current.photoImportClaimedAt >= input.leaseBeforeIso;
+      if (leaseHeld) {
+        return "busy";
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(input.attemptId, {
+        ...current,
+        photoImportStatus: "in_progress",
+        photoImportAttempts: attempts + 1,
+        photoImportClaimedAt: input.nowIso,
+      });
+      return "claimed";
+    },
+    async settlePhotoImport(attemptId, status, updatedAt) {
+      const tables = read();
+      const current = tables.attempts.get(attemptId);
+      if (!current) {
+        return;
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(attemptId, {
+        ...current,
+        photoImportStatus: status,
+        updatedAt,
+      });
+    },
+    async claimEmptyAvatar(input) {
+      const tables = read();
+      const profile = tables.profiles.get(input.userId);
+      if (!profile) {
+        return "missing";
+      }
+
+      if (Object.prototype.hasOwnProperty.call(profile, "avatarUrl") && profile.avatarUrl !== undefined) {
+        return "occupied";
+      }
+
+      tables.noteMutation();
+      profile.avatarUrl = input.avatarUrl;
+      profile.updatedAt = input.updatedAt;
+      return "applied";
     },
     async findUserByEmail(email) {
       const user = [...read().users.values()].find((candidate) => candidate.email === email);
@@ -583,6 +746,128 @@ function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabas
         { returnDocument: "after", ...sessionOptions },
       );
       return raced ? "stored" : "conflict";
+    },
+    async establishPhotoImportEligibility(attemptId, photo, updatedAt) {
+      await ensureMongo();
+      const updated = await attempts().findOneAndUpdate(
+        {
+          attemptId,
+          createdMember: true,
+          photoImportStatus: { $exists: false },
+        },
+        {
+          $set: {
+            photoImportStatus: "pending",
+            photoImportAttempts: 0,
+            photoImportDigest: photo.digest,
+            photoImportByteLength: photo.byteLength,
+            updatedAt,
+          },
+        },
+        { returnDocument: "after", ...sessionOptions },
+      );
+      if (updated) {
+        return "established";
+      }
+
+      const current = await attempts().findOne({ attemptId }, sessionOptions);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.createdMember !== true) {
+        return "ineligible";
+      }
+
+      return "already_set";
+    },
+    async claimPhotoImport(input) {
+      await ensureMongo();
+      const filter: Filter<ProvisionAttemptRecord> = {
+        attemptId: input.attemptId,
+        expiresAt: { $gt: input.nowSeconds },
+        $and: [
+          {
+            $or: [
+              { photoImportAttempts: { $lt: input.maxAttempts } },
+              { photoImportAttempts: { $exists: false } },
+            ],
+          },
+          {
+            $or: [
+              { photoImportStatus: "pending" },
+              {
+                photoImportStatus: "in_progress",
+                $or: [
+                  { photoImportClaimedAt: { $lt: input.leaseBeforeIso } },
+                  { photoImportClaimedAt: { $exists: false } },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const claimed = await attempts().findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            photoImportStatus: "in_progress",
+            photoImportClaimedAt: input.nowIso,
+          },
+          $inc: { photoImportAttempts: 1 },
+        },
+        { returnDocument: "after", ...sessionOptions },
+      );
+      if (claimed) {
+        return "claimed";
+      }
+
+      const current = await attempts().findOne({ attemptId: input.attemptId }, sessionOptions);
+      if (!current) {
+        return "missing";
+      }
+
+      if (current.expiresAt <= input.nowSeconds) {
+        return "expired";
+      }
+
+      if (
+        current.photoImportStatus === "applied" ||
+        current.photoImportStatus === "skipped" ||
+        current.photoImportStatus === "failed" ||
+        (current.photoImportAttempts ?? 0) >= input.maxAttempts
+      ) {
+        return "terminal";
+      }
+
+      if (current.photoImportStatus === "in_progress") {
+        return "busy";
+      }
+
+      return "ineligible";
+    },
+    async settlePhotoImport(attemptId, status, updatedAt) {
+      await ensureMongo();
+      await attempts().updateOne(
+        { attemptId },
+        { $set: { photoImportStatus: status, updatedAt } },
+        sessionOptions,
+      );
+    },
+    async claimEmptyAvatar(input) {
+      await ensureMongo();
+      const profiles = getMongoCollection<MemberProfile>(MONGO_COLLECTIONS.memberProfiles);
+      const updated = await profiles.findOneAndUpdate(
+        { userId: input.userId, avatarUrl: { $exists: false } },
+        { $set: { avatarUrl: input.avatarUrl, updatedAt: input.updatedAt } },
+        { returnDocument: "after", ...sessionOptions },
+      );
+      if (updated) {
+        return "applied";
+      }
+
+      const existing = await profiles.findOne({ userId: input.userId }, sessionOptions);
+      return existing ? "occupied" : "missing";
     },
     async findUserByEmail(email) {
       await ensureMongo();

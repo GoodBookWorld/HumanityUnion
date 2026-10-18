@@ -65,6 +65,12 @@ export const INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV = "INTEGRITY_MEDIA_LINK_HMAC_S
 export const INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV = "INTEGRITY_MEDIA_LINK_RETURN_ORIGIN";
 export const INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV = "INTEGRITY_MEDIA_LINK_RETURN_PATH";
 
+/** Trusted Integrity Media server origin. Never taken from a snapshot or browser. */
+export const INTEGRITY_MEDIA_SERVER_ORIGIN_ENV = "INTEGRITY_MEDIA_SERVER_ORIGIN";
+
+/** IM → HU frozen WEBP retrieval. This purpose cannot register or confirm an attempt. */
+export const INTEGRITY_MEDIA_PROVISION_PHOTO_PURPOSE = "integrity-media-provision-photo";
+
 /** Future Integrity Media completion route. Overridable, never taken from the browser. */
 export const DEFAULT_INTEGRITY_MEDIA_RETURN_PATH = "/api/author/humanity-union-link/complete";
 
