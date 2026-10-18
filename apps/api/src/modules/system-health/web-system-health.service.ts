@@ -1,4 +1,7 @@
-import { assertAdminDiagnosticsActor } from "../administration/admin-diagnostics-root-cause.js";
+import {
+  AdministrationForbiddenError,
+  AdministrationUnauthorizedError,
+} from "../administration/administration.errors.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import {
   readConfiguredSystemHealthToken,
@@ -59,10 +62,12 @@ async function authorize(
   const user = actorUserId.trim()
     ? await (loadUser ?? ((id: string) => findAuthUserById(id)))(actorUserId)
     : null;
-  assertAdminDiagnosticsActor({
-    userId: actorUserId,
-    user: user ? { status: user.status, role: user.role } : null,
-  });
+  if (!actorUserId.trim()) {
+    throw new AdministrationUnauthorizedError("Authentication is required.");
+  }
+  if (!user || user.status !== "active" || user.role !== "admin") {
+    throw new AdministrationForbiddenError("Administrator access is required.");
+  }
 }
 
 export async function readAdminWebSystemHealthEvents(input: {

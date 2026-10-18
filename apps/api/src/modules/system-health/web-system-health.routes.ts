@@ -1,7 +1,10 @@
 import { Router, type Response } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
-import { resolveAdminDiagnosticsHttpStatus } from "../administration/admin-diagnostics-root-cause.js";
+import {
+  AdministrationForbiddenError,
+  AdministrationUnauthorizedError,
+} from "../administration/administration.errors.js";
 import {
   authenticationMiddleware,
   requireAuthenticationMiddleware,
@@ -26,8 +29,18 @@ function createFailureResponse(message: string) {
   };
 }
 
+function resolveAdminHttpStatus(error: unknown): number {
+  if (error instanceof AdministrationUnauthorizedError) {
+    return 401;
+  }
+  if (error instanceof AdministrationForbiddenError) {
+    return 403;
+  }
+  return 500;
+}
+
 function handleAdminError(res: Response, error: unknown): void {
-  const status = resolveAdminDiagnosticsHttpStatus(error);
+  const status = resolveAdminHttpStatus(error);
   const message =
     status === 401
       ? "Authentication is required."
