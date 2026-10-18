@@ -1,4 +1,4 @@
-import { AuthValidationError, InvalidCredentialsError } from "./auth.errors.js";
+import { AuthValidationError, InvalidCredentialsError, UserDisabledError } from "./auth.errors.js";
 import { confirmMemberRegistration } from "../member/application/confirm-member-registration.service.js";
 import { toAuthUserPublic } from "./auth-user.projection.js";
 import {
@@ -118,7 +118,7 @@ export async function requestPasswordReset(
 
   const user = await findAuthUserByEmail(normalizedEmail);
 
-  if (!user) {
+  if (!user || user.status === "disabled") {
     return { requested: true, message: PASSWORD_RESET_GENERIC_MESSAGE };
   }
 
@@ -133,11 +133,15 @@ export async function requestPasswordReset(
  */
 export async function requestPasswordResetForUserId(
   userId: string,
-): Promise<{ sent: true } | { sent: false; reason: "not_found" }> {
+): Promise<{ sent: true } | { sent: false; reason: "not_found" | "disabled" }> {
   const user = await findAuthUserById(userId);
 
   if (!user) {
     return { sent: false, reason: "not_found" };
+  }
+
+  if (user.status === "disabled") {
+    return { sent: false, reason: "disabled" };
   }
 
   await issuePasswordResetForUser(user);
@@ -154,7 +158,17 @@ export async function validatePasswordResetToken(token: string): Promise<{ valid
     purpose: "password_reset",
   });
 
-  return { valid: record !== null };
+  if (!record) {
+    return { valid: false };
+  }
+
+  const user = await findAuthUserById(record.userId);
+
+  if (!user || user.status === "disabled") {
+    return { valid: false };
+  }
+
+  return { valid: true };
 }
 
 export async function resetPasswordWithToken(token: string, password: string) {
@@ -164,6 +178,25 @@ export async function resetPasswordWithToken(token: string, password: string) {
 
   if (password.length < 8) {
     throw new AuthValidationError("Password must be at least 8 characters.");
+  }
+
+  const pending = await findValidEmailVerificationToken({
+    token,
+    purpose: "password_reset",
+  });
+
+  if (!pending) {
+    throw new InvalidCredentialsError("Invalid or expired reset token.");
+  }
+
+  const account = await findAuthUserById(pending.userId);
+
+  if (!account) {
+    throw new AuthValidationError("User account not found.");
+  }
+
+  if (account.status === "disabled") {
+    throw new UserDisabledError();
   }
 
   const record = await consumeEmailVerificationToken({

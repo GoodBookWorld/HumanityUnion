@@ -22,7 +22,7 @@ import {
   sendRegistrationConfirmationCodeEmail,
   sendRegistrationWelcomeEmail,
 } from "../email/email.service.js";
-import { AuthValidationError } from "./auth.errors.js";
+import { AuthValidationError, UserDisabledError } from "./auth.errors.js";
 import { createPendingConfirmationToken } from "./auth-pending-confirmation.tokens.js";
 import { issueAuthSession } from "./auth-session.issue.js";
 import {
@@ -57,6 +57,17 @@ function normalizeConfirmationCode(code: string): string {
 function assertValidConfirmationCodeFormat(code: string): void {
   if (!/^\d{6}$/.test(code)) {
     throw new AuthValidationError("The confirmation code is incorrect.");
+  }
+}
+
+/**
+ * Login and refresh already reject disabled accounts. Registration
+ * confirmation and its resend must too, before a code is created, sent,
+ * consumed, or a session is issued.
+ */
+function rejectDisabledConfirmationAccount(user: { status: string }): void {
+  if (user.status === "disabled") {
+    throw new UserDisabledError();
   }
 }
 
@@ -230,6 +241,8 @@ export async function confirmRegistrationEmailCode(input: {
     throw new AuthValidationError("Email confirmation session is invalid.");
   }
 
+  rejectDisabledConfirmationAccount(user);
+
   if (user.emailVerificationStatus === "verified") {
     const existingMember = await findMemberByIdentityId(user.userId);
 
@@ -244,6 +257,7 @@ export async function confirmRegistrationEmailCode(input: {
       throw new AuthValidationError("Email confirmation session is invalid.");
     }
 
+    rejectDisabledConfirmationAccount(refreshedUser);
     return issueAuthSession(refreshedUser);
   }
 
@@ -286,6 +300,8 @@ export async function confirmRegistrationEmailCode(input: {
     throw new AuthValidationError("Email confirmation session is invalid.");
   }
 
+  rejectDisabledConfirmationAccount(verifiedUser);
+
   const welcomeSent = await markRegistrationWelcomeEmailSent(verifiedUser.userId);
 
   if (welcomeSent) {
@@ -314,6 +330,8 @@ export async function resendRegistrationConfirmationCode(input: {
   if (user.emailVerificationStatus === "verified") {
     throw new AuthValidationError("Email address is already confirmed.");
   }
+
+  rejectDisabledConfirmationAccount(user);
 
   const activeCode = await findActiveEmailConfirmationCode({
     userId: user.userId,
