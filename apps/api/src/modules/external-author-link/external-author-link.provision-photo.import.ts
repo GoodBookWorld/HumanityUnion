@@ -5,7 +5,11 @@ import { findMediaRecordByStorageKey, saveMediaRecordDurable } from "../media-up
 import { resolveMediaStorageProviderName } from "../media-upload/media-object-storage.js";
 import { resolveMediaObjectStorage } from "../media-upload/resolve-media-object-storage.js";
 import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
-import { fetchProvisionPhoto, type ProvisionPhotoFetchResult } from "./external-author-link.provision-photo.client.js";
+import {
+  fetchProvisionPhoto,
+  type ProvisionPhotoFailureCode,
+  type ProvisionPhotoFetchResult,
+} from "./external-author-link.provision-photo.client.js";
 import {
   currentProvisionDatabase,
   withProvisionLock,
@@ -151,7 +155,7 @@ function preparedFromFetch(fetched: ProvisionPhotoFetchResult): PreparedProvisio
   return {
     prefetch: "failed",
     bytes: null,
-    terminalFailure: fetched.code === "missing" || fetched.code === "expired",
+    terminalFailure: isTerminalPhotoFailure(fetched.code),
   };
 }
 
@@ -257,7 +261,7 @@ async function resolveCommittedPhoto(
   if (!fetched.ok) {
     return {
       ok: false,
-      terminalFailure: fetched.code === "missing" || fetched.code === "expired",
+      terminalFailure: isTerminalPhotoFailure(fetched.code),
     };
   }
 
@@ -266,6 +270,10 @@ async function resolveCommittedPhoto(
   }
 
   return { ok: true, bytes: fetched.bytes };
+}
+
+function isTerminalPhotoFailure(code: ProvisionPhotoFailureCode): boolean {
+  return code === "missing" || code === "expired" || code === "conflict";
 }
 
 function photoBytesMatch(bytes: Buffer, photo: ImportableSnapshotPhoto): boolean {

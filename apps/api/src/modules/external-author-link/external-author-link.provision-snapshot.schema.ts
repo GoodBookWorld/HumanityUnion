@@ -28,6 +28,12 @@ const PHOTO_FIELDS = new Set([
   "digest",
 ]);
 
+/**
+ * Integrity Media serializes `SHA-256`. Existing fixtures use `sha256`.
+ * Both name the same algorithm. The snapshot string itself is not rewritten.
+ */
+const ACCEPTED_SNAPSHOT_DIGEST_ALGORITHMS = new Set(["SHA-256", "sha256"]);
+
 export const MAX_PROVISION_SNAPSHOT_BYTES = 16 * 1024;
 
 export interface ApprovedProvisionSnapshot {
@@ -78,7 +84,7 @@ export function readImportableSnapshotPhoto(
   }
 
   const record = photo as Record<string, unknown>;
-  if (record.mediaType !== "image/webp" || record.digestAlgorithm !== "sha256") {
+  if (record.mediaType !== "image/webp" || !isAcceptedDigestAlgorithm(record.digestAlgorithm)) {
     return null;
   }
 
@@ -222,7 +228,7 @@ function photoFailure(photo: unknown): SnapshotSchemaFailure | null {
     return "invalid_snapshot";
   }
 
-  if (record.digestAlgorithm !== "sha256") {
+  if (!isAcceptedDigestAlgorithm(record.digestAlgorithm)) {
     return "invalid_snapshot";
   }
 
@@ -231,6 +237,10 @@ function photoFailure(photo: unknown): SnapshotSchemaFailure | null {
   }
 
   return null;
+}
+
+function isAcceptedDigestAlgorithm(value: unknown): boolean {
+  return typeof value === "string" && ACCEPTED_SNAPSHOT_DIGEST_ALGORITHMS.has(value);
 }
 
 function boundedDimension(value: unknown): value is number {

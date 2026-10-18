@@ -145,25 +145,28 @@ describe("Integrity Media account provision", () => {
   });
 
   it("stores an attempt idempotently and rejects a conflicting retry", async () => {
-    const created = await register(attemptBody());
+    const expiresAt = Math.floor(Date.now() / 1000) + 600;
+    const body = attemptBody({ expiresAt });
+    const created = await register(body);
     assert.equal(created.status, 200);
     assert.equal(created.body.data?.idempotent, false);
     assert.equal(created.body.data?.mapping, "none");
     assert.equal(memory.users().length, 0);
     assert.equal(memory.participants().length, 0);
 
-    const replay = await register(attemptBody(), { signature: created.signature, timestamp: created.timestamp });
+    const replay = await register(body, { signature: created.signature, timestamp: created.timestamp });
     assert.equal(replay.status, 401);
     assert.equal(replay.body.meta.code, "replayed");
 
-    const same = await register(attemptBody(), {
+    const same = await register(body, {
       timestamp: String(Number(created.timestamp) + 1),
     });
     assert.equal(same.status, 200);
     assert.equal(same.body.data?.idempotent, true);
     assert.equal(memory.attempts().length, 1);
+    assert.equal(memory.attempts()[0]?.expiresAt, expiresAt);
 
-    const conflict = await register(attemptBody({ email: "other@example.com" }));
+    const conflict = await register(attemptBody({ expiresAt, email: "other@example.com" }));
     assert.equal(conflict.status, 409);
     assert.equal(conflict.body.meta.code, "attempt_conflict");
     assert.equal(memory.users().length, 0);
