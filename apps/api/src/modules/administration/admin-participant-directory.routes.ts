@@ -91,6 +91,23 @@ adminParticipantDirectoryRouter.get(
           : undefined;
       const role =
         req.query.role === "member" || req.query.role === "admin" ? req.query.role : undefined;
+      const emailVerificationRaw =
+        typeof req.query.emailVerificationStatus === "string"
+          ? req.query.emailVerificationStatus.trim()
+          : undefined;
+      if (
+        emailVerificationRaw &&
+        emailVerificationRaw !== "pending" &&
+        emailVerificationRaw !== "verified"
+      ) {
+        throw new AdminParticipantDirectoryValidationError(
+          "Invalid emailVerificationStatus filter.",
+        );
+      }
+      const emailVerificationStatus =
+        emailVerificationRaw === "pending" || emailVerificationRaw === "verified"
+          ? emailVerificationRaw
+          : undefined;
       const membershipStatusRaw =
         typeof req.query.membershipStatus === "string" ? req.query.membershipStatus : undefined;
       const membershipStatus =
@@ -116,6 +133,7 @@ adminParticipantDirectoryRouter.get(
         search,
         status,
         role,
+        emailVerificationStatus,
         membershipStatus,
         sort,
         order,

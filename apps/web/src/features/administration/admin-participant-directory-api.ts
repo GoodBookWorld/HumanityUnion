@@ -6,6 +6,7 @@ export interface ListAdminParticipantsQuery {
   search?: string;
   status?: "active" | "disabled";
   role?: "member" | "admin";
+  emailVerificationStatus?: "pending" | "verified";
   membershipStatus?: string;
   sort?: "createdAt" | "lastLoginAt" | "email";
   order?: "asc" | "desc";
@@ -26,6 +27,9 @@ export async function listAdminParticipants(
   }
   if (query.role) {
     params.set("role", query.role);
+  }
+  if (query.emailVerificationStatus) {
+    params.set("emailVerificationStatus", query.emailVerificationStatus);
   }
   if (query.membershipStatus) {
     params.set("membershipStatus", query.membershipStatus);

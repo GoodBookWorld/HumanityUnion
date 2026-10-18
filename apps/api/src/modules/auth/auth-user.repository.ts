@@ -507,6 +507,7 @@ export interface ListAuthUsersForAdminQuery {
   search?: string;
   status?: AuthUserRecord["status"];
   role?: AuthUserRecord["role"];
+  emailVerificationStatus?: "pending" | "verified";
   /** When set, only these userIds are considered (intersection). */
   userIdAllowlist?: readonly string[];
   /** Extra userIds matched via Member.uniqueName search — OR'd with email/displayName search. */
@@ -544,6 +545,10 @@ export async function listAuthUsersForAdmin(
 
   if (query.role) {
     filter.role = query.role;
+  }
+
+  if (query.emailVerificationStatus) {
+    filter.emailVerificationStatus = query.emailVerificationStatus;
   }
 
   if (query.userIdAllowlist) {

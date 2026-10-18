@@ -89,6 +89,7 @@ export interface ListAdminParticipantsInput {
   search?: string;
   status?: AuthUserRecord["status"];
   role?: AuthUserRecord["role"];
+  emailVerificationStatus?: string;
   /** MembershipStatus or Pack 25D operational filter (application_submitted / member_badge_orders). */
   membershipStatus?: string | MembershipStatus;
   sort?: AdminAuthUserListSort;
@@ -195,6 +196,17 @@ export async function listAdminParticipants(
     throw new AdminParticipantDirectoryValidationError("Invalid role filter.");
   }
 
+  let emailVerificationStatus: "pending" | "verified" | undefined;
+  if (input.emailVerificationStatus) {
+    if (
+      input.emailVerificationStatus !== "pending" &&
+      input.emailVerificationStatus !== "verified"
+    ) {
+      throw new AdminParticipantDirectoryValidationError("Invalid emailVerificationStatus filter.");
+    }
+    emailVerificationStatus = input.emailVerificationStatus;
+  }
+
   if (
     sort !== "createdAt" &&
     sort !== "lastLoginAt" &&
@@ -237,6 +249,7 @@ export async function listAdminParticipants(
     search,
     status: input.status,
     role: input.role,
+    emailVerificationStatus,
     userIdAllowlist,
     searchAlsoUserIds,
     sort,

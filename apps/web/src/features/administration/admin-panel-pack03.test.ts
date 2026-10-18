@@ -99,8 +99,23 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
     assert.match(section, /membershipStatus/);
     assert.match(section, /adminParticipantPublicProfilePath/);
     assert.match(section, /View profile/);
-    assert.doesNotMatch(section, /passwordHash|refreshToken|accessToken/);
+    assert.match(section, /Clear selection/);
+    assert.match(section, /Select all participants on this page/);
+    assert.match(section, /Account status/);
+    assert.match(section, /Email verification/);
+    assert.match(section, /emailVerificationStatus/);
+    assert.match(section, /Review \/ Restore/);
+    assert.match(section, /View Order/);
+    assert.match(section, /Each successful suspension sends the existing review email/);
+    assert.match(section, /Each successful restore sends the existing notification email/);
+    assert.doesNotMatch(section, /passwordHash|refreshToken|accessToken|reviewToken/);
+    assert.doesNotMatch(section, /Change role|Reset password|Edit identity/);
     assert.doesNotMatch(section, /\/member\/\$\{encodeURIComponent\(row\.uniqueName\)\}/);
+
+    const selection = read("features/administration/participant-directory-selection.ts");
+    assert.match(selection, /PARTICIPANT_SELECTION_CAP = 25/);
+    assert.match(selection, /selectAllParticipantsOnPage/);
+    assert.match(selection, /blockedDuplicate/);
 
     const api = read("features/administration/admin-participant-directory-api.ts");
     assert.match(api, /\/api\/v1\/admin\/participants/);

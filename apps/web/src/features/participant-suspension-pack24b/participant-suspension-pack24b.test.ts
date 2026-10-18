@@ -27,8 +27,10 @@ describe("Pack 24B — Admin Participant suspension UI", () => {
     assert.match(section, /variant="secondary"/);
     assert.match(section, /admin-participants-table__actions/);
     assert.match(section, /ConfirmDialog/);
-    assert.match(section, /Suspend Participant/);
-    assert.match(section, /Restore Participant/);
+    assert.match(section, /Suspend participants\?/);
+    assert.match(section, /Restore participants\?/);
+    assert.match(section, /Each successful suspension sends the existing review email/);
+    assert.match(section, /Each successful restore sends the existing notification email/);
 
     const css = read("features/administration/components/admin-participants-table.css");
     assert.match(css, /\.admin-participants-table__actions/);
