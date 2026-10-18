@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   AdminParticipantDirectoryItem,
@@ -39,6 +39,17 @@ import { useOpenDirectConversation } from "../../direct-messaging/use-open-direc
 import { AdminMemberBadgeOrderModal } from "./AdminMemberBadgeOrderModal";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
+import {
+  PARTICIPANT_SELECTION_CAP,
+  classifyRestoreTargets,
+  classifySuspendTargets,
+  countEmailWarnings,
+  createSequentialParticipantMutationRunner,
+  pageCheckboxState,
+  selectAllParticipantsOnPage,
+  toggleParticipantSelection,
+  type ParticipantMutationBatchResult,
+} from "../participant-directory-selection";
 
 import "./admin-panel.css";
 import "./admin-participants-table.css";
@@ -81,6 +92,10 @@ function participantSecondaryName(row: AdminParticipantDirectoryItem): string | 
 
 function formatAccountStatus(status: AdminParticipantDirectoryItem["status"]): string {
   return status === "active" ? "Active" : "Suspended";
+}
+
+function formatEmailVerificationStatus(status: string): string {
+  return status === "verified" ? "Verified" : "Pending";
 }
 
 function formatAccountRole(role: AdminParticipantDirectoryItem["role"]): string {
@@ -138,7 +153,7 @@ function formatBadgeFulfillmentLabel(row: AdminParticipantDirectoryItem): string
   return order.fulfillmentStatus.replace(/_/g, " ");
 }
 
-export function AdminParticipantsSection({ user: _user }: AdminParticipantsSectionProps) {
+export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps) {
   const [counts, setCounts] = useState<PlatformStatisticsCounts | null>(null);
   const [meta, setMeta] = useState<PlatformStatisticsMeta | null>(null);
   const [membership, setMembership] = useState<MembershipStatisticsPayload | null>(null);
@@ -158,15 +173,20 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
   const [membershipStatus, setMembershipStatus] = useState("");
   const [sort, setSort] = useState<"createdAt" | "lastLoginAt" | "email">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [emailVerification, setEmailVerification] = useState<"" | "pending" | "verified">("");
 
-  const [suspendTarget, setSuspendTarget] = useState<AdminParticipantDirectoryItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedById, setSelectedById] = useState<Map<string, AdminParticipantDirectoryItem>>(
+    () => new Map(),
+  );
+  const [selectionLimitReached, setSelectionLimitReached] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | "suspend" | "restore">(null);
   const [suspendReason, setSuspendReason] = useState<ParticipantSuspensionReasonCode>(
     "community_standards_violation",
   );
-  const [suspending, setSuspending] = useState(false);
-
-  const [restoreTarget, setRestoreTarget] = useState<AdminParticipantDirectoryItem | null>(null);
-  const [restoring, setRestoring] = useState(false);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const batchRunnerRef = useRef(createSequentialParticipantMutationRunner());
+  const previousFilterKey = useRef<string | null>(null);
   const [badgeOrderApplicationId, setBadgeOrderApplicationId] = useState<string | null>(null);
 
   const {
@@ -234,6 +254,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
         search: search || undefined,
         status: status || undefined,
         role: role || undefined,
+        emailVerificationStatus: emailVerification || undefined,
         membershipStatus: membershipStatus || undefined,
         sort,
         order,
@@ -254,7 +275,25 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
     } finally {
       setTableLoading(false);
     }
-  }, [search, status, role, membershipStatus, sort, order, offset]);
+  }, [search, status, role, membershipStatus, emailVerification, sort, order, offset]);
+
+  const filterKey = `${search}|${status}|${role}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
+
+  useEffect(() => {
+    if (previousFilterKey.current === null) {
+      previousFilterKey.current = filterKey;
+      return;
+    }
+
+    if (previousFilterKey.current === filterKey) {
+      return;
+    }
+
+    previousFilterKey.current = filterKey;
+    setSelectedIds([]);
+    setSelectedById(new Map());
+    setSelectionLimitReached(false);
+  }, [filterKey]);
 
   useEffect(() => {
     void loadDirectory();
@@ -271,51 +310,125 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
   const canPrev = offset > 0;
   const canNext = offset + PAGE_SIZE < total;
 
-  async function confirmSuspend() {
-    if (!suspendTarget) {
-      return;
-    }
-    setSuspending(true);
-    setActionMessage(null);
-    try {
-      const result = await suspendAdminParticipant(suspendTarget.memberId, suspendReason);
-      setSuspendTarget(null);
-      setActionMessage(
-        result.emailQueued
-          ? "Participant suspended. A review email was queued."
-          : result.emailWarning
-            ? `Participant suspended. ${result.emailWarning}`
-            : "Participant suspended. Review email could not be queued.",
-      );
-      await loadDirectory();
-    } catch (caught: unknown) {
-      setActionMessage(formatAuthFormError(caught));
-    } finally {
-      setSuspending(false);
-    }
+  function clearSelection() {
+    setSelectedIds([]);
+    setSelectedById(new Map());
+    setSelectionLimitReached(false);
   }
 
-  async function confirmRestore() {
-    if (!restoreTarget) {
+  function rememberSelectedRows(nextIds: readonly string[]) {
+    const keep = new Set(nextIds);
+    setSelectedById((current) => {
+      const next = new Map(current);
+      for (const memberId of next.keys()) {
+        if (!keep.has(memberId)) {
+          next.delete(memberId);
+        }
+      }
+      for (const row of rows) {
+        if (keep.has(row.memberId)) {
+          next.set(row.memberId, row);
+        }
+      }
+      return next;
+    });
+  }
+
+  function applySelection(nextIds: string[], limitReached: boolean) {
+    setSelectedIds(nextIds);
+    setSelectionLimitReached(limitReached);
+    rememberSelectedRows(nextIds);
+  }
+
+  const selectedRecords = useMemo(
+    () =>
+      selectedIds
+        .map((memberId) => selectedById.get(memberId))
+        .filter((row): row is AdminParticipantDirectoryItem => Boolean(row)),
+    [selectedById, selectedIds],
+  );
+  const suspendClassification = useMemo(
+    () => classifySuspendTargets(selectedRecords, user.memberId),
+    [selectedRecords, user.memberId],
+  );
+  const restoreClassification = useMemo(
+    () => classifyRestoreTargets(selectedRecords),
+    [selectedRecords],
+  );
+  const singleSelection = selectedRecords.length === 1 ? selectedRecords[0] : null;
+  const canViewProfile = Boolean(singleSelection?.publicName?.trim());
+  const canMessage = singleSelection?.status === "active";
+  const pageMemberIds = isBadgeOrdersView ? [] : rows.map((row) => row.memberId);
+  const pageSelection = pageCheckboxState(selectedIds, pageMemberIds);
+  const selectionAtCap = selectedIds.length >= PARTICIPANT_SELECTION_CAP;
+
+  function describeBatch(
+    action: "Suspended" | "Restored",
+    skippedCount: number,
+    result: ParticipantMutationBatchResult,
+  ): string {
+    const emailWarnings = countEmailWarnings(result.succeeded);
+    const parts = [
+      `${action} ${result.succeeded.length}.`,
+      `Skipped ${skippedCount}.`,
+      `Failed ${result.failed.length}.`,
+      `Email warnings ${emailWarnings}.`,
+    ];
+
+    if (emailWarnings > 0) {
+      parts.push("Successful account changes are kept when a notification email fails.");
+    }
+
+    const failureDetail = result.failed
+      .map((failure) => failure.message)
+      .filter((message) => message.length > 0)
+      .slice(0, 3)
+      .join(" ");
+
+    if (failureDetail) {
+      parts.push(failureDetail);
+    }
+
+    return parts.join(" ");
+  }
+
+  async function runModerationBatch(
+    action: "suspend" | "restore",
+    memberIds: readonly string[],
+    skippedCount: number,
+  ) {
+    if (batchRunnerRef.current.isRunning()) {
+      setActionMessage("A directory update is already running.");
       return;
     }
-    setRestoring(true);
+
+    setBatchRunning(true);
     setActionMessage(null);
+
     try {
-      const result = await restoreAdminParticipant(restoreTarget.memberId);
-      setRestoreTarget(null);
-      setActionMessage(
-        result.emailQueued
-          ? "Participant restored."
-          : result.emailWarning
-            ? `Participant restored. ${result.emailWarning}`
-            : "Participant restored.",
+      const result = await batchRunnerRef.current.run(
+        memberIds,
+        async (memberId): Promise<{ emailQueued: boolean; emailWarning?: string }> => {
+          if (action === "suspend") {
+            return suspendAdminParticipant(memberId, suspendReason);
+          }
+          return restoreAdminParticipant(memberId);
+        },
       );
+
+      if (result.blockedDuplicate) {
+        setActionMessage("A directory update is already running.");
+        return;
+      }
+
+      setPendingAction(null);
+      setActionMessage(
+        describeBatch(action === "suspend" ? "Suspended" : "Restored", skippedCount, result),
+      );
+      clearSelection();
       await loadDirectory();
-    } catch (caught: unknown) {
-      setActionMessage(formatAuthFormError(caught));
     } finally {
-      setRestoring(false);
+      setBatchRunning(false);
     }
   }
 
@@ -382,7 +495,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
           <div className="admin-participants-filters__row">
             <label>
-              Status
+              Account status
               <select
                 value={status}
                 onChange={(event) => {
@@ -393,6 +506,21 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                 <option value="">All</option>
                 <option value="active">Active</option>
                 <option value="disabled">Suspended</option>
+              </select>
+            </label>
+
+            <label>
+              Email verification
+              <select
+                value={emailVerification}
+                onChange={(event) => {
+                  setOffset(0);
+                  setEmailVerification(event.target.value as "" | "pending" | "verified");
+                }}
+              >
+                <option value="">All</option>
+                <option value="verified">Verified</option>
+                <option value="pending">Pending</option>
               </select>
             </label>
 
@@ -471,7 +599,84 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
         {!tableLoading && !error ? (
           <>
-            <div className="admin-participants-table-wrap">
+            {isBadgeOrdersView ? null : (
+              <div className="admin-participants-toolbar" role="region" aria-label="Participant actions">
+                <p className="hu-caption admin-participants-toolbar__count" role="status">
+                  {selectedIds.length === 1
+                    ? "1 participant selected"
+                    : `${selectedIds.length} participants selected`}
+                </p>
+                <Button type="button" variant="tertiary" onClick={clearSelection} disabled={batchRunning || selectedIds.length === 0}>
+                  Clear selection
+                </Button>
+                {canViewProfile && singleSelection ? (
+                  <Button
+                    href={adminParticipantPublicProfilePath(singleSelection.memberId)}
+                    variant="secondary"
+                    className="admin-participants-toolbar__action"
+                    aria-label={`View profile for ${participantPrimaryName(singleSelection)}`}
+                  >
+                    View profile
+                  </Button>
+                ) : (
+                  <Button type="button" variant="secondary" disabled aria-label="View profile">
+                    View profile
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!canMessage || isOpeningMessage || batchRunning || !singleSelection}
+                  aria-label={
+                    singleSelection
+                      ? `Message ${participantPrimaryName(singleSelection)}`
+                      : "Message"
+                  }
+                  onClick={() => {
+                    if (!singleSelection || singleSelection.status !== "active") {
+                      return;
+                    }
+                    setMessagingParticipantId(singleSelection.memberId);
+                    openConversation({ participantId: singleSelection.memberId });
+                  }}
+                >
+                  {isOpeningMessage && singleSelection && messagingParticipantId === singleSelection.memberId
+                    ? "Opening…"
+                    : "Message"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  disabled={batchRunning || suspendClassification.eligible.length === 0}
+                  onClick={() => {
+                    setSuspendReason("community_standards_violation");
+                    setPendingAction("suspend");
+                  }}
+                >
+                  Suspend
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={batchRunning || restoreClassification.eligible.length === 0}
+                  onClick={() => setPendingAction("restore")}
+                >
+                  Review / Restore
+                </Button>
+                {selectionLimitReached || selectionAtCap ? (
+                  <p className="hu-caption admin-participants-toolbar__limit" role="status">
+                    Selection is limited to {PARTICIPANT_SELECTION_CAP} participants. Clear a
+                    selection before choosing someone else.
+                  </p>
+                ) : null}
+              </div>
+            )}
+            <div
+              className="admin-participants-table-wrap"
+              tabIndex={0}
+              role="region"
+              aria-label={isBadgeOrdersView ? "Member badge orders" : "Participant directory"}
+            >
               <table
                 className={[
                   "admin-participants-table",
@@ -482,48 +687,110 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
               >
                 <thead>
                   <tr>
-                    <th scope="col">Participant</th>
-                    <th scope="col">Email</th>
+                    {isBadgeOrdersView ? null : (
+                      <th scope="col" className="admin-participants-table__select">
+                        <input
+                          className="admin-participants-table__checkbox"
+                          type="checkbox"
+                          checked={pageSelection === "checked"}
+                          ref={(element) => {
+                            if (element) {
+                              element.indeterminate = pageSelection === "indeterminate";
+                            }
+                          }}
+                          aria-label="Select all participants on this page"
+                          disabled={batchRunning || pageMemberIds.length === 0}
+                          onChange={() => {
+                            const next = selectAllParticipantsOnPage(selectedIds, pageMemberIds);
+                            applySelection(next.selectedIds, next.limitReached);
+                          }}
+                        />
+                      </th>
+                    )}
+                    <th scope="col" className="admin-participants-table__participant">
+                      Participant
+                    </th>
+                    <th scope="col" className="admin-participants-table__email">
+                      Email
+                    </th>
                     {isBadgeOrdersView ? (
                       <>
-                        <th scope="col">Member Number</th>
-                        <th scope="col">Payment</th>
-                        <th scope="col">Fulfillment</th>
-                        <th scope="col">Updated</th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Member Number
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Payment
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Fulfillment
+                        </th>
+                        <th scope="col" className="admin-participants-table__date">
+                          Updated
+                        </th>
                       </>
                     ) : (
                       <>
-                        <th scope="col">Status</th>
-                        <th scope="col">Role</th>
-                        <th scope="col">Member status</th>
-                        <th scope="col">Joined</th>
-                        <th scope="col">Last active</th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Account status
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Email verification
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Role
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
+                          Member status
+                        </th>
+                        <th scope="col" className="admin-participants-table__date">
+                          Joined
+                        </th>
+                        <th scope="col" className="admin-participants-table__date">
+                          Last active
+                        </th>
                       </>
                     )}
-                    <th scope="col">Actions</th>
+                    {isBadgeOrdersView ? (
+                      <th scope="col" className="admin-participants-table__actions-heading">
+                        Actions
+                      </th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={isBadgeOrdersView ? 7 : 8}>
+                      <td colSpan={isBadgeOrdersView ? 7 : 9}>
                         No participants match these filters.
                       </td>
                     </tr>
                   ) : (
                     rows.map((row) => {
                       const secondary = participantSecondaryName(row);
-                      // Pack 24A — enable only when CURRENT publicName exists; navigate via
-                      // Admin resolver keyed by stable memberId (never uniqueName).
-                      const canViewPublicProfile = Boolean(row.publicName?.trim());
-                      const profileHref = canViewPublicProfile
-                        ? adminParticipantPublicProfilePath(row.memberId)
-                        : null;
                       const badgeApplicationId = row.memberBadgeOrder?.applicationId;
+
+                      const rowSelected = selectedIds.includes(row.memberId);
 
                       return (
                         <tr key={row.userId}>
-                          <td>
+                          {isBadgeOrdersView ? null : (
+                            <td className="admin-participants-table__select">
+                              <input
+                                className="admin-participants-table__checkbox"
+                                type="checkbox"
+                                checked={rowSelected}
+                                aria-label={`Select ${participantPrimaryName(row)}`}
+                                disabled={
+                                  batchRunning || (!rowSelected && selectionAtCap)
+                                }
+                                onChange={() => {
+                                  const next = toggleParticipantSelection(selectedIds, row.memberId);
+                                  applySelection(next.selectedIds, next.limitReached);
+                                }}
+                              />
+                            </td>
+                          )}
+                          <td className="admin-participants-table__participant">
                             <div className="admin-participants-table__identity">
                               {row.avatarUrl ? (
                                 <img
@@ -541,7 +808,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                                   {(participantPrimaryName(row)[0] ?? "?").toUpperCase()}
                                 </span>
                               )}
-                              <div>
+                              <div className="admin-participants-table__identity-copy">
                                 <p className="admin-participants-table__name">
                                   {participantPrimaryName(row)}
                                 </p>
@@ -553,23 +820,27 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                               </div>
                             </div>
                           </td>
-                          <td>{row.email}</td>
+                          <td className="admin-participants-table__email" title={row.email}>
+                            <span className="admin-participants-table__email-text">{row.email}</span>
+                          </td>
                           {isBadgeOrdersView ? (
                             <>
-                              <td>{row.membership?.memberNumber ?? "—"}</td>
-                              <td>
+                              <td className="admin-participants-table__categorical">
+                                {row.membership?.memberNumber ?? "—"}
+                              </td>
+                              <td className="admin-participants-table__categorical">
                                 <WorkspaceStatusBadge
                                   status={formatBadgePaymentLabel(
                                     row.memberBadgeOrder?.paymentStatus,
                                   )}
                                 />
                               </td>
-                              <td>
+                              <td className="admin-participants-table__categorical">
                                 <WorkspaceStatusBadge
                                   status={formatBadgeFulfillmentLabel(row)}
                                 />
                               </td>
-                              <td>
+                              <td className="admin-participants-table__date">
                                 {formatCompactDate(
                                   row.memberBadgeOrder?.updatedAt ?? row.lastLoginAt,
                                 )}
@@ -598,78 +869,27 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                             </>
                           ) : (
                             <>
-                              <td>
+                              <td className="admin-participants-table__categorical">
                                 <WorkspaceStatusBadge status={formatAccountStatus(row.status)} />
                               </td>
-                              <td>
+                              <td className="admin-participants-table__categorical">
+                                <WorkspaceStatusBadge
+                                  status={formatEmailVerificationStatus(row.emailVerificationStatus)}
+                                />
+                              </td>
+                              <td className="admin-participants-table__categorical">
                                 <span className="admin-participants-table__role">
                                   {formatAccountRole(row.role)}
                                 </span>
                               </td>
-                              <td>
+                              <td className="admin-participants-table__categorical">
                                 <WorkspaceStatusBadge status={formatMembershipLabel(row)} />
                               </td>
-                              <td>{formatCompactDate(row.createdAt)}</td>
-                              <td>{formatCompactDate(row.lastLoginAt)}</td>
-                              <td>
-                                <div className="admin-participants-table__actions">
-                                  {profileHref ? (
-                                    <Button
-                                      href={profileHref}
-                                      variant="secondary"
-                                      className="admin-participants-table__action"
-                                      aria-label={`View profile for ${participantPrimaryName(row)}`}
-                                    >
-                                      View profile
-                                    </Button>
-                                  ) : (
-                                    <span className="hu-caption admin-participants-table__action--unavailable">
-                                      Profile unavailable
-                                    </span>
-                                  )}
-                                  {row.status === "active" ? (
-                                    <Button
-                                      type="button"
-                                      variant="secondary"
-                                      className="admin-participants-table__action"
-                                      disabled={isOpeningMessage}
-                                      aria-label={`Message ${participantPrimaryName(row)}`}
-                                      onClick={() => {
-                                        setMessagingParticipantId(row.memberId);
-                                        openConversation({ participantId: row.memberId });
-                                      }}
-                                    >
-                                      {isOpeningMessage && messagingParticipantId === row.memberId
-                                        ? "Opening…"
-                                        : "Message"}
-                                    </Button>
-                                  ) : null}
-                                  {row.status === "active" && row.role !== "admin" ? (
-                                    <Button
-                                      type="button"
-                                      variant="danger"
-                                      className="admin-participants-table__action"
-                                      aria-label={`Suspend ${participantPrimaryName(row)}`}
-                                      onClick={() => {
-                                        setSuspendReason("community_standards_violation");
-                                        setSuspendTarget(row);
-                                      }}
-                                    >
-                                      Suspend
-                                    </Button>
-                                  ) : null}
-                                  {row.status === "disabled" ? (
-                                    <Button
-                                      type="button"
-                                      variant="secondary"
-                                      className="admin-participants-table__action"
-                                      aria-label={`Review or restore ${participantPrimaryName(row)}`}
-                                      onClick={() => setRestoreTarget(row)}
-                                    >
-                                      Review / Restore
-                                    </Button>
-                                  ) : null}
-                                </div>
+                              <td className="admin-participants-table__date">
+                                {formatCompactDate(row.createdAt)}
+                              </td>
+                              <td className="admin-participants-table__date">
+                                {formatCompactDate(row.lastLoginAt)}
                               </td>
                             </>
                           )}
@@ -725,100 +945,118 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
       ) : null}
 
       <ConfirmDialog
-        isOpen={suspendTarget !== null}
-        title="Suspend Participant?"
+        isOpen={pendingAction === "suspend"}
+        title="Suspend participants?"
         description={
-          suspendTarget ? (
-            <div className="admin-participants-suspend">
-              <p className="hu-body">
-                Suspend <strong>{participantPrimaryName(suspendTarget)}</strong>
-                {suspendTarget.email ? ` (${suspendTarget.email})` : ""}. They will lose normal
-                access and receive a review request email.
-              </p>
-              <label className="admin-participants-suspend__label">
-                Reason
-                <select
-                  value={suspendReason}
-                  onChange={(event) =>
-                    setSuspendReason(event.target.value as ParticipantSuspensionReasonCode)
-                  }
-                  disabled={suspending}
-                >
-                  {PARTICIPANT_SUSPENSION_REASON_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ) : null
+          <div className="admin-participants-suspend">
+            <p className="hu-body">
+              Suspend {suspendClassification.eligible.length} selected participant
+              {suspendClassification.eligible.length === 1 ? "" : "s"}.{" "}
+              {suspendClassification.skipped.length} selected participant
+              {suspendClassification.skipped.length === 1 ? "" : "s"} will be skipped.
+              Each successful suspension sends the existing review email.
+            </p>
+            <label className="admin-participants-suspend__label">
+              Reason
+              <select
+                value={suspendReason}
+                onChange={(event) =>
+                  setSuspendReason(event.target.value as ParticipantSuspensionReasonCode)
+                }
+                disabled={batchRunning}
+              >
+                {PARTICIPANT_SUSPENSION_REASON_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         }
-        confirmLabel="Suspend Participant"
-        isConfirming={suspending}
+        confirmLabel="Suspend participants"
+        isConfirming={batchRunning}
         onCancel={() => {
-          if (!suspending) {
-            setSuspendTarget(null);
+          if (!batchRunning) {
+            setPendingAction(null);
           }
         }}
         onConfirm={() => {
-          void confirmSuspend();
+          void runModerationBatch(
+            "suspend",
+            suspendClassification.eligible.map((row) => row.memberId),
+            suspendClassification.skipped.length,
+          );
         }}
       />
 
       <ConfirmDialog
-        isOpen={restoreTarget !== null}
-        title="Restore Participant?"
+        isOpen={pendingAction === "restore"}
+        title="Restore participants?"
         description={
-          restoreTarget ? (
-            <div className="admin-participants-suspend">
-              <p className="hu-body">
-                Restore access for <strong>{participantPrimaryName(restoreTarget)}</strong>.
-              </p>
-              {restoreTarget.suspension ? (
-                <dl className="admin-participants-suspend__meta">
-                  <div>
-                    <dt>Reason</dt>
-                    <dd>
-                      {formatParticipantSuspensionReasonLabel(restoreTarget.suspension.reasonCode)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Suspended</dt>
-                    <dd>{formatCompactDate(restoreTarget.suspension.suspendedAt)}</dd>
-                  </div>
-                  {restoreTarget.suspension.hasPendingReview ? (
+          <div className="admin-participants-suspend">
+            <p className="hu-body">
+              Restore {restoreClassification.eligible.length} selected participant
+              {restoreClassification.eligible.length === 1 ? "" : "s"}.{" "}
+              {restoreClassification.skipped.length} selected participant
+              {restoreClassification.skipped.length === 1 ? "" : "s"} will be skipped.
+              Each successful restore sends the existing notification email.
+            </p>
+            {restoreClassification.eligible.map((row) => (
+              <div key={row.memberId}>
+                <p className="hu-body">
+                  <strong>{participantPrimaryName(row)}</strong>
+                  {row.email ? ` (${row.email})` : ""}
+                </p>
+                {row.suspension ? (
+                  <dl className="admin-participants-suspend__meta">
                     <div>
-                      <dt>Review request</dt>
+                      <dt>Reason</dt>
                       <dd>
-                        {restoreTarget.suspension.reviewExplanation?.trim()
-                          ? restoreTarget.suspension.reviewExplanation
-                          : "Pending (submitted)"}
+                        {formatParticipantSuspensionReasonLabel(row.suspension.reasonCode)}
                       </dd>
                     </div>
-                  ) : (
                     <div>
-                      <dt>Review request</dt>
-                      <dd>None pending</dd>
+                      <dt>Suspended</dt>
+                      <dd>{formatCompactDate(row.suspension.suspendedAt)}</dd>
                     </div>
-                  )}
-                </dl>
-              ) : (
-                <p className="hu-caption">No suspension details available for this account.</p>
-              )}
-            </div>
-          ) : null
+                    {row.suspension.hasPendingReview ? (
+                      <div>
+                        <dt>Review request</dt>
+                        <dd>
+                          {row.suspension.reviewExplanation?.trim()
+                            ? row.suspension.reviewExplanation
+                            : "Pending (submitted)"}
+                        </dd>
+                      </div>
+                    ) : (
+                      <div>
+                        <dt>Review request</dt>
+                        <dd>None pending</dd>
+                      </div>
+                    )}
+                  </dl>
+                ) : (
+                  <p className="hu-caption">No suspension details available for this account.</p>
+                )}
+              </div>
+            ))}
+          </div>
         }
-        confirmLabel="Restore Participant"
+        confirmLabel="Restore participants"
         destructive={false}
-        isConfirming={restoring}
+        isConfirming={batchRunning}
         onCancel={() => {
-          if (!restoring) {
-            setRestoreTarget(null);
+          if (!batchRunning) {
+            setPendingAction(null);
           }
         }}
         onConfirm={() => {
-          void confirmRestore();
+          void runModerationBatch(
+            "restore",
+            restoreClassification.eligible.map((row) => row.memberId),
+            restoreClassification.skipped.length,
+          );
         }}
       />
     </div>

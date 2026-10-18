@@ -40,5 +40,20 @@ describe("Admin Participant directory — Pack 03 contracts", () => {
     assert.match(repo, /skip\(query\.offset\)/);
     assert.match(repo, /limit\(query\.limit\)/);
     assert.match(repo, /countDocuments/);
+    assert.match(repo, /emailVerificationStatus/);
+  });
+
+  it("rejects an invalid email verification filter and keeps pagination", () => {
+    const routes = read("modules/administration/admin-participant-directory.routes.ts");
+    assert.match(routes, /Invalid emailVerificationStatus filter/);
+    assert.match(routes, /AdminParticipantDirectoryValidationError/);
+    assert.match(routes, /return 400/);
+    assert.match(routes, /limit/);
+    assert.match(routes, /offset/);
+
+    const service = read("modules/administration/admin-participant-directory.service.ts");
+    assert.match(service, /Invalid emailVerificationStatus filter/);
+    assert.match(service, /emailVerificationStatus/);
+    assert.doesNotMatch(service, /passwordHash:/);
   });
 });
