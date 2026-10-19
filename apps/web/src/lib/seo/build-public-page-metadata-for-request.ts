@@ -31,6 +31,7 @@ import {
   toNextMetadataLanguageAlternates,
 } from "./hreflang-policy";
 import { buildPublicSeoLocalizedVariantPredicate } from "./public-seo-localized-eligibility-loader";
+import { withSeoMetadataOperation } from "../system-health/web-memory-sampler";
 import {
   normalizeCanonicalPath,
   resolvePublicSiteOrigin,
@@ -98,6 +99,12 @@ function listSeoIndexableLocales(
  * Derive self-canonical + hreflang paths for the current request.
  */
 export async function resolvePublicSeoMetadataDocumentPaths(
+  input: ResolvePublicSeoMetadataDocumentPathsInput,
+): Promise<ResolvedPublicSeoMetadataDocumentPaths> {
+  return withSeoMetadataOperation(() => resolvePublicSeoMetadataDocumentPathsUncounted(input));
+}
+
+async function resolvePublicSeoMetadataDocumentPathsUncounted(
   input: ResolvePublicSeoMetadataDocumentPathsInput,
 ): Promise<ResolvedPublicSeoMetadataDocumentPaths> {
   const localeFreePath = normalizeCanonicalPath(input.localeFreeCanonicalPath);

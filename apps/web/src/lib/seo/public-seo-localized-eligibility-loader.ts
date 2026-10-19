@@ -15,6 +15,7 @@ import {
   isPublicSeoLocalizedVariantEligible,
   type PublicSeoLocalizedPageEvidence,
 } from "./public-seo-localized-eligibility";
+import { withSeoEligibilityOperation } from "../system-health/web-memory-sampler";
 import { normalizeCanonicalPath } from "./public-site-url";
 
 const RESOLVE_TIMEOUT_MS = 2_500;
@@ -120,6 +121,13 @@ function entityIdentity(
  * Safe to call for paths outside the SEO perimeter (always false).
  */
 export async function buildPublicSeoLocalizedVariantPredicate(input: {
+  readonly localeFreePaths: readonly string[];
+  readonly locales: readonly string[];
+}): Promise<(localeFreePath: string, locale: string) => boolean> {
+  return withSeoEligibilityOperation(() => buildPublicSeoLocalizedVariantPredicateUncounted(input));
+}
+
+async function buildPublicSeoLocalizedVariantPredicateUncounted(input: {
   readonly localeFreePaths: readonly string[];
   readonly locales: readonly string[];
 }): Promise<(localeFreePath: string, locale: string) => boolean> {

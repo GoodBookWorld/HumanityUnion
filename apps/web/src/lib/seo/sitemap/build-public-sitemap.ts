@@ -14,6 +14,7 @@ import {
   openSitemapBuildObservation,
   readCurrentSitemapMemory,
 } from "../../system-health/sitemap-build-diagnostic";
+import { recordSitemapMemoryBoundary } from "../../system-health/web-memory-sampler";
 import { resolvePublicSiteOrigin, toAbsolutePublicUrl } from "../public-site-url";
 import { dedupeSitemapPathEntries } from "./dedupe-sitemap-entries";
 import { buildPublicSeoLocalizedVariantPredicate } from "../public-seo-localized-eligibility-loader";
@@ -120,6 +121,7 @@ export async function collectPublicSitemapPathEntries(options?: {
   ) => boolean;
 }): Promise<SitemapPathEntry[]> {
   const observation = openSitemapBuildObservation();
+  recordSitemapMemoryBoundary("start");
   const failedProviderIds: string[] = [];
   let canonicalPathCount = 0;
   let seoLocaleCount = 0;
@@ -212,6 +214,7 @@ export async function collectPublicSitemapPathEntries(options?: {
       memoryAfterEligibility,
     });
     closeSitemapBuildObservation();
+    recordSitemapMemoryBoundary("completion");
   }
 }
 
@@ -238,6 +241,7 @@ function emitShortCircuitSitemapDiagnostic(
   outcome: "indexing_disallowed" | "origin_missing",
 ): void {
   const observation = openSitemapBuildObservation();
+  recordSitemapMemoryBoundary("start");
   try {
     emitSitemapBuildDiagnostic({
       observation,
@@ -253,6 +257,7 @@ function emitShortCircuitSitemapDiagnostic(
     });
   } finally {
     closeSitemapBuildObservation();
+    recordSitemapMemoryBoundary("completion");
   }
 }
 
