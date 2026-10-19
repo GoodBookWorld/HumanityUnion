@@ -6,6 +6,7 @@
 import { environment } from "../../config/environment.js";
 import { resolvePlatformMode } from "../../config/platform.config.js";
 import { checkMongoConnection } from "../../infrastructure/mongodb/mongo-health.js";
+import { assessOutboxOperations } from "../../infrastructure/outbox/outbox-operational-health.js";
 import { getOutboxHealthStatus } from "../../infrastructure/outbox/outbox.dispatcher.js";
 import {
   AdministrationForbiddenError,
@@ -66,6 +67,9 @@ export interface AdminDiagnosticsHealthPayload {
     } | null;
     lastDispatchAt: string | null;
     lastError: string | null;
+    oldestDuePendingCreatedAt: string | null;
+    newestFailedAt: string | null;
+    lastDispatchErrorAt: string | null;
   };
 }
 
@@ -78,8 +82,15 @@ export async function getAdminDiagnosticsHealth(input: {
   const email = await getEmailProviderHealth();
   const outbox = await getOutboxHealthStatus();
 
-  const outboxDegraded =
-    outbox.configured && outbox.enabled && outbox.stats !== null && outbox.stats.failed > 0;
+  const outboxDegraded = assessOutboxOperations({
+    configured: outbox.configured,
+    enabled: outbox.enabled,
+    running: outbox.running,
+    stats: outbox.stats,
+    oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+    newestFailedAt: outbox.newestFailedAt,
+    lastDispatchErrorAt: outbox.lastDispatchErrorAt,
+  }).degradesApi;
   const status: "healthy" | "degraded" = mongo.connected
     ? email.healthy && !outboxDegraded
       ? "healthy"
@@ -119,6 +130,9 @@ export async function getAdminDiagnosticsHealth(input: {
         : null,
       lastDispatchAt: outbox.lastDispatchAt,
       lastError: sanitizeProbeMessage(outbox.lastError),
+      oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+      newestFailedAt: outbox.newestFailedAt,
+      lastDispatchErrorAt: outbox.lastDispatchErrorAt,
     },
   };
 }

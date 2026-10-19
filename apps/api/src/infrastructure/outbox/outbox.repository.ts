@@ -32,6 +32,8 @@ interface OutboxMongoDocument extends Document {
   createdAt: string;
   publishedAt: string | null;
   availableAt?: string | null;
+  /** Present only after this process first marks the row failed. */
+  failedAt?: string | null;
 }
 
 function assertMongoAvailable(): void {
@@ -283,6 +285,21 @@ export function resolveOutboxFailureStatus(input: {
   return "pending";
 }
 
+/**
+ * Forward-only failure time. A row that is already failed keeps its failedAt.
+ * Rows that stay pending do not receive one. Historical rows are not rewritten.
+ */
+export function failedAtForOutboxTransition(input: {
+  readonly existingStatus: OutboxRecord["status"];
+  readonly nextStatus: OutboxRecord["status"];
+  readonly nowIso: string;
+}): string | null {
+  if (input.nextStatus === "failed" && input.existingStatus !== "failed") {
+    return input.nowIso;
+  }
+  return null;
+}
+
 export async function markOutboxRecordFailed(
   outboxId: string,
   error: unknown,
@@ -304,6 +321,11 @@ export async function markOutboxRecordFailed(
     maxAttempts,
     immediateTerminal: isImmediateTerminalOutboxFailure(error),
   });
+  const failedAt = failedAtForOutboxTransition({
+    existingStatus: existing.status,
+    nextStatus: status,
+    nowIso: new Date().toISOString(),
+  });
 
   await collection.updateOne(
     { _id: outboxId },
@@ -312,6 +334,7 @@ export async function markOutboxRecordFailed(
         attempts,
         lastError: message,
         status,
+        ...(failedAt ? { failedAt } : {}),
       },
     },
   );
@@ -345,6 +368,55 @@ export async function getOutboxDispatchStats(): Promise<OutboxDispatchStats> {
     failed,
     oldestPendingCreatedAt: oldestPending ? oldestPending.createdAt : null,
   };
+}
+
+/**
+ * One indexed read of the oldest due pending row. Uses outbox_status_created_at.
+ * Future availableAt rows are excluded. Returns null when nothing is due.
+ */
+export async function findOldestDuePendingCreatedAt(
+  nowIso: string = new Date().toISOString(),
+): Promise<string | null> {
+  if (!isMongoConfigured()) {
+    return null;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection
+    .find(
+      {
+        status: "pending",
+        $or: [
+          { availableAt: { $exists: false } },
+          { availableAt: null },
+          { availableAt: { $lte: nowIso } },
+        ],
+      },
+      { projection: { createdAt: 1 } },
+    )
+    .sort({ createdAt: 1 })
+    .limit(1)
+    .next();
+  return typeof document?.createdAt === "string" ? document.createdAt : null;
+}
+
+/**
+ * Newest forward-only failedAt. Uses the partial outbox_failed_at_recent index.
+ * Rows without failedAt, including the historical stock, are not candidates.
+ */
+export async function findNewestOutboxFailedAt(): Promise<string | null> {
+  if (!isMongoConfigured()) {
+    return null;
+  }
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const document = await collection
+    .find(
+      { status: "failed", failedAt: { $type: "string" } },
+      { projection: { failedAt: 1 } },
+    )
+    .sort({ failedAt: -1 })
+    .limit(1)
+    .next();
+  return typeof document?.failedAt === "string" ? document.failedAt : null;
 }
 
 export async function findOutboxRecordById(outboxId: string): Promise<OutboxRecord | null> {

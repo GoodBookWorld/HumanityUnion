@@ -216,16 +216,156 @@ describe("Diagnostics Pack 01 — Mongo / Email / Outbox / Integrity rendering h
     assert.match(healthyWithHistory.detail ?? "", /Published 50000/);
     assert.match(healthyWithHistory.detail ?? "", /Failed 0/);
 
-    const failed = deriveOutboxStatus({
+    const historical = deriveOutboxStatus({
       outbox: {
         enabled: true,
         configured: true,
         running: true,
-        stats: { pending: 0, published: 50_000, failed: 4 },
+        stats: { pending: 0, published: 50_000, failed: 6306 },
+        lastError: null,
+        newestFailedAt: null,
+      },
+    });
+    assert.equal(historical.status, "healthy");
+    assert.match(historical.detail ?? "", /Failed 6306/);
+    assert.match(historical.detail ?? "", /Historical failed rows retained/);
+  });
+
+  it("warns on active outbox faults and keeps unrelated health failures", () => {
+    const now = Date.parse("2026-10-19T00:00:00.000Z");
+    const recent = deriveOutboxStatus(
+      {
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: true,
+          stats: { pending: 0, published: 10, failed: 6306 },
+          newestFailedAt: "2026-10-18T12:00:00.000Z",
+          lastError: null,
+        },
+      },
+      now,
+    );
+    assert.equal(recent.status, "warning");
+    assert.match(recent.detail ?? "", /Failed 6306/);
+
+    const stoppedIdle = deriveOutboxStatus(
+      {
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: false,
+          stats: { pending: 0, published: 10, failed: 0 },
+          lastError: null,
+        },
+      },
+      now,
+    );
+    assert.equal(stoppedIdle.status, "warning");
+    assert.match(stoppedIdle.summary, /not running/);
+
+    const stoppedDue = deriveOutboxStatus(
+      {
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: false,
+          stats: { pending: 2, published: 10, failed: 0 },
+          oldestDuePendingCreatedAt: "2026-10-18T23:50:00.000Z",
+          lastError: null,
+        },
+      },
+      now,
+    );
+    assert.equal(stoppedDue.status, "critical");
+
+    const overdue = deriveOutboxStatus(
+      {
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: true,
+          stats: { pending: 1, published: 10, failed: 0 },
+          oldestDuePendingCreatedAt: "2026-10-18T23:30:00.000Z",
+          lastError: null,
+        },
+      },
+      now,
+    );
+    assert.equal(overdue.status, "warning");
+    assert.match(overdue.summary, /overdue/);
+
+    const unconfigured = deriveOutboxStatus({
+      outbox: {
+        enabled: false,
+        configured: false,
+        running: false,
+        stats: { pending: 0, published: 0, failed: 0 },
         lastError: null,
       },
     });
-    assert.equal(failed.status, "critical");
+    assert.equal(unconfigured.status, "warning");
+
+    const missing = deriveOutboxStatus({
+      outbox: {
+        enabled: true,
+        configured: true,
+        running: true,
+        stats: null,
+        lastError: null,
+      },
+    });
+    assert.equal(missing.status, "unknown");
+
+    const mongoDown = buildTechnicalHealthSnapshot({
+      health: {
+        status: "degraded",
+        ready: false,
+        mongodb: { connected: false, error: "unavailable" },
+        email: { provider: "smtp", healthy: true, configured: true },
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: true,
+          stats: { pending: 0, published: 1, failed: 6306 },
+          newestFailedAt: null,
+          lastError: null,
+        },
+      },
+      ready: { ready: false },
+      healthError: null,
+      readyError: null,
+      initiativeWarningCount: 0,
+      initiativeError: null,
+    });
+    assert.equal(mongoDown.services.find((row) => row.id === "mongodb")?.status, "critical");
+    assert.equal(mongoDown.outbox.status, "healthy");
+    assert.equal(mongoDown.overall, "critical");
+
+    const emailDown = buildTechnicalHealthSnapshot({
+      health: {
+        status: "degraded",
+        ready: true,
+        mongodb: { connected: true, latencyMs: 1, error: null },
+        email: { provider: "smtp", healthy: false, configured: true, message: "down" },
+        outbox: {
+          enabled: true,
+          configured: true,
+          running: true,
+          stats: { pending: 0, published: 1, failed: 4 },
+          newestFailedAt: null,
+          lastError: null,
+        },
+      },
+      ready: { ready: true },
+      healthError: null,
+      readyError: null,
+      initiativeWarningCount: 0,
+      initiativeError: null,
+    });
+    assert.equal(emailDown.services.find((row) => row.id === "email")?.status, "warning");
+    assert.equal(emailDown.outbox.status, "healthy");
+    assert.equal(emailDown.overall, "warning");
   });
 
   it("renders Initiative integrity findings and deferred lifecycle reconciliation", () => {

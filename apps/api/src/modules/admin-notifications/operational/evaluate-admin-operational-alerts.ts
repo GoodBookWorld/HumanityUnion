@@ -13,6 +13,10 @@ import type {
 } from "@hu/types";
 
 import { checkMongoConnection } from "../../../infrastructure/mongodb/mongo-health.js";
+import {
+  assessOutboxOperations,
+  type OutboxOperationalSeverity,
+} from "../../../infrastructure/outbox/outbox-operational-health.js";
 import { getOutboxHealthStatus } from "../../../infrastructure/outbox/outbox.dispatcher.js";
 import type { OutboxHealthStatus } from "../../../infrastructure/outbox/outbox.types.js";
 import { getEmailProviderHealth } from "../../email/email.service.js";
@@ -30,7 +34,11 @@ import type { AdminOperationalIncident } from "./admin-operational-incident.type
 export interface OperationalHealthSnapshot {
   apiReady: boolean;
   mongoConnected: boolean;
+  /** Lifetime terminal failures. Kept for operators. Not an alert predicate. */
   outboxFailedCount: number;
+  /** True only for an active outbox fault. Historical rows alone leave this false. */
+  outboxDegradesApi: boolean;
+  outboxSeverity: OutboxOperationalSeverity;
   email: Pick<EmailProviderHealth, "configured" | "healthy">;
 }
 
@@ -89,14 +97,14 @@ export function detectOperationalConditions(
     });
   }
 
-  if (snapshot.outboxFailedCount > 0) {
+  if (snapshot.outboxDegradesApi) {
+    const critical = snapshot.outboxSeverity === "critical";
     conditions.push({
       dedupeKey: "ops:outbox-failed",
-      severity: "critical",
-      targetLabel:
-        snapshot.outboxFailedCount === 1
-          ? "1 failed outbox event"
-          : `${snapshot.outboxFailedCount} failed outbox events`,
+      severity: critical ? "critical" : "warning",
+      targetLabel: critical
+        ? "Outbox dispatcher stopped with due work"
+        : "Active outbox fault",
     });
   }
 
@@ -120,12 +128,25 @@ export async function collectLiveOperationalHealthSnapshot(): Promise<Operationa
     outbox.configured && outbox.stats && typeof outbox.stats.failed === "number"
       ? outbox.stats.failed
       : 0;
+  const outboxAssessment = assessOutboxOperations({
+    configured: outbox.configured,
+    enabled: outbox.enabled,
+    running: outbox.running,
+    stats: outbox.stats
+      ? { pending: outbox.stats.pending, failed: outbox.stats.failed }
+      : null,
+    oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+    newestFailedAt: outbox.newestFailedAt,
+    lastDispatchErrorAt: outbox.lastDispatchErrorAt,
+  });
 
   return {
     // Align with /health/ready: durable plane readiness = Mongo connected.
     apiReady: mongo.connected,
     mongoConnected: mongo.connected,
     outboxFailedCount: failed,
+    outboxDegradesApi: outboxAssessment.degradesApi,
+    outboxSeverity: outboxAssessment.severity,
     email: { configured: email.configured, healthy: email.healthy },
   };
 }

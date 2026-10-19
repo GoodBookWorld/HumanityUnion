@@ -15,6 +15,8 @@ import {
   deferOutboxRecordUntilAvailable,
   fetchPendingOutboxRecords,
   findEarliestFutureOutboxAvailableAt,
+  findNewestOutboxFailedAt,
+  findOldestDuePendingCreatedAt,
   getOutboxDispatchStats,
   markOutboxRecordFailed,
   markOutboxRecordPublished,
@@ -39,6 +41,7 @@ let followUp = false;
 let cyclePromise: Promise<void> | null = null;
 let lastDispatchAt: string | null = null;
 let lastError: string | null = null;
+let lastDispatchErrorAt: string | null = null;
 let dueTimer: NodeJS.Timeout | null = null;
 let dueTimerAtMs: number | null = null;
 let dueFire: (() => void) | null = null;
@@ -341,6 +344,7 @@ export async function dispatchOutboxBatch(): Promise<number> {
         }
 
         lastError = error instanceof Error ? error.message : String(error);
+        lastDispatchErrorAt = new Date().toISOString();
 
         logDomainEvent("failed", {
           outboxId: record.outboxId,
@@ -413,10 +417,17 @@ export async function getOutboxHealthStatus(): Promise<OutboxHealthStatus> {
       stats: null,
       lastDispatchAt,
       lastError,
+      oldestDuePendingCreatedAt: null,
+      newestFailedAt: null,
+      lastDispatchErrorAt,
     };
   }
 
-  const stats = await getOutboxDispatchStats();
+  const [stats, oldestDuePendingCreatedAt, newestFailedAt] = await Promise.all([
+    getOutboxDispatchStats(),
+    findOldestDuePendingCreatedAt(),
+    findNewestOutboxFailedAt(),
+  ]);
 
   return {
     enabled: config.dispatchEnabled,
@@ -426,6 +437,9 @@ export async function getOutboxHealthStatus(): Promise<OutboxHealthStatus> {
     stats,
     lastDispatchAt,
     lastError,
+    oldestDuePendingCreatedAt,
+    newestFailedAt,
+    lastDispatchErrorAt,
   };
 }
 
@@ -438,6 +452,7 @@ export function resetOutboxDispatcherStateForTests(): void {
   stopOutboxDispatcher();
   lastDispatchAt = null;
   lastError = null;
+  lastDispatchErrorAt = null;
   dispatchInProgress = false;
   cycleInProgress = false;
   followUp = false;
