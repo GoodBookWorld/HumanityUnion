@@ -2,6 +2,7 @@ import type { Collection } from "mongodb";
 
 import type { EditorGrantRecord } from "@hu/types";
 
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 
@@ -30,6 +31,9 @@ export async function findEditorGrantById(
 export async function findEditorGrantByParticipantId(
   participantId: string,
 ): Promise<EditorGrantRecord | null> {
+  if (process.env.NODE_TEST_ENV === "true" && !isMongoConfigured()) {
+    return null;
+  }
   return collection().findOne({ participantId }, { projection: { _id: 0 } });
 }
 

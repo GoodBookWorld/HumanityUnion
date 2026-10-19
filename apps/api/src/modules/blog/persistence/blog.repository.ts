@@ -38,6 +38,37 @@ async function ensureBlogMongoReady(): Promise<void> {
   await connectMongoClient();
 }
 
+/**
+ * Explicit test seam for callers that must run the real Blog draft/submit
+ * functions without a Mongo client. Production never enables it.
+ */
+let blogMemoryForTests: {
+  posts: Map<string, BlogPost>;
+  grants: Map<string, BlogCapabilityGrant>;
+} | null = null;
+
+export function enableBlogMemoryPersistenceForTests(): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Blog memory persistence is available only when NODE_TEST_ENV=true.");
+  }
+  blogMemoryForTests = { posts: new Map(), grants: new Map() };
+}
+
+export function resetBlogMemoryPersistenceForTests(): void {
+  enableBlogMemoryPersistenceForTests();
+}
+
+export function listBlogMemoryPostsForTests(): readonly BlogPost[] {
+  if (process.env.NODE_TEST_ENV !== "true" || !blogMemoryForTests) {
+    throw new Error("Blog memory persistence is not enabled.");
+  }
+  return [...blogMemoryForTests.posts.values()];
+}
+
+function blogMemory(): NonNullable<typeof blogMemoryForTests> | null {
+  return blogMemoryForTests;
+}
+
 function postsCollection() {
   return getMongoCollection<BlogPostMongoDocument>(MONGO_COLLECTIONS.blogPosts);
 }
@@ -56,6 +87,12 @@ export async function insertBlogPost(
   post: BlogPost,
   options: RepositorySessionOptions = {},
 ): Promise<BlogPost> {
+  const memory = blogMemory();
+  if (memory) {
+    memory.posts.set(post.postId, { ...post });
+    return post;
+  }
+
   await ensureBlogMongoReady();
 
   try {
@@ -70,6 +107,12 @@ export async function replaceBlogPost(
   post: BlogPost,
   options: RepositorySessionOptions = {},
 ): Promise<BlogPost> {
+  const memory = blogMemory();
+  if (memory) {
+    memory.posts.set(post.postId, { ...post });
+    return post;
+  }
+
   await ensureBlogMongoReady();
 
   try {
@@ -93,6 +136,12 @@ export async function replaceBlogPost(
 }
 
 export async function findBlogPostById(postId: string): Promise<BlogPost | null> {
+  const memory = blogMemory();
+  if (memory) {
+    const post = memory.posts.get(postId);
+    return post ? { ...post } : null;
+  }
+
   await ensureBlogMongoReady();
   const doc = await postsCollection().findOne({ postId });
   return doc ? fromBlogPostMongoDocument(doc) : null;
@@ -105,6 +154,16 @@ export async function findBlogPostBySlug(slug: string): Promise<BlogPost | null>
 }
 
 export async function blogSlugExists(slug: string, excludePostId?: string): Promise<boolean> {
+  const memory = blogMemory();
+  if (memory) {
+    for (const post of memory.posts.values()) {
+      if (post.slug === slug && post.postId !== excludePostId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   await ensureBlogMongoReady();
   const filter: Record<string, unknown> = { slug };
   if (excludePostId) {
@@ -268,6 +327,15 @@ export async function upsertBlogCapabilityGrant(
   grant: BlogCapabilityGrant,
   options: RepositorySessionOptions = {},
 ): Promise<BlogCapabilityGrant> {
+  const memory = blogMemory();
+  if (memory) {
+    memory.grants.set(grant.participantId, {
+      ...grant,
+      capabilities: [...grant.capabilities],
+    });
+    return grant;
+  }
+
   await ensureBlogMongoReady();
 
   await grantsCollection().replaceOne(
@@ -283,6 +351,12 @@ export async function findBlogCapabilityGrant(
   participantId: string,
   options: RepositorySessionOptions = {},
 ): Promise<BlogCapabilityGrant | null> {
+  const memory = blogMemory();
+  if (memory) {
+    const grant = memory.grants.get(participantId);
+    return grant ? { ...grant, capabilities: [...grant.capabilities] } : null;
+  }
+
   await ensureBlogMongoReady();
   const doc = await grantsCollection().findOne(
     { participantId },

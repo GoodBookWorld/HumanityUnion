@@ -76,6 +76,31 @@ export const INTEGRITY_MEDIA_AUTHOR_REPLY_PATH =
   "/api/v1/integrations/integrity-media/author-reply";
 
 export const INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV = "INTEGRITY_MEDIA_LINK_HMAC_SECRET";
+
+/**
+ * IM → HU article delivery. A link, provision, SSO, or disconnect signature
+ * cannot ingest an article, and this purpose cannot authorize those flows.
+ * The secret is dedicated and is never the browser session.
+ */
+export const INTEGRITY_MEDIA_ARTICLE_INGEST_PURPOSE = "integrity-media-article-ingest";
+
+export const INTEGRITY_MEDIA_ARTICLE_INGEST_HMAC_SECRET_ENV =
+  "INTEGRITY_MEDIA_ARTICLE_INGEST_HMAC_SECRET";
+
+/**
+ * Active HU Blog category id for ingested articles.
+ * This is the whole mapping. Sphere slugs are not accepted and are not guessed.
+ */
+export const INTEGRITY_MEDIA_ARTICLE_CATEGORY_ID_ENV = "INTEGRITY_MEDIA_ARTICLE_CATEGORY_ID";
+
+export const INTEGRITY_MEDIA_ARTICLE_INGEST_PATH =
+  "/api/v1/integrations/integrity-media/articles";
+
+export const INTEGRITY_MEDIA_ARTICLE_TIMESTAMP_HEADER =
+  "x-hu-integrity-media-article-timestamp";
+
+export const INTEGRITY_MEDIA_ARTICLE_SIGNATURE_HEADER =
+  "x-hu-integrity-media-article-signature";
 export const INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV = "INTEGRITY_MEDIA_LINK_RETURN_ORIGIN";
 export const INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV = "INTEGRITY_MEDIA_LINK_RETURN_PATH";
 
