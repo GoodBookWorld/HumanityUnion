@@ -152,6 +152,44 @@
   flex-shrink: 0;
 }
 
+/* Authors directory: scroll the table instead of compressing columns. */
+.admin-publishing-table-wrap--authors {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.admin-publishing-table--authors {
+  width: max-content;
+  min-width: 76rem;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-publishing-table--authors th,
+.admin-publishing-table--authors td {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-publishing-table--authors .admin-publishing-table__trusted {
+  max-width: none;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.admin-publishing-table--authors .admin-publishing-table__actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
 .admin-publishing-table__status {
   display: inline-flex;
   align-items: center;
