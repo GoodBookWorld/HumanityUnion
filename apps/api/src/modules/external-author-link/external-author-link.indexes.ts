@@ -41,6 +41,14 @@ export const EXTERNAL_AUTHOR_PROVISION_ATTEMPT_INDEXES: IndexDescription[] = [
   },
 ];
 
+export const INTEGRITY_MEDIA_ARTICLE_DELIVERY_INDEXES: IndexDescription[] = [
+  {
+    key: { source: 1, publicationId: 1 },
+    unique: true,
+    name: "integrity_media_article_deliveries_source_publication_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_SSO_GRANT_INDEXES: IndexDescription[] = [
   {
     key: { grantId: 1 },

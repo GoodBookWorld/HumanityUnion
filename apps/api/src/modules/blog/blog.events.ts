@@ -1,12 +1,20 @@
 import { CATALOGUE_EVENTS } from "../../infrastructure/events/catalogue-events.js";
 import { createDomainEvent } from "../../infrastructure/events/event-envelope.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repository.js";
+
+function skipBlogEventsWithoutMongoInTests(): boolean {
+  return process.env.NODE_TEST_ENV === "true" && !isMongoConfigured();
+}
 
 export async function emitBlogPostSubmittedForReview(input: {
   postId: string;
   authorParticipantId: string;
   actorParticipantId: string;
 }): Promise<void> {
+  if (skipBlogEventsWithoutMongoInTests()) {
+    return;
+  }
   await enqueueDomainEvent(
     createDomainEvent({
       eventName: CATALOGUE_EVENTS.blogPostSubmittedForReview,
@@ -52,6 +60,9 @@ export async function emitBlogPostPublished(input: {
   safetyOutcome?: string | null;
   reviewNote?: string;
 }): Promise<void> {
+  if (skipBlogEventsWithoutMongoInTests()) {
+    return;
+  }
   await enqueueDomainEvent(
     createDomainEvent({
       eventName: CATALOGUE_EVENTS.blogPostPublished,
