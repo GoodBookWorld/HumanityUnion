@@ -649,8 +649,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No accepted Authors match this filter.</p>
           ) : null}
           {!loading && authors.length > 0 ? (
-            <div className="admin-publishing-table-wrap">
-              <table className="admin-publishing-table">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--authors">
+              <table className="admin-publishing-table admin-publishing-table--authors">
                 <thead>
                   <tr>
                     <th>Author</th>
