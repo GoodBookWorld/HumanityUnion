@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../api-base-url";
+import { publishActiveSitemapBuilds } from "./web-memory-gauges";
 import {
   readWebProcessMemorySnapshot,
   type WebProcessMemorySnapshot,
@@ -50,8 +51,13 @@ const INGEST_TIMEOUT_MS = 2_000;
 
 let inFlightBuilds = 0;
 
+function publishSitemapBuildGauge(): void {
+  publishActiveSitemapBuilds(inFlightBuilds);
+}
+
 export function openSitemapBuildObservation(nowMs: number = Date.now()): SitemapBuildObservation {
   inFlightBuilds += 1;
+  publishSitemapBuildGauge();
   return {
     startedAtMs: nowMs,
     overlappingSitemapBuilds: inFlightBuilds,
@@ -60,10 +66,12 @@ export function openSitemapBuildObservation(nowMs: number = Date.now()): Sitemap
 
 export function closeSitemapBuildObservation(): void {
   inFlightBuilds = Math.max(0, inFlightBuilds - 1);
+  publishSitemapBuildGauge();
 }
 
 export function resetSitemapBuildOverlapForTests(): void {
   inFlightBuilds = 0;
+  publishSitemapBuildGauge();
 }
 
 export function allowlistedProviderIds(ids: readonly string[]): SitemapProviderId[] {
