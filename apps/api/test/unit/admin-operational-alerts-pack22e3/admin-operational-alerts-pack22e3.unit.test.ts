@@ -21,6 +21,7 @@ import {
   resetMemoryAdminNotificationPersistenceForTests,
   resolveAdminOperationalIncidentStore,
 } from "../../../src/modules/admin-notifications/index.js";
+import type { OperationalHealthSnapshot } from "../../../src/modules/admin-notifications/operational/evaluate-admin-operational-alerts.js";
 import { createMemoryAdminNotificationPersistenceAdapter } from "../../../src/modules/admin-notifications/persistence/admin-notification-memory.persistence.js";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -37,6 +38,20 @@ const persistence = createMemoryAdminNotificationPersistenceAdapter();
 const ADMIN_A = "admin-a";
 const ADMIN_B = "admin-b";
 
+function opsSnapshot(
+  overrides: Partial<OperationalHealthSnapshot> = {},
+): OperationalHealthSnapshot {
+  return {
+    apiReady: true,
+    mongoConnected: true,
+    outboxFailedCount: 0,
+    outboxDegradesApi: false,
+    outboxSeverity: "healthy",
+    email: { configured: true, healthy: true },
+    ...overrides,
+  };
+}
+
 describe("Pack 22E.3 — Admin operational alerts", () => {
   beforeEach(() => {
     resetMemoryAdminNotificationPersistenceForTests();
@@ -51,20 +66,19 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
   });
 
   it("1–5. detects API/Mongo/outbox/email conditions; integrity deferred", () => {
-    const healthy = detectOperationalConditions({
-      apiReady: true,
-      mongoConnected: true,
-      outboxFailedCount: 0,
-      email: { configured: true, healthy: true },
-    });
+    const healthy = detectOperationalConditions(opsSnapshot());
     assert.equal(healthy.length, 0);
 
-    const degraded = detectOperationalConditions({
-      apiReady: false,
-      mongoConnected: false,
-      outboxFailedCount: 3,
-      email: { configured: true, healthy: false },
-    });
+    const degraded = detectOperationalConditions(
+      opsSnapshot({
+        apiReady: false,
+        mongoConnected: false,
+        outboxFailedCount: 3,
+        outboxDegradesApi: true,
+        outboxSeverity: "critical",
+        email: { configured: true, healthy: false },
+      }),
+    );
     const keys = degraded.map((c) => c.dedupeKey).sort();
     assert.deepEqual(keys, [
       "ops:api-readiness",
@@ -74,35 +88,46 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
     ]);
     assert.equal(
       degraded.find((c) => c.dedupeKey === "ops:outbox-failed")?.targetLabel,
-      "3 failed outbox events",
+      "Outbox dispatcher stopped with due work",
+    );
+    assert.equal(
+      degraded.find((c) => c.dedupeKey === "ops:outbox-failed")?.severity,
+      "critical",
     );
 
     // Email not configured → no ops alert
     assert.equal(
-      detectOperationalConditions({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 0,
-        email: { configured: false, healthy: false },
-      }).length,
+      detectOperationalConditions(
+        opsSnapshot({ email: { configured: false, healthy: false } }),
+      ).length,
       0,
     );
 
-    // Pending alone is not an alertable condition in detector (failed only)
+    // Pending and a lifetime failed count are not alertable by themselves.
+    assert.equal(detectOperationalConditions(opsSnapshot()).length, 0);
     assert.equal(
-      detectOperationalConditions({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 0,
-        email: { configured: true, healthy: true },
-      }).length,
+      detectOperationalConditions(opsSnapshot({ outboxFailedCount: 6306 })).length,
       0,
     );
+    const recent = detectOperationalConditions(
+      opsSnapshot({
+        outboxFailedCount: 6306,
+        outboxDegradesApi: true,
+        outboxSeverity: "warning",
+      }),
+    );
+    assert.equal(recent.length, 1);
+    assert.equal(recent[0]?.dedupeKey, "ops:outbox-failed");
+    assert.equal(recent[0]?.severity, "warning");
+    assert.equal(recent[0]?.targetLabel, "Active outbox fault");
 
     const evaluator = readApi(
       "src/modules/admin-notifications/operational/evaluate-admin-operational-alerts.ts",
     );
     assert.doesNotMatch(evaluator, /ops:initiative-integrity/);
+    assert.doesNotMatch(evaluator, /outboxFailedCount > 0/);
+    assert.match(evaluator, /outboxDegradesApi/);
+    assert.match(evaluator, /assessOutboxOperations/);
   });
 
   it("6–11. transition model: open, no duplicate, clear-while-active, recover, reopen", async () => {
@@ -113,12 +138,12 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       incidentStore: store,
       createIncidentId: () => "inc-1",
       now: () => "2026-08-01T10:00:00.000Z",
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 2,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          outboxFailedCount: 2,
+          outboxDegradesApi: true,
+          outboxSeverity: "warning",
+        }),
     };
 
     const first = await evaluateAdminOperationalAlerts(deps);
@@ -152,12 +177,7 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
     // Recovery — no new notification
     const recovered = await evaluateAdminOperationalAlerts({
       ...deps,
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 0,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () => opsSnapshot({ outboxFailedCount: 6306 }),
       now: () => "2026-08-01T11:00:00.000Z",
     });
     assert.deepEqual(recovered.recovered, ["ops:outbox-failed"]);
@@ -168,12 +188,12 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       ...deps,
       createIncidentId: () => "inc-2",
       now: () => "2026-08-01T12:00:00.000Z",
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 1,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          outboxFailedCount: 6307,
+          outboxDegradesApi: true,
+          outboxSeverity: "warning",
+        }),
     });
     assert.deepEqual(reopened.opened, ["ops:outbox-failed"]);
     assert.equal(await persistence.countByRecipient(ADMIN_A), 1);
@@ -195,12 +215,12 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       incidentStore: resolveAdminOperationalIncidentStore(),
       createIncidentId: () => "inc-ob",
       now: () => "2026-08-01T10:00:00.000Z",
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 1,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          outboxFailedCount: 6306,
+          outboxDegradesApi: true,
+          outboxSeverity: "warning",
+        }),
     });
     await evaluateAdminOperationalAlerts({
       listActiveAdminUserIds: async () => [ADMIN_A],
@@ -208,16 +228,16 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       incidentStore: resolveAdminOperationalIncidentStore(),
       createIncidentId: () => "inc-ob",
       now: () => "2026-08-01T10:05:00.000Z",
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 5,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          outboxFailedCount: 6306,
+          outboxDegradesApi: true,
+          outboxSeverity: "critical",
+        }),
     });
     const rows = await persistence.list({ recipientAdminUserId: ADMIN_A });
     assert.equal(rows.length, 1);
-    assert.equal(rows[0]?.targetLabel, "5 failed outbox events");
+    assert.equal(rows[0]?.targetLabel, "Outbox dispatcher stopped with due work");
     assert.equal(rows[0]?.severity, "critical");
   });
 
@@ -227,12 +247,12 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       persistence,
       incidentStore: resolveAdminOperationalIncidentStore(),
       createIncidentId: () => "inc-m",
-      collectSnapshot: async () => ({
-        apiReady: false,
-        mongoConnected: false,
-        outboxFailedCount: 0,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          apiReady: false,
+          mongoConnected: false,
+          outboxFailedCount: 6306,
+        }),
     });
     assert.equal(await persistence.countByRecipient(ADMIN_A), 2);
     assert.equal(await persistence.countByRecipient(ADMIN_B), 2);
@@ -288,12 +308,12 @@ describe("Pack 22E.3 — Admin operational alerts", () => {
       persistence,
       incidentStore: store,
       createIncidentId: () => "inc-concurrent",
-      collectSnapshot: async () => ({
-        apiReady: true,
-        mongoConnected: true,
-        outboxFailedCount: 1,
-        email: { configured: true, healthy: true },
-      }),
+      collectSnapshot: async () =>
+        opsSnapshot({
+          outboxFailedCount: 1,
+          outboxDegradesApi: true,
+          outboxSeverity: "warning",
+        }),
     };
     await Promise.all([
       evaluateAdminOperationalAlerts(deps),

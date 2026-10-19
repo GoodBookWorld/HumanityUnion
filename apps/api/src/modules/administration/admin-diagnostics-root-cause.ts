@@ -5,6 +5,7 @@
  * health thresholds.
  */
 
+import { assessOutboxOperations } from "../../infrastructure/outbox/outbox-operational-health.js";
 import {
   AdministrationForbiddenError,
   AdministrationUnauthorizedError,
@@ -13,7 +14,10 @@ import {
 export const ADMIN_DIAGNOSTICS_DEGRADED_REASONS = [
   "MONGODB_DISCONNECTED",
   "EMAIL_UNHEALTHY",
-  "OUTBOX_FAILED_COUNT",
+  "OUTBOX_DISPATCHER_STOPPED",
+  "OUTBOX_OVERDUE_PENDING",
+  "OUTBOX_RECENT_FAILURE",
+  "OUTBOX_DISPATCH_ERROR",
   "READINESS_CHECK_FAILED",
 ] as const;
 
@@ -158,7 +162,13 @@ export interface AdminDiagnosticsHealthAssessmentInput {
   emailLastFailureCategory?: string | null;
   outboxConfigured: boolean;
   outboxEnabled: boolean;
-  outboxStats: { failed: number } | null;
+  /** Omitted callers are treated as running so a missing flag is not a stoppage. */
+  outboxRunning?: boolean;
+  outboxStats: { pending?: number; failed: number } | null;
+  oldestDuePendingCreatedAt?: string | null;
+  newestFailedAt?: string | null;
+  lastDispatchErrorAt?: string | null;
+  nowMs?: number;
   readiness: readonly { id?: unknown; status?: unknown }[];
 }
 
@@ -174,11 +184,11 @@ export interface AdminDiagnosticsHealthAssessment {
 /**
  * Production overall status uses the same predicates as GET /api/v1/health
  * once MongoDB is connected: email healthy, no readiness item with status
- * "fail", and the outbox predicate below.
- * Outbox degrades health only when it is configured, enabled, stats are
- * present, and the failed count is greater than zero. A disabled or
- * unconfigured outbox is not an active degradation cause, including when
- * historical failed rows exist. Missing stats are not treated as zero.
+ * "fail", and an active outbox fault.
+ * A lifetime failed count is not an active fault. Historical rows stay
+ * visible on the diagnostics page and do not set a degraded reason.
+ * Missing stats are not treated as zero. A disabled or unconfigured
+ * dispatcher does not degrade this assessment by itself.
  * In production, a disconnected MongoDB degrades both surfaces. Outside
  * production, public /health can still report overall "healthy" while
  * MongoDB is disconnected. This Admin assessment still reports
@@ -189,11 +199,18 @@ export function assessAdminDiagnosticsHealth(
   input: AdminDiagnosticsHealthAssessmentInput,
 ): AdminDiagnosticsHealthAssessment {
   const failedReadinessCheckIds = selectFailedReadinessCheckIds(input.readiness);
-  const outboxDegraded =
-    input.outboxConfigured &&
-    input.outboxEnabled &&
-    input.outboxStats !== null &&
-    input.outboxStats.failed > 0;
+  const outbox = assessOutboxOperations({
+    configured: input.outboxConfigured,
+    enabled: input.outboxEnabled,
+    running: input.outboxRunning ?? true,
+    stats: input.outboxStats
+      ? { pending: input.outboxStats.pending ?? 0, failed: input.outboxStats.failed }
+      : null,
+    oldestDuePendingCreatedAt: input.oldestDuePendingCreatedAt ?? null,
+    newestFailedAt: input.newestFailedAt ?? null,
+    lastDispatchErrorAt: input.lastDispatchErrorAt ?? null,
+    nowMs: input.nowMs,
+  });
 
   const degradedReasons: AdminDiagnosticsDegradedReason[] = [];
   if (!input.mongoConnected) {
@@ -202,8 +219,17 @@ export function assessAdminDiagnosticsHealth(
   if (!input.emailHealthy) {
     degradedReasons.push("EMAIL_UNHEALTHY");
   }
-  if (outboxDegraded) {
-    degradedReasons.push("OUTBOX_FAILED_COUNT");
+  if (outbox.degradesApi && outbox.reasons.includes("DISPATCHER_STOPPED")) {
+    degradedReasons.push("OUTBOX_DISPATCHER_STOPPED");
+  }
+  if (outbox.degradesApi && outbox.reasons.includes("OVERDUE_PENDING")) {
+    degradedReasons.push("OUTBOX_OVERDUE_PENDING");
+  }
+  if (outbox.degradesApi && outbox.reasons.includes("RECENT_FAILURE")) {
+    degradedReasons.push("OUTBOX_RECENT_FAILURE");
+  }
+  if (outbox.degradesApi && outbox.reasons.includes("DISPATCH_ERROR")) {
+    degradedReasons.push("OUTBOX_DISPATCH_ERROR");
   }
   if (failedReadinessCheckIds.length > 0) {
     degradedReasons.push("READINESS_CHECK_FAILED");
@@ -217,7 +243,7 @@ export function assessAdminDiagnosticsHealth(
       configured: input.emailConfigured,
       lastFailureCategory: input.emailLastFailureCategory,
     }),
-    outboxFailedCountReason: outboxDegraded ? "OUTBOX_FAILED_COUNT" : null,
+    outboxFailedCountReason: null,
     failedReadinessCheckIds,
     mongodbDisconnectedReason: input.mongoConnected ? null : "MONGODB_DISCONNECTED",
   };

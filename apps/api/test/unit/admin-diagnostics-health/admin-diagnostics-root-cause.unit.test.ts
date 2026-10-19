@@ -22,6 +22,8 @@ import {
   classifyAdminDiagnosticsActor,
   resolveAdminDiagnosticsHttpStatus,
 } from "../../../src/modules/administration/admin-diagnostics-root-cause.js";
+import { assessOutboxOperations } from "../../../src/infrastructure/outbox/outbox-operational-health.js";
+import { failedAtForOutboxTransition } from "../../../src/infrastructure/outbox/outbox.repository.js";
 import { FAILED_OUTBOX_DIAGNOSTIC_PROJECTION } from "../../../src/infrastructure/outbox/outbox.repository.js";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -101,7 +103,10 @@ describe("HU-DIAG.04B — health reasons reuse existing predicates", () => {
     });
     assert.equal(assessment.status, "healthy");
     assert.equal(assessment.outboxFailedCountReason, null);
-    assert.equal(assessment.degradedReasons.includes("OUTBOX_FAILED_COUNT"), false);
+    assert.equal(
+      assessment.degradedReasons.some((reason) => reason.startsWith("OUTBOX_")),
+      false,
+    );
 
     let reads = 0;
     const summary = await assembleAdminOutboxFailureSummary({
@@ -150,15 +155,124 @@ describe("HU-DIAG.04B — health reasons reuse existing predicates", () => {
     assert.deepEqual(assessment.degradedReasons, [
       "MONGODB_DISCONNECTED",
       "EMAIL_UNHEALTHY",
-      "OUTBOX_FAILED_COUNT",
       "READINESS_CHECK_FAILED",
     ]);
     assert.equal(assessment.mongodbDisconnectedReason, "MONGODB_DISCONNECTED");
     assert.equal(assessment.emailUnhealthyReason, "AUTH_FAILURE");
-    assert.equal(assessment.outboxFailedCountReason, "OUTBOX_FAILED_COUNT");
+    assert.equal(assessment.outboxFailedCountReason, null);
     assert.deepEqual(assessment.failedReadinessCheckIds, ["jwt", "UNKNOWN"]);
     assert.equal(assessment.status, "degraded");
     assert.doesNotMatch(JSON.stringify(assessment), /user@example.com|password|mongodb:\/\//i);
+  });
+
+  it("does not degrade on historical failed rows and does degrade on active faults", () => {
+    const now = Date.parse("2026-10-19T00:00:00.000Z");
+    const historical = assessAdminDiagnosticsHealth({
+      ...healthyProbes(),
+      outboxStats: { pending: 0, failed: 6306 },
+      newestFailedAt: null,
+      nowMs: now,
+    });
+    assert.equal(historical.status, "healthy");
+    assert.equal(historical.outboxFailedCountReason, null);
+    assert.deepEqual(historical.degradedReasons, []);
+
+    const recent = assessAdminDiagnosticsHealth({
+      ...healthyProbes(),
+      outboxStats: { pending: 0, failed: 6306 },
+      newestFailedAt: "2026-10-18T12:00:00.000Z",
+      nowMs: now,
+    });
+    assert.equal(recent.status, "degraded");
+    assert.deepEqual(recent.degradedReasons, ["OUTBOX_RECENT_FAILURE"]);
+
+    const stoppedDue = assessAdminDiagnosticsHealth({
+      ...healthyProbes(),
+      outboxRunning: false,
+      outboxStats: { pending: 1, failed: 0 },
+      oldestDuePendingCreatedAt: "2026-10-18T23:00:00.000Z",
+      nowMs: now,
+    });
+    assert.deepEqual(stoppedDue.degradedReasons, ["OUTBOX_DISPATCHER_STOPPED"]);
+
+    const overdue = assessAdminDiagnosticsHealth({
+      ...healthyProbes(),
+      outboxRunning: true,
+      outboxStats: { pending: 1, failed: 0 },
+      oldestDuePendingCreatedAt: "2026-10-18T23:00:00.000Z",
+      nowMs: now,
+    });
+    assert.deepEqual(overdue.degradedReasons, ["OUTBOX_OVERDUE_PENDING"]);
+
+    const dispatchError = assessAdminDiagnosticsHealth({
+      ...healthyProbes(),
+      outboxStats: { pending: 0, failed: 0 },
+      lastDispatchErrorAt: "2026-10-18T23:30:00.000Z",
+      nowMs: now,
+    });
+    assert.deepEqual(dispatchError.degradedReasons, ["OUTBOX_DISPATCH_ERROR"]);
+
+    const stoppedIdle = assessOutboxOperations({
+      configured: true,
+      enabled: true,
+      running: false,
+      stats: { pending: 0, failed: 6306 },
+      oldestDuePendingCreatedAt: null,
+      newestFailedAt: null,
+      lastDispatchErrorAt: null,
+      nowMs: now,
+    });
+    assert.equal(stoppedIdle.severity, "warning");
+    assert.equal(stoppedIdle.degradesApi, false);
+
+    const unconfigured = assessOutboxOperations({
+      configured: false,
+      enabled: false,
+      running: false,
+      stats: { pending: 0, failed: 0 },
+      oldestDuePendingCreatedAt: null,
+      newestFailedAt: null,
+      lastDispatchErrorAt: null,
+    });
+    assert.equal(unconfigured.severity, "warning");
+    assert.equal(unconfigured.degradesApi, false);
+
+    const missing = assessOutboxOperations({
+      configured: true,
+      enabled: true,
+      running: true,
+      stats: null,
+      oldestDuePendingCreatedAt: null,
+      newestFailedAt: null,
+      lastDispatchErrorAt: null,
+    });
+    assert.equal(missing.severity, "unknown");
+    assert.equal(missing.degradesApi, false);
+
+    assert.equal(
+      failedAtForOutboxTransition({
+        existingStatus: "pending",
+        nextStatus: "failed",
+        nowIso: "2026-10-19T00:00:00.000Z",
+      }),
+      "2026-10-19T00:00:00.000Z",
+    );
+    assert.equal(
+      failedAtForOutboxTransition({
+        existingStatus: "failed",
+        nextStatus: "failed",
+        nowIso: "2026-10-19T01:00:00.000Z",
+      }),
+      null,
+    );
+    assert.equal(
+      failedAtForOutboxTransition({
+        existingStatus: "pending",
+        nextStatus: "pending",
+        nowIso: "2026-10-19T00:00:00.000Z",
+      }),
+      null,
+    );
   });
 
   it("maps unknown email categories to UNKNOWN and ignores historical categories when healthy", () => {

@@ -21,6 +21,11 @@ export interface OutboxRecord {
    * Used for provider pacing defer. Not a failure and not a second scheduler.
    */
   availableAt?: string | null;
+  /**
+   * Set only when a row first transitions to failed. Historical rows omit it.
+   * This is not enqueue createdAt.
+   */
+  failedAt?: string | null;
 }
 
 export interface EnqueueOutboxOptions {
@@ -42,4 +47,10 @@ export interface OutboxHealthStatus {
   stats: OutboxDispatchStats | null;
   lastDispatchAt: string | null;
   lastError: string | null;
+  /** Oldest due pending enqueue time. Null when nothing is due. */
+  oldestDuePendingCreatedAt: string | null;
+  /** Newest forward-only failedAt. Null when no row has been failed since tracking began. */
+  newestFailedAt: string | null;
+  /** In-process time of the latest dispatcher catch. Not stored on historical rows. */
+  lastDispatchErrorAt: string | null;
 }

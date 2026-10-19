@@ -1,7 +1,8 @@
 /**
  * Root-cause presentation for Admin diagnostics.
- * Maps existing health fields and the Admin outbox summary. Does not invent
- * failure timestamps or health thresholds.
+ * Maps health fields and the Admin outbox summary. Actual failure time comes
+ * from failedAt when a row was failed after tracking began. Enqueue time is
+ * labeled separately and is not treated as the failure time.
  */
 
 import type { ApiHealthPayload, DiagnosticCheck } from "./admin-diagnostics-model";
@@ -70,7 +71,7 @@ export interface AdminOutboxFailureSummaryView {
   readonly timestamps: {
     readonly oldestFailedEnqueuedAt: string | null;
     readonly newestFailedEnqueuedAt: string | null;
-    readonly actualFailureAt: null;
+    readonly actualFailureAt: string | null;
     readonly oldestFailedEnqueuedAtLabel: string;
     readonly newestFailedEnqueuedAtLabel: string;
     readonly actualFailureLabel: string;
@@ -178,19 +179,24 @@ function outboxFailedCause(
       at: newest,
     });
   }
-  evidence.push(ACTUAL_FAILURE_UNAVAILABLE);
-  const activeDegradation = health.outboxFailedCountReason === "OUTBOX_FAILED_COUNT";
+  if (health.outbox?.newestFailedAt) {
+    evidence.push({
+      kind: "actual_failure_time",
+      label: "Actual failure time",
+      at: health.outbox.newestFailedAt,
+    });
+  } else {
+    evidence.push(ACTUAL_FAILURE_UNAVAILABLE);
+  }
   const singleCategory =
     summary && summary.byFailureCategory.length === 1
       ? summary.byFailureCategory[0]?.key
       : undefined;
-  const countWarning = activeDegradation
-    ? "Critical is a failed-row count warning. The dispatcher is enabled and configured, so this failed count is also an API degradation cause."
-    : "Critical is a failed-row count warning for historical failed rows. This count is not an active API degradation cause while the dispatcher is disabled.";
+  const countWarning =
+    "Historical failed rows stay visible. The lifetime count is not, by itself, an API degradation or a Platform Health critical.";
   return {
     failingCheck: "outbox.stats.failed",
-    failureCategory:
-      singleCategory ?? (activeDegradation ? "OUTBOX_FAILED_COUNT" : "FAILED_ROW_COUNT"),
+    failureCategory: singleCategory ?? "HISTORICAL_FAILED_ROWS",
     evidence,
     operationalImpact: summary?.impact.text
       ? `${countWarning} ${summary.impact.text}`
@@ -224,7 +230,13 @@ export function deriveComponentRootCauses(input: {
   health: ApiHealthPayload | null;
   outboxFailures: AdminOutboxFailureSummaryView | null;
 }): DiagnosticRootCause[] {
-  if (input.check.status === "healthy" || input.check.status === "not_available" || !input.health) {
+  if (!input.health) {
+    return [];
+  }
+  if (input.check.id === "outbox") {
+    return outboxRootCauses(input.health, input.outboxFailures);
+  }
+  if (input.check.status === "healthy" || input.check.status === "not_available") {
     return [];
   }
 
@@ -254,38 +266,123 @@ export function deriveComponentRootCauses(input: {
     return causes;
   }
 
-  if (input.check.id !== "outbox" || !health.outbox) {
+  return [];
+}
+
+function outboxRootCauses(
+  health: ApiHealthPayload,
+  summary: AdminOutboxFailureSummaryView | null,
+): DiagnosticRootCause[] {
+  if (!health.outbox) {
     return [];
   }
-
+  if (!health.outbox.configured) {
+    return [
+      {
+        failingCheck: "outbox.configured",
+        failureCategory: "NOT_CONFIGURED",
+        evidence: [UNAVAILABLE_EVIDENCE],
+        operationalImpact:
+          "The outbox is not configured. A pending count of zero does not make this Healthy.",
+        recommendedAction: "Configure MongoDB for the outbox before treating dispatch as healthy.",
+      },
+    ];
+  }
   const stats = health.outbox.stats;
-  if (!health.outbox.configured || stats == null) {
+  if (stats == null) {
     return [outboxStatsUnavailableCause()];
   }
 
   const causes: DiagnosticRootCause[] = [];
-  if ((stats.failed ?? 0) > 0) {
-    causes.push(outboxFailedCause(health, input.outboxFailures));
-  } else if (health.outbox.enabled && !health.outbox.running) {
+  const duePending = Boolean(health.outbox.oldestDuePendingCreatedAt);
+  if (health.outbox.running !== true && (health.outbox.enabled === true || duePending)) {
     causes.push(dispatcherStoppedCause(health));
-  } else if (health.outbox.lastError) {
+  } else if (health.outbox.running !== true && health.outbox.enabled !== true) {
     causes.push({
-      failingCheck: "outbox.lastError",
-      failureCategory: "UNKNOWN",
-      evidence: health.outbox.lastDispatchAt
+      failingCheck: "outbox.enabled",
+      failureCategory: "DISPATCHER_DISABLED",
+      evidence: [UNAVAILABLE_EVIDENCE],
+      operationalImpact:
+        "The dispatcher is disabled. A pending count of zero does not make this Healthy.",
+      recommendedAction: "Enable the outbox dispatcher before treating dispatch as healthy.",
+    });
+  }
+  if (
+    health.outbox.running === true &&
+    health.outbox.enabled === true &&
+    health.outbox.oldestDuePendingCreatedAt
+  ) {
+    const dueAt = Date.parse(health.outbox.oldestDuePendingCreatedAt);
+    if (Number.isFinite(dueAt) && Date.now() - dueAt >= 15 * 60 * 1000) {
+      causes.push({
+        failingCheck: "outbox.oldestDuePendingCreatedAt",
+        failureCategory: "OVERDUE_PENDING",
+        evidence: [
+          {
+            kind: "failed_row_enqueued_at",
+            label: "Oldest due pending enqueue time",
+            at: health.outbox.oldestDuePendingCreatedAt,
+          },
+        ],
+        operationalImpact: "Due outbox work has been waiting at least 15 minutes.",
+        recommendedAction: "Confirm the dispatcher is draining due pending rows.",
+      });
+    }
+  }
+  if (health.outbox.newestFailedAt) {
+    const failedAt = Date.parse(health.outbox.newestFailedAt);
+    if (Number.isFinite(failedAt) && Date.now() - failedAt <= 24 * 60 * 60 * 1000) {
+      causes.push({
+        failingCheck: "outbox.newestFailedAt",
+        failureCategory: "RECENT_FAILURE",
+        evidence: [
+          {
+            kind: "actual_failure_time",
+            label: "Actual failure time",
+            at: health.outbox.newestFailedAt,
+          },
+        ],
+        operationalImpact: "A row was marked failed within the last 24 hours.",
+        recommendedAction: "Review the newest failure in Event Infrastructure. This page does not retry it.",
+      });
+    }
+  }
+  const dispatchErrorAt = health.outbox.lastDispatchErrorAt
+    ? Date.parse(health.outbox.lastDispatchErrorAt)
+    : Number.NaN;
+  const recentDispatchError =
+    health.outbox.lastDispatchErrorAt != null
+      ? Number.isFinite(dispatchErrorAt) && Date.now() - dispatchErrorAt <= 24 * 60 * 60 * 1000
+      : Boolean(health.outbox.lastError);
+  if (recentDispatchError) {
+    causes.push({
+      failingCheck: "outbox.lastDispatchErrorAt",
+      failureCategory: "DISPATCH_ERROR",
+      evidence: health.outbox.lastDispatchErrorAt
         ? [
             {
-              kind: "last_dispatcher_cycle",
-              label: "Last dispatcher cycle",
-              at: health.outbox.lastDispatchAt,
+              kind: "actual_failure_time",
+              label: "Dispatcher error time",
+              at: health.outbox.lastDispatchErrorAt,
             },
           ]
-        : [UNAVAILABLE_EVIDENCE],
+        : health.outbox.lastDispatchAt
+          ? [
+              {
+                kind: "last_dispatcher_cycle",
+                label: "Last dispatcher cycle",
+                at: health.outbox.lastDispatchAt,
+              },
+            ]
+          : [UNAVAILABLE_EVIDENCE],
       operationalImpact:
-        "A dispatcher error was recorded. The raw error is omitted. Operational impact beyond the outbox card is unknown.",
+        "A dispatcher error was recorded in this process. The raw error is omitted.",
       recommendedAction:
         "Inspect dispatcher logs for the safe failure category. This page does not replay events.",
     });
+  }
+  if ((stats.failed ?? 0) > 0) {
+    causes.push(outboxFailedCause(health, summary));
   }
   return causes;
 }
@@ -348,7 +445,9 @@ export function formatOutboxFailureSummaryLines(
     newestEnqueue: summary.timestamps.newestFailedEnqueuedAt
       ? `${summary.timestamps.newestFailedEnqueuedAtLabel}: ${summary.timestamps.newestFailedEnqueuedAt}`
       : `${summary.timestamps.newestFailedEnqueuedAtLabel}: unavailable`,
-    actualFailure: `${summary.timestamps.actualFailureLabel}: unavailable`,
+    actualFailure: summary.timestamps.actualFailureAt
+      ? `${summary.timestamps.actualFailureLabel}: ${summary.timestamps.actualFailureAt}`
+      : `${summary.timestamps.actualFailureLabel}: unavailable`,
     lastDispatch: summary.lastDispatchAt
       ? `${summary.timestamps.lastDispatchLabel}: ${summary.lastDispatchAt}`
       : `${summary.timestamps.lastDispatchLabel}: unavailable`,

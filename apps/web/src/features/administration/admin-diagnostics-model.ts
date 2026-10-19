@@ -52,6 +52,9 @@ export interface ApiHealthPayload {
     } | null;
     readonly lastDispatchAt?: string | null;
     readonly lastError?: string | null;
+    readonly oldestDuePendingCreatedAt?: string | null;
+    readonly newestFailedAt?: string | null;
+    readonly lastDispatchErrorAt?: string | null;
   };
   readonly degradedReasons?: readonly string[];
   readonly emailUnhealthyReason?: string | null;
@@ -261,7 +264,91 @@ export function deriveEmailStatus(health: ApiHealthPayload | null): DiagnosticCh
   };
 }
 
-export function deriveOutboxStatus(health: ApiHealthPayload | null): DiagnosticCheck {
+/** Keep aligned with apps/api outbox-operational-health.ts. */
+export const OUTBOX_DUE_PENDING_WARNING_MS = 15 * 60 * 1000;
+export const OUTBOX_RECENT_FAILURE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export type OutboxCardReason =
+  | "DISPATCHER_STOPPED"
+  | "DISPATCHER_DISABLED"
+  | "OVERDUE_PENDING"
+  | "RECENT_FAILURE"
+  | "DISPATCH_ERROR";
+
+function parsedIso(value: string | null | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function isRecentOutboxInstant(atMs: number, nowMs: number): boolean {
+  const age = nowMs - atMs;
+  return age >= -60_000 && age <= OUTBOX_RECENT_FAILURE_WINDOW_MS;
+}
+
+export function assessOutboxCard(input: {
+  readonly configured: boolean;
+  readonly enabled: boolean;
+  readonly running: boolean;
+  readonly statsPresent: boolean;
+  readonly oldestDuePendingCreatedAt: string | null;
+  readonly newestFailedAt: string | null;
+  readonly lastDispatchErrorAt: string | null;
+  readonly nowMs: number;
+}): { readonly status: DiagnosticSeverity; readonly reasons: readonly OutboxCardReason[] } {
+  if (!input.configured) {
+    return { status: "warning", reasons: [] };
+  }
+  if (!input.statsPresent) {
+    return { status: "unknown", reasons: [] };
+  }
+
+  const reasons: OutboxCardReason[] = [];
+  let status: DiagnosticSeverity = "healthy";
+  const dueAt = parsedIso(input.oldestDuePendingCreatedAt);
+  const duePending = dueAt != null;
+
+  if (!input.running) {
+    if (duePending) {
+      reasons.push("DISPATCHER_STOPPED");
+      status = "critical";
+    } else if (input.enabled) {
+      reasons.push("DISPATCHER_STOPPED");
+      status = "warning";
+    } else {
+      reasons.push("DISPATCHER_DISABLED");
+      status = "warning";
+    }
+  } else if (input.enabled && dueAt != null && input.nowMs - dueAt >= OUTBOX_DUE_PENDING_WARNING_MS) {
+    reasons.push("OVERDUE_PENDING");
+    status = "warning";
+  }
+
+  const failedAt = parsedIso(input.newestFailedAt);
+  if (failedAt != null && isRecentOutboxInstant(failedAt, input.nowMs)) {
+    reasons.push("RECENT_FAILURE");
+    if (status === "healthy") {
+      status = "warning";
+    }
+  }
+
+  const errorAt = parsedIso(input.lastDispatchErrorAt);
+  if (errorAt != null && isRecentOutboxInstant(errorAt, input.nowMs)) {
+    reasons.push("DISPATCH_ERROR");
+    if (status === "healthy") {
+      status = "warning";
+    }
+  }
+
+  return { status, reasons };
+}
+
+export function deriveOutboxStatus(
+  health: ApiHealthPayload | null,
+  nowMs: number = Date.now(),
+): DiagnosticCheck {
   if (!health?.outbox) {
     return {
       id: "outbox",
@@ -278,9 +365,6 @@ export function deriveOutboxStatus(health: ApiHealthPayload | null): DiagnosticC
       label: "Outbox",
       status: health.outbox.configured ? "unknown" : "warning",
       summary: health.outbox.configured ? "Stats unavailable" : "Not configured",
-      detail: health.outbox.lastError
-        ? sanitizeOperatorMessage(health.outbox.lastError)
-        : undefined,
     };
   }
 
@@ -288,18 +372,66 @@ export function deriveOutboxStatus(health: ApiHealthPayload | null): DiagnosticC
   const published = stats.published ?? 0;
   const failed = stats.failed ?? 0;
   const counts = `Pending ${pending} · Published ${published} · Failed ${failed}`;
+  const dispatchErrorAt =
+    health.outbox.lastDispatchErrorAt ??
+    (health.outbox.lastError ? new Date(nowMs).toISOString() : null);
+  const assessment = assessOutboxCard({
+    configured: true,
+    enabled: health.outbox.enabled === true,
+    running: health.outbox.running === true,
+    statsPresent: true,
+    oldestDuePendingCreatedAt: health.outbox.oldestDuePendingCreatedAt ?? null,
+    newestFailedAt: health.outbox.newestFailedAt ?? null,
+    lastDispatchErrorAt: dispatchErrorAt,
+    nowMs,
+  });
 
-  if (failed > 0) {
+  const historicalNote =
+    failed > 0 && assessment.status === "healthy"
+      ? " · Historical failed rows retained"
+      : "";
+
+  if (assessment.status === "critical") {
     return {
       id: "outbox",
       label: "Outbox",
       status: "critical",
-      summary: "Failed events present",
+      summary: "Dispatcher stopped with due work",
+      detail: `${counts}${historicalNote}`,
+    };
+  }
+
+  if (assessment.reasons.includes("OVERDUE_PENDING")) {
+    return {
+      id: "outbox",
+      label: "Outbox",
+      status: "warning",
+      summary: "Due work is overdue",
       detail: counts,
     };
   }
 
-  if (health.outbox.enabled && !health.outbox.running) {
+  if (assessment.reasons.includes("RECENT_FAILURE")) {
+    return {
+      id: "outbox",
+      label: "Outbox",
+      status: "warning",
+      summary: "Recent dispatch failure",
+      detail: counts,
+    };
+  }
+
+  if (assessment.reasons.includes("DISPATCH_ERROR")) {
+    return {
+      id: "outbox",
+      label: "Outbox",
+      status: "warning",
+      summary: "Dispatcher error recorded",
+      detail: counts,
+    };
+  }
+
+  if (assessment.reasons.includes("DISPATCHER_STOPPED")) {
     return {
       id: "outbox",
       label: "Outbox",
@@ -309,23 +441,22 @@ export function deriveOutboxStatus(health: ApiHealthPayload | null): DiagnosticC
     };
   }
 
-  if (health.outbox.lastError) {
+  if (assessment.reasons.includes("DISPATCHER_DISABLED")) {
     return {
       id: "outbox",
       label: "Outbox",
       status: "warning",
-      summary: "Recent dispatch error recorded",
-      detail: `${counts} · ${sanitizeOperatorMessage(health.outbox.lastError)}`,
+      summary: "Dispatcher disabled",
+      detail: `${counts}${failed > 0 ? " · Historical failed rows retained" : ""}`,
     };
   }
 
-  // Pending backlog alone is not automatically unhealthy (no age threshold in API).
   return {
     id: "outbox",
     label: "Outbox",
     status: "healthy",
     summary: pending > 0 ? "Healthy with pending backlog" : "Healthy",
-    detail: counts,
+    detail: `${counts}${historicalNote}`,
   };
 }
 

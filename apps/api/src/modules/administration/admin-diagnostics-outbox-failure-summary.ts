@@ -105,7 +105,7 @@ export interface AdminOutboxFailureSummary {
   timestamps: {
     oldestFailedEnqueuedAt: string | null;
     newestFailedEnqueuedAt: string | null;
-    actualFailureAt: null;
+    actualFailureAt: string | null;
     oldestFailedEnqueuedAtLabel: "Failed-row enqueue time";
     newestFailedEnqueuedAtLabel: "Failed-row enqueue time";
     actualFailureLabel: "Actual failure time";
@@ -338,6 +338,7 @@ export function buildFailedOutboxSummary(input: {
   oldestEnqueuedAt: string | null;
   newestEnqueuedAt: string | null;
   boundsAvailable: boolean;
+  actualFailureAt?: string | null;
 }): AdminOutboxFailureSummary {
   const scanCap = Math.max(0, input.scanCap);
   const rows = input.rows.slice(0, scanCap);
@@ -417,6 +418,7 @@ export function buildFailedOutboxSummary(input: {
       ...emptyTimestamps(),
       oldestFailedEnqueuedAt,
       newestFailedEnqueuedAt,
+      actualFailureAt: safeIsoTimestamp(input.actualFailureAt),
     },
     impact: (() => {
       const assessed = impactForCategories(input.totalFailed, categories.allGroups);
@@ -439,6 +441,7 @@ export async function assembleAdminOutboxFailureSummary(input: {
     oldestCreatedAt: string | null;
     newestCreatedAt: string | null;
   }>;
+  readNewestFailedAt?: () => Promise<string | null>;
 }): Promise<AdminOutboxFailureSummary> {
   const health = input.health;
   if (!health.configured || health.stats === null) {
@@ -466,9 +469,10 @@ export async function assembleAdminOutboxFailureSummary(input: {
     });
   }
 
-  const [rows, bounds] = await Promise.all([
+  const [rows, bounds, newestFailedAt] = await Promise.all([
     input.readOldestFailedRows(input.scanCap),
     input.readEnqueueBounds(),
+    input.readNewestFailedAt ? input.readNewestFailedAt() : Promise.resolve(null),
   ]);
 
   return buildFailedOutboxSummary({
@@ -481,5 +485,6 @@ export async function assembleAdminOutboxFailureSummary(input: {
     oldestEnqueuedAt: bounds.oldestCreatedAt,
     newestEnqueuedAt: bounds.newestCreatedAt,
     boundsAvailable: true,
+    actualFailureAt: newestFailedAt,
   });
 }

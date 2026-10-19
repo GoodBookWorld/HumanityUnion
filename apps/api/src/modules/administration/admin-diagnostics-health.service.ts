@@ -9,6 +9,7 @@ import { checkMongoConnection } from "../../infrastructure/mongodb/mongo-health.
 import { getOutboxHealthStatus } from "../../infrastructure/outbox/outbox.dispatcher.js";
 import {
   findFailedOutboxEnqueueBounds,
+  findNewestOutboxFailedAt,
   scanOldestFailedOutboxRows,
 } from "../../infrastructure/outbox/outbox.repository.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
@@ -78,6 +79,9 @@ export interface AdminDiagnosticsHealthPayload {
     } | null;
     lastDispatchAt: string | null;
     lastError: string | null;
+    oldestDuePendingCreatedAt: string | null;
+    newestFailedAt: string | null;
+    lastDispatchErrorAt: string | null;
   };
 }
 
@@ -97,7 +101,11 @@ export async function getAdminDiagnosticsHealth(input: {
     emailLastFailureCategory: email.lastFailureCategory,
     outboxConfigured: outbox.configured,
     outboxEnabled: outbox.enabled,
+    outboxRunning: outbox.running,
     outboxStats: outbox.stats,
+    oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+    newestFailedAt: outbox.newestFailedAt,
+    lastDispatchErrorAt: outbox.lastDispatchErrorAt,
     readiness: checklist,
   });
 
@@ -139,6 +147,9 @@ export async function getAdminDiagnosticsHealth(input: {
         : null,
       lastDispatchAt: outbox.lastDispatchAt,
       lastError: sanitizeProbeMessage(outbox.lastError),
+      oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+      newestFailedAt: outbox.newestFailedAt,
+      lastDispatchErrorAt: outbox.lastDispatchErrorAt,
     },
   };
 }
@@ -165,5 +176,6 @@ export async function getAdminOutboxFailureSummary(input: {
     scanCap: FAILED_OUTBOX_SCAN_CAP,
     readOldestFailedRows: (limit) => scanOldestFailedOutboxRows(limit),
     readEnqueueBounds: () => findFailedOutboxEnqueueBounds(),
+    readNewestFailedAt: () => findNewestOutboxFailedAt(),
   });
 }

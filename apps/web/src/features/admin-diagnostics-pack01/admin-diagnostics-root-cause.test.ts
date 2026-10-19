@@ -248,7 +248,7 @@ describe("HU-DIAG.04B — root-cause display", () => {
     assert.match(missingSummary.lastDispatch, /unavailable/);
   });
 
-  it("explains Outbox Critical as a failed-row count, not an active cause when disabled", () => {
+  it("keeps historical failed rows visible without making them Critical", () => {
     const disabled = buildTechnicalHealthSnapshot({
       health: {
         status: "healthy",
@@ -270,26 +270,27 @@ describe("HU-DIAG.04B — root-cause display", () => {
       initiativeWarningCount: 0,
       initiativeError: null,
     });
-    const disabledCause = disabled.outbox.rootCauses?.[0];
-    assert.equal(disabled.outbox.status, "critical");
-    assert.equal(disabledCause?.failureCategory, "FAILED_ROW_COUNT");
-    assert.match(disabledCause?.operationalImpact ?? "", /failed-row count warning/);
-    assert.match(disabledCause?.operationalImpact ?? "", /not an active API degradation cause/);
-    assert.doesNotMatch(disabledCause?.failureCategory ?? "", /OUTBOX_FAILED_COUNT/);
+    assert.equal(disabled.outbox.status, "warning");
+    assert.equal(disabled.outbox.rootCauses?.[0]?.failureCategory, "DISPATCHER_DISABLED");
+    const historical = disabled.outbox.rootCauses?.find(
+      (cause) => cause.failureCategory === "HISTORICAL_FAILED_ROWS",
+    );
+    assert.match(historical?.operationalImpact ?? "", /not, by itself/);
+    assert.equal(disabled.overall, "warning");
 
-    const active = buildTechnicalHealthSnapshot({
+    const retained = buildTechnicalHealthSnapshot({
       health: {
-        status: "degraded",
+        status: "healthy",
         ready: true,
-        outboxFailedCountReason: "OUTBOX_FAILED_COUNT",
         mongodb: { connected: true, latencyMs: 1, error: null },
         email: { provider: "smtp", healthy: true, configured: true },
         outbox: {
           enabled: true,
           configured: true,
           running: true,
-          stats: { pending: 1, published: 4, failed: 2 },
+          stats: { pending: 0, published: 4, failed: 6306 },
           lastError: null,
+          newestFailedAt: null,
         },
       },
       ready: { ready: true },
@@ -298,13 +299,10 @@ describe("HU-DIAG.04B — root-cause display", () => {
       initiativeWarningCount: 0,
       initiativeError: null,
     });
-    const activeCause = active.outbox.rootCauses?.[0];
-    assert.match(activeCause?.operationalImpact ?? "", /failed-row count warning/);
-    assert.match(activeCause?.operationalImpact ?? "", /API degradation cause/);
-    assert.doesNotMatch(
-      activeCause?.operationalImpact ?? "",
-      /not an active API degradation cause/,
-    );
+    assert.equal(retained.outbox.status, "healthy");
+    assert.equal(retained.overall, "healthy");
+    assert.equal(retained.outbox.rootCauses?.[0]?.failureCategory, "HISTORICAL_FAILED_ROWS");
+    assert.match(retained.outbox.detail ?? "", /Failed 6306/);
   });
 
   it("renders root cause and the outbox summary without retry controls", () => {

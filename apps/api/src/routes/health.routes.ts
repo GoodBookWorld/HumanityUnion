@@ -6,6 +6,7 @@ import { checkMongoConnection } from "../infrastructure/mongodb/mongo-health.js"
 import { getEmailProviderHealth } from "../modules/email/email.service.js";
 import { buildPlatformReadinessChecklist } from "../modules/closed-beta/closed-beta.service.js";
 import { getOutboxHealthStatus } from "../infrastructure/outbox/outbox.dispatcher.js";
+import { assessOutboxOperations } from "../infrastructure/outbox/outbox-operational-health.js";
 import { createSuccessResponse } from "../shared/http-response.js";
 
 const healthRouter = Router();
@@ -23,8 +24,15 @@ healthRouter.get("/", async (_req, res) => {
   const outbox = await getOutboxHealthStatus();
   const checklist = await buildPlatformReadinessChecklist();
   const failedChecks = checklist.filter((item) => item.status === "fail").length;
-  const outboxDegraded =
-    outbox.configured && outbox.enabled && outbox.stats !== null && outbox.stats.failed > 0;
+  const outboxDegraded = assessOutboxOperations({
+    configured: outbox.configured,
+    enabled: outbox.enabled,
+    running: outbox.running,
+    stats: outbox.stats,
+    oldestDuePendingCreatedAt: outbox.oldestDuePendingCreatedAt,
+    newestFailedAt: outbox.newestFailedAt,
+    lastDispatchErrorAt: outbox.lastDispatchErrorAt,
+  }).degradesApi;
   const status = mongo.connected
     ? email.healthy && failedChecks === 0 && !outboxDegraded
       ? "healthy"

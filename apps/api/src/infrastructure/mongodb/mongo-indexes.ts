@@ -851,6 +851,11 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { eventId: 1 }, unique: true, name: "outbox_event_id_unique" },
       { key: { status: 1, createdAt: 1 }, name: "outbox_status_created_at" },
       { key: { aggregateType: 1, aggregateId: 1 }, name: "outbox_aggregate_ref" },
+      {
+        key: { failedAt: -1 },
+        name: "outbox_failed_at_recent",
+        partialFilterExpression: { status: "failed", failedAt: { $type: "string" } },
+      },
     ],
   },
   {
