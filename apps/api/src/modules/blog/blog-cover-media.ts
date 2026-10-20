@@ -1,4 +1,4 @@
-import type { BlogCoverMedia } from "@hu/types";
+import type { BlogCoverMedia, BlogExternalCover } from "@hu/types";
 
 import { findMediaRecordByUrl, getMediaRecordById } from "../media-upload/media-upload.service.js";
 import { isPlatformMediaUrl } from "../media-upload/media-upload.validation.js";
@@ -69,4 +69,26 @@ export function resolveBlogCoverMedia(input: unknown): BlogCoverMedia | null {
     mediaUrl: media.mediaUrl,
     ...(altText ? { altText } : {}),
   };
+}
+
+/**
+ * Public cover. An uploaded cover wins. A partner URL is used only when
+ * `coverMedia` is absent, and it is not stored as platform media.
+ */
+export function displayedBlogCoverMedia(post: {
+  coverMedia: BlogCoverMedia | null;
+  externalCover?: BlogExternalCover | null;
+}): BlogCoverMedia | null {
+  if (post.coverMedia) {
+    return { ...post.coverMedia };
+  }
+
+  if (post.externalCover?.source === "integrity-media" && post.externalCover.url) {
+    return {
+      mediaId: post.externalCover.url,
+      mediaUrl: post.externalCover.url,
+    };
+  }
+
+  return null;
 }

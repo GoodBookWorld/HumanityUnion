@@ -5,6 +5,7 @@ import {
   type BlogAuthorApplication,
   type BlogCapabilityGrant,
   type BlogCategoryId,
+  type BlogExternalCover,
   type BlogPost,
   type BlogPostStatus,
 } from "@hu/types";
@@ -132,6 +133,48 @@ export async function replaceBlogPost(
       throw error;
     }
     throw new BlogPersistenceError("Failed to replace Blog post.", error);
+  }
+}
+
+/**
+ * Writes only the partner cover. Does not change body, title, author,
+ * category, status, published version, or publication events.
+ */
+export async function updateBlogPostExternalCover(
+  postId: string,
+  externalCover: BlogExternalCover,
+): Promise<void> {
+  const memory = blogMemory();
+  if (memory) {
+    const post = memory.posts.get(postId);
+    if (!post) {
+      throw new BlogPersistenceError(`Blog post ${postId} not found for cover update.`);
+    }
+    memory.posts.set(postId, {
+      ...post,
+      externalCover: { source: externalCover.source, url: externalCover.url },
+    });
+    return;
+  }
+
+  await ensureBlogMongoReady();
+  try {
+    const result = await postsCollection().updateOne(
+      { postId },
+      {
+        $set: {
+          externalCover: { source: externalCover.source, url: externalCover.url },
+        },
+      },
+    );
+    if (result.matchedCount === 0) {
+      throw new BlogPersistenceError(`Blog post ${postId} not found for cover update.`);
+    }
+  } catch (error) {
+    if (error instanceof BlogPersistenceError) {
+      throw error;
+    }
+    throw new BlogPersistenceError("Failed to update Blog external cover.", error);
   }
 }
 

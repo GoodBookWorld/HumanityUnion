@@ -16,7 +16,7 @@ import type {
 import { PLATFORM_SOCIAL_NETWORK_IDS } from "@hu/types";
 
 import { listPublicPlatformSocialAccounts } from "../platform-social-accounts/index.js";
-import { resolveBlogCoverMedia } from "./blog-cover-media.js";
+import { displayedBlogCoverMedia, resolveBlogCoverMedia } from "./blog-cover-media.js";
 import { BlogValidationError } from "./blog.errors.js";
 
 export const BLOG_SEO_TITLE_MAX = 70;
@@ -283,7 +283,7 @@ export function resolvePublicBlogPostSeo(post: BlogPost): PublicBlogPostSeo {
   const socialImage =
     opt?.socialImage !== undefined && opt.socialImage !== null
       ? opt.socialImage
-      : post.coverMedia;
+      : displayedBlogCoverMedia(post);
 
   return {
     title,

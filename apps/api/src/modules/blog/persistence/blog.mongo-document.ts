@@ -3,6 +3,7 @@ import type {
   BlogCapabilityGrant,
   BlogCoverMedia,
   BlogEditorialHistoryEntry,
+  BlogExternalCover,
   BlogPost,
   BlogPostLegacyMigration,
   BlogPostReviewMetadata,
@@ -20,6 +21,7 @@ export interface BlogPostMongoDocument {
   categoryId: BlogPost["categoryId"];
   tags: string[];
   coverMedia: BlogCoverMedia | null;
+  externalCover?: BlogExternalCover;
   status: BlogPost["status"];
   originalLanguage: string;
   safetyOutcome: BlogPost["safetyOutcome"];
@@ -124,6 +126,9 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
     categoryId: post.categoryId,
     tags: [...post.tags],
     coverMedia: post.coverMedia ? { ...post.coverMedia } : null,
+    ...(post.externalCover
+      ? { externalCover: { source: post.externalCover.source, url: post.externalCover.url } }
+      : {}),
     status: post.status,
     originalLanguage: post.originalLanguage,
     safetyOutcome: post.safetyOutcome,
@@ -144,6 +149,13 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
     legacy: post.legacy ? { ...post.legacy } : undefined,
     ...(post.optimization ? { optimization: structuredCloneOptimization(post.optimization) } : {}),
   };
+}
+
+function readExternalCover(value: BlogExternalCover | undefined): { externalCover: BlogExternalCover } | Record<string, never> {
+  if (!value || value.source !== "integrity-media" || typeof value.url !== "string" || !value.url) {
+    return {};
+  }
+  return { externalCover: { source: "integrity-media", url: value.url } };
 }
 
 function structuredCloneOptimization(
@@ -193,6 +205,7 @@ export function fromBlogPostMongoDocument(doc: BlogPostMongoDocument): BlogPost 
     categoryId: doc.categoryId,
     tags: [...(doc.tags ?? [])],
     coverMedia: doc.coverMedia ? { ...doc.coverMedia } : null,
+    ...readExternalCover(doc.externalCover),
     status: doc.status,
     originalLanguage: doc.originalLanguage,
     safetyOutcome: doc.safetyOutcome ?? null,

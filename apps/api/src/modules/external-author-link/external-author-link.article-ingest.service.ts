@@ -1,4 +1,6 @@
-import type { BlogPostStatus } from "@hu/types";
+import { BlockList, isIP } from "node:net";
+
+import type { BlogExternalCover, BlogPostStatus } from "@hu/types";
 
 import { createBlogDraft, submitBlogPostForReview } from "../blog/blog.service.js";
 import { ensureBlogCategoriesSeeded, isActiveBlogCategoryId } from "../blog/blog-categories.js";
@@ -9,9 +11,10 @@ import {
   BlogValidationError,
 } from "../blog/blog.errors.js";
 import { validateCreateBlogDraftInput } from "../blog/blog.validators.js";
-import { findBlogPostById } from "../blog/persistence/blog.repository.js";
+import { findBlogPostById, updateBlogPostExternalCover } from "../blog/persistence/blog.repository.js";
 import { integrityMediaLinkSignaturesEqual, signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
 import {
+  articleCoverDigest,
   articlePayloadDigest,
   buildArticleIngestPayload,
   hasArticleIngestSignature,
@@ -19,10 +22,11 @@ import {
 } from "./external-author-link.article-ingest.hmac.js";
 import {
   ArticleDeliveryDuplicateError,
+  compareAndSetArticleCover,
   findArticleDelivery,
   insertArticleDelivery,
   releaseArticleDeliveryWithoutPost,
-  updateArticleDelivery,
+  updateArticleDeliveryPhase,
   type ArticleDeliveryRecord,
 } from "./external-author-link.article-ingest.repository.js";
 import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
@@ -47,6 +51,20 @@ const ARTICLE_FIELDS = new Set([
   "canonicalUrl",
   "target",
 ]);
+
+const OPTIONAL_ARTICLE_FIELDS = new Set(["coverImageUrl"]);
+
+const blockedCoverDestinations = new BlockList();
+blockedCoverDestinations.addSubnet("0.0.0.0", 8, "ipv4");
+blockedCoverDestinations.addSubnet("10.0.0.0", 8, "ipv4");
+blockedCoverDestinations.addSubnet("127.0.0.0", 8, "ipv4");
+blockedCoverDestinations.addSubnet("169.254.0.0", 16, "ipv4");
+blockedCoverDestinations.addSubnet("172.16.0.0", 12, "ipv4");
+blockedCoverDestinations.addSubnet("192.168.0.0", 16, "ipv4");
+blockedCoverDestinations.addAddress("::", "ipv6");
+blockedCoverDestinations.addAddress("::1", "ipv6");
+blockedCoverDestinations.addSubnet("fc00::", 7, "ipv6");
+blockedCoverDestinations.addSubnet("fe80::", 10, "ipv6");
 
 const PUBLICATION_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
 const COMPLETE_STATUSES = new Set<BlogPostStatus>(["published", "scheduled", "submitted_for_review"]);
@@ -89,9 +107,11 @@ interface NormalizedArticle {
   publishedAt: string;
   canonicalUrl: string;
   target: string;
+  coverImageUrl?: string;
 }
 
 let afterClaimForTests: (() => Promise<void> | void) | null = null;
+let afterCoverAcceptForTests: (() => Promise<void> | void) | null = null;
 const deliveryLocks = new Map<string, Promise<unknown>>();
 
 export function setArticleIngestAfterClaimForTests(
@@ -103,12 +123,22 @@ export function setArticleIngestAfterClaimForTests(
   afterClaimForTests = hook;
 }
 
+export function setArticleIngestAfterCoverAcceptForTests(
+  hook: (() => Promise<void> | void) | null,
+): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Article ingest test hooks are available only when NODE_TEST_ENV=true.");
+  }
+  afterCoverAcceptForTests = hook;
+}
+
 export function resetArticleIngestLocksForTests(): void {
   if (process.env.NODE_TEST_ENV !== "true") {
     throw new Error("Article ingest test hooks are available only when NODE_TEST_ENV=true.");
   }
   deliveryLocks.clear();
   afterClaimForTests = null;
+  afterCoverAcceptForTests = null;
 }
 
 export async function ingestIntegrityMediaArticle(input: {
@@ -211,28 +241,36 @@ export async function ingestIntegrityMediaArticle(input: {
       validated,
       digest,
       now,
+      signedTimestamp: input.timestamp,
     }),
   );
 }
 
-async function deliverClaimedArticle(input: {
+interface DeliveryWork {
   article: NormalizedArticle;
   categoryId: string;
   validated: ReturnType<typeof validateCreateBlogDraftInput>;
   digest: string;
   now: Date;
-}): Promise<ArticleIngestResult> {
+  signedTimestamp: string;
+}
+
+async function deliverClaimedArticle(input: DeliveryWork): Promise<ArticleIngestResult> {
   const existing = await findArticleDelivery(input.article.publicationId);
   if (existing) {
     return continueExistingDelivery(existing, input);
   }
 
   const createdAt = input.now.toISOString();
+  const coverUrl = input.article.coverImageUrl ?? null;
   try {
     await insertArticleDelivery({
       source: INTEGRITY_MEDIA_SOURCE,
       publicationId: input.article.publicationId,
       payloadDigest: input.digest,
+      coverUrl,
+      coverDigest: articleCoverDigest(coverUrl ?? ""),
+      coverTimestamp: coverUrl ? input.signedTimestamp : "",
       postId: null,
       status: null,
       phase: "creating",
@@ -264,13 +302,7 @@ async function deliverClaimedArticle(input: {
 
 async function continueExistingDelivery(
   existing: ArticleDeliveryRecord,
-  input: {
-    article: NormalizedArticle;
-    categoryId: string;
-    validated: ReturnType<typeof validateCreateBlogDraftInput>;
-    digest: string;
-    now: Date;
-  },
+  input: DeliveryWork,
 ): Promise<ArticleIngestResult> {
   if (existing.payloadDigest !== input.digest) {
     throw new ArticleIngestError(
@@ -280,15 +312,20 @@ async function continueExistingDelivery(
     );
   }
   if (existing.phase === "complete" && existing.postId && existing.status) {
+    await reconcileCover(existing.postId, input);
+    const post = await findBlogPostById(existing.postId);
     return {
       source: INTEGRITY_MEDIA_SOURCE,
       publicationId: existing.publicationId,
       postId: existing.postId,
-      status: existing.status,
+      status: post?.status ?? existing.status,
       idempotent: true,
     };
   }
   if (existing.postId) {
+    if (input.article.coverImageUrl) {
+      await reconcileCover(existing.postId, input);
+    }
     return createAndSubmit(input, existing);
   }
   throw new ArticleIngestError(
@@ -298,14 +335,63 @@ async function continueExistingDelivery(
   );
 }
 
+async function reconcileCover(postId: string, input: DeliveryWork): Promise<void> {
+  const coverUrl = input.article.coverImageUrl;
+  let winning: ArticleDeliveryRecord | null = null;
+  let accepted = false;
+  if (coverUrl) {
+    const result = await compareAndSetArticleCover({
+      publicationId: input.article.publicationId,
+      coverUrl,
+      coverDigest: articleCoverDigest(coverUrl),
+      coverTimestamp: input.signedTimestamp,
+    });
+    winning = result.record;
+    accepted = result.updated;
+  } else {
+    winning = await findArticleDelivery(input.article.publicationId);
+  }
+  if (!winning) {
+    throw new ArticleIngestError(503, "unavailable", "Article delivery could not be reconciled.");
+  }
+  await applyExternalCover(postId, winning, accepted);
+}
+
+async function applyExternalCover(
+  postId: string,
+  delivery: ArticleDeliveryRecord,
+  justAccepted: boolean,
+): Promise<void> {
+  if (!delivery.coverUrl) {
+    return;
+  }
+  const cover: BlogExternalCover = { source: "integrity-media", url: delivery.coverUrl };
+  const post = await findBlogPostById(postId);
+  if (!post) {
+    throw new ArticleIngestError(503, "unavailable", "Article delivery could not be reconciled.");
+  }
+  if (post.externalCover?.source === cover.source && post.externalCover.url === cover.url) {
+    return;
+  }
+  if (justAccepted && afterCoverAcceptForTests) {
+    const hook = afterCoverAcceptForTests;
+    afterCoverAcceptForTests = null;
+    await hook();
+  }
+  await updateBlogPostExternalCover(postId, cover);
+}
+
+async function saveDeliveryPhase(input: {
+  publicationId: string;
+  postId: string | null;
+  status: BlogPostStatus | null;
+  phase: ArticleDeliveryRecord["phase"];
+}): Promise<void> {
+  await updateArticleDeliveryPhase(input);
+}
+
 async function createAndSubmit(
-  input: {
-    article: NormalizedArticle;
-    categoryId: string;
-    validated: ReturnType<typeof validateCreateBlogDraftInput>;
-    digest: string;
-    now: Date;
-  },
+  input: DeliveryWork,
   claimed?: ArticleDeliveryRecord,
 ): Promise<ArticleIngestResult> {
   let postId = claimed?.postId ?? null;
@@ -325,16 +411,17 @@ async function createAndSubmit(
         },
       });
       postId = draft.postId;
-      await updateArticleDelivery({
-        source: INTEGRITY_MEDIA_SOURCE,
+      await saveDeliveryPhase({
         publicationId: input.article.publicationId,
-        payloadDigest: input.digest,
         postId,
         status: draft.status,
         phase: "held",
-        createdAt: claimed?.createdAt ?? input.now.toISOString(),
-        updatedAt: new Date().toISOString(),
       });
+    }
+
+    const recorded = await findArticleDelivery(input.article.publicationId);
+    if (recorded) {
+      await applyExternalCover(postId, recorded, false);
     }
 
     const submitted = await submitBlogPostForReview({
@@ -342,15 +429,11 @@ async function createAndSubmit(
       actorParticipantId: input.article.huMemberId,
     });
     const status = await actualStatus(postId, submitted.status);
-    await updateArticleDelivery({
-      source: INTEGRITY_MEDIA_SOURCE,
+    await saveDeliveryPhase({
       publicationId: input.article.publicationId,
-      payloadDigest: input.digest,
       postId,
       status,
       phase: "complete",
-      createdAt: claimed?.createdAt ?? input.now.toISOString(),
-      updatedAt: new Date().toISOString(),
     });
     return {
       source: INTEGRITY_MEDIA_SOURCE,
@@ -368,15 +451,11 @@ async function createAndSubmit(
     const stored = await findBlogPostById(postId);
     const status = stored?.status ?? "draft";
     if (COMPLETE_STATUSES.has(status)) {
-      await updateArticleDelivery({
-        source: INTEGRITY_MEDIA_SOURCE,
+      await saveDeliveryPhase({
         publicationId: input.article.publicationId,
-        payloadDigest: input.digest,
         postId,
         status,
         phase: "complete",
-        createdAt: claimed?.createdAt ?? input.now.toISOString(),
-        updatedAt: new Date().toISOString(),
       });
       return {
         source: INTEGRITY_MEDIA_SOURCE,
@@ -387,15 +466,11 @@ async function createAndSubmit(
       };
     }
 
-    await updateArticleDelivery({
-      source: INTEGRITY_MEDIA_SOURCE,
+    await saveDeliveryPhase({
       publicationId: input.article.publicationId,
-      payloadDigest: input.digest,
       postId,
       status,
       phase: "held",
-      createdAt: claimed?.createdAt ?? input.now.toISOString(),
-      updatedAt: new Date().toISOString(),
     });
     throw mapBlogError(error, { postId, status });
   }
@@ -471,6 +546,7 @@ function verifySignature(input: {
     title: input.article.title,
     excerpt: input.article.excerpt,
     content: input.article.content,
+    ...(input.article.coverImageUrl ? { coverImageUrl: input.article.coverImageUrl } : {}),
   });
   const expected = signIntegrityMediaLinkRedeem(input.secret, payload);
   if (!integrityMediaLinkSignaturesEqual(expected, input.signature)) {
@@ -499,7 +575,7 @@ function normalizeArticle(body: unknown): NormalizedArticle {
   }
   const record = body as Record<string, unknown>;
   for (const key of Object.keys(record)) {
-    if (!ARTICLE_FIELDS.has(key)) {
+    if (!ARTICLE_FIELDS.has(key) && !OPTIONAL_ARTICLE_FIELDS.has(key)) {
       throw new ArticleIngestError(400, "unexpected_field", "The article payload is not valid.");
     }
   }
@@ -518,6 +594,7 @@ function normalizeArticle(body: unknown): NormalizedArticle {
   const language = requiredString(record.language, "language").trim().toLowerCase();
   const publishedAt = requiredString(record.publishedAt, "publishedAt").trim();
   const canonicalUrl = normalizeCanonicalUrl(record.canonicalUrl);
+  const coverImageUrl = normalizeCoverImageUrl(record.coverImageUrl);
   const target = requiredString(record.target, "target").trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)) {
@@ -535,6 +612,7 @@ function normalizeArticle(body: unknown): NormalizedArticle {
     publishedAt,
     canonicalUrl,
     target,
+    ...(coverImageUrl ? { coverImageUrl } : {}),
   };
 }
 
@@ -556,20 +634,92 @@ function requiredToken(value: unknown, pattern: RegExp, field: string): string {
   return value;
 }
 
+function normalizeCoverImageUrl(value: unknown): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "string" || value.trim().length === 0 || value.trim().length > 2048) {
+    throw new ArticleIngestError(400, "invalid_article", "coverImageUrl is not valid.");
+  }
+  return canonicalHttpsUrl(value, "coverImageUrl");
+}
+
 function normalizeCanonicalUrl(value: unknown): string {
   if (typeof value !== "string" || value.trim().length === 0 || value.trim().length > 2048) {
     throw new ArticleIngestError(400, "invalid_article", "canonicalUrl is not valid.");
   }
+  return canonicalHttpsUrl(value, "canonicalUrl");
+}
+
+function canonicalHttpsUrl(value: string, field: string): string {
   let parsed: URL;
   try {
     parsed = new URL(value.trim());
   } catch {
-    throw new ArticleIngestError(400, "invalid_article", "canonicalUrl is not valid.");
+    throw new ArticleIngestError(400, "invalid_article", `${field} is not valid.`);
   }
   if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
-    throw new ArticleIngestError(400, "invalid_article", "canonicalUrl is not valid.");
+    throw new ArticleIngestError(400, "invalid_article", `${field} is not valid.`);
+  }
+  if (field === "coverImageUrl" && isDisallowedCoverHost(parsed.hostname)) {
+    throw new ArticleIngestError(400, "invalid_article", "coverImageUrl is not valid.");
   }
   return parsed.toString();
+}
+
+function isDisallowedCoverHost(hostname: string): boolean {
+  const bare = (hostname.startsWith("[") && hostname.endsWith("]")
+    ? hostname.slice(1, -1)
+    : hostname
+  ).toLowerCase();
+  if (
+    bare === "localhost" ||
+    bare.endsWith(".localhost") ||
+    bare.endsWith(".local")
+  ) {
+    return true;
+  }
+
+  const mapped = ipv4FromMappedIpv6(bare);
+  if (mapped) {
+    return blockedCoverDestinations.check(mapped, "ipv4");
+  }
+
+  const kind = isIP(bare);
+  if (kind === 4) {
+    return blockedCoverDestinations.check(bare, "ipv4");
+  }
+  if (kind === 6) {
+    return blockedCoverDestinations.check(bare, "ipv6");
+  }
+  return false;
+}
+
+function ipv4FromMappedIpv6(host: string): string | null {
+  const match = /^::ffff:(.+)$/i.exec(host);
+  if (!match) {
+    return null;
+  }
+  const rest = match[1]!;
+  if (isIP(rest) === 4) {
+    return rest;
+  }
+  const parts = rest.split(":");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return null;
+  }
+  const high = Number.parseInt(parts[0], 16);
+  const low = Number.parseInt(parts[1], 16);
+  if (!Number.isFinite(high) || !Number.isFinite(low) || high < 0 || low < 0 || high > 0xffff || low > 0xffff) {
+    return null;
+  }
+  const value = (high << 16) + low;
+  return [
+    (value >>> 24) & 255,
+    (value >>> 16) & 255,
+    (value >>> 8) & 255,
+    value & 255,
+  ].join(".");
 }
 
 function serializeDelivery<T>(publicationId: string, run: () => Promise<T>): Promise<T> {
