@@ -32,6 +32,7 @@ import {
   unblockAdminPublishingAuthor,
   unblockAdminPublishingPublication,
 } from "../admin-publishing-api";
+import { adminParticipantPublicProfilePath } from "../admin-participant-directory-api";
 import { AdminBlogCategoriesPanel } from "./AdminBlogCategoriesPanel";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
@@ -776,7 +777,10 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                       <td>{formatCompactDate(row.lastPublishedAt)}</td>
                       <td>
                         <div className="admin-publishing-table__actions">
-                          <Link className="admin-panel__link" href={row.profileHref}>
+                          <Link
+                            className="admin-panel__link"
+                            href={adminParticipantPublicProfilePath(row.participantId)}
+                          >
                             View profile
                           </Link>
                           <Link

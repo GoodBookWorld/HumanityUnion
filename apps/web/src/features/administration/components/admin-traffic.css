@@ -93,14 +93,20 @@
 }
 
 .admin-traffic__table-wrap {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
   max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   border: 1px solid rgba(26, 77, 109, 0.12);
   border-radius: 0.4rem;
 }
 
 .admin-traffic__table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.92rem;
 }
@@ -119,6 +125,10 @@
   letter-spacing: 0.03em;
   color: var(--hu-workspace-text-muted, #4a5d6a);
   background: rgba(1, 116, 176, 0.04);
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .admin-traffic__table tbody tr:last-child td {

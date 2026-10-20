@@ -71,8 +71,10 @@
 
 .admin-publishing__filter select,
 .admin-publishing__search input {
-  min-width: 12rem;
+  min-width: min(100%, 12rem);
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   padding: var(--hu-space-2, 0.5rem) var(--hu-space-3, 0.75rem);
   font: inherit;
   border: 1px solid var(--hu-control-border, #dadce0);
@@ -90,7 +92,12 @@
 }
 
 .admin-publishing-table-wrap {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   max-width: 100%;
   border: var(--hu-border-card, 1px solid var(--hu-color-border, #d6dee8));
   border-radius: var(--hu-radius-card, 12px);
@@ -112,6 +119,18 @@
   padding: 0.65rem 0.5rem;
   border-bottom: 1px solid var(--hu-color-border, #d8d8d8);
   vertical-align: top;
+}
+
+.admin-publishing-table th {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-publishing-table__actions .hu-button,
+.admin-publishing-table__actions .admin-panel__link {
+  white-space: nowrap;
 }
 
 .admin-publishing-table__identity {

@@ -1,7 +1,11 @@
 .admin-initiatives-table-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   border: 1px solid rgba(26, 77, 109, 0.14);
   border-radius: 0.4rem;
 }
@@ -27,6 +31,10 @@
   letter-spacing: 0.03em;
   color: var(--hu-workspace-text-muted, #4a5d6a);
   background: rgba(1, 116, 176, 0.04);
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .admin-initiatives-table__title {
@@ -141,14 +149,20 @@
 .admin-initiative-action-form {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 0.55rem;
   margin-top: 0.75rem;
+  width: 100%;
+  min-width: 0;
   max-width: 28rem;
+  box-sizing: border-box;
 }
 
 .admin-initiative-action-form textarea {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 4.5rem;
   padding: 0.55rem 0.7rem;
   border: 1px solid rgba(26, 77, 109, 0.28);

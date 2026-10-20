@@ -48,7 +48,18 @@
   align-items: flex-start;
   gap: 0.65rem;
   margin-top: 0.75rem;
+  width: 100%;
+  min-width: 0;
   max-width: 24rem;
+  box-sizing: border-box;
+}
+
+.admin-panel__label,
+.admin-panel label,
+.admin-panel legend {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .admin-panel__label {
@@ -58,6 +69,9 @@
 
 .admin-panel__input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.55rem 0.7rem;
   border: 1px solid rgba(26, 77, 109, 0.28);
   border-radius: 0.35rem;

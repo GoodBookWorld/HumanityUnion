@@ -45,6 +45,11 @@ describe("Pack 13B — Admin Publishing UI", () => {
     assert.match(authors, /Trusted publishing/);
     assert.match(authors, /Publish without manual review/);
     assert.match(authors, /View publications/);
+    assert.match(authors, /adminParticipantPublicProfilePath\(row\.participantId\)/);
+    assert.doesNotMatch(authors, /href=\{row\.profileHref\}/);
+    assert.doesNotMatch(authors, /\/participation\//);
+    assert.doesNotMatch(authors, /externalAuthorId/);
+    assert.doesNotMatch(authors, /href=\{`\/member\/\$\{/);
     assert.match(authors, /authorParticipantId=/);
     assert.match(authors, /integrityMediaLinked/);
     assert.match(authors, /Integrity Media/);
@@ -62,6 +67,32 @@ describe("Pack 13B — Admin Publishing UI", () => {
       /\.admin-publishing-table--authors \.admin-publishing-table__trusted\s*\{[^}]*max-width:\s*none/s,
     );
     assert.match(css, /\.admin-publishing-table\s*\{[^}]*min-width:\s*56rem/s);
+  });
+
+  it("View profile uses the participant profile path for IM and ordinary authors", () => {
+    const section = readWeb("features/administration/components/AdminPublishingSection.tsx");
+    const resolver = readWeb("features/administration/admin-participant-directory-api.ts");
+    const authorsStart = section.indexOf('{tab === "authors" ?');
+    const publicationsStart = section.indexOf('title="Publications"', authorsStart);
+    const authors = section.slice(authorsStart, publicationsStart);
+    const profileLink = authors.slice(
+      authors.indexOf("View profile") - 280,
+      authors.indexOf("View profile"),
+    );
+
+    assert.match(resolver, /function adminParticipantPublicProfilePath/);
+    assert.match(
+      resolver,
+      /return `\/admin\/participants\/\$\{encodeURIComponent\(participantId\)\}\/public-profile`/,
+    );
+    assert.match(profileLink, /adminParticipantPublicProfilePath\(row\.participantId\)/);
+    assert.doesNotMatch(profileLink, /integrityMediaLinked/);
+    assert.doesNotMatch(profileLink, /profileHref|uniqueName|displayName|externalAuthorId/);
+    assert.doesNotMatch(authors, /href=\{row\.profileHref\}/);
+    assert.doesNotMatch(authors, /\/participation\//);
+    assert.match(authors, /View publications/);
+    assert.match(authors, /integrityMediaLinked/);
+    assert.match(authors, /Block/);
   });
 
   it("Author blocked UX copy on authoring page", () => {

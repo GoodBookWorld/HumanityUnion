@@ -7,7 +7,7 @@
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .admin-country-people__form h3 {
@@ -33,6 +33,8 @@
   min-width: 0;
   max-width: 100%;
   width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .admin-country-people__form-grid input,
@@ -98,7 +100,7 @@
 
 .admin-country-people__row-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
 }
 
