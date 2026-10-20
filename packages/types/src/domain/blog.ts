@@ -138,6 +138,15 @@ export interface BlogCoverMedia {
   readonly altText?: string;
 }
 
+/**
+ * Optional partner cover. This is not a platform media upload.
+ * Public surfaces use it only when `coverMedia` is absent.
+ */
+export interface BlogExternalCover {
+  readonly source: "integrity-media";
+  readonly url: string;
+}
+
 /** Pack 16C — Humanity Union-owned social distribution preference (outbox-driven). */
 export type BlogHuSocialDistributionPreference = "opt_in" | "opt_out" | "unset";
 
@@ -258,6 +267,8 @@ export interface BlogPost {
   readonly categoryId: BlogCategoryId;
   readonly tags: readonly string[];
   readonly coverMedia: BlogCoverMedia | null;
+  /** Partner cover URL. Preserved across author saves. Not a media upload. */
+  readonly externalCover?: BlogExternalCover;
   readonly status: BlogPostStatus;
   readonly originalLanguage: LanguageCode;
   readonly safetyOutcome: LifecycleSafetyOutcome | null;

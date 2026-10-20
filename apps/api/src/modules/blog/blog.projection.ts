@@ -8,6 +8,7 @@ import type {
   PublicCommentAuthor,
 } from "@hu/types";
 
+import { displayedBlogCoverMedia } from "./blog-cover-media.js";
 import { getBlogCategoryById } from "./blog-categories.js";
 import { resolvePublicBlogPostSeo } from "./blog-seo.js";
 
@@ -98,7 +99,7 @@ export function toBlogPreviewProjection(
     title: post.title,
     excerpt: post.excerpt,
     content: post.content,
-    coverImage: post.coverMedia ? { ...post.coverMedia } : null,
+    coverImage: displayedBlogCoverMedia(post),
     author,
     publishedAt: post.publishedAt ?? post.updatedAt,
     updatedAt: post.updatedAt,
@@ -127,7 +128,7 @@ export function toPublicBlogPostListItem(
     slug: post.slug,
     title: post.title,
     excerpt: post.excerpt,
-    coverImage: post.coverMedia ? { ...post.coverMedia } : null,
+    coverImage: displayedBlogCoverMedia(post),
     author,
     publishedAt: post.publishedAt ?? post.updatedAt,
     category,
@@ -157,7 +158,7 @@ export function toPublicBlogPostDetail(
     title: post.title,
     excerpt: post.excerpt,
     content: post.content,
-    coverImage: post.coverMedia ? { ...post.coverMedia } : null,
+    coverImage: displayedBlogCoverMedia(post),
     author,
     publishedAt: post.publishedAt ?? post.updatedAt,
     updatedAt: post.updatedAt,
@@ -222,6 +223,6 @@ export function blogPostToSearchMetadata(post: BlogPost): CivicSearchMetadata | 
     status: post.status,
     publicUrl: seo.canonicalPath,
     updatedAt: post.updatedAt,
-    imageUrl: seo.socialImage?.mediaUrl ?? post.coverMedia?.mediaUrl,
+    imageUrl: seo.socialImage?.mediaUrl ?? displayedBlogCoverMedia(post)?.mediaUrl,
   };
 }

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { PublicBlogPostListItem } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
+import { blogHtmlToPlainText } from "../../../../../api/src/modules/blog/blog-content-sanitize";
 import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { formatBlogPublishedDate } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
@@ -82,10 +83,9 @@ export function BlogPostCard({ post, layout = "default" }: BlogPostCardProps) {
     persisted.fields.excerpt?.trim()
       ? persisted.fields.excerpt
       : post.excerpt;
+  const plainExcerpt = blogHtmlToPlainText(excerptSource);
   const excerptForDisplay =
-    layout === "related"
-      ? truncateWordsForDisplay(excerptSource, 10)
-      : excerptSource;
+    layout === "related" ? truncateWordsForDisplay(plainExcerpt, 10) : plainExcerpt;
   const isRelated = layout === "related";
   const titleLang =
     persisted.owner === "hu-persisted" && persisted.presentationMode === "localized"

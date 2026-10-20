@@ -7,6 +7,22 @@ function skipBlogEventsWithoutMongoInTests(): boolean {
   return process.env.NODE_TEST_ENV === "true" && !isMongoConfigured();
 }
 
+let blogPublishEmitCount = 0;
+
+export function resetBlogPublishEmitCountForTests(): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Blog publish emit counters are available only when NODE_TEST_ENV=true.");
+  }
+  blogPublishEmitCount = 0;
+}
+
+export function blogPublishEmitCountForTests(): number {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Blog publish emit counters are available only when NODE_TEST_ENV=true.");
+  }
+  return blogPublishEmitCount;
+}
+
 export async function emitBlogPostSubmittedForReview(input: {
   postId: string;
   authorParticipantId: string;
@@ -60,6 +76,9 @@ export async function emitBlogPostPublished(input: {
   safetyOutcome?: string | null;
   reviewNote?: string;
 }): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    blogPublishEmitCount += 1;
+  }
   if (skipBlogEventsWithoutMongoInTests()) {
     return;
   }

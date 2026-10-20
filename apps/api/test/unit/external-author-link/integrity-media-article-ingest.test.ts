@@ -4,9 +4,19 @@ import { after, before, beforeEach, describe, it } from "node:test";
 
 import express from "express";
 
-import { grantBlogCapabilitiesForTests } from "../../../src/modules/blog/blog.service.js";
+import {
+  blogPublishEmitCountForTests,
+  resetBlogPublishEmitCountForTests,
+} from "../../../src/modules/blog/blog.events.js";
+import { updateBlogDraft, grantBlogCapabilitiesForTests } from "../../../src/modules/blog/blog.service.js";
+import { toPublicBlogPostListItem } from "../../../src/modules/blog/blog.projection.js";
+import {
+  fromBlogPostMongoDocument,
+  toBlogPostMongoDocument,
+} from "../../../src/modules/blog/persistence/blog.mongo-document.js";
 import {
   listBlogMemoryPostsForTests,
+  replaceBlogPost,
   resetBlogMemoryPersistenceForTests,
   upsertBlogCapabilityGrant,
 } from "../../../src/modules/blog/persistence/blog.repository.js";
@@ -15,11 +25,15 @@ import {
   setSafetyProviderForTests,
 } from "../../../src/modules/lifecycle-safety/safety-provider.js";
 import { buildArticleIngestPayload, resetArticleIngestReplayCacheForTests } from "../../../src/modules/external-author-link/external-author-link.article-ingest.hmac.js";
-import { resetArticleDeliveriesForTests } from "../../../src/modules/external-author-link/external-author-link.article-ingest.repository.js";
+import {
+  listArticleDeliveriesForTests,
+  resetArticleDeliveriesForTests,
+} from "../../../src/modules/external-author-link/external-author-link.article-ingest.repository.js";
 import articleIngestRouter from "../../../src/modules/external-author-link/external-author-link.article-ingest.routes.js";
 import {
   resetArticleIngestLocksForTests,
   setArticleIngestAfterClaimForTests,
+  setArticleIngestAfterCoverAcceptForTests,
 } from "../../../src/modules/external-author-link/external-author-link.article-ingest.service.js";
 import {
   INTEGRITY_MEDIA_ARTICLE_CATEGORY_ID_ENV,
@@ -110,6 +124,7 @@ describe("Integrity Media article ingestion", () => {
     resetArticleDeliveriesForTests();
     resetArticleIngestReplayCacheForTests();
     resetArticleIngestLocksForTests();
+    resetBlogPublishEmitCountForTests();
     resetSafetyProviderForTests();
     store = createMemoryExternalAuthorLinkStore();
     setExternalAuthorLinkStoreForTests(store);
@@ -367,6 +382,263 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(retried.body.data?.status, "published");
     assert.equal(listBlogMemoryPostsForTests().length, 1);
   });
+
+  it("accepts a legacy twelve-line signature and stores no external cover", async () => {
+    await trustedAuthor();
+    const body = articleBody("pub-cover-legacy");
+    const signed = signBody(body);
+    assert.equal(buildArticleIngestPayload(signInput(body, signed.timestamp)).split("\n").length, 12);
+    const response = await send(body, signed.timestamp, signed.signature);
+    assert.equal(response.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover, undefined);
+    assert.equal(blogPublishEmitCountForTests(), 1);
+  });
+
+  it("stores a thirteen-line cover and keeps an uploaded cover in front of it", async () => {
+    await trustedAuthor();
+    const cover = "https://integrity.website/media/articles/cover-one";
+    const body = articleBody("pub-cover-new", { coverImageUrl: cover });
+    const signed = signBody(body);
+    assert.equal(buildArticleIngestPayload(signInput(body, signed.timestamp)).split("\n").length, 13);
+    const response = await send(body, signed.timestamp, signed.signature);
+    assert.equal(response.status, 200);
+    const created = listBlogMemoryPostsForTests()[0];
+    assert.equal(created?.externalCover?.source, "integrity-media");
+    assert.equal(created?.externalCover?.url, cover);
+    assert.equal(created?.coverMedia, null);
+    const shown = toPublicBlogPostListItem(created!, { displayName: "Participant" });
+    assert.equal(shown.coverImage?.mediaUrl, cover);
+
+    await replaceBlogPost({
+      ...created!,
+      coverMedia: { mediaId: "media-hu-1", mediaUrl: "/api/v1/media/files/media-hu-1" },
+    });
+    const withUpload = listBlogMemoryPostsForTests()[0]!;
+    assert.equal(
+      toPublicBlogPostListItem(withUpload, { displayName: "Participant" }).coverImage?.mediaUrl,
+      "/api/v1/media/files/media-hu-1",
+    );
+
+    const nextCover = "https://integrity.website/media/articles/cover-two";
+    const changed = await postArticle(articleBody("pub-cover-new", { coverImageUrl: nextCover }));
+    assert.equal(changed.status, 200);
+    assert.equal(changed.body.data?.idempotent, true);
+    assert.equal(changed.body.data?.postId, response.body.data?.postId);
+    const updated = listBlogMemoryPostsForTests();
+    assert.equal(updated.length, 1);
+    assert.equal(updated[0]?.externalCover?.url, nextCover);
+    assert.equal(updated[0]?.coverMedia?.mediaId, "media-hu-1");
+    assert.equal(updated[0]?.status, created?.status);
+    assert.equal(updated[0]?.publishedVersion, created?.publishedVersion);
+    assert.equal(updated[0]?.title, created?.title);
+    assert.equal(
+      toPublicBlogPostListItem(updated[0]!, { displayName: "Participant" }).coverImage?.mediaUrl,
+      "/api/v1/media/files/media-hu-1",
+    );
+    assert.equal(blogPublishEmitCountForTests(), 1);
+  });
+
+  it("returns the same post for a repeated cover and preserves a cover when a later request omits it", async () => {
+    await trustedAuthor();
+    const cover = "https://cdn.example.com/covers/original.webp";
+    const body = articleBody("pub-cover-same", { coverImageUrl: cover });
+    const first = await postArticle(body);
+    const second = await postArticle(body);
+    assert.equal(second.status, 200);
+    assert.equal(second.body.data?.idempotent, true);
+    assert.equal(second.body.data?.postId, first.body.data?.postId);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover?.url, cover);
+
+    const omitted = await postArticle(articleBody("pub-cover-same"));
+    assert.equal(omitted.status, 200);
+    assert.equal(omitted.body.data?.idempotent, true);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover?.url, cover);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+  });
+
+  it("rejects a tampered cover, an unsigned cover, and invalid cover URLs", async () => {
+    await trustedAuthor();
+    const cover = "https://integrity.website/media/articles/signed";
+    const body = articleBody("pub-cover-tamper", { coverImageUrl: cover });
+    const signed = signBody(body);
+    const tampered = await send(
+      { ...body, coverImageUrl: "https://integrity.website/media/articles/other" },
+      signed.timestamp,
+      signed.signature,
+    );
+    assert.equal(tampered.status, 401);
+    assert.equal(tampered.body.meta.code, "invalid_signature");
+
+    const unsigned = await send(body, signed.timestamp, signBody(articleBody("pub-cover-tamper"), signed.timestamp).signature);
+    assert.equal(unsigned.status, 401);
+    assert.equal(unsigned.body.meta.code, "invalid_signature");
+    assert.equal(listBlogMemoryPostsForTests().length, 0);
+
+    const unexpected = await send(
+      { ...articleBody("pub-cover-extra"), extraField: "no" },
+      nextTimestamp(),
+      "ab".repeat(32),
+    );
+    assert.equal(unexpected.status, 400);
+    assert.equal(unexpected.body.meta.code, "unexpected_field");
+
+    const invalidCovers = [
+      "",
+      "http://integrity.website/media/articles/a",
+      "https://user:pass@integrity.website/media/articles/a",
+      "https://127.0.0.1/a.webp",
+      "https://10.1.2.3/a.webp",
+      "https://172.16.4.4/a.webp",
+      "https://192.168.1.9/a.webp",
+      "https://169.254.169.254/latest",
+      "https://localhost/a.webp",
+      "https://files.local/a.webp",
+      "not a url",
+    ];
+    for (const [index, coverImageUrl] of invalidCovers.entries()) {
+      const rejected = await send(
+        { ...articleBody(`pub-cover-bad-${index}`), coverImageUrl },
+        nextTimestamp(),
+        "cd".repeat(32),
+      );
+      assert.equal(rejected.status, 400, coverImageUrl);
+      assert.equal(rejected.body.meta.code, "invalid_article", coverImageUrl);
+    }
+
+    const loopback = await send(
+      { ...articleBody("pub-cover-v6"), coverImageUrl: "https://[::1]/a.webp" },
+      nextTimestamp(),
+      "ef".repeat(32),
+    );
+    assert.equal(loopback.status, 400);
+    assert.equal(loopback.body.meta.code, "invalid_article");
+    const linkLocal = await send(
+      { ...articleBody("pub-cover-ll"), coverImageUrl: "https://[fe80::1]/a.webp" },
+      nextTimestamp(),
+      "11".repeat(32),
+    );
+    assert.equal(linkLocal.status, 400);
+    assert.equal(linkLocal.body.meta.code, "invalid_article");
+    assert.equal(listBlogMemoryPostsForTests().length, 0);
+  });
+
+  it("keeps the newer cover when concurrent updates race, including a partial post write", async () => {
+    await trustedAuthor();
+    const publicationId = "pub-cover-race";
+    const older = "https://integrity.website/media/articles/older";
+    const newer = "https://cdn.example.com/covers/newer.webp";
+    const base = Math.floor(Date.now() / 1000) - 30;
+    const olderBody = articleBody(publicationId, { coverImageUrl: older });
+    const newerBody = articleBody(publicationId, { coverImageUrl: newer });
+    const created = await send(olderBody, String(base), signBody(olderBody, String(base)).signature);
+    assert.equal(created.status, 200);
+    const version = listBlogMemoryPostsForTests()[0]?.publishedVersion;
+    const status = listBlogMemoryPostsForTests()[0]?.status;
+    resetBlogPublishEmitCountForTests();
+
+    const [left, right] = await Promise.all([
+      send(olderBody, String(base + 1), signBody(olderBody, String(base + 1)).signature),
+      send(newerBody, String(base + 10), signBody(newerBody, String(base + 10)).signature),
+    ]);
+    assert.equal(left.status, 200);
+    assert.equal(right.status, 200);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover?.url, newer);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedVersion, version);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.status, status);
+    assert.equal(blogPublishEmitCountForTests(), 0);
+
+    const stale = await send(olderBody, String(base + 2), signBody(olderBody, String(base + 2)).signature);
+    assert.equal(stale.status, 200);
+    assert.equal(stale.body.data?.idempotent, true);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover?.url, newer);
+    assert.equal(blogPublishEmitCountForTests(), 0);
+
+    const sameSecond = articleBody("pub-cover-tie", { coverImageUrl: older });
+    const tieCreated = await send(sameSecond, String(base + 3), signBody(sameSecond, String(base + 3)).signature);
+    assert.equal(tieCreated.status, 200);
+    const other = articleBody("pub-cover-tie", { coverImageUrl: newer });
+    const tied = await send(other, String(base + 3), signBody(other, String(base + 3)).signature);
+    assert.equal(tied.status, 200);
+    const tiedPost = listBlogMemoryPostsForTests().find((post) => post.title.includes("pub-cover-tie"));
+    assert.equal(tiedPost?.externalCover?.url, older);
+    assert.equal(listBlogMemoryPostsForTests().length, 2);
+    const emitsAfterTie = blogPublishEmitCountForTests();
+    assert.equal(emitsAfterTie, 1);
+
+    setArticleIngestAfterCoverAcceptForTests(() => {
+      throw new Error("stop after the cover record");
+    });
+    const partialBody = articleBody(publicationId, { coverImageUrl: "https://cdn.example.com/covers/partial.webp" });
+    const partial = await send(
+      partialBody,
+      String(base + 20),
+      signBody(partialBody, String(base + 20)).signature,
+    );
+    assert.equal(partial.status, 503);
+    assert.equal(listArticleDeliveriesForTests().find((row) => row.publicationId === publicationId)?.coverUrl, partialBody.coverImageUrl);
+    assert.equal(listBlogMemoryPostsForTests().find((post) => post.postId === created.body.data?.postId)?.externalCover?.url, newer);
+    assert.equal(listBlogMemoryPostsForTests().length, 2);
+
+    const repaired = await send(
+      partialBody,
+      String(base + 21),
+      signBody(partialBody, String(base + 21)).signature,
+    );
+    assert.equal(repaired.status, 200);
+    assert.equal(repaired.body.data?.postId, created.body.data?.postId);
+    assert.equal(
+      listBlogMemoryPostsForTests().find((post) => post.postId === created.body.data?.postId)?.externalCover?.url,
+      partialBody.coverImageUrl,
+    );
+    assert.equal(listBlogMemoryPostsForTests().length, 2);
+    assert.equal(blogPublishEmitCountForTests(), emitsAfterTie);
+  });
+
+  it("persists an external cover across document hydration and an author save", async () => {
+    await trustedAuthor();
+    const cover = "https://integrity.website/media/articles/kept";
+    const created = await postArticle(articleBody("pub-cover-save", { coverImageUrl: cover }));
+    assert.equal(created.status, 200);
+    const post = listBlogMemoryPostsForTests()[0]!;
+    const hydrated = fromBlogPostMongoDocument(toBlogPostMongoDocument(post));
+    assert.equal(hydrated.externalCover?.url, cover);
+    assert.equal(hydrated.externalCover?.source, "integrity-media");
+
+    const saved = await updateBlogDraft({
+      postId: post.postId,
+      actorParticipantId: MEMBER,
+      role: "admin",
+      body: { excerpt: "A revised public excerpt for the same article." },
+    });
+    assert.equal(saved.excerpt, "A revised public excerpt for the same article.");
+    const stored = listBlogMemoryPostsForTests()[0]!;
+    assert.equal(stored.externalCover?.url, cover);
+    assert.equal(stored.title, post.title);
+    assert.equal(stored.status, post.status);
+    assert.equal(stored.authorParticipantId, MEMBER);
+    assert.equal(stored.categoryId, CATEGORY);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+  });
+
+  it("does not apply a cover when the article content conflicts", async () => {
+    await trustedAuthor();
+    const cover = "https://integrity.website/media/articles/original";
+    const body = articleBody("pub-cover-conflict", { coverImageUrl: cover });
+    const created = await postArticle(body);
+    assert.equal(created.status, 200);
+    const conflict = await postArticle({
+      ...body,
+      title: "A different article title",
+      coverImageUrl: "https://integrity.website/media/articles/replacement",
+    });
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.meta.code, "publication_conflict");
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalCover?.url, cover);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, body.title);
+  });
 });
 
 function articleBody(
@@ -388,24 +660,35 @@ function articleBody(
   };
 }
 
+function signInput(body: Record<string, string>, at: string) {
+  return {
+    timestamp: at,
+    publicationId: body.publicationId!,
+    authorId: body.authorId!,
+    huMemberId: body.huMemberId!,
+    target: body.target!,
+    language: body.language!,
+    publishedAt: body.publishedAt!,
+    canonicalUrl: new URL(body.canonicalUrl!).toString(),
+    title: body.title!.trim().replace(/\s+/g, " "),
+    excerpt: body.excerpt!.trim().replace(/\s+/g, " "),
+    content: body.content!,
+    ...(body.coverImageUrl ? { coverImageUrl: new URL(body.coverImageUrl).toString() } : {}),
+  };
+}
+
 function signBody(body: Record<string, string>, at = nextTimestamp()): { timestamp: string; signature: string } {
-  const signature = signIntegrityMediaLinkRedeem(
-    SECRET,
-    buildArticleIngestPayload({
-      timestamp: at,
-      publicationId: body.publicationId!,
-      authorId: body.authorId!,
-      huMemberId: body.huMemberId!,
-      target: body.target!,
-      language: body.language!,
-      publishedAt: body.publishedAt!,
-      canonicalUrl: new URL(body.canonicalUrl!).toString(),
-      title: body.title!.trim().replace(/\s+/g, " "),
-      excerpt: body.excerpt!.trim().replace(/\s+/g, " "),
-      content: body.content!,
-    }),
-  );
+  const signature = signIntegrityMediaLinkRedeem(SECRET, buildArticleIngestPayload(signInput(body, at)));
   return { timestamp: at, signature };
+}
+
+async function trustedAuthor(): Promise<void> {
+  await linkAuthor();
+  await grantBlogCapabilitiesForTests({
+    participantId: MEMBER,
+    capabilities: ["author"],
+    publishWithoutManualReview: true,
+  });
 }
 
 function nextTimestamp(): string {

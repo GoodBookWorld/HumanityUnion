@@ -14,6 +14,9 @@ export function hashArticleField(value: string): string {
  * Title and excerpt are the normalized Blog strings. Content is the exact
  * request string. Field hashes keep the article body out of the signed lines'
  * logs while still binding it.
+ *
+ * When a cover URL is present, its canonical URL is a thirteenth line.
+ * Omitting the cover keeps the original twelve-line payload.
  */
 export function buildArticleIngestPayload(input: {
   timestamp: string;
@@ -27,8 +30,9 @@ export function buildArticleIngestPayload(input: {
   title: string;
   excerpt: string;
   content: string;
+  coverImageUrl?: string;
 }): string {
-  return [
+  const lines = [
     INTEGRITY_MEDIA_ARTICLE_INGEST_PURPOSE,
     input.timestamp,
     input.publicationId,
@@ -41,7 +45,16 @@ export function buildArticleIngestPayload(input: {
     hashArticleField(input.title),
     hashArticleField(input.excerpt),
     hashArticleField(input.content),
-  ].join("\n");
+  ];
+  if (input.coverImageUrl !== undefined) {
+    lines.push(input.coverImageUrl);
+  }
+  return lines.join("\n");
+}
+
+/** Separate from the content digest so a cover change is not a content conflict. */
+export function articleCoverDigest(url: string): string {
+  return hashArticleField(url);
 }
 
 export function articlePayloadDigest(input: {
