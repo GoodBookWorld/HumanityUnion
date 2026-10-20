@@ -65,6 +65,8 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
+  flex: 1 1 16rem;
 }
 
 .admin-publishing__filter select,
@@ -188,6 +190,75 @@
 .admin-publishing-table--authors .admin-publishing-table__actions {
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+/* Same scroll shell for the other Publishing tables. Width follows content. */
+.admin-publishing-table-wrap--directory {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.admin-publishing-table--directory {
+  width: max-content;
+  min-width: max(100%, 56rem);
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-publishing-table--directory th,
+.admin-publishing-table--directory td {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.admin-publishing-table--directory .admin-publishing-table__actions {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.admin-publishing-table__source {
+  display: inline-flex;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 35%, transparent);
+  border-radius: var(--hu-radius-pill, 999px);
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.admin-publishing-table__row--integrity-media > td:first-child {
+  box-shadow: inset 3px 0 0 var(--hu-color-primary, #0174b0);
+}
+
+.admin-publishing__author-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin: 0 0 0.75rem;
+}
+
+.admin-publishing__pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
 }
 
 .admin-publishing-table__status {

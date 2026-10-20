@@ -45,14 +45,47 @@ interface AdminPublishingSectionProps {
 type PublishingTab = "pending" | "pending-review" | "authors" | "publications" | "categories";
 
 const PUBLICATION_CATEGORIES_HASH = "publication-categories";
+const PUBLICATION_PAGE_SIZE = 50;
 
 function readInitialPublishingTab(): PublishingTab {
   if (typeof window === "undefined") {
     return "pending";
   }
-  return window.location.hash.replace(/^#/, "") === PUBLICATION_CATEGORIES_HASH
-    ? "categories"
-    : "pending";
+  if (window.location.hash.replace(/^#/, "") === PUBLICATION_CATEGORIES_HASH) {
+    return "categories";
+  }
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  if (
+    tab === "pending" ||
+    tab === "pending-review" ||
+    tab === "authors" ||
+    tab === "publications" ||
+    tab === "categories"
+  ) {
+    return tab;
+  }
+  return "pending";
+}
+
+function readInitialPublicationAuthorId(): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return new URLSearchParams(window.location.search).get("authorParticipantId")?.trim() ?? "";
+}
+
+function rememberPublicationAuthor(authorParticipantId: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("tab", "publications");
+  if (authorParticipantId) {
+    url.searchParams.set("authorParticipantId", authorParticipantId);
+  } else {
+    url.searchParams.delete("authorParticipantId");
+  }
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 function setPublicationCategoriesHash(active: boolean): void {
@@ -112,6 +145,9 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
   const [publicationStatus, setPublicationStatus] =
     useState<AdminPublicationDirectoryStatusFilter>("all");
   const [publicationQuery, setPublicationQuery] = useState("");
+  const [publicationAuthorId, setPublicationAuthorId] = useState(readInitialPublicationAuthorId);
+  const [publicationAuthorLabel, setPublicationAuthorLabel] = useState("");
+  const [publicationOffset, setPublicationOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
@@ -190,8 +226,9 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       const result = await listAdminPublishingPublications({
         status: publicationStatus,
         q: publicationQuery.trim() || undefined,
-        limit: 50,
-        offset: 0,
+        authorParticipantId: publicationAuthorId.trim() || undefined,
+        limit: PUBLICATION_PAGE_SIZE,
+        offset: publicationOffset,
       });
       setPublications(result.publications);
       setPublicationTotal(result.total);
@@ -205,7 +242,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
     } finally {
       setLoading(false);
     }
-  }, [publicationQuery, publicationStatus]);
+  }, [publicationAuthorId, publicationOffset, publicationQuery, publicationStatus]);
 
   useEffect(() => {
     if (tab === "pending") {
@@ -410,7 +447,13 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => selectPublishingTab("publications")}
+            onClick={() => {
+              setPublicationAuthorId("");
+              setPublicationAuthorLabel("");
+              setPublicationOffset(0);
+              rememberPublicationAuthor("");
+              selectPublishingTab("publications");
+            }}
           >
             Publications
           </button>
@@ -472,8 +515,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No pending Author applications.</p>
           ) : null}
           {!loading && pendingApps.length > 0 ? (
-            <div className="admin-publishing-table-wrap">
-              <table className="admin-publishing-table">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory">
+              <table className="admin-publishing-table admin-publishing-table--directory">
                 <thead>
                   <tr>
                     <th>Applicant</th>
@@ -558,8 +601,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No publications awaiting review.</p>
           ) : null}
           {!loading && pendingReviews.length > 0 ? (
-            <div className="admin-publishing-table-wrap">
-              <table className="admin-publishing-table">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory">
+              <table className="admin-publishing-table admin-publishing-table--directory">
                 <thead>
                   <tr>
                     <th>Title</th>
@@ -664,7 +707,14 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 </thead>
                 <tbody>
                   {authors.map((row) => (
-                    <tr key={row.participantId}>
+                    <tr
+                      key={row.participantId}
+                      className={
+                        row.integrityMediaLinked
+                          ? "admin-publishing-table__row--integrity-media"
+                          : undefined
+                      }
+                    >
                       <td>
                         <div className="admin-publishing-table__identity">
                           {row.avatarUrl ? (
@@ -680,6 +730,9 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                           )}
                           <div>
                             <strong>{row.displayName}</strong>
+                            {row.integrityMediaLinked ? (
+                              <span className="admin-publishing-table__source">Integrity Media</span>
+                            ) : null}
                             {row.uniqueName ? (
                               <div className="hu-caption">@{row.uniqueName}</div>
                             ) : null}
@@ -728,11 +781,14 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                           </Link>
                           <Link
                             className="admin-panel__link"
-                            href={`/admin/publishing?tab=publications&q=${encodeURIComponent(row.displayName)}`}
+                            href={`/admin/publishing?tab=publications&authorParticipantId=${encodeURIComponent(row.participantId)}`}
                             onClick={() => {
-                              setTab("publications");
-                              setPublicationQuery(row.displayName);
+                              setPublicationAuthorId(row.participantId);
+                              setPublicationAuthorLabel(row.displayName);
+                              setPublicationQuery("");
                               setPublicationStatus("all");
+                              setPublicationOffset(0);
+                              setTab("publications");
                             }}
                           >
                             View publications
@@ -763,14 +819,34 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       ) : (
         <ProfileSection title="Publications">
           <p className="hu-caption">Total matching: {publicationTotal}</p>
+          {publicationAuthorId ? (
+            <div className="admin-publishing__author-filter">
+              <p className="hu-caption">
+                Publications by {publicationAuthorLabel || "this author"}.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setPublicationAuthorId("");
+                  setPublicationAuthorLabel("");
+                  setPublicationOffset(0);
+                  rememberPublicationAuthor("");
+                }}
+              >
+                All publications
+              </Button>
+            </div>
+          ) : null}
           <div className="admin-publishing__toolbar">
             <label className="admin-publishing__filter">
               <span>Status</span>
               <select
                 value={publicationStatus}
-                onChange={(event) =>
-                  setPublicationStatus(event.target.value as AdminPublicationDirectoryStatusFilter)
-                }
+                onChange={(event) => {
+                  setPublicationOffset(0);
+                  setPublicationStatus(event.target.value as AdminPublicationDirectoryStatusFilter);
+                }}
               >
                 <option value="all">All</option>
                 <option value="draft">Draft</option>
@@ -787,7 +863,10 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 type="search"
                 placeholder="Search title, author, category"
                 value={publicationQuery}
-                onChange={(event) => setPublicationQuery(event.target.value)}
+                onChange={(event) => {
+                  setPublicationOffset(0);
+                  setPublicationQuery(event.target.value);
+                }}
               />
             </label>
             <Button type="button" variant="secondary" onClick={() => void loadPublications()}>
@@ -799,8 +878,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No publications match this filter.</p>
           ) : null}
           {!loading && publications.length > 0 ? (
-            <div className="admin-publishing-table-wrap">
-              <table className="admin-publishing-table">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory">
+              <table className="admin-publishing-table admin-publishing-table--directory">
                 <thead>
                   <tr>
                     <th>Title</th>
@@ -859,6 +938,33 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                   ))}
                 </tbody>
               </table>
+            </div>
+          ) : null}
+          {publicationTotal > PUBLICATION_PAGE_SIZE || publicationOffset > 0 ? (
+            <div className="admin-publishing__pager">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={publicationOffset === 0 || loading}
+                onClick={() =>
+                  setPublicationOffset((current) => Math.max(0, current - PUBLICATION_PAGE_SIZE))
+                }
+              >
+                Previous
+              </Button>
+              <span className="hu-caption">
+                {publicationTotal === 0
+                  ? "0"
+                  : `${publicationOffset + 1}–${Math.min(publicationOffset + PUBLICATION_PAGE_SIZE, publicationTotal)} of ${publicationTotal}`}
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={loading || publicationOffset + PUBLICATION_PAGE_SIZE >= publicationTotal}
+                onClick={() => setPublicationOffset((current) => current + PUBLICATION_PAGE_SIZE)}
+              >
+                Next
+              </Button>
             </div>
           ) : null}
         </ProfileSection>

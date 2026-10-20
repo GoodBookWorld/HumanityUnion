@@ -479,6 +479,20 @@ async function repairAcceptedArticleUpdate(
   delivery: ArticleDeliveryRecord,
   input: DeliveryWork,
 ): Promise<ArticleIngestResult> {
+  if (
+    post.administrativelyBlocked === true ||
+    (await isBlogAuthorAdministrativelyBlocked(input.article.huMemberId))
+  ) {
+    if (syndicatedArticleMatches(post, input)) {
+      return currentArticleResult(delivery, post, true);
+    }
+    throw new ArticleIngestError(
+      403,
+      "author_blocked",
+      "This publication is blocked by an administrator and cannot be edited or republished.",
+      { postId: post.postId, status: post.status },
+    );
+  }
   if (syndicatedArticleMatches(post, input)) {
     return currentArticleResult(delivery, post, true);
   }

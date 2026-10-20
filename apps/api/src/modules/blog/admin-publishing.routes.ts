@@ -299,6 +299,10 @@ adminPublishingRouter.get(
         actorUserId: req.auth!.id,
         status: parsePublicationStatus(req.query.status),
         q: typeof req.query.q === "string" ? req.query.q : undefined,
+        authorParticipantId:
+          typeof req.query.authorParticipantId === "string"
+            ? req.query.authorParticipantId
+            : undefined,
         limit: req.query.limit ? Number(req.query.limit) : undefined,
         offset: req.query.offset ? Number(req.query.offset) : undefined,
       });

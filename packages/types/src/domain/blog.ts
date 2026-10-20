@@ -715,6 +715,11 @@ export interface AdminAuthorDirectoryItem {
   readonly publishWithoutManualReview: boolean;
   readonly publicationCount: number;
   readonly acceptedAt: string;
+  /**
+   * True when an Integrity Media `external_author_links` row exists for this
+   * participant. Display only; it does not change capabilities or grants.
+   */
+  readonly integrityMediaLinked?: boolean;
   readonly lastPublishedAt?: string;
   readonly administrativelyBlockedAt?: string;
   readonly administrativeBlockReason?: string;

@@ -688,6 +688,55 @@ export async function findApprovedAuthorApplicationAcceptedAt(
   return doc.decidedAt ?? doc.updatedAt ?? doc.createdAt;
 }
 
+function publicationMatchesAdminDirectory(
+  post: BlogPost,
+  input: {
+    statusFilter?:
+      | "all"
+      | "draft"
+      | "scheduled"
+      | "published"
+      | "blocked"
+      | "submitted_for_review"
+      | "archived";
+    q?: string;
+    authorParticipantId?: string;
+  },
+): boolean {
+  const authorParticipantId = input.authorParticipantId?.trim();
+  if (authorParticipantId && post.authorParticipantId !== authorParticipantId) {
+    return false;
+  }
+
+  const statusFilter = input.statusFilter ?? "all";
+  const blocked = post.administrativelyBlocked === true;
+  if (statusFilter === "blocked") {
+    if (!blocked) {
+      return false;
+    }
+  } else if (statusFilter === "scheduled") {
+    if (post.status !== "scheduled" || blocked) {
+      return false;
+    }
+  } else if (statusFilter !== "all") {
+    if (post.status !== statusFilter || blocked) {
+      return false;
+    }
+  }
+
+  const query = input.q?.trim();
+  if (!query) {
+    return true;
+  }
+  const pattern = new RegExp(escapeRegex(query), "i");
+  return (
+    pattern.test(post.title) ||
+    pattern.test(post.authorDisplayNameSnapshot) ||
+    pattern.test(post.categoryId) ||
+    post.tags.some((tag) => pattern.test(tag))
+  );
+}
+
 /** Pack 13B — Admin Publications directory (includes blocked; status ≠ block). */
 export async function listAdminBlogPublications(input: {
   statusFilter?:
@@ -699,13 +748,29 @@ export async function listAdminBlogPublications(input: {
     | "submitted_for_review"
     | "archived";
   q?: string;
+  authorParticipantId?: string;
   limit: number;
   offset: number;
 }): Promise<{ items: BlogPost[]; total: number }> {
+  const memory = blogMemory();
+  if (memory) {
+    const items = [...memory.posts.values()]
+      .filter((post) => publicationMatchesAdminDirectory(post, input))
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    return {
+      total: items.length,
+      items: items.slice(input.offset, input.offset + input.limit),
+    };
+  }
+
   await ensureBlogMongoReady();
 
   const filter: Record<string, unknown> = {};
   const statusFilter = input.statusFilter ?? "all";
+  const authorParticipantId = input.authorParticipantId?.trim();
+  if (authorParticipantId) {
+    filter.authorParticipantId = authorParticipantId;
+  }
 
   if (statusFilter === "blocked") {
     filter.administrativelyBlocked = true;

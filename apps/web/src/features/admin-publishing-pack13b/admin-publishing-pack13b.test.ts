@@ -45,6 +45,11 @@ describe("Pack 13B — Admin Publishing UI", () => {
     assert.match(authors, /Trusted publishing/);
     assert.match(authors, /Publish without manual review/);
     assert.match(authors, /View publications/);
+    assert.match(authors, /authorParticipantId=/);
+    assert.match(authors, /integrityMediaLinked/);
+    assert.match(authors, /Integrity Media/);
+    assert.match(section, /All publications/);
+    assert.match(section, /authorParticipantId: publicationAuthorId/);
     assert.match(css, /\.admin-publishing-table-wrap--authors\s*\{[^}]*overflow-x:\s*auto/s);
     assert.match(css, /\.admin-publishing-table-wrap--authors\s*\{[^}]*min-width:\s*0/s);
     assert.match(css, /\.admin-publishing-table--authors\s*\{[^}]*min-width:\s*76rem/s);
