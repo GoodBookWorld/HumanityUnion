@@ -95,10 +95,46 @@ describe("Pack 13B — Admin Publishing UI", () => {
     assert.match(authors, /Block/);
   });
 
-  it("Author blocked UX copy on authoring page", () => {
+  it("Author blocked UX uses the authoring localization contract", () => {
     const page = readWeb("features/blog/components/AuthoringPageContent.tsx");
-    assert.match(page, /author_blocked/);
-    assert.match(page, /Your Author access has been blocked/);
+    const catalog = JSON.parse(readWeb("features/i18n/messages/en.json")) as {
+      authoringPage: {
+        status: { blockedTitle: string; blockedBody: string };
+        blockedWorkspaceNote: string;
+      };
+    };
+
+    assert.match(page, /useTranslations\("authoringPage"\)/);
+    assert.match(page, /case "author_blocked"/);
+    assert.match(page, /title=\{t\("status\.blockedTitle"\)\}/);
+    assert.match(page, /message=\{t\("status\.blockedBody"\)\}/);
+    assert.match(page, /const isBlockedAuthor = state\.presentation === "author_blocked"/);
+    assert.match(page, /\{isBlockedAuthor \? \(\s*<p className="hu-body">\{t\("blockedWorkspaceNote"\)\}<\/p>/s);
+    assert.match(page, /const isPublishingReady =\s*!isBlockedAuthor &&/s);
+    assert.doesNotMatch(page, /Your Author access has been blocked/);
+
+    assert.equal(catalog.authoringPage.status.blockedTitle, "Author access blocked");
+    assert.equal(
+      catalog.authoringPage.status.blockedBody,
+      "Your Author access has been blocked. Please contact the administrator.",
+    );
+    assert.match(
+      catalog.authoringPage.blockedWorkspaceNote,
+      /Author publishing tools are suspended/,
+    );
+
+    for (const locale of ["uk.json", "ar.json", "zh-Hant.json"]) {
+      const messages = JSON.parse(readWeb(`features/i18n/messages/${locale}`)) as {
+        authoringPage: {
+          status: { blockedTitle?: string; blockedBody?: string };
+          blockedWorkspaceNote?: string;
+        };
+      };
+      assert.equal(typeof messages.authoringPage.status.blockedTitle, "string");
+      assert.equal(typeof messages.authoringPage.status.blockedBody, "string");
+      assert.ok((messages.authoringPage.status.blockedBody ?? "").length > 0);
+      assert.equal(typeof messages.authoringPage.blockedWorkspaceNote, "string");
+    }
   });
 
   it("Admin publishing API client targets /api/v1/admin/publishing", () => {
