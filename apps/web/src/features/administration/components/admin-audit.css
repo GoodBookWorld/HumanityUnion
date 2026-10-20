@@ -28,7 +28,7 @@
 
 .admin-audit__action {
   font-size: 0.78rem;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
 }
 
