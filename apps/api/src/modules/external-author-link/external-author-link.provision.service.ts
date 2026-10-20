@@ -16,6 +16,11 @@ import {
   INTEGRITY_MEDIA_SOURCE,
 } from "./external-author-link.constants.js";
 import {
+  integrityMediaEnvironmentTargetAccepted,
+  isIntegrityMediaDeploymentTarget,
+  readRawIntegrityMediaPlatformMode,
+} from "./external-author-link.environment-target.js";
+import {
   integrityMediaLinkSignaturesEqual,
   signIntegrityMediaLinkRedeem,
 } from "./external-author-link.hmac.js";
@@ -117,7 +122,7 @@ interface NormalizedAttempt {
 }
 
 export function readRawPlatformMode(env: NodeJS.ProcessEnv = process.env): string {
-  return env.PLATFORM_MODE?.trim() ?? "";
+  return readRawIntegrityMediaPlatformMode(env);
 }
 
 export async function findProvisionRedeemOutcome(
@@ -662,15 +667,7 @@ async function verifyProvisionSignature(input: {
   }
 
   noteProvisionAttemptSignature(input.signature, input.now.getTime());
-
-  const rawPlatformMode = readRawPlatformMode();
-  if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
-    throw new ProvisionRequestError(
-      403,
-      "target_mismatch",
-      "This provision attempt is for a different Humanity Union environment.",
-    );
-  }
+  assertProvisionEnvironmentTarget(input.normalized.target);
 }
 
 function approvedSnapshotFields(snapshot: string | undefined): ApprovedProvisionSnapshot | null {
@@ -756,13 +753,7 @@ function normalizeSnapshotBody(body: unknown): NormalizedSnapshot {
     throw new ProvisionRequestError(400, "invalid_request", "The provision attempt id is not valid.");
   }
 
-  if (target !== "staging") {
-    throw new ProvisionRequestError(
-      403,
-      "target_mismatch",
-      "This provision attempt is for a different Humanity Union environment.",
-    );
-  }
+  assertRecognizedProvisionTarget(target);
 
   if (Buffer.byteLength(snapshot, "utf8") > MAX_PROVISION_SNAPSHOT_BYTES) {
     throw new ProvisionRequestError(413, "payload_too_large", "The provision snapshot is too large.");
@@ -816,15 +807,7 @@ async function verifySnapshotSignature(input: {
   }
 
   noteProvisionSnapshotSignature(input.signature, input.now.getTime());
-
-  const rawPlatformMode = readRawPlatformMode();
-  if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
-    throw new ProvisionRequestError(
-      403,
-      "target_mismatch",
-      "This provision attempt is for a different Humanity Union environment.",
-    );
-  }
+  assertProvisionEnvironmentTarget(input.normalized.target);
 }
 
 function normalizeAttemptBody(body: unknown): NormalizedAttempt {
@@ -874,13 +857,7 @@ function normalizeAttemptBody(body: unknown): NormalizedAttempt {
     throw new ProvisionRequestError(400, "invalid_request", "The provision display name is not valid.");
   }
 
-  if (target !== "staging") {
-    throw new ProvisionRequestError(
-      403,
-      "target_mismatch",
-      "This provision attempt is for a different Humanity Union environment.",
-    );
-  }
+  assertRecognizedProvisionTarget(target);
 
   if (!Number.isInteger(record.expiresAt) || !isTenDigitSeconds(record.expiresAt as number)) {
     throw new ProvisionRequestError(400, "invalid_request", "The provision expiry is not valid.");
@@ -976,17 +953,29 @@ function verifyVersionDeclaration(input: {
   }
 
   noteProvisionVersionSignature(input.signature, input.now.getTime());
+  assertProvisionEnvironmentTarget(input.normalized.target);
 
-  const rawPlatformMode = readRawPlatformMode();
-  if (input.normalized.target !== "staging" || input.normalized.target !== rawPlatformMode) {
+  return true;
+}
+
+function assertRecognizedProvisionTarget(target: string): void {
+  if (!isIntegrityMediaDeploymentTarget(target)) {
     throw new ProvisionRequestError(
       403,
       "target_mismatch",
       "This provision attempt is for a different Humanity Union environment.",
     );
   }
+}
 
-  return true;
+function assertProvisionEnvironmentTarget(target: string): void {
+  if (!integrityMediaEnvironmentTargetAccepted(target)) {
+    throw new ProvisionRequestError(
+      403,
+      "target_mismatch",
+      "This provision attempt is for a different Humanity Union environment.",
+    );
+  }
 }
 
 function hasAcceptedSnapshot(attempt: ProvisionAttemptRecord): boolean {

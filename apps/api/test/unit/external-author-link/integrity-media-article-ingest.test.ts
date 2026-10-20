@@ -268,23 +268,66 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(listBlogMemoryPostsForTests().length, 1);
   });
 
-  it("rejects the wrong target and a non-staging environment", async () => {
-    await linkAuthor();
-    await grantBlogCapabilitiesForTests({
-      participantId: MEMBER,
-      capabilities: ["author"],
-      publishWithoutManualReview: true,
-    });
-    const productionTarget = await postArticle(articleBody("pub-target-01", { target: "production" }));
-    assert.equal(productionTarget.status, 403);
-    assert.equal(productionTarget.body.meta.code, "target_mismatch");
+  it("accepts only the deployment target bound by the article signature", async () => {
+    await trustedAuthor();
+    const stagingTarget = await postArticle(articleBody("pub-target-staging", { target: "staging" }));
+    assert.equal(stagingTarget.status, 200);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+
+    const productionOnStaging = await postArticle(articleBody("pub-target-01", { target: "production" }));
+    assert.equal(productionOnStaging.status, 403);
+    assert.equal(productionOnStaging.body.meta.code, "target_mismatch");
+
+    const malformed = await postArticle(articleBody("pub-target-malformed", { target: "Staging" }));
+    assert.equal(malformed.status, 403);
+    assert.equal(malformed.body.meta.code, "target_mismatch");
 
     process.env.PLATFORM_MODE = "production";
-    const productionMode = await postArticle(articleBody("pub-target-02"));
+    const stagingBody = articleBody("pub-target-relocated", {
+      target: "staging",
+      externalVideoUrl: YOUTUBE_WATCH,
+      coverImageUrl: COVER,
+    });
+    const signed = signBody(stagingBody);
+    const relocated = await send(stagingBody, signed.timestamp, signed.signature);
+    assert.equal(relocated.status, 403);
+    assert.equal(relocated.body.meta.code, "target_mismatch");
+
+    const retargeted = await send(
+      { ...stagingBody, target: "production" },
+      signed.timestamp,
+      signed.signature,
+    );
+    assert.equal(retargeted.status, 401);
+    assert.equal(retargeted.body.meta.code, "invalid_signature");
+
+    const production = await postArticle(
+      articleBody("pub-target-production", {
+        target: "production",
+        externalVideoUrl: YOUTUBE_WATCH,
+        coverImageUrl: COVER,
+      }),
+    );
+    assert.equal(production.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[1]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(displayedBlogCoverMedia(listBlogMemoryPostsForTests()[1]!)?.mediaUrl, new URL(COVER).toString());
+
+    const stagingOnProduction = await postArticle(articleBody("pub-target-02", { target: "staging" }));
+    assert.equal(stagingOnProduction.status, 403);
+    assert.equal(stagingOnProduction.body.meta.code, "target_mismatch");
+
+    delete process.env.PLATFORM_MODE;
+    const missingMode = await postArticle(articleBody("pub-target-missing", { target: "production" }));
+    assert.equal(missingMode.status, 403);
+    assert.equal(missingMode.body.meta.code, "target_mismatch");
+
+    process.env.PLATFORM_MODE = "beta";
+    const unknownMode = await postArticle(articleBody("pub-target-beta", { target: "beta" }));
+    assert.equal(unknownMode.status, 403);
+    assert.equal(unknownMode.body.meta.code, "target_mismatch");
+
     process.env.PLATFORM_MODE = "staging";
-    assert.equal(productionMode.status, 403);
-    assert.equal(productionMode.body.meta.code, "target_mismatch");
-    assert.equal(listBlogMemoryPostsForTests().length, 0);
+    assert.equal(listBlogMemoryPostsForTests().length, 2);
   });
 
   it("rejects an unknown author and a member mismatch", async () => {

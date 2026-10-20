@@ -134,15 +134,49 @@ describe("Integrity Media account provision", () => {
     assert.equal(stale.body.meta.code, "stale_timestamp");
 
     process.env.PLATFORM_MODE = "production";
-    const crossed = await register(attemptBody());
+    const stagingBody = attemptBody({ attemptId: "relocatedAttemptTok1" });
+    const crossed = await register(stagingBody);
     assert.equal(crossed.status, 403);
     assert.equal(crossed.body.meta.code, "target_mismatch");
-    process.env.PLATFORM_MODE = "staging";
 
-    const otherTarget = await register(attemptBody({ target: "production" }));
+    const retargeted = await register(
+      { ...stagingBody, target: "production" },
+      { timestamp: crossed.timestamp, signature: crossed.signature },
+    );
+    assert.equal(retargeted.status, 401);
+    assert.equal(retargeted.body.meta.code, "invalid_signature");
+
+    const accepted = await register(attemptBody({ attemptId: "prodAttemptToken00001", target: "production" }));
+    assert.equal(accepted.status, 200);
+    assert.equal(memory.attempts().find((attempt) => attempt.attemptId === "prodAttemptToken00001")?.target, "production");
+    const confirmed = await request("POST", "/provision-confirm", { state: "prodAttemptToken00001" });
+    assert.equal(confirmed.status, 200);
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(memory.users().length, 1);
+
+    const stagingOnProduction = await register(attemptBody({ attemptId: "stagingOnProdToken01" }));
+    assert.equal(stagingOnProduction.status, 403);
+    assert.equal(stagingOnProduction.body.meta.code, "target_mismatch");
+
+    delete process.env.PLATFORM_MODE;
+    const missingMode = await register(attemptBody({ attemptId: "missingModeToken0001", target: "production" }));
+    assert.equal(missingMode.status, 403);
+    assert.equal(missingMode.body.meta.code, "target_mismatch");
+
+    process.env.PLATFORM_MODE = "beta";
+    const unknownMode = await register(attemptBody({ attemptId: "unknownModeToken0001", target: "beta" }));
+    assert.equal(unknownMode.status, 403);
+    assert.equal(unknownMode.body.meta.code, "target_mismatch");
+
+    process.env.PLATFORM_MODE = "staging";
+    const otherTarget = await register(attemptBody({ attemptId: "otherTargetToken0001", target: "production" }));
     assert.equal(otherTarget.status, 403);
     assert.equal(otherTarget.body.meta.code, "target_mismatch");
-    assert.equal(memory.users().length, 0);
+    const malformed = await register(attemptBody({ attemptId: "malformedTargetTok01", target: "Staging" }));
+    assert.equal(malformed.status, 403);
+    assert.equal(malformed.body.meta.code, "target_mismatch");
+    assert.equal(memory.users().length, 1);
+    assert.equal(memory.attempts().filter((attempt) => attempt.target === "production").length, 1);
   });
 
   it("stores an attempt idempotently and rejects a conflicting retry", async () => {

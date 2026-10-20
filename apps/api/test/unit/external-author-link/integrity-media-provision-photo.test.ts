@@ -89,6 +89,7 @@ let uploads = 0;
 let failUploads = 0;
 let photoMode: PhotoMode = "ok";
 let photoRequests = 0;
+let lastPhotoTarget = "";
 let previousMode: string | undefined;
 let previousSecret: string | undefined;
 let previousOrigin: string | undefined;
@@ -169,7 +170,85 @@ describe("Integrity Media provision photo import", () => {
     failUploads = 0;
     photoMode = "ok";
     photoRequests = 0;
+    lastPhotoTarget = "";
     setMediaObjectStorageForTests(countingStorage(storage));
+  });
+
+  it("imports a production avatar and refuses a relocated staging photo request", async () => {
+    process.env.PLATFORM_MODE = "production";
+    const attemptId = "productionPhotoTok01";
+    assert.equal((await registerAttempt({ attemptId, target: "production" })).status, 200);
+    assert.equal((await registerSnapshot(snapshotText(), { attemptId, target: "production" })).status, 200);
+    const confirmed = await confirm(attemptId);
+    assert.equal(confirmed.status, 200);
+    assert.equal(confirmed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(photoRequests, 1);
+    assert.equal(lastPhotoTarget, "production");
+    assert.equal(memory.attempts()[0]?.photoImportStatus, "applied");
+    assert.equal(memory.profiles()[0]?.avatarUrl?.endsWith(`${attemptId}.webp`), true);
+
+    const stagingPayload = buildProvisionPhotoPayload({
+      timestamp: "1700000000",
+      attemptId,
+      target: "staging",
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    const productionPayload = buildProvisionPhotoPayload({
+      timestamp: "1700000000",
+      attemptId,
+      target: "production",
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.notEqual(
+      signIntegrityMediaLinkRedeem(SECRET, stagingPayload),
+      signIntegrityMediaLinkRedeem(SECRET, productionPayload),
+    );
+
+    delete process.env.PLATFORM_MODE;
+    photoRequests = 0;
+    const missing = await fetchProvisionPhoto({
+      attemptId,
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.equal(missing.ok, false);
+    if (!missing.ok) {
+      assert.equal(missing.code, "unavailable");
+    }
+    assert.equal(photoRequests, 0);
+
+    process.env.PLATFORM_MODE = "beta";
+    const unknown = await fetchProvisionPhoto({
+      attemptId,
+      digest: webpDigest,
+      byteLength: webp.length,
+    });
+    assert.equal(unknown.ok, false);
+    if (!unknown.ok) {
+      assert.equal(unknown.code, "unavailable");
+    }
+    assert.equal(photoRequests, 0);
+
+    process.env.PLATFORM_MODE = "staging";
+    const stagingAttempt = "stagingPhotoToken0001";
+    await provisionNew({
+      attemptId: stagingAttempt,
+      externalAuthorId: "77777777-7777-4777-8777-777777777777",
+      email: "staging-photo@example.com",
+    });
+    process.env.PLATFORM_MODE = "production";
+    photoRequests = 0;
+    const crossed = await confirm(stagingAttempt);
+    assert.equal(crossed.status, 200);
+    assert.equal(crossed.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(photoRequests, 0);
+    assert.equal(
+      memory.attempts().find((attempt) => attempt.attemptId === stagingAttempt)?.photoImportStatus,
+      undefined,
+    );
+    process.env.PLATFORM_MODE = "staging";
   });
 
   it("retrieves a signed WEBP and stores it for a new Participant", async () => {
@@ -637,6 +716,7 @@ async function handlePhoto(request: IncomingMessage, response: ServerResponse): 
     digest?: string;
     byteLength?: number;
   };
+  lastPhotoTarget = String(body.target ?? "");
   const timestamp = String(request.headers["x-hu-integrity-media-timestamp"] ?? "");
   const signature = String(request.headers["x-hu-integrity-media-signature"] ?? "");
   const expected = signIntegrityMediaLinkRedeem(
@@ -649,7 +729,12 @@ async function handlePhoto(request: IncomingMessage, response: ServerResponse): 
       byteLength: Number(body.byteLength),
     }),
   );
-  if (!integrityMediaLinkSignaturesEqual(expected, signature) || body.target !== "staging") {
+  const mode = process.env.PLATFORM_MODE;
+  if (
+    !integrityMediaLinkSignaturesEqual(expected, signature) ||
+    body.target !== mode ||
+    (mode !== "staging" && mode !== "production")
+  ) {
     response.writeHead(401);
     response.end();
     return;
@@ -756,6 +841,7 @@ async function registerAttempt(
     externalAuthorId: string;
     email: string;
     displayName: string;
+    target: string;
   }> = {},
   options: { version2?: boolean } = { version2: true },
 ) {
@@ -805,22 +891,26 @@ async function registerAttempt(
   });
 }
 
-async function registerSnapshot(snapshot: string, override: { attemptId?: string } = {}) {
+async function registerSnapshot(
+  snapshot: string,
+  override: { attemptId?: string; target?: string } = {},
+) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const attemptId = override.attemptId ?? ATTEMPT_ID;
+  const target = override.target ?? "staging";
   const signature = signIntegrityMediaLinkRedeem(
     SECRET,
     buildProvisionSnapshotPayload({
       timestamp,
       attemptId,
-      target: "staging",
+      target,
       snapshot,
     }),
   );
   return request(
     "POST",
     "/api/v1/integrity-media/link/provision-snapshot",
-    { attemptId, target: "staging", snapshot },
+    { attemptId, target, snapshot },
     {
       "x-hu-integrity-media-timestamp": timestamp,
       "x-hu-integrity-media-signature": signature,

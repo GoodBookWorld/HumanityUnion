@@ -6,6 +6,10 @@ import { resolveMediaStorageProviderName } from "../media-upload/media-object-st
 import { resolveMediaObjectStorage } from "../media-upload/resolve-media-object-storage.js";
 import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import {
+  integrityMediaEnvironmentTargetAccepted,
+  readIntegrityMediaDeploymentTarget,
+} from "./external-author-link.environment-target.js";
+import {
   fetchProvisionPhoto,
   type ProvisionPhotoFailureCode,
   type ProvisionPhotoFetchResult,
@@ -90,7 +94,7 @@ export async function establishNewParticipantPhotoEligibility(
   updatedAt: string,
 ): Promise<void> {
   const photo = readImportableSnapshotPhoto(attempt.profileSnapshot);
-  if (!photo || rawPlatformMode() !== "staging" || attempt.target !== "staging") {
+  if (!photo || !integrityMediaEnvironmentTargetAccepted(attempt.target)) {
     return;
   }
 
@@ -102,13 +106,13 @@ export async function establishNewParticipantPhotoEligibility(
 }
 
 async function prepareUnlocked(attemptId: string, now: Date): Promise<PreparedProvisionPhoto> {
-  if (rawPlatformMode() !== "staging") {
+  if (!readIntegrityMediaDeploymentTarget()) {
     return { prefetch: "skipped", bytes: null, terminalFailure: false };
   }
 
   const db = currentProvisionDatabase();
   const attempt = await db.findAttempt(attemptId);
-  if (!attempt || attempt.expiresAt <= unixSeconds(now) || attempt.target !== "staging") {
+  if (!attempt || attempt.expiresAt <= unixSeconds(now) || !integrityMediaEnvironmentTargetAccepted(attempt.target)) {
     return { prefetch: "skipped", bytes: null, terminalFailure: false };
   }
 
@@ -369,10 +373,6 @@ function photoStorageKey(attemptId: string): string {
   }
 
   return `avatars/integrity-media/${attemptId}.webp`;
-}
-
-function rawPlatformMode(): string {
-  return process.env.PLATFORM_MODE?.trim() ?? "";
 }
 
 function unixSeconds(now: Date): number {

@@ -366,6 +366,12 @@ describe("Integrity Media provision version declaration", () => {
     });
     assert.equal(production.status, 403);
     assert.equal(production.body.meta.code, "target_mismatch");
+    const accepted = await register(
+      attemptBody({ attemptId: "productionAttemptTok3", target: "production" }),
+      { version2: true },
+    );
+    assert.equal(accepted.status, 200);
+    assert.equal(memory.attempts().find((attempt) => attempt.attemptId === "productionAttemptTok3")?.target, "production");
     process.env.PLATFORM_MODE = "staging";
     const otherTarget = await register(
       attemptBody({ attemptId: "productionAttemptTok2", target: "production" }),
@@ -373,7 +379,8 @@ describe("Integrity Media provision version declaration", () => {
     );
     assert.equal(otherTarget.status, 403);
     assert.equal(otherTarget.body.meta.code, "target_mismatch");
-    assert.equal(memory.attempts().some((attempt) => attempt.attemptId.startsWith("production")), false);
+    assert.equal(memory.attempts().some((attempt) => attempt.attemptId === "productionAttemptTok1"), false);
+    assert.equal(memory.attempts().some((attempt) => attempt.attemptId === "productionAttemptTok2"), false);
 
     const expired = await register(
       attemptBody({

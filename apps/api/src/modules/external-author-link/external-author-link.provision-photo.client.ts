@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { detectImageSignature, looksLikeMarkupOrScript } from "../media-upload/image-signature.js";
 import { resolveIntegrityMediaLinkConfig } from "./external-author-link.config.js";
 import { INTEGRITY_MEDIA_SERVER_ORIGIN_ENV } from "./external-author-link.constants.js";
+import { readIntegrityMediaDeploymentTarget } from "./external-author-link.environment-target.js";
 import { signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
 import { buildProvisionPhotoPayload } from "./external-author-link.provision-photo.hmac.js";
 import { SNAPSHOT_PHOTO_MAX_BYTES } from "./external-author-link.provision-snapshot.schema.js";
@@ -65,7 +66,8 @@ export async function fetchProvisionPhoto(input: {
 }): Promise<ProvisionPhotoFetchResult> {
   const origin = resolveIntegrityMediaServerOrigin();
   const secret = resolveIntegrityMediaLinkConfig().hmacSecret;
-  if (!origin || !secret || !isPhotoRequest(input)) {
+  const target = readIntegrityMediaDeploymentTarget();
+  if (!origin || !secret || !target || !isPhotoRequest(input)) {
     return { ok: false, code: "unavailable" };
   }
 
@@ -76,6 +78,7 @@ export async function fetchProvisionPhoto(input: {
     last = await fetchOnce({
       origin,
       secret,
+      target,
       attemptId: input.attemptId,
       digest: input.digest,
       byteLength: input.byteLength,
@@ -99,6 +102,7 @@ export async function fetchProvisionPhoto(input: {
 async function fetchOnce(input: {
   origin: string;
   secret: string;
+  target: "staging" | "production";
   attemptId: string;
   digest: string;
   byteLength: number;
@@ -107,7 +111,7 @@ async function fetchOnce(input: {
   const payload = buildProvisionPhotoPayload({
     timestamp: input.timestamp,
     attemptId: input.attemptId,
-    target: "staging",
+    target: input.target,
     digest: input.digest,
     byteLength: input.byteLength,
   });
@@ -125,7 +129,7 @@ async function fetchOnce(input: {
       },
       body: JSON.stringify({
         attemptId: input.attemptId,
-        target: "staging",
+        target: input.target,
         digest: input.digest,
         byteLength: input.byteLength,
       }),

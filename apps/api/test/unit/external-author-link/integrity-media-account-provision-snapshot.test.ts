@@ -249,6 +249,38 @@ describe("Integrity Media provision profile snapshot", () => {
     assert.equal(memory.attempts()[0]?.profileSnapshot, undefined);
   });
 
+  it("accepts a production snapshot only for a production attempt", async () => {
+    process.env.PLATFORM_MODE = "production";
+    const attemptId = "prodSnapshotAttempt01";
+    assert.equal(
+      (await registerAttempt(attemptBody({ attemptId, target: "production" }))).status,
+      200,
+    );
+    const snapshot = snapshotText();
+    const relocated = await registerSnapshot(snapshot, {}, { attemptId, target: "staging" });
+    assert.equal(relocated.status, 403);
+    assert.equal(relocated.body.meta.code, "target_mismatch");
+
+    const retargeted = await registerSnapshot(
+      snapshot,
+      { timestamp: relocated.timestamp, signature: relocated.signature },
+      { attemptId, target: "production" },
+    );
+    assert.equal(retargeted.status, 401);
+    assert.equal(retargeted.body.meta.code, "invalid_signature");
+
+    const accepted = await registerSnapshot(snapshot, {}, { attemptId, target: "production" });
+    assert.equal(accepted.status, 200);
+    assert.equal(memory.attempts()[0]?.target, "production");
+    assert.equal(memory.attempts()[0]?.profileSnapshot, snapshot);
+
+    delete process.env.PLATFORM_MODE;
+    const missing = await registerSnapshot(snapshot, {}, { attemptId: "missingSnapAttempt001", target: "production" });
+    assert.equal(missing.status, 403);
+    assert.equal(missing.body.meta.code, "target_mismatch");
+    process.env.PLATFORM_MODE = "staging";
+  });
+
   it("rejects a conflicting snapshot and keeps the first one under concurrency", async () => {
     assert.equal((await registerAttempt(attemptBody())).status, 200);
     const first = snapshotText({ biography: "First public biography." });
@@ -639,6 +671,7 @@ function attemptBody(
     externalAuthorId: string;
     email: string;
     displayName: string;
+    target: string;
     expiresAt: number;
   }> = {},
 ) {

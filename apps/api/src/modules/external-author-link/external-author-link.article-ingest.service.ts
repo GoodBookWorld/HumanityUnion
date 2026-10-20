@@ -50,6 +50,7 @@ import {
   type ArticleDeliveryRecord,
 } from "./external-author-link.article-ingest.repository.js";
 import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
+import { integrityMediaEnvironmentTargetAccepted } from "./external-author-link.environment-target.js";
 import {
   INTEGRITY_MEDIA_ARTICLE_CATEGORY_ID_ENV,
   INTEGRITY_MEDIA_ARTICLE_INGEST_HMAC_SECRET_ENV,
@@ -206,8 +207,7 @@ export async function ingestIntegrityMediaArticle(input: {
     now,
   });
 
-  const rawPlatformMode = process.env.PLATFORM_MODE?.trim() ?? "";
-  if (article.target !== "staging" || article.target !== rawPlatformMode) {
+  if (!integrityMediaEnvironmentTargetAccepted(article.target)) {
     throw new ArticleIngestError(
       403,
       "target_mismatch",
