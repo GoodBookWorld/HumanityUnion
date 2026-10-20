@@ -62,10 +62,29 @@ export async function resolveHuPlatformDistributionDestinations(
   return resolved;
 }
 
+let socialEnqueueCountForTests = 0;
+
+export function resetBlogSocialEnqueueCountForTests(): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Blog social enqueue counters are available only when NODE_TEST_ENV=true.");
+  }
+  socialEnqueueCountForTests = 0;
+}
+
+export function blogSocialEnqueueCountForTests(): number {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Blog social enqueue counters are available only when NODE_TEST_ENV=true.");
+  }
+  return socialEnqueueCountForTests;
+}
+
 export async function enqueueBlogSocialDistributionBestEffort(input: {
   post: BlogPost;
   actorParticipantId: string;
 }): Promise<{ enqueued: boolean; reason: string }> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    socialEnqueueCountForTests += 1;
+  }
   // Lifecycle authority: never distribute for draft/review/scheduled/blocked/archived.
   if (input.post.status !== "published") {
     return { enqueued: false, reason: "blocked_not_published" };
