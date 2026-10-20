@@ -6,6 +6,7 @@ import { WorkspaceNavigation } from "../../features/initiatives/components/Works
 import { AdminWorkspaceHeader } from "../../features/administration/components/AdminWorkspaceHeader";
 
 import "../../features/administration/components/admin-panel.css";
+import "../../features/administration/components/admin-table-readability.css";
 
 export const metadata: Metadata = {
   title: "Admin Panel | Humanity Union",

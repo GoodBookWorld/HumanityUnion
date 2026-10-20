@@ -104,9 +104,10 @@
 
 .admin-media-resources__col-website {
   width: 12rem;
+  max-width: 16rem;
   white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-media-resources__col-rss {
@@ -130,8 +131,8 @@
 
 .admin-media-resources-table .admin-initiatives-table__meta {
   max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-media-resources__logo {

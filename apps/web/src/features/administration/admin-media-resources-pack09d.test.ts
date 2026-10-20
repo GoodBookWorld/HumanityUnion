@@ -60,7 +60,7 @@ describe("Administration Pack 09D — Media Resources", () => {
     assert.match(css, /admin-media-resources__col-rss/);
     assert.match(css, /white-space:\s*nowrap/);
     assert.match(css, /scroll-margin-top/);
-    assert.match(css, /\.admin-initiatives-table__meta[\s\S]*overflow-wrap:\s*anywhere/);
+    assert.match(css, /\.admin-initiatives-table__meta[\s\S]*overflow-wrap:\s*break-word/);
   });
 
   it("shows authored media resource ids and hides generated UUID ids", () => {

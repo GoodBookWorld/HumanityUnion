@@ -11,8 +11,8 @@
 }
 
 .admin-initiatives-table {
-  width: 100%;
-  min-width: 64rem;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
