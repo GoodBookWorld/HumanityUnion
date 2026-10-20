@@ -1,3 +1,4 @@
+import type { InitiativeCoverMediaExternalProvider } from "./initiative-cover-media.js";
 import type { LanguageCode } from "./language.js";
 import type { LifecycleSafetyOutcome } from "./lifecycle-safety.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
@@ -147,6 +148,16 @@ export interface BlogExternalCover {
   readonly url: string;
 }
 
+/**
+ * Syndicated external video. Only a validated provider and video id are stored.
+ * Embed HTML is never persisted.
+ */
+export interface BlogExternalVideo {
+  readonly source: "integrity-media";
+  readonly provider: InitiativeCoverMediaExternalProvider;
+  readonly providerVideoId: string;
+}
+
 /** Pack 16C — Humanity Union-owned social distribution preference (outbox-driven). */
 export type BlogHuSocialDistributionPreference = "opt_in" | "opt_out" | "unset";
 
@@ -269,6 +280,8 @@ export interface BlogPost {
   readonly coverMedia: BlogCoverMedia | null;
   /** Partner cover URL. Preserved across author saves. Not a media upload. */
   readonly externalCover?: BlogExternalCover;
+  /** Partner video identity. Preserved across author saves. Not a media upload. */
+  readonly externalVideo?: BlogExternalVideo;
   readonly status: BlogPostStatus;
   readonly originalLanguage: LanguageCode;
   readonly safetyOutcome: LifecycleSafetyOutcome | null;
@@ -385,6 +398,8 @@ export interface PublicBlogPostDetail {
   readonly excerpt: string;
   readonly content: string;
   readonly coverImage: BlogCoverMedia | null;
+  /** Present only for a validated YouTube or Vimeo publication. */
+  readonly externalVideo?: BlogExternalVideo;
   readonly author: PublicCommentAuthor;
   readonly publishedAt: string;
   readonly updatedAt: string;

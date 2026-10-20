@@ -14,6 +14,7 @@ import { shouldShowBlogLastEdited } from "../blog-last-edited";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
+import { BlogArticleVideo } from "./BlogArticleVideo";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCommentsSection } from "./BlogCommentsSection";
@@ -298,6 +299,10 @@ export function BlogArticlePageContent({
                 priority
               />
             </div>
+
+            {post.externalVideo ? (
+              <BlogArticleVideo video={post.externalVideo} title={titleForDisplay} />
+            ) : null}
 
             <BlogArticleBody html={bodyHtml} />
           </div>

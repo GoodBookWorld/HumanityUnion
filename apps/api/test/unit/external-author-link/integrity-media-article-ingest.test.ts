@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, beforeEach, describe, it } from "node:test";
 
+import { parseExternalVideoUrl } from "@hu/types";
 import express from "express";
 
 import {
@@ -10,7 +11,7 @@ import {
 } from "../../../src/modules/blog/blog.events.js";
 import { updateBlogDraft, grantBlogCapabilitiesForTests } from "../../../src/modules/blog/blog.service.js";
 import { displayedBlogCoverMedia } from "../../../src/modules/blog/blog-cover-media.js";
-import { toPublicBlogPostDetail, toPublicBlogPostListItem } from "../../../src/modules/blog/blog.projection.js";
+import { toBlogAuthorWorkspacePost, toPublicBlogPostDetail, toPublicBlogPostListItem } from "../../../src/modules/blog/blog.projection.js";
 import {
   fromBlogPostMongoDocument,
   toBlogPostMongoDocument,
@@ -25,7 +26,7 @@ import {
   resetSafetyProviderForTests,
   setSafetyProviderForTests,
 } from "../../../src/modules/lifecycle-safety/safety-provider.js";
-import { buildArticleIngestPayload, resetArticleIngestReplayCacheForTests } from "../../../src/modules/external-author-link/external-author-link.article-ingest.hmac.js";
+import { buildArticleIngestPayload, externalVideoIngestLine, resetArticleIngestReplayCacheForTests } from "../../../src/modules/external-author-link/external-author-link.article-ingest.hmac.js";
 import {
   listArticleDeliveriesForTests,
   resetArticleDeliveriesForTests,
@@ -65,6 +66,14 @@ import {
 import type { ExternalAuthorLinkRecord } from "../../../src/modules/external-author-link/external-author-link.types.js";
 
 const SECRET = "article-ingest-test-secret";
+const YOUTUBE_ID = "dQw4w9WgXcQ";
+const VIMEO_ID = "76979871";
+const YOUTUBE_WATCH = `https://www.youtube.com/watch?v=${YOUTUBE_ID}`;
+const YOUTUBE_SHORT = `https://youtu.be/${YOUTUBE_ID}`;
+const OTHER_YOUTUBE = "https://www.youtube.com/watch?v=abcdefghijk";
+const VIMEO_PAGE = `https://vimeo.com/${VIMEO_ID}`;
+const VIMEO_PLAYER = `https://player.vimeo.com/video/${VIMEO_ID}`;
+const COVER = "https://integrity.website/media/articles/with-video";
 const AUTHOR = "11111111-1111-4111-8111-111111111111";
 const MEMBER = "22222222-2222-4222-8222-222222222222";
 const OTHER_MEMBER = "33333333-3333-4333-8333-333333333333";
@@ -1030,6 +1039,285 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(lines[13], "1");
     assert.equal(lines.length, 14);
   });
+
+  it("keeps a text article without a video and accepts YouTube and Vimeo", async () => {
+    await trustedAuthor();
+    const text = await postArticle(articleBody("pub-video-text"));
+    assert.equal(text.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo, undefined);
+    assert.equal(listArticleDeliveriesForTests()[0]?.externalVideo, undefined);
+    const textLines = buildArticleIngestPayload(signInput(articleBody("pub-video-text"), "1700000300")).split("\n");
+    assert.equal(textLines.length, 12);
+    assert.equal(textLines.some((line) => line.startsWith("video:")), false);
+
+    const youtubeBody = articleBody("pub-video-youtube", {
+      externalVideoUrl: YOUTUBE_WATCH,
+      content: "<p>Public article.</p><iframe src=\"https://evil.example/embed\"></iframe>",
+    });
+    const youtube = await postArticle(youtubeBody);
+    assert.equal(youtube.status, 200);
+    assert.equal(youtube.body.data?.idempotent, false);
+    const youtubePost = listBlogMemoryPostsForTests().find((post) => post.postId === youtube.body.data?.postId);
+    assert.equal(youtubePost?.externalVideo?.provider, "youtube");
+    assert.equal(youtubePost?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(youtubePost?.externalVideo?.source, "integrity-media");
+    assert.equal(youtubePost?.content.includes("<iframe"), false);
+    assert.equal(youtubePost?.content.includes("evil.example"), false);
+    const youtubeDelivery = listArticleDeliveriesForTests().find((row) => row.publicationId === "pub-video-youtube");
+    assert.deepEqual(youtubeDelivery?.externalVideo, { provider: "youtube", providerVideoId: YOUTUBE_ID });
+
+    const duplicate = await postArticle({ ...youtubeBody, externalVideoUrl: YOUTUBE_SHORT });
+    assert.equal(duplicate.status, 200);
+    assert.equal(duplicate.body.data?.idempotent, true);
+    assert.equal(duplicate.body.data?.postId, youtube.body.data?.postId);
+    assert.equal(listBlogMemoryPostsForTests().filter((post) => post.title.includes("pub-video-youtube")).length, 1);
+
+    const vimeo = await postArticle(articleBody("pub-video-vimeo", { externalVideoUrl: VIMEO_PAGE }));
+    assert.equal(vimeo.status, 200);
+    const vimeoPost = listBlogMemoryPostsForTests().find((post) => post.postId === vimeo.body.data?.postId);
+    assert.deepEqual(vimeoPost?.externalVideo, {
+      source: "integrity-media",
+      provider: "vimeo",
+      providerVideoId: VIMEO_ID,
+    });
+    const vimeoAgain = await postArticle(articleBody("pub-video-vimeo", { externalVideoUrl: VIMEO_PLAYER }));
+    assert.equal(vimeoAgain.status, 200);
+    assert.equal(vimeoAgain.body.data?.idempotent, true);
+    assert.equal(vimeoAgain.body.data?.postId, vimeo.body.data?.postId);
+
+    const detail = toPublicBlogPostDetail(vimeoPost!, { displayName: "Participant" });
+    assert.deepEqual(detail.externalVideo, vimeoPost?.externalVideo);
+    assert.equal(JSON.stringify(detail).includes("<iframe"), false);
+    assert.equal(JSON.stringify(detail).includes("youtube-nocookie"), false);
+    assert.equal(JSON.stringify(detail).includes("player.vimeo.com/video"), false);
+    const list = toPublicBlogPostListItem(vimeoPost!, { displayName: "Participant" });
+    assert.equal("externalVideo" in list, false);
+    const workspace = toBlogAuthorWorkspacePost(vimeoPost!);
+    assert.equal("externalVideo" in workspace, false);
+
+    const hydrated = fromBlogPostMongoDocument(toBlogPostMongoDocument(vimeoPost!));
+    assert.deepEqual(hydrated.externalVideo, vimeoPost?.externalVideo);
+    const unsafe = fromBlogPostMongoDocument({
+      ...toBlogPostMongoDocument(vimeoPost!),
+      externalVideo: {
+        source: "integrity-media",
+        provider: "youtube",
+        providerVideoId: "<iframe src=\"https://evil.example\">",
+      },
+    });
+    assert.equal(unsafe.externalVideo, undefined);
+    assert.equal(
+      toPublicBlogPostDetail(
+        { ...vimeoPost!, externalVideo: unsafe.externalVideo },
+        { displayName: "Participant" },
+      ).externalVideo,
+      undefined,
+    );
+  });
+
+  it("adds, replaces, removes, and preserves video across signed revisions", async () => {
+    await trustedAuthor();
+    const created = await postArticle(articleBody("pub-video-life"));
+    assert.equal(created.status, 200);
+    const original = listBlogMemoryPostsForTests()[0]!;
+    const beforePublish = blogPublishEmitCountForTests();
+    const beforeSocial = blogSocialEnqueueCountForTests();
+
+    const added = await postArticle(updateBody("pub-video-life", 1, { externalVideoUrl: YOUTUBE_WATCH }));
+    assert.equal(added.status, 200);
+    assert.equal(added.body.data?.idempotent, false);
+    assert.equal(added.body.data?.postId, original.postId);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, original.title);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.slug, original.slug);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.authorParticipantId, MEMBER);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.categoryId, CATEGORY);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, original.publishedAt);
+    assert.equal(blogPublishEmitCountForTests(), beforePublish);
+    assert.equal(blogSocialEnqueueCountForTests(), beforeSocial);
+
+    const sameRevision = await postArticle(updateBody("pub-video-life", 1, { externalVideoUrl: YOUTUBE_SHORT }));
+    assert.equal(sameRevision.status, 200);
+    assert.equal(sameRevision.body.data?.idempotent, true);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(blogPublishEmitCountForTests(), beforePublish);
+
+    const replaced = await postArticle(updateBody("pub-video-life", 2, { externalVideoUrl: VIMEO_PAGE }));
+    assert.equal(replaced.status, 200);
+    assert.equal(replaced.body.data?.postId, original.postId);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.provider, "vimeo");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, VIMEO_ID);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+
+    const conflict = await postArticle(updateBody("pub-video-life", 2, { externalVideoUrl: YOUTUBE_WATCH }));
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.meta.code, "publication_conflict");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.provider, "vimeo");
+
+    const stale = await postArticle(updateBody("pub-video-life", 1, { externalVideoUrl: YOUTUBE_WATCH }));
+    assert.equal(stale.status, 200);
+    assert.equal(stale.body.data?.idempotent, true);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.provider, "vimeo");
+
+    const omitted = await postArticle(
+      updateBody("pub-video-life", 3, { title: "Title kept with the same video" }),
+    );
+    assert.equal(omitted.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Title kept with the same video");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, VIMEO_ID);
+    assert.equal(
+      buildArticleIngestPayload(
+        signInput(updateBody("pub-video-life", 3, { title: "Title kept with the same video" }), "1700000400"),
+      ).includes("video:"),
+      false,
+    );
+
+    const removed = await postArticle(updateBody("pub-video-life", 4, { externalVideoUrl: null }));
+    assert.equal(removed.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo, undefined);
+    assert.equal(listArticleDeliveriesForTests()[0]?.externalVideo, null);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.postId, original.postId);
+
+    const omittedAfterRemoval = await postArticle(
+      updateBody("pub-video-life", 5, { title: "Still no video" }),
+    );
+    assert.equal(omittedAfterRemoval.status, 200);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo, undefined);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Still no video");
+    assert.equal(blogPublishEmitCountForTests(), beforePublish);
+    assert.equal(blogSocialEnqueueCountForTests(), beforeSocial);
+
+    const emptyRemoval = await send(
+      updateBody("pub-video-life", 6, { externalVideoUrl: "" }),
+      nextTimestamp(),
+      "ab".repeat(32),
+    );
+    assert.equal(emptyRemoval.status, 400);
+    assert.equal(emptyRemoval.body.meta.code, "invalid_article");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Still no video");
+  });
+
+  it("does not let a legacy retry or a blocked update change the video", async () => {
+    await trustedAuthor();
+    const body = articleBody("pub-video-guard", { externalVideoUrl: YOUTUBE_WATCH });
+    const created = await postArticle(body);
+    assert.equal(created.status, 200);
+    const legacyRetry = await postArticle(articleBody("pub-video-guard"));
+    assert.equal(legacyRetry.status, 409);
+    assert.equal(legacyRetry.body.meta.code, "publication_conflict");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+
+    await replaceBlogPost({
+      ...listBlogMemoryPostsForTests()[0]!,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+    const blockedPost = await postArticle(
+      updateBody("pub-video-guard", 1, { externalVideoUrl: VIMEO_PAGE, title: "Blocked video edit" }),
+    );
+    assert.equal(blockedPost.status, 403);
+    assert.equal(blockedPost.body.meta.code, "author_blocked");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title.startsWith("Public article"), true);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.administrativelyBlocked, true);
+    assert.equal(listArticleDeliveriesForTests()[0]?.contentRevision ?? 0, 0);
+
+    await replaceBlogPost({
+      ...listBlogMemoryPostsForTests()[0]!,
+      administrativelyBlocked: undefined,
+    });
+    await upsertBlogCapabilityGrant({
+      participantId: MEMBER,
+      capabilities: ["author"],
+      updatedAt: new Date().toISOString(),
+      publishWithoutManualReview: true,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+    const blockedAuthor = await postArticle(
+      updateBody("pub-video-guard", 1, { externalVideoUrl: VIMEO_PAGE }),
+    );
+    assert.equal(blockedAuthor.status, 403);
+    assert.equal(blockedAuthor.body.meta.code, "author_blocked");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+  });
+
+  it("rejects an unsupported, malformed, or tampered video without writing it", async () => {
+    await trustedAuthor();
+    const created = await postArticle(articleBody("pub-video-secure", { externalVideoUrl: YOUTUBE_WATCH }));
+    assert.equal(created.status, 200);
+    const invalidVideos = [
+      "",
+      "http://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://dailymotion.com/video/x8a",
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      "https://user:pass@www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://evil.example/redirect?to=https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "<iframe src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\"></iframe>",
+      "not a url",
+      "https://www.youtube.com/watch",
+      "https://vimeo.com/not-a-number",
+    ];
+    for (const [index, externalVideoUrl] of invalidVideos.entries()) {
+      const rejected = await send(
+        { ...articleBody(`pub-video-bad-${index}`), externalVideoUrl },
+        nextTimestamp(),
+        "cd".repeat(32),
+      );
+      assert.equal(rejected.status, 400, externalVideoUrl);
+      assert.equal(rejected.body.meta.code, "invalid_article", externalVideoUrl);
+    }
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+
+    const signed = signBody(articleBody("pub-video-secure", { externalVideoUrl: YOUTUBE_WATCH }));
+    const tampered = await send(
+      articleBody("pub-video-secure", { externalVideoUrl: OTHER_YOUTUBE }),
+      signed.timestamp,
+      signed.signature,
+    );
+    assert.equal(tampered.status, 401);
+    assert.equal(tampered.body.meta.code, "invalid_signature");
+    const strippedBody = articleBody("pub-video-secure");
+    const downgraded = await send(strippedBody, signed.timestamp, signed.signature);
+    assert.equal(downgraded.status, 401);
+    assert.equal(downgraded.body.meta.code, "invalid_signature");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+
+    const at = "1700000500";
+    const watch = buildArticleIngestPayload(
+      signInput(articleBody("pub-video-lines", { externalVideoUrl: YOUTUBE_WATCH, coverImageUrl: COVER }), at),
+    ).split("\n");
+    const short = buildArticleIngestPayload(
+      signInput(
+        updateBody("pub-video-lines", 4, { externalVideoUrl: YOUTUBE_SHORT, coverImageUrl: COVER }),
+        at,
+      ),
+    ).split("\n");
+    assert.equal(externalVideoIngestLine({ provider: "youtube", providerVideoId: YOUTUBE_ID }), `video:v1:youtube:${YOUTUBE_ID}`);
+    assert.equal(externalVideoIngestLine(null), "video:v1:remove");
+    assert.equal(watch.at(-2), `video:v1:youtube:${YOUTUBE_ID}`);
+    assert.equal(watch.at(-1), new URL(COVER).toString());
+    assert.equal(watch.length, 14);
+    assert.equal(short[12], "update");
+    assert.equal(short[13], "4");
+    assert.equal(short.at(-2), `video:v1:youtube:${YOUTUBE_ID}`);
+    assert.equal(short.at(-1), new URL(COVER).toString());
+    assert.equal(parseExternalVideoUrl(YOUTUBE_SHORT)?.providerVideoId, YOUTUBE_ID);
+
+    const saved = await updateBlogDraft({
+      postId: created.body.data!.postId!,
+      actorParticipantId: MEMBER,
+      role: "admin",
+      body: { excerpt: "A revised public excerpt that keeps the video." },
+    });
+    assert.equal(saved.excerpt, "A revised public excerpt that keeps the video.");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
+    assert.equal("externalVideo" in saved, false);
+  });
 });
 
 interface ArticleRequest {
@@ -1044,6 +1332,7 @@ interface ArticleRequest {
   canonicalUrl: string;
   target: string;
   coverImageUrl?: string;
+  externalVideoUrl?: string | null;
   operation?: "update";
   contentRevision?: number;
 }
@@ -1096,7 +1385,24 @@ function signInput(body: ArticleRequest, at: string) {
     ...(body.operation === "update"
       ? { operation: "update" as const, contentRevision: body.contentRevision }
       : {}),
+    ...signedExternalVideo(body),
     ...(body.coverImageUrl ? { coverImageUrl: new URL(body.coverImageUrl).toString() } : {}),
+  };
+}
+
+function signedExternalVideo(body: ArticleRequest): { externalVideo: { provider: "youtube" | "vimeo"; providerVideoId: string } | null } | Record<string, never> {
+  if (!Object.prototype.hasOwnProperty.call(body, "externalVideoUrl") || body.externalVideoUrl === undefined) {
+    return {};
+  }
+  if (body.externalVideoUrl === null) {
+    return { externalVideo: null };
+  }
+  const parsed = parseExternalVideoUrl(body.externalVideoUrl);
+  if (!parsed) {
+    throw new Error(`test cannot sign invalid externalVideoUrl: ${body.externalVideoUrl}`);
+  }
+  return {
+    externalVideo: { provider: parsed.provider, providerVideoId: parsed.providerVideoId },
   };
 }
 

@@ -15,11 +15,36 @@ export function hashArticleField(value: string): string {
  * request string. Field hashes keep the article body out of the signed lines'
  * logs while still binding it.
  *
- * Create: twelve lines. A cover URL, when present, is the thirteenth line.
+ * Create: twelve lines.
  * Update: the same twelve lines, then the literal `update`, then the decimal
- * contentRevision. A cover URL, when present, is the last line. Omitting the
- * update lines keeps every previously signed create and cover payload valid.
+ * contentRevision.
+ * Video, only when the JSON field is present: `video:v1:<provider>:<id>` or
+ * `video:v1:remove`. Absence of this line is not a removal.
+ * A cover URL, when present, is the last line. Omitting the update and video
+ * lines keeps every previously signed create and cover payload valid.
  */
+export interface ArticleIngestVideoIdentity {
+  provider: "youtube" | "vimeo";
+  providerVideoId: string;
+}
+
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+const VIMEO_VIDEO_ID = /^\d+$/;
+
+/** Canonical video line. `null` is the explicit removal token. */
+export function externalVideoIngestLine(video: ArticleIngestVideoIdentity | null): string {
+  if (video === null) {
+    return "video:v1:remove";
+  }
+  const valid =
+    (video.provider === "youtube" && YOUTUBE_VIDEO_ID.test(video.providerVideoId)) ||
+    (video.provider === "vimeo" && VIMEO_VIDEO_ID.test(video.providerVideoId));
+  if (!valid) {
+    throw new Error("external video identity is not valid.");
+  }
+  return `video:v1:${video.provider}:${video.providerVideoId}`;
+}
+
 export function buildArticleIngestPayload(input: {
   timestamp: string;
   publicationId: string;
@@ -35,6 +60,8 @@ export function buildArticleIngestPayload(input: {
   coverImageUrl?: string;
   operation?: "update";
   contentRevision?: number;
+  /** Omitted: leave video unchanged. Null: explicit removal. */
+  externalVideo?: ArticleIngestVideoIdentity | null;
 }): string {
   const lines = [
     INTEGRITY_MEDIA_ARTICLE_INGEST_PURPOSE,
@@ -60,6 +87,9 @@ export function buildArticleIngestPayload(input: {
     }
     lines.push("update", String(input.contentRevision));
   }
+  if (input.externalVideo !== undefined) {
+    lines.push(externalVideoIngestLine(input.externalVideo));
+  }
   if (input.coverImageUrl !== undefined) {
     lines.push(input.coverImageUrl);
   }
@@ -83,22 +113,29 @@ export function articlePayloadDigest(input: {
   title: string;
   excerpt: string;
   content: string;
+  /**
+   * Included only when the request carries the video field, so a legacy body
+   * keeps the digest already stored for that text article.
+   */
+  externalVideo?: ArticleIngestVideoIdentity | null;
 }): string {
-  return hashArticleField(
-    [
-      input.publicationId,
-      input.authorId,
-      input.huMemberId,
-      input.target,
-      input.language,
-      input.publishedAt,
-      input.canonicalUrl,
-      input.categoryId,
-      hashArticleField(input.title),
-      hashArticleField(input.excerpt),
-      hashArticleField(input.content),
-    ].join("\n"),
-  );
+  const lines = [
+    input.publicationId,
+    input.authorId,
+    input.huMemberId,
+    input.target,
+    input.language,
+    input.publishedAt,
+    input.canonicalUrl,
+    input.categoryId,
+    hashArticleField(input.title),
+    hashArticleField(input.excerpt),
+    hashArticleField(input.content),
+  ];
+  if (input.externalVideo !== undefined) {
+    lines.push(externalVideoIngestLine(input.externalVideo));
+  }
+  return hashArticleField(lines.join("\n"));
 }
 
 export function resetArticleIngestReplayCacheForTests(): void {

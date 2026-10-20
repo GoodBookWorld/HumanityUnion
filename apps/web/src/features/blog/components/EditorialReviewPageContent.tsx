@@ -35,6 +35,7 @@ import {
 } from "../editorial-api";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
+import { BlogArticleVideo } from "./BlogArticleVideo";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCoverImage } from "./BlogCoverImage";
@@ -329,6 +330,9 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
               className="blog-article__cover-image"
             />
           </div>
+          {preview.externalVideo ? (
+            <BlogArticleVideo video={preview.externalVideo} title={preview.title} />
+          ) : null}
           {preview.excerpt ? <p className="hu-body blog-article__excerpt">{preview.excerpt}</p> : null}
           <BlogArticleBody html={preview.content} />
           <BlogAuthorCard author={preview.author} />

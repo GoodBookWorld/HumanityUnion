@@ -1,6 +1,7 @@
 import type {
   BlogAuthorWorkspacePost,
   BlogAuthorWorkspacePostSummary,
+  BlogExternalVideo,
   BlogPost,
   CivicSearchMetadata,
   PublicBlogPostDetail,
@@ -9,6 +10,7 @@ import type {
 } from "@hu/types";
 
 import { displayedBlogCoverMedia } from "./blog-cover-media.js";
+import { storedExternalVideo } from "./blog-external-video.js";
 import { getBlogCategoryById } from "./blog-categories.js";
 import { resolvePublicBlogPostSeo } from "./blog-seo.js";
 
@@ -100,6 +102,7 @@ export function toBlogPreviewProjection(
     excerpt: post.excerpt,
     content: post.content,
     coverImage: displayedBlogCoverMedia(post),
+    ...projectedExternalVideo(post),
     author,
     publishedAt: post.publishedAt ?? post.updatedAt,
     updatedAt: post.updatedAt,
@@ -159,6 +162,7 @@ export function toPublicBlogPostDetail(
     excerpt: post.excerpt,
     content: post.content,
     coverImage: displayedBlogCoverMedia(post),
+    ...projectedExternalVideo(post),
     author,
     publishedAt: post.publishedAt ?? post.updatedAt,
     updatedAt: post.updatedAt,
@@ -176,6 +180,13 @@ export function toPublicBlogPostDetail(
 }
 
 /** Assert public JSON never includes legacy / internal fields. */
+function projectedExternalVideo(
+  post: BlogPost,
+): { externalVideo: BlogExternalVideo } | Record<string, never> {
+  const video = storedExternalVideo(post.externalVideo);
+  return video ? { externalVideo: video } : {};
+}
+
 export function assertNoInternalBlogFields(payload: unknown): void {
   const serialized = JSON.stringify(payload);
   const forbidden = [

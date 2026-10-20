@@ -737,6 +737,26 @@
   object-position: center;
 }
 
+.blog-article__video {
+  width: 100%;
+  max-width: min(100%, 56rem);
+  min-width: 0;
+  margin-inline: auto;
+  margin-top: var(--hu-space-4);
+  border-radius: var(--hu-radius-card);
+  overflow: hidden;
+  background: black;
+}
+
+.blog-article__video .external-video-embed {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+}
+
 .blog-article-body {
   max-width: var(--hu-reading-max-width); /* editorial measure — narrower than outer page */
   margin-inline: auto;

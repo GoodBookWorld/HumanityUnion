@@ -4,11 +4,14 @@ import type {
   BlogCoverMedia,
   BlogEditorialHistoryEntry,
   BlogExternalCover,
+  BlogExternalVideo,
   BlogPost,
   BlogPostLegacyMigration,
   BlogPostReviewMetadata,
   ModerationBlockAuthority,
 } from "@hu/types";
+
+import { storedExternalVideo } from "../blog-external-video.js";
 
 export interface BlogPostMongoDocument {
   postId: string;
@@ -22,6 +25,7 @@ export interface BlogPostMongoDocument {
   tags: string[];
   coverMedia: BlogCoverMedia | null;
   externalCover?: BlogExternalCover;
+  externalVideo?: BlogExternalVideo;
   status: BlogPost["status"];
   originalLanguage: string;
   safetyOutcome: BlogPost["safetyOutcome"];
@@ -115,6 +119,7 @@ function pickModerationBlockFields(source: {
 }
 
 export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
+  const externalVideo = storedExternalVideo(post.externalVideo);
   return {
     postId: post.postId,
     authorParticipantId: post.authorParticipantId,
@@ -129,6 +134,7 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
     ...(post.externalCover
       ? { externalCover: { source: post.externalCover.source, url: post.externalCover.url } }
       : {}),
+    ...(externalVideo ? { externalVideo } : {}),
     status: post.status,
     originalLanguage: post.originalLanguage,
     safetyOutcome: post.safetyOutcome,
@@ -149,6 +155,13 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
     legacy: post.legacy ? { ...post.legacy } : undefined,
     ...(post.optimization ? { optimization: structuredCloneOptimization(post.optimization) } : {}),
   };
+}
+
+function readExternalVideo(
+  value: BlogExternalVideo | undefined,
+): { externalVideo: BlogExternalVideo } | Record<string, never> {
+  const video = storedExternalVideo(value);
+  return video ? { externalVideo: video } : {};
 }
 
 function readExternalCover(value: BlogExternalCover | undefined): { externalCover: BlogExternalCover } | Record<string, never> {
@@ -206,6 +219,7 @@ export function fromBlogPostMongoDocument(doc: BlogPostMongoDocument): BlogPost 
     tags: [...(doc.tags ?? [])],
     coverMedia: doc.coverMedia ? { ...doc.coverMedia } : null,
     ...readExternalCover(doc.externalCover),
+    ...readExternalVideo(doc.externalVideo),
     status: doc.status,
     originalLanguage: doc.originalLanguage,
     safetyOutcome: doc.safetyOutcome ?? null,

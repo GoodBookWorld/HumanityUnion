@@ -12,6 +12,7 @@ import {
 import { formatBlogPublishedDate } from "../api";
 import { previewBlogPost, type BlogPreviewProjection } from "../publishing-api";
 import { BlogArticleBody } from "./BlogArticleBody";
+import { BlogArticleVideo } from "./BlogArticleVideo";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCoverImage } from "./BlogCoverImage";
@@ -85,6 +86,8 @@ export function BlogPreviewPageContent({ postId }: { postId: string }) {
           priority
         />
       </div>
+
+      {post.externalVideo ? <BlogArticleVideo video={post.externalVideo} title={post.title} /> : null}
 
       <BlogArticleBody html={post.content} />
       <BlogAuthorCard author={post.author} />
