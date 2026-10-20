@@ -1,6 +1,6 @@
 .admin-public-choice-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.45rem 0.65rem;
 }
@@ -32,7 +32,10 @@
   flex-direction: column;
   gap: 0.55rem;
   margin-top: 0.65rem;
+  width: 100%;
+  min-width: 0;
   max-width: 28rem;
+  box-sizing: border-box;
   padding: 0.75rem 0.85rem;
   border: 1px solid rgba(26, 77, 109, 0.14);
   border-radius: 0.35rem;
@@ -54,6 +57,10 @@
 }
 
 .admin-public-choice-edit-form__fields input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.4rem 0.5rem;
   border: 1px solid rgba(26, 77, 109, 0.28);
   border-radius: 0.3rem;

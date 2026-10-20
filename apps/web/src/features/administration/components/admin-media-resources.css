@@ -7,7 +7,7 @@
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: auto;
   scroll-margin-top: var(--humanity-header-offset, var(--hu-scroll-margin-top, 5rem));
 }
 
@@ -34,6 +34,8 @@
   min-width: 0;
   max-width: 100%;
   width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .admin-media-resources__form-grid input,
@@ -66,15 +68,20 @@
 }
 
 .admin-media-resources-table {
-  table-layout: fixed;
-  width: 100%;
-  min-width: 78rem;
+  table-layout: auto;
+  width: max-content;
+  min-width: max(100%, 78rem);
 }
 
 .admin-media-resources-table th,
 .admin-media-resources-table td {
   overflow-wrap: normal;
   word-break: normal;
+}
+
+.admin-media-resources-table th {
+  white-space: nowrap;
+  hyphens: none;
 }
 
 .admin-media-resources__col-logo {
@@ -113,8 +120,7 @@
 }
 
 .admin-media-resources__col-actions {
-  width: 15rem;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .admin-media-resources-table .admin-initiatives-table__title {
@@ -153,7 +159,7 @@
 
 .admin-media-resources__row-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
 }
 

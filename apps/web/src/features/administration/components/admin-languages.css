@@ -12,10 +12,14 @@
 }
 
 .admin-languages__table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: auto;
   max-height: min(70vh, 40rem);
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .admin-languages-table {
@@ -58,9 +62,16 @@
   width: 12.5rem;
   min-width: 12.5rem;
   max-width: 14rem;
-  white-space: normal;
   overflow-wrap: normal;
   word-break: normal;
+}
+
+.admin-languages-table th.admin-languages__actions-col {
+  white-space: nowrap;
+}
+
+.admin-languages-table td.admin-languages__actions-col {
+  white-space: normal;
 }
 
 .admin-languages__row-actions {
@@ -270,8 +281,10 @@
 
 .admin-languages__form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
   gap: 0.75rem 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-languages__form-span {
@@ -283,6 +296,19 @@
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.875rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.admin-languages__form input:not([type="checkbox"]):not([type="radio"]),
+.admin-languages__form select,
+.admin-languages__form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .admin-languages__form-check {

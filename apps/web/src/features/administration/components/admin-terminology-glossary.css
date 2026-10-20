@@ -19,11 +19,17 @@
 }
 
 .admin-glossary__table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .admin-glossary-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -59,9 +65,11 @@
 
 .admin-glossary__readonly-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
   gap: 0.75rem 1rem;
   margin-bottom: 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-glossary__readonly-field {
@@ -162,15 +170,30 @@
 
 .admin-glossary__locale-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   gap: 0.75rem 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-glossary__locale-grid label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.875rem;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.admin-glossary__locale-grid input:not([type="checkbox"]):not([type="radio"]),
+.admin-glossary__locale-grid textarea,
+.admin-glossary__locale-grid select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .admin-glossary__locale-grid textarea {
