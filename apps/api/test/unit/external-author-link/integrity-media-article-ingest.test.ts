@@ -876,6 +876,83 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(blogPublishEmitCountForTests(), 1);
   });
 
+  it("refuses to rewrite a blocked publication on a later revision or a repair retry", async () => {
+    await trustedAuthor();
+    await postArticle(articleBody("pub-sync-blocked"));
+    const accepted = await postArticle(updateBody("pub-sync-blocked", 1, { title: "Accepted title" }));
+    assert.equal(accepted.status, 200);
+    const stored = listBlogMemoryPostsForTests()[0]!;
+    await replaceBlogPost({
+      ...stored,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+
+    const later = await postArticle(updateBody("pub-sync-blocked", 2, { title: "Should not replace" }));
+    assert.equal(later.status, 403);
+    assert.equal(later.body.meta.code, "author_blocked");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Accepted title");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.administrativelyBlocked, true);
+    assert.equal(
+      listArticleDeliveriesForTests().find((row) => row.publicationId === "pub-sync-blocked")
+        ?.contentRevision,
+      1,
+    );
+
+    await replaceBlogPost({
+      ...listBlogMemoryPostsForTests()[0]!,
+      administrativelyBlocked: undefined,
+    });
+    setArticleIngestAfterContentAcceptForTests(() => {
+      throw new Error("stop before the article write");
+    });
+    const failed = await postArticle(updateBody("pub-sync-blocked", 2, { title: "Revision two" }));
+    assert.equal(failed.status, 503);
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Accepted title");
+
+    await replaceBlogPost({
+      ...listBlogMemoryPostsForTests()[0]!,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+    const repaired = await postArticle(updateBody("pub-sync-blocked", 2, { title: "Revision two" }));
+    assert.equal(repaired.status, 403);
+    assert.equal(repaired.body.meta.code, "author_blocked");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.title, "Accepted title");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.administrativelyBlocked, true);
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+  });
+
+  it("refuses to repair a publication when the author is blocked", async () => {
+    await trustedAuthor();
+    await postArticle(articleBody("pub-sync-author-blocked"));
+    setArticleIngestAfterContentAcceptForTests(() => {
+      throw new Error("stop before the article write");
+    });
+    const failed = await postArticle(
+      updateBody("pub-sync-author-blocked", 1, { title: "Blocked author edit" }),
+    );
+    assert.equal(failed.status, 503);
+    await upsertBlogCapabilityGrant({
+      participantId: MEMBER,
+      capabilities: ["author"],
+      updatedAt: new Date().toISOString(),
+      publishWithoutManualReview: true,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+    const repaired = await postArticle(
+      updateBody("pub-sync-author-blocked", 1, { title: "Blocked author edit" }),
+    );
+    assert.equal(repaired.status, 403);
+    assert.equal(repaired.body.meta.code, "author_blocked");
+    assert.equal(
+      listBlogMemoryPostsForTests()[0]?.title,
+      "Public article pub-sync-author-blocked",
+    );
+    assert.equal(listBlogMemoryPostsForTests().length, 1);
+  });
+
   it("lets the higher concurrent revision win and keeps one post", async () => {
     await trustedAuthor();
     await postArticle(articleBody("pub-sync-race"));

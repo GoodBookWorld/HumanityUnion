@@ -156,6 +156,7 @@ export async function setAdminAuthorTrustedPublishing(
 export async function listAdminPublishingPublications(query: {
   status?: AdminPublicationDirectoryStatusFilter;
   q?: string;
+  authorParticipantId?: string;
   limit?: number;
   offset?: number;
 } = {}): Promise<AdminPublicationDirectoryResponse> {
@@ -165,6 +166,9 @@ export async function listAdminPublishingPublications(query: {
   }
   if (query.q?.trim()) {
     params.set("q", query.q.trim());
+  }
+  if (query.authorParticipantId?.trim()) {
+    params.set("authorParticipantId", query.authorParticipantId.trim());
   }
   if (query.limit !== undefined) {
     params.set("limit", String(query.limit));

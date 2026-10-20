@@ -286,8 +286,8 @@ export function AdminBlogCategoriesPanel() {
       {loading ? <p className="hu-caption">Loading categories…</p> : null}
 
       {!loading ? (
-        <div className="admin-publishing-table-wrap admin-blog-categories__table-wrap">
-          <table className="admin-publishing-table admin-blog-categories__table">
+        <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-blog-categories__table-wrap">
+          <table className="admin-publishing-table admin-publishing-table--directory admin-blog-categories__table">
             <caption className="hu-visually-hidden">
               Publication categories ordered by display priority
             </caption>

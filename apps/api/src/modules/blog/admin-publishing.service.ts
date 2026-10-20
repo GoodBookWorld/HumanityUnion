@@ -22,6 +22,8 @@ import {
 } from "../administration/administration.errors.js";
 import { record } from "../administration/audit.service.js";
 import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repository.js";
+import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
+import { getExternalAuthorLinkStore } from "../external-author-link/external-author-link.store.js";
 import { findMemberById } from "../member/infrastructure/member.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import {
@@ -158,15 +160,36 @@ export async function listAdminAuthors(input: {
           row.participantId.toLowerCase().includes(q),
       )
     : projected;
+  const page = filtered.slice(offset, offset + limit);
+  const linkedMemberIds = await integrityMediaLinkedMemberIds(
+    page.map((row) => row.participantId),
+  );
 
   return {
-    authors: filtered.slice(offset, offset + limit),
+    authors: page.map((row) => ({
+      ...row,
+      integrityMediaLinked: linkedMemberIds.has(row.participantId),
+    })),
     total: filtered.length,
     activeCount: listed.activeCount,
     blockedCount: listed.blockedCount,
     limit,
     offset,
   };
+}
+
+/** IM identity comes from the link row, including a later disabled connection. */
+async function integrityMediaLinkedMemberIds(memberIds: readonly string[]): Promise<Set<string>> {
+  if (memberIds.length === 0) {
+    return new Set();
+  }
+  const listed = await getExternalAuthorLinkStore().listForAdminByMemberIds({
+    source: INTEGRITY_MEDIA_SOURCE,
+    memberIds,
+    limit: memberIds.length,
+    offset: 0,
+  });
+  return new Set(listed.items.map((record) => record.memberId));
 }
 
 export async function blockAdminAuthor(input: {
@@ -401,6 +424,7 @@ export async function listAdminPublications(input: {
   actorUserId: string;
   status?: AdminPublicationDirectoryStatusFilter;
   q?: string;
+  authorParticipantId?: string;
   limit?: number;
   offset?: number;
 }): Promise<AdminPublicationDirectoryResponse> {
@@ -408,10 +432,12 @@ export async function listAdminPublications(input: {
 
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
   const offset = Math.max(input.offset ?? 0, 0);
+  const authorParticipantId = input.authorParticipantId?.trim();
 
   const listed = await listAdminBlogPublications({
     statusFilter: input.status ?? "all",
     q: input.q,
+    ...(authorParticipantId ? { authorParticipantId } : {}),
     limit,
     offset,
   });
