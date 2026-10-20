@@ -7,6 +7,7 @@ import {
   resolvePublicMembershipFields,
   toPublicMemberProfile,
 } from "../../../src/modules/member-profile/member-profile.projection.js";
+import { validateMemberProfilePrivacyPatch } from "../../../src/modules/member-profile/member-profile.validators.js";
 
 function buildProfile(overrides: Partial<MemberProfile> = {}): MemberProfile {
   return {
@@ -184,6 +185,38 @@ describe("Launch Readiness UX Fix Pack 01 — public profile visibility projecti
     );
     assert.equal(activeWithoutNumber.membershipStatus, "participant");
     assert.equal(activeWithoutNumber.memberBadgeVisible, false);
+  });
+
+  it("shows a public profile to an anonymous viewer and withholds restricted profiles", () => {
+    const anonymous = { viewerIsAuthenticated: false, viewerIsOwner: false };
+    const member = { viewerIsAuthenticated: true, viewerIsOwner: false };
+
+    const publicProfile = toPublicMemberProfile(buildProfile({ profileVisibility: "public" }), anonymous);
+    assert.ok(publicProfile);
+    assert.equal(publicProfile.publicName, "jane-steward-abc123");
+
+    assert.equal(
+      toPublicMemberProfile(buildProfile({ profileVisibility: "members_only" }), anonymous),
+      null,
+    );
+    assert.ok(toPublicMemberProfile(buildProfile({ profileVisibility: "members_only" }), member));
+    assert.equal(
+      toPublicMemberProfile(buildProfile({ profileVisibility: "private" }), member),
+      null,
+    );
+    assert.ok(
+      toPublicMemberProfile(buildProfile({ profileVisibility: "private" }), {
+        viewerIsAuthenticated: true,
+        viewerIsOwner: true,
+      }),
+    );
+  });
+
+  it("accepts Public, Members only, and Private through the profile privacy API", () => {
+    for (const profileVisibility of ["public", "members_only", "private"] as const) {
+      const patch = validateMemberProfilePrivacyPatch({ profileVisibility });
+      assert.equal(patch.profileVisibility, profileVisibility);
+    }
   });
 
   it("never leaks auth internals through the public projection", () => {

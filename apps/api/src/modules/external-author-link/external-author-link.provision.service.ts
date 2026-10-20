@@ -482,6 +482,9 @@ async function createProvisionedIdentity(
     userId,
     displayName: participantName,
   });
+  // New IM authors start public. Ordinary registration keeps the shared default,
+  // and an existing participant's later choice is never written again.
+  profile.profileVisibility = "public";
 
   if (approved?.biography !== undefined) {
     profile.biography = approved.biography;
