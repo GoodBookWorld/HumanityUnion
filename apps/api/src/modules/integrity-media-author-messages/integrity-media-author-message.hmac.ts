@@ -3,7 +3,15 @@ import { createHash, createHmac } from "node:crypto";
 import {
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V3,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV,
 } from "./integrity-media-author-message.constants.js";
+
+const AUTHOR_MESSAGE_V3_TARGETS = ["staging", "production"] as const;
+const AUTHOR_MESSAGE_V3_KINDS = ["notification", "chat"] as const;
+
+export type IntegrityMediaAuthorMessageSignedTarget = (typeof AUTHOR_MESSAGE_V3_TARGETS)[number];
+export type IntegrityMediaAuthorMessageSignedKind = (typeof AUTHOR_MESSAGE_V3_KINDS)[number];
 
 export interface IntegrityMediaAuthorMessageContentInput {
   body: string;
@@ -72,6 +80,55 @@ export function buildIntegrityMediaAuthorMessageCanonicalStringV2(input: {
     input.kind,
     input.contentSha256,
   ].join("\n");
+}
+
+/**
+ * Seven newline-joined lines, no trailing newline.
+ * `target` and `kind` are authenticated here and are not part of contentSha256.
+ * Unknown targets and kinds are rejected and are never replaced with another value.
+ */
+export function buildIntegrityMediaAuthorMessageCanonicalStringV3(input: {
+  timestamp: string;
+  messageId: string;
+  recipientAuthorId: string;
+  target: string;
+  kind: string;
+  contentSha256: string;
+}): string {
+  if (!isAuthorMessageV3Target(input.target)) {
+    throw new Error("Integrity Media author message v3 target is not recognized.");
+  }
+
+  if (!isAuthorMessageV3Kind(input.kind)) {
+    throw new Error("Integrity Media author message v3 kind is not recognized.");
+  }
+
+  return [
+    INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V3,
+    input.timestamp,
+    input.messageId,
+    input.recipientAuthorId,
+    input.target,
+    input.kind,
+    input.contentSha256,
+  ].join("\n");
+}
+
+/** True only for the exact env value `true` after trim. Every other value stays on v1/v2. */
+export function integrityMediaAuthorMessageV3Enabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]?.trim() === "true";
+}
+
+function isAuthorMessageV3Target(
+  value: string,
+): value is IntegrityMediaAuthorMessageSignedTarget {
+  return (AUTHOR_MESSAGE_V3_TARGETS as readonly string[]).includes(value);
+}
+
+function isAuthorMessageV3Kind(value: string): value is IntegrityMediaAuthorMessageSignedKind {
+  return (AUTHOR_MESSAGE_V3_KINDS as readonly string[]).includes(value);
 }
 
 export function signIntegrityMediaAuthorMessage(secret: string, canonical: string): string {
