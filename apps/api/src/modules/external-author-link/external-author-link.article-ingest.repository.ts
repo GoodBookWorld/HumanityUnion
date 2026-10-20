@@ -7,6 +7,11 @@ import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 
 export type ArticleDeliveryPhase = "creating" | "complete" | "held";
 
+export interface ArticleDeliveryExternalVideo {
+  provider: "youtube" | "vimeo";
+  providerVideoId: string;
+}
+
 export interface ArticleDeliveryRecord {
   source: typeof INTEGRITY_MEDIA_SOURCE;
   publicationId: string;
@@ -27,6 +32,11 @@ export interface ArticleDeliveryRecord {
   coverUrl?: string | null;
   /** Signed timestamp that accepted coverUrl. Empty or absent means no cover decision. */
   coverTimestamp?: string;
+  /**
+   * Accepted external video. Absent means this delivery has not recorded a video
+   * decision. Null means an explicit removal was accepted.
+   */
+  externalVideo?: ArticleDeliveryExternalVideo | null;
   postId: string | null;
   status: BlogPostStatus | null;
   phase: ArticleDeliveryPhase;
@@ -212,6 +222,7 @@ export async function compareAndSetArticleCover(input: {
  * An equal revision with the same digest is idempotent. An equal revision with
  * a different digest conflicts. A lower revision is stale and must not write.
  * Cover fields change only when this revision includes a cover.
+ * Video fields change only when this revision includes the video field.
  */
 export async function compareAndSetArticleContent(input: {
   publicationId: string;
@@ -223,6 +234,7 @@ export async function compareAndSetArticleContent(input: {
     coverDigest: string;
     coverTimestamp: string;
   };
+  externalVideo?: ArticleDeliveryExternalVideo | null;
 }): Promise<ArticleContentWriteResult> {
   if (articleDeliveryUsesMemory()) {
     const key = deliveryKey(INTEGRITY_MEDIA_SOURCE, input.publicationId);
@@ -280,6 +292,23 @@ function classifyContentRevision(
   return "applied";
 }
 
+function videoRevisionFields(video: ArticleDeliveryExternalVideo | null | undefined): {
+  externalVideo: ArticleDeliveryExternalVideo | null;
+} | Record<string, never> {
+  if (video === undefined) {
+    return {};
+  }
+  if (video === null) {
+    return { externalVideo: null };
+  }
+  return {
+    externalVideo: {
+      provider: video.provider,
+      providerVideoId: video.providerVideoId,
+    },
+  };
+}
+
 function applyContentRevision(
   current: ArticleDeliveryRecord,
   input: {
@@ -291,6 +320,7 @@ function applyContentRevision(
       coverDigest: string;
       coverTimestamp: string;
     };
+    externalVideo?: ArticleDeliveryExternalVideo | null;
   },
 ): ArticleDeliveryRecord {
   return {
@@ -305,6 +335,7 @@ function applyContentRevision(
           coverTimestamp: input.cover.coverTimestamp,
         }
       : {}),
+    ...videoRevisionFields(input.externalVideo),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -318,6 +349,7 @@ function contentRevisionUpdate(input: {
     coverDigest: string;
     coverTimestamp: string;
   };
+  externalVideo?: ArticleDeliveryExternalVideo | null;
 }): Record<string, unknown> {
   return {
     payloadDigest: input.payloadDigest,
@@ -331,6 +363,7 @@ function contentRevisionUpdate(input: {
           coverTimestamp: input.cover.coverTimestamp,
         }
       : {}),
+    ...videoRevisionFields(input.externalVideo),
   };
 }
 

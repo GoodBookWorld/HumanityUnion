@@ -1928,6 +1928,7 @@ export type {
   AdminBlogCategoryListResponse,
   BlogCoverMedia,
   BlogExternalCover,
+  BlogExternalVideo,
   BlogExternalSocialProviderId,
   BlogHuSocialDistributionPreference,
   BlogHuPlatformDistributionChannel,

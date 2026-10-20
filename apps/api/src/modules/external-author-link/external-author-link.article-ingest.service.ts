@@ -1,6 +1,13 @@
 import { BlockList, isIP } from "node:net";
 
-import type { BlogExternalCover, BlogPost, BlogPostStatus, LifecycleSafetyOutcome } from "@hu/types";
+import {
+  parseExternalVideoUrl,
+  type BlogExternalCover,
+  type BlogExternalVideo,
+  type BlogPost,
+  type BlogPostStatus,
+  type LifecycleSafetyOutcome,
+} from "@hu/types";
 
 import { isBlogAuthorAdministrativelyBlocked } from "../blog/admin-publishing.service.js";
 import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
@@ -20,6 +27,7 @@ import { notifyPublicPresentationChanged } from "../language/public-presentation
 import {
   findBlogPostById,
   updateBlogPostExternalCover,
+  updateBlogPostExternalVideo,
   updateSyndicatedBlogArticleContent,
 } from "../blog/persistence/blog.repository.js";
 import { integrityMediaLinkSignaturesEqual, signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
@@ -38,6 +46,7 @@ import {
   insertArticleDelivery,
   releaseArticleDeliveryWithoutPost,
   updateArticleDeliveryPhase,
+  type ArticleDeliveryExternalVideo,
   type ArticleDeliveryRecord,
 } from "./external-author-link.article-ingest.repository.js";
 import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
@@ -63,7 +72,12 @@ const ARTICLE_FIELDS = new Set([
   "target",
 ]);
 
-const OPTIONAL_ARTICLE_FIELDS = new Set(["coverImageUrl", "operation", "contentRevision"]);
+const OPTIONAL_ARTICLE_FIELDS = new Set([
+  "coverImageUrl",
+  "externalVideoUrl",
+  "operation",
+  "contentRevision",
+]);
 
 const blockedCoverDestinations = new BlockList();
 blockedCoverDestinations.addSubnet("0.0.0.0", 8, "ipv4");
@@ -119,6 +133,8 @@ interface NormalizedArticle {
   canonicalUrl: string;
   target: string;
   coverImageUrl?: string;
+  /** Omitted: leave the stored video unchanged. Null: explicit removal. */
+  externalVideo?: ArticleDeliveryExternalVideo | null;
   operation?: "update";
   contentRevision?: number;
 }
@@ -256,6 +272,7 @@ export async function ingestIntegrityMediaArticle(input: {
     title: validated.title,
     excerpt: validated.excerpt,
     content: article.content,
+    ...(article.externalVideo !== undefined ? { externalVideo: article.externalVideo } : {}),
   });
 
   return serializeDelivery(article.publicationId, () =>
@@ -307,6 +324,9 @@ async function deliverClaimedArticle(input: DeliveryWork): Promise<ArticleIngest
       coverUrl,
       coverDigest: articleCoverDigest(coverUrl ?? ""),
       coverTimestamp: coverUrl ? input.signedTimestamp : "",
+      ...(input.article.externalVideo !== undefined
+        ? { externalVideo: input.article.externalVideo }
+        : {}),
       postId: null,
       status: null,
       phase: "creating",
@@ -359,6 +379,7 @@ async function continueExistingDelivery(
   }
   if (existing.phase === "complete" && existing.postId && existing.status) {
     await reconcileCover(existing.postId, input);
+    await reconcileStoredExternalVideo(existing.postId, existing);
     const post = await findBlogPostById(existing.postId);
     return {
       source: INTEGRITY_MEDIA_SOURCE,
@@ -447,6 +468,9 @@ async function applyArticleUpdate(
             coverTimestamp: input.signedTimestamp,
           },
         }
+      : {}),
+    ...(input.article.externalVideo !== undefined
+      ? { externalVideo: input.article.externalVideo }
       : {}),
   });
   if (decision.decision === "stale") {
@@ -571,6 +595,9 @@ async function writeSyndicatedArticle(post: BlogPost, input: DeliveryWork): Prom
     ...(input.article.coverImageUrl
       ? { externalCover: { source: "integrity-media", url: input.article.coverImageUrl } }
       : {}),
+    ...(input.article.externalVideo !== undefined
+      ? { externalVideo: externalVideoForPost(input.article.externalVideo) }
+      : {}),
   });
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
@@ -594,7 +621,34 @@ function syndicatedArticleMatches(post: BlogPost, input: DeliveryWork): boolean 
   if (input.article.coverImageUrl && post.externalCover?.url !== input.article.coverImageUrl) {
     return false;
   }
+  if (input.article.externalVideo !== undefined && !externalVideoMatches(post, input.article.externalVideo)) {
+    return false;
+  }
   return true;
+}
+
+function externalVideoMatches(
+  post: BlogPost,
+  video: ArticleDeliveryExternalVideo | null,
+): boolean {
+  if (video === null) {
+    return !post.externalVideo;
+  }
+  return (
+    post.externalVideo?.provider === video.provider &&
+    post.externalVideo.providerVideoId === video.providerVideoId
+  );
+}
+
+function externalVideoForPost(video: ArticleDeliveryExternalVideo | null): BlogExternalVideo | null {
+  if (video === null) {
+    return null;
+  }
+  return {
+    source: "integrity-media",
+    provider: video.provider,
+    providerVideoId: video.providerVideoId,
+  };
 }
 
 function currentArticleResult(
@@ -631,6 +685,31 @@ async function reconcileCover(postId: string, input: DeliveryWork): Promise<void
     throw new ArticleIngestError(503, "unavailable", "Article delivery could not be reconciled.");
   }
   await applyExternalCover(postId, winning, accepted);
+}
+
+async function reconcileStoredExternalVideo(
+  postId: string,
+  delivery: ArticleDeliveryRecord,
+): Promise<void> {
+  if (delivery.externalVideo === undefined) {
+    return;
+  }
+  await applyExternalVideo(postId, delivery.externalVideo);
+}
+
+async function applyExternalVideo(
+  postId: string,
+  video: ArticleDeliveryExternalVideo | null,
+): Promise<void> {
+  const post = await findBlogPostById(postId);
+  if (!post) {
+    throw new ArticleIngestError(503, "unavailable", "Article delivery could not be reconciled.");
+  }
+  const next = externalVideoForPost(video);
+  if (externalVideoMatches(post, video)) {
+    return;
+  }
+  await updateBlogPostExternalVideo(postId, next);
 }
 
 async function applyExternalCover(
@@ -698,6 +777,9 @@ async function createAndSubmit(
     const recorded = await findArticleDelivery(input.article.publicationId);
     if (recorded) {
       await applyExternalCover(postId, recorded, false);
+      if (recorded.externalVideo !== undefined) {
+        await applyExternalVideo(postId, recorded.externalVideo);
+      }
     }
 
     const submitted = await submitBlogPostForReview({
@@ -825,6 +907,9 @@ function verifySignature(input: {
     ...(input.article.operation === "update"
       ? { operation: "update" as const, contentRevision: input.article.contentRevision }
       : {}),
+    ...(input.article.externalVideo !== undefined
+      ? { externalVideo: input.article.externalVideo }
+      : {}),
     ...(input.article.coverImageUrl ? { coverImageUrl: input.article.coverImageUrl } : {}),
   });
   const expected = signIntegrityMediaLinkRedeem(input.secret, payload);
@@ -874,6 +959,7 @@ function normalizeArticle(body: unknown): NormalizedArticle {
   const publishedAt = requiredString(record.publishedAt, "publishedAt").trim();
   const canonicalUrl = normalizeCanonicalUrl(record.canonicalUrl);
   const coverImageUrl = normalizeCoverImageUrl(record.coverImageUrl);
+  const externalVideo = normalizeExternalVideo(record);
   const target = requiredString(record.target, "target").trim();
   const updateFields = normalizeUpdateFields(record);
 
@@ -893,8 +979,42 @@ function normalizeArticle(body: unknown): NormalizedArticle {
     canonicalUrl,
     target,
     ...(coverImageUrl ? { coverImageUrl } : {}),
+    ...(externalVideo !== undefined ? { externalVideo } : {}),
     ...updateFields,
   };
+}
+
+function normalizeExternalVideo(
+  record: Record<string, unknown>,
+): ArticleDeliveryExternalVideo | null | undefined {
+  if (!Object.prototype.hasOwnProperty.call(record, "externalVideoUrl")) {
+    return undefined;
+  }
+  const value = record.externalVideoUrl;
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
+  }
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 2048 || /[<>]/.test(trimmed) || /\s/.test(trimmed)) {
+    throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
+  }
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(trimmed);
+  } catch {
+    throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
+  }
+  if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
+    throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
+  }
+  const parsed = parseExternalVideoUrl(trimmed);
+  if (!parsed) {
+    throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
+  }
+  return { provider: parsed.provider, providerVideoId: parsed.providerVideoId };
 }
 
 function normalizeUpdateFields(

@@ -6,6 +6,7 @@ import {
   type BlogCapabilityGrant,
   type BlogCategoryId,
   type BlogExternalCover,
+  type BlogExternalVideo,
   type BlogPost,
   type BlogPostStatus,
 } from "@hu/types";
@@ -138,7 +139,8 @@ export async function replaceBlogPost(
 
 /**
  * Writes syndicated title, excerpt, sanitized HTML, and the edit timestamp.
- * Optionally replaces the partner cover. Does not change publication id, slug,
+ * Optionally replaces the partner cover or video. An omitted video leaves the
+ * stored video in place. Null removes it. Does not change publication id, slug,
  * author, category, uploaded cover, status, or published version.
  */
 export async function updateSyndicatedBlogArticleContent(input: {
@@ -149,6 +151,7 @@ export async function updateSyndicatedBlogArticleContent(input: {
   safetyOutcome: BlogPost["safetyOutcome"];
   updatedAt: string;
   externalCover?: BlogExternalCover;
+  externalVideo?: BlogExternalVideo | null;
 }): Promise<BlogPost> {
   const memory = blogMemory();
   if (memory) {
@@ -156,7 +159,7 @@ export async function updateSyndicatedBlogArticleContent(input: {
     if (!post) {
       throw new BlogPersistenceError(`Blog post ${input.postId} not found for syndicated update.`);
     }
-    const next: BlogPost = {
+    let next: BlogPost = {
       ...post,
       title: input.title,
       excerpt: input.excerpt,
@@ -167,31 +170,17 @@ export async function updateSyndicatedBlogArticleContent(input: {
         ? { externalCover: { source: input.externalCover.source, url: input.externalCover.url } }
         : {}),
     };
+    next = applyExternalVideoField(next, input.externalVideo);
     memory.posts.set(input.postId, next);
     return { ...next };
   }
 
   await ensureBlogMongoReady();
   try {
+    const update = syndicatedContentUpdate(input);
     const result = await postsCollection().updateOne(
       { postId: input.postId },
-      {
-        $set: {
-          title: input.title,
-          excerpt: input.excerpt,
-          content: input.content,
-          safetyOutcome: input.safetyOutcome,
-          updatedAt: input.updatedAt,
-          ...(input.externalCover
-            ? {
-                externalCover: {
-                  source: input.externalCover.source,
-                  url: input.externalCover.url,
-                },
-              }
-            : {}),
-        },
-      },
+      update,
     );
     if (result.matchedCount === 0) {
       throw new BlogPersistenceError(`Blog post ${input.postId} not found for syndicated update.`);
@@ -250,6 +239,110 @@ export async function updateBlogPostExternalCover(
     }
     throw new BlogPersistenceError("Failed to update Blog external cover.", error);
   }
+}
+
+/**
+ * Writes only the partner video identity. Null removes it. Does not change
+ * body, title, author, category, status, or publication events.
+ */
+export async function updateBlogPostExternalVideo(
+  postId: string,
+  externalVideo: BlogExternalVideo | null,
+): Promise<void> {
+  const memory = blogMemory();
+  if (memory) {
+    const post = memory.posts.get(postId);
+    if (!post) {
+      throw new BlogPersistenceError(`Blog post ${postId} not found for video update.`);
+    }
+    memory.posts.set(postId, applyExternalVideoField(post, externalVideo));
+    return;
+  }
+
+  await ensureBlogMongoReady();
+  try {
+    const result = await postsCollection().updateOne(
+      { postId },
+      externalVideo
+        ? {
+            $set: {
+              externalVideo: {
+                source: externalVideo.source,
+                provider: externalVideo.provider,
+                providerVideoId: externalVideo.providerVideoId,
+              },
+            },
+          }
+        : { $unset: { externalVideo: "" } },
+    );
+    if (result.matchedCount === 0) {
+      throw new BlogPersistenceError(`Blog post ${postId} not found for video update.`);
+    }
+  } catch (error) {
+    if (error instanceof BlogPersistenceError) {
+      throw error;
+    }
+    throw new BlogPersistenceError("Failed to update Blog external video.", error);
+  }
+}
+
+function applyExternalVideoField(
+  post: BlogPost,
+  externalVideo: BlogExternalVideo | null | undefined,
+): BlogPost {
+  if (externalVideo === undefined) {
+    return post;
+  }
+  if (externalVideo === null) {
+    const { externalVideo: _removed, ...rest } = post;
+    return rest;
+  }
+  return {
+    ...post,
+    externalVideo: {
+      source: externalVideo.source,
+      provider: externalVideo.provider,
+      providerVideoId: externalVideo.providerVideoId,
+    },
+  };
+}
+
+function syndicatedContentUpdate(input: {
+  title: string;
+  excerpt: string;
+  content: string;
+  safetyOutcome: BlogPost["safetyOutcome"];
+  updatedAt: string;
+  externalCover?: BlogExternalCover;
+  externalVideo?: BlogExternalVideo | null;
+}): { $set: Record<string, unknown>; $unset?: { externalVideo: "" } } {
+  const $set: Record<string, unknown> = {
+    title: input.title,
+    excerpt: input.excerpt,
+    content: input.content,
+    safetyOutcome: input.safetyOutcome,
+    updatedAt: input.updatedAt,
+    ...(input.externalCover
+      ? {
+          externalCover: {
+            source: input.externalCover.source,
+            url: input.externalCover.url,
+          },
+        }
+      : {}),
+  };
+  if (input.externalVideo) {
+    $set.externalVideo = {
+      source: input.externalVideo.source,
+      provider: input.externalVideo.provider,
+      providerVideoId: input.externalVideo.providerVideoId,
+    };
+    return { $set };
+  }
+  if (input.externalVideo === null) {
+    return { $set, $unset: { externalVideo: "" } };
+  }
+  return { $set };
 }
 
 export async function findBlogPostById(postId: string): Promise<BlogPost | null> {
