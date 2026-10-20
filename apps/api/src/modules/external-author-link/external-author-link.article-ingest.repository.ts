@@ -11,6 +11,13 @@ export interface ArticleDeliveryRecord {
   source: typeof INTEGRITY_MEDIA_SOURCE;
   publicationId: string;
   payloadDigest: string;
+  /** IM author that created this delivery. Absent on rows stored before updates. */
+  authorId?: string;
+  /**
+   * Monotonic accepted content revision. Absent or 0 is the original create.
+   * Independent of the HMAC request timestamp.
+   */
+  contentRevision?: number;
   /**
    * SHA-256 of the accepted cover URL, or of "" when no cover has been accepted.
    * Independent of payloadDigest. Absent on deliveries stored before covers.
@@ -25,6 +32,13 @@ export interface ArticleDeliveryRecord {
   phase: ArticleDeliveryPhase;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ArticleContentDecision = "applied" | "idempotent" | "stale" | "conflict";
+
+export interface ArticleContentWriteResult {
+  decision: ArticleContentDecision;
+  record: ArticleDeliveryRecord;
 }
 
 export interface ArticleCoverWriteResult {
@@ -191,6 +205,133 @@ export async function compareAndSetArticleCover(input: {
     throw new Error("article_delivery_missing");
   }
   return { record: current, updated: false };
+}
+
+/**
+ * Accept a content revision only when it is greater than the stored revision.
+ * An equal revision with the same digest is idempotent. An equal revision with
+ * a different digest conflicts. A lower revision is stale and must not write.
+ * Cover fields change only when this revision includes a cover.
+ */
+export async function compareAndSetArticleContent(input: {
+  publicationId: string;
+  contentRevision: number;
+  payloadDigest: string;
+  authorId: string;
+  cover?: {
+    coverUrl: string;
+    coverDigest: string;
+    coverTimestamp: string;
+  };
+}): Promise<ArticleContentWriteResult> {
+  if (articleDeliveryUsesMemory()) {
+    const key = deliveryKey(INTEGRITY_MEDIA_SOURCE, input.publicationId);
+    const current = memoryRows.get(key);
+    if (!current) {
+      throw new Error("article_delivery_missing");
+    }
+    const decision = classifyContentRevision(current, input);
+    if (decision !== "applied") {
+      return { decision, record: { ...current } };
+    }
+    const next = applyContentRevision(current, input);
+    memoryRows.set(key, next);
+    return { decision: "applied", record: { ...next } };
+  }
+
+  const updated = await collection().findOneAndUpdate(
+    {
+      source: INTEGRITY_MEDIA_SOURCE,
+      publicationId: input.publicationId,
+      $expr: {
+        $lt: [{ $ifNull: ["$contentRevision", 0] }, input.contentRevision],
+      },
+    },
+    {
+      $set: contentRevisionUpdate(input),
+    },
+    { returnDocument: "after", projection: { _id: 0 } },
+  );
+  if (updated) {
+    return { decision: "applied", record: updated };
+  }
+
+  const current = await findArticleDelivery(input.publicationId);
+  if (!current) {
+    throw new Error("article_delivery_missing");
+  }
+  return { decision: classifyContentRevision(current, input), record: current };
+}
+
+function classifyContentRevision(
+  current: ArticleDeliveryRecord,
+  input: {
+    contentRevision: number;
+    payloadDigest: string;
+  },
+): ArticleContentDecision {
+  const stored = current.contentRevision ?? 0;
+  if (input.contentRevision < stored) {
+    return "stale";
+  }
+  if (input.contentRevision === stored) {
+    return current.payloadDigest === input.payloadDigest ? "idempotent" : "conflict";
+  }
+  return "applied";
+}
+
+function applyContentRevision(
+  current: ArticleDeliveryRecord,
+  input: {
+    contentRevision: number;
+    payloadDigest: string;
+    authorId: string;
+    cover?: {
+      coverUrl: string;
+      coverDigest: string;
+      coverTimestamp: string;
+    };
+  },
+): ArticleDeliveryRecord {
+  return {
+    ...current,
+    authorId: current.authorId ?? input.authorId,
+    payloadDigest: input.payloadDigest,
+    contentRevision: input.contentRevision,
+    ...(input.cover
+      ? {
+          coverUrl: input.cover.coverUrl,
+          coverDigest: input.cover.coverDigest,
+          coverTimestamp: input.cover.coverTimestamp,
+        }
+      : {}),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function contentRevisionUpdate(input: {
+  contentRevision: number;
+  payloadDigest: string;
+  authorId: string;
+  cover?: {
+    coverUrl: string;
+    coverDigest: string;
+    coverTimestamp: string;
+  };
+}): Record<string, unknown> {
+  return {
+    payloadDigest: input.payloadDigest,
+    contentRevision: input.contentRevision,
+    authorId: input.authorId,
+    updatedAt: new Date().toISOString(),
+    ...(input.cover
+      ? {
+          coverUrl: input.cover.coverUrl,
+          coverDigest: input.cover.coverDigest,
+          coverTimestamp: input.cover.coverTimestamp,
+        }
+      : {}),
+  };
 }
 
 /** Updates delivery progress without replacing the accepted cover fields. */

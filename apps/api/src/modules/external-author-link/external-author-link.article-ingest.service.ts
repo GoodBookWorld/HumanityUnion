@@ -1,7 +1,9 @@
 import { BlockList, isIP } from "node:net";
 
-import type { BlogExternalCover, BlogPostStatus } from "@hu/types";
+import type { BlogExternalCover, BlogPost, BlogPostStatus, LifecycleSafetyOutcome } from "@hu/types";
 
+import { isBlogAuthorAdministrativelyBlocked } from "../blog/admin-publishing.service.js";
+import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
 import { createBlogDraft, submitBlogPostForReview } from "../blog/blog.service.js";
 import { ensureBlogCategoriesSeeded, isActiveBlogCategoryId } from "../blog/blog-categories.js";
 import {
@@ -10,8 +12,16 @@ import {
   BlogSafetyRejectedError,
   BlogValidationError,
 } from "../blog/blog.errors.js";
+import { resolvePublishWithoutManualReview } from "../blog/blog-permissions.js";
 import { validateCreateBlogDraftInput } from "../blog/blog.validators.js";
-import { findBlogPostById, updateBlogPostExternalCover } from "../blog/persistence/blog.repository.js";
+import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
+import { evaluateLifecycleSafety } from "../lifecycle-safety/lifecycle-safety.service.js";
+import { notifyPublicPresentationChanged } from "../language/public-presentation-changed.js";
+import {
+  findBlogPostById,
+  updateBlogPostExternalCover,
+  updateSyndicatedBlogArticleContent,
+} from "../blog/persistence/blog.repository.js";
 import { integrityMediaLinkSignaturesEqual, signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
 import {
   articleCoverDigest,
@@ -22,6 +32,7 @@ import {
 } from "./external-author-link.article-ingest.hmac.js";
 import {
   ArticleDeliveryDuplicateError,
+  compareAndSetArticleContent,
   compareAndSetArticleCover,
   findArticleDelivery,
   insertArticleDelivery,
@@ -52,7 +63,7 @@ const ARTICLE_FIELDS = new Set([
   "target",
 ]);
 
-const OPTIONAL_ARTICLE_FIELDS = new Set(["coverImageUrl"]);
+const OPTIONAL_ARTICLE_FIELDS = new Set(["coverImageUrl", "operation", "contentRevision"]);
 
 const blockedCoverDestinations = new BlockList();
 blockedCoverDestinations.addSubnet("0.0.0.0", 8, "ipv4");
@@ -108,10 +119,13 @@ interface NormalizedArticle {
   canonicalUrl: string;
   target: string;
   coverImageUrl?: string;
+  operation?: "update";
+  contentRevision?: number;
 }
 
 let afterClaimForTests: (() => Promise<void> | void) | null = null;
 let afterCoverAcceptForTests: (() => Promise<void> | void) | null = null;
+let afterContentAcceptForTests: (() => Promise<void> | void) | null = null;
 const deliveryLocks = new Map<string, Promise<unknown>>();
 
 export function setArticleIngestAfterClaimForTests(
@@ -132,6 +146,15 @@ export function setArticleIngestAfterCoverAcceptForTests(
   afterCoverAcceptForTests = hook;
 }
 
+export function setArticleIngestAfterContentAcceptForTests(
+  hook: (() => Promise<void> | void) | null,
+): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Article ingest test hooks are available only when NODE_TEST_ENV=true.");
+  }
+  afterContentAcceptForTests = hook;
+}
+
 export function resetArticleIngestLocksForTests(): void {
   if (process.env.NODE_TEST_ENV !== "true") {
     throw new Error("Article ingest test hooks are available only when NODE_TEST_ENV=true.");
@@ -139,6 +162,7 @@ export function resetArticleIngestLocksForTests(): void {
   deliveryLocks.clear();
   afterClaimForTests = null;
   afterCoverAcceptForTests = null;
+  afterContentAcceptForTests = null;
 }
 
 export async function ingestIntegrityMediaArticle(input: {
@@ -257,6 +281,16 @@ interface DeliveryWork {
 
 async function deliverClaimedArticle(input: DeliveryWork): Promise<ArticleIngestResult> {
   const existing = await findArticleDelivery(input.article.publicationId);
+  if (input.article.operation === "update") {
+    if (!existing) {
+      throw new ArticleIngestError(
+        404,
+        "publication_not_found",
+        "This publication has not been delivered.",
+      );
+    }
+    return applyArticleUpdate(existing, input);
+  }
   if (existing) {
     return continueExistingDelivery(existing, input);
   }
@@ -267,7 +301,9 @@ async function deliverClaimedArticle(input: DeliveryWork): Promise<ArticleIngest
     await insertArticleDelivery({
       source: INTEGRITY_MEDIA_SOURCE,
       publicationId: input.article.publicationId,
+      authorId: input.article.authorId,
       payloadDigest: input.digest,
+      contentRevision: 0,
       coverUrl,
       coverDigest: articleCoverDigest(coverUrl ?? ""),
       coverTimestamp: coverUrl ? input.signedTimestamp : "",
@@ -305,6 +341,16 @@ async function continueExistingDelivery(
   input: DeliveryWork,
 ): Promise<ArticleIngestResult> {
   if (existing.payloadDigest !== input.digest) {
+    if ((existing.contentRevision ?? 0) > 0 && existing.postId) {
+      const post = await findBlogPostById(existing.postId);
+      return {
+        source: INTEGRITY_MEDIA_SOURCE,
+        publicationId: existing.publicationId,
+        postId: existing.postId,
+        status: post?.status ?? existing.status ?? "draft",
+        idempotent: true,
+      };
+    }
     throw new ArticleIngestError(
       409,
       "publication_conflict",
@@ -333,6 +379,222 @@ async function continueExistingDelivery(
     "delivery_in_progress",
     "This publication delivery is already in progress.",
   );
+}
+
+async function applyArticleUpdate(
+  existing: ArticleDeliveryRecord,
+  input: DeliveryWork,
+): Promise<ArticleIngestResult> {
+  if (!existing.postId) {
+    throw new ArticleIngestError(
+      409,
+      "delivery_in_progress",
+      "This publication delivery is already in progress.",
+    );
+  }
+  if (existing.authorId && existing.authorId !== input.article.authorId) {
+    throw new ArticleIngestError(
+      409,
+      "author_mismatch",
+      "Only the linked author of this publication can update it.",
+    );
+  }
+
+  const post = await findBlogPostById(existing.postId);
+  if (!post) {
+    throw new ArticleIngestError(503, "unavailable", "Article delivery could not be reconciled.");
+  }
+  if (post.authorParticipantId !== input.article.huMemberId) {
+    throw new ArticleIngestError(
+      409,
+      "author_mismatch",
+      "Only the linked author of this publication can update it.",
+    );
+  }
+
+  const revision = input.article.contentRevision;
+  if (revision === undefined) {
+    throw new ArticleIngestError(400, "invalid_article", "contentRevision is not valid.");
+  }
+  const storedRevision = existing.contentRevision ?? 0;
+  if (revision === storedRevision && existing.payloadDigest === input.digest) {
+    return repairAcceptedArticleUpdate(post, existing, input);
+  }
+  if (revision < storedRevision) {
+    const current = (await findBlogPostById(post.postId)) ?? post;
+    return currentArticleResult(existing, current, true);
+  }
+  if (revision === storedRevision) {
+    throw new ArticleIngestError(
+      409,
+      "publication_conflict",
+      "This publication revision was already delivered with different content.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+
+  await assertSyndicatedUpdateAllowed(post, input);
+  const decision = await compareAndSetArticleContent({
+    publicationId: input.article.publicationId,
+    contentRevision: revision,
+    payloadDigest: input.digest,
+    authorId: input.article.authorId,
+    ...(input.article.coverImageUrl
+      ? {
+          cover: {
+            coverUrl: input.article.coverImageUrl,
+            coverDigest: articleCoverDigest(input.article.coverImageUrl),
+            coverTimestamp: input.signedTimestamp,
+          },
+        }
+      : {}),
+  });
+  if (decision.decision === "stale") {
+    const current = (await findBlogPostById(post.postId)) ?? post;
+    return currentArticleResult(decision.record, current, true);
+  }
+  if (decision.decision === "conflict") {
+    throw new ArticleIngestError(
+      409,
+      "publication_conflict",
+      "This publication revision was already delivered with different content.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+  if (decision.decision === "idempotent") {
+    return repairAcceptedArticleUpdate(post, decision.record, input);
+  }
+
+  if (afterContentAcceptForTests) {
+    const hook = afterContentAcceptForTests;
+    afterContentAcceptForTests = null;
+    await hook();
+  }
+  const updated = await writeSyndicatedArticle(post, input);
+  return currentArticleResult(decision.record, updated, false);
+}
+
+async function repairAcceptedArticleUpdate(
+  post: BlogPost,
+  delivery: ArticleDeliveryRecord,
+  input: DeliveryWork,
+): Promise<ArticleIngestResult> {
+  if (syndicatedArticleMatches(post, input)) {
+    return currentArticleResult(delivery, post, true);
+  }
+  const updated = await writeSyndicatedArticle(post, input);
+  return currentArticleResult(delivery, updated, true);
+}
+
+async function assertSyndicatedUpdateAllowed(post: BlogPost, input: DeliveryWork): Promise<void> {
+  if (
+    post.administrativelyBlocked === true ||
+    (await isBlogAuthorAdministrativelyBlocked(input.article.huMemberId))
+  ) {
+    throw new ArticleIngestError(
+      403,
+      "author_blocked",
+      "This publication is blocked by an administrator and cannot be edited or republished.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+  if (post.status === "archived") {
+    throw new ArticleIngestError(
+      409,
+      "article_not_editable",
+      "Archived articles are not updated by synchronization.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+
+  const safety = await evaluateLifecycleSafety({
+    surfaceId: "blog_post",
+    initiativeId: null,
+    actorParticipantId: input.article.huMemberId,
+    text: [input.validated.title, input.validated.excerpt, blogHtmlToPlainText(input.validated.content)]
+      .filter(Boolean)
+      .join("\n\n"),
+    fieldName: "blog_post",
+  });
+  if (safety.outcome === "rejected") {
+    throw new ArticleIngestError(
+      422,
+      "safety_rejected",
+      safety.summary ?? "Blog content was rejected by Safety.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+  if (safety.outcome === "needs_review") {
+    throw new ArticleIngestError(
+      422,
+      "safety_needs_review",
+      safety.summary ?? "Safety requires review before this content can replace the article.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+
+  const automatic = await resolvePublishWithoutManualReview(input.article.huMemberId);
+  const publicStatus = post.status === "published" || post.status === "scheduled";
+  const inReview = post.status === "submitted_for_review";
+  if (!automatic && (publicStatus || inReview)) {
+    throw new ArticleIngestError(
+      409,
+      "automatic_publication_disabled",
+      "Automatic publication is disabled for this author. The existing article was left unchanged.",
+      { postId: post.postId, status: post.status },
+    );
+  }
+}
+
+async function writeSyndicatedArticle(post: BlogPost, input: DeliveryWork): Promise<BlogPost> {
+  const updated = await updateSyndicatedBlogArticleContent({
+    postId: post.postId,
+    title: input.validated.title,
+    excerpt: input.validated.excerpt,
+    content: input.validated.content,
+    safetyOutcome: "accepted" satisfies LifecycleSafetyOutcome,
+    updatedAt: input.now.toISOString(),
+    ...(input.article.coverImageUrl
+      ? { externalCover: { source: "integrity-media", url: input.article.coverImageUrl } }
+      : {}),
+  });
+  if (updated.status === "published") {
+    invalidateGlobalSearchIndex();
+    notifyPublicPresentationChanged({
+      sourceKind: "blog_post",
+      sourceRecordId: updated.postId,
+      reason: "public_update",
+    });
+  }
+  return updated;
+}
+
+function syndicatedArticleMatches(post: BlogPost, input: DeliveryWork): boolean {
+  if (
+    post.title !== input.validated.title ||
+    post.excerpt !== input.validated.excerpt ||
+    post.content !== input.validated.content
+  ) {
+    return false;
+  }
+  if (input.article.coverImageUrl && post.externalCover?.url !== input.article.coverImageUrl) {
+    return false;
+  }
+  return true;
+}
+
+function currentArticleResult(
+  delivery: ArticleDeliveryRecord,
+  post: BlogPost,
+  idempotent: boolean,
+): ArticleIngestResult {
+  return {
+    source: INTEGRITY_MEDIA_SOURCE,
+    publicationId: delivery.publicationId,
+    postId: post.postId,
+    status: post.status,
+    idempotent,
+  };
 }
 
 async function reconcileCover(postId: string, input: DeliveryWork): Promise<void> {
@@ -546,6 +808,9 @@ function verifySignature(input: {
     title: input.article.title,
     excerpt: input.article.excerpt,
     content: input.article.content,
+    ...(input.article.operation === "update"
+      ? { operation: "update" as const, contentRevision: input.article.contentRevision }
+      : {}),
     ...(input.article.coverImageUrl ? { coverImageUrl: input.article.coverImageUrl } : {}),
   });
   const expected = signIntegrityMediaLinkRedeem(input.secret, payload);
@@ -596,6 +861,7 @@ function normalizeArticle(body: unknown): NormalizedArticle {
   const canonicalUrl = normalizeCanonicalUrl(record.canonicalUrl);
   const coverImageUrl = normalizeCoverImageUrl(record.coverImageUrl);
   const target = requiredString(record.target, "target").trim();
+  const updateFields = normalizeUpdateFields(record);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)) {
     throw new ArticleIngestError(400, "invalid_article", "publishedAt must be a YYYY-MM-DD date.");
@@ -613,7 +879,35 @@ function normalizeArticle(body: unknown): NormalizedArticle {
     canonicalUrl,
     target,
     ...(coverImageUrl ? { coverImageUrl } : {}),
+    ...updateFields,
   };
+}
+
+function normalizeUpdateFields(
+  record: Record<string, unknown>,
+): { operation: "update"; contentRevision: number } | Record<string, never> {
+  const hasOperation = "operation" in record;
+  const hasRevision = "contentRevision" in record;
+  if (!hasOperation && !hasRevision) {
+    return {};
+  }
+  if (!hasOperation || !hasRevision || record.operation !== "update") {
+    throw new ArticleIngestError(400, "invalid_article", "operation is not valid.");
+  }
+  return { operation: "update", contentRevision: normalizeContentRevision(record.contentRevision) };
+}
+
+function normalizeContentRevision(value: unknown): number {
+  const revision =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^[1-9]\d*$/.test(value)
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isSafeInteger(revision) || revision < 1) {
+    throw new ArticleIngestError(400, "invalid_article", "contentRevision is not valid.");
+  }
+  return revision;
 }
 
 function normalizeArticleText(value: unknown, field: string): string {

@@ -279,6 +279,21 @@ async function collectSearchEntityRefs(): Promise<SearchEntityRef[]> {
 }
 
 let cachedIndex: GlobalSearchIndexEntry[] | null = null;
+let searchInvalidationCountForTests = 0;
+
+export function resetGlobalSearchInvalidationCountForTests(): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Search invalidation counters are available only when NODE_TEST_ENV=true.");
+  }
+  searchInvalidationCountForTests = 0;
+}
+
+export function globalSearchInvalidationCountForTests(): number {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Search invalidation counters are available only when NODE_TEST_ENV=true.");
+  }
+  return searchInvalidationCountForTests;
+}
 
 export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
   const entries: GlobalSearchIndexEntry[] = [];
@@ -343,4 +358,7 @@ export function setGlobalSearchIndexForTests(entries: GlobalSearchIndexEntry[]):
 
 export function invalidateGlobalSearchIndex(): void {
   cachedIndex = null;
+  if (process.env.NODE_TEST_ENV === "true") {
+    searchInvalidationCountForTests += 1;
+  }
 }

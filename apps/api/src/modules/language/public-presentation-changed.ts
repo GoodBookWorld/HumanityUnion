@@ -26,6 +26,22 @@ function asWarmReason(reason: string | undefined): ContentTranslationWarmReason 
   return undefined;
 }
 
+let presentationChangeCountForTests = 0;
+
+export function resetPublicPresentationChangeCountForTests(): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Presentation change counters are available only when NODE_TEST_ENV=true.");
+  }
+  presentationChangeCountForTests = 0;
+}
+
+export function publicPresentationChangeCountForTests(): number {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Presentation change counters are available only when NODE_TEST_ENV=true.");
+  }
+  return presentationChangeCountForTests;
+}
+
 export function notifyPublicPresentationChanged(input: {
   sourceKind: ContentTranslationSourceKind | string;
   sourceRecordId: string;
@@ -33,6 +49,9 @@ export function notifyPublicPresentationChanged(input: {
   /** Optional fingerprint when caller already has canonical version (News). */
   canonicalVersion?: string;
 }): void {
+  if (process.env.NODE_TEST_ENV === "true") {
+    presentationChangeCountForTests += 1;
+  }
   if (!isSupportedContentTranslationSourceKind(input.sourceKind)) {
     return;
   }

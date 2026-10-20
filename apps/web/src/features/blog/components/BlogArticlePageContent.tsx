@@ -10,6 +10,7 @@ import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
 import { useHuPersistedOrdinaryFields } from "../../language/use-hu-persisted-ordinary-fields";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
+import { shouldShowBlogLastEdited } from "../blog-last-edited";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
@@ -185,10 +186,7 @@ export function BlogArticlePageContent({
     );
   }
 
-  const showUpdated =
-    post.updatedAt &&
-    post.publishedAt &&
-    Date.parse(post.updatedAt) - Date.parse(post.publishedAt) > 60_000;
+  const showUpdated = shouldShowBlogLastEdited(post.publishedAt, post.updatedAt);
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
   const categoryDisplayName = resolveBlogCategoryDisplayName(

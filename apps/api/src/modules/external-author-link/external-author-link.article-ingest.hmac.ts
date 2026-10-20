@@ -10,13 +10,15 @@ export function hashArticleField(value: string): string {
 }
 
 /**
- * Twelve lines, UTF-8, joined by newline, no trailing newline.
+ * UTF-8, joined by newline, no trailing newline.
  * Title and excerpt are the normalized Blog strings. Content is the exact
  * request string. Field hashes keep the article body out of the signed lines'
  * logs while still binding it.
  *
- * When a cover URL is present, its canonical URL is a thirteenth line.
- * Omitting the cover keeps the original twelve-line payload.
+ * Create: twelve lines. A cover URL, when present, is the thirteenth line.
+ * Update: the same twelve lines, then the literal `update`, then the decimal
+ * contentRevision. A cover URL, when present, is the last line. Omitting the
+ * update lines keeps every previously signed create and cover payload valid.
  */
 export function buildArticleIngestPayload(input: {
   timestamp: string;
@@ -31,6 +33,8 @@ export function buildArticleIngestPayload(input: {
   excerpt: string;
   content: string;
   coverImageUrl?: string;
+  operation?: "update";
+  contentRevision?: number;
 }): string {
   const lines = [
     INTEGRITY_MEDIA_ARTICLE_INGEST_PURPOSE,
@@ -46,6 +50,16 @@ export function buildArticleIngestPayload(input: {
     hashArticleField(input.excerpt),
     hashArticleField(input.content),
   ];
+  if (input.operation === "update") {
+    if (
+      input.contentRevision === undefined ||
+      !Number.isSafeInteger(input.contentRevision) ||
+      input.contentRevision < 1
+    ) {
+      throw new Error("contentRevision is required for an article update signature.");
+    }
+    lines.push("update", String(input.contentRevision));
+  }
   if (input.coverImageUrl !== undefined) {
     lines.push(input.coverImageUrl);
   }

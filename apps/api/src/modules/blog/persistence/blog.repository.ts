@@ -137,6 +137,80 @@ export async function replaceBlogPost(
 }
 
 /**
+ * Writes syndicated title, excerpt, sanitized HTML, and the edit timestamp.
+ * Optionally replaces the partner cover. Does not change publication id, slug,
+ * author, category, uploaded cover, status, or published version.
+ */
+export async function updateSyndicatedBlogArticleContent(input: {
+  postId: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  safetyOutcome: BlogPost["safetyOutcome"];
+  updatedAt: string;
+  externalCover?: BlogExternalCover;
+}): Promise<BlogPost> {
+  const memory = blogMemory();
+  if (memory) {
+    const post = memory.posts.get(input.postId);
+    if (!post) {
+      throw new BlogPersistenceError(`Blog post ${input.postId} not found for syndicated update.`);
+    }
+    const next: BlogPost = {
+      ...post,
+      title: input.title,
+      excerpt: input.excerpt,
+      content: input.content,
+      safetyOutcome: input.safetyOutcome,
+      updatedAt: input.updatedAt,
+      ...(input.externalCover
+        ? { externalCover: { source: input.externalCover.source, url: input.externalCover.url } }
+        : {}),
+    };
+    memory.posts.set(input.postId, next);
+    return { ...next };
+  }
+
+  await ensureBlogMongoReady();
+  try {
+    const result = await postsCollection().updateOne(
+      { postId: input.postId },
+      {
+        $set: {
+          title: input.title,
+          excerpt: input.excerpt,
+          content: input.content,
+          safetyOutcome: input.safetyOutcome,
+          updatedAt: input.updatedAt,
+          ...(input.externalCover
+            ? {
+                externalCover: {
+                  source: input.externalCover.source,
+                  url: input.externalCover.url,
+                },
+              }
+            : {}),
+        },
+      },
+    );
+    if (result.matchedCount === 0) {
+      throw new BlogPersistenceError(`Blog post ${input.postId} not found for syndicated update.`);
+    }
+  } catch (error) {
+    if (error instanceof BlogPersistenceError) {
+      throw error;
+    }
+    throw new BlogPersistenceError("Failed to update syndicated Blog article.", error);
+  }
+
+  const updated = await findBlogPostById(input.postId);
+  if (!updated) {
+    throw new BlogPersistenceError(`Blog post ${input.postId} not found after syndicated update.`);
+  }
+  return updated;
+}
+
+/**
  * Writes only the partner cover. Does not change body, title, author,
  * category, status, published version, or publication events.
  */
