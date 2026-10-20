@@ -33,6 +33,7 @@ import {
   type ExternalAuthorLinkStore,
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
 import type { ExternalAuthorLinkRecord } from "../../../src/modules/external-author-link/external-author-link.types.js";
+import { buildDefaultMemberProfile } from "../../../src/modules/member-profile/member-profile.repository.js";
 const SECRET = "dummy-secret-not-real";
 const DIGEST = "bcb5016507f8fd5c0c32bb502ae88cd8b11f1182542a56d2dad893493af3580b";
 const AUTHOR = "11111111-1111-4111-8111-111111111111";
@@ -418,6 +419,75 @@ describe("Integrity Media account provision", () => {
       new URL(String(callback)).search,
       "?state=exampleAttemptToken_12&status=confirmed&code=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     );
+  });
+
+  it("gives a new Integrity Media author a public profile and keeps later choices", async () => {
+    const ordinary = buildDefaultMemberProfile({
+      userId: "ordinary-user",
+      displayName: "Ordinary Participant",
+    });
+    assert.equal(ordinary.profileVisibility, "members_only");
+
+    assert.equal((await register(attemptBody())).status, 200);
+    const created = await request("POST", "/provision-confirm", {
+      state: "exampleAttemptToken_12",
+    });
+    assert.equal(created.status, 200);
+    assert.equal(created.body.data?.provisionOutcome, "NEW_AUTHOR");
+    assert.equal(memory.profiles().length, 1);
+    assert.equal(memory.profiles()[0]?.profileVisibility, "public");
+    assert.equal(memory.profiles()[0]?.participationVisibility, "members_only");
+    assert.equal(memory.profiles()[0]?.skillsVisibility, "members_only");
+    assert.equal(memory.grants()[0]?.capabilities.includes("author"), true);
+    assert.equal(memory.grants()[0]?.publishWithoutManualReview, true);
+
+    const userId = memory.profiles()[0]?.userId;
+    assert.ok(userId);
+    memory.patchProfile(userId, { profileVisibility: "private" });
+    const again = await request("POST", "/provision-confirm", {
+      state: "exampleAttemptToken_12",
+    });
+    assert.equal(again.status, 200);
+    assert.equal(again.body.data?.provisionOutcome, "CONFIRMED_MAPPING_EXISTS");
+    assert.equal(memory.profiles()[0]?.profileVisibility, "private");
+    assert.equal(memory.profiles().length, 1);
+  });
+
+  it("keeps an existing participant profile visibility when Integrity Media links them", async () => {
+    const memberId = "55555555-5555-4555-8555-555555555555";
+    const userId = "user-existing-visibility";
+    const profile = buildDefaultMemberProfile({
+      userId,
+      displayName: "Existing Person",
+    });
+    profile.profileVisibility = "private";
+    await memory.view().insertUser({
+      ...existingUser("existing-visibility@example.com", memberId),
+      userId,
+    });
+    await memory.view().insertProfile(profile);
+    await memory.view().insertLink(confirmedLink(AUTHOR, memberId));
+
+    assert.equal(
+      (
+        await register(
+          attemptBody({
+            attemptId: "existingVisibilityToken",
+            email: "existing-visibility@example.com",
+          }),
+        )
+      ).status,
+      200,
+    );
+    const linked = await request("POST", "/provision-confirm", {
+      state: "existingVisibilityToken",
+    });
+    assert.equal(linked.status, 200);
+    assert.equal(linked.body.data?.provisionOutcome, "CONFIRMED_MAPPING_EXISTS");
+    assert.equal(memory.profiles().length, 1);
+    assert.equal(memory.profiles()[0]?.userId, userId);
+    assert.equal(memory.profiles()[0]?.profileVisibility, "private");
+    assert.equal(memory.users().length, 1);
   });
 
   it("fails closed when a transaction is unavailable", async () => {
