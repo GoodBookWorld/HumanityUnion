@@ -15,6 +15,8 @@ export const ADMIN_NOTIFICATION_TYPES = [
   "participant_suspension_review_requested",
   /** Pack 25C — Member Badge Application payment confirmed. */
   "member_badge_order_paid",
+  /** IM–HU.07E.4G.9 — accepted Integrity Media author chat reply. */
+  "integrity_media_author_message",
 ] as const;
 
 export type AdminNotificationType = (typeof ADMIN_NOTIFICATION_TYPES)[number];
