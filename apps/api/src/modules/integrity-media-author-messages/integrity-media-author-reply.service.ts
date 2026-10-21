@@ -19,6 +19,7 @@ import {
   getExternalAuthorLinkStore,
 } from "../external-author-link/external-author-link.store.js";
 import type { ExternalAuthorLinkRecord } from "../external-author-link/external-author-link.types.js";
+import { announceAcceptedIntegrityMediaAuthorReply } from "../admin-notifications/integrity-media-author-reply-notification.js";
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_BODY_MAX_LENGTH } from "./integrity-media-author-message.constants.js";
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY } from "./integrity-media-author-message.constants.js";
 import { resolveIntegrityMediaAuthorMessageDirection } from "./integrity-media-author-message.contract.js";
@@ -139,6 +140,13 @@ async function commitReply(
 
   if (outcome.auditAction) {
     await audit(value, outcome.auditAction, outcome.auditReason, now);
+  }
+
+  if (outcome.result.ok && !outcome.result.idempotent) {
+    await announceAcceptedIntegrityMediaAuthorReply({
+      messageId: outcome.result.messageId,
+      memberId: outcome.result.memberId,
+    });
   }
 
   return outcome.result;

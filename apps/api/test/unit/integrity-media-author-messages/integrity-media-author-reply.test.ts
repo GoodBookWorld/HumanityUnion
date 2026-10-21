@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 
 import express from "express";
 
+import { setIntegrityMediaAuthorReplyAnnouncementDepsForTests } from "../../../src/modules/admin-notifications/integrity-media-author-reply-notification.js";
+import { resetMemoryAdminNotificationPersistenceForTests } from "../../../src/modules/admin-notifications/persistence/admin-notification-memory.persistence.js";
+import { resolveAdminNotificationPersistenceAdapter } from "../../../src/modules/admin-notifications/persistence/resolve-admin-notification-persistence.js";
 import { setAuthUserLookupOverrideForTests } from "../../../src/modules/auth/auth-active-account-gate.js";
 import { createAccessToken } from "../../../src/modules/auth/auth-tokens.js";
 import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.types.js";
@@ -26,6 +29,7 @@ import {
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
 import type { ExternalAuthorLinkRecord } from "../../../src/modules/external-author-link/external-author-link.types.js";
 import { MONGO_COLLECTIONS } from "../../../src/infrastructure/mongodb/mongo-collections.js";
+import { setIntegrityMediaAuthorParticipantResolverForTests } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-directory.service.js";
 import { reconcilePendingIntegrityMediaAuthorMessages } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.reconciliation.js";
 import integrityMediaAuthorMessageRouter from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.routes.js";
 import {
@@ -49,6 +53,8 @@ import {
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.constants.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const ADMIN_ONE = "admin-notify-1";
+const ADMIN_TWO = "admin-notify-2";
 const ADMIN_MEMBER = "33333333-3333-4333-8333-333333333333";
 const MEMBER = "22222222-2222-4222-8222-222222222222";
 const OTHER_MEMBER = "44444444-4444-4444-8444-444444444444";
@@ -109,6 +115,9 @@ describe("Integrity Media inbound author replies", () => {
 
   after(async () => {
     setAuthUserLookupOverrideForTests(null);
+    setIntegrityMediaAuthorReplyAnnouncementDepsForTests(null);
+    setIntegrityMediaAuthorParticipantResolverForTests(null);
+    resetMemoryAdminNotificationPersistenceForTests();
     setExternalAuthorLinkStoreForTests(null);
     setIntegrityMediaAuthorMessageStoreForTests(null);
     setIntegrityMediaAuthorMessageTransportForTests(null);
@@ -121,6 +130,9 @@ describe("Integrity Media inbound author replies", () => {
     users.clear();
     remoteRequests = [];
     resetIntegrityMediaAuthorReplyReplayCacheForTests();
+    setIntegrityMediaAuthorReplyAnnouncementDepsForTests(null);
+    setIntegrityMediaAuthorParticipantResolverForTests(null);
+    resetMemoryAdminNotificationPersistenceForTests();
     linkStore = createMemoryExternalAuthorLinkStore();
     messageStore = createMemoryIntegrityMediaAuthorMessageStore();
     setExternalAuthorLinkStoreForTests(linkStore);
@@ -478,7 +490,115 @@ describe("Integrity Media inbound author replies", () => {
     assert.equal(new Set(ids).size, ids.length);
     assert.equal(ids.includes(reply.body.data?.messageId), true);
   });
+
+  it("announces one Integrity Media reply to each active administrator", async () => {
+    await seedLink();
+    enableReplyAnnouncements("Ada Author");
+    const messageId = randomUUID();
+    const accepted = await postReply({ messageId, body: VECTOR_BODY });
+    assert.equal(accepted.status, 200);
+    assert.equal(accepted.body.data?.idempotent, false);
+    const stored = (await messageStore.list())[0];
+    assert.equal(stored?.adminReadAt, undefined);
+    assert.equal(await messageStore.countUnreadInboundChats(), 1);
+    const first = await inboxRows();
+    assert.equal(first.length, 2);
+    assert.deepEqual(
+      first.map((row) => row.recipientAdminUserId).sort(),
+      [ADMIN_ONE, ADMIN_TWO],
+    );
+    for (const row of first) {
+      assert.equal(row.type, "integrity_media_author_message");
+      assert.equal(row.title, "Integrity Media author message");
+      assert.equal(row.targetLabel, "Ada Author");
+      assert.equal(row.actorLabel, undefined);
+      assert.equal(row.targetHref, "/admin/integrity-media");
+      assert.equal(row.sourceEventId, messageId);
+      assert.equal(previewText(row).includes(VECTOR_BODY), false);
+      assert.equal(previewText(row).includes(AUTHOR), false);
+      assert.equal(previewText(row).includes(MEMBER), false);
+      assert.equal(previewText(row).includes(messageId), false);
+    }
+
+    const retry = await postReply({ messageId, body: VECTOR_BODY, timestamp: stamp(1) });
+    assert.equal(retry.status, 200);
+    assert.equal(retry.body.data?.idempotent, true);
+    assert.equal((await inboxRows()).length, 2);
+
+    const conflict = await postReply({ messageId, body: "Different text", timestamp: stamp(2) });
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.meta.code, "message_conflict");
+    assert.equal((await inboxRows()).length, 2);
+    assert.equal(await messageStore.countUnreadInboundChats(), 1);
+  });
+
+  it("uses Participant when no display name is available and ignores projection failure", async () => {
+    await seedLink();
+    enableReplyAnnouncements(null);
+    const unnamed = await postReply({ body: VECTOR_BODY });
+    assert.equal(unnamed.status, 200);
+    const rows = await inboxRows();
+    assert.equal(rows.length, 2);
+    assert.equal(rows.every((row) => row.targetLabel === "Participant"), true);
+    assert.equal(rows.every((row) => previewText(row).includes(VECTOR_BODY) === false), true);
+
+    setIntegrityMediaAuthorReplyAnnouncementDepsForTests({
+      listActiveAdminUserIds: async () => {
+        throw new Error("inbox unavailable");
+      },
+    });
+    const accepted = await postReply({ body: "Still accepted", timestamp: stamp(1) });
+    assert.equal(accepted.status, 200);
+    assert.equal(accepted.body.data?.idempotent, false);
+    assert.equal((await messageStore.list()).length, 2);
+    assert.equal(await messageStore.countUnreadInboundChats(), 2);
+    assert.equal((await inboxRows()).length, 2);
+  });
 });
+
+function enableReplyAnnouncements(displayName: string | null): void {
+  setIntegrityMediaAuthorReplyAnnouncementDepsForTests({
+    listActiveAdminUserIds: async () => [ADMIN_ONE, ADMIN_TWO],
+  });
+  setIntegrityMediaAuthorParticipantResolverForTests(async (memberIds) => {
+    const displays = new Map();
+    if (displayName) {
+      for (const memberId of memberIds) {
+        displays.set(memberId, { participantDisplayName: displayName });
+      }
+    }
+    return displays;
+  });
+}
+
+async function inboxRows(): Promise<
+  Array<{
+    recipientAdminUserId: string;
+    type: string;
+    title: string;
+    targetLabel?: string;
+    actorLabel?: string;
+    targetHref?: string;
+    sourceEventId?: string;
+  }>
+> {
+  const persistence = resolveAdminNotificationPersistenceAdapter();
+  const rows = await Promise.all(
+    [ADMIN_ONE, ADMIN_TWO].map((recipientAdminUserId) =>
+      persistence.list({ recipientAdminUserId, limit: 20 }),
+    ),
+  );
+  return rows.flat();
+}
+
+function previewText(row: {
+  title: string;
+  targetLabel?: string;
+  actorLabel?: string;
+  targetHref?: string;
+}): string {
+  return [row.title, row.targetLabel ?? "", row.actorLabel ?? "", row.targetHref ?? ""].join("\n");
+}
 
 function stamp(offsetSeconds: number): string {
   return String(Math.floor(Date.now() / 1000) + offsetSeconds);
