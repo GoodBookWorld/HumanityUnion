@@ -10,6 +10,10 @@ import {
   resolveIntegrityMediaCollaborationStatus,
 } from "../external-author-link/external-author-link.collaboration.js";
 import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
+import {
+  readIntegrityMediaDeploymentTarget,
+  type IntegrityMediaDeploymentTarget,
+} from "../external-author-link/external-author-link.environment-target.js";
 import { isIntegrityMediaAuthorLinkOperational } from "../external-author-link/external-author-link.service.js";
 import { getExternalAuthorLinkStore } from "../external-author-link/external-author-link.store.js";
 import {
@@ -22,8 +26,10 @@ import {
 import {
   buildIntegrityMediaAuthorMessageCanonicalString,
   buildIntegrityMediaAuthorMessageCanonicalStringV2,
+  buildIntegrityMediaAuthorMessageCanonicalStringV3,
   hashIntegrityMediaAuthorMessageContent,
   integrityMediaAuthorMessageTimestamp,
+  integrityMediaAuthorMessageV3Enabled,
   signIntegrityMediaAuthorMessage,
 } from "./integrity-media-author-message.hmac.js";
 import { getIntegrityMediaAuthorMessageStore } from "./integrity-media-author-message.store.js";
@@ -188,23 +194,23 @@ export async function performRemoteDelivery(
     ctaUrl,
     title: claimed.title,
   });
-  const canonical =
-    claimed.kind === "chat"
-      ? buildIntegrityMediaAuthorMessageCanonicalStringV2({
-          timestamp,
-          messageId: claimed.messageId,
-          recipientAuthorId: claimed.recipientExternalAuthorId,
-          kind: "chat",
-          contentSha256,
-        })
-      : buildIntegrityMediaAuthorMessageCanonicalString({
-          timestamp,
-          messageId: claimed.messageId,
-          recipientAuthorId: claimed.recipientExternalAuthorId,
-          contentSha256,
-        });
-  const signature = signIntegrityMediaAuthorMessage(endpoint.secret, canonical);
-  const requestBody = buildRemoteBody(claimed);
+  const outbound = selectOutboundAuthorMessage({
+    claimed,
+    timestamp,
+    contentSha256,
+  });
+
+  if (!outbound) {
+    await getIntegrityMediaAuthorMessageStore().markTransient({
+      messageId: claimed.messageId,
+      nowIso: now.toISOString(),
+      errorCode: "not_configured",
+    });
+    return;
+  }
+
+  const signature = signIntegrityMediaAuthorMessage(endpoint.secret, outbound.canonical);
+  const requestBody = buildRemoteBody(claimed, outbound.target);
   let result: IntegrityMediaAuthorMessageHttpResult;
 
   try {
@@ -466,10 +472,60 @@ async function resolveOperationalRecipient(
   };
 }
 
-function buildRemoteBody(record: IntegrityMediaAuthorMessageRecord): string {
+/**
+ * Gate off keeps the historical v1 notification and v2 chat strings.
+ * Gate on signs only v3. A missing or unknown deployment target does not
+ * fall back to another environment or to v1/v2.
+ */
+function selectOutboundAuthorMessage(input: {
+  claimed: IntegrityMediaAuthorMessageRecord;
+  timestamp: string;
+  contentSha256: string;
+}): { canonical: string; target: IntegrityMediaDeploymentTarget | null } | null {
+  const identity = {
+    timestamp: input.timestamp,
+    messageId: input.claimed.messageId,
+    recipientAuthorId: input.claimed.recipientExternalAuthorId,
+    contentSha256: input.contentSha256,
+  };
+
+  if (!integrityMediaAuthorMessageV3Enabled()) {
+    return {
+      target: null,
+      canonical:
+        input.claimed.kind === "chat"
+          ? buildIntegrityMediaAuthorMessageCanonicalStringV2({
+              ...identity,
+              kind: "chat",
+            })
+          : buildIntegrityMediaAuthorMessageCanonicalString(identity),
+    };
+  }
+
+  const target = readIntegrityMediaDeploymentTarget();
+
+  if (!target) {
+    return null;
+  }
+
+  return {
+    target,
+    canonical: buildIntegrityMediaAuthorMessageCanonicalStringV3({
+      ...identity,
+      target,
+      kind: input.claimed.kind === "chat" ? "chat" : "notification",
+    }),
+  };
+}
+
+function buildRemoteBody(
+  record: IntegrityMediaAuthorMessageRecord,
+  target: IntegrityMediaDeploymentTarget | null,
+): string {
   const payload: {
     messageId: string;
     recipientAuthorId: string;
+    target?: IntegrityMediaDeploymentTarget;
     category: typeof INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY;
     title: string;
     body: string;
@@ -478,6 +534,7 @@ function buildRemoteBody(record: IntegrityMediaAuthorMessageRecord): string {
   } = {
     messageId: record.messageId,
     recipientAuthorId: record.recipientExternalAuthorId,
+    ...(target ? { target } : {}),
     category: INTEGRITY_MEDIA_AUTHOR_MESSAGE_CATEGORY,
     title: record.title,
     body: record.body,

@@ -7,6 +7,21 @@ export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE = "humanity-union-author-mes
  */
 export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2 = "humanity-union-author-message-v2";
 
+/**
+ * Environment-bound destination. `target` and `kind` are their own canonical
+ * lines and are not part of the content hash. A v1 or v2 signature cannot
+ * authorize this purpose.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V3 = "humanity-union-author-message-v3";
+
+/**
+ * Explicit send gate. Unset, empty, and every value other than the exact
+ * string `true` (after trim) keep the v1 notification and v2 chat signatures.
+ * When `true`, every outbound author message is signed as v3. A rejected v3
+ * message is not retried as v1 or v2.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV = "INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3";
+
 export const INTEGRITY_MEDIA_AUTHOR_MESSAGE_PATH =
   "/api/integrations/humanity-union/author-messages";
 

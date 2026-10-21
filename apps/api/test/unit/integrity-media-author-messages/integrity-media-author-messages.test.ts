@@ -40,7 +40,9 @@ import {
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_BODY_MAX_LENGTH,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V3,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS,
+  INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_SIGNATURE_HEADER,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_TIMESTAMP_HEADER,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_TIMEOUT_MS,
@@ -48,8 +50,10 @@ import {
 import {
   buildIntegrityMediaAuthorMessageCanonicalString,
   buildIntegrityMediaAuthorMessageCanonicalStringV2,
+  buildIntegrityMediaAuthorMessageCanonicalStringV3,
   buildIntegrityMediaAuthorMessageContentPayload,
   hashIntegrityMediaAuthorMessageContent,
+  integrityMediaAuthorMessageV3Enabled,
   signIntegrityMediaAuthorMessage,
 } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.hmac.js";
 import { reconcilePendingIntegrityMediaAuthorMessages } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.reconciliation.js";
@@ -116,6 +120,8 @@ const users = new Map<string, AuthUserRecord>();
 const previousEnv = {
   secret: process.env[INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV],
   origin: process.env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV],
+  platformMode: process.env.PLATFORM_MODE,
+  authorMessageV3: process.env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV],
 };
 
 describe("Integrity Media outbound author messages", () => {
@@ -145,6 +151,8 @@ describe("Integrity Media outbound author messages", () => {
     setIntegrityMediaAuthorMessageFetchForTests(null);
     restoreEnv(INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV, previousEnv.secret);
     restoreEnv(INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV, previousEnv.origin);
+    restoreEnv("PLATFORM_MODE", previousEnv.platformMode);
+    restoreEnv(INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV, previousEnv.authorMessageV3);
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
@@ -179,6 +187,8 @@ describe("Integrity Media outbound author messages", () => {
     });
     process.env[INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV] = SECRET;
     process.env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV] = ORIGIN;
+    restoreEnv("PLATFORM_MODE", previousEnv.platformMode);
+    restoreEnv(INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV, previousEnv.authorMessageV3);
     rememberUser("admin-user", ADMIN_MEMBER, "admin");
     rememberUser("member-user", OTHER_MEMBER, "member");
     rememberUser("moderator-user", OTHER_MEMBER, "moderator");
@@ -1821,6 +1831,330 @@ describe("Integrity Media outbound author messages", () => {
     assert.equal(unknownField.status, 400);
   });
 
+  it("builds the v3 canonical string with the deployment target outside the content hash", () => {
+    const content = buildIntegrityMediaAuthorMessageContentPayload({
+      body: "Line one\nLine two",
+      category: "notification",
+      ctaLabel: "",
+      ctaUrl: "",
+      title: "Hello",
+    });
+    assert.equal(content.includes("target"), false);
+    assert.equal(content.includes("kind"), false);
+    const hash = hashIntegrityMediaAuthorMessageContent({
+      body: "Line one\nLine two",
+      category: "notification",
+      ctaLabel: "",
+      ctaUrl: "",
+      title: "Hello",
+    });
+    const canonical = buildIntegrityMediaAuthorMessageCanonicalStringV3({
+      timestamp: "1700000000",
+      messageId: "11111111-1111-4111-8111-111111111111",
+      recipientAuthorId: AUTHOR,
+      target: "production",
+      kind: "notification",
+      contentSha256: hash,
+    });
+    assert.equal(
+      canonical,
+      [
+        "humanity-union-author-message-v3",
+        "1700000000",
+        "11111111-1111-4111-8111-111111111111",
+        AUTHOR,
+        "production",
+        "notification",
+        hash,
+      ].join("\n"),
+    );
+    assert.equal(canonical.endsWith("\n"), false);
+    assert.equal(canonical.split("\n").length, 7);
+    assert.equal(canonical.split("\n")[0], INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V3);
+    assert.notEqual(canonical.split("\n")[0], INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE);
+    assert.notEqual(canonical.split("\n")[0], INTEGRITY_MEDIA_AUTHOR_MESSAGE_PURPOSE_V2);
+    assert.throws(
+      () =>
+        buildIntegrityMediaAuthorMessageCanonicalStringV3({
+          timestamp: "1700000000",
+          messageId: "11111111-1111-4111-8111-111111111111",
+          recipientAuthorId: AUTHOR,
+          target: "beta",
+          kind: "notification",
+          contentSha256: hash,
+        }),
+      /target is not recognized/,
+    );
+    assert.throws(
+      () =>
+        buildIntegrityMediaAuthorMessageCanonicalStringV3({
+          timestamp: "1700000000",
+          messageId: "11111111-1111-4111-8111-111111111111",
+          recipientAuthorId: AUTHOR,
+          target: "staging",
+          kind: "system",
+          contentSha256: hash,
+        }),
+      /kind is not recognized/,
+    );
+  });
+
+  it("enables v3 only for the exact env value true", () => {
+    assert.equal(integrityMediaAuthorMessageV3Enabled({}), false);
+    assert.equal(
+      integrityMediaAuthorMessageV3Enabled({ [INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]: "" }),
+      false,
+    );
+    assert.equal(
+      integrityMediaAuthorMessageV3Enabled({ [INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]: "TRUE" }),
+      false,
+    );
+    assert.equal(
+      integrityMediaAuthorMessageV3Enabled({ [INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]: "1" }),
+      false,
+    );
+    assert.equal(
+      integrityMediaAuthorMessageV3Enabled({ [INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]: "yes" }),
+      false,
+    );
+    assert.equal(
+      integrityMediaAuthorMessageV3Enabled({ [INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV]: " true " }),
+      true,
+    );
+  });
+
+  it("keeps v1 notifications and v2 chat when the v3 gate is off", async () => {
+    await seedLink();
+    process.env.PLATFORM_MODE = "production";
+    delete process.env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV];
+    transportResult = (request) => accepted(request, false);
+    const notification = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(notification.status, 200);
+    const notificationRequest = requests[0]!;
+    const notificationRemote = JSON.parse(notificationRequest.body) as {
+      messageId: string;
+      recipientAuthorId: string;
+      title: string;
+      body: string;
+      kind?: string;
+      target?: string;
+    };
+    assert.equal(notificationRemote.target, undefined);
+    assert.equal(notificationRemote.kind, undefined);
+    assert.equal(notificationRequest.body.includes('"target"'), false);
+    assert.equal(
+      notificationRequest.signature,
+      independentSignature({
+        timestamp: notificationRequest.timestamp,
+        messageId: notificationRemote.messageId,
+        recipientAuthorId: notificationRemote.recipientAuthorId,
+        title: notificationRemote.title,
+        body: notificationRemote.body,
+        ctaLabel: "",
+        ctaUrl: "",
+      }),
+    );
+    const chat = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(chat.status, 200);
+    const chatRequest = requests[1]!;
+    const chatRemote = JSON.parse(chatRequest.body) as {
+      messageId: string;
+      recipientAuthorId: string;
+      title: string;
+      body: string;
+      kind?: string;
+      target?: string;
+    };
+    assert.equal(chatRemote.kind, "chat");
+    assert.equal(chatRemote.target, undefined);
+    assert.equal(chatRequest.body.includes('"target"'), false);
+    assert.equal(
+      chatRequest.signature,
+      chatSignature({
+        timestamp: chatRequest.timestamp,
+        messageId: chatRemote.messageId,
+        recipientAuthorId: chatRemote.recipientAuthorId,
+        body: chatRemote.body,
+        title: chatRemote.title,
+      }),
+    );
+  });
+
+  it("signs staging and production notifications and chats as v3 only", async () => {
+    await seedLink();
+    transportResult = (request) => accepted(request, false);
+    process.env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV] = "true";
+
+    process.env.PLATFORM_MODE = "staging";
+    const stagingNotification = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(stagingNotification.status, 200);
+    assertV3Request(requests[0]!, "staging", "notification");
+
+    const stagingChat = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    assert.equal(stagingChat.status, 200);
+    assertV3Request(requests[1]!, "staging", "chat");
+
+    process.env.PLATFORM_MODE = "production";
+    const productionNotification = await post(
+      RECIPIENT_MEMBER,
+      { ...validBody(), title: "Production note" },
+      adminToken(),
+    );
+    assert.equal(productionNotification.status, 200);
+    assertV3Request(requests[2]!, "production", "notification");
+
+    const productionChat = await postChat(
+      RECIPIENT_MEMBER,
+      { body: "Production chat" },
+      adminToken(),
+    );
+    assert.equal(productionChat.status, 200);
+    assertV3Request(requests[3]!, "production", "chat");
+    assert.equal(requests.length, 4);
+  });
+
+  it("binds the signature to the target and the deployment secret", () => {
+    const hash = hashIntegrityMediaAuthorMessageContent({
+      body: BODY_MARKER,
+      category: "notification",
+      ctaLabel: "",
+      ctaUrl: "",
+      title: TITLE,
+    });
+    const shared = {
+      timestamp: "1700000000",
+      messageId: "11111111-1111-4111-8111-111111111111",
+      recipientAuthorId: AUTHOR,
+      kind: "notification" as const,
+      contentSha256: hash,
+    };
+    const staging = buildIntegrityMediaAuthorMessageCanonicalStringV3({
+      ...shared,
+      target: "staging",
+    });
+    const production = buildIntegrityMediaAuthorMessageCanonicalStringV3({
+      ...shared,
+      target: "production",
+    });
+    const signature = signIntegrityMediaAuthorMessage(SECRET, staging);
+    assert.notEqual(signature, signIntegrityMediaAuthorMessage(SECRET, production));
+    assert.notEqual(signature, signIntegrityMediaAuthorMessage("other-secret", staging));
+    assert.equal(signature, createHmac("sha256", SECRET).update(staging, "utf8").digest("hex"));
+  });
+
+  it("rejects a caller-supplied target and does not sign it", async () => {
+    await seedLink();
+    enableAuthorMessageV3("staging");
+    transportResult = (request) => accepted(request, false);
+    const spoofed = await post(
+      RECIPIENT_MEMBER,
+      { ...validBody(), target: "production" },
+      adminToken(),
+    );
+    assert.equal(spoofed.status, 400);
+    assert.equal(spoofed.body.meta.code, "unexpected_field");
+    assert.equal(requests.length, 0);
+    assert.equal((await messageStore.list()).length, 0);
+    const sent = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(sent.status, 200);
+    assertV3Request(requests[0]!, "staging", "notification");
+    const tampered = JSON.parse(requests[0]!.body) as { target: string };
+    tampered.target = "production";
+    assert.notEqual(
+      requests[0]!.signature,
+      signIntegrityMediaAuthorMessage(SECRET, canonicalForTamperedTarget(requests[0]!, "production")),
+    );
+  });
+
+  it("does not send when PLATFORM_MODE is missing or invalid", async () => {
+    await seedLink();
+    process.env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV] = "true";
+    transportResult = (request) => accepted(request, false);
+    for (const mode of [undefined, "", "beta", "development", "STAGING", "prod"]) {
+      if (mode === undefined) {
+        delete process.env.PLATFORM_MODE;
+      } else {
+        process.env.PLATFORM_MODE = mode;
+      }
+      const response = await post(
+        RECIPIENT_MEMBER,
+        { ...validBody(), title: `Mode ${mode ?? "missing"}` },
+        adminToken(),
+      );
+      assert.equal(response.status, 202);
+      assert.equal(response.body.data?.status, "pending");
+      assert.equal(response.body.data?.lastErrorCode, "not_configured");
+    }
+    assert.equal(requests.length, 0);
+    const rows = await messageStore.list();
+    assert.equal(rows.length, 6);
+    assert.equal(rows.every((row) => row.status === "pending" && row.lastErrorCode === "not_configured"), true);
+  });
+
+  it("does not fall back to v1 or another environment when v3 cannot be signed", async () => {
+    await seedLink();
+    enableAuthorMessageV3("beta");
+    transportResult = (request) => accepted(request, false);
+    const created = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(created.status, 202);
+    assert.equal(created.body.data?.lastErrorCode, "not_configured");
+    assert.equal(requests.length, 0);
+    const stillBlocked = later();
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: stillBlocked });
+    assert.equal(requests.length, 0);
+    assert.equal((await messageStore.list())[0]?.status, "pending");
+    process.env.PLATFORM_MODE = "staging";
+    await reconcilePendingIntegrityMediaAuthorMessages({
+      now: new Date(stillBlocked.getTime() + INTEGRITY_MEDIA_AUTHOR_MESSAGE_RECONCILE_BACKOFF_MS + 5_000),
+    });
+    assert.equal(requests.length, 1);
+    assertV3Request(requests[0]!, "staging", "notification");
+    assert.notEqual(
+      requests[0]!.signature,
+      independentSignature({
+        timestamp: requests[0]!.timestamp,
+        messageId: JSON.parse(requests[0]!.body).messageId as string,
+        recipientAuthorId: AUTHOR,
+        title: TITLE,
+        body: BODY_MARKER,
+        ctaLabel: "",
+        ctaUrl: "",
+      }),
+    );
+  });
+
+  it("retries a v3 message with the same target and does not resend a rejection as v1", async () => {
+    await seedLink();
+    enableAuthorMessageV3("production");
+    transportResult = () => ({ kind: "timeout" });
+    const created = await postChat(RECIPIENT_MEMBER, { body: "Hello author" }, adminToken());
+    const messageId = created.body.data?.messageId ?? "";
+    assert.equal(requests.length, 1);
+    assertV3Request(requests[0]!, "production", "chat");
+    transportResult = (request) => accepted(request, true);
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 2);
+    assertV3Request(requests[1]!, "production", "chat");
+    assert.equal(JSON.parse(requests[0]!.body).messageId, messageId);
+    assert.equal(JSON.parse(requests[1]!.body).messageId, messageId);
+    assert.notEqual(requests[0]!.timestamp, requests[1]!.timestamp);
+    assert.notEqual(requests[0]!.signature, requests[1]!.signature);
+    assert.equal((await messageStore.findByMessageId(messageId))?.status, "delivered");
+
+    transportResult = () => ({
+      kind: "response",
+      status: 401,
+      body: JSON.stringify({ success: false, error: "invalid_signature" }),
+    });
+    const rejected = await post(RECIPIENT_MEMBER, validBody(), adminToken());
+    assert.equal(rejected.body.data?.status, "failed");
+    assert.equal(rejected.body.data?.lastErrorCode, "invalid_signature");
+    assert.equal(requests.length, 3);
+    assertV3Request(requests[2]!, "production", "notification");
+    await reconcilePendingIntegrityMediaAuthorMessages({ now: later() });
+    assert.equal(requests.length, 3);
+  });
+
   async function assertPermanentRemoteFailure(status: number, code: string): Promise<void> {
     await seedLink();
     transportResult = () => ({
@@ -2163,6 +2497,94 @@ async function updateCurrentLink(patch: Partial<ExternalAuthorLinkRecord>): Prom
 
 async function replaceLink(patch: Partial<ExternalAuthorLinkRecord>): Promise<void> {
   await updateCurrentLink(patch);
+}
+
+function enableAuthorMessageV3(mode: string): void {
+  process.env[INTEGRITY_MEDIA_AUTHOR_MESSAGE_V3_ENV] = "true";
+  process.env.PLATFORM_MODE = mode;
+}
+
+function assertV3Request(
+  request: IntegrityMediaAuthorMessageHttpRequest,
+  target: "staging" | "production",
+  kind: "notification" | "chat",
+): void {
+  const remote = JSON.parse(request.body) as {
+    messageId: string;
+    recipientAuthorId: string;
+    title: string;
+    body: string;
+    kind?: string;
+    target?: string;
+    cta?: { label: string; url: string };
+  };
+  assert.equal(remote.target, target);
+  if (kind === "chat") {
+    assert.equal(remote.kind, "chat");
+  } else {
+    assert.equal(remote.kind, undefined);
+    assert.equal(request.body.includes('"kind"'), false);
+  }
+  assert.match(request.timestamp, /^\d{10}$/);
+  const hash = hashIntegrityMediaAuthorMessageContent({
+    body: remote.body,
+    category: "notification",
+    ctaLabel: remote.cta?.label ?? "",
+    ctaUrl: remote.cta?.url ?? "",
+    title: remote.title,
+  });
+  const canonical = buildIntegrityMediaAuthorMessageCanonicalStringV3({
+    timestamp: request.timestamp,
+    messageId: remote.messageId,
+    recipientAuthorId: remote.recipientAuthorId,
+    target,
+    kind,
+    contentSha256: hash,
+  });
+  assert.equal(request.signature, signIntegrityMediaAuthorMessage(SECRET, canonical));
+  const otherTarget = target === "staging" ? "production" : "staging";
+  assert.notEqual(
+    request.signature,
+    signIntegrityMediaAuthorMessage(
+      SECRET,
+      buildIntegrityMediaAuthorMessageCanonicalStringV3({
+        timestamp: request.timestamp,
+        messageId: remote.messageId,
+        recipientAuthorId: remote.recipientAuthorId,
+        target: otherTarget,
+        kind,
+        contentSha256: hash,
+      }),
+    ),
+  );
+  assert.notEqual(request.signature, signIntegrityMediaAuthorMessage("other-secret", canonical));
+}
+
+function canonicalForTamperedTarget(
+  request: IntegrityMediaAuthorMessageHttpRequest,
+  target: string,
+): string {
+  const remote = JSON.parse(request.body) as {
+    messageId: string;
+    recipientAuthorId: string;
+    title: string;
+    body: string;
+    cta?: { label: string; url: string };
+  };
+  return buildIntegrityMediaAuthorMessageCanonicalStringV3({
+    timestamp: request.timestamp,
+    messageId: remote.messageId,
+    recipientAuthorId: remote.recipientAuthorId,
+    target,
+    kind: "notification",
+    contentSha256: hashIntegrityMediaAuthorMessageContent({
+      body: remote.body,
+      category: "notification",
+      ctaLabel: remote.cta?.label ?? "",
+      ctaUrl: remote.cta?.url ?? "",
+      title: remote.title,
+    }),
+  });
 }
 
 function chatSignature(input: {
