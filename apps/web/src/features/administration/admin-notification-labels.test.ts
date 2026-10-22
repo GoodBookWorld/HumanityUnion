@@ -22,5 +22,29 @@ describe("Admin notification labels", () => {
       }),
       "/admin/integrity-media",
     );
+    assert.equal(
+      resolveAdminNotificationHref({
+        type: "integrity_media_author_message",
+        targetHref: "/admin/integrity-media",
+        sourceEventId: "11111111-1111-4111-8111-111111111111",
+      }),
+      "/admin/integrity-media?messageId=11111111-1111-4111-8111-111111111111",
+    );
+    assert.equal(
+      resolveAdminNotificationHref({
+        type: "integrity_media_author_message",
+        targetHref: "/admin/integrity-media",
+        sourceEventId: "not-a-message",
+      }),
+      "/admin/integrity-media",
+    );
+    assert.equal(
+      resolveAdminNotificationHref({
+        type: "participant_registered",
+        targetHref: "/admin/participants",
+        sourceEventId: "11111111-1111-4111-8111-111111111111",
+      }),
+      "/admin/participants",
+    );
   });
 });

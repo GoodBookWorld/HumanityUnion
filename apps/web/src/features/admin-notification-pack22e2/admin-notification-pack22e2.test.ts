@@ -58,7 +58,7 @@ describe("Pack 22E.2 — Admin Notification widget & panel", () => {
     assert.doesNotMatch(api, /\/api\/v1\/notifications/);
     assert.match(header, /fetchAdminNotifications/);
     assert.match(header, /fetchAdminNotificationCount/);
-    assert.match(header, /notification\.targetHref/);
+    assert.match(header, /resolveAdminNotificationHref\(notification\)/);
     assert.match(header, /<Link href=\{href\}/);
     assert.match(header, /notification\.actorLabel/);
     assert.match(header, /notification\.targetLabel/);

@@ -27,7 +27,13 @@ import {
   mergeIntegrityMediaAuthorHistory,
   restoredTranscriptScrollTop,
   inboundIntegrityMediaAuthorChatIds,
+  authorNotificationOpenRequest,
   buildAdminIntegrityMediaAuthorReadPath,
+  buildAdminIntegrityMediaAuthorReplyTargetPath,
+  findIntegrityMediaAuthorDirectoryRow,
+  integrityMediaAuthorDirectoryHref,
+  isIntegrityMediaAuthorReplyMessageId,
+  selectIntegrityMediaAuthorByMemberId,
   validateIntegrityMediaAuthorChatForm,
   validateIntegrityMediaAuthorMessageForm,
   type IntegrityMediaAuthorHistoryMessage,
@@ -94,6 +100,84 @@ function renderPanel(
     }),
   );
 }
+
+describe("Integrity author notification chat", () => {
+  const ada = "22222222-2222-4222-8222-222222222222";
+  const grace = "55555555-5555-4555-8555-555555555555";
+  const replyId = "11111111-1111-4111-8111-111111111111";
+
+  it("selects the member id when two authors share a display name", async () => {
+    const authors = [
+      row({ memberId: ada, participantDisplayName: "Ada Lovelace" }),
+      row({ memberId: grace, participantDisplayName: "Ada Lovelace" }),
+    ];
+    assert.equal(selectIntegrityMediaAuthorByMemberId(authors, grace)?.memberId, grace);
+    assert.equal(selectIntegrityMediaAuthorByMemberId(authors, ada)?.memberId, ada);
+    assert.equal(selectIntegrityMediaAuthorByMemberId(authors, "77777777-7777-4777-8777-777777777777"), null);
+
+    const pages: number[] = [];
+    const found = await findIntegrityMediaAuthorDirectoryRow(grace, async (query) => {
+      assert.equal(query.state, "all");
+      pages.push(query.offset);
+      if (query.offset === 0) {
+        return { authors: authors.slice(0, 1), hasMore: true };
+      }
+      return { authors: authors.slice(1), hasMore: false };
+    });
+    assert.deepEqual(pages, [0, 1]);
+    assert.equal(found?.memberId, grace);
+    assert.equal(found?.participantDisplayName, "Ada Lovelace");
+  });
+
+  it("opens a direct reply link once and stays quiet while that id is current", () => {
+    assert.equal(isIntegrityMediaAuthorReplyMessageId(replyId), true);
+    assert.equal(isIntegrityMediaAuthorReplyMessageId("not-a-message"), false);
+    assert.equal(authorNotificationOpenRequest(null, null), null);
+    assert.equal(authorNotificationOpenRequest("not-a-message", null), null);
+    assert.equal(authorNotificationOpenRequest(replyId, null), replyId);
+    assert.equal(authorNotificationOpenRequest(replyId, replyId), null);
+    assert.equal(
+      buildAdminIntegrityMediaAuthorReplyTargetPath(replyId),
+      `/api/v1/admin/integrity-media/authors/reply-target?messageId=${replyId}`,
+    );
+  });
+
+  it("removes only messageId so the same notification can reopen", () => {
+    assert.equal(
+      integrityMediaAuthorDirectoryHref(
+        "/admin/integrity-media",
+        `messageId=${replyId}&view=unread`,
+      ),
+      "/admin/integrity-media?view=unread",
+    );
+    assert.equal(
+      integrityMediaAuthorDirectoryHref("/admin/integrity-media", `messageId=${replyId}`),
+      "/admin/integrity-media",
+    );
+    assert.equal(authorNotificationOpenRequest(replyId, null), replyId);
+  });
+
+  it("keeps Chat and History on the directory and opens the dialog from the reply link", () => {
+    const html = renderPanel({
+      authors: [
+        row({ memberId: ada, participantDisplayName: "Ada Lovelace" }),
+        row({ memberId: grace, participantDisplayName: "Ada Lovelace" }),
+      ],
+      total: 2,
+    });
+    assert.equal((html.match(/Open chat with Ada Lovelace/g) ?? []).length, 2);
+    const section = read("features/administration/components/AdminIntegrityAuthorsSection.tsx");
+    assert.match(section, /useSearchParams/);
+    assert.match(section, /resolveAdminIntegrityMediaAuthorReply/);
+    assert.match(section, /onSend=\{setSendTarget\}/);
+    assert.match(section, /integrityMediaAuthorDirectoryHref/);
+    assert.match(section, /authorNotificationOpenRequest/);
+    assert.doesNotMatch(section, /markAdminIntegrityMediaAuthorMessagesRead/);
+    const header = read("features/administration/components/AdminWorkspaceHeader.tsx");
+    assert.match(header, /async function handleClear/);
+    assert.match(header, /resolveAdminNotificationHref\(notification\)/);
+  });
+});
 
 describe("Integrity Authors admin", () => {
   it("adds Integrity Media after Publishing at /admin/integrity-media", () => {
