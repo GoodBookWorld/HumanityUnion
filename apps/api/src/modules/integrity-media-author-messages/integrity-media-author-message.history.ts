@@ -4,6 +4,7 @@ import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_HISTORY_PAGE_SIZE } from "./integrity-me
 import {
   decodeIntegrityMediaAuthorMessageCursor,
   encodeIntegrityMediaAuthorMessageCursor,
+  isIntegrityMediaAuthorMessageId,
   resolveIntegrityMediaAuthorMessageDirection,
   resolveIntegrityMediaAuthorMessageKind,
   type IntegrityMediaAuthorMessageCursor,
@@ -94,6 +95,52 @@ export async function listIntegrityMediaAuthorMessageHistory(input: {
       },
     },
   };
+}
+
+/**
+ * Read-only identity for an accepted IM → HU author chat.
+ * The caller supplies a message id. The member id comes only from that row
+ * and must still be the linked member for the same external author.
+ */
+export async function resolveIntegrityMediaAuthorReplyMember(input: {
+  actorUserId: string;
+  actorMemberId: string;
+  messageId: string;
+}): Promise<
+  | { ok: true; data: { memberId: string } }
+  | IntegrityMediaAuthorMessageHistoryFailure
+> {
+  await requireIntegrityMediaAuthorMessageAdmin(input.actorUserId, input.actorMemberId);
+
+  if (!isIntegrityMediaAuthorMessageId(input.messageId)) {
+    return failure(404, "not_found", "The author conversation could not be found.");
+  }
+
+  const record = await getIntegrityMediaAuthorMessageStore().findByMessageId(input.messageId);
+  if (
+    !record ||
+    record.direction !== "im_to_hu" ||
+    record.kind !== "chat" ||
+    record.status !== "recorded" ||
+    !record.recipientMemberId ||
+    !record.recipientExternalAuthorId
+  ) {
+    return failure(404, "not_found", "The author conversation could not be found.");
+  }
+
+  const link = await getExternalAuthorLinkStore().findLinkByMember(
+    INTEGRITY_MEDIA_SOURCE,
+    record.recipientMemberId,
+  );
+  if (
+    !link ||
+    link.memberId !== record.recipientMemberId ||
+    link.externalAuthorId !== record.recipientExternalAuthorId
+  ) {
+    return failure(404, "not_found", "The author conversation could not be found.");
+  }
+
+  return { ok: true, data: { memberId: link.memberId } };
 }
 
 /**

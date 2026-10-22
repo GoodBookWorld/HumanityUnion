@@ -4,6 +4,8 @@
  */
 import type { AdminNotification, AdminNotificationType } from "@hu/types";
 
+import { isIntegrityMediaAuthorReplyMessageId } from "./admin-integrity-media-authors-model";
+
 const ADMIN_NOTIFICATION_TYPE_LABELS: Record<AdminNotificationType, string> = {
   participant_registered: "New Participant",
   blog_subscriber_confirmed: "New Blog subscriber",
@@ -36,8 +38,12 @@ export function resolveAdminNotificationTypeLabel(
  * For those, select Member Badge Orders without guessing an order identity.
  */
 export function resolveAdminNotificationHref(
-  notification: Pick<AdminNotification, "type" | "targetHref">,
+  notification: Pick<AdminNotification, "type" | "targetHref" | "sourceEventId">,
 ): string | null {
+  if (notification.type === "integrity_media_author_message") {
+    return integrityMediaAuthorMessageNotificationHref(notification);
+  }
+
   const raw = notification.targetHref?.trim() || null;
 
   if (notification.type !== "member_badge_order_paid") {
@@ -55,6 +61,27 @@ export function resolveAdminNotificationHref(
   } catch {
     return "/admin/participants?view=member_badge_orders";
   }
+}
+
+const INTEGRITY_MEDIA_AUTHOR_DIRECTORY_PATH = "/admin/integrity-media";
+
+/**
+ * Click address for an author-reply notification. The stored targetHref stays
+ * the directory. A valid reply id selects that conversation; anything else
+ * stays on the directory and does not open a chat.
+ */
+export function integrityMediaAuthorMessageNotificationHref(
+  notification: Pick<AdminNotification, "targetHref" | "sourceEventId">,
+): string {
+  const directory = notification.targetHref?.trim() || INTEGRITY_MEDIA_AUTHOR_DIRECTORY_PATH;
+  const messageId = notification.sourceEventId?.trim() ?? "";
+  if (!isIntegrityMediaAuthorReplyMessageId(messageId)) {
+    return directory;
+  }
+
+  const params = new URLSearchParams();
+  params.set("messageId", messageId);
+  return `${INTEGRITY_MEDIA_AUTHOR_DIRECTORY_PATH}?${params.toString()}`;
 }
 
 export function formatAdminNotificationDate(iso: string): string {

@@ -554,6 +554,92 @@ describe("Integrity Media inbound author replies", () => {
     assert.equal(await messageStore.countUnreadInboundChats(), 2);
     assert.equal((await inboxRows()).length, 2);
   });
+
+  it("resolves an accepted reply to its member and hides every other message", async () => {
+    await seedLink();
+    const accepted = await postReply({ messageId: VECTOR_MESSAGE, body: VECTOR_BODY });
+    assert.equal(accepted.status, 200);
+    const before = await messageStore.list();
+    const resolved = await getReplyTarget(VECTOR_MESSAGE);
+    assert.equal(resolved.status, 200);
+    assert.deepEqual(resolved.body.data, { memberId: MEMBER });
+    assert.equal(JSON.stringify(resolved.body).includes(VECTOR_BODY), false);
+    assert.equal(JSON.stringify(resolved.body).includes(AUTHOR), false);
+    assert.deepEqual(await messageStore.list(), before);
+    assert.equal(await messageStore.countUnreadInboundChats(), 1);
+
+    const outboundId = "99999999-9999-4999-8999-999999999999";
+    await seedMessage({
+      messageId: outboundId,
+      recipientMemberId: MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+    });
+    assert.equal((await getReplyTarget(outboundId)).status, 404);
+    assert.equal((await getReplyTarget("not-a-message")).status, 404);
+    assert.equal((await getReplyTarget("12121212-1212-4212-8212-121212121299")).status, 404);
+    assert.equal((await getReplyTarget(VECTOR_MESSAGE, { memberId: OTHER_MEMBER })).status, 400);
+
+    const mismatchId = "88888888-8888-4888-8888-888888888888";
+    await seedMessage({
+      messageId: mismatchId,
+      recipientMemberId: MEMBER,
+      recipientExternalAuthorId: OTHER_AUTHOR,
+      direction: "im_to_hu",
+      kind: "chat",
+      status: "recorded",
+      actorMemberId: MEMBER,
+    });
+    const orphanId = "77777777-7777-4777-8777-777777777777";
+    await seedMessage({
+      messageId: orphanId,
+      recipientMemberId: OTHER_MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      direction: "im_to_hu",
+      kind: "chat",
+      status: "recorded",
+      actorMemberId: OTHER_MEMBER,
+    });
+    assert.equal((await getReplyTarget(mismatchId)).status, 404);
+    assert.equal((await getReplyTarget(orphanId)).status, 404);
+    assert.equal((await getReplyTarget(VECTOR_MESSAGE)).body.data?.memberId, MEMBER);
+  });
+
+  it("refuses reply identity lookup without an administrator", async () => {
+    await seedLink();
+    const accepted = await postReply({ messageId: VECTOR_MESSAGE, body: VECTOR_BODY });
+    assert.equal(accepted.status, 200);
+    const anonymous = await fetch(
+      `${baseUrl}/api/v1/admin/integrity-media/authors/reply-target?messageId=${VECTOR_MESSAGE}`,
+    );
+    assert.equal(anonymous.status, 401);
+
+    const now = new Date().toISOString();
+    users.set("member-user", {
+      userId: "member-user",
+      email: "member-user@example.com",
+      passwordHash: "not-a-credential",
+      displayName: "Member User",
+      role: "member",
+      status: "active",
+      memberId: MEMBER,
+      emailVerificationStatus: "verified",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const token = createAccessToken({
+      sub: "member-user",
+      memberId: MEMBER,
+      role: "member",
+      displayName: "Member User",
+      email: "member-user@example.com",
+    });
+    const member = await fetch(
+      `${baseUrl}/api/v1/admin/integrity-media/authors/reply-target?messageId=${VECTOR_MESSAGE}`,
+      { headers: { authorization: `Bearer ${token}` } },
+    );
+    assert.equal(member.status, 403);
+    assert.equal(await messageStore.countUnreadInboundChats(), 1);
+  });
 });
 
 function enableReplyAnnouncements(displayName: string | null): void {
@@ -741,6 +827,25 @@ async function postAdmin(pathSuffix: string, body: Record<string, unknown>): Pro
       },
       body: JSON.stringify(body),
     },
+  );
+  return { status: response.status, body: (await response.json()) as ApiBody };
+}
+
+async function getReplyTarget(
+  messageId: string,
+  extraQuery: Record<string, string> = {},
+): Promise<{ status: number; body: ApiBody }> {
+  const token = createAccessToken({
+    sub: "admin-user",
+    memberId: ADMIN_MEMBER,
+    role: "admin",
+    displayName: "Test User",
+    email: "admin-user@example.com",
+  });
+  const params = new URLSearchParams({ messageId, ...extraQuery });
+  const response = await fetch(
+    `${baseUrl}/api/v1/admin/integrity-media/authors/reply-target?${params.toString()}`,
+    { headers: { authorization: `Bearer ${token}` } },
   );
   return { status: response.status, body: (await response.json()) as ApiBody };
 }

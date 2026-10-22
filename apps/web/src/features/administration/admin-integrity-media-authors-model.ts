@@ -283,6 +283,90 @@ export function buildAdminIntegrityMediaAuthorReadPath(memberId: string): string
   return `/api/v1/admin/integrity-media/authors/${encodeURIComponent(memberId)}/messages/read`;
 }
 
+const AUTHOR_REPLY_MESSAGE_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export const INTEGRITY_MEDIA_AUTHOR_DIRECTORY_LOOKUP_LIMIT = 100;
+export const INTEGRITY_MEDIA_AUTHOR_DIRECTORY_LOOKUP_PAGES = 20;
+
+export function isIntegrityMediaAuthorReplyMessageId(
+  value: string | null | undefined,
+): value is string {
+  return typeof value === "string" && AUTHOR_REPLY_MESSAGE_ID_PATTERN.test(value);
+}
+
+export function buildAdminIntegrityMediaAuthorReplyTargetPath(messageId: string): string {
+  const params = new URLSearchParams();
+  params.set("messageId", messageId);
+  return `/api/v1/admin/integrity-media/authors/reply-target?${params.toString()}`;
+}
+
+/** One directory row, chosen by member id. Display names are never the key. */
+export function selectIntegrityMediaAuthorByMemberId(
+  authors: readonly IntegrityMediaAuthorRow[],
+  memberId: string,
+): IntegrityMediaAuthorRow | null {
+  const matches = authors.filter((author) => author.memberId === memberId);
+  return matches.length === 1 ? (matches[0] ?? null) : null;
+}
+
+/**
+ * Ask for a lookup only when the URL names a new valid reply.
+ * The same id stays quiet so a mounted section does not look it up again.
+ */
+export function authorNotificationOpenRequest(
+  messageIdParam: string | null,
+  openedMessageId: string | null,
+): string | null {
+  if (!isIntegrityMediaAuthorReplyMessageId(messageIdParam)) {
+    return null;
+  }
+  if (openedMessageId === messageIdParam) {
+    return null;
+  }
+  return messageIdParam;
+}
+
+export function integrityMediaAuthorDirectoryHref(pathname: string, search: string): string {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  params.delete("messageId");
+  const next = params.toString();
+  return next ? `${pathname}?${next}` : pathname;
+}
+
+export async function findIntegrityMediaAuthorDirectoryRow(
+  memberId: string,
+  loadPage: (query: {
+    state: "all";
+    limit: number;
+    offset: number;
+  }) => Promise<Pick<IntegrityMediaAuthorDirectoryPage, "authors" | "hasMore">>,
+): Promise<IntegrityMediaAuthorRow | null> {
+  const identity = memberId.trim();
+  if (!identity) {
+    return null;
+  }
+
+  let offset = 0;
+  for (let page = 0; page < INTEGRITY_MEDIA_AUTHOR_DIRECTORY_LOOKUP_PAGES; page += 1) {
+    const result = await loadPage({
+      state: "all",
+      limit: INTEGRITY_MEDIA_AUTHOR_DIRECTORY_LOOKUP_LIMIT,
+      offset,
+    });
+    const match = selectIntegrityMediaAuthorByMemberId(result.authors, identity);
+    if (match) {
+      return match;
+    }
+    if (!result.hasMore || result.authors.length === 0) {
+      return null;
+    }
+    offset += result.authors.length;
+  }
+
+  return null;
+}
+
 export function inboundIntegrityMediaAuthorChatIds(
   messages: readonly IntegrityMediaAuthorHistoryMessage[],
 ): string[] {

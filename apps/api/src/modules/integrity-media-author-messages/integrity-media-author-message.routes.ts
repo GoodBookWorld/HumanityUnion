@@ -12,6 +12,7 @@ import { isIntegrityMediaAuthorMessageId } from "./integrity-media-author-messag
 import {
   acknowledgePresentedIntegrityMediaAuthorChats,
   listIntegrityMediaAuthorMessageHistory,
+  resolveIntegrityMediaAuthorReplyMember,
 } from "./integrity-media-author-message.history.js";
 import {
   sendIntegrityMediaAuthorChat,
@@ -22,6 +23,7 @@ const MESSAGE_FIELDS = new Set(["title", "body", "cta"]);
 const CHAT_FIELDS = new Set(["body"]);
 
 const LIST_QUERY = new Set(["limit", "offset", "state"]);
+const REPLY_TARGET_QUERY = new Set(["messageId"]);
 const HISTORY_QUERY = new Set(["limit", "cursor"]);
 const DIRECTORY_STATES = new Set(["all", "linked", "disabled", "setup_pending", "unread"]);
 const READ_FIELDS = new Set(["messageIds"]);
@@ -78,6 +80,50 @@ integrityMediaAuthorMessageRouter.get(
       }
 
       sendFailure(res, 500, "Integrity authors could not be loaded.", "unavailable");
+    }
+  },
+);
+
+integrityMediaAuthorMessageRouter.get(
+  "/reply-target",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    if (unexpectedReplyTargetQuery(req)) {
+      sendFailure(res, 400, "The author conversation request is not valid.", "unexpected_field");
+      return;
+    }
+
+    const messageId = readQueryString(req.query.messageId);
+    if (messageId === "invalid" || !messageId || !isIntegrityMediaAuthorMessageId(messageId)) {
+      sendFailure(res, 404, "The author conversation could not be found.", "not_found");
+      return;
+    }
+
+    try {
+      const result = await resolveIntegrityMediaAuthorReplyMember({
+        actorUserId: req.auth?.id ?? "",
+        actorMemberId: req.auth?.memberId ?? "",
+        messageId,
+      });
+
+      if (!result.ok) {
+        sendFailure(res, result.status, result.message, result.code);
+        return;
+      }
+
+      res.status(200).json(createSuccessResponse(result.data, "Integrity author conversation found."));
+    } catch (error) {
+      if (error instanceof AdministrationUnauthorizedError) {
+        sendFailure(res, 401, "Authentication is required.", "authentication_required");
+        return;
+      }
+
+      if (error instanceof AdministrationForbiddenError) {
+        sendFailure(res, 403, "Administrator access is required.", "administrator_required");
+        return;
+      }
+
+      sendFailure(res, 500, "The author conversation could not be loaded.", "unavailable");
     }
   },
 );
@@ -294,6 +340,16 @@ function unexpectedField(
 function unexpectedHistoryQuery(req: Request): boolean {
   for (const key of Object.keys(req.query)) {
     if (!HISTORY_QUERY.has(key)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function unexpectedReplyTargetQuery(req: Request): boolean {
+  for (const key of Object.keys(req.query)) {
+    if (!REPLY_TARGET_QUERY.has(key)) {
       return true;
     }
   }

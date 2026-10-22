@@ -2,12 +2,16 @@ import { apiRequest } from "../../lib/api-client";
 import {
   buildAdminIntegrityMediaAuthorHistoryPath,
   buildAdminIntegrityMediaAuthorReadPath,
+  buildAdminIntegrityMediaAuthorReplyTargetPath,
   buildAdminIntegrityMediaAuthorsPath,
+  findIntegrityMediaAuthorDirectoryRow,
+  isIntegrityMediaAuthorReplyMessageId,
   type IntegrityMediaAuthorDirectoryPage,
   type IntegrityMediaAuthorHistoryPage,
   type IntegrityMediaAuthorListState,
   type IntegrityMediaAuthorMessageDelivery,
   type IntegrityMediaAuthorMessageRequest,
+  type IntegrityMediaAuthorRow,
 } from "./admin-integrity-media-authors-model";
 
 export interface ListAdminIntegrityMediaAuthorsQuery {
@@ -20,6 +24,34 @@ export async function listAdminIntegrityMediaAuthors(
   query: ListAdminIntegrityMediaAuthorsQuery = {},
 ): Promise<IntegrityMediaAuthorDirectoryPage> {
   return apiRequest<IntegrityMediaAuthorDirectoryPage>(buildAdminIntegrityMediaAuthorsPath(query));
+}
+
+/**
+ * Resolve one accepted reply to its directory row. The browser supplies only
+ * the message id. A miss, rejection, or identity mismatch opens nothing.
+ */
+export async function resolveAdminIntegrityMediaAuthorReply(
+  messageId: string,
+): Promise<IntegrityMediaAuthorRow | null> {
+  if (!isIntegrityMediaAuthorReplyMessageId(messageId)) {
+    return null;
+  }
+
+  try {
+    const identity = await apiRequest<{ memberId?: string }>(
+      buildAdminIntegrityMediaAuthorReplyTargetPath(messageId),
+    );
+    const memberId = identity.memberId?.trim() ?? "";
+    if (!memberId) {
+      return null;
+    }
+    const row = await findIntegrityMediaAuthorDirectoryRow(memberId, (query) =>
+      listAdminIntegrityMediaAuthors(query),
+    );
+    return row?.memberId === memberId ? row : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function listAdminIntegrityMediaAuthorHistory(

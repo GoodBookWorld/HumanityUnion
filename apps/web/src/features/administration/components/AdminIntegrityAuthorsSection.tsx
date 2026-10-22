@@ -1,17 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import type { AuthUserPublic } from "@hu/types";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
-import { listAdminIntegrityMediaAuthors } from "../admin-integrity-media-authors-api";
+import {
+  listAdminIntegrityMediaAuthors,
+  resolveAdminIntegrityMediaAuthorReply,
+} from "../admin-integrity-media-authors-api";
 import {
   INTEGRITY_MEDIA_AUTHORS_PAGE_SIZE,
+  authorNotificationOpenRequest,
+  integrityMediaAuthorDirectoryHref,
   integrityMediaAuthorsNextOffset,
   integrityMediaAuthorsPreviousOffset,
   integrityMediaAuthorsQueryAfterFilter,
+  isIntegrityMediaAuthorReplyMessageId,
   type IntegrityMediaAuthorListState,
   type IntegrityMediaAuthorRow,
 } from "../admin-integrity-media-authors-model";
@@ -26,7 +33,27 @@ interface AdminIntegrityAuthorsSectionProps {
   user: AuthUserPublic;
 }
 
-export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuthorsSectionProps) {
+export function AdminIntegrityAuthorsSection({ user }: AdminIntegrityAuthorsSectionProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="admin-panel">
+          <AdminPanelNavigation />
+          <p className="hu-body">Loading Integrity Authors…</p>
+        </div>
+      }
+    >
+      <AdminIntegrityAuthorsSectionInner user={user} />
+    </Suspense>
+  );
+}
+
+function AdminIntegrityAuthorsSectionInner({ user: _user }: AdminIntegrityAuthorsSectionProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const openedMessageIdRef = useRef<string | null>(null);
+  const pendingMessageIdRef = useRef<string | null>(null);
   const [state, setState] = useState<IntegrityMediaAuthorListState>("all");
   const [offset, setOffset] = useState(0);
   const [authors, setAuthors] = useState<readonly IntegrityMediaAuthorRow[]>([]);
@@ -74,6 +101,52 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
   useEffect(() => {
     void loadAuthors();
   }, [loadAuthors]);
+
+  useEffect(() => {
+    const rawMessageId = searchParams.get("messageId");
+    if (!isIntegrityMediaAuthorReplyMessageId(rawMessageId)) {
+      pendingMessageIdRef.current = null;
+      openedMessageIdRef.current = null;
+      return;
+    }
+
+    const requested = authorNotificationOpenRequest(rawMessageId, openedMessageIdRef.current);
+    if (!requested || pendingMessageIdRef.current === requested) {
+      return;
+    }
+
+    pendingMessageIdRef.current = requested;
+    let cancelled = false;
+
+    void (async () => {
+      const row = await resolveAdminIntegrityMediaAuthorReply(requested);
+      if (cancelled || pendingMessageIdRef.current !== requested) {
+        return;
+      }
+      pendingMessageIdRef.current = null;
+      openedMessageIdRef.current = requested;
+      setSendTarget(row?.memberId ? row : null);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (pendingMessageIdRef.current === requested) {
+        pendingMessageIdRef.current = null;
+      }
+    };
+  }, [searchParams]);
+
+  function handleCloseDialog() {
+    setSendTarget(null);
+    if (!searchParams.get("messageId")) {
+      pendingMessageIdRef.current = null;
+      openedMessageIdRef.current = null;
+      return;
+    }
+    router.replace(integrityMediaAuthorDirectoryHref(pathname, searchParams.toString()), {
+      scroll: false,
+    });
+  }
 
   function handleStateChange(next: IntegrityMediaAuthorListState) {
     const query = integrityMediaAuthorsQueryAfterFilter(next);
@@ -148,7 +221,7 @@ export function AdminIntegrityAuthorsSection({ user: _user }: AdminIntegrityAuth
           authorActivationPending={sendTarget.authorActivationPending}
           collaborationStatus={sendTarget.collaborationStatus}
           isOpen={sendTarget !== null}
-          onClose={() => setSendTarget(null)}
+          onClose={handleCloseDialog}
           onRefresh={() => {
             void loadAuthors();
           }}
