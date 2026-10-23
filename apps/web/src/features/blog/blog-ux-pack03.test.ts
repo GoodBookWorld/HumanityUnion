@@ -196,6 +196,31 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     assert.match(css, /\.blog-article-body figure\.image\s*\{[^}]*display:\s*block/s);
     assert.match(css, /\.blog-article-body figure\.image-style-block img\s*\{[^}]*width:\s*auto/s);
     assert.match(css, /\.blog-article__video \.external-video-embed\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/s);
+    assert.match(
+      css,
+      /\.blog-cover-image,\s*\n\.blog-post-card__image,\s*\n\.blog-article__cover-image\s*\{[^}]*object-fit:\s*contain/s,
+    );
+    assert.match(
+      css,
+      /\.blog-cover-image,\s*\n\.blog-post-card__image,\s*\n\.blog-article__cover-image\s*\{[^}]*max-width:\s*100%/s,
+    );
+    assert.doesNotMatch(
+      css,
+      /\.blog-cover-image,\s*\n\.blog-post-card__image,\s*\n\.blog-article__cover-image\s*\{[^}]*object-fit:\s*cover/s,
+    );
+    assert.match(
+      css,
+      /\.blog-post-card--related \.blog-cover-image\s*\{[^}]*object-fit:\s*contain/s,
+    );
+    assert.doesNotMatch(
+      css,
+      /\.blog-post-card--related \.blog-cover-image\s*\{[^}]*object-fit:\s*cover/s,
+    );
+    assert.match(
+      css,
+      /\.blog-latest-mini__thumb\.blog-cover-image,\s*\n\.blog-latest-mini__thumb\s*\{[^}]*object-fit:\s*contain/s,
+    );
+    assert.match(css, /\.blog-article-body figure\.image_resized img\s*\{[^}]*width:\s*100%/s);
     assert.match(css, /\.blog-post-grid--related[\s\S]*min-width:\s*0/);
     assert.match(read("features/blog/components/BlogPostCard.tsx"), /&nbsp;/);
   });

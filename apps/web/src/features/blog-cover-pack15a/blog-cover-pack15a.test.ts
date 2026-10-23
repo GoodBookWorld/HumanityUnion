@@ -50,13 +50,21 @@ describe("Pack 15A — Blog cover preview & media state", () => {
     assert.match(image, /allowTitleAsAltFallback/);
   });
 
-  it("preview geometry is 16:9 cover without stretch", () => {
+  it("preview geometry letterboxes the full cover inside the 16:9 field", () => {
     const css = readWeb("features/blog/publishing.css");
     assert.match(css, /\.blog-cover-field__preview[\s\S]*aspect-ratio:\s*16\s*\/\s*9/s);
     assert.match(css, /\.blog-cover-field__preview[\s\S]*overflow:\s*hidden/s);
-    assert.match(css, /\.blog-cover-field__image[\s\S]*object-fit:\s*cover/s);
-    assert.match(css, /\.blog-cover-field__image[\s\S]*object-position:\s*center/s);
-    assert.match(css, /\.blog-cover-field__image[\s\S]*width:\s*100%/s);
+    assert.match(css, /\.blog-cover-field__image\s*\{[^}]*height:\s*100%/s);
+    assert.match(css, /\.blog-cover-field__image\s*\{[^}]*width:\s*100%/s);
+    assert.match(css, /\.blog-cover-field__image\s*\{[^}]*object-fit:\s*contain/s);
+    assert.match(css, /\.blog-cover-field__image\s*\{[^}]*object-position:\s*center/s);
+    assert.doesNotMatch(css, /\.blog-cover-field__image\s*\{[^}]*object-fit:\s*cover/s);
+    assert.match(css, /\.publication-list-item__cover\s*\{[^}]*object-fit:\s*contain/s);
+    assert.match(css, /\.publication-list-item__cover\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/s);
+    assert.match(
+      css,
+      /\.blog-publication-optimization__og-image\s*,[^}]*object-fit:\s*cover/s,
+    );
   });
 
   it("failed Replace does not clear prior cover (onChange only after upload success)", () => {

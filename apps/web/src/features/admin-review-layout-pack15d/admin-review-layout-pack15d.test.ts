@@ -80,7 +80,7 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.doesNotMatch(review, /trust score|reputation|author score/i);
   });
 
-  it("center preview renders via BlogArticleBody with stable 16:9 cover", () => {
+  it("center preview renders via BlogArticleBody with the full cover", () => {
     const review = readWeb("features/blog/components/EditorialReviewPageContent.tsx");
     assert.match(review, /BlogArticleBody/);
     assert.match(review, /html=\{preview\.content\}/);
@@ -90,8 +90,20 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     assert.doesNotMatch(review, /dangerouslySetInnerHTML/);
 
     const css = readWeb("features/blog/editorial.css");
-    assert.match(css, /aspect-ratio:\s*16\s*\/\s*9/);
-    assert.match(css, /object-fit:\s*cover/);
+    assert.match(css, /\.editorial-review__preview \.blog-article__cover\s*\{[^}]*aspect-ratio:\s*auto/s);
+    assert.match(css, /\.editorial-review__preview \.blog-article__cover\s*\{[^}]*height:\s*auto/s);
+    assert.match(
+      css,
+      /\.editorial-review__preview \.blog-article__cover \.blog-cover-image\s*\{[^}]*object-fit:\s*contain/s,
+    );
+    assert.match(
+      css,
+      /\.editorial-review__preview \.blog-article__cover \.blog-cover-image\s*\{[^}]*height:\s*auto/s,
+    );
+    assert.doesNotMatch(
+      css,
+      /\.editorial-review__preview \.blog-article__cover \.blog-cover-image\s*\{[^}]*object-fit:\s*cover/s,
+    );
   });
 
   it("right moderation keeps canonical actions; sticky below header; schedule hint", () => {

@@ -72,6 +72,6 @@ describe("Pack 16E — Blog 25/50/25 and category dropdown", () => {
 
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /\.blog-latest-mini__thumb-frame[\s\S]*width:\s*5rem/s);
-    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*cover/s);
+    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*contain/s);
   });
 });
