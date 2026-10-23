@@ -26,10 +26,12 @@ import { evaluateLifecycleSafety } from "../lifecycle-safety/lifecycle-safety.se
 import { notifyPublicPresentationChanged } from "../language/public-presentation-changed.js";
 import {
   findBlogPostById,
+  replaceBlogPost,
   updateBlogPostExternalCover,
   updateBlogPostExternalVideo,
   updateSyndicatedBlogArticleContent,
 } from "../blog/persistence/blog.repository.js";
+import { integrityMediaArticlePublicationInstant } from "./external-author-link.article-publication-instant.js";
 import { integrityMediaLinkSignaturesEqual, signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
 import {
   articleCoverDigest,
@@ -782,6 +784,11 @@ async function createAndSubmit(
       }
     }
 
+    await alignIntegrityMediaDraftPublicationInstant(
+      postId,
+      input.article.publishedAt,
+      input.now,
+    );
     const submitted = await submitBlogPostForReview({
       postId,
       actorParticipantId: input.article.huMemberId,
@@ -832,6 +839,26 @@ async function createAndSubmit(
     });
     throw mapBlogError(error, { postId, status });
   }
+}
+
+/**
+ * Drafts only. A pending-review article is left untouched, so enabling trusted
+ * publishing later still does not release it.
+ */
+async function alignIntegrityMediaDraftPublicationInstant(
+  postId: string,
+  publicationDate: string,
+  now: Date,
+): Promise<void> {
+  const post = await findBlogPostById(postId);
+  if (!post || post.status !== "draft") {
+    return;
+  }
+  const publishedAt = integrityMediaArticlePublicationInstant(publicationDate, now);
+  if (post.publishedAt === publishedAt) {
+    return;
+  }
+  await replaceBlogPost({ ...post, publishedAt });
 }
 
 async function actualStatus(postId: string, fallback: BlogPostStatus): Promise<BlogPostStatus> {

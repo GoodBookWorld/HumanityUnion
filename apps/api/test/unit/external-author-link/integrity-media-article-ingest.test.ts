@@ -33,6 +33,8 @@ import {
 } from "../../../src/modules/external-author-link/external-author-link.article-ingest.repository.js";
 import articleIngestRouter from "../../../src/modules/external-author-link/external-author-link.article-ingest.routes.js";
 import {
+  ArticleIngestError,
+  ingestIntegrityMediaArticle,
   resetArticleIngestLocksForTests,
   setArticleIngestAfterClaimForTests,
   setArticleIngestAfterContentAcceptForTests,
@@ -1361,6 +1363,82 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(listBlogMemoryPostsForTests()[0]?.externalVideo?.providerVideoId, YOUTUBE_ID);
     assert.equal("externalVideo" in saved, false);
   });
+
+  it("publishes an article dated today before noon UTC without moving the calendar day", async () => {
+    await trustedAuthor();
+    const now = new Date("2026-10-22T11:00:00.000Z");
+    const result = await ingestDatedArticle("pub-today-before-noon", "2026-10-22", now);
+    assert.equal(result.status, "published");
+    const post = listBlogMemoryPostsForTests()[0];
+    assert.equal(post?.publishedAt, now.toISOString());
+    assert.equal(post?.publishedAt?.slice(0, 10), "2026-10-22");
+  });
+
+  it("publishes an article dated today after noon UTC at noon", async () => {
+    await trustedAuthor();
+    const result = await ingestDatedArticle(
+      "pub-today-after-noon",
+      "2026-10-22",
+      new Date("2026-10-22T15:00:00.000Z"),
+    );
+    assert.equal(result.status, "published");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, "2026-10-22T12:00:00.000Z");
+  });
+
+  it("publishes an article dated yesterday at noon UTC on that day", async () => {
+    await trustedAuthor();
+    const result = await ingestDatedArticle(
+      "pub-yesterday",
+      "2026-10-21",
+      new Date("2026-10-22T11:00:00.000Z"),
+    );
+    assert.equal(result.status, "published");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, "2026-10-21T12:00:00.000Z");
+  });
+
+  it("schedules an article dated tomorrow at noon UTC", async () => {
+    await trustedAuthor();
+    const result = await ingestDatedArticle(
+      "pub-tomorrow",
+      "2026-10-23",
+      new Date("2026-10-22T15:00:00.000Z"),
+    );
+    assert.equal(result.status, "scheduled");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, "2026-10-23T12:00:00.000Z");
+  });
+
+  it("still queues review when trusted publishing is off, including a same-day article", async () => {
+    await linkAuthor();
+    await grantBlogCapabilitiesForTests({
+      participantId: MEMBER,
+      capabilities: ["author"],
+    });
+    const result = await ingestDatedArticle(
+      "pub-today-review",
+      "2026-10-22",
+      new Date("2026-10-22T11:00:00.000Z"),
+    );
+    assert.equal(result.status, "submitted_for_review");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.status, "submitted_for_review");
+    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt?.slice(0, 10), "2026-10-22");
+  });
+
+  it("rejects a soft-blocked author before a same-day article is stored", async () => {
+    await linkAuthor();
+    await upsertBlogCapabilityGrant({
+      participantId: MEMBER,
+      capabilities: ["author"],
+      updatedAt: "2026-10-22T11:00:00.000Z",
+      publishWithoutManualReview: true,
+      administrativelyBlocked: true,
+      administrativeBlockAuthority: "ADMIN",
+    });
+    await assert.rejects(
+      () => ingestDatedArticle("pub-blocked-today", "2026-10-22", new Date("2026-10-22T11:00:00.000Z")),
+      (error: unknown) => error instanceof ArticleIngestError && error.code === "author_blocked",
+    );
+    assert.equal(listBlogMemoryPostsForTests().length, 0);
+  });
 });
 
 interface ArticleRequest {
@@ -1466,6 +1544,17 @@ async function trustedAuthor(): Promise<void> {
 function nextTimestamp(): string {
   timestamp += 1;
   return String(timestamp);
+}
+
+async function ingestDatedArticle(publicationId: string, publishedAt: string, now: Date) {
+  const body = articleBody(publicationId, { publishedAt });
+  const signed = signBody(body, String(Math.floor(now.getTime() / 1000)));
+  return ingestIntegrityMediaArticle({
+    body,
+    timestamp: signed.timestamp,
+    signature: signed.signature,
+    now,
+  });
 }
 
 async function postArticle(body: ArticleRequest): Promise<{ status: number; body: ApiBody }> {
