@@ -723,7 +723,6 @@
   margin-inline: auto;
   border-radius: var(--hu-radius-card);
   overflow: hidden;
-  aspect-ratio: 16 / 9;
 }
 
 .blog-article__cover .blog-cover-image,
@@ -731,9 +730,10 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 100%;
+  height: auto;
+  max-height: none;
   aspect-ratio: auto;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -761,6 +761,9 @@
   max-width: var(--hu-reading-max-width); /* editorial measure — narrower than outer page */
   margin-inline: auto;
   width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-wrap: anywhere;
   color: var(--hu-color-text);
   font-size: var(--hu-font-size-base);
   line-height: var(--hu-line-height);
@@ -825,7 +828,9 @@
 
 /* Pack 22C.1 — CKEditor image styles must render without editor theme CSS. */
 .blog-article-body figure.image {
-  display: table;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
   clear: both;
 }
 
@@ -867,7 +872,9 @@
 }
 
 .blog-article-body figure.image-style-block img {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .blog-article-body figure.image_resized,

@@ -1,8 +1,8 @@
 /**
- * Integrity Media sends a calendar day, not a clock time.
- * A day that is today or earlier in UTC is due immediately, including before noon.
- * A later day stays at noon UTC so ordinary scheduling can hold it.
- * The returned instant never uses an earlier calendar day than the one supplied.
+ * Integrity Media sends a calendar day, not a schedule instruction.
+ * Today and earlier stay on that calendar day and are already due.
+ * A later day is not a schedule: the ingest instant is used so the post is due now.
+ * Ordinary Blog posts do not use this helper.
  */
 export function integrityMediaArticlePublicationInstant(
   publicationDate: string,
@@ -10,6 +10,9 @@ export function integrityMediaArticlePublicationInstant(
 ): string {
   const nowIso = now.toISOString();
   const today = nowIso.slice(0, 10);
+  if (publicationDate > today) {
+    return nowIso;
+  }
   const noon = `${publicationDate}T12:00:00.000Z`;
   if (publicationDate === today && noon > nowIso) {
     return nowIso;

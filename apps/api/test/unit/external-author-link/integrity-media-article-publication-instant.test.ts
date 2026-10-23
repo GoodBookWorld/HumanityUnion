@@ -37,7 +37,11 @@ describe("Integrity Media publication instant", () => {
     );
     assert.equal(
       integrityMediaArticlePublicationInstant("2026-10-23", afterNoon),
-      "2026-10-23T12:00:00.000Z",
+      afterNoon.toISOString(),
+    );
+    assert.equal(
+      integrityMediaArticlePublicationInstant("2026-10-23", afterNoon).slice(0, 10),
+      "2026-10-22",
     );
   });
 });

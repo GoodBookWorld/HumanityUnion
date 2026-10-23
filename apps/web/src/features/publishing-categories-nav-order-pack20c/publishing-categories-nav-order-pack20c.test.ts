@@ -35,6 +35,14 @@ describe("Pack 20C — Publishing Categories navigation & ordering (web)", () =>
     assert.match(section, /setPublicationCategoriesHash/);
     const css = read("features/administration/components/admin-publishing.css");
     assert.match(css, /#publication-categories\s*\{[^}]*scroll-margin-top/s);
+    assert.match(css, /\.admin-blog-categories__desc\s*\{[^}]*width:\s*220px/s);
+    assert.match(css, /\.admin-blog-categories__desc\s*\{[^}]*max-width:\s*220px/s);
+    assert.match(css, /\.admin-blog-categories__desc\s*\{[^}]*white-space:\s*normal/s);
+    assert.match(css, /\.admin-blog-categories__desc\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.match(
+      css,
+      /\.admin-blog-categories \.admin-publishing-table--directory td:nth-child\(2\)\s*\{[^}]*white-space:\s*normal/s,
+    );
   });
 
   it("renders category management as one priority table", () => {
