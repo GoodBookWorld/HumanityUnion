@@ -125,15 +125,18 @@
 .editorial-review__preview .blog-article__cover {
   width: 100%;
   max-width: none;
-  aspect-ratio: 16 / 9;
+  height: auto;
+  aspect-ratio: auto;
 }
 
-.editorial-review__preview .blog-article__cover-image,
-.editorial-review__preview .blog-cover-image {
+.editorial-review__preview .blog-article__cover .blog-article__cover-image,
+.editorial-review__preview .blog-article__cover .blog-cover-image {
   width: 100%;
-  height: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: auto;
+  object-fit: contain;
   object-position: center;
 }
 

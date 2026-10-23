@@ -41,7 +41,7 @@ describe("Pack 15C — Public Blog layout (refined 25/50/25 in Pack 16E)", () =>
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /\.blog-latest-mini__thumb-frame[\s\S]*width:\s*5rem/s);
     assert.match(css, /\.blog-latest-mini__thumb-frame[\s\S]*height:\s*5rem/s);
-    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*cover/s);
+    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*contain/s);
     assert.match(css, /\.blog-latest-mini__thumb[\s\S]*aspect-ratio:\s*1\s*\/\s*1/s);
     assert.match(css, /flex:\s*none/);
   });

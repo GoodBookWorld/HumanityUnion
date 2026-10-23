@@ -39,7 +39,7 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(editor, /coverMedia=\{coverMedia\}/);
     assert.match(editor, /setCoverMedia\(saved\.coverMedia/);
     assert.match(css, /\.blog-cover-field__preview[\s\S]*aspect-ratio:\s*16\s*\/\s*9/s);
-    assert.match(css, /\.blog-cover-field__image[\s\S]*object-fit:\s*cover/s);
+    assert.match(css, /\.blog-cover-field__image\s*\{[^}]*object-fit:\s*contain/s);
   });
 
   it("3–6 CKEditor formatting, inline image, alt/caption, toolbar at editor top (15B/18A)", () => {
@@ -142,7 +142,7 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
     assert.match(css, /\.blog-latest-mini__thumb-frame[\s\S]*width:\s*5rem/s);
-    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*cover/s);
+    assert.match(css, /\.blog-latest-mini__thumb[\s\S]*object-fit:\s*contain/s);
     assert.match(css, /flex:\s*none/);
 
     assert.equal(BLOG_PAGE_SIZE, 9);

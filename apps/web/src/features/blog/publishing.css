@@ -44,9 +44,12 @@
 
 .publication-list-item__cover {
   width: 100%;
+  max-width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: var(--hu-color-bg-muted, rgba(28, 36, 48, 0.06));
   border-radius: var(--hu-radius-sm, 6px);
 }
 
@@ -465,9 +468,10 @@
 .blog-cover-field__image {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
