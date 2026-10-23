@@ -914,6 +914,21 @@ export async function listDueScheduledBlogPosts(input: {
   nowIso: string;
   limit?: number;
 }): Promise<BlogPost[]> {
+  const memory = blogMemory();
+  if (memory) {
+    return [...memory.posts.values()]
+      .filter(
+        (post) =>
+          post.status === "scheduled" &&
+          typeof post.publishedAt === "string" &&
+          post.publishedAt <= input.nowIso &&
+          post.administrativelyBlocked !== true,
+      )
+      .sort((left, right) => (left.publishedAt ?? "").localeCompare(right.publishedAt ?? ""))
+      .slice(0, input.limit ?? 100)
+      .map((post) => ({ ...post }));
+  }
+
   await ensureBlogMongoReady();
   const docs = await postsCollection()
     .find({
