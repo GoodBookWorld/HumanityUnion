@@ -1353,15 +1353,15 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, "2026-10-21T12:00:00.000Z");
   });
 
-  it("schedules an article dated tomorrow at noon UTC", async () => {
+  it("publishes an article dated a future UTC day at the ingest instant", async () => {
     await trustedAuthor();
-    const result = await ingestDatedArticle(
-      "pub-tomorrow",
-      "2026-10-23",
-      new Date("2026-10-22T15:00:00.000Z"),
-    );
-    assert.equal(result.status, "scheduled");
-    assert.equal(listBlogMemoryPostsForTests()[0]?.publishedAt, "2026-10-23T12:00:00.000Z");
+    const now = new Date("2026-10-22T15:00:00.000Z");
+    const result = await ingestDatedArticle("pub-tomorrow", "2026-10-23", now);
+    assert.equal(result.status, "published");
+    const post = listBlogMemoryPostsForTests()[0];
+    assert.equal(post?.status, "published");
+    assert.equal(post?.publishedAt, now.toISOString());
+    assert.equal(post?.publishedAt?.slice(0, 10), "2026-10-22");
   });
 
   it("still queues review when trusted publishing is off, including a same-day article", async () => {

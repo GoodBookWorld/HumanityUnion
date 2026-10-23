@@ -187,8 +187,15 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     assert.match(css, /blog-post-grid--related/);
     assert.match(css, /overflow-x:\s*auto/);
     assert.match(css, /flex-basis:\s*calc\(\(100% - var\(--hu-card-gap\)\) \/ 2\)/);
-    assert.match(css, /\.blog-article__cover[\s\S]*min-width:\s*0/);
-    assert.match(css, /\.blog-article__cover[\s\S]*aspect-ratio:\s*16\s*\/\s*9/);
+    assert.match(css, /\.blog-article__cover\s*\{[^}]*min-width:\s*0/);
+    assert.doesNotMatch(css, /\.blog-article__cover\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/);
+    assert.match(css, /\.blog-article__cover \.blog-cover-image,\s*\n\.blog-article__cover \.blog-article__cover-image\s*\{[^}]*height:\s*auto/s);
+    assert.match(css, /\.blog-article__cover \.blog-cover-image,\s*\n\.blog-article__cover \.blog-article__cover-image\s*\{[^}]*object-fit:\s*contain/s);
+    assert.match(css, /\.blog-article-body\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.match(css, /\.blog-article-body\s*\{[^}]*overflow-x:\s*auto/s);
+    assert.match(css, /\.blog-article-body figure\.image\s*\{[^}]*display:\s*block/s);
+    assert.match(css, /\.blog-article-body figure\.image-style-block img\s*\{[^}]*width:\s*auto/s);
+    assert.match(css, /\.blog-article__video \.external-video-embed\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/s);
     assert.match(css, /\.blog-post-grid--related[\s\S]*min-width:\s*0/);
     assert.match(read("features/blog/components/BlogPostCard.tsx"), /&nbsp;/);
   });

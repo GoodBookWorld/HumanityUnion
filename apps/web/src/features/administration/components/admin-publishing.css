@@ -439,8 +439,17 @@
   gap: 0.5rem;
 }
 
+.admin-blog-categories .admin-publishing-table--directory td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .admin-blog-categories__desc {
   margin: 0.25rem 0 0;
+  width: 220px;
+  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .admin-blog-categories__reassign {
