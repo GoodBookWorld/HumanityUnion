@@ -78,4 +78,51 @@ describe("Pack 22C.1 — image style / resize sanitize contracts", () => {
     assert.doesNotMatch(withWidget, /image-style-align-left/);
     assert.doesNotMatch(withWidget, /ck-widget/);
   });
+
+  for (const style of ["image-style-block-align-left", "image-style-block-align-right"]) {
+    it(`${style} survives with caption, alt, and a safe image link`, () => {
+      const html = sanitizeBlogHtml(
+        `<figure class="image image_resized ${style}" style="width: 25%;"><a href="https://example.com/story" target="_blank"><img src="${SRC}" alt="Placed" /></a><figcaption>Caption</figcaption></figure>`,
+      );
+      assert.match(html, new RegExp(`class="image image_resized ${style}"`));
+      assert.match(html, /width:\s*25%/);
+      assert.match(html, /href="https:\/\/example\.com\/story"/);
+      assert.doesNotMatch(html, /target=/);
+      assert.match(html, /alt="Placed"/);
+      assert.match(html, /<figcaption>Caption<\/figcaption>/);
+    });
+  }
+
+  it("rejects an unsafe image link and an unapproved alignment class", () => {
+    const unsafe = sanitizeBlogHtml(
+      `<figure class="image image-style-block-align-left"><a href="javascript:alert(1)"><img src="${SRC}" alt="X" /></a></figure>`,
+    );
+    assert.doesNotMatch(unsafe, /javascript:/i);
+    assert.match(unsafe, /alt="X"/);
+
+    const unknown = sanitizeBlogHtml(
+      `<figure class="image image-style-block-align-center"><img src="${SRC}" alt="Y" /></figure>`,
+    );
+    assert.doesNotMatch(unknown, /image-style-block-align/);
+    assert.match(unknown, /alt="Y"/);
+  });
+
+  it("keeps previously stored wrap, center, and unstyled figures", () => {
+    const html = sanitizeBlogHtml(
+      [
+        `<figure class="image image_resized image-style-align-left" style="width: 35%;"><img src="${SRC}" alt="Wrap" /></figure>`,
+        `<figure class="image image-style-align-center" style="width: 80%;"><img src="${SRC}" alt="Center" /><figcaption>Old</figcaption></figure>`,
+        `<figure class="image"><img src="${SRC}" alt="Plain" /></figure>`,
+        `<figure class="image image-style-block"><img src="${SRC}" alt="Full" /></figure>`,
+      ].join(""),
+    );
+    assert.match(html, /image-style-align-left/);
+    assert.match(html, /width:\s*35%/);
+    assert.match(html, /image-style-align-center/);
+    assert.match(html, /width:\s*80%/);
+    assert.match(html, /<figcaption>Old<\/figcaption>/);
+    assert.match(html, /<figure class="image"><img src="[^"]+" alt="Plain"/);
+    assert.match(html, /image-style-block"/);
+    assert.doesNotMatch(html, /image-style-block-align/);
+  });
 });
