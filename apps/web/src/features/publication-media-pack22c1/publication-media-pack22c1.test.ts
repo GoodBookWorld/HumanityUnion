@@ -83,6 +83,42 @@ describe("Pack 22C.1 — publication image position / resize / inline", () => {
     }
   });
 
+  it("editor intrinsic figures stay natural; resized figures still fill their percentage", () => {
+    const publishing = readWeb("features/blog/publishing.css");
+    const css = readWeb("features/blog/blog.css");
+    assert.match(
+      publishing,
+      /\.blog-rich-text--ckeditor \.ck-content figure\.image img\s*\{[^}]*min-width:\s*0/s,
+    );
+    assert.match(
+      publishing,
+      /\.blog-rich-text--ckeditor \.ck-content figure\.image img\s*\{[^}]*width:\s*auto/s,
+    );
+    assert.match(
+      publishing,
+      /\.blog-rich-text--ckeditor \.ck-content figure\.image_resized img\s*\{[^}]*width:\s*100%/s,
+    );
+    assert.match(
+      publishing,
+      /\.blog-rich-text--ckeditor \.ck-content figure\.image_resized img\s*\{[^}]*max-width:\s*100%/s,
+    );
+    assert.match(
+      publishing,
+      /@media \(max-width:\s*768px\)[\s\S]*\.blog-rich-text--ckeditor \.ck-content figure\.image-style-align-left[\s\S]*float:\s*none/,
+    );
+    assert.match(
+      publishing,
+      /@media \(max-width:\s*768px\)[\s\S]*image-style-inline[\s\S]*max-width:\s*min\(100%,\s*8rem\)/,
+    );
+    assert.match(css, /\.blog-article-body figure\.image-style-block img\s*\{[^}]*width:\s*auto/s);
+    assert.match(css, /\.blog-article-body figure\.image_resized img\s*\{[^}]*width:\s*100%/s);
+    assert.match(
+      css,
+      /@media \(max-width:\s*768px\)[\s\S]*figure\.image-style-align-left[\s\S]*float:\s*none/,
+    );
+    assert.match(css, /max-width:\s*min\(100%,\s*8rem\)/);
+  });
+
   it("Pack 22C.2 — Blog cover accept includes GIF; ImageResize remains", () => {
     const rich = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
     assert.match(rich, /ImageResize/);
