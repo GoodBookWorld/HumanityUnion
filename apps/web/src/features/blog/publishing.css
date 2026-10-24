@@ -572,8 +572,22 @@
 
 .blog-rich-text--ckeditor .ck-content figure.image {
   margin: 1rem 0;
-  display: table;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
   clear: both;
+}
+
+/* CKEditor content CSS sets `.image img { min-width: 100% }`, which enlarges
+   an unresized figure to the editor column. Match the public article: natural
+   size, capped by the column. Resized figures keep width 100% below. */
+.blog-rich-text--ckeditor .ck-content figure.image img {
+  display: block;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Pack 22C.1 — authoring preview parity with public Blog image styles. */
@@ -601,6 +615,19 @@
   clear: both;
 }
 
+.blog-rich-text--ckeditor .ck-content figure.image-style-block {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-block img {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+}
+
 .blog-rich-text--ckeditor .ck-content figure.image_resized,
 .blog-rich-text--ckeditor .ck-content img.image_resized {
   max-width: 100%;
@@ -609,6 +636,8 @@
 
 .blog-rich-text--ckeditor .ck-content figure.image_resized img {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: auto;
 }
 
@@ -631,6 +660,7 @@
 }
 
 .blog-rich-text--ckeditor .ck-content figcaption {
+  display: block;
   font-size: 0.875rem;
   color: var(--hu-color-text-muted, #4a5563);
 }
@@ -805,6 +835,22 @@
 
   .blog-rich-text--ckeditor .ck-editor__editable {
     min-height: 280px;
+  }
+
+  .blog-rich-text--ckeditor .ck-content figure.image-style-align-left,
+  .blog-rich-text--ckeditor .ck-content figure.image-style-align-right,
+  .blog-rich-text--ckeditor .ck-content figure.image-style-side {
+    float: none;
+    display: block;
+    max-width: 100%;
+    margin: 1rem auto;
+  }
+
+  .blog-rich-text--ckeditor .ck-content img.image-style-inline,
+  .blog-rich-text--ckeditor .ck-content .image-style-inline > img,
+  .blog-rich-text--ckeditor .ck-content span.image-style-inline img,
+  .blog-rich-text--ckeditor .ck-content figure.image-style-inline {
+    max-width: min(100%, 8rem);
   }
 
   .blog-rich-text--ckeditor .ck-toolbar {
