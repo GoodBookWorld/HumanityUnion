@@ -51,8 +51,12 @@ const BLOCK_TAGS_WITH_ALIGN = new Set([
   "td",
 ]);
 
-const SAFE_CLASS_PATTERN =
-  /^(image|image_resized|image-style-align-left|image-style-align-center|image-style-align-right|image-style-block|image-style-inline|image-style-side|table|ck-table-resized)(\s+(image|image_resized|image-style-align-left|image-style-align-center|image-style-align-right|image-style-block|image-style-inline|image-style-side|table|ck-table-resized))*$/;
+const SAFE_CLASS_TOKEN =
+  "image|image_resized|image-style-align-left|image-style-align-center|image-style-align-right|image-style-block-align-left|image-style-block-align-right|image-style-block|image-style-inline|image-style-side|table|ck-table-resized";
+
+const SAFE_CLASS_PATTERN = new RegExp(
+  `^(?:${SAFE_CLASS_TOKEN})(?:\\s+(?:${SAFE_CLASS_TOKEN}))*$`,
+);
 
 function decodeEntities(value: string): string {
   return value

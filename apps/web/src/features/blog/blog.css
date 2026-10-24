@@ -877,6 +877,25 @@
   height: auto;
 }
 
+/* Block alignment breaks text. It does not float. */
+.blog-article-body figure.image-style-block-align-left,
+.blog-article-body figure.image-style-block-align-right {
+  float: none;
+  clear: both;
+  display: block;
+  max-width: 100%;
+}
+
+.blog-article-body figure.image-style-block-align-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.blog-article-body figure.image-style-block-align-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .blog-article-body figure.image_resized,
 .blog-article-body img.image_resized {
   max-width: 100%;
@@ -928,6 +947,13 @@
     display: block;
     max-width: 100%;
     margin: var(--hu-space-4) auto;
+  }
+
+  .blog-article-body figure.image-style-block-align-left,
+  .blog-article-body figure.image-style-block-align-right {
+    float: none;
+    display: block;
+    max-width: 100%;
   }
 
   .blog-article-body img.image-style-inline,

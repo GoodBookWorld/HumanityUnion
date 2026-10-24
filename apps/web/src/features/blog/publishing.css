@@ -628,6 +628,25 @@
   height: auto;
 }
 
+/* Block alignment breaks text. It does not float. */
+.blog-rich-text--ckeditor .ck-content figure.image-style-block-align-left,
+.blog-rich-text--ckeditor .ck-content figure.image-style-block-align-right {
+  float: none;
+  clear: both;
+  display: block;
+  max-width: 100%;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-block-align-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-block-align-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .blog-rich-text--ckeditor .ck-content figure.image_resized,
 .blog-rich-text--ckeditor .ck-content img.image_resized {
   max-width: 100%;
@@ -663,6 +682,15 @@
   display: block;
   font-size: 0.875rem;
   color: var(--hu-color-text-muted, #4a5563);
+}
+
+/* Image balloon stays with the selection and wraps instead of covering the picture. */
+.ck.ck-balloon-panel.ck-toolbar-container {
+  max-width: min(100vw - 1rem, 34rem);
+}
+
+.ck.ck-balloon-panel.ck-toolbar-container > .ck.ck-toolbar > .ck-toolbar__items {
+  flex-wrap: wrap;
 }
 
 .blog-rich-text--ckeditor .ck-content table {
@@ -844,6 +872,13 @@
     display: block;
     max-width: 100%;
     margin: 1rem auto;
+  }
+
+  .blog-rich-text--ckeditor .ck-content figure.image-style-block-align-left,
+  .blog-rich-text--ckeditor .ck-content figure.image-style-block-align-right {
+    float: none;
+    display: block;
+    max-width: 100%;
   }
 
   .blog-rich-text--ckeditor .ck-content img.image-style-inline,

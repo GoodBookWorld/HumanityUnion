@@ -133,4 +133,47 @@ describe("Pack 22C.1 — publication image position / resize / inline", () => {
     assert.match(rich, /imageTextAlternative/);
     assert.match(rich, /toggleImageCaption/);
   });
+
+  it("groups image size, wrap, and block controls and keeps percentage resize", () => {
+    const rich = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
+    assert.match(rich, /LinkImage/);
+    assert.match(rich, /"resizeImage"/);
+    assert.match(rich, /"imageStyle:wrapText"/);
+    assert.match(rich, /imageStyle:blockLayout/);
+    assert.match(rich, /"linkImage"/);
+    for (const control of [
+      "resizeImage:original",
+      "resizeImage:25",
+      "resizeImage:50",
+      "resizeImage:100",
+      "resizeImage:custom",
+      "imageStyle:alignBlockLeft",
+      "imageStyle:alignBlockRight",
+      "imageStyle:full",
+    ]) {
+      assert.match(rich, new RegExp(control.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
+    assert.match(rich, /resizeUnit:\s*"%"/);
+    assert.match(rich, /className:\s*"image-style-block"/);
+    assert.match(rich, /className:\s*"image-style-block-align-left"/);
+    assert.match(rich, /className:\s*"image-style-block-align-right"/);
+    assert.doesNotMatch(rich, /image-style-block-align-center|imageStyle:alignBlockCenter/);
+
+    const css = readWeb("features/blog/blog.css");
+    const publishing = readWeb("features/blog/publishing.css");
+    const sanitize = readApi("modules/blog/blog-content-sanitize.ts");
+    for (const file of [css, publishing, sanitize]) {
+      assert.match(file, /image-style-block-align-left/);
+      assert.match(file, /image-style-block-align-right/);
+    }
+    assert.match(css, /\.blog-article-body figure\.image_resized img\s*\{[^}]*width:\s*100%/s);
+    assert.match(
+      publishing,
+      /\.blog-rich-text--ckeditor \.ck-content figure\.image_resized img\s*\{[^}]*width:\s*100%/s,
+    );
+    assert.match(css, /figure\.image-style-block-align-left\s*\{[^}]*margin-left:\s*0/s);
+    assert.match(css, /figure\.image-style-block-align-right\s*\{[^}]*margin-left:\s*auto/s);
+    assert.match(publishing, /ck-balloon-panel\.ck-toolbar-container/);
+    assert.match(publishing, /flex-wrap:\s*wrap/);
+  });
 });
