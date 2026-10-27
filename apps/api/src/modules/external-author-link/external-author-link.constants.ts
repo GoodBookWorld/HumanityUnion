@@ -11,6 +11,19 @@ export const INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE = "integrity-media-link-redeem"
 export const INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE = "integrity-media-link-acknowledge";
 
 /**
+ * IM → HU rebinding of one confirmed author link to the participant proven by a
+ * confirmation result. Redeem, acknowledge, disconnect, and reply signatures
+ * cannot authorize it, and this purpose cannot authorize those flows.
+ */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_PURPOSE = "integrity-media-binding-recovery-redeem";
+
+/** Recovery is enabled only when the trimmed value is exactly `true`. */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED_ENV =
+  "INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED";
+
+export const INTEGRITY_MEDIA_RECOVERY_ID_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
+
+/**
  * IM → HU account provision attempt. A redeem or acknowledgement signature
  * cannot register an attempt, and this purpose cannot redeem or confirm.
  */

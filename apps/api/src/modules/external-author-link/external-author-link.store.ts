@@ -5,13 +5,22 @@ import { runIntegrityMediaLinkCriticalSection } from "../integrity-media-author-
 import { isExplicitIsolatedMongoTest } from "../../infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
-import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
+import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
+import {
+  executeBindingRecovery,
+  recoveryResultFromCommittedReceipt,
+  type BindingRecoveryApplyInput,
+  type BindingRecoveryApplyResult,
+  type BindingRecoveryPersistence,
+} from "./external-author-link.binding-recovery.js";
+import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
 import { assignedLinkRevision, linkRevisionMatches } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorDisconnectEventRecord,
   ExternalAuthorLinkAuditRecord,
   ExternalAuthorLinkRecord,
+  ExternalAuthorLinkRecoveryReceiptRecord,
   ExternalAuthorLinkResultRecord,
 } from "./external-author-link.types.js";
 
@@ -113,6 +122,19 @@ export interface ExternalAuthorLinkStore {
   }): Promise<{ items: ExternalAuthorLinkRecord[]; total: number }>;
   listResults(): Promise<ExternalAuthorLinkResultRecord[]>;
   listAudits(): Promise<ExternalAuthorLinkAuditRecord[]>;
+  /** Read only. Does not claim, reserve, or consume. */
+  findResult(resultCode: string): Promise<ExternalAuthorLinkResultRecord | null>;
+  /** Read only, outside any recovery transaction. */
+  findBindingRecoveryReceipt(
+    recoveryId: string,
+  ): Promise<ExternalAuthorLinkRecoveryReceiptRecord | null>;
+  /**
+   * Rebind one confirmed link to the participant of a confirmation result.
+   * On Mongo every recovery write runs in one transaction. There is no
+   * session-less fallback.
+   */
+  applyBindingRecovery(input: BindingRecoveryApplyInput): Promise<BindingRecoveryApplyResult>;
+  listBindingRecoveryReceipts(): Promise<ExternalAuthorLinkRecoveryReceiptRecord[]>;
 }
 
 export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
@@ -121,6 +143,106 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
   const byAuthor = new Map<string, ExternalAuthorLinkRecord>();
   const byMember = new Map<string, ExternalAuthorLinkRecord>();
   const audits: ExternalAuthorLinkAuditRecord[] = [];
+  const recoveryReceipts = new Map<string, ExternalAuthorLinkRecoveryReceiptRecord>();
+
+  const recoveryPersistence: BindingRecoveryPersistence = {
+    async findReceipt(recoveryId) {
+      const found = recoveryReceipts.get(recoveryId);
+      return found ? copyReceipt(found) : null;
+    },
+
+    async insertReceipt(record) {
+      if (recoveryReceipts.has(record.recoveryId)) {
+        return "duplicate";
+      }
+
+      recoveryReceipts.set(record.recoveryId, copyReceipt(record));
+      return "inserted";
+    },
+
+    async replaceReceipt(record) {
+      recoveryReceipts.set(record.recoveryId, copyReceipt(record));
+    },
+
+    async findLinkByAuthor(externalAuthorId) {
+      return copyLink(byAuthor.get(linkKey(INTEGRITY_MEDIA_SOURCE, externalAuthorId)));
+    },
+
+    async findLinkByMember(memberId) {
+      return copyLink(byMember.get(linkKey(INTEGRITY_MEDIA_SOURCE, memberId)));
+    },
+
+    async findResult(resultCode) {
+      const found = results.get(resultCode);
+      return found ? { ...found } : null;
+    },
+
+    async reserveResult(resultCode, reservationId) {
+      const current = results.get(resultCode);
+      if (!current || current.consumedAt || current.bindingRecoveryReservationId !== undefined) {
+        return false;
+      }
+
+      current.bindingRecoveryReservationId = reservationId;
+      return true;
+    },
+
+    async releaseResult(resultCode, reservationId) {
+      const current = results.get(resultCode);
+      if (current && !current.consumedAt && current.bindingRecoveryReservationId === reservationId) {
+        delete current.bindingRecoveryReservationId;
+      }
+    },
+
+    async consumeResult(resultCode, reservationId, nowIso) {
+      const current = results.get(resultCode);
+      if (!current || current.consumedAt || current.bindingRecoveryReservationId !== reservationId) {
+        return false;
+      }
+
+      current.consumedAt = nowIso;
+      return true;
+    },
+
+    async rebind(input) {
+      const authorKey = linkKey(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
+      const current = byAuthor.get(authorKey);
+      if (
+        !current ||
+        current.memberId !== input.historicalMemberId ||
+        current.linkRevision !== input.historicalLinkRevision ||
+        current.linkInstanceId !== input.historicalLinkInstanceId ||
+        current.state !== "linked" ||
+        current.linkFinalization !== "confirmed" ||
+        (current.bindingRecoveryId !== undefined && current.bindingRecoveryId !== input.recoveryId)
+      ) {
+        return "stale";
+      }
+
+      const replacementKey = linkKey(INTEGRITY_MEDIA_SOURCE, input.set.memberId);
+      const occupant = byMember.get(replacementKey);
+      if (occupant && occupant.externalAuthorId !== input.externalAuthorId) {
+        return "member_taken";
+      }
+
+      const stored: ExternalAuthorLinkRecord = { ...current, ...input.set };
+      byMember.delete(linkKey(INTEGRITY_MEDIA_SOURCE, current.memberId));
+      byAuthor.set(authorKey, stored);
+      byMember.set(replacementKey, stored);
+      return "rebound";
+    },
+
+    async findRecoveryAudit(recoveryId) {
+      const found = audits.find(
+        (record) => record.action === "link_binding_recovered" && record.recoveryId === recoveryId,
+      );
+      return found ? { ...found } : null;
+    },
+
+    async insertAudit(record) {
+      audits.push({ ...record });
+    },
+  };
 
   return {
     async insertResult(record) {
@@ -138,7 +260,7 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         return { status: "missing" };
       }
 
-      if (current.consumedAt) {
+      if (current.consumedAt || current.bindingRecoveryReservationId !== undefined) {
         return { status: "consumed" };
       }
 
@@ -318,6 +440,25 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     async listAudits() {
       return audits.map((record) => ({ ...record }));
     },
+
+    async findResult(resultCode) {
+      const found = results.get(resultCode);
+      return found ? { ...found } : null;
+    },
+
+    async findBindingRecoveryReceipt(recoveryId) {
+      return runIntegrityMediaLinkCriticalSection(() => recoveryPersistence.findReceipt(recoveryId));
+    },
+
+    async applyBindingRecovery(input) {
+      return runIntegrityMediaLinkCriticalSection(() =>
+        executeBindingRecovery(recoveryPersistence, input),
+      );
+    },
+
+    async listBindingRecoveryReceipts() {
+      return [...recoveryReceipts.values()].map((record) => copyReceipt(record));
+    },
   };
 }
 
@@ -340,7 +481,12 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
 
     async claimResult(resultCode, nowIso) {
       const claimed = await results().findOneAndUpdate(
-        { resultCode, consumedAt: null, expiresAt: { $gt: nowIso } },
+        {
+          resultCode,
+          consumedAt: null,
+          expiresAt: { $gt: nowIso },
+          bindingRecoveryReservationId: { $exists: false },
+        },
         { $set: { consumedAt: nowIso } },
         { returnDocument: "before" },
       );
@@ -355,9 +501,13 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         return { status: "missing" };
       }
 
-      if (!existing.consumedAt && existing.expiresAt <= nowIso) {
+      if (
+        !existing.consumedAt &&
+        existing.bindingRecoveryReservationId === undefined &&
+        existing.expiresAt <= nowIso
+      ) {
         await results().updateOne(
-          { resultCode, consumedAt: null },
+          { resultCode, consumedAt: null, bindingRecoveryReservationId: { $exists: false } },
           { $set: { consumedAt: nowIso } },
         );
         return { status: "expired" };
@@ -592,6 +742,163 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     async listAudits() {
       const documents = await audits().find({}).toArray();
       return documents.map((document) => withoutId(document));
+    },
+
+    async findResult(resultCode) {
+      const document = await results().findOne({ resultCode });
+      return document ? withoutId(document) : null;
+    },
+
+    async findBindingRecoveryReceipt(recoveryId) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const document = await recoveryReceipts().findOne({ recoveryId });
+        return document ? withoutId(document) : null;
+      });
+    },
+
+    async applyBindingRecovery(input) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        try {
+          return await runMongoTransaction((session) =>
+            executeBindingRecovery(createMongoBindingRecoveryPersistence(session), input),
+          );
+        } catch (error) {
+          if (!isDuplicateKeyError(error)) {
+            throw error;
+          }
+
+          // The transaction is already aborted. Only a committed receipt can answer.
+          const document = await recoveryReceipts().findOne({ recoveryId: input.request.recoveryId });
+          const committed = recoveryResultFromCommittedReceipt(
+            document ? withoutId(document) : null,
+            input.request,
+          );
+          if (committed) {
+            return committed;
+          }
+
+          throw error;
+        }
+      });
+    },
+
+    async listBindingRecoveryReceipts() {
+      const documents = await recoveryReceipts().find({}).toArray();
+      return documents.map((document) => withoutId(document));
+    },
+  };
+}
+
+function recoveryReceipts() {
+  return getMongoCollection<ExternalAuthorLinkRecoveryReceiptRecord>(
+    MONGO_COLLECTIONS.externalAuthorLinkRecoveryReceipts,
+  );
+}
+
+/**
+ * Every recovery read and write is bound to the transaction session.
+ * A duplicate key is not caught here: it aborts the transaction.
+ */
+export function createMongoBindingRecoveryPersistence(
+  session: ClientSession,
+): BindingRecoveryPersistence {
+  const links = () =>
+    getMongoCollection<ExternalAuthorLinkRecord>(MONGO_COLLECTIONS.externalAuthorLinks);
+  const results = () =>
+    getMongoCollection<ExternalAuthorLinkResultRecord>(MONGO_COLLECTIONS.externalAuthorLinkResults);
+  const audits = () =>
+    getMongoCollection<ExternalAuthorLinkAuditRecord>(MONGO_COLLECTIONS.externalAuthorLinkAudit);
+
+  return {
+    async findReceipt(recoveryId) {
+      const document = await recoveryReceipts().findOne({ recoveryId }, { session });
+      return document ? withoutId(document) : null;
+    },
+
+    async insertReceipt(record) {
+      await recoveryReceipts().insertOne({ ...record }, { session });
+      return "inserted";
+    },
+
+    async replaceReceipt(record) {
+      await recoveryReceipts().replaceOne({ recoveryId: record.recoveryId }, { ...record }, { session });
+    },
+
+    async findLinkByAuthor(externalAuthorId) {
+      const document = await links().findOne(
+        { source: INTEGRITY_MEDIA_SOURCE, externalAuthorId },
+        { session },
+      );
+      return document ? withoutId(document) : null;
+    },
+
+    async findLinkByMember(memberId) {
+      const document = await links().findOne({ source: INTEGRITY_MEDIA_SOURCE, memberId }, { session });
+      return document ? withoutId(document) : null;
+    },
+
+    async findResult(resultCode) {
+      const document = await results().findOne({ resultCode }, { session });
+      return document ? withoutId(document) : null;
+    },
+
+    async reserveResult(resultCode, reservationId) {
+      const updated = await results().updateOne(
+        { resultCode, consumedAt: null, bindingRecoveryReservationId: { $exists: false } },
+        { $set: { bindingRecoveryReservationId: reservationId } },
+        { session },
+      );
+      return updated.matchedCount === 1;
+    },
+
+    async releaseResult(resultCode, reservationId) {
+      await results().updateOne(
+        { resultCode, consumedAt: null, bindingRecoveryReservationId: reservationId },
+        { $unset: { bindingRecoveryReservationId: "" } },
+        { session },
+      );
+    },
+
+    async consumeResult(resultCode, reservationId, nowIso) {
+      const updated = await results().updateOne(
+        { resultCode, consumedAt: null, bindingRecoveryReservationId: reservationId },
+        { $set: { consumedAt: nowIso } },
+        { session },
+      );
+      return updated.matchedCount === 1;
+    },
+
+    async rebind(input) {
+      const updated = await links().findOneAndUpdate(
+        {
+          source: INTEGRITY_MEDIA_SOURCE,
+          externalAuthorId: input.externalAuthorId,
+          memberId: input.historicalMemberId,
+          linkRevision: input.historicalLinkRevision,
+          linkInstanceId: input.historicalLinkInstanceId,
+          state: "linked",
+          linkFinalization: "confirmed",
+          $or: [
+            { bindingRecoveryId: { $exists: false } },
+            { bindingRecoveryId: input.recoveryId },
+          ],
+        },
+        { $set: input.set },
+        { returnDocument: "after", session },
+      );
+      return updated ? "rebound" : "stale";
+    },
+
+    async findRecoveryAudit(recoveryId) {
+      const document = await audits().findOne(
+        { action: "link_binding_recovered", recoveryId },
+        { session },
+      );
+      return document ? withoutId(document) : null;
+    },
+
+    async insertAudit(record) {
+      await audits().insertOne({ ...record }, { session });
     },
   };
 }
@@ -866,6 +1173,12 @@ function authorReplyLinkFilter(input: {
 
 function copyLink(record: ExternalAuthorLinkRecord | undefined): ExternalAuthorLinkRecord | null {
   return record ? { ...record } : null;
+}
+
+function copyReceipt(
+  record: ExternalAuthorLinkRecoveryReceiptRecord,
+): ExternalAuthorLinkRecoveryReceiptRecord {
+  return { ...record, outcome: record.outcome ? { ...record.outcome } : null };
 }
 
 function withoutId<T extends object>(document: T & { _id?: unknown }): T {

@@ -2,7 +2,14 @@ import { Router, type Request, type Response } from "express";
 
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
-import { resolveIntegrityMediaLinkConfig } from "./external-author-link.config.js";
+import {
+  bindingRecoveryDisabledFailure,
+  redeemIntegrityMediaBindingRecovery,
+} from "./external-author-link.binding-recovery.service.js";
+import {
+  isIntegrityMediaBindingRecoveryEnabled,
+  resolveIntegrityMediaLinkConfig,
+} from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_PROVISION_VERSION_SIGNATURE_HEADER,
   INTEGRITY_MEDIA_PROVISION_VERSION_TIMESTAMP_HEADER,
@@ -32,6 +39,15 @@ const ACKNOWLEDGE_FIELDS = new Set([
   "memberId",
   "linkRevision",
   "linkInstanceId",
+]);
+const BINDING_RECOVERY_FIELDS = new Set([
+  "resultCode",
+  "externalAuthorId",
+  "huTarget",
+  "expectedHuMemberId",
+  "expectedHuLinkRevision",
+  "expectedHuLinkInstanceId",
+  "recoveryId",
 ]);
 
 const externalAuthorLinkRouter = Router();
@@ -208,6 +224,66 @@ externalAuthorLinkRouter.post("/acknowledge", async (req, res) => {
         idempotent: result.idempotent,
       },
       "Integrity Media link acknowledged.",
+    ),
+  );
+});
+
+externalAuthorLinkRouter.post("/binding-recovery/redeem", async (req, res) => {
+  if (!isIntegrityMediaBindingRecoveryEnabled()) {
+    const disabled = bindingRecoveryDisabledFailure();
+    sendFailure(res, disabled.status, disabled.message, disabled.code);
+    return;
+  }
+
+  const body = readObject(req);
+  const unexpected =
+    unexpectedField(body, BINDING_RECOVERY_FIELDS) ?? unexpectedQuery(req, new Set());
+
+  if (!body || unexpected) {
+    sendFailure(
+      res,
+      400,
+      "The recovery request is not valid.",
+      unexpected === "memberId" ? "browser_member_id" : "unexpected_field",
+    );
+    return;
+  }
+
+  const config = resolveIntegrityMediaLinkConfig();
+  const result = await redeemIntegrityMediaBindingRecovery({
+    resultCode: typeof body.resultCode === "string" ? body.resultCode : "",
+    externalAuthorId: typeof body.externalAuthorId === "string" ? body.externalAuthorId : "",
+    huTarget: typeof body.huTarget === "string" ? body.huTarget : "",
+    expectedHuMemberId: typeof body.expectedHuMemberId === "string" ? body.expectedHuMemberId : "",
+    expectedHuLinkRevision:
+      typeof body.expectedHuLinkRevision === "number" ? body.expectedHuLinkRevision : Number.NaN,
+    expectedHuLinkInstanceId:
+      typeof body.expectedHuLinkInstanceId === "string" ? body.expectedHuLinkInstanceId : "",
+    recoveryId: typeof body.recoveryId === "string" ? body.recoveryId : "",
+    timestamp: headerValue(req, "x-hu-integrity-media-timestamp"),
+    signature: headerValue(req, "x-hu-integrity-media-signature"),
+    secret: config.hmacSecret,
+  });
+
+  if (!result.ok) {
+    sendFailure(res, result.status, result.message, result.code);
+    return;
+  }
+
+  res.json(
+    createSuccessResponse(
+      {
+        source: result.source,
+        externalAuthorId: result.externalAuthorId,
+        huTarget: result.huTarget,
+        memberId: result.memberId,
+        linkRevision: result.linkRevision,
+        linkInstanceId: result.linkInstanceId,
+        replacedMemberId: result.replacedMemberId,
+        replacedLinkRevision: result.replacedLinkRevision,
+        replacedLinkInstanceId: result.replacedLinkInstanceId,
+      },
+      "Integrity Media binding recovered.",
     ),
   );
 });
