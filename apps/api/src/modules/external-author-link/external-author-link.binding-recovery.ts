@@ -206,6 +206,81 @@ export function recoveryResultFromCommittedReceipt(
   return null;
 }
 
+const MEMBER_UNIQUE_INDEX_NAME = "external_author_links_source_member_unique";
+
+function isMongoDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
+}
+
+/** A duplicate key on the unique (source, memberId) link index. */
+export function isBindingRecoveryMemberDuplicate(error: unknown): boolean {
+  if (!isMongoDuplicateKeyError(error)) {
+    return false;
+  }
+
+  const keyPattern = (error as { keyPattern?: unknown }).keyPattern;
+  if (typeof keyPattern === "object" && keyPattern !== null) {
+    const keys = Object.keys(keyPattern).sort();
+    if (keys.length === 2 && keys[0] === "memberId" && keys[1] === "source") {
+      return true;
+    }
+  }
+
+  const message = error instanceof Error ? error.message : "";
+  return message.includes(MEMBER_UNIQUE_INDEX_NAME);
+}
+
+/**
+ * The server refused a transaction because it is not a replica set member or
+ * mongos. Nothing was written and no ordinary write may follow.
+ */
+export function isMongoTransactionUnsupportedError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const message = error instanceof Error ? error.message : "";
+  return (
+    message.includes("Transaction numbers are only allowed on a replica set member or mongos") ||
+    ((error as { code?: unknown }).code === 20 && /transaction/i.test(message))
+  );
+}
+
+/**
+ * Interpret a failed recovery transaction without writing. Only a duplicate key
+ * is interpreted: a committed receipt answers, an occupied replacement member is
+ * the ordinary occupied-member rejection, and any other duplicate is incomplete.
+ * Every other error is rethrown unchanged.
+ */
+export async function resolveAbortedBindingRecovery(input: {
+  error: unknown;
+  request: IntegrityMediaBindingRecoveryRequest;
+  readCommittedReceipt: () => Promise<ExternalAuthorLinkRecoveryReceiptRecord | null>;
+}): Promise<BindingRecoveryApplyResult> {
+  if (!isMongoDuplicateKeyError(input.error)) {
+    throw input.error;
+  }
+
+  const committed = recoveryResultFromCommittedReceipt(
+    await input.readCommittedReceipt(),
+    input.request,
+  );
+  if (committed) {
+    return committed;
+  }
+
+  if (isBindingRecoveryMemberDuplicate(input.error)) {
+    return { kind: "rejected", code: "member_already_linked" };
+  }
+
+  throw new IntegrityMediaBindingRecoveryIncompleteError();
+}
+
 /**
  * Only a linked, confirmed row with an assigned generation and instance that
  * equal the historical tuple is recoverable. A missing revision is not 0 and

@@ -6,7 +6,12 @@ import { fileURLToPath } from "node:url";
 
 import { MONGO_COLLECTIONS } from "../../../src/infrastructure/mongodb/mongo-collections.js";
 import {
+  IntegrityMediaBindingRecoveryIncompleteError,
+  isBindingRecoveryMemberDuplicate,
+  isMongoTransactionUnsupportedError,
   recoveryResultFromCommittedReceipt,
+  resolveAbortedBindingRecovery,
+  type BindingRecoveryApplyResult,
   type IntegrityMediaBindingRecoveryRequest,
 } from "../../../src/modules/external-author-link/external-author-link.binding-recovery.js";
 import {
@@ -63,9 +68,98 @@ describe("Integrity Media binding recovery Mongo transaction (static)", () => {
     assert.doesNotMatch(body, /catch\s*\(|isDuplicateKeyError|11000/);
 
     const apply = methodBody(mongoStoreBody(), "async applyBindingRecovery(input)");
-    assert.match(apply, /isDuplicateKeyError\(error\)/);
-    assert.match(apply, /recoveryResultFromCommittedReceipt\(/);
-    assert.match(apply, /throw error;/);
+    assert.equal(countMatches(apply, /catch\s*\(/g), 1);
+    assert.match(apply, /catch \(error\) \{[\s\S]*return resolveAbortedBindingRecovery\(\{/);
+    const reader = methodBody(apply, "readCommittedReceipt: async () =>");
+    assert.match(reader, /recoveryReceipts\(\)\.findOne\(/);
+    assert.doesNotMatch(reader, /session|insertOne|updateOne|replaceOne|findOneAndUpdate|delete/);
+  });
+
+  it("answers an aborted transaction from a committed receipt without writing", async () => {
+    const outcome = {
+      memberId: "22222222-2222-4222-8222-222222222222",
+      linkRevision: 5,
+      linkInstanceId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      replacedMemberId: REQUEST.expectedHuMemberId,
+      replacedLinkRevision: 4,
+      replacedLinkInstanceId: REQUEST.expectedHuLinkInstanceId,
+    };
+    const memberDuplicate = duplicateKey({ source: 1, memberId: 1 });
+
+    assert.deepEqual(
+      await resolve(memberDuplicate, receipt({ status: "completed", outcome })),
+      { kind: "recovered", outcome },
+    );
+    assert.deepEqual(
+      await resolve(duplicateKey({ recoveryId: 1 }), receipt({ status: "rejected", rejectionCode: "link_provisional" })),
+      { kind: "rejected", code: "link_provisional" },
+    );
+    assert.deepEqual(
+      await resolve(memberDuplicate, receipt({ status: "completed", outcome, recoveryId: "recovery-id-other-abcdef" })),
+      { kind: "conflict" },
+    );
+  });
+
+  it("maps a member duplicate key without a committed receipt to member_already_linked", async () => {
+    let reads = 0;
+    const result = await resolveAbortedBindingRecovery({
+      error: duplicateKey({ source: 1, memberId: 1 }),
+      request: REQUEST,
+      readCommittedReceipt: async () => {
+        reads += 1;
+        return null;
+      },
+    });
+
+    assert.deepEqual(result, { kind: "rejected", code: "member_already_linked" });
+    assert.equal(reads, 1);
+    assert.equal(
+      isBindingRecoveryMemberDuplicate(
+        Object.assign(
+          new Error(
+            "E11000 duplicate key error collection: hu.external_author_links index: external_author_links_source_member_unique dup key",
+          ),
+          { code: 11000 },
+        ),
+      ),
+      true,
+    );
+    assert.equal(
+      await resolve(duplicateKey({ source: 1, memberId: 1 }), receipt({ status: "pending" })).then((value) => value.kind),
+      "rejected",
+    );
+  });
+
+  it("treats any other duplicate key as incomplete and rethrows other errors unchanged", async () => {
+    await assert.rejects(
+      resolve(duplicateKey({ recoveryId: 1 }), null),
+      IntegrityMediaBindingRecoveryIncompleteError,
+    );
+    await assert.rejects(
+      resolve(duplicateKey({ source: 1, externalAuthorId: 1 }), receipt({ status: "pending" })),
+      IntegrityMediaBindingRecoveryIncompleteError,
+    );
+
+    const standalone = Object.assign(
+      new Error("Transaction numbers are only allowed on a replica set member or mongos"),
+      { code: 20 },
+    );
+    let reads = 0;
+    await assert.rejects(
+      resolveAbortedBindingRecovery({
+        error: standalone,
+        request: REQUEST,
+        readCommittedReceipt: async () => {
+          reads += 1;
+          return null;
+        },
+      }),
+      (error) => error === standalone,
+    );
+    assert.equal(reads, 0);
+    assert.equal(isMongoTransactionUnsupportedError(standalone), true);
+    assert.equal(isMongoTransactionUnsupportedError(new Error("connection reset")), false);
+    assert.equal(isBindingRecoveryMemberDuplicate(standalone), false);
   });
 
   it("declares the unique recovery id index and keeps the link indexes", () => {
@@ -146,6 +240,21 @@ function receipt(
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
+}
+
+function duplicateKey(keyPattern: Record<string, number>): Error {
+  return Object.assign(new Error("E11000 duplicate key error"), { code: 11000, keyPattern });
+}
+
+function resolve(
+  error: unknown,
+  committed: ExternalAuthorLinkRecoveryReceiptRecord | null,
+): Promise<BindingRecoveryApplyResult> {
+  return resolveAbortedBindingRecovery({
+    error,
+    request: REQUEST,
+    readCommittedReceipt: async () => committed,
+  });
 }
 
 function countMatches(source: string, pattern: RegExp): number {
