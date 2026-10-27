@@ -143,6 +143,12 @@ export async function findProvisionRedeemOutcome(
   };
 }
 
+/** Author bound by a committed provision attempt, or null when no attempt exists. */
+export async function findProvisionAttemptAuthorId(attemptState: string): Promise<string | null> {
+  const attempt = await findCommittedProvisionAttempt(attemptState);
+  return attempt?.externalAuthorId ?? null;
+}
+
 export async function registerProvisionAttempt(input: {
   body: unknown;
   timestamp: string;

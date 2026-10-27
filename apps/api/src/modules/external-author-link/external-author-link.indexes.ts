@@ -25,6 +25,14 @@ export const EXTERNAL_AUTHOR_LINK_RESULT_INDEXES: IndexDescription[] = [
   },
 ];
 
+export const EXTERNAL_AUTHOR_LINK_RECOVERY_RECEIPT_INDEXES: IndexDescription[] = [
+  {
+    key: { recoveryId: 1 },
+    unique: true,
+    name: "external_author_link_recovery_receipts_recovery_id_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES: IndexDescription[] = [
   {
     key: { eventId: 1 },

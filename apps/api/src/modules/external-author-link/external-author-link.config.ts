@@ -1,5 +1,6 @@
 import {
   DEFAULT_INTEGRITY_MEDIA_RETURN_PATH,
+  INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED_ENV,
   INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV,
@@ -25,6 +26,16 @@ export function resolveIntegrityMediaLinkConfig(
     returnOrigin: env[INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV]?.trim() || null,
     returnPath: configuredPath || DEFAULT_INTEGRITY_MEDIA_RETURN_PATH,
   };
+}
+
+/**
+ * Read at call time. Absent, empty, `TRUE`, `1`, and every other value leave
+ * recovery disabled. The HMAC secret does not enable it.
+ */
+export function isIntegrityMediaBindingRecoveryEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env[INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED_ENV]?.trim() === "true";
 }
 
 export function buildIntegrityMediaReturnUrl(input: {

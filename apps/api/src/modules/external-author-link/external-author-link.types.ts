@@ -49,6 +49,16 @@ export interface ExternalAuthorLinkRecord {
   linkInstanceId?: string;
   /** Absent on legacy rows. Those rows are not provisional and are not backfilled. */
   linkFinalization?: ExternalAuthorLinkFinalization;
+  /**
+   * Set only by binding recovery. A link with a recovery id cannot be
+   * recovered again under a different id.
+   */
+  bindingRecoveryId?: string;
+  bindingRecoveryResultCode?: string;
+  bindingRecoveryHuTarget?: string;
+  bindingRecoveryReplacedMemberId?: string;
+  bindingRecoveryReplacedLinkRevision?: number;
+  bindingRecoveryReplacedLinkInstanceId?: string;
 }
 
 export interface ExternalAuthorLinkResultRecord {
@@ -59,6 +69,44 @@ export interface ExternalAuthorLinkResultRecord {
   expiresAt: string;
   consumedAt: string | null;
   createdAt: string;
+  /** Absent on current rows. When set, binding recovery requires the signed author to match. */
+  externalAuthorId?: string;
+  /**
+   * Binding recovery reservation. Ordinary redemption treats a reserved
+   * result as unavailable.
+   */
+  bindingRecoveryReservationId?: string;
+}
+
+export type ExternalAuthorLinkRecoveryReceiptStatus = "pending" | "completed" | "rejected";
+
+export interface ExternalAuthorLinkRecoveryOutcome {
+  memberId: string;
+  linkRevision: number;
+  linkInstanceId: string;
+  replacedMemberId: string;
+  replacedLinkRevision: number;
+  replacedLinkInstanceId: string;
+}
+
+/**
+ * One binding recovery request, keyed by recoveryId. The signature is never stored.
+ * A rejected receipt stays bound to its request.
+ */
+export interface ExternalAuthorLinkRecoveryReceiptRecord {
+  recoveryId: string;
+  source: IntegrityMediaSource;
+  resultCode: string;
+  externalAuthorId: string;
+  huTarget: string;
+  expectedHuMemberId: string;
+  expectedHuLinkRevision: number;
+  expectedHuLinkInstanceId: string;
+  status: ExternalAuthorLinkRecoveryReceiptStatus;
+  outcome: ExternalAuthorLinkRecoveryOutcome | null;
+  rejectionCode: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type ExternalAuthorLinkAuditAction =
@@ -72,7 +120,8 @@ export type ExternalAuthorLinkAuditAction =
   | "author_activation_pending"
   | "author_capability_recovered"
   | "integrity_media_disconnect_accepted"
-  | "link_acknowledged";
+  | "link_acknowledged"
+  | "link_binding_recovered";
 
 export interface ExternalAuthorLinkAuditRecord {
   eventId: string;
@@ -83,6 +132,13 @@ export interface ExternalAuthorLinkAuditRecord {
   attemptStateHash: string | null;
   reason: string | null;
   createdAt: string;
+  /** Binding recovery only. Never the result code, email, or signature. */
+  recoveryId?: string;
+  replacedMemberId?: string;
+  linkRevision?: number;
+  linkInstanceId?: string;
+  replacedLinkRevision?: number;
+  replacedLinkInstanceId?: string;
 }
 
 export type ExternalAuthorLinkConflict = "external_author_already_linked" | "member_already_linked";

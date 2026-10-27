@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import {
+  INTEGRITY_MEDIA_BINDING_RECOVERY_PURPOSE,
   INTEGRITY_MEDIA_LINK_ACKNOWLEDGE_PURPOSE,
   INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE,
   INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS,
@@ -123,4 +124,64 @@ export function noteIntegrityMediaAcknowledgeSignature(signature: string, nowMs:
   }
 
   seenAcknowledgeSignatures.set(signature, nowMs);
+}
+
+const seenBindingRecoverySignatures = new Map<string, number>();
+
+/**
+ * purpose, timestamp, resultCode, externalAuthorId, huTarget,
+ * expectedHuMemberId, expectedHuLinkRevision, expectedHuLinkInstanceId, recoveryId
+ */
+export function buildIntegrityMediaBindingRecoveryPayload(input: {
+  timestamp: string;
+  resultCode: string;
+  externalAuthorId: string;
+  huTarget: string;
+  expectedHuMemberId: string;
+  expectedHuLinkRevision: number;
+  expectedHuLinkInstanceId: string;
+  recoveryId: string;
+}): string {
+  return [
+    INTEGRITY_MEDIA_BINDING_RECOVERY_PURPOSE,
+    input.timestamp,
+    input.resultCode,
+    input.externalAuthorId,
+    input.huTarget,
+    input.expectedHuMemberId,
+    String(input.expectedHuLinkRevision),
+    input.expectedHuLinkInstanceId,
+    input.recoveryId,
+  ].join("\n");
+}
+
+export function resetIntegrityMediaBindingRecoveryReplayCacheForTests(): void {
+  seenBindingRecoverySignatures.clear();
+}
+
+export function hasIntegrityMediaBindingRecoverySignature(signature: string, nowMs: number): boolean {
+  const seenAt = seenBindingRecoverySignatures.get(signature);
+
+  if (seenAt === undefined) {
+    return false;
+  }
+
+  if (nowMs - seenAt > INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS * 1000) {
+    seenBindingRecoverySignatures.delete(signature);
+    return false;
+  }
+
+  return true;
+}
+
+export function noteIntegrityMediaBindingRecoverySignature(signature: string, nowMs: number): void {
+  const cutoff = nowMs - INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS * 1000;
+
+  for (const [key, seenAt] of seenBindingRecoverySignatures) {
+    if (seenAt < cutoff) {
+      seenBindingRecoverySignatures.delete(key);
+    }
+  }
+
+  seenBindingRecoverySignatures.set(signature, nowMs);
 }
