@@ -31,6 +31,10 @@ import {
   toNextMetadataLanguageAlternates,
 } from "./hreflang-policy";
 import { buildPublicSeoLocalizedVariantPredicate } from "./public-seo-localized-eligibility-loader";
+import {
+  acquireSeoMetadataEligibilityPermit,
+  releaseSeoMetadataEligibilityPermit,
+} from "./seo-metadata-eligibility-gate";
 import { withSeoMetadataOperation } from "../system-health/web-memory-sampler";
 import {
   normalizeCanonicalPath,
@@ -108,6 +112,7 @@ async function resolvePublicSeoMetadataDocumentPathsUncounted(
   input: ResolvePublicSeoMetadataDocumentPathsInput,
 ): Promise<ResolvedPublicSeoMetadataDocumentPaths> {
   const localeFreePath = normalizeCanonicalPath(input.localeFreeCanonicalPath);
+  let metadataEligibilityPermitHeld = false;
 
   try {
     const hasCatalogOverride = Object.prototype.hasOwnProperty.call(input, "catalog");
@@ -142,14 +147,17 @@ async function resolvePublicSeoMetadataDocumentPathsUncounted(
       input,
       "isLocalizedVariantEligible",
     );
-    const eligibility = explicitEligibility
-      ? input.isLocalizedVariantEligible
-      : hasCatalogOverride
-        ? undefined
-        : await buildPublicSeoLocalizedVariantPredicate({
-            localeFreePaths: [localeFreePath],
-            locales: seoLocales,
-          });
+    // One permit per metadata resolution. Sitemap calls the predicate directly
+    // and must not take this permit. Do not acquire again inside the predicate.
+    let eligibility = explicitEligibility ? input.isLocalizedVariantEligible : undefined;
+    if (!explicitEligibility && !hasCatalogOverride) {
+      await acquireSeoMetadataEligibilityPermit();
+      metadataEligibilityPermitHeld = true;
+      eligibility = await buildPublicSeoLocalizedVariantPredicate({
+        localeFreePaths: [localeFreePath],
+        locales: seoLocales,
+      });
+    }
 
     if (eligibility) {
       seoLocales = seoLocales.filter((locale) => eligibility(localeFreePath, locale));
@@ -208,6 +216,11 @@ async function resolvePublicSeoMetadataDocumentPathsUncounted(
       languageAlternates: null,
       suppressLocalizedIndexing: false,
     };
+  } finally {
+    if (metadataEligibilityPermitHeld) {
+      metadataEligibilityPermitHeld = false;
+      releaseSeoMetadataEligibilityPermit();
+    }
   }
 }
 

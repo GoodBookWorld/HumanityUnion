@@ -30,6 +30,12 @@ import {
   runSeoEvidenceFetch,
   SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT,
 } from "./seo-evidence-fetch-gate";
+import {
+  readActiveSeoMetadataEligibilityPermitsForTests,
+  readQueuedSeoMetadataEligibilityPermitsForTests,
+  resetSeoMetadataEligibilityGateForTests,
+  SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT,
+} from "./seo-metadata-eligibility-gate";
 
 const ORIGINAL_FETCH = globalThis.fetch;
 const ORIGINAL_PLATFORM_MODE = process.env.NEXT_PUBLIC_PLATFORM_MODE;
@@ -361,6 +367,7 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
     control.reset();
     resetLocalizedBrandCacheForTests();
     resetSeoEvidenceFetchGateForTests();
+    resetSeoMetadataEligibilityGateForTests();
     resetWebMemorySamplerForTests();
     globalThis.fetch = (input, init) => control.handle(input, init);
   });
@@ -370,6 +377,7 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
     globalThis.fetch = ORIGINAL_FETCH;
     resetLocalizedBrandCacheForTests();
     resetSeoEvidenceFetchGateForTests();
+    resetSeoMetadataEligibilityGateForTests();
     resetWebMemorySamplerForTests();
     restoreEnv("NEXT_PUBLIC_PLATFORM_MODE", ORIGINAL_PLATFORM_MODE);
     restoreEnv("NEXT_PUBLIC_SITE_URL", ORIGINAL_SITE_URL);
@@ -393,7 +401,12 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
         control.count("web-ui", "zh-Hant") === 1 &&
         control.count("web-ui", "zz-Future") === 1 &&
         readWebWorkloadGauges().activeSeoMetadataOperations === 24 &&
-        readWebWorkloadGauges().activeSeoEligibilityOperations === 24,
+        readWebWorkloadGauges().activeSeoEligibilityOperations ===
+          SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT &&
+        readActiveSeoMetadataEligibilityPermitsForTests() ===
+          SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT &&
+        readQueuedSeoMetadataEligibilityPermitsForTests() ===
+          24 - SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT,
     );
 
     assert.equal(control.count("web-ui"), 3);
@@ -414,7 +427,9 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
 
     control.releaseHold();
     const documents = await pending;
-    assert.equal(control.count("web-ui"), 3);
+    // Settled evidence is not reused. Each wave of four refetches the three
+    // locale keys, so 24 requests produce six waves.
+    assert.equal(control.count("web-ui"), 18);
     assert.equal(readActiveSeoEvidenceFetchesForTests(), 0);
     assert.equal(readQueuedSeoEvidenceFetchesForTests(), 0);
     assert.equal(readInFlightSeoEvidenceKeysForTests().length, 0);
