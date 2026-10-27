@@ -8,7 +8,7 @@ import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.
 import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
 import {
   executeBindingRecovery,
-  recoveryResultFromCommittedReceipt,
+  resolveAbortedBindingRecovery,
   type BindingRecoveryApplyInput,
   type BindingRecoveryApplyResult,
   type BindingRecoveryPersistence,
@@ -763,21 +763,17 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
             executeBindingRecovery(createMongoBindingRecoveryPersistence(session), input),
           );
         } catch (error) {
-          if (!isDuplicateKeyError(error)) {
-            throw error;
-          }
-
-          // The transaction is already aborted. Only a committed receipt can answer.
-          const document = await recoveryReceipts().findOne({ recoveryId: input.request.recoveryId });
-          const committed = recoveryResultFromCommittedReceipt(
-            document ? withoutId(document) : null,
-            input.request,
-          );
-          if (committed) {
-            return committed;
-          }
-
-          throw error;
+          // The transaction is already aborted. Interpretation reads only.
+          return resolveAbortedBindingRecovery({
+            error,
+            request: input.request,
+            readCommittedReceipt: async () => {
+              const document = await recoveryReceipts().findOne({
+                recoveryId: input.request.recoveryId,
+              });
+              return document ? withoutId(document) : null;
+            },
+          });
         }
       });
     },

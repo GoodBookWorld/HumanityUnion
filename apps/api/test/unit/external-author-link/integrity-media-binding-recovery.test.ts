@@ -6,7 +6,9 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import cookieParser from "cookie-parser";
 import express from "express";
 
+import { MongoTransactionUnavailableError } from "../../../src/infrastructure/mongodb/mongo-transaction.js";
 import {
+  resolveAbortedBindingRecovery,
   setIntegrityMediaBindingRecoveryInterruptForTests,
   type IntegrityMediaBindingRecoveryRequest,
 } from "../../../src/modules/external-author-link/external-author-link.binding-recovery.js";
@@ -646,12 +648,9 @@ describe("Integrity Media binding recovery", () => {
       setExternalAuthorLinkStoreForTests(rollingBack);
       const timestamp = nowTimestamp();
 
-      await assert.rejects(async () => {
-        const response = await recover({ timestamp });
-        if (response.status >= 500) {
-          throw new Error(`server error ${response.status}`);
-        }
-      });
+      const failed = await recover({ timestamp });
+      assert.equal(failed.status, 503);
+      assert.equal(failed.body.meta.code, "recovery_incomplete");
       const replay = await recover({ timestamp });
       assert.equal(replay.status, 401);
       assert.equal(replay.body.meta.code, "replayed");
@@ -659,6 +658,65 @@ describe("Integrity Media binding recovery", () => {
 
       const fresh = await recover({ timestamp: String(Number(timestamp) - 1) });
       assert.equal(fresh.status, 200);
+    });
+
+    it("returns a controlled failure when Mongo transactions are unavailable and writes nothing", async () => {
+      const inner = store;
+      const failures: unknown[] = [
+        new MongoTransactionUnavailableError(),
+        Object.assign(new Error("Transaction numbers are only allowed on a replica set member or mongos"), {
+          code: 20,
+        }),
+      ];
+      let calls = 0;
+      setExternalAuthorLinkStoreForTests({
+        ...inner,
+        async applyBindingRecovery() {
+          const error = failures[calls];
+          calls += 1;
+          throw error;
+        },
+      });
+      const before = await snapshot();
+
+      for (const [index] of failures.entries()) {
+        const response = await recover({
+          body: { ...requestBody(), recoveryId: `recovery-unavailable-${index}-abc` },
+        });
+        assert.equal(response.status, 503);
+        assert.equal(response.body.meta.code, "recovery_incomplete");
+        assert.equal(response.body.message, "Integrity Media binding recovery could not be finished.");
+      }
+
+      assert.equal(calls, failures.length);
+      assert.deepEqual(await snapshot(), before);
+    });
+
+    it("answers a Mongo member duplicate key with the occupied-member rejection", async () => {
+      const inner = store;
+      setExternalAuthorLinkStoreForTests({
+        ...inner,
+        async applyBindingRecovery(input) {
+          return resolveAbortedBindingRecovery({
+            error: Object.assign(new Error("E11000 duplicate key error"), {
+              code: 11000,
+              keyPattern: { source: 1, memberId: 1 },
+            }),
+            request: input.request,
+            readCommittedReceipt: () => inner.findBindingRecoveryReceipt(input.request.recoveryId),
+          });
+        },
+      });
+      const before = await snapshot();
+      const response = await recover();
+
+      assert.equal(response.status, 409);
+      assert.equal(response.body.meta.code, "member_already_linked");
+      assert.equal(
+        response.body.message,
+        "This Humanity Union account is already linked to another Integrity Media author.",
+      );
+      assert.deepEqual(await snapshot(), before);
     });
 
     it("finishes after an interruption following the rebind", async () => {

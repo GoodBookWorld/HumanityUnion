@@ -1,7 +1,10 @@
+import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
+import { logger } from "../../shared/observability/logger.js";
 import {
   BINDING_RECOVERY_REJECTIONS,
   IntegrityMediaBindingRecoveryIncompleteError,
   IntegrityMediaBindingRecoveryInterruptedError,
+  isMongoTransactionUnsupportedError,
   sameRecoveryRequest,
   type BindingRecoveryApplyResult,
   type IntegrityMediaBindingRecoveryRequest,
@@ -131,18 +134,27 @@ export async function redeemIntegrityMediaBindingRecovery(
     return toResponse(request, applied);
   } catch (error) {
     if (
+      error instanceof MongoTransactionUnavailableError ||
+      isMongoTransactionUnsupportedError(error)
+    ) {
+      logger.warn("integrity_media_binding_recovery", { outcome: "transaction_unavailable" });
+      return recoveryIncomplete();
+    }
+
+    if (
       error instanceof IntegrityMediaBindingRecoveryInterruptedError ||
       error instanceof IntegrityMediaBindingRecoveryIncompleteError
     ) {
-      return failure(
-        503,
-        "recovery_incomplete",
-        "Integrity Media binding recovery could not be finished.",
-      );
+      return recoveryIncomplete();
     }
 
     throw error;
   }
+}
+
+/** Nothing was committed. A retry needs a new signature. */
+function recoveryIncomplete(): IntegrityMediaBindingRecoveryFailure {
+  return failure(503, "recovery_incomplete", "Integrity Media binding recovery could not be finished.");
 }
 
 function hasValidShape(input: IntegrityMediaBindingRecoveryRequest & { timestamp: string }): boolean {
