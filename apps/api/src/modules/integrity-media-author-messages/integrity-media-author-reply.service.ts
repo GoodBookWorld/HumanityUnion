@@ -75,9 +75,9 @@ export interface IntegrityMediaAuthorReplyRequest {
  * member and revision. The revision is not refreshed from a later reconnect.
  *
  * In one process, acceptance and disconnect share a critical section.
- * On Mongo, acceptance also rewrites nothing visible on the link except a
- * same-value updatedAt inside a transaction, so a concurrent disconnect
- * conflicts instead of letting the reply use a stale snapshot.
+ * On Mongo, acceptance also increments the link's `linkWriteGuard` inside the
+ * reply transaction. A disconnect or rebind from any process then waits for
+ * the reply to commit, or the reply retries and re-reads the changed link.
  */
 export async function acceptIntegrityMediaAuthorReply(
   input: IntegrityMediaAuthorReplyRequest,
