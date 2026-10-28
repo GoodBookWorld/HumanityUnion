@@ -41,6 +41,11 @@ export interface ExternalAuthorLinkRecord {
    */
   authorActivationGuard?: number;
   /**
+   * Incremented by each accepted author reply inside its transaction. The write
+   * is what makes a concurrent disconnect or rebind wait for, or retry after, the reply.
+   */
+  linkWriteGuard?: number;
+  /**
    * Confirmed connection generation for this identity pair. Absent on rows
    * stored before revisions existed. Absence is not generation zero.
    * The initial generation is assigned as 1. Reconnect advances it and

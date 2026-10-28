@@ -45,8 +45,10 @@ export interface ExternalAuthorLinkStore {
   ): Promise<ExternalAuthorLinkRecord | null>;
   /**
    * Re-read the link and, on Mongo, write it only while the reply is still
-   * eligible. The stored generation, member, and state stay the same.
-   * A concurrent disconnect conflicts with that write.
+   * eligible. The generation, member, and state stay the same; only
+   * `linkWriteGuard` is incremented. Inside the reply transaction that write
+   * makes a concurrent disconnect or rebind of the row wait for the reply, or
+   * makes the reply retry and re-read after the change.
    */
   holdAuthorReplyLink(input: {
     source: typeof INTEGRITY_MEDIA_SOURCE;
@@ -671,9 +673,10 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
 
     async holdAuthorReplyLink(input) {
+      // A real change: a same-value update writes nothing and does not conflict.
       const updated = await links().findOneAndUpdate(
         authorReplyLinkFilter(input),
-        [{ $set: { updatedAt: "$updatedAt" } }],
+        { $inc: { linkWriteGuard: 1 } },
         {
           returnDocument: "after",
           ...(input.session ? { session: input.session } : {}),

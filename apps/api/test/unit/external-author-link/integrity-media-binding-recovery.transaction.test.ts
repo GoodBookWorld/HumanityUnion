@@ -59,6 +59,14 @@ describe("Integrity Media binding recovery Mongo transaction (static)", () => {
     assert.doesNotMatch(guard, /"\$updatedAt"|catch\s*\(/);
   });
 
+  it("holds the link with a real change in the author-reply transaction", () => {
+    const hold = methodBody(mongoStoreBody(), "async holdAuthorReplyLink(input)");
+    assert.match(hold, /findOneAndUpdate\(\s*authorReplyLinkFilter\(input\),\s*\{ \$inc: \{ linkWriteGuard: 1 \} \}/);
+    assert.match(hold, /input\.session \? \{ session: input\.session \} : \{\}/);
+    assert.doesNotMatch(hold, /"\$updatedAt"/);
+    assert.doesNotMatch(storeSource, /\[\{ \$set: \{ updatedAt: "\$updatedAt" \} \}\]/);
+  });
+
   it("requires a session for every Mongo recovery read and write", () => {
     assert.match(
       storeSource,
