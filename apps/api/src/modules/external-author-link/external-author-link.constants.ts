@@ -24,6 +24,30 @@ export const INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED_ENV =
 export const INTEGRITY_MEDIA_RECOVERY_ID_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 
 /**
+ * Signed Binding Recovery confirmation state (Workflow 06B, version 1).
+ * A state signature cannot authorize a redeem, acknowledgement, disconnect,
+ * reply, provision, SSO, or article request, and those cannot authorize a state.
+ */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_STATE_PURPOSE =
+  "integrity-media-binding-recovery-state";
+
+/** Any state starting with `hur` and a digit is a recovery state. It never falls back. */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_STATE_FAMILY_PATTERN = /^hur[0-9]/;
+
+/**
+ * tag, target, issuedAt, expiresAt, externalAuthorId (UUID v4 hex without dashes),
+ * nonce, recoveryId (16 to 48), lowercase hex HMAC. Length 159 to 191.
+ */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_STATE_V1_PATTERN =
+  /^hur1([ps])(\d{10})(\d{10})([0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15})([A-Za-z0-9_-]{22})([A-Za-z0-9_-]{16,48})([0-9a-f]{64})$/;
+
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_STATE_MAX_LIFETIME_SECONDS = 600;
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_STATE_FUTURE_SKEW_SECONDS = 60;
+
+/** Purpose stored on a confirmation code minted from a verified recovery state. */
+export const INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE = "binding_recovery";
+
+/**
  * IM → HU account provision attempt. A redeem or acknowledgement signature
  * cannot register an attempt, and this purpose cannot redeem or confirm.
  */

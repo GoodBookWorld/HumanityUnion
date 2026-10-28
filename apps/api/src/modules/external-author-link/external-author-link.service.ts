@@ -5,10 +5,15 @@ import {
   type BlogAuthorCapabilityEnsureResult,
 } from "../blog/blog-author-capability.js";
 import { getMemberById } from "../member/application/member-read.service.js";
-import { buildIntegrityMediaReturnUrl } from "./external-author-link.config.js";
+import { classifyIntegrityMediaConfirmationState } from "./external-author-link.binding-recovery-state.js";
+import {
+  buildIntegrityMediaReturnUrl,
+  resolveIntegrityMediaLinkConfig,
+} from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN,
   INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS,
+  INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE,
   INTEGRITY_MEDIA_AUTHOR_ID_PATTERN,
   INTEGRITY_MEDIA_LINK_REDEEM_PURPOSE,
   INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS,
@@ -55,6 +60,10 @@ export interface IntegrityMediaPreviewSuccess {
   ok: true;
   source: typeof INTEGRITY_MEDIA_SOURCE;
   displayName: string;
+  /** Present only for a verified Binding Recovery state. */
+  purpose?: typeof INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE;
+  /** The signed-in account's own email. Present only with `purpose`. */
+  email?: string;
 }
 
 export interface IntegrityMediaConfirmSuccess {
@@ -208,10 +217,18 @@ export async function previewIntegrityMediaLink(input: {
     return failure(400, "invalid_state", "This confirmation link is incomplete.");
   }
 
+  const recovery = classifyConfirmationState(input.attemptState, new Date());
+  if (recovery.kind === "recovery_rejected") {
+    return failure(recovery.status, recovery.code, recovery.message);
+  }
+
   return {
     ok: true,
     source: INTEGRITY_MEDIA_SOURCE,
     displayName: await resolveDisplayName(input.memberId, input.email),
+    ...(recovery.kind === "recovery"
+      ? { purpose: INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE, email: input.email }
+      : {}),
   };
 }
 
@@ -229,6 +246,11 @@ export async function confirmIntegrityMediaLink(input: {
   }
 
   const now = input.now ?? new Date();
+  const recovery = classifyConfirmationState(input.attemptState, now);
+  if (recovery.kind === "recovery_rejected") {
+    return failure(recovery.status, recovery.code, recovery.message);
+  }
+
   const resultCode = randomBytes(32).toString("base64url");
   const store = getExternalAuthorLinkStore();
 
@@ -240,14 +262,22 @@ export async function confirmIntegrityMediaLink(input: {
     expiresAt: new Date(now.getTime() + INTEGRITY_MEDIA_RESULT_TTL_MS).toISOString(),
     consumedAt: null,
     createdAt: now.toISOString(),
+    ...(recovery.kind === "recovery"
+      ? {
+          purpose: INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE,
+          externalAuthorId: recovery.fields.externalAuthorId,
+          bindingRecoveryId: recovery.fields.recoveryId,
+          huTarget: recovery.fields.huTarget,
+        }
+      : {}),
   });
 
   await recordAudit(store, {
     action: "link_confirmation_created",
     memberId: input.memberId,
-    externalAuthorId: null,
+    externalAuthorId: recovery.kind === "recovery" ? recovery.fields.externalAuthorId : null,
     attemptState: input.attemptState,
-    reason: "confirmed",
+    reason: recovery.kind === "recovery" ? INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE : "confirmed",
     now,
   });
 
@@ -1049,6 +1079,14 @@ async function grantBlogAuthorForConfirmedLink(
   }
 
   return { ok: true };
+}
+
+function classifyConfirmationState(attemptState: string, now: Date) {
+  return classifyIntegrityMediaConfirmationState({
+    state: attemptState,
+    secret: resolveIntegrityMediaLinkConfig().hmacSecret,
+    now,
+  });
 }
 
 function isSessionMemberId(memberId: string): boolean {

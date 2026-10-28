@@ -325,7 +325,9 @@ describe("Integrity Media binding recovery", () => {
       const memory = createMemoryProvisionState();
       setProvisionMemoryForTests(memory);
       await memory.view().insertAttempt(provisionAttemptRecord(provisionAttempt, OTHER_AUTHOR));
-      store = await freshStoreWith(result({ attemptState: provisionAttempt }));
+      store = await freshStoreWith(
+        result({ attemptState: provisionAttempt, bindingRecoveryId: "recovery-id-0002-abcdef" }),
+      );
       const onAttempt = await recover({ body: { ...requestBody(), recoveryId: "recovery-id-0002-abcdef" } });
 
       assert.equal(onAttempt.status, 409);
@@ -363,8 +365,71 @@ describe("Integrity Media binding recovery", () => {
     });
   });
 
+  describe("confirmation-code isolation", () => {
+    it("rejects a recovery code at ordinary redeem without consuming it", async () => {
+      const ordinary = await redeem(RESULT_CODE, AUTHOR);
+      const stored = (await store.listResults())[0];
+
+      assert.equal(ordinary.status, 409);
+      assert.equal(ordinary.body.meta.code, "result_already_used");
+      assert.equal(stored?.consumedAt, null);
+      assert.equal(stored?.bindingRecoveryReservationId, undefined);
+      assert.equal((await linkFor(AUTHOR))?.memberId, HISTORICAL_MEMBER);
+
+      const recovered = await recover();
+      assert.equal(recovered.status, 200);
+    });
+
+    it("does not let ordinary redeem expire a recovery code", async () => {
+      store = await freshStoreWith(result({ expiresAt: "2020-01-01T00:00:00.000Z" }));
+      const ordinary = await redeem(RESULT_CODE, AUTHOR);
+
+      assert.equal(ordinary.status, 409);
+      assert.equal(ordinary.body.meta.code, "result_already_used");
+      assert.equal((await store.listResults())[0]?.consumedAt, null);
+    });
+
+    it("rejects an ordinary code at recovery redeem without consuming it", async () => {
+      store = await freshStoreWith(ordinaryResult());
+      const response = await recover();
+
+      assert.equal(response.status, 409);
+      assert.equal(response.body.meta.code, "result_not_recovery");
+      assert.equal(
+        response.body.message,
+        "This confirmation result was not issued for binding recovery.",
+      );
+      assert.equal((await store.listResults())[0]?.consumedAt, null);
+      assert.equal((await linkFor(AUTHOR))?.memberId, HISTORICAL_MEMBER);
+    });
+
+    it("rejects a recovery code bound to another recovery id or target", async () => {
+      store = await freshStoreWith(result({ bindingRecoveryId: "recovery-id-other-abcdef" }));
+      const otherRecovery = await recover();
+      assert.equal(otherRecovery.status, 409);
+      assert.equal(otherRecovery.body.meta.code, "result_recovery_mismatch");
+
+      resetIntegrityMediaBindingRecoveryReplayCacheForTests();
+      store = await freshStoreWith(result({ huTarget: "production" }));
+      const otherTarget = await recover();
+      assert.equal(otherTarget.status, 409);
+      assert.equal(otherTarget.body.meta.code, "result_recovery_mismatch");
+      assert.equal((await linkFor(AUTHOR))?.memberId, HISTORICAL_MEMBER);
+    });
+
+    it("rejects a recovery code bound to another author", async () => {
+      store = await freshStoreWith(result({ externalAuthorId: OTHER_AUTHOR }));
+      const response = await recover();
+
+      assert.equal(response.status, 409);
+      assert.equal(response.body.meta.code, "result_author_mismatch");
+      assert.equal((await store.listResults())[0]?.consumedAt, null);
+    });
+  });
+
   describe("historical link", () => {
     it("rejects a missing link", async () => {
+      store = await freshStoreWith(result({ externalAuthorId: OTHER_AUTHOR }));
       const response = await recover({ body: { ...requestBody(), externalAuthorId: OTHER_AUTHOR } });
 
       assert.equal(response.status, 404);
@@ -379,8 +444,11 @@ describe("Integrity Media binding recovery", () => {
       ];
 
       for (const [index, [override, code]] of cases.entries()) {
+        const recoveryId = `recovery-mismatch-${index}-abc`;
+        const resultCode = `mismatchResultCode_${index}_0123456789abcdefABCD`;
+        await store.insertResult(result({ resultCode, bindingRecoveryId: recoveryId }));
         const response = await recover({
-          body: { ...requestBody(), ...override, recoveryId: `recovery-mismatch-${index}-abc` },
+          body: { ...requestBody(), ...override, recoveryId, resultCode },
         });
         assert.equal(response.status, 409);
         assert.equal(response.body.meta.code, code);
@@ -401,10 +469,11 @@ describe("Integrity Media binding recovery", () => {
       for (const [index, [row, code]] of rows.entries()) {
         store = createMemoryExternalAuthorLinkStore();
         setExternalAuthorLinkStoreForTests(store);
+        const recoveryId = `recovery-row-${index}-abcdef`;
         await store.insertLink(row);
-        await store.insertResult(result());
+        await store.insertResult(result({ bindingRecoveryId: recoveryId }));
         const response = await recover({
-          body: { ...requestBody(), recoveryId: `recovery-row-${index}-abcdef` },
+          body: { ...requestBody(), recoveryId },
         });
 
         assert.equal(response.status, 409, code);
@@ -553,14 +622,27 @@ describe("Integrity Media binding recovery", () => {
 
     it("refuses a second recovery id after success because the historical tuple moved", async () => {
       const first = await recover();
-      await store.insertResult(result({ resultCode: "secondResultCode_0123456789abcdefABCD", memberId: OTHER_MEMBER }));
-      const secondBody = {
-        ...requestBody(),
-        resultCode: "secondResultCode_0123456789abcdefABCD",
-      };
+      await store.insertResult(
+        result({
+          resultCode: "secondResultCode_0123456789abcdefABCD",
+          memberId: OTHER_MEMBER,
+          bindingRecoveryId: "recovery-id-0099-abcdef",
+        }),
+      );
+      await store.insertResult(
+        result({
+          resultCode: "thirdResultCode_0123456789abcdefABCDE",
+          memberId: OTHER_MEMBER,
+          bindingRecoveryId: "recovery-id-0097-abcdef",
+        }),
+      );
 
       const whileProvisional = await recover({
-        body: { ...secondBody, recoveryId: "recovery-id-0099-abcdef" },
+        body: {
+          ...requestBody(),
+          resultCode: "secondResultCode_0123456789abcdefABCD",
+          recoveryId: "recovery-id-0099-abcdef",
+        },
       });
       assert.equal(whileProvisional.status, 409);
       assert.equal(whileProvisional.body.meta.code, "link_provisional");
@@ -571,12 +653,20 @@ describe("Integrity Media binding recovery", () => {
         first.body.data?.linkInstanceId as string,
       );
       const afterAcknowledgement = await recover({
-        body: { ...secondBody, recoveryId: "recovery-id-0097-abcdef" },
+        body: {
+          ...requestBody(),
+          resultCode: "thirdResultCode_0123456789abcdefABCDE",
+          recoveryId: "recovery-id-0097-abcdef",
+        },
       });
       assert.equal(afterAcknowledgement.status, 409);
       assert.equal(afterAcknowledgement.body.meta.code, "historical_member_mismatch");
       assert.equal((await linkFor(AUTHOR))?.memberId, REPLACEMENT_MEMBER);
-      assert.equal((await store.listResults()).find((row) => row.memberId === OTHER_MEMBER)?.consumedAt, null);
+      assert.ok(
+        (await store.listResults())
+          .filter((row) => row.memberId === OTHER_MEMBER)
+          .every((row) => row.consumedAt === null),
+      );
     });
 
     it("refuses another recovery id on a link that was already recovered and acknowledged", async () => {
@@ -586,7 +676,13 @@ describe("Integrity Media binding recovery", () => {
         first.body.data?.linkRevision as number,
         first.body.data?.linkInstanceId as string,
       );
-      await store.insertResult(result({ resultCode: "secondResultCode_0123456789abcdefABCD", memberId: OTHER_MEMBER }));
+      await store.insertResult(
+        result({
+          resultCode: "secondResultCode_0123456789abcdefABCD",
+          memberId: OTHER_MEMBER,
+          bindingRecoveryId: "recovery-id-0098-abcdef",
+        }),
+      );
       const second = await recover({
         body: {
           ...requestBody(),
@@ -617,7 +713,13 @@ describe("Integrity Media binding recovery", () => {
     });
 
     it("lets one of two concurrent requests with different recovery ids move the link", async () => {
-      await store.insertResult(result({ resultCode: "secondResultCode_0123456789abcdefABCD", memberId: OTHER_MEMBER }));
+      await store.insertResult(
+        result({
+          resultCode: "secondResultCode_0123456789abcdefABCD",
+          memberId: OTHER_MEMBER,
+          bindingRecoveryId: "recovery-id-0002-abcdef",
+        }),
+      );
       const responses = await Promise.all([
         recover(),
         recover({
@@ -795,7 +897,9 @@ describe("Integrity Media binding recovery", () => {
 
     it("keeps ordinary connect working for another author", async () => {
       await recover();
-      await store.insertResult(result({ resultCode: "ordinaryResultCode_0123456789abcdefABC", memberId: OTHER_MEMBER }));
+      await store.insertResult(
+        ordinaryResult({ resultCode: "ordinaryResultCode_0123456789abcdefABC", memberId: OTHER_MEMBER }),
+      );
       const redeemed = await redeem("ordinaryResultCode_0123456789abcdefABC", OTHER_AUTHOR);
 
       assert.equal(redeemed.status, 200);
@@ -948,7 +1052,26 @@ function legacyLink(): ExternalAuthorLinkRecord {
   return legacy;
 }
 
+/** A recovery-bound code, as /confirm mints it from a verified recovery state. */
 function result(overrides: Partial<ExternalAuthorLinkResultRecord> = {}): ExternalAuthorLinkResultRecord {
+  return {
+    resultCode: RESULT_CODE,
+    source: INTEGRITY_MEDIA_SOURCE,
+    attemptState: "recoveryAttemptState01",
+    memberId: REPLACEMENT_MEMBER,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    consumedAt: null,
+    createdAt: new Date().toISOString(),
+    purpose: "binding_recovery",
+    externalAuthorId: AUTHOR,
+    bindingRecoveryId: RECOVERY_ID,
+    huTarget: "staging",
+    ...overrides,
+  };
+}
+
+/** An ordinary code minted from an unsigned state. */
+function ordinaryResult(overrides: Partial<ExternalAuthorLinkResultRecord> = {}): ExternalAuthorLinkResultRecord {
   return {
     resultCode: RESULT_CODE,
     source: INTEGRITY_MEDIA_SOURCE,

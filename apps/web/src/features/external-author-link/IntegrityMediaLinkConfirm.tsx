@@ -11,6 +11,16 @@ import {
   isAuthenticationRequiredError,
   isNotFoundError,
 } from "../../lib/api-client";
+import { logout } from "../auth/auth-api";
+import {
+  canSubmitIntegrityMediaConfirmation,
+  isBindingRecoveryPreview,
+  ORDINARY_CONFIRMATION_TITLE,
+  RECOVERY_ACKNOWLEDGEMENT,
+  RECOVERY_CONFIRMATION_TITLE,
+  RECOVERY_WARNING,
+  type IntegrityMediaLinkPreview,
+} from "./integrity-media-link-confirm-model";
 
 const ATTEMPT_STATE_PATTERN = /^[A-Za-z0-9_-]{16,200}$/;
 
@@ -32,11 +42,6 @@ const PROVISION_SENTENCE =
 
 const PROVISION_COLLISION_NOTICE =
   "This Integrity Media account cannot be linked automatically. No Humanity Union account was created.";
-
-interface Preview {
-  displayName: string;
-  source: string;
-}
 
 function confirmationPath(attemptState: string): string {
   return `/connect/integrity-media?state=${encodeURIComponent(attemptState)}`;
@@ -62,6 +67,9 @@ export function IntegrityMediaLinkConfirm() {
   const [displayName, setDisplayName] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [recovery, setRecovery] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
 
   useEffect(() => {
     if (!ATTEMPT_STATE_PATTERN.test(attemptState)) {
@@ -73,7 +81,7 @@ export function IntegrityMediaLinkConfirm() {
 
     async function loadSessionPreview() {
       try {
-        const preview = await apiRequest<Preview>(
+        const preview = await apiRequest<IntegrityMediaLinkPreview>(
           `/api/v1/integrity-media/link/preview?state=${encodeURIComponent(attemptState)}`,
         );
 
@@ -81,7 +89,11 @@ export function IntegrityMediaLinkConfirm() {
           return;
         }
 
+        const isRecovery = isBindingRecoveryPreview(preview);
         setDisplayName(preview.displayName);
+        setRecovery(isRecovery);
+        setSessionEmail(isRecovery ? (preview.email ?? "") : "");
+        setAcknowledged(false);
         setPhase("ready");
       } catch (error) {
         if (cancelled) {
@@ -185,7 +197,17 @@ export function IntegrityMediaLinkConfirm() {
     }
   }
 
+  async function switchAccount() {
+    setPhase("submitting");
+    await logout();
+    window.location.assign(loginPath(attemptState));
+  }
+
   async function confirmConnection() {
+    if (!canSubmitIntegrityMediaConfirmation({ phase, recovery, acknowledged })) {
+      return;
+    }
+
     setPhase("submitting");
 
     try {
@@ -251,7 +273,9 @@ export function IntegrityMediaLinkConfirm() {
 
   return (
     <section className="auth-form" aria-live="polite">
-      <h1 className="auth-page__title">Connect your Humanity Union account to Integrity Media?</h1>
+      <h1 className="auth-page__title">
+        {recovery ? RECOVERY_CONFIRMATION_TITLE : ORDINARY_CONFIRMATION_TITLE}
+      </h1>
       {phase === "provision" || phase === "provision-submitting" ? (
         <>
           <p>{PROVISION_SENTENCE}</p>
@@ -270,7 +294,26 @@ export function IntegrityMediaLinkConfirm() {
         </>
       ) : null}
       {phase === "provision-blocked" ? <p>{message}</p> : null}
-      {phase === "ready" || phase === "submitting" ? (
+      {(phase === "ready" || phase === "submitting") && recovery ? (
+        <>
+          <p>
+            You are signed in as <strong>{displayName}</strong>
+            {sessionEmail ? <> ({sessionEmail})</> : null}. Confirm only if this is the Humanity
+            Union account that should replace the previous connection.
+          </p>
+          <p className="auth-feedback">{RECOVERY_WARNING}</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={acknowledged}
+              disabled={phase === "submitting"}
+              onChange={(event) => setAcknowledged(event.target.checked)}
+            />{" "}
+            {RECOVERY_ACKNOWLEDGEMENT}
+          </label>
+        </>
+      ) : null}
+      {(phase === "ready" || phase === "submitting") && !recovery ? (
         <p>
           You are signed in as <strong>{displayName}</strong>. Confirm only if this is the Humanity
           Union account you want to connect.
@@ -285,11 +328,16 @@ export function IntegrityMediaLinkConfirm() {
         <div className="auth-form__actions">
           <Button
             variant="primary"
-            disabled={phase === "submitting"}
+            disabled={!canSubmitIntegrityMediaConfirmation({ phase, recovery, acknowledged })}
             onClick={() => void confirmConnection()}
           >
             Confirm
           </Button>
+          {recovery ? (
+            <Button disabled={phase === "submitting"} onClick={() => void switchAccount()}>
+              Use a different account
+            </Button>
+          ) : null}
           <Button disabled={phase === "submitting"} onClick={() => void cancelConnection()}>
             Cancel
           </Button>

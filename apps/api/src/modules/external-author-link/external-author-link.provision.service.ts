@@ -7,6 +7,7 @@ import { hashPassword } from "../auth/auth-password.js";
 import type { AuthUserRecord } from "../auth/auth-user.types.js";
 import { buildNewPersistedMember } from "../member/infrastructure/member.persistence.js";
 import { buildDefaultMemberProfile } from "../member-profile/member-profile.repository.js";
+import { isIntegrityMediaBindingRecoveryStateFamily } from "./external-author-link.binding-recovery-state.js";
 import { resolveIntegrityMediaLinkConfig, buildIntegrityMediaReturnUrl } from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN,
@@ -230,6 +231,11 @@ export async function readProvisionConsent(input: {
     throw new ProvisionRequestError(400, "invalid_state", "This confirmation link is incomplete.");
   }
 
+  // A recovery state is never an account-creation attempt.
+  if (isIntegrityMediaBindingRecoveryStateFamily(input.attemptState)) {
+    throw new ProvisionRequestError(404, "attempt_not_found", "This confirmation link is incomplete.");
+  }
+
   const attempt = await currentProvisionDatabase().findAttempt(input.attemptState);
   if (!attempt) {
     throw new ProvisionRequestError(404, "attempt_not_found", "This confirmation link is incomplete.");
@@ -251,6 +257,10 @@ export async function confirmProvisionAttempt(input: {
 }): Promise<ProvisionConfirmResult> {
   const now = input.now ?? new Date();
   const attemptId = readConfirmState(input.body);
+  if (isIntegrityMediaBindingRecoveryStateFamily(attemptId)) {
+    throw new ProvisionRequestError(404, "attempt_not_found", "This confirmation link is incomplete.");
+  }
+
   const preparedPhoto = await prepareProvisionPhoto(attemptId, now);
   await runAfterProvisionPhotoPrefetchForTests();
 

@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
+import {
+  INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE,
+  INTEGRITY_MEDIA_SOURCE,
+} from "./external-author-link.constants.js";
 import { assignedLinkRevision, revisionForReconnect } from "./external-author-link.revision.js";
 import type {
   ExternalAuthorLinkAuditRecord,
@@ -22,6 +25,14 @@ export interface IntegrityMediaBindingRecoveryRequest {
 
 export const BINDING_RECOVERY_REJECTIONS = {
   result_not_found: { status: 404, message: "The confirmation result was not found." },
+  result_not_recovery: {
+    status: 409,
+    message: "This confirmation result was not issued for binding recovery.",
+  },
+  result_recovery_mismatch: {
+    status: 409,
+    message: "This confirmation result belongs to another recovery request.",
+  },
   result_expired: { status: 410, message: "This confirmation result has expired." },
   result_already_used: { status: 409, message: "This confirmation result was already used." },
   result_author_mismatch: {
@@ -484,6 +495,15 @@ async function evaluate(
     return { kind: "reject", code: "result_not_found", result: null };
   }
 
+  // Only a code minted from a verified recovery state, bound to this request.
+  if (result.purpose !== INTEGRITY_MEDIA_BINDING_RECOVERY_RESULT_PURPOSE) {
+    return { kind: "reject", code: "result_not_recovery", result: null };
+  }
+
+  if (result.bindingRecoveryId !== request.recoveryId || result.huTarget !== request.huTarget) {
+    return { kind: "reject", code: "result_recovery_mismatch", result: null };
+  }
+
   const ownReservation = result.bindingRecoveryReservationId === request.recoveryId;
 
   if (!ownReservation) {
@@ -497,7 +517,7 @@ async function evaluate(
   }
 
   if (
-    (result.externalAuthorId !== undefined && result.externalAuthorId !== request.externalAuthorId) ||
+    result.externalAuthorId !== request.externalAuthorId ||
     (input.provisionAuthorId !== null && input.provisionAuthorId !== request.externalAuthorId)
   ) {
     return { kind: "reject", code: "result_author_mismatch", result: ownReservation ? result : null };

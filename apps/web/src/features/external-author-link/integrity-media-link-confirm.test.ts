@@ -5,6 +5,15 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { resolveSafeReturnTo } from "../auth/lib/resolve-safe-return-to.js";
+import {
+  BINDING_RECOVERY_PREVIEW_PURPOSE,
+  canSubmitIntegrityMediaConfirmation,
+  isBindingRecoveryPreview,
+  ORDINARY_CONFIRMATION_TITLE,
+  RECOVERY_ACKNOWLEDGEMENT,
+  RECOVERY_CONFIRMATION_TITLE,
+  RECOVERY_WARNING,
+} from "./integrity-media-link-confirm-model.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +22,8 @@ describe("Integrity Media confirmation page", () => {
     const page = readFileSync(path.join(here, "IntegrityMediaLinkConfirm.tsx"), "utf8");
     const confirmationPath = "/connect/integrity-media?state=opaque-attempt-state";
 
-    assert.match(page, /Connect your Humanity Union account to Integrity Media\?/);
+    assert.equal(ORDINARY_CONFIRMATION_TITLE, "Connect your Humanity Union account to Integrity Media?");
+    assert.match(page, /recovery \? RECOVERY_CONFIRMATION_TITLE : ORDINARY_CONFIRMATION_TITLE/);
     assert.match(page, /\/login\?returnTo=/);
     assert.match(page, /\/connect\/integrity-media\?state=/);
     assert.match(page, /JSON\.stringify\(\{ state: attemptState \}\)/);
@@ -42,5 +52,70 @@ describe("Integrity Media confirmation page", () => {
       "/workspace",
     );
     assert.equal(resolveSafeReturnTo("//integrity.example", "/workspace"), "/workspace");
+  });
+});
+
+describe("Integrity Media Binding Recovery confirmation", () => {
+  const page = readFileSync(path.join(here, "IntegrityMediaLinkConfirm.tsx"), "utf8");
+
+  it("treats only the API-reported purpose as recovery", () => {
+    assert.equal(BINDING_RECOVERY_PREVIEW_PURPOSE, "binding_recovery");
+    assert.equal(
+      isBindingRecoveryPreview({ displayName: "Ada", source: "integrity-media", purpose: "binding_recovery" }),
+      true,
+    );
+    assert.equal(isBindingRecoveryPreview({ displayName: "Ada", source: "integrity-media" }), false);
+    assert.equal(
+      isBindingRecoveryPreview({ displayName: "Ada", source: "integrity-media", purpose: "BINDING_RECOVERY" }),
+      false,
+    );
+    assert.doesNotMatch(page, /params\.get\("(purpose|recovery)"\)/);
+  });
+
+  it("requires an explicit acknowledgement before a recovery can be confirmed", () => {
+    assert.equal(
+      canSubmitIntegrityMediaConfirmation({ phase: "ready", recovery: true, acknowledged: false }),
+      false,
+    );
+    assert.equal(
+      canSubmitIntegrityMediaConfirmation({ phase: "ready", recovery: true, acknowledged: true }),
+      true,
+    );
+    assert.equal(
+      canSubmitIntegrityMediaConfirmation({ phase: "submitting", recovery: true, acknowledged: true }),
+      false,
+    );
+    assert.equal(
+      canSubmitIntegrityMediaConfirmation({ phase: "ready", recovery: false, acknowledged: false }),
+      true,
+    );
+    assert.match(page, /type="checkbox"/);
+    assert.match(page, /RECOVERY_ACKNOWLEDGEMENT/);
+    assert.match(
+      page,
+      /disabled=\{!canSubmitIntegrityMediaConfirmation\(\{ phase, recovery, acknowledged \}\)\}/,
+    );
+    assert.match(page, /if \(!canSubmitIntegrityMediaConfirmation\(\{ phase, recovery, acknowledged \}\)\) \{/);
+  });
+
+  it("shows the recovery warning, the signed-in name and email, and a switch-account action", () => {
+    assert.equal(RECOVERY_CONFIRMATION_TITLE, "Replace the Humanity Union account connected to Integrity Media?");
+    assert.match(RECOVERY_WARNING, /will be replaced/);
+    assert.match(RECOVERY_ACKNOWLEDGEMENT, /replaces the previous Humanity Union connection/);
+    assert.match(page, /\{displayName\}/);
+    assert.match(page, /\{sessionEmail\}/);
+    assert.match(page, /Use a different account/);
+    assert.match(page, /await logout\(\);\s*window\.location\.assign\(loginPath\(attemptState\)\)/);
+  });
+
+  it("does not disclose the previous member and keeps the ordinary wording", () => {
+    for (const text of [RECOVERY_CONFIRMATION_TITLE, RECOVERY_WARNING, RECOVERY_ACKNOWLEDGEMENT]) {
+      assert.doesNotMatch(text, /@|\{|member id/i);
+    }
+    assert.doesNotMatch(page, /previous(Member|Name|Email)|replacedMember|historical/i);
+    assert.match(
+      page,
+      /Confirm only if this is the Humanity\s+Union account you want to connect\./,
+    );
   });
 });
