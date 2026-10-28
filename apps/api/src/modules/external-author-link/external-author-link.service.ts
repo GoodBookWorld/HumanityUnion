@@ -1,9 +1,16 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
+import type { ClientSession } from "mongodb";
+
 import {
   ensureBlogAuthorCapability,
   type BlogAuthorCapabilityEnsureResult,
+  type BlogAuthorCapabilityStore,
 } from "../blog/blog-author-capability.js";
+import {
+  findBlogCapabilityGrant,
+  upsertBlogCapabilityGrant,
+} from "../blog/persistence/blog.repository.js";
 import { getMemberById } from "../member/application/member-read.service.js";
 import { classifyIntegrityMediaConfirmationState } from "./external-author-link.binding-recovery-state.js";
 import {
@@ -113,6 +120,7 @@ export function setIntegrityMediaDisplayNameResolverForTests(
 
 type BlogAuthorCapabilityEnsurer = (
   participantId: string,
+  capabilityStore: BlogAuthorCapabilityStore,
 ) => Promise<BlogAuthorCapabilityEnsureResult>;
 
 let blogAuthorCapabilityEnsurerOverride: BlogAuthorCapabilityEnsurer | null = null;
@@ -125,26 +133,58 @@ export function setIntegrityMediaAuthorCapabilityEnsurerForTests(
 
 async function ensureLinkedBlogAuthorCapability(
   participantId: string,
+  capabilityStore: BlogAuthorCapabilityStore,
 ): Promise<BlogAuthorCapabilityEnsureResult> {
   if (blogAuthorCapabilityEnsurerOverride) {
-    return blogAuthorCapabilityEnsurerOverride(participantId);
+    return blogAuthorCapabilityEnsurerOverride(participantId, capabilityStore);
   }
 
-  return ensureBlogAuthorCapability(participantId);
+  return ensureBlogAuthorCapability(participantId, capabilityStore);
 }
 
+/** Blog grant reads and writes bound to the link transaction, when there is one. */
+function blogAuthorCapabilityStoreFor(session: ClientSession | null): BlogAuthorCapabilityStore {
+  const options = session ? { session } : {};
+  return {
+    findGrant: (participantId) => findBlogCapabilityGrant(participantId, options),
+    saveGrant: (grant) => upsertBlogCapabilityGrant(grant, options),
+  };
+}
+
+type ProvenBlogAuthorOutcome =
+  | { ok: true; capability: BlogAuthorCapabilityEnsureResult }
+  | { ok: false; linkChanged: boolean };
+
+/**
+ * Grant only while the member still holds the link. A rebind or disconnect
+ * that commits first leaves `linkChanged` and grants nothing.
+ */
 async function ensureProvenBlogAuthor(
-  participantId: string,
-): Promise<{ ok: true; capability: BlogAuthorCapabilityEnsureResult } | { ok: false }> {
+  store: ExternalAuthorLinkStore,
+  link: { externalAuthorId: string; memberId: string },
+): Promise<ProvenBlogAuthorOutcome> {
   for (let attempt = 0; attempt < INTEGRITY_MEDIA_AUTHOR_ACTIVATION_ATTEMPTS; attempt += 1) {
     try {
-      return { ok: true, capability: await ensureLinkedBlogAuthorCapability(participantId) };
+      const outcome = await store.runWithBoundAuthorLink(
+        {
+          source: INTEGRITY_MEDIA_SOURCE,
+          externalAuthorId: link.externalAuthorId,
+          memberId: link.memberId,
+        },
+        (session) =>
+          ensureLinkedBlogAuthorCapability(link.memberId, blogAuthorCapabilityStoreFor(session)),
+      );
+      if (outcome.status === "changed") {
+        return { ok: false, linkChanged: true };
+      }
+
+      return { ok: true, capability: outcome.value };
     } catch {
       // The proven pair stays. The next attempt is the same idempotent ensure.
     }
   }
 
-  return { ok: false };
+  return { ok: false, linkChanged: false };
 }
 
 async function setAuthorActivationPending(
@@ -488,7 +528,14 @@ export async function redeemIntegrityMediaLink(input: {
     };
   }
 
-  const activated = await ensureProvenBlogAuthor(claimed.record.memberId);
+  const activated = await ensureProvenBlogAuthor(store, {
+    externalAuthorId: input.externalAuthorId,
+    memberId: claimed.record.memberId,
+  });
+
+  if (!activated.ok && activated.linkChanged) {
+    return linkChangedFailure();
+  }
 
   if (!activated.ok) {
     await setAuthorActivationPending(store, {
@@ -616,7 +663,11 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
   }
 
   const wasPending = link.authorActivationPending === true;
-  const activated = await ensureProvenBlogAuthor(link.memberId);
+  const activated = await ensureProvenBlogAuthor(store, link);
+
+  if (!activated.ok && activated.linkChanged) {
+    return linkChangedFailure();
+  }
 
   if (!activated.ok) {
     await setAuthorActivationPending(store, {
@@ -1026,7 +1077,15 @@ async function grantBlogAuthorForConfirmedLink(
   link: ExternalAuthorLinkRecord,
   now: Date,
 ): Promise<{ ok: true } | IntegrityMediaLinkFailure> {
-  const activated = await ensureProvenBlogAuthor(link.memberId);
+  const activated = await ensureProvenBlogAuthor(store, link);
+
+  if (!activated.ok && activated.linkChanged) {
+    return failure(
+      409,
+      "acknowledgement_mismatch",
+      "This acknowledgement does not match the Integrity Media link.",
+    );
+  }
 
   if (!activated.ok) {
     await setAuthorActivationPending(store, {
@@ -1099,6 +1158,11 @@ function conflictMessage(conflict: ExternalAuthorLinkConflict): string {
   }
 
   return "This Humanity Union account is already linked to another Integrity Media author.";
+}
+
+/** The member no longer holds this link: nothing was granted and no pending state is written. */
+function linkChangedFailure(): IntegrityMediaLinkFailure {
+  return failure(409, "link_changed", "The Integrity Media link changed during author setup.");
 }
 
 function failure(status: number, code: string, message: string): IntegrityMediaLinkFailure {

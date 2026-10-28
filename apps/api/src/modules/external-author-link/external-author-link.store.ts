@@ -96,6 +96,20 @@ export interface ExternalAuthorLinkStore {
     | { status: "legacy" }
     | { status: "disabled" }
   >;
+  /**
+   * Run `work` only while this member still holds the author's linked,
+   * non-provisional row. On Mongo the row is changed in the same transaction
+   * as `work`, so a concurrent rebind or disconnect of that row cannot commit
+   * between the check and `work`'s writes.
+   */
+  runWithBoundAuthorLink<T>(
+    input: {
+      source: typeof INTEGRITY_MEDIA_SOURCE;
+      externalAuthorId: string;
+      memberId: string;
+    },
+    work: (session: ClientSession | null) => Promise<T>,
+  ): Promise<{ status: "bound"; value: T } | { status: "changed" }>;
   claimNextPendingAuthorActivation(input: {
     source: typeof INTEGRITY_MEDIA_SOURCE;
     nowIso: string;
@@ -383,6 +397,18 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       return copyLink(current);
     },
 
+    async runWithBoundAuthorLink(input, work) {
+      return runIntegrityMediaLinkCriticalSection(async () => {
+        const current = byAuthor.get(linkKey(input.source, input.externalAuthorId));
+        if (!current || !isBoundAuthorLink(current, input)) {
+          return { status: "changed" as const };
+        }
+
+        // In-process only: recovery and disconnect share this critical section.
+        return { status: "bound" as const, value: await work(null) };
+      });
+    },
+
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
       for (const record of byAuthor.values()) {
         if (!isPendingAuthorActivationEligible(record, source, eligibleBeforeIso)) {
@@ -654,6 +680,22 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         },
       );
       return updated ? withoutId(updated) : null;
+    },
+
+    async runWithBoundAuthorLink(input, work) {
+      return runMongoTransaction(async (session) => {
+        // A real change, not a no-op: only a changed document conflicts with a concurrent writer.
+        const held = await links().findOneAndUpdate(
+          boundAuthorLinkFilter(input),
+          { $inc: { authorActivationGuard: 1 } },
+          { session, returnDocument: "after" },
+        );
+        if (!held) {
+          return { status: "changed" as const };
+        }
+
+        return { status: "bound" as const, value: await work(session) };
+      });
     },
 
     async claimNextPendingAuthorActivation({ source, nowIso, eligibleBeforeIso }) {
@@ -1175,6 +1217,33 @@ function authorReplyLinkFilter(input: {
       { collaborationStatus: { $exists: false } },
       { collaborationStatus: { $type: "null" } },
     ],
+  };
+}
+
+function isBoundAuthorLink(
+  link: ExternalAuthorLinkRecord,
+  input: { source: typeof INTEGRITY_MEDIA_SOURCE; externalAuthorId: string; memberId: string },
+): boolean {
+  return (
+    link.source === input.source &&
+    link.externalAuthorId === input.externalAuthorId &&
+    link.memberId === input.memberId &&
+    link.state === "linked" &&
+    link.linkFinalization !== "provisional"
+  );
+}
+
+function boundAuthorLinkFilter(input: {
+  source: typeof INTEGRITY_MEDIA_SOURCE;
+  externalAuthorId: string;
+  memberId: string;
+}): Filter<ExternalAuthorLinkRecord> {
+  return {
+    source: input.source,
+    externalAuthorId: input.externalAuthorId,
+    memberId: input.memberId,
+    state: "linked",
+    linkFinalization: { $ne: "provisional" },
   };
 }
 
