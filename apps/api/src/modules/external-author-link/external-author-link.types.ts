@@ -69,8 +69,17 @@ export interface ExternalAuthorLinkResultRecord {
   expiresAt: string;
   consumedAt: string | null;
   createdAt: string;
-  /** Absent on current rows. When set, binding recovery requires the signed author to match. */
+  /** Set on recovery codes. When set, binding recovery requires the signed author to match. */
   externalAuthorId?: string;
+  /**
+   * Present only on a code minted from a verified recovery state. Ordinary
+   * redemption treats such a code as unavailable and never consumes it.
+   */
+  purpose?: "binding_recovery";
+  /** Recovery id from the verified state. Recovery redeem requires it to match. */
+  bindingRecoveryId?: string;
+  /** Deployment target from the verified state. */
+  huTarget?: string;
   /**
    * Binding recovery reservation. Ordinary redemption treats a reserved
    * result as unavailable.

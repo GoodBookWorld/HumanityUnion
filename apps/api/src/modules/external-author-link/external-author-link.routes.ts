@@ -77,7 +77,11 @@ externalAuthorLinkRouter.get("/preview", requireJwtAuthenticationMiddleware, asy
 
   res.json(
     createSuccessResponse(
-      { source: result.source, displayName: result.displayName },
+      {
+        source: result.source,
+        displayName: result.displayName,
+        ...(result.purpose ? { purpose: result.purpose, email: result.email ?? "" } : {}),
+      },
       "Humanity Union account loaded.",
     ),
   );

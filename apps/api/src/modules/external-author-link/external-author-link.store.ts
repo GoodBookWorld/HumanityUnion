@@ -260,7 +260,11 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         return { status: "missing" };
       }
 
-      if (current.consumedAt || current.bindingRecoveryReservationId !== undefined) {
+      if (
+        current.consumedAt ||
+        current.bindingRecoveryReservationId !== undefined ||
+        current.purpose !== undefined
+      ) {
         return { status: "consumed" };
       }
 
@@ -486,6 +490,7 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
           consumedAt: null,
           expiresAt: { $gt: nowIso },
           bindingRecoveryReservationId: { $exists: false },
+          purpose: { $exists: false },
         },
         { $set: { consumedAt: nowIso } },
         { returnDocument: "before" },
@@ -504,10 +509,16 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       if (
         !existing.consumedAt &&
         existing.bindingRecoveryReservationId === undefined &&
+        existing.purpose === undefined &&
         existing.expiresAt <= nowIso
       ) {
         await results().updateOne(
-          { resultCode, consumedAt: null, bindingRecoveryReservationId: { $exists: false } },
+          {
+            resultCode,
+            consumedAt: null,
+            bindingRecoveryReservationId: { $exists: false },
+            purpose: { $exists: false },
+          },
           { $set: { consumedAt: nowIso } },
         );
         return { status: "expired" };

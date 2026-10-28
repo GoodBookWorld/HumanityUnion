@@ -184,6 +184,10 @@ describe("Integrity Media binding recovery leaves collaboration content in place
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       consumedAt: null,
       createdAt: new Date().toISOString(),
+      purpose: "binding_recovery",
+      externalAuthorId: AUTHOR,
+      bindingRecoveryId: RECOVERY_ID,
+      huTarget: "staging",
     });
     await grantBlogCapabilitiesForTests({
       participantId: HISTORICAL_MEMBER,
