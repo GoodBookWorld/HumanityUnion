@@ -36,6 +36,11 @@ export interface ExternalAuthorLinkRecord {
   /** Last automatic or exhausted activation attempt. Used only to space retries. */
   authorActivationAttemptAt?: string | null;
   /**
+   * Incremented by each Blog author activation in the same transaction as the
+   * grant. The write is what makes a concurrent rebind or disconnect conflict.
+   */
+  authorActivationGuard?: number;
+  /**
    * Confirmed connection generation for this identity pair. Absent on rows
    * stored before revisions existed. Absence is not generation zero.
    * The initial generation is assigned as 1. Reconnect advances it and

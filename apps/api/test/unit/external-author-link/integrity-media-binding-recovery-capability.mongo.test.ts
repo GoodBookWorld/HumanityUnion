@@ -30,8 +30,15 @@ import {
   disconnectMongoClient,
 } from "../../../src/infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection, getMongoDatabase } from "../../../src/infrastructure/mongodb/mongo-database.js";
+import { runMongoTransaction } from "../../../src/infrastructure/mongodb/mongo-transaction.js";
 import { ensureBlogAuthorCapability } from "../../../src/modules/blog/blog-author-capability.js";
-import { setIntegrityMediaBindingRecoveryInterruptForTests } from "../../../src/modules/external-author-link/external-author-link.binding-recovery.js";
+import {
+  executeBindingRecovery,
+  resolveAbortedBindingRecovery,
+  setIntegrityMediaBindingRecoveryInterruptForTests,
+  type BindingRecoveryApplyResult,
+  type IntegrityMediaBindingRecoveryRequest,
+} from "../../../src/modules/external-author-link/external-author-link.binding-recovery.js";
 import { redeemIntegrityMediaBindingRecovery } from "../../../src/modules/external-author-link/external-author-link.binding-recovery.service.js";
 import {
   INTEGRITY_MEDIA_BINDING_RECOVERY_ENABLED_ENV,
@@ -58,6 +65,7 @@ import {
   setIntegrityMediaAuthorCapabilityEnsurerForTests,
 } from "../../../src/modules/external-author-link/external-author-link.service.js";
 import {
+  createMongoBindingRecoveryPersistence,
   createMongoExternalAuthorLinkStore,
   setExternalAuthorLinkStoreForTests,
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
@@ -371,53 +379,110 @@ describe("real Blog author capability after Binding Recovery acknowledgement", (
       assert.equal(await grants().countDocuments({ participantId: HISTORICAL_MEMBER }), 0);
     });
 
-    it("CHARACTERIZATION: an in-flight reconciler grants author to the historical member after recovery commits", async () => {
-      let reachedEnsure!: () => void;
-      const ensureReached = new Promise<void>((resolve) => {
-        reachedEnsure = resolve;
+    it("does not grant author to the historical member when recovery commits after the reconciler read the link", async () => {
+      const unrelatedGrant = await rawGrant(UNRELATED_MEMBER);
+      const usersBefore = await rawUsers();
+      const gate = coordinationGate();
+      const real = createMongoExternalAuthorLinkStore();
+      // Coordination only: pauses after the reconciler read the historical link and
+      // before the guarded activation transaction, then delegates to the real store.
+      setExternalAuthorLinkStoreForTests({
+        ...real,
+        async runWithBoundAuthorLink(input, work) {
+          if (input.memberId === HISTORICAL_MEMBER) {
+            gate.reach(input.memberId);
+            await gate.released;
+          }
+          return real.runWithBoundAuthorLink(input, work);
+        },
       });
-      let releaseEnsure!: () => void;
-      const ensureReleased = new Promise<void>((resolve) => {
-        releaseEnsure = resolve;
-      });
-      const ensuredFor: string[] = [];
-      // Coordination only: pauses, then delegates to the real ensurer and repository.
-      setIntegrityMediaAuthorCapabilityEnsurerForTests(async (participantId) => {
-        ensuredFor.push(participantId);
-        reachedEnsure();
-        await ensureReleased;
-        return ensureBlogAuthorCapability(participantId);
+
+      try {
+        const inFlight = reconcilePendingIntegrityMediaAuthorActivations({
+          now: new Date(Date.now() + 2 * 60 * 1000),
+          limit: 1,
+        });
+        await withTimeout(gate.reached, "the reconciler did not reach author activation");
+        assert.deepEqual(gate.members, [HISTORICAL_MEMBER]);
+
+        const tuple = await recoverOk();
+        assert.equal((await linkFor())?.memberId, REPLACEMENT_MEMBER);
+
+        gate.release();
+        const reconciled = await inFlight;
+        assert.deepEqual(reconciled, { examined: 1, recovered: 0, pending: 1 });
+
+        assert.equal(await grants().countDocuments({ participantId: HISTORICAL_MEMBER }), 0);
+        assert.equal(
+          await audits().countDocuments({
+            memberId: HISTORICAL_MEMBER,
+            action: { $in: ["author_capability_ensured", "author_capability_failed", "author_capability_recovered"] },
+          }),
+          0,
+        );
+        const link = await linkFor();
+        assert.equal(link?.memberId, REPLACEMENT_MEMBER);
+        assert.equal(link?.linkFinalization, "provisional");
+        assert.equal(link?.authorActivationPending, true);
+
+        // The replacement still activates through acknowledgement, and the pending flag clears.
+        assert.equal((await acknowledge(tuple)).ok, true);
+        assert.deepEqual((await grants().findOne({ participantId: REPLACEMENT_MEMBER }))?.capabilities, ["author"]);
+        assert.equal(await grants().countDocuments({ participantId: REPLACEMENT_MEMBER }), 1);
+        assert.equal((await linkFor())?.authorActivationPending, false);
+        assert.equal(await grants().countDocuments({ participantId: HISTORICAL_MEMBER }), 0);
+        assert.equal(await rawGrant(UNRELATED_MEMBER), unrelatedGrant);
+        assert.deepEqual(await rawUsers(), usersBefore);
+      } finally {
+        setExternalAuthorLinkStoreForTests(createMongoExternalAuthorLinkStore());
+      }
+    });
+
+    it("serializes a separate-process recovery behind an activation that already holds the link", async () => {
+      const gate = coordinationGate();
+      // Coordination only: pauses inside the guarded transaction, after the link
+      // write, then delegates to the real ensurer with the transaction-bound store.
+      setIntegrityMediaAuthorCapabilityEnsurerForTests(async (participantId, capabilityStore) => {
+        gate.reach(participantId);
+        await gate.released;
+        return ensureBlogAuthorCapability(participantId, capabilityStore);
       });
 
       const inFlight = reconcilePendingIntegrityMediaAuthorActivations({
         now: new Date(Date.now() + 2 * 60 * 1000),
         limit: 1,
       });
-      await withTimeout(ensureReached, "the reconciler did not reach the capability ensurer");
-      assert.deepEqual(ensuredFor, [HISTORICAL_MEMBER]);
+      await withTimeout(gate.reached, "the reconciler did not reach the capability ensurer");
+      assert.deepEqual(gate.members, [HISTORICAL_MEMBER]);
 
-      const tuple = await recoverOk();
-      assert.equal((await linkFor())?.memberId, REPLACEMENT_MEMBER);
+      // A second store instance, outside this process's link critical section.
+      let recoverySettled = false;
+      const recovery = recoverAsSeparateProcess().finally(() => {
+        recoverySettled = true;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assert.equal(recoverySettled, false, "recovery must wait while activation holds the link");
+      assert.equal((await linkFor())?.memberId, HISTORICAL_MEMBER);
+      assert.equal(await grants().countDocuments({ participantId: HISTORICAL_MEMBER }), 0);
 
-      releaseEnsure();
-      const reconciled = await inFlight;
-      assert.deepEqual(reconciled, { examined: 1, recovered: 0, pending: 1 });
+      gate.release();
+      await inFlight;
+      const recovered = await recovery;
+      assert.equal(recovered.kind, "recovered");
 
-      // Observed: the stale pass completed activation for the previous member.
+      // The activation committed while the historical member still held the link.
       assert.deepEqual((await grants().findOne({ participantId: HISTORICAL_MEMBER }))?.capabilities, ["author"]);
+      assert.equal(await grants().countDocuments({ participantId: HISTORICAL_MEMBER }), 1);
       const link = await linkFor();
       assert.equal(link?.memberId, REPLACEMENT_MEMBER);
       assert.equal(link?.linkFinalization, "provisional");
-      assert.equal(link?.authorActivationPending, true);
-      assert.equal(
-        await audits().countDocuments({ action: "author_capability_ensured", memberId: HISTORICAL_MEMBER }),
-        1,
-      );
+      assert.equal(await receipts().countDocuments({ status: "completed" }), 1);
 
-      // The replacement still activates normally through acknowledgement.
       setIntegrityMediaAuthorCapabilityEnsurerForTests(null);
-      assert.equal((await acknowledge(tuple)).ok, true);
+      assert.ok(recovered.kind === "recovered");
+      assert.equal((await acknowledge(recovered.outcome)).ok, true);
       assert.deepEqual((await grants().findOne({ participantId: REPLACEMENT_MEMBER }))?.capabilities, ["author"]);
+      assert.equal(await grants().countDocuments({ participantId: REPLACEMENT_MEMBER }), 1);
       assert.equal((await linkFor())?.authorActivationPending, false);
     });
   });
@@ -586,6 +651,57 @@ async function acknowledge(tuple: { memberId: string; linkRevision: number; link
     ),
     secret: SECRET,
   });
+}
+
+function coordinationGate() {
+  let reach!: () => void;
+  const reached = new Promise<void>((resolve) => {
+    reach = resolve;
+  });
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const members: string[] = [];
+  return {
+    reached,
+    released,
+    members,
+    release,
+    reach(memberId: string) {
+      members.push(memberId);
+      reach();
+    },
+  };
+}
+
+/**
+ * The Mongo store's recovery path as a second API instance would run it:
+ * its own transaction, outside this process's link critical section.
+ */
+async function recoverAsSeparateProcess(): Promise<BindingRecoveryApplyResult> {
+  const request: IntegrityMediaBindingRecoveryRequest = {
+    resultCode: RESULT_CODE,
+    externalAuthorId: AUTHOR,
+    huTarget: "staging",
+    expectedHuMemberId: HISTORICAL_MEMBER,
+    expectedHuLinkRevision: HISTORICAL_REVISION,
+    expectedHuLinkInstanceId: HISTORICAL_INSTANCE,
+    recoveryId: RECOVERY_ID,
+  };
+  const input = { request, provisionAuthorId: null, now: new Date() };
+  try {
+    return await runMongoTransaction((session) =>
+      executeBindingRecovery(createMongoBindingRecoveryPersistence(session), input),
+    );
+  } catch (error) {
+    return resolveAbortedBindingRecovery({
+      error,
+      request,
+      readCommittedReceipt: async () =>
+        (await receipts().findOne({ recoveryId: RECOVERY_ID }, { projection: { _id: 0 } })) as never,
+    });
+  }
 }
 
 async function withTimeout(promise: Promise<void>, message: string): Promise<void> {

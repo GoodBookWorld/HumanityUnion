@@ -42,11 +42,21 @@ const REQUEST: IntegrityMediaBindingRecoveryRequest = {
 
 describe("Integrity Media binding recovery Mongo transaction (static)", () => {
   it("runs the Mongo recovery in exactly one runMongoTransaction with the session persistence", () => {
-    assert.equal(countMatches(storeSource, /runMongoTransaction\(/g), 1);
+    // Recovery and the author-activation guard are the only Mongo transactions in the store.
+    assert.equal(countMatches(storeSource, /runMongoTransaction\(/g), 2);
 
     const apply = methodBody(mongoStoreBody(), "async applyBindingRecovery(input)");
+    assert.equal(countMatches(apply, /runMongoTransaction\(/g), 1);
     assert.match(apply, /runMongoTransaction\(\(session\) =>\s*executeBindingRecovery\(createMongoBindingRecoveryPersistence\(session\), input\)/);
     assert.doesNotMatch(apply, /recoveryPersistence\b|createMemory|isMongoConfigured|\.insertOne\(|\.updateOne\(|\.findOneAndUpdate\(/);
+  });
+
+  it("holds the link with a real change in the author-activation transaction", () => {
+    const guard = methodBody(mongoStoreBody(), "async runWithBoundAuthorLink(input, work)");
+    assert.equal(countMatches(guard, /runMongoTransaction\(/g), 1);
+    assert.match(guard, /findOneAndUpdate\(\s*boundAuthorLinkFilter\(input\),\s*\{ \$inc: \{ authorActivationGuard: 1 \} \},\s*\{ session, returnDocument: "after" \}/);
+    assert.match(guard, /work\(session\)/);
+    assert.doesNotMatch(guard, /"\$updatedAt"|catch\s*\(/);
   });
 
   it("requires a session for every Mongo recovery read and write", () => {
