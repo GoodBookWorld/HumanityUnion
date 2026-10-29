@@ -41,6 +41,15 @@ export const EXTERNAL_AUTHOR_DELETION_TOMBSTONE_INDEXES: IndexDescription[] = [
   },
 ];
 
+/** One guard document per author. Both deletion and link insert increment it. */
+export const EXTERNAL_AUTHOR_DELETION_GUARD_INDEXES: IndexDescription[] = [
+  {
+    key: { source: 1, externalAuthorId: 1 },
+    unique: true,
+    name: "external_author_deletion_guards_source_author_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES: IndexDescription[] = [
   {
     key: { eventId: 1 },

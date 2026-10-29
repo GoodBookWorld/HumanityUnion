@@ -345,6 +345,35 @@ function syndicatedContentUpdate(input: {
   return { $set };
 }
 
+export async function deleteBlogPostsByIds(
+  postIds: readonly string[],
+  options: RepositorySessionOptions = {},
+): Promise<number> {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  if (options.session) {
+    const result = await postsCollection().deleteMany(
+      { postId: { $in: [...postIds] } },
+      { session: options.session },
+    );
+    return result.deletedCount;
+  }
+  const memory = blogMemory();
+  if (memory) {
+    let removed = 0;
+    for (const postId of postIds) {
+      if (memory.posts.delete(postId)) {
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+  await ensureBlogMongoReady();
+  const result = await postsCollection().deleteMany({ postId: { $in: [...postIds] } });
+  return result.deletedCount;
+}
+
 export async function findBlogPostById(postId: string): Promise<BlogPost | null> {
   const memory = blogMemory();
   if (memory) {

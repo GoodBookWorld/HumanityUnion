@@ -17,6 +17,7 @@ import { insertMemberProfile } from "../member-profile/member-profile.repository
 import type { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import {
   getExternalAuthorLinkStore,
+  integrityMediaMemoryAuthorDeletionTombstoneExists,
   type ExternalAuthorLinkStore,
 } from "./external-author-link.store.js";
 import type {
@@ -189,6 +190,7 @@ export interface MemoryProvisionState {
   grants(): BlogCapabilityGrant[];
   results(): ExternalAuthorLinkResultRecord[];
   attempts(): ProvisionAttemptRecord[];
+  removeAttemptsForAuthor(externalAuthorId: string): number;
   participants(): PersistedMemberRecord[];
   profiles(): MemberProfile[];
   patchAttempt(attemptId: string, patch: Partial<ProvisionAttemptRecord>): void;
@@ -205,6 +207,33 @@ export function setProvisionMemoryForTests(state: MemoryProvisionState | null): 
 
 export function getProvisionMemoryForTests(): MemoryProvisionState | null {
   return memoryState;
+}
+
+/** Exact externalAuthorId only. Member identities stored on the attempt are not used as authority. */
+export async function deleteProvisionAttemptsForAuthorDeletion(
+  externalAuthorId: string,
+  session?: ClientSession,
+): Promise<number> {
+  if (session) {
+    const result = await getMongoCollection<ProvisionAttemptRecord>(
+      MONGO_COLLECTIONS.externalAuthorProvisionAttempts,
+    ).deleteMany({ externalAuthorId }, { session });
+    return result.deletedCount;
+  }
+
+  const memory = memoryState;
+  if (memory) {
+    return memory.removeAttemptsForAuthor(externalAuthorId);
+  }
+
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  const result = await getMongoCollection<ProvisionAttemptRecord>(
+    MONGO_COLLECTIONS.externalAuthorProvisionAttempts,
+  ).deleteMany({ externalAuthorId });
+  return result.deletedCount;
 }
 
 export function createMemoryProvisionState(): MemoryProvisionState {
@@ -292,6 +321,16 @@ export function createMemoryProvisionState(): MemoryProvisionState {
     grants: () => [...grants.values()].map((grant) => ({ ...grant, capabilities: [...grant.capabilities] })),
     results: () => [...results.values()].map((result) => ({ ...result })),
     attempts: () => [...attempts.values()].map((attempt) => ({ ...attempt })),
+    removeAttemptsForAuthor(externalAuthorId) {
+      let removed = 0;
+      for (const [attemptId, attempt] of attempts) {
+        if (attempt.externalAuthorId === externalAuthorId) {
+          attempts.delete(attemptId);
+          removed += 1;
+        }
+      }
+      return removed;
+    },
     participants: () => [...participants.values()].map((participant) => ({ ...participant })),
     profiles: () => [...profiles.values()].map((profile) => structuredClone(profile)),
     patchAttempt(attemptId, patch) {
@@ -623,6 +662,7 @@ function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
       }
 
       if (
+        integrityMediaMemoryAuthorDeletionTombstoneExists(record.source, record.externalAuthorId) ||
         tables.links.has(record.externalAuthorId) ||
         [...tables.links.values()].some((link) => link.memberId === record.memberId)
       ) {

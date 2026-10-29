@@ -99,11 +99,42 @@ export type ExternalAuthorLinkConflict =
 /** Accepted IM → HU disconnect. The signature is never stored. */
 export type ExternalAuthorDisconnectOutcome = "disabled" | "superseded";
 
-export type ExternalAuthorDeletionReceiptStatus = "pending" | "rejected";
+export type ExternalAuthorDeletionReceiptStatus = "pending" | "rejected" | "completed";
+
+/** Why a candidate record was left in place. No name, email, or content. */
+export type AuthorDeletionWithheldReason =
+  | "missing_post_id"
+  | "post_missing"
+  | "post_owner_mismatch"
+  | "author_id_case_variant";
+
+export interface AuthorDeletionWithheldRecord {
+  publicationId: string;
+  postId: string | null;
+  reason: AuthorDeletionWithheldReason;
+}
+
+/** Counts only. These fields are not identifiers of people or content. */
+export interface AuthorDeletionRemovalCounts {
+  posts: number;
+  comments: number;
+  reactions: number;
+  translations: number;
+  publicationDeliveries: number;
+  articleDeliveries: number;
+  provisionAttempts: number;
+  ssoGrants: number;
+  messages: number;
+  messageAudits: number;
+  disconnectEvents: number;
+  linkAudits: number;
+  links: number;
+}
 
 /**
  * Durable deletion operation. Pending means the tombstone is in place and
- * content cleanup has not run. This record is not a completed-deletion acknowledgment.
+ * content cleanup has not committed. Completed is the durable acknowledgment
+ * written only after that cleanup transaction commits.
  */
 export interface ExternalAuthorDeletionReceipt {
   operationId: string;
@@ -116,8 +147,11 @@ export interface ExternalAuthorDeletionReceipt {
   expectedLinkInstanceId: string | null;
   status: ExternalAuthorDeletionReceiptStatus;
   rejectCode: string | null;
+  withheld?: AuthorDeletionWithheldRecord[];
+  removed?: AuthorDeletionRemovalCounts;
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
 }
 
 /** Permanent author identity block. No name, email, or content. */
