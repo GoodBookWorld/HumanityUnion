@@ -139,9 +139,7 @@ describe("Integrity Media author deletion cleanup on disposable MongoDB", () => 
       });
     }
     await closeAppClient();
-    if (mongod && !mongod.killed) {
-      mongod.kill("SIGTERM");
-    }
+    await stopMongod();
     if (dbPath) {
       rmSync(dbPath, { recursive: true, force: true });
     }
@@ -683,6 +681,37 @@ async function waitForReplicaPrimary(uri: string, port: number): Promise<void> {
     }
   }
   throw lastError instanceof Error ? lastError : new Error("Disposable mongod did not start.");
+}
+
+/** mongod keeps writing to its dbpath until it exits, so removal must wait for the exit. */
+async function stopMongod(): Promise<void> {
+  const child = mongod;
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+
+  const exited = new Promise<true>((resolve) => child.once("exit", () => resolve(true)));
+  child.kill("SIGTERM");
+  if (await settlesWithin(exited, 15_000)) {
+    return;
+  }
+
+  child.kill("SIGKILL");
+  if (!(await settlesWithin(exited, 5_000))) {
+    throw new Error("Disposable mongod did not exit.");
+  }
+}
+
+async function settlesWithin(exited: Promise<true>, ms: number): Promise<boolean> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), ms);
+  });
+  try {
+    return await Promise.race([exited, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function closeAppClient(): Promise<void> {
