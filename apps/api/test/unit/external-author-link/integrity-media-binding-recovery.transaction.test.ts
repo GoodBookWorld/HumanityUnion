@@ -42,13 +42,19 @@ const REQUEST: IntegrityMediaBindingRecoveryRequest = {
 
 describe("Integrity Media binding recovery Mongo transaction (static)", () => {
   it("runs the Mongo recovery in exactly one runMongoTransaction with the session persistence", () => {
-    // Recovery and the author-activation guard are the only Mongo transactions in the store.
-    assert.equal(countMatches(storeSource, /runMongoTransaction\(/g), 2);
+    // Recovery, the author-activation guard, tombstone-checked link insert,
+    // and the two author-deletion transactions are the Mongo transactions.
+    assert.equal(countMatches(storeSource, /runMongoTransaction\(/g), 5);
 
     const apply = methodBody(mongoStoreBody(), "async applyBindingRecovery(input)");
     assert.equal(countMatches(apply, /runMongoTransaction\(/g), 1);
     assert.match(apply, /runMongoTransaction\(\(session\) =>\s*executeBindingRecovery\(createMongoBindingRecoveryPersistence\(session\), input\)/);
     assert.doesNotMatch(apply, /recoveryPersistence\b|createMemory|isMongoConfigured|\.insertOne\(|\.updateOne\(|\.findOneAndUpdate\(/);
+
+    const mongoStore = mongoStoreBody();
+    assert.equal(countMatches(methodBody(mongoStore, "async insertLink(record, options)"), /runMongoTransaction\(/g), 1);
+    assert.equal(countMatches(methodBody(mongoStore, "async applyAuthorDeletion(command)"), /runMongoTransaction\(/g), 1);
+    assert.equal(countMatches(methodBody(mongoStore, "async completeAuthorDeletion(command)"), /runMongoTransaction\(/g), 1);
   });
 
   it("holds the link with a real change in the author-activation transaction", () => {
