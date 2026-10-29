@@ -1,7 +1,11 @@
+import type { ClientSession } from "mongodb";
 import type { ContentTranslationSourceKind, LanguageCode, TranslatedContentRecord } from "@hu/types";
 
+import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
+import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 import {
+  deleteBlogPostTranslationsMemory,
   findContentTranslationMemory,
   listContentTranslationsForSourceMemory,
   markStaleTranslationsForSourceMemory,
@@ -50,6 +54,24 @@ export async function listContentTranslationsForSource(input: {
     return listContentTranslationsForSourceMongo(input);
   }
   return listContentTranslationsForSourceMemory(input);
+}
+
+/** Deletes blog_post translations for the given posts. Other source kinds stay. */
+export async function deleteBlogPostContentTranslations(
+  postIds: readonly string[],
+  options?: { session?: ClientSession },
+): Promise<number> {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  if (options?.session || shouldUseMongoContentTranslations()) {
+    const result = await getMongoCollection(MONGO_COLLECTIONS.contentTranslations).deleteMany(
+      { sourceKind: "blog_post", sourceRecordId: { $in: [...postIds] } },
+      options?.session ? { session: options.session } : {},
+    );
+    return result.deletedCount;
+  }
+  return deleteBlogPostTranslationsMemory(postIds);
 }
 
 export async function markStaleTranslationsForSource(input: {

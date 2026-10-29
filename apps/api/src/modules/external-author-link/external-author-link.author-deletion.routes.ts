@@ -67,8 +67,10 @@ integrityMediaAuthorDeletionRouter.post("/author-deletion", async (req, res) => 
         status: result.status,
         cleanup: result.cleanup,
         idempotent: result.idempotent,
+        withheld: result.withheld,
+        removed: result.removed,
       },
-      "Integrity Media author deletion is pending.",
+      "Integrity Media author deletion is complete.",
     ),
   );
 });

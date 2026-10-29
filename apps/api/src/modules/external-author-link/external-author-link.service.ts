@@ -651,6 +651,9 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
   const link = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.externalAuthorId);
 
   if (!link) {
+    if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId)) {
+      return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+    }
     return failure(404, "link_not_found", "No proven Integrity Media author link exists.");
   }
 

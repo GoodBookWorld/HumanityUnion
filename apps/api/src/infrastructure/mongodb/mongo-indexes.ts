@@ -1,6 +1,7 @@
 import type { Document, IndexDescription } from "mongodb";
 
 import {
+  EXTERNAL_AUTHOR_DELETION_GUARD_INDEXES,
   EXTERNAL_AUTHOR_DELETION_RECEIPT_INDEXES,
   EXTERNAL_AUTHOR_DELETION_TOMBSTONE_INDEXES,
   EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES,
@@ -1693,6 +1694,10 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     collectionName: MONGO_COLLECTIONS.externalAuthorDeletionTombstones,
     indexes: EXTERNAL_AUTHOR_DELETION_TOMBSTONE_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.externalAuthorDeletionGuards,
+    indexes: EXTERNAL_AUTHOR_DELETION_GUARD_INDEXES,
   },
   {
     collectionName: MONGO_COLLECTIONS.externalAuthorProvisionAttempts,

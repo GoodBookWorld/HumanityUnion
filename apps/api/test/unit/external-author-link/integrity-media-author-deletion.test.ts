@@ -10,7 +10,20 @@ import express from "express";
 import { setAuthUserLookupOverrideForTests } from "../../../src/modules/auth/auth-active-account-gate.js";
 import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.types.js";
 import {
+  findBlogCommentById,
+  insertBlogComment,
+} from "../../../src/modules/blog/persistence/blog-comment.repository.js";
+import {
+  claimBlogPublicationDelivery,
+  findBlogPublicationDelivery,
+} from "../../../src/modules/blog/persistence/blog-publication-delivery.repository.js";
+import {
+  getBlogReactionSummary,
+  setBlogReaction,
+} from "../../../src/modules/blog/persistence/blog-reaction.repository.js";
+import {
   findBlogCapabilityGrant,
+  findBlogPostById,
   replaceBlogPost,
   resetBlogMemoryPersistenceForTests,
   upsertBlogCapabilityGrant,
@@ -21,7 +34,9 @@ import {
   signIntegrityMediaAuthorDeletion,
 } from "../../../src/modules/external-author-link/external-author-link.author-deletion.hmac.js";
 import integrityMediaAuthorDeletionRouter from "../../../src/modules/external-author-link/external-author-link.author-deletion.routes.js";
+import { setAuthorDeletionCleanupFailureForTests } from "../../../src/modules/external-author-link/external-author-link.author-deletion.cleanup.js";
 import { setAuthorDeletionTransactionFailureForTests } from "../../../src/modules/external-author-link/external-author-link.author-deletion.rules.js";
+import { insertArticleDelivery } from "../../../src/modules/external-author-link/external-author-link.article-ingest.repository.js";
 import {
   buildArticleIngestPayload,
   resetArticleIngestReplayCacheForTests,
@@ -59,10 +74,15 @@ import {
   signIntegrityMediaLinkRedeem,
 } from "../../../src/modules/external-author-link/external-author-link.hmac.js";
 import {
+  EXTERNAL_AUTHOR_DELETION_GUARD_INDEXES,
   EXTERNAL_AUTHOR_DELETION_RECEIPT_INDEXES,
   EXTERNAL_AUTHOR_DELETION_TOMBSTONE_INDEXES,
 } from "../../../src/modules/external-author-link/external-author-link.indexes.js";
-import { createMemoryProvisionState, setProvisionMemoryForTests } from "../../../src/modules/external-author-link/external-author-link.provision.database.js";
+import {
+  createMemoryProvisionState,
+  getProvisionMemoryForTests,
+  setProvisionMemoryForTests,
+} from "../../../src/modules/external-author-link/external-author-link.provision.database.js";
 import {
   buildProvisionAttemptPayload,
   resetProvisionAttemptReplayCacheForTests,
@@ -78,16 +98,25 @@ import {
   recoverProvenIntegrityMediaAuthorLink,
   setIntegrityMediaAuthorCapabilityEnsurerForTests,
 } from "../../../src/modules/external-author-link/external-author-link.service.js";
-import { createMemorySsoState, setSsoMemoryForTests } from "../../../src/modules/external-author-link/external-author-link.sso.database.js";
+import {
+  createMemorySsoState,
+  getSsoMemoryForTests,
+  setSsoMemoryForTests,
+} from "../../../src/modules/external-author-link/external-author-link.sso.database.js";
 import { buildSsoGrantPayload } from "../../../src/modules/external-author-link/external-author-link.sso.hmac.js";
 import { registerSsoGrant, SsoRequestError } from "../../../src/modules/external-author-link/external-author-link.sso.service.js";
 import {
   createMemoryExternalAuthorLinkStore,
   setExternalAuthorLinkStoreForTests,
+  setMemoryAuthorLinkMutatorForTests,
   type ExternalAuthorLinkStore,
 } from "../../../src/modules/external-author-link/external-author-link.store.js";
 import type { ExternalAuthorLinkRecord } from "../../../src/modules/external-author-link/external-author-link.types.js";
 import { sendIntegrityMediaAuthorMessage } from "../../../src/modules/integrity-media-author-messages/integrity-media-author-message.service.js";
+import {
+  findContentTranslation,
+  upsertContentTranslation,
+} from "../../../src/modules/language/persistence/content-translation.repository.js";
 import {
   createMemoryIntegrityMediaAuthorMessageStore,
   setIntegrityMediaAuthorMessageStoreForTests,
@@ -131,6 +160,8 @@ interface ApiBody {
     status?: string;
     cleanup?: string;
     idempotent?: boolean;
+    withheld?: Array<{ publicationId: string; postId: string | null; reason: string }>;
+    removed?: { posts: number; articleDeliveries: number; links: number; messages: number };
   } | null;
   meta: { code?: string };
   message: string;
@@ -174,6 +205,8 @@ describe("Integrity Media author deletion foundation", () => {
     setProvisionMemoryForTests(null);
     setSsoMemoryForTests(null);
     setAuthorDeletionTransactionFailureForTests(false);
+    setAuthorDeletionCleanupFailureForTests("off");
+    setMemoryAuthorLinkMutatorForTests(null);
     restoreEnv(previousEnv.mode, "PLATFORM_MODE");
     restoreEnv(previousEnv.flag, INTEGRITY_MEDIA_AUTHOR_DELETION_ENABLED_ENV);
     restoreEnv(previousEnv.secret, INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV);
@@ -192,6 +225,8 @@ describe("Integrity Media author deletion foundation", () => {
     setProvisionMemoryForTests(createMemoryProvisionState());
     setSsoMemoryForTests(createMemorySsoState());
     setAuthorDeletionTransactionFailureForTests(false);
+    setAuthorDeletionCleanupFailureForTests("off");
+    setMemoryAuthorLinkMutatorForTests(null);
     resetIntegrityMediaAuthorDeletionReplayCacheForTests();
     resetIntegrityMediaRedeemReplayCacheForTests();
     resetIntegrityMediaAcknowledgeReplayCacheForTests();
@@ -247,6 +282,12 @@ describe("Integrity Media author deletion foundation", () => {
     assert.equal(
       EXTERNAL_AUTHOR_DELETION_RECEIPT_INDEXES.some(
         (index) => index.unique === true && index.key.operationId === 1,
+      ),
+      true,
+    );
+    assert.equal(
+      EXTERNAL_AUTHOR_DELETION_GUARD_INDEXES.some(
+        (index) => index.unique === true && index.key.source === 1 && index.key.externalAuthorId === 1,
       ),
       true,
     );
@@ -320,31 +361,30 @@ describe("Integrity Media author deletion foundation", () => {
     assert.equal((await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, OTHER_AUTHOR))?.linkInstanceId, undefined);
   });
 
-  it("accepts a legacy link without an instance id and stays pending", async () => {
+  it("completes a legacy link deletion and keeps the tombstone", async () => {
     await store.insertLink(legacyLink());
     const first = await postDeletion(
       deletionBody({ expectedLinkInstanceId: "absent", expectedLinkRevision: 1 }),
     );
     assert.equal(first.status, 200);
     assert.equal(first.body.success, true);
-    assert.equal(first.body.data?.status, "pending");
-    assert.equal(first.body.data?.cleanup, "pending");
+    assert.equal(first.body.data?.status, "completed");
+    assert.equal(first.body.data?.cleanup, "completed");
     assert.equal(first.body.data?.idempotent, false);
-    assert.equal(first.body.message.includes("pending"), true);
-    assert.equal(JSON.stringify(first.body).includes("completed"), false);
+    assert.equal(first.body.data?.removed?.links, 1);
+    assert.equal(first.body.data?.removed?.posts, 0);
+    assert.deepEqual(first.body.data?.withheld, []);
+    assert.equal(first.body.message.includes("complete"), true);
 
     const second = await postDeletion(
       deletionBody({ expectedLinkInstanceId: "absent", expectedLinkRevision: 1 }),
     );
     assert.equal(second.status, 200);
     assert.equal(second.body.data?.idempotent, true);
-    assert.equal(second.body.data?.status, "pending");
+    assert.equal(second.body.data?.status, "completed");
+    assert.deepEqual(second.body.data?.removed, first.body.data?.removed);
 
-    const link = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR);
-    assert.equal(link?.authorDeletionPending, true);
-    assert.equal(link?.linkInstanceId, undefined);
-    assert.equal(link?.memberId, MEMBER);
-    assert.equal(link?.state, "linked");
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
     const tombstone = await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR);
     assert.deepEqual(Object.keys(tombstone ?? {}).sort(), [
       "createdAt",
@@ -352,7 +392,7 @@ describe("Integrity Media author deletion foundation", () => {
       "operationId",
       "source",
     ]);
-    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "pending");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "completed");
   });
 
   it("treats the same operation as idempotent and a different body as a conflict", async () => {
@@ -364,9 +404,12 @@ describe("Integrity Media author deletion foundation", () => {
     assert.equal(conflict.body.meta.code, "operation_conflict");
     const again = await postDeletion(deletionBody());
     assert.equal(again.status, 200);
+    assert.equal(again.body.data?.status, "completed");
     assert.equal(again.body.data?.idempotent, true);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
     assert.equal((await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.operationId, OPERATION);
     assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.expectedLinkRevision, 1);
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "completed");
   });
 
   it("keeps one tombstone when deletion requests arrive together", async () => {
@@ -375,22 +418,24 @@ describe("Integrity Media author deletion foundation", () => {
       postDeletion(deletionBody({ operationId: OPERATION })),
       postDeletion(deletionBody({ operationId: OPERATION_2 })),
     ]);
-    assert.equal(first.status, 200);
-    assert.equal(second.status, 200);
-    assert.equal(first.body.data?.status, "pending");
-    assert.equal(second.body.data?.status, "pending");
+    const statuses = [first.status, second.status].sort();
+    assert.equal(statuses.includes(200), true);
+    assert.equal(statuses.every((status) => status === 200 || status === 404 || status === 503), true);
     const tombstone = await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR);
     assert.equal(tombstone?.operationId === OPERATION || tombstone?.operationId === OPERATION_2, true);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
     const third = await postDeletion(deletionBody({ operationId: OPERATION_3 }));
-    assert.equal(third.status, 200);
-    assert.equal(third.body.data?.status, "pending");
+    assert.equal(third.status, 404);
+    assert.equal(third.body.meta.code, "link_not_found");
     assert.equal(
       (await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.operationId,
       tombstone?.operationId,
     );
-    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "pending");
-    assert.equal((await store.findAuthorDeletionReceipt(OPERATION_2))?.status, "pending");
-    assert.equal((await store.findAuthorDeletionReceipt(OPERATION_3))?.status, "pending");
+    assert.equal(
+      (await store.findAuthorDeletionReceipt(OPERATION))?.status === "completed" ||
+        (await store.findAuthorDeletionReceipt(OPERATION_2))?.status === "completed",
+      true,
+    );
 
     const same = await Promise.all([
       postDeletion(deletionBody({ operationId: OPERATION, authorId: OTHER_AUTHOR })),
@@ -434,9 +479,8 @@ describe("Integrity Media author deletion foundation", () => {
       assert.equal(redeemed.code, "author_deletion_pending");
     }
     const afterRedeem = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR);
-    assert.equal(afterRedeem?.state, "disabled");
-    assert.equal(afterRedeem?.linkInstanceId, INSTANCE);
-    assert.equal(await store.updateLink({ ...afterRedeem!, state: "linked", disconnectedAt: null }), "refused");
+    assert.equal(afterRedeem, null);
+    assert.equal(await store.insertLink(confirmedLink()), "duplicate");
 
     const acknowledgeAt = stamp();
     const acknowledged = await acknowledgeIntegrityMediaLink({
@@ -463,7 +507,7 @@ describe("Integrity Media author deletion foundation", () => {
     if (!acknowledged.ok) {
       assert.equal(acknowledged.code, "author_deletion_pending");
     }
-    assert.equal((await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.linkFinalization, "confirmed");
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
 
     const publicationId = "pub-delete-1";
     const articleAt = stamp();
@@ -559,13 +603,13 @@ describe("Integrity Media author deletion foundation", () => {
     });
     assert.equal(sent.ok, false);
     if (!sent.ok) {
-      assert.equal(sent.code, "author_deletion_pending");
+      assert.equal(sent.code, "link_missing");
     }
     assert.equal(ensureCalls, 0);
     assert.equal((await messages.list()).length, 0);
   });
 
-  it("preserves the Humanity Union member, grant, Blog post, and existing message", async () => {
+  it("preserves Humanity Union identities and ordinary publications", async () => {
     await store.insertLink(confirmedLink());
     const post = samplePost();
     await replaceBlogPost(post);
@@ -576,29 +620,46 @@ describe("Integrity Media author deletion foundation", () => {
     };
     await upsertBlogCapabilityGrant(grant);
     const existing = sampleMessage();
+    const otherMessage = { ...sampleMessage(), messageId: OPERATION_2, recipientExternalAuthorId: OTHER_AUTHOR };
     await messages.insert(existing);
+    await messages.insert(otherMessage);
+    await store.insertResult({
+      resultCode: "r".repeat(32),
+      source: INTEGRITY_MEDIA_SOURCE,
+      attemptState: "attempt-state-ok1",
+      memberId: MEMBER,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      consumedAt: null,
+      createdAt: STORED_AT,
+    });
     const adminBefore = users.get("admin-user");
 
     const response = await postDeletion(deletionBody());
     assert.equal(response.status, 200);
-    assert.equal(response.body.data?.cleanup, "pending");
+    assert.equal(response.body.data?.status, "completed");
+    assert.equal(response.body.data?.cleanup, "completed");
+    assert.equal(response.body.data?.removed?.messages, 1);
 
-    const link = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR);
-    assert.equal(link?.memberId, MEMBER);
-    assert.equal(link?.state, "linked");
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+    assert.equal((await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.externalAuthorId, AUTHOR);
     assert.deepEqual(await findBlogCapabilityGrant(MEMBER), grant);
-    assert.deepEqual(await replaceBlogPost(post), post);
-    const storedMessage = await messages.findByMessageId(existing.messageId);
-    assert.equal(storedMessage?.body, existing.body);
-    assert.equal((await messages.list()).length, 1);
+    assert.deepEqual(await findBlogPostById(post.postId), post);
+    assert.equal(await messages.findByMessageId(existing.messageId), null);
+    assert.equal((await messages.findByMessageId(otherMessage.messageId))?.recipientExternalAuthorId, OTHER_AUTHOR);
+    assert.equal((await store.listResults()).length, 1);
     assert.equal(users.get("admin-user")?.role, "admin");
     assert.equal(users.get("admin-user")?.memberId, adminBefore?.memberId);
     assert.equal(users.get(`user-${MEMBER}`)?.role, "member");
     const receipt = await store.findAuthorDeletionReceipt(OPERATION);
-    const stored = JSON.stringify({ receipt, tombstone: await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR) });
+    const stored = JSON.stringify({
+      response: response.body,
+      receipt,
+      tombstone: await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR),
+    });
     assert.equal(stored.includes("example.com"), false);
     assert.equal(stored.includes(post.content), false);
     assert.equal(stored.includes(existing.body), false);
+    assert.equal(JSON.stringify(response.body.data?.withheld ?? []).includes(MEMBER), false);
   });
 
   it("does nothing while the feature flag is off", async () => {
@@ -626,9 +687,296 @@ describe("Integrity Media author deletion foundation", () => {
     setAuthorDeletionTransactionFailureForTests(false);
     const retried = await postDeletion(body, at);
     assert.equal(retried.status, 200);
-    assert.equal(retried.body.data?.status, "pending");
+    assert.equal(retried.body.data?.status, "completed");
     assert.equal(retried.body.data?.idempotent, false);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+    assert.equal((await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.operationId, OPERATION);
+  });
+
+  it("deletes only posts with exact author, delivery, and member ownership", async () => {
+    await store.insertLink(confirmedLink());
+    const proven = samplePost("post-proven", MEMBER);
+    const ordinary = samplePost("post-ordinary", MEMBER);
+    const casePost = samplePost("post-case", MEMBER);
+    const mismatch = samplePost("post-mismatch", OTHER_MEMBER);
+    const otherPost = samplePost("post-other", OTHER_MEMBER);
+    const unowned = samplePost("post-unowned", MEMBER);
+    for (const post of [proven, ordinary, casePost, mismatch, otherPost, unowned]) {
+      await replaceBlogPost(post);
+    }
+    await insertBlogComment(sampleComment("comment-proven", proven.postId));
+    await insertBlogComment(sampleComment("comment-ordinary", ordinary.postId));
+    await setBlogReaction({ postId: proven.postId, actorParticipantId: OTHER_MEMBER, reaction: "helpful" });
+    await setBlogReaction({ postId: ordinary.postId, actorParticipantId: ADMIN_MEMBER, reaction: "helpful" });
+    await claimBlogPublicationDelivery({ postId: proven.postId, subscriberId: "subscriber-proven", maxAttempts: 3 });
+    await claimBlogPublicationDelivery({ postId: ordinary.postId, subscriberId: "subscriber-ordinary", maxAttempts: 3 });
+    await upsertContentTranslation(sampleTranslation("blog_post", proven.postId, "tr-proven"));
+    await upsertContentTranslation(sampleTranslation("discussion_comment", proven.postId, "tr-comment"));
+    await insertArticleDelivery(sampleDelivery("pub-proven", AUTHOR, proven.postId));
+    await insertArticleDelivery(sampleDelivery("pub-case", AUTHOR.toUpperCase(), casePost.postId));
+    await insertArticleDelivery(sampleDelivery("pub-missing-post", AUTHOR, null));
+    await insertArticleDelivery(sampleDelivery("pub-absent-post", AUTHOR, "post-does-not-exist"));
+    await insertArticleDelivery(sampleDelivery("pub-mismatch", AUTHOR, mismatch.postId));
+    await insertArticleDelivery(sampleDelivery("pub-other", OTHER_AUTHOR, otherPost.postId));
+    await insertArticleDelivery({ ...sampleDelivery("pub-no-author", AUTHOR, unowned.postId), authorId: undefined });
+    await messages.insert(sampleMessage());
+    await messages.appendAudit({
+      eventId: "audit-message-1",
+      action: "integrity_media_message_delivered",
+      messageId: sampleMessage().messageId,
+      actorMemberId: ADMIN_MEMBER,
+      recipientMemberId: MEMBER,
+      recipientExternalAuthorId: AUTHOR,
+      errorCode: null,
+      createdAt: STORED_AT,
+    });
+    const provision = getProvisionMemoryForTests();
+    assert.ok(provision);
+    await provision.view().insertAttempt({
+      attemptId: "attempt-author-1",
+      externalAuthorId: AUTHOR,
+      email: "hidden@example.com",
+      displayName: "Hidden Name",
+      target: "staging",
+      expiresAt: 4_000_000_000,
+      returnPath: "/return",
+      emailVerification: "pending",
+      memberId: MEMBER,
+      userId: "user-1",
+      createdMember: false,
+      createdAt: STORED_AT,
+      updatedAt: STORED_AT,
+    });
+    await provision.view().insertAttempt({
+      attemptId: "attempt-other-1",
+      externalAuthorId: OTHER_AUTHOR,
+      email: "other@example.com",
+      displayName: "Other",
+      target: "staging",
+      expiresAt: 4_000_000_000,
+      returnPath: "/return",
+      emailVerification: "pending",
+      memberId: OTHER_MEMBER,
+      userId: "user-2",
+      createdMember: false,
+      createdAt: STORED_AT,
+      updatedAt: STORED_AT,
+    });
+    const sso = getSsoMemoryForTests();
+    assert.ok(sso);
+    await sso.view().insertGrant({
+      grantId: "grant-author",
+      requestId: "request-author",
+      externalAuthorId: AUTHOR,
+      memberId: MEMBER,
+      userId: "user-1",
+      linkRevision: 1,
+      target: "staging",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      consumedAt: null,
+      createdAt: STORED_AT,
+    });
+    await sso.view().insertGrant({
+      grantId: "grant-other",
+      requestId: "request-other",
+      externalAuthorId: OTHER_AUTHOR,
+      memberId: OTHER_MEMBER,
+      userId: "user-2",
+      linkRevision: 1,
+      target: "staging",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      consumedAt: null,
+      createdAt: STORED_AT,
+    });
+    await store.insertDisconnectEvent({
+      eventId: OPERATION_2,
+      externalAuthorId: AUTHOR,
+      memberId: MEMBER,
+      linkRevision: 1,
+      outcome: "disabled",
+      createdAt: STORED_AT,
+    });
+    await store.appendAudit({
+      eventId: "link-audit-1",
+      action: "link_acknowledged",
+      source: INTEGRITY_MEDIA_SOURCE,
+      memberId: MEMBER,
+      externalAuthorId: AUTHOR,
+      attemptStateHash: null,
+      reason: null,
+      createdAt: STORED_AT,
+    });
+
+    const response = await postDeletion(deletionBody());
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data?.status, "completed");
+    assert.equal(response.body.data?.removed?.posts, 1);
+    assert.equal(response.body.data?.removed?.articleDeliveries, 1);
+    assert.equal(response.body.data?.removed?.links, 1);
+    assert.deepEqual(
+      response.body.data?.withheld?.map((entry) => entry.reason).sort(),
+      ["author_id_case_variant", "missing_post_id", "post_missing", "post_owner_mismatch"],
+    );
+    const withheldText = JSON.stringify(response.body.data?.withheld);
+    assert.equal(withheldText.includes("example.com"), false);
+    assert.equal(withheldText.includes("Hidden"), false);
+    assert.equal(withheldText.includes(MEMBER), false);
+
+    assert.equal(await findBlogPostById(proven.postId), null);
+    assert.deepEqual(await findBlogPostById(ordinary.postId), ordinary);
+    assert.deepEqual(await findBlogPostById(casePost.postId), casePost);
+    assert.deepEqual(await findBlogPostById(mismatch.postId), mismatch);
+    assert.deepEqual(await findBlogPostById(otherPost.postId), otherPost);
+    assert.deepEqual(await findBlogPostById(unowned.postId), unowned);
+    assert.equal(await findBlogCommentById("comment-proven"), null);
+    assert.equal((await findBlogCommentById("comment-ordinary"))?.postId, ordinary.postId);
+    assert.equal((await getBlogReactionSummary({ postId: proven.postId })).helpful, 0);
+    assert.equal((await getBlogReactionSummary({ postId: ordinary.postId })).helpful, 1);
+    assert.equal(await findBlogPublicationDelivery(proven.postId, "subscriber-proven"), null);
+    assert.ok(await findBlogPublicationDelivery(ordinary.postId, "subscriber-ordinary"));
+    assert.equal(
+      await findContentTranslation({
+        sourceKind: "blog_post",
+        sourceRecordId: proven.postId,
+        sourceVersion: "1",
+        targetLanguage: "es",
+      }),
+      null,
+    );
+    assert.ok(
+      await findContentTranslation({
+        sourceKind: "discussion_comment",
+        sourceRecordId: proven.postId,
+        sourceVersion: "1",
+        targetLanguage: "es",
+      }),
+    );
+    const deliveries = listArticleDeliveriesForTests();
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-proven"), false);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-case"), true);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-missing-post"), true);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-absent-post"), true);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-mismatch"), true);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-other"), true);
+    assert.equal(deliveries.some((row) => row.publicationId === "pub-no-author"), true);
+    assert.equal(await messages.findByMessageId(sampleMessage().messageId), null);
+    assert.equal((await messages.listAudits()).length, 0);
+    assert.equal(provision.attempts().some((attempt) => attempt.externalAuthorId === AUTHOR), false);
+    assert.equal(provision.attempts().some((attempt) => attempt.externalAuthorId === OTHER_AUTHOR), true);
+    assert.equal(sso.grants().some((grant) => grant.externalAuthorId === AUTHOR), false);
+    assert.equal(sso.grants().some((grant) => grant.externalAuthorId === OTHER_AUTHOR), true);
+    assert.equal((await store.listDisconnectEvents()).length, 0);
+    assert.equal((await store.listAudits()).length, 0);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+
+    const repeated = await postDeletion(deletionBody());
+    assert.equal(repeated.status, 200);
+    assert.equal(repeated.body.data?.idempotent, true);
+    assert.deepEqual(repeated.body.data?.withheld, response.body.data?.withheld);
+    assert.deepEqual(repeated.body.data?.removed, response.body.data?.removed);
+    assert.deepEqual(await findBlogPostById(ordinary.postId), ordinary);
+  });
+
+  it("does not let a rejected operation block a corrected operation id", async () => {
+    await store.insertLink(confirmedLink());
+    const rejected = await postDeletion(deletionBody({ expectedMemberId: OTHER_MEMBER }));
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.body.meta.code, "member_mismatch");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "rejected");
+    assert.equal(await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+
+    const corrected = await postDeletion(deletionBody({ operationId: OPERATION_2 }));
+    assert.equal(corrected.status, 200);
+    assert.equal(corrected.body.data?.status, "completed");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "rejected");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION_2))?.status, "completed");
+    assert.equal((await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.operationId, OPERATION_2);
+  });
+
+  it("refuses cleanup when the stored link no longer matches the receipt", async () => {
+    await store.insertLink(confirmedLink());
+    const proven = samplePost("post-binding", MEMBER);
+    await replaceBlogPost(proven);
+    await insertArticleDelivery(sampleDelivery("pub-binding", AUTHOR, proven.postId));
+    setMemoryAuthorLinkMutatorForTests((link) => {
+      link.memberId = OTHER_MEMBER;
+    });
+    const blocked = await postDeletion(deletionBody());
+    assert.equal(blocked.status, 503);
+    assert.equal(blocked.body.meta.code, "cleanup_incomplete");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "pending");
+    assert.deepEqual(await findBlogPostById(proven.postId), proven);
+    assert.equal(listArticleDeliveriesForTests().length, 1);
+    assert.equal((await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.authorDeletionPending, true);
+
+    setMemoryAuthorLinkMutatorForTests((link) => {
+      link.memberId = MEMBER;
+    });
+    const resumed = await postDeletion(deletionBody());
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.body.data?.status, "completed");
+    assert.equal(await findBlogPostById(proven.postId), null);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+  });
+
+  it("keeps an interrupted cleanup pending and resumes it", async () => {
+    await store.insertLink(confirmedLink());
+    const proven = samplePost("post-resume", MEMBER);
+    await replaceBlogPost(proven);
+    await insertArticleDelivery(sampleDelivery("pub-resume", AUTHOR, proven.postId));
+    const body = deletionBody();
+    const at = stamp();
+    setAuthorDeletionCleanupFailureForTests("before_writes");
+    const interrupted = await postDeletion(body, at);
+    assert.equal(interrupted.status, 503);
+    assert.equal(interrupted.body.meta.code, "cleanup_incomplete");
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "pending");
+    assert.ok(await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR));
     assert.equal((await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR))?.memberId, MEMBER);
+    assert.deepEqual(await findBlogPostById(proven.postId), proven);
+    assert.equal(listArticleDeliveriesForTests().length, 1);
+
+    setAuthorDeletionCleanupFailureForTests("off");
+    const resumed = await postDeletion(body, at);
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.body.data?.status, "completed");
+    assert.equal(resumed.body.data?.idempotent, false);
+    assert.equal(await findBlogPostById(proven.postId), null);
+    assert.equal(listArticleDeliveriesForTests().length, 0);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+    assert.ok(await store.findAuthorDeletionTombstone(INTEGRITY_MEDIA_SOURCE, AUTHOR));
+  });
+
+  it("accepts the same operation once when requests overlap", async () => {
+    await store.insertLink(confirmedLink());
+    const proven = samplePost("post-concurrent", MEMBER);
+    await replaceBlogPost(proven);
+    await insertArticleDelivery(sampleDelivery("pub-concurrent", AUTHOR, proven.postId));
+    const now = Math.floor(Date.now() / 1000);
+    const [first, second] = await Promise.all([
+      postDeletion(deletionBody(), String(now)),
+      postDeletion(deletionBody(), String(now - 1)),
+    ]);
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    const flags = [first.body.data?.idempotent, second.body.data?.idempotent];
+    assert.equal(flags.includes(false), true);
+    assert.equal(flags.includes(true), true);
+    assert.equal(await findBlogPostById(proven.postId), null);
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+    assert.equal((await store.findAuthorDeletionReceipt(OPERATION))?.status, "completed");
+  });
+
+  it("refuses to recreate the author link after cleanup", async () => {
+    await store.insertLink(confirmedLink());
+    const response = await postDeletion(deletionBody());
+    assert.equal(response.status, 200);
+    assert.equal(await store.insertLink(confirmedLink()), "duplicate");
+    const provision = getProvisionMemoryForTests();
+    assert.ok(provision);
+    assert.equal(await provision.view().insertLink(confirmedLink()), "duplicate");
+    assert.equal(await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, AUTHOR), null);
+    assert.equal(provision.links().length, 0);
   });
 });
 
@@ -830,13 +1178,13 @@ async function replyInput() {
   };
 }
 
-function samplePost(): BlogPost {
+function samplePost(postId = "post-kept", authorParticipantId = MEMBER): BlogPost {
   return {
-    postId: "post-kept",
-    authorParticipantId: MEMBER,
+    postId,
+    authorParticipantId,
     authorDisplayNameSnapshot: "Participant",
     title: "Kept dispatch",
-    slug: "post-kept",
+    slug: postId,
     excerpt: "Excerpt",
     content: "<p>Kept body</p>",
     categoryId: "our_life",
@@ -890,6 +1238,56 @@ function rememberUser(userId: string, memberId: string, role: "member" | "admin"
     createdAt: STORED_AT,
     updatedAt: STORED_AT,
   });
+}
+
+function sampleDelivery(publicationId: string, authorId: string, postId: string | null) {
+  return {
+    source: INTEGRITY_MEDIA_SOURCE,
+    publicationId,
+    payloadDigest: "ab".repeat(32),
+    authorId,
+    postId,
+    status: "published" as const,
+    phase: "complete" as const,
+    createdAt: STORED_AT,
+    updatedAt: STORED_AT,
+  };
+}
+
+function sampleComment(commentId: string, postId: string) {
+  return {
+    commentId,
+    postId,
+    authorParticipantId: OTHER_MEMBER,
+    authorDisplayNameSnapshot: "Reader",
+    content: "A comment that stays with its post.",
+    status: "visible" as const,
+    moderationState: "none" as const,
+    safetyOutcome: null,
+    createdAt: STORED_AT,
+    updatedAt: STORED_AT,
+  };
+}
+
+function sampleTranslation(
+  sourceKind: "blog_post" | "discussion_comment",
+  sourceRecordId: string,
+  translationId: string,
+) {
+  return {
+    translationId,
+    sourceKind,
+    sourceRecordId,
+    sourceVersion: "1",
+    sourceLanguage: "en" as const,
+    targetLanguage: "es" as const,
+    translatedContent: "texto",
+    translationProvider: "deterministic" as const,
+    translationKind: "machine" as const,
+    createdAt: STORED_AT,
+    stale: false,
+    freshness: "current" as const,
+  };
 }
 
 function restoreEnv(value: string | undefined, name: string): void {

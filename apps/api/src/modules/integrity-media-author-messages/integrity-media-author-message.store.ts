@@ -73,6 +73,11 @@ export interface IntegrityMediaAuthorMessageStore {
   }): Promise<number>;
   appendAudit(record: IntegrityMediaAuthorMessageAuditRecord): Promise<void>;
   listAudits(): Promise<IntegrityMediaAuthorMessageAuditRecord[]>;
+  /** Exact recipientExternalAuthorId only. Other authors stay. */
+  deleteForAuthor(
+    recipientExternalAuthorId: string,
+    options?: { session?: ClientSession },
+  ): Promise<{ messages: number; audits: number }>;
 }
 
 export function createMemoryIntegrityMediaAuthorMessageStore(): IntegrityMediaAuthorMessageStore {
@@ -182,6 +187,24 @@ export function createMemoryIntegrityMediaAuthorMessageStore(): IntegrityMediaAu
 
     async listAudits() {
       return audits.map((record) => ({ ...record }));
+    },
+
+    async deleteForAuthor(recipientExternalAuthorId) {
+      let messagesRemoved = 0;
+      for (const [messageId, message] of messages) {
+        if (message.recipientExternalAuthorId === recipientExternalAuthorId) {
+          messages.delete(messageId);
+          messagesRemoved += 1;
+        }
+      }
+      let auditsRemoved = 0;
+      for (let index = audits.length - 1; index >= 0; index -= 1) {
+        if (audits[index]?.recipientExternalAuthorId === recipientExternalAuthorId) {
+          audits.splice(index, 1);
+          auditsRemoved += 1;
+        }
+      }
+      return { messages: messagesRemoved, audits: auditsRemoved };
     },
   };
 }
@@ -419,6 +442,14 @@ export function createMongoIntegrityMediaAuthorMessageStore(): IntegrityMediaAut
     async listAudits() {
       const documents = await audits().find({}).toArray();
       return documents.map((document) => withoutId(document));
+    },
+
+    async deleteForAuthor(recipientExternalAuthorId, options) {
+      const sessionOptions = options?.session ? { session: options.session } : {};
+      const filter = { recipientExternalAuthorId };
+      const messageResult = await messages().deleteMany(filter, sessionOptions);
+      const auditResult = await audits().deleteMany(filter, sessionOptions);
+      return { messages: messageResult.deletedCount, audits: auditResult.deletedCount };
     },
   };
 }

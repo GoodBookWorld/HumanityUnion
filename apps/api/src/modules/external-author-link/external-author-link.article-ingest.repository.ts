@@ -1,4 +1,5 @@
 import type { BlogPostStatus } from "@hu/types";
+import type { ClientSession } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
@@ -105,6 +106,68 @@ function isDuplicateKey(error: unknown): boolean {
     "code" in error &&
     (error as { code?: number }).code === 11_000
   );
+}
+
+/**
+ * Deliveries whose authorId matches this author ignoring case.
+ * Rows with no authorId are not returned and are not deletion candidates.
+ */
+export async function listArticleDeliveriesForAuthorDeletion(
+  authorId: string,
+  options?: { session?: ClientSession },
+): Promise<ArticleDeliveryRecord[]> {
+  if (!options?.session && articleDeliveryUsesMemory()) {
+    const lowered = authorId.toLowerCase();
+    return [...memoryRows.values()]
+      .filter((row) => {
+        const author = row.authorId;
+        return (
+          row.source === INTEGRITY_MEDIA_SOURCE &&
+          typeof author === "string" &&
+          author.length > 0 &&
+          author.toLowerCase() === lowered
+        );
+      })
+      .map((row) => ({ ...row }));
+  }
+
+  const documents = await collection()
+    .find(
+      {
+        source: INTEGRITY_MEDIA_SOURCE,
+        authorId: { $type: "string", $ne: "" },
+        $expr: { $eq: [{ $toLower: "$authorId" }, authorId.toLowerCase()] },
+      },
+      {
+        projection: { _id: 0 },
+        ...(options?.session ? { session: options.session } : {}),
+      },
+    )
+    .toArray();
+  return documents;
+}
+
+export async function deleteArticleDeliveriesByPublicationIds(
+  publicationIds: readonly string[],
+  options?: { session?: ClientSession },
+): Promise<number> {
+  if (publicationIds.length === 0) {
+    return 0;
+  }
+  if (!options?.session && articleDeliveryUsesMemory()) {
+    let removed = 0;
+    for (const publicationId of publicationIds) {
+      if (memoryRows.delete(deliveryKey(INTEGRITY_MEDIA_SOURCE, publicationId))) {
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+  const result = await collection().deleteMany(
+    { source: INTEGRITY_MEDIA_SOURCE, publicationId: { $in: [...publicationIds] } },
+    options?.session ? { session: options.session } : {},
+  );
+  return result.deletedCount;
 }
 
 export async function findArticleDelivery(

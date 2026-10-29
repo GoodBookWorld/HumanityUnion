@@ -1,5 +1,5 @@
 import type { BlogComment, BlogCommentStatus } from "@hu/types";
-import type { Filter } from "mongodb";
+import type { ClientSession, Filter } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
@@ -291,6 +291,35 @@ export async function countVisibleBlogCommentsByPostIds(
     result.set(row._id, row.count);
   }
   return result;
+}
+
+export async function deleteBlogCommentsByPostIds(
+  postIds: readonly string[],
+  options?: { session?: ClientSession },
+): Promise<number> {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  if (options?.session) {
+    const result = await commentsCollection().deleteMany(
+      { postId: { $in: [...postIds] } },
+      { session: options.session },
+    );
+    return result.deletedCount;
+  }
+  if (!isMongoConfigured()) {
+    let removed = 0;
+    for (let index = memoryComments.length - 1; index >= 0; index -= 1) {
+      if (postIds.includes(memoryComments[index]!.postId)) {
+        memoryComments.splice(index, 1);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+  await ensureReady();
+  const result = await commentsCollection().deleteMany({ postId: { $in: [...postIds] } });
+  return result.deletedCount;
 }
 
 export async function deleteBlogCommentsByPostIdsForTests(postIds: readonly string[]): Promise<void> {

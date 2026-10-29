@@ -399,6 +399,14 @@ async function resolveSsoIdentity(
   const link = await db.findLink(input.externalAuthorId);
 
   if (!link) {
+    if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId)) {
+      fail(
+        409,
+        "author_deletion_pending",
+        "This Integrity Media author connection is pending deletion.",
+        input,
+      );
+    }
     fail(404, "author_not_found", "This Integrity Media author is not linked.", input);
   }
 
