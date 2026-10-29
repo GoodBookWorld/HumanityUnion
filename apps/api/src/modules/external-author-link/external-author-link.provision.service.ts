@@ -7,6 +7,7 @@ import { hashPassword } from "../auth/auth-password.js";
 import type { AuthUserRecord } from "../auth/auth-user.types.js";
 import { buildNewPersistedMember } from "../member/infrastructure/member.persistence.js";
 import { buildDefaultMemberProfile } from "../member-profile/member-profile.repository.js";
+import { integrityMediaAuthorDeletionBlocks } from "./external-author-link.author-deletion.js";
 import { isIntegrityMediaBindingRecoveryStateFamily } from "./external-author-link.binding-recovery-state.js";
 import { resolveIntegrityMediaLinkConfig, buildIntegrityMediaReturnUrl } from "./external-author-link.config.js";
 import {
@@ -177,6 +178,14 @@ export async function registerProvisionAttempt(input: {
     throw new ProvisionRequestError(409, "attempt_expired", "This provision attempt has expired.");
   }
 
+  if (await integrityMediaAuthorDeletionBlocks(normalized.externalAuthorId)) {
+    throw new ProvisionRequestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
+
   return withProvisionLock(() => storeProvisionAttempt(normalized, now));
 }
 
@@ -198,6 +207,18 @@ export async function registerProvisionSnapshot(input: {
 
   if (!parsed.ok) {
     throw new ProvisionRequestError(400, parsed.code, "The provision snapshot is not valid.");
+  }
+
+  const existingAttempt = await currentProvisionDatabase().findAttempt(normalized.attemptId);
+  if (
+    existingAttempt &&
+    (await integrityMediaAuthorDeletionBlocks(existingAttempt.externalAuthorId))
+  ) {
+    throw new ProvisionRequestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
   }
 
   const attached = await withProvisionLock(() =>
@@ -302,6 +323,14 @@ async function confirmInTransaction(
   }
 
   const existingLink = await db.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, attempt.externalAuthorId);
+  if (await integrityMediaAuthorDeletionBlocks(attempt.externalAuthorId, existingLink)) {
+    throw new ProvisionRequestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
+
   const boundMemberId = attempt.memberId ?? existingLink?.memberId ?? null;
   const emailOwner = await db.findUserByEmail(attempt.email);
 
@@ -570,6 +599,14 @@ async function insertProvisionalLink(
   db: ProvisionDatabase,
   input: { externalAuthorId: string; memberId: string; now: Date },
 ): Promise<ExternalAuthorLinkRecord> {
+  if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId)) {
+    throw new ProvisionRequestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
+
   const timestamp = input.now.toISOString();
   const record: ExternalAuthorLinkRecord = {
     source: INTEGRITY_MEDIA_SOURCE,

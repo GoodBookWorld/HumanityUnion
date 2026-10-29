@@ -1,3 +1,4 @@
+import { integrityMediaAuthorDeletionBlocks } from "../external-author-link/external-author-link.author-deletion.js";
 import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
 import { getExternalAuthorLinkStore } from "../external-author-link/external-author-link.store.js";
 import { INTEGRITY_MEDIA_AUTHOR_MESSAGE_HISTORY_PAGE_SIZE } from "./integrity-media-author-message.constants.js";
@@ -65,6 +66,14 @@ export async function listIntegrityMediaAuthorMessageHistory(input: {
   const link = await getExternalAuthorLinkStore().findLinkByMember(INTEGRITY_MEDIA_SOURCE, memberId);
   if (!link || link.memberId !== memberId || !link.externalAuthorId) {
     return failure(404, "link_missing", "This member is not linked to Integrity Media.");
+  }
+
+  if (await integrityMediaAuthorDeletionBlocks(link.externalAuthorId, link)) {
+    return failure(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
   }
 
   const limit = input.limit ?? INTEGRITY_MEDIA_AUTHOR_MESSAGE_HISTORY_PAGE_SIZE;
@@ -140,6 +149,14 @@ export async function resolveIntegrityMediaAuthorReplyMember(input: {
     return failure(404, "not_found", "The author conversation could not be found.");
   }
 
+  if (await integrityMediaAuthorDeletionBlocks(link.externalAuthorId, link)) {
+    return failure(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
+
   return { ok: true, data: { memberId: link.memberId } };
 }
 
@@ -174,6 +191,14 @@ export async function acknowledgePresentedIntegrityMediaAuthorChats(input: {
   const link = await getExternalAuthorLinkStore().findLinkByMember(INTEGRITY_MEDIA_SOURCE, memberId);
   if (!link || link.memberId !== memberId || !link.externalAuthorId) {
     return failure(404, "link_missing", "This member is not linked to Integrity Media.");
+  }
+
+  if (await integrityMediaAuthorDeletionBlocks(link.externalAuthorId, link)) {
+    return failure(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
   }
 
   const messageStore = getIntegrityMediaAuthorMessageStore();
