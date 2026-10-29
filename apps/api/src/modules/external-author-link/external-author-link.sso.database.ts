@@ -82,6 +82,7 @@ export interface MemorySsoState {
   members(): SsoMemberView[];
   grants(): SsoGrantRecord[];
   sessions(): AuthSessionRecord[];
+  removeGrantsForAuthor(externalAuthorId: string): number;
 }
 
 let memoryState: MemorySsoState | null = null;
@@ -93,6 +94,32 @@ export function setSsoMemoryForTests(state: MemorySsoState | null): void {
 
 export function getSsoMemoryForTests(): MemorySsoState | null {
   return memoryState;
+}
+
+/** Exact externalAuthorId only. Grants for other authors stay. */
+export async function deleteSsoGrantsForAuthorDeletion(
+  externalAuthorId: string,
+  session?: ClientSession,
+): Promise<number> {
+  if (session) {
+    const result = await getMongoCollection<SsoGrantRecord>(
+      MONGO_COLLECTIONS.externalAuthorSsoGrants,
+    ).deleteMany({ externalAuthorId }, { session });
+    return result.deletedCount;
+  }
+
+  if (memoryState) {
+    return memoryState.removeGrantsForAuthor(externalAuthorId);
+  }
+
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  const result = await getMongoCollection<SsoGrantRecord>(
+    MONGO_COLLECTIONS.externalAuthorSsoGrants,
+  ).deleteMany({ externalAuthorId });
+  return result.deletedCount;
 }
 
 export function createMemorySsoState(): MemorySsoState {
@@ -155,6 +182,16 @@ export function createMemorySsoState(): MemorySsoState {
     users: () => [...users.values()].map((user) => ({ ...user })),
     members: () => [...members.values()].map((member) => ({ ...member })),
     grants: () => [...grants.values()].map((grant) => ({ ...grant })),
+    removeGrantsForAuthor(externalAuthorId) {
+      let removed = 0;
+      for (const [grantId, grant] of grants) {
+        if (grant.externalAuthorId === externalAuthorId) {
+          grants.delete(grantId);
+          removed += 1;
+        }
+      }
+      return removed;
+    },
     sessions: () => [...sessions.values()].map((session) => ({ ...session })),
   };
 

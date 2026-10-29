@@ -223,6 +223,7 @@ export async function ingestIntegrityMediaArticle(input: {
     article.authorId,
   );
   if (!link) {
+    await assertAuthorDeletionAllowsArticle(article.authorId, null);
     throw new ArticleIngestError(
       404,
       "author_not_linked",

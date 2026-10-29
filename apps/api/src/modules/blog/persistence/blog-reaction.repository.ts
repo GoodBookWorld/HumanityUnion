@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { BlogReaction, BlogReactionKind, BlogReactionSummary } from "@hu/types";
+import type { ClientSession } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
@@ -179,6 +180,35 @@ export async function getBlogReactionSummary(input: {
     }
   }
   return { helpful, notHelpful, currentUserReaction };
+}
+
+export async function deleteBlogReactionsByPostIds(
+  postIds: readonly string[],
+  options?: { session?: ClientSession },
+): Promise<number> {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  if (options?.session) {
+    const result = await reactionsCollection().deleteMany(
+      { postId: { $in: [...postIds] } },
+      { session: options.session },
+    );
+    return result.deletedCount;
+  }
+  if (!isMongoConfigured()) {
+    let removed = 0;
+    for (let index = memoryReactions.length - 1; index >= 0; index -= 1) {
+      if (postIds.includes(memoryReactions[index]!.postId)) {
+        memoryReactions.splice(index, 1);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+  await ensureReady();
+  const result = await reactionsCollection().deleteMany({ postId: { $in: [...postIds] } });
+  return result.deletedCount;
 }
 
 export async function deleteBlogReactionsByPostIdsForTests(

@@ -183,6 +183,8 @@ export const MONGO_COLLECTIONS = {
   externalAuthorDisconnectEvents: "external_author_disconnect_events",
   externalAuthorDeletionReceipts: "external_author_deletion_receipts",
   externalAuthorDeletionTombstones: "external_author_deletion_tombstones",
+  /** Same-author write fence shared by deletion and link creation. */
+  externalAuthorDeletionGuards: "external_author_deletion_guards",
   externalAuthorProvisionAttempts: "external_author_provision_attempts",
   externalAuthorSsoGrants: "external_author_sso_grants",
   integrityMediaArticleDeliveries: "integrity_media_article_deliveries",

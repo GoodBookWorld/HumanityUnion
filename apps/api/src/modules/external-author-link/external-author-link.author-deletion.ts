@@ -1,4 +1,5 @@
 import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
+import { AuthorDeletionCleanupAbortError } from "./external-author-link.author-deletion.cleanup.js";
 import { isIntegrityMediaAuthorDeletionEnabled } from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_AUTHOR_ID_PATTERN,
@@ -21,15 +22,21 @@ import {
 import { isIntegrityMediaDeploymentTarget } from "./external-author-link.environment-target.js";
 import { integrityMediaEnvironmentTargetAccepted } from "./external-author-link.environment-target.js";
 import { getExternalAuthorLinkStore } from "./external-author-link.store.js";
-import type { ExternalAuthorDeletionTombstone } from "./external-author-link.types.js";
+import type {
+  AuthorDeletionRemovalCounts,
+  AuthorDeletionWithheldRecord,
+  ExternalAuthorDeletionTombstone,
+} from "./external-author-link.types.js";
 
 export interface IntegrityMediaAuthorDeletionSuccess {
   ok: true;
   operationId: string;
   authorId: string;
-  status: "pending";
-  cleanup: "pending";
+  status: "completed";
+  cleanup: "completed";
   idempotent: boolean;
+  withheld: AuthorDeletionWithheldRecord[];
+  removed: AuthorDeletionRemovalCounts;
 }
 
 export interface IntegrityMediaAuthorDeletionFailure {
@@ -149,15 +156,12 @@ export async function acceptIntegrityMediaAuthorDeletion(input: {
   try {
     const applied = await store.applyAuthorDeletion(command);
 
+    if (applied.status === "completed") {
+      return completedDeletion(applied);
+    }
+
     if (applied.status === "pending") {
-      return {
-        ok: true,
-        operationId: applied.operationId,
-        authorId: applied.externalAuthorId,
-        status: "pending",
-        cleanup: "pending",
-        idempotent: applied.idempotent,
-      };
+      return await finishPendingAuthorDeletion(command);
     }
 
     if (applied.status === "conflict") {
@@ -178,6 +182,56 @@ export async function acceptIntegrityMediaAuthorDeletion(input: {
     forgetIntegrityMediaAuthorDeletionSignature(input.signature);
     throw error;
   }
+}
+
+async function finishPendingAuthorDeletion(
+  command: AuthorDeletionCommand,
+): Promise<IntegrityMediaAuthorDeletionSuccess | IntegrityMediaAuthorDeletionFailure> {
+  try {
+    const cleaned = await getExternalAuthorLinkStore().completeAuthorDeletion(command);
+    if (cleaned.status === "completed") {
+      return completedDeletion(cleaned);
+    }
+    if (cleaned.status === "conflict") {
+      return failure(409, "operation_conflict", "This deletion operation is already bound to another request.");
+    }
+    return failure(
+      503,
+      "cleanup_incomplete",
+      "Integrity Media author deletion cleanup did not finish.",
+    );
+  } catch (error) {
+    if (
+      error instanceof AuthorDeletionCleanupAbortError ||
+      error instanceof MongoTransactionUnavailableError
+    ) {
+      return failure(
+        503,
+        "cleanup_incomplete",
+        "Integrity Media author deletion cleanup did not finish.",
+      );
+    }
+    throw error;
+  }
+}
+
+function completedDeletion(result: {
+  operationId: string;
+  externalAuthorId: string;
+  idempotent: boolean;
+  withheld: AuthorDeletionWithheldRecord[];
+  removed: AuthorDeletionRemovalCounts;
+}): IntegrityMediaAuthorDeletionSuccess {
+  return {
+    ok: true,
+    operationId: result.operationId,
+    authorId: result.externalAuthorId,
+    status: "completed",
+    cleanup: "completed",
+    idempotent: result.idempotent,
+    withheld: result.withheld,
+    removed: result.removed,
+  };
 }
 
 function requestShapeIsValid(input: {

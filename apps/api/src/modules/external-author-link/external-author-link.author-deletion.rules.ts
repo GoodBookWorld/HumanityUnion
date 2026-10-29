@@ -2,6 +2,8 @@ import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/m
 import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import { linkRevisionMatches } from "./external-author-link.revision.js";
 import type {
+  AuthorDeletionRemovalCounts,
+  AuthorDeletionWithheldRecord,
   ExternalAuthorDeletionReceipt,
   ExternalAuthorDeletionTombstone,
   ExternalAuthorLinkRecord,
@@ -33,9 +35,35 @@ export type AuthorDeletionApplyResult =
       operationId: string;
       externalAuthorId: string;
     }
+  | {
+      status: "completed";
+      idempotent: true;
+      operationId: string;
+      externalAuthorId: string;
+      withheld: AuthorDeletionWithheldRecord[];
+      removed: AuthorDeletionRemovalCounts;
+    }
   | { status: "rejected"; idempotent: boolean; code: AuthorDeletionRejectCode }
   | { status: "conflict" }
   | { status: "unavailable" };
+
+export function emptyAuthorDeletionRemovalCounts(): AuthorDeletionRemovalCounts {
+  return {
+    posts: 0,
+    comments: 0,
+    reactions: 0,
+    translations: 0,
+    publicationDeliveries: 0,
+    articleDeliveries: 0,
+    provisionAttempts: 0,
+    ssoGrants: 0,
+    messages: 0,
+    messageAudits: 0,
+    disconnectEvents: 0,
+    linkAudits: 0,
+    links: 0,
+  };
+}
 
 export class AuthorDeletionRestartError extends Error {
   constructor() {
@@ -103,6 +131,8 @@ function storedLinkInstance(value: string | null | undefined): string | null {
 }
 
 export interface AuthorDeletionIo {
+  /** Write the shared author guard so a concurrent link insert conflicts. */
+  bumpGuard(externalAuthorId: string): Promise<void>;
   findReceipt(operationId: string): Promise<ExternalAuthorDeletionReceipt | null>;
   findLink(externalAuthorId: string): Promise<ExternalAuthorLinkRecord | null>;
   findTombstone(externalAuthorId: string): Promise<ExternalAuthorDeletionTombstone | null>;
@@ -115,6 +145,7 @@ export async function executeAuthorDeletion(
   io: AuthorDeletionIo,
   command: AuthorDeletionCommand,
 ): Promise<AuthorDeletionApplyResult> {
+  await io.bumpGuard(command.externalAuthorId);
   const existing = await io.findReceipt(command.operationId);
   if (existing) {
     if (!sameAuthorDeletionRequest(existing, command)) {
@@ -127,6 +158,17 @@ export async function executeAuthorDeletion(
         idempotent: true,
         operationId: existing.operationId,
         externalAuthorId: existing.externalAuthorId,
+      };
+    }
+
+    if (existing.status === "completed") {
+      return {
+        status: "completed",
+        idempotent: true,
+        operationId: existing.operationId,
+        externalAuthorId: existing.externalAuthorId,
+        withheld: existing.withheld?.map((entry) => ({ ...entry })) ?? [],
+        removed: existing.removed ? { ...existing.removed } : emptyAuthorDeletionRemovalCounts(),
       };
     }
 

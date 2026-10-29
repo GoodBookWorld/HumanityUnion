@@ -3,6 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
+import type { ClientSession } from "mongodb";
 import type { BlogPublicationDeliveryRecord, BlogPublicationDeliveryStatus } from "@hu/types";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -50,6 +51,35 @@ function isDuplicateKeyError(error: unknown): boolean {
 
 export function resetBlogPublicationDeliveriesForTests(): void {
   memoryDeliveries.length = 0;
+}
+
+export async function deleteBlogPublicationDeliveriesByPostIds(
+  postIds: readonly string[],
+  options?: { session?: ClientSession },
+): Promise<number> {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  if (options?.session) {
+    const result = await collection().deleteMany(
+      { postId: { $in: [...postIds] } },
+      { session: options.session },
+    );
+    return result.deletedCount;
+  }
+  if (isMemoryStore()) {
+    let removed = 0;
+    for (let index = memoryDeliveries.length - 1; index >= 0; index -= 1) {
+      if (postIds.includes(memoryDeliveries[index]!.postId)) {
+        memoryDeliveries.splice(index, 1);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+  await ensureReady();
+  const result = await collection().deleteMany({ postId: { $in: [...postIds] } });
+  return result.deletedCount;
 }
 
 export async function findBlogPublicationDelivery(

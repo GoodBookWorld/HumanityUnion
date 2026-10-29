@@ -119,6 +119,9 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
 
     const current = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.authorId);
     if (!current) {
+      if (await integrityMediaAuthorDeletionBlocks(input.authorId)) {
+        return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+      }
       return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
     }
 
@@ -132,6 +135,9 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
   const link = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.authorId);
 
   if (!link) {
+    if (await integrityMediaAuthorDeletionBlocks(input.authorId)) {
+      return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+    }
     return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
   }
 
@@ -148,12 +154,18 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
   });
 
   if (updated === "missing") {
+    if (await integrityMediaAuthorDeletionBlocks(input.authorId)) {
+      return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+    }
     return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
   }
 
   if (updated === "stale") {
     const current = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.authorId);
     if (!current) {
+      if (await integrityMediaAuthorDeletionBlocks(input.authorId)) {
+        return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+      }
       return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
     }
 

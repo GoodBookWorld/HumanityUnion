@@ -47,6 +47,21 @@ export function listContentTranslationsForSourceMemory(input: {
   );
 }
 
+export function deleteBlogPostTranslationsMemory(postIds: readonly string[]): number {
+  if (postIds.length === 0) {
+    return 0;
+  }
+  const ids = new Set(postIds);
+  let removed = 0;
+  for (const [key, record] of records) {
+    if (record.sourceKind === "blog_post" && ids.has(record.sourceRecordId)) {
+      records.delete(key);
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
 export function markStaleTranslationsForSourceMemory(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;
