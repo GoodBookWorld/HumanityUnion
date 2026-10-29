@@ -32,6 +32,7 @@ describe("disposable MongoDB author-deletion cleanup", () => {
         "--import",
         "tsx",
         "--test",
+        "--test-reporter=tap",
         "--test-concurrency=1",
         "test/integration/integrity-media-author-deletion.cleanup.mongo.worker.ts",
       ],
