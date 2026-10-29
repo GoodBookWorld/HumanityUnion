@@ -13,6 +13,7 @@ import {
   findActiveEmailConfirmationCode,
   findLatestEmailConfirmationSendAt,
 } from "../email/email-confirmation-code.repository.js";
+import { integrityMediaAuthorDeletionBlocks } from "./external-author-link.author-deletion.js";
 import { resolveIntegrityMediaLinkConfig } from "./external-author-link.config.js";
 import {
   INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN,
@@ -399,6 +400,15 @@ async function resolveSsoIdentity(
 
   if (!link) {
     fail(404, "author_not_found", "This Integrity Media author is not linked.", input);
+  }
+
+  if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId, link)) {
+    fail(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+      input,
+    );
   }
 
   if (link.state === "disabled") {

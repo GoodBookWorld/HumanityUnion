@@ -7,6 +7,15 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
 import {
+  assertAuthorDeletionTransactionAvailable,
+  AuthorDeletionRestartError,
+  classifyAuthorDeletionBinding,
+  executeAuthorDeletion,
+  type AuthorDeletionApplyResult,
+  type AuthorDeletionCommand,
+  type AuthorDeletionIo,
+} from "./external-author-link.author-deletion.rules.js";
+import {
   executeBindingRecovery,
   resolveAbortedBindingRecovery,
   type BindingRecoveryApplyInput,
@@ -17,6 +26,8 @@ import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 import { isOrdinaryIntegrityMediaCollaborationAllowed } from "./external-author-link.collaboration.js";
 import { assignedLinkRevision, linkRevisionMatches } from "./external-author-link.revision.js";
 import type {
+  ExternalAuthorDeletionReceipt,
+  ExternalAuthorDeletionTombstone,
   ExternalAuthorDisconnectEventRecord,
   ExternalAuthorLinkAuditRecord,
   ExternalAuthorLinkRecord,
@@ -151,6 +162,13 @@ export interface ExternalAuthorLinkStore {
    */
   applyBindingRecovery(input: BindingRecoveryApplyInput): Promise<BindingRecoveryApplyResult>;
   listBindingRecoveryReceipts(): Promise<ExternalAuthorLinkRecoveryReceiptRecord[]>;
+  findAuthorDeletionTombstone(
+    source: typeof INTEGRITY_MEDIA_SOURCE,
+    externalAuthorId: string,
+    options?: { session?: ClientSession },
+  ): Promise<ExternalAuthorDeletionTombstone | null>;
+  findAuthorDeletionReceipt(operationId: string): Promise<ExternalAuthorDeletionReceipt | null>;
+  applyAuthorDeletion(command: AuthorDeletionCommand): Promise<AuthorDeletionApplyResult>;
 }
 
 export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
@@ -260,6 +278,9 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
   };
 
+  const deletionReceipts = new Map<string, ExternalAuthorDeletionReceipt>();
+  const deletionTombstones = new Map<string, ExternalAuthorDeletionTombstone>();
+
   return {
     async insertResult(record) {
       if (results.has(record.resultCode)) {
@@ -306,7 +327,7 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       const authorKey = linkKey(record.source, record.externalAuthorId);
       const memberKey = linkKey(record.source, record.memberId);
 
-      if (byAuthor.has(authorKey) || byMember.has(memberKey)) {
+      if (deletionTombstones.has(authorKey) || byAuthor.has(authorKey) || byMember.has(memberKey)) {
         return "duplicate";
       }
 
@@ -325,6 +346,8 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       }
 
       if (
+        existing.authorDeletionPending === true ||
+        deletionTombstones.has(authorKey) ||
         existing.memberId !== record.memberId ||
         existing.externalAuthorId !== record.externalAuthorId ||
         existing.source !== record.source
@@ -344,6 +367,10 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         const current = byAuthor.get(authorKey);
         if (!current || current.memberId !== input.memberId) {
           return "missing" as const;
+        }
+
+        if (current.authorDeletionPending === true || deletionTombstones.has(authorKey)) {
+          return "stale" as const;
         }
 
         if (!linkRevisionMatches(current.linkRevision, input.linkRevision)) {
@@ -371,6 +398,10 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
           return { status: "missing" as const };
         }
 
+        if (current.authorDeletionPending === true || deletionTombstones.has(authorKey)) {
+          return { status: "mismatch" as const };
+        }
+
         const decision = classifyConfirmCandidate(current, input);
         if (decision !== "provisional") {
           return decision === "already_confirmed"
@@ -392,7 +423,12 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     async holdAuthorReplyLink(input) {
       const authorKey = linkKey(input.source, input.externalAuthorId);
       const current = byAuthor.get(authorKey);
-      if (!current || !authorReplyLinkIsEligible(current, input)) {
+      if (
+        !current ||
+        current.authorDeletionPending === true ||
+        deletionTombstones.has(authorKey) ||
+        !authorReplyLinkIsEligible(current, input)
+      ) {
         return null;
       }
 
@@ -491,6 +527,96 @@ export function createMemoryExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     async listBindingRecoveryReceipts() {
       return [...recoveryReceipts.values()].map((record) => copyReceipt(record));
     },
+
+    async findAuthorDeletionTombstone(source, externalAuthorId) {
+      return copyDeletionTombstone(deletionTombstones.get(linkKey(source, externalAuthorId)));
+    },
+
+    async findAuthorDeletionReceipt(operationId) {
+      return copyDeletionReceipt(deletionReceipts.get(operationId));
+    },
+
+    async applyAuthorDeletion(command) {
+      assertAuthorDeletionTransactionAvailable();
+      return runIntegrityMediaLinkCriticalSection(() =>
+        runAuthorDeletionAttempt(() =>
+          executeAuthorDeletion(memoryDeletionIo(command, {
+            receipts: deletionReceipts,
+            tombstones: deletionTombstones,
+            byAuthor,
+          }), command),
+        ),
+      );
+    },
+  };
+}
+
+async function runAuthorDeletionAttempt(
+  attempt: () => Promise<AuthorDeletionApplyResult>,
+): Promise<AuthorDeletionApplyResult> {
+  try {
+    return await attempt();
+  } catch (error) {
+    if (error instanceof AuthorDeletionRestartError || isDuplicateKeyError(error)) {
+      return attempt();
+    }
+
+    throw error;
+  }
+}
+
+function memoryDeletionIo(
+  _command: AuthorDeletionCommand,
+  state: {
+    receipts: Map<string, ExternalAuthorDeletionReceipt>;
+    tombstones: Map<string, ExternalAuthorDeletionTombstone>;
+    byAuthor: Map<string, ExternalAuthorLinkRecord>;
+  },
+): AuthorDeletionIo {
+  return {
+    async findReceipt(operationId) {
+      return copyDeletionReceipt(state.receipts.get(operationId));
+    },
+
+    async findLink(externalAuthorId) {
+      return copyLink(state.byAuthor.get(linkKey(INTEGRITY_MEDIA_SOURCE, externalAuthorId)));
+    },
+
+    async findTombstone(externalAuthorId) {
+      return copyDeletionTombstone(
+        state.tombstones.get(linkKey(INTEGRITY_MEDIA_SOURCE, externalAuthorId)),
+      );
+    },
+
+    async insertReceipt(record) {
+      if (state.receipts.has(record.operationId)) {
+        return "duplicate";
+      }
+
+      state.receipts.set(record.operationId, { ...record });
+      return "inserted";
+    },
+
+    async insertTombstone(record) {
+      const key = linkKey(record.source, record.externalAuthorId);
+      if (state.tombstones.has(key)) {
+        return "duplicate";
+      }
+
+      state.tombstones.set(key, { ...record });
+      return "inserted";
+    },
+
+    async markLinkPending(command) {
+      const current = state.byAuthor.get(linkKey(INTEGRITY_MEDIA_SOURCE, command.externalAuthorId));
+      if (!current || !classifyAuthorDeletionBinding(current, command).ok) {
+        return "missing";
+      }
+
+      current.authorDeletionPending = true;
+      current.updatedAt = command.nowIso;
+      return "marked";
+    },
   };
 }
 
@@ -505,6 +631,73 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     getMongoCollection<ExternalAuthorDisconnectEventRecord>(
       MONGO_COLLECTIONS.externalAuthorDisconnectEvents,
     );
+  const deletionReceipts = () =>
+    getMongoCollection<ExternalAuthorDeletionReceipt>(MONGO_COLLECTIONS.externalAuthorDeletionReceipts);
+  const deletionTombstones = () =>
+    getMongoCollection<ExternalAuthorDeletionTombstone>(
+      MONGO_COLLECTIONS.externalAuthorDeletionTombstones,
+    );
+
+  function mongoDeletionIo(session: ClientSession): AuthorDeletionIo {
+    const options = { session };
+    return {
+      async findReceipt(operationId) {
+        const document = await deletionReceipts().findOne({ operationId }, options);
+        return document ? withoutId(document) : null;
+      },
+
+      async findLink(externalAuthorId) {
+        const document = await links().findOne(
+          { source: INTEGRITY_MEDIA_SOURCE, externalAuthorId },
+          options,
+        );
+        return document ? withoutId(document) : null;
+      },
+
+      async findTombstone(externalAuthorId) {
+        const document = await deletionTombstones().findOne(
+          { source: INTEGRITY_MEDIA_SOURCE, externalAuthorId },
+          options,
+        );
+        return document ? withoutId(document) : null;
+      },
+
+      async insertReceipt(record) {
+        try {
+          await deletionReceipts().insertOne(record, options);
+          return "inserted";
+        } catch (error) {
+          if (isDuplicateKeyError(error)) {
+            return "duplicate";
+          }
+
+          throw error;
+        }
+      },
+
+      async insertTombstone(record) {
+        try {
+          await deletionTombstones().insertOne(record, options);
+          return "inserted";
+        } catch (error) {
+          if (isDuplicateKeyError(error)) {
+            return "duplicate";
+          }
+
+          throw error;
+        }
+      },
+
+      async markLinkPending(command) {
+        const updated = await links().findOneAndUpdate(
+          authorDeletionMarkFilter(command),
+          { $set: { authorDeletionPending: true, updatedAt: command.nowIso } },
+          { returnDocument: "after", session },
+        );
+        return updated ? "marked" : "missing";
+      },
+    };
+  }
 
   return {
     async insertResult(record, options) {
@@ -572,8 +765,17 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
 
     async insertLink(record, options) {
+      const sessionOptions = options?.session ? { session: options.session } : {};
+      const tombstone = await deletionTombstones().findOne(
+        { source: record.source, externalAuthorId: record.externalAuthorId },
+        sessionOptions,
+      );
+      if (tombstone) {
+        return "duplicate";
+      }
+
       try {
-        await links().insertOne(record, options?.session ? { session: options.session } : {});
+        await links().insertOne(record, sessionOptions);
         return "inserted";
       } catch (error) {
         if (isDuplicateKeyError(error)) {
@@ -585,22 +787,43 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
     },
 
     async updateLink(record) {
+      const tombstone = await deletionTombstones().findOne({
+        source: record.source,
+        externalAuthorId: record.externalAuthorId,
+      });
       const result = await links().updateOne(
         {
           source: record.source,
           externalAuthorId: record.externalAuthorId,
           memberId: record.memberId,
+          authorDeletionPending: { $ne: true },
         },
         {
           $set: linkUpdateFields(record),
         },
       );
 
-      return result.matchedCount === 0 ? "missing" : "updated";
+      if (result.matchedCount > 0) {
+        return "updated";
+      }
+
+      const existing = await links().findOne({
+        source: record.source,
+        externalAuthorId: record.externalAuthorId,
+      });
+      if (existing?.authorDeletionPending === true || tombstone) {
+        return "refused";
+      }
+
+      return "missing";
     },
 
     async compareAndDisableLink(input) {
       return runIntegrityMediaLinkCriticalSection(async () => {
+        const tombstone = await deletionTombstones().findOne({
+          source: input.source,
+          externalAuthorId: input.externalAuthorId,
+        });
         const existing = await links().findOne({
           source: input.source,
           externalAuthorId: input.externalAuthorId,
@@ -610,11 +833,16 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
           return "missing" as const;
         }
 
+        if (existing.authorDeletionPending === true || tombstone) {
+          return "stale" as const;
+        }
+
         const updated = await links().findOneAndUpdate(
           {
             source: input.source,
             externalAuthorId: input.externalAuthorId,
             memberId: input.memberId,
+            authorDeletionPending: { $ne: true },
             ...integrityMediaDisconnectRevisionFilter(input.linkRevision),
           },
           {
@@ -643,6 +871,7 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
             linkInstanceId: input.linkInstanceId,
             state: "linked",
             linkFinalization: "provisional",
+            authorDeletionPending: { $ne: true },
           },
           { $set: { linkFinalization: "confirmed", updatedAt: input.nowIso } },
           { returnDocument: "after" },
@@ -657,6 +886,14 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
         });
         if (!current) {
           return { status: "missing" as const };
+        }
+
+        const tombstone = await deletionTombstones().findOne({
+          source: input.source,
+          externalAuthorId: input.externalAuthorId,
+        });
+        if (current.authorDeletionPending === true || tombstone) {
+          return { status: "mismatch" as const };
         }
 
         const decision = classifyConfirmCandidate(withoutId(current), input);
@@ -838,6 +1075,26 @@ export function createMongoExternalAuthorLinkStore(): ExternalAuthorLinkStore {
       const documents = await recoveryReceipts().find({}).toArray();
       return documents.map((document) => withoutId(document));
     },
+
+    async findAuthorDeletionTombstone(source, externalAuthorId, options) {
+      const document = await deletionTombstones().findOne(
+        { source, externalAuthorId },
+        options?.session ? { session: options.session } : {},
+      );
+      return document ? withoutId(document) : null;
+    },
+
+    async findAuthorDeletionReceipt(operationId) {
+      const document = await deletionReceipts().findOne({ operationId });
+      return document ? withoutId(document) : null;
+    },
+
+    async applyAuthorDeletion(command) {
+      assertAuthorDeletionTransactionAvailable();
+      return runAuthorDeletionAttempt(() =>
+        runMongoTransaction((session) => executeAuthorDeletion(mongoDeletionIo(session), command)),
+      );
+    },
   };
 }
 
@@ -998,6 +1255,7 @@ function pendingAuthorActivationFilter(
     source,
     state: "linked" as const,
     authorActivationPending: true,
+    authorDeletionPending: { $ne: true },
     linkFinalization: { $ne: "provisional" as const },
     $or: [
       { authorActivationAttemptAt: null },
@@ -1016,6 +1274,7 @@ function isPendingAuthorActivationEligible(
     record.source !== source ||
     record.state !== "linked" ||
     record.authorActivationPending !== true ||
+    record.authorDeletionPending === true ||
     record.linkFinalization === "provisional"
   ) {
     return false;
@@ -1214,6 +1473,7 @@ function authorReplyLinkFilter(input: {
     state: "linked",
     linkRevision: input.linkRevision,
     authorActivationPending: { $ne: true },
+    authorDeletionPending: { $ne: true },
     linkFinalization: { $ne: "provisional" as const },
     $or: [
       { collaborationStatus: "active" },
@@ -1248,6 +1508,44 @@ function boundAuthorLinkFilter(input: {
     state: "linked",
     linkFinalization: { $ne: "provisional" },
   };
+}
+
+function authorDeletionMarkFilter(command: AuthorDeletionCommand): Filter<ExternalAuthorLinkRecord> {
+  return {
+    $and: [
+      { source: INTEGRITY_MEDIA_SOURCE },
+      { externalAuthorId: command.externalAuthorId },
+      { memberId: command.expectedMemberId },
+      integrityMediaDisconnectRevisionFilter(command.expectedLinkRevision),
+      authorDeletionInstanceFilter(command.expectedLinkInstanceId),
+    ],
+  };
+}
+
+function authorDeletionInstanceFilter(expected: string | null): Filter<ExternalAuthorLinkRecord> {
+  if (expected === null) {
+    return {
+      $or: [
+        { linkInstanceId: { $exists: false } },
+        { linkInstanceId: { $type: "null" } },
+        { linkInstanceId: "" },
+      ],
+    };
+  }
+
+  return { linkInstanceId: expected };
+}
+
+function copyDeletionReceipt(
+  record: ExternalAuthorDeletionReceipt | undefined,
+): ExternalAuthorDeletionReceipt | null {
+  return record ? { ...record } : null;
+}
+
+function copyDeletionTombstone(
+  record: ExternalAuthorDeletionTombstone | undefined,
+): ExternalAuthorDeletionTombstone | null {
+  return record ? { ...record } : null;
 }
 
 function copyLink(record: ExternalAuthorLinkRecord | undefined): ExternalAuthorLinkRecord | null {

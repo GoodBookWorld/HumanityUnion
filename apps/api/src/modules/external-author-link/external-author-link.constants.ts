@@ -100,6 +100,19 @@ export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_INITIAL_PURPOSE =
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_PATH =
   "/api/v1/integrations/integrity-media/author-disconnect";
 
+/**
+ * IM → HU author-deletion foundation. A disconnect, redeem, article, or SSO
+ * signature cannot open a deletion, and this purpose cannot authorize those flows.
+ * Content cleanup is a later phase. The flag defaults off.
+ */
+export const INTEGRITY_MEDIA_AUTHOR_DELETION_PURPOSE = "integrity-media-author-deletion";
+
+export const INTEGRITY_MEDIA_AUTHOR_DELETION_PATH =
+  "/api/v1/integrations/integrity-media/author-deletion";
+
+export const INTEGRITY_MEDIA_AUTHOR_DELETION_ENABLED_ENV =
+  "INTEGRITY_MEDIA_AUTHOR_DELETION_ENABLED";
+
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_TIMESTAMP_HEADER = "x-im-hu-timestamp";
 export const INTEGRITY_MEDIA_AUTHOR_DISCONNECT_SIGNATURE_HEADER = "x-im-hu-signature";
 

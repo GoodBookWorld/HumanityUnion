@@ -44,6 +44,10 @@ import {
   noteIntegrityMediaRedeemSignature,
   signIntegrityMediaLinkRedeem,
 } from "./external-author-link.hmac.js";
+import {
+  AUTHOR_DELETION_PENDING_MESSAGE,
+  integrityMediaAuthorDeletionBlocks,
+} from "./external-author-link.author-deletion.js";
 import { resolveIntegrityMediaCollaborationStatus } from "./external-author-link.collaboration.js";
 import { findProvisionRedeemOutcome } from "./external-author-link.provision.service.js";
 import {
@@ -650,6 +654,10 @@ export async function recoverProvenIntegrityMediaAuthorLink(input: {
     return failure(404, "link_not_found", "No proven Integrity Media author link exists.");
   }
 
+  if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId, link)) {
+    return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+  }
+
   if (link.linkFinalization === "provisional") {
     return failure(409, "link_provisional", "This Integrity Media link is not confirmed.");
   }
@@ -794,6 +802,11 @@ async function establishLink(
   | { ok: true; reconnected: boolean; linkRevision: number; reason: "confirmed" | "already_linked" | "reconnected" }
   | { ok: false; conflict: ExternalAuthorLinkConflict }
 > {
+  const blocked = await rejectAuthorDeletion(store, input.externalAuthorId);
+  if (blocked) {
+    return blocked;
+  }
+
   const decision = await classifyLink(store, input);
 
   if (!decision.ok) {
@@ -801,6 +814,11 @@ async function establishLink(
   }
 
   if (decision.existing) {
+    const stillBlocked = await rejectAuthorDeletion(store, input.externalAuthorId);
+    if (stillBlocked) {
+      return stillBlocked;
+    }
+
     if (decision.existing.state !== "disabled") {
       const linkRevision = revisionForDuplicateRedeem(decision.existing.linkRevision);
       if (
@@ -813,11 +831,23 @@ async function establishLink(
           updatedAt: input.now.toISOString(),
         });
         if (materialized !== "updated") {
-          return { ok: false, conflict: "external_author_already_linked" };
+          return (
+            (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+              ok: false,
+              conflict: "external_author_already_linked",
+            }
+          );
         }
       }
 
-      return { ok: true, reconnected: false, linkRevision, reason: "already_linked" };
+      return (
+        (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+          ok: true,
+          reconnected: false,
+          linkRevision,
+          reason: "already_linked",
+        }
+      );
     }
 
     const linkRevision = revisionForReconnect(decision.existing.linkRevision);
@@ -841,10 +871,22 @@ async function establishLink(
     });
 
     if (updated !== "updated") {
-      return { ok: false, conflict: "external_author_already_linked" };
+      return (
+        (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+          ok: false,
+          conflict: "external_author_already_linked",
+        }
+      );
     }
 
-    return { ok: true, reconnected: true, linkRevision, reason: "reconnected" };
+    return (
+      (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+        ok: true,
+        reconnected: true,
+        linkRevision,
+        reason: "reconnected",
+      }
+    );
   }
 
   const linkRevision = revisionForNewLink();
@@ -865,7 +907,19 @@ async function establishLink(
   const inserted = await store.insertLink(record);
 
   if (inserted === "inserted") {
-    return { ok: true, reconnected: false, linkRevision, reason: "confirmed" };
+    return (
+      (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+        ok: true,
+        reconnected: false,
+        linkRevision,
+        reason: "confirmed",
+      }
+    );
+  }
+
+  const racedBlocked = await rejectAuthorDeletion(store, input.externalAuthorId);
+  if (racedBlocked) {
+    return racedBlocked;
   }
 
   const raced = await classifyLink(store, input);
@@ -875,11 +929,30 @@ async function establishLink(
   }
 
   if (raced.existing && raced.existing.memberId === input.memberId) {
-    const linkRevision = revisionForDuplicateRedeem(raced.existing.linkRevision);
-    return { ok: true, reconnected: false, linkRevision, reason: "already_linked" };
+    const racedRevision = revisionForDuplicateRedeem(raced.existing.linkRevision);
+    return (
+      (await rejectAuthorDeletion(store, input.externalAuthorId)) ?? {
+        ok: true,
+        reconnected: false,
+        linkRevision: racedRevision,
+        reason: "already_linked",
+      }
+    );
   }
 
   return { ok: false, conflict: "external_author_already_linked" };
+}
+
+async function rejectAuthorDeletion(
+  store: ExternalAuthorLinkStore,
+  externalAuthorId: string,
+): Promise<{ ok: false; conflict: "author_deletion_pending" } | null> {
+  const current = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, externalAuthorId);
+  if (await integrityMediaAuthorDeletionBlocks(externalAuthorId, current)) {
+    return { ok: false, conflict: "author_deletion_pending" };
+  }
+
+  return null;
 }
 
 async function classifyLink(
@@ -1011,6 +1084,10 @@ export async function acknowledgeIntegrityMediaLink(input: {
   noteIntegrityMediaAcknowledgeSignature(input.signature, now.getTime());
 
   const store = getExternalAuthorLinkStore();
+  if (await integrityMediaAuthorDeletionBlocks(input.externalAuthorId)) {
+    return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+  }
+
   const confirmed = await store.compareAndConfirmLink({
     source: INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: input.externalAuthorId,
@@ -1022,6 +1099,15 @@ export async function acknowledgeIntegrityMediaLink(input: {
 
   if (confirmed.status === "missing") {
     return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
+  }
+
+  if (
+    await integrityMediaAuthorDeletionBlocks(
+      input.externalAuthorId,
+      "record" in confirmed ? confirmed.record : null,
+    )
+  ) {
+    return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
   }
 
   if (confirmed.status === "legacy") {
@@ -1153,6 +1239,10 @@ function isSessionMemberId(memberId: string): boolean {
 }
 
 function conflictMessage(conflict: ExternalAuthorLinkConflict): string {
+  if (conflict === "author_deletion_pending") {
+    return AUTHOR_DELETION_PENDING_MESSAGE;
+  }
+
   if (conflict === "external_author_already_linked") {
     return "This Integrity Media author is already linked to another Humanity Union account.";
   }

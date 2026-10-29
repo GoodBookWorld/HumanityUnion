@@ -30,12 +30,14 @@ export function resolveIntegrityMediaCollaborationStatus(link: {
 export function isOrdinaryIntegrityMediaCollaborationAllowed(link: {
   state: ExternalAuthorLinkState;
   authorActivationPending?: boolean;
+  authorDeletionPending?: boolean;
   collaborationStatus?: IntegrityMediaCollaborationStatus | null;
   linkFinalization?: ExternalAuthorLinkFinalization | null;
 }): boolean {
   return (
     link.state === "linked" &&
     link.authorActivationPending !== true &&
+    link.authorDeletionPending !== true &&
     link.linkFinalization !== "provisional" &&
     resolveIntegrityMediaCollaborationStatus(link) === "active"
   );

@@ -33,6 +33,22 @@ export const EXTERNAL_AUTHOR_LINK_RECOVERY_RECEIPT_INDEXES: IndexDescription[] =
   },
 ];
 
+export const EXTERNAL_AUTHOR_DELETION_RECEIPT_INDEXES: IndexDescription[] = [
+  {
+    key: { operationId: 1 },
+    unique: true,
+    name: "external_author_deletion_receipts_operation_id_unique",
+  },
+];
+
+export const EXTERNAL_AUTHOR_DELETION_TOMBSTONE_INDEXES: IndexDescription[] = [
+  {
+    key: { source: 1, externalAuthorId: 1 },
+    unique: true,
+    name: "external_author_deletion_tombstones_source_author_unique",
+  },
+];
+
 export const EXTERNAL_AUTHOR_DISCONNECT_EVENT_INDEXES: IndexDescription[] = [
   {
     key: { eventId: 1 },

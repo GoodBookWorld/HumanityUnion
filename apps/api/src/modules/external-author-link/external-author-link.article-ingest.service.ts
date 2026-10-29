@@ -31,6 +31,7 @@ import {
   updateBlogPostExternalVideo,
   updateSyndicatedBlogArticleContent,
 } from "../blog/persistence/blog.repository.js";
+import { integrityMediaAuthorDeletionBlocks } from "./external-author-link.author-deletion.js";
 import { integrityMediaArticlePublicationInstant } from "./external-author-link.article-publication-instant.js";
 import { integrityMediaLinkSignaturesEqual, signIntegrityMediaLinkRedeem } from "./external-author-link.hmac.js";
 import {
@@ -235,6 +236,7 @@ export async function ingestIntegrityMediaArticle(input: {
       "The Integrity Media author and Humanity Union member do not match.",
     );
   }
+  await assertAuthorDeletionAllowsArticle(article.authorId, link);
   if (!isOrdinaryIntegrityMediaCollaborationAllowed(link)) {
     throw new ArticleIngestError(
       409,
@@ -299,6 +301,7 @@ interface DeliveryWork {
 }
 
 async function deliverClaimedArticle(input: DeliveryWork): Promise<ArticleIngestResult> {
+  await assertAuthorDeletionAllowsArticle(input.article.authorId);
   const existing = await findArticleDelivery(input.article.publicationId);
   if (input.article.operation === "update") {
     if (!existing) {
@@ -906,6 +909,23 @@ async function resolveConfiguredCategoryId(): Promise<string> {
     );
   }
   return categoryId;
+}
+
+async function assertAuthorDeletionAllowsArticle(
+  authorId: string,
+  link?: { authorDeletionPending?: boolean } | null,
+): Promise<void> {
+  const current =
+    link === undefined
+      ? await getExternalAuthorLinkStore().findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, authorId)
+      : link;
+  if (await integrityMediaAuthorDeletionBlocks(authorId, current)) {
+    throw new ArticleIngestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
 }
 
 function verifySignature(input: {

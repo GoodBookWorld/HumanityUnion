@@ -14,6 +14,10 @@ import {
   noteIntegrityMediaAuthorDisconnectSignature,
   signIntegrityMediaAuthorDisconnect,
 } from "./external-author-link.disconnect-hmac.js";
+import {
+  AUTHOR_DELETION_PENDING_MESSAGE,
+  integrityMediaAuthorDeletionBlocks,
+} from "./external-author-link.author-deletion.js";
 import { assignedLinkRevision } from "./external-author-link.revision.js";
 import { getExternalAuthorLinkStore } from "./external-author-link.store.js";
 import type {
@@ -118,6 +122,10 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
       return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
     }
 
+    if (await integrityMediaAuthorDeletionBlocks(input.authorId, current)) {
+      return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
+    }
+
     return truthful(input, current, true);
   }
 
@@ -125,6 +133,10 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
 
   if (!link) {
     return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
+  }
+
+  if (await integrityMediaAuthorDeletionBlocks(input.authorId, link)) {
+    return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
   }
 
   const updated = await store.compareAndDisableLink({
@@ -143,6 +155,10 @@ export async function acceptIntegrityMediaAuthorDisconnect(input: {
     const current = await store.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, input.authorId);
     if (!current) {
       return failure(404, "link_not_found", "No Integrity Media author link exists for this author.");
+    }
+
+    if (await integrityMediaAuthorDeletionBlocks(input.authorId, current)) {
+      return failure(409, "author_deletion_pending", AUTHOR_DELETION_PENDING_MESSAGE);
     }
 
     const assigned = assignedLinkRevision(current.linkRevision);
