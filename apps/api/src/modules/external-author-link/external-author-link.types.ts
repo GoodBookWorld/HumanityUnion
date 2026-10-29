@@ -49,6 +49,12 @@ export interface ExternalAuthorLinkRecord {
   linkInstanceId?: string;
   /** Absent on legacy rows. Those rows are not provisional and are not backfilled. */
   linkFinalization?: ExternalAuthorLinkFinalization;
+  /**
+   * Set when an author-deletion operation has been accepted and content cleanup
+   * has not finished. Absent means no deletion is pending. This is not a deletion
+   * of the member, grant, or Blog post.
+   */
+  authorDeletionPending?: boolean;
 }
 
 export interface ExternalAuthorLinkResultRecord {
@@ -85,10 +91,42 @@ export interface ExternalAuthorLinkAuditRecord {
   createdAt: string;
 }
 
-export type ExternalAuthorLinkConflict = "external_author_already_linked" | "member_already_linked";
+export type ExternalAuthorLinkConflict =
+  | "external_author_already_linked"
+  | "member_already_linked"
+  | "author_deletion_pending";
 
 /** Accepted IM → HU disconnect. The signature is never stored. */
 export type ExternalAuthorDisconnectOutcome = "disabled" | "superseded";
+
+export type ExternalAuthorDeletionReceiptStatus = "pending" | "rejected";
+
+/**
+ * Durable deletion operation. Pending means the tombstone is in place and
+ * content cleanup has not run. This record is not a completed-deletion acknowledgment.
+ */
+export interface ExternalAuthorDeletionReceipt {
+  operationId: string;
+  source: IntegrityMediaSource;
+  externalAuthorId: string;
+  huTarget: string;
+  expectedMemberId: string;
+  expectedLinkRevision: number;
+  /** Null is the signed legacy sentinel for a link with no instance id. */
+  expectedLinkInstanceId: string | null;
+  status: ExternalAuthorDeletionReceiptStatus;
+  rejectCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Permanent author identity block. No name, email, or content. */
+export interface ExternalAuthorDeletionTombstone {
+  source: IntegrityMediaSource;
+  externalAuthorId: string;
+  operationId: string;
+  createdAt: string;
+}
 
 export interface ExternalAuthorDisconnectEventRecord {
   eventId: string;

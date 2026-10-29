@@ -9,6 +9,7 @@ import {
   isOrdinaryIntegrityMediaCollaborationAllowed,
   resolveIntegrityMediaCollaborationStatus,
 } from "../external-author-link/external-author-link.collaboration.js";
+import { integrityMediaAuthorDeletionBlocks } from "../external-author-link/external-author-link.author-deletion.js";
 import { INTEGRITY_MEDIA_SOURCE } from "../external-author-link/external-author-link.constants.js";
 import {
   readIntegrityMediaDeploymentTarget,
@@ -431,6 +432,14 @@ async function resolveOperationalRecipient(
 
   if (!link) {
     return failure(404, "link_missing", "This member is not linked to Integrity Media.");
+  }
+
+  if (await integrityMediaAuthorDeletionBlocks(link.externalAuthorId, link)) {
+    return failure(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
   }
 
   if (link.state === "disabled") {

@@ -12,6 +12,7 @@ import {
   INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS,
   INTEGRITY_MEDIA_SOURCE,
 } from "../external-author-link/external-author-link.constants.js";
+import { findBlockingAuthorDeletion } from "../external-author-link/external-author-link.author-deletion.js";
 import { isIntegrityMediaAuthorLinkOperational } from "../external-author-link/external-author-link.service.js";
 import { assignedLinkRevision } from "../external-author-link/external-author-link.revision.js";
 import {
@@ -184,6 +185,14 @@ async function commitReplyWithSession(
   }
 
   const links = getExternalAuthorLinkStore();
+  if (await findBlockingAuthorDeletion(value.authorId)) {
+    return {
+      result: failureFor("author_deletion_pending"),
+      auditAction: "integrity_media_author_reply_rejected",
+      auditReason: "author_deletion_pending",
+    };
+  }
+
   const link = await links.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, value.authorId, options);
   const ineligible = replyEligibilityCode(link, value);
 
@@ -213,6 +222,14 @@ async function commitReplyWithSession(
   });
 
   if (!held) {
+    if (await findBlockingAuthorDeletion(value.authorId)) {
+      return {
+        result: failureFor("author_deletion_pending"),
+        auditAction: "integrity_media_author_reply_rejected",
+        auditReason: "author_deletion_pending",
+      };
+    }
+
     const current = await links.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, value.authorId, options);
     const code = replyEligibilityCode(current, value) ?? "revision_conflict";
     return {
@@ -348,6 +365,10 @@ function replyEligibilityCode(
     return "link_not_found";
   }
 
+  if (link.authorDeletionPending === true) {
+    return "author_deletion_pending";
+  }
+
   if (link.memberId !== value.memberId || link.externalAuthorId !== value.authorId) {
     return "member_mismatch";
   }
@@ -416,6 +437,8 @@ function sameStoredReply(existing: IntegrityMediaAuthorMessageRecord, value: Val
 
 function failureFor(code: string): IntegrityMediaAuthorReplyFailure {
   switch (code) {
+    case "author_deletion_pending":
+      return failure(409, code, "This Integrity Media author connection is pending deletion.");
     case "link_not_found":
       return failure(404, code, "No Integrity Media author link exists for this author.");
     case "link_disabled":

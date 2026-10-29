@@ -1,5 +1,6 @@
 import {
   DEFAULT_INTEGRITY_MEDIA_RETURN_PATH,
+  INTEGRITY_MEDIA_AUTHOR_DELETION_ENABLED_ENV,
   INTEGRITY_MEDIA_LINK_HMAC_SECRET_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_ORIGIN_ENV,
   INTEGRITY_MEDIA_LINK_RETURN_PATH_ENV,
@@ -15,6 +16,13 @@ export interface IntegrityMediaLinkConfig {
  * Read at call time. Missing values leave the feature dormant.
  * Startup does not require Integrity Media to be reachable or configured.
  */
+/** Absent or any value other than the exact string "true" leaves deletion dormant. */
+export function isIntegrityMediaAuthorDeletionEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env[INTEGRITY_MEDIA_AUTHOR_DELETION_ENABLED_ENV]?.trim() === "true";
+}
+
 export function resolveIntegrityMediaLinkConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): IntegrityMediaLinkConfig {

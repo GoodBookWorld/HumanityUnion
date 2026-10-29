@@ -180,6 +180,8 @@ export const MONGO_COLLECTIONS = {
   externalAuthorLinkResults: "external_author_link_results",
   externalAuthorLinkAudit: "external_author_link_audit",
   externalAuthorDisconnectEvents: "external_author_disconnect_events",
+  externalAuthorDeletionReceipts: "external_author_deletion_receipts",
+  externalAuthorDeletionTombstones: "external_author_deletion_tombstones",
   externalAuthorProvisionAttempts: "external_author_provision_attempts",
   externalAuthorSsoGrants: "external_author_sso_grants",
   integrityMediaArticleDeliveries: "integrity_media_article_deliveries",
