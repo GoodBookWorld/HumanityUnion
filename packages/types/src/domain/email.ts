@@ -4,6 +4,8 @@ export type EmailTemplateId =
   | "registration_confirmation_code"
   | "registration_welcome"
   | "login_two_step_code"
+  /** Code that proves ownership before an Integrity Media author is linked to an existing account. */
+  | "integrity_media_account_link_code"
   | "password_reset"
   | "login_notification"
   | "email_change_verification"

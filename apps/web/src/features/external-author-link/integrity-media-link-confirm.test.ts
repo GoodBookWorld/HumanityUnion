@@ -7,7 +7,12 @@ import { fileURLToPath } from "node:url";
 import { resolveSafeReturnTo } from "../auth/lib/resolve-safe-return-to.js";
 import {
   BINDING_RECOVERY_PREVIEW_PURPOSE,
+  canSendExistingAccountCode,
   canSubmitIntegrityMediaConfirmation,
+  canVerifyExistingAccount,
+  EXISTING_ACCOUNT_AUTHORIZATION,
+  EXISTING_ACCOUNT_TERMINAL_CODES,
+  EXISTING_ACCOUNT_TITLE,
   isBindingRecoveryPreview,
   ORDINARY_CONFIRMATION_TITLE,
   RECOVERY_ACKNOWLEDGEMENT,
@@ -52,6 +57,47 @@ describe("Integrity Media confirmation page", () => {
       "/workspace",
     );
     assert.equal(resolveSafeReturnTo("//integrity.example", "/workspace"), "/workspace");
+  });
+});
+
+describe("Integrity Media existing account connection", () => {
+  const page = readFileSync(path.join(here, "IntegrityMediaLinkConfirm.tsx"), "utf8");
+
+  it("replaces the email collision dead end with the existing account flow", () => {
+    assert.equal(EXISTING_ACCOUNT_TITLE, "Connect your existing Humanity Union account");
+    assert.match(page, /error\.meta\?\.code === "existing_email_collision"[\s\S]{0,200}setPhase\("existing-account"\)/);
+    assert.match(page, /Email address/);
+    assert.match(page, /Send Verification Code/);
+    assert.match(page, /Verification Code/);
+    assert.match(page, /Verify & Connect/);
+    assert.match(page, /existing-account\/send-code/);
+    assert.match(page, /existing-account\/verify/);
+    assert.match(page, /JSON\.stringify\(\{ state: attemptState, email: existingEmail \}\)/);
+    assert.match(page, /authorize: authorized/);
+    assert.equal(page.includes("memberId"), false);
+  });
+
+  it("enables sending only for an email and verifying only with a code and authorization", () => {
+    assert.equal(canSendExistingAccountCode({ phase: "existing-account", email: "" }), false);
+    assert.equal(canSendExistingAccountCode({ phase: "existing-account", email: "not-an-email" }), false);
+    assert.equal(canSendExistingAccountCode({ phase: "existing-account", email: " author@example.com " }), true);
+    assert.equal(canSendExistingAccountCode({ phase: "existing-sending", email: "author@example.com" }), false);
+
+    assert.equal(canVerifyExistingAccount({ phase: "existing-code", code: "123456", authorized: false }), false);
+    assert.equal(canVerifyExistingAccount({ phase: "existing-code", code: "12345", authorized: true }), false);
+    assert.equal(canVerifyExistingAccount({ phase: "existing-code", code: "123456", authorized: true }), true);
+    assert.equal(canVerifyExistingAccount({ phase: "existing-verifying", code: "123456", authorized: true }), false);
+    assert.match(EXISTING_ACCOUNT_AUTHORIZATION, /I authorize/);
+    assert.match(page, /type="checkbox"[\s\S]{0,200}checked=\{authorized\}/);
+    assert.match(page, /disabled=\{!canVerifyExistingAccount\(\{ phase, code: verificationCode, authorized \}\)\}/);
+  });
+
+  it("stops on outcomes that cannot connect an existing account", () => {
+    for (const code of ["author_deletion_pending", "author_already_linked", "attempt_already_bound"]) {
+      assert.equal(EXISTING_ACCOUNT_TERMINAL_CODES.has(code), true);
+    }
+    assert.equal(EXISTING_ACCOUNT_TERMINAL_CODES.has("invalid_code"), false);
+    assert.equal(EXISTING_ACCOUNT_TERMINAL_CODES.has("code_expired"), false);
   });
 });
 

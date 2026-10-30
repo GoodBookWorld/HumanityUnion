@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from "express";
 
+import { AuthCodeRateLimitError } from "../auth/auth.errors.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { createAuthRateLimiter } from "../auth/auth-rate-limit.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import {
   bindingRecoveryDisabledFailure,
@@ -28,6 +30,8 @@ import {
   readProvisionConsent,
   registerProvisionAttempt,
   registerProvisionSnapshot,
+  sendExistingAccountLinkCode,
+  verifyExistingAccountLink,
 } from "./external-author-link.provision.service.js";
 import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
 
@@ -101,6 +105,7 @@ externalAuthorLinkRouter.post("/confirm", requireJwtAuthenticationMiddleware, as
   const result = await confirmIntegrityMediaLink({
     memberId: sessionMemberId(req),
     attemptState: typeof body.state === "string" ? body.state : "",
+    sessionRoles: req.auth?.roles ?? [],
   });
 
   if (!result.ok) {
@@ -350,6 +355,53 @@ externalAuthorLinkRouter.post("/provision-confirm", async (req, res) => {
     sendProvisionError(res, error);
   }
 });
+
+// Identity comes only from the emailed code. An active session is never read here.
+const existingAccountRateLimit = createAuthRateLimiter("integrity-media-existing-account");
+
+externalAuthorLinkRouter.post("/existing-account/send-code", existingAccountRateLimit, async (req, res) => {
+  try {
+    const result = await sendExistingAccountLinkCode({
+      body: readObject(req),
+      ipKey: clientIpKey(req),
+    });
+    res.json(
+      createSuccessResponse(
+        result,
+        "If this email belongs to a Humanity Union account that can be connected, a code was sent.",
+      ),
+    );
+  } catch (error) {
+    sendExistingAccountError(res, error);
+  }
+});
+
+externalAuthorLinkRouter.post("/existing-account/verify", existingAccountRateLimit, async (req, res) => {
+  try {
+    const result = await verifyExistingAccountLink({ body: readObject(req) });
+    res.json(createSuccessResponse(result, "Humanity Union account connected."));
+  } catch (error) {
+    sendExistingAccountError(res, error);
+  }
+});
+
+function sendExistingAccountError(res: Response, error: unknown): void {
+  if (error instanceof AuthCodeRateLimitError) {
+    sendFailure(res, 429, error.message, "rate_limited");
+    return;
+  }
+
+  sendProvisionError(res, error);
+}
+
+function clientIpKey(req: Request): string | undefined {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim().length > 0) {
+    return forwarded.split(",")[0]?.trim();
+  }
+
+  return req.ip;
+}
 
 export default externalAuthorLinkRouter;
 

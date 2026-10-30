@@ -13,7 +13,14 @@ import {
 } from "../../lib/api-client";
 import { logout } from "../auth/auth-api";
 import {
+  canSendExistingAccountCode,
   canSubmitIntegrityMediaConfirmation,
+  canVerifyExistingAccount,
+  EXISTING_ACCOUNT_AUTHORIZATION,
+  EXISTING_ACCOUNT_CODE_SENT,
+  EXISTING_ACCOUNT_SENTENCE,
+  EXISTING_ACCOUNT_TERMINAL_CODES,
+  EXISTING_ACCOUNT_TITLE,
   isBindingRecoveryPreview,
   ORDINARY_CONFIRMATION_TITLE,
   RECOVERY_ACKNOWLEDGEMENT,
@@ -35,7 +42,11 @@ type Phase =
   | "error"
   | "provision"
   | "provision-submitting"
-  | "provision-blocked";
+  | "provision-blocked"
+  | "existing-account"
+  | "existing-sending"
+  | "existing-code"
+  | "existing-verifying";
 
 const PROVISION_SENTENCE =
   "Confirmation creates an account on the Humanity Union social education and civic participation platform.";
@@ -70,6 +81,9 @@ export function IntegrityMediaLinkConfirm() {
   const [recovery, setRecovery] = useState(false);
   const [sessionEmail, setSessionEmail] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
+  const [existingEmail, setExistingEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     if (!ATTEMPT_STATE_PATTERN.test(attemptState)) {
@@ -187,13 +201,88 @@ export function IntegrityMediaLinkConfirm() {
       ) {
         setAccountEmail("");
         setDisplayName("");
-        setMessage(PROVISION_COLLISION_NOTICE);
-        setPhase("provision-blocked");
+        setExistingEmail("");
+        setMessage("");
+        setPhase("existing-account");
         return;
       }
 
       setMessage(error instanceof ApiRequestError ? error.message : "Confirmation failed.");
       setPhase("error");
+    }
+  }
+
+  function stopExistingAccount(error: unknown): boolean {
+    const code = error instanceof ApiRequestError ? error.meta?.code : undefined;
+    if (typeof code !== "string" || !EXISTING_ACCOUNT_TERMINAL_CODES.has(code)) {
+      return false;
+    }
+
+    setMessage(
+      error instanceof ApiRequestError && error.message ? error.message : PROVISION_COLLISION_NOTICE,
+    );
+    setPhase("provision-blocked");
+    return true;
+  }
+
+  async function sendExistingAccountCode() {
+    setPhase("existing-sending");
+    setMessage("");
+
+    try {
+      await apiRequest<{ accepted: boolean }>("/api/v1/integrity-media/link/existing-account/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: attemptState, email: existingEmail }),
+      });
+      setVerificationCode("");
+      setAuthorized(false);
+      setMessage(EXISTING_ACCOUNT_CODE_SENT);
+      setPhase("existing-code");
+    } catch (error) {
+      if (stopExistingAccount(error)) {
+        return;
+      }
+
+      setMessage(error instanceof ApiRequestError ? error.message : "The code could not be sent.");
+      setPhase("existing-account");
+    }
+  }
+
+  async function verifyExistingAccount() {
+    if (!canVerifyExistingAccount({ phase, code: verificationCode, authorized })) {
+      return;
+    }
+
+    setPhase("existing-verifying");
+    setMessage("");
+
+    try {
+      const result = await apiRequest<{ redirectUrl: string | null }>(
+        "/api/v1/integrity-media/link/existing-account/verify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: attemptState, code: verificationCode.trim(), authorize: authorized }),
+        },
+      );
+
+      if (result.redirectUrl && isNavigableHttpUrl(result.redirectUrl)) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+
+      setMessage(
+        "Humanity Union confirmed this account. Returning to Integrity Media is not configured yet.",
+      );
+      setPhase("confirmed");
+    } catch (error) {
+      if (stopExistingAccount(error)) {
+        return;
+      }
+
+      setMessage(error instanceof ApiRequestError ? error.message : "Verification failed.");
+      setPhase("existing-code");
     }
   }
 
@@ -294,6 +383,79 @@ export function IntegrityMediaLinkConfirm() {
         </>
       ) : null}
       {phase === "provision-blocked" ? <p>{message}</p> : null}
+      {phase === "existing-account" || phase === "existing-sending" ? (
+        <>
+          <h2>{EXISTING_ACCOUNT_TITLE}</h2>
+          <p>{EXISTING_ACCOUNT_SENTENCE}</p>
+          <label className="auth-form__field" htmlFor="integrity-media-existing-email">
+            Email address
+            <input
+              id="integrity-media-existing-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={existingEmail}
+              disabled={phase === "existing-sending"}
+              onChange={(event) => setExistingEmail(event.target.value)}
+            />
+          </label>
+          <div className="auth-form__actions">
+            <Button
+              variant="primary"
+              disabled={!canSendExistingAccountCode({ phase, email: existingEmail })}
+              onClick={() => void sendExistingAccountCode()}
+            >
+              Send Verification Code
+            </Button>
+          </div>
+        </>
+      ) : null}
+      {phase === "existing-code" || phase === "existing-verifying" ? (
+        <>
+          <h2>{EXISTING_ACCOUNT_TITLE}</h2>
+          <label className="auth-form__field" htmlFor="integrity-media-existing-code">
+            Verification Code
+            <input
+              id="integrity-media-existing-code"
+              className="auth-form__code-input"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={verificationCode}
+              disabled={phase === "existing-verifying"}
+              onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, ""))}
+            />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={authorized}
+              disabled={phase === "existing-verifying"}
+              onChange={(event) => setAuthorized(event.target.checked)}
+            />{" "}
+            {EXISTING_ACCOUNT_AUTHORIZATION}
+          </label>
+          <div className="auth-form__actions">
+            <Button
+              variant="primary"
+              disabled={!canVerifyExistingAccount({ phase, code: verificationCode, authorized })}
+              onClick={() => void verifyExistingAccount()}
+            >
+              Verify & Connect
+            </Button>
+            <Button
+              disabled={phase === "existing-verifying"}
+              onClick={() => {
+                setMessage("");
+                setPhase("existing-account");
+              }}
+            >
+              Send a new code
+            </Button>
+          </div>
+        </>
+      ) : null}
       {(phase === "ready" || phase === "submitting") && recovery ? (
         <>
           <p>
@@ -348,7 +510,10 @@ export function IntegrityMediaLinkConfirm() {
           <a href={loginPath(attemptState)}>Sign in</a>
         </p>
       ) : null}
-      {phase === "provision" || phase === "provision-submitting" || phase === "provision-blocked" ? null : (
+      {phase === "provision" ||
+      phase === "provision-submitting" ||
+      phase === "provision-blocked" ||
+      phase.startsWith("existing-") ? null : (
         <p>
           If you do not have a Humanity Union account, use the normal{" "}
           <Link href="/register">registration</Link> process. This confirmation will not be kept

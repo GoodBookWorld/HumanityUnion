@@ -140,6 +140,12 @@ export interface LoginTwoStepCodeTemplateInput {
   expiresMinutes: number;
 }
 
+export interface IntegrityMediaAccountLinkCodeTemplateInput {
+  displayName: string;
+  verificationCode: string;
+  expiresMinutes: number;
+}
+
 export interface PasswordResetTemplateInput {
   displayName: string;
   resetUrl: string;
@@ -262,6 +268,25 @@ export function renderLoginTwoStepCodeEmail(
     subject: "Your Humanity Union login code",
     html: wrapEmailLayout(htmlBody),
     text: `Use this code to complete your Humanity Union login:\n\n${input.loginCode}\n\nThis code expires in ${input.expiresMinutes} minutes.\n\nIf you did not attempt to sign in, change your password and review your account security.`,
+  };
+}
+
+export function renderIntegrityMediaAccountLinkCodeEmail(
+  input: IntegrityMediaAccountLinkCodeTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Connect Integrity Media to your account</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Use this code to connect your Humanity Union account to Integrity Media:</p>
+    <p style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:0.25em;color:${PRIMARY_COLOR};">${input.verificationCode}</p>
+    <p style="margin:0 0 16px;line-height:1.6;">This code expires in ${input.expiresMinutes} minutes.</p>
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">If you did not ask to connect Integrity Media, ignore this email. Your account is not connected without this code.</p>
+  `;
+
+  return {
+    subject: "Your Humanity Union verification code",
+    html: wrapEmailLayout(htmlBody),
+    text: `Use this code to connect your Humanity Union account to Integrity Media:\n\n${input.verificationCode}\n\nThis code expires in ${input.expiresMinutes} minutes.\n\nIf you did not ask to connect Integrity Media, ignore this email. Your account is not connected without this code.`,
   };
 }
 
@@ -729,6 +754,10 @@ export function renderEmailTemplate(
       return renderRegistrationWelcomeEmail(input as unknown as RegistrationWelcomeTemplateInput);
     case "login_two_step_code":
       return renderLoginTwoStepCodeEmail(input as unknown as LoginTwoStepCodeTemplateInput);
+    case "integrity_media_account_link_code":
+      return renderIntegrityMediaAccountLinkCodeEmail(
+        input as unknown as IntegrityMediaAccountLinkCodeTemplateInput,
+      );
     case "password_reset":
       return renderPasswordResetEmail(input as unknown as PasswordResetTemplateInput);
     case "email_change_verification":

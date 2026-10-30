@@ -11,6 +11,8 @@ import {
   findBlogCapabilityGrant,
   upsertBlogCapabilityGrant,
 } from "../blog/persistence/blog.repository.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
+import { findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { getMemberById } from "../member/application/member-read.service.js";
 import { classifyIntegrityMediaConfirmationState } from "./external-author-link.binding-recovery-state.js";
 import {
@@ -120,6 +122,29 @@ export function setIntegrityMediaDisplayNameResolverForTests(
   resolver: DisplayNameResolver | null,
 ): void {
   displayNameResolverOverride = resolver;
+}
+
+type StoredAccountRoleResolver = (memberId: string) => Promise<string | null>;
+
+let storedAccountRoleResolverOverride: StoredAccountRoleResolver | null = null;
+
+export function setIntegrityMediaStoredAccountRoleResolverForTests(
+  resolver: StoredAccountRoleResolver | null,
+): void {
+  storedAccountRoleResolverOverride = resolver;
+}
+
+async function resolveStoredAccountRole(memberId: string): Promise<string | null> {
+  if (storedAccountRoleResolverOverride) {
+    return storedAccountRoleResolverOverride(memberId);
+  }
+
+  // Without a database there is no stored account to read.
+  if (!isMongoConfigured()) {
+    return null;
+  }
+
+  return (await findAuthUserByMemberId(memberId))?.role ?? null;
 }
 
 type BlogAuthorCapabilityEnsurer = (
@@ -279,6 +304,8 @@ export async function previewIntegrityMediaLink(input: {
 export async function confirmIntegrityMediaLink(input: {
   memberId: string;
   attemptState: string;
+  /** Roles of the signed-in session. */
+  sessionRoles?: readonly string[];
   now?: Date;
 }): Promise<IntegrityMediaConfirmSuccess | IntegrityMediaLinkFailure> {
   if (!isSessionMemberId(input.memberId)) {
@@ -287,6 +314,21 @@ export async function confirmIntegrityMediaLink(input: {
 
   if (!INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN.test(input.attemptState)) {
     return failure(400, "invalid_state", "This confirmation link is incomplete.");
+  }
+
+  let storedRole: string | null;
+  try {
+    storedRole = await resolveStoredAccountRole(input.memberId);
+  } catch {
+    return failure(503, "unavailable", "Confirmation is temporarily unavailable.");
+  }
+
+  if (input.sessionRoles?.includes("admin") || storedRole === "admin") {
+    return failure(
+      403,
+      "administrator_session",
+      "Administrator accounts cannot be connected to Integrity Media. Sign in with your Participant account.",
+    );
   }
 
   const now = input.now ?? new Date();
