@@ -3,8 +3,21 @@ import { randomBytes, randomUUID } from "node:crypto";
 import type { BlogCapabilityGrant } from "@hu/types";
 
 import { MongoTransactionUnavailableError } from "../../infrastructure/mongodb/mongo-transaction.js";
+import { assertAuthCodeSendAllowed } from "../auth/auth-code-rate-limit.js";
 import { hashPassword } from "../auth/auth-password.js";
 import type { AuthUserRecord } from "../auth/auth-user.types.js";
+import {
+  consumeEmailConfirmationCode,
+  createEmailConfirmationCode,
+  discardEmailConfirmationCode,
+  findActiveEmailConfirmationCode,
+  findLatestEmailConfirmationSendAt,
+  incrementEmailConfirmationAttempt,
+  markEmailConfirmationCodeDelivered,
+  resolveResendPolicyForPurpose,
+} from "../email/email-confirmation-code.repository.js";
+import { sendIntegrityMediaAccountLinkCodeEmail } from "../email/email.service.js";
+import { resolveLoginEmailTwoStepConfig } from "../email/login-email-two-step.config.js";
 import { buildNewPersistedMember } from "../member/infrastructure/member.persistence.js";
 import { buildDefaultMemberProfile } from "../member-profile/member-profile.repository.js";
 import { integrityMediaAuthorDeletionBlocks } from "./external-author-link.author-deletion.js";
@@ -28,8 +41,10 @@ import {
   ProvisionDuplicateKeyError,
   runProvisionTransaction,
   withProvisionLock,
+  type ExistingAccountLinkBinding,
   type ProvisionAttemptRecord,
   type ProvisionDatabase,
+  type ProvisionUserView,
 } from "./external-author-link.provision.database.js";
 import {
   buildProvisionAttemptPayload,
@@ -411,6 +426,357 @@ async function confirmInTransaction(
     redirectUrl,
     provisionOutcome: createdNewMember ? "NEW_AUTHOR" : "CONFIRMED_MAPPING_EXISTS",
   };
+}
+
+const EXISTING_ACCOUNT_LINK_PURPOSE = "integrity_media_account_link" as const;
+
+export interface ExistingAccountCodeResult {
+  /** Always true: the response does not reveal whether an eligible account exists. */
+  accepted: true;
+  expiresMinutes: number;
+}
+
+/**
+ * Sends a code to an existing account whose email equals the attempt email.
+ * The caller learns nothing about the account. Administrator, disabled, and
+ * already linked accounts receive no code.
+ */
+export async function sendExistingAccountLinkCode(input: {
+  body: unknown;
+  ipKey?: string;
+  now?: Date;
+}): Promise<ExistingAccountCodeResult> {
+  const now = input.now ?? new Date();
+  const fields = readExistingAccountFields(input.body, new Set(["state", "email"]));
+  const email = normalizeEmailInput(fields.email);
+  const db = currentProvisionDatabase();
+  const attempt = await findOpenExistingAccountAttempt(db, fields.state, now);
+
+  if (email !== attempt.email) {
+    throw new ProvisionRequestError(
+      409,
+      "email_mismatch",
+      "Enter the email address of your Integrity Media account.",
+    );
+  }
+
+  const expiresMinutes = resolveLoginEmailTwoStepConfig().codeTtlMinutes;
+  const accepted: ExistingAccountCodeResult = { accepted: true, expiresMinutes };
+  const user = await db.findUserByEmail(email);
+  if (!user || !(await isLinkableExistingAccount(db, user))) {
+    return accepted;
+  }
+
+  const previous = attempt.existingAccountLink?.userId === user.userId ? attempt.existingAccountLink : undefined;
+  if (previous && previous.sendCount >= resolveResendPolicyForPurpose(EXISTING_ACCOUNT_LINK_PURPOSE).maxResendsPerChallenge) {
+    throw new ProvisionRequestError(
+      429,
+      "code_send_limit",
+      "Too many codes were requested. Start again from Integrity Media.",
+    );
+  }
+
+  await assertAuthCodeSendAllowed({
+    userId: user.userId,
+    purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+    ipKey: input.ipKey,
+    lastSentAt:
+      (await findLatestEmailConfirmationSendAt({
+        userId: user.userId,
+        purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+      })) ?? undefined,
+  });
+
+  const issued = await createEmailConfirmationCode({
+    userId: user.userId,
+    email: user.email,
+    purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+    ipKey: input.ipKey,
+  });
+  const delivery = await sendIntegrityMediaAccountLinkCodeEmail({
+    to: user.email,
+    displayName: user.displayName,
+    verificationCode: issued.code,
+    expiresMinutes,
+  });
+  if (!delivery.emailSent) {
+    await discardEmailConfirmationCode(issued.record.confirmationId);
+    throw new ProvisionRequestError(503, "code_delivery_failed", "The code could not be sent. Try again.");
+  }
+
+  const sentAt = now.toISOString();
+  await markEmailConfirmationCodeDelivered({
+    confirmationId: issued.record.confirmationId,
+    userId: user.userId,
+    email: user.email,
+    purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+    sentAt,
+    ipKey: input.ipKey,
+  });
+
+  const bound = await db.bindExistingAccountCode({
+    attemptId: attempt.attemptId,
+    binding: {
+      confirmationId: issued.record.confirmationId,
+      userId: user.userId,
+      memberId: user.memberId,
+      sentAt,
+      sendCount: (previous?.sendCount ?? 0) + 1,
+    },
+    updatedAt: sentAt,
+  });
+  if (bound !== "bound") {
+    await discardEmailConfirmationCode(issued.record.confirmationId);
+    throw attemptAlreadyBound();
+  }
+
+  return accepted;
+}
+
+/**
+ * Consumes the code bound to this attempt, then links the verified account
+ * through the existing provision-confirm transaction. A verified attempt can
+ * finish after a temporary failure without another code.
+ */
+export async function verifyExistingAccountLink(input: {
+  body: unknown;
+  now?: Date;
+}): Promise<ProvisionConfirmResult> {
+  const now = input.now ?? new Date();
+  const fields = readExistingAccountFields(input.body, new Set(["state", "code", "authorize"]));
+  if (fields.authorize !== true) {
+    throw new ProvisionRequestError(
+      400,
+      "authorization_required",
+      "Confirm that this account may be connected to Integrity Media.",
+    );
+  }
+
+  const db = currentProvisionDatabase();
+  const attempt = await findExistingAccountAttempt(db, fields.state, now);
+  const binding = attempt.existingAccountLink;
+  if (!binding) {
+    throw new ProvisionRequestError(409, "code_not_requested", "Request a verification code first.");
+  }
+
+  if (attempt.memberId !== null && attempt.memberId !== binding.memberId) {
+    throw attemptAlreadyBound();
+  }
+
+  if (binding.verifiedAt === undefined) {
+    await consumeBoundCode(db, attempt.attemptId, binding, normalizeCodeInput(fields.code), now);
+  }
+
+  try {
+    return await confirmExistingAccountOnce(attempt.attemptId, now);
+  } catch (error) {
+    if (!isProvisionDuplicateKeyError(error)) {
+      throw mapTransactionError(error);
+    }
+
+    try {
+      return await confirmExistingAccountOnce(attempt.attemptId, now);
+    } catch (retryError) {
+      throw mapTransactionError(retryError);
+    }
+  }
+}
+
+async function consumeBoundCode(
+  db: ProvisionDatabase,
+  attemptId: string,
+  binding: ExistingAccountLinkBinding,
+  code: string,
+  now: Date,
+): Promise<void> {
+  const consumed = /^\d{6}$/.test(code)
+    ? await consumeEmailConfirmationCode({
+        userId: binding.userId,
+        code,
+        purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+      })
+    : null;
+
+  if (!consumed) {
+    const active = await findActiveEmailConfirmationCode({
+      userId: binding.userId,
+      purpose: EXISTING_ACCOUNT_LINK_PURPOSE,
+    });
+    if (!active || active.confirmationId !== binding.confirmationId) {
+      throw new ProvisionRequestError(410, "code_expired", "This code is no longer valid. Request a new code.");
+    }
+
+    const counted = await incrementEmailConfirmationAttempt(active.confirmationId);
+    if (!counted || counted.status !== "active") {
+      throw new ProvisionRequestError(429, "code_locked", "Too many incorrect codes. Request a new code.");
+    }
+
+    throw new ProvisionRequestError(400, "invalid_code", "The verification code is incorrect.");
+  }
+
+  // A code consumed for another attempt of the same account is spent and authorizes nothing here.
+  if (consumed.confirmationId !== binding.confirmationId) {
+    throw new ProvisionRequestError(409, "code_not_for_attempt", "This code is no longer valid. Request a new code.");
+  }
+
+  const marked = await db.markExistingAccountVerified({
+    attemptId,
+    confirmationId: binding.confirmationId,
+    verifiedAt: now.toISOString(),
+  });
+  if (marked !== "verified") {
+    const current = await db.findAttempt(attemptId);
+    if (current?.existingAccountLink?.confirmationId !== binding.confirmationId || !current.existingAccountLink.verifiedAt) {
+      throw attemptAlreadyBound();
+    }
+  }
+}
+
+async function confirmExistingAccountOnce(attemptId: string, now: Date): Promise<ProvisionConfirmResult> {
+  return runProvisionTransaction(async (db) => {
+    const attempt = await db.findAttempt(attemptId);
+    const binding = attempt?.existingAccountLink;
+    if (!attempt || !binding?.verifiedAt) {
+      throw new ProvisionRequestError(409, "code_not_verified", "Verify the code before connecting.");
+    }
+
+    if (attempt.memberId === null) {
+      const user = await db.findUserByMemberId(binding.memberId);
+      if (
+        !user ||
+        user.userId !== binding.userId ||
+        user.email !== attempt.email ||
+        !(await isLinkableExistingAccount(db, user, attempt.externalAuthorId))
+      ) {
+        throw new ProvisionRequestError(
+          409,
+          "account_not_linkable",
+          "This Humanity Union account cannot be connected to Integrity Media.",
+        );
+      }
+
+      await db.saveAttempt({
+        ...attempt,
+        memberId: binding.memberId,
+        userId: binding.userId,
+        createdMember: false,
+        updatedAt: now.toISOString(),
+      });
+    } else if (attempt.memberId !== binding.memberId) {
+      throw attemptAlreadyBound();
+    }
+
+    return confirmInTransaction(db, attemptId, now);
+  });
+}
+
+/** Only an active member account with no Integrity Media link, other than this author's own. */
+async function isLinkableExistingAccount(
+  db: ProvisionDatabase,
+  user: ProvisionUserView,
+  externalAuthorId?: string,
+): Promise<boolean> {
+  if (user.role !== "member" || user.status !== "active" || !user.memberId) {
+    return false;
+  }
+
+  const held = await db.findLinkByMember(INTEGRITY_MEDIA_SOURCE, user.memberId);
+  return !held || held.externalAuthorId === externalAuthorId;
+}
+
+async function findExistingAccountAttempt(
+  db: ProvisionDatabase,
+  state: string,
+  now: Date,
+): Promise<ProvisionAttemptRecord> {
+  if (isIntegrityMediaBindingRecoveryStateFamily(state)) {
+    throw new ProvisionRequestError(404, "attempt_not_found", "This confirmation link is incomplete.");
+  }
+
+  const attempt = await db.findAttempt(state);
+  if (!attempt) {
+    throw new ProvisionRequestError(404, "attempt_not_found", "This confirmation link is incomplete.");
+  }
+
+  if (attempt.expiresAt <= unixSeconds(now)) {
+    throw new ProvisionRequestError(410, "attempt_expired", "This provision attempt has expired.");
+  }
+
+  const existingLink = await db.findLinkByAuthor(INTEGRITY_MEDIA_SOURCE, attempt.externalAuthorId);
+  if (await integrityMediaAuthorDeletionBlocks(attempt.externalAuthorId, existingLink)) {
+    throw new ProvisionRequestError(
+      409,
+      "author_deletion_pending",
+      "This Integrity Media author connection is pending deletion.",
+    );
+  }
+
+  if (existingLink && existingLink.memberId !== attempt.existingAccountLink?.memberId) {
+    throw new ProvisionRequestError(
+      409,
+      "author_already_linked",
+      "This Integrity Media author is already connected to a Humanity Union account.",
+    );
+  }
+
+  return attempt;
+}
+
+async function findOpenExistingAccountAttempt(
+  db: ProvisionDatabase,
+  state: string,
+  now: Date,
+): Promise<ProvisionAttemptRecord> {
+  const attempt = await findExistingAccountAttempt(db, state, now);
+  if (attempt.memberId !== null) {
+    throw attemptAlreadyBound();
+  }
+
+  return attempt;
+}
+
+function attemptAlreadyBound(): ProvisionRequestError {
+  return new ProvisionRequestError(
+    409,
+    "attempt_already_bound",
+    "This confirmation link is already connected to a Humanity Union account.",
+  );
+}
+
+function readExistingAccountFields(
+  body: unknown,
+  allowed: ReadonlySet<string>,
+): { state: string; email: string; code: string; authorize: unknown } {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new ProvisionRequestError(400, "invalid_request", "The confirmation request is not valid.");
+  }
+
+  const record = body as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (!allowed.has(key)) {
+      throw new ProvisionRequestError(400, "unexpected_field", "The confirmation request is not valid.");
+    }
+  }
+
+  const state = typeof record.state === "string" ? record.state : "";
+  if (!INTEGRITY_MEDIA_ATTEMPT_STATE_PATTERN.test(state)) {
+    throw new ProvisionRequestError(400, "invalid_state", "This confirmation link is incomplete.");
+  }
+
+  return {
+    state,
+    email: typeof record.email === "string" ? record.email : "",
+    code: typeof record.code === "string" ? record.code : "",
+    authorize: record.authorize,
+  };
+}
+
+function normalizeEmailInput(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeCodeInput(value: string): string {
+  return value.trim().replace(/\s+/g, "");
 }
 
 async function storeProvisionAttempt(

@@ -22,7 +22,8 @@ function resolvePolicyForPurpose(purpose: EmailConfirmationCodePurpose): AuthCod
   if (
     purpose === "login_email_two_step" ||
     purpose === "login_two_step_enable" ||
-    purpose === "login_two_step_disable"
+    purpose === "login_two_step_disable" ||
+    purpose === "integrity_media_account_link"
   ) {
     const config = resolveLoginEmailTwoStepConfig();
     return {

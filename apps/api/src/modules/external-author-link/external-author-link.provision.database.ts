@@ -54,6 +54,21 @@ export interface ProvisionAttemptRecord {
   photoImportClaimedAt?: string;
   photoImportDigest?: string;
   photoImportByteLength?: number;
+  /** Code sent to an existing account for this attempt. Absent on new-Participant attempts. */
+  existingAccountLink?: ExistingAccountLinkBinding;
+}
+
+/**
+ * Only the code identified by `confirmationId` can verify this attempt.
+ * `verifiedAt` is set once, when that code is consumed.
+ */
+export interface ExistingAccountLinkBinding {
+  confirmationId: string;
+  userId: string;
+  memberId: string;
+  sentAt: string;
+  sendCount: number;
+  verifiedAt?: string;
 }
 
 export type PhotoImportStatus = "pending" | "in_progress" | "applied" | "skipped" | "failed";
@@ -104,6 +119,9 @@ export interface ProvisionUserView {
   userId: string;
   memberId: string;
   email: string;
+  displayName: string;
+  role: AuthUserRecord["role"];
+  status: AuthUserRecord["status"];
   emailVerificationStatus: AuthUserRecord["emailVerificationStatus"];
   passwordHash: string;
 }
@@ -145,6 +163,22 @@ export interface ProvisionDatabase {
     source: typeof INTEGRITY_MEDIA_SOURCE,
     externalAuthorId: string,
   ): Promise<ExternalAuthorLinkRecord | null>;
+  findLinkByMember(
+    source: typeof INTEGRITY_MEDIA_SOURCE,
+    memberId: string,
+  ): Promise<ExternalAuthorLinkRecord | null>;
+  /** Replaces the code binding while the attempt has no member. */
+  bindExistingAccountCode(input: {
+    attemptId: string;
+    binding: ExistingAccountLinkBinding;
+    updatedAt: string;
+  }): Promise<"bound" | "stale">;
+  /** Sets `verifiedAt` once, for the bound code, while the attempt has no member. */
+  markExistingAccountVerified(input: {
+    attemptId: string;
+    confirmationId: string;
+    verifiedAt: string;
+  }): Promise<"verified" | "stale">;
   insertLink(record: ExternalAuthorLinkRecord): Promise<"inserted" | "duplicate">;
   listResultsForAttempt(attemptState: string): Promise<ExternalAuthorLinkResultRecord[]>;
   insertResult(record: ExternalAuthorLinkResultRecord): Promise<void>;
@@ -654,6 +688,46 @@ function createMemoryDatabaseView(read: () => MemoryTables): ProvisionDatabase {
     async findLinkByAuthor(_source, externalAuthorId) {
       return copy(read().links.get(externalAuthorId));
     },
+    async findLinkByMember(_source, memberId) {
+      return copy([...read().links.values()].find((link) => link.memberId === memberId));
+    },
+    async bindExistingAccountCode(input) {
+      const tables = read();
+      const current = tables.attempts.get(input.attemptId);
+      if (!current || current.memberId !== null) {
+        return "stale";
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(input.attemptId, {
+        ...current,
+        existingAccountLink: { ...input.binding },
+        updatedAt: input.updatedAt,
+      });
+      return "bound";
+    },
+    async markExistingAccountVerified(input) {
+      const tables = read();
+      const current = tables.attempts.get(input.attemptId);
+      const binding = current?.existingAccountLink;
+      if (
+        !current ||
+        current.memberId !== null ||
+        !binding ||
+        binding.confirmationId !== input.confirmationId ||
+        binding.verifiedAt !== undefined
+      ) {
+        return "stale";
+      }
+
+      tables.noteMutation();
+      tables.attempts.set(input.attemptId, {
+        ...current,
+        existingAccountLink: { ...binding, verifiedAt: input.verifiedAt },
+        updatedAt: input.verifiedAt,
+      });
+      return "verified";
+    },
     async insertLink(record) {
       const tables = read();
       if (tables.consumeLinkFailure()) {
@@ -959,6 +1033,32 @@ function createMongoProvisionDatabase(session?: ClientSession): ProvisionDatabas
     async findLinkByAuthor(source, externalAuthorId) {
       return linkStore().findLinkByAuthor(source, externalAuthorId, { session });
     },
+    async findLinkByMember(source, memberId) {
+      return linkStore().findLinkByMember(source, memberId, { session });
+    },
+    async bindExistingAccountCode(input) {
+      await ensureMongo();
+      const updated = await attempts().updateOne(
+        { attemptId: input.attemptId, memberId: null },
+        { $set: { existingAccountLink: input.binding, updatedAt: input.updatedAt } },
+        sessionOptions,
+      );
+      return updated.matchedCount === 1 ? "bound" : "stale";
+    },
+    async markExistingAccountVerified(input) {
+      await ensureMongo();
+      const updated = await attempts().updateOne(
+        {
+          attemptId: input.attemptId,
+          memberId: null,
+          "existingAccountLink.confirmationId": input.confirmationId,
+          "existingAccountLink.verifiedAt": { $exists: false },
+        },
+        { $set: { "existingAccountLink.verifiedAt": input.verifiedAt, updatedAt: input.verifiedAt } },
+        sessionOptions,
+      );
+      return updated.matchedCount === 1 ? "verified" : "stale";
+    },
     async insertLink(record) {
       return linkStore().insertLink(record, { session });
     },
@@ -992,6 +1092,9 @@ function toUserView(user: AuthUserRecord): ProvisionUserView {
     userId: user.userId,
     memberId: user.memberId,
     email: user.email,
+    displayName: user.displayName,
+    role: user.role,
+    status: user.status,
     emailVerificationStatus: user.emailVerificationStatus,
     passwordHash: user.passwordHash,
   };

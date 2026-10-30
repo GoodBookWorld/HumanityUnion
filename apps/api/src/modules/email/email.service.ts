@@ -305,6 +305,23 @@ export async function sendLoginTwoStepCodeEmail(input: {
   });
 }
 
+export async function sendIntegrityMediaAccountLinkCodeEmail(input: {
+  to: string;
+  displayName: string;
+  verificationCode: string;
+  expiresMinutes: number;
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "integrity_media_account_link_code",
+    templateInput: {
+      displayName: input.displayName,
+      verificationCode: input.verificationCode,
+      expiresMinutes: input.expiresMinutes,
+    },
+  });
+}
+
 export async function sendPasswordResetEmail(input: {
   to: string;
   displayName: string;
