@@ -17,17 +17,21 @@ export function storedExternalVideo(
   if (!value || value.source !== "integrity-media") {
     return undefined;
   }
-  if (value.provider !== "youtube" && value.provider !== "vimeo") {
-    return undefined;
-  }
   if (typeof value.providerVideoId !== "string" || !value.providerVideoId) {
     return undefined;
   }
   const canonical =
     value.provider === "youtube"
       ? `https://www.youtube.com/watch?v=${value.providerVideoId}`
-      : `https://vimeo.com/${value.providerVideoId}`;
-  const parsed = parseExternalVideoUrl(canonical);
+      : value.provider === "vimeo"
+        ? `https://vimeo.com/${value.providerVideoId}`
+        : value.provider === "integrity-media"
+          ? `https://integrity.website/embed/videos/${value.providerVideoId}`
+          : "";
+  if (!canonical) {
+    return undefined;
+  }
+  const parsed = parseExternalVideoUrl(canonical, { allowIntegrityMedia: true });
   if (
     !parsed ||
     parsed.provider !== value.provider ||

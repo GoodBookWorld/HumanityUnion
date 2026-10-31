@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { isIntegrityMediaVideoId, type BlogExternalVideoProvider } from "@hu/types";
+
 import { INTEGRITY_MEDIA_ARTICLE_INGEST_PURPOSE } from "./external-author-link.constants.js";
 import { INTEGRITY_MEDIA_REPLAY_WINDOW_SECONDS } from "./external-author-link.constants.js";
 
@@ -24,7 +26,7 @@ export function hashArticleField(value: string): string {
  * lines keeps every previously signed create and cover payload valid.
  */
 export interface ArticleIngestVideoIdentity {
-  provider: "youtube" | "vimeo";
+  provider: BlogExternalVideoProvider;
   providerVideoId: string;
 }
 
@@ -38,7 +40,8 @@ export function externalVideoIngestLine(video: ArticleIngestVideoIdentity | null
   }
   const valid =
     (video.provider === "youtube" && YOUTUBE_VIDEO_ID.test(video.providerVideoId)) ||
-    (video.provider === "vimeo" && VIMEO_VIDEO_ID.test(video.providerVideoId));
+    (video.provider === "vimeo" && VIMEO_VIDEO_ID.test(video.providerVideoId)) ||
+    (video.provider === "integrity-media" && isIntegrityMediaVideoId(video.providerVideoId));
   if (!valid) {
     throw new Error("external video identity is not valid.");
   }

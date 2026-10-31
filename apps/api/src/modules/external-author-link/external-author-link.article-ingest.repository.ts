@@ -1,4 +1,4 @@
-import type { BlogPostStatus } from "@hu/types";
+import type { BlogExternalVideoProvider, BlogPostStatus } from "@hu/types";
 import type { ClientSession } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
@@ -9,7 +9,7 @@ import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 export type ArticleDeliveryPhase = "creating" | "complete" | "held";
 
 export interface ArticleDeliveryExternalVideo {
-  provider: "youtube" | "vimeo";
+  provider: BlogExternalVideoProvider;
   providerVideoId: string;
 }
 

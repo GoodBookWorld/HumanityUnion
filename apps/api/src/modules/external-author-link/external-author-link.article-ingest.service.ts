@@ -1058,7 +1058,7 @@ function normalizeExternalVideo(
   if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
     throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
   }
-  const parsed = parseExternalVideoUrl(trimmed);
+  const parsed = parseExternalVideoUrl(trimmed, { allowIntegrityMedia: true });
   if (!parsed) {
     throw new ArticleIngestError(400, "invalid_article", "externalVideoUrl is not valid.");
   }

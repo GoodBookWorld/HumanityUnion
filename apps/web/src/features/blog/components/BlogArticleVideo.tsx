@@ -11,7 +11,7 @@ interface BlogArticleVideoProps {
 }
 
 /**
- * Renders a syndicated YouTube or Vimeo player from the stored provider and
+ * Renders a syndicated YouTube, Vimeo, or Integrity Media player from the stored provider and
  * video id. Unsupported identities render nothing. The embed URL is built by
  * the shared external-video component, never from article HTML.
  */

@@ -123,6 +123,49 @@ describe("parseExternalVideoUrl", () => {
     assert.equal(parseExternalVideoUrl(""), null);
   });
 
+  it("keeps Integrity Media out of Initiative cover parsing unless explicitly allowed", () => {
+    const url = "https://integrity.website/embed/videos/0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87";
+    assert.equal(parseExternalVideoUrl(url), null);
+    assert.deepEqual(parseExternalVideoUrl(url, { allowIntegrityMedia: true }), {
+      provider: "integrity-media",
+      providerVideoId: "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
+      canonicalUrl: url,
+    });
+  });
+
+  it("accepts only the exact Integrity Media embed URL structure", () => {
+    const id = "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87";
+    for (const rejected of [
+      `http://integrity.website/embed/videos/${id}`,
+      `https://www.integrity.website/embed/videos/${id}`,
+      `https://integrity.website.evil.example/embed/videos/${id}`,
+      `https://evil.example/embed/videos/${id}`,
+      `https://integrity.website:443/embed/videos/${id}`,
+      `https://user:pass@integrity.website/embed/videos/${id}`,
+      `https://integrity.website/embed/videos/${id}/`,
+      `https://integrity.website/embed/videos/${id}?autoplay=1`,
+      `https://integrity.website/embed/videos/${id}#t=1`,
+      `https://integrity.website/embed/video/${id}`,
+      `https://integrity.website/videos/${id}`,
+      `https://integrity.website/embed/videos/${id}/extra`,
+      `https://integrity.website/embed/videos/${id.toUpperCase()}`,
+      "https://integrity.website/embed/videos/not-a-uuid",
+      "https://integrity.website/embed/videos/0b3c7e2a5d4f4c1b9a8e6f2d1c0b9a87",
+      "https://integrity.website/embed/videos/0b3c7e2a-5d4f-0c1b-9a8e-6f2d1c0b9a87",
+      "https://integrity.website/embed/videos/0b3c7e2a-5d4f-4c1b-7a8e-6f2d1c0b9a87",
+      "https://integrity.website/embed/videos/",
+    ]) {
+      assert.equal(parseExternalVideoUrl(rejected, { allowIntegrityMedia: true }), null, rejected);
+    }
+  });
+
+  it("builds the Integrity Media embed URL from only the video id", () => {
+    assert.equal(
+      buildExternalVideoEmbedUrl("integrity-media", "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87"),
+      "https://integrity.website/embed/videos/0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
+    );
+  });
+
   it("rejects a YouTube host with no resolvable video id", () => {
     assert.equal(parseExternalVideoUrl("https://www.youtube.com/"), null);
   });

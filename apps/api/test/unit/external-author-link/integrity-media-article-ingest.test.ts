@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, beforeEach, describe, it } from "node:test";
 
-import { parseExternalVideoUrl } from "@hu/types";
+import { parseExternalVideoUrl, type BlogExternalVideoProvider } from "@hu/types";
 import express from "express";
 
 import {
@@ -75,6 +75,9 @@ const YOUTUBE_SHORT = `https://youtu.be/${YOUTUBE_ID}`;
 const OTHER_YOUTUBE = "https://www.youtube.com/watch?v=abcdefghijk";
 const VIMEO_PAGE = `https://vimeo.com/${VIMEO_ID}`;
 const VIMEO_PLAYER = `https://player.vimeo.com/video/${VIMEO_ID}`;
+const IM_VIDEO_ID = "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87";
+const IM_VIDEO = `https://integrity.website/embed/videos/${IM_VIDEO_ID}`;
+const OTHER_IM_VIDEO = "https://integrity.website/embed/videos/7c9e6679-7425-40de-944b-e07fc1f90ae7";
 const COVER = "https://integrity.website/media/articles/with-video";
 const AUTHOR = "11111111-1111-4111-8111-111111111111";
 const MEMBER = "22222222-2222-4222-8222-222222222222";
@@ -1290,6 +1293,91 @@ describe("Integrity Media article ingestion", () => {
     assert.equal(listBlogMemoryPostsForTests().length, 1);
   });
 
+  it("stores and signs an Integrity Media hosted video and rejects every other form of it", async () => {
+    await trustedAuthor();
+    const body = articleBody("pub-video-im", {
+      externalVideoUrl: IM_VIDEO,
+      content: "<p>Public article.</p><iframe src=\"https://integrity.website/embed/videos/x\"></iframe>",
+    });
+    const lines = buildArticleIngestPayload(signInput(body, "1700000600")).split("\n");
+    assert.equal(lines.at(-1), `video:v1:integrity-media:${IM_VIDEO_ID}`);
+    assert.equal(
+      externalVideoIngestLine({ provider: "integrity-media", providerVideoId: IM_VIDEO_ID }),
+      `video:v1:integrity-media:${IM_VIDEO_ID}`,
+    );
+    assert.throws(() =>
+      externalVideoIngestLine({ provider: "integrity-media", providerVideoId: IM_VIDEO_ID.toUpperCase() }),
+    );
+    assert.throws(() => externalVideoIngestLine({ provider: "integrity-media", providerVideoId: "x" }));
+
+    const created = await postArticle(body);
+    assert.equal(created.status, 200);
+    const post = listBlogMemoryPostsForTests().find((item) => item.postId === created.body.data?.postId);
+    assert.deepEqual(post?.externalVideo, {
+      source: "integrity-media",
+      provider: "integrity-media",
+      providerVideoId: IM_VIDEO_ID,
+    });
+    assert.equal(post?.content.includes("<iframe"), false);
+    const delivery = listArticleDeliveriesForTests().find((row) => row.publicationId === "pub-video-im");
+    assert.deepEqual(delivery?.externalVideo, { provider: "integrity-media", providerVideoId: IM_VIDEO_ID });
+    const repeated = await postArticle(body);
+    assert.equal(repeated.body.data?.idempotent, true);
+
+    const detail = toPublicBlogPostDetail(post!, { displayName: "Participant" });
+    assert.deepEqual(detail.externalVideo, post?.externalVideo);
+    assert.equal(JSON.stringify(detail).includes("<iframe"), false);
+    const hydrated = fromBlogPostMongoDocument(toBlogPostMongoDocument(post!));
+    assert.deepEqual(hydrated.externalVideo, post?.externalVideo);
+    for (const providerVideoId of [IM_VIDEO_ID.toUpperCase(), "not-a-uuid", `${IM_VIDEO_ID}?autoplay=1`]) {
+      const unsafe = fromBlogPostMongoDocument({
+        ...toBlogPostMongoDocument(post!),
+        externalVideo: { source: "integrity-media", provider: "integrity-media", providerVideoId },
+      });
+      assert.equal(unsafe.externalVideo, undefined, providerVideoId);
+    }
+
+    for (const [index, externalVideoUrl] of [
+      `http://integrity.website/embed/videos/${IM_VIDEO_ID}`,
+      `https://www.integrity.website/embed/videos/${IM_VIDEO_ID}`,
+      `https://evil.example/embed/videos/${IM_VIDEO_ID}`,
+      `https://integrity.website/embed/videos/${IM_VIDEO_ID}?autoplay=1`,
+      `https://integrity.website/embed/videos/${IM_VIDEO_ID}/`,
+      `https://integrity.website/embed/video/${IM_VIDEO_ID}`,
+      `https://integrity.website/embed/videos/${IM_VIDEO_ID.toUpperCase()}`,
+      "https://integrity.website/embed/videos/not-a-uuid",
+    ].entries()) {
+      const rejected = await send(
+        { ...articleBody(`pub-video-im-bad-${index}`), externalVideoUrl },
+        nextTimestamp(),
+        "cd".repeat(32),
+      );
+      assert.equal(rejected.status, 400, externalVideoUrl);
+      assert.equal(rejected.body.meta.code, "invalid_article", externalVideoUrl);
+    }
+
+    const unexpected = await send(
+      { ...articleBody("pub-video-im-field"), externalVideoUrl: IM_VIDEO, videoProvider: "integrity-media" },
+      nextTimestamp(),
+      "ab".repeat(32),
+    );
+    assert.equal(unexpected.status, 400);
+    assert.equal(unexpected.body.meta.code, "unexpected_field");
+
+    const signed = signBody(articleBody("pub-video-im-tamper", { externalVideoUrl: IM_VIDEO }));
+    const tampered = await send(
+      articleBody("pub-video-im-tamper", { externalVideoUrl: OTHER_IM_VIDEO }),
+      signed.timestamp,
+      signed.signature,
+    );
+    assert.equal(tampered.status, 401);
+    assert.equal(tampered.body.meta.code, "invalid_signature");
+    assert.equal(
+      listBlogMemoryPostsForTests().filter((item) => item.externalVideo?.provider === "integrity-media").length,
+      1,
+    );
+  });
+
   it("rejects an unsupported, malformed, or tampered video without writing it", async () => {
     await trustedAuthor();
     const created = await postArticle(articleBody("pub-video-secure", { externalVideoUrl: YOUTUBE_WATCH }));
@@ -1511,14 +1599,14 @@ function signInput(body: ArticleRequest, at: string) {
   };
 }
 
-function signedExternalVideo(body: ArticleRequest): { externalVideo: { provider: "youtube" | "vimeo"; providerVideoId: string } | null } | Record<string, never> {
+function signedExternalVideo(body: ArticleRequest): { externalVideo: { provider: BlogExternalVideoProvider; providerVideoId: string } | null } | Record<string, never> {
   if (!Object.prototype.hasOwnProperty.call(body, "externalVideoUrl") || body.externalVideoUrl === undefined) {
     return {};
   }
   if (body.externalVideoUrl === null) {
     return { externalVideo: null };
   }
-  const parsed = parseExternalVideoUrl(body.externalVideoUrl);
+  const parsed = parseExternalVideoUrl(body.externalVideoUrl, { allowIntegrityMedia: true });
   if (!parsed) {
     throw new Error(`test cannot sign invalid externalVideoUrl: ${body.externalVideoUrl}`);
   }

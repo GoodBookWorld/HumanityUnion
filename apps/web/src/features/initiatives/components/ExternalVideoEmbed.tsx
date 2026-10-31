@@ -1,12 +1,12 @@
 "use client";
 
-import type { InitiativeCoverMediaExternalProvider } from "@hu/types";
+import type { BlogExternalVideoProvider } from "@hu/types";
 import { buildExternalVideoEmbedUrl } from "@hu/types";
 
 import "./external-video-embed.css";
 
 interface ExternalVideoEmbedProps {
-  provider: InitiativeCoverMediaExternalProvider;
+  provider: BlogExternalVideoProvider;
   providerVideoId: string;
   title: string;
   className?: string;

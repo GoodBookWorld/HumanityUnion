@@ -1,4 +1,4 @@
-import type { InitiativeCoverMediaExternalProvider } from "./initiative-cover-media.js";
+import type { BlogExternalVideoProvider } from "./initiative-cover-media.js";
 import type { LanguageCode } from "./language.js";
 import type { LifecycleSafetyOutcome } from "./lifecycle-safety.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
@@ -154,7 +154,7 @@ export interface BlogExternalCover {
  */
 export interface BlogExternalVideo {
   readonly source: "integrity-media";
-  readonly provider: InitiativeCoverMediaExternalProvider;
+  readonly provider: BlogExternalVideoProvider;
   readonly providerVideoId: string;
 }
 

@@ -27,6 +27,9 @@ export type InitiativeCoverMediaVerificationStatus =
 
 export type InitiativeCoverMediaExternalProvider = "youtube" | "vimeo";
 
+/** Blog video providers. Integrity Media is accepted only for syndicated Blog articles. */
+export type BlogExternalVideoProvider = InitiativeCoverMediaExternalProvider | "integrity-media";
+
 export interface InitiativeCoverMedia {
   type: InitiativeCoverMediaType;
   url: string;
@@ -96,6 +99,42 @@ export interface ParsedExternalVideoUrl {
   canonicalUrl: string;
 }
 
+export interface ParsedBlogExternalVideoUrl {
+  provider: BlogExternalVideoProvider;
+  providerVideoId: string;
+  canonicalUrl: string;
+}
+
+const INTEGRITY_MEDIA_VIDEO_EMBED_PREFIX = "https://integrity.website/embed/videos/";
+/** Lowercase canonical RFC 4122 UUID. */
+const INTEGRITY_MEDIA_VIDEO_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export function isIntegrityMediaVideoId(value: string): boolean {
+  return INTEGRITY_MEDIA_VIDEO_ID_PATTERN.test(value);
+}
+
+/**
+ * Exactly `https://integrity.website/embed/videos/{uuid}`: no other host,
+ * port, credentials, path, query, fragment, trailing slash, or letter case.
+ */
+function parseIntegrityMediaVideoUrl(value: string): ParsedBlogExternalVideoUrl | null {
+  if (!value.startsWith(INTEGRITY_MEDIA_VIDEO_EMBED_PREFIX)) {
+    return null;
+  }
+
+  const videoId = value.slice(INTEGRITY_MEDIA_VIDEO_EMBED_PREFIX.length);
+  if (!INTEGRITY_MEDIA_VIDEO_ID_PATTERN.test(videoId)) {
+    return null;
+  }
+
+  return {
+    provider: "integrity-media",
+    providerVideoId: videoId,
+    canonicalUrl: `${INTEGRITY_MEDIA_VIDEO_EMBED_PREFIX}${videoId}`,
+  };
+}
+
 const YOUTUBE_HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"]);
 const VIMEO_HOSTS = new Set(["vimeo.com", "www.vimeo.com", "player.vimeo.com"]);
 
@@ -142,12 +181,30 @@ function extractVimeoVideoId(url: URL): string | null {
  * Deterministic and side-effect free (no network access), so it is safe to
  * run both in the browser (optimistic validation) and on the server
  * (authoritative validation) from the exact same implementation.
+ *
+ * Integrity Media embeds are accepted only with `allowIntegrityMedia`, so
+ * Initiative cover media keeps its YouTube and Vimeo allowlist.
  */
-export function parseExternalVideoUrl(rawUrl: string): ParsedExternalVideoUrl | null {
+export function parseExternalVideoUrl(rawUrl: string): ParsedExternalVideoUrl | null;
+export function parseExternalVideoUrl(
+  rawUrl: string,
+  options: { allowIntegrityMedia: true },
+): ParsedBlogExternalVideoUrl | null;
+export function parseExternalVideoUrl(
+  rawUrl: string,
+  options?: { allowIntegrityMedia?: boolean },
+): ParsedBlogExternalVideoUrl | null {
   const trimmed = rawUrl.trim();
 
   if (!trimmed) {
     return null;
+  }
+
+  if (options?.allowIntegrityMedia === true) {
+    const integrityMedia = parseIntegrityMediaVideoUrl(trimmed);
+    if (integrityMedia) {
+      return integrityMedia;
+    }
   }
 
   let parsed: URL;
@@ -201,13 +258,17 @@ export function parseExternalVideoUrl(rawUrl: string): ParsedExternalVideoUrl | 
  * provider offers them.
  */
 export function buildExternalVideoEmbedUrl(
-  provider: InitiativeCoverMediaExternalProvider,
+  provider: BlogExternalVideoProvider,
   providerVideoId: string,
 ): string {
   const encodedId = encodeURIComponent(providerVideoId);
 
   if (provider === "youtube") {
     return `https://www.youtube-nocookie.com/embed/${encodedId}?rel=0&modestbranding=1`;
+  }
+
+  if (provider === "integrity-media") {
+    return `${INTEGRITY_MEDIA_VIDEO_EMBED_PREFIX}${encodedId}`;
   }
 
   return `https://player.vimeo.com/video/${encodedId}?title=0&byline=0`;

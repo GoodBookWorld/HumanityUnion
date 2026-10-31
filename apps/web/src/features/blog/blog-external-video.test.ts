@@ -73,6 +73,28 @@ describe("Blog external video", () => {
       }),
       null,
     );
+    const integrityMedia = acceptedBlogExternalVideo({
+      source: "integrity-media",
+      provider: "integrity-media",
+      providerVideoId: "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
+    });
+    assert.equal(integrityMedia?.provider, "integrity-media");
+    assert.equal(
+      integrityMedia ? buildExternalVideoEmbedUrl(integrityMedia.provider, integrityMedia.providerVideoId) : "",
+      "https://integrity.website/embed/videos/0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
+    );
+    for (const providerVideoId of [
+      "0B3C7E2A-5D4F-4C1B-9A8E-6F2D1C0B9A87",
+      "not-a-uuid",
+      "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87?autoplay=1",
+      "../../evil",
+    ]) {
+      assert.equal(
+        acceptedBlogExternalVideo({ source: "integrity-media", provider: "integrity-media", providerVideoId }),
+        null,
+        providerVideoId,
+      );
+    }
     assert.equal(
       buildExternalVideoEmbedUrl("youtube", "dQw4w9WgXcQ").includes("autoplay"),
       false,

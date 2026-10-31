@@ -686,14 +686,17 @@ export {
   resolveEffectiveModerationBlock,
 } from "./moderation-block.js";
 export type {
+  BlogExternalVideoProvider,
   InitiativeCoverMedia,
   InitiativeCoverMediaExternalProvider,
   InitiativeCoverMediaType,
   InitiativeCoverMediaVerificationStatus,
+  ParsedBlogExternalVideoUrl,
   ParsedExternalVideoUrl,
 } from "./initiative-cover-media.js";
 export {
   buildExternalVideoEmbedUrl,
+  isIntegrityMediaVideoId,
   parseExternalVideoUrl,
   resolveInitiativeCoverMedia,
 } from "./initiative-cover-media.js";
