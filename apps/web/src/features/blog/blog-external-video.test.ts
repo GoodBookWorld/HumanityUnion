@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildExternalVideoEmbedUrl, type BlogExternalVideo } from "@hu/types";
 
+import { withRequestedPlayback } from "../initiatives/components/ExternalVideoEmbed.js";
 import { acceptedBlogExternalVideo, planBlogArticleMedia } from "./blog-article-video.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -117,15 +118,46 @@ describe("Blog unified cover and video", () => {
     assert.match(media, /type="button"[\s\S]*onClick=\{\(\) => setPlaying\(true\)\}[\s\S]*aria-label=\{`Play video: \$\{title\}`\}/);
     assert.match(media, /className="blog-article__cover blog-article__video"/);
     assert.equal(media.match(/<ExternalVideoEmbed\b/g)?.length, 1);
-    assert.doesNotMatch(media, /<iframe|dangerouslySetInnerHTML|autoplay/i);
+    assert.doesNotMatch(media, /<iframe|dangerouslySetInnerHTML/i);
     assert.match(media, /<div className="blog-article__cover">\s*<BlogCoverImage[\s\S]*className="blog-article__cover-image"/);
+  });
+
+  it("requests playback only from the Play click", () => {
+    assert.equal(media.match(/autoplay=\{/g)?.length, 1);
+    assert.match(media, /autoplay=\{playing\}/);
+    assert.match(embed, /autoplay = false,/);
+    assert.match(embed, /const src = autoplay \? withRequestedPlayback\(embedUrl\) : embedUrl;/);
+    for (const caller of [
+      "../initiatives/components/InitiativeImage.tsx",
+      "../media-upload/components/InitiativeCoverMediaField.tsx",
+    ]) {
+      const source = read(caller);
+      assert.match(source, /<ExternalVideoEmbed\b/, caller);
+      assert.doesNotMatch(source, /<ExternalVideoEmbed\b[^>]*\bautoplay\b/, caller);
+    }
+  });
+
+  it("adds the provider autoplay flag without changing provider, path, or video id", () => {
+    assert.equal(
+      withRequestedPlayback(buildExternalVideoEmbedUrl("youtube", "dQw4w9WgXcQ")),
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&autoplay=1",
+    );
+    assert.equal(
+      withRequestedPlayback(buildExternalVideoEmbedUrl("vimeo", "76979871")),
+      "https://player.vimeo.com/video/76979871?title=0&byline=0&autoplay=1",
+    );
+    assert.equal(
+      withRequestedPlayback(buildExternalVideoEmbedUrl("integrity-media", IM_VIDEO_ID)),
+      `https://integrity.website/embed/videos/${IM_VIDEO_ID}?autoplay=1`,
+    );
   });
 
   it("keeps the iframe security model unchanged", () => {
     assert.match(embed, /sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"/);
-    assert.match(embed, /allow="encrypted-media; picture-in-picture"/);
+    assert.match(embed, /const PLAYER_PERMISSIONS = "encrypted-media; picture-in-picture";/);
+    assert.match(embed, /allow=\{autoplay \? `autoplay; \$\{PLAYER_PERMISSIONS\}` : PLAYER_PERMISSIONS\}/);
     assert.match(embed, /referrerPolicy="strict-origin-when-cross-origin"/);
-    assert.doesNotMatch(embed, /autoplay=/);
+    assert.equal(embed.match(/sandbox=/g)?.length, 1);
   });
 
   it("uses 16:9 only for video and keeps image-only covers at their own ratio", () => {

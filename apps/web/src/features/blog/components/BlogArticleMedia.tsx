@@ -18,7 +18,8 @@ interface BlogArticleMediaProps {
 
 /**
  * The article's single cover or video block. A video poster mounts the
- * sandboxed player in the same 16:9 container only after Play is pressed.
+ * sandboxed player in the same 16:9 container only after Play is pressed,
+ * and only that click requests playback.
  */
 export function BlogArticleMedia({ title, coverImage, video, priority }: BlogArticleMediaProps) {
   const [playing, setPlaying] = useState(false);
@@ -49,6 +50,7 @@ export function BlogArticleMedia({ title, coverImage, video, priority }: BlogArt
             provider={plan.video.provider}
             providerVideoId={plan.video.providerVideoId}
             title={title}
+            autoplay={playing}
           />
         ) : (
           <>

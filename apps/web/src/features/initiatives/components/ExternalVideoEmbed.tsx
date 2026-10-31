@@ -10,6 +10,20 @@ interface ExternalVideoEmbedProps {
   providerVideoId: string;
   title: string;
   className?: string;
+  /**
+   * Set only after the reader pressed Play: requests playback with the
+   * provider's `autoplay=1` and delegates the `autoplay` permission.
+   */
+  autoplay?: boolean;
+}
+
+const PLAYER_PERMISSIONS = "encrypted-media; picture-in-picture";
+
+/** YouTube, Vimeo, and the Integrity Media embed all read `autoplay=1`. */
+export function withRequestedPlayback(src: string): string {
+  const url = new URL(src);
+  url.searchParams.set("autoplay", "1");
+  return url.toString();
 }
 
 /**
@@ -19,15 +33,18 @@ interface ExternalVideoEmbedProps {
  * user-supplied HTML or iframe code is ever used. `sandbox` restricts the
  * framed document to script execution and its own origin only — it can
  * never access this page's origin, storage, or DOM. Controls are the
- * provider's default (enabled); autoplay is never requested.
+ * provider's default (enabled); autoplay is requested only through
+ * `autoplay`, after a user action.
  */
 export function ExternalVideoEmbed({
   provider,
   providerVideoId,
   title,
   className,
+  autoplay = false,
 }: ExternalVideoEmbedProps) {
-  const src = buildExternalVideoEmbedUrl(provider, providerVideoId);
+  const embedUrl = buildExternalVideoEmbedUrl(provider, providerVideoId);
+  const src = autoplay ? withRequestedPlayback(embedUrl) : embedUrl;
 
   return (
     <iframe
@@ -36,9 +53,9 @@ export function ExternalVideoEmbed({
       }
       src={src}
       title={title}
-      loading="lazy"
+      loading={autoplay ? "eager" : "lazy"}
       sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-      allow="encrypted-media; picture-in-picture"
+      allow={autoplay ? `autoplay; ${PLAYER_PERMISSIONS}` : PLAYER_PERMISSIONS}
       referrerPolicy="strict-origin-when-cross-origin"
       allowFullScreen
     />
