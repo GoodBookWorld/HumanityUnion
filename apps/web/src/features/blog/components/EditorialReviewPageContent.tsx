@@ -35,11 +35,9 @@ import {
 } from "../editorial-api";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
-import { BlogArticleVideo } from "./BlogArticleVideo";
+import { BlogArticleMedia } from "./BlogArticleMedia";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
-import { BlogCoverImage } from "./BlogCoverImage";
-
 import "../blog.css";
 
 function formatDate(value?: string): string {
@@ -322,17 +320,11 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
               </time>
             ) : null}
           </div>
-          <div className="blog-article__cover">
-            <BlogCoverImage
-              title={preview.title}
-              imageUrl={preview.coverImage?.mediaUrl}
-              altText={preview.coverImage?.altText}
-              className="blog-article__cover-image"
-            />
-          </div>
-          {preview.externalVideo ? (
-            <BlogArticleVideo video={preview.externalVideo} title={preview.title} />
-          ) : null}
+          <BlogArticleMedia
+            title={preview.title}
+            coverImage={preview.coverImage}
+            video={preview.externalVideo}
+          />
           {preview.excerpt ? <p className="hu-body blog-article__excerpt">{preview.excerpt}</p> : null}
           <BlogArticleBody html={preview.content} />
           <BlogAuthorCard author={preview.author} />

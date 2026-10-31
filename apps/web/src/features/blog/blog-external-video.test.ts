@@ -4,104 +4,146 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { buildExternalVideoEmbedUrl } from "@hu/types";
+import { buildExternalVideoEmbedUrl, type BlogExternalVideo } from "@hu/types";
 
-import { acceptedBlogExternalVideo } from "./blog-article-video.js";
+import { acceptedBlogExternalVideo, planBlogArticleMedia } from "./blog-article-video.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const IM_VIDEO_ID = "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87";
+
+function video(provider: BlogExternalVideo["provider"], providerVideoId: string): BlogExternalVideo {
+  return { source: "integrity-media", provider, providerVideoId };
+}
+
+const youtube = video("youtube", "dQw4w9WgXcQ");
+const vimeo = video("vimeo", "76979871");
+const integrityMedia = video("integrity-media", IM_VIDEO_ID);
 
 describe("Blog external video", () => {
-  it("accepts only a canonical YouTube or Vimeo identity and renders it through the sandboxed player", () => {
-    const page = readFileSync(path.join(here, "components/BlogArticlePageContent.tsx"), "utf8");
-    const preview = readFileSync(path.join(here, "components/BlogPreviewPageContent.tsx"), "utf8");
-    const review = readFileSync(path.join(here, "components/EditorialReviewPageContent.tsx"), "utf8");
-    const player = readFileSync(path.join(here, "components/BlogArticleVideo.tsx"), "utf8");
-    const editor = readFileSync(path.join(here, "components/BlogPostEditor.tsx"), "utf8");
-    const css = readFileSync(path.join(here, "blog.css"), "utf8");
-    const embed = readFileSync(
-      path.join(here, "../initiatives/components/ExternalVideoEmbed.tsx"),
-      "utf8",
-    );
-
-    assert.match(page, /post\.externalVideo \?/);
-    assert.match(page, /<BlogArticleVideo video=\{post\.externalVideo\} title=\{titleForDisplay\} \/>/);
-    assert.match(page, /<BlogArticleBody html=\{bodyHtml\} \/>/);
-    assert.doesNotMatch(page, /<iframe/);
-    assert.match(preview, /post\.externalVideo \?/);
-    assert.match(review, /preview\.externalVideo \?/);
-    assert.match(player, /ExternalVideoEmbed/);
-    assert.match(player, /acceptedBlogExternalVideo/);
-    assert.doesNotMatch(player, /<iframe|dangerouslySetInnerHTML/);
-    assert.doesNotMatch(editor, /externalVideo|youtube|vimeo|<iframe/i);
-    assert.match(css, /\.blog-article__video \.external-video-embed[\s\S]*aspect-ratio:\s*16\s*\/\s*9/);
-    assert.match(embed, /sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"/);
-    assert.match(embed, /allow="encrypted-media; picture-in-picture"/);
-    assert.doesNotMatch(embed, /autoplay=/);
-
-    const youtube = acceptedBlogExternalVideo({
-      source: "integrity-media",
-      provider: "youtube",
-      providerVideoId: "dQw4w9WgXcQ",
-    });
-    assert.equal(youtube?.provider, "youtube");
+  it("accepts only a canonical provider identity and builds its fixed embed URL", () => {
+    const acceptedYoutube = acceptedBlogExternalVideo(youtube);
     assert.equal(
-      youtube ? buildExternalVideoEmbedUrl(youtube.provider, youtube.providerVideoId) : "",
+      acceptedYoutube ? buildExternalVideoEmbedUrl(acceptedYoutube.provider, acceptedYoutube.providerVideoId) : "",
       "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1",
     );
-    const vimeo = acceptedBlogExternalVideo({
-      source: "integrity-media",
-      provider: "vimeo",
-      providerVideoId: "76979871",
-    });
+    const acceptedVimeo = acceptedBlogExternalVideo(vimeo);
     assert.equal(
-      vimeo ? buildExternalVideoEmbedUrl(vimeo.provider, vimeo.providerVideoId) : "",
+      acceptedVimeo ? buildExternalVideoEmbedUrl(acceptedVimeo.provider, acceptedVimeo.providerVideoId) : "",
       "https://player.vimeo.com/video/76979871?title=0&byline=0",
     );
+    const acceptedIm = acceptedBlogExternalVideo(integrityMedia);
+    assert.equal(acceptedIm?.provider, "integrity-media");
     assert.equal(
-      acceptedBlogExternalVideo({
-        source: "integrity-media",
-        provider: "youtube",
-        providerVideoId: "<iframe>",
-      }),
-      null,
+      acceptedIm ? buildExternalVideoEmbedUrl(acceptedIm.provider, acceptedIm.providerVideoId) : "",
+      `https://integrity.website/embed/videos/${IM_VIDEO_ID}`,
     );
-    assert.equal(
-      acceptedBlogExternalVideo({
-        source: "integrity-media",
-        provider: "vimeo",
-        providerVideoId: "not-a-number",
-      }),
-      null,
-    );
-    const integrityMedia = acceptedBlogExternalVideo({
-      source: "integrity-media",
-      provider: "integrity-media",
-      providerVideoId: "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
-    });
-    assert.equal(integrityMedia?.provider, "integrity-media");
-    assert.equal(
-      integrityMedia ? buildExternalVideoEmbedUrl(integrityMedia.provider, integrityMedia.providerVideoId) : "",
-      "https://integrity.website/embed/videos/0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87",
-    );
-    for (const providerVideoId of [
-      "0B3C7E2A-5D4F-4C1B-9A8E-6F2D1C0B9A87",
-      "not-a-uuid",
-      "0b3c7e2a-5d4f-4c1b-9a8e-6f2d1c0b9a87?autoplay=1",
-      "../../evil",
+    for (const rejected of [
+      video("youtube", "<iframe>"),
+      video("vimeo", "not-a-number"),
+      video("integrity-media", IM_VIDEO_ID.toUpperCase()),
+      video("integrity-media", "not-a-uuid"),
+      video("integrity-media", `${IM_VIDEO_ID}?autoplay=1`),
+      video("integrity-media", "../../evil"),
     ]) {
-      assert.equal(
-        acceptedBlogExternalVideo({ source: "integrity-media", provider: "integrity-media", providerVideoId }),
-        null,
-        providerVideoId,
-      );
+      assert.equal(acceptedBlogExternalVideo(rejected), null, rejected.providerVideoId);
     }
-    assert.equal(
-      buildExternalVideoEmbedUrl("youtube", "dQw4w9WgXcQ").includes("autoplay"),
-      false,
+    for (const provider of ["youtube", "vimeo", "integrity-media"] as const) {
+      const id = provider === "youtube" ? "dQw4w9WgXcQ" : provider === "vimeo" ? "76979871" : IM_VIDEO_ID;
+      assert.equal(buildExternalVideoEmbedUrl(provider, id).includes("autoplay"), false);
+    }
+  });
+});
+
+describe("Blog unified cover and video", () => {
+  const read = (relative: string) => readFileSync(path.join(here, relative), "utf8");
+  const media = read("components/BlogArticleMedia.tsx");
+  const css = read("blog.css");
+  const embed = read("../initiatives/components/ExternalVideoEmbed.tsx");
+  const views = {
+    article: read("components/BlogArticlePageContent.tsx"),
+    preview: read("components/BlogPreviewPageContent.tsx"),
+    review: read("components/EditorialReviewPageContent.tsx"),
+  };
+
+  it("uses the cover as the poster for every provider when both exist", () => {
+    for (const item of [youtube, vimeo, integrityMedia]) {
+      const plan = planBlogArticleMedia({ hasCoverImage: true, video: item });
+      assert.equal(plan.kind, "video", item.provider);
+      assert.ok(plan.kind === "video");
+      assert.equal(plan.video.provider, item.provider);
+      assert.equal(plan.video.providerVideoId, item.providerVideoId);
+      assert.deepEqual(plan.poster, { kind: "cover" });
+    }
+  });
+
+  it("uses the YouTube thumbnail without a cover and the player for Vimeo and Integrity Media", () => {
+    assert.deepEqual(planBlogArticleMedia({ hasCoverImage: false, video: youtube }), {
+      kind: "video",
+      video: acceptedBlogExternalVideo(youtube),
+      poster: { kind: "youtube-thumbnail", url: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg" },
+    });
+    for (const item of [vimeo, integrityMedia]) {
+      const plan = planBlogArticleMedia({ hasCoverImage: false, video: item });
+      assert.ok(plan.kind === "video");
+      assert.equal(plan.poster, null, item.provider);
+      assert.equal(plan.video.provider, item.provider);
+    }
+  });
+
+  it("keeps the plain cover when there is no playable video", () => {
+    assert.deepEqual(planBlogArticleMedia({ hasCoverImage: true }), { kind: "cover" });
+    assert.deepEqual(planBlogArticleMedia({ hasCoverImage: false, video: null }), { kind: "cover" });
+    assert.deepEqual(
+      planBlogArticleMedia({ hasCoverImage: true, video: video("integrity-media", "not-a-uuid") }),
+      { kind: "cover" },
     );
-    assert.equal(
-      buildExternalVideoEmbedUrl("vimeo", "76979871").includes("autoplay"),
-      false,
+  });
+
+  it("renders one media block in the article, preview, and editorial views", () => {
+    for (const [name, page] of Object.entries(views)) {
+      assert.equal(page.match(/<BlogArticleMedia\b/g)?.length, 1, name);
+      assert.doesNotMatch(page, /<BlogCoverImage\b|<BlogArticleVideo\b|<ExternalVideoEmbed\b|<iframe/, name);
+      assert.match(page, /video=\{(post|preview)\.externalVideo\}/, name);
+      assert.match(page, /coverImage=\{(post|preview)\.coverImage\}/, name);
+    }
+    assert.match(views.article, /<BlogArticleBody html=\{bodyHtml\} \/>/);
+  });
+
+  it("mounts the provider player in the same container only after Play", () => {
+    assert.match(media, /const \[playing, setPlaying\] = useState\(false\)/);
+    assert.match(media, /playing \|\| !plan\.poster \?/);
+    assert.match(media, /provider=\{plan\.video\.provider\}/);
+    assert.match(media, /providerVideoId=\{plan\.video\.providerVideoId\}/);
+    assert.match(media, /type="button"[\s\S]*onClick=\{\(\) => setPlaying\(true\)\}[\s\S]*aria-label=\{`Play video: \$\{title\}`\}/);
+    assert.match(media, /className="blog-article__cover blog-article__video"/);
+    assert.equal(media.match(/<ExternalVideoEmbed\b/g)?.length, 1);
+    assert.doesNotMatch(media, /<iframe|dangerouslySetInnerHTML|autoplay/i);
+    assert.match(media, /<div className="blog-article__cover">\s*<BlogCoverImage[\s\S]*className="blog-article__cover-image"/);
+  });
+
+  it("keeps the iframe security model unchanged", () => {
+    assert.match(embed, /sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"/);
+    assert.match(embed, /allow="encrypted-media; picture-in-picture"/);
+    assert.match(embed, /referrerPolicy="strict-origin-when-cross-origin"/);
+    assert.doesNotMatch(embed, /autoplay=/);
+  });
+
+  it("uses 16:9 only for video and keeps image-only covers at their own ratio", () => {
+    assert.match(css, /\.blog-article__video-frame \{[^}]*aspect-ratio:\s*16\s*\/\s*9/);
+    assert.match(media, /<div className="blog-article__cover blog-article__video">\s*<div className="blog-article__video-frame">/);
+    // The poster must outrank the editorial preview's `.editorial-review__preview .blog-article__cover .blog-cover-image`.
+    assert.match(
+      css,
+      /\.blog-article__cover\.blog-article__video \.blog-article__video-frame \.blog-article__media-poster \{[^}]*position:\s*absolute/,
     );
+    assert.doesNotMatch(css, /\.blog-article__cover\.blog-article__video \{[^}]*aspect-ratio/);
+    assert.match(
+      css,
+      /\.blog-article__cover \.blog-cover-image,\s*\.blog-article__cover \.blog-article__cover-image \{[^}]*aspect-ratio:\s*auto/,
+    );
+    assert.match(css, /\.blog-article__video \.external-video-embed \{[^}]*aspect-ratio:\s*16\s*\/\s*9/);
+    assert.match(css, /\.blog-article__play-button:focus-visible \{[^}]*outline:/);
+    assert.match(css, /@media \(max-width: 40rem\) \{\s*\.blog-article__play-icon/);
+    assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}/);
   });
 });

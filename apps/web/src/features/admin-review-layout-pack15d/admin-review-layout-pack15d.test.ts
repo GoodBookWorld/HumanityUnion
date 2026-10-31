@@ -84,7 +84,8 @@ describe("Pack 15D — Admin publication review 30/40/30", () => {
     const review = readWeb("features/blog/components/EditorialReviewPageContent.tsx");
     assert.match(review, /BlogArticleBody/);
     assert.match(review, /html=\{preview\.content\}/);
-    assert.match(review, /blog-article__cover-image/);
+    assert.match(review, /<BlogArticleMedia[\s\S]*coverImage=\{preview\.coverImage\}/);
+    assert.match(readWeb("features/blog/components/BlogArticleMedia.tsx"), /blog-article__cover-image/);
     assert.match(review, /preview\.title/);
     assert.match(review, /preview\.excerpt/);
     assert.doesNotMatch(review, /dangerouslySetInnerHTML/);

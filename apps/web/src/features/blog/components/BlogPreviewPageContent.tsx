@@ -12,11 +12,9 @@ import {
 import { formatBlogPublishedDate } from "../api";
 import { previewBlogPost, type BlogPreviewProjection } from "../publishing-api";
 import { BlogArticleBody } from "./BlogArticleBody";
-import { BlogArticleVideo } from "./BlogArticleVideo";
+import { BlogArticleMedia } from "./BlogArticleMedia";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
-import { BlogCoverImage } from "./BlogCoverImage";
-
 import "../blog.css";
 
 export function BlogPreviewPageContent({ postId }: { postId: string }) {
@@ -77,17 +75,12 @@ export function BlogPreviewPageContent({ postId }: { postId: string }) {
         )}
       </div>
 
-      <div className="blog-article__cover">
-        <BlogCoverImage
-          title={post.title}
-          imageUrl={post.coverImage?.mediaUrl}
-          altText={post.coverImage?.altText}
-          className="blog-article__cover-image"
-          priority
-        />
-      </div>
-
-      {post.externalVideo ? <BlogArticleVideo video={post.externalVideo} title={post.title} /> : null}
+      <BlogArticleMedia
+        title={post.title}
+        coverImage={post.coverImage}
+        video={post.externalVideo}
+        priority
+      />
 
       <BlogArticleBody html={post.content} />
       <BlogAuthorCard author={post.author} />

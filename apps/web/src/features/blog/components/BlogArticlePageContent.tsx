@@ -14,11 +14,10 @@ import { shouldShowBlogLastEdited } from "../blog-last-edited";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { BlogArticleBody } from "./BlogArticleBody";
-import { BlogArticleVideo } from "./BlogArticleVideo";
+import { BlogArticleMedia } from "./BlogArticleMedia";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCommentsSection } from "./BlogCommentsSection";
-import { BlogCoverImage } from "./BlogCoverImage";
 import { BlogDiscoveryLeftRail } from "./BlogDiscoveryLeftRail";
 import { BlogDiscoveryRightRail } from "./BlogDiscoveryRightRail";
 import { BlogDiscoverySearch } from "./BlogDiscoverySearch";
@@ -290,19 +289,12 @@ export function BlogArticlePageContent({
               {titleForDisplay}
             </h1>
 
-            <div className="blog-article__cover">
-              <BlogCoverImage
-                title={titleForDisplay}
-                imageUrl={post.coverImage?.mediaUrl}
-                altText={post.coverImage?.altText}
-                className="blog-article__cover-image"
-                priority
-              />
-            </div>
-
-            {post.externalVideo ? (
-              <BlogArticleVideo video={post.externalVideo} title={titleForDisplay} />
-            ) : null}
+            <BlogArticleMedia
+              title={titleForDisplay}
+              coverImage={post.coverImage}
+              video={post.externalVideo}
+              priority
+            />
 
             <BlogArticleBody html={bodyHtml} />
           </div>

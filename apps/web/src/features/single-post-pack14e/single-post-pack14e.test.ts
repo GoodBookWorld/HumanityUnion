@@ -52,7 +52,8 @@ describe("Pack 14E — Single-post shell & Block 14 certification (Web)", () => 
     assert.match(article, /formatBlogPublishedDate/);
     assert.match(article, /BlogAuthorInline/);
     assert.match(article, /commentsLabel|commentCount/);
-    assert.match(article, /BlogCoverImage/);
+    assert.match(article, /BlogArticleMedia/);
+    assert.match(readWeb("features/blog/components/BlogArticleMedia.tsx"), /BlogCoverImage/);
     assert.match(article, /BlogArticleBody/);
     assert.match(article, /BlogCommentsSection/);
     assert.match(article, /post\.category/);

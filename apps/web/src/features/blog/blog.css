@@ -737,14 +737,14 @@
   object-position: center;
 }
 
-.blog-article__video {
+/*
+ * A video article keeps one 16:9 block: poster and Play first, then the player.
+ * The frame owns the ratio, so cover rules that reset the container still apply.
+ */
+.blog-article__video-frame {
+  position: relative;
   width: 100%;
-  max-width: min(100%, 56rem);
-  min-width: 0;
-  margin-inline: auto;
-  margin-top: var(--hu-space-4);
-  border-radius: var(--hu-radius-card);
-  overflow: hidden;
+  aspect-ratio: 16 / 9;
   background: black;
 }
 
@@ -752,9 +752,69 @@
   display: block;
   width: 100%;
   max-width: 100%;
+  height: 100%;
   aspect-ratio: 16 / 9;
-  height: auto;
   border: 0;
+}
+
+.blog-article__cover.blog-article__video .blog-article__video-frame .blog-article__media-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+  object-fit: contain;
+  object-position: center;
+  background: black;
+}
+
+.blog-article__cover.blog-article__video .blog-article__video-frame .blog-article__media-poster--thumbnail {
+  object-fit: cover;
+}
+
+.blog-article__play-button {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  cursor: pointer;
+}
+
+.blog-article__play-button:hover,
+.blog-article__play-button:focus-visible {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.blog-article__play-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: -4px;
+}
+
+.blog-article__play-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  padding-inline-start: 0.25rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+@media (max-width: 40rem) {
+  .blog-article__play-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.35rem;
+  }
 }
 
 .blog-article-body {
