@@ -54,7 +54,8 @@ const FIXTURE_RESOURCE: TrustedMediaResource = {
 describe("Pack 08K.3.3 home map + country media", () => {
   it("A–B: Home interactive map inventory uses next-intl + geography resolver", () => {
     const map = readWeb("features/world-map/components/InteractiveWorldMap.tsx");
-    assert.match(map, /getLocalizedCountryDisplayName/);
+    // HYD-01B — names come from the shared resolver, resolved on the server.
+    assert.match(map, /useLocalizedCountries/);
     assert.match(map, /publicHome\.interactiveMap/);
     assert.match(map, /setCountryNames/);
     assert.match(map, /setPinLabels/);
@@ -76,9 +77,10 @@ describe("Pack 08K.3.3 home map + country media", () => {
     const geoNav = readWeb(
       "features/global-experience/components/GeographicNavigator.tsx",
     );
-    assert.match(ipNav, /getLocalizedCountryDisplayName/);
+    // HYD-01B — country names via the server-resolved GeographyDisplayProvider.
+    assert.match(ipNav, /useCountryDisplayName/);
     assert.match(ipNav, /getLocalizedAdminRegionDisplayName/);
-    assert.match(geoNav, /getLocalizedCountryDisplayName/);
+    assert.match(geoNav, /useCountryDisplayName/);
     assert.match(geoNav, /getLocalizedAdminRegionDisplayName/);
     assert.doesNotMatch(geoNav, /country\?\.label \?\?/);
   });

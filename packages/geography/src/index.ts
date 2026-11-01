@@ -76,6 +76,7 @@ export type { PublicGeographyInput, ResolvedPublicGeography } from "./format-pub
 export {
   getLocalizedAdminRegionDisplayName,
   getLocalizedCountryDisplayName,
+  listLocalizedCountries,
   normalizeGeographicDisplayLocale,
   resolveAdminRegionDisplayName,
   resolveCountryDisplayName,
@@ -85,4 +86,5 @@ export {
 export type {
   GeographicDisplayKind,
   GeographicDisplayNameResult,
+  LocalizedCountryName,
 } from "./geographic-display-names.js";

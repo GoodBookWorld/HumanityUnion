@@ -9,6 +9,7 @@ export default defineConfig({
     "**/workspace-pwa-root-width-15d8e1.playwright.e2e.ts",
     "**/seo-a11y-contrast-seo10.playwright.e2e.ts",
     "**/hyd-01a-utc-dates.playwright.e2e.ts",
+    "**/hyd-01b-geography-names.playwright.e2e.ts",
   ],
   timeout: 60_000,
   retries: 0,

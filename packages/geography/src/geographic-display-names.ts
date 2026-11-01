@@ -12,6 +12,7 @@
  */
 
 import {
+  getCountries,
   getCountryByCode,
   getRegionByCode,
   normalizeCountryInput,
@@ -326,6 +327,36 @@ export function getLocalizedCountryDisplayName(
   fallback?: string,
 ): string {
   return resolveCountryDisplayName({ countryCode, locale, fallback }).displayName;
+}
+
+export type LocalizedCountryName = {
+  /** ISO 3166-1 alpha-2 code (canonical identity). */
+  readonly code: string;
+  readonly label: string;
+};
+
+function localeCollator(locale: string): Intl.Collator {
+  try {
+    return new Intl.Collator(locale);
+  } catch {
+    return new Intl.Collator("en");
+  }
+}
+
+/**
+ * HYD-01B — every country with its display name for `locale`, sorted for that
+ * locale. Resolve on the server and hand the result to client components so
+ * server render and hydration use the same names and order (browser ICU data
+ * differs from Node's). Works for any locale the runtime can format.
+ */
+export function listLocalizedCountries(locale: string): readonly LocalizedCountryName[] {
+  const collator = localeCollator(normalizeGeographicDisplayLocale(locale));
+  return getCountries()
+    .map((country) => ({
+      code: country.code,
+      label: resolveCountryDisplayName({ countryCode: country.code, locale }).displayName,
+    }))
+    .sort((a, b) => collator.compare(a.label, b.label) || (a.code < b.code ? -1 : 1));
 }
 
 /** Convenience: admin region display string only. */

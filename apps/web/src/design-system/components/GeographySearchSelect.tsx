@@ -13,6 +13,8 @@ import {
 export interface GeographyOption {
   slug: string;
   label: string;
+  /** Extra text the filter also matches (not displayed). */
+  searchText?: string;
 }
 
 interface GeographySearchSelectProps {
@@ -78,7 +80,10 @@ export function GeographySearchSelect({
     }
 
     return options.filter(
-      (option) => option.label.toLowerCase().includes(needle) || option.slug.includes(needle),
+      (option) =>
+        option.label.toLowerCase().includes(needle) ||
+        option.slug.includes(needle) ||
+        (option.searchText?.toLowerCase().includes(needle) ?? false),
     );
   }, [hasQuery, needle, options]);
 

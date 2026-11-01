@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
-import {
-  getLocalizedCountryDisplayName,
-  toGeographyCountryOptions,
-} from "@hu/geography";
+import { toGeographyCountryOptions } from "@hu/geography";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
+import { useCountryDisplayName } from "../geography-display/GeographyDisplayProvider";
 
 export interface CountrySelectProps {
   id: string;
@@ -34,15 +32,17 @@ export function CountrySelect({
   label,
   error,
 }: CountrySelectProps) {
-  const locale = useLocale();
+  const countryDisplayName = useCountryDisplayName();
   const t = useTranslations("initiativeExperience");
   const options = useMemo(
     () =>
       toGeographyCountryOptions().map((option) => ({
         ...option,
-        label: getLocalizedCountryDisplayName(option.code, locale, option.label),
+        label: countryDisplayName(option.code, option.label),
+        // Canonical English name stays searchable in every interface language.
+        searchText: option.label,
       })),
-    [locale],
+    [countryDisplayName],
   );
   const resolvedLabel = label ?? t("manage.fields.country");
   const resolvedPlaceholder = placeholder ?? t("manage.fields.searchCountries");

@@ -1,6 +1,7 @@
 /**
  * Pack 08K.3.3 / Step 15D.3.1 — Home interactive map shell.
- * UI chrome + pin legend via next-intl; country labels via geography display-name resolver.
+ * UI chrome + pin legend via next-intl; country labels from the server-resolved
+ * GeographyDisplayProvider (HYD-01B).
  * Iframe tooltips receive locale-aware names/labels over postMessage.
  */
 
@@ -10,8 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
-import { GEOGRAPHY_COUNTRIES, getLocalizedCountryDisplayName } from "@hu/geography";
-
+import { useLocalizedCountries } from "../../geography-display/GeographyDisplayProvider";
 import enMessages from "../../i18n/messages/en.json";
 import {
   MAP_PIN_LEGEND_ENTRIES,
@@ -69,14 +69,7 @@ export function InteractiveWorldMap({ onCountrySelect }: InteractiveWorldMapProp
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [view, setView] = useState<MapViewState>({ scale: MIN_SCALE, x: 0, y: 0 });
 
-  const localizedCountries = useMemo(
-    () =>
-      GEOGRAPHY_COUNTRIES.map((country) => ({
-        code: country.slug.toUpperCase(),
-        label: getLocalizedCountryDisplayName(country.slug, locale, country.label),
-      })).sort((a, b) => a.label.localeCompare(b.label, locale)),
-    [locale],
-  );
+  const localizedCountries = useLocalizedCountries();
 
   const countryNamesByCode = useMemo(() => {
     const map: Record<string, string> = {};

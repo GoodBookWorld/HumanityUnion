@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { listLocalizedCountries } from "@hu/geography";
 import { CANONICAL_ENGLISH_BRAND_FALLBACK } from "@hu/types";
 
 import { HumanityLayout } from "../design-system/components/HumanityLayout";
 import { resolveBrandForMetadata } from "../features/brand-localization/resolve-brand-for-metadata";
+import { GeographyDisplayProvider } from "../features/geography-display/GeographyDisplayProvider";
 import { loadUiMessagesForLocale } from "../features/i18n/load-ui-messages";
 import { resolveDocumentHtmlLocale } from "../features/language/resolve-document-locale";
 import { PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP } from "../features/pwa/pwa-launch-first-paint-bootstrap";
@@ -75,7 +77,12 @@ export default async function RootLayout({
         />
         <JsonLdScript data={rootStructuredData} />
         <NextIntlClientProvider locale={documentLocale.locale} messages={uiMessages.messages}>
-          <HumanityLayout>{children}</HumanityLayout>
+          <GeographyDisplayProvider
+            locale={documentLocale.locale}
+            countries={listLocalizedCountries(documentLocale.locale)}
+          >
+            <HumanityLayout>{children}</HumanityLayout>
+          </GeographyDisplayProvider>
         </NextIntlClientProvider>
       </body>
     </html>

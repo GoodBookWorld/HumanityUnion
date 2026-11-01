@@ -16,6 +16,7 @@ import {
 } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../language/format-language-display-name";
+import { formatUtcCalendarDate } from "../language/format-utc-calendar-date";
 import { getControlledLifecyclePreferredTerm } from "../language/controlled-lifecycle-preferred-terms";
 import { normalizeInitiativeStageCode } from "./normalize-initiative-stage-code";
 import {
@@ -168,14 +169,7 @@ export function formatInitiativeExperienceDate(
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
-  // UTC keeps server and browser output identical (hydration) and shows calendar
-  // dates stored as UTC midnight (startDate/completionDate) on their own day.
-  return date.toLocaleDateString(locale, {
-    year: "numeric",
-    month: options?.month ?? "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+  return formatUtcCalendarDate(locale, date, options?.month ?? "long");
 }
 
 /** Human-readable language name for the active interface locale. */
