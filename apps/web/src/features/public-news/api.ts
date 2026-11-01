@@ -54,16 +54,17 @@ export function buildRegisterCreateInitiativeFromNewsHref(newsId: string): strin
   return `/register?returnTo=${returnTo}`;
 }
 
-export function formatNewsPublishedDate(isoDate: string): string {
+export function formatNewsPublishedDate(isoDate: string, locale: string): string {
   const parsed = Date.parse(isoDate);
 
   if (Number.isNaN(parsed)) {
     return isoDate;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   }).format(new Date(parsed));
 }

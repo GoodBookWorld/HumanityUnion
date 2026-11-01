@@ -1,7 +1,7 @@
 "use client";
 
 import type { PublicNewsArticleItem } from "@hu/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system";
 import { formatNewsPublishedDate } from "../../public-news/api";
@@ -17,6 +17,7 @@ interface InitiativeNewsSourcePanelProps {
 export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsSourcePanelProps) {
   const tCommon = useTranslations("initiativeExperience.common");
   const tManage = useTranslations("initiativeExperience.manage");
+  const locale = useLocale();
 
   return (
     <aside className="public-news-source-panel" aria-labelledby="initiative-news-source-heading">
@@ -41,7 +42,9 @@ export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsS
             <strong>{article.title}</strong>
           </p>
           <p className="public-news-source-panel__meta">
-            {tCommon("publishedPrefix", { date: formatNewsPublishedDate(article.publishedAt) })}
+            {tCommon("publishedPrefix", {
+              date: formatNewsPublishedDate(article.publishedAt, locale),
+            })}
           </p>
           <p>
             <a href={article.articleUrl} target="_blank" rel="noopener noreferrer">

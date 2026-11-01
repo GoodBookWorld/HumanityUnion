@@ -168,10 +168,13 @@ export function formatInitiativeExperienceDate(
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
+  // UTC keeps server and browser output identical (hydration) and shows calendar
+  // dates stored as UTC midnight (startDate/completionDate) on their own day.
   return date.toLocaleDateString(locale, {
     year: "numeric",
     month: options?.month ?? "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
