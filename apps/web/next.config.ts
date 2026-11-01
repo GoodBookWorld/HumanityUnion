@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: workspaceRoot,
   },
+  // SEO-09 — Resolve metadata before streaming for every user agent so
+  // title/description/canonical/robots/hreflang/OG/Twitter render inside
+  // <head>. Next's default only does this for its HTML-limited bot list,
+  // which excludes browsers and Googlebot and leaves those tags in <body>.
+  htmlLimitedBots: /.*/,
   async redirects() {
     return [
       {
