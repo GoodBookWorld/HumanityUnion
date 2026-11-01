@@ -1,13 +1,14 @@
 /**
- * HYD-01A — server (Node, UTC) and browser (any timezone) produce the same
- * initiative date text.
+ * HYD-01A/HYD-01B — server (Node, UTC) and browser (any timezone) produce the
+ * same initiative date text, Georgian included.
  *
- * Parity layer (always): the real formatters run in Node and in Chrome under
- * UTC, America/Vancouver and Asia/Tokyo for all 10 interface locales.
+ * Parity layer (always): the shared `formatUtcCalendarDate` runs in Chrome under
+ * UTC, America/Vancouver and Asia/Tokyo and must equal the Node output of the
+ * public formatters for all 10 interface locales.
  *
- * Live layer (`HYD01A_BASE_URL`): /initiatives pages (no country selector, so
- * any React #418 there is not HYD-01B) must hydrate without errors in each
- * browser timezone; server and hydrated card dates must match.
+ * Live layer (`HYD01A_BASE_URL`): /initiatives pages (no country selector) must
+ * hydrate without errors in each browser timezone; server and hydrated card
+ * dates must match.
  *
  *   HYD01A_BASE_URL=https://staging.huws.org PLAYWRIGHT_CHANNEL=chrome \
  *     pnpm --filter @hu/web exec playwright test -c playwright.config.ts \
@@ -15,6 +16,7 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { formatUtcCalendarDate } from "../language/format-utc-calendar-date";
 import { formatInitiativeExperienceDate } from "../public-initiative-experience/initiative-experience-i18n";
 import { formatNewsPublishedDate } from "../public-news/api";
 
@@ -23,13 +25,8 @@ test.use({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
 const INTERFACE_LOCALES = ["en", "uk", "ar", "he", "zh-Hant", "ka", "es", "de", "fr", "pt"];
 const TIMEZONES = ["UTC", "America/Vancouver", "Asia/Tokyo"];
 const SAMPLES = ["2026-08-01T00:00:00.000Z", "2026-08-19T00:26:18.039Z"];
-/**
- * Locales whose CLDR date data Chrome may not ship (it then falls back to
- * English while Node formats natively). Reported, never substituted.
- */
-const KNOWN_ENGINE_DATA_GAPS = new Set(["ka"]);
 
-type Row = { locale: string; iso: string; month: "long" | "short" | "news"; text: string };
+type Row = { locale: string; iso: string; month: "long" | "short"; text: string };
 
 function nodeRows(): Row[] {
   const rows: Row[] = [];
@@ -43,7 +40,7 @@ function nodeRows(): Row[] {
           text: formatInitiativeExperienceDate(locale, iso, { month }),
         });
       }
-      rows.push({ locale, iso, month: "news", text: formatNewsPublishedDate(iso, locale) });
+      rows.push({ locale, iso, month: "long", text: formatNewsPublishedDate(iso, locale) });
     }
   }
   return rows;
@@ -57,44 +54,19 @@ for (const timezoneId of TIMEZONES) {
       await page.goto("about:blank");
       const expected = nodeRows();
       const browser = await page.evaluate(
-        ({ rows, initiativeSource, newsSource }) => {
-          const initiative = new Function(`return (${initiativeSource})`)() as (
+        ({ rows, source }) => {
+          const format = new Function(`return (${source})`)() as (
             locale: string,
-            iso: string,
-            options?: { month?: "long" | "short" },
+            date: Date,
+            month: "long" | "short",
           ) => string;
-          const news = new Function(`return (${newsSource})`)() as (
-            iso: string,
-            locale: string,
-          ) => string;
-          return rows.map((row) =>
-            row.month === "news"
-              ? news(row.iso, row.locale)
-              : initiative(row.locale, row.iso, { month: row.month }),
-          );
+          return rows.map((row) => format(row.locale, new Date(row.iso), row.month));
         },
-        {
-          rows: expected,
-          initiativeSource: formatInitiativeExperienceDate.toString(),
-          newsSource: formatNewsPublishedDate.toString(),
-        },
+        { rows: expected, source: formatUtcCalendarDate.toString() },
       );
-
-      const gaps: string[] = [];
       expected.forEach((row, index) => {
-        const actual = browser[index];
-        if (KNOWN_ENGINE_DATA_GAPS.has(row.locale)) {
-          if (actual !== row.text)
-            gaps.push(`${row.locale} ${row.month}: node "${row.text}" vs chrome "${actual}"`);
-          return;
-        }
-        expect(actual, `${row.locale} ${row.month} ${row.iso}`).toBe(row.text);
+        expect(browser[index], `${row.locale} ${row.month} ${row.iso}`).toBe(row.text);
       });
-      if (gaps.length > 0) {
-        test
-          .info()
-          .annotations.push({ type: "known-remaining-issue", description: gaps.join("; ") });
-      }
     });
   });
 }
@@ -127,7 +99,7 @@ for (const timezoneId of ["America/Vancouver", "Asia/Tokyo"]) {
 
         const response = await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
         expect(response?.status()).toBe(200);
-        const server = await page.evaluate(async () => {
+        const dates = await page.evaluate(async () => {
           const html = await (await fetch(location.href)).text();
           const doc = new DOMParser().parseFromString(html, "text/html");
           const read = (root: Document) =>
@@ -137,15 +109,8 @@ for (const timezoneId of ["America/Vancouver", "Asia/Tokyo"]) {
           return { server: read(doc), hydrated: read(document) };
         });
 
-        expect(server.server.length, `${path} renders dated cards`).toBeGreaterThan(0);
-        if (path === "/ka/initiatives" && hydrationErrors.length > 0) {
-          test.info().annotations.push({
-            type: "known-remaining-issue",
-            description: `Georgian engine data gap: ${hydrationErrors[0]}`,
-          });
-          return;
-        }
-        expect(server.hydrated, `${path} hydrated dates equal server dates`).toEqual(server.server);
+        expect(dates.server.length, `${path} renders dated cards`).toBeGreaterThan(0);
+        expect(dates.hydrated, `${path} hydrated dates equal server dates`).toEqual(dates.server);
         expect(hydrationErrors, `${path} hydration errors`).toEqual([]);
       });
     }

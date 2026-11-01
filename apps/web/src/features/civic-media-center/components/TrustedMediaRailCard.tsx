@@ -8,10 +8,10 @@
 "use client";
 
 import type { TrustedMediaResource } from "@hu/types";
-import { getLocalizedCountryDisplayName } from "@hu/geography";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
+import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
 import { WorkspaceStatusBadge as Badge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import {
   MediaSemanticNode,
@@ -51,7 +51,7 @@ export function TrustedMediaRailCard({
   "data-hu-fallback-nodes": fallbackNodes,
 }: TrustedMediaRailCardProps) {
   const t = useTranslations("civicMediaPublic");
-  const locale = useLocale();
+  const resolveCountryName = useCountryDisplayName();
   const catalogCategory = t.has(`trustedCategories.${resource.categoryId}`)
     ? t(`trustedCategories.${resource.categoryId}`)
     : resource.categoryId;
@@ -69,7 +69,7 @@ export function TrustedMediaRailCard({
         plpMode === "PUBLISHED_LOCALIZED" ? "CANONICAL_FALLBACK" : plpMode,
       );
   const countryLabel = resource.countryCode
-    ? getLocalizedCountryDisplayName(resource.countryCode, locale, resource.country)
+    ? resolveCountryName(resource.countryCode, resource.country)
     : resource.country;
 
   const cta = (

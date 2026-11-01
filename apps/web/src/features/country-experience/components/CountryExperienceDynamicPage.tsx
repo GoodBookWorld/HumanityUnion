@@ -10,10 +10,10 @@ import type { CountryStatisticsCounts, TrustedMediaResource } from "@hu/types";
 import { getCountryByCode } from "@hu/geography";
 import {
   getLocalizedAdminRegionDisplayName,
-  getLocalizedCountryDisplayName,
   resolveUnRegionDisplayName,
   resolveUnSubregionDisplayName,
 } from "@hu/geography";
+import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../geography-integrity";
 import type { CivicMediaTrustedExplanationsById } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
@@ -81,13 +81,8 @@ export function CountryExperienceDynamicPage({
   const tExperience = useTranslations("initiativeExperience");
   const plpEnabled = initialPlpTrustedById != null;
   const country = getCountryByCode(countryCode);
-  const countryDisplayName = useMemo(
-    () =>
-      country
-        ? getLocalizedCountryDisplayName(countryCode, locale, country.name)
-        : countryCode,
-    [country, countryCode, locale],
-  );
+  const resolveCountryName = useCountryDisplayName();
+  const countryDisplayName = country ? resolveCountryName(countryCode, country.name) : countryCode;
   const unRegionDisplayName = useMemo(
     () =>
       country?.region

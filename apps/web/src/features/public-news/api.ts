@@ -1,6 +1,7 @@
 import type { PublicNewsArticleItem, PublicNewsListingResponse } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
+import { formatUtcCalendarDate } from "../language/format-utc-calendar-date";
 
 export interface FetchPublicNewsOptions {
   limit?: number;
@@ -61,10 +62,5 @@ export function formatNewsPublishedDate(isoDate: string, locale: string): string
     return isoDate;
   }
 
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(parsed));
+  return formatUtcCalendarDate(locale, new Date(parsed), "long");
 }

@@ -5,11 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { ApproximateIpGeography } from "@hu/types";
-import {
-  getLocalizedAdminRegionDisplayName,
-  getLocalizedCountryDisplayName,
-} from "@hu/geography";
+import { getLocalizedAdminRegionDisplayName } from "@hu/geography";
 
+import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
 import { fetchApproximateIpGeography } from "../ip-geography-api";
 
 import "../../global-experience/components/geographic-navigator.css";
@@ -25,13 +23,13 @@ function buildNavigatorLevels(
   geography: ApproximateIpGeography,
   worldLabel: string,
   locale: string,
+  resolveCountryName: (countryCode: string, fallback?: string) => string,
 ): NavigatorLevel[] {
   const levels: NavigatorLevel[] = [{ key: "world", label: worldLabel, href: "/initiatives" }];
 
   if (geography.countryCode) {
-    const countryLabel = getLocalizedCountryDisplayName(
+    const countryLabel = resolveCountryName(
       geography.countryCode,
-      locale,
       geography.countryName ?? geography.countryCode,
     );
     levels.push({
@@ -68,6 +66,7 @@ function buildNavigatorLevels(
 export function ApproximateIpGeographicNavigator() {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
+  const resolveCountryName = useCountryDisplayName();
   const [geography, setGeography] = useState<ApproximateIpGeography>({ source: "unavailable" });
   const [loading, setLoading] = useState(true);
 
@@ -80,8 +79,8 @@ export function ApproximateIpGeographicNavigator() {
 
   const worldLabel = t("geography.world");
   const levels = useMemo(
-    () => buildNavigatorLevels(geography, worldLabel, locale),
-    [geography, worldLabel, locale],
+    () => buildNavigatorLevels(geography, worldLabel, locale, resolveCountryName),
+    [geography, worldLabel, locale, resolveCountryName],
   );
   const screenReaderSummary = levels.map((level) => level.label).join(", ");
 

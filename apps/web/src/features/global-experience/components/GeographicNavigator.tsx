@@ -6,10 +6,10 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   GEOGRAPHY_COUNTRIES,
   getLocalizedAdminRegionDisplayName,
-  getLocalizedCountryDisplayName,
   getRegionsForCountry,
 } from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
+import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
 
 import "./geographic-navigator.css";
 
@@ -34,6 +34,7 @@ export function GeographicNavigator({
 }: GeographicNavigatorProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
+  const resolveCountryName = useCountryDisplayName();
   const country =
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === countrySlug) ??
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === FEATURED_COUNTRY_CODE);
@@ -43,7 +44,7 @@ export function GeographicNavigator({
   );
 
   const countryDisplayName = country
-    ? getLocalizedCountryDisplayName(country.slug, locale, country.label)
+    ? resolveCountryName(country.slug, country.label)
     : t("geography.country");
   const regionDisplayName = region
     ? getLocalizedAdminRegionDisplayName(
