@@ -157,7 +157,7 @@
 
 /* Education — compact learning cards */
 .hux-section--education .horizontal-section-shell__eyebrow {
-  color: var(--hu-color-accent, #df9815);
+  color: var(--hu-color-accent-text, #966510);
 }
 
 .hux-section--education.horizontal-section-shell--grouped .horizontal-section-shell__inner {

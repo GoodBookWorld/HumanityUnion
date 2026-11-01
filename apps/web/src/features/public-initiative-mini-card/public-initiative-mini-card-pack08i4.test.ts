@@ -119,7 +119,7 @@ describe("Pack 08I.4 — PublicInitiativeMiniCard translation boundary", () => {
     assert.match(card, /t\("updated"/);
     assert.match(card, /t\("likesDislikes"/);
     assert.match(card, /t\("shareAria"/);
-    assert.match(card, /t\("viewAria"/);
+    assert.doesNotMatch(card, /aria-label=\{t\("viewAria"/);
   });
 });
 

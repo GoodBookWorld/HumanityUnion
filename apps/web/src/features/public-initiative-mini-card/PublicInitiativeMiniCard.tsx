@@ -76,11 +76,7 @@ export function PublicInitiativeMiniCard({
           ariaLabel={t("shareAria", { title: displayTitle })}
         />
       </div>
-      <Link
-        href={href}
-        className="public-initiative-mini-card__link"
-        aria-label={t("viewAria", { title: displayTitle })}
-      >
+      <Link href={href} className="public-initiative-mini-card__link">
         <div className="public-initiative-mini-card__media" aria-hidden="true">
           <MiniCardImage title={displayTitle} imageUrl={initiative.imageUrl} />
         </div>

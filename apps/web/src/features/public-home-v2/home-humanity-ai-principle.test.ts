@@ -90,7 +90,7 @@ describe("Home Humanity AI principle line", () => {
 
   it("4 — preferred color/token applied", () => {
     const tokens = readTokens();
-    assert.match(tokens, /--hu-color-brand-tagline:\s*#a57979/);
+    assert.match(tokens, /--hu-color-brand-tagline:\s*#8f6666/);
     assert.match(tokens, /--hu-color-brand-principle:\s*#8f6666/);
     const css = readFeature("public-home-v2.css");
     assert.match(

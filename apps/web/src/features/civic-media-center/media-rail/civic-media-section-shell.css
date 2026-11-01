@@ -101,7 +101,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--hu-color-accent, #df9815);
+  color: var(--hu-color-accent-text, #966510);
 }
 
 .horizontal-section-shell--civic .horizontal-section-shell__eyebrow,
@@ -115,7 +115,7 @@
 
 .horizontal-section-shell--verification .horizontal-section-shell__eyebrow,
 .civic-media-section-shell--verification .civic-media-section-shell__eyebrow {
-  color: var(--hu-color-accent, #df9815);
+  color: var(--hu-color-accent-text, #966510);
 }
 
 .horizontal-section-shell--impact .horizontal-section-shell__eyebrow,
@@ -124,7 +124,7 @@
 }
 
 .horizontal-section-shell--knowledge .horizontal-section-shell__eyebrow {
-  color: var(--hu-color-accent, #df9815);
+  color: var(--hu-color-accent-text, #966510);
 }
 
 .horizontal-section-shell__title-row,
