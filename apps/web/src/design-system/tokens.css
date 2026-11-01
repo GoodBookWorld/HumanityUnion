@@ -7,6 +7,8 @@
   --hu-color-secondary-blue: #4a9fd4;
   --hu-color-secondary-slate: #64748b;
   --hu-color-accent: #df9815;
+  /* Accent hue for small text on light surfaces: >= 4.5:1 on #ffffff and #f4f7fa. */
+  --hu-color-accent-text: #966510;
 
   --hu-color-bg: #ffffff;
   --hu-color-bg-muted: #f4f7fa;
@@ -15,7 +17,8 @@
   --hu-color-border: #d6dee8;
   --hu-color-text: #1a2b3c;
   --hu-color-text-muted: #5f6b7a;
-  --hu-color-brand-tagline: #a57979;
+  /* Same slogan-family tone as the principle line: >= 4.5:1 on #f4f7fa and #ffffff. */
+  --hu-color-brand-tagline: #8f6666;
   /* Darker slogan-family tone for long principle lines on #f4f7fa. */
   --hu-color-brand-principle: #8f6666;
   --hu-color-danger: #b42318;

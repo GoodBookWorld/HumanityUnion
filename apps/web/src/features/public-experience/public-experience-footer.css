@@ -71,7 +71,7 @@
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a57979;
+  color: var(--hu-color-brand-tagline);
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: anywhere;

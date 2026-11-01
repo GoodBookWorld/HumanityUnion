@@ -27,7 +27,8 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
     const card = read("features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx");
     assert.match(card, /resolvePublicInitiativeHref/);
     assert.match(card, /t\("viewInitiative"\)/);
-    assert.match(card, /aria-label=\{t\("viewAria"/);
+    // SEO-10 — the link is named by its visible content (WCAG 2.5.3 Label in Name).
+    assert.doesNotMatch(card, /aria-label=\{t\("viewAria"/);
     assert.match(card, /public-initiative-mini-card__link/);
     assert.match(card, /CivicShareButton/);
     assert.doesNotMatch(card, /<Link[^>]*>[\s\S]*<Link/);
@@ -41,7 +42,7 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
     const world = read("features/initiatives/components/WorldInitiativesPageContent.tsx");
     assert.match(world, /className="world-initiative-card"/);
     assert.match(world, /tMini\("viewInitiative"\)/);
-    assert.match(world, /aria-label=\{tMini\("viewAria"/);
+    assert.doesNotMatch(world, /aria-label=\{tMini\("viewAria"/);
   });
 
   it("media empty state explains RSS refresh requirement instead of fake cards", () => {

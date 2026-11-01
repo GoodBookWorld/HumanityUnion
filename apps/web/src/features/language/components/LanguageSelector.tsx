@@ -477,8 +477,7 @@ export function LanguageSelector({
               ? "hu-language-selector__icon-trigger"
               : "hu-language-selector__select"
           }
-          aria-label={resolvedLabel}
-          aria-labelledby={`${selectId}-label`}
+          aria-labelledby={`${selectId}-label ${selectId}`}
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={listId}

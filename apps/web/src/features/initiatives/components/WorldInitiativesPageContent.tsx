@@ -59,11 +59,7 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
           ariaLabel={tMini("shareAria", { title: displayTitle })}
         />
       </div>
-      <Link
-        href={href}
-        className="world-initiative-card__link"
-        aria-label={tMini("viewAria", { title: displayTitle })}
-      >
+      <Link href={href} className="world-initiative-card__link">
         <div className="world-initiative-card__media" aria-hidden="true">
           <InitiativeImage
             title={displayTitle}

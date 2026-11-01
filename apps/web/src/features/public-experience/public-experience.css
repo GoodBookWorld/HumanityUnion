@@ -106,7 +106,7 @@
 .geographic-navigator__scope--active {
   background: #ffffff;
   border-color: #d4d4d4;
-  color: #df9815;
+  color: var(--hu-color-accent-text, #966510);
   font-weight: 600;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .geographic-navigator__scope--link:hover {
-  color: #df9815;
+  color: var(--hu-color-accent-text, #966510);
   border-color: #a3a3a3;
 }
 
@@ -595,7 +595,7 @@
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a57979;
+  color: var(--hu-color-brand-tagline);
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: anywhere;
