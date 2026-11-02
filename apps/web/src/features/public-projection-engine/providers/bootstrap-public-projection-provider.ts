@@ -24,12 +24,7 @@ import {
   getBootstrapCountryProjections,
   isBootstrapCountrySlug,
 } from "./bootstrap/countries";
-import {
-  BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG,
-  BOOTSTRAP_REGION_SLUGS,
-  getBootstrapRegionProjections,
-  isBootstrapRegionSlug,
-} from "./bootstrap/regions";
+import { BOOTSTRAP_REGION_SLUGS, getBootstrapRegionProjections } from "./bootstrap/regions";
 import { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./bootstrap/world-pipeline";
 import { WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION } from "./bootstrap/world-latest-initiatives";
 import { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./bootstrap/world-statistics";
@@ -178,13 +173,9 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
   }
 
   async getRegionExperienceProjections(
-    regionSlug: string,
+    regionKey: string,
   ): Promise<RegionExperiencePublicProjections | null> {
-    if (!isBootstrapRegionSlug(regionSlug)) {
-      return null;
-    }
-
-    return BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG[regionSlug] ?? null;
+    return getBootstrapRegionProjections(regionKey);
   }
 
   async getKnownCommunitySlugs(): Promise<readonly string[]> {

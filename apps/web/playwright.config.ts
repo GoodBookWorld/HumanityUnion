@@ -12,6 +12,7 @@ export default defineConfig({
     "**/hyd-01b-geography-names.playwright.e2e.ts",
     "**/a11y-01-public-corrections.playwright.e2e.ts",
     "**/region-500a-dynamic-route.playwright.e2e.ts",
+    "**/region-500b2-real-region-web.playwright.e2e.ts",
   ],
   timeout: 60_000,
   retries: 0,

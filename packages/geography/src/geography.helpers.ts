@@ -54,6 +54,7 @@ const countriesByName = new Map(
 const regionsByCountry = new Map<string, AdministrativeRegionOption[]>();
 const regionsByCode = new Map<string, AdministrativeRegionOption>();
 const regionsByLegacySlug = new Map<string, AdministrativeRegionOption>();
+const regionsByNameSlug = new Map<string, AdministrativeRegionOption[]>();
 
 for (const region of regions) {
   const countryRegions = regionsByCountry.get(region.countryCode) ?? [];
@@ -64,6 +65,7 @@ for (const region of regions) {
   const legacySlug = slugifyLabel(region.name);
   regionsByLegacySlug.set(`${region.countryCode}::${legacySlug}`, region);
   regionsByLegacySlug.set(legacySlug, region);
+  regionsByNameSlug.set(legacySlug, [...(regionsByNameSlug.get(legacySlug) ?? []), region]);
 }
 
 function slugifyLabel(value: string): string {
@@ -229,6 +231,25 @@ export function normalizeRegionInput(
 
 export function getCountryLabel(countryCode: string): string | undefined {
   return getCountryByCode(countryCode)?.name;
+}
+
+/**
+ * Region for an ISO 3166-2 code (any case) without a separate country, using the
+ * code's own country prefix. Returns undefined for anything that is not a registry code.
+ */
+export function getRegionByIsoCode(code: string): AdministrativeRegionOption | undefined {
+  const upper = code.trim().toUpperCase();
+  const countryCode = /^([A-Z]{2})-[A-Z0-9]+$/.exec(upper)?.[1];
+
+  return countryCode ? regionsByCode.get(`${countryCode}::${upper}`) : undefined;
+}
+
+/**
+ * Every region, in any country, whose English name slugifies to the same value
+ * (e.g. "british-columbia"). Several matches mean the name is ambiguous.
+ */
+export function findRegionsByNameSlug(value: string): readonly AdministrativeRegionOption[] {
+  return [...(regionsByNameSlug.get(slugifyLabel(value)) ?? [])];
 }
 
 export function getRegionLabel(countryCode: string, regionCode: string): string | undefined {

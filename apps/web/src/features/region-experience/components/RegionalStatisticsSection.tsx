@@ -6,6 +6,7 @@ import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
+import { localizeRegionStatistics } from "../region-projection-labels";
 
 interface RegionalStatisticsSectionProps {
   projection: ParticipationPublicStatisticsProjection;
@@ -17,6 +18,7 @@ export function RegionalStatisticsSection({
   regionName,
 }: RegionalStatisticsSectionProps) {
   const t = useTranslations("publicStatistics.region");
+  const tCatalog = useTranslations();
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
 
@@ -29,7 +31,9 @@ export function RegionalStatisticsSection({
       contextIntroduction={t("contextIntroduction", { regionName, ...siteName })}
       visitorConclusion={t("visitorConclusion")}
     >
-      <ParticipationStatisticsEvidence projection={projection} />
+      <ParticipationStatisticsEvidence
+        projection={localizeRegionStatistics(projection, tCatalog)}
+      />
       <p className="regional-statistics__public-note" role="note">
         {t("publicNote")}
       </p>

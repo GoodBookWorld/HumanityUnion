@@ -1,3 +1,4 @@
+import { findRegionsByNameSlug, getRegionByIsoCode, normalizeCountryInput } from "@hu/geography";
 import type { RegionExperiencePublicProjections } from "@hu/types";
 
 import { BOOTSTRAP_COMMUNITY_CATALOG } from "./communities";
@@ -7,7 +8,7 @@ function publicInitiativeHref(initiativeId: string): string {
 }
 
 function countryHref(slug: string): string {
-  return `/country/${encodeURIComponent(slug)}`;
+  return `/countries/${encodeURIComponent(normalizeCountryInput(slug) ?? slug.toUpperCase())}`;
 }
 
 const BRITISH_COLUMBIA_COMMUNITY_CATALOG = {
@@ -144,14 +145,32 @@ export function isBootstrapRegionSlug(
   return slug in BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG;
 }
 
-export function getBootstrapRegionProjections(
-  slug: string,
-): RegionExperiencePublicProjections | null {
-  if (!isBootstrapRegionSlug(slug)) {
+/** Bootstrap slug for a bootstrap slug or for the ISO 3166-2 code of the same registry region. */
+export function resolveBootstrapRegionSlug(regionKey: string): string | null {
+  if (isBootstrapRegionSlug(regionKey)) {
+    return regionKey;
+  }
+
+  const region = getRegionByIsoCode(regionKey);
+
+  if (!region) {
     return null;
   }
 
-  return BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG[slug] ?? null;
+  return (
+    BOOTSTRAP_REGION_SLUGS.find((slug) => {
+      const matches = findRegionsByNameSlug(slug);
+      return matches.length === 1 && matches[0]?.code === region.code;
+    }) ?? null
+  );
+}
+
+export function getBootstrapRegionProjections(
+  regionKey: string,
+): RegionExperiencePublicProjections | null {
+  const slug = resolveBootstrapRegionSlug(regionKey);
+
+  return slug ? (BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG[slug] ?? null) : null;
 }
 
 export { countryHref };

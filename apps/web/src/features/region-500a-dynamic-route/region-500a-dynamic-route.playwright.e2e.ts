@@ -2,9 +2,9 @@
  * REGION-500A — region pages render per request instead of failing with
  * "Page changed from static to dynamic" (HTTP 500).
  *
- * REGION500A_PROVIDER is the server's PUBLIC_PROJECTION_PROVIDER:
- * - bootstrap: /region/british-columbia 200, unknown regions 404;
- * - api: no region projections, so every region is 404.
+ * REGION500A_PROVIDER is the server's PUBLIC_PROJECTION_PROVIDER. Since
+ * REGION-500B.2 both providers render /region/CA-BC (bootstrap: demonstration
+ * data; api: real projection) and unknown regions are 404.
  *
  *   REGION500A_BASE_URL=https://staging.huws.org REGION500A_PROVIDER=bootstrap \
  *     PLAYWRIGHT_CHANNEL=chrome pnpm --filter @hu/web exec playwright test \
@@ -18,9 +18,9 @@ const baseUrl = process.env.REGION500A_BASE_URL?.trim().replace(/\/$/, "") ?? ""
 const provider = process.env.REGION500A_PROVIDER?.trim() ?? "";
 const cookieLocale = process.env.REGION500A_COOKIE_LOCALE?.trim() || "uk";
 
-const KNOWN_REGION = "/region/british-columbia";
-const UNKNOWN_REGION = "/region/ontario";
-const expectedKnownStatus = provider === "bootstrap" ? 200 : 404;
+const KNOWN_REGION = "/region/CA-BC";
+const UNKNOWN_REGION = "/region/ZZ-ZZ";
+const expectedKnownStatus = 200;
 
 test.describe("REGION-500A — region routes", () => {
   test.skip(
@@ -32,7 +32,7 @@ test.describe("REGION-500A — region routes", () => {
     for (const [path, expected] of [
       [KNOWN_REGION, expectedKnownStatus],
       [UNKNOWN_REGION, 404],
-      ["/region/california", 404],
+      ["/region/atlantis", 404],
     ] as const) {
       const response = await request.get(`${baseUrl}${path}`, { maxRedirects: 0 });
       expect(response.status(), path).toBe(expected);

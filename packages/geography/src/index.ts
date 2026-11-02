@@ -12,6 +12,7 @@ export type { GeographyCountry, GeographyRegion } from "./geography.helpers.js";
 export {
   OTHER_REGION_CODE,
   OTHER_REGION_SLUG,
+  findRegionsByNameSlug,
   formatRegionCode,
   getCountries,
   getCountriesByRegion,
@@ -21,6 +22,7 @@ export {
   getCountryBySlug,
   getCountryLabel,
   getRegionByCode,
+  getRegionByIsoCode,
   getRegionLabel,
   getRegionsByCountry,
   getRegionsForCountry,

@@ -7,7 +7,9 @@ import type {
   ParticipationPublicStatisticsProjection,
   RegionExperiencePublicProjections,
 } from "@hu/types";
+import { getRegionByIsoCode } from "@hu/geography";
 
+import { apiRequestOptional } from "../../../lib/api-client";
 import type { PublicProjectionProvider } from "../provider";
 import type { PublicProjectionScopeRef } from "../types";
 import { applyLiveCommunityLatestInitiatives } from "./apply-live-community-latest-initiatives";
@@ -93,10 +95,22 @@ export class ApiPublicProjectionProvider implements PublicProjectionProvider {
     return null;
   }
 
+  /**
+   * REGION-500B.2 — real public region projection. Unknown regions are null (404);
+   * API failures throw so the page never falls back to bootstrap data.
+   */
   async getRegionExperienceProjections(
-    _regionSlug: string,
+    regionCode: string,
   ): Promise<RegionExperiencePublicProjections | null> {
-    return null;
+    const region = getRegionByIsoCode(regionCode);
+
+    if (!region) {
+      return null;
+    }
+
+    return apiRequestOptional<RegionExperiencePublicProjections>(
+      `/api/v1/public/countries/${encodeURIComponent(region.countryCode)}/regions/${encodeURIComponent(region.code)}`,
+    );
   }
 
   async getKnownCommunitySlugs(): Promise<readonly string[]> {
