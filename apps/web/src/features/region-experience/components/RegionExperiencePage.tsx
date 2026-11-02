@@ -23,7 +23,10 @@ export function RegionExperiencePage({ projections }: RegionExperiencePageProps)
       <main className="region-experience-page__main">
         <div className="region-experience-page__content">
           <RegionIdentitySection identity={identity} />
-          <RegionalInteractiveMapSection regionName={identity.name} />
+          {/* The map is a fixed British Columbia illustration; real regions have no map data. */}
+          {identity.source === "bootstrap" ? (
+            <RegionalInteractiveMapSection regionName={identity.name} />
+          ) : null}
           <RegionalStatisticsSection projection={statistics} regionName={identity.name} />
           <RegionalParticipationPipelineSection projection={pipeline} regionName={identity.name} />
           <LatestRegionalInitiativesSection

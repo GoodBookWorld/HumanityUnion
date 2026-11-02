@@ -41,12 +41,16 @@ export function CommunityDiscoveryEvidence({
                 >
                   <Link href={community.communityHref}>{community.name}</Link>
                 </h3>
-                <p className="community-discovery__description">{community.description}</p>
+                {community.description ? (
+                  <p className="community-discovery__description">{community.description}</p>
+                ) : null}
                 <dl className="community-discovery__meta">
-                  <div>
-                    <dt>{tShared("activityArea")}</dt>
-                    <dd>{community.activityArea}</dd>
-                  </div>
+                  {community.activityArea ? (
+                    <div>
+                      <dt>{tShared("activityArea")}</dt>
+                      <dd>{community.activityArea}</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt>{tShared("localGeographicContext")}</dt>
                     <dd>

@@ -28,9 +28,10 @@ export function LatestRegionalInitiativesSection({
       architecturalName={t("architecturalName")}
       stage={t("stage")}
       contextIntroduction={t("contextIntroduction", { regionName, ...siteName })}
-      visitorConclusion={t("visitorConclusion")}
+      // The conclusion copy describes demonstration cards, which only bootstrap data has.
+      visitorConclusion={projection.source === "bootstrap" ? t("visitorConclusion") : undefined}
     >
-      <LatestInitiativesEvidence projection={projection} emptyMessage={t("empty")} />
+      <LatestInitiativesEvidence projection={projection} emptyMessage={t("emptyMessage")} />
     </ExperienceBlockShell>
   );
 }

@@ -1,6 +1,13 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
+import { getLocalizedCountryDisplayName } from "@hu/geography";
 
 import { RegionExperiencePage } from "../../../features/region-experience/components/RegionExperiencePage";
+import { withLocalizedCountryName } from "../../../features/region-experience/region-projection-labels";
+import {
+  regionHref,
+  resolveRegionRoute,
+} from "../../../features/region-experience/resolve-region-route";
 import {
   getKnownRegionSlugs,
   loadRegionExperiencePageData,
@@ -25,11 +32,34 @@ export async function generateStaticParams() {
 
 export default async function RegionPage({ params }: RegionPageProps) {
   const { regionSlug } = await params;
-  const pageData = await loadRegionExperiencePageData(regionSlug);
+  const route = resolveRegionRoute(regionSlug);
+
+  if (route.kind === "redirect") {
+    redirect(regionHref(route.regionCode));
+  }
+
+  if (route.kind === "not-found") {
+    notFound();
+  }
+
+  const pageData = await loadRegionExperiencePageData(route.regionCode);
 
   if (!pageData) {
     notFound();
   }
 
-  return <RegionExperiencePage projections={pageData.projections} />;
+  const { projections } = pageData;
+  const localizedProjections =
+    projections.identity.source === "projection"
+      ? withLocalizedCountryName(
+          projections,
+          getLocalizedCountryDisplayName(
+            route.countryCode,
+            await getLocale(),
+            projections.identity.countryLabel,
+          ),
+        )
+      : projections;
+
+  return <RegionExperiencePage projections={localizedProjections} />;
 }

@@ -39,17 +39,19 @@ export function RegionIdentitySection({ identity }: RegionIdentitySectionProps) 
 
           <div className="region-identity__summary">
             <p className="region-identity__scope">
-              {t("region.identity.scopeLine", {
+              {t("region.identity.scopeLabel", {
                 regionName: identity.name,
                 countryName: identity.countryLabel,
               })}
             </p>
-            <dl className="region-identity__details">
-              <div className="region-identity__detail">
-                <dt>{t("region.identity.descriptionLabel")}</dt>
-                <dd>{identity.description}</dd>
-              </div>
-            </dl>
+            {identity.description ? (
+              <dl className="region-identity__details">
+                <div className="region-identity__detail">
+                  <dt>{t("region.identity.descriptionLabel")}</dt>
+                  <dd>{identity.description}</dd>
+                </div>
+              </dl>
+            ) : null}
           </div>
         </div>
 

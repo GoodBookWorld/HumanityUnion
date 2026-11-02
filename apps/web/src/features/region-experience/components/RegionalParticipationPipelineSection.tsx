@@ -7,6 +7,7 @@ import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import type { ParticipationPipelinePublicProjection } from "@hu/types";
 
 import { ExperienceBlockShell, ParticipationPipelineEvidence } from "../../public-experience";
+import { localizeRegionPipeline } from "../region-projection-labels";
 
 interface RegionalParticipationPipelineSectionProps {
   projection: ParticipationPipelinePublicProjection;
@@ -18,6 +19,7 @@ export function RegionalParticipationPipelineSection({
   regionName,
 }: RegionalParticipationPipelineSectionProps) {
   const t = useTranslations("publicGeo.region.pipeline");
+  const tCatalog = useTranslations();
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
 
@@ -30,7 +32,7 @@ export function RegionalParticipationPipelineSection({
       contextIntroduction={t("contextIntroduction", { regionName, ...siteName })}
       visitorConclusion={t("visitorConclusion")}
     >
-      <ParticipationPipelineEvidence projection={projection} />
+      <ParticipationPipelineEvidence projection={localizeRegionPipeline(projection, tCatalog)} />
     </ExperienceBlockShell>
   );
 }
