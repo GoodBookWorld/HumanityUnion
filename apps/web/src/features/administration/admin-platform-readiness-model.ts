@@ -15,6 +15,7 @@ import {
   shouldDisallowSearchIndexing,
   type PlatformIndexingMode,
 } from "../../lib/platform-indexing";
+import { readPublicBuildEnv } from "../../lib/seo/public-build-env";
 import { resolvePublicSiteOrigin } from "../../lib/seo/public-site-url";
 
 export interface AdminPlatformWarning {
@@ -109,7 +110,7 @@ export function formatRegistrationAccessLabel(input: {
  */
 export function buildAdminPlatformReadinessView(
   api: AdminPlatformReadinessPublic,
-  env: ViewEnv = process.env,
+  env: ViewEnv = readPublicBuildEnv(),
 ): AdminPlatformReadinessView {
   const siteOrigin = resolvePublicSiteOrigin(env);
   const siteOriginConfigured = Boolean(siteOrigin) || api.publicSiteOriginConfigured;
