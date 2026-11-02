@@ -133,7 +133,7 @@ export function toCountryInitiativeCardProjection(
   };
 }
 
-function matchesCountryDiscoveryGeography(
+export function matchesCountryDiscoveryGeography(
   initiative: Initiative,
   countryCode: string,
   query: CountryDiscoveryQuery,

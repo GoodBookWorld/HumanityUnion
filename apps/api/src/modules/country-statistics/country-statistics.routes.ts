@@ -10,6 +10,7 @@ import {
   listCountryTrustedMediaResources,
 } from "./country-public.service.js";
 import { getCountryStatisticsPayload } from "./country-statistics.service.js";
+import { buildRegionPublicProjection } from "./region-public.service.js";
 
 const countryStatisticsRouter = Router();
 
@@ -185,6 +186,61 @@ countryStatisticsRouter.get(
         error instanceof Error
           ? error.message
           : "Country affiliations are temporarily unavailable.";
+      res.status(500).json({
+        success: false,
+        data: null,
+        meta: {},
+        links: {},
+        message,
+      });
+    }
+  },
+);
+
+countryStatisticsRouter.get(
+  "/countries/:countryCode/regions/:regionCode",
+  async (req, res: Response) => {
+    const countryCode = resolveCountryCode(req.params.countryCode);
+
+    if (!countryCode || !getCountryByCode(countryCode)) {
+      res.status(404).json({
+        success: false,
+        data: null,
+        meta: {},
+        links: {},
+        message: "Country not found.",
+      });
+      return;
+    }
+
+    try {
+      const payload = await buildRegionPublicProjection(countryCode, req.params.regionCode);
+
+      if (!payload) {
+        res.status(404).json({
+          success: false,
+          data: null,
+          meta: {},
+          links: {},
+          message: "Region not found.",
+        });
+        return;
+      }
+
+      res.json(
+        createSuccessResponse(payload.projections, "Region loaded.", {
+          countryCode: payload.region.countryCode,
+          countryName: payload.region.countryName,
+          regionCode: payload.region.regionCode,
+          regionName: payload.region.regionName,
+          administrativeType: payload.region.administrativeType,
+          canonical: payload.canonical,
+          generatedAt: payload.projections.statistics.generatedAt,
+        }),
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Region is temporarily unavailable.";
       res.status(500).json({
         success: false,
         data: null,

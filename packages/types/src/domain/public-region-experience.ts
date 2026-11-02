@@ -16,6 +16,12 @@ export interface RegionIdentityPublicProjection {
   countryLabel: string;
   representativeVisual: RegionRepresentativeVisual;
   source: "bootstrap" | "projection";
+  /** ISO 3166-2 code from the geography registry (projection source only). */
+  regionCode?: string;
+  /** ISO 3166-1 alpha-2 code (projection source only). */
+  countryCode?: string;
+  /** Registry administrative type, e.g. "province" (projection source only). */
+  administrativeType?: string | null;
 }
 
 export interface RegionExperiencePublicProjections {
