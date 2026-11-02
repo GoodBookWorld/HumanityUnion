@@ -25,6 +25,7 @@ import { listCountrySitemapEntries } from "./providers/countries";
 import { listInitiativeSitemapEntries } from "./providers/initiatives";
 import { listKnowledgeArticleSitemapEntries } from "./providers/knowledge-articles";
 import { listParticipantProfileSitemapEntries } from "./providers/participant-profiles";
+import { listRegionSitemapEntries } from "./providers/regions";
 import { listStaticPublicSitemapEntries } from "./providers/static-public-pages";
 import type { SitemapPathEntry, SitemapProvider } from "./types";
 
@@ -157,6 +158,7 @@ export async function collectPublicSitemapPathEntries(options?: {
           listParticipantProfileSitemapEntries,
           failedProviderIds,
         ),
+        collectProviderEntries("regions", listRegionSitemapEntries, failedProviderIds),
       ]);
       canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
     }

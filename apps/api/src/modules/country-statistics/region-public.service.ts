@@ -16,6 +16,7 @@ import {
 import type {
   CivicEntityType,
   CommunityPublicRecord,
+  Initiative,
   LatestInitiativeCardProjection,
   ParticipationPipelineStageCount,
   ParticipationPublicStatisticsIndicator,
@@ -40,6 +41,69 @@ export const REGION_LATEST_INITIATIVES_LIMIT = 12;
 
 /** Demonstration initiatives (web bootstrap / staging cleanup) are never public region records. */
 const DEMONSTRATION_INITIATIVE_ID_PREFIX = "initiative-bootstrap-";
+
+/** Ordinary-public, non-demonstration initiative; geography is checked separately. */
+function isRegionCandidateInitiative(initiative: Initiative): boolean {
+  return (
+    !initiative.initiativeId.startsWith(DEMONSTRATION_INITIATIVE_ID_PREFIX) &&
+    isInitiativeEligibleForPublicProjection(initiative)
+  );
+}
+
+export interface PublicRegionWithContent {
+  countryCode: string;
+  regionCode: string;
+  initiativeCount: number;
+  /** Latest updatedAt among the region's public initiatives. */
+  updatedAt: string;
+}
+
+/**
+ * REGION-500B.3 — registry regions that have at least one public regional
+ * initiative under the same rules as buildRegionPublicProjection (World scope
+ * excluded), in one pass over the initiative store. Used for the sitemap.
+ */
+export function listPublicRegionsWithContent(
+  initiatives: readonly Initiative[] = listInitiatives(),
+): PublicRegionWithContent[] {
+  const regions = new Map<string, PublicRegionWithContent>();
+
+  for (const initiative of initiatives) {
+    if (!isRegionCandidateInitiative(initiative)) {
+      continue;
+    }
+
+    const { country, region } = resolveInitiativeSearchGeography(initiative);
+    const resolved = country && region ? resolvePublicRegion(country, region) : null;
+
+    if (
+      !resolved ||
+      resolved.regionCode !== region ||
+      !matchesCountryDiscoveryGeography(initiative, resolved.countryCode, {
+        regionCode: resolved.regionCode,
+      })
+    ) {
+      continue;
+    }
+
+    const key = `${resolved.countryCode}::${resolved.regionCode}`;
+    const current = regions.get(key);
+
+    regions.set(key, {
+      countryCode: resolved.countryCode,
+      regionCode: resolved.regionCode,
+      initiativeCount: (current?.initiativeCount ?? 0) + 1,
+      updatedAt:
+        current && current.updatedAt > initiative.updatedAt
+          ? current.updatedAt
+          : initiative.updatedAt,
+    });
+  }
+
+  return [...regions.values()].sort((left, right) =>
+    left.regionCode.localeCompare(right.regionCode),
+  );
+}
 
 export interface ResolvedPublicRegion {
   countryCode: string;
@@ -155,8 +219,7 @@ export async function buildRegionPublicProjection(
 
   const regionInitiatives = listInitiatives().filter(
     (initiative) =>
-      !initiative.initiativeId.startsWith(DEMONSTRATION_INITIATIVE_ID_PREFIX) &&
-      isInitiativeEligibleForPublicProjection(initiative) &&
+      isRegionCandidateInitiative(initiative) &&
       matchesCountryDiscoveryGeography(initiative, countryCode, { regionCode }),
   );
   const initiativeIds = new Set(regionInitiatives.map((initiative) => initiative.initiativeId));

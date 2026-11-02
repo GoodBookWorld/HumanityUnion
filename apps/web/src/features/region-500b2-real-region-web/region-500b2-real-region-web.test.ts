@@ -169,8 +169,9 @@ describe("REGION-500B.2 — canonical region routing", () => {
     assert.match(page, /^export const dynamic = "force-dynamic";$/m);
     assert.match(page, /export async function generateStaticParams\(\)/);
     assert.match(page, /resolveRegionRoute\(regionSlug\)/);
-    assert.match(page, /redirect\(regionHref\(route\.regionCode\)\)/);
-    assert.match(page, /loadRegionExperiencePageData\(route\.regionCode\)/);
+    assert.match(page, /permanentRedirect\(regionHref\(route\.regionCode\)\)/);
+    assert.match(page, /loadLocalizedRegionProjections\(route\.regionCode, route\.countryCode\)/);
+    assert.match(page, /loadRegionExperiencePageData\(regionCode\)/);
   });
 });
 

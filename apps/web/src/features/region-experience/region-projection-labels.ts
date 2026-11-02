@@ -60,6 +60,25 @@ export function localizeRegionStatistics(
 }
 
 /**
+ * REGION-500B.3 — a region page may be indexed only for real (API) projections
+ * with at least one public regional initiative; every linked public record
+ * belongs to such an initiative. Bootstrap demonstration pages are never indexed.
+ */
+export function isRegionProjectionIndexable(
+  projections: RegionExperiencePublicProjections,
+): boolean {
+  if (projections.identity.source !== "projection") {
+    return false;
+  }
+
+  const initiatives = projections.statistics.indicators.find(
+    (indicator) => indicator.id === "region-initiatives",
+  )?.value;
+
+  return (initiatives ?? projections.latestInitiatives.initiatives.length) > 0;
+}
+
+/**
  * Replaces the API's English country name with the server-resolved localized
  * name (identity, initiative geography suffix, community catalog). Region names
  * stay as published by the registry.
