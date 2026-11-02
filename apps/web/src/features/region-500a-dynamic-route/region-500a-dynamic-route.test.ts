@@ -33,9 +33,9 @@ describe("REGION-500A — region route contract", () => {
   it("keeps generateStaticParams and the existing data resolution", () => {
     assert.match(regionPage, /export async function generateStaticParams\(\)/);
     assert.match(regionPage, /getKnownRegionSlugs\(\)/);
-    assert.match(regionPage, /loadRegionExperiencePageData\(route\.regionCode\)/);
+    assert.match(regionPage, /loadRegionExperiencePageData\(regionCode\)/);
     assert.match(regionPage, /notFound\(\)/);
-    assert.match(regionPage, /<RegionExperiencePage projections=\{localizedProjections\} \/>/);
+    assert.match(regionPage, /<RegionExperiencePage projections=\{projections\} \/>/);
   });
 
   it("does not opt out of request-time rendering in any other way", () => {

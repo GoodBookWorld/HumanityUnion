@@ -3,7 +3,7 @@
   width: 100%;
   min-height: 100vh;
   background: #fafafa;
-  color: #df9815;
+  color: var(--hu-color-accent-text, #966510);
   text-align: start;
   line-height: 1.6;
   overflow-x: clip;
@@ -16,7 +16,7 @@
   z-index: 100;
   padding: 0.5rem 0.875rem;
   border-radius: 0.375rem;
-  background: #df9815;
+  background: var(--hu-color-accent-text, #966510);
   color: #ffffff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -103,7 +103,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #737373;
+  color: var(--hu-color-text-muted, #5f6b7a);
 }
 
 .region-identity__detail dd {
@@ -117,7 +117,7 @@
 .region-identity__source {
   margin: 0;
   font-size: 0.8125rem;
-  color: #737373;
+  color: var(--hu-color-text-muted, #5f6b7a);
 }
 
 .regional-interactive-map {
@@ -220,7 +220,7 @@
 .regional-statistics__public-note {
   margin-top: 1rem;
   font-size: 0.8125rem;
-  color: #737373;
+  color: var(--hu-color-text-muted, #5f6b7a);
 }
 
 .community-discovery {
@@ -257,7 +257,7 @@
 }
 
 .community-discovery__title a {
-  color: #df9815;
+  color: var(--hu-color-accent-text, #966510);
   text-decoration: none;
 }
 
@@ -280,7 +280,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #737373;
+  color: var(--hu-color-text-muted, #5f6b7a);
 }
 
 .community-discovery__meta dd {
@@ -295,5 +295,29 @@
 .community-discovery__source {
   margin: 0;
   font-size: 0.8125rem;
-  color: #737373;
+  color: var(--hu-color-text-muted, #5f6b7a);
+}
+
+/* The shared navigator label color is only 4.35:1 on the navigator background. */
+.region-experience-page .geographic-navigator__label {
+  color: var(--hu-color-text-muted, #5f6b7a);
+}
+
+/* Shared public-experience text that uses the decorative accent (2.4:1). */
+.region-experience-page .latest-initiative-card__title a,
+.region-experience-page .latest-initiative-card__related-list a:hover,
+.region-experience-page .global-statistics__value {
+  color: var(--hu-color-accent-text, #966510);
+}
+
+/* Shared public-experience muted text (4.35:1 on light panels). */
+.region-experience-page .experience-block__placeholder,
+.region-experience-page .participation-pipeline__source,
+.region-experience-page .global-statistics__derived,
+.region-experience-page .latest-initiative-card__unavailable,
+.region-experience-page .latest-initiative-card__primary-link--placeholder,
+.region-experience-page .latest-initiative-card__related-placeholder,
+.region-experience-page .latest-initiative-card__meta-item dt,
+.region-experience-page .latest-initiative-card__related-label {
+  color: var(--hu-color-text-muted, #5f6b7a);
 }

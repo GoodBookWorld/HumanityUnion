@@ -77,8 +77,10 @@ export function CommunityDiscoveryEvidence({
 
       {catalog.source === "bootstrap" ? (
         <p className="community-discovery__source" role="note">
-          {tShared("bootstrapSource")} —{" "}
-          {t("bootstrapNote", { count: availableCommunities.length })}
+          {tShared("bootstrapCommunitiesObserveInRegion", {
+            count: availableCommunities.length,
+            regionName,
+          })}
         </p>
       ) : null}
     </div>

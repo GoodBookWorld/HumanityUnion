@@ -32,7 +32,7 @@ export function RegionalInteractiveMapEvidence({
       <div
         className="regional-interactive-map__canvas"
         role="group"
-        aria-label={t("canvasAria", { regionName })}
+        aria-label={t("mapAria", { regionName })}
         aria-describedby={`${scopeStatusId} ${feedbackId}`}
       >
         <svg
@@ -66,7 +66,11 @@ export function RegionalInteractiveMapEvidence({
           })}
         </svg>
 
-        <div className="regional-interactive-map__controls" role="group" aria-label={t("areasAria")}>
+        <div
+          className="regional-interactive-map__controls"
+          role="group"
+          aria-label={t("mapAreasAria")}
+        >
           {BC_MAP_SUBREGIONS.map((subRegion) => {
             const isSelected = selectedSubRegionId === subRegion.id;
 
@@ -78,14 +82,13 @@ export function RegionalInteractiveMapEvidence({
                   isSelected ? " regional-interactive-map__subregion-button--selected" : ""
                 }`}
                 aria-pressed={isSelected}
-                aria-label={t("selectPreviewAria", { label: subRegion.label })}
                 onClick={() =>
                   setSelectedSubRegionId((current) =>
                     current === subRegion.id ? null : subRegion.id,
                   )
                 }
               >
-                {subRegion.label} {t("previewSuffix")}
+                {t("previewLabel", { label: subRegion.label })}
               </button>
             );
           })}
@@ -111,7 +114,7 @@ export function RegionalInteractiveMapEvidence({
           <>
             <p>
               {t("subUnavailableWithLabel", {
-                message: t("subUnavailable"),
+                message: t("subRegionUnavailableMessage"),
                 label: selectedSubRegion.label,
               })}
             </p>
@@ -120,7 +123,7 @@ export function RegionalInteractiveMapEvidence({
               className="regional-interactive-map__reset"
               onClick={() => setSelectedSubRegionId(null)}
             >
-              {t("returnToRegion")}
+              {t("returnToRegionLabel")}
             </button>
           </>
         ) : (

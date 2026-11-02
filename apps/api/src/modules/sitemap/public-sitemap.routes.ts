@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { listPublicRegionsWithContent } from "../country-statistics/region-public.service.js";
 import { MemberProfilePersistenceUnavailableError } from "../member-profile/member-profile.errors.js";
 import {
   listPublicSitemapInitiatives,
@@ -19,6 +20,24 @@ publicSitemapRouter.get("/initiatives", (_req, res) => {
       "Public sitemap initiative inventory loaded.",
       { total: entries.length },
     ),
+  );
+});
+
+/**
+ * REGION-500B.3 — canonical regions with public regional initiatives (one in-memory pass).
+ */
+publicSitemapRouter.get("/regions", (_req, res) => {
+  const entries = listPublicRegionsWithContent().map(({ countryCode, regionCode, updatedAt }) => ({
+    countryCode,
+    regionCode,
+    updatedAt,
+  }));
+
+  res.setHeader("Cache-Control", "no-store");
+  res.json(
+    createSuccessResponse({ entries }, "Public sitemap region inventory loaded.", {
+      total: entries.length,
+    }),
   );
 });
 
