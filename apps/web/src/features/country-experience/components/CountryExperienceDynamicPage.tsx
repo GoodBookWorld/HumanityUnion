@@ -248,7 +248,7 @@ export function CountryExperienceDynamicPage({
   }
 
   return (
-    <div className="country-experience-dynamic">
+    <main className="country-experience-dynamic">
       <nav
         className="country-experience-dynamic__breadcrumb"
         aria-label={t("shared.breadcrumbAria")}
@@ -478,6 +478,6 @@ export function CountryExperienceDynamicPage({
 
       <CountryTeamSection countryCode={countryCode} countryName={countryDisplayName} />
       <CountryPartnersSection countryCode={countryCode} countryName={countryDisplayName} />
-    </div>
+    </main>
   );
 }
