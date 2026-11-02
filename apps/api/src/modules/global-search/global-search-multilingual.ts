@@ -58,7 +58,7 @@ function normalizeLanguageCode(value: string): string {
   return value.trim();
 }
 
-function isSearchEnabledRecord(record: LanguageRegistryRecord): boolean {
+export function isSearchEnabledRecord(record: LanguageRegistryRecord): boolean {
   return record.enabled === true && record.searchEnabled === true;
 }
 

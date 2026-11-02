@@ -1,4 +1,10 @@
-import type { CivicEntityType, CivicSearchMetadata } from "@hu/types";
+import {
+  normalizeLanguageRegistryLocaleKey,
+  type CivicEntityType,
+  type CivicSearchMetadata,
+  type LanguageRegistryRecord,
+  type TerminologyConcept,
+} from "@hu/types";
 
 import { buildSearchMetadata } from "../capability02-integration/capability02-integration.service.js";
 import { listAccountabilities } from "../civic-accountability/civic-accountability.store.js";
@@ -25,7 +31,13 @@ import { listPublishedCivicNominations } from "../civic-nomination/civic-nominat
 import { listPetitions } from "../petition/petition.store.js";
 import { blogPostToSearchMetadata } from "../blog/blog.projection.js";
 import { listPublishedBlogPostsForSearch } from "../blog/blog.service.js";
-import { enrichSearchEntryWithMultilingual } from "./global-search-multilingual.js";
+import { listLanguageRegistry } from "../language/language-registry/language-registry.repository.js";
+import { listTerminologyConcepts } from "../language/terminology-glossary/terminology-glossary.repository.js";
+import {
+  enrichSearchEntryWithMultilingual,
+  isSearchEnabledRecord,
+  type GlobalSearchMultilingualDeps,
+} from "./global-search-multilingual.js";
 
 interface SearchEntityRef {
   entityType: CivicEntityType;
@@ -114,13 +126,84 @@ function buildNormalizedMultilingualMaps(metadata: CivicSearchMetadata): {
   };
 }
 
+export interface GlobalSearchBuildLookups {
+  readonly listLanguageRegistry: () => Promise<readonly LanguageRegistryRecord[]>;
+  readonly listTerminologyConcepts: () => Promise<readonly TerminologyConcept[]>;
+}
+
+const DEFAULT_BUILD_LOOKUPS: GlobalSearchBuildLookups = {
+  listLanguageRegistry,
+  listTerminologyConcepts,
+};
+
+type Settled<T> = { ok: true; value: T } | { ok: false; error: unknown };
+
+async function settle<T>(promise: Promise<T>): Promise<Settled<T>> {
+  try {
+    return { ok: true, value: await promise };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+function unwrap<T>(result: Settled<T>): T {
+  if (!result.ok) {
+    throw result.error;
+  }
+  return result.value;
+}
+
+/**
+ * REGION-500B.P2 — one language registry and one terminology glossary read per
+ * index build, shared by every entry; translation target locales resolve against
+ * that registry in memory (same locale/alias keys as resolveLanguageRegistryLocale).
+ * A failed read keeps the existing per-entry soft-fail: entries stay canonical-only.
+ */
+export async function createGlobalSearchBuildMultilingualDeps(
+  lookups: GlobalSearchBuildLookups = DEFAULT_BUILD_LOOKUPS,
+): Promise<GlobalSearchMultilingualDeps> {
+  const [registry, concepts] = await Promise.all([
+    settle(lookups.listLanguageRegistry()),
+    settle(lookups.listTerminologyConcepts()),
+  ]);
+
+  const byLocaleKey = new Map<string, LanguageRegistryRecord>();
+  if (registry.ok) {
+    for (const record of registry.value) {
+      const key = normalizeLanguageRegistryLocaleKey(record.locale);
+      if (!byLocaleKey.has(key)) {
+        byLocaleKey.set(key, record);
+      }
+    }
+    for (const record of registry.value) {
+      for (const alias of record.aliases ?? []) {
+        const key = normalizeLanguageRegistryLocaleKey(alias);
+        if (!byLocaleKey.has(key)) {
+          byLocaleKey.set(key, record);
+        }
+      }
+    }
+  }
+
+  return {
+    listSearchEnabledLanguages: async () => unwrap(registry).filter(isSearchEnabledRecord),
+    resolveLocale: async (localeOrAlias) => {
+      unwrap(registry);
+      const key = normalizeLanguageRegistryLocaleKey(localeOrAlias);
+      return key ? (byLocaleKey.get(key) ?? null) : null;
+    },
+    listTerminologyConcepts: async () => unwrap(concepts),
+  };
+}
+
 async function toIndexEntry(
   metadata: NonNullable<Awaited<ReturnType<typeof buildSearchMetadata>>>,
+  multilingualDeps: GlobalSearchMultilingualDeps,
 ): Promise<GlobalSearchIndexEntry> {
   let enriched: CivicSearchMetadata = metadata;
 
   try {
-    enriched = await enrichSearchEntryWithMultilingual(metadata);
+    enriched = await enrichSearchEntryWithMultilingual(metadata, multilingualDeps);
   } catch {
     // Soft-fail enrichment — keep the canonical entry searchable.
     enriched = metadata;
@@ -278,8 +361,26 @@ async function collectSearchEntityRefs(): Promise<SearchEntityRef[]> {
   return refs;
 }
 
-let cachedIndex: GlobalSearchIndexEntry[] | null = null;
+/** Entries are valid only for the generation they were built in. */
+let cachedIndex: { generation: number; entries: GlobalSearchIndexEntry[] } | null = null;
+/** Incremented by every invalidation. */
+let indexGeneration = 0;
+let inFlightBuild: { generation: number; promise: Promise<GlobalSearchIndexEntry[]> } | null = null;
+let buildIndexForGetter: () => Promise<GlobalSearchIndexEntry[]> = () => buildGlobalSearchIndex();
 let searchInvalidationCountForTests = 0;
+
+/**
+ * A waiting request rebuilds at most this many times when invalidations keep
+ * landing during its builds, then fails instead of returning an obsolete index.
+ */
+export const GLOBAL_SEARCH_INDEX_MAX_BUILD_ATTEMPTS = 3;
+
+export class GlobalSearchIndexUnstableError extends Error {
+  constructor() {
+    super("Global search index was invalidated during every rebuild attempt.");
+    this.name = "GlobalSearchIndexUnstableError";
+  }
+}
 
 export function resetGlobalSearchInvalidationCountForTests(): void {
   if (process.env.NODE_TEST_ENV !== "true") {
@@ -295,8 +396,11 @@ export function globalSearchInvalidationCountForTests(): number {
   return searchInvalidationCountForTests;
 }
 
-export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
+export async function buildGlobalSearchIndex(
+  lookups: GlobalSearchBuildLookups = DEFAULT_BUILD_LOOKUPS,
+): Promise<GlobalSearchIndexEntry[]> {
   const entries: GlobalSearchIndexEntry[] = [];
+  const multilingualDeps = await createGlobalSearchBuildMultilingualDeps(lookups);
 
   for (const ref of await collectSearchEntityRefs()) {
     const metadata = await buildSearchMetadata(ref.entityType, ref.entityId);
@@ -305,22 +409,22 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
       continue;
     }
 
-    entries.push(await toIndexEntry(metadata));
+    entries.push(await toIndexEntry(metadata, multilingualDeps));
   }
 
   for (const article of getKnowledgeArticleRecordsForSearch()) {
-    entries.push(await toIndexEntry(knowledgeArticleToSearchMetadata(article)));
+    entries.push(await toIndexEntry(knowledgeArticleToSearchMetadata(article), multilingualDeps));
   }
 
   for (const mediaRecord of await getCivicMediaRecordsForSearch()) {
-    entries.push(await toIndexEntry(civicMediaToSearchMetadata(mediaRecord)));
+    entries.push(await toIndexEntry(civicMediaToSearchMetadata(mediaRecord), multilingualDeps));
   }
 
   for (const nomination of listPublishedCivicNominations()) {
     const metadata = civicNominationToSearchMetadata(nomination);
 
     if (metadata) {
-      entries.push(await toIndexEntry(metadata));
+      entries.push(await toIndexEntry(metadata, multilingualDeps));
     }
   }
 
@@ -328,7 +432,7 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
     for (const post of await listPublishedBlogPostsForSearch()) {
       const metadata = blogPostToSearchMetadata(post);
       if (metadata) {
-        entries.push(await toIndexEntry(metadata));
+        entries.push(await toIndexEntry(metadata, multilingualDeps));
       }
     }
   } catch {
@@ -340,23 +444,85 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
   );
 }
 
-export async function getGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
-  if (!cachedIndex) {
-    cachedIndex = await buildGlobalSearchIndex();
+/** Starts a build for the current generation, or joins the one already running for it. */
+function joinBuildForCurrentGeneration(): { generation: number; promise: Promise<GlobalSearchIndexEntry[]> } {
+  const generation = indexGeneration;
+
+  if (inFlightBuild?.generation === generation) {
+    return inFlightBuild;
   }
 
-  return cachedIndex;
+  const build = { generation, promise: buildIndexForGetter() };
+  inFlightBuild = build;
+
+  build.promise.then(
+    (entries) => {
+      // Publish only if nothing was invalidated while this build ran.
+      if (indexGeneration === generation) {
+        cachedIndex = { generation, entries };
+      }
+    },
+    () => {
+      // A failed build is not cached; the next request starts a new one.
+    },
+  );
+  void build.promise
+    .finally(() => {
+      if (inFlightBuild === build) {
+        inFlightBuild = null;
+      }
+    })
+    .catch(() => {});
+
+  return build;
+}
+
+/**
+ * REGION-500B.P2 — concurrent callers share one build per index generation. A
+ * build that was invalidated before it finished is never cached or returned; the
+ * caller rebuilds (bounded by GLOBAL_SEARCH_INDEX_MAX_BUILD_ATTEMPTS).
+ */
+export async function getGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
+  for (let attempt = 0; attempt < GLOBAL_SEARCH_INDEX_MAX_BUILD_ATTEMPTS; attempt += 1) {
+    if (cachedIndex && cachedIndex.generation === indexGeneration) {
+      return cachedIndex.entries;
+    }
+
+    const build = joinBuildForCurrentGeneration();
+    const entries = await build.promise;
+
+    if (build.generation === indexGeneration) {
+      return entries;
+    }
+  }
+
+  throw new GlobalSearchIndexUnstableError();
 }
 
 export function resetGlobalSearchIndexForTests(): void {
   cachedIndex = null;
+  inFlightBuild = null;
+  buildIndexForGetter = () => buildGlobalSearchIndex();
 }
 
 export function setGlobalSearchIndexForTests(entries: GlobalSearchIndexEntry[]): void {
-  cachedIndex = entries;
+  cachedIndex = { generation: indexGeneration, entries };
+}
+
+/** Replaces the builder used by getGlobalSearchIndex (null restores the real build). */
+export function setGlobalSearchIndexBuilderForTests(
+  builder: (() => Promise<GlobalSearchIndexEntry[]>) | null,
+): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("The search index builder can be replaced only when NODE_TEST_ENV=true.");
+  }
+  cachedIndex = null;
+  inFlightBuild = null;
+  buildIndexForGetter = builder ?? (() => buildGlobalSearchIndex());
 }
 
 export function invalidateGlobalSearchIndex(): void {
+  indexGeneration += 1;
   cachedIndex = null;
   if (process.env.NODE_TEST_ENV === "true") {
     searchInvalidationCountForTests += 1;
