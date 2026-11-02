@@ -8,6 +8,7 @@ import {
   shouldDisallowSearchIndexing,
   type PlatformIndexingMode,
 } from "../../lib/platform-indexing";
+import { readPublicBuildEnv } from "../../lib/seo/public-build-env";
 import { resolvePublicSiteOrigin } from "../../lib/seo/public-site-url";
 
 type SeoDiagnosticsEnv = {
@@ -308,7 +309,7 @@ function check(
 }
 
 export function buildIndexingDiagnostics(
-  env: SeoDiagnosticsEnv = process.env,
+  env: SeoDiagnosticsEnv = readPublicBuildEnv(),
 ): SeoDiagnosticCheck[] {
   const platformMode = resolvePlatformIndexingMode(env);
   const indexingDisallowed = shouldDisallowSearchIndexing(env);
@@ -552,7 +553,7 @@ export function buildPublicSurfaceDiagnostics(): SeoDiagnosticCheck[] {
 }
 
 export function buildSeoDiagnosticsSnapshot(
-  env: SeoDiagnosticsEnv = process.env,
+  env: SeoDiagnosticsEnv = readPublicBuildEnv(),
 ): SeoDiagnosticsSnapshot {
   const indexing = buildIndexingDiagnostics(env);
   const sitemap = buildSitemapDiagnostics();
