@@ -10,6 +10,7 @@ export default defineConfig({
     "**/seo-a11y-contrast-seo10.playwright.e2e.ts",
     "**/hyd-01a-utc-dates.playwright.e2e.ts",
     "**/hyd-01b-geography-names.playwright.e2e.ts",
+    "**/a11y-01-public-corrections.playwright.e2e.ts",
   ],
   timeout: 60_000,
   retries: 0,

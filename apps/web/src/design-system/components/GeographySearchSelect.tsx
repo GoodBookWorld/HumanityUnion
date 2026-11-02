@@ -230,7 +230,7 @@ export function GeographySearchSelect({
             : "geography-search-select__trigger hu-form-control"
         }
         disabled={controlDisabled}
-        aria-labelledby={`${id}-label`}
+        aria-labelledby={`${id}-label ${id}-value`}
         aria-describedby={describedBy || undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -245,7 +245,7 @@ export function GeographySearchSelect({
           setOpen((current) => !current);
         }}
       >
-        <span className="geography-search-select__trigger-value">
+        <span className="geography-search-select__trigger-value" id={`${id}-value`}>
           {selectedLabel || emptyOptionLabel}
         </span>
         <span className="geography-search-select__chevron" aria-hidden="true" />

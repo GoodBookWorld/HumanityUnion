@@ -289,7 +289,8 @@
 .civic-media-chip--active {
   border-color: rgb(1 116 176 / 0.35);
   background: rgb(1 116 176 / 0.08);
-  color: var(--hu-color-primary, #0174b0);
+  /* The tint lets muted panels show through; primary-hover keeps >= 4.5:1 on all of them. */
+  color: var(--hu-color-primary-hover, #015f92);
 }
 
 .horizontal-section-shell__category-meta,
@@ -378,7 +379,7 @@
 .trusted-media-category-tabs__tab[aria-selected="true"] {
   border-color: rgb(1 116 176 / 0.45);
   background: rgb(1 116 176 / 0.1);
-  color: var(--hu-color-primary, #0174b0);
+  color: var(--hu-color-primary-hover, #015f92);
 }
 
 .trusted-media-category-tabs__panel-heading {
