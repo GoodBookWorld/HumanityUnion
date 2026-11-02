@@ -9,6 +9,11 @@ import {
 import "../../../features/public-experience/public-experience.css";
 import "../../../features/region-experience/region-experience.css";
 
+// The root layout reads the language cookie. When generateStaticParams returns no
+// slugs (API provider), Next would otherwise register this route as static and
+// fail every request with "Page changed from static to dynamic".
+export const dynamic = "force-dynamic";
+
 interface RegionPageProps {
   params: Promise<{ regionSlug: string }>;
 }
