@@ -115,7 +115,14 @@ describe("SEO-11A — Admin SEO diagnostics by environment (defaults)", () => {
     assert.equal(checks["sitemap-availability"]!.status, "healthy");
     assert.equal(checks["sitemap-availability"]!.summary, "Available at /sitemap.xml");
     assert.equal(checks["indexing-allowed"]!.summary, "Allowed");
-    assert.deepEqual(snapshot.summary, { healthy: 43, warning: 0, missing: 0, notApplicable: 4 });
+    // SEO-11B.1: Region surface (structured data missing) and the covered Regions sitemap provider.
+    assert.deepEqual(snapshot.summary, {
+      healthy: 46,
+      warning: 0,
+      missing: 2,
+      deferred: 0,
+      notApplicable: 3,
+    });
   });
 
   it("B — Staging: staging mode stays noindex with its own origin", () => {

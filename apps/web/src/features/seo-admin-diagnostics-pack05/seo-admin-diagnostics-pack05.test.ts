@@ -213,6 +213,7 @@ describe("SEO Pack 05 — missing surfaces and summary", () => {
       snapshot.summary.healthy +
         snapshot.summary.warning +
         snapshot.summary.missing +
+        snapshot.summary.deferred +
         snapshot.summary.notApplicable,
       snapshot.allChecks.length,
     );

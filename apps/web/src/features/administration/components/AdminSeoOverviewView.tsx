@@ -3,148 +3,127 @@
 import Link from "next/link";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
+import type { AdminSeoViewId } from "../admin-seo-console-model";
 import {
   formatSeoDiagnosticSeverityLabel,
   type SeoDiagnosticsSnapshot,
 } from "../admin-seo-diagnostics-model";
+import {
+  buildSeoActionItems,
+  buildSeoOverviewCategories,
+  computeSeoHealthScore,
+  type SeoActionItem,
+  type SeoActionKind,
+  type SeoHealthScore,
+} from "../admin-seo-overview-model";
+import { AdminSeoRadialIndicator } from "./AdminSeoRadialIndicator";
 
 import "./admin-seo-diagnostics.css";
 import "./admin-seo-console.css";
+import "./admin-seo-overview.css";
 
 interface AdminSeoOverviewViewProps {
   diagnostics: SeoDiagnosticsSnapshot;
+  onNavigate?: (view: AdminSeoViewId) => void;
 }
 
-export function AdminSeoOverviewView({ diagnostics }: AdminSeoOverviewViewProps) {
-  const indexingAllowed = diagnostics.indexingAllowed;
-  const originConfigured = diagnostics.siteOriginConfigured;
+const ACTION_GROUPS: ReadonlyArray<{ kind: SeoActionKind; title: string }> = [
+  { kind: "missing", title: "Missing" },
+  { kind: "warning", title: "Warnings" },
+  { kind: "deferred", title: "Deferred" },
+];
 
-  const coverageCards = [
-    {
-      id: "metadata",
-      label: "Metadata",
-      summary: `${countBy(diagnostics.metadata, "healthy")} healthy · ${countBy(diagnostics.metadata, "missing")} missing`,
-    },
-    {
-      id: "canonical",
-      label: "Canonical",
-      summary: `${countBy(diagnostics.canonical, "healthy")} healthy · ${countBy(diagnostics.canonical, "warning")} warnings`,
-    },
-    {
-      id: "structured-data",
-      label: "Structured Data",
-      summary: `${countBy(diagnostics.structuredData, "healthy")} healthy · ${countBy(diagnostics.structuredData, "missing")} missing`,
-    },
-    {
-      id: "sitemap",
-      label: "Sitemap",
-      summary: `${countBy(diagnostics.sitemap, "healthy")} covered · ${countBy(diagnostics.sitemap, "not_applicable")} deferred`,
-    },
-  ];
+function scoreCaption(score: SeoHealthScore): string {
+  const base = `${score.healthy} of ${score.scored} healthy`;
+  return score.deferred > 0 ? `${base} · ${score.deferred} deferred` : base;
+}
+
+/** SEO-11B.1 — visual SEO overview built from the Pack 05 diagnostics snapshot. */
+export function AdminSeoOverviewView({ diagnostics, onNavigate }: AdminSeoOverviewViewProps) {
+  const health = computeSeoHealthScore(diagnostics.allChecks);
+  const categories = buildSeoOverviewCategories(diagnostics);
+  const actions = buildSeoActionItems(diagnostics);
+  const openDiagnostics = onNavigate ? () => onNavigate("diagnostics") : undefined;
 
   return (
-    <div className="admin-seo-console__panel">
-      <ProfileSection title="Search visibility">
-        <ul className="admin-seo-console__overview-grid">
-          <li>
-            <article className="admin-seo-diagnostics__card">
-              <header className="admin-seo-diagnostics__card-header">
-                <h3 className="admin-seo-diagnostics__card-title">Indexing</h3>
-                <span
-                  className={`admin-seo-diagnostics__badge admin-seo-diagnostics__badge--healthy`}
-                >
-                  Healthy
-                </span>
-              </header>
-              <p className="admin-seo-diagnostics__card-summary">
-                {indexingAllowed ? "Allowed" : "Protected (noindex)"}
-              </p>
-              <p className="hu-caption admin-seo-diagnostics__card-detail">
-                Mode: {diagnostics.platformMode}
-              </p>
-            </article>
-          </li>
-          <li>
-            <OverviewCard
-              label="Robots"
-              status="healthy"
-              summary={
-                indexingAllowed ? "Indexing permitted via robots" : "Protective noindex active"
-              }
-            />
-          </li>
-          <li>
-            <OverviewCard
-              label="Public site origin"
-              status={originConfigured ? "healthy" : "warning"}
-              summary={originConfigured ? "Configured" : "NEXT_PUBLIC_SITE_URL missing"}
-              detail={
-                originConfigured
-                  ? "Absolute canonicals, sitemap, and JSON-LD use this origin."
-                  : "Absolute URLs omit until the public site origin is configured."
-              }
-            />
-          </li>
-          <li>
-            <OverviewCard
-              label="Sitemap"
-              status={originConfigured ? "healthy" : "warning"}
-              summary={
-                !originConfigured
-                  ? "Route exists; absolute URLs unavailable"
-                  : indexingAllowed
-                    ? "Available at /sitemap.xml"
-                    : "Available; empty while indexing is disallowed"
-              }
-            />
-          </li>
-        </ul>
-      </ProfileSection>
+    <div className="admin-seo-console__panel admin-seo-overview">
+      <div className="admin-seo-overview__headline">
+        <section className="admin-seo-overview__card" aria-labelledby="seo-health-title">
+          <AdminSeoRadialIndicator
+            label="SEO implementation health"
+            percent={health.percent}
+            size="large"
+          />
+          <div>
+            <h2 className="admin-seo-overview__card-title" id="seo-health-title">
+              SEO implementation health
+            </h2>
+            <ul className="admin-seo-overview__facts">
+              <li>
+                {health.healthy} healthy · {health.warning} warnings · {health.missing} missing
+              </li>
+              <li>
+                Excluded: {health.deferred} deferred · {health.notApplicable} not applicable
+              </li>
+              <li>
+                Indexing: {diagnostics.indexingAllowed ? "allowed" : "protected (noindex)"} · Mode:{" "}
+                {diagnostics.platformMode}
+              </li>
+            </ul>
+            <p className="admin-seo-overview__note">
+              Healthy ÷ (healthy + warnings + missing). Measures the implemented SEO architecture,
+              not a live crawl.{" "}
+              <Link className="admin-panel__link" href="/robots.txt">
+                robots.txt
+              </Link>
+              {" · "}
+              <Link className="admin-panel__link" href="/sitemap.xml">
+                sitemap.xml
+              </Link>
+            </p>
+          </div>
+        </section>
 
-      <ProfileSection title="Coverage">
-        <ul className="admin-seo-console__overview-grid">
-          {coverageCards.map((card) => (
-            <li key={card.id}>
-              <article className="admin-seo-diagnostics__card">
-                <header className="admin-seo-diagnostics__card-header">
-                  <h3 className="admin-seo-diagnostics__card-title">{card.label}</h3>
-                </header>
-                <p className="admin-seo-diagnostics__card-summary">{card.summary}</p>
-              </article>
+        <section className="admin-seo-overview__card" aria-labelledby="seo-visibility-title">
+          <AdminSeoRadialIndicator label="Search visibility" percent={null} size="large" />
+          <div>
+            <h2 className="admin-seo-overview__card-title" id="seo-visibility-title">
+              Search visibility
+            </h2>
+            <p className="admin-seo-overview__note">
+              No data. Google Search Console and Bing Webmaster Tools are not connected, so search
+              performance (impressions, clicks, indexed pages) is unavailable. No visibility figure
+              is estimated.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <ProfileSection title="Implementation categories">
+        <ul className="admin-seo-overview__categories">
+          {categories.map((category) => (
+            <li key={category.id}>
+              <AdminSeoRadialIndicator
+                label={category.label}
+                percent={category.score.percent}
+                size="compact"
+                caption={scoreCaption(category.score)}
+                onSelect={openDiagnostics}
+              />
             </li>
           ))}
         </ul>
-      </ProfileSection>
-
-      <ProfileSection title="Issues">
-        <ul className="admin-seo-diagnostics__summary" aria-label="SEO issue summary">
-          <li className="admin-seo-diagnostics__summary-card admin-seo-diagnostics__summary-card--healthy">
-            <p className="admin-seo-diagnostics__summary-label">Healthy</p>
-            <p className="admin-seo-diagnostics__summary-value">{diagnostics.summary.healthy}</p>
-          </li>
-          <li className="admin-seo-diagnostics__summary-card admin-seo-diagnostics__summary-card--warning">
-            <p className="admin-seo-diagnostics__summary-label">Warnings</p>
-            <p className="admin-seo-diagnostics__summary-value">{diagnostics.summary.warning}</p>
-          </li>
-          <li className="admin-seo-diagnostics__summary-card admin-seo-diagnostics__summary-card--missing">
-            <p className="admin-seo-diagnostics__summary-label">Missing</p>
-            <p className="admin-seo-diagnostics__summary-value">{diagnostics.summary.missing}</p>
-          </li>
-        </ul>
-        <p className="hu-caption admin-seo-diagnostics__note">
-          Counts come from Pack 05 diagnostics. Deferred / not applicable items are not treated as
-          Missing failures.{" "}
-          <Link className="admin-panel__link" href="/robots.txt">
-            robots.txt
-          </Link>
-          {" · "}
-          <Link className="admin-panel__link" href="/sitemap.xml">
-            sitemap.xml
-          </Link>
+        <p className="admin-seo-overview__note">
+          Each category counts its own checks once. The overall score also includes per-surface
+          rollups, so category totals do not add up to the overall total.
         </p>
       </ProfileSection>
 
-      <ProfileSection title="Notable gaps">
+      <ProfileSection title="Action center">
+        <ActionCenter actions={actions} onNavigate={onNavigate} />
+      </ProfileSection>
+
+      <ProfileSection title="Notes">
         <ul className="admin-panel__gap-list hu-body">
           <li>
             Petition is Initiative-owned (Pack 10): not independently indexed; crawlable via
@@ -161,31 +140,64 @@ export function AdminSeoOverviewView({ diagnostics }: AdminSeoOverviewViewProps)
   );
 }
 
-function countBy(
-  checks: SeoDiagnosticsSnapshot["metadata"],
-  status: SeoDiagnosticsSnapshot["metadata"][number]["status"],
-): number {
-  return checks.filter((check) => check.status === status).length;
-}
-
-function OverviewCard(props: {
-  label: string;
-  status: "healthy" | "warning" | "missing" | "not_applicable";
-  summary: string;
-  detail?: string;
+function ActionCenter({
+  actions,
+  onNavigate,
+}: {
+  actions: readonly SeoActionItem[];
+  onNavigate?: (view: AdminSeoViewId) => void;
 }) {
   return (
-    <article className={`admin-seo-diagnostics__card admin-seo-diagnostics__card--${props.status}`}>
-      <header className="admin-seo-diagnostics__card-header">
-        <h3 className="admin-seo-diagnostics__card-title">{props.label}</h3>
-        <span className={`admin-seo-diagnostics__badge admin-seo-diagnostics__badge--${props.status}`}>
-          {formatSeoDiagnosticSeverityLabel(props.status)}
-        </span>
-      </header>
-      <p className="admin-seo-diagnostics__card-summary">{props.summary}</p>
-      {props.detail ? (
-        <p className="hu-caption admin-seo-diagnostics__card-detail">{props.detail}</p>
+    <div className="admin-seo-overview__actions">
+      {actions.length === 0 ? (
+        <p className="hu-body">No missing, warning or deferred checks.</p>
+      ) : (
+        ACTION_GROUPS.map(({ kind, title }) => {
+          const items = actions.filter((action) => action.kind === kind);
+          if (items.length === 0) {
+            return null;
+          }
+          return (
+            <section key={kind} className="admin-seo-overview__action-group">
+              <h3>
+                {title} ({items.length})
+              </h3>
+              <ul className="admin-seo-overview__action-list">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    <span
+                      className={`admin-seo-diagnostics__badge admin-seo-diagnostics__badge--${kind}`}
+                    >
+                      {formatSeoDiagnosticSeverityLabel(kind)}
+                    </span>{" "}
+                    <strong>{item.label}</strong>{" "}
+                    <span className="admin-seo-overview__action-area">({item.area})</span> —{" "}
+                    {item.summary}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      )}
+      {onNavigate ? (
+        <div className="admin-seo-overview__action-links">
+          <button
+            type="button"
+            className="hu-tab-control admin-publishing__tab"
+            onClick={() => onNavigate("diagnostics")}
+          >
+            Open Diagnostics
+          </button>
+          <button
+            type="button"
+            className="hu-tab-control admin-publishing__tab"
+            onClick={() => onNavigate("pages")}
+          >
+            Open Pages
+          </button>
+        </div>
       ) : null}
-    </article>
+    </div>
   );
 }

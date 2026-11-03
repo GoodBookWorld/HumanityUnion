@@ -82,7 +82,9 @@ export function AdminSeoSection({ user: _user }: AdminSeoSectionProps) {
         ))}
       </div>
 
-      {view === "overview" ? <AdminSeoOverviewView diagnostics={diagnostics} /> : null}
+      {view === "overview" ? (
+        <AdminSeoOverviewView diagnostics={diagnostics} onNavigate={setView} />
+      ) : null}
       {view === "pages" ? (
         <AdminSeoPagesView
           rows={pageRows}
