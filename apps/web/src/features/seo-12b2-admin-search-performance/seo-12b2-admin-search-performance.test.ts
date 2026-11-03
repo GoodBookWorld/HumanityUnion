@@ -29,6 +29,7 @@ import {
 import type { AdminSeoSearchProviderPanel as PanelFn } from "../administration/components/AdminSeoSearchProviderPanel.js";
 import type { SearchVisibilityCardContent as CardFn } from "../administration/components/AdminSeoSearchVisibilityCard.js";
 import type { SearchPerformanceTrendChart as ChartFn } from "../administration/components/SearchPerformanceTrendChart.js";
+import type * as LogoModule from "../administration/components/SearchProviderLogo.js";
 
 let AdminSeoSearchProviderPanel: typeof PanelFn;
 let SearchVisibilityCardContent: typeof CardFn;
@@ -651,5 +652,104 @@ describe("SEO-12B.2 — compatibility with the SEO-12B.1 API response", () => {
     } finally {
       auth.setFindAuthUserByIdForTests(null);
     }
+  });
+});
+
+describe("SEO-12B.5 — provider logos and scrollable top tables", () => {
+  let logoModule: typeof LogoModule;
+
+  before(async () => {
+    logoModule = await import("../administration/components/SearchProviderLogo.js");
+  });
+
+  it("serves both provider marks from local SVGs with no external references", () => {
+    const readLogo = (provider: "google" | "bing") => {
+      const src = logoModule.SEARCH_PROVIDER_LOGOS[provider]!;
+      assert.match(src, /^\/icons\/providers\/[a-z-]+\.svg$/);
+      const svg = readFileSync(path.resolve(webSrc, "../public", src.slice(1)), "utf8");
+      assert.doesNotMatch(
+        svg,
+        /https?:\/\/(?!www\.w3\.org\/(?:2000\/svg|1999\/xlink)")|<script|<image|<foreignObject|href=|url\((?!#)/i,
+      );
+      return svg;
+    };
+    const google = readLogo("google");
+    assert.match(google, /^<svg[^>]*viewBox="0 0 24 24"/);
+    assert.match(google, /fill="#458CF5"/);
+    const bing = readLogo("bing");
+    assert.match(bing, /^<svg[^>]*viewBox="98\.154 26\.999 303\.69 455\.861"/);
+    assert.match(bing, /<linearGradient id="a"[\s\S]*stop-color="#37bdff"/);
+    assert.match(bing, /fill="url\(#b\)"/);
+  });
+
+  it("renders both logos as decorative next to the unchanged headings", () => {
+    const expected = {
+      google: "google-search-console",
+      bing: "bing-webmaster-tools",
+    } as const;
+    for (const provider of ["google", "bing"] as const) {
+      const html = render(createElement(logoModule.SearchProviderLogo, { provider }));
+      assert.match(
+        html,
+        new RegExp(
+          `<img class="admin-seo-search__logo" src="/icons/providers/${expected[provider]}\\.svg" alt="" width="24" height="24" aria-hidden="true"/>`,
+        ),
+      );
+    }
+    const viewSource = read("features/administration/components/AdminSeoSearchPerformanceView.tsx");
+    assert.match(viewSource, /title=\{SEARCH_PROVIDER_LABELS\[provider\]\}/);
+    assert.match(viewSource, /headingAccessory=\{/);
+    assert.match(
+      read("features/administration/components/admin-seo-search-performance.css"),
+      /\.admin-seo-search__logo \{[^}]*order: -1;/,
+    );
+  });
+
+  it("bounds top queries and top pages to 500px with their own scroll and a sticky header", () => {
+    const withPages = view({
+      topPages: {
+        dimension: "page",
+        startDay: "2026-10-03",
+        endDay: "2026-10-30",
+        rows: [
+          { key: "https://huws.org/", clicks: 5, impressions: 70, ctr: 0.0714, position: 2.1 },
+        ],
+        metricsSource: "provider",
+      },
+    });
+    const html = render(
+      createElement(AdminSeoSearchProviderPanel, { view: withPages, syncEnabled: true }),
+    );
+    for (const label of ["Google top queries", "Google top pages"]) {
+      assert.match(
+        html,
+        new RegExp(
+          `<div class="admin-traffic__table-wrap admin-seo-search__table-scroll" role="region" aria-label="${label}" tabindex="0">`,
+        ),
+      );
+    }
+    assert.equal(
+      (html.match(/admin-seo-search__table-scroll/g) ?? []).length,
+      2,
+      "sitemap table is not bounded",
+    );
+    assert.match(
+      html,
+      /<th scope="col">Query<\/th><th scope="col">Clicks<\/th><th scope="col">Impressions<\/th><th scope="col">CTR<\/th><th scope="col">Position<\/th>/,
+    );
+
+    const css = read("features/administration/components/admin-seo-search-performance.css");
+    assert.match(
+      css,
+      /\.admin-traffic__table-wrap\.admin-seo-search__table-scroll \{[^}]*max-height: 500px;[^}]*overflow-y: auto;/,
+    );
+    assert.match(
+      css,
+      /\.admin-seo-search__table-scroll \.admin-traffic__table thead th \{[^}]*position: sticky;[^}]*top: 0;[^}]*#fff/,
+    );
+    assert.match(
+      read("features/administration/components/admin-traffic.css"),
+      /\.admin-traffic__table-wrap \{[^}]*overflow-x: auto;/,
+    );
   });
 });

@@ -194,7 +194,12 @@ function TopRowsTable({
               ? `CTR and position reported by ${providerName}.`
               : `Combined from ${providerName} rows: CTR = clicks ÷ impressions, position weighted by impressions.`}
           </p>
-          <div className="admin-traffic__table-wrap">
+          <div
+            className="admin-traffic__table-wrap admin-seo-search__table-scroll"
+            role="region"
+            aria-label={`${providerName} ${title.toLowerCase()}`}
+            tabIndex={0}
+          >
             <table className="admin-traffic__table">
               <caption className="hu-visually-hidden">
                 {providerName} {title.toLowerCase()}

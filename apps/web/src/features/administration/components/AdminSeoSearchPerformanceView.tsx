@@ -13,6 +13,7 @@ import {
   type SearchPerformancePeriod,
 } from "../admin-seo-search-performance-model";
 import { AdminSeoSearchProviderPanel } from "./AdminSeoSearchProviderPanel";
+import { SEARCH_PROVIDER_LOGOS, SearchProviderLogo } from "./SearchProviderLogo";
 
 import "./admin-insights.css";
 import "./admin-traffic.css";
@@ -111,6 +112,11 @@ export function AdminSeoSearchPerformanceView() {
               key={provider}
               id={`seo-search-${provider}`}
               title={SEARCH_PROVIDER_LABELS[provider]}
+              headingAccessory={
+                SEARCH_PROVIDER_LOGOS[provider] ? (
+                  <SearchProviderLogo provider={provider} />
+                ) : undefined
+              }
             >
               <AdminSeoSearchProviderPanel
                 view={data.providers[provider]}

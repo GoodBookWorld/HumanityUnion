@@ -56,6 +56,33 @@
   overflow-wrap: anywhere;
 }
 
+.admin-seo-search__logo {
+  order: -1;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Top queries / top pages: bounded viewport, vertical scroll, sticky header. */
+.admin-traffic__table-wrap.admin-seo-search__table-scroll {
+  max-height: 500px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.admin-seo-search__table-scroll:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #0174b0);
+  outline-offset: 2px;
+}
+
+.admin-seo-search__table-scroll .admin-traffic__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(rgba(1, 116, 176, 0.04), rgba(1, 116, 176, 0.04)), #fff;
+  box-shadow: inset 0 -1px 0 rgba(26, 77, 109, 0.12);
+}
+
 .admin-seo-search__unsupported {
   margin: 0.25rem 0 0;
   padding-left: 1.25rem;
