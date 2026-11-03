@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { fetchPublicSupportOperationalLinks } from "./support-operational-links-api.js";
 import {
   SUPPORT_DONATE_URL,
   SUPPORT_ILLUSTRATIONS,
@@ -70,6 +71,53 @@ describe("Support Page UX Pack 01", () => {
     assert.equal(SUPPORT_LINK_FALLBACKS.regional_program, "#");
     assert.doesNotMatch(constants, /huws\.org\/regional-program/);
     assert.match(content, /href=\{links\.regionalProgramUrl\}/);
+  });
+
+  describe("Regional Program ignores stored legacy Support link values", () => {
+    const originalFetch = globalThis.fetch;
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    function stubSupportLinksResponse(links: readonly { linkId: string; url: string }[]) {
+      globalThis.fetch = (async () =>
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { links: links.map((link) => ({ ...link, label: link.linkId })) },
+            meta: {},
+            links: {},
+            message: "Platform support links loaded.",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        )) as typeof fetch;
+    }
+
+    it("uses '#' even when the API returns the retired WordPress URL", async () => {
+      stubSupportLinksResponse([
+        { linkId: "donation", url: "https://example.org/donate" },
+        { linkId: "volunteer", url: "/volunteer-override" },
+        { linkId: "regional_program", url: "https://huws.org/regional-program/" },
+      ]);
+      const resolved = await fetchPublicSupportOperationalLinks();
+      assert.equal(resolved.regionalProgramUrl, "#");
+      assert.equal(resolved.donationUrl, "https://example.org/donate");
+      assert.equal(resolved.volunteerUrl, "/volunteer-override");
+    });
+
+    it("keeps '#' and the other fallbacks when the API omits links or is unavailable", async () => {
+      stubSupportLinksResponse([]);
+      assert.deepEqual(await fetchPublicSupportOperationalLinks(), {
+        donationUrl: SUPPORT_DONATE_URL,
+        volunteerUrl: "/volunteer",
+        regionalProgramUrl: "#",
+      });
+
+      globalThis.fetch = (async () => {
+        throw new TypeError("network down");
+      }) as typeof fetch;
+      assert.equal((await fetchPublicSupportOperationalLinks()).regionalProgramUrl, "#");
+    });
   });
 
   it("treats '#' links as same-page actions, not external new-tab links", () => {

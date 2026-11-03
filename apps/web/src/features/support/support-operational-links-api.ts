@@ -12,6 +12,9 @@ export interface ResolvedSupportOperationalLinks {
 /**
  * Public Support operational links from canonical platform settings,
  * with historical Support page defaults as fallbacks.
+ *
+ * Regional Program always uses its fixed placeholder: stored platform settings may
+ * still hold the retired WordPress `/regional-program/` URL.
  */
 export async function fetchPublicSupportOperationalLinks(): Promise<ResolvedSupportOperationalLinks> {
   try {
@@ -22,8 +25,7 @@ export async function fetchPublicSupportOperationalLinks(): Promise<ResolvedSupp
     return {
       donationUrl: byId.get("donation") ?? SUPPORT_LINK_FALLBACKS.donation,
       volunteerUrl: byId.get("volunteer") ?? SUPPORT_LINK_FALLBACKS.volunteer,
-      regionalProgramUrl:
-        byId.get("regional_program") ?? SUPPORT_LINK_FALLBACKS.regional_program,
+      regionalProgramUrl: SUPPORT_LINK_FALLBACKS.regional_program,
     };
   } catch {
     return {
