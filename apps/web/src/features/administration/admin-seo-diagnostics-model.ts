@@ -18,7 +18,8 @@ type SeoDiagnosticsEnv = {
   NEXT_PUBLIC_SITE_URL?: string;
   [key: string]: string | undefined;
 };
-export type SeoDiagnosticSeverity = "healthy" | "warning" | "missing" | "not_applicable";
+/** Deferred (planned, not yet built) and not_applicable (intentionally absent) stay distinct. */
+export type SeoDiagnosticSeverity = "healthy" | "warning" | "missing" | "deferred" | "not_applicable";
 
 export type SeoDiagnosticCategory =
   | "indexing"
@@ -67,6 +68,7 @@ export interface SeoDiagnosticsSummary {
   readonly healthy: number;
   readonly warning: number;
   readonly missing: number;
+  readonly deferred: number;
   readonly notApplicable: number;
 }
 
@@ -184,6 +186,18 @@ export const SEO_PUBLIC_SURFACE_REGISTRY: readonly SeoSurfaceRegistryEntry[] = [
     structuredDataTypes: "WebPage + BreadcrumbList",
     notes: "Pack 08 — automatic metadata and WebPage JSON-LD; Admin overrides merge when present.",
   },
+  {
+    id: "region",
+    label: "Region",
+    routePattern: "/region/{regionCode}",
+    metadata: "covered",
+    canonical: "covered",
+    openGraph: "covered",
+    sitemap: "covered",
+    structuredData: "missing",
+    notes:
+      "REGION-500B — canonical /region/{ISO 3166-2 code}; regions with public regional initiatives are index, follow and listed in the sitemap, empty regions are noindex, follow. No JSON-LD on region pages yet.",
+  },
 ] as const;
 
 export const SEO_SITEMAP_PROVIDER_REGISTRY: readonly SeoSitemapProviderEntry[] = [
@@ -242,8 +256,10 @@ export const SEO_SITEMAP_PROVIDER_REGISTRY: readonly SeoSitemapProviderEntry[] =
   {
     id: "regions",
     label: "Regions",
-    state: "deferred",
-    summary: "Deferred — no meaningful public regional inventory yet",
+    state: "covered",
+    summary: "Regions with public regional initiatives via the public sitemap region inventory API",
+    detail:
+      "REGION-500B — canonical /region/{ISO code} only; empty regions and legacy region slugs are never listed.",
   },
 ] as const;
 
@@ -256,6 +272,7 @@ export function coverageStateToSeverity(state: SeoCoverageState): SeoDiagnosticS
     case "missing":
       return "missing";
     case "deferred":
+      return "deferred";
     case "not_applicable":
       return "not_applicable";
   }
@@ -269,6 +286,8 @@ export function formatSeoDiagnosticSeverityLabel(status: SeoDiagnosticSeverity):
       return "Warning";
     case "missing":
       return "Missing";
+    case "deferred":
+      return "Deferred";
     case "not_applicable":
       return "Not applicable";
   }
@@ -280,6 +299,7 @@ export function summarizeSeoDiagnostics(
   let healthy = 0;
   let warning = 0;
   let missing = 0;
+  let deferred = 0;
   let notApplicable = 0;
 
   for (const check of checks) {
@@ -293,13 +313,16 @@ export function summarizeSeoDiagnostics(
       case "missing":
         missing += 1;
         break;
+      case "deferred":
+        deferred += 1;
+        break;
       case "not_applicable":
         notApplicable += 1;
         break;
     }
   }
 
-  return { healthy, warning, missing, notApplicable };
+  return { healthy, warning, missing, deferred, notApplicable };
 }
 
 function check(
@@ -520,7 +543,7 @@ function aggregateSurfaceStatus(
     return "warning";
   }
   if (capabilities.every((state) => state === "deferred" || state === "not_applicable")) {
-    return "not_applicable";
+    return capabilities.some((state) => state === "deferred") ? "deferred" : "not_applicable";
   }
   // covered + intentional deferred siblings are Healthy — deferrals are not failures.
   if (

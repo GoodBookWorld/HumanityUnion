@@ -135,6 +135,15 @@
   background: rgba(70, 70, 70, 0.12);
 }
 
+.admin-seo-diagnostics__badge--deferred {
+  color: #1a4d6d;
+  background: rgba(26, 77, 109, 0.12);
+}
+
+.admin-seo-diagnostics__card--deferred {
+  border-color: rgba(26, 77, 109, 0.3);
+}
+
 .admin-seo-diagnostics__note {
   margin: 0.75rem 0 0;
   max-width: 42rem;

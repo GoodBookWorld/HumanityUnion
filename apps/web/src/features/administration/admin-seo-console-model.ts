@@ -529,6 +529,8 @@ export function formatSeoCapabilityLabel(status: SeoCapabilityStatus): string {
       return "Warning";
     case "missing":
       return "Missing";
+    case "deferred":
+      return "Deferred";
     case "not_applicable":
       return "Not applicable";
   }
