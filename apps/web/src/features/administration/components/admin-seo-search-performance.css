@@ -1,0 +1,104 @@
+/* SEO-12B.2 — Admin → SEO → Search performance and Overview search visibility. */
+
+.admin-seo-search__provider {
+  min-width: 0;
+}
+
+.admin-seo-search__status {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-seo-search__meta {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+  overflow-wrap: anywhere;
+}
+
+.admin-seo-search__issues ul {
+  margin: 0.25rem 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.admin-traffic__summary.admin-seo-search__kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-traffic__summary.admin-seo-search__crawl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-seo-overview__card.admin-seo-visibility--figures {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
+  text-align: start;
+}
+
+.admin-seo-search__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-seo-search__chart-title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.admin-seo-search__key {
+  max-width: 28rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-seo-search__unsupported {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-seo-visibility__providers li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.admin-seo-visibility__figures {
+  flex-basis: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-seo-visibility__range {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+@media (max-width: 1100px) {
+  .admin-traffic__summary.admin-seo-search__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-seo-search__charts {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-traffic__summary.admin-seo-search__crawl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-traffic__summary.admin-seo-search__kpis,
+  .admin-traffic__summary.admin-seo-search__crawl {
+    grid-template-columns: 1fr;
+  }
+}

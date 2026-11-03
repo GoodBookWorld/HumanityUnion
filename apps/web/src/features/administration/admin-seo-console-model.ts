@@ -9,7 +9,13 @@ import {
   coverageStateToSeverity,
 } from "./admin-seo-diagnostics-model";
 
-export const ADMIN_SEO_VIEWS = ["overview", "pages", "diagnostics", "structured-data"] as const;
+export const ADMIN_SEO_VIEWS = [
+  "overview",
+  "pages",
+  "diagnostics",
+  "structured-data",
+  "search-performance",
+] as const;
 
 export type AdminSeoViewId = (typeof ADMIN_SEO_VIEWS)[number];
 
@@ -18,6 +24,7 @@ export const ADMIN_SEO_VIEW_LABELS: Record<AdminSeoViewId, string> = {
   pages: "Pages",
   diagnostics: "Diagnostics",
   "structured-data": "Structured Data",
+  "search-performance": "Search performance",
 };
 
 export type SeoPageFamilyId =

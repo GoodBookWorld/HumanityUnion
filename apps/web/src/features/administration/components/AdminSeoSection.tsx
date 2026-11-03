@@ -17,6 +17,7 @@ import { AdminPanelNavigation } from "./AdminPanelNavigation";
 import { AdminSeoDiagnosticsView } from "./AdminSeoDiagnosticsView";
 import { AdminSeoOverviewView } from "./AdminSeoOverviewView";
 import { AdminSeoPagesView } from "./AdminSeoPagesView";
+import { AdminSeoSearchPerformanceView } from "./AdminSeoSearchPerformanceView";
 import { AdminSeoStructuredDataView } from "./AdminSeoStructuredDataView";
 
 import "./admin-panel.css";
@@ -28,7 +29,7 @@ interface AdminSeoSectionProps {
 
 /**
  * SEO Pack 06 — Admin SEO working console.
- * Overview | Pages | Diagnostics | Structured Data. Read-only; no Page SEO editor.
+ * Overview | Pages | Diagnostics | Structured Data | Search performance.
  */
 export function AdminSeoSection({ user: _user }: AdminSeoSectionProps) {
   const [view, setView] = useState<AdminSeoViewId>("overview");
@@ -97,6 +98,7 @@ export function AdminSeoSection({ user: _user }: AdminSeoSectionProps) {
       ) : null}
       {view === "diagnostics" ? <AdminSeoDiagnosticsView diagnostics={diagnostics} /> : null}
       {view === "structured-data" ? <AdminSeoStructuredDataView /> : null}
+      {view === "search-performance" ? <AdminSeoSearchPerformanceView /> : null}
     </div>
   );
 }

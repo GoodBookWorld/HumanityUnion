@@ -35,12 +35,13 @@ function readWeb(relativePath: string): string {
 }
 
 describe("SEO Pack 06 — working screen views", () => {
-  it("defines four SEO views and defaults Overview in AdminSeoSection", () => {
+  it("defines the SEO views and defaults Overview in AdminSeoSection", () => {
     assert.deepEqual([...ADMIN_SEO_VIEWS], [
       "overview",
       "pages",
       "diagnostics",
       "structured-data",
+      "search-performance",
     ]);
     assert.equal(ADMIN_SEO_VIEW_LABELS.overview, "Overview");
 
@@ -50,6 +51,7 @@ describe("SEO Pack 06 — working screen views", () => {
     assert.match(section, /AdminSeoPagesView/);
     assert.match(section, /AdminSeoDiagnosticsView/);
     assert.match(section, /AdminSeoStructuredDataView/);
+    assert.match(section, /AdminSeoSearchPerformanceView/);
   });
 
   it("keeps Pack 05 Diagnostics available and Structured Data coverage rendered", () => {
