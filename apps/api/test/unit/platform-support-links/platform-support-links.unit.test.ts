@@ -70,4 +70,14 @@ describe("Production Completion Pack 01 — platform support links (unit)", () =
       assert.equal("secret" in row, false);
     }
   });
+
+  it("seeds Regional Program with the '#' placeholder instead of the retired WordPress page", async () => {
+    assert.equal(PLATFORM_SUPPORT_LINK_SEED_URLS.regional_program, "#");
+    assert.equal(PLATFORM_SUPPORT_LINK_SEED_URLS.donation, "https://buy.stripe.com/6oE03n4bc9Vm9A45kl");
+
+    const publicList = await listPublicPlatformSupportLinks();
+    const regional = publicList.links.find((row) => row.linkId === "regional_program");
+    assert.equal(regional?.url, "#");
+    assert.doesNotMatch(JSON.stringify(publicList), /huws\.org\/regional-program/);
+  });
 });
