@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   SUPPORT_DONATE_URL,
   SUPPORT_ILLUSTRATIONS,
+  SUPPORT_LINK_FALLBACKS,
   SUPPORT_REGIONAL_PROGRAM_URL,
 } from "./support.constants.js";
 
@@ -62,14 +63,26 @@ describe("Support Page UX Pack 01", () => {
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });
 
-  it("Regional Program defaults to temporary WordPress URL until Admin overrides", () => {
+  it("Regional Program defaults to a same-page '#' placeholder, never the retired WordPress page", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     const constants = read("features/support/support.constants.ts");
-    assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "https://huws.org/regional-program/");
-    assert.match(content, /regionalProgramUrl|SUPPORT_LINK_FALLBACKS/);
-    assert.match(constants, /WordPress/);
-    assert.match(constants, /WORDPRESS_REDIRECT_INVENTORY/);
-    assert.match(constants, /NEEDS_MAPPING|KEEP_TEMPORARILY/);
+    assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "#");
+    assert.equal(SUPPORT_LINK_FALLBACKS.regional_program, "#");
+    assert.doesNotMatch(constants, /huws\.org\/regional-program/);
+    assert.match(content, /href=\{links\.regionalProgramUrl\}/);
+  });
+
+  it("treats '#' links as same-page actions, not external new-tab links", () => {
+    const content = read("features/support/components/SupportPageContent.tsx");
+    const supportAction = content.slice(content.indexOf("function SupportAction"));
+    const internalBranch = supportAction.match(
+      /if \(href\.startsWith\("\/"\) \|\| href\.startsWith\("#"\)\) \{\s*return \(\s*<Button href=\{href\}/,
+    );
+    assert.ok(internalBranch, "'#' must render the internal Button branch");
+    assert.ok(
+      supportAction.indexOf('href.startsWith("#")') < supportAction.indexOf("<ExternalButtonLink"),
+      "'#' must be handled before the external new-tab fallback",
+    );
   });
 
   it("closing CTA scrolls to support cards; Support links use public platform API", () => {

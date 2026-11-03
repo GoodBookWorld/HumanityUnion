@@ -64,7 +64,7 @@ function SupportAction({
       </Button>
     );
   }
-  if (href.startsWith("/")) {
+  if (href.startsWith("/") || href.startsWith("#")) {
     return (
       <Button href={href} variant={variant}>
         {children}
