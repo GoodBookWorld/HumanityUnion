@@ -176,6 +176,9 @@ export const MONGO_COLLECTIONS = {
   platformSupportLinks: "platform_support_links",
   // SEO Pack 07 — sparse Admin page SEO overrides (non-Blog public pages).
   seoPageOverrides: "seo_page_overrides",
+  // SEO-12B.1 — Google / Bing search performance (16-month daily TTL) and per-provider sync state.
+  seoSearchDailyMetrics: "seo_search_daily_metrics",
+  seoSearchSyncState: "seo_search_sync_state",
   // Integrity Media author ↔ Humanity Union member confirmation. Not profile data.
   externalAuthorLinks: "external_author_links",
   externalAuthorLinkResults: "external_author_link_results",

@@ -74,6 +74,11 @@ async function start(): Promise<void> {
   );
   startIntegrityMediaAuthorMessageScheduler();
 
+  const { startSearchPerformanceScheduler } = await import(
+    "./modules/seo-search-performance/search-performance.scheduler.js"
+  );
+  startSearchPerformanceScheduler();
+
   const { startAuthorApplicationReconciliationOnce } = await import(
     "./modules/blog/blog-author-application-reconciliation.js"
   );
