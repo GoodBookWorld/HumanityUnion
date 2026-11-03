@@ -248,6 +248,7 @@ import {
   adminSeoPageOverridesRouter,
   publicSeoPageOverridesRouter,
 } from "./modules/seo-page-overrides/index.js";
+import { adminSearchPerformanceRouter } from "./modules/seo-search-performance/index.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
 import healthRouter from "./routes/health.routes.js";
 
@@ -326,6 +327,7 @@ app.use("/api/v1/admin/diagnostics", adminDiagnosticsHealthRouter);
 app.use("/api/v1/admin/system-health", adminWebSystemHealthRouter);
 app.use("/api/v1/internal/system-health", internalWebSystemHealthRouter);
 app.use("/api/v1/admin/seo/page-overrides", adminSeoPageOverridesRouter);
+app.use("/api/v1/admin/seo/search-performance", adminSearchPerformanceRouter);
 app.use("/api/v1/public/seo/page-overrides", publicSeoPageOverridesRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);

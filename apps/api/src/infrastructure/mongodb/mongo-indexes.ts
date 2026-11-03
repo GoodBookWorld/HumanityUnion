@@ -17,6 +17,10 @@ import {
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_AUDIT_INDEXES,
   INTEGRITY_MEDIA_AUTHOR_MESSAGE_INDEXES,
 } from "../../modules/integrity-media-author-messages/integrity-media-author-message.indexes.js";
+import {
+  SEARCH_DAILY_METRICS_INDEXES,
+  SEARCH_SYNC_STATE_INDEXES,
+} from "../../modules/seo-search-performance/search-performance.indexes.js";
 import { WEB_SYSTEM_HEALTH_EVENT_INDEXES } from "../../modules/system-health/web-system-health-event.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
@@ -1698,6 +1702,14 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     collectionName: MONGO_COLLECTIONS.webSystemHealthEvents,
     indexes: WEB_SYSTEM_HEALTH_EVENT_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.seoSearchDailyMetrics,
+    indexes: SEARCH_DAILY_METRICS_INDEXES,
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.seoSearchSyncState,
+    indexes: SEARCH_SYNC_STATE_INDEXES,
   },
 ];
 
