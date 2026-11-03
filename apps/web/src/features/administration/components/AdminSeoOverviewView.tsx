@@ -17,6 +17,7 @@ import {
   type SeoHealthScore,
 } from "../admin-seo-overview-model";
 import { AdminSeoRadialIndicator } from "./AdminSeoRadialIndicator";
+import { AdminSeoSearchVisibilityCard } from "./AdminSeoSearchVisibilityCard";
 
 import "./admin-seo-diagnostics.css";
 import "./admin-seo-console.css";
@@ -84,19 +85,7 @@ export function AdminSeoOverviewView({ diagnostics, onNavigate }: AdminSeoOvervi
           </div>
         </section>
 
-        <section className="admin-seo-overview__card" aria-labelledby="seo-visibility-title">
-          <AdminSeoRadialIndicator label="Search visibility" percent={null} size="large" />
-          <div>
-            <h2 className="admin-seo-overview__card-title" id="seo-visibility-title">
-              Search visibility
-            </h2>
-            <p className="admin-seo-overview__note">
-              No data. Google Search Console and Bing Webmaster Tools are not connected, so search
-              performance (impressions, clicks, indexed pages) is unavailable. No visibility figure
-              is estimated.
-            </p>
-          </div>
-        </section>
+        <AdminSeoSearchVisibilityCard onNavigate={onNavigate} />
       </div>
 
       <ProfileSection title="Implementation categories">

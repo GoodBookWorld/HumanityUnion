@@ -268,12 +268,12 @@ describe("SEO-11B.1 — Overview layout", () => {
   const overview = read("features/administration/components/AdminSeoOverviewView.tsx");
   const css = read("features/administration/components/admin-seo-overview.css");
 
-  it("shows Search visibility as No data without any estimate", () => {
-    assert.match(overview, /label="Search visibility" percent=\{null\}/);
-    assert.match(
-      overview,
-      /No data\. Google Search Console and Bing Webmaster Tools are not connected/,
-    );
+  it("shows Search visibility from the search performance API, as No data without any estimate", () => {
+    const card = read("features/administration/components/AdminSeoSearchVisibilityCard.tsx");
+    assert.match(overview, /<AdminSeoSearchVisibilityCard onNavigate=\{onNavigate\} \/>/);
+    assert.match(card, /label="Search visibility" percent=\{null\}/);
+    assert.match(card, /No visibility figure is estimated/);
+    assert.doesNotMatch(card, /percent=\{[^n]/);
   });
 
   it("uses the health score, six compact indicators and the Action Center", () => {
