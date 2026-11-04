@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 import { GlobalSearchPageContent } from "../../features/global-search/components/GlobalSearchPageContent";
+import { shouldDisallowSearchIndexing } from "../../lib/platform-indexing";
 import { buildPublicPageMetadata } from "../../lib/seo/build-public-page-metadata";
 import { resolveLocalizedPublicMetadataCopy } from "../../lib/seo/resolve-localized-public-metadata-copy";
 
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     translatedDescription: t("meta.description", { siteName: brand.seoSiteName }),
   });
 
-  return buildPublicPageMetadata({
+  const metadata = buildPublicPageMetadata({
     title: localized.title,
     description: localized.description,
     canonicalPath: "/search",
@@ -32,6 +33,13 @@ export async function generateMetadata(): Promise<Metadata> {
     titleBrandSuffix: brand.seoTitleSuffix,
     openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
   });
+
+  // SEO-BING-06 — query-driven utility page: crawlable for links, never indexed.
+  // Staging/dev keep the stricter platform robots from the shared builder.
+  if (shouldDisallowSearchIndexing()) {
+    return metadata;
+  }
+  return { ...metadata, robots: { index: false, follow: true } };
 }
 
 export default async function SearchPage() {

@@ -1,6 +1,7 @@
 /**
  * SEO Pack 02 — static public/indexable surfaces that exist in App Router.
- * Intentionally excludes auth, workspace, admin, transactional, and owner routes.
+ * Intentionally excludes auth, workspace, admin, transactional, and owner routes,
+ * and `/search` (noindex utility page, SEO-BING-06).
  */
 export const STATIC_PUBLIC_SITEMAP_PATHS = [
   "/",
@@ -16,7 +17,6 @@ export const STATIC_PUBLIC_SITEMAP_PATHS = [
   "/privacy",
   "/terms",
   "/support",
-  "/search",
 ] as const;
 
 export function listStaticPublicSitemapEntries() {

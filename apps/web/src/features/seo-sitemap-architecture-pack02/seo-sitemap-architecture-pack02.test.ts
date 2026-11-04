@@ -98,7 +98,7 @@ describe("SEO Pack 02 — static and excluded routes", () => {
     assert.ok(paths.includes("/privacy"));
     assert.ok(paths.includes("/terms"));
     assert.ok(paths.includes("/support"));
-    assert.ok(paths.includes("/search"));
+    assert.ok(!paths.includes("/search"));
     assert.ok(!paths.includes("/civic-activity"));
     assert.ok(!paths.includes("/knowledge/media"));
     assert.ok(!paths.includes("/about"));
