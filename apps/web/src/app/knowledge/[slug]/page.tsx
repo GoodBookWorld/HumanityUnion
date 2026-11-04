@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { KnowledgeArticlePageContent } from "../../../features/knowledge-center/components/KnowledgeArticlePageContent";
 import { fetchKnowledgeArticle, fetchKnowledgeListing } from "../../../features/knowledge-center/api";
+import { buildKnowledgeArticleMetaDescription } from "../../../features/knowledge-center/knowledge-article-meta-description";
 import { applyPageSeoOverrideToMetadataInput } from "../../../lib/seo/apply-page-seo-override";
 import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
 import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
@@ -21,8 +22,7 @@ export async function generateMetadata({ params }: KnowledgeArticlePageProps): P
 
   try {
     const article = await fetchKnowledgeArticle(slug);
-    const description =
-      article.purpose?.trim() || `${article.title} — Knowledge on Humanity Union`;
+    const description = buildKnowledgeArticleMetaDescription(article);
     const override = await fetchPublicSeoPageOverride({
       family: "knowledge",
       entityKey: slug,
@@ -54,8 +54,7 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
   let article: KnowledgeArticlePublic;
   try {
     article = await fetchKnowledgeArticle(slug);
-    const description =
-      article.purpose?.trim() || `${article.title} — Knowledge on Humanity Union`;
+    const description = buildKnowledgeArticleMetaDescription(article);
     const canonicalPath = `/knowledge/${encodeURIComponent(slug)}`;
     const override = await fetchPublicSeoPageOverride({
       family: "knowledge",
