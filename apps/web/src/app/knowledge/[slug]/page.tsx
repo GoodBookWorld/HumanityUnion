@@ -1,8 +1,9 @@
+import type { KnowledgeArticlePublic } from "@hu/types";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { KnowledgeArticlePageContent } from "../../../features/knowledge-center/components/KnowledgeArticlePageContent";
-import { fetchKnowledgeArticle } from "../../../features/knowledge-center/api";
+import { fetchKnowledgeArticle, fetchKnowledgeListing } from "../../../features/knowledge-center/api";
 import { applyPageSeoOverrideToMetadataInput } from "../../../lib/seo/apply-page-seo-override";
 import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
 import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
@@ -50,8 +51,9 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
   const { slug } = await params;
 
   let structuredData = null;
+  let article: KnowledgeArticlePublic;
   try {
-    const article = await fetchKnowledgeArticle(slug);
+    article = await fetchKnowledgeArticle(slug);
     const description =
       article.purpose?.trim() || `${article.title} — Knowledge on Humanity Union`;
     const canonicalPath = `/knowledge/${encodeURIComponent(slug)}`;
@@ -78,10 +80,18 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
     notFound();
   }
 
+  // The menu listing is optional for the first render; the client fetches it if missing.
+  const listing = await fetchKnowledgeListing().catch(() => null);
+
   return (
     <>
       <JsonLdScript data={structuredData} />
-      <KnowledgeArticlePageContent slug={slug} />
+      <KnowledgeArticlePageContent
+        key={slug}
+        slug={slug}
+        initialArticle={article}
+        initialListing={listing}
+      />
     </>
   );
 }

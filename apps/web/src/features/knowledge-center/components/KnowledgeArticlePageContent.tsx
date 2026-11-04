@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
 import type { KnowledgeArticlePublic, KnowledgeCenterListing } from "@hu/types";
@@ -24,17 +24,47 @@ import "../knowledge-center.css";
 
 interface KnowledgeArticlePageContentProps {
   slug: string;
+  /** Server-fetched published article; rendered immediately so it is in the initial HTML. */
+  initialArticle?: KnowledgeArticlePublic | null;
+  initialListing?: KnowledgeCenterListing | null;
 }
 
-export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageContentProps) {
+export function KnowledgeArticlePageContent({
+  slug,
+  initialArticle = null,
+  initialListing = null,
+}: KnowledgeArticlePageContentProps) {
   const t = useTranslations("knowledgePublic");
+  const locale = useLocale();
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
-  const [listing, setListing] = useState<KnowledgeCenterListing | null>(null);
-  const [article, setArticle] = useState<KnowledgeArticlePublic | null>(null);
+  const hasInitialArticle = initialArticle?.slug === slug;
+  const [listing, setListing] = useState<KnowledgeCenterListing | null>(initialListing);
+  const [article, setArticle] = useState<KnowledgeArticlePublic | null>(
+    hasInitialArticle ? initialArticle : null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (hasInitialArticle) {
+      if (initialListing) {
+        return;
+      }
+      let cancelled = false;
+      void fetchKnowledgeListing()
+        .then((listingData) => {
+          if (!cancelled) {
+            setListing(listingData);
+          }
+        })
+        .catch(() => {
+          // The article is already shown; the menu stays disabled without a listing.
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
     let cancelled = false;
     setArticle(null);
     setError(null);
@@ -58,7 +88,7 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
     return () => {
       cancelled = true;
     };
-  }, [slug, t]);
+  }, [slug, t, hasInitialArticle, initialListing]);
 
   const purpose = article
     ? resolveKnowledgeArticleField(slug, "purpose", article.purpose, t, siteName)
@@ -197,7 +227,10 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
           <Card className="knowledge-article__meta-grid">
             <p>
               {t("article.lastUpdated", {
-                date: new Date(article.updatedAt).toLocaleDateString(),
+                // Locale + UTC keeps server and browser output identical (hydration).
+                date: new Intl.DateTimeFormat(locale, { timeZone: "UTC" }).format(
+                  new Date(article.updatedAt),
+                ),
               })}
             </p>
             <p>{t("article.version", { version: article.version })}</p>
