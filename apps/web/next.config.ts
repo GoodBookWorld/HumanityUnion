@@ -31,6 +31,27 @@ const nextConfig: NextConfig = {
         destination: "/media",
         permanent: true,
       },
+      // SEO-BING-01.3 — owner-approved legacy WordPress article URLs (exact paths only).
+      {
+        source: "/who-owns-the-earth",
+        destination: "/blog/who-owns-the-earth",
+        permanent: true,
+      },
+      {
+        source: "/breaking-stereotypes",
+        destination: "/blog/breaking-stereotypes",
+        permanent: true,
+      },
+      {
+        source: "/world-protection-corps",
+        destination: "/blog/world-protection-corps",
+        permanent: true,
+      },
+      {
+        source: "/leader",
+        destination: "/blog/leader",
+        permanent: true,
+      },
     ];
   },
   async headers() {
