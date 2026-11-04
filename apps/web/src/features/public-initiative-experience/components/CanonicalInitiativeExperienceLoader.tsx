@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { getInitiativeOwnerAccess } from "../../initiative-owner-studio/api";
 import { InitiativeOwnerDraftShell } from "../../initiative-owner-studio/components/InitiativeOwnerDraftShell";
 import { getPublicInitiativeExperience } from "../api";
+import { InitiativePieHeroPresentationDom } from "../initiative-presentation-dom";
 import { PublicInitiativeExperiencePage } from "./PublicInitiativeExperiencePage";
 
 import "../../initiative-owner-studio/initiative-owner-studio.css";
@@ -19,6 +20,14 @@ interface CanonicalInitiativeExperienceLoaderProps {
     readonly title: string;
     readonly description: string;
   };
+  /**
+   * SEO-BING-03D — canonical title/description from the anonymous public
+   * projection, shown only while the client experience loads.
+   */
+  readonly initialPublicSummary?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 /**
@@ -27,6 +36,7 @@ interface CanonicalInitiativeExperienceLoaderProps {
 export function CanonicalInitiativeExperienceLoader({
   initiativeId,
   initialPresentation,
+  initialPublicSummary,
 }: CanonicalInitiativeExperienceLoaderProps) {
   const t = useTranslations("initiativeExperience");
   const [experience, setExperience] = useState<PublicInitiativeExperienceProjection | null>(null);
@@ -61,6 +71,9 @@ export function CanonicalInitiativeExperienceLoader({
   if (loading) {
     return (
       <main className="pie-page">
+        {initialPublicSummary?.title ? (
+          <InitiativePieHeroPresentationDom presentation={initialPublicSummary} />
+        ) : null}
         <p role="status">{t("common.loadingExperience")}</p>
       </main>
     );

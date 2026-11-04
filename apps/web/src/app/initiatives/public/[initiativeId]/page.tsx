@@ -6,6 +6,7 @@ import {
   initiativeMetadataFieldsFromPresentationSeed,
   loadInitiativeDocumentServerData,
 } from "../../../../features/public-initiative-experience/load-initiative-document-server-data";
+import { selectInitiativeDetailDescription } from "../../../../features/public-initiative-experience/select-initiative-detail-description";
 import { resolveBrandForMetadata } from "../../../../features/brand-localization/resolve-brand-for-metadata";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
 import { buildPublicPageMetadataForRequest } from "../../../../lib/seo/build-public-page-metadata-for-request";
@@ -106,6 +107,10 @@ export async function generateMetadata({
  * Canonical Initiative experience. Client-loads with credentials so
  * viewerIsSteward / Manage / Author Mode match the authenticated session
  * for both Workspace and Header entry paths.
+ *
+ * SEO-BING-03D — the anonymous public projection seeds the loading state with
+ * the canonical title/description for server HTML. Never fetch the Experience
+ * endpoint here: it records a view and carries viewer-specific state.
  */
 export default async function PublicInitiativePage({ params }: PublicInitiativePageProps) {
   const { initiativeId } = await params;
@@ -118,10 +123,17 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let initialPresentation:
     | { title: string; description: string }
     | undefined;
+  let initialPublicSummary:
+    | { title: string; description: string }
+    | undefined;
   try {
     const documentData = await loadInitiativeDocumentServerData(initiativeId);
     const initiative = documentData.initiative;
     initialPresentation = documentData.presentationSeed;
+    initialPublicSummary = {
+      title: initiative.title,
+      description: selectInitiativeDetailDescription(initiative.description),
+    };
 
     const rawImage =
       initiative.metadata.imageUrl ??
@@ -145,6 +157,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
     });
   } catch {
     structuredData = null;
+    initialPublicSummary = undefined;
   }
 
   return (
@@ -153,6 +166,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       <CanonicalInitiativeExperienceLoader
         initiativeId={initiativeId}
         initialPresentation={initialPresentation}
+        initialPublicSummary={initialPublicSummary}
       />
     </>
   );
