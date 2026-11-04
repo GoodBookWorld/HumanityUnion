@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { KnowledgeArticlePageContent } from "../../../features/knowledge-center/components/KnowledgeArticlePageContent";
 import { fetchKnowledgeArticle, fetchKnowledgeListing } from "../../../features/knowledge-center/api";
 import { buildKnowledgeArticleMetaDescription } from "../../../features/knowledge-center/knowledge-article-meta-description";
+import { buildKnowledgeArticleSeoTitle } from "../../../features/knowledge-center/knowledge-article-seo-title";
 import { applyPageSeoOverrideToMetadataInput } from "../../../lib/seo/apply-page-seo-override";
 import { buildPublicPageMetadataForRequest } from "../../../lib/seo/build-public-page-metadata-for-request";
 import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: KnowledgeArticlePageProps): P
     return buildPublicPageMetadataForRequest({
       ...applyPageSeoOverrideToMetadataInput(
         {
-          title: article.title,
+          title: buildKnowledgeArticleSeoTitle(article),
           description,
           canonicalPath: localeFreeCanonicalPath,
           socialTitle: article.title,

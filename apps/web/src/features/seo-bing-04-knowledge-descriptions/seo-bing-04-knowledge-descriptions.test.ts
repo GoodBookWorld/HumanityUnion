@@ -217,7 +217,7 @@ describe("SEO-BING-04 — Knowledge meta descriptions", () => {
     assert.equal(PAGE.includes("article.purpose?.trim() ||"), false);
     assert.match(
       PAGE,
-      /title: article\.title,\s*description,\s*canonicalPath: localeFreeCanonicalPath,/,
+      /title: buildKnowledgeArticleSeoTitle\(article\),\s*description,\s*canonicalPath: localeFreeCanonicalPath,/,
     );
     assert.match(PAGE, /socialTitle: article\.title,\s*socialDescription: description,/);
     assert.match(PAGE, /applyPageSeoOverrideToMetadataInput\(/);
