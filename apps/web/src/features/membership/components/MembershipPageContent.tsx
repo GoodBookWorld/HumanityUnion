@@ -209,8 +209,22 @@ export function MembershipPageContent() {
   const siteName = { siteName: brand.siteName };
   const authStatus = useClientAuthStatus();
 
+  // Server render and first client render: auth is unknown, so only content shown
+  // to every visitor. The sign-in prompt and member cards wait for auth to resolve.
   if (authStatus === "pending") {
-    return <LoadingState message={t("loading")} />;
+    return (
+      <div className="membership-page-shell">
+        <header className="membership-page-shell__header">
+          <h1 className="membership-page-shell__title">{t("pageTitle")}</h1>
+          <p className="membership-page-shell__subtitle">{t("pageSubtitle", siteName)}</p>
+        </header>
+        <div className="membership-page">
+          <MembershipHero />
+          <LoadingState message={t("loading")} />
+          <MembershipPublicSections />
+        </div>
+      </div>
+    );
   }
 
   if (authStatus === "authenticated") {
