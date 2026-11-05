@@ -563,7 +563,7 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
         ) : null}
 
         {!listLoading && rows.length > 0 ? (
-          <div className="admin-publishing-table-wrap">
+          <div className="admin-publishing-table-wrap admin-publishing-table-wrap--scroll-y">
             <table className="admin-publishing-table">
               <thead>
                 <tr>

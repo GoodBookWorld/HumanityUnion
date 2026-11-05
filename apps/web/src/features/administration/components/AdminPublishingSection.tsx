@@ -820,7 +820,9 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             </div>
           ) : null}
         </ProfileSection>
-      ) : (
+      ) : null}
+
+      {tab === "publications" ? (
         <ProfileSection title="Publications">
           <p className="hu-caption">Total matching: {publicationTotal}</p>
           {publicationAuthorId ? (
@@ -882,7 +884,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No publications match this filter.</p>
           ) : null}
           {!loading && publications.length > 0 ? (
-            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-publishing-table-wrap--scroll-y">
               <table className="admin-publishing-table admin-publishing-table--directory">
                 <thead>
                   <tr>
@@ -972,7 +974,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             </div>
           ) : null}
         </ProfileSection>
-      )}
+      ) : null}
 
       {tab === "categories" && !denied ? (
         <ProfileSection title="Publication Categories" id={PUBLICATION_CATEGORIES_HASH}>

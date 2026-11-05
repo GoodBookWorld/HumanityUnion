@@ -111,12 +111,17 @@ describe("Home Humanity AI principle line", () => {
     );
   });
 
-  it("6 — white-space nowrap", () => {
+  it("6 — wraps naturally across lines for every language", () => {
     const css = readFeature("public-home-v2.css");
-    assert.match(
-      css,
-      /\.public-home-v2__humanity-ai-principle\s*\{[^}]*white-space:\s*nowrap/s,
-    );
+    const block = css.match(
+      /\.public-home-v2__humanity-ai-principle\s*\{[^}]+\}/s,
+    )?.[0];
+    assert.ok(block);
+    assert.match(block, /white-space:\s*normal/);
+    assert.match(block, /overflow-wrap:\s*break-word/);
+    assert.match(block, /text-wrap:\s*balance/);
+    assert.doesNotMatch(block, /white-space:\s*nowrap|text-overflow|line-clamp/);
+    assert.doesNotMatch(block, /(?<![\w-])height:/);
   });
 
   it("7 — responsive font scaling", () => {
@@ -167,10 +172,11 @@ describe("Home Humanity AI principle line", () => {
       css,
       /\.public-home-v2__humanity-ai-principle\s*\{[^}]*padding-inline:\s*var\(--hu-space-4\)/s,
     );
-    assert.match(
-      css,
-      /\.public-home-v2__humanity-ai-principle\s*\{[^}]*overflow-x:\s*clip/s,
-    );
+    const block = css.match(
+      /\.public-home-v2__humanity-ai-principle\s*\{[^}]+\}/s,
+    )?.[0];
+    assert.ok(block);
+    assert.doesNotMatch(block, /overflow(-x)?:\s*(clip|hidden)/);
   });
 
   it("12 — no animation", () => {

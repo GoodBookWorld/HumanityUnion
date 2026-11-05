@@ -57,3 +57,68 @@
     grid-template-columns: 1fr;
   }
 }
+
+/*
+ * Workspace Home only (the public /membership page does not carry this class).
+ * Lives here because this file is loaded with the panel; membership-page.css is
+ * not part of the /workspace bundle.
+ */
+.membership-workspace-widget__platform-stats .membership-participation-statistics__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.membership-workspace-widget__platform-stats .membership-participation-statistics__item {
+  min-width: 0;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.membership-workspace-widget__platform-stats
+  .membership-participation-statistics__item:nth-child(1) {
+  background: var(--hu-color-primary-soft, #e8f4fa);
+}
+
+.membership-workspace-widget__platform-stats
+  .membership-participation-statistics__item:nth-child(2) {
+  background: color-mix(in srgb, var(--hu-color-accent, #df9815) 14%, #ffffff);
+}
+
+.membership-workspace-widget__platform-stats
+  .membership-participation-statistics__item:nth-child(3) {
+  background: color-mix(in srgb, var(--hu-color-success, #1a6b3a) 10%, #ffffff);
+}
+
+.membership-workspace-widget__platform-stats .membership-participation-statistics__item dt {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.membership-workspace-widget__platform-stats .membership-participation-statistics__item dd {
+  max-width: 100%;
+  color: var(--hu-color-text, #1a2b3c);
+  font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .membership-workspace-widget__platform-stats .membership-participation-statistics__grid {
+    gap: var(--hu-space-2);
+  }
+
+  .membership-workspace-widget__platform-stats .membership-participation-statistics__item {
+    padding: var(--hu-space-2);
+  }
+
+  .membership-workspace-widget__platform-stats .membership-participation-statistics__item dt {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .membership-workspace-widget__platform-stats .membership-participation-statistics__item dd {
+    font-size: 1.375rem;
+  }
+}

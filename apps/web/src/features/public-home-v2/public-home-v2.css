@@ -277,12 +277,14 @@
   text-align: center;
   font-family: var(--hu-font-family);
   font-weight: var(--hu-font-weight-regular);
-  /* Slogan family uses 0.08–0.10em; moderated for this long single-line sentence. */
+  /* Slogan family uses 0.08–0.10em; moderated for this long sentence. */
   letter-spacing: 0.06em;
-  line-height: 1.2;
+  line-height: 1.45;
   color: var(--hu-color-brand-principle);
-  white-space: nowrap;
-  overflow-x: clip;
+  /* Translations differ in length: wrap at spaces, never clip. */
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-wrap: balance;
   /* Floor matches header slogan size (0.6875rem); scales up on wide desktops. */
   font-size: clamp(0.6875rem, 0.42rem + 0.55vw, 0.875rem);
 }

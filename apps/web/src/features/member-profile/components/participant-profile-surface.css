@@ -390,6 +390,29 @@
     100% 100%;
 }
 
+/* RTL: copy starts on the right, so mountains sit on the left and the fade is mirrored. */
+[dir="rtl"] .public-member-page__biography {
+  background-image:
+    linear-gradient(
+      270deg,
+      #ffffff 0%,
+      color-mix(in srgb, #ffffff 92%, transparent) 48%,
+      color-mix(in srgb, #ffffff 55%, transparent) 68%,
+      transparent 86%
+    ),
+    url("/illustrations/mountains-rtl.webp"),
+    linear-gradient(
+      255deg,
+      #ffffff 0%,
+      color-mix(in srgb, var(--hu-color-primary-soft) 40%, #ffffff) 58%,
+      color-mix(in srgb, var(--hu-color-bg-muted) 55%, #ffffff) 100%
+    );
+  background-position:
+    right center,
+    left center,
+    right center;
+}
+
 .public-member-page__biography-copy {
   position: relative;
   z-index: 1;
@@ -531,7 +554,9 @@
     width: min(100%, 46rem);
   }
 
-  .public-member-page__biography {
+  /* Both directions: the RTL selector is listed so its higher specificity cannot restore mountains. */
+  .public-member-page__biography,
+  [dir="rtl"] .public-member-page__biography {
     background-image: linear-gradient(
       105deg,
       #ffffff 0%,

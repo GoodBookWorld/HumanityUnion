@@ -222,6 +222,22 @@
   overscroll-behavior-x: contain;
 }
 
+/* Publications and Subscribers: fixed-height scroll area; must follow --directory. */
+.admin-publishing-table-wrap--scroll-y {
+  height: 600px;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.admin-publishing-table-wrap--scroll-y thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--hu-surface-raised, #fff);
+  box-shadow: inset 0 -1px 0 var(--hu-color-border, #d8d8d8);
+}
+
 .admin-publishing-table--directory {
   width: max-content;
   min-width: max(100%, 56rem);
