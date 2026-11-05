@@ -238,6 +238,11 @@
   box-shadow: inset 0 -1px 0 var(--hu-color-border, #d8d8d8);
 }
 
+/* Publications and Categories: at the table's top or bottom, keep scrolling the page. */
+.admin-publishing-table-wrap--scroll-y.admin-publishing-table-wrap--scroll-chain {
+  overscroll-behavior-y: auto;
+}
+
 .admin-publishing-table--directory {
   width: max-content;
   min-width: max(100%, 56rem);

@@ -884,7 +884,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             <p className="hu-body">No publications match this filter.</p>
           ) : null}
           {!loading && publications.length > 0 ? (
-            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-publishing-table-wrap--scroll-y">
+            <div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-publishing-table-wrap--scroll-y admin-publishing-table-wrap--scroll-chain">
               <table className="admin-publishing-table admin-publishing-table--directory">
                 <thead>
                   <tr>

@@ -205,6 +205,12 @@
   align-items: flex-end;
 }
 
+/* RTL: mirror the cover-corner CTA to the bottom-left at every breakpoint. */
+[dir="rtl"] .public-member-page__message-action {
+  right: auto;
+  left: var(--hu-space-3, 0.75rem);
+}
+
 /* --- Main body panels --- */
 .public-member-page__body-row {
   display: grid;

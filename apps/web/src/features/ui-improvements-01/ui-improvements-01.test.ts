@@ -99,7 +99,7 @@ describe("UI-IMPROVEMENTS-01 — 600px scroll tables", () => {
     );
   });
 
-  it("4. applied only to Publications and Subscribers; shared rules unchanged", () => {
+  it("4. applied only to Publications, Categories and Subscribers; shared rules unchanged", () => {
     const users = [
       "features/administration/components/AdminPublishingSection.tsx",
       "features/administration/components/AdminViewsSubscribersSection.tsx",
@@ -114,14 +114,14 @@ describe("UI-IMPROVEMENTS-01 — 600px scroll tables", () => {
     assert.deepEqual(Object.fromEntries(users), {
       "features/administration/components/AdminPublishingSection.tsx": 1,
       "features/administration/components/AdminViewsSubscribersSection.tsx": 1,
-      "features/administration/components/AdminBlogCategoriesPanel.tsx": 0,
+      "features/administration/components/AdminBlogCategoriesPanel.tsx": 1,
       "features/administration/components/AdminBetaAccessSection.tsx": 0,
       "features/administration/components/AdminAuditSection.tsx": 0,
       "features/blog/components/MyPublicationsTable.tsx": 0,
     });
     assert.match(
       read("features/administration/components/AdminPublishingSection.tsx"),
-      /publications\.length > 0 \? \(\s*<div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-publishing-table-wrap--scroll-y">/,
+      /publications\.length > 0 \? \(\s*<div className="admin-publishing-table-wrap admin-publishing-table-wrap--directory admin-publishing-table-wrap--scroll-y[ a-z-]*">/,
     );
     const base = ruleBody(css, ".admin-publishing-table-wrap");
     assert.doesNotMatch(base, /height|overflow-y/);
