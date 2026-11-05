@@ -17,7 +17,12 @@ import { loadMediaPlpTrustedPresentations } from "../../../features/language/med
 import type { MediaPlpResolvedPresentation } from "../../../features/language/media-plp/presentation";
 import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
 import type { TrustedMediaResource } from "@hu/types";
+import { shouldDisallowSearchIndexing } from "../../../lib/platform-indexing";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
+import {
+  loadPublicCountryInventory,
+  resolveCountryIndexability,
+} from "../../../lib/seo/country-indexability";
 import {
   applyPageSeoOverrideToMetadataInput,
 } from "../../../lib/seo/apply-page-seo-override";
@@ -54,12 +59,15 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
     country.name,
   );
 
-  const override = await fetchPublicSeoPageOverride({
-    family: "country",
-    entityKey: countryCode,
-  });
+  const [override, inventory] = await Promise.all([
+    fetchPublicSeoPageOverride({
+      family: "country",
+      entityKey: countryCode,
+    }),
+    loadPublicCountryInventory(),
+  ]);
 
-  return buildPublicPageMetadata(
+  const metadata = buildPublicPageMetadata(
     applyPageSeoOverrideToMetadataInput(
       {
         title: countryDisplayName,
@@ -71,6 +79,17 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
       override?.fields,
     ),
   );
+
+  // Countries without public content stay reachable for crawlers but are not indexed.
+  // An unknown or empty inventory keeps the existing index, follow.
+  if (
+    resolveCountryIndexability(inventory, countryCode) === "ineligible" &&
+    !shouldDisallowSearchIndexing()
+  ) {
+    return { ...metadata, robots: { index: false, follow: true } };
+  }
+
+  return metadata;
 }
 
 export default async function CountriesPage({ params }: CountriesPageProps) {

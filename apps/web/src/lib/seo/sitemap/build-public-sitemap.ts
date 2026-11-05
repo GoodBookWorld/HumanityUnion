@@ -21,7 +21,10 @@ import { buildPublicSeoLocalizedVariantPredicate } from "../public-seo-localized
 import { expandPublicSitemapEntriesForSeoLocales } from "./expand-public-sitemap-for-seo-locales";
 import { listBlogPostSitemapEntries } from "./providers/blog-posts";
 import { listCivicArchiveSitemapEntries } from "./providers/civic-archive";
-import { listCountrySitemapEntries } from "./providers/countries";
+import {
+  listCountrySitemapEntries,
+  listEligibleCountrySitemapEntries,
+} from "./providers/countries";
 import { listInitiativeSitemapEntries } from "./providers/initiatives";
 import { listKnowledgeArticleSitemapEntries } from "./providers/knowledge-articles";
 import { listParticipantProfileSitemapEntries } from "./providers/participant-profiles";
@@ -135,16 +138,14 @@ export async function collectPublicSitemapPathEntries(options?: {
   try {
     const includeDynamic = options?.includeDynamicProviders !== false;
 
-    const localEntries: SitemapPathEntry[] = [
-      ...listStaticPublicSitemapEntries(),
-      ...listCountrySitemapEntries(),
-    ];
+    const staticEntries: SitemapPathEntry[] = listStaticPublicSitemapEntries();
 
     let canonical: SitemapPathEntry[];
     if (!includeDynamic) {
-      canonical = dedupeSitemapPathEntries(localEntries);
+      canonical = dedupeSitemapPathEntries([...staticEntries, ...listCountrySitemapEntries()]);
     } else {
-      const dynamicBatches = await Promise.all([
+      const [countryEntries, ...dynamicBatches] = await Promise.all([
+        listEligibleCountrySitemapEntries(),
         collectProviderEntries("blog-posts", listBlogPostSitemapEntries, failedProviderIds),
         collectProviderEntries("initiatives", listInitiativeSitemapEntries, failedProviderIds),
         collectProviderEntries(
@@ -160,7 +161,11 @@ export async function collectPublicSitemapPathEntries(options?: {
         ),
         collectProviderEntries("regions", listRegionSitemapEntries, failedProviderIds),
       ]);
-      canonical = dedupeSitemapPathEntries([...localEntries, ...dynamicBatches.flat()]);
+      canonical = dedupeSitemapPathEntries([
+        ...staticEntries,
+        ...countryEntries,
+        ...dynamicBatches.flat(),
+      ]);
     }
     memoryAfterInventory = readCurrentSitemapMemory();
 
