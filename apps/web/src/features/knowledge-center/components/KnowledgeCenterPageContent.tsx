@@ -18,14 +18,24 @@ import { KnowledgeShell } from "./KnowledgeShell";
 
 import "../knowledge-center.css";
 
-export function KnowledgeCenterPageContent() {
+interface KnowledgeCenterPageContentProps {
+  /** Server-fetched public listing; rendered immediately so it is in the initial HTML. */
+  initialListing?: KnowledgeCenterListing | null;
+}
+
+export function KnowledgeCenterPageContent({
+  initialListing = null,
+}: KnowledgeCenterPageContentProps) {
   const t = useTranslations("knowledgePublic");
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
-  const [listing, setListing] = useState<KnowledgeCenterListing | null>(null);
+  const [listing, setListing] = useState<KnowledgeCenterListing | null>(initialListing);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialListing) {
+      return;
+    }
     void fetchKnowledgeListing()
       .then(setListing)
       .catch((fetchError: unknown) => {

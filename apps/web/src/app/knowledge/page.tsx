@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
+import { fetchKnowledgeListing } from "../../features/knowledge-center/api";
 import { KnowledgeCenterPageContent } from "../../features/knowledge-center/components/KnowledgeCenterPageContent";
 import { buildPublicPageMetadataForRequest } from "../../lib/seo/build-public-page-metadata-for-request";
 
@@ -23,6 +24,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function KnowledgePage() {
-  return <KnowledgeCenterPageContent />;
+export default async function KnowledgePage() {
+  // The client fetches the listing itself when the server request fails.
+  const listing = await fetchKnowledgeListing().catch(() => null);
+  return <KnowledgeCenterPageContent initialListing={listing} />;
 }
