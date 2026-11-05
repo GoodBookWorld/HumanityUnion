@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
@@ -11,6 +11,7 @@ import type {
   BlogCategory,
   PublicBlogCategoryCount,
   PublicBlogPostListItem,
+  PublicBlogPostListResponse,
 } from "@hu/types";
 
 import { isApiUnavailableError } from "../../../lib/api-client";
@@ -32,7 +33,24 @@ import { BlogSubscriptionForm } from "./BlogSubscriptionForm";
 
 import "../blog.css";
 
-export function BlogIndexPageContent() {
+/** Server-fetched public data for the unfiltered first page (`/blog`). */
+export interface BlogIndexInitialData {
+  readonly categories: readonly BlogCategory[];
+  readonly listing: PublicBlogPostListResponse;
+}
+
+function resolveTotalPages(response: PublicBlogPostListResponse): number {
+  return (
+    response.totalPages ??
+    (response.total === 0 ? 0 : Math.max(1, Math.ceil(response.total / BLOG_PAGE_SIZE)))
+  );
+}
+
+export function BlogIndexPageContent({
+  initialData = null,
+}: {
+  initialData?: BlogIndexInitialData | null;
+}) {
   const t = useTranslations("blogPublic");
   const brand = useLocalizedBrand();
   const siteName = { siteName: brand.siteName };
@@ -42,19 +60,29 @@ export function BlogIndexPageContent() {
   const categorySlug = searchParams.get("category") ?? "all";
   const page = parseBlogPageParam(searchParams.get("page"));
 
-  const [categories, setCategories] = useState<readonly BlogCategory[]>([]);
-  const [items, setItems] = useState<PublicBlogPostListItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<readonly PublicBlogCategoryCount[]>([]);
-  const [latestPublications, setLatestPublications] = useState<readonly PublicBlogPostListItem[]>(
-    [],
+  // Server data applies only when the browser URL is the same unfiltered first page.
+  const seed = initialData && q === "" && categorySlug === "all" && page === 1 ? initialData : null;
+  const seededOnMount = useRef(seed !== null);
+  const skipSeededPostsFetch = useRef(seed !== null);
+
+  const [categories, setCategories] = useState<readonly BlogCategory[]>(seed?.categories ?? []);
+  const [items, setItems] = useState<PublicBlogPostListItem[]>(seed ? [...seed.listing.items] : []);
+  const [total, setTotal] = useState(seed?.listing.total ?? 0);
+  const [totalPages, setTotalPages] = useState(seed ? resolveTotalPages(seed.listing) : 0);
+  const [categoryCounts, setCategoryCounts] = useState<readonly PublicBlogCategoryCount[]>(
+    seed?.listing.categoryCounts ?? [],
   );
-  const [blogIndexViews, setBlogIndexViews] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [latestPublications, setLatestPublications] = useState<readonly PublicBlogPostListItem[]>(
+    seed?.listing.latestPublications ?? [],
+  );
+  const [blogIndexViews, setBlogIndexViews] = useState(seed?.listing.blogIndexViews ?? 0);
+  const [loading, setLoading] = useState(seed === null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (seededOnMount.current) {
+      return;
+    }
     let cancelled = false;
 
     void fetchPublicBlogCategories()
@@ -80,6 +108,10 @@ export function BlogIndexPageContent() {
   );
 
   useEffect(() => {
+    if (skipSeededPostsFetch.current) {
+      skipSeededPostsFetch.current = false;
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
     setError(null);
@@ -99,10 +131,7 @@ export function BlogIndexPageContent() {
 
         setItems([...response.items]);
         setTotal(response.total);
-        setTotalPages(
-          response.totalPages ??
-            (response.total === 0 ? 0 : Math.max(1, Math.ceil(response.total / BLOG_PAGE_SIZE))),
-        );
+        setTotalPages(resolveTotalPages(response));
         setCategoryCounts(response.categoryCounts ?? []);
         setLatestPublications(response.latestPublications ?? []);
         setBlogIndexViews(response.blogIndexViews ?? 0);
