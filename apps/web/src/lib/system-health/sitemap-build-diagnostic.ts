@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../api-base-url";
+import type { CountryInventoryDiagnostic } from "../seo/country-indexability";
 import { publishActiveSitemapBuilds } from "./web-memory-gauges";
 import {
   readWebProcessMemorySnapshot,
@@ -44,6 +45,8 @@ export interface SitemapBuildDiagnosticInput {
   readonly memoryAtStart: WebProcessMemorySnapshot | null;
   readonly memoryAfterInventory: WebProcessMemorySnapshot | null;
   readonly memoryAfterEligibility: WebProcessMemorySnapshot | null;
+  /** Null when the build did not load the country inventory. */
+  readonly countryInventory?: CountryInventoryDiagnostic | null;
 }
 
 const INGEST_PATH = "/api/v1/internal/system-health/events";
@@ -92,6 +95,32 @@ function nonNegativeInt(value: number): number {
     return 0;
   }
   return value;
+}
+
+const GIT_COMMIT_SHA = /^[0-9a-f]{7,40}$/;
+
+/** Render's RENDER_GIT_COMMIT for the running deploy; null when unset or not a commit SHA. */
+export function readDeployCommit(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): string | null {
+  const value = env.RENDER_GIT_COMMIT?.trim().toLowerCase();
+  return value && GIT_COMMIT_SHA.test(value) ? value : null;
+}
+
+function closedCountryInventory(
+  diagnostic: CountryInventoryDiagnostic | null | undefined,
+): Record<string, unknown> | null {
+  if (!diagnostic) {
+    return null;
+  }
+  if (diagnostic.outcome === "known") {
+    return { outcome: "known", eligibleCount: nonNegativeInt(diagnostic.eligibleCount) };
+  }
+  return {
+    outcome: "unknown",
+    reason: diagnostic.reason,
+    httpStatus: diagnostic.httpStatus === undefined ? null : nonNegativeInt(diagnostic.httpStatus),
+  };
 }
 
 export function sitemapBuildShouldPersist(input: {
@@ -151,9 +180,11 @@ export function buildSitemapDiagnosticRecord(
     instanceId: primary?.instanceId ?? null,
     processStartedAt: primary?.processStartedAt ?? null,
     uptimeSeconds: primary?.uptimeSeconds ?? null,
+    deployCommit: readDeployCommit(),
     failedProviderIds,
     partialProviderIds,
     counts,
+    countryInventory: closedCountryInventory(input.countryInventory),
     memory,
     persistRequested: eventTypes.length > 0,
   };

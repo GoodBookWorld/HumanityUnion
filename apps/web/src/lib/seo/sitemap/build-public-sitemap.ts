@@ -21,9 +21,10 @@ import { buildPublicSeoLocalizedVariantPredicate } from "../public-seo-localized
 import { expandPublicSitemapEntriesForSeoLocales } from "./expand-public-sitemap-for-seo-locales";
 import { listBlogPostSitemapEntries } from "./providers/blog-posts";
 import { listCivicArchiveSitemapEntries } from "./providers/civic-archive";
+import type { CountryInventoryDiagnostic } from "../country-indexability";
 import {
   listCountrySitemapEntries,
-  listEligibleCountrySitemapEntries,
+  loadEligibleCountrySitemapEntries,
 } from "./providers/countries";
 import { listInitiativeSitemapEntries } from "./providers/initiatives";
 import { listKnowledgeArticleSitemapEntries } from "./providers/knowledge-articles";
@@ -134,6 +135,7 @@ export async function collectPublicSitemapPathEntries(options?: {
   const memoryAtStart = readCurrentSitemapMemory();
   let memoryAfterInventory: ReturnType<typeof readCurrentSitemapMemory> | null = null;
   let memoryAfterEligibility: ReturnType<typeof readCurrentSitemapMemory> | null = null;
+  let countryInventory: CountryInventoryDiagnostic | null = null;
 
   try {
     const includeDynamic = options?.includeDynamicProviders !== false;
@@ -144,8 +146,8 @@ export async function collectPublicSitemapPathEntries(options?: {
     if (!includeDynamic) {
       canonical = dedupeSitemapPathEntries([...staticEntries, ...listCountrySitemapEntries()]);
     } else {
-      const [countryEntries, ...dynamicBatches] = await Promise.all([
-        listEligibleCountrySitemapEntries(),
+      const [countrySitemap, ...dynamicBatches] = await Promise.all([
+        loadEligibleCountrySitemapEntries(),
         collectProviderEntries("blog-posts", listBlogPostSitemapEntries, failedProviderIds),
         collectProviderEntries("initiatives", listInitiativeSitemapEntries, failedProviderIds),
         collectProviderEntries(
@@ -161,9 +163,10 @@ export async function collectPublicSitemapPathEntries(options?: {
         ),
         collectProviderEntries("regions", listRegionSitemapEntries, failedProviderIds),
       ]);
+      countryInventory = countrySitemap.diagnostic;
       canonical = dedupeSitemapPathEntries([
         ...staticEntries,
-        ...countryEntries,
+        ...countrySitemap.entries,
         ...dynamicBatches.flat(),
       ]);
     }
@@ -219,6 +222,7 @@ export async function collectPublicSitemapPathEntries(options?: {
       memoryAtStart,
       memoryAfterInventory,
       memoryAfterEligibility,
+      countryInventory,
     });
     closeSitemapBuildObservation();
     recordSitemapMemoryBoundary("completion");

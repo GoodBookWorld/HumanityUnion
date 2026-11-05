@@ -19,7 +19,7 @@ import {
 import {
   filterCountrySitemapEntries,
   listCountrySitemapEntries,
-  listEligibleCountrySitemapEntries,
+  loadEligibleCountrySitemapEntries,
 } from "../../lib/seo/sitemap/providers/countries.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -175,12 +175,12 @@ describe("SEO-BING-06 — country sitemap", () => {
     mockFetch(() =>
       envelope({ entries: [{ countryCode: "CA" }, { countryCode: "DE" }, { countryCode: "UA" }] }),
     );
-    assert.equal((await listEligibleCountrySitemapEntries()).length, 3);
+    assert.equal((await loadEligibleCountrySitemapEntries()).entries.length, 3);
     assert.equal(fetchCalls.length, 1, "no per-country requests");
 
     mockFetch(() => envelope(null, 503));
     assert.deepEqual(
-      (await listEligibleCountrySitemapEntries()).map((entry) => entry.path),
+      (await loadEligibleCountrySitemapEntries()).entries.map((entry) => entry.path),
       ALL_COUNTRY_PATHS,
     );
   });
@@ -188,7 +188,7 @@ describe("SEO-BING-06 — country sitemap", () => {
   it("10. a valid empty API response keeps every country listed", async () => {
     mockFetch(() => envelope({ entries: [] }));
     assert.deepEqual(
-      (await listEligibleCountrySitemapEntries()).map((entry) => entry.path),
+      (await loadEligibleCountrySitemapEntries()).entries.map((entry) => entry.path),
       ALL_COUNTRY_PATHS,
     );
   });
@@ -229,7 +229,7 @@ describe("SEO-BING-06 — wiring", () => {
   it("13. sitemap build loads the inventory once alongside the dynamic providers", () => {
     assert.match(
       BUILD,
-      /const \[countryEntries, \.\.\.dynamicBatches\] = await Promise\.all\(\[\s*listEligibleCountrySitemapEntries\(\),/,
+      /const \[countrySitemap, \.\.\.dynamicBatches\] = await Promise\.all\(\[\s*loadEligibleCountrySitemapEntries\(\),/,
     );
     assert.match(
       BUILD,

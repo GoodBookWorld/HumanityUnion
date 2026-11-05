@@ -1,8 +1,9 @@
 import { getCountries } from "@hu/geography";
 
 import {
-  loadPublicCountryInventory,
+  loadPublicCountryInventoryWithDiagnostic,
   resolveCountryIndexability,
+  type CountryInventoryDiagnostic,
   type PublicCountryInventory,
 } from "../../country-indexability";
 import type { SitemapPathEntry } from "../types";
@@ -35,6 +36,10 @@ export function filterCountrySitemapEntries(
   );
 }
 
-export async function listEligibleCountrySitemapEntries(): Promise<SitemapPathEntry[]> {
-  return filterCountrySitemapEntries(await loadPublicCountryInventory());
+export async function loadEligibleCountrySitemapEntries(): Promise<{
+  readonly entries: SitemapPathEntry[];
+  readonly diagnostic: CountryInventoryDiagnostic;
+}> {
+  const { inventory, diagnostic } = await loadPublicCountryInventoryWithDiagnostic();
+  return { entries: filterCountrySitemapEntries(inventory), diagnostic };
 }
