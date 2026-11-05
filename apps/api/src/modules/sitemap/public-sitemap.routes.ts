@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { listPublicCountriesWithContent } from "../country-statistics/country-public.service.js";
 import { listPublicRegionsWithContent } from "../country-statistics/region-public.service.js";
 import { MemberProfilePersistenceUnavailableError } from "../member-profile/member-profile.errors.js";
 import {
@@ -39,6 +40,36 @@ publicSitemapRouter.get("/regions", (_req, res) => {
       total: entries.length,
     }),
   );
+});
+
+/**
+ * SEO-BING-06 — countries with meaningful public content (public country-discovery
+ * initiatives, active curated trusted media, or active affiliations). Read-only; codes only.
+ * Fails closed with 503 so callers never treat a partial inventory as complete.
+ */
+publicSitemapRouter.get("/countries", async (_req, res) => {
+  try {
+    const entries = await listPublicCountriesWithContent();
+
+    res.setHeader("Cache-Control", "no-store");
+    res.json(
+      createSuccessResponse({ entries }, "Public sitemap country inventory loaded.", {
+        total: entries.length,
+      }),
+    );
+  } catch (error) {
+    console.error(
+      "public_sitemap.countries_failed",
+      error instanceof Error ? error.message : "unknown_error",
+    );
+    res.status(503).json({
+      success: false,
+      data: null,
+      meta: {},
+      links: {},
+      message: "Country inventory is temporarily unavailable.",
+    });
+  }
 });
 
 /**

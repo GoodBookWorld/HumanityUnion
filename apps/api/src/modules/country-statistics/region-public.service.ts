@@ -33,14 +33,12 @@ import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiati
 import { listInitiatives } from "../initiatives/initiative.store.js";
 import { loadCommunitiesForRegion } from "../participation-area/participation-area-community.loader.js";
 import {
+  DEMONSTRATION_INITIATIVE_ID_PREFIX,
   listCountryInitiativeCardProjections,
   matchesCountryDiscoveryGeography,
 } from "./country-public.service.js";
 
 export const REGION_LATEST_INITIATIVES_LIMIT = 12;
-
-/** Demonstration initiatives (web bootstrap / staging cleanup) are never public region records. */
-const DEMONSTRATION_INITIATIVE_ID_PREFIX = "initiative-bootstrap-";
 
 /** Ordinary-public, non-demonstration initiative; geography is checked separately. */
 function isRegionCandidateInitiative(initiative: Initiative): boolean {
