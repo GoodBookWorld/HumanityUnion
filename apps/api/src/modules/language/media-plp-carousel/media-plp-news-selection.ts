@@ -115,17 +115,21 @@ export async function selectCountrySourceNewsArticles(input?: {
       .map((resource) => resource.name),
     ...listCountryNewsFallbackSourceNames().filter((name) => activeNames.has(name)),
   ]);
+  // Same selection as the public `sources=` query: exact name or the resource ids.
   const batches = await Promise.all(
     [...names].map((name) =>
       findActivePublicNewsRecords({
         limit: COUNTRY_NEWS_RAIL_LIMIT,
         language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
         sources: [name],
+        sourceIds: activeNewsSources
+          .filter((resource) => resource.name === name)
+          .map((resource) => resource.id),
         now: input?.now,
       }),
     ),
   );
-  return batches.flat();
+  return [...new Map(batches.flat().map((record) => [record.id, record])).values()];
 }
 
 function countryAffiliatedSourceNames(): Set<string> {

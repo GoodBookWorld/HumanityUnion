@@ -168,6 +168,7 @@ adminMediaResourcesRouter.post(
         secondaryText: (body.secondaryText as string | null | undefined) ?? null,
         language: (body.language as string | null | undefined) ?? null,
         providerId: (body.providerId as string | null | undefined) ?? null,
+        articleDomains: (body.articleDomains as string[] | null | undefined) ?? null,
         active: typeof body.active === "boolean" ? body.active : undefined,
         sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
         id: typeof body.id === "string" ? body.id : undefined,
@@ -222,6 +223,10 @@ adminMediaResourcesRouter.patch(
           body.providerId === undefined
             ? undefined
             : ((body.providerId as string | null) ?? null),
+        articleDomains:
+          body.articleDomains === undefined
+            ? undefined
+            : ((body.articleDomains as string[] | null) ?? null),
         active: typeof body.active === "boolean" ? body.active : undefined,
         sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
       });

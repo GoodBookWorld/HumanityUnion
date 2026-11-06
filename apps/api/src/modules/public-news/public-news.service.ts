@@ -12,7 +12,10 @@ import {
 } from "../language/published-localized-presentation/media/canonical-trees.js";
 import { enqueueConsumerVisibleNewsPlpBuilds } from "../language/published-localized-presentation/universal/news-consumer-build-trigger.js";
 import { resolvePlpAutoBuildLocales } from "../language/published-localized-presentation/universal/public-source-mutation-bridge.js";
-import { resolvePublicNewsConfig } from "./public-news.config.js";
+import {
+  listActiveApprovedNewsSourceLanguages,
+  resolvePublicNewsConfig,
+} from "./public-news.config.js";
 import type { ExternalNewsArticle } from "./public-news.normalize.js";
 import { filterExternalNewsArticles, validateExternalNewsArticleUrls } from "./public-news.filter.js";
 import {
@@ -32,6 +35,11 @@ import {
 import { resolveNewsProvider } from "./providers/resolve-news-provider.js";
 import { PublicNewsIngestionTelemetry } from "./public-news-source-health.js";
 import { recordPublicNewsSourceChecks } from "./public-news-source-health.repository.js";
+import {
+  tryAcquirePublicNewsRefreshLease,
+  type PublicNewsRefreshLease,
+  type PublicNewsRefreshLeaseResult,
+} from "./public-news-refresh-lease.js";
 
 /** Telemetry is best-effort: a storage failure must never affect ingestion. */
 async function flushSourceHealthTelemetry(telemetry: PublicNewsIngestionTelemetry): Promise<void> {
@@ -128,29 +136,39 @@ export function parsePublicNewsQuery(query: Record<string, unknown>): PublicNews
   return { limit, language, category, source, ...(sources ? { sources } : {}) };
 }
 
-/** Requested names that belong to an active NEWS_SOURCE resource; disabled sources return nothing. */
-async function filterToActiveNewsSourceNames(names: readonly string[]): Promise<string[]> {
+/**
+ * Requested names that belong to an active NEWS_SOURCE resource, plus those resources'
+ * ids (articles stored since RSS-SOURCE-02B carry the id). Disabled sources return nothing.
+ */
+async function resolveActiveNewsSourceSelection(
+  names: readonly string[],
+): Promise<{ sources: string[]; sourceIds: string[] }> {
   const { listMediaResources } =
     await import("../media-resources/persistence/media-resource.repository.js");
-  const active = new Set(
-    (await listMediaResources({ resourceType: "NEWS_SOURCE", active: true })).map(
-      (resource) => resource.name,
-    ),
+  const requested = new Set(names);
+  const matches = (await listMediaResources({ resourceType: "NEWS_SOURCE", active: true })).filter(
+    (resource) => requested.has(resource.name),
   );
-  return names.filter((name) => active.has(name));
+  const activeNames = new Set(matches.map((resource) => resource.name));
+  return {
+    sources: names.filter((name) => activeNames.has(name)),
+    sourceIds: [...new Set(matches.map((resource) => resource.id))],
+  };
 }
 
 export async function listPublicNewsArticles(
   query: PublicNewsQuery,
 ): Promise<PublicNewsListingResponse> {
   const config = resolvePublicNewsConfig();
-  const sources = query.sources ? await filterToActiveNewsSourceNames(query.sources) : undefined;
+  const selection = query.sources
+    ? await resolveActiveNewsSourceSelection(query.sources)
+    : undefined;
   const records = await findActivePublicNewsRecords({
     limit: query.limit,
     language: query.language ?? config.defaultLanguage,
     category: query.category,
     source: query.source,
-    ...(sources ? { sources } : {}),
+    ...(selection ? selection : {}),
   });
   const activeProviders = await findActivePublicNewsSourceNames({
     language: query.language ?? config.defaultLanguage,
@@ -190,12 +208,51 @@ export async function buildInitiativeNewsSourceSnapshot(
   return toInitiativeNewsSourceSnapshot(record);
 }
 
-export async function refreshPublicNews(): Promise<{ upserted: number; fetched: number }> {
+export interface PublicNewsRefreshResult {
+  upserted: number;
+  fetched: number;
+  /**
+   * Set when nothing was fetched or written: another instance holds the lease or
+   * already refreshed, the lease store failed, or the lease was lost mid-refresh.
+   * Existing public articles are left untouched in every case.
+   */
+  skipped?: "lease_held" | "completed_elsewhere" | "lease_unavailable" | "lease_lost";
+  /** With `lease_held`: when the current lease expires (epoch ms). */
+  retryAt?: number;
+}
+
+/** Storage failures fail closed: no lease means no fetch and no writes this cycle. */
+async function acquireRefreshLease(options: {
+  skipIfCompletedSince?: Date;
+}): Promise<PublicNewsRefreshLeaseResult | null> {
+  try {
+    return await tryAcquirePublicNewsRefreshLease(options);
+  } catch {
+    console.warn("[public-news] Refresh lease unavailable; skipping this refresh.");
+    return null;
+  }
+}
+
+/** Languages to ingest: the default first, then each other active source language. */
+function resolveIngestionLanguages(defaultLanguage: string): string[] {
+  return [
+    ...new Set([
+      defaultLanguage.toLowerCase(),
+      ...listActiveApprovedNewsSourceLanguages().map((language) => language.toLowerCase()),
+    ]),
+  ];
+}
+
+export async function refreshPublicNews(
+  options: { skipIfCompletedSince?: Date } = {},
+): Promise<PublicNewsRefreshResult> {
   if (refreshInProgress) {
     return { upserted: 0, fetched: 0 };
   }
 
   refreshInProgress = true;
+  let lease: PublicNewsRefreshLease | null = null;
+  let completed = false;
 
   try {
     const { ensureMediaResourcesSeededOnce } = await import(
@@ -217,20 +274,48 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       return { upserted: 0, fetched: 0 };
     }
 
-    let fetchedArticles: ExternalNewsArticle[] = [];
+    const leaseResult = await acquireRefreshLease(options);
+    if (!leaseResult) {
+      return { upserted: 0, fetched: 0, skipped: "lease_unavailable" };
+    }
+    if (!leaseResult.acquired) {
+      return leaseResult.reason === "held"
+        ? { upserted: 0, fetched: 0, skipped: "lease_held", retryAt: leaseResult.retryAt }
+        : { upserted: 0, fetched: 0, skipped: "completed_elsewhere" };
+    }
+    lease = leaseResult.lease;
+    const heldLease = lease;
+    const leaseLost = async () => {
+      if (await heldLease.confirm()) {
+        return false;
+      }
+      console.warn("[public-news] Refresh lease lost; discarding this refresh without writes.");
+      return true;
+    };
+
+    const fetchedArticles: ExternalNewsArticle[] = [];
     const telemetry = new PublicNewsIngestionTelemetry();
 
     try {
-      fetchedArticles = await provider.fetchRecentArticles({
-        language: config.defaultLanguage,
-        limit: config.fetchLimit,
-        telemetry,
-      });
+      // Each language keeps its own fetch limit, so other-language sources never
+      // displace default-language articles from the global cap.
+      for (const language of resolveIngestionLanguages(config.defaultLanguage)) {
+        fetchedArticles.push(
+          ...(await provider.fetchRecentArticles({
+            language,
+            limit: config.fetchLimit,
+            telemetry,
+          })),
+        );
+      }
     } catch (error) {
       console.error(
         "[public-news] Provider fetch failed:",
         error instanceof Error ? error.message : error,
       );
+      if (await leaseLost()) {
+        return { upserted: 0, fetched: 0, skipped: "lease_lost" };
+      }
       await flushSourceHealthTelemetry(telemetry);
       return { upserted: 0, fetched: 0 };
     }
@@ -257,11 +342,20 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       })
       .filter((record): record is NewsArticleRecord => record !== null);
 
+    if (await leaseLost()) {
+      return { upserted: 0, fetched: fetchedArticles.length, skipped: "lease_lost" };
+    }
+
     const upserted = await upsertPublicNewsRecords(normalized);
     await flushSourceHealthTelemetry(telemetry);
 
     for (const record of normalized) {
-      if (record.status === "active") {
+      // Other-language articles are shown in their original language only; they are
+      // not announced to the localization pipeline.
+      if (
+        record.status === "active" &&
+        record.language.toLowerCase() === config.defaultLanguage.toLowerCase()
+      ) {
         // RESET 05C — canonicalVersion required for PLP enqueue (mutation bridge).
         const canonicalVersion = fingerprintPublicNewsCanonicalVersion(record);
         notifyPublicPresentationChanged({
@@ -280,11 +374,17 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       await enqueueConsumerVisibleNewsPlpBuilds({ locales: autoBuildLocales });
     }
 
+    completed = true;
     return {
       upserted,
       fetched: fetchedArticles.length,
     };
   } finally {
+    if (lease) {
+      await lease.release({ completed }).catch(() => {
+        console.warn("[public-news] Refresh lease could not be released; it will expire.");
+      });
+    }
     refreshInProgress = false;
   }
 }

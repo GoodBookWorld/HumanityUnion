@@ -17,6 +17,7 @@ export interface MediaResourceMongoDocument extends Document {
   secondaryText?: string | null;
   language?: string | null;
   providerId?: string | null;
+  articleDomains?: string[];
   active: boolean;
   sortOrder: number;
   createdAt: string;
@@ -41,6 +42,7 @@ export function toMediaResourceMongoDocument(
     secondaryText: resource.secondaryText ?? null,
     language: resource.language ?? null,
     providerId: resource.providerId ?? null,
+    ...(resource.articleDomains?.length ? { articleDomains: [...resource.articleDomains] } : {}),
     active: resource.active,
     sortOrder: resource.sortOrder,
     createdAt: resource.createdAt,
@@ -66,6 +68,9 @@ export function fromMediaResourceMongoDocument(
     secondaryText: document.secondaryText ?? null,
     language: document.language ?? null,
     providerId: document.providerId ?? null,
+    ...(Array.isArray(document.articleDomains) && document.articleDomains.length
+      ? { articleDomains: [...document.articleDomains] }
+      : {}),
     active: document.active,
     sortOrder: document.sortOrder,
     createdAt: document.createdAt,

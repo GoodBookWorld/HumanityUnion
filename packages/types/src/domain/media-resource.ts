@@ -21,6 +21,8 @@ export interface MediaResource {
   secondaryText?: string | null; // coverage (fact) / explanation (propaganda) / country display label
   language?: string | null; // NEWS_SOURCE
   providerId?: string | null; // media-registry id for NEWS_SOURCE
+  /** NEWS_SOURCE only: extra hostnames (and subdomains) its feed may link articles to. */
+  articleDomains?: string[] | null;
   active: boolean;
   sortOrder: number;
   createdAt: string;

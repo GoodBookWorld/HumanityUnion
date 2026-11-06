@@ -1,6 +1,7 @@
 import type { NewsArticleRecord } from "@hu/types";
 import { createHash } from "node:crypto";
 
+import { sanitizePublicNewsImageUrl } from "./public-news-image-url.js";
 import {
   resolveNewsProviderId,
   validateNewsArticleRecordForInitiativeSource,
@@ -20,7 +21,7 @@ export interface ExternalNewsArticle {
   category?: string;
   geographicScope?: string;
   isSponsored?: boolean;
-  /** Source attribution for health telemetry only; never persisted. */
+  /** NEWS_SOURCE MediaResource id; drives source trust, telemetry and is persisted. */
   mediaResourceId?: string;
 }
 
@@ -157,6 +158,7 @@ export function normalizeExternalNewsArticle(
     provider: normalizePlainText(article.provider, "Provider"),
     sourceName,
     sourceDomain: normalizeOptionalPlainText(article.sourceDomain),
+    ...(article.mediaResourceId?.trim() ? { mediaResourceId: article.mediaResourceId.trim() } : {}),
     title,
     summary,
     articleUrl,
@@ -176,23 +178,7 @@ export function normalizeExternalNewsArticle(
 }
 
 function normalizeOptionalImageUrl(value: unknown): string | undefined {
-  const normalized = normalizeOptionalPlainText(value);
-
-  if (!normalized) {
-    return undefined;
-  }
-
-  try {
-    const parsed = new URL(normalized);
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return undefined;
-    }
-
-    return parsed.toString();
-  } catch {
-    return undefined;
-  }
+  return sanitizePublicNewsImageUrl(normalizeOptionalPlainText(value));
 }
 
 export function toPublicNewsArticleItem(record: NewsArticleRecord) {
@@ -202,7 +188,7 @@ export function toPublicNewsArticleItem(record: NewsArticleRecord) {
     title: record.title,
     summary: record.summary,
     articleUrl: record.articleUrl,
-    imageUrl: record.imageUrl,
+    imageUrl: sanitizePublicNewsImageUrl(record.imageUrl),
     publishedAt: record.publishedAt,
     language: record.language,
     category: record.category,

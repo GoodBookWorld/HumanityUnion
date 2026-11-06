@@ -140,6 +140,33 @@ export function listActiveApprovedNewsSources(
 }
 
 /**
+ * Distinct languages of active Admin NEWS_SOURCE rows (lowercase). Empty before the
+ * Admin catalog loads: the static registry fallback ingests the default language only.
+ */
+export function listActiveApprovedNewsSourceLanguages(): string[] {
+  if (!newsSourceCatalogLoaded) {
+    return [];
+  }
+  return [
+    ...new Set(
+      approvedNewsSourcesFromMediaResources.map((source) => source.language.trim().toLowerCase()),
+    ),
+  ].filter(Boolean);
+}
+
+/** Active Admin NEWS_SOURCE projection by MediaResource id, any language. */
+export function findActiveApprovedNewsSourceById(
+  mediaResourceId: string,
+): ApprovedNewsSource | undefined {
+  if (!newsSourceCatalogLoaded) {
+    return undefined;
+  }
+  return approvedNewsSourcesFromMediaResources.find(
+    (source) => source.mediaResourceId === mediaResourceId,
+  );
+}
+
+/**
  * Allow-list check: active MediaResource NEWS_SOURCE rssUrl OR registry feed allow-list.
  */
 export function isApprovedNewsFeedUrl(feedUrl: string): boolean {

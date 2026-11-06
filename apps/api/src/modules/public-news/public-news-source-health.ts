@@ -14,7 +14,7 @@ import type {
   PublicNewsSourceHealthStatusReason,
 } from "@hu/types";
 
-import { ExternalRequestError } from "./public-news.fetch.js";
+import { ExternalFetchPolicyError, ExternalRequestError } from "./public-news.fetch.js";
 
 /** One source's result for a single refresh, before merging with stored history. */
 export interface PublicNewsSourceCheck {
@@ -72,6 +72,30 @@ export const UNAPPROVED_FEED_ERROR: PublicNewsSourceHealthError = {
   httpStatus: null,
 };
 
+const FETCH_POLICY_ERRORS: Record<ExternalFetchPolicyError["code"], PublicNewsSourceHealthError> = {
+  blocked_host: {
+    code: "blocked_host",
+    message: "The feed host is not allowed.",
+    httpStatus: null,
+  },
+  too_many_redirects: {
+    code: "too_many_redirects",
+    message: "The feed redirected too many times.",
+    httpStatus: null,
+  },
+  unsupported_content_type: {
+    code: "unsupported_content_type",
+    message: "The feed response was not a supported text or XML document.",
+    httpStatus: null,
+  },
+  response_too_large: {
+    code: "response_too_large",
+    message: "The feed response exceeded the size limit.",
+    httpStatus: null,
+  },
+  timeout: { code: "timeout", message: "The feed request timed out.", httpStatus: null },
+};
+
 /** Maps an exception to a fixed, sanitized summary; raw messages may contain URLs or addresses. */
 export function classifySourceFetchError(error: unknown): PublicNewsSourceHealthError {
   if (error instanceof ExternalRequestError) {
@@ -80,6 +104,9 @@ export function classifySourceFetchError(error: unknown): PublicNewsSourceHealth
       message: `The feed responded with HTTP ${error.status}.`,
       httpStatus: error.status,
     };
+  }
+  if (error instanceof ExternalFetchPolicyError) {
+    return FETCH_POLICY_ERRORS[error.code];
   }
   const name = error instanceof Error ? error.name : "";
   const message = error instanceof Error ? error.message : "";

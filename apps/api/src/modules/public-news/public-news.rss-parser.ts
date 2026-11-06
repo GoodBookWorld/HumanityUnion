@@ -1,3 +1,4 @@
+import { sanitizePublicNewsImageUrl } from "./public-news-image-url.js";
 import { stripHtml } from "./public-news.normalize.js";
 
 export interface ParsedFeedItem {
@@ -11,6 +12,7 @@ export interface ParsedFeedItem {
 
 const TRACKING_IMAGE_PATTERN = /(?:pixel|tracking|spacer|beacon|\/1x1|rss-pixel)/i;
 const FEED_URL_PATTERN = /\/(?:feed|rss|atom)(?:\/|$|[?#])/i;
+const IMAGE_EXTENSION_PATTERN = /\.(?:jpe?g|png|webp|gif|avif)$/i;
 
 function decodeXmlEntities(value: string): string {
   return value
@@ -194,15 +196,29 @@ function readGuid(block: string): string | undefined {
   return readTag(block, ["guid", "id"]);
 }
 
+/** Attribute values stay XML-escaped (`&amp;`, `&#038;`); image URLs must be decoded. */
+function readImageAttribute(tag: string, attributeName: string): string | undefined {
+  const raw = readAttribute(tag, attributeName);
+  return raw ? decodeXmlEntities(raw).trim() : undefined;
+}
+
+function hasImageFileExtension(url: string): boolean {
+  try {
+    return IMAGE_EXTENSION_PATTERN.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
+
 function readTagUrlAttribute(block: string, tagName: string): string | undefined {
   const pattern = new RegExp(`<${tagName}\\b[^>]*\\/?>`, "gi");
   const tags = block.match(pattern) ?? [];
 
   for (const tag of tags) {
-    const url = readAttribute(tag, "url");
+    const url = sanitizePublicNewsImageUrl(readImageAttribute(tag, "url"));
 
-    if (url && isHttpUrl(url)) {
-      return sanitizeHttpUrl(url);
+    if (url) {
+      return url;
     }
   }
 
@@ -222,13 +238,12 @@ function readEnclosureImageUrl(block: string): string | undefined {
 
   for (const tag of tags) {
     const type = readAttribute(tag, "type");
-    const url = readAttribute(tag, "url");
 
-    if (!url || !isImageMimeType(type)) {
+    if (!isImageMimeType(type)) {
       continue;
     }
 
-    const sanitized = sanitizeHttpUrl(url);
+    const sanitized = sanitizePublicNewsImageUrl(readImageAttribute(tag, "url"));
 
     if (sanitized) {
       return sanitized;
@@ -238,6 +253,11 @@ function readEnclosureImageUrl(block: string): string | undefined {
   return undefined;
 }
 
+/**
+ * media:content counts as an image when `medium="image"`, an image MIME type, or,
+ * with neither attribute (e.g. The Guardian), an image file extension. Among
+ * several renditions the widest wins; without widths, document order decides.
+ */
 function readMediaImageUrl(block: string): string | undefined {
   const thumbnail = readTagUrlAttribute(block, "media:thumbnail");
 
@@ -246,9 +266,10 @@ function readMediaImageUrl(block: string): string | undefined {
   }
 
   const tags = block.match(/<media:content\b[^>]*\/?>/gi) ?? [];
+  let best: { url: string; width: number } | undefined;
 
   for (const tag of tags) {
-    const url = readAttribute(tag, "url");
+    const url = sanitizePublicNewsImageUrl(readImageAttribute(tag, "url"));
     const medium = readAttribute(tag, "medium")?.toLowerCase();
     const type = readAttribute(tag, "type");
 
@@ -256,18 +277,25 @@ function readMediaImageUrl(block: string): string | undefined {
       continue;
     }
 
-    if (medium !== "image" && !isImageMimeType(type)) {
+    const isImage = medium
+      ? medium === "image"
+      : type
+        ? isImageMimeType(type)
+        : hasImageFileExtension(url);
+
+    if (!isImage) {
       continue;
     }
 
-    const sanitized = sanitizeHttpUrl(url);
+    const width = Number.parseInt(readAttribute(tag, "width") ?? "", 10);
+    const comparableWidth = Number.isFinite(width) ? width : 0;
 
-    if (sanitized) {
-      return sanitized;
+    if (!best || comparableWidth > best.width) {
+      best = { url, width: comparableWidth };
     }
   }
 
-  return undefined;
+  return best?.url;
 }
 
 function isTrackingImageUrl(url: string): boolean {
@@ -286,11 +314,11 @@ function readHtmlImageUrl(block: string): string | undefined {
   for (const match of html.matchAll(imgPattern)) {
     const src = decodeXmlEntities(match[1]?.trim() ?? "");
 
-    if (!src || !isHttpUrl(src) || isTrackingImageUrl(src)) {
+    if (!src || isTrackingImageUrl(src)) {
       continue;
     }
 
-    const sanitized = sanitizeHttpUrl(src);
+    const sanitized = sanitizePublicNewsImageUrl(src);
 
     if (sanitized) {
       return sanitized;
@@ -307,13 +335,13 @@ function readItunesImageUrl(block: string): string | undefined {
     return undefined;
   }
 
-  const href = readAttribute(tag, "href");
+  const href = readImageAttribute(tag, "href");
 
-  if (!href || !isHttpUrl(href) || isTrackingImageUrl(href)) {
+  if (!href || isTrackingImageUrl(href)) {
     return undefined;
   }
 
-  return sanitizeHttpUrl(href);
+  return sanitizePublicNewsImageUrl(href);
 }
 
 function readImageUrl(block: string): string | undefined {

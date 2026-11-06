@@ -5,9 +5,31 @@ import {
 } from "../public-news.config.js";
 import { classifySourceFetchError, UNAPPROVED_FEED_ERROR } from "../public-news-source-health.js";
 import type { ExternalNewsArticle } from "../public-news.normalize.js";
-import { fetchExternalDocument } from "../public-news.fetch.js";
+import { fetchExternalDocumentWithRetry } from "../public-news.fetch.js";
 import { parseRssOrAtomFeed } from "../public-news.rss-parser.js";
 import type { NewsProvider, NewsProviderFetchInput } from "./news-provider.types.js";
+
+/** Feeds fetched at once; bounds sockets and event-loop pressure during a refresh. */
+export const RSS_FETCH_CONCURRENCY = 6;
+
+/** Runs `task` over `items` with at most `limit` in flight; results keep input order. */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await task(items[index]!);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(Math.max(limit, 1), items.length) }, worker));
+  return results;
+}
 
 export class RssNewsProvider implements NewsProvider {
   readonly name = "rss";
@@ -18,8 +40,10 @@ export class RssNewsProvider implements NewsProvider {
     const perSourceLimit = Math.max(3, Math.ceil(input.limit / Math.max(sources.length, 1)));
     const telemetry = input.telemetry;
 
-    const batches = await Promise.all(
-      sources.map(async (source): Promise<ExternalNewsArticle[]> => {
+    const batches = await mapWithConcurrency(
+      sources,
+      RSS_FETCH_CONCURRENCY,
+      async (source): Promise<ExternalNewsArticle[]> => {
         const sourceId = source.mediaResourceId;
         telemetry?.begin(source);
 
@@ -35,7 +59,7 @@ export class RssNewsProvider implements NewsProvider {
         let httpStatus: number | null = null;
 
         try {
-          const xml = await fetchExternalDocument(source.rssFeedUrl, {
+          const xml = await fetchExternalDocumentWithRetry(source.rssFeedUrl, {
             timeoutMs: config.fetchTimeoutMs,
             maxBytes: config.maxResponseBytes,
             requireApprovedRssFeed: true,
@@ -84,7 +108,7 @@ export class RssNewsProvider implements NewsProvider {
           telemetry?.fetchFailed(sourceId, classifySourceFetchError(error), Date.now() - startedAt);
           return [];
         }
-      }),
+      },
     );
 
     const sorted = batches

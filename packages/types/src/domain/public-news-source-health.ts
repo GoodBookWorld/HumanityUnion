@@ -13,6 +13,8 @@ export type PublicNewsRejectionReason =
   | "placeholder_url"
   | "homepage_url"
   | "no_registry_provider"
+  /** Article host is neither the source's website domain nor an approved article domain. */
+  | "unapproved_article_domain"
   | "not_article_url"
   | "outside_retention_window"
   | "missing_title_or_source"
@@ -27,6 +29,8 @@ export type PublicNewsSourceErrorCode =
   | "network_error"
   | "response_too_large"
   | "blocked_host"
+  | "too_many_redirects"
+  | "unsupported_content_type"
   | "unapproved_feed"
   | "invalid_feed"
   | "unknown_error";
@@ -88,7 +92,7 @@ export interface AdminNewsSourceHealthItem {
   providerId: string | null;
   status: PublicNewsSourceHealthStatus;
   statusReason: PublicNewsSourceHealthStatusReason;
-  /** Active, unexpired public articles stored under this exact name (capped). */
+  /** Active, unexpired public articles stored under this exact name or resource id (capped). */
   publicArticleCount: number;
   publicArticleCountCapped: boolean;
   lastCheckCompletedAt: string | null;

@@ -84,4 +84,9 @@ export interface ApprovedNewsSource {
   category: MediaRegistryCategory;
   /** MediaResource id when derived from an Admin NEWS_SOURCE row (health telemetry key). */
   mediaResourceId?: string;
+  /**
+   * Admin-derived sources only: hostnames whose host or subdomains may appear in
+   * article URLs (website host, linked registry domains, explicit articleDomains).
+   */
+  articleDomains?: string[];
 }

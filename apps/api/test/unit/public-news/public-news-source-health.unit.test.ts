@@ -53,7 +53,15 @@ import {
   setPublicNewsSourceHealthWriteFailureForTests,
 } from "../../../src/modules/public-news/public-news-source-health.repository.js";
 import { refreshApprovedNewsSourcesFromMediaResources } from "../../../src/modules/public-news/public-news.config.js";
-import { ExternalRequestError } from "../../../src/modules/public-news/public-news.fetch.js";
+import {
+  ExternalRequestError,
+  setExternalFetchRetrySleepForTests,
+  setExternalHttpTransportForTests,
+} from "../../../src/modules/public-news/public-news.fetch.js";
+import {
+  type FakeExternalResponse,
+  toExternalHttpResponse,
+} from "../../helpers/fake-external-http.js";
 import {
   findActivePublicNewsRecords,
   resetPublicNewsMemoryStoreForTests,
@@ -118,29 +126,30 @@ const economistItems = [1, 2].map((n) => ({
   publishedAt: new Date(Date.now() - (40 + n) * 86_400_000),
 }));
 
-let feedResponses: Record<string, () => Response> = {};
+let feedResponses: Record<string, () => FakeExternalResponse> = {};
 let fetchedUrls: string[] = [];
 
 function installNetworkMocks(): void {
   mock.method(dnsPromises, "lookup", async () => [{ address: "93.184.216.34", family: 4 }]);
-  mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
-    const url = String(input);
+  setExternalHttpTransportForTests(async (request) => {
+    const url = request.url.toString();
     fetchedUrls.push(url);
     const respond = feedResponses[url];
     if (!respond) {
       throw new TypeError("fetch failed");
     }
-    return respond();
+    return toExternalHttpResponse(respond());
   });
+  setExternalFetchRetrySleepForTests(async () => undefined);
 }
 
-function defaultFeeds(): Record<string, () => Response> {
+function defaultFeeds(): Record<string, () => FakeExternalResponse> {
   return {
-    [FEEDS.ukrinform]: () => new Response(rss(ukrinformItems), { status: 200 }),
-    [FEEDS.kyiv]: () => new Response("Not found", { status: 404 }),
-    [FEEDS.pravda]: () => new Response("<html><body>Not a feed</body></html>", { status: 200 }),
-    [FEEDS.economist]: () => new Response(rss(economistItems), { status: 200 }),
-    [FEEDS.france24]: () => new Response(rss([]), { status: 200 }),
+    [FEEDS.ukrinform]: () => ({ status: 200, body: rss(ukrinformItems) }),
+    [FEEDS.kyiv]: () => ({ status: 404, body: "Not found" }),
+    [FEEDS.pravda]: () => ({ status: 200, body: "<html><body>Not a feed</body></html>" }),
+    [FEEDS.economist]: () => ({ status: 200, body: rss(economistItems) }),
+    [FEEDS.france24]: () => ({ status: 200, body: rss([]) }),
   };
 }
 
@@ -208,6 +217,8 @@ afterEach(() => {
 
 after(() => {
   mock.restoreAll();
+  setExternalHttpTransportForTests(null);
+  setExternalFetchRetrySleepForTests(null);
   resetMediaResourcesMemoryForTests();
   resetPublicNewsMemoryStoreForTests();
   resetPublicNewsSourceHealthForTests();
@@ -297,18 +308,18 @@ describe("RSS-HEALTH-01 — telemetry recorded by the existing refresh", () => {
     assert.equal(await healthOf("france24"), undefined);
   });
 
-  it("7. renamed source: same record id, stored name mismatch is visible", async () => {
+  it("7. renamed source: same record id, articles follow the Admin name (RSS-SOURCE-02B)", async () => {
     await refreshPublicNews();
     await seedSources({ ukrinform: { name: "Укрінформ" } });
     await refreshPublicNews();
     const health = await healthOf("ukrinform");
     assert.equal(health?.sourceName, "Укрінформ");
-    assert.deepEqual(health?.lastStoredSourceNames, ["Ukrinform"]);
+    assert.deepEqual(health?.lastStoredSourceNames, ["Укрінформ"]);
     const listing = await listAdminNewsSourceHealth({ actorUserId: "admin-user" });
     const item = listing.items.find((entry) => entry.mediaResourceId === "ukrinform");
     assert.equal(item?.name, "Укрінформ");
-    assert.equal(item?.publicArticleCount, 0);
-    assert.deepEqual([item?.status, item?.statusReason], ["failing", "no_public_articles"]);
+    assert.equal(item?.publicArticleCount, 3);
+    assert.deepEqual([item?.status, item?.statusReason], ["healthy", "ok"]);
   });
 
   it("8. telemetry storage failure never breaks ingestion", async () => {
@@ -343,8 +354,8 @@ describe("RSS-HEALTH-01 — existing ingestion unchanged", () => {
     assert.deepEqual(withTelemetry, withoutTelemetry);
     assert.deepEqual(publicWith, publicWithout);
     assert.ok(
-      withTelemetry.every((record) => !("mediaResourceId" in record)),
-      "attribution is not persisted",
+      withTelemetry.every((record) => record.mediaResourceId === "ukrinform"),
+      "RSS-SOURCE-02B persists the MediaResource id",
     );
     assert.deepEqual(
       withTelemetry.map((record) => record.sourceName),

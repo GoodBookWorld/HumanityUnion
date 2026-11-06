@@ -1,13 +1,15 @@
 import {
+  getMediaRegistryProviderById,
   isApprovedMediaRegistryDomain,
   isMediaRegistryWebsiteUrl,
   isSpecificMediaArticleUrl,
   resolveMediaRegistryProviderForArticle,
 } from "@hu/media-registry";
 
-import type { PublicNewsRejectionReason } from "@hu/types";
+import type { MediaRegistryProvider, PublicNewsRejectionReason } from "@hu/types";
 
-import { resolvePublicNewsConfig } from "./public-news.config.js";
+import { findActiveApprovedNewsSourceById, resolvePublicNewsConfig } from "./public-news.config.js";
+import { isUrlOnApprovedDomains } from "./public-news-source-trust.js";
 import type { ExternalNewsArticle } from "./public-news.normalize.js";
 import { normalizeArticleUrl, normalizeOptionalPlainText } from "./public-news.normalize.js";
 import { validatePublicArticleUrl, isPlaceholderArticleUrl } from "./public-news.fetch.js";
@@ -87,15 +89,34 @@ export function filterExternalNewsArticles(
       continue;
     }
 
-    const provisionalSourceName = normalizeOptionalPlainText(article.sourceName) ?? "";
-    const registryProvider = resolveMediaRegistryProviderForArticle(
-      provisionalSourceName,
-      article.articleUrl,
-    );
+    // Admin NEWS_SOURCE articles: the active MediaResource is the authority and the
+    // article host must be one of its approved domains. Articles without a
+    // MediaResource id (static registry fallback) keep the registry rules.
+    const adminSource = article.mediaResourceId
+      ? findActiveApprovedNewsSourceById(article.mediaResourceId)
+      : undefined;
+    let registryProvider: MediaRegistryProvider | undefined;
 
-    if (!registryProvider || registryProvider.rssEnabled === false) {
-      reject(article, "no_registry_provider");
-      continue;
+    if (article.mediaResourceId) {
+      if (
+        !adminSource ||
+        !isUrlOnApprovedDomains(article.articleUrl, adminSource.articleDomains ?? [])
+      ) {
+        reject(article, "unapproved_article_domain");
+        continue;
+      }
+      registryProvider = getMediaRegistryProviderById(adminSource.providerId);
+    } else {
+      const provisionalSourceName = normalizeOptionalPlainText(article.sourceName) ?? "";
+      registryProvider = resolveMediaRegistryProviderForArticle(
+        provisionalSourceName,
+        article.articleUrl,
+      );
+
+      if (!registryProvider || registryProvider.rssEnabled === false) {
+        reject(article, "no_registry_provider");
+        continue;
+      }
     }
 
     if (!isSpecificMediaArticleUrl(article.articleUrl, registryProvider)) {
@@ -124,7 +145,15 @@ export function filterExternalNewsArticles(
       continue;
     }
 
-    const approved = resolveApprovedSource(sourceName, article.articleUrl);
+    // Admin sources keep the Admin name; only registry fallback articles are renamed.
+    const approved = adminSource
+      ? {
+          sourceName: adminSource.sourceName,
+          sourceDomain: adminSource.sourceDomain,
+          category: adminSource.category,
+          language: adminSource.language,
+        }
+      : resolveApprovedSource(sourceName, article.articleUrl);
 
     if (!approved) {
       reject(article, "no_registry_provider");
@@ -174,9 +203,16 @@ export async function validateExternalNewsArticleUrls(
     const batch = articles.slice(index, index + concurrency);
     const results = await Promise.all(
       batch.map(async (article) => {
-        const reachable = await validatePublicArticleUrl(article.articleUrl, {
-          timeoutMs: Math.min(config.fetchTimeoutMs, 8_000),
-        });
+        const adminSource = article.mediaResourceId
+          ? findActiveApprovedNewsSourceById(article.mediaResourceId)
+          : undefined;
+        const reachable =
+          article.mediaResourceId && !adminSource
+            ? false
+            : await validatePublicArticleUrl(article.articleUrl, {
+                timeoutMs: Math.min(config.fetchTimeoutMs, 8_000),
+                ...(adminSource ? { allowedDomains: adminSource.articleDomains ?? [] } : {}),
+              });
         if (!reachable) {
           onReject?.(article);
         }

@@ -8,6 +8,8 @@ export interface NewsArticleRecord {
   provider: string;
   sourceName: string;
   sourceDomain?: string;
+  /** NEWS_SOURCE MediaResource id; absent on articles stored before RSS-SOURCE-02B. */
+  mediaResourceId?: string;
   title: string;
   summary: string;
   articleUrl: string;

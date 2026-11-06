@@ -377,6 +377,7 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { publishedAt: -1 }, name: "public_news_published_at" },
       { key: { status: 1, publishedAt: -1 }, name: "public_news_status_published_at" },
       { key: { sourceName: 1 }, name: "public_news_source_name" },
+      { key: { mediaResourceId: 1 }, name: "public_news_media_resource_id" },
       { key: { language: 1 }, name: "public_news_language" },
       { key: { id: 1 }, name: "public_news_id" },
     ],

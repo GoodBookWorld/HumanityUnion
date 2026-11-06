@@ -31,8 +31,13 @@ import {
   projectPropagandaAnalysisResources,
   projectPublicCountryNewsSources,
   projectTrustedMediaResources,
+  resolveNewsSourceLanguage,
 } from "./media-resource.projections.js";
 import { resolveNewsSourceHealthStatus } from "../public-news/public-news-source-health.js";
+import {
+  MAX_ARTICLE_DOMAINS,
+  normalizeApprovedDomain,
+} from "../public-news/public-news-source-trust.js";
 import { listPublicNewsSourceHealth } from "../public-news/public-news-source-health.repository.js";
 import { resolvePublicNewsConfig } from "../public-news/public-news.config.js";
 import { findActivePublicNewsRecords } from "../public-news/public-news.repository.js";
@@ -187,6 +192,44 @@ function normalizeOptionalUrl(value: string | null | undefined, field: string): 
   }
 }
 
+function normalizeArticleDomainsInput(
+  value: unknown,
+  resourceType: MediaResourceType,
+): string[] | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (!Array.isArray(value)) {
+    throw new MediaResourceValidationError("articleDomains must be an array of hostnames.");
+  }
+  if (resourceType !== "NEWS_SOURCE") {
+    if (value.length > 0) {
+      throw new MediaResourceValidationError(
+        "articleDomains is only allowed for NEWS_SOURCE resources.",
+      );
+    }
+    return null;
+  }
+  if (value.length > MAX_ARTICLE_DOMAINS) {
+    throw new MediaResourceValidationError(
+      `articleDomains may contain at most ${MAX_ARTICLE_DOMAINS} hostnames.`,
+    );
+  }
+  const domains: string[] = [];
+  for (const entry of value) {
+    const normalized = typeof entry === "string" ? normalizeApprovedDomain(entry) : null;
+    if (!normalized) {
+      throw new MediaResourceValidationError(
+        "articleDomains must contain public hostnames such as news.example.org.",
+      );
+    }
+    if (!domains.includes(normalized)) {
+      domains.push(normalized);
+    }
+  }
+  return domains.length > 0 ? domains : null;
+}
+
 function assertScopeInvariant(
   scopeType: MediaResourceScopeType,
   countryCode: string | null,
@@ -312,6 +355,7 @@ export interface AdminMediaResourceCreateInput {
   secondaryText?: string | null;
   language?: string | null;
   providerId?: string | null;
+  articleDomains?: string[] | null;
   active?: boolean;
   sortOrder?: number;
   id?: string;
@@ -333,6 +377,7 @@ export interface AdminMediaResourceUpdateInput {
   secondaryText?: string | null;
   language?: string | null;
   providerId?: string | null;
+  articleDomains?: string[] | null;
   active?: boolean;
   sortOrder?: number;
 }
@@ -342,25 +387,28 @@ export const NEWS_HEALTH_MAX_ITEMS = 200;
 export const NEWS_HEALTH_PUBLIC_COUNT_CAP = 50;
 const NEWS_HEALTH_COUNT_CONCURRENCY = 8;
 
-/** Public article count per exact source name, capped (same query the public news API uses). */
-async function countPublicArticlesBySourceName(
-  names: readonly string[],
-  language: string,
+/**
+ * Public article count per resource (exact current name or its MediaResource id) in
+ * the source's own language, capped; the same selection the public news API uses
+ * with `language=<source language>`. Keyed by resource id.
+ */
+async function countPublicArticlesByResource(
+  resources: readonly MediaResource[],
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
-  const unique = [...new Set(names)];
-  for (let index = 0; index < unique.length; index += NEWS_HEALTH_COUNT_CONCURRENCY) {
-    const batch = unique.slice(index, index + NEWS_HEALTH_COUNT_CONCURRENCY);
+  for (let index = 0; index < resources.length; index += NEWS_HEALTH_COUNT_CONCURRENCY) {
+    const batch = resources.slice(index, index + NEWS_HEALTH_COUNT_CONCURRENCY);
     const results = await Promise.all(
-      batch.map((name) =>
+      batch.map((resource) =>
         findActivePublicNewsRecords({
           limit: NEWS_HEALTH_PUBLIC_COUNT_CAP,
-          language,
-          sources: [name],
+          language: resolveNewsSourceLanguage(resource),
+          sources: [resource.name],
+          sourceIds: [resource.id],
         }),
       ),
     );
-    batch.forEach((name, position) => counts.set(name, results[position]!.length));
+    batch.forEach((resource, position) => counts.set(resource.id, results[position]!.length));
   }
   return counts;
 }
@@ -386,15 +434,12 @@ export async function listAdminNewsSourceHealth(input: {
 
   const [health, publicCounts] = await Promise.all([
     listPublicNewsSourceHealth(selected.map((resource) => resource.id)),
-    countPublicArticlesBySourceName(
-      selected.map((resource) => resource.name),
-      config.defaultLanguage,
-    ),
+    countPublicArticlesByResource(selected),
   ]);
 
   const items = selected.map((resource): AdminNewsSourceHealthItem => {
     const record = health.get(resource.id) ?? null;
-    const publicArticleCount = publicCounts.get(resource.name) ?? 0;
+    const publicArticleCount = publicCounts.get(resource.id) ?? 0;
     const { status, statusReason } = resolveNewsSourceHealthStatus({
       record,
       publicArticleCount,
@@ -544,6 +589,7 @@ export async function createAdminMediaResource(
   if (resourceType !== "NEWS_SOURCE" && rssUrl) {
     throw new MediaResourceValidationError("rssUrl is only allowed for NEWS_SOURCE resources.");
   }
+  const articleDomains = normalizeArticleDomainsInput(input.articleDomains, resourceType);
 
   let categoryId: string | null = input.categoryId?.trim() || null;
   if (resourceType === "TRUSTED_MEDIA") {
@@ -597,6 +643,7 @@ export async function createAdminMediaResource(
     secondaryText: input.secondaryText?.trim() || null,
     language: resourceType === "NEWS_SOURCE" ? input.language?.trim() || null : null,
     providerId: resourceType === "NEWS_SOURCE" ? input.providerId?.trim() || null : null,
+    ...(articleDomains ? { articleDomains } : {}),
     active,
     sortOrder:
       typeof input.sortOrder === "number" && Number.isFinite(input.sortOrder)
@@ -682,6 +729,12 @@ export async function updateAdminMediaResource(
   if (existing.resourceType !== "NEWS_SOURCE" && rssUrl) {
     throw new MediaResourceValidationError("rssUrl is only allowed for NEWS_SOURCE resources.");
   }
+  const articleDomains =
+    input.articleDomains !== undefined
+      ? normalizeArticleDomainsInput(input.articleDomains, existing.resourceType)
+      : existing.resourceType === "NEWS_SOURCE"
+        ? (existing.articleDomains ?? null)
+        : null;
 
   let categoryId =
     input.categoryId !== undefined
@@ -756,6 +809,11 @@ export async function updateAdminMediaResource(
         : existing.sortOrder,
     updatedAt: new Date().toISOString(),
   };
+  if (articleDomains?.length) {
+    resource.articleDomains = articleDomains;
+  } else {
+    delete resource.articleDomains;
+  }
 
   await upsertMediaResource(resource);
   await notifyTrustedCanonicalChange({

@@ -54,6 +54,7 @@ export async function upsertPublicNewsRecords(records: NewsArticleRecord[]): Pro
         memoryRecords.set(existing.id, {
           ...existing,
           ...record,
+          imageUrl: record.imageUrl ?? existing.imageUrl,
           id: existing.id,
           createdAt: existing.createdAt,
           updatedAt: new Date().toISOString(),
@@ -70,7 +71,10 @@ export async function upsertPublicNewsRecords(records: NewsArticleRecord[]): Pro
   let upserted = 0;
 
   for (const record of records) {
-    const { id, createdAt, ...mutableFields } = record;
+    const { id, createdAt, imageUrl, ...otherFields } = record;
+    // A feed item that temporarily omits its image must not erase the stored one
+    // (the driver would otherwise write `undefined` as null).
+    const mutableFields = imageUrl ? { ...otherFields, imageUrl } : otherFields;
     const result = await collection.updateOne(
       { normalizedArticleUrl: record.normalizedArticleUrl },
       {
@@ -168,14 +172,20 @@ export async function findActivePublicNewsRecords(input: {
   source?: string;
   /** Exact `sourceName` matches; applied before the limit, newest first, no source balancing. */
   sources?: readonly string[];
+  /**
+   * Exact `mediaResourceId` matches, combined with `sources` as a union, so a renamed
+   * source keeps its newer articles while older articles still match by name.
+   */
+  sourceIds?: readonly string[];
   now?: string;
 }): Promise<NewsArticleRecord[]> {
   const now = input.now ?? new Date().toISOString();
   const mode = resolvePublicNewsPersistenceMode();
-  const exactSources = input.sources ? new Set(input.sources) : null;
+  const exactSources = input.sources || input.sourceIds ? new Set(input.sources ?? []) : null;
+  const exactIds = new Set(input.sourceIds ?? []);
   const sourceFilterActive = Boolean(input.source?.trim()) || exactSources !== null;
 
-  if (exactSources !== null && exactSources.size === 0) {
+  if (exactSources !== null && exactSources.size === 0 && exactIds.size === 0) {
     return [];
   }
 
@@ -189,7 +199,12 @@ export async function findActivePublicNewsRecords(input: {
       .filter((record) =>
         input.source ? record.sourceName.toLowerCase().includes(input.source.toLowerCase()) : true,
       )
-      .filter((record) => (exactSources ? exactSources.has(record.sourceName) : true));
+      .filter((record) =>
+        exactSources
+          ? exactSources.has(record.sourceName) ||
+            (record.mediaResourceId !== undefined && exactIds.has(record.mediaResourceId))
+          : true,
+      );
 
     if (sourceFilterActive) {
       return sortNewestFirst(filtered).slice(0, input.limit);
@@ -216,7 +231,9 @@ export async function findActivePublicNewsRecords(input: {
   }
 
   if (exactSources) {
-    const exact = { sourceName: { $in: [...exactSources] } };
+    const byName = { sourceName: { $in: [...exactSources] } };
+    const exact =
+      exactIds.size > 0 ? { $or: [byName, { mediaResourceId: { $in: [...exactIds] } }] } : byName;
     if (query.sourceName) {
       query.$and = [exact];
     } else {

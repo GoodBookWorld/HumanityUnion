@@ -9,6 +9,8 @@ import type {
 } from "@hu/types";
 import { getMediaRegistryProviderById } from "@hu/media-registry";
 
+import { resolveSourceArticleDomains } from "../public-news/public-news-source-trust.js";
+
 function hasHttpRssUrl(value: string | null | undefined): boolean {
   try {
     const protocol = new URL(value?.trim() ?? "").protocol;
@@ -109,6 +111,14 @@ export function toPropagandaAnalysisResource(
   };
 }
 
+/** Configured original language of a NEWS_SOURCE (lowercase); articles keep it. */
+export function resolveNewsSourceLanguage(
+  resource: Pick<MediaResource, "id" | "language" | "providerId">,
+): string {
+  const registryProvider = getMediaRegistryProviderById(resource.providerId?.trim() || resource.id);
+  return (resource.language?.trim() || registryProvider?.language || "en").toLowerCase();
+}
+
 export function toApprovedNewsSource(resource: MediaResource): ApprovedNewsSource | null {
   if (resource.resourceType !== "NEWS_SOURCE" || !resource.active) {
     return null;
@@ -133,9 +143,10 @@ export function toApprovedNewsSource(resource: MediaResource): ApprovedNewsSourc
     sourceName: resource.name,
     sourceDomain,
     rssFeedUrl,
-    language: resource.language?.trim() || registryProvider?.language || "en",
+    language: resolveNewsSourceLanguage(resource),
     category,
     mediaResourceId: resource.id,
+    articleDomains: resolveSourceArticleDomains(resource),
   };
 }
 
