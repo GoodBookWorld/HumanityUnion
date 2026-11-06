@@ -20,15 +20,23 @@ import { uploadMediaResourceLogo } from "../../media-upload/media-upload-api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import {
   activateAdminMediaResource,
+  confirmAdminNewsSourceFeed,
   createAdminMediaResource,
   deactivateAdminMediaResource,
   deleteAdminMediaResource,
+  discoverAdminNewsSourceFeed,
   getAdminMediaResource,
   listAdminMediaResources,
   updateAdminMediaResource,
   type AdminMediaResourceWriteInput,
 } from "../admin-media-resources-api";
 import { mediaResourceAdminIdSubtitle } from "../admin-media-resource-id-display";
+import {
+  AdminNewsFeedDiscoveryPanel,
+  SECTION_MISMATCH_WARNING,
+  type NewsFeedConfirmOptions,
+  type NewsFeedDiscoveryState,
+} from "./AdminNewsFeedDiscoveryPanel";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -79,6 +87,7 @@ function emptyForm(resourceType: MediaResourceType = "TRUSTED_MEDIA"): AdminMedi
     description: "",
     secondaryText: "",
     language: resourceType === "NEWS_SOURCE" ? "en" : null,
+    newsSectionUrl: null,
     active: true,
     sortOrder: 100,
   };
@@ -99,9 +108,15 @@ function toForm(resource: MediaResource): AdminMediaResourceWriteInput {
     secondaryText: resource.secondaryText ?? "",
     language: resource.language ?? null,
     providerId: resource.providerId ?? null,
+    newsSectionUrl: resource.newsSectionUrl ?? null,
     active: resource.active,
     sortOrder: resource.sortOrder,
   };
+}
+
+/** The page discovery reads: the news section if given, otherwise the website. */
+function discoveryPageFor(form: AdminMediaResourceWriteInput): string {
+  return form.newsSectionUrl?.trim() || form.websiteUrl.trim();
 }
 
 export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesSectionProps) {
@@ -119,6 +134,13 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
   const [saving, setSaving] = useState(false);
   const editFormRef = useRef<HTMLDivElement>(null);
   const pendingEditScrollRef = useRef(false);
+  /** RSS-SOURCE-02C — one discovery at a time, for the open form or a table row. */
+  const [discovery, setDiscovery] = useState<{
+    target: { kind: "form" } | { kind: "row"; resource: MediaResource };
+    state: NewsFeedDiscoveryState;
+  } | null>(null);
+  const [confirmingFeed, setConfirmingFeed] = useState(false);
+  const lastAutoDiscoveredUrlRef = useRef<string | null>(null);
 
   const countryOptions = useMemo(
     () => [...toGeographyCountryOptions()].sort((a, b) => a.label.localeCompare(b.label)),
@@ -185,6 +207,8 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     setForm(emptyForm(resourceTypeFilter || "TRUSTED_MEDIA"));
     setFormOpen(true);
     setStatus(null);
+    setDiscovery(null);
+    lastAutoDiscoveredUrlRef.current = null;
   }
 
   function openEdit(resource: MediaResource) {
@@ -192,7 +216,109 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     setForm(toForm(resource));
     setFormOpen(true);
     setStatus(null);
+    setDiscovery(null);
+    lastAutoDiscoveredUrlRef.current = null;
     pendingEditScrollRef.current = true;
+  }
+
+  async function runDiscovery(target: { kind: "form" } | { kind: "row"; resource: MediaResource }) {
+    setDiscovery({ target, state: { status: "loading" } });
+    try {
+      const result =
+        target.kind === "row"
+          ? await discoverAdminNewsSourceFeed({ mediaResourceId: target.resource.id })
+          : await discoverAdminNewsSourceFeed({
+              websiteUrl: form.websiteUrl.trim(),
+              newsSectionUrl: form.newsSectionUrl?.trim() ?? "",
+              ...(editingId ? { mediaResourceId: editingId } : {}),
+            });
+      setDiscovery((current) =>
+        current?.target === target ? { target, state: { status: "done", result } } : current,
+      );
+    } catch (discoveryError) {
+      setDiscovery((current) =>
+        current?.target === target
+          ? { target, state: { status: "error", message: formatAuthFormError(discoveryError) } }
+          : current,
+      );
+    }
+  }
+
+  /**
+   * Automatic discovery after the website or news section is entered (the section page
+   * wins when given); never blocks the form.
+   */
+  function maybeAutoDiscover() {
+    const pageUrl = discoveryPageFor(form);
+    if (
+      form.resourceType !== "NEWS_SOURCE" ||
+      form.rssUrl?.trim() ||
+      !/^https:\/\/[^/\s]+\.[^/\s]+/i.test(pageUrl) ||
+      lastAutoDiscoveredUrlRef.current === pageUrl ||
+      discovery?.state.status === "loading"
+    ) {
+      return;
+    }
+    lastAutoDiscoveredUrlRef.current = pageUrl;
+    void runDiscovery({ kind: "form" });
+  }
+
+  /** Editing the website or section makes earlier form discovery results stale. */
+  function updateDiscoveryInput(field: "websiteUrl" | "newsSectionUrl", value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setDiscovery((current) => (current?.target.kind === "form" ? null : current));
+  }
+
+  async function handleDiscoveryConfirm(
+    feedUrl: string,
+    { replaceWorkingFeed, acceptSectionMismatch }: NewsFeedConfirmOptions,
+  ) {
+    if (!discovery) {
+      return;
+    }
+    if (
+      acceptSectionMismatch &&
+      !window.confirm(`${SECTION_MISMATCH_WARNING} Use this feed anyway?`)
+    ) {
+      return;
+    }
+    if (
+      replaceWorkingFeed &&
+      !window.confirm("The current RSS feed is working. Replace it with the selected feed?")
+    ) {
+      return;
+    }
+    if (discovery.target.kind === "form") {
+      setForm((current) => ({ ...current, rssUrl: feedUrl }));
+      setDiscovery(null);
+      setStatus("RSS URL filled in from discovery. Save the form to apply it.");
+      return;
+    }
+    const { resource } = discovery.target;
+    setConfirmingFeed(true);
+    setError(null);
+    try {
+      await confirmAdminNewsSourceFeed(resource.id, {
+        feedUrl,
+        expectedCurrentRssUrl: resource.rssUrl ?? null,
+        expectedNewsSectionUrl: resource.newsSectionUrl ?? null,
+        replaceWorkingFeed,
+        acceptSectionMismatch,
+      });
+      setDiscovery(null);
+      setStatus(
+        `RSS feed saved for ${resource.name}. It is used from the next scheduled news refresh.`,
+      );
+      await load();
+    } catch (confirmError) {
+      setDiscovery((current) =>
+        current
+          ? { ...current, state: { status: "error", message: formatAuthFormError(confirmError) } }
+          : current,
+      );
+    } finally {
+      setConfirmingFeed(false);
+    }
   }
 
   async function handleSave() {
@@ -204,6 +330,8 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
         ...form,
         countryCode: form.scopeType === "WORLD" ? null : form.countryCode,
         rssUrl: form.resourceType === "NEWS_SOURCE" ? form.rssUrl : null,
+        newsSectionUrl:
+          form.resourceType === "NEWS_SOURCE" ? form.newsSectionUrl?.trim() || null : null,
         categoryId: form.resourceType === "TRUSTED_MEDIA" ? form.categoryId : null,
         language: form.resourceType === "NEWS_SOURCE" ? form.language || "en" : null,
         logoLabel: form.logoLabel.trim() || form.name.trim().slice(0, 3).toUpperCase(),
@@ -218,6 +346,7 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
         setStatus("Media resource created.");
       }
       setFormOpen(false);
+      setDiscovery((current) => (current?.target.kind === "form" ? null : current));
       await load();
     } catch (saveError) {
       setError(formatAuthFormError(saveError));
@@ -455,11 +584,29 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                 Website URL
                 <input
                   value={form.websiteUrl}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, websiteUrl: event.target.value }))
-                  }
+                  onChange={(event) => updateDiscoveryInput("websiteUrl", event.target.value)}
+                  onBlur={maybeAutoDiscover}
                 />
               </label>
+              {form.resourceType === "NEWS_SOURCE" ? (
+                <label>
+                  News Section URL (optional)
+                  <input
+                    value={form.newsSectionUrl ?? ""}
+                    placeholder="https://"
+                    aria-describedby="admin-media-news-section-help"
+                    onChange={(event) => updateDiscoveryInput("newsSectionUrl", event.target.value)}
+                    onBlur={maybeAutoDiscover}
+                  />
+                  <span
+                    id="admin-media-news-section-help"
+                    className="hu-caption admin-media-resources__help"
+                  >
+                    Enter a specific news section URL (e.g. World, Country or Politics). Leave empty
+                    to use the main website.
+                  </span>
+                </label>
+              ) : null}
               {form.resourceType === "NEWS_SOURCE" ? (
                 <label>
                   RSS URL
@@ -533,6 +680,30 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
               </label>
             </div>
 
+            {form.resourceType === "NEWS_SOURCE" ? (
+              <div className="admin-media-resources__discover">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!form.websiteUrl.trim() || discovery?.state.status === "loading"}
+                  onClick={() => void runDiscovery({ kind: "form" })}
+                >
+                  Discover RSS
+                </Button>
+                {discovery?.target.kind === "form" ? (
+                  <AdminNewsFeedDiscoveryPanel
+                    heading="RSS discovery"
+                    state={discovery.state}
+                    confirming={false}
+                    onConfirm={(candidate, options) =>
+                      void handleDiscoveryConfirm(candidate.feedUrl, options)
+                    }
+                    onCancel={() => setDiscovery(null)}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
             <PersonImageUploadField
               label="Logo"
               variant="landscape"
@@ -575,12 +746,27 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                 type="button"
                 variant="secondary"
                 disabled={saving}
-                onClick={() => setFormOpen(false)}
+                onClick={() => {
+                  setFormOpen(false);
+                  setDiscovery((current) => (current?.target.kind === "form" ? null : current));
+                }}
               >
                 Cancel
               </Button>
             </div>
           </div>
+        ) : null}
+
+        {discovery?.target.kind === "row" ? (
+          <AdminNewsFeedDiscoveryPanel
+            heading={`RSS discovery for ${discovery.target.resource.name}`}
+            state={discovery.state}
+            confirming={confirmingFeed}
+            onConfirm={(candidate, options) =>
+              void handleDiscoveryConfirm(candidate.feedUrl, options)
+            }
+            onCancel={() => setDiscovery(null)}
+          />
         ) : null}
 
         {loading ? <p className="hu-body">Loading media resources…</p> : null}
@@ -659,6 +845,16 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                           <Button type="button" variant="secondary" onClick={() => openEdit(resource)}>
                             Edit
                           </Button>
+                          {resource.resourceType === "NEWS_SOURCE" ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              disabled={discovery?.state.status === "loading"}
+                              onClick={() => void runDiscovery({ kind: "row", resource })}
+                            >
+                              Discover RSS
+                            </Button>
+                          ) : null}
                           {resource.active ? (
                             <Button
                               type="button"

@@ -15,10 +15,13 @@ import {
   MediaResourceNotFoundError,
   MediaResourceValidationError,
 } from "./media-resource.errors.js";
+import { NewsFeedDiscoveryRateLimitError } from "../public-news/public-news-feed-discovery.js";
 import {
   activateAdminMediaResource,
+  confirmAdminNewsSourceFeed,
   createAdminMediaResource,
   deactivateAdminMediaResource,
+  discoverAdminNewsSourceFeeds,
   deleteAdminMediaResource,
   getAdminMediaResource,
   listAdminMediaResources,
@@ -48,6 +51,9 @@ function resolveErrorStatus(error: unknown): number {
   }
   if (error instanceof MediaResourceNotFoundError) {
     return 404;
+  }
+  if (error instanceof NewsFeedDiscoveryRateLimitError) {
+    return 429;
   }
   if (
     error instanceof MediaResourceValidationError ||
@@ -128,6 +134,55 @@ adminMediaResourcesRouter.get(
   },
 );
 
+adminMediaResourcesRouter.post(
+  "/news-sources/discover-feed",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await discoverAdminNewsSourceFeeds({
+        actorUserId: req.auth!.id,
+        websiteUrl: typeof body.websiteUrl === "string" ? body.websiteUrl : undefined,
+        newsSectionUrl:
+          typeof body.newsSectionUrl === "string" || body.newsSectionUrl === null
+            ? (body.newsSectionUrl as string | null)
+            : undefined,
+        mediaResourceId:
+          typeof body.mediaResourceId === "string" ? body.mediaResourceId : undefined,
+      });
+      res.json(createSuccessResponse(result, "RSS discovery completed."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminMediaResourcesRouter.post(
+  "/:id/rss-feed/confirm",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await confirmAdminNewsSourceFeed({
+        actorUserId: req.auth!.id,
+        id: String(req.params.id ?? "").trim(),
+        feedUrl: typeof body.feedUrl === "string" ? body.feedUrl : "",
+        expectedCurrentRssUrl:
+          typeof body.expectedCurrentRssUrl === "string" ? body.expectedCurrentRssUrl : null,
+        expectedNewsSectionUrl:
+          typeof body.expectedNewsSectionUrl === "string" ? body.expectedNewsSectionUrl : null,
+        replaceWorkingFeed: body.replaceWorkingFeed === true,
+        acceptSectionMismatch: body.acceptSectionMismatch === true,
+      });
+      res.json(createSuccessResponse(result, "RSS feed confirmed."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 adminMediaResourcesRouter.get(
   "/:id",
   authenticationMiddleware,
@@ -169,6 +224,7 @@ adminMediaResourcesRouter.post(
         language: (body.language as string | null | undefined) ?? null,
         providerId: (body.providerId as string | null | undefined) ?? null,
         articleDomains: (body.articleDomains as string[] | null | undefined) ?? null,
+        newsSectionUrl: (body.newsSectionUrl as string | null | undefined) ?? null,
         active: typeof body.active === "boolean" ? body.active : undefined,
         sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
         id: typeof body.id === "string" ? body.id : undefined,
@@ -227,6 +283,10 @@ adminMediaResourcesRouter.patch(
           body.articleDomains === undefined
             ? undefined
             : ((body.articleDomains as string[] | null) ?? null),
+        newsSectionUrl:
+          body.newsSectionUrl === undefined
+            ? undefined
+            : ((body.newsSectionUrl as string | null) ?? null),
         active: typeof body.active === "boolean" ? body.active : undefined,
         sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
       });

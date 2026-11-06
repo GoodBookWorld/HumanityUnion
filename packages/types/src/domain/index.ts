@@ -2093,6 +2093,13 @@ export type {
   PublicNewsSourceHealthStatusReason,
 } from "./public-news-source-health.js";
 export type {
+  NewsFeedCandidateReason,
+  NewsFeedDiscoveryCandidate,
+  NewsFeedDiscoveryResult,
+  NewsFeedDiscoveryStatus,
+  NewsFeedSectionMatch,
+} from "./news-feed-discovery.js";
+export type {
   InitiativeNewsSourceReference,
   NewsArticleRecord,
   NewsArticleStatus,

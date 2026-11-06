@@ -361,6 +361,7 @@ async function readBoundedBody(
   response: ExternalHttpResponse,
   maxBytes: number,
   signal: AbortSignal,
+  truncate = false,
 ): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let total = 0;
@@ -372,10 +373,17 @@ async function readBoundedBody(
         break;
       }
       const chunk = Buffer.from(next.value);
-      total += chunk.byteLength;
-      if (total > maxBytes) {
-        throw sizeLimitError();
+      if (total + chunk.byteLength > maxBytes) {
+        if (!truncate) {
+          throw sizeLimitError();
+        }
+        chunks.push(chunk.subarray(0, maxBytes - total));
+        total = maxBytes;
+        response.destroy();
+        void iterator.return?.();
+        break;
       }
+      total += chunk.byteLength;
       chunks.push(chunk);
     }
   } catch (error) {
@@ -384,6 +392,57 @@ async function readBoundedBody(
     throw error;
   }
   return Buffer.concat(chunks, total);
+}
+
+/**
+ * First `maxBytes` of decoded output from a body that may have been cut short;
+ * decoding stops at the cap, so output stays bounded even for compression bombs.
+ */
+function decodeTruncatedPrefix(
+  raw: Buffer,
+  encoding: string | undefined,
+  maxBytes: number,
+): Promise<Buffer> {
+  const normalized = encoding?.trim().toLowerCase() ?? "";
+  if (!normalized || normalized === "identity") {
+    return Promise.resolve(raw.subarray(0, maxBytes));
+  }
+  const decoder =
+    normalized === "gzip" || normalized === "x-gzip"
+      ? zlib.createGunzip()
+      : normalized === "deflate"
+        ? zlib.createInflate()
+        : normalized === "br"
+          ? zlib.createBrotliDecompress()
+          : null;
+  if (!decoder) {
+    return Promise.reject(
+      new ExternalFetchPolicyError("unsupported_content_type", "Unsupported content encoding."),
+    );
+  }
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    let settled = false;
+    const finish = () => {
+      if (!settled) {
+        settled = true;
+        decoder.destroy();
+        resolve(Buffer.concat(chunks).subarray(0, maxBytes));
+      }
+    };
+    decoder.on("data", (chunk: Buffer) => {
+      chunks.push(chunk);
+      total += chunk.byteLength;
+      if (total >= maxBytes) {
+        finish();
+      }
+    });
+    decoder.on("end", finish);
+    // A cut-short stream ends with an error; what was decoded so far is kept.
+    decoder.on("error", finish);
+    decoder.end(raw);
+  });
 }
 
 /** Decompresses with the same output cap as the raw body (compression-bomb safe). */
@@ -473,6 +532,13 @@ export interface FetchExternalDocumentOptions {
   requireApprovedRssFeed?: boolean;
   /** Receives the HTTP status of the final response (health telemetry). */
   onStatus?: (status: number) => void;
+  /** Receives the URL of the final response after redirects. */
+  onFinalUrl?: (url: string) => void;
+  /**
+   * Return the first `maxBytes` of a larger document instead of failing (HTML pages
+   * whose `<head>` is all that is needed). Never used for feeds.
+   */
+  truncateAtMaxBytes?: boolean;
 }
 
 export async function fetchExternalDocument(
@@ -524,6 +590,7 @@ export async function fetchExternalDocument(
       }
 
       options.onStatus?.(response.status);
+      options.onFinalUrl?.(current.toString());
 
       if (response.status < 200 || response.status >= 300) {
         response.destroy();
@@ -537,6 +604,15 @@ export async function fetchExternalDocument(
       if (!isAcceptableFeedContentType(contentType)) {
         response.destroy();
         throw new ExternalFetchPolicyError("unsupported_content_type", "Unsupported content type.");
+      }
+
+      if (options.truncateAtMaxBytes) {
+        const raw = await readBoundedBody(response, options.maxBytes, signal, true);
+        const decoded = await raceAbort(
+          decodeTruncatedPrefix(raw, response.headers["content-encoding"], options.maxBytes),
+          signal,
+        );
+        return decodeText(decoded, contentType);
       }
 
       const declaredLength = Number(response.headers["content-length"]);

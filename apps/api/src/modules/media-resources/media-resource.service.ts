@@ -8,6 +8,8 @@ import type {
   MediaResource,
   MediaResourceScopeType,
   MediaResourceType,
+  NewsFeedDiscoveryCandidate,
+  NewsFeedDiscoveryResult,
   PropagandaAnalysisResource,
   PublicCountryNewsSource,
   TrustedMediaCategoryId,
@@ -33,8 +35,16 @@ import {
   projectTrustedMediaResources,
   resolveNewsSourceLanguage,
 } from "./media-resource.projections.js";
+import {
+  acquireNewsFeedDiscoverySlot,
+  checkNewsFeedCandidate,
+  discoverNewsSourceFeeds,
+  parseHttpsDiscoveryUrl,
+  verifyNewsFeedForConfirmation,
+} from "../public-news/public-news-feed-discovery.js";
 import { resolveNewsSourceHealthStatus } from "../public-news/public-news-source-health.js";
 import {
+  checkNewsSectionUrl,
   MAX_ARTICLE_DOMAINS,
   normalizeApprovedDomain,
 } from "../public-news/public-news-source-trust.js";
@@ -230,6 +240,30 @@ function normalizeArticleDomainsInput(
   return domains.length > 0 ? domains : null;
 }
 
+/** NEWS_SOURCE only; `null`/empty clears it. Must be on the source's approved domains. */
+function normalizeNewsSectionUrlInput(
+  value: unknown,
+  resourceType: MediaResourceType,
+  source: Pick<MediaResource, "websiteUrl" | "providerId" | "articleDomains">,
+): string | null {
+  if (value === undefined || value === null || (typeof value === "string" && !value.trim())) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new MediaResourceValidationError("News Section URL must be a valid https:// address.");
+  }
+  if (resourceType !== "NEWS_SOURCE") {
+    throw new MediaResourceValidationError(
+      "News Section URL is only allowed for NEWS_SOURCE resources.",
+    );
+  }
+  const checked = checkNewsSectionUrl(value, source);
+  if (!checked.ok) {
+    throw new MediaResourceValidationError(checked.message);
+  }
+  return checked.url;
+}
+
 function assertScopeInvariant(
   scopeType: MediaResourceScopeType,
   countryCode: string | null,
@@ -356,6 +390,7 @@ export interface AdminMediaResourceCreateInput {
   language?: string | null;
   providerId?: string | null;
   articleDomains?: string[] | null;
+  newsSectionUrl?: string | null;
   active?: boolean;
   sortOrder?: number;
   id?: string;
@@ -378,6 +413,7 @@ export interface AdminMediaResourceUpdateInput {
   language?: string | null;
   providerId?: string | null;
   articleDomains?: string[] | null;
+  newsSectionUrl?: string | null;
   active?: boolean;
   sortOrder?: number;
 }
@@ -482,6 +518,145 @@ export async function listAdminNewsSourceHealth(input: {
     publicArticleCountCap: NEWS_HEALTH_PUBLIC_COUNT_CAP,
     truncated: resources.length > selected.length,
   };
+}
+
+/**
+ * RSS-SOURCE-02C — discovers official RSS/Atom feeds for a NEWS_SOURCE website.
+ * Read-only: nothing is saved, and source health telemetry is not touched.
+ */
+export async function discoverAdminNewsSourceFeeds(input: {
+  actorUserId: string;
+  websiteUrl?: string;
+  /** Omitted: the saved section (existing source); empty: none (discover the website). */
+  newsSectionUrl?: string | null;
+  mediaResourceId?: string;
+}): Promise<NewsFeedDiscoveryResult> {
+  const admin = await assertAdminUser(input.actorUserId);
+  await ensureMediaResourcesSeededOnce();
+
+  const existing = input.mediaResourceId?.trim()
+    ? await loadMediaResourceByIdentity({
+        id: input.mediaResourceId.trim(),
+        resourceType: "NEWS_SOURCE",
+      })
+    : null;
+  const websiteUrl = input.websiteUrl?.trim() || existing?.websiteUrl || "";
+  if (!parseHttpsDiscoveryUrl(websiteUrl)) {
+    throw new MediaResourceValidationError(
+      "Enter the source's website as an https:// address to discover its RSS feed.",
+    );
+  }
+
+  const source = {
+    websiteUrl,
+    providerId: existing?.providerId ?? null,
+    articleDomains: existing?.articleDomains ?? null,
+  };
+  const sectionInput =
+    input.newsSectionUrl !== undefined ? input.newsSectionUrl : (existing?.newsSectionUrl ?? null);
+  let newsSectionUrl: string | null = null;
+  if (sectionInput?.trim()) {
+    const checked = checkNewsSectionUrl(sectionInput, source);
+    if (!checked.ok) {
+      throw new MediaResourceValidationError(checked.message);
+    }
+    newsSectionUrl = checked.url;
+  }
+
+  const release = acquireNewsFeedDiscoverySlot(admin.userId);
+  try {
+    return await discoverNewsSourceFeeds({
+      ...source,
+      newsSectionUrl,
+      currentRssUrl: existing?.rssUrl ?? null,
+    });
+  } finally {
+    release();
+  }
+}
+
+/**
+ * Saves an Admin-confirmed feed as the NEWS_SOURCE RSS URL through the existing
+ * update path (all other settings unchanged). The feed is verified again first; a
+ * working saved feed is only replaced with `replaceWorkingFeed`. With a news section,
+ * a feed not classified `section_match` needs `acceptSectionMismatch`. No refresh runs.
+ */
+export async function confirmAdminNewsSourceFeed(input: {
+  actorUserId: string;
+  id: string;
+  feedUrl: string;
+  expectedCurrentRssUrl: string | null;
+  /** The news section the Admin discovered with; a changed section invalidates the result. */
+  expectedNewsSectionUrl?: string | null;
+  replaceWorkingFeed?: boolean;
+  acceptSectionMismatch?: boolean;
+}): Promise<{ resource: MediaResource; candidate: NewsFeedDiscoveryCandidate }> {
+  const admin = await assertAdminUser(input.actorUserId);
+  await ensureMediaResourcesSeededOnce();
+
+  const existing = await loadMediaResourceByIdentity({ id: input.id, resourceType: "NEWS_SOURCE" });
+  const feedUrl = parseHttpsDiscoveryUrl(input.feedUrl ?? "")?.toString();
+  if (!feedUrl) {
+    throw new MediaResourceValidationError("Only an https:// RSS or Atom feed can be confirmed.");
+  }
+  const currentRssUrl = existing.rssUrl?.trim() || null;
+  if (currentRssUrl !== (input.expectedCurrentRssUrl?.trim() || null)) {
+    throw new MediaResourceConflictError(
+      "This source's RSS URL changed since discovery. Run Discover RSS again.",
+    );
+  }
+  const newsSectionUrl = existing.newsSectionUrl?.trim() || null;
+  if (newsSectionUrl !== (input.expectedNewsSectionUrl?.trim() || null)) {
+    throw new MediaResourceConflictError(
+      "This source's News Section URL changed since discovery. Run Discover RSS again.",
+    );
+  }
+
+  const release = acquireNewsFeedDiscoverySlot(admin.userId);
+  let candidate: NewsFeedDiscoveryCandidate;
+  try {
+    const context = {
+      websiteUrl: existing.websiteUrl,
+      providerId: existing.providerId ?? null,
+      articleDomains: existing.articleDomains ?? null,
+    };
+    candidate = await verifyNewsFeedForConfirmation({ feedUrl, context, newsSectionUrl });
+    if (!candidate.valid) {
+      throw new MediaResourceValidationError(
+        `The selected feed could not be verified. ${candidate.message ?? ""}`.trim(),
+      );
+    }
+    if (
+      newsSectionUrl &&
+      candidate.sectionMatch !== "section_match" &&
+      !input.acceptSectionMismatch
+    ) {
+      throw new MediaResourceConflictError(
+        "This feed is not confirmed as specific to the news section, so unrelated news may appear. Confirm explicitly to use it.",
+      );
+    }
+    if (currentRssUrl === feedUrl) {
+      return { resource: existing, candidate };
+    }
+    if (currentRssUrl && !input.replaceWorkingFeed) {
+      const current = await checkNewsFeedCandidate(currentRssUrl, context);
+      if (current.valid) {
+        throw new MediaResourceConflictError(
+          "The current RSS feed is working. Confirm explicitly to replace it.",
+        );
+      }
+    }
+  } finally {
+    release();
+  }
+
+  const resource = await updateAdminMediaResource({
+    actorUserId: input.actorUserId,
+    id: existing.id,
+    resourceType: "NEWS_SOURCE",
+    rssUrl: feedUrl,
+  });
+  return { resource, candidate };
 }
 
 export async function listAdminMediaResources(input: {
@@ -590,6 +765,11 @@ export async function createAdminMediaResource(
     throw new MediaResourceValidationError("rssUrl is only allowed for NEWS_SOURCE resources.");
   }
   const articleDomains = normalizeArticleDomainsInput(input.articleDomains, resourceType);
+  const newsSectionUrl = normalizeNewsSectionUrlInput(input.newsSectionUrl, resourceType, {
+    websiteUrl,
+    providerId: input.providerId?.trim() || null,
+    articleDomains,
+  });
 
   let categoryId: string | null = input.categoryId?.trim() || null;
   if (resourceType === "TRUSTED_MEDIA") {
@@ -644,6 +824,7 @@ export async function createAdminMediaResource(
     language: resourceType === "NEWS_SOURCE" ? input.language?.trim() || null : null,
     providerId: resourceType === "NEWS_SOURCE" ? input.providerId?.trim() || null : null,
     ...(articleDomains ? { articleDomains } : {}),
+    ...(newsSectionUrl ? { newsSectionUrl } : {}),
     active,
     sortOrder:
       typeof input.sortOrder === "number" && Number.isFinite(input.sortOrder)
@@ -813,6 +994,17 @@ export async function updateAdminMediaResource(
     resource.articleDomains = articleDomains;
   } else {
     delete resource.articleDomains;
+  }
+  // A kept section URL is re-checked too: a website change may leave it off-domain.
+  const newsSectionUrl = normalizeNewsSectionUrlInput(
+    input.newsSectionUrl !== undefined ? input.newsSectionUrl : (existing.newsSectionUrl ?? null),
+    existing.resourceType,
+    resource,
+  );
+  if (newsSectionUrl) {
+    resource.newsSectionUrl = newsSectionUrl;
+  } else {
+    delete resource.newsSectionUrl;
   }
 
   await upsertMediaResource(resource);

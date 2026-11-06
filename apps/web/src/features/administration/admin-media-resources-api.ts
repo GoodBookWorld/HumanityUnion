@@ -2,6 +2,8 @@ import type {
   MediaResource,
   MediaResourceScopeType,
   MediaResourceType,
+  NewsFeedDiscoveryCandidate,
+  NewsFeedDiscoveryResult,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
@@ -27,6 +29,8 @@ export interface AdminMediaResourceWriteInput {
   secondaryText?: string | null;
   language?: string | null;
   providerId?: string | null;
+  /** NEWS_SOURCE only: optional news section page used for RSS discovery. */
+  newsSectionUrl?: string | null;
   active?: boolean;
   sortOrder?: number;
 }
@@ -90,6 +94,41 @@ export async function updateAdminMediaResource(
       body: JSON.stringify(input),
     },
   );
+}
+
+/** RSS-SOURCE-02C — read-only discovery; nothing is saved. */
+export async function discoverAdminNewsSourceFeed(input: {
+  websiteUrl?: string;
+  /** Empty string: no section (discover the website). Omitted: the saved section. */
+  newsSectionUrl?: string;
+  mediaResourceId?: string;
+}): Promise<NewsFeedDiscoveryResult> {
+  return apiRequest<NewsFeedDiscoveryResult>(
+    "/api/v1/admin/media-resources/news-sources/discover-feed",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/** Saves an Admin-confirmed, re-verified feed as the source's RSS URL. */
+export async function confirmAdminNewsSourceFeed(
+  id: string,
+  input: {
+    feedUrl: string;
+    expectedCurrentRssUrl: string | null;
+    expectedNewsSectionUrl: string | null;
+    replaceWorkingFeed?: boolean;
+    acceptSectionMismatch?: boolean;
+  },
+): Promise<{ resource: MediaResource; candidate: NewsFeedDiscoveryCandidate }> {
+  return apiRequest(`/api/v1/admin/media-resources/${encodeURIComponent(id)}/rss-feed/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
 
 export async function activateAdminMediaResource(

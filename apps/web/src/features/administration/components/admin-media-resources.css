@@ -169,3 +169,120 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* RSS-SOURCE-02C — RSS/Atom discovery results. */
+.admin-media-resources__discover {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.admin-feed-discovery {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(26, 77, 109, 0.2);
+  border-radius: 0.45rem;
+  background: rgba(1, 116, 176, 0.04);
+}
+
+.admin-feed-discovery__heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.admin-feed-discovery__status--found {
+  color: #1d6b3a;
+  font-weight: 600;
+}
+
+.admin-feed-discovery__error,
+.admin-feed-discovery__status--website_unreachable,
+.admin-feed-discovery__status--no_valid_feed {
+  color: #8a2a1b;
+}
+
+.admin-feed-discovery__candidates {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-feed-discovery__candidate {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(26, 77, 109, 0.16);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.85);
+  min-width: 0;
+}
+
+.admin-feed-discovery__candidate--invalid {
+  opacity: 0.75;
+}
+
+.admin-feed-discovery__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.admin-feed-discovery__badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(1, 116, 176, 0.12);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.admin-feed-discovery__url,
+.admin-feed-discovery__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-media-resources__help {
+  font-weight: 400;
+  color: var(--hu-color-text-muted, #5b6470);
+}
+
+.admin-feed-discovery__badge--section_match {
+  background: rgba(29, 107, 58, 0.14);
+  color: #1d6b3a;
+}
+
+.admin-feed-discovery__badge--uncertain,
+.admin-feed-discovery__badge--general_feed {
+  background: rgba(138, 90, 0, 0.14);
+  color: #8a5a00;
+}
+
+.admin-feed-discovery__evidence {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+}
+
+.admin-feed-discovery__warning {
+  margin: 0.4rem 0;
+  color: #8a5a00;
+  font-size: 0.82rem;
+}
+
+.admin-feed-discovery__candidate-actions,
+.admin-feed-discovery__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

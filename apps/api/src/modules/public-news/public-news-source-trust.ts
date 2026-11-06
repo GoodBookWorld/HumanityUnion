@@ -107,3 +107,43 @@ export function resolveSourceArticleDomains(
 
   return [...domains];
 }
+
+/**
+ * RSS-SOURCE-02C.1 — a NEWS_SOURCE news section URL: HTTPS on the default port, no
+ * credentials, a public DNS hostname, on the source's approved domains (website host,
+ * linked registry domains or `articleDomains`). Never widens those domains.
+ */
+export function checkNewsSectionUrl(
+  value: string,
+  source: Pick<MediaResource, "websiteUrl" | "providerId" | "articleDomains">,
+): { ok: true; url: string } | { ok: false; message: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(value.trim());
+  } catch {
+    return { ok: false, message: "News Section URL must be a valid https:// address." };
+  }
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.username ||
+    parsed.password ||
+    (parsed.port && parsed.port !== "443")
+  ) {
+    return { ok: false, message: "News Section URL must be a valid https:// address." };
+  }
+  const host = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  if (net.isIP(host.replace(/^\[|\]$/g, "")) || !HOSTNAME_PATTERN.test(host)) {
+    return { ok: false, message: "News Section URL must use a public website address." };
+  }
+  if (
+    !resolveSourceArticleDomains(source).some((domain) => hostMatchesApprovedDomain(host, domain))
+  ) {
+    return {
+      ok: false,
+      message:
+        "News Section URL must be on the publisher's website domain or an approved subdomain.",
+    };
+  }
+  parsed.hash = "";
+  return { ok: true, url: parsed.toString() };
+}

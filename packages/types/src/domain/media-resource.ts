@@ -23,6 +23,8 @@ export interface MediaResource {
   providerId?: string | null; // media-registry id for NEWS_SOURCE
   /** NEWS_SOURCE only: extra hostnames (and subdomains) its feed may link articles to. */
   articleDomains?: string[] | null;
+  /** NEWS_SOURCE only: news section page (on the publisher's domains) used for RSS discovery. */
+  newsSectionUrl?: string | null;
   active: boolean;
   sortOrder: number;
   createdAt: string;

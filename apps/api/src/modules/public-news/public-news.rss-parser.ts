@@ -10,7 +10,6 @@ export interface ParsedFeedItem {
   publishedAt: string;
 }
 
-const TRACKING_IMAGE_PATTERN = /(?:pixel|tracking|spacer|beacon|\/1x1|rss-pixel)/i;
 const FEED_URL_PATTERN = /\/(?:feed|rss|atom)(?:\/|$|[?#])/i;
 const IMAGE_EXTENSION_PATTERN = /\.(?:jpe?g|png|webp|gif|avif)$/i;
 
@@ -298,8 +297,11 @@ function readMediaImageUrl(block: string): string | undefined {
   return best?.url;
 }
 
-function isTrackingImageUrl(url: string): boolean {
-  return TRACKING_IMAGE_PATTERN.test(url);
+/** An `<img>` declared 1×1 (or smaller) is a beacon whatever its URL. */
+function isDeclaredPixelImage(tag: string): boolean {
+  const width = Number.parseInt(readAttribute(tag, "width") ?? "", 10);
+  const height = Number.parseInt(readAttribute(tag, "height") ?? "", 10);
+  return (Number.isFinite(width) && width <= 1) || (Number.isFinite(height) && height <= 1);
 }
 
 function readHtmlImageUrl(block: string): string | undefined {
@@ -314,10 +316,11 @@ function readHtmlImageUrl(block: string): string | undefined {
   for (const match of html.matchAll(imgPattern)) {
     const src = decodeXmlEntities(match[1]?.trim() ?? "");
 
-    if (!src || isTrackingImageUrl(src)) {
+    if (!src || isDeclaredPixelImage(match[0])) {
       continue;
     }
 
+    // Tracking images are rejected by the shared image URL rule.
     const sanitized = sanitizePublicNewsImageUrl(src);
 
     if (sanitized) {
@@ -337,7 +340,7 @@ function readItunesImageUrl(block: string): string | undefined {
 
   const href = readImageAttribute(tag, "href");
 
-  if (!href || isTrackingImageUrl(href)) {
+  if (!href) {
     return undefined;
   }
 
