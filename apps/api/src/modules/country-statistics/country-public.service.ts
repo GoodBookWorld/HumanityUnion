@@ -2,6 +2,7 @@ import { getCountryByCode, normalizeCountryInput, normalizeRegionInput } from "@
 import type {
   Initiative,
   InitiativeLifecycleProfile,
+  PublicCountryNewsSource,
   TrustedMediaResource,
   WorldInitiativeCardProjection,
 } from "@hu/types";
@@ -19,7 +20,10 @@ import { listDecisionsByInitiative } from "../initiative-collective-decision/ini
 import { listPublicChoiceCandidatesByInitiative } from "../public-choice-candidate/persistence/public-choice-candidate.repository.js";
 import { listCountryAffiliations } from "../country-affiliation/persistence/country-affiliation.repository.js";
 import { projectTrustedMediaResources } from "../media-resources/media-resource.projections.js";
-import { listPublicCountryTrustedMedia } from "../media-resources/media-resource.service.js";
+import {
+  listPublicCountryNewsSources,
+  listPublicCountryTrustedMedia,
+} from "../media-resources/media-resource.service.js";
 import { listMediaResources } from "../media-resources/persistence/media-resource.repository.js";
 import { resolveInitiativeSearchGeography } from "../initiatives/initiative-geography.js";
 import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiative-public-projection.access.js";
@@ -251,6 +255,12 @@ export async function listCountryTrustedMediaResources(
   limit = COUNTRY_MEDIA_LIMIT,
 ): Promise<TrustedMediaResource[]> {
   return listPublicCountryTrustedMedia(countryCodeInput, limit);
+}
+
+export async function listCountryNewsSources(
+  countryCodeInput: string,
+): Promise<PublicCountryNewsSource[]> {
+  return listPublicCountryNewsSources(countryCodeInput);
 }
 
 /**

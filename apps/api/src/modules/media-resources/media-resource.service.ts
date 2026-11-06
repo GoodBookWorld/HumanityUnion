@@ -7,6 +7,7 @@ import type {
   MediaResourceScopeType,
   MediaResourceType,
   PropagandaAnalysisResource,
+  PublicCountryNewsSource,
   TrustedMediaCategoryId,
   TrustedMediaResource,
 } from "@hu/types";
@@ -26,6 +27,7 @@ import {
   projectApprovedNewsSources,
   projectFactCheckResources,
   projectPropagandaAnalysisResources,
+  projectPublicCountryNewsSources,
   projectTrustedMediaResources,
 } from "./media-resource.projections.js";
 import { seedMediaResourcesFromCanonicalSources } from "./media-resource.seed.js";
@@ -878,6 +880,25 @@ export async function listPublicCountryTrustedMedia(
   });
   const projected = projectTrustedMediaResources(resources);
   return typeof limit === "number" ? projected.slice(0, limit) : projected;
+}
+
+/** COUNTRY-MEDIA-NEWS-01 — active country-scoped NEWS_SOURCE resources with a usable RSS feed. */
+export async function listPublicCountryNewsSources(
+  countryCodeInput: string,
+): Promise<PublicCountryNewsSource[]> {
+  await ensureMediaResourcesSeededOnce();
+  const countryCode = normalizeCountryInput(countryCodeInput);
+  if (!countryCode || !getCountryByCode(countryCode)) {
+    return [];
+  }
+
+  const resources = await listMediaResources({
+    resourceType: "NEWS_SOURCE",
+    scopeType: "COUNTRY",
+    countryCode,
+    active: true,
+  });
+  return projectPublicCountryNewsSources(resources);
 }
 
 export async function listActiveNewsSourceMediaResources(): Promise<MediaResource[]> {

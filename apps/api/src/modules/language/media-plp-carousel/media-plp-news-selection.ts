@@ -3,18 +3,22 @@
  *
  * /media PLP batch: limit 12 (unchanged 03E.13).
  * Country rails: shared country-first selector (media-registry).
- * Auto-build: media-12 ∪ country-rail IDs for requested countries ∪ country-affiliated sources.
+ * Auto-build: media-12 ∪ country-rail IDs for requested countries ∪ country-affiliated sources
+ * ∪ the source-based Country News articles (COUNTRY-MEDIA-NEWS-01).
  */
 
 import type { NewsArticleRecord } from "@hu/types";
 import {
+  COUNTRY_NEWS_RAIL_LIMIT,
   COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
   COUNTRY_PUBLIC_NEWS_RAIL_LIMIT,
+  listCountryNewsFallbackSourceNames,
   selectCountryPublicNewsRail,
   TRUSTED_GLOBAL_MEDIA_REGISTRY,
   type CountryPublicNewsContext,
 } from "@hu/media-registry";
 
+import { listMediaResources } from "../../media-resources/persistence/media-resource.repository.js";
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
 import { TRUSTED_MEDIA_RESOURCES } from "../../civic-media-center/content/trusted-media.js";
 import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
@@ -94,6 +98,36 @@ export async function selectCountryPublicNewsRailArticles(input: {
   };
 }
 
+/**
+ * COUNTRY-MEDIA-NEWS-01 — everything the source-based Country News widget can show:
+ * the newest COUNTRY_NEWS_RAIL_LIMIT articles of each active country NEWS_SOURCE and of
+ * each active global fallback source. This covers every country's "All" view (newest
+ * across its sources) and every single-provider view, with the same exact-source rule.
+ */
+export async function selectCountrySourceNewsArticles(input?: {
+  readonly now?: string;
+}): Promise<readonly NewsArticleRecord[]> {
+  const activeNewsSources = await listMediaResources({ resourceType: "NEWS_SOURCE", active: true });
+  const activeNames = new Set(activeNewsSources.map((resource) => resource.name));
+  const names = new Set([
+    ...activeNewsSources
+      .filter((resource) => resource.scopeType === "COUNTRY")
+      .map((resource) => resource.name),
+    ...listCountryNewsFallbackSourceNames().filter((name) => activeNames.has(name)),
+  ]);
+  const batches = await Promise.all(
+    [...names].map((name) =>
+      findActivePublicNewsRecords({
+        limit: COUNTRY_NEWS_RAIL_LIMIT,
+        language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
+        sources: [name],
+        now: input?.now,
+      }),
+    ),
+  );
+  return batches.flat();
+}
+
 function countryAffiliatedSourceNames(): Set<string> {
   const names = new Set<string>();
   for (const provider of TRUSTED_GLOBAL_MEDIA_REGISTRY) {
@@ -150,6 +184,9 @@ export async function selectConsumerVisibleNewsArticlesForAutoBuild(input?: {
     for (const article of countryRail.articles) {
       byId.set(article.id, article);
     }
+  }
+  for (const article of await selectCountrySourceNewsArticles({ now: input?.now })) {
+    byId.set(article.id, article);
   }
   return [...byId.values()];
 }

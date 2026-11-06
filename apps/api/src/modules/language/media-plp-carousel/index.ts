@@ -27,6 +27,7 @@ export {
   listNewestActivePublicNewsIdsIgnoringConsumerBalance,
   selectConsumerVisibleNewsArticlesForAutoBuild,
   selectConsumerVisibleNewsIdsForAutoBuild,
+  selectCountrySourceNewsArticles,
   selectMediaPlpConsumerNewsArticles,
   selectMediaPlpConsumerNewsIds,
 } from "./media-plp-news-selection.js";

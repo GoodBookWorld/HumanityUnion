@@ -166,11 +166,18 @@ export async function findActivePublicNewsRecords(input: {
   language?: string;
   category?: string;
   source?: string;
+  /** Exact `sourceName` matches; applied before the limit, newest first, no source balancing. */
+  sources?: readonly string[];
   now?: string;
 }): Promise<NewsArticleRecord[]> {
   const now = input.now ?? new Date().toISOString();
   const mode = resolvePublicNewsPersistenceMode();
-  const sourceFilterActive = Boolean(input.source?.trim());
+  const exactSources = input.sources ? new Set(input.sources) : null;
+  const sourceFilterActive = Boolean(input.source?.trim()) || exactSources !== null;
+
+  if (exactSources !== null && exactSources.size === 0) {
+    return [];
+  }
 
   if (mode === "memory") {
     const filtered = [...memoryRecords.values()]
@@ -181,7 +188,8 @@ export async function findActivePublicNewsRecords(input: {
       )
       .filter((record) =>
         input.source ? record.sourceName.toLowerCase().includes(input.source.toLowerCase()) : true,
-      );
+      )
+      .filter((record) => (exactSources ? exactSources.has(record.sourceName) : true));
 
     if (sourceFilterActive) {
       return sortNewestFirst(filtered).slice(0, input.limit);
@@ -205,6 +213,15 @@ export async function findActivePublicNewsRecords(input: {
 
   if (input.source) {
     query.sourceName = { $regex: input.source, $options: "i" };
+  }
+
+  if (exactSources) {
+    const exact = { sourceName: { $in: [...exactSources] } };
+    if (query.sourceName) {
+      query.$and = [exact];
+    } else {
+      Object.assign(query, exact);
+    }
   }
 
   const collection = getCollection();

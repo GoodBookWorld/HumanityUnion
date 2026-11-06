@@ -7,6 +7,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { listPublicByCountry } from "../country-affiliation/country-affiliation.service.js";
 import {
   listCountryInitiativeCardProjections,
+  listCountryNewsSources,
   listCountryTrustedMediaResources,
 } from "./country-public.service.js";
 import { getCountryStatisticsPayload } from "./country-statistics.service.js";
@@ -138,6 +139,41 @@ countryStatisticsRouter.get("/countries/:countryCode/media", async (req, res: Re
       generatedAt: new Date().toISOString(),
     }),
   );
+});
+
+countryStatisticsRouter.get("/countries/:countryCode/news-sources", async (req, res: Response) => {
+  const countryCode = resolveCountryCode(req.params.countryCode);
+
+  if (!countryCode || !getCountryByCode(countryCode)) {
+    res.status(404).json({
+      success: false,
+      data: null,
+      meta: {},
+      links: {},
+      message: "Country not found.",
+    });
+    return;
+  }
+
+  try {
+    const sources = await listCountryNewsSources(countryCode);
+
+    res.json(
+      createSuccessResponse(sources, "Country news sources loaded.", {
+        countryCode,
+        count: sources.length,
+        generatedAt: new Date().toISOString(),
+      }),
+    );
+  } catch {
+    res.status(503).json({
+      success: false,
+      data: null,
+      meta: {},
+      links: {},
+      message: "Country news sources are temporarily unavailable.",
+    });
+  }
 });
 
 countryStatisticsRouter.get(

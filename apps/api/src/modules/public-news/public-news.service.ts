@@ -57,6 +57,49 @@ export interface PublicNewsQuery {
   language?: string;
   category?: string;
   source?: string;
+  /** Exact source names (bounded, de-duplicated). */
+  sources?: string[];
+}
+
+export const PUBLIC_NEWS_MAX_SOURCES = 20;
+export const PUBLIC_NEWS_MAX_SOURCE_NAME_LENGTH = 120;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
+
+/**
+ * `sources` accepts repeated parameters and/or comma-separated values.
+ * Names containing commas therefore cannot be requested through `sources`.
+ */
+function parseExactSources(raw: unknown): string[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const values = Array.isArray(raw) ? raw : [raw];
+  if (values.some((value) => typeof value !== "string")) {
+    throw new Error("sources must be a list of source names.");
+  }
+  const names = [
+    ...new Set(
+      (values as string[])
+        .flatMap((value) => value.split(","))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (names.length === 0) {
+    throw new Error("sources must include at least one source name.");
+  }
+  if (names.length > PUBLIC_NEWS_MAX_SOURCES) {
+    throw new Error(`sources supports at most ${PUBLIC_NEWS_MAX_SOURCES} source names.`);
+  }
+  if (
+    names.some(
+      (name) => name.length > PUBLIC_NEWS_MAX_SOURCE_NAME_LENGTH || CONTROL_CHARACTERS.test(name),
+    )
+  ) {
+    throw new Error("sources contains an invalid source name.");
+  }
+  return names;
 }
 
 export function parsePublicNewsQuery(query: Record<string, unknown>): PublicNewsQuery {
@@ -69,19 +112,34 @@ export function parsePublicNewsQuery(query: Record<string, unknown>): PublicNews
     typeof query.category === "string" && query.category.trim() ? query.category.trim() : undefined;
   const source =
     typeof query.source === "string" && query.source.trim() ? query.source.trim() : undefined;
+  const sources = parseExactSources(query.sources);
 
-  return { limit, language, category, source };
+  return { limit, language, category, source, ...(sources ? { sources } : {}) };
+}
+
+/** Requested names that belong to an active NEWS_SOURCE resource; disabled sources return nothing. */
+async function filterToActiveNewsSourceNames(names: readonly string[]): Promise<string[]> {
+  const { listMediaResources } =
+    await import("../media-resources/persistence/media-resource.repository.js");
+  const active = new Set(
+    (await listMediaResources({ resourceType: "NEWS_SOURCE", active: true })).map(
+      (resource) => resource.name,
+    ),
+  );
+  return names.filter((name) => active.has(name));
 }
 
 export async function listPublicNewsArticles(
   query: PublicNewsQuery,
 ): Promise<PublicNewsListingResponse> {
   const config = resolvePublicNewsConfig();
+  const sources = query.sources ? await filterToActiveNewsSourceNames(query.sources) : undefined;
   const records = await findActivePublicNewsRecords({
     limit: query.limit,
     language: query.language ?? config.defaultLanguage,
     category: query.category,
     source: query.source,
+    ...(sources ? { sources } : {}),
   });
   const activeProviders = await findActivePublicNewsSourceNames({
     language: query.language ?? config.defaultLanguage,

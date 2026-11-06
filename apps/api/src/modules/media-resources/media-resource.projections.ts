@@ -3,10 +3,44 @@ import type {
   FactCheckResource,
   MediaResource,
   PropagandaAnalysisResource,
+  PublicCountryNewsSource,
   TrustedMediaCategoryId,
   TrustedMediaResource,
 } from "@hu/types";
 import { getMediaRegistryProviderById } from "@hu/media-registry";
+
+function hasHttpRssUrl(value: string | null | undefined): boolean {
+  try {
+    const protocol = new URL(value?.trim() ?? "").protocol;
+    return protocol === "https:" || protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Public Country News provider list: active NEWS_SOURCE rows with a usable RSS URL.
+ * Exposes only identity fields; the RSS URL and admin metadata stay private.
+ */
+export function projectPublicCountryNewsSources(
+  resources: readonly MediaResource[],
+): PublicCountryNewsSource[] {
+  return resources
+    .filter(
+      (resource) =>
+        resource.resourceType === "NEWS_SOURCE" &&
+        resource.scopeType === "COUNTRY" &&
+        resource.active &&
+        hasHttpRssUrl(resource.rssUrl),
+    )
+    .sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name))
+    .map((resource) => ({
+      id: resource.id,
+      name: resource.name,
+      providerId: resource.providerId ?? null,
+      language: resource.language ?? null,
+    }));
+}
 
 function hostnameFromUrl(url: string): string {
   try {

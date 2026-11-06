@@ -33,6 +33,11 @@ export {
   normalizeMediaSourceIdentity,
   selectCountryPublicNewsRail,
 } from "./country-public-news-selection.js";
+export {
+  COUNTRY_NEWS_FALLBACK_PROVIDER_IDS,
+  COUNTRY_NEWS_RAIL_LIMIT,
+  listCountryNewsFallbackSourceNames,
+} from "./country-news-sources.js";
 export type {
   CountryNewsSelectableArticle,
   CountryPublicNewsContext,

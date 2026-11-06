@@ -2086,6 +2086,7 @@ export type {
   NewsArticleRecord,
   NewsArticleStatus,
   NewsVerificationStatus,
+  PublicCountryNewsSource,
   PublicNewsArticleItem,
   PublicNewsListingResponse,
 } from "./public-news-article.js";

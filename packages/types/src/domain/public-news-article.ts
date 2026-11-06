@@ -47,6 +47,17 @@ export interface PublicNewsListingResponse {
   activeProviders: string[];
 }
 
+/**
+ * Public projection of an active, country-scoped NEWS_SOURCE MediaResource.
+ * `name` is the exact `sourceName` its ingested articles carry.
+ */
+export interface PublicCountryNewsSource {
+  id: string;
+  name: string;
+  providerId: string | null;
+  language: string | null;
+}
+
 export interface InitiativeNewsSourceReference {
   type: "public-news";
   /** Canonical Public News record id at attachment time. */
