@@ -382,6 +382,16 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.publicNewsSourceHealth,
+    indexes: [
+      {
+        key: { mediaResourceId: 1 },
+        unique: true,
+        name: "public_news_source_health_media_resource_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.civicCompatibilityReviews,
     indexes: [
       { key: { initiativeId: 1 } },

@@ -5,6 +5,8 @@ import {
   resolveMediaRegistryProviderForArticle,
 } from "@hu/media-registry";
 
+import type { PublicNewsRejectionReason } from "@hu/types";
+
 import { resolvePublicNewsConfig } from "./public-news.config.js";
 import type { ExternalNewsArticle } from "./public-news.normalize.js";
 import { normalizeArticleUrl, normalizeOptionalPlainText } from "./public-news.normalize.js";
@@ -37,8 +39,15 @@ export function resolveApprovedSource(sourceName: string, articleUrl: string) {
 
 export function filterExternalNewsArticles(
   articles: ExternalNewsArticle[],
-  input: { retentionDays: number; now?: Date },
+  input: {
+    retentionDays: number;
+    now?: Date;
+    /** Health telemetry only; does not change which articles are kept. */
+    onReject?: (article: ExternalNewsArticle, reason: PublicNewsRejectionReason) => void;
+  },
 ): ExternalNewsArticle[] {
+  const reject = (article: ExternalNewsArticle, reason: PublicNewsRejectionReason) =>
+    input.onReject?.(article, reason);
   const now = input.now ?? new Date();
   const oldestAllowed = new Date(now);
   oldestAllowed.setUTCDate(oldestAllowed.getUTCDate() - input.retentionDays);
@@ -50,6 +59,7 @@ export function filterExternalNewsArticles(
 
   for (const article of articles) {
     if (article.isSponsored || isSponsoredText(article.title) || isSponsoredText(article.summary)) {
+      reject(article, "sponsored");
       continue;
     }
 
@@ -58,18 +68,22 @@ export function filterExternalNewsArticles(
     try {
       normalizedArticleUrl = normalizeArticleUrl(article.articleUrl).normalizedArticleUrl;
     } catch {
+      reject(article, "invalid_url");
       continue;
     }
 
     if (seenUrls.has(normalizedArticleUrl)) {
+      reject(article, "duplicate");
       continue;
     }
 
     if (isPlaceholderArticleUrl(article.articleUrl)) {
+      reject(article, "placeholder_url");
       continue;
     }
 
     if (isMediaRegistryWebsiteUrl(article.articleUrl)) {
+      reject(article, "homepage_url");
       continue;
     }
 
@@ -80,16 +94,19 @@ export function filterExternalNewsArticles(
     );
 
     if (!registryProvider || registryProvider.rssEnabled === false) {
+      reject(article, "no_registry_provider");
       continue;
     }
 
     if (!isSpecificMediaArticleUrl(article.articleUrl, registryProvider)) {
+      reject(article, "not_article_url");
       continue;
     }
 
     const publishedAt = Date.parse(article.publishedAt);
 
     if (Number.isNaN(publishedAt) || publishedAt < oldestAllowed.getTime()) {
+      reject(article, "outside_retention_window");
       continue;
     }
 
@@ -98,22 +115,26 @@ export function filterExternalNewsArticles(
     const summary = normalizeOptionalPlainText(article.summary);
 
     if (!title || !sourceName) {
+      reject(article, "missing_title_or_source");
       continue;
     }
 
     if (!summary && title.length < 12) {
+      reject(article, "too_short");
       continue;
     }
 
     const approved = resolveApprovedSource(sourceName, article.articleUrl);
 
     if (!approved) {
+      reject(article, "no_registry_provider");
       continue;
     }
 
     const compositeKey = `${sourceName.toLowerCase()}::${title.toLowerCase()}::${new Date(publishedAt).toISOString().slice(0, 10)}`;
 
     if (seenComposite.has(compositeKey)) {
+      reject(article, "duplicate");
       continue;
     }
 
@@ -136,6 +157,8 @@ export function filterExternalNewsArticles(
 
 export async function validateExternalNewsArticleUrls(
   articles: ExternalNewsArticle[],
+  /** Health telemetry only; does not change which articles are kept. */
+  onReject?: (article: ExternalNewsArticle) => void,
 ): Promise<ExternalNewsArticle[]> {
   if (process.env.HU_VERIFICATION_MODE === "true") {
     return articles;
@@ -154,6 +177,9 @@ export async function validateExternalNewsArticleUrls(
         const reachable = await validatePublicArticleUrl(article.articleUrl, {
           timeoutMs: Math.min(config.fetchTimeoutMs, 8_000),
         });
+        if (!reachable) {
+          onReject?.(article);
+        }
         return reachable ? article : null;
       }),
     );

@@ -82,4 +82,6 @@ export interface ApprovedNewsSource {
   rssFeedUrl: string;
   language: string;
   category: MediaRegistryCategory;
+  /** MediaResource id when derived from an Admin NEWS_SOURCE row (health telemetry key). */
+  mediaResourceId?: string;
 }

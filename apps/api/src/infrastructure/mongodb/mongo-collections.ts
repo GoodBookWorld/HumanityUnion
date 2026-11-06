@@ -27,6 +27,7 @@ export const MONGO_COLLECTIONS = {
   publicImpactEvidence: "public_impact_evidence",
   publicCivicArchiveRecords: "public_civic_archive_records",
   publicNewsArticles: "public_news_articles",
+  publicNewsSourceHealth: "public_news_source_health",
   mediaResources: "media_resources",
   mediaResourceTombstones: "media_resource_tombstones",
   countryAffiliations: "country_affiliations",

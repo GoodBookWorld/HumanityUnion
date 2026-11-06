@@ -2082,6 +2082,17 @@ export type {
   CountryAffiliationPublic,
 } from "./country-affiliation.js";
 export type {
+  AdminNewsSourceHealthItem,
+  AdminNewsSourceHealthListing,
+  PublicNewsRejectionReason,
+  PublicNewsSourceCheckOutcome,
+  PublicNewsSourceErrorCode,
+  PublicNewsSourceHealthError,
+  PublicNewsSourceHealthRecord,
+  PublicNewsSourceHealthStatus,
+  PublicNewsSourceHealthStatusReason,
+} from "./public-news-source-health.js";
+export type {
   InitiativeNewsSourceReference,
   NewsArticleRecord,
   NewsArticleStatus,

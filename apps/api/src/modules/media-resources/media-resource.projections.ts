@@ -135,6 +135,7 @@ export function toApprovedNewsSource(resource: MediaResource): ApprovedNewsSourc
     rssFeedUrl,
     language: resource.language?.trim() || registryProvider?.language || "en",
     category,
+    mediaResourceId: resource.id,
   };
 }
 

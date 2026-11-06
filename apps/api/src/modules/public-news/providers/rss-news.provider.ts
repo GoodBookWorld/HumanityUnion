@@ -3,6 +3,7 @@ import {
   listActiveApprovedNewsSources,
   resolvePublicNewsConfig,
 } from "../public-news.config.js";
+import { classifySourceFetchError, UNAPPROVED_FEED_ERROR } from "../public-news-source-health.js";
 import type { ExternalNewsArticle } from "../public-news.normalize.js";
 import { fetchExternalDocument } from "../public-news.fetch.js";
 import { parseRssOrAtomFeed } from "../public-news.rss-parser.js";
@@ -15,31 +16,46 @@ export class RssNewsProvider implements NewsProvider {
     const config = resolvePublicNewsConfig();
     const sources = listActiveApprovedNewsSources(input.language);
     const perSourceLimit = Math.max(3, Math.ceil(input.limit / Math.max(sources.length, 1)));
+    const telemetry = input.telemetry;
 
     const batches = await Promise.all(
       sources.map(async (source): Promise<ExternalNewsArticle[]> => {
+        const sourceId = source.mediaResourceId;
+        telemetry?.begin(source);
+
         if (!isApprovedNewsFeedUrl(source.rssFeedUrl)) {
           console.warn(
             `[public-news] Skipping non-registry RSS URL for ${source.sourceName}.`,
           );
+          telemetry?.fetchFailed(sourceId, UNAPPROVED_FEED_ERROR, 0);
           return [];
         }
+
+        const startedAt = Date.now();
+        let httpStatus: number | null = null;
 
         try {
           const xml = await fetchExternalDocument(source.rssFeedUrl, {
             timeoutMs: config.fetchTimeoutMs,
             maxBytes: config.maxResponseBytes,
             requireApprovedRssFeed: true,
+            onStatus: (status) => {
+              httpStatus = status;
+            },
           });
+          telemetry?.fetchSucceeded(sourceId, httpStatus, Date.now() - startedAt);
           const feedItems = parseRssOrAtomFeed(xml, source.rssFeedUrl);
+          telemetry?.parsed(sourceId, feedItems);
           const accepted: ExternalNewsArticle[] = [];
 
-          for (const item of feedItems) {
+          for (const [index, item] of feedItems.entries()) {
             if (accepted.length >= perSourceLimit) {
+              telemetry?.reject(sourceId, "per_source_cap", feedItems.length - index);
               break;
             }
 
             if (input.from && Date.parse(item.publishedAt) < input.from.getTime()) {
+              telemetry?.reject(sourceId, "outside_retention_window");
               continue;
             }
 
@@ -55,6 +71,7 @@ export class RssNewsProvider implements NewsProvider {
               publishedAt: item.publishedAt,
               language: source.language,
               category: source.category,
+              ...(sourceId ? { mediaResourceId: sourceId } : {}),
             });
           }
 
@@ -64,14 +81,20 @@ export class RssNewsProvider implements NewsProvider {
             `[public-news] RSS provider failed for ${source.sourceName}:`,
             error instanceof Error ? error.message : error,
           );
+          telemetry?.fetchFailed(sourceId, classifySourceFetchError(error), Date.now() - startedAt);
           return [];
         }
       }),
     );
 
-    return batches
+    const sorted = batches
       .flat()
-      .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt))
-      .slice(0, input.limit);
+      .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt));
+
+    for (const dropped of sorted.slice(input.limit)) {
+      telemetry?.reject(dropped.mediaResourceId, "global_cap");
+    }
+
+    return sorted.slice(0, input.limit);
   }
 }

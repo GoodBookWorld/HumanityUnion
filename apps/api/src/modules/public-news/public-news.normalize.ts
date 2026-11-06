@@ -20,6 +20,8 @@ export interface ExternalNewsArticle {
   category?: string;
   geographicScope?: string;
   isSponsored?: boolean;
+  /** Source attribution for health telemetry only; never persisted. */
+  mediaResourceId?: string;
 }
 
 const HTML_TAG_PATTERN = /<[^>]+>/g;

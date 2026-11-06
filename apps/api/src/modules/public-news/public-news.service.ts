@@ -30,6 +30,17 @@ import {
   upsertPublicNewsRecords,
 } from "./public-news.repository.js";
 import { resolveNewsProvider } from "./providers/resolve-news-provider.js";
+import { PublicNewsIngestionTelemetry } from "./public-news-source-health.js";
+import { recordPublicNewsSourceChecks } from "./public-news-source-health.repository.js";
+
+/** Telemetry is best-effort: a storage failure must never affect ingestion. */
+async function flushSourceHealthTelemetry(telemetry: PublicNewsIngestionTelemetry): Promise<void> {
+  try {
+    await recordPublicNewsSourceChecks(telemetry.completed());
+  } catch {
+    console.warn("[public-news] Source health telemetry could not be stored.");
+  }
+}
 
 function fingerprintPublicNewsCanonicalVersion(record: NewsArticleRecord): string {
   const tree = asMediaPlpPresentationNode(
@@ -207,37 +218,47 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
     }
 
     let fetchedArticles: ExternalNewsArticle[] = [];
+    const telemetry = new PublicNewsIngestionTelemetry();
 
     try {
       fetchedArticles = await provider.fetchRecentArticles({
         language: config.defaultLanguage,
         limit: config.fetchLimit,
+        telemetry,
       });
     } catch (error) {
       console.error(
         "[public-news] Provider fetch failed:",
         error instanceof Error ? error.message : error,
       );
+      await flushSourceHealthTelemetry(telemetry);
       return { upserted: 0, fetched: 0 };
     }
 
     const filtered = filterExternalNewsArticles(fetchedArticles, {
       retentionDays: config.retentionDays,
+      onReject: (article, reason) => telemetry.reject(article.mediaResourceId, reason),
     });
 
-    const validated = await validateExternalNewsArticleUrls(filtered);
+    const validated = await validateExternalNewsArticleUrls(filtered, (article) =>
+      telemetry.reject(article.mediaResourceId, "url_validation_failed"),
+    );
 
     const normalized = validated
       .map((article) => {
         try {
-          return normalizeExternalNewsArticle(article, config.retentionDays);
+          const record = normalizeExternalNewsArticle(article, config.retentionDays);
+          telemetry.accept(article.mediaResourceId, record.sourceName);
+          return record;
         } catch {
+          telemetry.reject(article.mediaResourceId, "normalization_failed");
           return null;
         }
       })
       .filter((record): record is NewsArticleRecord => record !== null);
 
     const upserted = await upsertPublicNewsRecords(normalized);
+    await flushSourceHealthTelemetry(telemetry);
 
     for (const record of normalized) {
       if (record.status === "active") {

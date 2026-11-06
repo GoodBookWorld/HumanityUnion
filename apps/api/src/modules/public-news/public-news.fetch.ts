@@ -105,9 +105,26 @@ async function assertSafeHostname(hostname: string): Promise<void> {
   }
 }
 
+/** Non-2xx response; same message as before, plus the status for health telemetry. */
+export class ExternalRequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number) {
+    super(`External request failed with status ${status}.`);
+    this.name = "ExternalRequestError";
+    this.status = status;
+  }
+}
+
 export async function fetchExternalDocument(
   url: string,
-  options: { timeoutMs: number; maxBytes: number; requireApprovedRssFeed?: boolean },
+  options: {
+    timeoutMs: number;
+    maxBytes: number;
+    requireApprovedRssFeed?: boolean;
+    /** Receives the HTTP status of the final response (health telemetry). */
+    onStatus?: (status: number) => void;
+  },
 ): Promise<string> {
   const parsed = new URL(url);
 
@@ -140,8 +157,10 @@ export async function fetchExternalDocument(
       },
     });
 
+    options.onStatus?.(response.status);
+
     if (!response.ok) {
-      throw new Error(`External request failed with status ${response.status}.`);
+      throw new ExternalRequestError(response.status);
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());

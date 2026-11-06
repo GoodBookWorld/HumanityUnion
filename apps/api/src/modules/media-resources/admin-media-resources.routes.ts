@@ -22,6 +22,7 @@ import {
   deleteAdminMediaResource,
   getAdminMediaResource,
   listAdminMediaResources,
+  listAdminNewsSourceHealth,
   updateAdminMediaResource,
 } from "./media-resource.service.js";
 import type { MediaResourceScopeType, MediaResourceType } from "@hu/types";
@@ -103,6 +104,24 @@ adminMediaResourcesRouter.get(
         active: parseBooleanQuery(req.query.active),
       });
       res.json(createSuccessResponse(result, "Admin media resources loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/** RSS-HEALTH-01 — read-only News / RSS source health (registered before "/:id"). */
+adminMediaResourcesRouter.get(
+  "/news-health",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await listAdminNewsSourceHealth({
+        actorUserId: req.auth!.id,
+        active: parseBooleanQuery(req.query.active),
+      });
+      res.json(createSuccessResponse(result, "News source health loaded."));
     } catch (error) {
       handleError(res, error);
     }

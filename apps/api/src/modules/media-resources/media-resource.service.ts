@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { getCountryByCode, normalizeCountryInput } from "@hu/geography";
 import type {
+  AdminNewsSourceHealthItem,
+  AdminNewsSourceHealthListing,
   FactCheckResource,
   MediaResource,
   MediaResourceScopeType,
@@ -30,6 +32,10 @@ import {
   projectPublicCountryNewsSources,
   projectTrustedMediaResources,
 } from "./media-resource.projections.js";
+import { resolveNewsSourceHealthStatus } from "../public-news/public-news-source-health.js";
+import { listPublicNewsSourceHealth } from "../public-news/public-news-source-health.repository.js";
+import { resolvePublicNewsConfig } from "../public-news/public-news.config.js";
+import { findActivePublicNewsRecords } from "../public-news/public-news.repository.js";
 import { seedMediaResourcesFromCanonicalSources } from "./media-resource.seed.js";
 import { recordMediaResourceTombstone } from "./persistence/media-resource-tombstone.repository.js";
 import {
@@ -329,6 +335,108 @@ export interface AdminMediaResourceUpdateInput {
   providerId?: string | null;
   active?: boolean;
   sortOrder?: number;
+}
+
+/** RSS-HEALTH-01 — bounds for the read-only News / RSS health listing. */
+export const NEWS_HEALTH_MAX_ITEMS = 200;
+export const NEWS_HEALTH_PUBLIC_COUNT_CAP = 50;
+const NEWS_HEALTH_COUNT_CONCURRENCY = 8;
+
+/** Public article count per exact source name, capped (same query the public news API uses). */
+async function countPublicArticlesBySourceName(
+  names: readonly string[],
+  language: string,
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const unique = [...new Set(names)];
+  for (let index = 0; index < unique.length; index += NEWS_HEALTH_COUNT_CONCURRENCY) {
+    const batch = unique.slice(index, index + NEWS_HEALTH_COUNT_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((name) =>
+        findActivePublicNewsRecords({
+          limit: NEWS_HEALTH_PUBLIC_COUNT_CAP,
+          language,
+          sources: [name],
+        }),
+      ),
+    );
+    batch.forEach((name, position) => counts.set(name, results[position]!.length));
+  }
+  return counts;
+}
+
+export async function listAdminNewsSourceHealth(input: {
+  actorUserId: string;
+  active?: boolean;
+  now?: Date;
+}): Promise<AdminNewsSourceHealthListing> {
+  await assertAdminUser(input.actorUserId);
+  await ensureMediaResourcesSeededOnce();
+
+  const config = resolvePublicNewsConfig();
+  const now = input.now ?? new Date();
+  const staleAfterMs = config.refreshIntervalHours * 2 * 3_600_000;
+  const resources = (
+    await listMediaResources({
+      resourceType: "NEWS_SOURCE",
+      ...(input.active !== undefined ? { active: input.active } : {}),
+    })
+  ).sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name));
+  const selected = resources.slice(0, NEWS_HEALTH_MAX_ITEMS);
+
+  const [health, publicCounts] = await Promise.all([
+    listPublicNewsSourceHealth(selected.map((resource) => resource.id)),
+    countPublicArticlesBySourceName(
+      selected.map((resource) => resource.name),
+      config.defaultLanguage,
+    ),
+  ]);
+
+  const items = selected.map((resource): AdminNewsSourceHealthItem => {
+    const record = health.get(resource.id) ?? null;
+    const publicArticleCount = publicCounts.get(resource.name) ?? 0;
+    const { status, statusReason } = resolveNewsSourceHealthStatus({
+      record,
+      publicArticleCount,
+      now: now.getTime(),
+      staleAfterMs,
+      retentionDays: config.retentionDays,
+    });
+    return {
+      mediaResourceId: resource.id,
+      name: resource.name,
+      active: resource.active,
+      scopeType: resource.scopeType,
+      countryCode: resource.countryCode,
+      providerId: resource.providerId ?? null,
+      status,
+      statusReason,
+      publicArticleCount,
+      publicArticleCountCapped: publicArticleCount >= NEWS_HEALTH_PUBLIC_COUNT_CAP,
+      lastCheckCompletedAt: record?.lastCheckCompletedAt ?? null,
+      lastSuccessAt: record?.lastSuccessAt ?? null,
+      lastOutcome: record?.lastOutcome ?? null,
+      lastHttpStatus: record?.lastHttpStatus ?? null,
+      lastDurationMs: record?.lastDurationMs ?? null,
+      lastParsedCount: record?.lastParsedCount ?? null,
+      lastAcceptedCount: record?.lastAcceptedCount ?? null,
+      lastRejectedCount: record?.lastRejectedCount ?? null,
+      lastRejectionReasons: record?.lastRejectionReasons ?? {},
+      lastStoredSourceNames: record?.lastStoredSourceNames ?? [],
+      lastItemPublishedAt: record?.lastItemPublishedAt ?? null,
+      lastError: record?.lastError ?? null,
+      consecutiveFailures: record?.consecutiveFailures ?? 0,
+    };
+  });
+
+  return {
+    items,
+    generatedAt: now.toISOString(),
+    staleAfterHours: config.refreshIntervalHours * 2,
+    retentionDays: config.retentionDays,
+    publicArticleCountCap: NEWS_HEALTH_PUBLIC_COUNT_CAP,
+    truncated: resources.length > selected.length,
+  };
 }
 
 export async function listAdminMediaResources(input: {
