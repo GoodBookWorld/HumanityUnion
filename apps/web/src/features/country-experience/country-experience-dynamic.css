@@ -426,3 +426,14 @@
     height: 2rem;
   }
 }
+
+/* Recommended Media logos keep their own proportions inside the 90x48 card slot. */
+[data-hu-surface="country-recommended-media"] .civic-media-center__logo-image {
+  display: block;
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+  max-width: 90px;
+  max-height: 48px;
+  object-fit: contain;
+}

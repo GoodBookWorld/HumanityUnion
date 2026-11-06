@@ -3,6 +3,7 @@ import type {
   CountryAffiliationPublic,
   CountryStatisticsCounts,
   InitiativeLifecycleProfile,
+  PublicCountryNewsSource,
   TrustedMediaResource,
   WorldInitiativeCardProjection,
 } from "@hu/types";
@@ -96,6 +97,27 @@ export async function fetchCountryMedia(countryCode: string): Promise<TrustedMed
 
   if (!body.success || !body.data) {
     throw new Error("Country civic media is temporarily unavailable.");
+  }
+
+  return body.data;
+}
+
+export async function fetchCountryNewsSources(
+  countryCode: string,
+): Promise<PublicCountryNewsSource[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/public/countries/${encodeURIComponent(countryCode)}/news-sources`,
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error("Country news sources are temporarily unavailable.");
+  }
+
+  const body = (await response.json()) as ApiEnvelope<PublicCountryNewsSource[]>;
+
+  if (!body.success || !Array.isArray(body.data)) {
+    throw new Error("Country news sources are temporarily unavailable.");
   }
 
   return body.data;

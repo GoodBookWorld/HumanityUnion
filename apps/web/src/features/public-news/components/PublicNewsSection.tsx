@@ -25,11 +25,8 @@ import {
   sortPublicNewsArticles,
   type PublicNewsFilters,
 } from "../public-news-discovery.utils";
-import {
-  selectCountryPublicNewsRail,
-  COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT,
-  type CountryPublicNewsMediaRef,
-} from "../public-news-country.utils";
+import { COUNTRY_NEWS_ALL_PROVIDERS } from "../country-news-rail";
+import { useCountryNewsRail } from "../use-country-news-rail";
 import { PublicNewsPlaceholder } from "./PublicNewsPlaceholder";
 import { PublicNewsToolbar } from "./PublicNewsToolbar";
 import { PublicNewsCard } from "./PublicNewsCard";
@@ -42,8 +39,6 @@ export interface PublicNewsSectionProps {
   variant?: "discovery" | "country";
   countryCode?: string;
   countryName?: string;
-  regionName?: string;
-  recommendedMedia?: CountryPublicNewsMediaRef[];
   showToolbar?: boolean;
   showIntro?: boolean;
   sectionId?: string;
@@ -86,8 +81,6 @@ export function PublicNewsSection({
   variant = "discovery",
   countryCode,
   countryName,
-  regionName,
-  recommendedMedia = [],
   showToolbar,
   showIntro = true,
   sectionId = "news-widgets",
@@ -110,11 +103,21 @@ export function PublicNewsSection({
   const [loading, setLoading] = useState(() => initialArticles == null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PublicNewsFilters>(DEFAULT_PUBLIC_NEWS_FILTERS);
-  const [countryProvider, setCountryProvider] = useState("all");
+  const [countryProvider, setCountryProvider] = useState(COUNTRY_NEWS_ALL_PROVIDERS);
   const [clientPlpNewsById, setClientPlpNewsById] = useState<
     Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined
   >(undefined);
   const hasInitialArticles = initialArticles != null;
+  const isCountryRail = variant === "country" && Boolean(countryCode && countryName);
+  const countryRail = useCountryNewsRail({
+    enabled: isCountryRail,
+    countryCode,
+    provider: countryProvider,
+  });
+
+  useEffect(() => {
+    setCountryProvider(COUNTRY_NEWS_ALL_PROVIDERS);
+  }, [countryCode]);
 
   const resolvedShowToolbar = showToolbar ?? variant === "discovery";
   const resolvedEyebrow =
@@ -170,15 +173,10 @@ export function PublicNewsSection({
     setError(null);
 
     try {
-      // Pack 08K.3 / RESET 05D — English source corpus.
-      // Country rails fetch a larger candidate pool then apply shared
-      // country-first selection (never truncate-to-24 before relevance).
+      // Pack 08K.3 — English source corpus. Country rails load through useCountryNewsRail.
       void locale;
       const response = await fetchPublicNewsArticles({
-        limit:
-          variant === "country"
-            ? COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT
-            : PUBLIC_NEWS_RAIL_LIMIT,
+        limit: PUBLIC_NEWS_RAIL_LIMIT,
         language: "en",
       });
       setArticles(response.items);
@@ -194,43 +192,25 @@ export function PublicNewsSection({
     } finally {
       setLoading(false);
     }
-  }, [tErrors, locale, variant]);
+  }, [tErrors, locale]);
 
   useEffect(() => {
-    if (hasInitialArticles) {
+    if (hasInitialArticles || isCountryRail) {
       return;
     }
     void loadArticles();
-  }, [hasInitialArticles, loadArticles]);
+  }, [hasInitialArticles, isCountryRail, loadArticles]);
 
   const filterOptions = useMemo(
     () => collectFilterOptions(articles, activeProviders),
     [activeProviders, articles],
   );
 
-  const { processedArticles, usedGlobalFallback, countryScopedArticles } = useMemo(() => {
-    if (variant === "country" && countryCode && countryName) {
-      const selected = selectCountryPublicNewsRail(
-        articles,
-        {
-          countryCode,
-          countryName,
-          regionName,
-          recommendedMedia,
-          language: "en",
-        },
-        PUBLIC_NEWS_RAIL_LIMIT,
-      );
-
-      const providerFiltered =
-        countryProvider === "all"
-          ? selected.articles
-          : selected.articles.filter((article) => article.sourceName === countryProvider);
-
+  const { processedArticles, usedGlobalFallback } = useMemo(() => {
+    if (isCountryRail) {
       return {
-        processedArticles: [...providerFiltered],
-        usedGlobalFallback: selected.usedFallback,
-        countryScopedArticles: [...selected.articles],
+        processedArticles: [...countryRail.articles],
+        usedGlobalFallback: countryRail.usedGlobalFallback,
       };
     }
 
@@ -242,18 +222,15 @@ export function PublicNewsSection({
         PUBLIC_NEWS_RAIL_LIMIT,
       ),
       usedGlobalFallback: false,
-      countryScopedArticles: [],
     };
-  }, [
-    articles,
-    countryCode,
-    countryName,
-    countryProvider,
-    filters,
-    recommendedMedia,
-    regionName,
-    variant,
-  ]);
+  }, [articles, countryRail.articles, countryRail.usedGlobalFallback, filters, isCountryRail]);
+
+  const showLoading = isCountryRail ? countryRail.loading : loading;
+  const shownError = isCountryRail
+    ? countryRail.failed
+      ? tErrors("temporarilyUnavailable")
+      : null
+    : error;
 
   // RESET 05C — country rail shares PLP identity with /media (read-only resolve).
   useEffect(() => {
@@ -279,10 +256,8 @@ export function PublicNewsSection({
     };
   }, [countryPlpEnabled, localeMatchedSsrPlp, processedArticles, locale]);
 
-  const countryProviders = useMemo(() => {
-    const names = new Set(countryScopedArticles.map((article) => article.sourceName));
-    return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, [countryScopedArticles]);
+  const countryProviders = countryRail.options?.names ?? [];
+  const countryProvidersAreGlobal = countryRail.options?.group === "global";
 
   function updateFilters(patch: Partial<PublicNewsFilters>) {
     setFilters((current) => ({ ...current, ...patch }));
@@ -312,12 +287,16 @@ export function PublicNewsSection({
     variant === "country" && countryName ? (
       <>
         <span className="civic-media-chip civic-media-chip--active">
-          {tCountry(
-            processedArticles.length === 1 ? "eventsForCountry" : "eventsForCountryPlural",
-            { count: processedArticles.length, countryName },
-          )}
+          {usedGlobalFallback
+            ? tDiscovery(processedArticles.length === 1 ? "eventsFound" : "eventsFoundPlural", {
+                count: processedArticles.length,
+              })
+            : tCountry(
+                processedArticles.length === 1 ? "eventsForCountry" : "eventsForCountryPlural",
+                { count: processedArticles.length, countryName },
+              )}
         </span>
-        {countryProvider !== "all" ? (
+        {countryProvider !== COUNTRY_NEWS_ALL_PROVIDERS ? (
           <span className="civic-media-chip civic-media-chip--active">{countryProvider}</span>
         ) : null}
         {usedGlobalFallback ? (
@@ -353,8 +332,8 @@ export function PublicNewsSection({
       eyebrow={showIntro ? resolvedEyebrow : undefined}
       title={showIntro ? resolvedHeading : tDiscovery("titleCollapsed")}
       description={showIntro ? resolvedDescription : undefined}
-      metadata={!loading && !error ? resultSummary : null}
-      controls={!loading && !error && processedArticles.length > 0 ? controls : null}
+      metadata={!showLoading && !shownError ? resultSummary : null}
+      controls={!showLoading && !shownError && processedArticles.length > 0 ? controls : null}
       className={className}
       chromeSemanticOwner="UI_DICTIONARY"
       chromeSemanticResult="LOCALIZED_DICTIONARY"
@@ -364,7 +343,7 @@ export function PublicNewsSection({
         ) : undefined
       }
     >
-      {!loading && !error ? (
+      {!showLoading && !shownError ? (
         <div className="hux-discovery-toolbar public-news-discovery__panel">
           {variant === "country" && countryName ? (
             <div className="public-news-toolbar public-news-toolbar--country">
@@ -375,19 +354,33 @@ export function PublicNewsSection({
                   value={countryProvider}
                   onChange={(event) => setCountryProvider(event.target.value)}
                 >
-                  <option value="all">{tCountry("allTrustedMedia", { countryName })}</option>
-                  {countryProviders.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {provider}
-                    </option>
-                  ))}
+                  <option value={COUNTRY_NEWS_ALL_PROVIDERS}>
+                    {countryProvidersAreGlobal
+                      ? tCountry("globalSources", { countryName })
+                      : tCountry("allTrustedMedia", { countryName })}
+                  </option>
+                  {countryProvidersAreGlobal ? (
+                    <optgroup label={tCountry("globalSources", { countryName })}>
+                      {countryProviders.map((provider) => (
+                        <option key={provider} value={provider}>
+                          {provider}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    countryProviders.map((provider) => (
+                      <option key={provider} value={provider}>
+                        {provider}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
-              {countryProvider !== "all" ? (
+              {countryProvider !== COUNTRY_NEWS_ALL_PROVIDERS ? (
                 <button
                   type="button"
                   className="public-news-toolbar__clear"
-                  onClick={() => setCountryProvider("all")}
+                  onClick={() => setCountryProvider(COUNTRY_NEWS_ALL_PROVIDERS)}
                 >
                   {tCountry("clearFilter")}
                 </button>
@@ -410,17 +403,24 @@ export function PublicNewsSection({
         </div>
       ) : null}
 
-      {loading ? <PublicNewsPlaceholder variant="loading" /> : null}
+      {showLoading ? <PublicNewsPlaceholder variant="loading" /> : null}
 
-      {!loading && error ? (
-        <PublicNewsPlaceholder variant="error" onRetry={() => void loadArticles()} />
+      {!showLoading && shownError ? (
+        <PublicNewsPlaceholder
+          variant="error"
+          onRetry={() => (isCountryRail ? countryRail.retry() : void loadArticles())}
+        />
       ) : null}
 
-      {!loading && !error && articles.length === 0 ? (
+      {!showLoading && !shownError && !isCountryRail && articles.length === 0 ? (
         <PublicNewsPlaceholder variant="empty" />
       ) : null}
 
-      {!loading && !error && articles.length > 0 && processedArticles.length === 0 ? (
+      {!showLoading &&
+      !shownError &&
+      (isCountryRail
+        ? processedArticles.length === 0
+        : articles.length > 0 && processedArticles.length === 0) ? (
         <PublicNewsPlaceholder
           variant="no-results"
           message={
@@ -431,7 +431,7 @@ export function PublicNewsSection({
         />
       ) : null}
 
-      {!loading && !error && processedArticles.length > 0 ? (
+      {!showLoading && !shownError && processedArticles.length > 0 ? (
         <MediaRailViewport
           label={railLabel}
           layout="three-two-one"

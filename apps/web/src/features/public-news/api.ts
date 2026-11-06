@@ -8,6 +8,8 @@ export interface FetchPublicNewsOptions {
   language?: string;
   category?: string;
   source?: string;
+  /** Exact source names; sent as repeated `sources` parameters. */
+  sources?: readonly string[];
 }
 
 export async function fetchPublicNewsArticles(
@@ -29,6 +31,10 @@ export async function fetchPublicNewsArticles(
 
   if (options.source) {
     params.set("source", options.source);
+  }
+
+  for (const source of options.sources ?? []) {
+    params.append("sources", source);
   }
 
   const query = params.toString();

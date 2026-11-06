@@ -327,8 +327,15 @@ describe("RESET 05D — delivery closure", () => {
       ),
       "utf8",
     );
-    assert.match(webSection, /selectCountryPublicNewsRail/);
-    assert.match(webSection, /COUNTRY_PUBLIC_NEWS_CANDIDATE_LIMIT/);
+    // COUNTRY-MEDIA-NEWS-01: the web country rail and the API selection share the
+    // exact-source contract (same limit, same global fallback outlets).
+    assert.match(webSection, /useCountryNewsRail/);
+    const webRail = readFileSync(
+      join(apiRoot, "../web/src/features/public-news/country-news-rail.ts"),
+      "utf8",
+    );
+    assert.match(webRail, /COUNTRY_NEWS_RAIL_LIMIT/);
+    assert.match(webRail, /listCountryNewsFallbackSourceNames/);
     const selection = readFileSync(
       join(
         apiRoot,
@@ -337,6 +344,8 @@ describe("RESET 05D — delivery closure", () => {
       "utf8",
     );
     assert.match(selection, /selectCountryPublicNewsRail/);
+    assert.match(selection, /COUNTRY_NEWS_RAIL_LIMIT/);
+    assert.match(selection, /listCountryNewsFallbackSourceNames/);
     const script = readFileSync(
       join(apiRoot, "src/scripts/diagnose-media-live-closure.ts"),
       "utf8",

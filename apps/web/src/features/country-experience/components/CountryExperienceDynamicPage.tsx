@@ -469,12 +469,7 @@ export function CountryExperienceDynamicPage({
         />
       </div>
 
-      <CountryPublicNewsWidget
-        countryCode={countryCode}
-        countryName={countryDisplayName}
-        regionName={country.region}
-        recommendedMedia={media}
-      />
+      <CountryPublicNewsWidget countryCode={countryCode} countryName={countryDisplayName} />
 
       <CountryTeamSection countryCode={countryCode} countryName={countryDisplayName} />
       <CountryPartnersSection countryCode={countryCode} countryName={countryDisplayName} />
