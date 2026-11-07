@@ -10,6 +10,8 @@ export interface FetchPublicNewsOptions {
   source?: string;
   /** Exact source names; sent as repeated `sources` parameters. */
   sources?: readonly string[];
+  /** MEDIA-NEWS-01B — the /media carousel selection (no other filters). */
+  carousel?: "media";
 }
 
 export async function fetchPublicNewsArticles(
@@ -35,6 +37,10 @@ export async function fetchPublicNewsArticles(
 
   for (const source of options.sources ?? []) {
     params.append("sources", source);
+  }
+
+  if (options.carousel) {
+    params.set("carousel", options.carousel);
   }
 
   const query = params.toString();

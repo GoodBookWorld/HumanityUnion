@@ -73,6 +73,7 @@ export default async function CivicMediaPage() {
             const newsListing = await fetchPublicNewsArticles({
               limit: MEDIA_PLP_NEWS_BATCH_LIMIT,
               language: "en",
+              carousel: "media",
             });
             return newsListing.items;
           },

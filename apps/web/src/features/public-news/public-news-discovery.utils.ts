@@ -22,8 +22,39 @@ export const DEFAULT_PUBLIC_NEWS_FILTERS: PublicNewsFilters = {
 export const PUBLIC_NEWS_PAGE_SIZE = 12;
 export const PUBLIC_NEWS_RAIL_LIMIT = 24;
 
-export function resolveProviderPresentation(sourceName: string) {
+/** API logos are HTTPS or site-relative /images/ paths; anything else is ignored. */
+function isUsableApiLogoUrl(value: string | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+  if (value.startsWith("/")) {
+    return value.startsWith("/images/") && !value.startsWith("//") && !value.includes("..");
+  }
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * MEDIA-NEWS-01B — publisher logo for a news card: the API-provided logo first, then
+ * the static registry by name, then initials.
+ */
+export function resolveProviderPresentation(
+  sourceName: string,
+  apiLogo?: { readonly logoUrl?: string; readonly logoLabel?: string },
+) {
   const provider = getMediaRegistryProviderByName(sourceName);
+  const apiLabel = apiLogo?.logoLabel?.trim() || undefined;
+
+  if (isUsableApiLogoUrl(apiLogo?.logoUrl)) {
+    return {
+      logoUrl: apiLogo.logoUrl,
+      logoLabel: apiLabel ?? provider?.logoLabel ?? sourceName.slice(0, 2).toUpperCase(),
+      country: provider?.country ?? "International",
+    };
+  }
 
   if (provider) {
     return {
@@ -35,7 +66,7 @@ export function resolveProviderPresentation(sourceName: string) {
 
   return {
     logoUrl: undefined,
-    logoLabel: sourceName.slice(0, 2).toUpperCase(),
+    logoLabel: apiLabel ?? sourceName.slice(0, 2).toUpperCase(),
     country: "International",
   };
 }

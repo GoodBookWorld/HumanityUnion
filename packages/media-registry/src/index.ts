@@ -38,6 +38,11 @@ export {
   COUNTRY_NEWS_RAIL_LIMIT,
   listCountryNewsFallbackSourceNames,
 } from "./country-news-sources.js";
+export {
+  MEDIA_CAROUSEL_PRIORITY_SOURCES,
+  resolveMediaCarouselPrioritySource,
+  type MediaCarouselPrioritySource,
+} from "./media-carousel-priority.js";
 export type {
   CountryNewsSelectableArticle,
   CountryPublicNewsContext,

@@ -30,6 +30,13 @@ export interface NewsArticleRecord {
 export interface PublicNewsArticleItem {
   id: string;
   sourceName: string;
+  /**
+   * MEDIA-NEWS-01B — publisher logo resolved server-side (HTTPS on the media host or a
+   * site-relative /images/ path). Absent when no logo is known; clients fall back.
+   */
+  sourceLogoUrl?: string;
+  /** Short text shown when no logo image is available. */
+  sourceLogoLabel?: string;
   title: string;
   summary: string;
   articleUrl: string;

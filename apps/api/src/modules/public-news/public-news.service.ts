@@ -1,5 +1,6 @@
 import type {
   InitiativeNewsSourceReference,
+  MediaResource,
   NewsArticleRecord,
   PublicNewsListingResponse,
 } from "@hu/types";
@@ -78,6 +79,8 @@ export interface PublicNewsQuery {
   source?: string;
   /** Exact source names (bounded, de-duplicated). */
   sources?: string[];
+  /** MEDIA-NEWS-01B — explicit /media carousel selection (filters not allowed). */
+  carousel?: "media";
 }
 
 export const PUBLIC_NEWS_MAX_SOURCES = 20;
@@ -132,22 +135,38 @@ export function parsePublicNewsQuery(query: Record<string, unknown>): PublicNews
   const source =
     typeof query.source === "string" && query.source.trim() ? query.source.trim() : undefined;
   const sources = parseExactSources(query.sources);
+  let carousel: PublicNewsQuery["carousel"];
+  if (query.carousel !== undefined) {
+    if (query.carousel !== "media") {
+      throw new Error('carousel supports only "media".');
+    }
+    if (category || source || sources) {
+      throw new Error("carousel cannot be combined with category, source or sources.");
+    }
+    carousel = "media";
+  }
 
-  return { limit, language, category, source, ...(sources ? { sources } : {}) };
+  return {
+    limit,
+    language,
+    category,
+    source,
+    ...(sources ? { sources } : {}),
+    ...(carousel ? { carousel } : {}),
+  };
 }
 
 /**
  * Requested names that belong to an active NEWS_SOURCE resource, plus those resources'
  * ids (articles stored since RSS-SOURCE-02B carry the id). Disabled sources return nothing.
  */
-async function resolveActiveNewsSourceSelection(
+function resolveActiveNewsSourceSelection(
   names: readonly string[],
-): Promise<{ sources: string[]; sourceIds: string[] }> {
-  const { listMediaResources } =
-    await import("../media-resources/persistence/media-resource.repository.js");
+  activeResources: readonly MediaResource[],
+): { sources: string[]; sourceIds: string[] } {
   const requested = new Set(names);
-  const matches = (await listMediaResources({ resourceType: "NEWS_SOURCE", active: true })).filter(
-    (resource) => requested.has(resource.name),
+  const matches = activeResources.filter(
+    (resource) => resource.resourceType === "NEWS_SOURCE" && requested.has(resource.name),
   );
   const activeNames = new Set(matches.map((resource) => resource.name));
   return {
@@ -160,22 +179,35 @@ export async function listPublicNewsArticles(
   query: PublicNewsQuery,
 ): Promise<PublicNewsListingResponse> {
   const config = resolvePublicNewsConfig();
+  const language = query.language ?? config.defaultLanguage;
+  const { listMediaResources } =
+    await import("../media-resources/persistence/media-resource.repository.js");
+  const { createNewsSourceLogoResolver, selectMediaCarouselNewsRecords } =
+    await import("./public-news-media-carousel.js");
+  // One read of active resources serves source filtering, carousel and logos.
+  const activeResources = await listMediaResources({ active: true });
   const selection = query.sources
-    ? await resolveActiveNewsSourceSelection(query.sources)
+    ? resolveActiveNewsSourceSelection(query.sources, activeResources)
     : undefined;
-  const records = await findActivePublicNewsRecords({
-    limit: query.limit,
-    language: query.language ?? config.defaultLanguage,
-    category: query.category,
-    source: query.source,
-    ...(selection ? selection : {}),
-  });
-  const activeProviders = await findActivePublicNewsSourceNames({
-    language: query.language ?? config.defaultLanguage,
-  });
+  const records =
+    query.carousel === "media"
+      ? await selectMediaCarouselNewsRecords({
+          limit: query.limit,
+          language,
+          resources: activeResources,
+        })
+      : await findActivePublicNewsRecords({
+          limit: query.limit,
+          language,
+          category: query.category,
+          source: query.source,
+          ...(selection ? selection : {}),
+        });
+  const activeProviders = await findActivePublicNewsSourceNames({ language });
+  const logoFor = createNewsSourceLogoResolver(activeResources);
 
   return {
-    items: records.map(toPublicNewsArticleItem),
+    items: records.map((record) => ({ ...toPublicNewsArticleItem(record), ...logoFor(record) })),
     generatedAt: new Date().toISOString(),
     retentionDays: config.retentionDays,
     activeProviders,

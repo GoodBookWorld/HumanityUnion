@@ -36,8 +36,6 @@ import {
   fingerprintMediaPlpCanonicalVersion,
   getMediaLocalizationBuildHookStatus,
   getPlpBuildRequestQueueStats,
-  getPlpSearchSeoInvalidationStatsForTests,
-  listPlpBuildRequestsCompletedForTests,
   listPlpBuildRequestsPendingForTests,
   MEDIA_LOCALIZATION_BUILD_HOOK_STATUS,
   notifyPlpPublicSourceMutation,
@@ -54,7 +52,6 @@ import {
   resetPlpSearchSeoInvalidationForTests,
   resetPublishedLocalizationPersistenceForTests,
   resolveMediaPlpConsumerItem,
-  resolvePlpAutoBuildLocales,
   resolvePlpProviderConcurrency,
   setMediaPlpConsumptionEnabledForTests,
   setPlpAutoBuildWorkForceMemoryForTests,
@@ -67,6 +64,11 @@ import {
   resetPublicNewsMemoryStoreForTests,
   upsertPublicNewsRecords,
 } from "../../../src/modules/public-news/public-news.repository.js";
+
+import {
+  resetActiveNewsSourcesForTests,
+  seedActiveNewsSourcesForTests,
+} from "../../helpers/active-news-sources.js";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const plpRoot = join(
@@ -341,9 +343,17 @@ describe("RESET 05C — RSS automatic PLP publication lifecycle", () => {
 
     const records = Array.from({ length: 30 }, (_, i) => makeNews(i));
     await upsertPublicNewsRecords(records);
+    // MEDIA-NEWS-01B — the consumer selection admits only active NEWS_SOURCE articles.
+    seedActiveNewsSourcesForTests(
+      Array.from({ length: 5 }, (_, i) => ({
+        name: `Source-${i}`,
+        websiteUrl: "https://example.com",
+      })),
+    );
 
     const media = await selectMediaPlpConsumerNewsArticles();
     const union = await selectConsumerVisibleNewsArticlesForAutoBuild();
+    resetActiveNewsSourcesForTests();
     assert.equal(media.length, 12);
     assert.ok(union.length >= media.length);
 

@@ -19,6 +19,7 @@ import {
 } from "@hu/media-registry";
 
 import { listMediaResources } from "../../media-resources/persistence/media-resource.repository.js";
+import { selectMediaCarouselNewsRecords } from "../../public-news/public-news-media-carousel.js";
 import { findActivePublicNewsRecords } from "../../public-news/public-news.repository.js";
 import { TRUSTED_MEDIA_RESOURCES } from "../../civic-media-center/content/trusted-media.js";
 import { MEDIA_PLP_CAROUSEL_NEWS_LIMIT } from "./constants.js";
@@ -36,12 +37,14 @@ export const MEDIA_PLP_AUTO_BUILD_NEWS_LIMIT = COUNTRY_PUBLIC_NEWS_RAIL_LIMIT;
 /**
  * Articles that belong in the /media PLP batch and carousel materializer inventory.
  * Default limit 12 — DO NOT change for 03E.13 parity.
+ * MEDIA-NEWS-01B — the same shared selection as GET /public/news?carousel=media, so
+ * the prebuild translates exactly the carousel's articles, in the same order.
  */
 export async function selectMediaPlpConsumerNewsArticles(input?: {
   readonly limit?: number;
   readonly now?: string;
 }): Promise<readonly NewsArticleRecord[]> {
-  return findActivePublicNewsRecords({
+  return selectMediaCarouselNewsRecords({
     limit: input?.limit ?? MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
     language: MEDIA_PLP_NEWS_CONSUMER_LANGUAGE,
     now: input?.now,

@@ -268,6 +268,67 @@ export async function findActivePublicNewsRecords(input: {
   return balancePublicNewsRecordsBySource(batches.flat(), input.limit);
 }
 
+/** Groups articles per source: MediaResource id, or `name:<sourceName>` for legacy rows. */
+function carouselGroupKey(record: Pick<NewsArticleRecord, "mediaResourceId" | "sourceName">) {
+  return record.mediaResourceId ? record.mediaResourceId : `name:${record.sourceName}`;
+}
+
+function compareNewestFirst(left: NewsArticleRecord, right: NewsArticleRecord): number {
+  return right.publishedAt.localeCompare(left.publishedAt) || left.id.localeCompare(right.id);
+}
+
+/**
+ * MEDIA-NEWS-01B — candidate pool for the /media carousel: the newest `perSource`
+ * active articles of each source, in one aggregation (no per-source queries).
+ */
+export async function findPublicNewsCarouselCandidates(input: {
+  language: string;
+  perSource: number;
+  now?: string;
+}): Promise<NewsArticleRecord[]> {
+  const now = input.now ?? new Date().toISOString();
+
+  if (resolvePublicNewsPersistenceMode() === "memory") {
+    const groups = new Map<string, NewsArticleRecord[]>();
+    for (const record of [...memoryRecords.values()].sort(compareNewestFirst)) {
+      if (
+        record.status !== "active" ||
+        record.expiresAt <= now ||
+        record.language !== input.language
+      ) {
+        continue;
+      }
+      const key = carouselGroupKey(record);
+      const group = groups.get(key) ?? [];
+      if (group.length < input.perSource) {
+        group.push(structuredClone(record));
+        groups.set(key, group);
+      }
+    }
+    return [...groups.values()].flat();
+  }
+
+  return getCollection()
+    .aggregate<NewsArticleRecord>(
+      [
+        { $match: { status: "active", expiresAt: { $gt: now }, language: input.language } },
+        { $sort: { publishedAt: -1, id: 1 } },
+        {
+          $group: {
+            _id: { $ifNull: ["$mediaResourceId", { $concat: ["name:", "$sourceName"] }] },
+            docs: { $push: "$$ROOT" },
+          },
+        },
+        { $project: { docs: { $slice: ["$docs", input.perSource] } } },
+        { $unwind: "$docs" },
+        { $replaceRoot: { newRoot: "$docs" } },
+        { $project: { _id: 0 } },
+      ],
+      { allowDiskUse: true },
+    )
+    .toArray();
+}
+
 export async function findActivePublicNewsSourceNames(input?: {
   language?: string;
   now?: string;

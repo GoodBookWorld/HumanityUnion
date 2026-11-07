@@ -83,7 +83,10 @@ export function PublicNewsCard({
     skipClientTranslation: disableOnDemandTranslation || plpPresentation != null,
     plpPresentation,
   });
-  const provider = resolveProviderPresentation(view.sourceName);
+  const provider = resolveProviderPresentation(view.sourceName, {
+    logoUrl: article.sourceLogoUrl,
+    logoLabel: article.sourceLogoLabel,
+  });
   const publishedLabel = formatNewsRelativeTime(view.publishedAt, locale);
   const aiSummaryBullets = useMemo(
     () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),

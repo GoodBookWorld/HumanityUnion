@@ -63,6 +63,11 @@ import {
   updateLanguageRegistryRecord,
 } from "../../../src/modules/language/index.js";
 
+import {
+  resetActiveNewsSourcesForTests,
+  seedActiveNewsSourcesForTests,
+} from "../../helpers/active-news-sources.js";
+
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 function makeNews(
@@ -150,7 +155,10 @@ describe("RESET 05D — delivery closure", () => {
       makeNews("m1", "BBC World", "2030-02-10T00:00:00.000Z"),
       makeNews("ca1", "CBC News", "2030-01-01T00:00:00.000Z"),
     ]);
+    // MEDIA-NEWS-01B — the consumer selection admits only active NEWS_SOURCE articles.
+    seedActiveNewsSourcesForTests([{ name: "BBC World", websiteUrl: "https://example.com" }]);
     const media = await selectMediaPlpConsumerNewsArticles({ limit: 12 });
+    resetActiveNewsSourcesForTests();
     const auto = await selectConsumerVisibleNewsArticlesForAutoBuild({
       countryContexts: [
         {

@@ -39,6 +39,11 @@ import {
   setPublishedLocalizationPersistenceModeForTests,
 } from "../../../src/modules/language/published-localized-presentation/index.js";
 
+import {
+  resetActiveNewsSourcesForTests,
+  seedActiveNewsSourcesForTests,
+} from "../../helpers/active-news-sources.js";
+
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const now = "2030-01-01T00:00:00.000Z";
 const expiresAt = "2030-12-31T00:00:00.000Z";
@@ -117,11 +122,19 @@ describe("Reset 03E.13 — public_news consumer selection parity", () => {
       );
     }
     await upsertPublicNewsRecords(records);
+    // MEDIA-NEWS-01B — the consumer selection admits only active NEWS_SOURCE articles.
+    seedActiveNewsSourcesForTests(
+      ["MonoSource", ...Array.from({ length: 8 }, (_, i) => `AltSource-${i}`)].map((name) => ({
+        name,
+        websiteUrl: "https://example.com",
+      })),
+    );
 
     const consumerIds = await selectMediaPlpConsumerNewsIds({
       limit: MEDIA_PLP_CAROUSEL_NEWS_LIMIT,
       now,
     });
+    resetActiveNewsSourcesForTests();
     assert.equal(consumerIds.length, MEDIA_PLP_CAROUSEL_NEWS_LIMIT);
     assert.equal(MEDIA_PLP_NEWS_CONSUMER_LANGUAGE, "en");
 
