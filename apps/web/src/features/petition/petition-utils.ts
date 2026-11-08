@@ -1,6 +1,59 @@
-import type { Petition, PetitionState, Signature } from "@hu/types";
+import type { Petition, PetitionState } from "@hu/types";
+
+import type { ClientAuthStatus } from "../auth/use-client-auth-status";
 
 export const BOOTSTRAP_PARTICIPANT_ID = "member-bootstrap-001";
+
+/**
+ * Viewer signature as reported by the server for the current session
+ * (`viewerHasSigned` on the public Petition projection) — never derived from a
+ * client-held participant id.
+ */
+export type ViewerSignatureStatus = "unknown" | "signed" | "unsigned" | "unavailable";
+
+export type SignatureSectionState =
+  | "checking"
+  | "sign_in"
+  | "just_signed"
+  | "already_signed"
+  | "not_open"
+  | "status_unavailable"
+  | "unsigned";
+
+export function resolveSignatureSectionState(input: {
+  readonly authStatus: ClientAuthStatus;
+  readonly viewerSignature: ViewerSignatureStatus;
+  readonly justSigned: boolean;
+  readonly petitionStatus: PetitionState;
+}): SignatureSectionState {
+  if (input.authStatus === "pending") {
+    return "checking";
+  }
+
+  if (input.authStatus === "unauthenticated") {
+    return input.petitionStatus === "Open" ? "sign_in" : "not_open";
+  }
+
+  if (input.viewerSignature === "signed") {
+    return input.justSigned ? "just_signed" : "already_signed";
+  }
+
+  if (input.petitionStatus !== "Open") {
+    return "not_open";
+  }
+
+  if (input.viewerSignature === "unknown") {
+    return "checking";
+  }
+
+  return input.viewerSignature === "unavailable" ? "status_unavailable" : "unsigned";
+}
+
+export function isSignatureWithdrawalAvailable(petition: Petition): boolean {
+  return (
+    petition.status === "Open" && petition.policy.withdrawalPolicy?.withdrawalPermitted === true
+  );
+}
 
 const PIPELINE_STAGES = [
   "Initiative",
@@ -42,19 +95,6 @@ export function getSupportStatusSummary(status: PetitionState): string {
   }
 }
 
-export function findParticipantSignature(
-  petition: Petition,
-  participantId: string,
-): Signature | undefined {
-  return petition.signatures.find(
-    (signature) => signature.participantId === participantId && signature.status === "Active",
-  );
-}
-
-export function participantHasSigned(petition: Petition, participantId: string): boolean {
-  return findParticipantSignature(petition, participantId) !== undefined;
-}
-
 export function getPipelineStageStatus(stage: (typeof PIPELINE_STAGES)[number]): string {
   const currentIndex = PIPELINE_STAGES.indexOf("Petition");
 
@@ -80,9 +120,9 @@ export interface NextMeaningfulAction {
 
 export function deriveNextMeaningfulAction(
   petition: Petition,
-  participantId: string,
+  viewerHasSigned: boolean,
 ): NextMeaningfulAction {
-  const hasSigned = participantHasSigned(petition, participantId);
+  const hasSigned = viewerHasSigned;
   const { status } = petition;
 
   if (status === "Draft" || status === "Ready") {

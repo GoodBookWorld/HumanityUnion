@@ -4,6 +4,8 @@ import type { CollaborativeAnalysis, CollectiveDecision, Initiative, Petition } 
 import { useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
+import { useClientAuthStatus } from "../../auth/use-client-auth-status";
+import { useViewerPetitionSignature } from "../use-viewer-petition-signature";
 
 import { ContributionRecognition } from "./ContributionRecognition";
 import { DecisionContext } from "./DecisionContext";
@@ -14,8 +16,6 @@ import { PetitionSubject } from "./PetitionSubject";
 import { RelatedLinks } from "./RelatedLinks";
 import { SignatureSection } from "./SignatureSection";
 import { SupportMetrics } from "./SupportMetrics";
-
-import { BOOTSTRAP_PARTICIPANT_ID, participantHasSigned } from "../petition-utils";
 
 import "./workspace.css";
 
@@ -33,9 +33,10 @@ export function PetitionWorkspace({
   collaborativeAnalysis,
 }: PetitionWorkspaceProps) {
   const [petition, setPetition] = useState(initialPetition);
-  const [showRecognition, setShowRecognition] = useState(
-    participantHasSigned(initialPetition, BOOTSTRAP_PARTICIPANT_ID),
-  );
+  const authStatus = useClientAuthStatus();
+  const { viewerSignature, registrationGatewayMessage, setViewerSignature, refresh } =
+    useViewerPetitionSignature(initialPetition.petitionId, authStatus);
+  const viewerHasSigned = authStatus === "authenticated" && viewerSignature === "signed";
 
   return (
     <div className="petition-workspace">
@@ -58,8 +59,12 @@ export function PetitionWorkspace({
       <ProfileSection title="Signature">
         <SignatureSection
           petition={petition}
+          authStatus={authStatus}
+          viewerSignature={viewerSignature}
+          registrationGatewayMessage={registrationGatewayMessage}
           onPetitionUpdated={setPetition}
-          onSignatureRecorded={() => setShowRecognition(true)}
+          onViewerSignatureChange={setViewerSignature}
+          onSignatureStatusStale={refresh}
         />
       </ProfileSection>
 
@@ -72,11 +77,11 @@ export function PetitionWorkspace({
       </ProfileSection>
 
       <ProfileSection title="Contribution Recognition">
-        <ContributionRecognition visible={showRecognition} />
+        <ContributionRecognition visible={viewerHasSigned} />
       </ProfileSection>
 
       <ProfileSection title="Next Meaningful Action">
-        <NextMeaningfulAction petition={petition} />
+        <NextMeaningfulAction petition={petition} viewerHasSigned={viewerHasSigned} />
       </ProfileSection>
 
       <ProfileSection title="Related Links">

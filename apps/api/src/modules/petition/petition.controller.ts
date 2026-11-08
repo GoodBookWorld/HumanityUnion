@@ -9,6 +9,13 @@ import {
 } from "../../shared/initiative-ancestry/index.js";
 import { AuthenticationRequiredError } from "../auth/auth.errors.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import {
+  assertCanManageInitiativePetition,
+  assertSignerIsActor,
+  resolvePetitionMutationActor,
+} from "./petition-mutation-authorization.js";
+import { PetitionAccessDeniedError } from "./petition.errors.js";
 import { mapPetitionListResponse, mapPetitionResponse } from "./petition.mapper.js";
 import {
   archivePetition,
@@ -89,6 +96,11 @@ function handleStoreError(res: Response, error: unknown): void {
     return;
   }
 
+  if (error instanceof PetitionAccessDeniedError) {
+    res.status(403).json(createFailureResponse(error.message));
+    return;
+  }
+
   const message = error instanceof Error ? error.message : "Petition request failed.";
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
@@ -96,6 +108,33 @@ function handleStoreError(res: Response, error: unknown): void {
 function getPetitionId(req: Request): string {
   const petitionId = req.params.petitionId;
   return Array.isArray(petitionId) ? (petitionId[0] ?? "") : (petitionId ?? "");
+}
+
+/**
+ * HU-LC-05B — runs before any administrative mutation: authenticated actor, the
+ * Petition exists, and the actor stewards its Initiative. Sends the failure response
+ * and returns false otherwise.
+ */
+async function guardPetitionManagement(
+  req: Request,
+  res: Response,
+  petitionId: string,
+): Promise<boolean> {
+  try {
+    const actor = await resolvePetitionMutationActor(req);
+    const petition = await getPetition(petitionId);
+
+    if (!petition) {
+      res.status(404).json(createFailureResponse("Petition not found."));
+      return false;
+    }
+
+    assertCanManageInitiativePetition(petition.subject.initiativeId, actor);
+    return true;
+  } catch (error) {
+    handleStoreError(res, error);
+    return false;
+  }
 }
 
 export async function listPetitionsHandler(_req: Request, res: Response): Promise<void> {
@@ -176,6 +215,14 @@ export async function createPetitionHandler(req: Request, res: Response): Promis
   }
 
   try {
+    const actor = await resolvePetitionMutationActor(req);
+
+    if (!getInitiativeById(petition.subject.initiativeId)) {
+      res.status(404).json(createFailureResponse("Initiative not found."));
+      return;
+    }
+
+    assertCanManageInitiativePetition(petition.subject.initiativeId, actor);
     const created = await createPetition(petition);
 
     res.status(201).json(createSuccessResponse(mapPetitionResponse(created), "Petition created."));
@@ -190,6 +237,10 @@ export async function patchPetitionHandler(req: Request, res: Response): Promise
 
   if (idError) {
     res.status(400).json(createFailureResponse(idError));
+    return;
+  }
+
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
     return;
   }
 
@@ -224,6 +275,10 @@ export async function preparePetitionHandler(req: Request, res: Response): Promi
     return;
   }
 
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
+    return;
+  }
+
   try {
     const petition = await preparePetition(petitionId);
 
@@ -247,6 +302,10 @@ export async function publishPetitionHandler(req: Request, res: Response): Promi
     return;
   }
 
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
+    return;
+  }
+
   try {
     const petition = await publishPetition(petitionId);
 
@@ -267,6 +326,10 @@ export async function openPetitionHandler(req: Request, res: Response): Promise<
 
   if (idError) {
     res.status(400).json(createFailureResponse(idError));
+    return;
+  }
+
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
     return;
   }
 
@@ -295,11 +358,9 @@ export async function openPetitionHandler(req: Request, res: Response): Promise<
 
 /**
  * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures).
- * When the request body omits `participantId` (the new Lifecycle-based
- * public Petition renderer never sends one), the acting Participant is
- * resolved from the authenticated request instead — mirroring
- * `withdrawPetitionSignatureHandler` below. The legacy body-supplied
- * contract keeps working unchanged whenever a caller still provides one.
+ * The acting Participant is always resolved from the authenticated request —
+ * mirroring `withdrawPetitionSignatureHandler` below. HU-LC-05B: a legacy
+ * body-supplied `participantId` is accepted only when it is that same Participant.
  */
 export async function signPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
@@ -320,8 +381,9 @@ export async function signPetitionHandler(req: Request, res: Response): Promise<
 
   try {
     const { participantId: bodyParticipantId, participationMode } = parseSignRequest(body);
-    const participantId = bodyParticipantId ?? (await resolveRequestIdentity(req)).participantId;
-    const petition = await signPetition(petitionId, participantId, participationMode);
+    const actor = await resolveRequestIdentity(req);
+    assertSignerIsActor(bodyParticipantId, actor);
+    const petition = await signPetition(petitionId, actor.participantId, participationMode);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -378,6 +440,10 @@ export async function closePetitionHandler(req: Request, res: Response): Promise
     return;
   }
 
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
+    return;
+  }
+
   const body = (req.body ?? {}) as Record<string, unknown>;
   const timestampError = validateOptionalTimestampField(body, "closesAt");
 
@@ -407,6 +473,10 @@ export async function archivePetitionHandler(req: Request, res: Response): Promi
 
   if (idError) {
     res.status(400).json(createFailureResponse(idError));
+    return;
+  }
+
+  if (!(await guardPetitionManagement(req, res, petitionId))) {
     return;
   }
 

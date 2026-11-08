@@ -39,3 +39,13 @@ export class PetitionConcurrencyConflictError extends Error {
     this.name = "PetitionConcurrencyConflictError";
   }
 }
+
+/** The authenticated Participant may not perform this Petition action. */
+export class PetitionAccessDeniedError extends Error {
+  readonly code = "PETITION_ACCESS_DENIED";
+
+  constructor(message = "You do not have access to manage this Petition.") {
+    super(message);
+    this.name = "PetitionAccessDeniedError";
+  }
+}

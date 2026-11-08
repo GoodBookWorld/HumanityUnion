@@ -1,13 +1,14 @@
 import type { Petition } from "@hu/types";
 
-import { BOOTSTRAP_PARTICIPANT_ID, deriveNextMeaningfulAction } from "../petition-utils";
+import { deriveNextMeaningfulAction } from "../petition-utils";
 
 interface NextMeaningfulActionProps {
   petition: Petition;
+  viewerHasSigned: boolean;
 }
 
-export function NextMeaningfulAction({ petition }: NextMeaningfulActionProps) {
-  const action = deriveNextMeaningfulAction(petition, BOOTSTRAP_PARTICIPANT_ID);
+export function NextMeaningfulAction({ petition, viewerHasSigned }: NextMeaningfulActionProps) {
+  const action = deriveNextMeaningfulAction(petition, viewerHasSigned);
 
   return (
     <div className="next-meaningful-action">
