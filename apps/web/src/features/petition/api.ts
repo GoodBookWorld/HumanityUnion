@@ -51,13 +51,16 @@ export async function signPetition(
  * (`setInitiativeRevisionReaction`, etc.), the server resolves the real
  * signed-in Participant from the request itself.
  */
-export async function signPetitionAsCurrentParticipant(petitionId: string): Promise<Petition> {
+export async function signPetitionAsCurrentParticipant(
+  petitionId: string,
+  participationMode: ParticipationMode = "Public",
+): Promise<Petition> {
   return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ participationMode: "Public" }),
+    body: JSON.stringify({ participationMode }),
   });
 }
 

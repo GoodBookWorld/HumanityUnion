@@ -2,6 +2,7 @@ import type { ClientSession } from "mongodb";
 
 import type { PetitionState } from "@hu/types";
 
+import { isExplicitIsolatedMongoTest } from "../../../infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../../infrastructure/mongodb/mongo-connection.js";
@@ -26,7 +27,8 @@ function isDuplicateKeyError(error: unknown): boolean {
 async function ensurePetitionMongoReady(): Promise<void> {
   // Author Lifecycle treats Petition as SOURCE_OPTIONAL. Unit certification
   // must not hang on Mongo selection when Petition substrate is unavailable.
-  if (process.env.NODE_TEST_ENV === "true") {
+  // An explicitly locked, owned hu_test_ database is the only test exception.
+  if (process.env.NODE_TEST_ENV === "true" && !isExplicitIsolatedMongoTest()) {
     throw new PetitionPersistenceError("MongoDB skipped in NODE_TEST_ENV.");
   }
 
