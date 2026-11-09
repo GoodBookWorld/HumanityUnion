@@ -90,6 +90,8 @@ export const MONGO_COLLECTIONS = {
   initiativeProposalReactions: "initiative_proposal_reactions",
   initiativeRevisionReactions: "initiative_revision_reactions",
   initiativePetitionDrafts: "initiative_petition_drafts",
+  /** HU-LC-05C.3 — independent Petition drafts keyed by draftId (many per Initiative). */
+  initiativePetitionWorkingDrafts: "initiative_petition_working_drafts",
   initiativeDiscussionCompletions: "initiative_discussion_completions",
 
   initiativeDecisionSessionDrafts: "initiative_decision_session_drafts",
