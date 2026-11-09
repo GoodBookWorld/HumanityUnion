@@ -9,6 +9,8 @@ import { getInitiativeLifecycleStageDefinition } from "@hu/types";
 import { buildInitiativeAnalysisSourceSnapshot } from "../initiative-collaborative-analysis/initiative-analysis-source-snapshot.service.js";
 import { buildInitiativeCivicArchiveIntelligenceSnapshot } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-intelligence.service.js";
 import { buildInitiativeCollectiveDecisionIntelligenceSnapshot } from "../initiative-collective-decision-lifecycle/initiative-collective-decision-intelligence.service.js";
+import type { PetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.types.js";
+import { buildInitiativePetitionIntelligenceSnapshot } from "../initiative-petition-lifecycle/initiative-petition-intelligence.service.js";
 import { buildInitiativePublicImpactIntelligenceSnapshot } from "../initiative-public-impact-lifecycle/initiative-public-impact-intelligence.service.js";
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { getMemberById } from "../member/member-access.js";
@@ -45,6 +47,52 @@ const DRAFT_REQUIRED_OPERATIONS = new Set<InitiativeLifecycleAiAssistOperation>(
   "improve_wording",
   "regenerate_section",
 ]);
+
+/** HU-LC-05C.4B.2 — Petition generation and gap review also build on the current draft. */
+const PETITION_DRAFT_OPERATIONS = new Set<InitiativeLifecycleAiAssistOperation>([
+  ...DRAFT_REQUIRED_OPERATIONS,
+  "generate_draft",
+  "identify_missing_information",
+]);
+
+const PETITION_SOURCE_ITEM_CHARS = 600;
+const PETITION_MAX_PROPOSAL_SOURCES = 5;
+
+function boundSourceText(text: string, maxChars = PETITION_SOURCE_ITEM_CHARS): string {
+  const trimmed = text.trim();
+  return trimmed.length > maxChars ? `${trimmed.slice(0, maxChars - 1)}…` : trimmed;
+}
+
+/** Same `field:\nvalue` layout the Author editor publishes as its draft excerpt. */
+export function formatPetitionWorkingDraftExcerpt(draft: PetitionWorkingDraft): string {
+  const fields: Array<[string, string]> = [
+    ["title", draft.title],
+    ["publicSummary", draft.publicSummary],
+    ["requestStatement", draft.requestStatement],
+    ["expectedOutcome", draft.expectedOutcome],
+    ["supportingContext", draft.supportingContext],
+    ["keyArguments", draft.keyArguments.join("\n")],
+  ];
+
+  return fields
+    .filter(([, value]) => value.trim().length > 0)
+    .map(([key, value]) => `${key}:\n${value.trim()}`)
+    .join("\n\n");
+}
+
+function describePetitionWorkingDraft(draft: PetitionWorkingDraft): string {
+  const recipients = draft.recipients.map((recipient) => boundSourceText(recipient, 200));
+
+  return [
+    "Selected Petition draft (loaded on the server; suggestions only — the Author applies and saves).",
+    recipients.length > 0
+      ? `Intended recipients (Author-provided): ${recipients.join("; ")}.`
+      : "Intended recipients: not specified by the Author — do not invent recipients.",
+    draft.revisionId
+      ? `Draft generated from published version ${draft.revisionVersion ?? "?"}.`
+      : "Draft has not been generated from a published version yet.",
+  ].join(" ");
+}
 
 async function resolveParticipantDisplayName(identity: RequestIdentity): Promise<string> {
   if (identity.displayName?.trim()) {
@@ -100,6 +148,43 @@ async function resolveStageSources(
         }.`,
       ].join(" ");
 
+      return { labels, summary };
+    }
+
+    if (stageId === "petition") {
+      const snapshot = await buildInitiativePetitionIntelligenceSnapshot(initiativeId);
+      const proposals = snapshot.proposalReferences.slice(0, PETITION_MAX_PROPOSAL_SOURCES);
+      const labels = [
+        `Initiative: ${snapshot.initiativeTitle || initiativeId}`,
+        snapshot.revisionReference
+          ? `Published Revision (version ${snapshot.revisionReference.version})`
+          : "Published Revision (not available)",
+        snapshot.analysisReference
+          ? `Collaborative Analysis (${snapshot.analysisReference.analysisId})`
+          : "Collaborative Analysis (not published)",
+        `Improvement Proposals (${snapshot.proposalReferences.length})`,
+      ];
+      const summary = [
+        `Initiative: ${boundSourceText(snapshot.initiativeTitle)}. ${boundSourceText(snapshot.initiativeDescription)}`,
+        snapshot.revisionReference
+          ? `Published Revision version ${snapshot.revisionReference.version}: ${boundSourceText(snapshot.revisionReference.revisionSummary)}`
+          : "No Published Revision is available — a Petition must reference one; do not invent it.",
+        snapshot.analysisReference
+          ? `Collaborative Analysis "${boundSourceText(snapshot.analysisReference.title, 200)}": ${boundSourceText(snapshot.analysisReference.summary)}`
+          : "No published Collaborative Analysis — do not invent analysis findings.",
+        proposals.length > 0
+          ? `Improvement Proposals accepted into the Revision: ${proposals
+              .map(
+                (proposal) =>
+                  `"${boundSourceText(proposal.title, 160)}" (${proposal.status}): ${boundSourceText(proposal.summary, 300)}`,
+              )
+              .join(" | ")}${
+              snapshot.proposalReferences.length > proposals.length
+                ? ` (+${snapshot.proposalReferences.length - proposals.length} more)`
+                : ""
+            }.`
+          : "No accepted Improvement Proposals — do not invent proposals.",
+      ].join("\n");
       return { labels, summary };
     }
 
@@ -199,6 +284,11 @@ export async function buildLifecycleAiProviderContext(input: {
   readonly instructions?: string;
   readonly currentDraftExcerpt?: string;
   readonly targetSectionId?: string;
+  /**
+   * HU-LC-05C.4B.2 — a working draft already loaded and authorized by the
+   * caller. Its stored content replaces any client-supplied excerpt.
+   */
+  readonly petitionWorkingDraft?: PetitionWorkingDraft;
 }): Promise<LifecycleAiAllowedProviderContext> {
   const lifecycleProfile = (input.initiative.lifecycleProfile ?? "STANDARD") as InitiativeLifecycleProfile;
   const sources = await resolveStageSources(
@@ -208,9 +298,18 @@ export async function buildLifecycleAiProviderContext(input: {
   );
   const participantDisplayName = await resolveParticipantDisplayName(input.identity);
   const instructions = input.instructions?.trim() || undefined;
-  const currentDraftExcerpt = DRAFT_REQUIRED_OPERATIONS.has(input.operation)
-    ? sanitizePublicDraftExcerpt(input.currentDraftExcerpt)
+  const excerptOperations =
+    input.stageId === "petition" ? PETITION_DRAFT_OPERATIONS : DRAFT_REQUIRED_OPERATIONS;
+  const draft = input.petitionWorkingDraft;
+  const excerptSource = draft
+    ? formatPetitionWorkingDraftExcerpt(draft)
+    : input.currentDraftExcerpt;
+  const currentDraftExcerpt = excerptOperations.has(input.operation)
+    ? sanitizePublicDraftExcerpt(excerptSource)
     : undefined;
+  const sourceContextSummary = draft
+    ? `${sources.summary}\n${describePetitionWorkingDraft(draft)}`
+    : sources.summary;
 
   const includedFields = [
     "participantDisplayName",
@@ -234,6 +333,9 @@ export async function buildLifecycleAiProviderContext(input: {
   if (input.targetSectionId) {
     includedFields.push("targetSectionId");
   }
+  if (draft) {
+    includedFields.push("petitionWorkingDraft", "recipients");
+  }
 
   const context: LifecycleAiAllowedProviderContext = {
     participantDisplayName,
@@ -243,8 +345,8 @@ export async function buildLifecycleAiProviderContext(input: {
     stageId: input.stageId,
     stageLabel: input.stageLabel,
     presentationMode: input.presentationMode,
-    availableSourceLabels: sources.labels,
-    sourceContextSummary: sources.summary,
+    availableSourceLabels: draft ? [...sources.labels, "Selected Petition draft"] : sources.labels,
+    sourceContextSummary,
     operation: input.operation,
     instructions,
     currentDraftExcerpt,

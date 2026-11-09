@@ -3,9 +3,11 @@ import { Router, type Response } from "express";
 import type { HumanityUnionAssistantSurfaceId, InitiativeLifecycleStageId } from "@hu/types";
 import { isHumanityUnionAssistantSurfaceId } from "@hu/types";
 
+import { AuthenticationRequiredError } from "../auth/auth.errors.js";
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { resolvePetitionMutationActor } from "../petition/petition-mutation-authorization.js";
 
 import {
   resolveLifecycleAiHttpStatus,
@@ -35,6 +37,11 @@ function createFailureResponse(message: string) {
 }
 
 function handleServiceError(res: Response, error: unknown): void {
+  if (error instanceof AuthenticationRequiredError) {
+    res.status(401).json(createFailureResponse("Authentication required."));
+    return;
+  }
+
   const message = toLifecycleAiPublicMessage(error);
   res.status(resolveLifecycleAiHttpStatus(error)).json(createFailureResponse(message));
 }
@@ -85,8 +92,12 @@ assistantRouter.post(
   }
 
   try {
-    const identity = await resolveRequestIdentity(req);
     const body = req.body as PlatformAssistantAssistBody;
+    // HU-LC-05C.4B.2 — a Petition working draft needs a verified, non-bootstrap Participant.
+    const identity =
+      body?.draftId !== undefined && body?.draftId !== null
+        ? await resolvePetitionMutationActor(req)
+        : await resolveRequestIdentity(req);
 
     if (!isHumanityUnionAssistantSurfaceId(body.surfaceId)) {
       res.status(400).json(createFailureResponse("This Assistant request could not be completed."));

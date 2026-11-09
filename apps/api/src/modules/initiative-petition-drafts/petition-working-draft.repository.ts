@@ -8,6 +8,7 @@ import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.
 import type {
   PetitionWorkingDraft,
   PetitionWorkingDraftContentUpdate,
+  PetitionWorkingDraftGeneratedFields,
 } from "./petition-working-draft.types.js";
 
 /** Petition persistence is MongoDB-only; tests use an explicitly isolated hu_test_ database. */
@@ -30,6 +31,24 @@ function collection() {
 }
 
 const WITHOUT_MONGO_ID = { projection: { _id: 0 } } as const;
+
+/** Drafts stored before HU-LC-05C.4B carry no traceability yet. */
+function withTraceability(draft: PetitionWorkingDraft): PetitionWorkingDraft;
+function withTraceability(draft: PetitionWorkingDraft | null): PetitionWorkingDraft | null;
+function withTraceability(draft: PetitionWorkingDraft | null): PetitionWorkingDraft | null {
+  if (!draft) {
+    return null;
+  }
+
+  return {
+    ...draft,
+    revisionId: draft.revisionId ?? null,
+    revisionVersion: draft.revisionVersion ?? null,
+    analysisId: draft.analysisId ?? null,
+    analysisVersion: draft.analysisVersion ?? null,
+    proposalIds: draft.proposalIds ?? [],
+  };
+}
 
 function isDuplicateKeyError(error: unknown): boolean {
   return (
@@ -61,7 +80,7 @@ export async function findPetitionWorkingDraft(
   draftId: string,
 ): Promise<PetitionWorkingDraft | null> {
   await ensureReady();
-  return collection().findOne({ draftId, initiativeId }, WITHOUT_MONGO_ID);
+  return withTraceability(await collection().findOne({ draftId, initiativeId }, WITHOUT_MONGO_ID));
 }
 
 /** Drafts of one Initiative, oldest first (ties by draftId). */
@@ -69,10 +88,11 @@ export async function listPetitionWorkingDrafts(
   initiativeId: string,
 ): Promise<PetitionWorkingDraft[]> {
   await ensureReady();
-  return collection()
+  const drafts = await collection()
     .find({ initiativeId }, WITHOUT_MONGO_ID)
     .sort({ createdAt: 1, draftId: 1 })
     .toArray();
+  return drafts.map((draft) => withTraceability(draft));
 }
 
 /** Updates only the named draft of the named Initiative; null when no such draft. */
@@ -82,10 +102,43 @@ export async function updatePetitionWorkingDraft(
   update: PetitionWorkingDraftContentUpdate & { readonly updatedAt: string },
 ): Promise<PetitionWorkingDraft | null> {
   await ensureReady();
-  return collection().findOneAndUpdate(
-    { draftId, initiativeId },
-    { $set: { ...update } },
-    { returnDocument: "after", ...WITHOUT_MONGO_ID },
+  return withTraceability(
+    await collection().findOneAndUpdate(
+      { draftId, initiativeId },
+      { $set: { ...update } },
+      { returnDocument: "after", ...WITHOUT_MONGO_ID },
+    ),
+  );
+}
+
+/**
+ * HU-LC-05C.4B — writes generated content and its traceability in one update,
+ * only while the draft still holds exactly the content (and updatedAt) the
+ * caller inspected; null when the draft is gone or was changed meanwhile.
+ */
+export async function applyGeneratedPetitionWorkingDraft(
+  initiativeId: string,
+  draftId: string,
+  inspected: PetitionWorkingDraft,
+  generated: PetitionWorkingDraftGeneratedFields,
+): Promise<PetitionWorkingDraft | null> {
+  await ensureReady();
+  return withTraceability(
+    await collection().findOneAndUpdate(
+      {
+        draftId,
+        initiativeId,
+        updatedAt: inspected.updatedAt,
+        title: inspected.title,
+        publicSummary: inspected.publicSummary,
+        requestStatement: inspected.requestStatement,
+        expectedOutcome: inspected.expectedOutcome,
+        supportingContext: inspected.supportingContext,
+        keyArguments: [...inspected.keyArguments],
+      },
+      { $set: { ...generated, keyArguments: [...generated.keyArguments] } },
+      { returnDocument: "after", ...WITHOUT_MONGO_ID },
+    ),
   );
 }
 

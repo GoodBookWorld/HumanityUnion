@@ -23,7 +23,10 @@ import {
   formatCommunityIntelligenceForAssistantPrompt,
   instructionsRequestCommunityIntelligence,
 } from "../community-intelligence/index.js";
+import { findPetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.repository.js";
+import type { PetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.types.js";
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
+import { isInitiativeOwnedBy } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { buildInitiativeLifecycleStageProjection } from "../initiatives/initiative-lifecycle-stage-projection.service.js";
 import { assertAiPromptSafe } from "../lifecycle-safety/lifecycle-safety.service.js";
@@ -55,8 +58,12 @@ import {
 import { resolveAssistantPromptVersions } from "./assistant-prompt-versions.js";
 import { recordAssistantUsageMetric } from "./assistant-usage-metrics.js";
 import { buildLifecycleAiPrompt } from "./build-lifecycle-ai-prompt.js";
-import { buildLifecycleAiProviderContext } from "./build-lifecycle-ai-provider-context.js";
+import {
+  buildLifecycleAiProviderContext,
+  formatPetitionWorkingDraftExcerpt,
+} from "./build-lifecycle-ai-provider-context.js";
 import { resolveAssistantBehaviorGuard } from "./assistant-behavior-guards.js";
+import { normalizeAssistantDraftId } from "./assistant-draft-id.js";
 import {
   ASSISTANT_SAFETY_POLICY_SUMMARY,
   HUMANITY_UNION_PRINCIPLES,
@@ -86,6 +93,73 @@ export interface PlatformAssistantAssistBody {
   readonly targetSectionId?: string;
   readonly currentDraftExcerpt?: string;
   readonly conversationHistory?: readonly HumanityUnionAssistantConversationTurn[];
+  /**
+   * HU-LC-05C.4B.2 — optional independent Petition working draft. The server
+   * loads it (steward only) and its stored content replaces `currentDraftExcerpt`.
+   */
+  readonly draftId?: string;
+}
+
+/**
+ * Draft operations available for a server-loaded Petition working draft. The
+ * Petition stage without a draftId keeps its existing (generate-only) set.
+ */
+const PETITION_WORKING_DRAFT_OPERATIONS: readonly InitiativeLifecycleAiAssistOperation[] = [
+  "generate_draft",
+  "improve_wording",
+  "regenerate_section",
+  "identify_missing_information",
+];
+
+/**
+ * Loads the selected Petition working draft for an Assistant request, or null
+ * when no draftId was supplied. Petition surface only; steward of the named
+ * Initiative only; the draft must belong to exactly that Initiative.
+ */
+async function resolveAssistantPetitionWorkingDraft(
+  identity: RequestIdentity,
+  body: PlatformAssistantAssistBody,
+  surfaceId: HumanityUnionAssistantSurfaceId,
+): Promise<PetitionWorkingDraft | null> {
+  if (body.draftId === undefined || body.draftId === null) {
+    return null;
+  }
+
+  const draftId = normalizeAssistantDraftId(body.draftId);
+  const initiativeId = body.initiativeId?.trim() || "";
+
+  if (!draftId) {
+    throw new LifecycleAiError("bad_request", "draftId must be a non-empty string.");
+  }
+
+  if (surfaceId !== "petition" || (body.stageId !== undefined && body.stageId !== "petition")) {
+    throw new LifecycleAiError("bad_request", "draftId is supported only for Petition drafts.");
+  }
+
+  if (!initiativeId) {
+    throw new LifecycleAiError("bad_request", "initiativeId is required with draftId.");
+  }
+
+  const initiative = getInitiativeById(initiativeId);
+
+  if (!initiative) {
+    throw new LifecycleAiError("not_found", "Initiative not found.");
+  }
+
+  if (!isInitiativeOwnedBy(initiative, identity)) {
+    throw new LifecycleAiError(
+      "forbidden",
+      "Only the Initiative steward may use a Petition draft.",
+    );
+  }
+
+  const draft = await findPetitionWorkingDraft(initiativeId, draftId);
+
+  if (!draft) {
+    throw new LifecycleAiError("not_found", "Petition draft not found.");
+  }
+
+  return draft;
 }
 
 function isAssistOperation(value: unknown): value is InitiativeLifecycleAiAssistOperation {
@@ -337,6 +411,14 @@ export async function requestHumanityUnionAssistantAssist(
     const specialization = resolveAssistantSpecialization(surfaceId);
     const displayName = identity.displayName?.trim() || "Participant";
     const config = resolveLifecycleAiConfig();
+    const petitionWorkingDraft = await resolveAssistantPetitionWorkingDraft(
+      identity,
+      body,
+      surfaceId,
+    );
+    const serverDraftExcerpt = petitionWorkingDraft
+      ? formatPetitionWorkingDraftExcerpt(petitionWorkingDraft)
+      : undefined;
 
     const behaviorGuard = resolveAssistantBehaviorGuard(body.instructions);
     if (behaviorGuard) {
@@ -388,7 +470,13 @@ export async function requestHumanityUnionAssistantAssist(
     }
 
     const safetyText =
-      [body.instructions, body.currentDraftExcerpt].filter(Boolean).join("\n\n") || body.operation;
+      [
+        body.instructions,
+        petitionWorkingDraft ? serverDraftExcerpt : body.currentDraftExcerpt,
+        petitionWorkingDraft?.recipients.join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n\n") || body.operation;
 
     try {
       await assertAiPromptSafe({
@@ -419,6 +507,7 @@ export async function requestHumanityUnionAssistantAssist(
     let allowedOperations = [...specialization.defaultOperations];
     let lifecycleProfile: string | undefined;
     let specializationInstructions = specialization.instructionBlock;
+    let providerDraftExcerpt: string | undefined;
     const blogAuthoring = surfaceId === "blog" && isBlogPublicationAuthoringPath(body.pagePath);
 
     if (blogAuthoring) {
@@ -462,6 +551,7 @@ export async function requestHumanityUnionAssistantAssist(
         allowedOperations = Array.from(
           new Set<InitiativeLifecycleAiAssistOperation>([
             ...operationsForCapabilities(projection.aiCapabilities),
+            ...(petitionWorkingDraft ? PETITION_WORKING_DRAFT_OPERATIONS : []),
             "explain",
             "answer_question",
           ]),
@@ -476,9 +566,11 @@ export async function requestHumanityUnionAssistantAssist(
           instructions: body.instructions,
           currentDraftExcerpt: body.currentDraftExcerpt,
           targetSectionId: body.targetSectionId,
+          petitionWorkingDraft: petitionWorkingDraft ?? undefined,
         });
         availableSourceLabels = providerContext.availableSourceLabels;
         lifecycleProfile = providerContext.lifecycleProfile;
+        providerDraftExcerpt = providerContext.currentDraftExcerpt;
         // Context minimization: only attach source snapshot when needed.
         const isPlatformOrientation =
           body.operation === "answer_question" &&
@@ -490,6 +582,12 @@ export async function requestHumanityUnionAssistantAssist(
           ? `${specialization.featureLabel}. Platform orientation question — stage snapshot omitted.`
           : truncateText(providerContext.sourceContextSummary, config.maxSourceContextChars);
       } else {
+        if (petitionWorkingDraft) {
+          throw new LifecycleAiError(
+            "forbidden",
+            "Petition drafts are only available in Author Workspace.",
+          );
+        }
         allowedOperations = ["explain", "answer_question"];
         if (!allowedOperations.includes(body.operation)) {
           throw new LifecycleAiError(
@@ -525,8 +623,10 @@ export async function requestHumanityUnionAssistantAssist(
       config.maxConversationHistoryTurns,
       config.maxConversationTurnChars,
     );
-    const currentDraftExcerpt = body.currentDraftExcerpt
-      ? truncateText(body.currentDraftExcerpt, config.maxDraftExcerptChars)
+    // With a draftId, only the server-loaded draft content reaches the provider.
+    const excerptSource = petitionWorkingDraft ? providerDraftExcerpt : body.currentDraftExcerpt;
+    const currentDraftExcerpt = excerptSource
+      ? truncateText(excerptSource, config.maxDraftExcerptChars)
       : undefined;
 
     const retrievedKnowledge = retrievePlatformKnowledge({
@@ -548,8 +648,11 @@ export async function requestHumanityUnionAssistantAssist(
 
       // Creation-context grounding: when no Initiative id is present, reuse the
       // Author's draft excerpt for a bounded public similarity check.
-      if (communityContext.relatedInitiatives.length === 0 && body.currentDraftExcerpt?.trim()) {
-        const excerpt = body.currentDraftExcerpt.trim();
+      const similarityExcerpt = petitionWorkingDraft
+        ? serverDraftExcerpt
+        : body.currentDraftExcerpt;
+      if (communityContext.relatedInitiatives.length === 0 && similarityExcerpt?.trim()) {
+        const excerpt = similarityExcerpt.trim();
         const draftCheck = await checkDraftSimilarity({
           title: excerpt.slice(0, 120) || "Untitled draft",
           description: excerpt,

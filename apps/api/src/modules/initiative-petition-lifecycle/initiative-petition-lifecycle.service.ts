@@ -33,7 +33,10 @@ import {
   reservePetitionPublication,
 } from "../initiative-petition-slots/petition-slot.service.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "./initiative-petition-intelligence.service.js";
-import { generatePetitionDraftContent } from "./initiative-petition-draft-builder.js";
+import {
+  buildPetitionDraftTraceability,
+  generatePetitionDraftContent,
+} from "./initiative-petition-draft-builder.js";
 import {
   deleteInitiativePetitionDraft,
   getInitiativePetitionDraftByInitiativeId,
@@ -280,11 +283,7 @@ export async function generateInitiativePetitionDraft(
     expectedOutcome: generated.expectedOutcome,
     supportingContext: generated.supportingContext,
     keyArguments: [...generated.keyArguments],
-    revisionId: snapshot.revisionReference?.revisionId ?? null,
-    revisionVersion: snapshot.revisionReference?.version ?? null,
-    analysisId: snapshot.analysisReference?.analysisId ?? null,
-    analysisVersion: snapshot.analysisReference?.initiativeVersion ?? null,
-    proposalIds: snapshot.proposalReferences.map((proposal) => proposal.proposalId),
+    ...buildPetitionDraftTraceability(snapshot),
   });
 
   return updated ?? draft;

@@ -41,6 +41,21 @@ export function validatePetitionWorkingDraftUpdate(
   ) as PetitionWorkingDraftContentUpdate;
 }
 
+/** Generate body: optional `overwrite` (default false). */
+export function validatePetitionWorkingDraftGenerate(body: unknown): { overwrite: boolean } {
+  const value = (body as { overwrite?: unknown } | null | undefined)?.overwrite;
+
+  if (value === undefined || value === null) {
+    return { overwrite: false };
+  }
+
+  if (typeof value !== "boolean") {
+    throw new Error("overwrite must be a boolean when provided.");
+  }
+
+  return { overwrite: value };
+}
+
 /** Create body: optional `derivedFromPetitionId`. */
 export function validatePetitionWorkingDraftCreate(body: unknown): {
   derivedFromPetitionId: string | null;

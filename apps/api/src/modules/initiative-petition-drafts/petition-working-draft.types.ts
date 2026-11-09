@@ -18,9 +18,34 @@ export interface PetitionWorkingDraft {
   readonly recipients: readonly string[];
   /** Published Petition of the same Initiative this draft was derived from. */
   readonly derivedFromPetitionId: string | null;
+  /**
+   * HU-LC-05C.4B — sources of the last generation into this draft (the
+   * lifecycle traceability contract); null / empty until generated.
+   */
+  readonly revisionId: string | null;
+  readonly revisionVersion: number | null;
+  readonly analysisId: string | null;
+  readonly analysisVersion: number | null;
+  readonly proposalIds: readonly string[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }
+
+export type PetitionWorkingDraftGeneratedFields = Pick<
+  PetitionWorkingDraft,
+  | "title"
+  | "publicSummary"
+  | "requestStatement"
+  | "expectedOutcome"
+  | "supportingContext"
+  | "keyArguments"
+  | "revisionId"
+  | "revisionVersion"
+  | "analysisId"
+  | "analysisVersion"
+  | "proposalIds"
+  | "updatedAt"
+>;
 
 export type PetitionWorkingDraftContentUpdate = Partial<
   Pick<
