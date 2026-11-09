@@ -5,11 +5,13 @@ import type { Initiative } from "@hu/types";
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import {
+  createWorkingDraftInSlot,
+  deleteWorkingDraftAndReleaseSlot,
+} from "../initiative-petition-slots/petition-slot.service.js";
 import { resolveInitiativePetitionReference } from "../petition/initiative-petition-selection.js";
 import {
-  deletePetitionWorkingDraft,
   findPetitionWorkingDraft,
-  insertPetitionWorkingDraft,
   listPetitionWorkingDrafts,
   updatePetitionWorkingDraft,
 } from "./petition-working-draft.repository.js";
@@ -69,9 +71,7 @@ export async function createPetitionWorkingDraft(
     updatedAt: now,
   };
 
-  await insertPetitionWorkingDraft(draft);
-
-  return draft;
+  return createWorkingDraftInSlot(draft);
 }
 
 export async function listInitiativePetitionWorkingDrafts(
@@ -125,7 +125,7 @@ export async function deleteInitiativePetitionWorkingDraft(
 ): Promise<void> {
   getStewardedInitiative(initiativeId, identity);
 
-  if (!(await deletePetitionWorkingDraft(initiativeId, draftId))) {
+  if (!(await deleteWorkingDraftAndReleaseSlot(initiativeId, draftId))) {
     throw new Error("Petition draft not found.");
   }
 }

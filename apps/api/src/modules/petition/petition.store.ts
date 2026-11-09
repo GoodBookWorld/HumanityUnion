@@ -1,3 +1,4 @@
+import type { ClientSession } from "mongodb";
 import type {
   Petition,
   PetitionPolicy,
@@ -11,7 +12,12 @@ import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transact
 import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repository.js";
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
-import { PetitionConcurrencyConflictError, PetitionTransactionError } from "./petition.errors.js";
+import { findPetitionSlotByPetitionId } from "../initiative-petition-slots/petition-slot.repository.js";
+import {
+  PetitionConcurrencyConflictError,
+  PetitionSlotRequiredError,
+  PetitionTransactionError,
+} from "./petition.errors.js";
 import { isPetitionPubliclyVisible } from "./petition-public-visibility.js";
 import { createPetitionSignedEvent } from "./petition-signed.event.js";
 import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
@@ -342,8 +348,11 @@ export async function preparePetition(petitionId: string): Promise<Petition | nu
   return assemblePetitionResponse(updated, signatures);
 }
 
-export async function publishPetition(petitionId: string): Promise<Petition | null> {
-  const record = await findPetitionById(petitionId);
+async function transitionPetitionToPublished(
+  petitionId: string,
+  session?: ClientSession,
+): Promise<Petition | null> {
+  const record = await findPetitionById(petitionId, { session });
 
   if (!record) {
     return null;
@@ -354,11 +363,16 @@ export async function publishPetition(petitionId: string): Promise<Petition | nu
 
   const publishedAt = nowIso();
 
-  const updated = await updatePetitionConditionally(petitionId, record.status, {
-    status: "Published",
-    shareLink: buildShareLink(record.subject.initiativeId, publishedAt),
-    updatedAt: publishedAt,
-  });
+  const updated = await updatePetitionConditionally(
+    petitionId,
+    record.status,
+    {
+      status: "Published",
+      shareLink: buildShareLink(record.subject.initiativeId, publishedAt),
+      updatedAt: publishedAt,
+    },
+    { session },
+  );
 
   if (!updated) {
     throw new PetitionConcurrencyConflictError();
@@ -366,13 +380,69 @@ export async function publishPetition(petitionId: string): Promise<Petition | nu
 
   const signatures = await listSignaturesByPetitionId(petitionId);
 
+  return assemblePetitionResponse(updated, signatures);
+}
+
+/** Side effects of a publication; run only once the Published state is committed. */
+export function onPetitionPublished(petitionId: string): void {
   scheduleContentTranslationWarmAfterMutation({
     sourceKind: "petition",
     sourceRecordId: petitionId,
     reason: "public_mutation",
   });
+}
 
-  return assemblePetitionResponse(updated, signatures);
+/**
+ * HU-LC-05C.4A.2/4A.3 — the only Ready → Published transition outside tests.
+ * Runs inside the caller's MongoDB transaction and requires, in that same
+ * transaction, a published slot of the Petition's own Initiative; otherwise it
+ * fails without writing. No side effects: the caller runs `onPetitionPublished`
+ * after commit. Callers use the Petition slot contract
+ * (initiative-petition-slots), never this function directly.
+ */
+export async function publishPetitionInSession(
+  petitionId: string,
+  session: ClientSession,
+): Promise<Petition> {
+  const record = await findPetitionById(petitionId, { session });
+
+  if (!record) {
+    throw new Error("Petition not found.");
+  }
+
+  const slot = await findPetitionSlotByPetitionId(petitionId, session);
+
+  if (slot?.state !== "published" || slot.initiativeId !== record.subject.initiativeId) {
+    throw new PetitionSlotRequiredError();
+  }
+
+  const petition = await transitionPetitionToPublished(petitionId, session);
+
+  if (!petition) {
+    throw new Error("Petition not found.");
+  }
+
+  return petition;
+}
+
+/**
+ * Test-only fixture seeding: publishes without a slot, to model Petitions that
+ * predate slot tracking. Refuses to run outside NODE_TEST_ENV.
+ */
+export async function publishPetitionForTests(petitionId: string): Promise<Petition | null> {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new PetitionSlotRequiredError(
+      "Publishing without a Petition slot is available only when NODE_TEST_ENV=true.",
+    );
+  }
+
+  const petition = await transitionPetitionToPublished(petitionId);
+
+  if (petition) {
+    onPetitionPublished(petitionId);
+  }
+
+  return petition;
 }
 
 export async function openPetition(petitionId: string, opensAt?: string): Promise<Petition | null> {

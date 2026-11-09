@@ -92,6 +92,8 @@ export const MONGO_COLLECTIONS = {
   initiativePetitionDrafts: "initiative_petition_drafts",
   /** HU-LC-05C.3 — independent Petition drafts keyed by draftId (many per Initiative). */
   initiativePetitionWorkingDrafts: "initiative_petition_working_drafts",
+  /** HU-LC-05C.4A — at most three Petition slots (drafts + published Petitions) per Initiative. */
+  initiativePetitionSlots: "initiative_petition_slots",
   initiativeDiscussionCompletions: "initiative_discussion_completions",
 
   initiativeDecisionSessionDrafts: "initiative_decision_session_drafts",

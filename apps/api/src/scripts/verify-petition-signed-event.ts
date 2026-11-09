@@ -52,13 +52,14 @@ async function main(): Promise<void> {
   const {
     createPetition,
     preparePetition,
-    publishPetition,
     openPetition,
     signPetition,
     getPetition,
     deletePetitionsByIdForTests,
     deleteSignaturesByPetitionIdForTests,
   } = await import("../modules/petition/petition.store.js");
+  const { publishPetitionWithinSlotLimit, deleteSlotOfDeletedPetitionForTests } =
+    await import("../modules/initiative-petition-slots/petition-slot.service.js");
   const { defaultPetitionPolicy } = await import("../modules/petition/petition.defaults.js");
   const { buildPetitionSignedEventId } = await import("../modules/petition/petition-signed.event.js");
   const { CATALOGUE_EVENTS } = await import("../infrastructure/events/catalogue-events.js");
@@ -138,7 +139,7 @@ async function main(): Promise<void> {
       outcome: null,
     });
     await preparePetition(petitionId);
-    await publishPetition(petitionId);
+    await publishPetitionWithinSlotLimit(petitionId);
     await openPetition(petitionId);
 
     // Recovery Task 26 Part 12 note: `defaultPetitionPolicy.eligibility
@@ -259,6 +260,7 @@ async function main(): Promise<void> {
     console.log("13. Clean owned fixtures");
     await deleteSignaturesByPetitionIdForTests(petitionId);
     await deletePetitionsByIdForTests(petitionId);
+    await deleteSlotOfDeletedPetitionForTests(petitionId);
     await deleteOutboxRecordsByEventIdPrefix(outboxEventIdPrefix);
 
     console.log("PetitionSigned event verification passed.");
@@ -267,6 +269,7 @@ async function main(): Promise<void> {
     // fixtures into subsequent runs.
     await deleteSignaturesByPetitionIdForTests(petitionId).catch(() => undefined);
     await deletePetitionsByIdForTests(petitionId).catch(() => undefined);
+    await deleteSlotOfDeletedPetitionForTests(petitionId).catch(() => undefined);
     await deleteOutboxRecordsByEventIdPrefix(outboxEventIdPrefix).catch(() => undefined);
     throw error;
   }

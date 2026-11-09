@@ -21,9 +21,17 @@ import {
   listPetitionsByInitiativeId,
   openPetition,
   preparePetition,
-  publishPetition,
 } from "../petition/petition.store.js";
 import { isPetitionPubliclyVisible } from "../petition/petition-public-visibility.js";
+import {
+  finalizePetitionPublication,
+  injectPetitionSlotFault,
+  isSimulatedPublicationCrash,
+  publishPetitionInPublishedSlot,
+  releasePetitionPublicationReservation,
+  renewPetitionPublicationReservation,
+  reservePetitionPublication,
+} from "../initiative-petition-slots/petition-slot.service.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "./initiative-petition-intelligence.service.js";
 import { generatePetitionDraftContent } from "./initiative-petition-draft-builder.js";
 import {
@@ -406,66 +414,85 @@ async function publishInitiativePetitionDraft(
     }
   }
 
+  // HU-LC-05C.4A.2 — this attempt owns a slot reservation before the Petition
+  // exists; only the owner can make it public, within the three-slot limit.
+  const reservation = await reservePetitionPublication(initiativeId, petitionId);
   let petition: Petition;
 
-  if (existingPetition) {
-    // Retry after a partial failure: resume this draft's own Petition; its
-    // content was written at creation and is never rewritten here.
-    petition = existingPetition;
-  } else {
-    const decision = await getOrCreatePetitionBootstrapDecision(
-      initiative,
-      identity.participantId,
-      petitionId,
-    );
-    petition = await createPetition({
-      petitionId,
-      collectiveDecisionId: decision.decisionId,
-      status: "Draft",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      subject: {
-        decisionId: decision.decisionId,
-        initiativeId,
-        title: draft.title,
-        summary: draft.publicSummary,
-        requestStatement: draft.requestStatement,
-        expectedOutcome: draft.expectedOutcome,
-        supportingContext: draft.supportingContext,
-        keyArguments: [...draft.keyArguments],
-      },
-      policy: {
-        ...defaultPetitionPolicy,
-        withdrawalPolicy: {
-          withdrawalPermitted: true,
-          withdrawalPolicyDescription:
-            "Signatures may be withdrawn at any time while this Petition is open for endorsement.",
-        },
-      },
-      shareLink: null,
-      signatures: [],
-      supportMetrics: {
-        totalSignatures: 0,
-        participantSignatures: 0,
-        dailyActivity: [],
-        supportThresholdStatus: {
-          thresholdDefined: false,
-          thresholdReached: false,
-          currentCount: 0,
-          thresholdCount: null,
-        },
-      },
-      outcome: null,
-      traceability: buildTraceability(draft),
-    });
-  }
+  try {
+    injectPetitionSlotFault("crash-after-reserve");
 
-  if (petition.status === "Draft") {
-    petition = (await preparePetition(petitionId)) ?? petition;
-  }
+    if (existingPetition) {
+      // Retry after a partial failure: resume this draft's own Petition; its
+      // content was written at creation and is never rewritten here.
+      petition = existingPetition;
+    } else {
+      const decision = await getOrCreatePetitionBootstrapDecision(
+        initiative,
+        identity.participantId,
+        petitionId,
+      );
+      petition = await createPetition({
+        petitionId,
+        collectiveDecisionId: decision.decisionId,
+        status: "Draft",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        subject: {
+          decisionId: decision.decisionId,
+          initiativeId,
+          title: draft.title,
+          summary: draft.publicSummary,
+          requestStatement: draft.requestStatement,
+          expectedOutcome: draft.expectedOutcome,
+          supportingContext: draft.supportingContext,
+          keyArguments: [...draft.keyArguments],
+        },
+        policy: {
+          ...defaultPetitionPolicy,
+          withdrawalPolicy: {
+            withdrawalPermitted: true,
+            withdrawalPolicyDescription:
+              "Signatures may be withdrawn at any time while this Petition is open for endorsement.",
+          },
+        },
+        shareLink: null,
+        signatures: [],
+        supportMetrics: {
+          totalSignatures: 0,
+          participantSignatures: 0,
+          dailyActivity: [],
+          supportThresholdStatus: {
+            thresholdDefined: false,
+            thresholdReached: false,
+            currentCount: 0,
+            thresholdCount: null,
+          },
+        },
+        outcome: null,
+        traceability: buildTraceability(draft),
+      });
+    }
 
-  if (petition.status === "Ready") {
-    petition = (await publishPetition(petitionId)) ?? petition;
+    if (petition.status === "Draft") {
+      petition = (await preparePetition(petitionId)) ?? petition;
+    }
+
+    injectPetitionSlotFault("crash-after-prepare");
+
+    if (petition.status === "Ready") {
+      if (reservation) {
+        await renewPetitionPublicationReservation(reservation);
+        petition = await finalizePetitionPublication(reservation);
+      } else {
+        petition = await publishPetitionInPublishedSlot(petitionId);
+      }
+    }
+  } catch (error) {
+    if (reservation && !isSimulatedPublicationCrash(error)) {
+      await releasePetitionPublicationReservation(reservation).catch(() => undefined);
+    }
+    throw error;
   }
 
   if (petition.status === "Published") {

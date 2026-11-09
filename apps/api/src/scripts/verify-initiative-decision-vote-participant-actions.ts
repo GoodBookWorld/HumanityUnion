@@ -120,12 +120,13 @@ async function main(): Promise<void> {
   const {
     createPetition,
     preparePetition,
-    publishPetition,
     openPetition,
     signPetition,
     deletePetitionsByIdForTests,
     deleteSignaturesByPetitionIdForTests,
   } = await import("../modules/petition/petition.store.js");
+  const { publishPetitionWithinSlotLimit, deleteSlotOfDeletedPetitionForTests } =
+    await import("../modules/initiative-petition-slots/petition-slot.service.js");
   const { defaultPetitionPolicy } = await import("../modules/petition/petition.defaults.js");
   const { buildPetitionSignedEventId } = await import("../modules/petition/petition-signed.event.js");
   const { getMemberById } = await import("../modules/member/member-access.js");
@@ -537,7 +538,7 @@ async function main(): Promise<void> {
       outcome: null,
     });
     await preparePetition(petitionId);
-    await publishPetition(petitionId);
+    await publishPetitionWithinSlotLimit(petitionId);
     await openPetition(petitionId);
     const signed = await signPetition(petitionId, signerMemberId, "Public");
     const signature = signed!.signatures[0]!;
@@ -608,6 +609,7 @@ async function main(): Promise<void> {
     }
     await deleteSignaturesByPetitionIdForTests(petitionId);
     await deletePetitionsByIdForTests(petitionId);
+    await deleteSlotOfDeletedPetitionForTests(petitionId);
     for (const prefix of outboxEventIdPrefixes) {
       await deleteOutboxRecordsByEventIdPrefix(prefix);
       await deleteProcessedEventsByEventIdPrefix(prefix);
@@ -634,6 +636,7 @@ async function main(): Promise<void> {
     }
     await deleteSignaturesByPetitionIdForTests(petitionId).catch(() => undefined);
     await deletePetitionsByIdForTests(petitionId).catch(() => undefined);
+    await deleteSlotOfDeletedPetitionForTests(petitionId).catch(() => undefined);
     for (const prefix of outboxEventIdPrefixes) {
       await deleteOutboxRecordsByEventIdPrefix(prefix).catch(() => undefined);
       await deleteProcessedEventsByEventIdPrefix(prefix).catch(() => undefined);

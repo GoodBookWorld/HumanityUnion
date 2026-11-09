@@ -141,7 +141,7 @@ async function seedPetition(initiativeId: string, status: PetitionState): Promis
   );
   if (status !== "Draft") {
     await mods.store.preparePetition(petitionId);
-    await mods.store.publishPetition(petitionId);
+    await mods.store.publishPetitionForTests(petitionId);
     await mods.store.openPetition(petitionId);
   }
   return petitionId;

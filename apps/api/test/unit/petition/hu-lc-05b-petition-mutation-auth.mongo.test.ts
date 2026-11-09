@@ -116,7 +116,7 @@ async function seedPetition(status: PetitionState, policy?: Petition["policy"]):
   await mods.store.createPetition(policy ? { ...fixture, policy } : fixture);
   const steps: Array<[PetitionState, (id: string) => Promise<unknown>]> = [
     ["Ready", mods.store.preparePetition],
-    ["Published", mods.store.publishPetition],
+    ["Published", mods.store.publishPetitionForTests],
     ["Open", mods.store.openPetition],
     ["Closed", mods.store.closePetition],
   ];
