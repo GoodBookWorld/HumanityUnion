@@ -22,7 +22,7 @@ import { listPublicImpactsByInitiative } from "../initiative-public-impact/initi
 import { listRevisionsByInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listResponsesByInitiative } from "../official-response/official-response.store.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { listEligibleInitiativePetitions } from "../petition/initiative-petition-selection.js";
 import { getArchiveRecordById, listPublishedArchiveRecords } from "./public-civic-archive.store.js";
 import type { CivicArchiveLifecycleIndexQuery } from "./civic-archive-index-query.js";
 import { matchesQuery } from "./public-civic-archive-lifecycle.filters.js";
@@ -231,9 +231,8 @@ async function buildLifecycleStages(
     );
   }
 
-  const petition = await getPetitionByInitiativeId(initiativeId);
-
-  if (petition) {
+  // HU-LC-05C.1 — every publicly visible Petition, oldest first.
+  for (const petition of await listEligibleInitiativePetitions(initiativeId)) {
     pushRecord(
       "petition",
       childRecord(

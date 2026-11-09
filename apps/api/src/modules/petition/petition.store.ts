@@ -12,6 +12,7 @@ import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repositor
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { PetitionConcurrencyConflictError, PetitionTransactionError } from "./petition.errors.js";
+import { isPetitionPubliclyVisible } from "./petition-public-visibility.js";
 import { createPetitionSignedEvent } from "./petition-signed.event.js";
 import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import {
@@ -32,7 +33,7 @@ import {
   deletePetitionsByInitiativeIdForTests,
   findPetitionByCollectiveDecisionId,
   findPetitionById,
-  findPetitionByInitiativeId,
+  findPetitionsByInitiativeId,
   insertPetitionDocument,
   listPetitionDocuments,
   updatePetitionConditionally,
@@ -163,16 +164,28 @@ export async function getPetitionByCollectiveDecisionId(
   return assemblePetitionResponse(record, signatures);
 }
 
+/** HU-LC-05C.1 — every Petition of an Initiative, oldest first (ties by petitionId). */
+export async function listPetitionsByInitiativeId(initiativeId: string): Promise<Petition[]> {
+  const records = await findPetitionsByInitiativeId(initiativeId);
+  const signaturesByPetition = await listSignaturesByPetitionIds(
+    records.map((record) => record.petitionId),
+  );
+
+  return records.map((record) =>
+    assemblePetitionResponse(record, signaturesByPetition.get(record.petitionId) ?? []),
+  );
+}
+
+/**
+ * Compatibility lookup for callers that expect one Petition per Initiative:
+ * the most recently created publicly visible Petition, else the most recently
+ * created Petition. Downstream Lifecycle stages use `initiative-petition-selection`.
+ */
 export async function getPetitionByInitiativeId(initiativeId: string): Promise<Petition | null> {
-  const record = await findPetitionByInitiativeId(initiativeId);
+  const petitions = await listPetitionsByInitiativeId(initiativeId);
+  const visible = petitions.filter((petition) => isPetitionPubliclyVisible(petition.status));
 
-  if (!record) {
-    return null;
-  }
-
-  const signatures = await listSignaturesByPetitionId(record.petitionId);
-
-  return assemblePetitionResponse(record, signatures);
+  return visible.at(-1) ?? petitions.at(-1) ?? null;
 }
 
 export async function participantHasSigned(

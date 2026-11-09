@@ -17,7 +17,7 @@ import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecyc
 import { defaultPetitionPolicy } from "../petition/petition.defaults.js";
 import {
   createPetition,
-  getPetitionByInitiativeId,
+  listPetitionsByInitiativeId,
   openPetition,
   preparePetition,
   publishPetition,
@@ -222,11 +222,13 @@ export async function getInitiativePetitionWorkspaceContext(
 ): Promise<InitiativePetitionDraftContext> {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
-  const publishedPetition = await getPetitionByInitiativeId(initiativeId);
   // Same visibility rule as public projection — Ready/Draft are not "published".
-  const isPublished = publishedPetition
-    ? isPetitionPubliclyVisible(publishedPetition.status)
-    : false;
+  // HU-LC-05C.1 — deterministic: the most recently created published Petition.
+  const publishedPetition =
+    (await listPetitionsByInitiativeId(initiativeId))
+      .filter((petition) => isPetitionPubliclyVisible(petition.status))
+      .at(-1) ?? null;
+  const isPublished = publishedPetition !== null;
 
   const intelligenceSnapshot = await buildInitiativePetitionIntelligenceSnapshot(initiativeId);
   const draft = isPublished ? null : getOrCreateWorkingPetitionDraft(identity, initiative);
@@ -347,11 +349,15 @@ export async function publishInitiativePetitionStage(
     );
   }
 
-  const existingPetition = await getPetitionByInitiativeId(initiativeId);
+  // One published Petition per Initiative until multi-Petition publishing lands;
+  // an unpublished Draft/Ready Petition (the most recently created) is reused.
+  const initiativePetitions = await listPetitionsByInitiativeId(initiativeId);
 
-  if (existingPetition && existingPetition.status !== "Draft" && existingPetition.status !== "Ready") {
+  if (initiativePetitions.some((petition) => isPetitionPubliclyVisible(petition.status))) {
     throw new Error("A Petition has already been published for this Initiative.");
   }
+
+  const existingPetition = initiativePetitions.at(-1) ?? null;
 
   const decision = await getOrCreatePetitionBootstrapDecision(initiative, identity.participantId);
 

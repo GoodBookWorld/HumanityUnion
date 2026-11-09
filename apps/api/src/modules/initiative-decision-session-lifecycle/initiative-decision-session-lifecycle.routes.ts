@@ -4,6 +4,10 @@ import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
+  parseOptionalPetitionId,
+  petitionSelectionErrorStatus,
+} from "../petition/initiative-petition-selection.js";
+import {
   generateInitiativeDecisionSessionDraft,
   getInitiativeDecisionSessionWorkspaceContext,
   listInitiativeDecisionSessionRecommendations,
@@ -41,6 +45,7 @@ function resolveErrorStatus(message: string): number {
     message.includes("is required") ||
     message.includes("already been published") ||
     message.includes("no longer current") ||
+    message.includes("no longer available") ||
     message.includes("cannot be submitted")
   ) {
     return 409;
@@ -52,7 +57,9 @@ function resolveErrorStatus(message: string): number {
 function handleServiceError(res: Response, error: unknown): void {
   const message =
     error instanceof Error ? error.message : "Initiative Decision Session request failed.";
-  res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
+  res
+    .status(petitionSelectionErrorStatus(error) ?? resolveErrorStatus(message))
+    .json(createFailureResponse(message));
 }
 
 function getInitiativeId(req: Request): string {
@@ -84,7 +91,9 @@ initiativeDecisionSessionLifecycleRouter.post(
   async (req, res) => {
     try {
       const identity = await resolveRequestIdentity(req);
-      const draft = await generateInitiativeDecisionSessionDraft(identity, getInitiativeId(req));
+      const draft = await generateInitiativeDecisionSessionDraft(identity, getInitiativeId(req), {
+        petitionId: parseOptionalPetitionId(req.body),
+      });
 
       res.json(createSuccessResponse(draft, "Decision Session draft generated."));
     } catch (error) {

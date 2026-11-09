@@ -36,6 +36,14 @@ import {
 } from "./initiative-decision-session-draft.store.js";
 import { buildInitiativeDecisionSessionIntelligenceSnapshot } from "./initiative-decision-session-intelligence.service.js";
 import {
+  PetitionReferenceUnavailableError,
+  requireResolvedPetitionSelection,
+  resolveInitiativePetitionReference,
+  selectInitiativePetition,
+  storedDecisionSessionPetitionId,
+  type InitiativePetitionSelection,
+} from "../petition/initiative-petition-selection.js";
+import {
   createRecommendation,
   listRecommendationsByInitiative,
 } from "./initiative-decision-session-recommendation.store.js";
@@ -116,19 +124,25 @@ function getPublishedSessionId(initiativeId: string): string | null {
   return published?.sessionId ?? null;
 }
 
+function getPublishedSessionPetitionId(initiativeId: string): string | null {
+  const published = listPublicSessionsByInitiative(initiativeId)[0] ?? null;
+  return published ? storedDecisionSessionPetitionId(published) : null;
+}
+
 export async function getInitiativeDecisionSessionWorkspaceContext(
   identity: RequestIdentity,
   initiativeId: string,
 ): Promise<InitiativeDecisionSessionDraftContext> {
   const initiative = getOwnedInitiative(initiativeId, identity);
   const publishedSessionId = getPublishedSessionId(initiativeId);
-  const intelligenceSnapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId);
   const recommendations = listRecommendationsByInitiative(initiativeId);
 
   if (publishedSessionId) {
     return {
       draft: null,
-      intelligenceSnapshot,
+      intelligenceSnapshot: await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId, {
+        petitionId: getPublishedSessionPetitionId(initiativeId),
+      }),
       recommendations,
       publishedSessionId,
     };
@@ -138,15 +152,43 @@ export async function getInitiativeDecisionSessionWorkspaceContext(
 
   return {
     draft,
-    intelligenceSnapshot,
+    intelligenceSnapshot: await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId, {
+      petitionId: draft.petitionId,
+    }),
     recommendations,
     publishedSessionId: null,
   };
 }
 
+/**
+ * HU-LC-05C.1 — the Petition a new Decision Session draft builds on. Selection
+ * errors surface to the Author; a Petition store outage keeps Petition optional.
+ */
+async function selectPetitionForGeneration(
+  initiativeId: string,
+  petitionId: string | null | undefined,
+): Promise<string | null> {
+  let selection: InitiativePetitionSelection;
+
+  try {
+    selection = await selectInitiativePetition({ initiativeId, petitionId });
+  } catch {
+    if (petitionId?.trim()) {
+      throw new PetitionReferenceUnavailableError(petitionId.trim());
+    }
+    return null;
+  }
+
+  return requireResolvedPetitionSelection(selection)?.petitionId ?? null;
+}
+
 export async function generateInitiativeDecisionSessionDraft(
   identity: RequestIdentity,
   initiativeId: string,
+  options: {
+    /** Required when the Initiative has several published Petitions. */
+    readonly petitionId?: string | null;
+  } = {},
 ): Promise<InitiativeDecisionSessionDraft> {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
@@ -154,7 +196,10 @@ export async function generateInitiativeDecisionSessionDraft(
     throw new Error("A Decision Session has already been published for this Initiative.");
   }
 
-  const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId);
+  const selectedPetitionId = await selectPetitionForGeneration(initiativeId, options.petitionId);
+  const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId, {
+    petitionId: selectedPetitionId,
+  });
   // Petition is SOURCE_OPTIONAL — generate from Initiative / Analysis / Proposal
   // context when Petition is absent. Never invent a fake Petition.
 
@@ -304,18 +349,24 @@ export async function publishInitiativeDecisionSessionStage(
 
   validateInitiativeDecisionSessionDraftForPublication(draft);
 
-  const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId);
+  // HU-LC-05C.1 — the draft's stored Petition is authoritative: it must still exist,
+  // belong to this Initiative and be public. Absence of Petition is allowed.
+  if (draft.petitionId) {
+    const reference = await resolveInitiativePetitionReference(
+      initiativeId,
+      draft.petitionId,
+    ).catch(() => null);
 
-  // When a Petition was linked on the draft, it must still be current.
-  // Absence of Petition is allowed (SOURCE_OPTIONAL).
-  if (
-    draft.petitionId &&
-    (!snapshot.petitionReference || snapshot.petitionReference.petitionId !== draft.petitionId)
-  ) {
-    throw new Error(
-      "The Petition this draft was generated from is no longer current. Generate the Decision Session again before publishing.",
-    );
+    if (reference?.kind !== "selected") {
+      throw new Error(
+        "The Petition this draft was generated from is no longer available. Generate the Decision Session again before publishing.",
+      );
+    }
   }
+
+  const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId, {
+    petitionId: draft.petitionId,
+  });
 
   const existingPublished = getPublishedSessionId(initiativeId);
 

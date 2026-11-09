@@ -40,7 +40,7 @@ import {
 } from "../participant-action/infrastructure/participant-action.repository.js";
 import type { ParticipantActionRecord } from "../participant-action/domain/participant-action.types.js";
 import { findSignatureByPetitionAndMember } from "../petition/persistence/petition-signature.repository.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { listPetitionsByInitiativeId } from "../petition/petition.store.js";
 import { buildInitiativeShellDeepLink } from "./initiative-shell-deep-link.js";
 import { resolveNextMeaningfulParticipationAction } from "./resolve-next-meaningful-participation-action.js";
 
@@ -175,10 +175,10 @@ async function loadPublishedStageCounts(initiativeId: string): Promise<Record<st
 
   const petitionLookup = await settleOptionalLifecycleLookup(
     "journey_petition",
-    getPetitionByInitiativeId(initiativeId),
+    listPetitionsByInitiativeId(initiativeId).then((list) => (list.length > 0 ? list : null)),
     null,
   );
-  if (petitionLookup.value && petitionLookup.value.status !== "Draft") {
+  if (petitionLookup.value?.some((petition) => petition.status !== "Draft")) {
     counts.petition = 1;
   }
 
@@ -427,21 +427,24 @@ export async function buildCollectiveParticipationJourney(input: {
 
   // Petition
   if (isLifecycleStageApplicableToProfile("petition", lifecycleProfile)) {
+    // HU-LC-05C.1 — every Petition of the Initiative, never one arbitrary pick.
     const petitionLookup = await settleOptionalLifecycleLookup(
       "journey_petition_sign",
-      getPetitionByInitiativeId(input.initiativeId),
+      listPetitionsByInitiativeId(input.initiativeId).then((list) => (list.length > 0 ? list : null)),
       null,
     );
-    const petition = petitionLookup.value;
-    const petitionOpen =
-      petition &&
-      (petition.status === "Open" || petition.status === "Published" || petition.status === "Ready");
+    const petitions = petitionLookup.value ?? [];
+    const anyPetitionOpen = petitions.some(
+      (petition) =>
+        petition.status === "Open" || petition.status === "Published" || petition.status === "Ready",
+    );
     const alreadySigned = pastActions.some((action) => action.actionType === "petition_signature");
 
-    if (!alreadySigned && petition && !petitionLookup.degraded) {
+    if (!alreadySigned && !petitionLookup.degraded) {
       try {
-        const signature = await findSignatureByPetitionAndMember(petition.petitionId, participantId);
-        if (signature) {
+        for (const petition of petitions) {
+          const signature = await findSignatureByPetitionAndMember(petition.petitionId, participantId);
+          if (signature) {
             pastActions.push({
               actionType: "petition_signature",
               stageId: "petition",
@@ -451,6 +454,8 @@ export async function buildCollectiveParticipationJourney(input: {
               deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
               source: "domain_derived",
             });
+            break;
+          }
         }
       } catch {
         /* soft */
@@ -480,7 +485,7 @@ export async function buildCollectiveParticipationJourney(input: {
         reasonCode: "petition_info_unavailable",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
-    } else if (!petition || !petitionOpen) {
+    } else if (!anyPetitionOpen) {
       availableActions.push({
         actionType: "petition_signature",
         stageId: "petition",

@@ -159,19 +159,25 @@ function buildApprovedDecisionContext(
  * blocks, or alters Petition creation/transition — this is informational
  * context only, resolving to `null` whenever the Initiative has not yet
  * published a Revision.
+ *
+ * HU-LC-05C.1 — a Petition with Traceability shows the Revision it was published
+ * from (never a later one; `null` if that Revision is missing). Only Petitions
+ * without Traceability fall back to the Initiative's current Revision.
  */
 async function buildPetitionRevisionContext(
-  initiativeId: string,
+  petition: Petition,
 ): Promise<PublicPetitionRevisionContext | null> {
-  const currentVersion = getCurrentPublishedVersion(initiativeId);
+  const initiativeId = petition.subject.initiativeId;
+  const traced = petition.traceability?.revisionId?.trim() ? petition.traceability : null;
+  const version = traced ? traced.revisionVersion : getCurrentPublishedVersion(initiativeId);
 
-  if (currentVersion === 0) {
+  if (version === 0) {
     return null;
   }
 
-  const revision = getRevisionByInitiativeAndVersion(initiativeId, currentVersion);
+  const revision = getRevisionByInitiativeAndVersion(initiativeId, version);
 
-  if (!revision) {
+  if (!revision || (traced && revision.revisionId !== traced.revisionId)) {
     return null;
   }
 
@@ -338,7 +344,7 @@ export async function toPublicPetitionProjection(
 
   const decision = getDecision(petition.collectiveDecisionId);
   const initiative = getInitiativeById(petition.subject.initiativeId);
-  const relatedRevisionContext = await buildPetitionRevisionContext(petition.subject.initiativeId);
+  const relatedRevisionContext = await buildPetitionRevisionContext(petition);
   const supportBreakdown = await buildSupportBreakdown(petition);
   const viewerHasSigned = viewerParticipantId
     ? petition.signatures.some(
