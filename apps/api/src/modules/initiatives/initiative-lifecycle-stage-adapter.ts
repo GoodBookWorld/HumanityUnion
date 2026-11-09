@@ -20,7 +20,7 @@ import { getPublicInitiativeVersionHistory } from "../initiative-version-revisio
 import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
 import { listPublicOfficialResponsesForInitiative } from "../official-response/official-response.projection.js";
 import { listPublicDecisionSessionsForInitiative } from "../decision-session/public-decision-session.projection.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { listEligibleInitiativePetitions } from "../petition/initiative-petition-selection.js";
 import { toPublicPetitionProjection } from "../petition/public-petition.projection.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "../initiative-petition-lifecycle/initiative-petition-intelligence.service.js";
 import { buildInitiativeDecisionSessionIntelligenceSnapshot } from "../initiative-decision-session-lifecycle/initiative-decision-session-intelligence.service.js";
@@ -193,7 +193,9 @@ async function adaptRevisionStage(initiativeId: string): Promise<InitiativeLifec
 async function adaptPetitionStage(initiativeId: string): Promise<InitiativeLifecycleStageAdapterResult> {
   let petition;
   try {
-    petition = await getPetitionByInitiativeId(initiativeId);
+    // HU-LC-05C.1 — single public result for the stage: the most recently created
+    // publicly visible Petition (deterministic; listing every Petition comes later).
+    petition = (await listEligibleInitiativePetitions(initiativeId)).at(-1) ?? null;
   } catch (error) {
     logger.error("initiative_lifecycle_stage_adapter.petition_infrastructure_failure", {
       initiativeId,

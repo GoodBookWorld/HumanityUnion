@@ -18,24 +18,26 @@ import {
   getRevisionByInitiativeAndVersion,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { findMembershipByUserId } from "../membership/membership.repository.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import {
+  selectedPetitionOrNull,
+  selectInitiativePetition,
+} from "../petition/initiative-petition-selection.js";
 import { countPetitionVisitorSignals } from "../petition/petition-visitor-signal.service.js";
 import { listRecommendationsByInitiative } from "./initiative-decision-session-recommendation.store.js";
 
-const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
-
 async function buildPetitionReference(
   initiativeId: string,
+  petitionId: string | null | undefined,
 ): Promise<InitiativeDecisionSessionPetitionReference | null> {
   // Petition is SOURCE_OPTIONAL — Mongo/infrastructure failure must not block Author DS.
   let petition;
   try {
-    petition = await getPetitionByInitiativeId(initiativeId);
+    petition = selectedPetitionOrNull(await selectInitiativePetition({ initiativeId, petitionId }));
   } catch {
     return null;
   }
 
-  if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+  if (!petition) {
     return null;
   }
 
@@ -249,6 +251,10 @@ function buildConsistencyChecks(input: {
  */
 export async function buildInitiativeDecisionSessionIntelligenceSnapshot(
   initiativeId: string,
+  options: {
+    /** Stored or chosen Petition; without one, only a sole eligible Petition is used. */
+    readonly petitionId?: string | null;
+  } = {},
 ): Promise<InitiativeDecisionSessionIntelligenceSnapshot> {
   // Mirror Petition Intelligence: degrade gracefully when the Initiative is
   // not yet readable from the store (e.g. projection-boundary unit tests that
@@ -257,7 +263,7 @@ export async function buildInitiativeDecisionSessionIntelligenceSnapshot(
   const initiative = getInitiativeById(initiativeId);
 
   const [petitionReference, allies, openComments] = await Promise.all([
-    buildPetitionReference(initiativeId),
+    buildPetitionReference(initiativeId, options.petitionId),
     listActiveAlliesByInitiative(initiativeId),
     buildOpenComments(initiativeId),
   ]);

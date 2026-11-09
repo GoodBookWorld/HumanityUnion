@@ -33,9 +33,13 @@ import {
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listPublicSessionsByInitiative } from "../decision-session/decision-session.store.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
-
-const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
+import {
+  countActiveSignatures,
+  listEligibleInitiativePetitions,
+  selectedPetitionOrNull,
+  selectInheritedInitiativePetition,
+  storedDecisionSessionPetitionId,
+} from "../petition/initiative-petition-selection.js";
 
 function buildAnalysisReference(
   initiativeId: string,
@@ -80,12 +84,19 @@ function buildRevisionReference(initiativeId: string): InitiativePublicImpactRev
   };
 }
 
+/** HU-LC-05C.1 — inherits the published Decision Session's stored Petition. */
 async function buildPetitionReference(
   initiativeId: string,
 ): Promise<InitiativePublicImpactPetitionReference | null> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  const session = listPublicSessionsByInitiative(initiativeId)[0] ?? null;
+  const petition = selectedPetitionOrNull(
+    await selectInheritedInitiativePetition({
+      initiativeId,
+      upstream: session ? { petitionId: storedDecisionSessionPetitionId(session) } : null,
+    }),
+  );
 
-  if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+  if (!petition) {
     return null;
   }
 
@@ -267,10 +278,9 @@ async function buildParticipationStatistics(input: {
   let activeAllyCount = 0;
 
   try {
-    const petition = await getPetitionByInitiativeId(input.initiativeId);
-    if (petition && PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
-      signatureCount = petition.signatures.filter((signature) => signature.status === "Active").length;
-    }
+    signatureCount = countActiveSignatures(
+      await listEligibleInitiativePetitions(input.initiativeId),
+    );
   } catch {
     signatureCount = 0;
   }

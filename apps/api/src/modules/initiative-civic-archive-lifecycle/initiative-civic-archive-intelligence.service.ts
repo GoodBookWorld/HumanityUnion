@@ -38,12 +38,16 @@ import {
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listPublicSessionsByInitiative } from "../decision-session/decision-session.store.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import {
+  countActiveSignatures,
+  listEligibleInitiativePetitions,
+  selectedPetitionOrNull,
+  selectInheritedInitiativePetition,
+  storedDecisionSessionPetitionId,
+} from "../petition/initiative-petition-selection.js";
 import { resolveCivicArchiveSourceEmptyState } from "./initiative-civic-archive-source-empty.js";
 
 export { resolveCivicArchiveSourceEmptyState } from "./initiative-civic-archive-source-empty.js";
-
-const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
 
 const SECTION_ANCHOR_BY_STAGE: Partial<Record<InitiativeLifecycleStageId, string>> = {
   initiative: "original_initiative",
@@ -149,9 +153,16 @@ async function buildPetitionReference(
   }
 
   try {
-    const petition = await getPetitionByInitiativeId(initiativeId);
+    // HU-LC-05C.1 — inherits the published Decision Session's stored Petition.
+    const session = listPublicSessionsByInitiative(initiativeId)[0] ?? null;
+    const petition = selectedPetitionOrNull(
+      await selectInheritedInitiativePetition({
+        initiativeId,
+        upstream: session ? { petitionId: storedDecisionSessionPetitionId(session) } : null,
+      }),
+    );
 
-    if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+    if (!petition) {
       return null;
     }
 
@@ -221,10 +232,7 @@ async function buildParticipationStatistics(input: {
   const [signatureCount, supportCount, reactionCount, activeAllyCount] = await Promise.all([
     (async () => {
       try {
-        const petition = await getPetitionByInitiativeId(input.initiativeId);
-        if (petition && PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
-          return petition.signatures.filter((signature) => signature.status === "Active").length;
-        }
+        return countActiveSignatures(await listEligibleInitiativePetitions(input.initiativeId));
       } catch {
         // best-effort
       }

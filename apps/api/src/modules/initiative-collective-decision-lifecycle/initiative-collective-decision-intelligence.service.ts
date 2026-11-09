@@ -17,27 +17,38 @@ import {
   getRevisionByInitiativeAndVersion,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { findMembershipByUserId } from "../membership/membership.repository.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import {
+  selectedPetitionOrNull,
+  selectInheritedInitiativePetition,
+} from "../petition/initiative-petition-selection.js";
 import { countPetitionVisitorSignals } from "../petition/petition-visitor-signal.service.js";
 import { getSessionById, listPublicSessionsByInitiative } from "../decision-session/decision-session.store.js";
 import { resolveCollectiveDecisionSourceEmptyState } from "./initiative-collective-decision-source-empty.js";
 
 export { resolveCollectiveDecisionSourceEmptyState } from "./initiative-collective-decision-source-empty.js";
 
-const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
-
+/**
+ * HU-LC-05C.1 — a published Decision Session's stored Petition is authoritative
+ * (null means it was built without one); otherwise only a sole eligible Petition.
+ */
 async function buildPetitionReference(
   initiativeId: string,
+  session: InitiativeCollectiveDecisionSessionReference | null,
 ): Promise<InitiativeCollectiveDecisionPetitionReference | null> {
   // Petition is SOURCE_OPTIONAL — Mongo/infrastructure failure must not block Author CD.
   let petition;
   try {
-    petition = await getPetitionByInitiativeId(initiativeId);
+    petition = selectedPetitionOrNull(
+      await selectInheritedInitiativePetition({
+        initiativeId,
+        upstream: session ? { petitionId: session.petitionId } : null,
+      }),
+    );
   } catch {
     return null;
   }
 
-  if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+  if (!petition) {
     return null;
   }
 
@@ -302,7 +313,7 @@ export async function buildInitiativeCollectiveDecisionIntelligenceSnapshot(
   const session = publishedSession ? getSessionById(publishedSession.sessionId) : null;
   const decisionSessionReference = session ? buildSessionReference(session) : null;
 
-  const petitionReference = await buildPetitionReference(initiativeId);
+  const petitionReference = await buildPetitionReference(initiativeId, decisionSessionReference);
   const revisionReference = buildRevisionReference(initiativeId);
   const analysisReference = initiative
     ? buildAnalysisReference(initiativeId, initiative.stewardId)

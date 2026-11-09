@@ -23,7 +23,10 @@ import {
   type SaveDecisionSessionDraftInput,
   validateDecisionSessionForPublication,
 } from "./decision-session.validators.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import {
+  selectedPetitionOrNull,
+  selectInitiativePetition,
+} from "../petition/initiative-petition-selection.js";
 import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 
 /**
@@ -261,9 +264,12 @@ export async function publishDecisionSession(
 
   const publishedAt = new Date().toISOString();
   // Petition is SOURCE_OPTIONAL — package references omit it when unavailable.
+  // HU-LC-05C.1 — only a sole eligible Petition; several are never picked between.
   let publishedPetition = null;
   try {
-    publishedPetition = await getPetitionByInitiativeId(session.initiativeId);
+    publishedPetition = selectedPetitionOrNull(
+      await selectInitiativePetition({ initiativeId: session.initiativeId }),
+    );
   } catch {
     publishedPetition = null;
   }

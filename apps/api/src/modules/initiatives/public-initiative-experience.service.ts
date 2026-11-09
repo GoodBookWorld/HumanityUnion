@@ -9,6 +9,7 @@ import type {
   PublicInitiativeProjection,
   PublicInitiativeRelatedCivicRecord,
   PublicInitiativeWithVersionHistory,
+  PublicPetitionProjection,
 } from "@hu/types";
 import {
   INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
@@ -50,7 +51,7 @@ import { getPackageByInitiativeId as getOfficialResponsePackageByInitiativeId } 
 import { listResponsesByInitiativeId as listLifecycleOfficialResponsesByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
 import { getReportByInitiativeId as getPublicImpactReportByInitiativeId } from "../initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { listPublicOfficialResponsesForInitiative } from "../official-response/official-response.projection.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { listPetitionsByInitiativeId } from "../petition/petition.store.js";
 import { toPublicPetitionProjection } from "../petition/public-petition.projection.js";
 import { getDiscussionCompletionByInitiativeId } from "../initiative-discussion-lifecycle/initiative-discussion-completion.store.js";
 import { listPublishedCollectionsByInitiative } from "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
@@ -204,7 +205,11 @@ export async function buildStageRecords(
     listPublicInitiativeImprovementProposals(initiativeId),
     listPublishedCollectionsByInitiative(initiativeId),
     precomputedVersionHistory ?? getPublicInitiativeVersionHistory(initiativeId),
-    settleOptionalLifecycleLookup("petition_by_initiative", getPetitionByInitiativeId(initiativeId), null),
+    settleOptionalLifecycleLookup(
+      "petition_by_initiative",
+      listPetitionsByInitiativeId(initiativeId).then((list) => (list.length > 0 ? list : null)),
+      null,
+    ),
     listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId),
     listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId),
     listPublicInitiativeImplementationTrackingsForInitiative(initiativeId),
@@ -285,22 +290,25 @@ export async function buildStageRecords(
     })),
   );
 
-  const petition = petitionLookup.value;
-  let petitionProjection = null;
-  if (petition && !petitionLookup.degraded) {
-    const projectionLookup = await settleOptionalLifecycleLookup(
-      "petition_public_projection",
-      toPublicPetitionProjection(petition),
-      null,
-    );
-    if (projectionLookup.degraded) {
-      optionalStageDiagnostics.petition = {
-        health: "unavailable",
-        reasonCode: "infrastructure_failure",
-      };
-    } else {
-      petitionProjection = projectionLookup.value;
-      if (petitionProjection) {
+  // HU-LC-05C.1 — every publicly visible Petition is a stage record (oldest first).
+  const petitionProjections: PublicPetitionProjection[] = [];
+  if (!petitionLookup.degraded) {
+    for (const petition of petitionLookup.value ?? []) {
+      const projectionLookup = await settleOptionalLifecycleLookup(
+        "petition_public_projection",
+        toPublicPetitionProjection(petition),
+        null,
+      );
+      if (projectionLookup.degraded) {
+        optionalStageDiagnostics.petition = {
+          health: "unavailable",
+          reasonCode: "infrastructure_failure",
+        };
+        petitionProjections.length = 0;
+        break;
+      }
+      if (projectionLookup.value) {
+        petitionProjections.push(projectionLookup.value);
         optionalStageDiagnostics.petition = { health: "ok" };
       }
     }
@@ -308,23 +316,19 @@ export async function buildStageRecords(
 
   records.set(
     "petition",
-    petitionProjection
-      ? [
-          {
-            recordId: petitionProjection.petitionIdentity.petitionId,
-            title: petitionProjection.petitionIdentity.title,
-            summary: petitionProjection.petitionSummary.purpose,
-            sourceKind: "petition",
-            status: petitionProjection.petitionIdentity.lifecycleStatus,
-            statusCode: petitionProjection.petitionIdentity.lifecycleStatus,
-            updatedAt:
-              petitionProjection.petitionSummary.publishedAt ??
-              petitionProjection.petitionSummary.opensAt ??
-              initiative.updatedAt,
-            publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
-          },
-        ]
-      : [],
+    petitionProjections.map((petitionProjection) => ({
+      recordId: petitionProjection.petitionIdentity.petitionId,
+      title: petitionProjection.petitionIdentity.title,
+      summary: petitionProjection.petitionSummary.purpose,
+      sourceKind: "petition",
+      status: petitionProjection.petitionIdentity.lifecycleStatus,
+      statusCode: petitionProjection.petitionIdentity.lifecycleStatus,
+      updatedAt:
+        petitionProjection.petitionSummary.publishedAt ??
+        petitionProjection.petitionSummary.opensAt ??
+        initiative.updatedAt,
+      publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
+    })),
   );
 
   records.set(

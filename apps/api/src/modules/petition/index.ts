@@ -6,6 +6,7 @@ export {
   getPetitionByCollectiveDecisionId,
   getPetitionByInitiativeId,
   listPetitions,
+  listPetitionsByInitiativeId,
   openPetition,
   participantHasSigned,
   preparePetition,

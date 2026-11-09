@@ -78,14 +78,18 @@ export async function findPetitionByCollectiveDecisionId(
   return document ? fromPetitionMongoDocument(document) : null;
 }
 
-export async function findPetitionByInitiativeId(
+/** HU-LC-05C.1 — every Petition of an Initiative, oldest first (ties by petitionId). */
+export async function findPetitionsByInitiativeId(
   initiativeId: string,
-): Promise<PetitionMongoRecord | null> {
+): Promise<PetitionMongoRecord[]> {
   await ensurePetitionMongoReady();
 
-  const document = await collection().findOne({ "subject.initiativeId": initiativeId });
+  const documents = await collection()
+    .find({ "subject.initiativeId": initiativeId })
+    .sort({ createdAt: 1, petitionId: 1 })
+    .toArray();
 
-  return document ? fromPetitionMongoDocument(document) : null;
+  return documents.map((document) => fromPetitionMongoDocument(document));
 }
 
 export async function listPetitionDocuments(): Promise<PetitionMongoRecord[]> {

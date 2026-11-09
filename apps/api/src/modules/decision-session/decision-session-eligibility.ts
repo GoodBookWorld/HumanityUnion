@@ -4,10 +4,9 @@ import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-a
 import { listProposalsByInitiative } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
-import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { listEligibleInitiativePetitions } from "../petition/initiative-petition-selection.js";
 
 const STEWARD_REVIEWED_STATUSES = new Set(["accepted", "partially_accepted", "declined"]);
-const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
 
 /**
  * Informational Petition presence for Decision Session context.
@@ -19,8 +18,7 @@ async function hasPublishedPetitionForInitiative(initiativeId: string): Promise<
   }
 
   try {
-    const petition = await getPetitionByInitiativeId(initiativeId);
-    return Boolean(petition && PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status));
+    return (await listEligibleInitiativePetitions(initiativeId)).length > 0;
   } catch {
     // Petition store may be unavailable offline (Mongo down).
     return false;
