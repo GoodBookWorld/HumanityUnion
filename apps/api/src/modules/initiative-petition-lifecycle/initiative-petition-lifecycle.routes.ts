@@ -35,6 +35,8 @@ function resolveErrorStatus(message: string): number {
   if (
     message.includes("is required") ||
     message.includes("already been published") ||
+    message.includes("already exists") ||
+    message.includes("concurrently modified") ||
     message.includes("no longer current")
   ) {
     return 409;

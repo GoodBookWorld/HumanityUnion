@@ -9,7 +9,7 @@ import type {
   PetitionTraceability,
 } from "@hu/types";
 
-import { getDecisionBySubjectId, createDecision } from "../collective-decision/collective-decision.store.js";
+import { createDecision, getDecision } from "../collective-decision/collective-decision.store.js";
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
@@ -17,12 +17,11 @@ import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecyc
 import { defaultPetitionPolicy } from "../petition/petition.defaults.js";
 import {
   createPetition,
+  getPetition,
   listPetitionsByInitiativeId,
   openPetition,
   preparePetition,
   publishPetition,
-  setPetitionTraceability,
-  updatePetition,
 } from "../petition/petition.store.js";
 import { isPetitionPubliclyVisible } from "../petition/petition-public-visibility.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "./initiative-petition-intelligence.service.js";
@@ -41,6 +40,9 @@ import { ensureLazyWorkingArtifact } from "../../shared/lifecycle/lazy-stage-ini
 
 const BOOTSTRAP_APPROVE_OPTION_ID = "option-petition-bootstrap-approve";
 const BOOTSTRAP_REJECT_OPTION_ID = "option-petition-bootstrap-reject";
+
+/** A draft's own Petition in these states is an interrupted publication to resume. */
+const RESUMABLE_PUBLICATION_STATUSES = new Set<Petition["status"]>(["Draft", "Ready", "Published"]);
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -66,15 +68,19 @@ function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): In
  * Initiative ids — solely so `createPetition`'s existing gate is satisfied.
  * It carries no real ballot/participation; it is never surfaced to the
  * Author or the public as a "Collective Decision" to interact with (the
- * Author never sees a decisionId, only the Petition stage). Idempotent:
- * reuses the existing bootstrap decision for this Initiative if Publish is
- * retried after an earlier partial failure.
+ * Author never sees a decisionId, only the Petition stage).
+ *
+ * HU-LC-05C.2 — one synthetic decision per Petition (its id derives from the
+ * petitionId, satisfying the unique `collectiveDecisionId` index); a retried
+ * publication reuses that same decision, never another Petition's.
  */
 async function getOrCreatePetitionBootstrapDecision(
   initiative: Initiative,
   actorParticipantId: string,
+  petitionId: string,
 ): Promise<CollectiveDecision> {
-  const existing = getDecisionBySubjectId("Initiative", initiative.initiativeId);
+  const decisionId = `decision-${petitionId}`;
+  const existing = getDecision(decisionId);
 
   if (existing) {
     return existing;
@@ -82,7 +88,7 @@ async function getOrCreatePetitionBootstrapDecision(
 
   const now = new Date().toISOString();
   const decision: CollectiveDecision = {
-    decisionId: `decision-petition-lifecycle-${randomUUID()}`,
+    decisionId,
     decisionSubjectType: "Initiative",
     decisionSubjectId: initiative.initiativeId,
     decisionMechanism: "CommunityPoll",
@@ -316,9 +322,10 @@ function buildTraceability(draft: InitiativePetitionDraft): PetitionTraceability
 /**
  * Initiative Lifecycle — Part F, Section 5/6/9/10. Publishes the working
  * draft as the canonical Public Petition: auto-provisions the bootstrap
- * Collective Decision (see above), creates (or reuses an in-progress
- * `Draft`/`Ready`) `Petition` via the pre-existing, unmodified Petition
- * state machine, attaches permanent Traceability, transitions it all the
+ * Collective Decision (see above), creates this draft's own `Petition`
+ * (HU-LC-05C.2: never another Petition found by Initiative) via the
+ * pre-existing, unmodified Petition state machine with permanent
+ * Traceability, transitions it all the
  * way to `Open` (so "Sign Petition" is immediately available — Section 6:
  * "Publishing Petition ... unlocks Decision Session" and Section 7's
  * signature reactions both presuppose the Petition already accepts
@@ -330,6 +337,35 @@ function buildTraceability(draft: InitiativePetitionDraft): PetitionTraceability
 export async function publishInitiativePetitionStage(
   identity: RequestIdentity,
   initiativeId: string,
+): Promise<Petition> {
+  return publishInitiativePetitionDraft(identity, initiativeId, { singlePublication: true });
+}
+
+/**
+ * HU-LC-05C.2 — publishes the working draft as an additional Petition without the
+ * single-Petition guard. Test-only until multi-Petition publishing is enabled;
+ * never reachable from a route.
+ */
+export async function publishAdditionalInitiativePetitionForTests(
+  identity: RequestIdentity,
+  initiativeId: string,
+): Promise<Petition> {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Additional Petition publication is available only when NODE_TEST_ENV=true.");
+  }
+
+  return publishInitiativePetitionDraft(identity, initiativeId, { singlePublication: false });
+}
+
+/** HU-LC-05C.2 — one draft publishes at most one Petition, with a permanent id. */
+export function petitionIdForDraft(draftId: string): string {
+  return `petition-${draftId}`;
+}
+
+async function publishInitiativePetitionDraft(
+  identity: RequestIdentity,
+  initiativeId: string,
+  options: { readonly singlePublication: boolean },
 ): Promise<Petition> {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
@@ -349,40 +385,41 @@ export async function publishInitiativePetitionStage(
     );
   }
 
-  // One published Petition per Initiative until multi-Petition publishing lands;
-  // an unpublished Draft/Ready Petition (the most recently created) is reused.
-  const initiativePetitions = await listPetitionsByInitiativeId(initiativeId);
+  const petitionId = petitionIdForDraft(draft.draftId);
+  const existingPetition = await getPetition(petitionId);
 
-  if (initiativePetitions.some((petition) => isPetitionPubliclyVisible(petition.status))) {
-    throw new Error("A Petition has already been published for this Initiative.");
+  // The same draft never publishes twice; a Petition it already opened is final.
+  if (existingPetition && !RESUMABLE_PUBLICATION_STATUSES.has(existingPetition.status)) {
+    throw new Error("This Petition draft has already been published.");
   }
 
-  const existingPetition = initiativePetitions.at(-1) ?? null;
+  if (options.singlePublication) {
+    const initiativePetitions = await listPetitionsByInitiativeId(initiativeId);
 
-  const decision = await getOrCreatePetitionBootstrapDecision(initiative, identity.participantId);
+    if (
+      initiativePetitions.some(
+        (petition) =>
+          petition.petitionId !== petitionId && isPetitionPubliclyVisible(petition.status),
+      )
+    ) {
+      throw new Error("A Petition has already been published for this Initiative.");
+    }
+  }
 
   let petition: Petition;
 
   if (existingPetition) {
-    const updated = await updatePetition(existingPetition.petitionId, {
-      subject: {
-        title: draft.title,
-        summary: draft.publicSummary,
-        requestStatement: draft.requestStatement,
-        expectedOutcome: draft.expectedOutcome,
-        supportingContext: draft.supportingContext,
-        keyArguments: [...draft.keyArguments],
-      },
-    });
-
-    if (!updated) {
-      throw new Error("Petition could not be updated for publication.");
-    }
-
-    petition = updated;
+    // Retry after a partial failure: resume this draft's own Petition; its
+    // content was written at creation and is never rewritten here.
+    petition = existingPetition;
   } else {
+    const decision = await getOrCreatePetitionBootstrapDecision(
+      initiative,
+      identity.participantId,
+      petitionId,
+    );
     petition = await createPetition({
-      petitionId: `petition-${randomUUID()}`,
+      petitionId,
       collectiveDecisionId: decision.decisionId,
       status: "Draft",
       createdAt: new Date().toISOString(),
@@ -419,22 +456,32 @@ export async function publishInitiativePetitionStage(
         },
       },
       outcome: null,
+      traceability: buildTraceability(draft),
     });
   }
 
-  const traceable = await setPetitionTraceability(petition.petitionId, buildTraceability(draft));
-  petition = traceable ?? petition;
+  if (petition.status === "Draft") {
+    petition = (await preparePetition(petitionId)) ?? petition;
+  }
 
-  const prepared = await preparePetition(petition.petitionId);
-  petition = prepared ?? petition;
+  if (petition.status === "Ready") {
+    petition = (await publishPetition(petitionId)) ?? petition;
+  }
 
-  const published = await publishPetition(petition.petitionId);
-  petition = published ?? petition;
+  if (petition.status === "Published") {
+    petition = (await openPetition(petitionId)) ?? petition;
+  }
 
-  const opened = await openPetition(petition.petitionId);
-  petition = opened ?? petition;
+  if (getInitiativePetitionDraftByInitiativeId(initiativeId)?.draftId === draft.draftId) {
+    deleteInitiativePetitionDraft(initiativeId);
+  }
 
-  deleteInitiativePetitionDraft(initiativeId);
+  // One publication event per Petition: version = its position among the
+  // Initiative's published Petitions (the first Petition keeps version 1).
+  const publishedPetitionIds = (await listPetitionsByInitiativeId(initiativeId))
+    .filter((entry) => isPetitionPubliclyVisible(entry.status))
+    .map((entry) => entry.petitionId);
+  const stageVersion = Math.max(1, publishedPetitionIds.indexOf(petitionId) + 1);
 
   try {
     await publishInitiativeLifecycleStage({
@@ -444,7 +491,7 @@ export async function publishInitiativePetitionStage(
       stageId: "petition",
       stageLabel: "Petition",
       stageArtifactId: petition.petitionId,
-      stageVersion: 1,
+      stageVersion,
       actorParticipantId: identity.participantId,
       publicationKind: "published",
       relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
