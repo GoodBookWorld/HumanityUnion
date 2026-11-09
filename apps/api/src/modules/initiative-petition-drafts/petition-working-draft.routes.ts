@@ -8,18 +8,21 @@ import { resolvePetitionMutationActor } from "../petition/petition-mutation-auth
 import {
   createPetitionWorkingDraft,
   deleteInitiativePetitionWorkingDraft,
+  generatePetitionWorkingDraftContent,
   getPetitionWorkingDraft,
   listInitiativePetitionWorkingDrafts,
   updatePetitionWorkingDraftContent,
 } from "./petition-working-draft.service.js";
 import {
   validatePetitionWorkingDraftCreate,
+  validatePetitionWorkingDraftGenerate,
   validatePetitionWorkingDraftUpdate,
 } from "./petition-working-draft.validators.js";
 
 /**
  * HU-LC-05C.3 — independent Petition drafts (many per Initiative). Steward-only;
  * every route needs a verified access token. Not yet used by Petition publication.
+ * HU-LC-05C.4B — content can be generated into one selected draft.
  */
 const petitionWorkingDraftRouter = Router();
 
@@ -45,7 +48,8 @@ function resolveErrorStatus(message: string): number {
   if (
     message.includes("already exists") ||
     message.includes("not available") ||
-    message.includes("please retry")
+    message.includes("please retry") ||
+    message.includes("overwrite: true")
   ) {
     return 409;
   }
@@ -137,6 +141,27 @@ petitionWorkingDraftRouter.patch(
         update,
       );
       res.json(createSuccessResponse(draft, "Petition draft saved."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/** HU-LC-05C.4B — generates Petition content into this one draft; body `{ overwrite?: boolean }`. */
+petitionWorkingDraftRouter.post(
+  "/initiative/:initiativeId/drafts/:draftId/generate",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolvePetitionMutationActor(req);
+      const options = validatePetitionWorkingDraftGenerate(req.body);
+      const draft = await generatePetitionWorkingDraftContent(
+        identity,
+        param(req, "initiativeId"),
+        param(req, "draftId"),
+        options,
+      );
+      res.json(createSuccessResponse(draft, "Petition draft generated."));
     } catch (error) {
       handleServiceError(res, error);
     }

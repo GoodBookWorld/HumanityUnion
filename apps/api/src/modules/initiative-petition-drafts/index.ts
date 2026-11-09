@@ -2,6 +2,7 @@ export { default as petitionWorkingDraftRouter } from "./petition-working-draft.
 export {
   createPetitionWorkingDraft,
   deleteInitiativePetitionWorkingDraft,
+  generatePetitionWorkingDraftContent,
   getPetitionWorkingDraft,
   listInitiativePetitionWorkingDrafts,
   updatePetitionWorkingDraftContent,
@@ -9,4 +10,5 @@ export {
 export type {
   PetitionWorkingDraft,
   PetitionWorkingDraftContentUpdate,
+  PetitionWorkingDraftGeneratedFields,
 } from "./petition-working-draft.types.js";

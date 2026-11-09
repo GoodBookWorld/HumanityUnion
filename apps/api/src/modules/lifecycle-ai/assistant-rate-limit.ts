@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { NextFunction, Request, Response } from "express";
 
+import { normalizeAssistantDraftId } from "./assistant-draft-id.js";
 import { resolveLifecycleAiConfig } from "./lifecycle-ai.config.js";
 import { LifecycleAiError } from "./lifecycle-ai.errors.js";
 
@@ -98,13 +99,18 @@ export function assertAssistantAssistWithinLimits(req: Request): void {
     instructions?: unknown;
     surfaceId?: unknown;
     initiativeId?: unknown;
+    draftId?: unknown;
   };
+  // HU-LC-05C.4B.3 — a well-formed Petition draftId separates independent drafts;
+  // malformed values add nothing, so they cannot vary the fingerprint.
+  const draftId = body.surfaceId === "petition" ? normalizeAssistantDraftId(body.draftId) : null;
   const fingerprintSource = [
     key,
     String(body.surfaceId ?? ""),
     String(body.operation ?? ""),
     String(body.initiativeId ?? ""),
     String(body.instructions ?? "").trim().toLowerCase(),
+    ...(draftId ? [`draft:${draftId}`] : []),
   ].join("|");
   const fingerprint = createHash("sha256").update(fingerprintSource).digest("hex").slice(0, 24);
   const duplicateKey = `dup:${fingerprint}`;

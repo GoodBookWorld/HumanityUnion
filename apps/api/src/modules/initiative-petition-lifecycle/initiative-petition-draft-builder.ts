@@ -110,6 +110,27 @@ export async function generatePetitionDraftContent(
   return provider.generateDraftContent(snapshot);
 }
 
+/** Part F, Section 9 — the sources a generated draft records (null when absent, never invented). */
+export interface PetitionDraftTraceability {
+  readonly revisionId: string | null;
+  readonly revisionVersion: number | null;
+  readonly analysisId: string | null;
+  readonly analysisVersion: number | null;
+  readonly proposalIds: string[];
+}
+
+export function buildPetitionDraftTraceability(
+  snapshot: InitiativePetitionIntelligenceSnapshot,
+): PetitionDraftTraceability {
+  return {
+    revisionId: snapshot.revisionReference?.revisionId ?? null,
+    revisionVersion: snapshot.revisionReference?.version ?? null,
+    analysisId: snapshot.analysisReference?.analysisId ?? null,
+    analysisVersion: snapshot.analysisReference?.initiativeVersion ?? null,
+    proposalIds: snapshot.proposalReferences.map((proposal) => proposal.proposalId),
+  };
+}
+
 /** Test/helper — true when draft prose still contains banned Revision vN templates. */
 export function petitionDraftContainsBannedRevisionLabel(text: string): boolean {
   return /\bRevision\s*\(?\s*v\d+/i.test(text) || /\bRevision\s+v\d+/i.test(text);
