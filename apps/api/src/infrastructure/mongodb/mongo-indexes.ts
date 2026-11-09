@@ -841,6 +841,21 @@ const MODULE_INDEXES: ReadonlyArray<{
     indexes: [{ key: { initiativeId: 1 } }, { key: { authorId: 1 } }],
   },
   {
+    // HU-LC-05C.3 — independent Petition drafts, many per Initiative.
+    collectionName: MONGO_COLLECTIONS.initiativePetitionWorkingDrafts,
+    indexes: [
+      {
+        key: { draftId: 1 },
+        unique: true,
+        name: "initiative_petition_working_drafts_draft_id_unique",
+      },
+      {
+        key: { initiativeId: 1, createdAt: 1, draftId: 1 },
+        name: "initiative_petition_working_drafts_initiative_created",
+      },
+    ],
+  },
+  {
     // Phase 04 — Discussion completion marker (Center-tab surface; no parallel Discussion domain).
     collectionName: MONGO_COLLECTIONS.initiativeDiscussionCompletions,
     indexes: [{ key: { initiativeId: 1 }, unique: true }],
