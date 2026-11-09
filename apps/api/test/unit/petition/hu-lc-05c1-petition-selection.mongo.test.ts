@@ -88,7 +88,7 @@ async function seedPetition(
   });
   const steps: Array<[PetitionState, (id: string) => Promise<unknown>]> = [
     ["Ready", mods.store.preparePetition],
-    ["Published", mods.store.publishPetition],
+    ["Published", mods.store.publishPetitionForTests],
     ["Open", mods.store.openPetition],
   ];
   for (const [reached, step] of steps) {

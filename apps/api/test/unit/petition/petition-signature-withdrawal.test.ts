@@ -12,7 +12,7 @@ import {
   deleteSignaturesByPetitionIdForTests,
   openPetition,
   preparePetition,
-  publishPetition,
+  publishPetitionForTests,
   signPetition,
   withdrawPetitionSignature,
 } from "../../../src/modules/petition/petition.store.js";
@@ -62,7 +62,7 @@ async function seedOpenPetitionWithWithdrawalPermitted(
     },
   });
   await preparePetition(petitionId);
-  await publishPetition(petitionId);
+  await publishPetitionForTests(petitionId);
   const opened = await openPetition(petitionId);
 
   if (!opened) {

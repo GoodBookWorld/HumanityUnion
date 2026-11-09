@@ -856,6 +856,30 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // HU-LC-05C.4A — Petition slots: one occupant per Initiative slot, one slot per
+    // working draft and one per published Petition.
+    collectionName: MONGO_COLLECTIONS.initiativePetitionSlots,
+    indexes: [
+      {
+        key: { initiativeId: 1, slotNumber: 1 },
+        unique: true,
+        name: "initiative_petition_slots_initiative_slot_unique",
+      },
+      {
+        key: { draftId: 1 },
+        unique: true,
+        name: "initiative_petition_slots_draft_unique",
+        partialFilterExpression: { draftId: { $type: "string" } },
+      },
+      {
+        key: { petitionId: 1 },
+        unique: true,
+        name: "initiative_petition_slots_petition_unique",
+        partialFilterExpression: { petitionId: { $type: "string" } },
+      },
+    ],
+  },
+  {
     // Phase 04 — Discussion completion marker (Center-tab surface; no parallel Discussion domain).
     collectionName: MONGO_COLLECTIONS.initiativeDiscussionCompletions,
     indexes: [{ key: { initiativeId: 1 }, unique: true }],

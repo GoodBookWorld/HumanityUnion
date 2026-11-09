@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { AuthenticationRequiredError } from "../auth/auth.errors.js";
+import { PetitionSlotLimitError } from "../initiative-petition-slots/petition-slot.service.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { resolvePetitionMutationActor } from "../petition/petition-mutation-authorization.js";
 import {
@@ -41,7 +42,11 @@ function resolveErrorStatus(message: string): number {
     return 403;
   }
 
-  if (message.includes("already exists") || message.includes("not available")) {
+  if (
+    message.includes("already exists") ||
+    message.includes("not available") ||
+    message.includes("please retry")
+  ) {
     return 409;
   }
 
@@ -51,6 +56,11 @@ function resolveErrorStatus(message: string): number {
 function handleServiceError(res: Response, error: unknown): void {
   if (error instanceof AuthenticationRequiredError) {
     res.status(401).json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (error instanceof PetitionSlotLimitError) {
+    res.status(409).json(createFailureResponse(error.message));
     return;
   }
 

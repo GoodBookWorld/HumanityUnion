@@ -6,7 +6,7 @@ import {
   createPetition,
   openPetition,
   preparePetition,
-  publishPetition,
+  publishPetitionForTests,
 } from "../../../src/modules/petition/petition.store.js";
 import { defaultPetitionPolicy } from "../../../src/modules/petition/petition.defaults.js";
 import { bootstrapInitiativeId } from "../../../src/modules/petition/petition.defaults.js";
@@ -71,7 +71,7 @@ export async function seedOpenPetition(
   await seedApprovedDecision(decisionId, initiativeId);
   await createPetition(buildFixturePetition({ petitionId, decisionId, initiativeId }));
   await preparePetition(petitionId);
-  await publishPetition(petitionId);
+  await publishPetitionForTests(petitionId);
   const opened = await openPetition(petitionId);
 
   if (!opened) {

@@ -47,12 +47,13 @@ async function main(): Promise<void> {
   const {
     createPetition,
     preparePetition,
-    publishPetition,
     openPetition,
     signPetition,
     deletePetitionsByIdForTests,
     deleteSignaturesByPetitionIdForTests,
   } = await import("../modules/petition/petition.store.js");
+  const { publishPetitionWithinSlotLimit, deleteSlotOfDeletedPetitionForTests } =
+    await import("../modules/initiative-petition-slots/petition-slot.service.js");
   const { defaultPetitionPolicy } = await import("../modules/petition/petition.defaults.js");
   const { buildPetitionSignedEventId } =
     await import("../modules/petition/petition-signed.event.js");
@@ -161,7 +162,7 @@ async function main(): Promise<void> {
       outcome: null,
     });
     await preparePetition(petitionId);
-    await publishPetition(petitionId);
+    await publishPetitionWithinSlotLimit(petitionId);
     await openPetition(petitionId);
 
     console.log("6. Sign Petition");
@@ -306,6 +307,7 @@ async function main(): Promise<void> {
     await deleteParticipantActionsBySourceEventIdForTests(eventId);
     await deleteSignaturesByPetitionIdForTests(petitionId);
     await deletePetitionsByIdForTests(petitionId);
+    await deleteSlotOfDeletedPetitionForTests(petitionId);
     await deleteOutboxRecordsByEventIdPrefix(outboxEventIdPrefix);
     await deleteProcessedEventsByEventIdPrefix(outboxEventIdPrefix);
     clearDomainEventHandlers();
@@ -323,6 +325,7 @@ async function main(): Promise<void> {
     }
     await deleteSignaturesByPetitionIdForTests(petitionId).catch(() => undefined);
     await deletePetitionsByIdForTests(petitionId).catch(() => undefined);
+    await deleteSlotOfDeletedPetitionForTests(petitionId).catch(() => undefined);
     await deleteOutboxRecordsByEventIdPrefix(outboxEventIdPrefix).catch(() => undefined);
     await deleteProcessedEventsByEventIdPrefix(outboxEventIdPrefix).catch(() => undefined);
     (

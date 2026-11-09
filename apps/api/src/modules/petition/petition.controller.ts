@@ -15,7 +15,14 @@ import {
   assertSignerIsActor,
   resolvePetitionMutationActor,
 } from "./petition-mutation-authorization.js";
-import { PetitionAccessDeniedError } from "./petition.errors.js";
+import { PetitionAccessDeniedError, PetitionSlotRequiredError } from "./petition.errors.js";
+import {
+  PetitionPublicationInProgressError,
+  PetitionReservationLostError,
+  PetitionSlotBusyError,
+  PetitionSlotLimitError,
+  publishPetitionWithinSlotLimit,
+} from "../initiative-petition-slots/petition-slot.service.js";
 import { mapPetitionListResponse, mapPetitionResponse } from "./petition.mapper.js";
 import {
   archivePetition,
@@ -27,7 +34,6 @@ import {
   listPetitions,
   openPetition,
   preparePetition,
-  publishPetition,
   signPetition,
   updatePetition,
   withdrawPetitionSignature,
@@ -98,6 +104,17 @@ function handleStoreError(res: Response, error: unknown): void {
 
   if (error instanceof PetitionAccessDeniedError) {
     res.status(403).json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (
+    error instanceof PetitionSlotLimitError ||
+    error instanceof PetitionSlotBusyError ||
+    error instanceof PetitionPublicationInProgressError ||
+    error instanceof PetitionReservationLostError ||
+    error instanceof PetitionSlotRequiredError
+  ) {
+    res.status(409).json(createFailureResponse(error.message));
     return;
   }
 
@@ -307,7 +324,8 @@ export async function publishPetitionHandler(req: Request, res: Response): Promi
   }
 
   try {
-    const petition = await publishPetition(petitionId);
+    // HU-LC-05C.4A.3 — the shared Petition slot contract (three-slot limit).
+    const petition = await publishPetitionWithinSlotLimit(petitionId);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));

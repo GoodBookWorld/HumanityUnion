@@ -63,13 +63,14 @@ async function main(): Promise<void> {
   const {
     createPetition,
     preparePetition,
-    publishPetition,
     openPetition,
     signPetition,
     getPetition,
     deletePetitionsByIdForTests,
     deleteSignaturesByPetitionIdForTests,
   } = await import("../modules/petition/petition.store.js");
+  const { publishPetitionWithinSlotLimit, deleteSlotOfDeletedPetitionForTests } =
+    await import("../modules/initiative-petition-slots/petition-slot.service.js");
   const { defaultPetitionPolicy } = await import("../modules/petition/petition.defaults.js");
 
   try {
@@ -146,7 +147,7 @@ async function main(): Promise<void> {
 
     console.log("6. Open Petition (Draft -> Ready -> Published -> Open)");
     await preparePetition(petitionId);
-    await publishPetition(petitionId);
+    await publishPetitionWithinSlotLimit(petitionId);
     const opened = await openPetition(petitionId);
     assert(opened?.status === "Open", "Petition must transition to Open");
 
@@ -179,6 +180,7 @@ async function main(): Promise<void> {
     console.log("11. Clean only owned fixtures");
     await deleteSignaturesByPetitionIdForTests(petitionId);
     await deletePetitionsByIdForTests(petitionId);
+    await deleteSlotOfDeletedPetitionForTests(petitionId);
 
     console.log("Petition persistence verification passed.");
   } catch (error) {
@@ -186,6 +188,7 @@ async function main(): Promise<void> {
     // fixtures into subsequent runs.
     await deleteSignaturesByPetitionIdForTests(petitionId).catch(() => undefined);
     await deletePetitionsByIdForTests(petitionId).catch(() => undefined);
+    await deleteSlotOfDeletedPetitionForTests(petitionId).catch(() => undefined);
     throw error;
   }
 }

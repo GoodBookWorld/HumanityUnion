@@ -20,7 +20,7 @@ import {
   getPetition,
   openPetition,
   preparePetition,
-  publishPetition,
+  publishPetitionForTests,
   signPetition,
 } from "../../../src/modules/petition/petition.store.js";
 import { buildPetitionSignedEventId } from "../../../src/modules/petition/petition-signed.event.js";
@@ -242,7 +242,7 @@ describe("PetitionSigned is now the reserved canonical event name for the Petiti
       outcome: null,
     });
     await preparePetition(petitionId);
-    await publishPetition(petitionId);
+    await publishPetitionForTests(petitionId);
     await openPetition(petitionId);
 
     try {

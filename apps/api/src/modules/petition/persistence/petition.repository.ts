@@ -60,10 +60,13 @@ export async function insertPetitionDocument(
   }
 }
 
-export async function findPetitionById(petitionId: string): Promise<PetitionMongoRecord | null> {
+export async function findPetitionById(
+  petitionId: string,
+  options: { session?: ClientSession } = {},
+): Promise<PetitionMongoRecord | null> {
   await ensurePetitionMongoReady();
 
-  const document = await collection().findOne({ petitionId });
+  const document = await collection().findOne({ petitionId }, { session: options.session });
 
   return document ? fromPetitionMongoDocument(document) : null;
 }

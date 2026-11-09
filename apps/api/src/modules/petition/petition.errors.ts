@@ -40,6 +40,21 @@ export class PetitionConcurrencyConflictError extends Error {
   }
 }
 
+/**
+ * HU-LC-05C.4A.3 — a Petition becomes public only in a transaction in which it
+ * holds a published slot of its own Initiative (the three-slot limit).
+ */
+export class PetitionSlotRequiredError extends Error {
+  readonly code = "PETITION_SLOT_REQUIRED";
+
+  constructor(
+    message = "Petition publication requires a reserved Petition slot; publish through the Petition slot contract.",
+  ) {
+    super(message);
+    this.name = "PetitionSlotRequiredError";
+  }
+}
+
 /** The authenticated Participant may not perform this Petition action. */
 export class PetitionAccessDeniedError extends Error {
   readonly code = "PETITION_ACCESS_DENIED";

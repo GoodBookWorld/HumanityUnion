@@ -1,3 +1,5 @@
+import type { ClientSession } from "mongodb";
+
 import { isExplicitIsolatedMongoTest } from "../../infrastructure/mongodb/explicit-isolated-mongo-test.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
@@ -38,11 +40,14 @@ function isDuplicateKeyError(error: unknown): boolean {
   );
 }
 
-export async function insertPetitionWorkingDraft(draft: PetitionWorkingDraft): Promise<void> {
+export async function insertPetitionWorkingDraft(
+  draft: PetitionWorkingDraft,
+  session?: ClientSession,
+): Promise<void> {
   await ensureReady();
 
   try {
-    await collection().insertOne({ ...draft });
+    await collection().insertOne({ ...draft }, { session });
   } catch (error) {
     if (isDuplicateKeyError(error)) {
       throw new Error(`Petition draft "${draft.draftId}" already exists.`);
@@ -88,8 +93,9 @@ export async function updatePetitionWorkingDraft(
 export async function deletePetitionWorkingDraft(
   initiativeId: string,
   draftId: string,
+  session?: ClientSession,
 ): Promise<boolean> {
   await ensureReady();
-  const result = await collection().deleteOne({ draftId, initiativeId });
+  const result = await collection().deleteOne({ draftId, initiativeId }, { session });
   return result.deletedCount === 1;
 }

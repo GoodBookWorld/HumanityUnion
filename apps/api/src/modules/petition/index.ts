@@ -10,7 +10,6 @@ export {
   openPetition,
   participantHasSigned,
   preparePetition,
-  publishPetition,
   signPetition,
   updatePetition,
 } from "./petition.store.js";
