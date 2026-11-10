@@ -38,6 +38,10 @@ import { InitiativeImprovementProposalsPublicResult } from "../../initiative-imp
 import { InitiativePetitionAuthorWorkspace } from "../../initiative-petition-lifecycle/components/InitiativePetitionAuthorWorkspace";
 import { InitiativePetitionDraftPreview } from "../../initiative-petition-lifecycle/components/InitiativePetitionDraftPreview";
 import { InitiativePetitionPublicResult } from "../../initiative-petition-lifecycle/components/InitiativePetitionPublicResult";
+import {
+  resolveCentralPetitionView,
+  type PetitionViewerSelection,
+} from "../../initiative-petition-lifecycle/petition-viewer-selection";
 import { InitiativeDecisionSessionAuthorWorkspace } from "../../initiative-decision-session-lifecycle/components/InitiativeDecisionSessionAuthorWorkspace";
 import { InitiativeDecisionSessionDraftPreview } from "../../initiative-decision-session-lifecycle/components/InitiativeDecisionSessionDraftPreview";
 import { InitiativeDecisionSessionPublicResult } from "../../initiative-decision-session-lifecycle/components/InitiativeDecisionSessionPublicResult";
@@ -426,6 +430,8 @@ function DiscussionPanel({
   );
 }
 
+const DEFAULT_PETITION_SELECTION: PetitionViewerSelection = { kind: "default" };
+
 interface PublicInitiativeCenterPanelProps {
   experience: PublicInitiativeExperienceProjection;
   activeTab: CenterTab;
@@ -470,6 +476,14 @@ interface PublicInitiativeCenterPanelProps {
   presentationDescription?: string;
   readOnly?: boolean;
   readOnlyElection?: AdminReadOnlyElectionBallot | null;
+  /**
+   * HU-LC-05C.4C.3C — the visitor's Petition choice, already validated
+   * against this Initiative's active Petitions. `default` → the stage's own
+   * published Petition.
+   */
+  petitionSelection?: PetitionViewerSelection;
+  /** HU-LC-05C.4C.4 — a Sign / Withdraw succeeded in the central Petition viewer. */
+  onPetitionSignatureChange?: () => void;
 }
 
 export function PublicInitiativeCenterPanel({
@@ -495,6 +509,8 @@ export function PublicInitiativeCenterPanel({
   presentationDescription,
   readOnly = false,
   readOnlyElection = null,
+  petitionSelection = DEFAULT_PETITION_SELECTION,
+  onPetitionSignatureChange,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -624,6 +640,9 @@ export function PublicInitiativeCenterPanel({
               initiativeId={experience.initiativeId}
               stageId={activeStage.stageId}
               lifecycleProfile={experience.lifecycleProfile}
+              publishedResultPresentation={
+                activeStage.stageId === "petition" ? "document" : "stage"
+              }
               onNavigateStage={onNavigateStage}
               returnToInitiativeHref={returnToInitiativeHref}
               isPreviewMode={isStagePreviewMode}
@@ -711,15 +730,26 @@ export function PublicInitiativeCenterPanel({
                           <InitiativeImprovementProposalsDraftPreview initiativeId={experience.initiativeId} />
                         ) : null
                     : activeStage.stageId === "petition"
-                        ? (projection) =>
-                            projection.metadata.publishedRecordId ? (
+                        ? (projection) => {
+                            const petitionView = resolveCentralPetitionView({
+                              publishedRecordId: projection.metadata.publishedRecordId,
+                              selection: petitionSelection,
+                            });
+                            return petitionView.kind === "pending" ? (
+                              <p className="lsw-result__placeholder">
+                                {t("author.petition.public.loading")}
+                              </p>
+                            ) : petitionView.kind === "petition" ? (
                               <InitiativePetitionPublicResult
-                                petitionId={projection.metadata.publishedRecordId}
+                                key={petitionView.petitionId}
+                                petitionId={petitionView.petitionId}
                                 isPreview={isStagePreviewMode}
+                                onSignatureChange={onPetitionSignatureChange}
                               />
                             ) : isStagePreviewMode ? (
                               <InitiativePetitionDraftPreview initiativeId={experience.initiativeId} />
-                            ) : null
+                            ) : null;
+                          }
                         : activeStage.stageId === "decision_session"
                           ? (projection) =>
                               projection.metadata.publishedRecordId ? (

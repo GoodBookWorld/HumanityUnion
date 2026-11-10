@@ -6,6 +6,7 @@ import type {
   PublicApprovedDecisionContext,
   PublicParticipationEntryGuidance,
   PublicPetitionIdentity,
+  PublicPetitionListItem,
   PublicPetitionOutcomeProjection,
   PublicPetitionProjection,
   PublicPetitionRevisionContext,
@@ -74,6 +75,21 @@ function buildPetitionIdentity(petition: Petition): PublicPetitionIdentity {
   };
 }
 
+/** HU-LC-05C.4C.3C — compact public list entry; same identity and publication date as the full projection. */
+export function toPublicPetitionListItem(petition: Petition): PublicPetitionListItem {
+  const identity = buildPetitionIdentity(petition);
+
+  return {
+    petitionId: identity.petitionId,
+    title: identity.title,
+    lifecycleStatus: identity.lifecycleStatus,
+    supportStatus: identity.supportStatus,
+    publishedAt: buildPetitionSummary(petition).publishedAt,
+    signatureCount: petition.signatures.filter((signature) => signature.status === "Active")
+      .length,
+  };
+}
+
 function buildPetitionSummary(petition: Petition): PublicPetitionSummary {
   const publishedAt =
     petition.status === "Published" ||
@@ -93,7 +109,22 @@ function buildPetitionSummary(petition: Petition): PublicPetitionSummary {
   };
 }
 
+/** Recorded recipients as public text: trimmed, non-empty strings only; undefined when none. */
+function publicRecipients(recipients: unknown): readonly string[] | undefined {
+  if (!Array.isArray(recipients)) {
+    return undefined;
+  }
+
+  const cleaned = recipients
+    .filter((recipient): recipient is string => typeof recipient === "string")
+    .map((recipient) => recipient.trim())
+    .filter(Boolean);
+
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function buildPetitionSubject(petition: Petition): PublicPetitionSubject {
+  const recipients = publicRecipients(petition.subject.recipients);
   return {
     subjectType: "Initiative",
     initiativeId: petition.subject.initiativeId,
@@ -103,6 +134,7 @@ function buildPetitionSubject(petition: Petition): PublicPetitionSubject {
     expectedOutcome: petition.subject.expectedOutcome,
     supportingContext: petition.subject.supportingContext,
     keyArguments: petition.subject.keyArguments,
+    ...(recipients ? { recipients } : {}),
   };
 }
 

@@ -184,6 +184,72 @@
   font-size: 0.85rem;
 }
 
+/* HU-LC-05C.4C.3B — public Petition document. */
+.ipl-document {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ipl-document__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.ipl-document__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.9rem;
+}
+
+.ipl-document__status {
+  font-weight: 600;
+}
+
+.ipl-document__recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ipl-document__recipients dt {
+  font-weight: 600;
+}
+
+.ipl-document__recipients dd {
+  margin: 0;
+}
+
+.ipl-document__recipients ul {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ipl-document__recipients li {
+  display: inline;
+}
+
+.ipl-document__recipients li + li::before {
+  content: "; ";
+}
+
+.ipl-document__reference {
+  margin: 0;
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.85rem;
+}
+
 .ipl-support {
   display: flex;
   flex-direction: column;

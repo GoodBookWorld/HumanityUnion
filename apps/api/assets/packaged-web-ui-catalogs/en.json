@@ -1180,6 +1180,15 @@
       "overview": "Overview",
       "discussion": "Discussion"
     },
+    "petitionsWidget": {
+      "title": "Petitions",
+      "countAria": "{count, plural, =0 {No active Petitions} one {# active Petition} other {# active Petitions}}",
+      "listAria": "Active Petitions",
+      "loading": "Loading Petitions…",
+      "loadFailed": "Petitions could not be loaded right now.",
+      "empty": "This Initiative has no active Petitions yet.",
+      "signatures": "{count, plural, one {# signature} other {# signatures}}"
+    },
     "hero": {
       "detailsAria": "Initiative details",
       "activityArea": "Activity Area",
@@ -2908,7 +2917,20 @@
           "supportCountersAria": "Petition support counters",
           "shareAria": "Share petition: {title}",
           "previewSignatureDisabled": "The Signature widget is disabled while previewing — signing becomes available to visitors once this Petition is published and open.",
-          "participationTransparencyNote": "Signing this Petition is a form of civic participation on Humanity Union. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation."
+          "participationTransparencyNote": "Signing this Petition is a form of civic participation on Humanity Union. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation.",
+          "document": {
+            "summary": "Summary",
+            "request": "Request",
+            "expectedOutcome": "Expected Outcome",
+            "supportingInformation": "Supporting Information",
+            "keyArguments": "Key Arguments",
+            "recipients": "Addressed to",
+            "statusOpen": "Open for signatures",
+            "statusClosed": "Closed",
+            "statusArchived": "Archived",
+            "basedOnRevision": "Based on the published Revision of this Initiative",
+            "basedOnRevisionVersion": "Based on version {version} of the published Revision of this Initiative"
+          }
         },
         "sourceSnapshot": {
           "title": "Petition Sources",

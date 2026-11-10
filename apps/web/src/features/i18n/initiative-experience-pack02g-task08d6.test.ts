@@ -117,7 +117,10 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     assert.doesNotMatch(panel, /\{check\.label\}/);
     assert.doesNotMatch(panel, /\{check\.detail\}/);
     assert.match(panel, /revisionReference\.revisionSummary/);
-    assert.match(publicResult, /traceability\.revisionId/);
+    // HU-LC-05C.4C.3B — the public document cites its source Revision in plain
+    // language; internal Revision ids stay in stored traceability only.
+    assert.doesNotMatch(publicResult, /traceability\.revisionId/);
+    assert.match(publicResult, /petitionDocumentRevisionReference\(projection\.traceability\)/);
     assert.match(publicResult, /participationTransparencyNote/);
     assert.match(publicResult, /shareReference\.sharingNote/);
   });

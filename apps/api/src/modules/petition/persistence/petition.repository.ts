@@ -118,6 +118,24 @@ export async function countPetitionsByCollectiveDecisionId(
   return collection().countDocuments(query);
 }
 
+/** HU-LC-05C.4C — publicly visible Petitions of an Initiative, other than one, in a session. */
+export async function countPubliclyVisiblePetitionsByInitiativeId(
+  initiativeId: string,
+  excludePetitionId: string,
+  session: ClientSession,
+): Promise<number> {
+  await ensurePetitionMongoReady();
+
+  return collection().countDocuments(
+    {
+      "subject.initiativeId": initiativeId,
+      petitionId: { $ne: excludePetitionId },
+      status: { $nin: ["Draft", "Ready"] },
+    },
+    { session },
+  );
+}
+
 /**
  * Applies a conditional lifecycle/subject/policy patch guarded by the status
  * observed at read time, preventing stale concurrent lifecycle writes

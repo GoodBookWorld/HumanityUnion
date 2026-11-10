@@ -1584,8 +1584,10 @@ export type {
 } from "./public-collective-decision.js";
 export type {
   PublicApprovedDecisionContext,
+  PublicInitiativePetitionList,
   PublicParticipationEntryGuidance,
   PublicPetitionIdentity,
+  PublicPetitionListItem,
   PublicPetitionOutcomeProjection,
   PublicPetitionProjection,
   PublicPetitionRevisionContext,

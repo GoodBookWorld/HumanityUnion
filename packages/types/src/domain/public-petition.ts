@@ -3,6 +3,27 @@ import type { InitiativeId } from "./initiative.js";
 import type { PetitionTraceability } from "./initiative-petition-lifecycle.js";
 import type { PetitionId, PetitionOutcomeType, PetitionState } from "./petition/index.js";
 
+/**
+ * HU-LC-05C.4C.3C — one active (Open, publicly signable) Petition in an
+ * Initiative's public Petition list. Working drafts never appear here.
+ */
+export interface PublicPetitionListItem {
+  petitionId: PetitionId;
+  title: string;
+  lifecycleStatus: PetitionState;
+  supportStatus: string;
+  publishedAt: string | null;
+  /** Active signatures only; withdrawn signatures are not counted. */
+  signatureCount: number;
+}
+
+/** Response of `GET /api/v1/public/petitions/by-initiative/:initiativeId`. */
+export interface PublicInitiativePetitionList {
+  initiativeId: InitiativeId;
+  /** Oldest Petition first (creation order); ties broken by `petitionId`. */
+  petitions: PublicPetitionListItem[];
+}
+
 export interface PublicPetitionIdentity {
   petitionId: PetitionId;
   title: string;
@@ -28,6 +49,8 @@ export interface PublicPetitionSubject {
   expectedOutcome?: string;
   supportingContext?: string;
   keyArguments?: readonly string[];
+  /** HU-LC-05C.4C.3B — Author-provided intended recipients; omitted when none are recorded. */
+  recipients?: readonly string[];
 }
 
 export interface PublicApprovedDecisionContext {

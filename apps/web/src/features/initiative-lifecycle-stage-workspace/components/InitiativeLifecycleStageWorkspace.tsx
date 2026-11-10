@@ -77,6 +77,13 @@ export interface InitiativeLifecycleStageWorkspaceProps {
   readonly onTogglePreview?: () => void;
   /** Public Choice Experience Pack 01 — hide STANDARD ordinals for PUBLIC_CHOICE. */
   readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /**
+   * HU-LC-05C.4C.3B — `document`: the published result is a self-contained
+   * public document (title, date, status). Public viewers get no stage
+   * ordinal / mode / version chrome; Author Workspace and Public Preview keep
+   * the full stage header.
+   */
+  readonly publishedResultPresentation?: "stage" | "document";
 }
 
 function formatTimestamp(locale: string, value: string | null): string | null {
@@ -97,14 +104,17 @@ function formatTimestamp(locale: string, value: string | null): string | null {
   }
 }
 
-function StageHeader({
+export function StageHeader({
   projection,
   isPreviewMode,
   showStageOrdinal,
+  documentPresentation = false,
 }: {
   projection: InitiativeLifecycleStageProjection;
   isPreviewMode: boolean;
   showStageOrdinal: boolean;
+  /** Public viewer of a published document result — the section keeps an accessible name only. */
+  documentPresentation?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -120,6 +130,22 @@ function StageHeader({
   );
   const publishedAtLabel = formatTimestamp(locale, projection.metadata.publishedAt);
   const draftUpdatedAtLabel = formatTimestamp(locale, projection.metadata.draftUpdatedAt);
+
+  if (
+    documentPresentation &&
+    !isPreviewMode &&
+    projection.presentationMode !== "author_workspace" &&
+    projection.metadata.canViewPublicResult
+  ) {
+    return (
+      <h2
+        id={`lsw-stage-title-${projection.stageId}`}
+        className="lsw-header__title hu-visually-hidden"
+      >
+        {stageLabel}
+      </h2>
+    );
+  }
 
   return (
     <header className="lsw-header">
@@ -193,12 +219,14 @@ function AuthorWorkspaceMainContent({
   publicResultSlot,
   participationSlot,
   isPreviewMode,
+  publishedResultPresentation,
 }: {
   projection: InitiativeLifecycleStageProjection;
   authorEditorSlot?: ReactNode;
   publicResultSlot?: InitiativeLifecycleStageSlot;
   participationSlot?: InitiativeLifecycleStageSlot;
   isPreviewMode: boolean;
+  publishedResultPresentation: "stage" | "document";
 }) {
   if (isPreviewMode) {
     return (
@@ -207,6 +235,7 @@ function AuthorWorkspaceMainContent({
         publicResultSlot={renderStageSlot(publicResultSlot, projection)}
         participationSlot={renderStageSlot(participationSlot, projection)}
         isPreview
+        presentation={publishedResultPresentation}
       />
     );
   }
@@ -310,6 +339,7 @@ export function InitiativeLifecycleStageWorkspace({
   isPreviewMode: controlledIsPreviewMode,
   onTogglePreview,
   lifecycleProfile,
+  publishedResultPresentation = "stage",
 }: InitiativeLifecycleStageWorkspaceProps) {
   const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
@@ -407,6 +437,7 @@ export function InitiativeLifecycleStageWorkspace({
         projection={projection}
         isPreviewMode={isPreviewMode}
         showStageOrdinal={showStageOrdinal}
+        documentPresentation={publishedResultPresentation === "document"}
       />
 
       {isAuthorWorkspace ? (
@@ -416,12 +447,14 @@ export function InitiativeLifecycleStageWorkspace({
           publicResultSlot={publicResultSlot}
           participationSlot={participationSlot}
           isPreviewMode={isPreviewMode}
+          publishedResultPresentation={publishedResultPresentation}
         />
       ) : (
         <InitiativeLifecyclePublicResultPanel
           projection={projection}
           publicResultSlot={renderStageSlot(publicResultSlot, projection)}
           participationSlot={renderStageSlot(participationSlot, projection)}
+          presentation={publishedResultPresentation}
         />
       )}
 

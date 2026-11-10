@@ -27,6 +27,20 @@ import type { AdminReadOnlyElectionBallot } from "./AdminReadOnlyElectionBallot"
 import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeCenterPanel";
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
+import { InitiativePetitionsHeroWidget } from "../../initiative-petition-lifecycle/components/InitiativePetitionsHeroWidget";
+import {
+  buildPetitionSelectionHref,
+  hasMalformedPetitionQuery,
+  isDefinitivelyInvalidPetitionRequest,
+  petitionListAfterFetchFailure,
+  petitionListForInitiative,
+  readRequestedPetitionId,
+  removePetitionQueryParam,
+  resolvePetitionViewerSelection,
+  type InitiativePetitionListState,
+  type PetitionViewerSelection,
+} from "../../initiative-petition-lifecycle/petition-viewer-selection";
+import { getPublicInitiativePetitions } from "../../petition/api";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
 import { selectInitiativeDetailDescription } from "../select-initiative-detail-description";
 import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
@@ -83,6 +97,13 @@ export function PublicInitiativeExperiencePage({
   >(undefined);
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const [openCandidateSubmit, setOpenCandidateSubmit] = useState(false);
+  /** HU-LC-05C.4C.3C — `?petition=` request; honoured only after validation below. */
+  const [requestedPetitionId, setRequestedPetitionId] = useState<string | null>(null);
+  const [petitionList, setPetitionList] = useState<InitiativePetitionListState>({
+    status: "loading",
+  });
+  /** Bumped after Sign / Withdraw (and on Retry) so the hero counts are re-read from the server. */
+  const [petitionListRevision, setPetitionListRevision] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const viewerIsSteward = Boolean(experience.viewerIsSteward);
@@ -118,6 +139,17 @@ export function PublicInitiativeExperiencePage({
     experience.lifecycleStages,
     experience.hero.currentStageLabel,
   ]);
+  /** PUBLIC_CHOICE and profiles without a Petition stage never show the widget or honour `?petition=`. */
+  const petitionNavStage = navStages.find((stage) => stage.stageId === "petition") ?? null;
+  const showPetitionsWidget = petitionNavStage !== null && !readOnly;
+  const initiativePetitionList = petitionListForInitiative(petitionList, experience.initiativeId);
+  const petitionSelection: PetitionViewerSelection = showPetitionsWidget
+    ? resolvePetitionViewerSelection({
+        initiativeId: experience.initiativeId,
+        requestedPetitionId,
+        list: initiativePetitionList,
+      })
+    : { kind: "default" };
   const petitionDegradedSection = publicSafeOptionalSectionMessage(
     experience.optionalStageDiagnostics,
     "petition",
@@ -218,8 +250,62 @@ export function PublicInitiativeExperiencePage({
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [applyHash]);
 
+  useEffect(() => {
+    if (!showPetitionsWidget) {
+      return;
+    }
+
+    let cancelled = false;
+    const initiativeId = experience.initiativeId;
+    getPublicInitiativePetitions(initiativeId)
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        if (result.initiativeId !== initiativeId) {
+          setPetitionList((current) => petitionListAfterFetchFailure(current, initiativeId));
+          return;
+        }
+        setPetitionList({ status: "ready", initiativeId, petitions: result.petitions });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPetitionList((current) => petitionListAfterFetchFailure(current, initiativeId));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [experience.initiativeId, showPetitionsWidget, petitionListRevision]);
+
+  const invalidPetitionRequest =
+    showPetitionsWidget &&
+    isDefinitivelyInvalidPetitionRequest({
+      initiativeId: experience.initiativeId,
+      requestedPetitionId,
+      list: petitionList,
+    });
+
+  useEffect(() => {
+    if (
+      invalidPetitionRequest &&
+      readRequestedPetitionId(window.location.search) === requestedPetitionId
+    ) {
+      window.history.replaceState(null, "", removePetitionQueryParam(window.location.href));
+    }
+  }, [invalidPetitionRequest, requestedPetitionId]);
+
+  const refreshPetitionList = useCallback(() => {
+    setPetitionListRevision((current) => current + 1);
+  }, []);
+
   const applyQueryParams = useCallback(
     (search: string) => {
+      setRequestedPetitionId(readRequestedPetitionId(search));
+      if (hasMalformedPetitionQuery(search)) {
+        window.history.replaceState(null, "", removePetitionQueryParam(window.location.href));
+      }
       const params = new URLSearchParams(search);
       const filterParam = params.get("filter");
 
@@ -274,6 +360,25 @@ export function PublicInitiativeExperiencePage({
     setShowManageTab(false);
     window.history.replaceState(null, "", `#${hash}`);
     scrollToContent();
+  };
+
+  const handlePetitionSelect = (petitionId: string) => {
+    if (
+      !petitionNavStage ||
+      !isLifecycleStageSelectable(experience.lifecycleStages, petitionNavStage.stageId, {
+        viewerIsSteward,
+      })
+    ) {
+      return;
+    }
+
+    setRequestedPetitionId(petitionId);
+    window.history.replaceState(
+      null,
+      "",
+      buildPetitionSelectionHref(window.location.href, petitionId, petitionNavStage.hash),
+    );
+    handleStageSelect(petitionNavStage.stageId, petitionNavStage.hash);
   };
 
   const handleOpenStagePublicPreview = () => {
@@ -389,6 +494,19 @@ export function PublicInitiativeExperiencePage({
               },
             )}
             presentation={initiativePresentation}
+            contentFooter={
+              showPetitionsWidget && petitionNavStage ? (
+                <InitiativePetitionsHeroWidget
+                  list={initiativePetitionList}
+                  selectedPetitionId={
+                    petitionSelection.kind === "selected" ? petitionSelection.petitionId : null
+                  }
+                  stageHash={petitionNavStage.hash}
+                  onSelectPetition={handlePetitionSelect}
+                  onRetry={refreshPetitionList}
+                />
+              ) : undefined
+            }
           />
         }
         lifecycle={
@@ -450,6 +568,8 @@ export function PublicInitiativeExperiencePage({
               onOpenCandidateSubmitConsumed={() => setOpenCandidateSubmit(false)}
               readOnly={readOnly}
               readOnlyElection={readOnlyElection}
+              petitionSelection={petitionSelection}
+              onPetitionSignatureChange={showPetitionsWidget ? refreshPetitionList : undefined}
             />
           </>
         }

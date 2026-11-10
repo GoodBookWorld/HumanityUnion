@@ -18,6 +18,7 @@ import { resolveInitiativePetitionReference } from "../petition/initiative-petit
 import {
   applyGeneratedPetitionWorkingDraft,
   findPetitionWorkingDraft,
+  isPetitionWorkingDraftLocked,
   listPetitionWorkingDrafts,
   updatePetitionWorkingDraft,
 } from "./petition-working-draft.repository.js";
@@ -123,10 +124,18 @@ export async function updatePetitionWorkingDraftContent(
   });
 
   if (!updated) {
+    await throwIfBeingPublished(initiativeId, draftId);
     throw new Error("Petition draft not found.");
   }
 
   return updated;
+}
+
+/** HU-LC-05C.4C — a draft locked by its own publication cannot be changed (409). */
+async function throwIfBeingPublished(initiativeId: string, draftId: string): Promise<void> {
+  if (await isPetitionWorkingDraftLocked(initiativeId, draftId)) {
+    throw new Error("This Petition draft is being published and cannot be changed; please retry.");
+  }
 }
 
 function hasAuthoredContent(draft: PetitionWorkingDraft): boolean {
@@ -202,6 +211,8 @@ export async function generatePetitionWorkingDraftContent(
     return updated;
   }
 
+  await throwIfBeingPublished(initiativeId, draftId);
+
   if (!(await findPetitionWorkingDraft(initiativeId, draftId))) {
     throw new Error("Petition draft not found.");
   }
@@ -217,6 +228,7 @@ export async function deleteInitiativePetitionWorkingDraft(
   getStewardedInitiative(initiativeId, identity);
 
   if (!(await deleteWorkingDraftAndReleaseSlot(initiativeId, draftId))) {
+    await throwIfBeingPublished(initiativeId, draftId);
     throw new Error("Petition draft not found.");
   }
 }

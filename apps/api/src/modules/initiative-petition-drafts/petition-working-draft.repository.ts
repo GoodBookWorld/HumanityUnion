@@ -24,13 +24,25 @@ async function ensureReady(): Promise<void> {
   await connectMongoClient();
 }
 
+/**
+ * HU-LC-05C.4C — while a publication attempt owns the draft's slot, the stored
+ * draft carries that attempt's id and no content write or delete matches it.
+ * Internal only: never returned to callers.
+ */
+type PetitionWorkingDraftDocument = PetitionWorkingDraft & {
+  readonly publishingAttemptId?: string | null;
+};
+
 function collection() {
-  return getMongoCollection<PetitionWorkingDraft>(
+  return getMongoCollection<PetitionWorkingDraftDocument>(
     MONGO_COLLECTIONS.initiativePetitionWorkingDrafts,
   );
 }
 
-const WITHOUT_MONGO_ID = { projection: { _id: 0 } } as const;
+const WITHOUT_MONGO_ID = { projection: { _id: 0, publishingAttemptId: 0 } } as const;
+
+/** Matches a draft that no publication attempt has locked (field absent or null). */
+const UNLOCKED = { publishingAttemptId: null } as const;
 
 /** Drafts stored before HU-LC-05C.4B carry no traceability yet. */
 function withTraceability(draft: PetitionWorkingDraft): PetitionWorkingDraft;
@@ -78,9 +90,89 @@ export async function insertPetitionWorkingDraft(
 export async function findPetitionWorkingDraft(
   initiativeId: string,
   draftId: string,
+  session?: ClientSession,
 ): Promise<PetitionWorkingDraft | null> {
   await ensureReady();
-  return withTraceability(await collection().findOne({ draftId, initiativeId }, WITHOUT_MONGO_ID));
+  return withTraceability(
+    await collection().findOne({ draftId, initiativeId }, { ...WITHOUT_MONGO_ID, session }),
+  );
+}
+
+/** True while a publication attempt holds the draft. */
+export async function isPetitionWorkingDraftLocked(
+  initiativeId: string,
+  draftId: string,
+): Promise<boolean> {
+  await ensureReady();
+  const locked = await collection().findOne(
+    { draftId, initiativeId, publishingAttemptId: { $type: "string" } },
+    { projection: { _id: 1 } },
+  );
+  return locked !== null;
+}
+
+/** Locks an unlocked draft for one publication attempt; false when absent or already locked. */
+export async function lockPetitionWorkingDraft(
+  initiativeId: string,
+  draftId: string,
+  attemptId: string,
+  session: ClientSession,
+): Promise<boolean> {
+  await ensureReady();
+  const result = await collection().updateOne(
+    { draftId, initiativeId, ...UNLOCKED },
+    { $set: { publishingAttemptId: attemptId } },
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Moves the lock from an expired attempt to the attempt that took the reservation over. */
+export async function transferPetitionWorkingDraftLock(
+  initiativeId: string,
+  draftId: string,
+  fromAttemptId: string | null,
+  toAttemptId: string,
+  session: ClientSession,
+): Promise<boolean> {
+  await ensureReady();
+  const result = await collection().updateOne(
+    { draftId, initiativeId, publishingAttemptId: fromAttemptId },
+    { $set: { publishingAttemptId: toAttemptId } },
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Releases the lock held by one attempt; false when that attempt does not hold it. */
+export async function unlockPetitionWorkingDraft(
+  initiativeId: string,
+  draftId: string,
+  attemptId: string | null,
+  session: ClientSession,
+): Promise<boolean> {
+  await ensureReady();
+  const result = await collection().updateOne(
+    { draftId, initiativeId, publishingAttemptId: attemptId },
+    { $set: { publishingAttemptId: null } },
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Inside the finalizing transaction: deletes the draft its own attempt has published. */
+export async function deletePublishedPetitionWorkingDraft(
+  initiativeId: string,
+  draftId: string,
+  attemptId: string,
+  session: ClientSession,
+): Promise<boolean> {
+  await ensureReady();
+  const result = await collection().deleteOne(
+    { draftId, initiativeId, publishingAttemptId: attemptId },
+    { session },
+  );
+  return result.deletedCount === 1;
 }
 
 /** Drafts of one Initiative, oldest first (ties by draftId). */
@@ -95,7 +187,7 @@ export async function listPetitionWorkingDrafts(
   return drafts.map((draft) => withTraceability(draft));
 }
 
-/** Updates only the named draft of the named Initiative; null when no such draft. */
+/** Updates only the named, unlocked draft of the named Initiative; null otherwise. */
 export async function updatePetitionWorkingDraft(
   initiativeId: string,
   draftId: string,
@@ -104,7 +196,7 @@ export async function updatePetitionWorkingDraft(
   await ensureReady();
   return withTraceability(
     await collection().findOneAndUpdate(
-      { draftId, initiativeId },
+      { draftId, initiativeId, ...UNLOCKED },
       { $set: { ...update } },
       { returnDocument: "after", ...WITHOUT_MONGO_ID },
     ),
@@ -128,6 +220,7 @@ export async function applyGeneratedPetitionWorkingDraft(
       {
         draftId,
         initiativeId,
+        ...UNLOCKED,
         updatedAt: inspected.updatedAt,
         title: inspected.title,
         publicSummary: inspected.publicSummary,
@@ -142,13 +235,13 @@ export async function applyGeneratedPetitionWorkingDraft(
   );
 }
 
-/** Deletes only the named draft of the named Initiative; false when no such draft. */
+/** Deletes only the named, unlocked draft of the named Initiative; false otherwise. */
 export async function deletePetitionWorkingDraft(
   initiativeId: string,
   draftId: string,
   session?: ClientSession,
 ): Promise<boolean> {
   await ensureReady();
-  const result = await collection().deleteOne({ draftId, initiativeId }, { session });
+  const result = await collection().deleteOne({ draftId, initiativeId, ...UNLOCKED }, { session });
   return result.deletedCount === 1;
 }

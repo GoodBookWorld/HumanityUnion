@@ -16,4 +16,9 @@ export interface PetitionSubject {
   expectedOutcome?: string;
   supportingContext?: string;
   keyArguments?: readonly string[];
+  /**
+   * HU-LC-05C.4C — intended recipients copied from the published working draft
+   * (free text, Author-provided). Optional; absent on every earlier Petition.
+   */
+  recipients?: readonly string[];
 }

@@ -1179,6 +1179,15 @@
       "overview": "概覽",
       "discussion": "討論"
     },
+    "petitionsWidget": {
+      "title": "請願",
+      "countAria": "{count, plural, =0 {沒有進行中的請願} other {# 項進行中的請願}}",
+      "listAria": "進行中的請願",
+      "loading": "正在載入請願…",
+      "loadFailed": "目前無法載入請願。",
+      "empty": "此倡議目前尚無進行中的請願。",
+      "signatures": "{count, plural, other {# 個簽署}}"
+    },
     "hero": {
       "detailsAria": "倡議詳情",
       "activityArea": "活動領域",
@@ -2907,7 +2916,20 @@
           "supportCountersAria": "請願支持計數",
           "shareAria": "分享請願：{title}",
           "previewSignatureDisabled": "預覽時簽署小工具已停用 — 此請願發布並開放後，訪客才能簽署。",
-          "participationTransparencyNote": "簽署此請願是 Humanity Union 上的公民參與形式。它不是具法律約束力的請願，本身也不會產生任何法律或政府義務。"
+          "participationTransparencyNote": "簽署此請願是 Humanity Union 上的公民參與形式。它不是具法律約束力的請願，本身也不會產生任何法律或政府義務。",
+          "document": {
+            "summary": "摘要",
+            "request": "請求",
+            "expectedOutcome": "預期結果",
+            "supportingInformation": "補充資訊",
+            "keyArguments": "關鍵論點",
+            "recipients": "致",
+            "statusOpen": "開放簽署中",
+            "statusClosed": "已關閉",
+            "statusArchived": "已封存",
+            "basedOnRevision": "依據此倡議已發布的修訂",
+            "basedOnRevisionVersion": "依據此倡議已發布修訂的版本 {version}"
+          }
         },
         "sourceSnapshot": {
           "title": "請願來源",

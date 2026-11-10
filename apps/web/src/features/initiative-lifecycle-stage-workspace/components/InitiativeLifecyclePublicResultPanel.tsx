@@ -22,11 +22,19 @@ export function InitiativeLifecyclePublicResultPanel({
   publicResultSlot,
   participationSlot,
   isPreview = false,
+  presentation = "stage",
 }: {
   projection: InitiativeLifecycleStageProjection;
   publicResultSlot?: ReactNode;
   participationSlot?: ReactNode;
   isPreview?: boolean;
+  /**
+   * HU-LC-05C.4C.3B — `document`: the published result slot is a complete
+   * document that owns its own heading and publication date, so the generic
+   * stage title and meta line are omitted. Draft preview and empty states
+   * are unchanged.
+   */
+  presentation?: "stage" | "document";
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -60,6 +68,17 @@ export function InitiativeLifecyclePublicResultPanel({
         {publicResultSlot ?? (
           <p className="lsw-result__placeholder">{t("author.shared.draftPreviewPlaceholder")}</p>
         )}
+      </div>
+    );
+  }
+
+  if (presentation === "document") {
+    return (
+      <div className="lsw-result" translate="yes" data-lsw-result-presentation="document">
+        {publicResultSlot ?? (
+          <p className="lsw-result__placeholder">{t("author.shared.publishedResultPlaceholder")}</p>
+        )}
+        {participationSlot ?? null}
       </div>
     );
   }
