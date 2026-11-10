@@ -21,16 +21,22 @@ import {
   listPetitionsByInitiativeId,
   openPetition,
   preparePetition,
+  syncPreparatoryPetitionContent,
 } from "../petition/petition.store.js";
+import { findPetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.repository.js";
+import { findPetitionSlotByPetitionId } from "../initiative-petition-slots/petition-slot.repository.js";
+import type { PetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.types.js";
 import { isPetitionPubliclyVisible } from "../petition/petition-public-visibility.js";
 import {
   finalizePetitionPublication,
+  findPublishedSlotOfWorkingDraft,
   injectPetitionSlotFault,
   isSimulatedPublicationCrash,
   publishPetitionInPublishedSlot,
   releasePetitionPublicationReservation,
   renewPetitionPublicationReservation,
   reservePetitionPublication,
+  reserveWorkingDraftPublication,
 } from "../initiative-petition-slots/petition-slot.service.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "./initiative-petition-intelligence.service.js";
 import {
@@ -527,4 +533,280 @@ async function publishInitiativePetitionDraft(
   }
 
   return petition;
+}
+
+/** A working draft's Petition is resumed only before it is public. */
+const RESUMABLE_WORKING_DRAFT_STATUSES = new Set<Petition["status"]>(["Draft", "Ready"]);
+
+/** Required content and Revision traceability; throws a 409-mapped message otherwise. */
+function assertWorkingDraftPublishable(
+  draft: PetitionWorkingDraft,
+  revisionReference: { readonly revisionId: string; readonly version: number } | null,
+): void {
+  validateInitiativePetitionDraftForPublication({
+    ...draft,
+    keyArguments: [...draft.keyArguments],
+    proposalIds: [...draft.proposalIds],
+  });
+
+  if (
+    !revisionReference ||
+    revisionReference.revisionId !== draft.revisionId ||
+    revisionReference.version !== draft.revisionVersion
+  ) {
+    throw new Error(
+      "The Revision this draft was generated from is no longer current. Generate the Petition again before publishing.",
+    );
+  }
+}
+
+function workingDraftPetitionContent(draft: PetitionWorkingDraft) {
+  return {
+    title: draft.title,
+    summary: draft.publicSummary,
+    requestStatement: draft.requestStatement,
+    expectedOutcome: draft.expectedOutcome,
+    supportingContext: draft.supportingContext,
+    keyArguments: [...draft.keyArguments],
+    recipients: [...draft.recipients],
+  };
+}
+
+function workingDraftTraceability(draft: PetitionWorkingDraft): PetitionTraceability {
+  return {
+    revisionId: draft.revisionId ?? "",
+    revisionVersion: draft.revisionVersion ?? 0,
+    proposalIds: [...draft.proposalIds],
+    analysisId: draft.analysisId,
+    analysisVersion: draft.analysisVersion,
+  };
+}
+
+/**
+ * After commit: opens the published Petition. Idempotent — the open-completion
+ * consumer or a retried request may have opened it first.
+ */
+async function openPublishedPetition(petition: Petition): Promise<Petition> {
+  if (petition.status !== "Published") {
+    return petition;
+  }
+
+  try {
+    return (await openPetition(petition.petitionId)) ?? petition;
+  } catch (error) {
+    const current = await getPetition(petition.petitionId);
+
+    if (current && isPetitionPubliclyVisible(current.status) && current.status !== "Published") {
+      return current;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * HU-LC-05C.4C.2A — durable Published → Open completion, run by the outbox
+ * consumer of the publication event that committed together with the
+ * publication. Acts only on a working-draft publication whose published slot
+ * carries this event's version; opens only a Published Petition (never Draft
+ * or Ready) and leaves an Open or later Petition unchanged. Idempotent.
+ */
+export async function completeWorkingDraftPetitionOpening(input: {
+  readonly initiativeId: string;
+  readonly petitionId: string;
+  readonly publicationVersion: number;
+}): Promise<"opened" | "already_open" | "not_applicable"> {
+  const slot = await findPetitionSlotByPetitionId(input.petitionId);
+
+  if (
+    slot?.state !== "published" ||
+    slot.initiativeId !== input.initiativeId ||
+    !slot.draftId ||
+    slot.publicationVersion !== input.publicationVersion
+  ) {
+    return "not_applicable";
+  }
+
+  const petition = await getPetition(input.petitionId);
+
+  if (!petition || petition.subject.initiativeId !== input.initiativeId) {
+    return "not_applicable";
+  }
+
+  if (petition.status !== "Published") {
+    return isPetitionPubliclyVisible(petition.status) ? "already_open" : "not_applicable";
+  }
+
+  const opened = await openPublishedPetition(petition);
+  return opened.status === "Open" ? "opened" : "already_open";
+}
+
+/**
+ * HU-LC-05C.4C — publishes one independent working draft as a new Petition of
+ * the Initiative, in the draft's own slot (draft → reserved → published).
+ * Several published Petitions are allowed, within the three-slot limit; the
+ * legacy single-draft route keeps its single-Petition guard.
+ *
+ * One transaction makes the Petition Published, the slot published with a
+ * unique publication version, deletes the draft, and enqueues the lifecycle
+ * publication event in the transactional outbox (dispatched only after
+ * commit). Opening happens after commit and is completed by a retry of the
+ * same request. Any failure before commit returns the slot to the unlocked
+ * draft; a retry resumes the same petitionId.
+ */
+export async function publishInitiativePetitionWorkingDraft(
+  identity: RequestIdentity,
+  initiativeId: string,
+  draftId: string,
+): Promise<Petition> {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+
+  if ((initiative.lifecycleProfile ?? "STANDARD") !== "STANDARD") {
+    throw new Error(
+      "Petition publication is not available for this Initiative's lifecycle profile.",
+    );
+  }
+
+  const petitionId = petitionIdForDraft(draftId);
+  const draft = await findPetitionWorkingDraft(initiativeId, draftId);
+
+  if (!draft) {
+    // The draft is gone only once its publication committed: finish opening it.
+    const published = await getPetition(petitionId);
+    const slot = await findPublishedSlotOfWorkingDraft(initiativeId, draftId, petitionId);
+
+    if (!published || !slot || published.subject.initiativeId !== initiativeId) {
+      throw new Error("Petition draft not found.");
+    }
+
+    return openPublishedPetition(published);
+  }
+
+  assertWorkingDraftPublishable(
+    draft,
+    (await buildInitiativePetitionIntelligenceSnapshot(initiativeId)).revisionReference,
+  );
+
+  const existingPetition = await getPetition(petitionId);
+
+  if (existingPetition && !RESUMABLE_WORKING_DRAFT_STATUSES.has(existingPetition.status)) {
+    throw new Error("This Petition draft has already been published.");
+  }
+
+  const reservation = await reserveWorkingDraftPublication(initiativeId, draftId, petitionId);
+
+  if (!reservation) {
+    const published = await getPetition(petitionId);
+
+    if (!published) {
+      throw new Error("Petition draft not found.");
+    }
+
+    return openPublishedPetition(published);
+  }
+
+  let petition: Petition;
+
+  try {
+    injectPetitionSlotFault("crash-after-reserve");
+
+    // The draft is locked from here on: validate and publish exactly this content.
+    const locked = await findPetitionWorkingDraft(initiativeId, draftId);
+
+    if (!locked) {
+      throw new Error("Petition draft not found.");
+    }
+
+    assertWorkingDraftPublishable(
+      locked,
+      (await buildInitiativePetitionIntelligenceSnapshot(initiativeId)).revisionReference,
+    );
+
+    if (existingPetition) {
+      // Resume this draft's own unpublished Petition with the draft's current content.
+      petition = await syncPreparatoryPetitionContent(
+        petitionId,
+        workingDraftPetitionContent(locked),
+        workingDraftTraceability(locked),
+      );
+    } else {
+      const decision = await getOrCreatePetitionBootstrapDecision(
+        initiative,
+        identity.participantId,
+        petitionId,
+      );
+      petition = await createPetition({
+        petitionId,
+        collectiveDecisionId: decision.decisionId,
+        status: "Draft",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        subject: {
+          decisionId: decision.decisionId,
+          initiativeId,
+          ...workingDraftPetitionContent(locked),
+        },
+        policy: {
+          ...defaultPetitionPolicy,
+          withdrawalPolicy: {
+            withdrawalPermitted: true,
+            withdrawalPolicyDescription:
+              "Signatures may be withdrawn at any time while this Petition is open for endorsement.",
+          },
+        },
+        shareLink: null,
+        signatures: [],
+        supportMetrics: {
+          totalSignatures: 0,
+          participantSignatures: 0,
+          dailyActivity: [],
+          supportThresholdStatus: {
+            thresholdDefined: false,
+            thresholdReached: false,
+            currentCount: 0,
+            thresholdCount: null,
+          },
+        },
+        outcome: null,
+        traceability: workingDraftTraceability(locked),
+      });
+    }
+
+    if (petition.status === "Draft") {
+      petition = (await preparePetition(petitionId)) ?? petition;
+    }
+
+    injectPetitionSlotFault("crash-after-prepare");
+    await renewPetitionPublicationReservation(reservation);
+
+    petition = await finalizePetitionPublication(reservation, {
+      onPublishedInTransaction: async (session, publicationVersion) => {
+        const result = await publishInitiativeLifecycleStage({
+          initiativeId,
+          initiativeTitle: initiative.title,
+          lifecycleProfile: initiative.lifecycleProfile,
+          stageId: "petition",
+          stageLabel: "Petition",
+          stageArtifactId: petitionId,
+          stageVersion: publicationVersion,
+          actorParticipantId: identity.participantId,
+          publicationKind: "published",
+          relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
+          session,
+        });
+
+        if (result.outcome !== "enqueued") {
+          throw new Error("The Petition publication event already exists.");
+        }
+      },
+    });
+  } catch (error) {
+    if (!isSimulatedPublicationCrash(error)) {
+      await releasePetitionPublicationReservation(reservation).catch(() => undefined);
+    }
+    throw error;
+  }
+
+  injectPetitionSlotFault("crash-after-finalize");
+  return openPublishedPetition(petition);
 }

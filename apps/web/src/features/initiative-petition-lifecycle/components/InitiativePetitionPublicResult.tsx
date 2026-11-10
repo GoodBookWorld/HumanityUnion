@@ -11,6 +11,14 @@ import {
   buildPublicPetitionSharePayload,
   CivicShareButton,
 } from "../../civic-share";
+import {
+  buildPetitionDocumentFallbackFields,
+  PETITION_DOCUMENT_FIELD_LABEL_KEYS,
+  petitionDocumentRecipients,
+  petitionDocumentRevisionReference,
+  petitionDocumentStatusKey,
+} from "../petition-public-document";
+import { createPetitionSignatureRefresher } from "../petition-signature-refresh";
 import { InitiativePetitionSignatureWidget } from "./InitiativePetitionSignatureWidget";
 
 import "./initiative-petition-stage-workspace.css";
@@ -24,6 +32,8 @@ interface InitiativePetitionPublicResultProps {
    * previewing can never record a real signature or visitor signal.
    */
   readonly isPreview?: boolean;
+  /** Called after a successful Sign / Withdraw, e.g. to refresh other Petition summaries on the page. */
+  readonly onSignatureChange?: (petitionId: string, viewerHasSigned: boolean) => void;
 }
 
 function formatDate(value: string | null, locale: string): string | null {
@@ -43,16 +53,103 @@ function formatDate(value: string | null, locale: string): string | null {
 }
 
 /**
+ * HU-LC-05C.4C.3B — the published Petition as a civic document: title as
+ * the single heading, publication date / status / recipients once in the
+ * header, reader-facing section labels, one shared translation area, and a
+ * plain-language source reference instead of internal traceability ids.
+ */
+export function InitiativePetitionPublicDocument({
+  petitionId,
+  projection,
+}: {
+  readonly petitionId: string;
+  readonly projection: PublicPetitionProjection;
+}) {
+  const locale = useLocale();
+  const t = useTranslations("initiativeExperience");
+  const { petitionIdentity, petitionSubject } = projection;
+  const publishedAtLabel = formatDate(projection.petitionSummary.publishedAt, locale);
+  const statusKey = petitionDocumentStatusKey(petitionIdentity.lifecycleStatus);
+  const recipients = petitionDocumentRecipients(petitionSubject);
+  const revisionReference = petitionDocumentRevisionReference(projection.traceability);
+
+  const header =
+    publishedAtLabel || statusKey || recipients.length > 0 ? (
+      <div className="ipl-document__header">
+        {publishedAtLabel || statusKey ? (
+          <p className="ipl-document__meta">
+            {statusKey ? (
+              <span className="ipl-document__status">
+                {t(`author.petition.public.document.${statusKey}`)}
+              </span>
+            ) : null}
+            {publishedAtLabel ? (
+              <span>{t("author.petition.public.publishedAt", { date: publishedAtLabel })}</span>
+            ) : null}
+          </p>
+        ) : null}
+        {recipients.length > 0 ? (
+          <dl className="ipl-document__recipients">
+            <dt>{t("author.petition.public.document.recipients")}</dt>
+            <dd>
+              <ul>
+                {recipients.map((recipient, index) => (
+                  <li key={`${index}-${recipient}`}>{recipient}</li>
+                ))}
+              </ul>
+            </dd>
+          </dl>
+        ) : null}
+      </div>
+    ) : null;
+
+  return (
+    <article className="ipl-document">
+      <PublicTranslatedFields
+        presentation="document"
+        sourceKind="petition"
+        sourceRecordId={petitionId}
+        headingField="title"
+        headerContent={header}
+        fieldOrder={[
+          "title",
+          "summary",
+          "requestStatement",
+          "expectedOutcome",
+          "supportingContext",
+          "keyArguments",
+        ]}
+        fieldLabels={Object.fromEntries(
+          Object.entries(PETITION_DOCUMENT_FIELD_LABEL_KEYS).map(([field, key]) => [
+            field,
+            t(`author.petition.public.document.${key}`),
+          ]),
+        )}
+        fallbackFields={buildPetitionDocumentFallbackFields(petitionIdentity, petitionSubject)}
+      />
+      {revisionReference ? (
+        <p className="ipl-document__reference">
+          {revisionReference.key === "basedOnRevisionVersion"
+            ? t("author.petition.public.document.basedOnRevisionVersion", {
+                version: revisionReference.version,
+              })
+            : t("author.petition.public.document.basedOnRevision")}
+        </p>
+      ) : null}
+    </article>
+  );
+}
+
+/**
  * Initiative Lifecycle — Part F, Section 5/7/8/9 (Public Petition /
  * Representative Signatures / Traceability).
  *
  * Renders inside the shared shell's `InitiativeLifecyclePublicResultPanel`
- * boundary as its `publicResultSlot` — that boundary already renders the
- * stage title, Publication Date, and Version generically; this adds
- * published Petition content: Public Summary, Request Statement, Expected
- * Outcome, Supporting Context, Key Arguments, permanent Traceability
- * (Revision/Analysis/Proposal references — Section 9), the three
- * independent Participant/Member/Visitor counters with the mandatory
+ * boundary as its `publicResultSlot`. The Petition stage uses the shell's
+ * document presentation (HU-LC-05C.4C.3B), so the published Petition itself
+ * (`InitiativePetitionPublicDocument`) owns the heading, publication date
+ * and source reference. This adds the three independent
+ * Participant/Member/Visitor counters with the mandatory
  * civic-participation disclaimer (Section 7), and Sign Petition / Withdraw
  * Signature (Section 8). Visitors never see a draft — only the Published
  * Petition, exactly as returned by the public projection.
@@ -60,11 +157,22 @@ function formatDate(value: string | null, locale: string): string | null {
 export function InitiativePetitionPublicResult({
   petitionId,
   isPreview = false,
+  onSignatureChange,
 }: InitiativePetitionPublicResultProps) {
-  const locale = useLocale();
   const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicPetitionProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // Section 7 — after Sign / Withdraw, the counters are re-read from the server.
+  const [signatureRefresher] = useState(() =>
+    createPetitionSignatureRefresher(
+      { fetchProjection: getPublicPetition, applyProjection: setProjection },
+      petitionId,
+    ),
+  );
+
+  useEffect(() => {
+    signatureRefresher.showPetition(petitionId);
+  }, [signatureRefresher, petitionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,80 +216,11 @@ export function InitiativePetitionPublicResult({
     return <p className="lsw-result__placeholder">{t("author.petition.public.loading")}</p>;
   }
 
-  const { petitionIdentity, petitionSubject, traceability, supportBreakdown } =
-    projection;
-  const publishedAtLabel = formatDate(projection.petitionSummary.publishedAt, locale);
+  const { petitionIdentity, petitionSubject, supportBreakdown } = projection;
 
   return (
     <div className="ipl-public-result" translate="yes">
-      <PublicTranslatedFields
-        sourceKind="petition"
-        sourceRecordId={petitionId}
-        fieldOrder={[
-          "title",
-          "summary",
-          "requestStatement",
-          "expectedOutcome",
-          "supportingContext",
-          "keyArguments",
-        ]}
-        fieldLabels={{
-          title: t("author.petition.fields.title"),
-          summary: t("author.petition.fields.publicSummary"),
-          requestStatement: t("author.petition.fields.requestStatement"),
-          expectedOutcome: t("author.petition.fields.expectedOutcome"),
-          supportingContext: t("author.petition.fields.supportingContext"),
-          keyArguments: t("author.petition.fields.keyArguments"),
-        }}
-        fallbackFields={{
-          title: petitionIdentity.title,
-          summary: petitionSubject.summary || t("author.petition.public.emptySummary"),
-          requestStatement: petitionSubject.requestStatement ?? "",
-          expectedOutcome: petitionSubject.expectedOutcome ?? "",
-          supportingContext: petitionSubject.supportingContext ?? "",
-          keyArguments: (petitionSubject.keyArguments ?? []).join("\n"),
-        }}
-      />
-
-      {traceability ? (
-        <div className="ipl-public-result__field">
-          <h4>{t("author.petition.public.traceability")}</h4>
-          <div className="ipl-traceability">
-            <span>
-              {t("author.petition.public.supportingRevision", {
-                version: traceability.revisionVersion,
-                revisionId: traceability.revisionId,
-              })}
-            </span>
-            {traceability.analysisId ? (
-              <span>
-                {traceability.analysisVersion !== null
-                  ? t("author.petition.public.supportingAnalysisWithVersion", {
-                      analysisId: traceability.analysisId,
-                      version: traceability.analysisVersion,
-                    })
-                  : t("author.petition.public.supportingAnalysis", {
-                      analysisId: traceability.analysisId,
-                    })}
-              </span>
-            ) : null}
-            <span>
-              {t("author.petition.public.supportingProposals", {
-                proposalIds:
-                  traceability.proposalIds.length > 0
-                    ? traceability.proposalIds.join(", ")
-                    : t("author.petition.public.supportingProposalsNone"),
-              })}
-            </span>
-          </div>
-        </div>
-      ) : null}
-
-      {publishedAtLabel ? (
-        <p className="ipl-public-result__empty">
-          {t("author.petition.public.publishedAt", { date: publishedAtLabel })}
-        </p>
-      ) : null}
+      <InitiativePetitionPublicDocument petitionId={petitionId} projection={projection} />
 
       <section className="ipl-support" aria-label={t("author.petition.public.signaturesAria")}>
         <div className="ipl-support__header">
@@ -235,9 +274,13 @@ export function InitiativePetitionPublicResult({
             viewerHasSigned={projection.viewerHasSigned}
             signingAvailable={projection.participationEntryGuidance.signingAvailable}
             participationEntryGuidance={projection.participationEntryGuidance}
-            onSignatureChange={(viewerHasSigned) =>
-              setProjection((current) => (current ? { ...current, viewerHasSigned } : current))
-            }
+            onSignatureChange={(viewerHasSigned) => {
+              void signatureRefresher.afterSignatureChange(
+                petitionIdentity.petitionId,
+                viewerHasSigned,
+              );
+              onSignatureChange?.(petitionIdentity.petitionId, viewerHasSigned);
+            }}
           />
         )}
       </section>

@@ -1,15 +1,23 @@
 import { randomUUID } from "node:crypto";
 
+import type { ClientSession } from "mongodb";
 import type { Petition } from "@hu/types";
 
 import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
 import {
   deletePetitionWorkingDraft,
+  deletePublishedPetitionWorkingDraft,
   insertPetitionWorkingDraft,
   listPetitionWorkingDrafts,
+  lockPetitionWorkingDraft,
+  transferPetitionWorkingDraftLock,
+  unlockPetitionWorkingDraft,
 } from "../initiative-petition-drafts/petition-working-draft.repository.js";
 import type { PetitionWorkingDraft } from "../initiative-petition-drafts/petition-working-draft.types.js";
-import { findPetitionById } from "../petition/persistence/petition.repository.js";
+import {
+  countPubliclyVisiblePetitionsByInitiativeId,
+  findPetitionById,
+} from "../petition/persistence/petition.repository.js";
 import { isPetitionPubliclyVisible } from "../petition/petition-public-visibility.js";
 import {
   getPetition,
@@ -18,11 +26,15 @@ import {
   publishPetitionInSession,
 } from "../petition/petition.store.js";
 import {
+  assignPublicationVersion,
+  convertDraftSlotToReservation,
   deleteDraftPetitionSlot,
   deletePetitionSlotByPetitionId,
   deleteReservation,
   ensurePetitionSlotStorageReady,
   finalizeOwnedReservation,
+  findMaxPublicationVersion,
+  findPetitionSlotByDraftId,
   findPetitionSlotByPetitionId,
   insertPetitionSlot,
   insertReservedPetitionSlot,
@@ -31,6 +43,7 @@ import {
   listPetitionSlots,
   markReservationPublished,
   renewReservationLease,
+  revertReservationToDraft,
   takeOverExpiredReservation,
 } from "./petition-slot.repository.js";
 import type { PetitionPublicationReservation, PetitionSlot } from "./petition-slot.types.js";
@@ -90,7 +103,11 @@ export class PetitionReservationLostError extends Error {
 }
 
 type SlotFault =
-  "after-draft-slot" | "after-draft-delete" | "crash-after-reserve" | "crash-after-prepare";
+  | "after-draft-slot"
+  | "after-draft-delete"
+  | "crash-after-reserve"
+  | "crash-after-prepare"
+  | "crash-after-finalize";
 let faultForTests: SlotFault | null = null;
 let leaseMsForTests: number | null = null;
 let finalizePauseForTests: (() => Promise<void>) | null = null;
@@ -210,15 +227,59 @@ async function recoverExpiredReservation(slot: PetitionSlot): Promise<void> {
     return;
   }
 
-  await runMongoTransaction(async (session) => {
-    const petition = await findPetitionById(petitionId, { session });
-
-    if (petition && isPetitionPubliclyVisible(petition.status)) {
-      return markReservationPublished(petitionId, slot.attemptId, session);
+  await runMongoTransaction((session) =>
+    releaseReservationInTransaction(
+      {
+        initiativeId: slot.initiativeId,
+        petitionId,
+        attemptId: slot.attemptId,
+        draftId: slot.draftId,
+      },
+      { expiredOnly: true },
+      session,
+    ),
+  ).catch((error: unknown) => {
+    // The owner or a retry changed the reservation meanwhile; it is no longer expired.
+    if (!(error instanceof PetitionReservationLostError)) {
+      throw error;
     }
-
-    return deleteReservation(petitionId, slot.attemptId, { expiredOnly: true }, session);
   });
+}
+
+/**
+ * Ends one reservation inside a transaction. A public Petition keeps the slot
+ * permanently. A working draft's converted slot returns to `draft` and the draft
+ * is unlocked (HU-LC-05C.4C); any other reservation is released. The Draft/Ready
+ * Petition is always kept for a retry.
+ */
+async function releaseReservationInTransaction(
+  reservation: {
+    readonly initiativeId: string;
+    readonly petitionId: string;
+    readonly attemptId: string | null;
+    readonly draftId?: string | null;
+  },
+  options: { expiredOnly: boolean },
+  session: ClientSession,
+): Promise<boolean> {
+  const { initiativeId, petitionId, attemptId } = reservation;
+  const petition = await findPetitionById(petitionId, { session });
+
+  if (petition && isPetitionPubliclyVisible(petition.status)) {
+    return markReservationPublished(petitionId, attemptId, session);
+  }
+
+  if (
+    reservation.draftId &&
+    (await unlockPetitionWorkingDraft(initiativeId, reservation.draftId, attemptId, session))
+  ) {
+    if (!(await revertReservationToDraft(petitionId, attemptId, options, session))) {
+      throw new PetitionReservationLostError();
+    }
+    return true;
+  }
+
+  return deleteReservation(petitionId, attemptId, options, session);
 }
 
 /** Releases every expired reservation of the Initiative whose Petition is not public. */
@@ -385,6 +446,106 @@ export async function reservePetitionPublication(
   throw new PetitionSlotBusyError();
 }
 
+/**
+ * HU-LC-05C.4C — starts the publication of a working draft in the draft's own
+ * slot (draft → reserved), locking the draft against edits in the same
+ * transaction; or takes over this draft's expired reservation. Never allocates
+ * another slot. Returns null when the draft's slot is already published.
+ * Throws PetitionPublicationInProgressError while another attempt's lease is
+ * active and PetitionSlotLimitError when the draft holds no slot.
+ */
+export async function reserveWorkingDraftPublication(
+  initiativeId: string,
+  draftId: string,
+  petitionId: string,
+): Promise<PetitionPublicationReservation | null> {
+  await accountExistingPetitionSlotOccupants(initiativeId);
+
+  for (let attempt = 0; attempt < MAX_ALLOCATION_ATTEMPTS; attempt += 1) {
+    const slot = await findPetitionSlotByDraftId(initiativeId, draftId);
+
+    if (!slot) {
+      // A draft that predates slot tracking found no free slot.
+      throw new PetitionSlotLimitError();
+    }
+
+    if (slot.state === "published") {
+      return null;
+    }
+
+    if (slot.state === "reserved" && slot.petitionId !== petitionId) {
+      throw new Error("This Petition draft is not available for publication.");
+    }
+
+    const attemptId = randomUUID();
+    const reservation = { initiativeId, petitionId, attemptId, draftId };
+    const acquired = await runMongoTransaction(async (session) => {
+      const slotAcquired =
+        slot.state === "draft"
+          ? await convertDraftSlotToReservation(reservation, reservationLeaseMs(), session)
+          : await takeOverExpiredReservation(
+              petitionId,
+              slot.attemptId,
+              attemptId,
+              reservationLeaseMs(),
+              session,
+            );
+
+      if (!slotAcquired) {
+        return false;
+      }
+
+      const draftLocked =
+        slot.state === "draft"
+          ? await lockPetitionWorkingDraft(initiativeId, draftId, attemptId, session)
+          : await transferPetitionWorkingDraftLock(
+              initiativeId,
+              draftId,
+              slot.attemptId,
+              attemptId,
+              session,
+            );
+
+      if (!draftLocked) {
+        throw new Error("Petition draft not found.");
+      }
+
+      return true;
+    });
+
+    if (acquired) {
+      return reservation;
+    }
+
+    const current = await findPetitionSlotByDraftId(initiativeId, draftId);
+
+    if (
+      slot.state === "reserved" &&
+      current?.state === "reserved" &&
+      current.attemptId === slot.attemptId
+    ) {
+      throw new PetitionPublicationInProgressError();
+    }
+  }
+
+  throw new PetitionSlotBusyError();
+}
+
+/** The published slot that a working draft's own publication produced, if any. */
+export async function findPublishedSlotOfWorkingDraft(
+  initiativeId: string,
+  draftId: string,
+  petitionId: string,
+): Promise<PetitionSlot | null> {
+  const slot = await findPetitionSlotByPetitionId(petitionId);
+
+  return slot?.state === "published" &&
+    slot.initiativeId === initiativeId &&
+    slot.draftId === draftId
+    ? slot
+    : null;
+}
+
 /** Extends the owner's lease before a long step; throws when the reservation was lost. */
 export async function renewPetitionPublicationReservation(
   reservation: PetitionPublicationReservation,
@@ -397,6 +558,87 @@ export async function renewPetitionPublicationReservation(
     ))
   ) {
     throw new PetitionReservationLostError();
+  }
+}
+
+/**
+ * HU-LC-05C.4C — the next lifecycle publication version of the Initiative:
+ * above every stored version and above the positional versions earlier
+ * publications used (at most the number of other public Petitions).
+ */
+async function allocatePublicationVersion(
+  reservation: PetitionPublicationReservation,
+  session: ClientSession,
+): Promise<number> {
+  const [maxStored, otherPublic] = await Promise.all([
+    findMaxPublicationVersion(reservation.initiativeId, session),
+    countPubliclyVisiblePetitionsByInitiativeId(
+      reservation.initiativeId,
+      reservation.petitionId,
+      session,
+    ),
+  ]);
+  const publicationVersion = Math.max(maxStored, otherPublic) + 1;
+
+  if (
+    !(await assignPublicationVersion(
+      reservation.petitionId,
+      reservation.attemptId,
+      publicationVersion,
+      session,
+    ))
+  ) {
+    throw new PetitionReservationLostError();
+  }
+
+  return publicationVersion;
+}
+
+async function runFinalizeTransaction(
+  reservation: PetitionPublicationReservation,
+  options: Parameters<typeof finalizePetitionPublication>[1] = {},
+): Promise<Petition> {
+  const draftId = reservation.draftId ?? null;
+
+  // A concurrent publication of the same Initiative may claim the same version
+  // first; the unique (initiativeId, publicationVersion) index then rejects this
+  // transaction, and it is retried with the next version.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await runMongoTransaction(async (session) => {
+        if (
+          !(await finalizeOwnedReservation(reservation.petitionId, reservation.attemptId, session))
+        ) {
+          throw new PetitionReservationLostError();
+        }
+
+        await finalizePauseForTests?.();
+        const petition = await publishPetitionInSession(reservation.petitionId, session);
+
+        if (draftId) {
+          const publicationVersion = await allocatePublicationVersion(reservation, session);
+
+          if (
+            !(await deletePublishedPetitionWorkingDraft(
+              reservation.initiativeId,
+              draftId,
+              reservation.attemptId,
+              session,
+            ))
+          ) {
+            throw new PetitionReservationLostError();
+          }
+
+          await options.onPublishedInTransaction?.(session, publicationVersion);
+        }
+
+        return petition;
+      });
+    } catch (error) {
+      if (!draftId || !isDuplicateKeyError(error) || attempt + 1 >= MAX_ALLOCATION_ATTEMPTS) {
+        throw error;
+      }
+    }
   }
 }
 
@@ -421,20 +663,22 @@ async function finalizedByThisAttempt(
  */
 export async function finalizePetitionPublication(
   reservation: PetitionPublicationReservation,
+  options: {
+    /**
+     * HU-LC-05C.4C — working-draft publication only: runs inside the finalizing
+     * transaction with the allocated publication version (e.g. to enqueue the
+     * publication event in the transactional outbox).
+     */
+    readonly onPublishedInTransaction?: (
+      session: ClientSession,
+      publicationVersion: number,
+    ) => Promise<void>;
+  } = {},
 ): Promise<Petition> {
   let petition: Petition;
 
   try {
-    petition = await runMongoTransaction(async (session) => {
-      if (
-        !(await finalizeOwnedReservation(reservation.petitionId, reservation.attemptId, session))
-      ) {
-        throw new PetitionReservationLostError();
-      }
-
-      await finalizePauseForTests?.();
-      return publishPetitionInSession(reservation.petitionId, session);
-    });
+    petition = await runFinalizeTransaction(reservation, options);
   } catch (error) {
     const committed = await finalizedByThisAttempt(reservation).catch(() => null);
 
@@ -508,18 +752,7 @@ export async function deleteSlotOfDeletedPetitionForTests(petitionId: string): P
 export async function releasePetitionPublicationReservation(
   reservation: PetitionPublicationReservation,
 ): Promise<void> {
-  await runMongoTransaction(async (session) => {
-    const petition = await findPetitionById(reservation.petitionId, { session });
-
-    if (petition && isPetitionPubliclyVisible(petition.status)) {
-      return markReservationPublished(reservation.petitionId, reservation.attemptId, session);
-    }
-
-    return deleteReservation(
-      reservation.petitionId,
-      reservation.attemptId,
-      { expiredOnly: false },
-      session,
-    );
-  });
+  await runMongoTransaction((session) =>
+    releaseReservationInTransaction(reservation, { expiredOnly: false }, session),
+  );
 }

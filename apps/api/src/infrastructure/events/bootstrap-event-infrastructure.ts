@@ -4,6 +4,7 @@ import { ensureMongoIndexes } from "../mongodb/mongo-indexes.js";
 import { registerWorkspaceProjectionHandlers } from "../../modules/workspace/index.js";
 import { registerParticipantActionHandlers } from "../../modules/participant-action/index.js";
 import { registerInitiativeLifecycleStageHandlers } from "../../shared/initiative-lifecycle-stage/index.js";
+import { registerInitiativePetitionOpenCompletionHandler } from "../../modules/initiative-petition-lifecycle/initiative-petition-open-completion.consumer.js";
 import { registerBlogPublicationDeliveryHandlers } from "../../modules/blog/blog-publication-delivery.index.js";
 import { registerBlogAdminSubscriberMessageHandlers } from "../../modules/blog/blog-subscription-admin-message.index.js";
 import { registerAdminNotificationHandlers } from "../../modules/admin-notifications/index.js";
@@ -32,6 +33,7 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   registerWorkspaceProjectionHandlers();
   registerParticipantActionHandlers();
   registerInitiativeLifecycleStageHandlers();
+  registerInitiativePetitionOpenCompletionHandler();
   registerBlogPublicationDeliveryHandlers();
   registerBlogAdminSubscriberMessageHandlers();
   registerAdminNotificationHandlers();

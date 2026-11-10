@@ -1,4 +1,9 @@
-import type { ParticipationMode, Petition, PublicPetitionProjection } from "@hu/types";
+import type {
+  ParticipationMode,
+  Petition,
+  PublicInitiativePetitionList,
+  PublicPetitionProjection,
+} from "@hu/types";
 
 import { apiRequest, apiRequestOptional } from "../../lib/api-client";
 
@@ -23,6 +28,15 @@ export async function getPetitionByInitiativeId(initiativeId: string): Promise<P
 export async function getPublicPetition(petitionId: string): Promise<PublicPetitionProjection> {
   return apiRequest<PublicPetitionProjection>(
     `/api/v1/public/petitions/${encodeURIComponent(petitionId)}`,
+  );
+}
+
+/** HU-LC-05C.4C.3C — active (Open) Petitions of one Initiative, for the public Initiative page. */
+export async function getPublicInitiativePetitions(
+  initiativeId: string,
+): Promise<PublicInitiativePetitionList> {
+  return apiRequest<PublicInitiativePetitionList>(
+    `/api/v1/public/petitions/by-initiative/${encodeURIComponent(initiativeId)}`,
   );
 }
 

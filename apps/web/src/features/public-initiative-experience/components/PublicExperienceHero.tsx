@@ -48,6 +48,8 @@ export interface PublicExperienceHeroProps {
     readonly title: string;
     readonly description: string;
   };
+  /** HU-LC-05C.4C.3C — rendered as the last element inside `pie-hero__content`. */
+  contentFooter?: ReactNode;
 }
 
 export function PublicExperienceHero({
@@ -58,6 +60,7 @@ export function PublicExperienceHero({
   meta,
   parentLink,
   presentation,
+  contentFooter,
 }: PublicExperienceHeroProps) {
   const t = useTranslations("initiativeExperience");
   const displayTitle = presentation?.title ?? title;
@@ -162,6 +165,7 @@ export function PublicExperienceHero({
               ))}
             </dl>
           </div>
+          {contentFooter ?? null}
         </div>
       </div>
       {descriptionText ? (

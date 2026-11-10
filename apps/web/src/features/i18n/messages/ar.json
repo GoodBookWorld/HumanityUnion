@@ -1179,6 +1179,15 @@
       "overview": "نظرة عامة",
       "discussion": "نقاش"
     },
+    "petitionsWidget": {
+      "title": "العرائض",
+      "countAria": "{count, plural, zero {لا توجد عرائض نشطة} one {عريضة نشطة واحدة} two {عريضتان نشطتان} few {# عرائض نشطة} many {# عريضة نشطة} other {# عريضة نشطة}}",
+      "listAria": "العرائض النشطة",
+      "loading": "جارٍ تحميل العرائض…",
+      "loadFailed": "تعذّر تحميل العرائض حاليًا.",
+      "empty": "لا توجد عرائض نشطة لهذه المبادرة بعد.",
+      "signatures": "{count, plural, zero {لا توقيعات} one {توقيع واحد} two {توقيعان} few {# توقيعات} many {# توقيعًا} other {# توقيع}}"
+    },
     "hero": {
       "detailsAria": "تفاصيل المبادرة",
       "activityArea": "مجال النشاط",
@@ -2907,7 +2916,20 @@
           "supportCountersAria": "عدّادات دعم العريضة",
           "shareAria": "مشاركة العريضة: {title}",
           "previewSignatureDisabled": "أداة التوقيع معطّلة أثناء المعاينة — يصبح التوقيع متاحاً للزوّار بعد نشر هذه العريضة وفتحها.",
-          "participationTransparencyNote": "توقيع هذه العريضة شكل من أشكال المشاركة المدنية على Humanity Union. وهي ليست عريضة مُلزمة قانوناً ولا تُنشئ بحد ذاتها أي التزام قانوني أو حكومي."
+          "participationTransparencyNote": "توقيع هذه العريضة شكل من أشكال المشاركة المدنية على Humanity Union. وهي ليست عريضة مُلزمة قانوناً ولا تُنشئ بحد ذاتها أي التزام قانوني أو حكومي.",
+          "document": {
+            "summary": "الملخص",
+            "request": "الطلب",
+            "expectedOutcome": "النتيجة المتوقعة",
+            "supportingInformation": "معلومات داعمة",
+            "keyArguments": "الحجج الرئيسية",
+            "recipients": "موجّهة إلى",
+            "statusOpen": "مفتوحة للتوقيع",
+            "statusClosed": "مغلقة",
+            "statusArchived": "مؤرشفة",
+            "basedOnRevision": "استنادًا إلى المراجعة المنشورة لهذه المبادرة",
+            "basedOnRevisionVersion": "استنادًا إلى النسخة {version} من المراجعة المنشورة لهذه المبادرة"
+          }
         },
         "sourceSnapshot": {
           "title": "مصادر العريضة",

@@ -1,0 +1,119 @@
+/* HU-LC-05C.4C.3C — hero Petitions widget (last element of .pie-hero__content). */
+.pie-hero-petitions {
+  margin-top: 1rem;
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-md);
+  min-width: 0;
+}
+
+.pie-hero-petitions__heading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pie-hero-petitions__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pie-hero-petitions__toggle:focus-visible {
+  outline: 2px solid var(--hu-color-primary);
+  outline-offset: 2px;
+}
+
+.pie-hero-petitions__icon {
+  flex: none;
+}
+
+.pie-hero-petitions__count {
+  min-width: 1.5rem;
+  padding: 0 0.45rem;
+  border-radius: var(--hu-radius-pill, 999px);
+  background: var(--color-surface-muted, #f1f3f4);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pie-hero-petitions__chevron {
+  margin-inline-start: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 2px solid currentColor;
+  border-block-end: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.pie-hero-petitions__toggle[aria-expanded="true"] .pie-hero-petitions__chevron {
+  transform: rotate(-135deg);
+}
+
+.pie-hero-petitions__panel {
+  padding: 0 0.85rem 0.75rem;
+}
+
+.pie-hero-petitions__note {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: 0.9rem;
+}
+
+.pie-hero-petitions__retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hu-color-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pie-hero-petitions__list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie-hero-petitions__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  min-width: 0;
+}
+
+.pie-hero-petitions__link {
+  min-width: 0;
+  color: var(--hu-color-primary);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.pie-hero-petitions__link:hover,
+.pie-hero-petitions__link[aria-current="true"] {
+  text-decoration: underline;
+}
+
+.pie-hero-petitions__link[aria-current="true"] {
+  font-weight: 600;
+}
+
+.pie-hero-petitions__signatures {
+  color: var(--hu-color-text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}

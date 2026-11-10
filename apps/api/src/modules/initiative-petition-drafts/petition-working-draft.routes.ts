@@ -4,6 +4,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { AuthenticationRequiredError } from "../auth/auth.errors.js";
 import { PetitionSlotLimitError } from "../initiative-petition-slots/petition-slot.service.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { publishInitiativePetitionWorkingDraft } from "../initiative-petition-lifecycle/initiative-petition-lifecycle.service.js";
 import { resolvePetitionMutationActor } from "../petition/petition-mutation-authorization.js";
 import {
   createPetitionWorkingDraft,
@@ -21,8 +22,9 @@ import {
 
 /**
  * HU-LC-05C.3 — independent Petition drafts (many per Initiative). Steward-only;
- * every route needs a verified access token. Not yet used by Petition publication.
+ * every route needs a verified access token.
  * HU-LC-05C.4B — content can be generated into one selected draft.
+ * HU-LC-05C.4C — a draft can be published; it is locked while that runs.
  */
 const petitionWorkingDraftRouter = Router();
 
@@ -49,7 +51,11 @@ function resolveErrorStatus(message: string): number {
     message.includes("already exists") ||
     message.includes("not available") ||
     message.includes("please retry") ||
-    message.includes("overwrite: true")
+    message.includes("overwrite: true") ||
+    message.includes("before publishing") ||
+    message.includes("no longer current") ||
+    message.includes("already been published") ||
+    message.includes("concurrently modified")
   ) {
     return 409;
   }
@@ -162,6 +168,29 @@ petitionWorkingDraftRouter.post(
         options,
       );
       res.json(createSuccessResponse(draft, "Petition draft generated."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/**
+ * HU-LC-05C.4C — publishes this draft as a new Petition of the Initiative in the
+ * draft's own slot. Multiple published Petitions are allowed within the
+ * three-slot limit; a retry of the same request is safe at any point.
+ */
+petitionWorkingDraftRouter.post(
+  "/initiative/:initiativeId/drafts/:draftId/publish",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolvePetitionMutationActor(req);
+      const petition = await publishInitiativePetitionWorkingDraft(
+        identity,
+        param(req, "initiativeId"),
+        param(req, "draftId"),
+      );
+      res.json(createSuccessResponse(petition, "Petition published."));
     } catch (error) {
       handleServiceError(res, error);
     }

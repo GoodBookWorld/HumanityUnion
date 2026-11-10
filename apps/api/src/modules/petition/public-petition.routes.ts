@@ -3,8 +3,14 @@ import cookieParser from "cookie-parser";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { getPetition } from "./petition.store.js";
-import { countPetitionVisitorSignals, recordPetitionVisitorSignal } from "./petition-visitor-signal.service.js";
+import {
+  countPetitionVisitorSignals,
+  recordPetitionVisitorSignal,
+} from "./petition-visitor-signal.service.js";
+import { listPublicInitiativePetitions } from "./public-petition-list.js";
 import { toPublicPetitionProjection } from "./public-petition.projection.js";
 
 const publicPetitionRouter = Router();
@@ -81,6 +87,37 @@ publicPetitionRouter.post("/:petitionId/visitor-signal", async (req, res) => {
   const visitorSignals = await countPetitionVisitorSignals(petitionId);
 
   res.json(createSuccessResponse({ visitorSignals }, "Petition visitor interest recorded."));
+});
+
+/**
+ * HU-LC-05C.4C.3C — read-only list of an Initiative's active Petitions for
+ * the public Initiative page. Anonymous access, gated by the same
+ * ordinary-public Initiative check as the Initiative experience: unknown,
+ * private, unprojected or administratively blocked Initiatives are 404.
+ */
+publicPetitionRouter.get("/by-initiative/:initiativeId", async (req, res) => {
+  const initiativeId = (
+    Array.isArray(req.params.initiativeId) ? req.params.initiativeId[0] : req.params.initiativeId
+  )?.trim();
+
+  if (!initiativeId) {
+    res.status(400).json(createFailureResponse("Initiative identifier is required."));
+    return;
+  }
+
+  const initiative = getInitiativeById(initiativeId);
+
+  if (!initiative || !canExposePublicInitiativeProjection(initiative)) {
+    res.status(404).json(createFailureResponse("Initiative not found."));
+    return;
+  }
+
+  res.json(
+    createSuccessResponse(
+      await listPublicInitiativePetitions(initiativeId),
+      "Public Initiative petitions loaded.",
+    ),
+  );
 });
 
 publicPetitionRouter.get("/:petitionId", async (req, res) => {

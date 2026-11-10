@@ -34,6 +34,20 @@
   border: 0;
 }
 
+/* HU-LC-05C.4C.3B — document presentation: one heading, one shared translation chrome. */
+.hu-public-translated-document__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.hu-public-translated-document > .hu-translated-content__meta {
+  padding-block: var(--hu-space-2, 0.5rem);
+  border-block: 1px solid var(--color-border, #dadce0);
+}
+
 .hu-civic-public-translated-section {
   min-width: 0;
   max-width: 100%;

@@ -286,6 +286,42 @@ export async function updatePetition(
 }
 
 /**
+ * HU-LC-05C.4C — replaces the content and traceability of a not-yet-public
+ * (Draft/Ready) Petition with its working draft's current content, before a
+ * resumed publication. Decision and Initiative identity never change.
+ */
+export async function syncPreparatoryPetitionContent(
+  petitionId: string,
+  content: Omit<PetitionSubject, "decisionId" | "initiativeId">,
+  traceability: Petition["traceability"],
+): Promise<Petition> {
+  const record = await findPetitionById(petitionId);
+
+  if (!record) {
+    throw new Error("Petition not found.");
+  }
+
+  assertMutablePetition(record.status);
+  assertPreparatoryPetition(record.status);
+
+  const updated = await updatePetitionConditionally(petitionId, record.status, {
+    subject: {
+      ...structuredClone(content),
+      decisionId: record.subject.decisionId,
+      initiativeId: record.subject.initiativeId,
+    },
+    traceability: traceability ?? null,
+    updatedAt: nowIso(),
+  });
+
+  if (!updated) {
+    throw new PetitionConcurrencyConflictError();
+  }
+
+  return assemblePetitionResponse(updated, await listSignaturesByPetitionId(petitionId));
+}
+
+/**
  * Initiative Lifecycle — Part F, Section 9 (Traceability). Only callable
  * while the Petition is still `Draft`/`Ready` (before Publish freezes its
  * public subject/policy) — mirrors `updatePetition`'s own mutability gate,

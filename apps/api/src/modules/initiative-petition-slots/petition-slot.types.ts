@@ -17,6 +17,11 @@ export interface PetitionSlot {
   readonly attemptId: string | null;
   /** MongoDB server time; set only while `reserved`. */
   readonly leaseExpiresAt: Date | null;
+  /**
+   * HU-LC-05C.4C — lifecycle publication event version, allocated once in the
+   * finalizing transaction of a working-draft publication; unique per Initiative.
+   */
+  readonly publicationVersion?: number | null;
   readonly createdAt: string;
 }
 
@@ -25,4 +30,6 @@ export interface PetitionPublicationReservation {
   readonly initiativeId: string;
   readonly petitionId: string;
   readonly attemptId: string;
+  /** HU-LC-05C.4C — the working draft whose own slot this reservation converted. */
+  readonly draftId?: string | null;
 }

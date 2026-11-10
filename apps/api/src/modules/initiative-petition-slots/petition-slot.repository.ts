@@ -101,10 +101,95 @@ export async function takeOverExpiredReservation(
   previousAttemptId: string | null,
   attemptId: string,
   leaseMs: number,
+  session?: ClientSession,
 ): Promise<boolean> {
   const result = await collection().updateOne(
     { petitionId, attemptId: previousAttemptId, state: "reserved", ...LEASE_EXPIRED },
     [{ $set: { attemptId, leaseExpiresAt: leaseFromNow(leaseMs) } }],
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+export async function findPetitionSlotByDraftId(
+  initiativeId: string,
+  draftId: string,
+  session?: ClientSession,
+): Promise<PetitionSlot | null> {
+  return collection().findOne({ initiativeId, draftId }, { ...WITHOUT_MONGO_ID, session });
+}
+
+/**
+ * HU-LC-05C.4C — converts a working draft's own slot into a reservation for the
+ * draft's Petition (draft → reserved). The slot number and draftId are kept, so
+ * publication never allocates another slot.
+ */
+export async function convertDraftSlotToReservation(
+  input: { initiativeId: string; draftId: string; petitionId: string; attemptId: string },
+  leaseMs: number,
+  session: ClientSession,
+): Promise<boolean> {
+  const result = await collection().updateOne(
+    { initiativeId: input.initiativeId, draftId: input.draftId, state: "draft" },
+    [
+      {
+        $set: {
+          state: "reserved",
+          petitionId: input.petitionId,
+          attemptId: input.attemptId,
+          leaseExpiresAt: leaseFromNow(leaseMs),
+        },
+      },
+    ],
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Returns a converted reservation to its working draft (reserved → draft); never a published slot. */
+export async function revertReservationToDraft(
+  petitionId: string,
+  attemptId: string | null,
+  options: { expiredOnly: boolean },
+  session: ClientSession,
+): Promise<boolean> {
+  const result = await collection().updateOne(
+    {
+      petitionId,
+      attemptId,
+      state: "reserved",
+      draftId: { $type: "string" },
+      ...(options.expiredOnly ? LEASE_EXPIRED : {}),
+    },
+    { $set: { state: "draft", petitionId: null, attemptId: null, leaseExpiresAt: null } },
+    { session },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Highest publication version stored for the Initiative (0 when none). */
+export async function findMaxPublicationVersion(
+  initiativeId: string,
+  session: ClientSession,
+): Promise<number> {
+  const latest = await collection().findOne(
+    { initiativeId, publicationVersion: { $gte: 1 } },
+    { projection: { _id: 0, publicationVersion: 1 }, sort: { publicationVersion: -1 }, session },
+  );
+  return latest?.publicationVersion ?? 0;
+}
+
+/** Records the publication version on the slot this attempt has just published. */
+export async function assignPublicationVersion(
+  petitionId: string,
+  attemptId: string,
+  publicationVersion: number,
+  session: ClientSession,
+): Promise<boolean> {
+  const result = await collection().updateOne(
+    { petitionId, attemptId, state: "published" },
+    { $set: { publicationVersion } },
+    { session },
   );
   return result.matchedCount === 1;
 }

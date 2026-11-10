@@ -866,6 +866,13 @@ const MODULE_INDEXES: ReadonlyArray<{
         name: "initiative_petition_slots_petition_unique",
         partialFilterExpression: { petitionId: { $type: "string" } },
       },
+      {
+        // HU-LC-05C.4C — one publication event version per Initiative.
+        key: { initiativeId: 1, publicationVersion: 1 },
+        unique: true,
+        name: "initiative_petition_slots_publication_version_unique",
+        partialFilterExpression: { publicationVersion: { $type: "number" } },
+      },
     ],
   },
   {
