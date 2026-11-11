@@ -1,9 +1,9 @@
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
 interface PetitionSubjectProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
 }
 
 export function PetitionSubject({ petition }: PetitionSubjectProps) {

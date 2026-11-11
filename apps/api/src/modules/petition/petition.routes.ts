@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   authenticationMiddleware,
+  optionalAuthenticationMiddleware,
   requireJwtAuthenticationMiddleware,
 } from "../auth/auth.middleware.js";
 import {
@@ -22,13 +23,21 @@ import {
 
 const petitionRouter = Router();
 
+// HU-LC-05C.4C.6B — reads return only publicly readable Petitions (public status +
+// ordinary-public Initiative) in the public-safe shape; the verified steward may
+// also read their own unpublished Petition. Never the bootstrap identity.
 petitionRouter.get("/", listPetitionsHandler);
 petitionRouter.get(
   "/by-collective-decision/:collectiveDecisionId",
+  optionalAuthenticationMiddleware,
   getPetitionByCollectiveDecisionHandler,
 );
-petitionRouter.get("/by-initiative/:initiativeId", getPetitionByInitiativeHandler);
-petitionRouter.get("/:petitionId", getPetitionHandler);
+petitionRouter.get(
+  "/by-initiative/:initiativeId",
+  optionalAuthenticationMiddleware,
+  getPetitionByInitiativeHandler,
+);
+petitionRouter.get("/:petitionId", optionalAuthenticationMiddleware, getPetitionHandler);
 // HU-LC-05B — administrative mutations need a verified access token (never the
 // bootstrap identity) and stewardship of the Petition's Initiative (controller).
 petitionRouter.post("/", requireJwtAuthenticationMiddleware, createPetitionHandler);

@@ -3,7 +3,7 @@ import type {
   Implementation,
   ImplementationCommitment,
   Initiative,
-  Petition,
+  PublicPetitionRecord,
 } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
@@ -19,7 +19,7 @@ interface InitiativeContextSectionProps {
   implementation: Implementation;
   initiative: Initiative | null;
   collectiveDecision: CollectiveDecision | null;
-  petition: Petition | null;
+  petition: PublicPetitionRecord | null;
   commitment: ImplementationCommitment | null;
 }
 

@@ -10,6 +10,7 @@ import {
   countPetitionVisitorSignals,
   recordPetitionVisitorSignal,
 } from "./petition-visitor-signal.service.js";
+import { canReadPetition, isPetitionPubliclyReadable } from "./petition-public-access.js";
 import { listPublicInitiativePetitions } from "./public-petition-list.js";
 import { toPublicPetitionProjection } from "./public-petition.projection.js";
 
@@ -75,9 +76,9 @@ publicPetitionRouter.post("/:petitionId/visitor-signal", async (req, res) => {
 
   const petition = await getPetition(petitionId);
 
-  // A Petition only becomes a public civic document once it leaves
-  // Draft/Ready — mirrors `isPubliclyVisible` in `public-petition.projection.ts`.
-  if (!petition || petition.status === "Draft" || petition.status === "Ready") {
+  // Only a public Petition of an ordinary-public Initiative counts visitor
+  // interest (HU-LC-05C.4C.6B).
+  if (!petition || !isPetitionPubliclyReadable(petition)) {
     res.status(404).json(createFailureResponse("Petition not found."));
     return;
   }
@@ -126,7 +127,9 @@ publicPetitionRouter.get("/:petitionId", async (req, res) => {
     : req.params.petitionId;
   const petition = await getPetition(petitionId ?? "");
 
-  if (!petition) {
+  // HU-LC-05C.4C.6B — missing, private, unprojected or blocked Initiatives never
+  // expose their Petitions; the Initiative's verified steward may still preview.
+  if (!petition || !(await canReadPetition(req, petition))) {
     res.status(404).json(createFailureResponse("Public Petition not found."));
     return;
   }

@@ -5,7 +5,7 @@ import type {
   Implementation,
   ImplementationCommitment,
   Initiative,
-  Petition,
+  PublicPetitionRecord,
 } from "@hu/types";
 import { useState } from "react";
 
@@ -31,7 +31,7 @@ interface ImplementationWorkspaceProps {
   initialImplementation: Implementation;
   initiative: Initiative | null;
   collectiveDecision: CollectiveDecision | null;
-  petition: Petition | null;
+  petition: PublicPetitionRecord | null;
   commitment: ImplementationCommitment | null;
 }
 

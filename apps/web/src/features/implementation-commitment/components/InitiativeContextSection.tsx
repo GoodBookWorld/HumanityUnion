@@ -1,4 +1,9 @@
-import type { CollectiveDecision, ImplementationCommitment, Initiative, Petition } from "@hu/types";
+import type {
+  CollectiveDecision,
+  ImplementationCommitment,
+  Initiative,
+  PublicPetitionRecord,
+} from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
@@ -13,7 +18,7 @@ interface InitiativeContextSectionProps {
   commitment: ImplementationCommitment;
   initiative: Initiative | null;
   collectiveDecision: CollectiveDecision | null;
-  petition: Petition | null;
+  petition: PublicPetitionRecord | null;
 }
 
 export function InitiativeContextSection({

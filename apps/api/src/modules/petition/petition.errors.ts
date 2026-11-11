@@ -55,6 +55,36 @@ export class PetitionSlotRequiredError extends Error {
   }
 }
 
+export type PetitionSignatureRejectionReason =
+  | "not_yet_open"
+  | "no_longer_open"
+  | "already_signed"
+  | "not_eligible"
+  | "not_signed"
+  | "withdrawal_not_permitted";
+
+const PETITION_SIGNATURE_REJECTION_MESSAGES: Record<PetitionSignatureRejectionReason, string> = {
+  not_yet_open: "This Petition is not open for signing yet.",
+  no_longer_open: "This Petition is no longer open for signatures.",
+  already_signed: "You have already signed this Petition.",
+  not_eligible: "You are not eligible to sign this Petition.",
+  not_signed: "You have not signed this Petition.",
+  withdrawal_not_permitted: "This Petition does not permit signature withdrawal.",
+};
+
+/**
+ * HU-LC-05C.4C.6C — an expected signing/withdrawal refusal. The message is
+ * shown to the signer as-is, so it must never carry identifiers.
+ */
+export class PetitionSignatureRejectedError extends Error {
+  readonly code = "PETITION_SIGNATURE_REJECTED";
+
+  constructor(readonly reason: PetitionSignatureRejectionReason) {
+    super(PETITION_SIGNATURE_REJECTION_MESSAGES[reason]);
+    this.name = "PetitionSignatureRejectedError";
+  }
+}
+
 /** The authenticated Participant may not perform this Petition action. */
 export class PetitionAccessDeniedError extends Error {
   readonly code = "PETITION_ACCESS_DENIED";

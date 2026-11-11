@@ -15,6 +15,7 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { findPetitionSlotByPetitionId } from "../initiative-petition-slots/petition-slot.repository.js";
 import {
   PetitionConcurrencyConflictError,
+  PetitionSignatureRejectedError,
   PetitionSlotRequiredError,
   PetitionTransactionError,
 } from "./petition.errors.js";
@@ -515,6 +516,17 @@ export async function openPetition(petitionId: string, opensAt?: string): Promis
   return assemblePetitionResponse(updated, signatures);
 }
 
+/** HU-LC-05C.4C.6C — signatures are given and withdrawn only while the Petition is Open. */
+function assertPetitionOpenForSignatures(status: Petition["status"]): void {
+  if (status === "Open") {
+    return;
+  }
+
+  throw new PetitionSignatureRejectedError(
+    status === "Closed" || status === "Archived" ? "no_longer_open" : "not_yet_open",
+  );
+}
+
 /**
  * Transactional signing (Recovery Task 24 Part 12; Recovery Task 25 Part 8
  * adds the atomic durable `PetitionSigned` outbox event to the same
@@ -549,20 +561,16 @@ export async function signPetition(
     return null;
   }
 
-  assertMutablePetition(record.status);
-
-  if (record.status !== "Open") {
-    throw new Error("Petition is not open for signing.");
-  }
+  assertPetitionOpenForSignatures(record.status);
 
   const existingSignature = await findSignatureByPetitionAndMember(petitionId, participantId);
 
   if (existingSignature?.status === "Active") {
-    throw new Error(`Participant "${participantId}" already signed this Petition.`);
+    throw new PetitionSignatureRejectedError("already_signed");
   }
 
   if (!(await isParticipantEligibleForPetition(participantId, record.policy))) {
-    throw new Error(`Participant "${participantId}" is not eligible to sign this Petition.`);
+    throw new PetitionSignatureRejectedError("not_eligible");
   }
 
   // Initiative Lifecycle — Part F, Section 8 (Withdraw Signature). A
@@ -574,7 +582,7 @@ export async function signPetition(
     const reactivated = await updateSignatureStatus(petitionId, participantId, "Active", signedAt);
 
     if (!reactivated) {
-      throw new Error(`Participant "${participantId}" already signed this Petition.`);
+      throw new PetitionSignatureRejectedError("already_signed");
     }
 
     const signatures = await listSignaturesByPetitionId(petitionId);
@@ -620,7 +628,7 @@ export async function signPetition(
     });
   } catch (error) {
     if (isDuplicateSignatureError(error)) {
-      throw new Error(`Participant "${participantId}" already signed this Petition.`);
+      throw new PetitionSignatureRejectedError("already_signed");
     }
 
     throw new PetitionTransactionError("Petition signing transaction failed.", error);
@@ -649,14 +657,16 @@ export async function withdrawPetitionSignature(
     return null;
   }
 
+  assertPetitionOpenForSignatures(record.status);
+
   if (!record.policy.withdrawalPolicy.withdrawalPermitted) {
-    throw new Error("This Petition does not permit signature withdrawal.");
+    throw new PetitionSignatureRejectedError("withdrawal_not_permitted");
   }
 
   const existingSignature = await findSignatureByPetitionAndMember(petitionId, participantId);
 
   if (!existingSignature || existingSignature.status !== "Active") {
-    throw new Error(`Participant "${participantId}" has not signed this Petition.`);
+    throw new PetitionSignatureRejectedError("not_signed");
   }
 
   const withdrawn = await updateSignatureStatus(
@@ -667,7 +677,7 @@ export async function withdrawPetitionSignature(
   );
 
   if (!withdrawn) {
-    throw new Error(`Participant "${participantId}" has not signed this Petition.`);
+    throw new PetitionSignatureRejectedError("not_signed");
   }
 
   const signatures = await listSignaturesByPetitionId(petitionId);

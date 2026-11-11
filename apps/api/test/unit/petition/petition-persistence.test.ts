@@ -419,7 +419,7 @@ describe("Signature persistence", () => {
     await seedOpenPetition(petitionId, decisionId);
     await closePetition(petitionId);
 
-    await assert.rejects(() => signPetition(petitionId, sampleMember.id), /not open for signing/);
+    await assert.rejects(() => signPetition(petitionId, sampleMember.id), /no longer open for signatures/);
   });
 
   it("23. Failed eligibility produces no Signature", async () => {

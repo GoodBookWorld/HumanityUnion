@@ -1,6 +1,6 @@
 "use client";
 
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 import { useState } from "react";
 
 import type { ClientAuthStatus } from "../../auth/use-client-auth-status";
@@ -12,11 +12,11 @@ import {
 } from "../petition-utils";
 
 interface SignatureSectionProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
   authStatus: ClientAuthStatus;
   viewerSignature: ViewerSignatureStatus;
   registrationGatewayMessage: string | null;
-  onPetitionUpdated: (petition: Petition) => void;
+  onPetitionUpdated: (petition: PublicPetitionRecord) => void;
   onViewerSignatureChange: (status: ViewerSignatureStatus) => void;
   /** Asks the server again after a failed action (e.g. a signature recorded elsewhere). */
   onSignatureStatusStale: () => void;

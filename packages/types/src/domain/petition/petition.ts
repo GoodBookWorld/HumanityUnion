@@ -32,3 +32,12 @@ export interface Petition {
    */
   traceability?: PetitionTraceability | null;
 }
+
+/**
+ * HU-LC-05C.4C.6B — the only Petition shape served by the legacy
+ * `/api/v1/petitions` read, sign and withdraw responses: no signer identities
+ * (`signatures`) and only the public parts of the policy.
+ */
+export interface PublicPetitionRecord extends Omit<Petition, "signatures" | "policy"> {
+  policy: Pick<PetitionPolicy, "endorsementPeriod" | "withdrawalPolicy">;
+}

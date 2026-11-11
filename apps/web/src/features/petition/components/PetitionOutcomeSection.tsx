@@ -1,12 +1,12 @@
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
 interface PetitionOutcomeSectionProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
 }
 
-const VISIBLE_STATUSES = new Set<Petition["status"]>(["Closed", "Archived"]);
+const VISIBLE_STATUSES = new Set<PublicPetitionRecord["status"]>(["Closed", "Archived"]);
 
 export function PetitionOutcomeSection({ petition }: PetitionOutcomeSectionProps) {
   if (!VISIBLE_STATUSES.has(petition.status)) {

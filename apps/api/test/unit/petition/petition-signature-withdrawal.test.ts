@@ -121,7 +121,7 @@ describe("signPetition + withdrawPetitionSignature (Part F, Section 8)", () => {
 
     await assert.rejects(
       () => withdrawPetitionSignature(petitionId, "member-who-never-signed"),
-      /has not signed this Petition/,
+      /You have not signed this Petition/,
     );
   });
 
@@ -135,7 +135,7 @@ describe("signPetition + withdrawPetitionSignature (Part F, Section 8)", () => {
 
     await assert.rejects(
       () => withdrawPetitionSignature(petitionId, participantId),
-      /has not signed this Petition/,
+      /You have not signed this Petition/,
     );
   });
 

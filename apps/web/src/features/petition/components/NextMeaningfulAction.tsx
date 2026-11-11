@@ -1,9 +1,9 @@
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 
 import { deriveNextMeaningfulAction } from "../petition-utils";
 
 interface NextMeaningfulActionProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
   viewerHasSigned: boolean;
 }
 

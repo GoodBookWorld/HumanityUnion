@@ -1,26 +1,28 @@
 import type {
   ParticipationMode,
-  Petition,
   PublicInitiativePetitionList,
   PublicPetitionProjection,
+  PublicPetitionRecord,
 } from "@hu/types";
 
 import { apiRequest, apiRequestOptional } from "../../lib/api-client";
 
-export async function getPetitionById(petitionId: string): Promise<Petition> {
-  return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}`);
+export async function getPetitionById(petitionId: string): Promise<PublicPetitionRecord> {
+  return apiRequest<PublicPetitionRecord>(`/api/v1/petitions/${encodeURIComponent(petitionId)}`);
 }
 
 export async function getPetitionByCollectiveDecisionId(
   collectiveDecisionId: string,
-): Promise<Petition | null> {
-  return apiRequestOptional<Petition>(
+): Promise<PublicPetitionRecord | null> {
+  return apiRequestOptional<PublicPetitionRecord>(
     `/api/v1/petitions/by-collective-decision/${encodeURIComponent(collectiveDecisionId)}`,
   );
 }
 
-export async function getPetitionByInitiativeId(initiativeId: string): Promise<Petition | null> {
-  return apiRequestOptional<Petition>(
+export async function getPetitionByInitiativeId(
+  initiativeId: string,
+): Promise<PublicPetitionRecord | null> {
+  return apiRequestOptional<PublicPetitionRecord>(
     `/api/v1/petitions/by-initiative/${encodeURIComponent(initiativeId)}`,
   );
 }
@@ -44,17 +46,20 @@ export async function signPetition(
   petitionId: string,
   participantId: string,
   participationMode: ParticipationMode = "Community",
-): Promise<Petition> {
-  return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+): Promise<PublicPetitionRecord> {
+  return apiRequest<PublicPetitionRecord>(
+    `/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        participantId,
+        participationMode,
+      }),
     },
-    body: JSON.stringify({
-      participantId,
-      participationMode,
-    }),
-  });
+  );
 }
 
 /**
@@ -68,19 +73,22 @@ export async function signPetition(
 export async function signPetitionAsCurrentParticipant(
   petitionId: string,
   participationMode: ParticipationMode = "Public",
-): Promise<Petition> {
-  return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+): Promise<PublicPetitionRecord> {
+  return apiRequest<PublicPetitionRecord>(
+    `/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ participationMode }),
     },
-    body: JSON.stringify({ participationMode }),
-  });
+  );
 }
 
 /** Section 8 — "Withdraw Signature": one signature per Participant, reversible while the Petition stays open. */
-export async function withdrawPetitionSignature(petitionId: string): Promise<Petition> {
-  return apiRequest<Petition>(
+export async function withdrawPetitionSignature(petitionId: string): Promise<PublicPetitionRecord> {
+  return apiRequest<PublicPetitionRecord>(
     `/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures/withdraw`,
     { method: "POST" },
   );

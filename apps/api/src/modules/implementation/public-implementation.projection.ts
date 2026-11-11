@@ -29,6 +29,7 @@ import { getDecision } from "../collective-decision/collective-decision.store.js
 import { getImplementationCommitment } from "../implementation-commitment/implementation-commitment.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
+import { presentPetitionSubjectForParticipants } from "../petition/petition-public-presentation.js";
 
 const VIEWING_NOTE =
   "Viewing this page does not record achievements or change collective progress.";
@@ -142,7 +143,9 @@ function buildPetitionReference(
 ): PublicPetitionReference {
   return {
     petitionId: implementation.petitionId,
-    summaryStatement: petition?.subject.summary ?? implementation.subjectSummary,
+    summaryStatement: petition
+      ? presentPetitionSubjectForParticipants(petition.subject).summary
+      : implementation.subjectSummary,
     endorsementContextNote:
       "Public Petition endorsement expresses support. It is separate from implementation execution recording.",
     contextAvailable: petition !== null,

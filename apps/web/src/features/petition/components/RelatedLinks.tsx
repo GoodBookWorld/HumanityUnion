@@ -1,12 +1,12 @@
 import Link from "next/link";
 
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 
 import { ViewImplementationCommitmentLink } from "../../implementation-commitment/components/ViewImplementationCommitmentLink";
 import { ViewImplementationLink } from "../../implementation/components/ViewImplementationLink";
 
 interface RelatedLinksProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
 }
 
 export function RelatedLinks({ petition }: RelatedLinksProps) {

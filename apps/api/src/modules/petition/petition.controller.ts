@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { Petition } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { logger } from "../../shared/observability/logger.js";
 import {
   InitiativeAncestryMissingError,
   InitiativeIdMalformedError,
@@ -15,7 +16,13 @@ import {
   assertSignerIsActor,
   resolvePetitionMutationActor,
 } from "./petition-mutation-authorization.js";
-import { PetitionAccessDeniedError, PetitionSlotRequiredError } from "./petition.errors.js";
+import {
+  PetitionAccessDeniedError,
+  PetitionConcurrencyConflictError,
+  PetitionSignatureRejectedError,
+  PetitionSlotRequiredError,
+} from "./petition.errors.js";
+import { findPetitionById } from "./persistence/petition.repository.js";
 import {
   PetitionPublicationInProgressError,
   PetitionReservationLostError,
@@ -23,7 +30,14 @@ import {
   PetitionSlotLimitError,
   publishPetitionWithinSlotLimit,
 } from "../initiative-petition-slots/petition-slot.service.js";
-import { mapPetitionListResponse, mapPetitionResponse } from "./petition.mapper.js";
+import { listEligibleInitiativePetitions } from "./initiative-petition-selection.js";
+import {
+  canReadPetition,
+  isPetitionPubliclyReadable,
+  isPetitionStewardRequest,
+  toPublicPetitionRecord,
+} from "./petition-public-access.js";
+import { mapPetitionResponse } from "./petition.mapper.js";
 import {
   archivePetition,
   closePetition,
@@ -122,6 +136,82 @@ function handleStoreError(res: Response, error: unknown): void {
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
 
+/**
+ * HU-LC-05C.4C.6C — sign/withdraw failures. Expected refusals carry their own
+ * identifier-free message; anything else is logged server-side and answered
+ * with a generic message so internal details never reach the client.
+ */
+function handleSignatureError(
+  res: Response,
+  error: unknown,
+  action: "sign" | "withdraw",
+  petitionId: string,
+): void {
+  if (error instanceof PetitionSignatureRejectedError) {
+    res
+      .status(error.reason === "not_eligible" ? 403 : 409)
+      .json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (error instanceof AuthenticationRequiredError) {
+    res.status(401).json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (error instanceof PetitionAccessDeniedError) {
+    res.status(403).json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (error instanceof PetitionConcurrencyConflictError) {
+    res.status(409).json(createFailureResponse(error.message));
+    return;
+  }
+
+  logger.error("petition.signature.request_failed", {
+    action,
+    petitionId,
+    errorName: error instanceof Error ? error.name : typeof error,
+    errorMessage: error instanceof Error ? error.message : String(error),
+  });
+  res
+    .status(500)
+    .json(
+      createFailureResponse(
+        action === "sign"
+          ? "We could not record your signature. Please try again later."
+          : "We could not withdraw your signature. Please try again later.",
+      ),
+    );
+}
+
+/**
+ * HU-LC-05C.4C.6C — signatures change only on publicly readable Petitions (see
+ * `isPetitionPubliclyReadable`, which applies `canExposePublicInitiativeProjection`).
+ * Others get the read routes' 404; the steward, who can still see the
+ * Petition, is told it is not open for signatures.
+ */
+async function guardPetitionSignature(
+  req: Request,
+  res: Response,
+  petitionId: string,
+): Promise<boolean> {
+  const petition = await findPetitionById(petitionId);
+
+  if (petition && isPetitionPubliclyReadable(petition)) {
+    return true;
+  }
+
+  if (petition && (await isPetitionStewardRequest(req, petition))) {
+    res.status(409).json(createFailureResponse("This Petition is not open for signatures."));
+  } else {
+    res.status(404).json(createFailureResponse("Petition not found."));
+  }
+
+  return false;
+}
+
 function getPetitionId(req: Request): string {
   const petitionId = req.params.petitionId;
   return Array.isArray(petitionId) ? (petitionId[0] ?? "") : (petitionId ?? "");
@@ -155,9 +245,23 @@ async function guardPetitionManagement(
 }
 
 export async function listPetitionsHandler(_req: Request, res: Response): Promise<void> {
-  const petitions = await listPetitions();
+  const petitions = (await listPetitions()).filter(isPetitionPubliclyReadable);
 
-  res.json(createSuccessResponse(mapPetitionListResponse(petitions), "Petitions loaded."));
+  res.json(createSuccessResponse(petitions.map(toPublicPetitionRecord), "Petitions loaded."));
+}
+
+/** HU-LC-05C.4C.6B — legacy reads: only readable Petitions, always in the public-safe shape. */
+async function sendReadablePetition(
+  req: Request,
+  res: Response,
+  petition: Petition | null,
+): Promise<void> {
+  if (!petition || !(await canReadPetition(req, petition))) {
+    res.status(404).json(createFailureResponse("Petition not found."));
+    return;
+  }
+
+  res.json(createSuccessResponse(toPublicPetitionRecord(petition), "Petition loaded."));
 }
 
 export async function getPetitionHandler(req: Request, res: Response): Promise<void> {
@@ -169,14 +273,7 @@ export async function getPetitionHandler(req: Request, res: Response): Promise<v
     return;
   }
 
-  const petition = await getPetition(petitionId);
-
-  if (!petition) {
-    res.status(404).json(createFailureResponse("Petition not found."));
-    return;
-  }
-
-  res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
+  await sendReadablePetition(req, res, await getPetition(petitionId));
 }
 
 export async function getPetitionByCollectiveDecisionHandler(
@@ -192,14 +289,11 @@ export async function getPetitionByCollectiveDecisionHandler(
     return;
   }
 
-  const petition = await getPetitionByCollectiveDecisionId(collectiveDecisionId);
-
-  if (!petition) {
-    res.status(404).json(createFailureResponse("Petition not found."));
-    return;
-  }
-
-  res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
+  await sendReadablePetition(
+    req,
+    res,
+    await getPetitionByCollectiveDecisionId(collectiveDecisionId),
+  );
 }
 
 export async function getPetitionByInitiativeHandler(req: Request, res: Response): Promise<void> {
@@ -212,14 +306,20 @@ export async function getPetitionByInitiativeHandler(req: Request, res: Response
     return;
   }
 
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  // The steward keeps the existing "newest public, else newest" selection;
+  // everyone else only ever gets the newest publicly readable Petition.
+  const stewardPetition = await getPetitionByInitiativeId(initiativeId);
 
-  if (!petition) {
-    res.status(404).json(createFailureResponse("Petition not found."));
+  if (stewardPetition && (await isPetitionStewardRequest(req, stewardPetition))) {
+    await sendReadablePetition(req, res, stewardPetition);
     return;
   }
 
-  res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
+  const publicPetition =
+    (await listEligibleInitiativePetitions(initiativeId))
+      .filter(isPetitionPubliclyReadable)
+      .at(-1) ?? null;
+  await sendReadablePetition(req, res, publicPetition);
 }
 
 export async function createPetitionHandler(req: Request, res: Response): Promise<void> {
@@ -401,6 +501,11 @@ export async function signPetitionHandler(req: Request, res: Response): Promise<
     const { participantId: bodyParticipantId, participationMode } = parseSignRequest(body);
     const actor = await resolveRequestIdentity(req);
     assertSignerIsActor(bodyParticipantId, actor);
+
+    if (!(await guardPetitionSignature(req, res, petitionId))) {
+      return;
+    }
+
     const petition = await signPetition(petitionId, actor.participantId, participationMode);
 
     if (!petition) {
@@ -410,9 +515,9 @@ export async function signPetitionHandler(req: Request, res: Response): Promise<
 
     res
       .status(201)
-      .json(createSuccessResponse(mapPetitionResponse(petition), "Signature recorded."));
+      .json(createSuccessResponse(toPublicPetitionRecord(petition), "Signature recorded."));
   } catch (error) {
-    handleStoreError(res, error);
+    handleSignatureError(res, error, "sign", petitionId);
   }
 }
 
@@ -436,6 +541,11 @@ export async function withdrawPetitionSignatureHandler(req: Request, res: Respon
 
   try {
     const identity = await resolveRequestIdentity(req);
+
+    if (!(await guardPetitionSignature(req, res, petitionId))) {
+      return;
+    }
+
     const petition = await withdrawPetitionSignature(petitionId, identity.participantId);
 
     if (!petition) {
@@ -443,9 +553,9 @@ export async function withdrawPetitionSignatureHandler(req: Request, res: Respon
       return;
     }
 
-    res.json(createSuccessResponse(mapPetitionResponse(petition), "Signature withdrawn."));
+    res.json(createSuccessResponse(toPublicPetitionRecord(petition), "Signature withdrawn."));
   } catch (error) {
-    handleStoreError(res, error);
+    handleSignatureError(res, error, "withdraw", petitionId);
   }
 }
 

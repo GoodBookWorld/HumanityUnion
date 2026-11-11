@@ -21,13 +21,14 @@ import type {
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getMemberById } from "../member/member-access.js";
-import { findMembershipByUserId } from "../membership/membership.repository.js";
+import { countActiveMemberSignatures } from "./petition-member-signatures.js";
 import {
   getCurrentPublishedVersion,
   getRevisionByInitiativeAndVersion,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { countPetitionVisitorSignals } from "./petition-visitor-signal.service.js";
 import { isPetitionPubliclyVisible } from "./petition-public-visibility.js";
+import { presentPetitionSubjectForParticipants } from "./petition-public-presentation.js";
 
 const VIEWING_NOTE = "Viewing this page does not record endorsement.";
 const SHARING_NOTE = "Sharing increases visibility but does not record endorsement.";
@@ -69,7 +70,7 @@ function getSupportState(status: PetitionState): PublicSupportState {
 function buildPetitionIdentity(petition: Petition): PublicPetitionIdentity {
   return {
     petitionId: petition.petitionId,
-    title: petition.subject.title,
+    title: presentPetitionSubjectForParticipants(petition.subject).title,
     supportStatus: getSupportStatusSummary(petition.status),
     lifecycleStatus: petition.status,
   };
@@ -100,7 +101,7 @@ function buildPetitionSummary(petition: Petition): PublicPetitionSummary {
       : null;
 
   return {
-    purpose: petition.subject.summary,
+    purpose: presentPetitionSubjectForParticipants(petition.subject).summary,
     followsApprovedDecisionStatement:
       "This Petition follows an approved Collective Decision. Public support expresses endorsement; it does not reopen the decision.",
     publishedAt,
@@ -125,15 +126,16 @@ function publicRecipients(recipients: unknown): readonly string[] | undefined {
 
 function buildPetitionSubject(petition: Petition): PublicPetitionSubject {
   const recipients = publicRecipients(petition.subject.recipients);
+  const subject = presentPetitionSubjectForParticipants(petition.subject);
   return {
     subjectType: "Initiative",
-    initiativeId: petition.subject.initiativeId,
-    title: petition.subject.title,
-    summary: petition.subject.summary,
-    requestStatement: petition.subject.requestStatement,
-    expectedOutcome: petition.subject.expectedOutcome,
-    supportingContext: petition.subject.supportingContext,
-    keyArguments: petition.subject.keyArguments,
+    initiativeId: subject.initiativeId,
+    title: subject.title,
+    summary: subject.summary,
+    requestStatement: subject.requestStatement,
+    expectedOutcome: subject.expectedOutcome,
+    supportingContext: subject.supportingContext,
+    keyArguments: subject.keyArguments,
     ...(recipients ? { recipients } : {}),
   };
 }
@@ -269,16 +271,7 @@ function buildPublicSupportStatistics(petition: Petition): PublicSupportStatisti
 async function buildSupportBreakdown(petition: Petition): Promise<PublicPetitionSupportBreakdown> {
   const activeSignatures = petition.signatures.filter((signature) => signature.status === "Active");
 
-  const memberFlags = await Promise.all(
-    activeSignatures.map(async (signature) => {
-      try {
-        const membership = await findMembershipByUserId(signature.participantId);
-        return membership?.status === "active_member";
-      } catch {
-        return false;
-      }
-    }),
-  );
+  const memberSignatures = await countActiveMemberSignatures(activeSignatures);
 
   let visitorSignals = 0;
   try {
@@ -289,7 +282,7 @@ async function buildSupportBreakdown(petition: Petition): Promise<PublicPetition
 
   return {
     participantSignatures: activeSignatures.length,
-    memberSignatures: memberFlags.filter(Boolean).length,
+    memberSignatures,
     visitorSignals,
   };
 }

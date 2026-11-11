@@ -17,7 +17,7 @@ import {
   getCurrentPublishedVersion,
   getRevisionByInitiativeAndVersion,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
-import { findMembershipByUserId } from "../membership/membership.repository.js";
+import { countActiveMemberSignatures } from "../petition/petition-member-signatures.js";
 import {
   selectedPetitionOrNull,
   selectInitiativePetition,
@@ -42,16 +42,7 @@ async function buildPetitionReference(
   }
 
   const activeSignatures = petition.signatures.filter((signature) => signature.status === "Active");
-  const memberFlags = await Promise.all(
-    activeSignatures.map(async (signature) => {
-      try {
-        const membership = await findMembershipByUserId(signature.participantId);
-        return membership?.status === "active_member";
-      } catch {
-        return false;
-      }
-    }),
-  );
+  const memberSignatures = await countActiveMemberSignatures(activeSignatures);
   const visitorSignals = await countPetitionVisitorSignals(petition.petitionId);
 
   return {
@@ -60,7 +51,7 @@ async function buildPetitionReference(
     summary: petition.subject.summary,
     publishedAt: petition.shareLink?.createdAt ?? null,
     participantSignatures: activeSignatures.length,
-    memberSignatures: memberFlags.filter(Boolean).length,
+    memberSignatures,
     visitorSignals,
     revisionId: petition.traceability?.revisionId ?? null,
     revisionVersion: petition.traceability?.revisionVersion ?? null,
