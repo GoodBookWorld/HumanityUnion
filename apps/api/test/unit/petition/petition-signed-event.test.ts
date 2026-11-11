@@ -331,7 +331,7 @@ describe("Failure path", () => {
     await seedOpenPetition(petitionId, decisionId);
     await closePetition(petitionId);
 
-    await assert.rejects(() => signPetition(petitionId, sampleMember.id), /not open for signing/);
+    await assert.rejects(() => signPetition(petitionId, sampleMember.id), /no longer open for signatures/);
 
     const outboxCount = await getMongoCollection(MONGO_COLLECTIONS.outbox).countDocuments({
       aggregateId: { $regex: `^signature-${petitionId}-` },

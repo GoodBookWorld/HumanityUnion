@@ -1,6 +1,11 @@
 "use client";
 
-import type { CollaborativeAnalysis, CollectiveDecision, Initiative, Petition } from "@hu/types";
+import type {
+  CollaborativeAnalysis,
+  CollectiveDecision,
+  Initiative,
+  PublicPetitionRecord,
+} from "@hu/types";
 import { useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -20,7 +25,7 @@ import { SupportMetrics } from "./SupportMetrics";
 import "./workspace.css";
 
 interface PetitionWorkspaceProps {
-  initialPetition: Petition;
+  initialPetition: PublicPetitionRecord;
   collectiveDecision: CollectiveDecision | null;
   initiative: Initiative | null;
   collaborativeAnalysis: CollaborativeAnalysis | null;

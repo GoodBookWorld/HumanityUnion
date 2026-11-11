@@ -1,6 +1,11 @@
 "use client";
 
-import type { CollectiveDecision, ImplementationCommitment, Initiative, Petition } from "@hu/types";
+import type {
+  CollectiveDecision,
+  ImplementationCommitment,
+  Initiative,
+  PublicPetitionRecord,
+} from "@hu/types";
 import { useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -22,7 +27,7 @@ interface ImplementationCommitmentWorkspaceProps {
   initialCommitment: ImplementationCommitment;
   initiative: Initiative | null;
   collectiveDecision: CollectiveDecision | null;
-  petition: Petition | null;
+  petition: PublicPetitionRecord | null;
 }
 
 export function ImplementationCommitmentWorkspace({

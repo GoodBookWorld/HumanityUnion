@@ -11,6 +11,7 @@ import type {
 import {
   DEFAULT_PLATFORM_LANGUAGE,
   normalizeLanguageCode,
+  presentLifecycleStageTokenFieldsAsEnglish,
 } from "@hu/types";
 
 import { logger } from "../../shared/observability/logger.js";
@@ -644,6 +645,23 @@ export async function getOrCreateContentTranslation(input: {
   return { source, translation: record, generated: true };
 }
 
+/**
+ * Participant-facing original fields never show raw `{lifecycleStage:...}`
+ * tokens; the stored source (and its sourceVersion) keeps them.
+ */
+function presentOriginalFieldsForDisplay(source: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly fields: Record<string, string>;
+}): Record<string, string> {
+  if (source.sourceKind === "collaborative_analysis") {
+    return presentCollaborativeAnalysisCanonicalFields(source.fields);
+  }
+  if (source.sourceKind === "petition") {
+    return presentLifecycleStageTokenFieldsAsEnglish(source.fields);
+  }
+  return source.fields;
+}
+
 export async function resolvePublicTranslatedContent(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;
@@ -681,10 +699,7 @@ export async function resolvePublicTranslatedContent(input: {
         });
       }
       return resolveStructuredTranslatedDisplay({
-        originalFields:
-          created.source.sourceKind === "collaborative_analysis"
-            ? presentCollaborativeAnalysisCanonicalFields(created.source.fields)
-            : created.source.fields,
+        originalFields: presentOriginalFieldsForDisplay(created.source),
         originalLanguage: created.source.sourceLanguage,
         preferredReadingLanguage,
         translationPreference,
@@ -702,10 +717,7 @@ export async function resolvePublicTranslatedContent(input: {
           throw error;
         }
         return resolveStructuredTranslatedDisplay({
-          originalFields:
-            source.sourceKind === "collaborative_analysis"
-              ? presentCollaborativeAnalysisCanonicalFields(source.fields)
-              : source.fields,
+          originalFields: presentOriginalFieldsForDisplay(source),
           originalLanguage: source.sourceLanguage,
           preferredReadingLanguage,
           translationPreference,
@@ -728,10 +740,7 @@ export async function resolvePublicTranslatedContent(input: {
   );
 
   return resolveStructuredTranslatedDisplay({
-    originalFields:
-      source.sourceKind === "collaborative_analysis"
-        ? presentCollaborativeAnalysisCanonicalFields(source.fields)
-        : source.fields,
+    originalFields: presentOriginalFieldsForDisplay(source),
     originalLanguage: source.sourceLanguage,
     preferredReadingLanguage,
     translationPreference,

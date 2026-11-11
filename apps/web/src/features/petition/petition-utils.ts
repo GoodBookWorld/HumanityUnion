@@ -1,4 +1,4 @@
-import type { Petition, PetitionState } from "@hu/types";
+import type { PublicPetitionRecord, PetitionState } from "@hu/types";
 
 import type { ClientAuthStatus } from "../auth/use-client-auth-status";
 
@@ -49,7 +49,7 @@ export function resolveSignatureSectionState(input: {
   return input.viewerSignature === "unavailable" ? "status_unavailable" : "unsigned";
 }
 
-export function isSignatureWithdrawalAvailable(petition: Petition): boolean {
+export function isSignatureWithdrawalAvailable(petition: PublicPetitionRecord): boolean {
   return (
     petition.status === "Open" && petition.policy.withdrawalPolicy?.withdrawalPermitted === true
   );
@@ -119,7 +119,7 @@ export interface NextMeaningfulAction {
 }
 
 export function deriveNextMeaningfulAction(
-  petition: Petition,
+  petition: PublicPetitionRecord,
   viewerHasSigned: boolean,
 ): NextMeaningfulAction {
   const hasSigned = viewerHasSigned;

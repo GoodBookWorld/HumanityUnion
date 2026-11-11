@@ -23,6 +23,7 @@ import { listRevisionsByInitiative } from "../initiative-version-revision/initia
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listResponsesByInitiative } from "../official-response/official-response.store.js";
 import { listEligibleInitiativePetitions } from "../petition/initiative-petition-selection.js";
+import { presentPetitionSubjectForParticipants } from "../petition/petition-public-presentation.js";
 import { getArchiveRecordById, listPublishedArchiveRecords } from "./public-civic-archive.store.js";
 import type { CivicArchiveLifecycleIndexQuery } from "./civic-archive-index-query.js";
 import { matchesQuery } from "./public-civic-archive-lifecycle.filters.js";
@@ -233,13 +234,14 @@ async function buildLifecycleStages(
 
   // HU-LC-05C.1 — every publicly visible Petition, oldest first.
   for (const petition of await listEligibleInitiativePetitions(initiativeId)) {
+    const subject = presentPetitionSubjectForParticipants(petition.subject);
     pushRecord(
       "petition",
       childRecord(
         "petition",
         petition.petitionId,
-        petition.subject.title,
-        petition.subject.summary,
+        subject.title,
+        subject.summary,
         petition.status,
         petition.updatedAt,
         { initiativeId },

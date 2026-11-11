@@ -173,7 +173,7 @@ describe("HU-LC-05B — legacy Petition mutation authorization", () => {
       title: "LC-05B Petition authorization fixture",
       description: "Fixture Initiative for legacy Petition route authorization.",
       status: "implementation",
-      lifecyclePhase: "published",
+      lifecyclePhase: "projected",
       lifecycleProfile: "STANDARD",
       visibility: { policy: "public" },
       metadata: { activityArea: "Environment", communitySlug: "fixture-community" },

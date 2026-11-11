@@ -16,9 +16,10 @@ import { getRevisionById } from "../initiative-version-revision/initiative-versi
 import { toPublicInitiativeVersionRevisionListItem } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getMemberById } from "../member/member-access.js";
-import { findMembershipByUserId } from "../membership/membership.repository.js";
+import { countActiveMemberSignatures } from "../petition/petition-member-signatures.js";
 import { getPetition } from "../petition/petition.store.js";
 import { countPetitionVisitorSignals } from "../petition/petition-visitor-signal.service.js";
+import { presentPetitionSubjectForParticipants } from "../petition/petition-public-presentation.js";
 import { getDecisionSessionPackageCounts } from "./decision-session-package.js";
 import {
   getSessionById,
@@ -112,24 +113,15 @@ async function buildRelatedPetitionContext(
   }
 
   const activeSignatures = petition.signatures.filter((signature) => signature.status === "Active");
-  const memberFlags = await Promise.all(
-    activeSignatures.map(async (signature) => {
-      try {
-        const membership = await findMembershipByUserId(signature.participantId);
-        return membership?.status === "active_member";
-      } catch {
-        return false;
-      }
-    }),
-  );
+  const memberSignatures = await countActiveMemberSignatures(activeSignatures);
   const visitorSignals = await countPetitionVisitorSignals(petitionId);
 
   return {
     petitionId: petition.petitionId,
-    title: petition.subject.title,
+    title: presentPetitionSubjectForParticipants(petition.subject).title,
     publishedAt: petition.shareLink?.createdAt ?? null,
     participantSignatures: activeSignatures.length,
-    memberSignatures: memberFlags.filter(Boolean).length,
+    memberSignatures,
     visitorSignals,
     revisionVersion: petition.traceability?.revisionVersion ?? null,
     proposalIds: petition.traceability?.proposalIds ?? [],

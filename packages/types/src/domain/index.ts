@@ -1693,6 +1693,7 @@ export type {
   PetitionSubject,
   PetitionVisibilityRules,
   PetitionWithdrawalPolicy,
+  PublicPetitionRecord,
   ShareLink,
   Signature,
   SignatureId,

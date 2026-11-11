@@ -1,4 +1,4 @@
-import type { Petition } from "@hu/types";
+import type { PublicPetitionRecord } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
@@ -10,7 +10,7 @@ import {
 } from "../petition-utils";
 
 interface PetitionStatusProps {
-  petition: Petition;
+  petition: PublicPetitionRecord;
 }
 
 export function PetitionStatus({ petition }: PetitionStatusProps) {

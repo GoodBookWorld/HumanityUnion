@@ -20,6 +20,7 @@ import type {
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
+import { presentPetitionSubjectForParticipants } from "../petition/petition-public-presentation.js";
 import { getFrozenPolicy } from "./frozen-policy.fixture.js";
 import { buildPublicSkillCoverageSummary } from "./implementation-commitment.helpers.js";
 
@@ -110,7 +111,9 @@ function buildPetitionReference(
 ): PublicPetitionReference {
   return {
     petitionId: commitment.petitionId,
-    summaryStatement: petition?.subject.summary ?? commitment.subjectSummary,
+    summaryStatement: petition
+      ? presentPetitionSubjectForParticipants(petition.subject).summary
+      : commitment.subjectSummary,
     endorsementContextNote:
       "Public Petition endorsement expresses support. It is separate from declared implementation preparedness.",
     contextAvailable: petition !== null,

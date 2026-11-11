@@ -1,4 +1,4 @@
-export type { Petition, PetitionId } from "./petition.js";
+export type { Petition, PetitionId, PublicPetitionRecord } from "./petition.js";
 export type { PetitionState } from "./petition-state.js";
 export type { PetitionSubject } from "./petition-subject.js";
 export type {
