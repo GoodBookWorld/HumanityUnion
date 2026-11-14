@@ -213,7 +213,11 @@ describe("HU-LC-05C.4C.3C — hero Petitions widget and central viewer selection
       page,
       /buildPetitionSelectionHref\(window\.location\.href, petitionId, petitionNavStage\.hash\)/,
     );
-    assert.match(page, /handleStageSelect\(petitionNavStage\.stageId, petitionNavStage\.hash\);/);
+    // HU-LC-05C.4C.7C.3A — same stage selection; the chosen document scrolls itself into view.
+    assert.match(
+      page,
+      /openStage\(petitionNavStage\.stageId, petitionNavStage\.hash, "petitionDocument"\);/,
+    );
     const source = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionsHeroWidget.tsx",
     );

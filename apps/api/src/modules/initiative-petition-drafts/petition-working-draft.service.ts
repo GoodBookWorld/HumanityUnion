@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import type { Initiative } from "@hu/types";
+import type { Initiative, Petition } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -44,21 +44,73 @@ function getStewardedInitiative(initiativeId: string, identity: RequestIdentity)
   return initiative;
 }
 
+type PetitionWorkingDraftSourceFields = Omit<
+  PetitionWorkingDraft,
+  "draftId" | "initiativeId" | "authorId" | "derivedFromPetitionId" | "createdAt" | "updatedAt"
+>;
+
+const EMPTY_WORKING_DRAFT_FIELDS: PetitionWorkingDraftSourceFields = {
+  title: "",
+  publicSummary: "",
+  requestStatement: "",
+  expectedOutcome: "",
+  supportingContext: "",
+  keyArguments: [],
+  recipients: [],
+  revisionId: null,
+  revisionVersion: null,
+  analysisId: null,
+  analysisVersion: null,
+  proposalIds: [],
+};
+
+/**
+ * HU-LC-05C.4C.7C.1 — the stored (canonical, lifecycle-token) content of a
+ * published Petition, plus the sources it was built from so the copy can be
+ * published without regenerating while that Revision is still current.
+ * Signatures, status, publication identity and timestamps are never copied.
+ */
+function workingDraftFieldsFromPetition(petition: Petition): PetitionWorkingDraftSourceFields {
+  const { subject, traceability } = petition;
+  const revisionId = traceability?.revisionId || null;
+
+  return {
+    title: subject.title,
+    publicSummary: subject.summary,
+    requestStatement: subject.requestStatement ?? "",
+    expectedOutcome: subject.expectedOutcome ?? "",
+    supportingContext: subject.supportingContext ?? "",
+    keyArguments: [...(subject.keyArguments ?? [])],
+    recipients: [...(subject.recipients ?? [])],
+    revisionId,
+    revisionVersion: revisionId ? (traceability?.revisionVersion ?? null) : null,
+    analysisId: traceability?.analysisId ?? null,
+    analysisVersion: traceability?.analysisVersion ?? null,
+    proposalIds: [...(traceability?.proposalIds ?? [])],
+  };
+}
+
 export async function createPetitionWorkingDraft(
   identity: RequestIdentity,
   initiativeId: string,
   input: { readonly derivedFromPetitionId?: string | null } = {},
 ): Promise<PetitionWorkingDraft> {
-  getStewardedInitiative(initiativeId, identity);
+  const initiative = getStewardedInitiative(initiativeId, identity);
 
   const derivedFromPetitionId = input.derivedFromPetitionId?.trim() || null;
+  let fields = EMPTY_WORKING_DRAFT_FIELDS;
 
   if (derivedFromPetitionId) {
-    const reference = await resolveInitiativePetitionReference(initiativeId, derivedFromPetitionId);
+    const reference =
+      (initiative.lifecycleProfile ?? "STANDARD") === "STANDARD"
+        ? await resolveInitiativePetitionReference(initiativeId, derivedFromPetitionId)
+        : null;
 
-    if (reference.kind !== "selected") {
+    if (reference?.kind !== "selected") {
       throw new Error("The Petition this draft derives from is not available for this Initiative.");
     }
+
+    fields = workingDraftFieldsFromPetition(reference.petition);
   }
 
   const now = new Date().toISOString();
@@ -66,19 +118,8 @@ export async function createPetitionWorkingDraft(
     draftId: `initiative-petition-draft-${randomUUID()}`,
     initiativeId,
     authorId: identity.participantId,
-    title: "",
-    publicSummary: "",
-    requestStatement: "",
-    expectedOutcome: "",
-    supportingContext: "",
-    keyArguments: [],
-    recipients: [],
+    ...fields,
     derivedFromPetitionId,
-    revisionId: null,
-    revisionVersion: null,
-    analysisId: null,
-    analysisVersion: null,
-    proposalIds: [],
     createdAt: now,
     updatedAt: now,
   };

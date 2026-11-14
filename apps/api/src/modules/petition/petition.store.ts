@@ -261,10 +261,11 @@ export async function updatePetition(
   const mergedSubject =
     update.subject !== undefined ? mergePetitionSubject(record.subject, update.subject) : record.subject;
 
-  // Initiative identity is immutable after creation regardless of what the
-  // patch body requests — Recovery Task 24 Part 8.
+  // Initiative and decision identity are immutable after creation regardless of
+  // what the patch body requests — Recovery Task 24 Part 8.
   const nextSubject: PetitionSubject = {
     ...mergedSubject,
+    decisionId: record.subject.decisionId,
     initiativeId: record.subject.initiativeId,
   };
 
@@ -405,7 +406,7 @@ async function transitionPetitionToPublished(
     record.status,
     {
       status: "Published",
-      shareLink: buildShareLink(record.subject.initiativeId, publishedAt),
+      shareLink: buildShareLink(record.subject.initiativeId, petitionId, publishedAt),
       updatedAt: publishedAt,
     },
     { session },

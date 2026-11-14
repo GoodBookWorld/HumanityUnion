@@ -61,17 +61,24 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     const editor = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionEditor.tsx",
     );
-    assert.match(editor, /author\.petition\.keyArguments\.add/);
-    assert.match(editor, /author\.petition\.keyArguments\.remove/);
-    assert.match(editor, /author\.petition\.keyArguments\.itemAria/);
-    assert.match(editor, /value=\{argument\}/);
-    assert.match(editor, /value=\{title\}/);
-    assert.match(editor, /value=\{publicSummary\}/);
-    assert.match(editor, /value=\{requestStatement\}/);
+    // HU-LC-05C.4C.7C.2 — the editor's form lives in the shared PetitionEditorFields.
+    const fields = readWeb(
+      "features/initiative-petition-lifecycle/components/PetitionEditorFields.tsx",
+    );
+    assert.match(fields, /author\.petition\.keyArguments\.add/);
+    assert.match(fields, /author\.petition\.keyArguments\.remove/);
+    assert.match(fields, /author\.petition\.keyArguments\.itemAria/);
+    assert.match(fields, /value=\{argument\}/);
+    assert.match(fields, /value=\{values\.title\}/);
+    assert.match(fields, /value=\{values\.publicSummary\}/);
+    assert.match(fields, /value=\{values\.requestStatement\}/);
+    assert.match(editor, /<PetitionEditorFields\s+values=\{\{\s*title,\s*publicSummary,\s*requestStatement,/);
     assert.match(editor, /draftContent=\{\{/);
-    assert.doesNotMatch(editor, /value=\{t\(/);
-    assert.doesNotMatch(editor, />Add Key Argument</);
-    assert.doesNotMatch(editor, />Remove</);
+    for (const source of [editor, fields]) {
+      assert.doesNotMatch(source, /value=\{t\(/);
+      assert.doesNotMatch(source, />Add Key Argument</);
+      assert.doesNotMatch(source, />Remove</);
+    }
   });
 
   it("proposal acceptance uses canonical codes only; unknown codes are not partially accepted", async () => {
@@ -184,7 +191,11 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     const preview = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionDraftPreview.tsx",
     );
-    assert.match(editor, /author\.petition\.keyArguments\.itemAria/);
+    const fields = readWeb(
+      "features/initiative-petition-lifecycle/components/PetitionEditorFields.tsx",
+    );
+    assert.match(fields, /author\.petition\.keyArguments\.itemAria/);
+    assert.doesNotMatch(fields, /aria-label=\{`Key argument/);
     assert.match(panel, /author\.petition\.sourceSnapshot\.proposalsAria/);
     assert.match(preview, /author\.petition\.preview\.signaturesAria/);
     assert.doesNotMatch(editor, /aria-label=\{`Key argument/);

@@ -422,7 +422,10 @@ describe("HU-LC-05C.4B — draft-scoped Petition generation", () => {
       assert.equal(withRecipients.status, 200, withRecipients.message);
       const plain = await createDraft(initiativeId);
 
-      const generated = (await generate(initiativeId, derived.draftId)).data as Draft;
+      // HU-LC-05C.4C.7C.1 — a derived draft starts with the source's content.
+      const regenerated = await generate(initiativeId, derived.draftId, { overwrite: true });
+      assert.equal(regenerated.status, 200, regenerated.message);
+      const generated = regenerated.data as Draft;
       assert.deepEqual(generated.recipients, ["City Council", "Mayor"]);
       assert.equal(generated.derivedFromPetitionId, published);
       assert.ok(generated.title.trim());

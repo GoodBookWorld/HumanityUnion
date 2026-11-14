@@ -37,9 +37,15 @@ import { InitiativeImprovementProposalsDraftPreview } from "../../initiative-imp
 import { InitiativeImprovementProposalsPublicResult } from "../../initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsPublicResult";
 import { InitiativePetitionAuthorWorkspace } from "../../initiative-petition-lifecycle/components/InitiativePetitionAuthorWorkspace";
 import { InitiativePetitionDraftPreview } from "../../initiative-petition-lifecycle/components/InitiativePetitionDraftPreview";
-import { InitiativePetitionPublicResult } from "../../initiative-petition-lifecycle/components/InitiativePetitionPublicResult";
+import {
+  InitiativePetitionPublicResult,
+  type PetitionDocumentScrollOutcome,
+} from "../../initiative-petition-lifecycle/components/InitiativePetitionPublicResult";
+import { InitiativePetitionStewardStageView } from "../../initiative-petition-lifecycle/components/InitiativePetitionStewardStageView";
 import {
   resolveCentralPetitionView,
+  shouldScrollToPetitionDocument,
+  type InitiativePetitionListState,
   type PetitionViewerSelection,
 } from "../../initiative-petition-lifecycle/petition-viewer-selection";
 import { InitiativeDecisionSessionAuthorWorkspace } from "../../initiative-decision-session-lifecycle/components/InitiativeDecisionSessionAuthorWorkspace";
@@ -484,6 +490,18 @@ interface PublicInitiativeCenterPanelProps {
   petitionSelection?: PetitionViewerSelection;
   /** HU-LC-05C.4C.4 — a Sign / Withdraw succeeded in the central Petition viewer. */
   onPetitionSignatureChange?: () => void;
+  /**
+   * HU-LC-05C.4C.7B — this Initiative's active Petitions and the page's
+   * selection handlers. Together they enable the steward's Petition
+   * navigator in the Petition stage Author Workspace.
+   */
+  petitionList?: InitiativePetitionListState;
+  onSelectPetition?: (petitionId: string) => void;
+  onClearPetitionSelection?: () => void;
+  onRetryPetitionList?: () => void;
+  /** HU-LC-05C.4C.7C.3A — the Petition chosen from a list, scrolled to once its document renders. */
+  petitionScrollRequestId?: string | null;
+  onPetitionScrollHandled?: (outcome: PetitionDocumentScrollOutcome) => void;
 }
 
 export function PublicInitiativeCenterPanel({
@@ -511,6 +529,12 @@ export function PublicInitiativeCenterPanel({
   readOnlyElection = null,
   petitionSelection = DEFAULT_PETITION_SELECTION,
   onPetitionSignatureChange,
+  petitionList,
+  onSelectPetition,
+  onClearPetitionSelection,
+  onRetryPetitionList,
+  petitionScrollRequestId = null,
+  onPetitionScrollHandled,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useControlledLifecyclePreferredTermsLocale();
@@ -660,10 +684,26 @@ export function PublicInitiativeCenterPanel({
                     onNavigate={onNavigateStage}
                   />
                 ) : activeStage.stageId === "petition" ? (
-                  <InitiativePetitionAuthorWorkspace
-                    initiativeId={experience.initiativeId}
-                    onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
-                  />
+                  isOwnerRoute && petitionList && onSelectPetition && onClearPetitionSelection ? (
+                    <InitiativePetitionStewardStageView
+                      initiativeId={experience.initiativeId}
+                      list={petitionList}
+                      selection={petitionSelection}
+                      onOpenPetition={onSelectPetition}
+                      onReturnToEditing={onClearPetitionSelection}
+                      onManageInitiative={showManageTab ? () => onTabChange("manage") : undefined}
+                      onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
+                      onRetryList={onRetryPetitionList}
+                      onSignatureChange={onPetitionSignatureChange}
+                      scrollRequestPetitionId={petitionScrollRequestId}
+                      onScrollRequestHandled={onPetitionScrollHandled}
+                    />
+                  ) : (
+                    <InitiativePetitionAuthorWorkspace
+                      initiativeId={experience.initiativeId}
+                      onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
+                    />
+                  )
                 ) : activeStage.stageId === "decision_session" ? (
                   <InitiativeDecisionSessionAuthorWorkspace
                     initiativeId={experience.initiativeId}
@@ -745,6 +785,12 @@ export function PublicInitiativeCenterPanel({
                                 petitionId={petitionView.petitionId}
                                 isPreview={isStagePreviewMode}
                                 onSignatureChange={onPetitionSignatureChange}
+                                scrollIntoViewOnLoad={shouldScrollToPetitionDocument({
+                                  scrollRequestPetitionId: petitionScrollRequestId,
+                                  petitionId: petitionView.petitionId,
+                                  isPreview: Boolean(isStagePreviewMode),
+                                })}
+                                onScrollRequestHandled={onPetitionScrollHandled}
                               />
                             ) : isStagePreviewMode ? (
                               <InitiativePetitionDraftPreview initiativeId={experience.initiativeId} />

@@ -1,12 +1,10 @@
-/* Launch Readiness Pack 03 — canonical outer page geometry. */
+/*
+ * HU-LC-05C.4C.7C.3B — outer geometry comes from `.humanity-workspace-page`
+ * (same Workspace shell as /workspace); no width or padding here, so cascade
+ * order cannot override it.
+ */
 .petition-page {
-    width: min(100%, var(--hu-page-max-width));
-  max-width: var(--hu-page-max-width);
-  margin-inline: auto;
-  padding-block: var(--hu-section-gap);
-  padding-inline: var(--hu-page-padding-inline);
-  box-sizing: border-box;
-  text-align: left;
+  text-align: start;
 }
 
 .petition-page__back {

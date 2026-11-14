@@ -104,7 +104,11 @@ async function call(
 }
 
 /** Seeds a Petition owned by INITIATIVE_ID and advances it to `status`. */
-async function seedPetition(status: PetitionState, policy?: Petition["policy"]): Promise<string> {
+async function seedPetition(
+  status: PetitionState,
+  policy?: Petition["policy"],
+  subject?: Partial<Petition["subject"]>,
+): Promise<string> {
   const petitionId = nextId(status.toLowerCase());
   const decisionId = `decision-${petitionId}`;
   await mods.helpers.seedApprovedDecision(decisionId, INITIATIVE_ID);
@@ -113,12 +117,17 @@ async function seedPetition(status: PetitionState, policy?: Petition["policy"]):
     decisionId,
     initiativeId: INITIATIVE_ID,
   });
-  await mods.store.createPetition(policy ? { ...fixture, policy } : fixture);
+  await mods.store.createPetition({
+    ...fixture,
+    ...(policy ? { policy } : {}),
+    subject: { ...fixture.subject, ...subject },
+  });
   const steps: Array<[PetitionState, (id: string) => Promise<unknown>]> = [
     ["Ready", mods.store.preparePetition],
     ["Published", mods.store.publishPetitionForTests],
     ["Open", mods.store.openPetition],
     ["Closed", mods.store.closePetition],
+    ["Archived", mods.store.archivePetition],
   ];
   for (const [reached, step] of steps) {
     if (status === "Draft") {
@@ -130,6 +139,15 @@ async function seedPetition(status: PetitionState, policy?: Petition["policy"]):
     }
   }
   return petitionId;
+}
+
+/** The persisted Petition document itself (read-time derived fields excluded). */
+async function storedPetition(petitionId: string): Promise<Record<string, unknown> | null> {
+  const database = await import("../../../src/infrastructure/mongodb/mongo-database.js");
+  return database
+    .getMongoDatabase()
+    .collection("petitions")
+    .findOne({ petitionId }, { projection: { _id: 0 } });
 }
 
 async function statusOf(petitionId: string): Promise<PetitionState | null> {
@@ -323,6 +341,99 @@ describe("HU-LC-05B — legacy Petition mutation authorization", () => {
       });
     });
   }
+
+  const FULL_CONTENT = {
+    requestStatement: "Install signalised crossings on every school route.",
+    expectedOutcome: "Fewer collisions near schools.",
+    supportingContext: "Two collisions were reported last year.",
+    keyArguments: ["Children walk these routes daily", "Crossings are inexpensive"],
+    recipients: ["City Council", "Department of Transport"],
+  };
+
+  describe("HU-LC-05C.4C.7F.3 — legacy PATCH keeps content and identity", () => {
+    it("A. a title edit preserves every other Petition field", async () => {
+      const petitionId = await seedPetition("Draft", undefined, FULL_CONTENT);
+      const before = await mods.store.getPetition(petitionId);
+      const result = await call("PATCH", `/api/v1/petitions/${petitionId}`, "steward", {
+        subject: { title: "Edited title" },
+      });
+      assert.equal(result.status, 200, result.message);
+      const afterward = await mods.store.getPetition(petitionId);
+      assert.deepEqual(afterward?.subject, { ...before?.subject, title: "Edited title" });
+      assert.deepEqual(afterward?.policy, before?.policy);
+      assert.equal(afterward?.collectiveDecisionId, before?.collectiveDecisionId);
+    });
+
+    it("B. changing decisionId or initiativeId returns 400 and changes nothing", async () => {
+      const petitionId = await seedPetition("Draft", undefined, FULL_CONTENT);
+      const before = await storedPetition(petitionId);
+      const storedDecisionId = (before?.subject as { decisionId?: string } | undefined)?.decisionId;
+      for (const subject of [
+        { decisionId: `decision-other-${RUN}` },
+        { initiativeId: `initiative-other-${RUN}` },
+        { title: "Sneaky", decisionId: storedDecisionId },
+      ]) {
+        const result = await call("PATCH", `/api/v1/petitions/${petitionId}`, "steward", {
+          subject,
+        });
+        assert.equal(result.status, 400, JSON.stringify(subject));
+        assert.match(result.message, /subject\.(decisionId|initiativeId)" cannot be modified/);
+      }
+      assert.deepEqual(await storedPetition(petitionId), before);
+    });
+
+    it("C. a null or array subject or policy returns 400 and changes nothing", async () => {
+      const petitionId = await seedPetition("Draft", undefined, FULL_CONTENT);
+      const before = await storedPetition(petitionId);
+      for (const body of [{ subject: null }, { subject: [] }, { policy: null }, { policy: [] }]) {
+        const result = await call("PATCH", `/api/v1/petitions/${petitionId}`, "steward", body);
+        assert.equal(result.status, 400, JSON.stringify(body));
+        assert.match(result.message, /must be an object/);
+      }
+      assert.deepEqual(await storedPetition(petitionId), before);
+    });
+  });
+
+  describe("HU-LC-05C.4C.7F.3 — published Petitions are immutable", () => {
+    const PUBLISHED_STATES: Array<[PetitionState, number]> = [
+      ["Published", 400],
+      ["Open", 400],
+      ["Closed", 400],
+      ["Archived", 409],
+    ];
+
+    for (const [state, expected] of PUBLISHED_STATES) {
+      it(`a steward PATCH on a ${state} Petition is rejected and nothing changes`, async () => {
+        const petitionId = await seedPetition(state, undefined, FULL_CONTENT);
+        const before = await storedPetition(petitionId);
+        assert.equal(before?.status, state);
+        const result = await call("PATCH", `/api/v1/petitions/${petitionId}`, "steward", {
+          subject: { title: "Rewritten after publication", recipients: ["Someone else"] },
+          policy: { visibility: { publicSignatureVisibility: "hidden" } },
+        });
+        assert.equal(result.status, expected, result.message);
+        assert.deepEqual(await storedPetition(petitionId), before);
+      });
+    }
+
+    it("content sync and traceability updates reject an Open Petition", async () => {
+      const petitionId = await seedPetition("Open", undefined, FULL_CONTENT);
+      const before = await storedPetition(petitionId);
+      await assert.rejects(
+        mods.store.syncPreparatoryPetitionContent(
+          petitionId,
+          { ...FULL_CONTENT, title: "Synced over", summary: "Synced summary" },
+          null,
+        ),
+        /Only Draft or Ready Petitions can be updated/,
+      );
+      await assert.rejects(
+        mods.store.setPetitionTraceability(petitionId, null),
+        /Only Draft or Ready Petitions can be updated/,
+      );
+      assert.deepEqual(await storedPetition(petitionId), before);
+    });
+  });
 
   describe("POST / (create)", () => {
     async function createBody(): Promise<Petition> {

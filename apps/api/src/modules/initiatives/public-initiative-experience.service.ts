@@ -21,6 +21,7 @@ import {
 
 import { settleOptionalLifecycleLookup } from "../../shared/lifecycle/optional-lifecycle-lookup.js";
 import { logger } from "../../shared/observability/logger.js";
+import { buildPublicPetitionHref } from "../petition/public-petition-href.js";
 import { buildLifecycleNavigation } from "./public-initiative-experience-lifecycle-nav.js";
 
 export {
@@ -327,7 +328,10 @@ export async function buildStageRecords(
         petitionProjection.petitionSummary.publishedAt ??
         petitionProjection.petitionSummary.opensAt ??
         initiative.updatedAt,
-      publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
+      publicHref: buildPublicPetitionHref(
+        initiativeId,
+        petitionProjection.petitionIdentity.petitionId,
+      ),
     })),
   );
 

@@ -4,6 +4,7 @@ import type { PublicPetitionRecord } from "@hu/types";
 
 import { ViewImplementationCommitmentLink } from "../../implementation-commitment/components/ViewImplementationCommitmentLink";
 import { ViewImplementationLink } from "../../implementation/components/ViewImplementationLink";
+import { publicPetitionHref } from "../../initiative-petition-lifecycle/petition-viewer-selection";
 
 interface RelatedLinksProps {
   petition: PublicPetitionRecord;
@@ -27,10 +28,7 @@ export function RelatedLinks({ petition }: RelatedLinksProps) {
       </Link>
       <ViewImplementationCommitmentLink petitionId={petitionId} />
       <ViewImplementationLink petitionId={petitionId} />
-      <Link
-        className="related-links__link"
-        href={`/initiatives/public/${encodeURIComponent(initiativeId)}#petition`}
-      >
+      <Link className="related-links__link" href={publicPetitionHref(initiativeId, petitionId)}>
         Public Petition
       </Link>
       <ViewImplementationCommitmentLink petitionId={petitionId} publicView />

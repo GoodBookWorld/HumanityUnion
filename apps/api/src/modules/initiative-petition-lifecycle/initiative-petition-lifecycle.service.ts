@@ -12,6 +12,7 @@ import type {
 import { createDecision, getDecision } from "../collective-decision/collective-decision.store.js";
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
+import { buildPublicPetitionHref } from "../petition/public-petition-href.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
 import { defaultPetitionPolicy } from "../petition/petition.defaults.js";
@@ -526,7 +527,7 @@ async function publishInitiativePetitionDraft(
       stageVersion,
       actorParticipantId: identity.participantId,
       publicationKind: "published",
-      relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
+      relatedUrl: buildPublicPetitionHref(initiativeId, petition.petitionId),
     });
   } catch (error) {
     console.warn(`[initiative-petition-lifecycle] Lifecycle stage notification skipped: ${String(error)}`);
@@ -791,7 +792,7 @@ export async function publishInitiativePetitionWorkingDraft(
           stageVersion: publicationVersion,
           actorParticipantId: identity.participantId,
           publicationKind: "published",
-          relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
+          relatedUrl: buildPublicPetitionHref(initiativeId, petitionId),
           session,
         });
 

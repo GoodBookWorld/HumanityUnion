@@ -2,6 +2,8 @@ import type { PublicPetitionRecord } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
+import { publicPetitionHref } from "../../initiative-petition-lifecycle/petition-viewer-selection";
+
 import {
   PIPELINE_STAGES,
   formatPetitionDate,
@@ -47,7 +49,7 @@ export function PetitionStatus({ petition }: PetitionStatusProps) {
         label="Share Link"
         value={
           shareLink
-            ? shareLink.url
+            ? publicPetitionHref(petition.subject.initiativeId, petition.petitionId)
             : status === "Published" ||
                 status === "Open" ||
                 status === "Closed" ||

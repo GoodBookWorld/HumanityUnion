@@ -13,6 +13,8 @@ import { describe, it } from "node:test";
 import type { Petition, PetitionSubject } from "@hu/types";
 
 import { defaultPetitionPolicy } from "../../../src/modules/petition/petition.defaults.js";
+import { buildShareLink } from "../../../src/modules/petition/petition.helpers.js";
+import { buildPublicPetitionHref } from "../../../src/modules/petition/public-petition-href.js";
 import { toPublicPetitionProjection } from "../../../src/modules/petition/public-petition.projection.js";
 
 function openPetition(subject: Partial<PetitionSubject> = {}): Petition {
@@ -109,5 +111,40 @@ describe("HU-LC-05C.4C.3B — public Petition recipients projection", () => {
       status: "Draft",
     } as Petition;
     assert.equal(await toPublicPetitionProjection(draft), null);
+  });
+
+  it("HU-LC-05C.4C.7F.3 — the canonical public Petition URL selects that Petition", () => {
+    assert.equal(
+      buildPublicPetitionHref("initiative-a", "petition-b"),
+      "/initiatives/public/initiative-a?petition=petition-b#petition",
+    );
+    assert.equal(
+      buildPublicPetitionHref("init/1 a", "pet&2?#"),
+      "/initiatives/public/init%2F1%20a?petition=pet%262%3F%23#petition",
+    );
+    assert.deepEqual(buildShareLink("initiative-a", "petition-b", "2026-11-14T00:00:00.000Z"), {
+      url: "/initiatives/public/initiative-a?petition=petition-b#petition",
+      createdAt: "2026-11-14T00:00:00.000Z",
+    });
+  });
+
+  it("HU-LC-05C.4C.7F.3 — two Petitions of one Initiative share distinct URLs", async () => {
+    const first = await toPublicPetitionProjection({
+      ...openPetition(),
+      petitionId: "petition-lc05c4c3b-a",
+    });
+    const second = await toPublicPetitionProjection({
+      ...openPetition(),
+      petitionId: "petition-lc05c4c3b-b",
+    });
+    assert.equal(
+      first?.shareReference.url,
+      "/initiatives/public/initiative-lc05c4c3b-recipients?petition=petition-lc05c4c3b-a#petition",
+    );
+    assert.equal(
+      second?.shareReference.url,
+      "/initiatives/public/initiative-lc05c4c3b-recipients?petition=petition-lc05c4c3b-b#petition",
+    );
+    assert.notEqual(first?.shareReference.url, second?.shareReference.url);
   });
 });

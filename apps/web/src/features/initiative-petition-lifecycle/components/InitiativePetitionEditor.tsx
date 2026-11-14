@@ -16,6 +16,7 @@ import {
   publishInitiativePetitionStage,
   saveInitiativePetitionDraft,
 } from "../api";
+import { PetitionEditorFields, type PetitionEditorFieldsValues } from "./PetitionEditorFields";
 
 interface PetitionApplyForm {
   title: string;
@@ -128,16 +129,13 @@ export function InitiativePetitionEditor({
     onDraftUpdated(updated);
   }
 
-  function updateKeyArgument(index: number, value: string) {
-    setKeyArguments((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
-  }
-
-  function removeKeyArgument(index: number) {
-    setKeyArguments((current) => current.filter((_, itemIndex) => itemIndex !== index));
-  }
-
-  function addKeyArgument() {
-    setKeyArguments((current) => [...current, ""]);
+  function applyFieldChange(patch: Partial<PetitionEditorFieldsValues>) {
+    if (patch.title !== undefined) setTitle(patch.title);
+    if (patch.publicSummary !== undefined) setPublicSummary(patch.publicSummary);
+    if (patch.requestStatement !== undefined) setRequestStatement(patch.requestStatement);
+    if (patch.expectedOutcome !== undefined) setExpectedOutcome(patch.expectedOutcome);
+    if (patch.supportingContext !== undefined) setSupportingContext(patch.supportingContext);
+    if (patch.keyArguments !== undefined) setKeyArguments([...patch.keyArguments]);
   }
 
   async function handleGenerate() {
@@ -281,74 +279,17 @@ export function InitiativePetitionEditor({
         </p>
       ) : null}
 
-      <div className="ipl-editor__section">
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-title">{t("author.petition.fields.title")}</label>
-          <input id="ipl-title" value={title} onChange={(event) => setTitle(event.target.value)} />
-        </div>
-
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-public-summary">{t("author.petition.fields.publicSummary")}</label>
-          <textarea
-            id="ipl-public-summary"
-            rows={3}
-            value={publicSummary}
-            onChange={(event) => setPublicSummary(event.target.value)}
-          />
-        </div>
-
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-request-statement">{t("author.petition.fields.requestStatement")}</label>
-          <textarea
-            id="ipl-request-statement"
-            rows={3}
-            value={requestStatement}
-            onChange={(event) => setRequestStatement(event.target.value)}
-          />
-        </div>
-
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-expected-outcome">{t("author.petition.fields.expectedOutcome")}</label>
-          <textarea
-            id="ipl-expected-outcome"
-            rows={3}
-            value={expectedOutcome}
-            onChange={(event) => setExpectedOutcome(event.target.value)}
-          />
-        </div>
-
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-supporting-context">{t("author.petition.fields.supportingContext")}</label>
-          <textarea
-            id="ipl-supporting-context"
-            rows={4}
-            value={supportingContext}
-            onChange={(event) => setSupportingContext(event.target.value)}
-          />
-        </div>
-
-        <div className="ipl-editor__field">
-          <label htmlFor="ipl-key-arguments">{t("author.petition.fields.keyArguments")}</label>
-          <div className="ipl-editor__key-arguments" id="ipl-key-arguments">
-            {keyArguments.map((argument, index) => (
-              <div key={index} className="ipl-editor__key-argument">
-                <textarea
-                  rows={2}
-                  value={argument}
-                  aria-label={t("author.petition.keyArguments.itemAria", { number: index + 1 })}
-                  onChange={(event) => updateKeyArgument(index, event.target.value)}
-                />
-                <WorkspaceButton variant="secondary" onClick={() => removeKeyArgument(index)}>
-                  {t("author.petition.keyArguments.remove")}
-                </WorkspaceButton>
-              </div>
-            ))}
-            <WorkspaceButton variant="secondary" onClick={addKeyArgument}>
-              {t("author.petition.keyArguments.add")}
-            </WorkspaceButton>
-          </div>
-        </div>
-      </div>
+      <PetitionEditorFields
+        values={{
+          title,
+          publicSummary,
+          requestStatement,
+          expectedOutcome,
+          supportingContext,
+          keyArguments,
+        }}
+        onChange={applyFieldChange}
+      />
 
       <TranslateDraftControl
         sourceKind="petition"

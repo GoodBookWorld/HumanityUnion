@@ -10,6 +10,7 @@ import {
 } from "@hu/types";
 
 import { publicUrlForEntity } from "../capability02-integration/capability02-integration.service.js";
+import { buildPublicPetitionHref } from "../petition/public-petition-href.js";
 import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { listDecisionsByInitiative } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
@@ -87,7 +88,7 @@ function childRecord(
   const publicUrl =
     entityType === "petition"
       ? extra?.initiativeId
-        ? `/initiatives/public/${encodeURIComponent(extra.initiativeId)}#petition`
+        ? buildPublicPetitionHref(extra.initiativeId, entityId)
         : `/petitions/public/${encodeURIComponent(entityId)}`
       : publicUrlForEntity(entityType, entityId, extra);
 

@@ -20,6 +20,7 @@ import { buildPublicPageMetadata } from "../../lib/seo/build-public-page-metadat
 import { buildUnavailablePublicMetadata } from "../../lib/seo/public-surface-copy";
 import { shouldDisallowSearchIndexing } from "../../lib/platform-indexing";
 import { buildPublicPetitionSharePayload } from "../civic-share/civic-share.actions";
+import { publicPetitionHref } from "../initiative-petition-lifecycle/petition-viewer-selection";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(dir, "../..");
@@ -122,26 +123,33 @@ describe("SEO Pack 10 — share and internal links", () => {
       title: "Coastal Petition",
       origin: "https://example.org",
     });
-    assert.equal(payload.url, "https://example.org/initiatives/public/init-1#petition");
+    assert.equal(
+      payload.url,
+      "https://example.org/initiatives/public/init-1?petition=pet-1#petition",
+    );
 
+    // HU-LC-05C.4C.7F.3 — Petition-specific API links use the canonical helper.
     assert.match(
-      readApi("modules/petition/petition.helpers.ts"),
-      /#petition/,
+      readApi("modules/petition/public-petition-href.ts"),
+      /\?petition=\$\{encodeURIComponent\(petitionId\)\}#petition/,
     );
-    assert.match(
-      readApi("modules/petition/public-petition.projection.ts"),
-      /#petition/,
-    );
-    assert.match(
-      readApi("modules/initiatives/public-initiative-experience.service.ts"),
-      /#petition/,
-    );
+    for (const file of [
+      "modules/petition/petition.helpers.ts",
+      "modules/petition/public-petition.projection.ts",
+      "modules/initiatives/public-initiative-experience.service.ts",
+    ]) {
+      assert.match(readApi(file), /buildPublicPetitionHref\(/, file);
+    }
   });
 
   it("converts RelatedLinks and stage publicHref to Initiative #petition", () => {
     assert.match(
       readWeb("features/petition/components/RelatedLinks.tsx"),
-      /\/initiatives\/public\/\$\{encodeURIComponent\(initiativeId\)\}#petition/,
+      /href=\{publicPetitionHref\(initiativeId, petitionId\)\}/,
+    );
+    assert.equal(
+      publicPetitionHref("init-1", "pet-1"),
+      "/initiatives/public/init-1?petition=pet-1#petition",
     );
     assert.doesNotMatch(
       readWeb("features/petition/components/RelatedLinks.tsx"),
