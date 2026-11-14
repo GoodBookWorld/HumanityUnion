@@ -12,7 +12,7 @@ import type {
   WebUiMessageTree,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { ApiRequestError, apiRequest } from "../../lib/api-client";
 import { invalidatePublicLanguagesClientCache } from "../language/public-languages-api";
 
 const ADMIN_LANGUAGES_PATH = "/api/v1/admin/languages";
@@ -117,12 +117,42 @@ export async function fetchAdminWebUiMessagePackPreparation(
   );
 }
 
+/**
+ * Resolve the optimistic-concurrency token for an Admin pack import.
+ * - Existing pack → current revision
+ * - Missing pack (404) → null (create-only)
+ */
+export async function resolveAdminWebUiMessagePackExpectedRevision(
+  locale: string,
+): Promise<number | null> {
+  try {
+    const result = await apiRequest<{
+      readonly pack: WebUiMessagePackRecord;
+    }>(`${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}`);
+    return result.pack.revision;
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export function formatWebUiPackRevisionConflictMessage(serverMessage?: string): string {
+  const detail = serverMessage?.trim();
+  return (
+    (detail && detail.length > 0 ? `${detail} ` : "") +
+    "The catalog pack was changed by another administrator. Refresh the current pack data, then import again. The previous import was not saved."
+  );
+}
+
 export async function importAdminWebUiMessagePack(
   locale: string,
   input: {
     readonly messages: WebUiMessageTree;
     readonly status: "draft" | "published";
     readonly sourceNote?: string | null;
+    readonly expectedRevision: number | null;
   },
 ): Promise<{
   readonly pack: WebUiMessagePackRecord;
@@ -139,6 +169,7 @@ export async function importAdminWebUiMessagePack(
         messages: input.messages,
         status: input.status,
         sourceNote: input.sourceNote ?? null,
+        expectedRevision: input.expectedRevision,
       }),
     },
   );

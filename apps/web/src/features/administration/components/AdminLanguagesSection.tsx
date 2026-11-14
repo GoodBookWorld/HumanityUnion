@@ -16,7 +16,7 @@ import type {
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
-import { formatAuthFormError } from "../../../lib/api-client";
+import { ApiRequestError, formatAuthFormError } from "../../../lib/api-client";
 import {
   activateAdminLanguageLocalization,
   createAdminLanguage,
@@ -24,7 +24,9 @@ import {
   fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
   fetchAdminWebUiMessagePackPreparation,
+  formatWebUiPackRevisionConflictMessage,
   importAdminWebUiMessagePack,
+  resolveAdminWebUiMessagePackExpectedRevision,
   updateAdminLanguage,
   type AdminLanguageCreateInput,
   type AdminLanguagePatchInput,
@@ -223,10 +225,12 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
         setNote("Catalog file must include a messages object.");
         return;
       }
+      const expectedRevision = await resolveAdminWebUiMessagePackExpectedRevision(locale);
       const result = await importAdminWebUiMessagePack(locale, {
         messages: body.messages as WebUiMessageTree,
         status: publishOnImport ? "published" : "draft",
         sourceNote: typeof body.sourceNote === "string" ? body.sourceNote : null,
+        expectedRevision,
       });
       const problems = result.validation.placeholderMismatchPaths.length;
       const empty = result.validation.emptyPaths.length;
@@ -238,6 +242,10 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
           `. ${result.pack.status === "published" ? "Published packs are used at runtime." : "Draft packs are not used at runtime."}`,
       );
     } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        setNote(formatWebUiPackRevisionConflictMessage(error.message));
+        return;
+      }
       setNote(formatAuthFormError(error));
     } finally {
       setBusy(false);

@@ -5,6 +5,7 @@ export {
   getWebUiMessagePackByLocale,
   getPublishedWebUiMessagePackByLocale,
   upsertWebUiMessagePack,
+  compareAndSetWebUiMessagePack,
 } from "./web-ui-message-pack.repository.js";
 export { resolveEffectiveWebUiMessagePack } from "./resolve-effective-web-ui-message-pack.js";
 export {
@@ -32,4 +33,5 @@ export {
   WebUiMessagePackValidationError,
   WebUiMessagePackNotFoundError,
   WebUiMessagePackPersistenceError,
+  WebUiMessagePackRevisionConflictError,
 } from "./web-ui-message-pack.errors.js";
