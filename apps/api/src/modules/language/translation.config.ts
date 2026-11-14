@@ -8,6 +8,16 @@ export interface TranslationConfig {
   readonly maxOutputTokens: number;
 }
 
+/**
+ * HU-LC-05C.4C.7E.9D — automatic Content Translation of user-authored content
+ * is frozen unless CONTENT_TRANSLATION_FROZEN is explicitly false. WEB_UI
+ * (interface) translation is never affected by this switch.
+ */
+export function isContentTranslationFrozen(): boolean {
+  const raw = process.env.CONTENT_TRANSLATION_FROZEN?.trim().toLowerCase();
+  return !(raw === "false" || raw === "0" || raw === "no" || raw === "off");
+}
+
 export function resolveTranslationConfig(): TranslationConfig {
   const raw = (process.env.TRANSLATION_PROVIDER?.trim() || "deterministic").toLowerCase();
   const provider: TranslationProviderMode = raw === "gemini" ? "gemini" : "deterministic";
