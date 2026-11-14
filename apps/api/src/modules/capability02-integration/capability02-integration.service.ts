@@ -18,6 +18,7 @@ import {
   listCommitmentsByInitiative,
 } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
+import { buildPublicPetitionHref } from "../petition/public-petition-href.js";
 import { listDecisionsByInitiative } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
@@ -88,7 +89,7 @@ export function publicUrlForEntity(
     case "petition":
       // SEO Pack 10 — Strategy B: Initiative-owned public destination when ancestry is known.
       return extra?.initiativeId
-        ? `/initiatives/public/${encodeURIComponent(extra.initiativeId)}#petition`
+        ? buildPublicPetitionHref(extra.initiativeId, entityId)
         : `/petitions/public/${encodeURIComponent(entityId)}`;
     case "decision_session":
       return `/decision-sessions/public/${encodeURIComponent(entityId)}`;

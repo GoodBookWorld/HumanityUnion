@@ -33,15 +33,29 @@ export function validatePatchBody(body: Record<string, unknown>): string | null 
     }
   }
 
-  if (body.subject !== undefined && typeof body.subject !== "object") {
+  if (body.subject !== undefined && !isPlainObject(body.subject)) {
     return "subject must be an object.";
   }
 
-  if (body.policy !== undefined && typeof body.policy !== "object") {
+  if (body.policy !== undefined && !isPlainObject(body.policy)) {
     return "policy must be an object.";
   }
 
+  if (isPlainObject(body.subject)) {
+    for (const key of IMMUTABLE_SUBJECT_FIELDS) {
+      if (key in body.subject) {
+        return `Field "subject.${key}" cannot be modified.`;
+      }
+    }
+  }
+
   return null;
+}
+
+const IMMUTABLE_SUBJECT_FIELDS = ["decisionId", "initiativeId"] as const;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function validateCreatePetition(petition: Petition): string | null {

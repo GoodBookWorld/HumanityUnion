@@ -1,3 +1,5 @@
+import { withPetitionQuery } from "../initiative-petition-lifecycle/petition-viewer-selection";
+
 import type { CivicSharePayload } from "./civic-share.types";
 import { isCivicSharePayloadPublic } from "./civic-share.types";
 import {
@@ -163,7 +165,7 @@ export function buildPublicPetitionSharePayload(input: {
     `/initiatives/public/${encodeURIComponent(input.initiativeId)}#petition`;
 
   return {
-    url: resolveAbsoluteCivicShareUrl(path, input.origin),
+    url: resolveAbsoluteCivicShareUrl(withPetitionQuery(path, input.petitionId), input.origin),
     title: input.title,
     image: input.image,
     optionalText: input.optionalText,

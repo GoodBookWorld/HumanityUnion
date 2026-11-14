@@ -119,7 +119,10 @@ describe("Initiative Experience UX Pack — author identity + reaction + civic s
       title: "Petition Title",
       origin: "https://staging.example",
     });
-    assert.equal(viaHash.url, "https://staging.example/initiatives/public/init-1#petition");
+    assert.equal(
+      viaHash.url,
+      "https://staging.example/initiatives/public/init-1?petition=pet-1#petition",
+    );
     assert.equal(viaHash.petitionId, "pet-1");
 
     const viaRef = buildPublicPetitionSharePayload({
@@ -129,7 +132,7 @@ describe("Initiative Experience UX Pack — author identity + reaction + civic s
       shareUrl: "/initiatives/public/init-1#petition",
       origin: "https://staging.example",
     });
-    assert.match(viaRef.url, /\/initiatives\/public\/init-1#petition$/);
+    assert.match(viaRef.url, /\/initiatives\/public\/init-1\?petition=pet-1#petition$/);
   });
 
   it("card share stops propagation and keeps compact trigger outside the Link", () => {

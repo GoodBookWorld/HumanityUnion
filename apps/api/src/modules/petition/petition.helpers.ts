@@ -11,6 +11,7 @@ import type {
 } from "@hu/types";
 
 import { getMemberById } from "../member/member-access.js";
+import { buildPublicPetitionHref } from "./public-petition-href.js";
 
 const ALLOWED_TRANSITIONS: Record<PetitionState, PetitionState[]> = {
   Draft: ["Ready"],
@@ -223,16 +224,30 @@ export function assertSignaturesImmutable(existing: Signature[], proposed: Signa
   }
 }
 
+/** Subject fields a steward may edit; decision and Initiative identity never change. */
+export const EDITABLE_PETITION_SUBJECT_FIELDS = [
+  "title",
+  "summary",
+  "requestStatement",
+  "expectedOutcome",
+  "supportingContext",
+  "keyArguments",
+  "recipients",
+] as const satisfies readonly (keyof PetitionSubject)[];
+
 export function mergePetitionSubject(
   current: PetitionSubject,
   update: Partial<PetitionSubject>,
 ): PetitionSubject {
-  return {
-    decisionId: update.decisionId ?? current.decisionId,
-    initiativeId: update.initiativeId ?? current.initiativeId,
-    title: update.title ?? current.title,
-    summary: update.summary ?? current.summary,
-  };
+  const next: PetitionSubject = { ...current };
+  for (const field of EDITABLE_PETITION_SUBJECT_FIELDS) {
+    if (update[field] !== undefined) {
+      Object.assign(next, { [field]: update[field] });
+    }
+  }
+  next.decisionId = current.decisionId;
+  next.initiativeId = current.initiativeId;
+  return next;
 }
 
 export function mergePetitionPolicy(
@@ -257,9 +272,9 @@ export function buildPublicPetitionExperiencePath(initiativeId: string): string 
   return `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`;
 }
 
-export function buildShareLink(initiativeId: string, createdAt: string) {
+export function buildShareLink(initiativeId: string, petitionId: string, createdAt: string) {
   return {
-    url: buildPublicPetitionExperiencePath(initiativeId),
+    url: buildPublicPetitionHref(initiativeId, petitionId),
     createdAt,
   };
 }

@@ -28,6 +28,7 @@ import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeC
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
 import { InitiativePetitionsHeroWidget } from "../../initiative-petition-lifecycle/components/InitiativePetitionsHeroWidget";
+import type { PetitionDocumentScrollOutcome } from "../../initiative-petition-lifecycle/components/InitiativePetitionPublicResult";
 import {
   buildPetitionSelectionHref,
   hasMalformedPetitionQuery,
@@ -99,6 +100,8 @@ export function PublicInitiativeExperiencePage({
   const [openCandidateSubmit, setOpenCandidateSubmit] = useState(false);
   /** HU-LC-05C.4C.3C — `?petition=` request; honoured only after validation below. */
   const [requestedPetitionId, setRequestedPetitionId] = useState<string | null>(null);
+  /** HU-LC-05C.4C.7C.3A — a Petition chosen from a list, scrolled to once its document renders. */
+  const [petitionScrollRequestId, setPetitionScrollRequestId] = useState<string | null>(null);
   const [petitionList, setPetitionList] = useState<InitiativePetitionListState>({
     status: "loading",
   });
@@ -188,6 +191,17 @@ export function PublicInitiativeExperiencePage({
   const scrollToContent = useCallback(() => {
     contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  /** A document that cannot be loaded falls back to the stage top. */
+  const handlePetitionScrollHandled = useCallback(
+    (outcome: PetitionDocumentScrollOutcome) => {
+      setPetitionScrollRequestId(null);
+      if (outcome === "unavailable") {
+        scrollToContent();
+      }
+    },
+    [scrollToContent],
+  );
 
   const applyHash = useCallback(
     (hash: string) => {
@@ -296,6 +310,13 @@ export function PublicInitiativeExperiencePage({
     }
   }, [invalidPetitionRequest, requestedPetitionId]);
 
+  // A chosen Petition that turns out not to be this Initiative's never renders.
+  useEffect(() => {
+    if (invalidPetitionRequest && petitionScrollRequestId === requestedPetitionId) {
+      scrollToContent();
+    }
+  }, [invalidPetitionRequest, petitionScrollRequestId, requestedPetitionId, scrollToContent]);
+
   const refreshPetitionList = useCallback(() => {
     setPetitionListRevision((current) => current + 1);
   }, []);
@@ -333,7 +354,15 @@ export function PublicInitiativeExperiencePage({
     applyQueryParams(window.location.search);
   }, [applyQueryParams]);
 
-  const handleStageSelect = (stageId: string, hash: string) => {
+  /**
+   * HU-LC-05C.4C.7C.3A — `petitionDocument`: the selected Petition's document
+   * scrolls itself into view once rendered, so the stage top is not used.
+   */
+  const openStage = (
+    stageId: string,
+    hash: string,
+    scrollTarget: "content" | "petitionDocument",
+  ) => {
     if (
       !isLifecycleStageSelectable(experience.lifecycleStages, stageId, {
         viewerIsSteward,
@@ -349,6 +378,7 @@ export function PublicInitiativeExperiencePage({
       setIsStagePreviewMode(false);
       setFocusDiscussionCommentId(undefined);
       setShowManageTab(false);
+      setPetitionScrollRequestId(null);
       window.history.replaceState(null, "", "#discussion");
       scrollToContent();
       return;
@@ -359,7 +389,15 @@ export function PublicInitiativeExperiencePage({
     setIsStagePreviewMode(false);
     setShowManageTab(false);
     window.history.replaceState(null, "", `#${hash}`);
-    scrollToContent();
+
+    if (scrollTarget === "content") {
+      setPetitionScrollRequestId(null);
+      scrollToContent();
+    }
+  };
+
+  const handleStageSelect = (stageId: string, hash: string) => {
+    openStage(stageId, hash, "content");
   };
 
   const handlePetitionSelect = (petitionId: string) => {
@@ -373,12 +411,19 @@ export function PublicInitiativeExperiencePage({
     }
 
     setRequestedPetitionId(petitionId);
+    setPetitionScrollRequestId(petitionId);
     window.history.replaceState(
       null,
       "",
       buildPetitionSelectionHref(window.location.href, petitionId, petitionNavStage.hash),
     );
-    handleStageSelect(petitionNavStage.stageId, petitionNavStage.hash);
+    openStage(petitionNavStage.stageId, petitionNavStage.hash, "petitionDocument");
+  };
+
+  const handlePetitionSelectionClear = () => {
+    setRequestedPetitionId(null);
+    setPetitionScrollRequestId(null);
+    window.history.replaceState(null, "", removePetitionQueryParam(window.location.href));
   };
 
   const handleOpenStagePublicPreview = () => {
@@ -389,6 +434,7 @@ export function PublicInitiativeExperiencePage({
   const handleTabChange = (tab: CenterTab) => {
     setActiveTab(tab);
     setShowLifecyclePanel(false);
+    setPetitionScrollRequestId(null);
 
     if (tab === "manage") {
       setShowManageTab(true);
@@ -570,6 +616,14 @@ export function PublicInitiativeExperiencePage({
               readOnlyElection={readOnlyElection}
               petitionSelection={petitionSelection}
               onPetitionSignatureChange={showPetitionsWidget ? refreshPetitionList : undefined}
+              petitionList={showPetitionsWidget ? initiativePetitionList : undefined}
+              onSelectPetition={showPetitionsWidget ? handlePetitionSelect : undefined}
+              onClearPetitionSelection={
+                showPetitionsWidget ? handlePetitionSelectionClear : undefined
+              }
+              onRetryPetitionList={showPetitionsWidget ? refreshPetitionList : undefined}
+              petitionScrollRequestId={showPetitionsWidget ? petitionScrollRequestId : null}
+              onPetitionScrollHandled={handlePetitionScrollHandled}
             />
           </>
         }

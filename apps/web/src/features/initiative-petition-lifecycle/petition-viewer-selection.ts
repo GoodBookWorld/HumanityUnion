@@ -136,6 +136,64 @@ export function resolveCentralPetitionView(input: {
   };
 }
 
+/**
+ * HU-LC-05C.4C.7C.3A — a Petition chosen from a Petition list is brought into
+ * view on its own document, once that document has loaded; never in Public
+ * Preview and never for any other Petition.
+ */
+export function shouldScrollToPetitionDocument(input: {
+  readonly scrollRequestPetitionId: string | null | undefined;
+  readonly petitionId: string;
+  readonly isPreview: boolean;
+}): boolean {
+  return !input.isPreview && input.scrollRequestPetitionId === input.petitionId;
+}
+
+export type PetitionDocumentScrollStep = "none" | "wait" | "scroll" | "fallback";
+
+/**
+ * When a requested document may scroll: only once it has rendered (data loaded
+ * and the element mounted); a failed load falls back to the stage instead.
+ */
+export function planPetitionDocumentScroll(input: {
+  readonly requested: boolean;
+  readonly loaded: boolean;
+  readonly loadFailed: boolean;
+  readonly mounted: boolean;
+}): PetitionDocumentScrollStep {
+  if (!input.requested) {
+    return "none";
+  }
+  if (input.loadFailed) {
+    return "fallback";
+  }
+  return input.loaded && input.mounted ? "scroll" : "wait";
+}
+
+export type StewardPetitionStageView =
+  | { readonly kind: "editor" }
+  | { readonly kind: "pending" }
+  | { readonly kind: "petition"; readonly petitionId: string };
+
+/**
+ * HU-LC-05C.4C.7B — the steward's Petition stage outside Public Preview.
+ * Without a validated selection it stays the Author Workspace; a selection
+ * confirmed by this Initiative's public list opens that published Petition
+ * in its normal public (signing) mode.
+ */
+export function resolveStewardPetitionStageView(
+  selection: PetitionViewerSelection,
+): StewardPetitionStageView {
+  switch (selection.kind) {
+    case "selected":
+      return { kind: "petition", petitionId: selection.petitionId };
+    case "pending":
+      return { kind: "pending" };
+    default:
+      return { kind: "editor" };
+  }
+}
+
 /** Same location with `?petition=` set (or removed) and the given stage hash; other params kept. */
 export function buildPetitionSelectionHref(
   currentHref: string,
@@ -150,4 +208,22 @@ export function buildPetitionSelectionHref(
   }
   url.hash = stageHash;
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+const RELATIVE_URL_BASE = "https://relative.invalid";
+
+/**
+ * `href` (relative or absolute) with `?petition=<petitionId>`, so it opens this
+ * Petition rather than the Initiative's default one. Other query values, the
+ * origin and the hash (default `#petition`) are kept.
+ */
+export function withPetitionQuery(href: string, petitionId: string): string {
+  const url = new URL(href, RELATIVE_URL_BASE);
+  const selected = buildPetitionSelectionHref(url.href, petitionId, url.hash || "#petition");
+  return url.origin === RELATIVE_URL_BASE ? selected : `${url.origin}${selected}`;
+}
+
+/** The public Initiative page opened on this Petition. */
+export function publicPetitionHref(initiativeId: string, petitionId: string): string {
+  return withPetitionQuery(`/initiatives/public/${encodeURIComponent(initiativeId)}#petition`, petitionId);
 }

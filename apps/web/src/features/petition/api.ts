@@ -11,6 +11,11 @@ export async function getPetitionById(petitionId: string): Promise<PublicPetitio
   return apiRequest<PublicPetitionRecord>(`/api/v1/petitions/${encodeURIComponent(petitionId)}`);
 }
 
+/** Every publicly readable Petition (Published, Open, Closed, Archived) in the public-safe shape. */
+export async function listReadablePetitions(): Promise<PublicPetitionRecord[]> {
+  return apiRequest<PublicPetitionRecord[]>("/api/v1/petitions");
+}
+
 export async function getPetitionByCollectiveDecisionId(
   collectiveDecisionId: string,
 ): Promise<PublicPetitionRecord | null> {

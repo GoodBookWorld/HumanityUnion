@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicPetitionProjection } from "@hu/types";
@@ -19,6 +19,7 @@ import {
   petitionDocumentStatusKey,
 } from "../petition-public-document";
 import { createPetitionSignatureRefresher } from "../petition-signature-refresh";
+import { planPetitionDocumentScroll } from "../petition-viewer-selection";
 import { InitiativePetitionSignatureWidget } from "./InitiativePetitionSignatureWidget";
 
 import "./initiative-petition-stage-workspace.css";
@@ -34,7 +35,13 @@ interface InitiativePetitionPublicResultProps {
   readonly isPreview?: boolean;
   /** Called after a successful Sign / Withdraw, e.g. to refresh other Petition summaries on the page. */
   readonly onSignatureChange?: (petitionId: string, viewerHasSigned: boolean) => void;
+  /** HU-LC-05C.4C.7C.3A — bring this document into view once it has loaded. */
+  readonly scrollIntoViewOnLoad?: boolean;
+  /** Reported once per request: scrolled, or the document could not be loaded. */
+  readonly onScrollRequestHandled?: (outcome: PetitionDocumentScrollOutcome) => void;
 }
+
+export type PetitionDocumentScrollOutcome = "scrolled" | "unavailable";
 
 function formatDate(value: string | null, locale: string): string | null {
   if (!value) {
@@ -158,10 +165,29 @@ export function InitiativePetitionPublicResult({
   petitionId,
   isPreview = false,
   onSignatureChange,
+  scrollIntoViewOnLoad = false,
+  onScrollRequestHandled,
 }: InitiativePetitionPublicResultProps) {
   const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicPetitionProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const documentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const step = planPetitionDocumentScroll({
+      requested: scrollIntoViewOnLoad,
+      loaded: projection !== null,
+      loadFailed,
+      mounted: documentRef.current !== null,
+    });
+
+    if (step === "fallback") {
+      onScrollRequestHandled?.("unavailable");
+    } else if (step === "scroll") {
+      documentRef.current?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      onScrollRequestHandled?.("scrolled");
+    }
+  }, [scrollIntoViewOnLoad, projection, loadFailed, onScrollRequestHandled]);
   // Section 7 — after Sign / Withdraw, the counters are re-read from the server.
   const [signatureRefresher] = useState(() =>
     createPetitionSignatureRefresher(
@@ -219,7 +245,12 @@ export function InitiativePetitionPublicResult({
   const { petitionIdentity, petitionSubject, supportBreakdown } = projection;
 
   return (
-    <div className="ipl-public-result" translate="yes">
+    <div
+      ref={documentRef}
+      className="ipl-public-result"
+      data-petition-document={petitionId}
+      translate="yes"
+    >
       <InitiativePetitionPublicDocument petitionId={petitionId} projection={projection} />
 
       <section className="ipl-support" aria-label={t("author.petition.public.signaturesAria")}>

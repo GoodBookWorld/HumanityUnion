@@ -21,6 +21,7 @@ import type {
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getMemberById } from "../member/member-access.js";
+import { buildPublicPetitionHref } from "./public-petition-href.js";
 import { countActiveMemberSignatures } from "./petition-member-signatures.js";
 import {
   getCurrentPublishedVersion,
@@ -311,7 +312,7 @@ function buildShareReference(petition: Petition): PublicShareReference {
     // SEO Pack 10 — Strategy B: public share URL is always Initiative-owned.
     // Legacy /petitions/public shareLink values remain stored for history but are not advertised.
     url: available
-      ? `/initiatives/public/${encodeURIComponent(petition.subject.initiativeId)}#petition`
+      ? buildPublicPetitionHref(petition.subject.initiativeId, petition.petitionId)
       : null,
     available,
     sharingNote: SHARING_NOTE,

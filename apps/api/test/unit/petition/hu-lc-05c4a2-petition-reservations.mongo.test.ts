@@ -204,6 +204,32 @@ async function eventually(check: () => Promise<boolean>, label: string): Promise
   assert.fail(`Timed out waiting for: ${label}`);
 }
 
+/**
+ * Publication side-effect: CT warm is enqueued only when Content Translation is
+ * unfrozen. Frozen mode must leave the outbox empty; business invariants are
+ * asserted by the caller before this helper runs.
+ */
+async function assertPublicationWarmSideEffect(
+  petitionId: string,
+  expectedWhenUnfrozen: number,
+): Promise<void> {
+  const { isContentTranslationFrozen } = await import(
+    "../../../src/modules/language/translation.config.js"
+  );
+  if (isContentTranslationFrozen()) {
+    assert.deepEqual(
+      await warmEvents(petitionId),
+      [],
+      "frozen CT must not enqueue petition warm events",
+    );
+    return;
+  }
+  await eventually(
+    async () => (await warmEvents(petitionId)).length === expectedWhenUnfrozen,
+    "warm event",
+  );
+}
+
 async function prepareLifecycleDraft(initiativeId: string, title: string): Promise<string> {
   const draft = await mods.lifecycle.generateInitiativePetitionDraft(identity, initiativeId);
   mods.lifecycle.saveInitiativePetitionDraft(identity, initiativeId, {
@@ -500,7 +526,7 @@ describe("HU-LC-05C.4A.2 — Petition publication reservations", () => {
       const slot = (await slotOf(petitionId))!;
       assert.equal(slot.state, "published");
       assert.equal(slot.attemptId, reservation.attemptId);
-      await eventually(async () => (await warmEvents(petitionId)).length >= 1, "warm event");
+      await assertPublicationWarmSideEffect(petitionId, 1);
     });
 
     it("G — recovery that wins first leaves the owner unable to publish", async () => {
@@ -575,7 +601,7 @@ describe("HU-LC-05C.4A.2 — Petition publication reservations", () => {
         attemptId: reservation.attemptId,
         leaseExpiresAt: null,
       });
-      await eventually(async () => (await warmEvents(petitionId)).length === 1, "warm event");
+      await assertPublicationWarmSideEffect(petitionId, 1);
 
       // An unknown commit outcome is resolved by the slot: a repeat by the owner is a no-op.
       const repeated = await mods.slots.finalizePetitionPublication(reservation);
@@ -646,7 +672,7 @@ describe("HU-LC-05C.4A.2 — Petition publication reservations", () => {
       assert.deepEqual(await stageEvents(initiativeId), [
         `initiative-lifecycle-stage-published:${initiativeId}:petition:1:published`,
       ]);
-      await eventually(async () => (await warmEvents(petitionId)).length === 1, "warm event");
+      await assertPublicationWarmSideEffect(petitionId, 1);
     });
 
     it("K — a retry after recovery released the slot re-reserves and resumes the Petition", async () => {
