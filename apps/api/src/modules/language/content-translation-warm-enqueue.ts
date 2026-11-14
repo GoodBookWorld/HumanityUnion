@@ -28,6 +28,7 @@ import {
 } from "../../infrastructure/outbox/index.js";
 import { logger } from "../../shared/observability/logger.js";
 import { refuseReadOnlyDiagnosticMutation } from "./read-only-diagnostic-guard.js";
+import { isContentTranslationFrozen } from "./translation.config.js";
 import { buildContentTranslationWarmRequestedCommand } from "./content-translation-warm-request.js";
 import { resolveWarmAttemptSourceVersion } from "./warm-attempt-version-ownership.js";
 
@@ -243,8 +244,11 @@ export async function enqueueContentTranslationWarmRequested(
   },
   options: EnqueueOutboxOptions = {},
 ): Promise<ContentTranslationWarmEnqueueResult> {
-  refuseReadOnlyDiagnosticMutation("enqueue content-translation warm work");
   const command = buildContentTranslationWarmRequestedCommand(input);
+  if (isContentTranslationFrozen()) {
+    return { enqueued: false, deduped: false, mode: "skipped", eventId: null, command };
+  }
+  refuseReadOnlyDiagnosticMutation("enqueue content-translation warm work");
   const aggregateId = buildContentTranslationWarmAggregateId(command);
 
   if (await findPendingWarmOutbox(aggregateId)) {

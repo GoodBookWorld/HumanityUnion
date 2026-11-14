@@ -935,7 +935,7 @@
       "help": "Set your preferred language for Humanity Union. Writing Languages are separate and do not change how the site is presented.",
       "interfaceLanguage": "Interface Language",
       "preferredReadingLanguage": "Preferred Reading Language",
-      "preferredReadingHelp": "Select the language you prefer to read the platform in. For the best experience, match it with your browser’s translation language.",
+      "preferredReadingHelp": "Select the language for the platform interface. Content written by participants stays in its original language; your browser can translate it if needed.",
       "writingLanguages": "Writing Languages",
       "writingLanguagesHelp": "Add the languages you use for writing and collaboration. These preferences help Humanity Union understand how you communicate and do not control your browser's translation language.",
       "writingLanguagesPlaceholder": "en, uk",
@@ -1188,6 +1188,93 @@
       "loadFailed": "Petitions could not be loaded right now.",
       "empty": "This Initiative has no active Petitions yet.",
       "signatures": "{count, plural, one {# signature} other {# signatures}}"
+    },
+    "petitionEditing": {
+      "tabs": {
+        "aria": "Petition views",
+        "status": "Petition Status",
+        "editing": "Editing Petition"
+      },
+      "title": "Editing Petition",
+      "intro": "Prepare new Petitions for this Initiative. Published Petitions cannot be changed: create a new working draft, edit it, and publish it as a separate Petition.",
+      "loading": "Loading Petition drafts…",
+      "slots": {
+        "summary": "Petition slots: {occupied} of {limit} in use, {available} available.",
+        "full": "All {limit} slots are in use. Delete a working draft to free a slot.",
+        "legend": {
+          "published": "Published",
+          "draft": "Draft",
+          "available": "Available"
+        }
+      },
+      "actions": {
+        "newEmpty": "New empty draft",
+        "newFromCurrent": "New draft from this Petition",
+        "refresh": "Refresh"
+      },
+      "published": {
+        "title": "Published Petitions",
+        "empty": "No published Petitions yet.",
+        "readOnly": "Read-only",
+        "current": "Open on this page",
+        "open": "Open",
+        "statusPublished": "Published"
+      },
+      "drafts": {
+        "title": "Working drafts",
+        "empty": "No working drafts yet.",
+        "emptyHint": "Start with an empty draft or from this Petition. Each draft uses one of the three Petition slots.",
+        "untitled": "Untitled draft",
+        "status": "Working draft",
+        "updated": "Last saved {date}",
+        "derived": "Based on a published Petition",
+        "edit": "Edit",
+        "editing": "Editing",
+        "delete": "Delete",
+        "close": "Close editor"
+      },
+      "fields": {
+        "recipients": "Recipients",
+        "recipientsHint": "One recipient per line, for example a council or an agency."
+      },
+      "confirm": {
+        "generate": {
+          "title": "Replace this draft's content?",
+          "description": "Generating the Petition again replaces the title, public summary, request, expected outcome, supporting context and key arguments of this draft, including unsaved changes. Recipients are kept.",
+          "confirm": "Replace content"
+        },
+        "publish": {
+          "title": "Publish this Petition?",
+          "description": "The draft is saved and published as a new, separate Petition that is open for signatures. A published Petition cannot be edited afterwards; its own identity, signatures and publication history stay independent of every other Petition.",
+          "confirm": "Publish Petition"
+        },
+        "delete": {
+          "title": "Delete this working draft?",
+          "description": "“{title}” will be deleted permanently. Published Petitions are not affected, and the Petition slot becomes available again.",
+          "confirm": "Delete draft"
+        }
+      },
+      "messages": {
+        "created": "A new empty working draft was created.",
+        "createdFromPetition": "A new working draft was created from this Petition.",
+        "deleted": "The working draft was deleted and its slot is available again.",
+        "published": "The draft was published as a new Petition.",
+        "openPublished": "Open the new Petition"
+      },
+      "errors": {
+        "signIn": "Sign in as the Initiative steward to edit Petitions.",
+        "forbidden": "Only the Initiative steward can edit these Petitions.",
+        "notFound": "This draft no longer exists. The list has been refreshed.",
+        "slotLimit": "All three Petition slots are in use. Delete a working draft to free a slot.",
+        "sourceUnavailable": "This Petition can no longer be used as the source of a new draft.",
+        "staleRevision": "This draft cannot be published: the Revision it was built from is no longer current, or it is already being published. Generate the Petition again, then publish.",
+        "overwriteRequired": "This draft already has content. Confirm the replacement to generate it again.",
+        "generateConflict": "The Petition could not be generated: the draft changed in the meantime, is being published, or the Initiative has no Published Revision yet. Refresh and try again.",
+        "beingPublished": "This draft is being published and cannot be changed right now. Refresh the list.",
+        "invalid": "Some fields are not valid. Check the recipients and key arguments, then save again.",
+        "unavailable": "The service is unavailable right now. Please try again shortly.",
+        "unknown": "Something went wrong. Refresh and try again."
+      }
     },
     "hero": {
       "detailsAria": "Initiative details",
@@ -1657,7 +1744,7 @@
         "emptyInterest": "No participants have expressed interest yet.",
         "emptyFilter": "No comments match this filter.",
         "emptyComments": "No comments have been added.",
-        "originalLanguageNote": "Comments may appear in your reading language when a translation is available. The original is always preserved.",
+        "originalLanguageNote": "Comments are shown in the language they were written in. Your browser can translate them if needed.",
         "commentsCount": "{count, plural, one {# comment} other {# comments}}",
         "loadMore": "Load more comments",
         "loading": "Loading…",
@@ -1897,6 +1984,7 @@
         "stageOf": "Stage {current} of {total}",
         "publicPreview": "Public Preview",
         "returnToEditing": "Return to Editing",
+        "backToAuthorWorkspace": "Back to Author Workspace",
         "returnToInitiative": "Return to Initiative",
         "previousStage": "← {stage}",
         "nextStage": "{stage} →",
@@ -2930,6 +3018,188 @@
             "statusArchived": "Archived",
             "basedOnRevision": "Based on the published Revision of this Initiative",
             "basedOnRevisionVersion": "Based on version {version} of the published Revision of this Initiative"
+          },
+          "status": {
+            "page": {
+              "title": "Petition",
+              "subtitle": "Public endorsement after collective decision",
+              "sectionsAria": "Petition sections",
+              "unavailableTitle": "Petition Workspace",
+              "unavailable": "Petition is not available.",
+              "backToInitiatives": "Back to Initiatives",
+              "platformLinksAria": "Platform integration",
+              "sectionsLabel": "Sections"
+            },
+            "sections": {
+              "subject": "Petition Subject",
+              "signature": "Signature",
+              "supportMetrics": "Support Metrics",
+              "outcome": "Petition Outcome",
+              "contribution": "Contribution Recognition",
+              "relatedLinks": "Related Links"
+            },
+            "overview": {
+              "intro": "You are in the Petition stage of the Collective Participation Journey.",
+              "pipelineAria": "Participation pipeline",
+              "lifecycleState": "Lifecycle State",
+              "supportStatus": "Support Status",
+              "created": "Created",
+              "openingDate": "Opening Date",
+              "shareLink": "Share Link",
+              "notAvailable": "Not available",
+              "availableAfterPublication": "Available after publication",
+              "notScheduled": "Not scheduled",
+              "notSpecified": "Not specified",
+              "closingDate": "Closing Date"
+            },
+            "pipeline": {
+              "implementationCommitment": "Implementation Commitment",
+              "implementation": "Implementation",
+              "impact": "Impact",
+              "complete": "Complete",
+              "notYetActive": "Not yet active"
+            },
+            "states": {
+              "draft": "Draft",
+              "ready": "Ready",
+              "published": "Published",
+              "open": "Open"
+            },
+            "supportSummary": {
+              "preparing": "Preparing for endorsement",
+              "publishedNotOpen": "Published — endorsement not yet open",
+              "open": "Open for endorsement",
+              "closed": "Endorsement closed"
+            },
+            "subject": {
+              "petitionSummary": "Petition Summary",
+              "approvedDecision": "Approved Collective Decision",
+              "note": "Endorsement follows an approved Collective Decision. Signing supports the approved direction; it does not reopen the decision."
+            },
+            "decision": {
+              "empty": "Collective Decision context is unavailable. Review the Petition subject before signing.",
+              "decisionStatus": "Decision Status",
+              "approvedResult": "Approved Result",
+              "outcome": "Collective Decision Outcome",
+              "outcomeExplanation": "Outcome Explanation",
+              "initiativeContext": "Initiative Context",
+              "analysisReadiness": "Analysis Readiness",
+              "readinessValue": "{percent} ready",
+              "unknownOption": "Unknown",
+              "resultPending": "Result not yet available",
+              "outcomePending": "Outcome not yet available",
+              "initiativeUnavailable": "Initiative details are not available.",
+              "note": "This summary supports informed endorsement. It does not reopen ballot participation.",
+              "statuses": {
+                "scheduled": "Scheduled",
+                "active": "Active",
+                "completed": "Completed",
+                "archived": "Archived",
+                "draft": "Draft",
+                "closed": "Closed",
+                "cancelled": "Cancelled"
+              },
+              "outcomes": {
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "selected": "Selected",
+                "prioritized": "Prioritized"
+              },
+              "synthetic": {
+                "question": "Should \"{initiativeTitle}\" proceed to the Petition stage?",
+                "explanation": "The Initiative Lifecycle Revision for \"{initiativeTitle}\" is ready for public participation.",
+                "options": {
+                  "approve": "Approve",
+                  "reject": "Reject"
+                },
+                "note": "This record was created automatically when the Petition was published. It is not the result of a community vote."
+              }
+            },
+            "support": {
+              "count": "Support Count",
+              "finalCount": "Final Support Count",
+              "participantSignatures": "Participant Signatures",
+              "thresholdProgress": "Threshold Progress",
+              "thresholdProgressValue": "{current, number} of {target, number}",
+              "thresholdReached": "Threshold Reached",
+              "threshold": "Threshold",
+              "noThreshold": "No threshold defined",
+              "recentActivity": "Recent Activity",
+              "activityEntry": "{date}: {count, plural, one {# signature} other {# signatures}}",
+              "emptyOpen": "No signatures recorded yet.",
+              "emptyPending": "Support activity will appear here as signatures are recorded."
+            },
+            "outcome": {
+              "pending": "Final Petition Outcome will appear after the endorsement period closes.",
+              "unavailable": "Petition Outcome is not yet available.",
+              "outcomeType": "Outcome Type",
+              "explanation": "Explanation",
+              "thresholdStatus": "Threshold Status",
+              "thresholdReached": "Threshold reached",
+              "thresholdNotReached": "Threshold not reached",
+              "types": {
+                "active": "Active"
+              },
+              "explanations": {
+                "active": "Public endorsement is active.",
+                "closed": "Public endorsement has closed.",
+                "archived": "Public endorsement is preserved as historical record."
+              }
+            },
+            "contribution": {
+              "recorded": "Your signature has been recorded.",
+              "contributes": "Your participation contributes to public support.",
+              "thanks": "Thank you for supporting this Petition."
+            },
+            "nextAction": {
+              "preparing": {
+                "title": "Review decision context",
+                "detail": "This Petition is being prepared. Read the approved Collective Decision context while publication is pending."
+              },
+              "publishedSigned": {
+                "title": "Follow support progress",
+                "detail": "Your signature is recorded. Follow support statistics until the endorsement period closes."
+              },
+              "publishedUnsigned": {
+                "title": "Read decision context",
+                "detail": "Endorsement has not opened yet. Understand what was approved before signing becomes available."
+              },
+              "openSigned": {
+                "title": "Continue civic journey",
+                "detail": "Review related Initiative or Collective Decision context, or follow public support as it develops."
+              },
+              "openUnsigned": {
+                "detail": "Use the Signature section when you are ready to record your endorsement through the Endorsement Panel."
+              },
+              "ended": {
+                "title": "Review Petition outcome",
+                "detail": "Endorsement has ended. Review the outcome and final support statistics. Signing is no longer available."
+              },
+              "fallback": {
+                "title": "Review this Petition",
+                "detail": "Continue reading this workspace for current civic context."
+              }
+            },
+            "links": {
+              "relatedAria": "Related participation context",
+              "initiativeWorkspace": "Initiative Workspace",
+              "collectiveDecisionWorkspace": "Collective Decision Workspace",
+              "publicPetition": "Public Petition",
+              "publicInitiative": "Public Initiative",
+              "publicCollectiveDecision": "Public Collective Decision",
+              "implementationCommitmentWorkspace": "Implementation Commitment Workspace",
+              "publicImplementationCommitment": "Public Implementation Commitment",
+              "commitmentNoReference": "No implementation commitment reference is available.",
+              "commitmentLoading": "Loading implementation commitment…",
+              "commitmentNotLinked": "No implementation commitment is linked to this participation stage yet.",
+              "viewPublicCommitment": "View Public Implementation Commitment",
+              "openCommitmentWorkspace": "Open Implementation Commitment Workspace",
+              "implementationNoReference": "No implementation reference is available.",
+              "implementationLoading": "Loading implementation…",
+              "implementationNotLinked": "No implementation is linked to this participation stage yet.",
+              "viewPublicImplementation": "View Public Implementation",
+              "openImplementationWorkspace": "Open Implementation Workspace"
+            }
           }
         },
         "sourceSnapshot": {
@@ -3667,7 +3937,27 @@
       "withdrawing": "Withdrawing…",
       "disclaimer": "Signing records your civic participation in support of this Petition. It is not a legally binding petition and does not assign implementation responsibility to you.",
       "recordFailed": "Could not record signature.",
-      "withdrawFailed": "Could not withdraw signature."
+      "withdrawFailed": "Could not withdraw signature.",
+      "checking": "Checking your signature status…",
+      "justSignedTitle": "Signature Recorded",
+      "justSignedNote": "Your endorsement of this Petition has been recorded.",
+      "alreadySignedTitle": "Already Signed",
+      "lockedNote": "Your endorsement is recorded and cannot be changed here.",
+      "notOpenPreparing": "This Petition is still being prepared. Endorsement is not available yet.",
+      "notOpenPublished": "This Petition is published but not yet open for signatures.",
+      "notOpenEnded": "This Petition is no longer open for signatures.",
+      "nextChangePublished": "Signing will become available when the Petition opens.",
+      "nextChangePreparing": "Signing will become available after publication and opening.",
+      "signInGuidance": "Sign in or register to sign this Petition. Registration is required before your endorsement can be recorded.",
+      "endorsementPrompt": "Signing records your endorsement of the approved direction. It does not assign implementation responsibility to you.",
+      "statusUnavailable": "Your signature status could not be confirmed.",
+      "errors": {
+        "signInAgain": "Your session has ended. Sign in again to continue.",
+        "notEligible": "Your account is not eligible to sign this Petition.",
+        "withdrawNotAllowed": "This signature cannot be withdrawn.",
+        "statusChanged": "The Petition or your signature status has changed. Reload the page to see the current status.",
+        "petitionUnavailable": "This Petition is no longer available."
+      }
     },
     "geography": {
       "world": "World",

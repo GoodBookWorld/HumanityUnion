@@ -15,7 +15,7 @@ import {
   listEnabledSelectableLanguages,
 } from "./language-registry-runtime.js";
 import { translationProviderPublicErrorMessage } from "./resolve-translation-provider.js";
-import { TranslationProviderError } from "./translation.config.js";
+import { isContentTranslationFrozen, TranslationProviderError } from "./translation.config.js";
 import { translateDraft } from "./translate-draft.js";
 import { translationRateLimiter } from "./translation-rate-limit.js";
 
@@ -168,6 +168,12 @@ languageRouter.post(
   async (req, res) => {
     if (!req.auth?.memberId) {
       res.status(401).json(failure("Authentication required."));
+      return;
+    }
+    if (isContentTranslationFrozen()) {
+      res
+        .status(410)
+        .json(failure("Content translation is not available. Content stays in its original language."));
       return;
     }
 

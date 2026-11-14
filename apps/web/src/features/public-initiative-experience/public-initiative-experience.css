@@ -95,6 +95,13 @@
   margin: 0;
 }
 
+/* Original LTR text (`dir="auto"`) on an RTL page keeps the page alignment. */
+[dir="rtl"] .pie-hero__description:dir(ltr),
+[dir="rtl"] .pie-hero__description p:dir(ltr),
+[dir="rtl"] .pie-overview__section p:dir(ltr) {
+  text-align: end;
+}
+
 .pie-center__panel--manage {
   max-width: none;
 }

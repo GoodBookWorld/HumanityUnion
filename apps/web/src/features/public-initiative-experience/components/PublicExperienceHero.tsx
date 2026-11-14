@@ -144,7 +144,7 @@ export function PublicExperienceHero({
             </h1>
           ) : (
             <h1 id="pie-hero-title" className="pie-hero__title">
-              {title}
+              <span dir="auto">{title}</span>
             </h1>
           )}
           <div className="pie-hero__meta-grid" role="group" aria-label={t("hero.detailsAria")}>
@@ -184,7 +184,7 @@ export function PublicExperienceHero({
               isStale={isStale}
             />
           ) : (
-            <p>{descriptionText}</p>
+            <p dir="auto">{descriptionText}</p>
           )}
         </div>
       ) : null}

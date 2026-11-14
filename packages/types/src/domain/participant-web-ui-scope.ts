@@ -2,8 +2,9 @@
  * Canonical participant WEB_UI readiness scope (Step 15D.2 / 15D.5 / 15D.7).
  *
  * Ordinary authenticated Participant surfaces — Workspace, Notifications,
- * Civic Activity, Initiative creation/manage, own Profile, Preferences,
- * own-account security/password/email chrome, authoring application/status,
+ * Civic Activity, Initiative creation/manage, Editing Petition for the
+ * Initiative steward, own Profile, Preferences, own-account
+ * security/password/email chrome, authoring application/status,
  * and Publishing chrome.
  * Distinct from PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES.
  *
@@ -34,6 +35,8 @@ export const PARTICIPANT_WEB_UI_REQUIRED_PREFIXES = [
   "notifications.",
   "civicActivity.",
   "initiativeExperience.manage.",
+  // Same Initiative-ownership gate as `manage` (any Participant who stewards an Initiative).
+  "initiativeExperience.petitionEditing.",
   "memberProfile.",
   "preferences.",
   "authoringPage.",

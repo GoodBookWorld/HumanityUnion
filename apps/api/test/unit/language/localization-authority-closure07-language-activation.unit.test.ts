@@ -111,7 +111,7 @@ describe("Localization Authority Closure 07 — language activation", () => {
     setWebUiMessagePackForceMemoryForTests(false);
   });
 
-  it("disabled locale → DISABLED; CT disabled stays DISABLED", async () => {
+  it("disabled locale → DISABLED; CT disabled is interface-only (7E.9D)", async () => {
     const disabled = await evaluateLanguageLocalizationReadiness({
       locale: "uk",
       registryRecord: {
@@ -167,9 +167,10 @@ describe("Localization Authority Closure 07 — language activation", () => {
       ctCounts: emptyLanguageLocalizationCountBucket(),
       plpCounts: emptyLanguageLocalizationCountBucket(),
     });
-    assert.equal(ctOff.state, "DISABLED");
+    assert.ok(["READY", "DATA_NOT_READY"].includes(ctOff.state), ctOff.state);
+    assert.equal(ctOff.engineReady, false);
     assert.equal(ctOff.registry.seoIndexingEnabled, true);
-    // Step 07B.2 — SEO indexable follows Registry flag; Extended Localization stays DISABLED.
+    // Step 07B.2 — SEO indexable follows Registry flag, independent of CT.
     assert.equal(ctOff.seoReady, true);
     assert.equal(isLocalizationReadyForSeo(ctOff), true);
   });

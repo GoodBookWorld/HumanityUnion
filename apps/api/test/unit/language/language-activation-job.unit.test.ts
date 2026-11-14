@@ -381,20 +381,17 @@ describe("Language activation async job", () => {
     );
   });
 
-  it("9. contentTranslationEnabled=false is rejected", async () => {
+  it("9. contentTranslationEnabled=false starts an interface-only activation (7E.9D)", async () => {
     const record = await createEligibleLocale("mt");
     await updateLanguageRegistryRecord(record.languageId, {
       contentTranslationEnabled: false,
     });
-    await assert.rejects(
-      () =>
-        startOrResumeLanguageActivationJob({
-          actorUserId: "admin-1",
-          languageId: record.languageId,
-          scheduleProcess: false,
-        }),
-      /contentTranslationEnabled/i,
-    );
+    const view = await startOrResumeLanguageActivationJob({
+      actorUserId: "admin-1",
+      languageId: record.languageId,
+      scheduleProcess: false,
+    });
+    assert.ok(view.job, "an enabled locale activates its interface without CT");
   });
 
   it("10. Search/SEO flags are unchanged", async () => {

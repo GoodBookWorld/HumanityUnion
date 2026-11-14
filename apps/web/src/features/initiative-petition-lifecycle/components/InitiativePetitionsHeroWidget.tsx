@@ -9,6 +9,8 @@ import {
   type InitiativePetitionListState,
 } from "../petition-viewer-selection";
 
+import { PetitionReadingTitle } from "../../petition/components/PetitionReadingTitle";
+
 import "./initiative-petitions-hero-widget.css";
 
 export const PETITION_WIDGET_ICON = "/icons/workspace/petition.png";
@@ -44,6 +46,7 @@ export function InitiativePetitionsHeroWidget({
   defaultExpanded = false,
 }: InitiativePetitionsHeroWidgetProps) {
   const t = useTranslations("initiativeExperience");
+  const tCommon = useTranslations("common");
   const [expanded, setExpanded] = useState(defaultExpanded);
   const baseId = useId();
   const toggleId = `${baseId}-toggle`;
@@ -92,7 +95,7 @@ export function InitiativePetitionsHeroWidget({
             {t("petitionsWidget.loadFailed")}{" "}
             {onRetry ? (
               <button type="button" className="pie-hero-petitions__retry" onClick={onRetry}>
-                {t("author.actions.retry")}
+                {tCommon("retry")}
               </button>
             ) : null}
           </p>
@@ -113,7 +116,7 @@ export function InitiativePetitionsHeroWidget({
                     }
                   }}
                 >
-                  {petition.title}
+                  <PetitionReadingTitle petitionId={petition.petitionId} title={petition.title} />
                 </a>
                 <span className="pie-hero-petitions__signatures">
                   {t("petitionsWidget.signatures", { count: petition.signatureCount })}

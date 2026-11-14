@@ -12,7 +12,8 @@
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "possibleReasonPrefix": "السبب المحتمل:",
-    "comingSoon": "قريباً"
+    "comingSoon": "قريباً",
+    "interfaceNote": "ملاحظة الواجهة"
   },
   "a11y": {
     "skipToMainContent": "التخطي إلى المحتوى الرئيسي"
@@ -934,7 +935,7 @@
       "help": "عيّن لغتك المفضّلة لـ Humanity Union. لغات الكتابة إعداد منفصل ولا تغيّر طريقة عرض الموقع.",
       "interfaceLanguage": "لغة الواجهة",
       "preferredReadingLanguage": "لغة القراءة المفضّلة",
-      "preferredReadingHelp": "اختر اللغة التي تفضّل قراءة المنصة بها. لأفضل تجربة، طابقها مع لغة الترجمة في متصفحك.",
+      "preferredReadingHelp": "اختر لغة واجهة المنصة. يبقى المحتوى الذي يكتبه المشاركون بلغته الأصلية، ويمكن لمتصفحك ترجمته عند الحاجة.",
       "writingLanguages": "لغات الكتابة",
       "writingLanguagesHelp": "أضف اللغات التي تستخدمها للكتابة والتعاون. تساعد هذه التفضيلات Humanity Union على فهم كيفية تواصلك ولا تتحكم في لغة ترجمة المتصفح.",
       "writingLanguagesPlaceholder": "en, uk",
@@ -1187,6 +1188,93 @@
       "loadFailed": "تعذّر تحميل العرائض حاليًا.",
       "empty": "لا توجد عرائض نشطة لهذه المبادرة بعد.",
       "signatures": "{count, plural, zero {لا توقيعات} one {توقيع واحد} two {توقيعان} few {# توقيعات} many {# توقيعًا} other {# توقيع}}"
+    },
+    "petitionEditing": {
+      "tabs": {
+        "aria": "عروض العريضة",
+        "status": "حالة العريضة",
+        "editing": "تحرير العريضة"
+      },
+      "title": "تحرير العريضة",
+      "intro": "أعدّ عرائض جديدة لهذه المبادرة. لا يمكن تغيير العرائض المنشورة: أنشئ مسودة عمل جديدة وحرّرها ثم انشرها كعريضة مستقلة.",
+      "loading": "جارٍ تحميل مسودات العرائض…",
+      "slots": {
+        "summary": "خانات العرائض: {occupied} من {limit} مستخدمة، والمتاح {available}.",
+        "full": "جميع الخانات ({limit}) مستخدمة. احذف مسودة عمل لتحرير خانة.",
+        "legend": {
+          "published": "منشورة",
+          "draft": "مسودة",
+          "available": "متاحة"
+        }
+      },
+      "actions": {
+        "newEmpty": "مسودة فارغة جديدة",
+        "newFromCurrent": "مسودة جديدة من هذه العريضة",
+        "refresh": "تحديث"
+      },
+      "published": {
+        "title": "العرائض المنشورة",
+        "empty": "لا توجد عرائض منشورة بعد.",
+        "readOnly": "للقراءة فقط",
+        "current": "مفتوحة في هذه الصفحة",
+        "open": "فتح",
+        "statusPublished": "منشورة"
+      },
+      "drafts": {
+        "title": "مسودات العمل",
+        "empty": "لا توجد مسودات عمل بعد.",
+        "emptyHint": "ابدأ بمسودة فارغة أو من هذه العريضة. تشغل كل مسودة واحدة من خانات العرائض الثلاث.",
+        "untitled": "مسودة بلا عنوان",
+        "status": "مسودة عمل",
+        "updated": "آخر حفظ: {date}",
+        "derived": "مبنية على عريضة منشورة",
+        "edit": "تحرير",
+        "editing": "قيد التحرير",
+        "delete": "حذف",
+        "close": "إغلاق المحرّر"
+      },
+      "fields": {
+        "recipients": "الجهات الموجّهة إليها",
+        "recipientsHint": "جهة واحدة في كل سطر، مثل مجلس أو هيئة."
+      },
+      "confirm": {
+        "generate": {
+          "title": "هل تريد استبدال محتوى هذه المسودة؟",
+          "description": "يؤدي إنشاء العريضة من جديد إلى استبدال العنوان والملخص العام وبيان الطلب والنتيجة المتوقعة والسياق الداعم والحجج الرئيسية في هذه المسودة، بما في ذلك التغييرات غير المحفوظة. تبقى الجهات الموجّهة إليها كما هي.",
+          "confirm": "استبدال المحتوى"
+        },
+        "publish": {
+          "title": "هل تريد نشر هذه العريضة؟",
+          "description": "تُحفظ المسودة ثم تُنشر كعريضة جديدة مستقلة مفتوحة للتوقيع. لا يمكن تحرير العريضة بعد نشرها؛ وتبقى هويتها وتوقيعاتها وسجل نشرها مستقلة عن كل عريضة أخرى.",
+          "confirm": "نشر العريضة"
+        },
+        "delete": {
+          "title": "هل تريد حذف مسودة العمل هذه؟",
+          "description": "سيتم حذف «{title}» نهائيًا. لا تتأثر العرائض المنشورة، وتصبح خانة العريضة متاحة من جديد.",
+          "confirm": "حذف المسودة"
+        }
+      },
+      "messages": {
+        "created": "تم إنشاء مسودة عمل فارغة جديدة.",
+        "createdFromPetition": "تم إنشاء مسودة عمل جديدة من هذه العريضة.",
+        "deleted": "تم حذف مسودة العمل وأصبحت خانتها متاحة من جديد.",
+        "published": "تم نشر المسودة كعريضة جديدة.",
+        "openPublished": "فتح العريضة الجديدة"
+      },
+      "errors": {
+        "signIn": "سجّل الدخول بصفتك المشرف على المبادرة لتحرير العرائض.",
+        "forbidden": "يمكن للمشرف على المبادرة فقط تحرير هذه العرائض.",
+        "notFound": "لم تعد هذه المسودة موجودة. تم تحديث القائمة.",
+        "slotLimit": "جميع خانات العرائض الثلاث مستخدمة. احذف مسودة عمل لتحرير خانة.",
+        "sourceUnavailable": "لم يعد من الممكن استخدام هذه العريضة كأساس لمسودة جديدة.",
+        "staleRevision": "لا يمكن نشر هذه المسودة: المراجعة التي بُنيت عليها لم تعد حالية، أو أنها قيد النشر بالفعل. أنشئ العريضة من جديد ثم انشرها.",
+        "overwriteRequired": "تحتوي هذه المسودة على محتوى بالفعل. أكّد الاستبدال لإنشائها من جديد.",
+        "generateConflict": "تعذّر إنشاء العريضة: تغيّرت المسودة في هذه الأثناء، أو أنها قيد النشر، أو لا تملك المبادرة مراجعة منشورة بعد. حدّث الصفحة وحاول مرة أخرى.",
+        "beingPublished": "هذه المسودة قيد النشر ولا يمكن تغييرها الآن. حدّث القائمة.",
+        "invalid": "بعض الحقول غير صالحة. تحقّق من الجهات الموجّهة إليها والحجج الرئيسية ثم احفظ مرة أخرى.",
+        "unavailable": "الخدمة غير متاحة حاليًا. يُرجى المحاولة بعد قليل.",
+        "unknown": "حدث خطأ ما. حدّث الصفحة وحاول مرة أخرى."
+      }
     },
     "hero": {
       "detailsAria": "تفاصيل المبادرة",
@@ -1656,7 +1744,7 @@
         "emptyInterest": "لم يُبدِ أي مشارك اهتمامًا بعد.",
         "emptyFilter": "لا تعليقات تطابق هذا التصفية.",
         "emptyComments": "لم تُضَف أي تعليقات.",
-        "originalLanguageNote": "قد تظهر التعليقات بلغة القراءة عند توفر ترجمة. يُحفظ النص الأصلي دائمًا.",
+        "originalLanguageNote": "تُعرض التعليقات باللغة التي كُتبت بها، ويمكن لمتصفحك ترجمتها عند الحاجة.",
         "commentsCount": "{count, plural, zero {لا تعليقات} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقًا} other {# تعليق}}",
         "loadMore": "تحميل المزيد من التعليقات",
         "loading": "جارٍ التحميل…",
@@ -1896,6 +1984,7 @@
         "stageOf": "المرحلة {current} من {total}",
         "publicPreview": "معاينة عامة",
         "returnToEditing": "العودة إلى التحرير",
+        "backToAuthorWorkspace": "العودة إلى مساحة عمل المؤلف",
         "returnToInitiative": "العودة إلى المبادرة",
         "previousStage": "← {stage}",
         "nextStage": "{stage} →",
@@ -2929,6 +3018,188 @@
             "statusArchived": "مؤرشفة",
             "basedOnRevision": "استنادًا إلى المراجعة المنشورة لهذه المبادرة",
             "basedOnRevisionVersion": "استنادًا إلى النسخة {version} من المراجعة المنشورة لهذه المبادرة"
+          },
+          "status": {
+            "page": {
+              "title": "العريضة",
+              "subtitle": "تأييد عام بعد القرار الجماعي",
+              "sectionsAria": "أقسام العريضة",
+              "unavailableTitle": "مساحة عمل العريضة",
+              "unavailable": "العريضة غير متاحة.",
+              "backToInitiatives": "العودة إلى المبادرات",
+              "platformLinksAria": "التكامل مع المنصة",
+              "sectionsLabel": "الأقسام"
+            },
+            "sections": {
+              "subject": "موضوع العريضة",
+              "signature": "التوقيع",
+              "supportMetrics": "مؤشرات التأييد",
+              "outcome": "نتيجة العريضة",
+              "contribution": "تقدير المساهمة",
+              "relatedLinks": "روابط ذات صلة"
+            },
+            "overview": {
+              "intro": "أنت في مرحلة العريضة من مسار المشاركة الجماعية.",
+              "pipelineAria": "مسار المشاركة",
+              "lifecycleState": "حالة دورة الحياة",
+              "supportStatus": "حالة التأييد",
+              "created": "تاريخ الإنشاء",
+              "openingDate": "تاريخ الفتح",
+              "shareLink": "رابط المشاركة",
+              "notAvailable": "غير متاح",
+              "availableAfterPublication": "متاح بعد النشر",
+              "notScheduled": "غير مجدول",
+              "notSpecified": "غير محدد",
+              "closingDate": "تاريخ الإغلاق"
+            },
+            "pipeline": {
+              "implementationCommitment": "التزام التنفيذ",
+              "implementation": "التنفيذ",
+              "impact": "الأثر",
+              "complete": "مكتملة",
+              "notYetActive": "غير نشطة بعد"
+            },
+            "states": {
+              "draft": "مسودة",
+              "ready": "جاهزة",
+              "published": "منشورة",
+              "open": "مفتوحة"
+            },
+            "supportSummary": {
+              "preparing": "قيد التحضير للتأييد",
+              "publishedNotOpen": "منشورة — التأييد لم يُفتح بعد",
+              "open": "مفتوحة للتأييد",
+              "closed": "أُغلق التأييد"
+            },
+            "subject": {
+              "petitionSummary": "ملخص العريضة",
+              "approvedDecision": "القرار الجماعي المعتمد",
+              "note": "يأتي التأييد بعد قرار جماعي معتمد. التوقيع يدعم الاتجاه المعتمد ولا يعيد فتح القرار."
+            },
+            "decision": {
+              "empty": "سياق القرار الجماعي غير متاح. راجع موضوع العريضة قبل التوقيع.",
+              "decisionStatus": "حالة القرار",
+              "approvedResult": "النتيجة المعتمدة",
+              "outcome": "نتيجة القرار الجماعي",
+              "outcomeExplanation": "شرح النتيجة",
+              "initiativeContext": "سياق المبادرة",
+              "analysisReadiness": "جاهزية التحليل",
+              "readinessValue": "الجاهزية {percent}",
+              "unknownOption": "غير معروف",
+              "resultPending": "النتيجة غير متاحة بعد",
+              "outcomePending": "المحصلة غير متاحة بعد",
+              "initiativeUnavailable": "تفاصيل المبادرة غير متاحة.",
+              "note": "يدعم هذا الملخص التأييد المستنير. ولا يعيد فتح المشاركة في الاقتراع.",
+              "statuses": {
+                "scheduled": "مجدول",
+                "active": "نشط",
+                "completed": "مكتمل",
+                "archived": "مؤرشف",
+                "draft": "مسودة",
+                "closed": "مغلق",
+                "cancelled": "ملغى"
+              },
+              "outcomes": {
+                "approved": "مُعتمد",
+                "rejected": "مرفوض",
+                "selected": "مُختار",
+                "prioritized": "ذو أولوية"
+              },
+              "synthetic": {
+                "question": "هل ينبغي أن تنتقل «{initiativeTitle}» إلى مرحلة العريضة؟",
+                "explanation": "مراجعة دورة حياة المبادرة «{initiativeTitle}» جاهزة للمشاركة العامة.",
+                "options": {
+                  "approve": "موافقة",
+                  "reject": "رفض"
+                },
+                "note": "أُنشئ هذا السجل تلقائيًا عند نشر العريضة، وهو ليس نتيجة تصويت مجتمعي."
+              }
+            },
+            "support": {
+              "count": "عدد التأييدات",
+              "finalCount": "العدد النهائي للتأييدات",
+              "participantSignatures": "توقيعات المشاركين",
+              "thresholdProgress": "التقدم نحو الحد",
+              "thresholdProgressValue": "{current, number} من {target, number}",
+              "thresholdReached": "تم بلوغ الحد",
+              "threshold": "الحد",
+              "noThreshold": "لم يُحدَّد حد",
+              "recentActivity": "النشاط الأخير",
+              "activityEntry": "{date}: {count, plural, zero {لا توقيعات} one {توقيع واحد} two {توقيعان} few {# توقيعات} many {# توقيعًا} other {# توقيع}}",
+              "emptyOpen": "لم تُسجَّل أي توقيعات بعد.",
+              "emptyPending": "سيظهر نشاط التأييد هنا عند تسجيل التوقيعات."
+            },
+            "outcome": {
+              "pending": "ستظهر النتيجة النهائية للعريضة بعد انتهاء فترة التأييد.",
+              "unavailable": "نتيجة العريضة غير متاحة بعد.",
+              "outcomeType": "نوع النتيجة",
+              "explanation": "الشرح",
+              "thresholdStatus": "حالة الحد",
+              "thresholdReached": "تم بلوغ الحد",
+              "thresholdNotReached": "لم يتم بلوغ الحد",
+              "types": {
+                "active": "نشطة"
+              },
+              "explanations": {
+                "active": "التأييد العام جارٍ.",
+                "closed": "أُغلق التأييد العام.",
+                "archived": "يُحفظ التأييد العام كسجل تاريخي."
+              }
+            },
+            "contribution": {
+              "recorded": "تم تسجيل توقيعك.",
+              "contributes": "مشاركتك تسهم في التأييد العام.",
+              "thanks": "شكرًا لدعمك هذه العريضة."
+            },
+            "nextAction": {
+              "preparing": {
+                "title": "راجع سياق القرار",
+                "detail": "يجري إعداد هذه العريضة. اقرأ سياق القرار الجماعي المعتمد ريثما يتم النشر."
+              },
+              "publishedSigned": {
+                "title": "تابع تقدم التأييد",
+                "detail": "تم تسجيل توقيعك. تابع إحصاءات التأييد حتى انتهاء فترة التأييد."
+              },
+              "publishedUnsigned": {
+                "title": "اقرأ سياق القرار",
+                "detail": "لم يُفتح التأييد بعد. افهم ما تم اعتماده قبل أن يصبح التوقيع متاحًا."
+              },
+              "openSigned": {
+                "title": "واصل مسارك المدني",
+                "detail": "راجع سياق المبادرة أو القرار الجماعي ذي الصلة، أو تابع تطور التأييد العام."
+              },
+              "openUnsigned": {
+                "detail": "استخدم قسم التوقيع عندما تكون مستعدًا لتسجيل تأييدك عبر لوحة التأييد."
+              },
+              "ended": {
+                "title": "راجع نتيجة العريضة",
+                "detail": "انتهت فترة التأييد. راجع النتيجة وإحصاءات التأييد النهائية. لم يعد التوقيع متاحًا."
+              },
+              "fallback": {
+                "title": "راجع هذه العريضة",
+                "detail": "تابع قراءة مساحة العمل هذه للاطلاع على السياق المدني الحالي."
+              }
+            },
+            "links": {
+              "relatedAria": "سياق المشاركة ذو الصلة",
+              "initiativeWorkspace": "مساحة عمل المبادرات",
+              "collectiveDecisionWorkspace": "مساحة عمل القرار الجماعي",
+              "publicPetition": "العريضة العامة",
+              "publicInitiative": "المبادرة العامة",
+              "publicCollectiveDecision": "القرار الجماعي العام",
+              "implementationCommitmentWorkspace": "مساحة عمل التزام التنفيذ",
+              "publicImplementationCommitment": "التزام التنفيذ العام",
+              "commitmentNoReference": "لا يتوفر مرجع لالتزام التنفيذ.",
+              "commitmentLoading": "جارٍ تحميل التزام التنفيذ…",
+              "commitmentNotLinked": "لم يُربط أي التزام تنفيذ بمرحلة المشاركة هذه بعد.",
+              "viewPublicCommitment": "عرض التزام التنفيذ العام",
+              "openCommitmentWorkspace": "فتح مساحة عمل التزام التنفيذ",
+              "implementationNoReference": "لا يتوفر مرجع للتنفيذ.",
+              "implementationLoading": "جارٍ تحميل التنفيذ…",
+              "implementationNotLinked": "لم يُربط أي تنفيذ بمرحلة المشاركة هذه بعد.",
+              "viewPublicImplementation": "عرض التنفيذ العام",
+              "openImplementationWorkspace": "فتح مساحة عمل التنفيذ"
+            }
           }
         },
         "sourceSnapshot": {
@@ -3666,7 +3937,27 @@
       "withdrawing": "جارٍ السحب…",
       "disclaimer": "التوقيع يسجّل مشاركتك المدنية لدعم هذه العريضة. ليست عريضة ملزمة قانونًا ولا تفرض عليك مسؤولية التنفيذ.",
       "recordFailed": "تعذّر تسجيل التوقيع.",
-      "withdrawFailed": "تعذّر سحب التوقيع."
+      "withdrawFailed": "تعذّر سحب التوقيع.",
+      "checking": "جارٍ التحقق من حالة توقيعك…",
+      "justSignedTitle": "تم تسجيل التوقيع",
+      "justSignedNote": "تم تسجيل تأييدك لهذه العريضة.",
+      "alreadySignedTitle": "تم التوقيع مسبقًا",
+      "lockedNote": "تم تسجيل تأييدك ولا يمكن تغييره هنا.",
+      "notOpenPreparing": "لا تزال هذه العريضة قيد الإعداد. التأييد غير متاح بعد.",
+      "notOpenPublished": "هذه العريضة منشورة لكنها غير مفتوحة للتوقيع بعد.",
+      "notOpenEnded": "لم تعد هذه العريضة مفتوحة للتوقيع.",
+      "nextChangePublished": "سيصبح التوقيع متاحًا عند فتح العريضة.",
+      "nextChangePreparing": "سيصبح التوقيع متاحًا بعد النشر والفتح.",
+      "signInGuidance": "سجّل الدخول أو أنشئ حسابًا لتوقيع هذه العريضة. التسجيل مطلوب قبل أن يُسجَّل تأييدك.",
+      "endorsementPrompt": "يسجّل التوقيع تأييدك للاتجاه المعتمد. ولا يحمّلك مسؤولية التنفيذ.",
+      "statusUnavailable": "تعذّر تأكيد حالة توقيعك.",
+      "errors": {
+        "signInAgain": "انتهت جلستك. سجّل الدخول مجددًا للمتابعة.",
+        "notEligible": "حسابك غير مؤهل لتوقيع هذه العريضة.",
+        "withdrawNotAllowed": "لا يمكن سحب هذا التوقيع.",
+        "statusChanged": "تغيّرت حالة العريضة أو حالة توقيعك. أعد تحميل الصفحة لعرض الحالة الحالية.",
+        "petitionUnavailable": "لم تعد هذه العريضة متاحة."
+      }
     },
     "geography": {
       "world": "العالم",
@@ -5899,7 +6190,7 @@
       "nextAria": "الصفحة التالية",
       "previous": "السابق",
       "next": "التالي ≫",
-      "showingCount": "عرض منشور واحد",
+      "showingCount": "عرض {count} منشور",
       "showingCountPlural": "عرض {count} منشورات",
       "showingRange": "عرض {start}–{end} من {total} منشورات",
       "pageAria": "الصفحة {page}"

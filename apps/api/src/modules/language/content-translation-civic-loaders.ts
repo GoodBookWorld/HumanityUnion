@@ -21,6 +21,8 @@ import { findPublishedStructuredProposalById } from "../initiative-improvement-p
 import { getPublicInitiativePublicImpact } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getRevisionById } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getPublicInitiativeVersionRevision } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { getPublicOfficialResponse } from "../official-response/official-response.projection.js";
 import { getPublicCivicArchive } from "../public-civic-archive/public-civic-archive.projection.js";
 import {
@@ -44,6 +46,15 @@ export const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
 
 export function isCivicMediaTranslationRecordId(sourceRecordId: string): boolean {
   return sourceRecordId.trim() === CIVIC_MEDIA_RECORD_ID;
+}
+
+/**
+ * Initiative child records are publicly readable only while their parent
+ * Initiative is. Child publication status alone is never sufficient.
+ */
+function isParentInitiativePublic(initiativeId: string): boolean {
+  const initiative = getInitiativeById(initiativeId);
+  return Boolean(initiative && canExposePublicInitiativeProjection(initiative));
 }
 
 /**
@@ -72,7 +83,7 @@ export async function loadImprovementProposalTranslationSource(
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: partD.collection.authorId,
-      isPublished: true,
+      isPublished: isParentInitiativePublic(partD.collection.initiativeId),
     };
   }
 
@@ -119,7 +130,7 @@ export async function loadInitiativeRevisionTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(revision.initiativeId),
   };
 }
 
@@ -161,7 +172,7 @@ export async function loadDecisionSessionTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -207,7 +218,7 @@ export async function loadCollectiveDecisionTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -245,7 +256,7 @@ export async function loadImplementationCommitmentTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -283,7 +294,7 @@ export async function loadImplementationTrackingTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -312,7 +323,7 @@ export async function loadOfficialResponseTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -348,7 +359,7 @@ export async function loadPublicImpactTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 
@@ -396,7 +407,7 @@ export async function loadCivicArchiveTranslationSource(
     sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
     fields,
     authorParticipantId: null,
-    isPublished: true,
+    isPublished: isParentInitiativePublic(projection.initiativeId),
   };
 }
 

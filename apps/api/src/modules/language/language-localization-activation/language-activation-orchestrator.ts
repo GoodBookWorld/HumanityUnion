@@ -14,6 +14,7 @@ import {
 
 import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
 import { runPublicLocalizationResidualRetry } from "../public-localization-residual-retry.js";
+import { isContentTranslationFrozen } from "../translation.config.js";
 import type { StagingWarmSourceKind } from "../content-translation-staging-warm-operator-scope.js";
 import { evaluateLanguageLocalizationReadiness } from "./language-localization-readiness-evaluator.js";
 import {
@@ -73,7 +74,9 @@ export async function activateLanguageLocalization(
 
   const record = await resolveLanguageRegistryLocale(locale);
   const registryEligible =
-    record?.enabled === true && record.contentTranslationEnabled === true;
+    record?.enabled === true &&
+    record.contentTranslationEnabled === true &&
+    !isContentTranslationFrozen();
 
   const readiness = await evaluateLanguageLocalizationReadiness({
     locale,

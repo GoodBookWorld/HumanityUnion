@@ -45,7 +45,7 @@ function sampleInitiative(): Initiative {
     title: "The Mind-Safe Alliance",
     description: "Participants restore civic trust. Testing Up 07E.1",
     status: "proposal",
-    lifecyclePhase: "published",
+    lifecyclePhase: "projected",
     visibility: { policy: "public" },
     metadata: {
       category: "Community",

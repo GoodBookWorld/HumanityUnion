@@ -7,6 +7,7 @@ import type { PublicPetitionProjection } from "@hu/types";
 
 import { PublicTranslatedFields } from "../../language";
 import { getPublicPetition, recordPetitionVisitorSignal } from "../../petition/api";
+import { usePetitionReadingText } from "../../petition/use-petition-reading-text";
 import {
   buildPublicPetitionSharePayload,
   CivicShareButton,
@@ -101,7 +102,9 @@ export function InitiativePetitionPublicDocument({
             <dd>
               <ul>
                 {recipients.map((recipient, index) => (
-                  <li key={`${index}-${recipient}`}>{recipient}</li>
+                  <li key={`${index}-${recipient}`}>
+                    <span dir="auto">{recipient}</span>
+                  </li>
                 ))}
               </ul>
             </dd>
@@ -144,6 +147,41 @@ export function InitiativePetitionPublicDocument({
         </p>
       ) : null}
     </article>
+  );
+}
+
+/** Shares the Petition with the title and summary the reader is currently shown. */
+function InitiativePetitionShareButton({
+  projection,
+}: {
+  readonly projection: PublicPetitionProjection;
+}) {
+  const t = useTranslations("initiativeExperience");
+  const { petitionIdentity, petitionSubject, shareReference } = projection;
+  const reading = usePetitionReadingText({
+    petitionId: petitionIdentity.petitionId,
+    title: petitionIdentity.title,
+    summary: petitionSubject.summary,
+    status: petitionIdentity.lifecycleStatus,
+  });
+
+  return (
+    <CivicShareButton
+      payload={
+        shareReference.available
+          ? buildPublicPetitionSharePayload({
+              initiativeId: petitionSubject.initiativeId,
+              petitionId: petitionIdentity.petitionId,
+              title: reading.title,
+              shareUrl: shareReference.url,
+              optionalText: reading.summary || undefined,
+            })
+          : null
+      }
+      disabled={!shareReference.available}
+      disabledReason={shareReference.sharingNote}
+      ariaLabel={t("author.petition.public.shareAria", { title: reading.title })}
+    />
   );
 }
 
@@ -242,7 +280,7 @@ export function InitiativePetitionPublicResult({
     return <p className="lsw-result__placeholder">{t("author.petition.public.loading")}</p>;
   }
 
-  const { petitionIdentity, petitionSubject, supportBreakdown } = projection;
+  const { petitionIdentity, supportBreakdown } = projection;
 
   return (
     <div
@@ -256,22 +294,7 @@ export function InitiativePetitionPublicResult({
       <section className="ipl-support" aria-label={t("author.petition.public.signaturesAria")}>
         <div className="ipl-support__header">
           <p className="ipl-support__title">{t("author.petition.public.signaturesTitle")}</p>
-          <CivicShareButton
-            payload={
-              projection.shareReference.available
-                ? buildPublicPetitionSharePayload({
-                    initiativeId: petitionSubject.initiativeId,
-                    petitionId: petitionIdentity.petitionId,
-                    title: petitionIdentity.title,
-                    shareUrl: projection.shareReference.url,
-                    optionalText: petitionSubject.summary || undefined,
-                  })
-                : null
-            }
-            disabled={!projection.shareReference.available}
-            disabledReason={projection.shareReference.sharingNote}
-            ariaLabel={t("author.petition.public.shareAria", { title: petitionIdentity.title })}
-          />
+          <InitiativePetitionShareButton projection={projection} />
         </div>
         <div
           className="ipl-support__counters"
@@ -302,9 +325,9 @@ export function InitiativePetitionPublicResult({
         ) : (
           <InitiativePetitionSignatureWidget
             petitionId={petitionIdentity.petitionId}
+            petitionStatus={petitionIdentity.lifecycleStatus}
             viewerHasSigned={projection.viewerHasSigned}
             signingAvailable={projection.participationEntryGuidance.signingAvailable}
-            participationEntryGuidance={projection.participationEntryGuidance}
             onSignatureChange={(viewerHasSigned) => {
               void signatureRefresher.afterSignatureChange(
                 petitionIdentity.petitionId,

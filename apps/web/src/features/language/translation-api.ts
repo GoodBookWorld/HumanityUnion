@@ -18,6 +18,9 @@ export async function listPriorityLanguages(): Promise<readonly PriorityLanguage
   return apiRequest<readonly PriorityLanguageOption[]>("/api/v1/translations/languages");
 }
 
+/** Identical concurrent lookups share one request; nothing is cached once it settles. */
+const inFlightResolves = new Map<string, Promise<ResolvedTranslatedDisplay<Record<string, string>>>>();
+
 export async function resolveTranslatedContent(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;
@@ -28,11 +31,18 @@ export async function resolveTranslatedContent(input: {
     params.set("language", input.language);
   }
   const query = params.toString();
-  return apiRequest<ResolvedTranslatedDisplay<Record<string, string>>>(
-    `/api/v1/translations/resolve/${input.sourceKind}/${encodeURIComponent(input.sourceRecordId)}${
-      query ? `?${query}` : ""
-    }`,
-  );
+  const path = `/api/v1/translations/resolve/${input.sourceKind}/${encodeURIComponent(input.sourceRecordId)}${
+    query ? `?${query}` : ""
+  }`;
+  const pending = inFlightResolves.get(path);
+  if (pending) {
+    return pending;
+  }
+  const request = apiRequest<ResolvedTranslatedDisplay<Record<string, string>>>(path).finally(() => {
+    inFlightResolves.delete(path);
+  });
+  inFlightResolves.set(path, request);
+  return request;
 }
 
 /**

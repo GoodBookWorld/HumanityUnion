@@ -72,6 +72,7 @@ import {
   type LanguageOwnerPreparationResult,
 } from "../../language-preparation/language-owner-preparation.js";
 import { isActivationCooldownDue } from "../activation-provider-transient-recovery.js";
+import { isContentTranslationFrozen } from "../translation.config.js";
 import {
   evaluateFailedWebUiActivationResume,
   listJobsNeedingWebUiActivationResume,
@@ -155,17 +156,18 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+/** Interface (WEB_UI) activation needs only an enabled locale; CT is optional. */
 function assertActivationEligible(record: LanguageRegistryRecord): void {
   if (!record.enabled) {
     throw new LanguageActivationJobValidationError(
       `Locale ${record.locale} is disabled; enable it before activation.`,
     );
   }
-  if (!record.contentTranslationEnabled) {
-    throw new LanguageActivationJobValidationError(
-      `Locale ${record.locale} has contentTranslationEnabled=false; enable content translation before activation.`,
-    );
-  }
+}
+
+/** CT/PLP residual work runs only when CT is enabled for the locale and not frozen. */
+function isContentTranslationActiveForLocale(record: LanguageRegistryRecord): boolean {
+  return record.contentTranslationEnabled === true && !isContentTranslationFrozen();
 }
 
 async function loadRegistryForLanguageId(
@@ -983,12 +985,11 @@ export async function processLanguageActivationJob(
   /** Gate A — historical jobs may store identity-key locale; owners use CANONICAL. */
   const canonicalLocale = registry.locale;
 
-  if (!registry.enabled || !registry.contentTranslationEnabled) {
+  if (!registry.enabled) {
     job = {
       ...job,
       status: "failed",
-      lastError:
-        "Locale became ineligible (disabled or contentTranslationEnabled=false).",
+      lastError: "Locale became ineligible (disabled).",
       diagnosticSummary: "failed — registry ineligible",
       updatedAt: nowIso(),
       completedAt: nowIso(),
@@ -1558,7 +1559,8 @@ export async function processLanguageActivationJob(
         participantWebUiDataReady: readiness.participantWebUi.dataReady === true,
       });
 
-    if (shouldReconcileResiduals && webUiReadyForHistorical) {
+    const contentTranslationActive = isContentTranslationActiveForLocale(registry);
+    if (shouldReconcileResiduals && webUiReadyForHistorical && contentTranslationActive) {
       const stamp = nowIso();
       const result = await activate({
         locale: canonicalLocale,
@@ -1626,7 +1628,7 @@ export async function processLanguageActivationJob(
     // Activation prepares the language; reconciliation converges content after READY.
     const workItemsRequired =
       readiness.ct.workItemsRequired + readiness.plpMedia.workItemsRequired;
-    if (webUiReadyForHistorical && workItemsRequired > 0) {
+    if (webUiReadyForHistorical && contentTranslationActive && workItemsRequired > 0) {
       void import("../localization-reconciliation-driver.js").then(
         ({ wakeLocalizationReconciliationAfterActivation }) => {
           wakeLocalizationReconciliationAfterActivation({

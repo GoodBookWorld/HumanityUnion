@@ -202,7 +202,7 @@ describe("HU-LC-05C.4C.4 — multi-Petition integration", () => {
         }),
       ),
     );
-    assert.match(html, /<button type="button" class="pie-hero-petitions__retry">Retry<\/button>/);
+    assert.match(html, /<button type="button" class="pie-hero-petitions__retry">Try again<\/button>/);
 
     const page = readWeb(
       "features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx",

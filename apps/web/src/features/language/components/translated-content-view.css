@@ -41,6 +41,11 @@
   text-align: start;
 }
 
+/* The body sets `dir="auto"`; original LTR text on an RTL page keeps the page alignment. */
+[dir="rtl"] .hu-translated-content__body:dir(ltr) {
+  text-align: end;
+}
+
 .hu-translated-content__toggle {
   justify-self: start;
   max-width: 100%;

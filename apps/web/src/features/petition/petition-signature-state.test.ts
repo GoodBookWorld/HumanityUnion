@@ -5,8 +5,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { NextIntlClientProvider, type AbstractIntlMessages } from "next-intl";
 import * as React from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -14,9 +15,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { Petition, PetitionState } from "@hu/types";
 
 import type { ClientAuthStatus } from "../auth/use-client-auth-status";
+import { loadUiMessagesForLocale } from "../i18n/load-ui-messages.js";
 import { SignatureSection } from "./components/SignatureSection";
+import { nextMeaningfulActionKeys } from "./petition-status-i18n";
 import {
-  deriveNextMeaningfulAction,
   isSignatureWithdrawalAvailable,
   resolveSignatureSectionState,
   type ViewerSignatureStatus,
@@ -59,6 +61,12 @@ function petition(status: PetitionState, withdrawalPermitted = false): Petition 
   } as unknown as Petition;
 }
 
+let englishMessages: AbstractIntlMessages = {};
+
+before(async () => {
+  englishMessages = (await loadUiMessagesForLocale("en")).messages;
+});
+
 function render(input: {
   status: PetitionState;
   authStatus: ClientAuthStatus;
@@ -66,15 +74,20 @@ function render(input: {
   withdrawalPermitted?: boolean;
 }): string {
   return renderToStaticMarkup(
-    createElement(SignatureSection, {
-      petition: petition(input.status, input.withdrawalPermitted),
-      authStatus: input.authStatus,
-      viewerSignature: input.viewerSignature,
-      registrationGatewayMessage: "Sign in or register to sign this Petition.",
-      onPetitionUpdated: () => undefined,
-      onViewerSignatureChange: () => undefined,
-      onSignatureStatusStale: () => undefined,
-    }),
+    createElement(
+      NextIntlClientProvider,
+      { locale: "en", messages: englishMessages, timeZone: "UTC" } as React.ComponentProps<
+        typeof NextIntlClientProvider
+      >,
+      createElement(SignatureSection, {
+        petition: petition(input.status, input.withdrawalPermitted),
+        authStatus: input.authStatus,
+        viewerSignature: input.viewerSignature,
+        onPetitionUpdated: () => undefined,
+        onViewerSignatureChange: () => undefined,
+        onSignatureStatusStale: () => undefined,
+      }),
+    ),
   );
 }
 
@@ -146,14 +159,14 @@ describe("HU-LC-05B.1 — SignatureSection rendering", () => {
       viewerSignature: "signed",
       withdrawalPermitted: true,
     });
-    assert.match(permitted, /Withdraw signature/);
+    assert.match(permitted, /Withdraw Signature/);
     const closed = render({
       status: "Closed",
       authStatus: "authenticated",
       viewerSignature: "signed",
       withdrawalPermitted: true,
     });
-    assert.doesNotMatch(closed, /Withdraw signature/);
+    assert.doesNotMatch(closed, /Withdraw Signature/);
   });
 
   it("anonymous visitor sees sign-in guidance, not a signer state or Sign button", () => {
@@ -174,10 +187,10 @@ describe("HU-LC-05B.1 — SignatureSection rendering", () => {
 
 describe("HU-LC-05B.1 — guidance and withdrawal rules", () => {
   it("next action follows the viewer's own signature", () => {
-    assert.equal(deriveNextMeaningfulAction(petition("Open"), false).title, "Sign this Petition");
+    assert.equal(nextMeaningfulActionKeys("Open", false).titleKey, "petitionSignature.sign");
     assert.equal(
-      deriveNextMeaningfulAction(petition("Open"), true).title,
-      "Continue civic journey",
+      nextMeaningfulActionKeys("Open", true).titleKey,
+      "author.petition.public.status.nextAction.openSigned.title",
     );
   });
 

@@ -70,7 +70,7 @@ function sampleInitiative(): Initiative {
     title: "Clean River Initiative",
     description: "Participants will restore a local river.",
     status: "proposal",
-    lifecyclePhase: "published",
+    lifecyclePhase: "projected",
     visibility: { policy: "public" },
     metadata: {
       category: "Community",

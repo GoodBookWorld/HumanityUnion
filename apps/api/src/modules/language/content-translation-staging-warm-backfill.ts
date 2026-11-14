@@ -20,8 +20,9 @@ import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-a
 import {
   listApprovedInitiativeComments,
 } from "../initiative-comments/initiative-comment.service.js";
-import { listInitiatives } from "../initiatives/initiative.store.js";
+import { getInitiativeById, listInitiatives } from "../initiatives/initiative.store.js";
 import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
+import { isPetitionPubliclyReadable } from "../petition/petition-public-access.js";
 import { listPetitions } from "../petition/petition.store.js";
 import {
   discoverCivicMediaTranslationRecordIds,
@@ -160,6 +161,8 @@ export interface StagingWarmDiscoveryDeps {
     readonly collectionsReturned: number;
     readonly hasMore: boolean;
   }>;
+  /** True when the published proposal's parent Initiative is publicly exposable. */
+  readonly isImprovementProposalParentPublic?: (proposalId: string) => Promise<boolean>;
   readonly listRevisionsByInitiative?: (
     initiativeId: string,
   ) => ReadonlyArray<{ revisionId: string }>;
@@ -252,6 +255,19 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
       "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
     );
     return listPublishedImprovementProposalIdsPage;
+  };
+  const resolveIsImprovementProposalParentPublic = async () => {
+    if (input?.deps?.isImprovementProposalParentPublic) {
+      return input.deps.isImprovementProposalParentPublic;
+    }
+    const { findPublishedStructuredProposalById } = await import(
+      "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
+    );
+    return async (proposalId: string) => {
+      const found = await findPublishedStructuredProposalById(proposalId);
+      const parent = found ? getInitiativeById(found.collection.initiativeId) : null;
+      return Boolean(parent && canExposePublicInitiativeProjection(parent));
+    };
   };
   const resolveListRevisionsByInitiative = async () => {
     if (input?.deps?.listRevisionsByInitiative) {
@@ -377,7 +393,7 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
       bumpField("petition", "sourceRecordsDiscovered", petitions.length);
       petitionsByInitiative = new Map();
       for (const petition of petitions) {
-        if (petition.status === "Draft") {
+        if (!isPetitionPubliclyReadable(petition)) {
           continue;
         }
         const initiativeId = petition.subject.initiativeId;
@@ -570,6 +586,7 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     try {
       const listPublishedImprovementProposalIdsPageFn =
         await resolveListPublishedImprovementProposalIdsPage();
+      const isImprovementProposalParentPublicFn = await resolveIsImprovementProposalParentPublic();
       const { IMPROVEMENT_PROPOSAL_WARM_COLLECTION_PAGE_SIZE } = await import(
         "../initiative-improvement-proposals-stage/extract-public-improvement-proposal-ids.js"
       );
@@ -585,7 +602,9 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
           page.proposalIds.length,
         );
         for (const proposalId of page.proposalIds) {
-          pushCandidate("improvement_proposal", proposalId);
+          if (await isImprovementProposalParentPublicFn(proposalId)) {
+            pushCandidate("improvement_proposal", proposalId);
+          }
         }
         if (!page.hasMore || page.collectionsReturned === 0) {
           break;

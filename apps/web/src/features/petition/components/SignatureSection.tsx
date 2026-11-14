@@ -1,10 +1,12 @@
 "use client";
 
 import type { PublicPetitionRecord } from "@hu/types";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { ClientAuthStatus } from "../../auth/use-client-auth-status";
 import { signPetitionAsCurrentParticipant, withdrawPetitionSignature } from "../api";
+import { signatureActionErrorKey, signatureNotOpenKey } from "../petition-status-i18n";
 import {
   isSignatureWithdrawalAvailable,
   resolveSignatureSectionState,
@@ -15,7 +17,6 @@ interface SignatureSectionProps {
   petition: PublicPetitionRecord;
   authStatus: ClientAuthStatus;
   viewerSignature: ViewerSignatureStatus;
-  registrationGatewayMessage: string | null;
   onPetitionUpdated: (petition: PublicPetitionRecord) => void;
   onViewerSignatureChange: (status: ViewerSignatureStatus) => void;
   /** Asks the server again after a failed action (e.g. a signature recorded elsewhere). */
@@ -26,14 +27,14 @@ export function SignatureSection({
   petition,
   authStatus,
   viewerSignature,
-  registrationGatewayMessage,
   onPetitionUpdated,
   onViewerSignatureChange,
   onSignatureStatusStale,
 }: SignatureSectionProps) {
+  const t = useTranslations("initiativeExperience");
   const [submitting, setSubmitting] = useState(false);
   const [justSigned, setJustSigned] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const state = resolveSignatureSectionState({
     authStatus,
@@ -44,7 +45,7 @@ export function SignatureSection({
 
   async function handleSign() {
     setSubmitting(true);
-    setErrorMessage(null);
+    setErrorKey(null);
 
     try {
       const updated = await signPetitionAsCurrentParticipant(petition.petitionId, "Community");
@@ -52,7 +53,7 @@ export function SignatureSection({
       setJustSigned(true);
       onViewerSignatureChange("signed");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unknown error");
+      setErrorKey(signatureActionErrorKey(error, "sign"));
       onSignatureStatusStale();
     } finally {
       setSubmitting(false);
@@ -61,7 +62,7 @@ export function SignatureSection({
 
   async function handleWithdraw() {
     setSubmitting(true);
-    setErrorMessage(null);
+    setErrorKey(null);
 
     try {
       const updated = await withdrawPetitionSignature(petition.petitionId);
@@ -69,21 +70,23 @@ export function SignatureSection({
       setJustSigned(false);
       onViewerSignatureChange("unsigned");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unknown error");
+      setErrorKey(signatureActionErrorKey(error, "withdraw"));
       onSignatureStatusStale();
     } finally {
       setSubmitting(false);
     }
   }
 
-  const errorNote = errorMessage ? (
-    <p className="signature-section__error">{errorMessage}</p>
+  const errorNote = errorKey ? (
+    <p className="signature-section__error" role="alert">
+      {t(errorKey)}
+    </p>
   ) : null;
 
   if (state === "checking") {
     return (
       <div className="signature-section" aria-busy="true">
-        <p className="signature-section__prompt">Checking your signature status...</p>
+        <p className="signature-section__prompt">{t("petitionSignature.checking")}</p>
       </div>
     );
   }
@@ -94,12 +97,14 @@ export function SignatureSection({
     return (
       <div className="signature-section signature-section--signed">
         <p className="signature-section__status">
-          {state === "just_signed" ? "Signature Recorded" : "Already Signed"}
+          {state === "just_signed"
+            ? t("petitionSignature.justSignedTitle")
+            : t("petitionSignature.alreadySignedTitle")}
         </p>
         <p className="signature-section__note">
           {state === "just_signed"
-            ? "Your endorsement of this Petition has been recorded."
-            : "You have already signed this Petition."}
+            ? t("petitionSignature.justSignedNote")
+            : t("petitionSignature.signedStatus")}
         </p>
         {canWithdraw ? (
           <button
@@ -108,12 +113,10 @@ export function SignatureSection({
             disabled={submitting}
             onClick={() => void handleWithdraw()}
           >
-            {submitting ? "Withdrawing signature..." : "Withdraw signature"}
+            {submitting ? t("petitionSignature.withdrawing") : t("petitionSignature.withdraw")}
           </button>
         ) : (
-          <p className="signature-section__note">
-            Your endorsement is recorded and cannot be changed here.
-          </p>
+          <p className="signature-section__note">{t("petitionSignature.lockedNote")}</p>
         )}
         {errorNote}
       </div>
@@ -121,24 +124,19 @@ export function SignatureSection({
   }
 
   if (state === "not_open") {
-    const unavailableMessage =
-      petition.status === "Draft" || petition.status === "Ready"
-        ? "This Petition is still being prepared. Endorsement is not available yet."
-        : petition.status === "Published"
-          ? "This Petition is published but not yet open for signatures."
-          : "This Petition is no longer open for signatures.";
+    const unavailableKey = signatureNotOpenKey(petition.status);
 
-    const nextChangeMessage =
+    const nextChangeKey =
       petition.status === "Published"
-        ? "Signing will become available when the Petition opens."
+        ? "petitionSignature.nextChangePublished"
         : petition.status === "Draft" || petition.status === "Ready"
-          ? "Signing will become available after publication and opening."
+          ? "petitionSignature.nextChangePreparing"
           : null;
 
     return (
       <div className="signature-section signature-section--inactive">
-        <p className="signature-section__inactive">{unavailableMessage}</p>
-        {nextChangeMessage ? <p className="signature-section__next">{nextChangeMessage}</p> : null}
+        <p className="signature-section__inactive">{t(unavailableKey)}</p>
+        {nextChangeKey ? <p className="signature-section__next">{t(nextChangeKey)}</p> : null}
       </div>
     );
   }
@@ -146,21 +144,16 @@ export function SignatureSection({
   if (state === "sign_in") {
     return (
       <div className="signature-section">
-        <p className="signature-section__prompt">
-          {registrationGatewayMessage ?? "Sign in to sign this Petition."}
-        </p>
+        <p className="signature-section__prompt">{t("petitionSignature.signInGuidance")}</p>
       </div>
     );
   }
 
   return (
     <div className="signature-section">
-      <p className="signature-section__prompt">
-        Signing records your endorsement of the approved direction. It does not assign
-        implementation responsibility to you.
-      </p>
+      <p className="signature-section__prompt">{t("petitionSignature.endorsementPrompt")}</p>
       {state === "status_unavailable" ? (
-        <p className="signature-section__note">Your signature status could not be confirmed.</p>
+        <p className="signature-section__note">{t("petitionSignature.statusUnavailable")}</p>
       ) : null}
       <button
         type="button"
@@ -168,7 +161,7 @@ export function SignatureSection({
         disabled={submitting}
         onClick={() => void handleSign()}
       >
-        {submitting ? "Recording signature..." : "Sign this Petition"}
+        {submitting ? t("petitionSignature.recording") : t("petitionSignature.sign")}
       </button>
       {errorNote}
     </div>

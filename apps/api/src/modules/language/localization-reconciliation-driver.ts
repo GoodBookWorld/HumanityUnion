@@ -30,6 +30,7 @@ import { readLocalizationProviderCooldown } from "./localization-provider-govern
 import type { LocalizationProviderCooldownRead } from "./localization-provider-governor.js";
 import { measureLiveActivationCtCoverage } from "./live-residual-ct-coverage.js";
 import { runPublicLocalizationResidualRetry } from "./public-localization-residual-retry.js";
+import { isContentTranslationFrozen } from "./translation.config.js";
 import {
   aggregatePlpCountsFromPlan,
   planLanguageHistoricalBackfill,
@@ -74,6 +75,7 @@ export type LocalizationReconciliationEligibility = {
     | "empty_locale"
     | "source_locale"
     | "registry_ineligible"
+    | "content_translation_frozen"
   | "web_ui_not_ready"
   | "provider_cooldown"
   | "no_actionable_work";
@@ -271,6 +273,14 @@ export async function assessLocalizationReconciliationEligibility(
       eligible: false,
       canonicalLocale,
       reason: "source_locale",
+      ...emptyCoverageFields(),
+    };
+  }
+  if (isContentTranslationFrozen()) {
+    return {
+      eligible: false,
+      canonicalLocale,
+      reason: "content_translation_frozen",
       ...emptyCoverageFields(),
     };
   }

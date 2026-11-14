@@ -124,6 +124,7 @@ export function TranslatedContentView({
       <div
         className="hu-translated-content__body"
         lang={lang}
+        dir="auto"
         translate="yes"
         aria-describedby={chrome === "full" ? labelId : undefined}
       >

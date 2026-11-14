@@ -15,10 +15,13 @@ import {
 } from "@hu/types";
 
 import { logger } from "../../shared/observability/logger.js";
+import { isBlogPostPubliclyDeliverable } from "../blog/blog-publication-delivery.service.js";
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
+import { isPetitionPubliclyReadable } from "../petition/petition-public-access.js";
 import { getPetition } from "../petition/petition.store.js";
 import { sanitizeBlogHtml } from "../blog/blog-content-sanitize.js";
 import { buildBlogPostTranslatableSource } from "./content-translation-blog-source.js";
@@ -90,7 +93,7 @@ import {
   buildLocalizationInputVersionFromConcepts,
   collectSourceTextLeaves,
 } from "./localization-input-contract.js";
-import { TranslationProviderError } from "./translation.config.js";
+import { isContentTranslationFrozen, TranslationProviderError } from "./translation.config.js";
 import type { TranslationProviderResult } from "./translation-provider.js";
 import { runLocalizationProviderRequest } from "./localization-provider-governor.js";
 
@@ -126,6 +129,33 @@ async function invalidateGlobalSearchIndexLazy(): Promise<void> {
   invalidateGlobalSearchIndex();
 }
 
+const PETITION_SOURCE_VERSION_STAMP = "petition-content";
+
+function isPublicInitiativeId(initiativeId: string): boolean {
+  const initiative = getInitiativeById(initiativeId);
+  return Boolean(initiative && canExposePublicInitiativeProjection(initiative));
+}
+
+/**
+ * Kinds whose loader reports canonical public readability in `isPublished`.
+ * Public resolve treats their non-public records exactly like unknown ids.
+ */
+const PUBLIC_RESOLVE_GATED_SOURCE_KINDS: ReadonlySet<ContentTranslationSourceKind> = new Set([
+  "initiative",
+  "collaborative_analysis",
+  "blog_post",
+  "discussion_comment",
+  "initiative_revision",
+  "improvement_proposal",
+  "decision_session",
+  "collective_decision",
+  "implementation_commitment",
+  "implementation_tracking",
+  "official_response",
+  "public_impact",
+  "civic_archive",
+]);
+
 export async function loadTranslatableSource(input: {
   sourceKind: ContentTranslationSourceKind;
   sourceRecordId: string;
@@ -152,7 +182,7 @@ export async function loadTranslatableSource(input: {
       ),
       fields,
       authorParticipantId: initiative.stewardId,
-      isPublished: initiative.lifecyclePhase === "published" || initiative.status !== "draft",
+      isPublished: canExposePublicInitiativeProjection(initiative),
     };
   }
 
@@ -180,13 +210,15 @@ export async function loadTranslatableSource(input: {
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: analysis.authorId,
-      isPublished: analysis.status === "published",
+      isPublished: analysis.status === "published" && isPublicInitiativeId(analysis.initiativeId),
     };
   }
 
   if (input.sourceKind === "petition") {
     const petition = await getPetition(input.sourceRecordId);
-    if (!petition) {
+    // Unpublished or hidden Petitions load exactly like unknown ones, so no
+    // translation path (resolve, warm, backfill, search) can read their text.
+    if (!petition || !isPetitionPubliclyReadable(petition)) {
       return null;
     }
     const fields = {
@@ -200,14 +232,16 @@ export async function loadTranslatableSource(input: {
     return {
       sourceKind: "petition",
       sourceRecordId: petition.petitionId,
+      // Published Petition text is immutable; status transitions only touch
+      // updatedAt, so the version follows the translatable fields alone.
       sourceVersion: buildContentTranslationSourceVersion({
         fields,
-        versionStamp: petition.updatedAt,
+        versionStamp: PETITION_SOURCE_VERSION_STAMP,
       }),
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: null,
-      isPublished: petition.status !== "Draft",
+      isPublished: true,
     };
   }
 
@@ -218,6 +252,7 @@ export async function loadTranslatableSource(input: {
     }
     // Pack 08I.5 — content remains sanitized HTML for translation + presentation.
     // Canonical blog_posts.content is never overwritten by translation persistence.
+    // Production helper is equivalent to the inlined 9e42be09 form — keep Production.
     return buildBlogPostTranslatableSource(post);
   }
 
@@ -239,7 +274,7 @@ export async function loadTranslatableSource(input: {
       sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
       fields,
       authorParticipantId: comment.authorUserId,
-      isPublished: true,
+      isPublished: isPublicInitiativeId(comment.initiativeId),
     };
   }
 
@@ -468,6 +503,10 @@ export async function getOrCreateContentTranslation(input: {
     intent,
   });
 
+  if (isContentTranslationFrozen()) {
+    return { source, translation: existing, generated: false };
+  }
+
   const provider = resolveTranslationProvider();
   let terminologyContext: string;
   try {
@@ -670,6 +709,13 @@ export async function resolvePublicTranslatedContent(input: {
   translationPreference?: TranslationDisplayPreference;
   generateIfMissing?: boolean;
 }): Promise<ResolvedTranslatedDisplay<Record<string, string>>> {
+  if (PUBLIC_RESOLVE_GATED_SOURCE_KINDS.has(input.sourceKind)) {
+    const gated = await loadTranslatableSource(input);
+    if (!gated?.isPublished) {
+      throw new TranslationProviderError("bad_request", "Source content was not found.");
+    }
+  }
+
   const language = await resolveParticipantLanguageContext(input.participantId);
   const preferredReadingLanguage = await resolveLocaleWithEnglishFallback(
     input.preferredReadingLanguage ?? language.preferredReadingLanguage,

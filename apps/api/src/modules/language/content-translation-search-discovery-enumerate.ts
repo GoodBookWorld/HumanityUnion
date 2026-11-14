@@ -17,8 +17,10 @@ import { listTrackings } from "../initiative-implementation-tracking/initiative-
 import { listRevisionsByInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { listImpacts } from "../initiative-public-impact/initiative-public-impact.store.js";
 import { getInitiativeById, listInitiatives } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { listResponses } from "../official-response/official-response.store.js";
 import { listPublishedArchiveRecords } from "../public-civic-archive/public-civic-archive.store.js";
+import { isPetitionPubliclyReadable } from "../petition/petition-public-access.js";
 import { listPetitions } from "../petition/petition.store.js";
 import {
   CONTENT_TRANSLATION_SEARCH_DISCOVERY_FIELDS,
@@ -32,7 +34,7 @@ export interface SearchDiscoveryWarmTarget {
 
 function isPublicInitiative(initiativeId: string): boolean {
   const initiative = getInitiativeById(initiativeId);
-  return initiative !== undefined && initiative !== null && initiative.lifecyclePhase !== "draft";
+  return Boolean(initiative && canExposePublicInitiativeProjection(initiative));
 }
 
 /** Deterministic ordered list of discovery-mapped sourceKinds (excludes civic_media). */
@@ -68,7 +70,7 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
 
   if (kinds.has("initiative")) {
     for (const initiative of listInitiatives()) {
-      if (initiative.lifecyclePhase === "draft") {
+      if (!canExposePublicInitiativeProjection(initiative)) {
         continue;
       }
       push("initiative", initiative.initiativeId);
@@ -77,7 +79,12 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
 
   if (kinds.has("collaborative_analysis")) {
     for (const analysis of listAnalyses()) {
-      if (analysis.status !== "published" || !isPublicInitiative(analysis.initiativeId)) {
+      const parent = getInitiativeById(analysis.initiativeId);
+      if (
+        analysis.status !== "published" ||
+        !parent ||
+        !canExposePublicInitiativeProjection(parent)
+      ) {
         continue;
       }
       push("collaborative_analysis", analysis.analysisId);
@@ -86,7 +93,7 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
 
   if (kinds.has("initiative_revision")) {
     for (const initiative of listInitiatives()) {
-      if (initiative.lifecyclePhase === "draft") {
+      if (!canExposePublicInitiativeProjection(initiative)) {
         continue;
       }
       for (const revision of listRevisionsByInitiative(initiative.initiativeId)) {
@@ -117,10 +124,7 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
   if (kinds.has("petition")) {
     try {
       for (const petition of await listPetitions()) {
-        if (
-          !["Open", "Published", "Closed", "Archived"].includes(petition.status) ||
-          !isPublicInitiative(petition.subject.initiativeId)
-        ) {
+        if (!isPetitionPubliclyReadable(petition)) {
           continue;
         }
         push("petition", petition.petitionId);
@@ -188,9 +192,10 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
   // records the CT loader rejects — warm would no-op / skip).
   if (kinds.has("improvement_proposal")) {
     try {
-      const { listPublishedImprovementProposalIdsPage } = await import(
-        "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
-      );
+      const { findPublishedStructuredProposalById, listPublishedImprovementProposalIdsPage } =
+        await import(
+          "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
+        );
       const { IMPROVEMENT_PROPOSAL_WARM_COLLECTION_PAGE_SIZE } = await import(
         "../initiative-improvement-proposals-stage/extract-public-improvement-proposal-ids.js"
       );
@@ -201,6 +206,10 @@ export async function listSearchDiscoveryWarmTargets(): Promise<
           offset,
         });
         for (const proposalId of page.proposalIds) {
+          const found = await findPublishedStructuredProposalById(proposalId);
+          if (!found || !isPublicInitiative(found.collection.initiativeId)) {
+            continue;
+          }
           push("improvement_proposal", proposalId);
         }
         if (!page.hasMore || page.collectionsReturned === 0) {

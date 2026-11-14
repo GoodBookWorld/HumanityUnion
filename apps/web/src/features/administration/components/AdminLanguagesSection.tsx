@@ -1280,7 +1280,6 @@ export function AdminLanguagesSection({ user: _user }: AdminLanguagesSectionProp
                         activation && typeof activation === "object" ? activation : null;
                       const canActivate =
                         row.enabled &&
-                        row.contentTranslationEnabled &&
                         !english &&
                         activationView?.job?.domains.webUi.preparationPhase !==
                           "provider_cooldown" &&

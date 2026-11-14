@@ -27,6 +27,7 @@ import {
   runPlpSafetySweep,
   setPlpBuildRequestProcessor,
 } from "./build-request-queue.js";
+import { isContentTranslationFrozen } from "../../translation.config.js";
 import { processPlpBuildRequest } from "./process-plp-build-request.js";
 import {
   refreshPlpAutoBuildQueueDepthFromStore,
@@ -71,7 +72,7 @@ function startPlpAutoBuildScheduler(): void {
 function applyRegistration(
   locales: readonly string[],
 ): RegisterPlpAutoBuildProcessorResult {
-  if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0") {
+  if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0" || isContentTranslationFrozen()) {
     setPlpBuildRequestProcessor(null);
     setPlpAutoBuildProcessorRegistered(false);
     setMediaLocalizationBuildHookStatus(QUEUE_ACTIVE_PROVIDER_DORMANT);
@@ -116,7 +117,7 @@ function applyRegistration(
  */
 export async function registerPlpAutoBuildProcessor(): Promise<RegisterPlpAutoBuildProcessorResult> {
   // Kill switch must short-circuit before Registry I/O.
-  if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0") {
+  if (process.env.HU_PLP_AUTO_BUILD_PROCESSOR === "0" || isContentTranslationFrozen()) {
     return applyRegistration([]);
   }
   const locales = await resolvePlpAutoBuildLocales();
