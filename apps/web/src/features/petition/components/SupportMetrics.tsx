@@ -1,12 +1,24 @@
 import type { PublicPetitionRecord } from "@hu/types";
+import { useLocale, useTranslations } from "next-intl";
 
 import { ProfileField } from "../../../components/member/ProfileField";
+
+import {
+  formatPetitionDate,
+  formatPetitionList,
+  formatPetitionNumber,
+} from "../petition-status-i18n";
+
+const SUPPORT = "author.petition.public.status.support";
 
 interface SupportMetricsProps {
   petition: PublicPetitionRecord;
 }
 
 export function SupportMetrics({ petition }: SupportMetricsProps) {
+  const t = useTranslations("initiativeExperience");
+  const tAuth = useTranslations("auth");
+  const locale = useLocale();
   const { supportMetrics, status } = petition;
   const { supportThresholdStatus } = supportMetrics;
   const isFinal = status === "Closed" || status === "Archived";
@@ -14,40 +26,46 @@ export function SupportMetrics({ petition }: SupportMetricsProps) {
   return (
     <div className="support-metrics">
       <ProfileField
-        label={isFinal ? "Final Support Count" : "Support Count"}
-        value={String(supportMetrics.totalSignatures)}
+        label={isFinal ? t(`${SUPPORT}.finalCount`) : t(`${SUPPORT}.count`)}
+        value={formatPetitionNumber(locale, supportMetrics.totalSignatures)}
       />
       <ProfileField
-        label="Participant Signatures"
-        value={String(supportMetrics.participantSignatures)}
+        label={t(`${SUPPORT}.participantSignatures`)}
+        value={formatPetitionNumber(locale, supportMetrics.participantSignatures)}
       />
       {supportThresholdStatus.thresholdDefined ? (
         <>
           <ProfileField
-            label="Threshold Progress"
-            value={`${supportThresholdStatus.currentCount} of ${supportThresholdStatus.thresholdCount ?? 0}`}
+            label={t(`${SUPPORT}.thresholdProgress`)}
+            value={t(`${SUPPORT}.thresholdProgressValue`, {
+              current: supportThresholdStatus.currentCount,
+              target: supportThresholdStatus.thresholdCount ?? 0,
+            })}
           />
           <ProfileField
-            label="Threshold Reached"
-            value={supportThresholdStatus.thresholdReached ? "Yes" : "No"}
+            label={t(`${SUPPORT}.thresholdReached`)}
+            value={supportThresholdStatus.thresholdReached ? tAuth("yes") : tAuth("no")}
           />
         </>
       ) : (
-        <ProfileField label="Threshold" value="No threshold defined" />
+        <ProfileField label={t(`${SUPPORT}.threshold`)} value={t(`${SUPPORT}.noThreshold`)} />
       )}
       {supportMetrics.dailyActivity.length > 0 ? (
         <ProfileField
-          label="Recent Activity"
-          value={supportMetrics.dailyActivity
-            .slice(-3)
-            .map((entry) => `${entry.date}: ${entry.signatureCount}`)
-            .join("; ")}
+          label={t(`${SUPPORT}.recentActivity`)}
+          value={formatPetitionList(
+            locale,
+            supportMetrics.dailyActivity.slice(-3).map((entry) =>
+              t(`${SUPPORT}.activityEntry`, {
+                date: formatPetitionDate(locale, entry.date, "short") ?? entry.date,
+                count: entry.signatureCount,
+              }),
+            ),
+          )}
         />
       ) : (
         <p className="support-metrics__empty">
-          {status === "Open"
-            ? "No signatures recorded yet."
-            : "Support activity will appear here as signatures are recorded."}
+          {status === "Open" ? t(`${SUPPORT}.emptyOpen`) : t(`${SUPPORT}.emptyPending`)}
         </p>
       )}
     </div>

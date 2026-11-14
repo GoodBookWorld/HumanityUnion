@@ -15,7 +15,7 @@ import { runLocalizationProviderRequest } from "./localization-provider-governor
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
-import { TranslationProviderError } from "./translation.config.js";
+import { isContentTranslationFrozen, TranslationProviderError } from "./translation.config.js";
 
 export interface TranslateDraftServiceRequest extends TranslateDraftRequest {
   readonly sourceKind?: ContentTranslationSourceKind;
@@ -29,6 +29,9 @@ export interface TranslateDraftServiceRequest extends TranslateDraftRequest {
 export async function translateDraft(
   request: TranslateDraftServiceRequest,
 ): Promise<TranslateDraftResult> {
+  if (isContentTranslationFrozen()) {
+    throw new TranslationProviderError("forbidden", "Content translation is frozen.");
+  }
   const sourceLanguage = (await resolveEnabledCanonicalLocale(request.sourceLanguage)) ??
     normalizeLanguageCode(request.sourceLanguage);
   const targetLanguage = await assertEnabledSelectableLocale(

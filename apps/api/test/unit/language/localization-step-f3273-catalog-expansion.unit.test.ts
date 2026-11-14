@@ -132,7 +132,7 @@ describe("STEP F.3.27.3 incremental WEB_UI catalog expansion", () => {
       (pathKey) => decisions.get(pathKey)?.classification === "REUSE_CURRENT",
     );
     assert.deepEqual(reused, []);
-    assert.equal(decisions.get(NEW_KEY)?.classification, "MISSING");
+    assert.equal(decisions.get(NEW_KEY)?.classification, "STALE_SOURCE");
     assert.equal(decisions.get("common.save")?.classification, "STALE_SOURCE");
   });
 });

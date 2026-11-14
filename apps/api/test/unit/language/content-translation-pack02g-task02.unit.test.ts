@@ -65,7 +65,7 @@ function sampleInitiative(overrides?: Partial<Initiative>): Initiative {
     title: "Clean River Initiative",
     description: "Participants will restore a local river with evidence-based steps.",
     status: "proposal",
-    lifecyclePhase: "published",
+    lifecyclePhase: "projected",
     visibility: { policy: "public" },
     metadata: {
       category: "Community",

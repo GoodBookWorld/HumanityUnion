@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 
+import { isContentTranslationFrozen } from "../content-translation-frozen.config";
 import {
   listPriorityLanguages,
   requestTranslateDraft,
@@ -30,8 +31,13 @@ export interface TranslateDraftControlProps {
  *
  * Pack 02G 08D.3 — UI chrome via initiativeExperience.author.translation.*;
  * civic draft payloads and content-translation semantics are unchanged.
+ * Not rendered while Content Translation is frozen.
  */
-export function TranslateDraftControl({
+export function TranslateDraftControl(props: TranslateDraftControlProps) {
+  return isContentTranslationFrozen() ? null : <TranslateDraftControlPanel {...props} />;
+}
+
+function TranslateDraftControlPanel({
   sourceKind,
   sourceRecordId,
   sourceVersion,

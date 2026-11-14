@@ -173,7 +173,7 @@ adminLanguagesRouter.get(
 
 /**
  * Explicit Admin activate-localization — queues durable async job (no provider in request).
- * Rejects disabled / contentTranslationEnabled=false. Does not mutate Search/SEO.
+ * Rejects disabled locales. Interface-only when CT is disabled or frozen. Does not mutate Search/SEO.
  */
 adminLanguagesRouter.post(
   "/:languageId/activate-localization",

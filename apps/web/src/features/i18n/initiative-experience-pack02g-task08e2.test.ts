@@ -53,7 +53,7 @@ describe("Pack 02G Task 08E.2 — Petition SignatureWidget i18n", () => {
     assert.notEqual(ieKey(uk.messages, "petitionSignature.withdraw"), "Withdraw Signature");
   });
 
-  it("SignatureWidget wires petitionSignature keys; gateway prose stays raw", () => {
+  it("SignatureWidget wires petitionSignature keys; guidance is status-derived (7E.5B)", () => {
     const widget = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionSignatureWidget.tsx",
     );
@@ -65,14 +65,9 @@ describe("Pack 02G Task 08E.2 — Petition SignatureWidget i18n", () => {
     assert.match(widget, /petitionSignature\.signedStatus/);
     assert.match(widget, /petitionSignature\.disclaimer/);
     assert.match(widget, /petitionSignature\.aria/);
-    assert.match(widget, /petitionSignature\.recordFailed/);
-    assert.match(widget, /petitionSignature\.withdrawFailed/);
-    assert.match(widget, /detailFromError/);
-    assert.match(
-      widget,
-      /\{participationEntryGuidance\.registrationGatewayMessage\}/,
-    );
-    assert.doesNotMatch(widget, /registrationGatewayMessage\)/);
+    assert.match(widget, /petitionSignature\.signInGuidance/);
+    assert.match(widget, /signatureNotOpenKey\(petitionStatus\)/);
+    assert.doesNotMatch(widget, /registrationGatewayMessage|detailFromError/);
     assert.doesNotMatch(widget, />Sign this Petition</);
     assert.doesNotMatch(widget, />Withdraw Signature</);
     assert.doesNotMatch(widget, /You have signed this Petition/);
@@ -99,18 +94,13 @@ describe("Pack 02G Task 08E.2 — Petition SignatureWidget i18n", () => {
     assert.doesNotMatch(widget, /gemini/i);
   });
 
-  it("arbitrary Error.message is preserved without English sentence matching", () => {
+  it("failures are mapped by HTTP status, never shown as the API's Error.message (7E.5B)", () => {
     const widget = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionSignatureWidget.tsx",
     );
-    assert.match(
-      widget,
-      /detailFromError\(submissionError, t\("petitionSignature\.recordFailed"\)\)/,
-    );
-    assert.match(
-      widget,
-      /detailFromError\(submissionError, t\("petitionSignature\.withdrawFailed"\)\)/,
-    );
+    assert.match(widget, /signatureActionErrorKey\(submissionError, "sign"\)/);
+    assert.match(widget, /signatureActionErrorKey\(submissionError, "withdraw"\)/);
+    assert.doesNotMatch(widget, /\.message\b/);
     assert.doesNotMatch(widget, /submissionError\.message === "/);
     assert.doesNotMatch(widget, /message\.includes\(/);
   });

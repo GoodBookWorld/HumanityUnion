@@ -25,7 +25,7 @@ describe("Preferences responsive overflow", () => {
     assert.match(css, /max-width:\s*min\(28rem,\s*100%\)/);
   });
 
-  it("Preferred Reading help text remains the concise browser-match guidance", () => {
+  it("Preferred Reading help text states that authored content stays original (7E.9D)", () => {
     const en = JSON.parse(
       readFileSync(
         path.join(webSrc, "i18n/messages/en.json"),
@@ -34,7 +34,7 @@ describe("Preferences responsive overflow", () => {
     ) as { preferences: { language: { preferredReadingHelp: string } } };
     assert.equal(
       en.preferences.language.preferredReadingHelp,
-      "Select the language you prefer to read the platform in. For the best experience, match it with your browser’s translation language.",
+      "Select the language for the platform interface. Content written by participants stays in its original language; your browser can translate it if needed.",
     );
   });
 });

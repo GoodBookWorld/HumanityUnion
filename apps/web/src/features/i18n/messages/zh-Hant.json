@@ -12,7 +12,8 @@
     "showPassword": "顯示密碼",
     "hidePassword": "隱藏密碼",
     "possibleReasonPrefix": "可能原因：",
-    "comingSoon": "即將推出"
+    "comingSoon": "即將推出",
+    "interfaceNote": "介面說明"
   },
   "a11y": {
     "skipToMainContent": "跳至主要內容"
@@ -934,7 +935,7 @@
       "help": "設定您在 Humanity Union 的偏好語言。書寫語言為獨立設定，不會改變網站呈現方式。",
       "interfaceLanguage": "介面語言",
       "preferredReadingLanguage": "偏好閱讀語言",
-      "preferredReadingHelp": "選擇您偏好用來閱讀本平台的語言。為獲得最佳體驗，請將其與瀏覽器的翻譯語言保持一致。",
+      "preferredReadingHelp": "選擇平台介面的語言。參與者撰寫的內容會保留原始語言；如有需要，可使用瀏覽器翻譯。",
       "writingLanguages": "書寫語言",
       "writingLanguagesHelp": "新增您用於書寫與協作的語言。這些偏好協助 Humanity Union 了解您的溝通方式，不會控制瀏覽器的翻譯語言。",
       "writingLanguagesPlaceholder": "en, uk",
@@ -1187,6 +1188,93 @@
       "loadFailed": "目前無法載入請願。",
       "empty": "此倡議目前尚無進行中的請願。",
       "signatures": "{count, plural, other {# 個簽署}}"
+    },
+    "petitionEditing": {
+      "tabs": {
+        "aria": "請願檢視",
+        "status": "請願狀態",
+        "editing": "編輯請願"
+      },
+      "title": "編輯請願",
+      "intro": "為此倡議準備新的請願。已發布的請願無法修改：請建立新的工作草稿、加以編輯，並作為獨立的請願發布。",
+      "loading": "正在載入請願草稿…",
+      "slots": {
+        "summary": "請願名額：已使用 {occupied} / {limit}，尚餘 {available}。",
+        "full": "全部 {limit} 個名額均已使用。刪除一份工作草稿即可釋出名額。",
+        "legend": {
+          "published": "已發布",
+          "draft": "草稿",
+          "available": "可用"
+        }
+      },
+      "actions": {
+        "newEmpty": "新增空白草稿",
+        "newFromCurrent": "以此請願建立新草稿",
+        "refresh": "重新整理"
+      },
+      "published": {
+        "title": "已發布的請願",
+        "empty": "尚無已發布的請願。",
+        "readOnly": "唯讀",
+        "current": "於此頁面開啟中",
+        "open": "開啟",
+        "statusPublished": "已發布"
+      },
+      "drafts": {
+        "title": "工作草稿",
+        "empty": "尚無工作草稿。",
+        "emptyHint": "可從空白草稿或此請願開始。每份草稿會佔用三個請願名額之一。",
+        "untitled": "未命名草稿",
+        "status": "工作草稿",
+        "updated": "上次儲存：{date}",
+        "derived": "以已發布的請願為基礎",
+        "edit": "編輯",
+        "editing": "編輯中",
+        "delete": "刪除",
+        "close": "關閉編輯器"
+      },
+      "fields": {
+        "recipients": "收件對象",
+        "recipientsHint": "每行一個收件對象，例如議會或機關。"
+      },
+      "confirm": {
+        "generate": {
+          "title": "要取代此草稿的內容嗎？",
+          "description": "重新產生請願會取代此草稿的標題、公開摘要、請求聲明、預期結果、支持脈絡與關鍵論點，包括尚未儲存的變更。收件對象會保留。",
+          "confirm": "取代內容"
+        },
+        "publish": {
+          "title": "要發布此請願嗎？",
+          "description": "此草稿會先儲存，再作為一份新的獨立請願發布並開放簽署。請願發布後即無法編輯；其識別、簽署與發布紀錄皆獨立於其他所有請願。",
+          "confirm": "發布請願"
+        },
+        "delete": {
+          "title": "要刪除此工作草稿嗎？",
+          "description": "「{title}」將被永久刪除。已發布的請願不受影響，且請願名額會重新釋出。",
+          "confirm": "刪除草稿"
+        }
+      },
+      "messages": {
+        "created": "已建立新的空白工作草稿。",
+        "createdFromPetition": "已以此請願建立新的工作草稿。",
+        "deleted": "已刪除工作草稿，其名額已重新釋出。",
+        "published": "草稿已作為新的請願發布。",
+        "openPublished": "開啟新的請願"
+      },
+      "errors": {
+        "signIn": "請以倡議管理人身分登入以編輯請願。",
+        "forbidden": "只有倡議管理人可以編輯這些請願。",
+        "notFound": "此草稿已不存在，清單已重新整理。",
+        "slotLimit": "三個請願名額均已使用。刪除一份工作草稿即可釋出名額。",
+        "sourceUnavailable": "此請願已無法作為新草稿的來源。",
+        "staleRevision": "此草稿無法發布：其所依據的修訂版已非最新，或草稿正在發布中。請重新產生請願後再發布。",
+        "overwriteRequired": "此草稿已有內容。請確認取代後再重新產生。",
+        "generateConflict": "無法產生請願：草稿已在此期間變更、正在發布，或倡議尚無已發布的修訂版。請重新整理後再試一次。",
+        "beingPublished": "此草稿正在發布中，目前無法變更。請重新整理清單。",
+        "invalid": "部分欄位無效。請檢查收件對象與關鍵論點後再儲存。",
+        "unavailable": "服務目前無法使用，請稍後再試。",
+        "unknown": "發生錯誤。請重新整理後再試一次。"
+      }
     },
     "hero": {
       "detailsAria": "倡議詳情",
@@ -1656,7 +1744,7 @@
         "emptyInterest": "尚無參與者表達興趣。",
         "emptyFilter": "沒有符合此篩選條件的留言。",
         "emptyComments": "尚未新增留言。",
-        "originalLanguageNote": "若有可用翻譯，留言可能以您的閱讀語言顯示。原文會永久保留。",
+        "originalLanguageNote": "留言會以撰寫時的語言顯示。如有需要，可使用瀏覽器翻譯。",
         "commentsCount": "{count, plural, other {# 則留言}}",
         "loadMore": "載入更多留言",
         "loading": "載入中…",
@@ -1896,6 +1984,7 @@
         "stageOf": "第 {current} 階段，共 {total} 階段",
         "publicPreview": "公開預覽",
         "returnToEditing": "返回編輯",
+        "backToAuthorWorkspace": "返回作者工作區",
         "returnToInitiative": "返回倡議",
         "previousStage": "← {stage}",
         "nextStage": "{stage} →",
@@ -2929,6 +3018,188 @@
             "statusArchived": "已封存",
             "basedOnRevision": "依據此倡議已發布的修訂",
             "basedOnRevisionVersion": "依據此倡議已發布修訂的版本 {version}"
+          },
+          "status": {
+            "page": {
+              "title": "請願",
+              "subtitle": "集體決策後的公開支持",
+              "sectionsAria": "請願區段",
+              "unavailableTitle": "請願工作區",
+              "unavailable": "無法取得此請願。",
+              "backToInitiatives": "返回倡議",
+              "platformLinksAria": "平台整合",
+              "sectionsLabel": "區段"
+            },
+            "sections": {
+              "subject": "請願主題",
+              "signature": "簽名",
+              "supportMetrics": "支持指標",
+              "outcome": "請願結果",
+              "contribution": "貢獻肯定",
+              "relatedLinks": "相關連結"
+            },
+            "overview": {
+              "intro": "您正處於集體參與歷程的請願階段。",
+              "pipelineAria": "參與流程",
+              "lifecycleState": "生命週期狀態",
+              "supportStatus": "支持狀態",
+              "created": "建立日期",
+              "openingDate": "開放日期",
+              "shareLink": "分享連結",
+              "notAvailable": "無法提供",
+              "availableAfterPublication": "發布後提供",
+              "notScheduled": "尚未排定",
+              "notSpecified": "未指定",
+              "closingDate": "截止日期"
+            },
+            "pipeline": {
+              "implementationCommitment": "執行承諾",
+              "implementation": "執行",
+              "impact": "影響",
+              "complete": "已完成",
+              "notYetActive": "尚未啟動"
+            },
+            "states": {
+              "draft": "草稿",
+              "ready": "已就緒",
+              "published": "已發布",
+              "open": "開放中"
+            },
+            "supportSummary": {
+              "preparing": "正在準備開放支持",
+              "publishedNotOpen": "已發布 — 尚未開放支持",
+              "open": "開放支持中",
+              "closed": "支持已截止"
+            },
+            "subject": {
+              "petitionSummary": "請願摘要",
+              "approvedDecision": "已核准的集體決策",
+              "note": "支持行動建立在已核准的集體決策之上。簽署表示支持已核准的方向，不會重新開啟該決策。"
+            },
+            "decision": {
+              "empty": "無法取得集體決策脈絡。請在簽署前先查看請願主題。",
+              "decisionStatus": "決策狀態",
+              "approvedResult": "核准結果",
+              "outcome": "集體決策結果",
+              "outcomeExplanation": "結果說明",
+              "initiativeContext": "倡議脈絡",
+              "analysisReadiness": "分析完備度",
+              "readinessValue": "完備度 {percent}",
+              "unknownOption": "未知",
+              "resultPending": "結果尚未公布",
+              "outcomePending": "結論尚未公布",
+              "initiativeUnavailable": "無法取得倡議詳細資料。",
+              "note": "此摘要有助於做出知情的支持決定，不會重新開放投票。",
+              "statuses": {
+                "scheduled": "已排定",
+                "active": "進行中",
+                "completed": "已完成",
+                "archived": "已封存",
+                "draft": "草稿",
+                "closed": "已關閉",
+                "cancelled": "已取消"
+              },
+              "outcomes": {
+                "approved": "已核准",
+                "rejected": "已否決",
+                "selected": "已選定",
+                "prioritized": "已列為優先"
+              },
+              "synthetic": {
+                "question": "「{initiativeTitle}」是否應進入請願階段？",
+                "explanation": "「{initiativeTitle}」的倡議生命週期修訂版已可供公眾參與。",
+                "options": {
+                  "approve": "核准",
+                  "reject": "否決"
+                },
+                "note": "此紀錄於請願發布時自動建立，並非社群投票的結果。"
+              }
+            },
+            "support": {
+              "count": "支持數",
+              "finalCount": "最終支持數",
+              "participantSignatures": "參與者簽名",
+              "thresholdProgress": "門檻進度",
+              "thresholdProgressValue": "{current, number} / {target, number}",
+              "thresholdReached": "已達門檻",
+              "threshold": "門檻",
+              "noThreshold": "未設定門檻",
+              "recentActivity": "近期活動",
+              "activityEntry": "{date}：{count, plural, other {# 個簽名}}",
+              "emptyOpen": "尚無簽名紀錄。",
+              "emptyPending": "記錄簽名後，支持活動將顯示於此。"
+            },
+            "outcome": {
+              "pending": "支持期間結束後將顯示最終請願結果。",
+              "unavailable": "請願結果尚未公布。",
+              "outcomeType": "結果類型",
+              "explanation": "說明",
+              "thresholdStatus": "門檻狀態",
+              "thresholdReached": "已達門檻",
+              "thresholdNotReached": "未達門檻",
+              "types": {
+                "active": "進行中"
+              },
+              "explanations": {
+                "active": "公開支持進行中。",
+                "closed": "公開支持已截止。",
+                "archived": "公開支持已作為歷史紀錄保存。"
+              }
+            },
+            "contribution": {
+              "recorded": "您的簽名已記錄。",
+              "contributes": "您的參與為公眾支持增添力量。",
+              "thanks": "感謝您支持此請願。"
+            },
+            "nextAction": {
+              "preparing": {
+                "title": "查看決策脈絡",
+                "detail": "此請願正在準備中。等待發布期間，請閱讀已核准集體決策的脈絡。"
+              },
+              "publishedSigned": {
+                "title": "追蹤支持進度",
+                "detail": "您的簽名已記錄。請持續追蹤支持統計，直到支持期間結束。"
+              },
+              "publishedUnsigned": {
+                "title": "閱讀決策脈絡",
+                "detail": "支持尚未開放。在可以簽署之前，先了解已核准的內容。"
+              },
+              "openSigned": {
+                "title": "繼續您的公民參與歷程",
+                "detail": "查看相關的倡議或集體決策脈絡，或追蹤公眾支持的發展。"
+              },
+              "openUnsigned": {
+                "detail": "準備好透過支持面板記錄您的支持時，請使用「簽名」區段。"
+              },
+              "ended": {
+                "title": "查看請願結果",
+                "detail": "支持期間已結束。請查看結果與最終支持統計。已無法再簽署。"
+              },
+              "fallback": {
+                "title": "查看此請願",
+                "detail": "繼續閱讀此工作區，以了解目前的公民脈絡。"
+              }
+            },
+            "links": {
+              "relatedAria": "相關參與脈絡",
+              "initiativeWorkspace": "倡議工作區",
+              "collectiveDecisionWorkspace": "集體決策工作區",
+              "publicPetition": "公開請願",
+              "publicInitiative": "公開倡議",
+              "publicCollectiveDecision": "公開集體決策",
+              "implementationCommitmentWorkspace": "執行承諾工作區",
+              "publicImplementationCommitment": "公開執行承諾",
+              "commitmentNoReference": "沒有可用的執行承諾參照。",
+              "commitmentLoading": "正在載入執行承諾…",
+              "commitmentNotLinked": "此參與階段尚未連結任何執行承諾。",
+              "viewPublicCommitment": "檢視公開執行承諾",
+              "openCommitmentWorkspace": "開啟執行承諾工作區",
+              "implementationNoReference": "沒有可用的執行參照。",
+              "implementationLoading": "正在載入執行…",
+              "implementationNotLinked": "此參與階段尚未連結任何執行。",
+              "viewPublicImplementation": "檢視公開執行",
+              "openImplementationWorkspace": "開啟執行工作區"
+            }
           }
         },
         "sourceSnapshot": {
@@ -3666,7 +3937,27 @@
       "withdrawing": "撤回中…",
       "disclaimer": "簽署代表您對此請願的公民參與支持。這不是具法律拘束力的請願，也不會讓您承擔執行責任。",
       "recordFailed": "無法記錄簽名。",
-      "withdrawFailed": "無法撤回簽名。"
+      "withdrawFailed": "無法撤回簽名。",
+      "checking": "正在確認您的簽名狀態…",
+      "justSignedTitle": "簽名已記錄",
+      "justSignedNote": "您對此請願的支持已記錄。",
+      "alreadySignedTitle": "已簽署",
+      "lockedNote": "您的支持已記錄，無法在此變更。",
+      "notOpenPreparing": "此請願仍在準備中，暫時無法支持。",
+      "notOpenPublished": "此請願已發布，但尚未開放簽署。",
+      "notOpenEnded": "此請願已不再開放簽署。",
+      "nextChangePublished": "請願開放後即可簽署。",
+      "nextChangePreparing": "請願發布並開放後即可簽署。",
+      "signInGuidance": "請登入或註冊以簽署此請願。記錄您的支持前必須先完成註冊。",
+      "endorsementPrompt": "簽署會記錄您對已核准方向的支持，不會使您承擔執行責任。",
+      "statusUnavailable": "無法確認您的簽名狀態。",
+      "errors": {
+        "signInAgain": "您的工作階段已結束。請重新登入以繼續。",
+        "notEligible": "您的帳戶不符合簽署此請願的資格。",
+        "withdrawNotAllowed": "無法撤回此簽名。",
+        "statusChanged": "請願或您的簽名狀態已變更。請重新整理頁面以查看目前狀態。",
+        "petitionUnavailable": "此請願已無法取得。"
+      }
     },
     "geography": {
       "world": "世界",

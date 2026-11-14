@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import {
@@ -10,6 +11,8 @@ import {
 } from "../api";
 
 import "../../petition/components/view-petition-link.css";
+
+const LINKS = "author.petition.public.status.links";
 
 interface ViewImplementationLinkProps {
   implementationCommitmentId?: string | null;
@@ -24,6 +27,7 @@ export function ViewImplementationLink({
   collectiveDecisionId = null,
   publicView = false,
 }: ViewImplementationLinkProps) {
+  const t = useTranslations("initiativeExperience");
   const [implementationId, setImplementationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -69,19 +73,15 @@ export function ViewImplementationLink({
   }, [collectiveDecisionId, implementationCommitmentId, petitionId]);
 
   if (!implementationCommitmentId && !petitionId && !collectiveDecisionId) {
-    return <p className="view-petition-link__empty">No implementation reference is available.</p>;
+    return <p className="view-petition-link__empty">{t(`${LINKS}.implementationNoReference`)}</p>;
   }
 
   if (loading) {
-    return <p className="view-petition-link__empty">Loading implementation...</p>;
+    return <p className="view-petition-link__empty">{t(`${LINKS}.implementationLoading`)}</p>;
   }
 
   if (!implementationId) {
-    return (
-      <p className="view-petition-link__empty">
-        No implementation is linked to this participation stage yet.
-      </p>
-    );
+    return <p className="view-petition-link__empty">{t(`${LINKS}.implementationNotLinked`)}</p>;
   }
 
   const href = publicView
@@ -90,7 +90,9 @@ export function ViewImplementationLink({
 
   return (
     <Link className="view-petition-link" href={href}>
-      {publicView ? "View Public Implementation" : "Open Implementation Workspace"}
+      {publicView
+        ? t(`${LINKS}.viewPublicImplementation`)
+        : t(`${LINKS}.openImplementationWorkspace`)}
     </Link>
   );
 }

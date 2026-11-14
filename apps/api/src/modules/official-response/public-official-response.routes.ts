@@ -2,12 +2,20 @@ import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { getCapById } from "../civic-action-package/civic-action-package.store.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import {
   computeOfficialResponseMetrics,
   getPublicOfficialResponse,
   listPublicOfficialResponsesForCap,
   listPublicOfficialResponsesForInitiative,
 } from "./official-response.projection.js";
+
+/** Official responses are public only while their parent Initiative is. */
+function isPublicInitiativeId(initiativeId: string): boolean {
+  const initiative = getInitiativeById(initiativeId);
+  return Boolean(initiative && canExposePublicInitiativeProjection(initiative));
+}
 
 function createFailureResponse(message: string) {
   return {
@@ -27,7 +35,7 @@ publicOfficialResponseRouter.get("/:responseId", (req, res) => {
     : (req.params.responseId ?? "");
   const projection = getPublicOfficialResponse(responseId);
 
-  if (!projection) {
+  if (!projection || !isPublicInitiativeId(projection.initiativeId)) {
     res.status(404).json(createFailureResponse("Official response is not available."));
     return;
   }
@@ -50,7 +58,9 @@ publicOfficialResponsesByCapRouter.get("/:capId/official-responses", (req, res) 
     return;
   }
 
-  const responses = listPublicOfficialResponsesForCap(capId);
+  const responses = listPublicOfficialResponsesForCap(capId).filter((response) =>
+    isPublicInitiativeId(response.initiativeId),
+  );
   const metrics = computeOfficialResponseMetrics();
 
   res.json(createSuccessResponse(responses, "Official response timeline loaded.", { metrics }));
@@ -62,7 +72,9 @@ publicOfficialResponsesByInitiativeRouter.get("/:initiativeId/official-responses
   const initiativeId = Array.isArray(req.params.initiativeId)
     ? (req.params.initiativeId[0] ?? "")
     : (req.params.initiativeId ?? "");
-  const responses = listPublicOfficialResponsesForInitiative(initiativeId);
+  const responses = isPublicInitiativeId(initiativeId)
+    ? listPublicOfficialResponsesForInitiative(initiativeId)
+    : [];
   const metrics = computeOfficialResponseMetrics();
 
   res.json(createSuccessResponse(responses, "Official response timeline loaded.", { metrics }));

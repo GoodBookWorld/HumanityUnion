@@ -25,3 +25,16 @@
   word-break: break-word;
   text-align: start;
 }
+
+/*
+ * On an RTL page an LTR-isolated value (URL, identifier, original English text)
+ * aligns with its RTL label: `end` of an LTR line is the label's `start`.
+ * The attribute rule also covers browsers without `:dir()`.
+ */
+[dir="rtl"] .profile-field__value[dir="ltr"] {
+  text-align: end;
+}
+
+[dir="rtl"] .profile-field__value:dir(ltr) {
+  text-align: end;
+}

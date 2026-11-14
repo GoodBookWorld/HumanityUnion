@@ -1,6 +1,7 @@
 import type { PublicPetitionRecord } from "@hu/types";
+import { useTranslations } from "next-intl";
 
-import { deriveNextMeaningfulAction } from "../petition-utils";
+import { nextMeaningfulActionKeys } from "../petition-status-i18n";
 
 interface NextMeaningfulActionProps {
   petition: PublicPetitionRecord;
@@ -8,12 +9,13 @@ interface NextMeaningfulActionProps {
 }
 
 export function NextMeaningfulAction({ petition, viewerHasSigned }: NextMeaningfulActionProps) {
-  const action = deriveNextMeaningfulAction(petition, viewerHasSigned);
+  const t = useTranslations("initiativeExperience");
+  const action = nextMeaningfulActionKeys(petition.status, viewerHasSigned);
 
   return (
     <div className="next-meaningful-action">
-      <p className="next-meaningful-action__title">{action.title}</p>
-      <p className="next-meaningful-action__detail">{action.detail}</p>
+      <p className="next-meaningful-action__title">{t(action.titleKey)}</p>
+      <p className="next-meaningful-action__detail">{t(action.detailKey)}</p>
     </div>
   );
 }

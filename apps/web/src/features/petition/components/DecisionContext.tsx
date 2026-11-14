@@ -1,66 +1,99 @@
-import type { CollaborativeAnalysis, CollectiveDecision, Initiative } from "@hu/types";
+import type { CollaborativeAnalysis, CollectiveDecision, PublicPetitionRecord } from "@hu/types";
+import { useLocale, useTranslations } from "next-intl";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
+import {
+  COLLECTIVE_DECISION_STATUS_LABEL_KEYS,
+  DECISION_OUTCOME_LABEL_KEYS,
+  formatPetitionPercent,
+  petitionDecisionText,
+  translateToken,
+} from "../petition-status-i18n";
+import type { InitiativeReadingText } from "../use-initiative-reading-text";
+
+const STATUS = "author.petition.public.status";
+
 interface DecisionContextProps {
   collectiveDecision: CollectiveDecision | null;
-  initiative: Initiative | null;
+  petition: PublicPetitionRecord;
+  initiativeText: InitiativeReadingText | null;
   collaborativeAnalysis: CollaborativeAnalysis | null;
-}
-
-function formatAnalysisReadiness(analysis: CollaborativeAnalysis | null): string {
-  if (!analysis) {
-    return "Not available";
-  }
-
-  return `${analysis.readiness.readinessScore}% ready`;
 }
 
 export function DecisionContext({
   collectiveDecision,
-  initiative,
+  petition,
+  initiativeText,
   collaborativeAnalysis,
 }: DecisionContextProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   if (!collectiveDecision) {
-    return (
-      <p className="decision-context__empty">
-        Collective Decision context is unavailable. Review the Petition subject before signing.
-      </p>
-    );
+    return <p className="decision-context__empty">{t(`${STATUS}.decision.empty`)}</p>;
   }
 
-  const approvedOption =
-    collectiveDecision.decisionResult?.winningOptionId !== undefined &&
-    collectiveDecision.decisionResult.winningOptionId !== null
-      ? (collectiveDecision.ballot.options.find(
-          (option) => option.optionId === collectiveDecision.decisionResult?.winningOptionId,
-        )?.label ?? "Unknown")
-      : null;
+  const text = petitionDecisionText({
+    decision: collectiveDecision,
+    petition,
+    initiativeTitle: initiativeText?.title ?? null,
+    translate: (key, values) => t(key, values),
+  });
+  const outcomeType = collectiveDecision.outcome?.outcomeType;
 
   return (
     <div className="decision-context">
-      <ProfileField label="Decision Question" value={collectiveDecision.ballot.question} />
-      <ProfileField label="Decision Status" value={collectiveDecision.status} />
-      <ProfileField label="Approved Result" value={approvedOption ?? "Result not yet available"} />
       <ProfileField
-        label="Collective Decision Outcome"
-        value={collectiveDecision.outcome?.outcomeType ?? "Outcome not yet available"}
+        label={t("author.decisionSession.fields.question")}
+        value={text.question || t(`${STATUS}.overview.notSpecified`)}
+        dir="auto"
       />
       <ProfileField
-        label="Outcome Explanation"
-        value={collectiveDecision.outcome?.explanation ?? "Not available"}
+        label={t(`${STATUS}.decision.decisionStatus`)}
+        value={translateToken(t, COLLECTIVE_DECISION_STATUS_LABEL_KEYS, collectiveDecision.status)}
       />
       <ProfileField
-        label="Initiative Context"
-        value={initiative?.description ?? "Initiative details are not available."}
+        label={t(`${STATUS}.decision.approvedResult`)}
+        value={text.winningOption ?? t(`${STATUS}.decision.resultPending`)}
+        dir="auto"
       />
       <ProfileField
-        label="Analysis Readiness"
-        value={formatAnalysisReadiness(collaborativeAnalysis)}
+        label={t(`${STATUS}.decision.outcome`)}
+        value={
+          outcomeType
+            ? translateToken(t, DECISION_OUTCOME_LABEL_KEYS, outcomeType)
+            : t(`${STATUS}.decision.outcomePending`)
+        }
       />
-      <p className="decision-context__note">
-        This summary supports informed endorsement. It does not reopen ballot participation.
-      </p>
+      <ProfileField
+        label={t(`${STATUS}.decision.outcomeExplanation`)}
+        value={text.explanation || t(`${STATUS}.overview.notAvailable`)}
+        dir="auto"
+      />
+      <ProfileField
+        label={t(`${STATUS}.decision.initiativeContext`)}
+        value={initiativeText?.description || t(`${STATUS}.decision.initiativeUnavailable`)}
+        lang={initiativeText?.description ? initiativeText.lang : undefined}
+        dir="auto"
+      />
+      <ProfileField
+        label={t(`${STATUS}.decision.analysisReadiness`)}
+        value={
+          collaborativeAnalysis
+            ? t(`${STATUS}.decision.readinessValue`, {
+                percent: formatPetitionPercent(
+                  locale,
+                  collaborativeAnalysis.readiness.readinessScore,
+                ),
+              })
+            : t(`${STATUS}.overview.notAvailable`)
+        }
+      />
+      {text.synthetic ? (
+        <p className="decision-context__note">{t(`${STATUS}.decision.synthetic.note`)}</p>
+      ) : null}
+      <p className="decision-context__note">{t(`${STATUS}.decision.note`)}</p>
     </div>
   );
 }

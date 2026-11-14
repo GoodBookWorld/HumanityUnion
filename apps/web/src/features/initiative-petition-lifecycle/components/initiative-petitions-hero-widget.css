@@ -49,8 +49,9 @@
   margin-inline-start: auto;
   width: 0.5rem;
   height: 0.5rem;
-  border-inline-end: 2px solid currentColor;
-  border-block-end: 2px solid currentColor;
+  /* Physical sides: the arrow points down/up in both LTR and RTL. */
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
   transition: transform 0.15s ease;
 }

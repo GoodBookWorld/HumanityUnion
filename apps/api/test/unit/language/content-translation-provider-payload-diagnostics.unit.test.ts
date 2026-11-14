@@ -93,7 +93,7 @@ function sampleInitiative(): Initiative {
     title: "Harbor Teachers",
     description: "Marine life can teach a city how to listen.",
     status: "proposal",
-    lifecyclePhase: "published",
+    lifecyclePhase: "projected",
     visibility: { policy: "public" },
     metadata: {
       category: "Community",

@@ -107,7 +107,7 @@ function OverviewSection({ label, value }: { label: string; value: string | null
   return (
     <section className="pie-overview__section">
       <h3>{label}</h3>
-      <p>{value}</p>
+      <p dir="auto">{value}</p>
     </section>
   );
 }

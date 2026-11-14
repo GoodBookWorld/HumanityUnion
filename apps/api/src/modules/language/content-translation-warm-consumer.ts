@@ -68,7 +68,7 @@ import {
   laterLocalizationInstant,
   localizationProviderNowMs,
 } from "./localization-provider-governor.js";
-import { TranslationProviderError } from "./translation.config.js";
+import { isContentTranslationFrozen, TranslationProviderError } from "./translation.config.js";
 
 export const CONTENT_TRANSLATION_WARM_CONSUMER_ID = "content-translation-warm-v1" as const;
 
@@ -206,6 +206,24 @@ export async function processContentTranslationWarmRequested(
     "commandName" in input && input.commandName === CONTENT_TRANSLATION_WARM_REQUESTED
       ? (input as ContentTranslationWarmRequestedCommand)
       : parseWarmCommand(input as Record<string, unknown>);
+
+  // Already-queued events drain as completed no-ops: no source load, no provider, no retry.
+  if (isContentTranslationFrozen()) {
+    logger.info("content_translation.warm.frozen", {
+      component: "content-translation-warm",
+      sourceKind: command.sourceKind,
+      sourceRecordId: command.sourceRecordId,
+      reason: command.reason,
+    });
+    return {
+      sourceKind: command.sourceKind,
+      sourceRecordId: command.sourceRecordId,
+      sourceVersion: null,
+      sourceLanguage: null,
+      outcome: "completed",
+      locales: [],
+    };
+  }
 
   logger.info("content_translation.warm.consume_start", {
     component: "content-translation-warm",

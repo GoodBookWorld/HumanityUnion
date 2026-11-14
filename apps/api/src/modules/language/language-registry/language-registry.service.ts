@@ -31,6 +31,7 @@ import {
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
 import { invalidateGlobalSearchIndex } from "../../global-search/global-search.index.js";
+import { isContentTranslationFrozen } from "../translation.config.js";
 import {
   LanguageRegistryNotFoundError,
   LanguageRegistryValidationError,
@@ -405,6 +406,7 @@ export async function updateAdminLanguage(input: {
     !(before.enabled === true && before.searchEnabled === true);
   if (
     becameSearchDiscoveryEligible &&
+    !isContentTranslationFrozen() &&
     !isLanguageRegistryMemoryAdapterActive() &&
     normalizeLanguageRegistryLocaleKey(updated.locale) !==
       normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
@@ -431,6 +433,7 @@ export async function updateAdminLanguage(input: {
     !(before.enabled === true && before.contentTranslationEnabled === true);
   if (
     becameCtEligible &&
+    !isContentTranslationFrozen() &&
     !isLanguageRegistryMemoryAdapterActive() &&
     normalizeLanguageRegistryLocaleKey(updated.locale) !==
       normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)

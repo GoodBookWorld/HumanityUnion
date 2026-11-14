@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import {
@@ -9,6 +10,8 @@ import {
 } from "../api";
 
 import "../../petition/components/view-petition-link.css";
+
+const LINKS = "author.petition.public.status.links";
 
 interface ViewImplementationCommitmentLinkProps {
   petitionId?: string | null;
@@ -21,6 +24,7 @@ export function ViewImplementationCommitmentLink({
   collectiveDecisionId = null,
   publicView = false,
 }: ViewImplementationCommitmentLinkProps) {
+  const t = useTranslations("initiativeExperience");
   const [commitmentId, setCommitmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -64,23 +68,15 @@ export function ViewImplementationCommitmentLink({
   }, [collectiveDecisionId, petitionId]);
 
   if (!petitionId && !collectiveDecisionId) {
-    return (
-      <p className="view-petition-link__empty">
-        No implementation commitment reference is available.
-      </p>
-    );
+    return <p className="view-petition-link__empty">{t(`${LINKS}.commitmentNoReference`)}</p>;
   }
 
   if (loading) {
-    return <p className="view-petition-link__empty">Loading implementation commitment...</p>;
+    return <p className="view-petition-link__empty">{t(`${LINKS}.commitmentLoading`)}</p>;
   }
 
   if (!commitmentId) {
-    return (
-      <p className="view-petition-link__empty">
-        No implementation commitment is linked to this participation stage yet.
-      </p>
-    );
+    return <p className="view-petition-link__empty">{t(`${LINKS}.commitmentNotLinked`)}</p>;
   }
 
   const href = publicView
@@ -89,9 +85,7 @@ export function ViewImplementationCommitmentLink({
 
   return (
     <Link className="view-petition-link" href={href}>
-      {publicView
-        ? "View Public Implementation Commitment"
-        : "Open Implementation Commitment Workspace"}
+      {publicView ? t(`${LINKS}.viewPublicCommitment`) : t(`${LINKS}.openCommitmentWorkspace`)}
     </Link>
   );
 }

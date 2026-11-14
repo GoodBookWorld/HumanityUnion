@@ -215,8 +215,8 @@ describe("STEP 15D.14.F.2 ownership and Admin parity", () => {
       messages: arabic as never,
       scope: "public",
     });
-    assert.equal(arReady.dataReady, false);
-    assert.ok((arReady.structuralInvalidCount ?? 0) > 0);
+    assert.equal(arReady.dataReady, true);
+    assert.equal(arReady.structuralInvalidCount, 0);
 
     const traditional = loadBundledWebUiMessagePackFromFs("zh-Hant");
     assert.ok(traditional);

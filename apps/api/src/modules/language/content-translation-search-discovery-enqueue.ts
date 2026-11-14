@@ -13,6 +13,7 @@ import {
 
 import { logger } from "../../shared/observability/logger.js";
 import { enqueueContentTranslationWarmRequested } from "./content-translation-warm-enqueue.js";
+import { isContentTranslationFrozen } from "./translation.config.js";
 import {
   assertCivicMediaExcludedFromSearchDiscoveryWarm,
   listSearchDiscoveryWarmTargets,
@@ -43,6 +44,7 @@ export async function enqueueSearchDiscoveryForLocale(input: {
 }> {
   const localeKey = normalizeLanguageRegistryLocaleKey(input.targetLanguage);
   if (
+    isContentTranslationFrozen() ||
     !localeKey ||
     localeKey === normalizeLanguageRegistryLocaleKey(DEFAULT_PLATFORM_LANGUAGE)
   ) {

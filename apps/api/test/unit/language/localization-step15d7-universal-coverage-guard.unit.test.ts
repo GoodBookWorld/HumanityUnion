@@ -204,7 +204,7 @@ describe("Step 15D.7 — universal localization coverage guard", () => {
     const missingFromBundled = all.filter(
       (pathKey) => !(uk.has(pathKey) && ar.has(pathKey) && zh.has(pathKey)),
     );
-    assert.deepEqual(missingFromBundled, ["common.interfaceNote"]);
+    assert.deepEqual(missingFromBundled, []);
     assert.equal(classifyWebUiCoveragePath("common.interfaceNote").unknown, false);
     assert.equal(classifyWebUiCoveragePath("common.interfaceNote").kind, "public_required");
     const common = all.filter((pathKey) => uk.has(pathKey) && ar.has(pathKey) && zh.has(pathKey));

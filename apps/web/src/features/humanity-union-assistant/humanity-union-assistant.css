@@ -156,10 +156,21 @@
   border: 0;
 }
 
+/* RTL: the button sits at the inline end (left), clear of where lines start. */
+[dir="rtl"] .hu-assistant-fab {
+  right: auto;
+  left: max(1.5rem, env(safe-area-inset-left, 0px));
+}
+
 @media (max-width: 640px) {
   .hu-assistant-fab {
     right: max(1rem, env(safe-area-inset-right, 0px));
     bottom: max(4.75rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+  }
+
+  [dir="rtl"] .hu-assistant-fab {
+    right: auto;
+    left: max(1rem, env(safe-area-inset-left, 0px));
   }
 }
 

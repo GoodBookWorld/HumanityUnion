@@ -8,7 +8,6 @@ import type { ViewerSignatureStatus } from "./petition-utils";
 
 interface ViewerPetitionSignature {
   readonly viewerSignature: ViewerSignatureStatus;
-  readonly registrationGatewayMessage: string | null;
   readonly setViewerSignature: (status: ViewerSignatureStatus) => void;
   /** Re-reads the server's view of the current session's signature. */
   readonly refresh: () => void;
@@ -24,7 +23,6 @@ export function useViewerPetitionSignature(
   authStatus: ClientAuthStatus,
 ): ViewerPetitionSignature {
   const [viewerSignature, setViewerSignature] = useState<ViewerSignatureStatus>("unknown");
-  const [registrationGatewayMessage, setRegistrationGatewayMessage] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
@@ -39,9 +37,6 @@ export function useViewerPetitionSignature(
         if (!active) {
           return;
         }
-        setRegistrationGatewayMessage(
-          projection.participationEntryGuidance.registrationGatewayMessage,
-        );
         setViewerSignature(
           authStatus === "authenticated" && projection.viewerHasSigned ? "signed" : "unsigned",
         );
@@ -59,5 +54,5 @@ export function useViewerPetitionSignature(
 
   const refresh = useCallback(() => setRevision((current) => current + 1), []);
 
-  return { viewerSignature, registrationGatewayMessage, setViewerSignature, refresh };
+  return { viewerSignature, setViewerSignature, refresh };
 }

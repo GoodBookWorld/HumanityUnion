@@ -305,6 +305,11 @@ export type LanguageLocalizationReadinessReport = {
   };
   /** Registry flags allow automatic CT/PLP targeting (engine path). */
   readonly engineReady: boolean;
+  /**
+   * HU-LC-05C.4C.7E.9D — automatic Content Translation is intentionally frozen.
+   * Readiness is then interface-only (WEB_UI + controlled vocabulary).
+   */
+  readonly contentTranslationFrozen?: boolean;
   /** WEB_UI (public + participant) + controlled vocab + owned content completeness. */
   readonly languageDataReady: boolean;
   readonly state: LanguageLocalizationReadinessState;
@@ -410,7 +415,19 @@ export function deriveLanguageLocalizationReadinessState(input: {
    * Omitted means already converged (legacy callers and non-Mongo runtimes).
    */
   readonly revisionInventoryReady?: boolean;
+  /**
+   * HU-LC-05C.4C.7E.9D — CT disabled or frozen for an enabled locale: READY means
+   * the interface (public + participant WEB_UI, controlled vocabulary) is ready.
+   */
+  readonly interfaceOnly?: boolean;
 }): LanguageLocalizationReadinessState {
+  if (input.enabled && input.interfaceOnly) {
+    return input.webUiDataReady &&
+      input.participantWebUiDataReady !== false &&
+      input.controlledVocabularyPresentationReady
+      ? "READY"
+      : "DATA_NOT_READY";
+  }
   if (!input.enabled || !input.contentTranslationEnabled) {
     return "DISABLED";
   }

@@ -15,7 +15,7 @@ import {
   listLanguageRegistry,
   resolveLanguageRegistryLocale,
 } from "./language-registry/language-registry.repository.js";
-import { TranslationProviderError } from "./translation.config.js";
+import { isContentTranslationFrozen, TranslationProviderError } from "./translation.config.js";
 
 export interface SearchDiscoveryContentTranslationWarmTargetResolution {
   readonly registryCandidates: readonly {
@@ -46,7 +46,7 @@ export async function resolveSearchDiscoveryContentTranslationWarmTargets(input?
     .sort((a, b) => a.locale.localeCompare(b.locale));
 
   const locales = new Set<string>();
-  for (const candidate of registryCandidates) {
+  for (const candidate of isContentTranslationFrozen() ? [] : registryCandidates) {
     if (candidate.enabled !== true) {
       continue;
     }
@@ -84,6 +84,12 @@ export async function assertSearchDiscoveryTargetLocale(
     throw new TranslationProviderError(
       "unsupported_language",
       `Unsupported ${fieldLabel}.`,
+    );
+  }
+  if (isContentTranslationFrozen()) {
+    throw new TranslationProviderError(
+      "unsupported_language",
+      `Automatic content translation is frozen; no ${fieldLabel} is available.`,
     );
   }
   const record = await resolveLanguageRegistryLocale(input.trim());

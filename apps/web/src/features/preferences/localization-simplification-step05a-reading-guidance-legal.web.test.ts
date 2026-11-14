@@ -51,10 +51,10 @@ describe("Localization Simplification Step 05A — reading guidance + Legal prot
     assert.match(workspace, /t\("language\.preferredReadingHelp"\)/);
     assert.doesNotMatch(
       workspace,
-      /Select the language you prefer to read the platform in/,
+      /Select the language for the platform interface/,
     );
-    assert.match(en, /Select the language you prefer to read the platform in/i);
-    assert.match(en, /browser.s translation language/i);
+    assert.match(en, /Select the language for the platform interface/i);
+    assert.match(en, /original language; your browser can translate it/i);
   });
 
   it("Writing Languages help is catalog-sourced (not hardcoded in PreferencesWorkspace)", () => {

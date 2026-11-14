@@ -668,7 +668,8 @@ export function deriveActivationJobStatus(input: {
   readonly automaticProgress?: ActivationAutomaticProgress;
 }): LanguageActivationJobStatus {
   const { readiness, domains } = input;
-  if (!readiness.engineReady) {
+  // Interface-only localization (CT disabled or frozen) is valid; only a disabled locale fails.
+  if (!readiness.engineReady && readiness.registry?.enabled !== true) {
     return "failed";
   }
   if (

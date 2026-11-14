@@ -32,6 +32,13 @@
  * Step 15D.7 — `publicNews.*` / `publicGeo.*` / `a11y.*` / public `auth.*`
  * chrome are required. Public News *article body* remains source-original;
  * these keys are page chrome only.
+ *
+ * HU-LC-05C.4C.7D.2A — `initiativeExperience.petitionEditing.tabs.*` is the
+ * `/petitions/<id>` view tab strip that every reader sees. The rest of
+ * `petitionEditing` is steward-only and stays Participant-required.
+ *
+ * HU-LC-05C.4C.7E.8B — `initiativeExperience.petitionsWidget.*` is the public
+ * Initiative hero Petitions list (also reused by the steward stage view).
  */
 
 export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
@@ -73,7 +80,9 @@ export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
   "initiativeExperience.lifecycleRecordSummaries.",
   "initiativeExperience.lifecycleRecordTitles.",
   "initiativeExperience.overview.",
+  "initiativeExperience.petitionEditing.tabs.",
   "initiativeExperience.petitionSignature.",
+  "initiativeExperience.petitionsWidget.",
   "initiativeExperience.phases.",
   "initiativeExperience.presentationStatuses.",
   "initiativeExperience.publicChoice.",

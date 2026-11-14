@@ -25,10 +25,12 @@ export function InitiativePieHeroPresentationDom(props: {
     <div className="pie-layout__hero">
       <section className="pie-hero" aria-labelledby="pie-hero-title">
         <h1 id="pie-hero-title" className="pie-hero__title">
-          {props.presentation.title}
+          <span dir="auto">{props.presentation.title}</span>
         </h1>
         {props.presentation.description ? (
-          <div className="pie-hero__description">{props.presentation.description}</div>
+          <div className="pie-hero__description" dir="auto">
+            {props.presentation.description}
+          </div>
         ) : null}
       </section>
     </div>
@@ -46,7 +48,7 @@ export function InitiativeOverviewDescriptionDom(props: {
   return (
     <section className="pie-overview__section">
       <h3>{props.label}</h3>
-      <p>{props.description}</p>
+      <p dir="auto">{props.description}</p>
     </section>
   );
 }

@@ -28,6 +28,7 @@ import { isCanonicalRevisionInventoryConverged } from "../../initiative-version-
 import { listBrandLocalizations } from "../../brand-localization/brand-localization.repository.js";
 import { getLegalLocalization } from "../../legal-localization/legal-localization.repository.js";
 import { resolveLanguageRegistryLocale } from "../language-registry/index.js";
+import { isContentTranslationFrozen } from "../translation.config.js";
 import { assessControlledVocabularyReadinessForLocale } from "./assess-controlled-vocabulary-readiness.js";
 import { assessWebUiCatalogReadinessForLocale } from "./assess-web-ui-catalog-readiness.js";
 import {
@@ -130,8 +131,11 @@ export async function evaluateLanguageLocalizationReadiness(
     pwaPersistedReadingEnabled: record?.pwaPersistedReadingEnabled === true,
   };
 
+  const contentTranslationFrozen = isContentTranslationFrozen();
   const engineReady =
-    registry.enabled === true && registry.contentTranslationEnabled === true;
+    registry.enabled === true &&
+    registry.contentTranslationEnabled === true &&
+    !contentTranslationFrozen;
 
   const assessWebUi = input.assessWebUi ?? assessWebUiCatalogReadinessForLocale;
   const assessControlledVocabulary =
@@ -173,7 +177,7 @@ export async function evaluateLanguageLocalizationReadiness(
   const pwaCoverage = bounded?.coverage ?? emptyPwaCivicCoverageScalars();
   const pwaCivic = buildLanguagePwaCivicReadinessSlice({
     enabled: registry.enabled,
-    contentTranslationEnabled: registry.contentTranslationEnabled,
+    contentTranslationEnabled: registry.contentTranslationEnabled && !contentTranslationFrozen,
     pwaPersistedReadingEnabled: registry.pwaPersistedReadingEnabled,
     revisionInventoryReady,
     coverage:
@@ -208,6 +212,7 @@ export async function evaluateLanguageLocalizationReadiness(
     ct,
     plpMedia,
     revisionInventoryReady,
+    interfaceOnly: registry.enabled && !engineReady,
   });
 
   const languageDataReady =
@@ -283,8 +288,12 @@ export async function evaluateLanguageLocalizationReadiness(
   ];
 
   const gaps: string[] = [];
-  if (!engineReady) {
-    gaps.push("Registry not enabled+contentTranslationEnabled");
+  if (!registry.enabled) {
+    gaps.push("Registry not enabled");
+  } else if (contentTranslationFrozen) {
+    gaps.push("Content Translation intentionally frozen (interface-only localization)");
+  } else if (!registry.contentTranslationEnabled) {
+    gaps.push("contentTranslationEnabled=false (interface-only localization)");
   }
   if (!registry.pwaPersistedReadingEnabled) {
     gaps.push("pwaPersistedReadingEnabled=false (PWA civic gate closed)");
@@ -336,6 +345,7 @@ export async function evaluateLanguageLocalizationReadiness(
     languageId: record?.languageId ?? null,
     registry,
     engineReady,
+    contentTranslationFrozen,
     languageDataReady,
     state,
     webUi,

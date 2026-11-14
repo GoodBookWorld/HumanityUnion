@@ -99,8 +99,8 @@ describe("Localization Simplification Step 01 — Preferences preferred reading 
     }
 
     const enHelp = languageKeys("en").preferredReadingHelp ?? "";
-    assert.match(enHelp, /Select the language you prefer to read the platform in/i);
-    assert.match(enHelp, /browser.s translation language/i);
+    assert.match(enHelp, /Select the language for the platform interface/i);
+    assert.match(enHelp, /original language; your browser can translate it/i);
     assert.doesNotMatch(enHelp, /approved names, key terms/i);
 
     const enWriting = languageKeys("en").writingLanguagesHelp ?? "";

@@ -5,6 +5,8 @@ import {
   type PublicInitiativeCollaborativeAnalysisProjection,
 } from "@hu/types";
 
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { getMemberById } from "../member/member-access.js";
 import {
   getAnalysisById,
@@ -84,8 +86,15 @@ export async function getPublicInitiativeCollaborativeAnalysis(
   viewerUserId?: string | null,
 ): Promise<PublicInitiativeCollaborativeAnalysisProjection | null> {
   const analysis = getAnalysisById(analysisId);
+  const initiative = analysis ? getInitiativeById(analysis.initiativeId) : null;
 
-  if (!analysis || analysis.status !== "published") {
+  // Same parent rule as the by-Initiative listing: hidden Initiatives expose no analyses.
+  if (
+    !analysis ||
+    analysis.status !== "published" ||
+    !initiative ||
+    !canExposePublicInitiativeProjection(initiative)
+  ) {
     return null;
   }
 

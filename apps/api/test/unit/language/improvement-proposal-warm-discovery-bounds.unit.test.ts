@@ -68,6 +68,7 @@ describe("Improvement Proposal warm discovery data bounds", () => {
             hasMore: false,
           };
         },
+        isImprovementProposalParentPublic: async () => true,
       },
     });
 

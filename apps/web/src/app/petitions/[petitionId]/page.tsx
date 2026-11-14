@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { getCollaborativeAnalysisByInitiativeId } from "../../../features/collaborative-analysis/api";
 import { getCollectiveDecisionById } from "../../../features/collective-decision/api";
@@ -6,6 +7,7 @@ import { getInitiativeById } from "../../../features/initiatives/api";
 import { getPetitionById } from "../../../features/petition/api";
 import { getImplementationCommitmentByPetitionId } from "../../../features/implementation-commitment/api";
 import { PetitionWorkspace } from "../../../features/petition/components/PetitionWorkspace";
+import { petitionStatusNavItems } from "../../../features/petition/petition-status-i18n";
 import { PetitionDocumentViews } from "../../../features/initiative-petition-lifecycle/components/PetitionDocumentViews";
 import {
   PETITION_VIEW_QUERY_PARAM,
@@ -16,17 +18,8 @@ import { WorkspaceNavigation } from "../../../features/initiatives/components/Wo
 
 import "../petition-page.css";
 
-const NAV_ITEMS = [
-  "Petition Status",
-  "Petition Subject",
-  "Decision Context",
-  "Signature",
-  "Support Metrics",
-  "Petition Outcome",
-  "Contribution Recognition",
-  "Next Meaningful Action",
-  "Related Links",
-];
+const PAGE = "author.petition.public.status.page";
+const LINKS = "author.petition.public.status.links";
 
 interface PetitionPageProps {
   params: Promise<{
@@ -38,6 +31,7 @@ interface PetitionPageProps {
 export default async function PetitionPage({ params, searchParams }: PetitionPageProps) {
   const { petitionId } = await params;
   const initialView = readPetitionDocumentView((await searchParams)[PETITION_VIEW_QUERY_PARAM]);
+  const t = await getTranslations("initiativeExperience");
   let petition = null;
 
   try {
@@ -50,10 +44,10 @@ export default async function PetitionPage({ params, searchParams }: PetitionPag
     return (
       <main className="petition-page humanity-workspace-page">
         <WorkspaceNavigation />
-        <h1>Petition Workspace</h1>
-        <p>Petition is not available.</p>
+        <h1>{t(`${PAGE}.unavailableTitle`)}</h1>
+        <p>{t(`${PAGE}.unavailable`)}</p>
         <p className="petition-page__back">
-          <Link href="/initiatives">Back to Initiatives</Link>
+          <Link href="/initiatives">{t(`${PAGE}.backToInitiatives`)}</Link>
         </p>
       </main>
     );
@@ -98,9 +92,11 @@ export default async function PetitionPage({ params, searchParams }: PetitionPag
         petitionId={petition.petitionId}
         initiativeId={petition.subject.initiativeId}
         initialView={initialView}
-        title="Petition"
-        subtitle="Public endorsement after collective decision"
-        statusNavItems={NAV_ITEMS}
+        title={t(`${PAGE}.title`)}
+        subtitle={t(`${PAGE}.subtitle`)}
+        statusNavItems={petitionStatusNavItems((key) => t(key))}
+        sectionsLabel={t(`${PAGE}.sectionsLabel`)}
+        sectionsAriaLabel={t(`${PAGE}.sectionsAria`)}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <PetitionWorkspace
@@ -111,40 +107,40 @@ export default async function PetitionPage({ params, searchParams }: PetitionPag
         />
       </PetitionDocumentViews>
 
-      <nav className="petition-page__links" aria-label="Platform integration">
-        <Link href="/initiatives">Initiative Workspace</Link>
+      <nav className="petition-page__links" aria-label={t(`${PAGE}.platformLinksAria`)}>
+        <Link href="/initiatives">{t(`${LINKS}.initiativeWorkspace`)}</Link>
         <Link href={`/collective-decisions/${encodeURIComponent(petition.collectiveDecisionId)}`}>
-          Collective Decision Workspace
+          {t(`${LINKS}.collectiveDecisionWorkspace`)}
         </Link>
         <Link href={publicPetitionHref(petition.subject.initiativeId, petition.petitionId)}>
-          Public Petition
+          {t(`${LINKS}.publicPetition`)}
         </Link>
         <Link href={`/initiatives/public/${encodeURIComponent(petition.subject.initiativeId)}`}>
-          Public Initiative
+          {t(`${LINKS}.publicInitiative`)}
         </Link>
         <Link
           href={`/collective-decisions/public/${encodeURIComponent(petition.collectiveDecisionId)}`}
         >
-          Public Collective Decision
+          {t(`${LINKS}.publicCollectiveDecision`)}
         </Link>
         {implementationCommitmentId ? (
           <>
             <Link
               href={`/implementation-commitments/${encodeURIComponent(implementationCommitmentId)}`}
             >
-              Implementation Commitment Workspace
+              {t(`${LINKS}.implementationCommitmentWorkspace`)}
             </Link>
             <Link
               href={`/implementation-commitments/public/${encodeURIComponent(implementationCommitmentId)}`}
             >
-              Public Implementation Commitment
+              {t(`${LINKS}.publicImplementationCommitment`)}
             </Link>
           </>
         ) : null}
       </nav>
 
       <p className="petition-page__back">
-        <Link href="/initiatives">Back to Initiatives</Link>
+        <Link href="/initiatives">{t(`${PAGE}.backToInitiatives`)}</Link>
       </p>
     </main>
   );

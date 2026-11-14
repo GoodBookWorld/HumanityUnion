@@ -3,23 +3,20 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { PublicParticipationEntryGuidance } from "@hu/types";
+import type { PetitionState } from "@hu/types";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { signPetitionAsCurrentParticipant, withdrawPetitionSignature } from "../../petition/api";
+import { signatureActionErrorKey, signatureNotOpenKey } from "../../petition/petition-status-i18n";
 
 import "./initiative-petition-stage-workspace.css";
 
 interface InitiativePetitionSignatureWidgetProps {
   readonly petitionId: string;
+  readonly petitionStatus: PetitionState;
   readonly viewerHasSigned: boolean;
   readonly signingAvailable: boolean;
-  readonly participationEntryGuidance: PublicParticipationEntryGuidance;
   readonly onSignatureChange: (viewerHasSigned: boolean) => void;
-}
-
-function detailFromError(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 /**
@@ -35,20 +32,20 @@ function detailFromError(error: unknown, fallback: string): string {
  * automatically when this stage's public result is viewed — see
  * `InitiativePetitionPublicResult`), never a duplicate signature.
  *
- * `participationEntryGuidance.registrationGatewayMessage` is API/domain
- * prose and is rendered as-is (not localized via next-intl).
+ * Guidance and failures are WEB_UI messages chosen from the Petition status
+ * and the HTTP status; the API's English prose is never shown.
  */
 export function InitiativePetitionSignatureWidget({
   petitionId,
+  petitionStatus,
   viewerHasSigned,
   signingAvailable,
-  participationEntryGuidance,
   onSignatureChange,
 }: InitiativePetitionSignatureWidgetProps) {
   const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
 
   async function handleSign() {
     if (authStatus !== "authenticated" || busy) {
@@ -56,13 +53,13 @@ export function InitiativePetitionSignatureWidget({
     }
 
     setBusy(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       await signPetitionAsCurrentParticipant(petitionId);
       onSignatureChange(true);
     } catch (submissionError) {
-      setError(detailFromError(submissionError, t("petitionSignature.recordFailed")));
+      setErrorKey(signatureActionErrorKey(submissionError, "sign"));
     } finally {
       setBusy(false);
     }
@@ -74,22 +71,28 @@ export function InitiativePetitionSignatureWidget({
     }
 
     setBusy(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       await withdrawPetitionSignature(petitionId);
       onSignatureChange(false);
     } catch (submissionError) {
-      setError(detailFromError(submissionError, t("petitionSignature.withdrawFailed")));
+      setErrorKey(signatureActionErrorKey(submissionError, "withdraw"));
     } finally {
       setBusy(false);
     }
   }
 
+  const errorNote = errorKey ? (
+    <p className="ipl-signature__error" role="alert">
+      {t(errorKey)}
+    </p>
+  ) : null;
+
   if (!signingAvailable) {
     return (
       <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
-        <p className="ipl-signature__prompt">{participationEntryGuidance.registrationGatewayMessage}</p>
+        <p className="ipl-signature__prompt">{t(signatureNotOpenKey(petitionStatus))}</p>
       </div>
     );
   }
@@ -97,7 +100,7 @@ export function InitiativePetitionSignatureWidget({
   if (authStatus !== "authenticated") {
     return (
       <div className="ipl-signature" aria-label={t("petitionSignature.aria")}>
-        <p className="ipl-signature__prompt">{participationEntryGuidance.registrationGatewayMessage}</p>
+        <p className="ipl-signature__prompt">{t("petitionSignature.signInGuidance")}</p>
       </div>
     );
   }
@@ -117,11 +120,7 @@ export function InitiativePetitionSignatureWidget({
             {busy ? t("petitionSignature.withdrawing") : t("petitionSignature.withdraw")}
           </button>
         </div>
-        {error ? (
-          <p className="ipl-signature__error" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {errorNote}
       </div>
     );
   }
@@ -140,11 +139,7 @@ export function InitiativePetitionSignatureWidget({
           {busy ? t("petitionSignature.recording") : t("petitionSignature.sign")}
         </button>
       </div>
-      {error ? (
-        <p className="ipl-signature__error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {errorNote}
     </div>
   );
 }
