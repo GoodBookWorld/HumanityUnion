@@ -7,7 +7,6 @@ import type {
   WebUiMessagePackPreparation,
   WebUiMessagePackPreparationScope,
   WebUiMessagePackRecord,
-  WebUiMessagePackUpsertInput,
   WebUiMessageTree,
 } from "@hu/types";
 import { isWebUiMessagePackStatus, normalizeLanguageRegistryLocaleKey } from "@hu/types";
@@ -25,10 +24,10 @@ import {
   WebUiMessagePackValidationError,
 } from "./web-ui-message-pack.errors.js";
 import {
+  compareAndSetWebUiMessagePack,
   getWebUiMessagePackByLocale,
   listWebUiMessagePacks,
   requireWebUiMessagePackByLocale,
-  upsertWebUiMessagePack,
 } from "./web-ui-message-pack.repository.js";
 import {
   collectStringPaths,
@@ -129,6 +128,28 @@ export async function upsertAdminWebUiMessagePack(input: {
     throw new AdministrationValidationError("messages object is required.");
   }
 
+  if (!Object.prototype.hasOwnProperty.call(body, "expectedRevision")) {
+    throw new AdministrationValidationError(
+      "expectedRevision is required (number for update, null for create).",
+    );
+  }
+
+  const expectedRevisionRaw = body.expectedRevision;
+  let expectedRevision: number | null;
+  if (expectedRevisionRaw === null) {
+    expectedRevision = null;
+  } else if (
+    typeof expectedRevisionRaw === "number" &&
+    Number.isInteger(expectedRevisionRaw) &&
+    expectedRevisionRaw >= 1
+  ) {
+    expectedRevision = expectedRevisionRaw;
+  } else {
+    throw new AdministrationValidationError(
+      "expectedRevision must be a positive integer or null.",
+    );
+  }
+
   const statusRaw = body.status;
   const status =
     statusRaw === undefined
@@ -140,16 +161,16 @@ export async function upsertAdminWebUiMessagePack(input: {
     throw new AdministrationValidationError("status must be draft or published.");
   }
 
-  const upsertInput: WebUiMessagePackUpsertInput = {
+  const messages = body.messages as WebUiMessageTree;
+  const validation = validateWebUiMessageTreeAgainstEnglish(messages);
+  const pack = await compareAndSetWebUiMessagePack({
     locale: canonicalLocale,
-    messages: body.messages as WebUiMessageTree,
+    messages,
     status,
     sourceNote: typeof body.sourceNote === "string" ? body.sourceNote : null,
     updatedByParticipantId: admin.participantId,
-  };
-
-  const validation = validateWebUiMessageTreeAgainstEnglish(upsertInput.messages);
-  const pack = await upsertWebUiMessagePack(upsertInput);
+    expectedRevision,
+  });
   const readiness = await assessWebUiCatalogReadinessForLocale({
     locale: pack.locale,
   });

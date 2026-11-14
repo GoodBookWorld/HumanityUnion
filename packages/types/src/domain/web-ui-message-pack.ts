@@ -58,6 +58,15 @@ export interface WebUiMessagePackUpsertInput {
   readonly sourceFingerprintsByPath?: Readonly<Record<string, string>> | null;
 }
 
+/**
+ * Admin HTTP optimistic-concurrency token for WEB_UI pack writes.
+ * - `number`: update only when the stored pack revision matches.
+ * - `null`: create only when no pack exists for the locale.
+ * Required on Admin PUT; omitted/invalid → 400.
+ * Trusted internal publication paths do not use this field.
+ */
+export type WebUiMessagePackExpectedRevision = number | null;
+
 export interface WebUiMessagePackPublicPayload {
   readonly locale: string;
   readonly revision: number;

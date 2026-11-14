@@ -3,6 +3,7 @@
  */
 
 import type {
+  WebUiMessagePackExpectedRevision,
   WebUiMessagePackRecord,
   WebUiMessagePackUpsertInput,
   WebUiMessageTree,
@@ -19,9 +20,11 @@ import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.
 import {
   WebUiMessagePackNotFoundError,
   WebUiMessagePackPersistenceError,
+  WebUiMessagePackRevisionConflictError,
   WebUiMessagePackValidationError,
 } from "./web-ui-message-pack.errors.js";
 import {
+  compareAndSetWebUiMessagePackMemory,
   getWebUiMessagePackByLocaleMemory,
   listWebUiMessagePackMemory,
   resetWebUiMessagePackMemoryForTests,
@@ -218,21 +221,8 @@ export async function getPublishedWebUiRuntimePayload(
   return loaded;
 }
 
-export async function upsertWebUiMessagePack(
-  input: WebUiMessagePackUpsertInput,
-): Promise<WebUiMessagePackRecord> {
-  const locale = input.locale.trim();
-  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
-  if (!localeKey) {
-    throw new WebUiMessagePackValidationError("locale is required.");
-  }
-
-  const status = input.status ?? "published";
-  if (!isWebUiMessagePackStatus(status)) {
-    throw new WebUiMessagePackValidationError("status must be draft or published.");
-  }
-
-  const validation = validateWebUiMessageTreeAgainstEnglish(input.messages);
+function assertWebUiMessageTreeForUpsert(messages: WebUiMessageTree): void {
+  const validation = validateWebUiMessageTreeAgainstEnglish(messages);
   if (validation.rejectedUnknownPaths.length > 0) {
     throw new WebUiMessagePackValidationError(
       `Unknown WEB_UI paths (not in English catalog): ${validation.rejectedUnknownPaths
@@ -252,6 +242,36 @@ export async function upsertWebUiMessagePack(
         .join("; ")}`,
     );
   }
+}
+
+function isMongoDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error != null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
+}
+
+/**
+ * Trusted internal upsert (activation / packaged adoption / tests).
+ * Unconditional — not exposed through Admin HTTP.
+ */
+export async function upsertWebUiMessagePack(
+  input: WebUiMessagePackUpsertInput,
+): Promise<WebUiMessagePackRecord> {
+  const locale = input.locale.trim();
+  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+  if (!localeKey) {
+    throw new WebUiMessagePackValidationError("locale is required.");
+  }
+
+  const status = input.status ?? "published";
+  if (!isWebUiMessagePackStatus(status)) {
+    throw new WebUiMessagePackValidationError("status must be draft or published.");
+  }
+
+  assertWebUiMessageTreeForUpsert(input.messages);
 
   const now = new Date().toISOString();
   const existing = await getWebUiMessagePackByLocale(locale);
@@ -285,6 +305,154 @@ export async function upsertWebUiMessagePack(
   );
   invalidatePublishedWebUiRuntimeCache(localeKey);
   return record;
+}
+
+export type CompareAndSetWebUiMessagePackInput = {
+  readonly locale: string;
+  readonly messages: WebUiMessageTree;
+  readonly status?: WebUiMessagePackUpsertInput["status"];
+  readonly sourceNote?: string | null;
+  readonly updatedByParticipantId?: string | null;
+  readonly sourceFingerprintsByPath?: WebUiMessagePackUpsertInput["sourceFingerprintsByPath"];
+  /** number = update at revision; null = create only. */
+  readonly expectedRevision: WebUiMessagePackExpectedRevision;
+};
+
+/**
+ * Admin optimistic concurrency: atomic compare-and-set by localeKey + revision.
+ * Never uses GET-then-PUT as the concurrency mechanism.
+ */
+export async function compareAndSetWebUiMessagePack(
+  input: CompareAndSetWebUiMessagePackInput,
+): Promise<WebUiMessagePackRecord> {
+  const locale = input.locale.trim();
+  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+  if (!localeKey) {
+    throw new WebUiMessagePackValidationError("locale is required.");
+  }
+
+  const status = input.status ?? "published";
+  if (!isWebUiMessagePackStatus(status)) {
+    throw new WebUiMessagePackValidationError("status must be draft or published.");
+  }
+
+  if (
+    input.expectedRevision !== null &&
+    (!Number.isInteger(input.expectedRevision) || input.expectedRevision < 1)
+  ) {
+    throw new WebUiMessagePackValidationError(
+      "expectedRevision must be a positive integer or null.",
+    );
+  }
+
+  assertWebUiMessageTreeForUpsert(input.messages);
+
+  const now = new Date().toISOString();
+  const conflictMessage =
+    input.expectedRevision === null
+      ? `WEB_UI message pack already exists for locale ${locale}.`
+      : `WEB_UI message pack revision conflict for locale ${locale} (expected ${input.expectedRevision}).`;
+
+  if (input.expectedRevision === null) {
+    const record: WebUiMessagePackRecord = {
+      packId: packIdForLocale(locale),
+      locale,
+      revision: 1,
+      status,
+      messages: input.messages,
+      createdAt: now,
+      updatedAt: now,
+      updatedByParticipantId: input.updatedByParticipantId ?? null,
+      sourceNote: input.sourceNote ?? null,
+      sourceFingerprintsByPath: input.sourceFingerprintsByPath ?? null,
+    };
+
+    if (shouldUseMemoryAdapter()) {
+      const ok = compareAndSetWebUiMessagePackMemory({
+        localeKey,
+        expectedRevision: null,
+        next: record,
+      });
+      if (!ok) {
+        throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+      }
+      invalidatePublishedWebUiRuntimeCache(localeKey);
+      return record;
+    }
+
+    await ensureMongoReady();
+    try {
+      await collection().insertOne(toWebUiMessagePackMongoDocument(record, localeKey));
+    } catch (error) {
+      if (isMongoDuplicateKeyError(error)) {
+        throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+      }
+      throw error;
+    }
+    invalidatePublishedWebUiRuntimeCache(localeKey);
+    return record;
+  }
+
+  const expectedRevision = input.expectedRevision;
+  const nextRevision = expectedRevision + 1;
+
+  if (shouldUseMemoryAdapter()) {
+    const existing = getWebUiMessagePackByLocaleMemory(localeKey);
+    if (!existing || existing.revision !== expectedRevision) {
+      throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+    }
+    const record: WebUiMessagePackRecord = {
+      packId: existing.packId,
+      locale: existing.locale,
+      revision: nextRevision,
+      status,
+      messages: input.messages,
+      createdAt: existing.createdAt,
+      updatedAt: now,
+      updatedByParticipantId: input.updatedByParticipantId ?? null,
+      sourceNote: input.sourceNote ?? null,
+      sourceFingerprintsByPath:
+        input.sourceFingerprintsByPath === undefined
+          ? existing.sourceFingerprintsByPath ?? null
+          : input.sourceFingerprintsByPath,
+    };
+    const ok = compareAndSetWebUiMessagePackMemory({
+      localeKey,
+      expectedRevision,
+      next: record,
+    });
+    if (!ok) {
+      throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+    }
+    invalidatePublishedWebUiRuntimeCache(localeKey);
+    return record;
+  }
+
+  await ensureMongoReady();
+  const setFields: Record<string, unknown> = {
+    revision: nextRevision,
+    status,
+    messages: input.messages,
+    updatedAt: now,
+    updatedByParticipantId: input.updatedByParticipantId ?? null,
+    sourceNote: input.sourceNote ?? null,
+  };
+  if (input.sourceFingerprintsByPath !== undefined) {
+    setFields.sourceFingerprintsByPath = input.sourceFingerprintsByPath;
+  }
+
+  const doc = await collection().findOneAndUpdate(
+    { localeKey, revision: expectedRevision },
+    { $set: setFields },
+    { returnDocument: "after" },
+  );
+
+  if (!doc) {
+    throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+  }
+
+  invalidatePublishedWebUiRuntimeCache(localeKey);
+  return fromWebUiMessagePackMongoDocument(doc);
 }
 
 /**

@@ -25,3 +25,14 @@ export class WebUiMessagePackPersistenceError extends WebUiMessagePackError {
     this.name = "WebUiMessagePackPersistenceError";
   }
 }
+
+/**
+ * Optimistic concurrency conflict — no write performed.
+ * Admin routes map this to HTTP 409.
+ */
+export class WebUiMessagePackRevisionConflictError extends WebUiMessagePackError {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebUiMessagePackRevisionConflictError";
+  }
+}

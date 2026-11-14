@@ -13,6 +13,7 @@ import {
 import {
   WebUiMessagePackNotFoundError,
   WebUiMessagePackPersistenceError,
+  WebUiMessagePackRevisionConflictError,
   WebUiMessagePackValidationError,
 } from "./web-ui-message-pack.errors.js";
 import {
@@ -46,6 +47,9 @@ function resolveErrorStatus(error: unknown): number {
   }
   if (error instanceof WebUiMessagePackNotFoundError) {
     return 404;
+  }
+  if (error instanceof WebUiMessagePackRevisionConflictError) {
+    return 409;
   }
   if (
     error instanceof WebUiMessagePackValidationError ||
