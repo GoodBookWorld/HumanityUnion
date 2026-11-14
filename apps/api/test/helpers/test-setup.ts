@@ -32,6 +32,14 @@ process.env.HU_VERIFICATION_MODE = "true";
 process.env.OUTBOX_DISPATCH_ENABLED = "false";
 
 /**
+ * HU-LC-05C.4C.7E.9D — the runtime default freezes automatic Content Translation.
+ * Existing CT engine suites exercise the retained engine; freeze suites set "true".
+ */
+if (process.env.CONTENT_TRANSLATION_FROZEN === undefined) {
+  process.env.CONTENT_TRANSLATION_FROZEN = "false";
+}
+
+/**
  * Default Initiative persistence to in-memory for unit tests so parallel
  * suites cannot race on apps/api/.runtime/initiatives.json.tmp. Individual
  * tests may still opt into mongodb/file explicitly before importing stores.
