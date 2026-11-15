@@ -642,6 +642,7 @@ export function PublicInitiativeExperiencePage({
             onOpenPublicPreview={handleOpenStagePublicPreview}
             onNavigateStage={handleStageSelect}
             collaborationTab={collaborationTab}
+            initiativeDisplayTitle={initiativePresentation.title}
             statistics={experience.supportStatistics}
             revisionHistory={experience.revisionHistory}
             latestInitiatives={experience.latestInitiatives}

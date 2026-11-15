@@ -870,6 +870,11 @@ export async function buildInitiativeLifecycleSourceSnapshotSummary(
 
   if (stageId === "petition") {
     const snapshot = await buildInitiativePetitionIntelligenceSnapshot(initiativeId);
+    const warningCount = snapshot.consistencyChecks.filter(
+      (check) => check.status === "warning",
+    ).length;
+    // English label/summary retained for API consumers; semantic `presentation`
+    // lets WEB localize platform chrome without mutating authored content.
     const items: InitiativeLifecycleSourceSnapshotItem[] = [
       {
         sourceId: "revision-reference",
@@ -878,24 +883,42 @@ export async function buildInitiativeLifecycleSourceSnapshotSummary(
         summary: snapshot.revisionReference
           ? `Version ${snapshot.revisionReference.version} — ${snapshot.revisionReference.revisionSummary}`
           : "No published Revision yet",
+        presentation: {
+          code: "petition.revision_reference",
+          version: snapshot.revisionReference?.version ?? null,
+          authoredSummary: snapshot.revisionReference?.revisionSummary ?? null,
+        },
       },
       {
         sourceId: "analysis-reference",
         kind: "member_contribution",
         label: "Published Collaborative Analysis",
         summary: snapshot.analysisReference ? snapshot.analysisReference.title : "No published Analysis yet",
+        presentation: {
+          code: "petition.analysis_reference",
+          authoredTitle: snapshot.analysisReference?.title ?? null,
+        },
       },
       {
         sourceId: "proposal-references",
         kind: "member_contribution",
         label: "Published Improvement Proposals",
         summary: `${snapshot.proposalReferences.length} accepted proposal(s) referenced`,
+        presentation: {
+          code: "petition.proposal_references",
+          acceptedCount: snapshot.proposalReferences.length,
+        },
       },
       {
         sourceId: "consistency-checks",
         kind: "member_contribution",
         label: "Consistency Checks",
-        summary: `${snapshot.consistencyChecks.filter((check) => check.status === "warning").length} warning(s) of ${snapshot.consistencyChecks.length}`,
+        summary: `${warningCount} warning(s) of ${snapshot.consistencyChecks.length}`,
+        presentation: {
+          code: "petition.consistency_checks",
+          warningCount,
+          totalCount: snapshot.consistencyChecks.length,
+        },
       },
     ];
 

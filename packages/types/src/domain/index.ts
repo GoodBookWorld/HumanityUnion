@@ -1256,6 +1256,7 @@ export type { InitiativeLifecycleStageMetadata } from "./initiative-lifecycle-st
 export type {
   InitiativeLifecycleSourceKind,
   InitiativeLifecycleSourceSnapshotItem,
+  InitiativeLifecycleSourceSnapshotPresentation,
   InitiativeLifecycleSourceSnapshotSummary,
 } from "./initiative-lifecycle-source-snapshot.js";
 export type {

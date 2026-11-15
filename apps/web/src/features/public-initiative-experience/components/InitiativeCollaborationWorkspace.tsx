@@ -20,6 +20,8 @@ interface InitiativeCollaborationWorkspaceProps {
    * to Channel.
    */
   initialTab?: CollaborationTab;
+  /** HU-LC-05C.4C.7F.7N.1 — page-owned hero presentation title for ICC parity. */
+  initiativeDisplayTitle?: string | null;
 }
 
 /**
@@ -31,7 +33,11 @@ interface InitiativeCollaborationWorkspaceProps {
  * simply gives it a second tab, rather than adding a second swap point or
  * a new page/route.
  */
-export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: InitiativeCollaborationWorkspaceProps) {
+export function InitiativeCollaborationWorkspace({
+  initiativeId,
+  initialTab,
+  initiativeDisplayTitle = null,
+}: InitiativeCollaborationWorkspaceProps) {
   const t = useTranslations("initiativeExperience");
   const [activeTab, setActiveTab] = useState<CollaborationTab>(initialTab ?? "channel");
 
@@ -78,7 +84,12 @@ export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: I
         aria-labelledby="icw-tab-channel"
         hidden={activeTab !== "channel"}
       >
-        {activeTab === "channel" ? <InitiativeCollaborationChannel initiativeId={initiativeId} /> : null}
+        {activeTab === "channel" ? (
+          <InitiativeCollaborationChannel
+            initiativeId={initiativeId}
+            initiativeDisplayTitle={initiativeDisplayTitle}
+          />
+        ) : null}
       </div>
 
       <div

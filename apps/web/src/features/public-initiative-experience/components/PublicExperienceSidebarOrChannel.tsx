@@ -66,6 +66,8 @@ interface PublicExperienceSidebarOrChannelProps extends PublicExperienceSidebarP
    * projection failure.
    */
   isInitiativeSteward?: boolean;
+  /** HU-LC-05C.4C.7F.7N.1 — page-owned hero presentation title for ICC parity. */
+  initiativeDisplayTitle?: string | null;
 }
 
 /**
@@ -88,6 +90,7 @@ export function PublicExperienceSidebarOrChannel({
   onNavigateStage,
   isStagePreviewMode = false,
   isInitiativeSteward = false,
+  initiativeDisplayTitle = null,
   ...sidebarProps
 }: PublicExperienceSidebarOrChannelProps) {
   const [viewerRole, setViewerRole] = useState<"author" | "active_ally" | "other" | "loading">(
@@ -180,7 +183,13 @@ export function PublicExperienceSidebarOrChannel({
     isAtOrBeyondCollaborativeAnalysis(currentStageId);
 
   if (showChannel) {
-    return <InitiativeCollaborationWorkspace initiativeId={sidebarProps.initiativeId} initialTab={collaborationTab} />;
+    return (
+      <InitiativeCollaborationWorkspace
+        initiativeId={sidebarProps.initiativeId}
+        initialTab={collaborationTab}
+        initiativeDisplayTitle={initiativeDisplayTitle}
+      />
+    );
   }
 
   return <PublicExperienceSidebar {...sidebarProps} lifecycleProfile={lifecycleProfile} />;
