@@ -67,6 +67,36 @@ export interface WebUiMessagePackUpsertInput {
  */
 export type WebUiMessagePackExpectedRevision = number | null;
 
+/**
+ * Admin read-only preview: additive fill of missing keys from the packaged locale catalog.
+ */
+export interface WebUiMessagePackAddMissingPreview {
+  readonly locale: string;
+  /** Current published pack revision, or null when no published pack exists. */
+  readonly currentRevision: number | null;
+  readonly existingKeyCount: number;
+  readonly missingKeyCount: number;
+  readonly expectedFinalCount: number;
+  readonly packagedCatalogExists: boolean;
+  readonly packStatus: WebUiMessagePackStatus | null;
+}
+
+/**
+ * Admin apply result for additive packaged fill.
+ */
+export interface WebUiMessagePackAddMissingResult {
+  readonly locale: string;
+  readonly pack: WebUiMessagePackRecord;
+  readonly addedKeyCount: number;
+  readonly existingKeyCount: number;
+  readonly missingKeyCount: number;
+  readonly expectedFinalCount: number;
+  /** False when the merge was a no-op (revision unchanged). */
+  readonly changed: boolean;
+  readonly validation: WebUiMessagePackValidationReport;
+  readonly readiness: LanguageWebUiReadinessSlice;
+}
+
 export interface WebUiMessagePackPublicPayload {
   readonly locale: string;
   readonly revision: number;

@@ -6,6 +6,8 @@ import type {
   LanguageTextDirection,
   LanguageUiTranslationStatus,
   LanguageWebUiReadinessSlice,
+  WebUiMessagePackAddMissingPreview,
+  WebUiMessagePackAddMissingResult,
   WebUiMessagePackPreparation,
   WebUiMessagePackRecord,
   WebUiMessagePackValidationReport,
@@ -172,5 +174,49 @@ export async function importAdminWebUiMessagePack(
         expectedRevision: input.expectedRevision,
       }),
     },
+  );
+}
+
+export async function previewAdminAddMissingWebUiFromPackaged(
+  locale: string,
+): Promise<WebUiMessagePackAddMissingPreview> {
+  return apiRequest<WebUiMessagePackAddMissingPreview>(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}/add-missing-from-packaged`,
+  );
+}
+
+export async function applyAdminAddMissingWebUiFromPackaged(
+  locale: string,
+  input: { readonly expectedRevision: number | null },
+): Promise<WebUiMessagePackAddMissingResult> {
+  return apiRequest<WebUiMessagePackAddMissingResult>(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}/add-missing-from-packaged`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expectedRevision: input.expectedRevision,
+      }),
+    },
+  );
+}
+
+export function formatAddMissingWebUiPreviewMessage(
+  preview: WebUiMessagePackAddMissingPreview,
+): string {
+  if (!preview.packagedCatalogExists) {
+    return (
+      `No packaged WEB_UI catalog is available for ${preview.locale} in this build. ` +
+      `Current pack revision: ${preview.currentRevision ?? "none"}. ` +
+      `Existing keys: ${preview.existingKeyCount}.`
+    );
+  }
+  return (
+    `Add missing translations for ${preview.locale}. ` +
+    `Current revision: ${preview.currentRevision ?? "none (create)"}. ` +
+    `Existing keys: ${preview.existingKeyCount}. ` +
+    `Missing keys: ${preview.missingKeyCount}. ` +
+    `Expected final keys: ${preview.expectedFinalCount}. ` +
+    `Existing translation values will be preserved.`
   );
 }

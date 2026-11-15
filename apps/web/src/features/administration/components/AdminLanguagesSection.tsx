@@ -19,13 +19,16 @@ import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { ApiRequestError, formatAuthFormError } from "../../../lib/api-client";
 import {
   activateAdminLanguageLocalization,
+  applyAdminAddMissingWebUiFromPackaged,
   createAdminLanguage,
   fetchAdminLanguageActivationStatus,
   fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
   fetchAdminWebUiMessagePackPreparation,
+  formatAddMissingWebUiPreviewMessage,
   formatWebUiPackRevisionConflictMessage,
   importAdminWebUiMessagePack,
+  previewAdminAddMissingWebUiFromPackaged,
   resolveAdminWebUiMessagePackExpectedRevision,
   updateAdminLanguage,
   type AdminLanguageCreateInput,
@@ -252,11 +255,63 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
     }
   }
 
+  async function addMissingFromPackaged(): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    try {
+      const preview = await previewAdminAddMissingWebUiFromPackaged(locale);
+      const summary = formatAddMissingWebUiPreviewMessage(preview);
+      if (!preview.packagedCatalogExists) {
+        setNote(summary);
+        return;
+      }
+      if (preview.missingKeyCount === 0) {
+        setNote(
+          `${summary} Nothing to add. Pack revision ${preview.currentRevision ?? "none"} unchanged.`,
+        );
+        return;
+      }
+      const confirmed = window.confirm(
+        `${summary}\n\nAdd ${preview.missingKeyCount} missing key(s) now? Existing values will not be changed.`,
+      );
+      if (!confirmed) {
+        setNote("Add missing translations cancelled.");
+        return;
+      }
+      const result = await applyAdminAddMissingWebUiFromPackaged(locale, {
+        expectedRevision: preview.currentRevision,
+      });
+      const preparation = await loadPreparation("public");
+      setNote(
+        (result.changed
+          ? `Added ${result.addedKeyCount} missing key(s). Pack ${result.pack.status} revision ${result.pack.revision}.`
+          : `No missing keys to add. Pack ${result.pack.status} revision ${result.pack.revision} unchanged.`) +
+          ` ${describePreparation(preparation)}`,
+      );
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        setNote(formatWebUiPackRevisionConflictMessage(error.message));
+        return;
+      }
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="admin-languages__pack-actions">
       <div>Catalog pack</div>
       <Button type="button" variant="secondary" disabled={busy} onClick={() => void checkPack()}>
         Check catalog pack
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy}
+        onClick={() => void addMissingFromPackaged()}
+      >
+        Add missing translations
       </Button>
       <Button type="button" variant="secondary" disabled={busy} onClick={() => void download("public")}>
         Download public catalog

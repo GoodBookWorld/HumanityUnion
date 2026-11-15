@@ -3,7 +3,10 @@
  */
 
 import type {
+  WebUiMessagePackAddMissingPreview,
+  WebUiMessagePackAddMissingResult,
   WebUiMessagePackAdminListResponse,
+  WebUiMessagePackExpectedRevision,
   WebUiMessagePackPreparation,
   WebUiMessagePackPreparationScope,
   WebUiMessagePackRecord,
@@ -20,11 +23,18 @@ import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { resolveLanguageRegistryLocale } from "../language/language-registry/language-registry.repository.js";
 import { assessWebUiCatalogReadinessForLocale } from "../language/language-localization-activation/assess-web-ui-catalog-readiness.js";
 import {
+  countWebUiStringLeaves,
+  mergeMissingPackagedWebUiMessages,
+} from "./merge-missing-packaged-web-ui-messages.js";
+import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
+import {
   WebUiMessagePackNotFoundError,
+  WebUiMessagePackRevisionConflictError,
   WebUiMessagePackValidationError,
 } from "./web-ui-message-pack.errors.js";
 import {
   compareAndSetWebUiMessagePack,
+  getPublishedWebUiMessagePackByLocale,
   getWebUiMessagePackByLocale,
   listWebUiMessagePacks,
   requireWebUiMessagePackByLocale,
@@ -183,6 +193,215 @@ export async function getAdminWebUiMessagePackOrNull(input: {
 }): Promise<WebUiMessagePackRecord | null> {
   await assertAdminActor(input.actorUserId);
   return getWebUiMessagePackByLocale(input.locale);
+}
+
+function parseExpectedRevision(raw: unknown): WebUiMessagePackExpectedRevision {
+  if (raw === null) {
+    return null;
+  }
+  if (typeof raw === "number" && Number.isInteger(raw) && raw >= 1) {
+    return raw;
+  }
+  throw new AdministrationValidationError(
+    "expectedRevision must be a positive integer or null.",
+  );
+}
+
+function requirePackagedCatalog(locale: string): WebUiMessageTree {
+  const packaged = loadPackagedWebUiCatalog(locale);
+  if (!packaged) {
+    throw new WebUiMessagePackValidationError(
+      `No packaged WEB_UI catalog is available for locale ${locale} in this build.`,
+    );
+  }
+  return packaged;
+}
+
+/**
+ * Admin read-only preview: compare published pack vs packaged locale catalog.
+ * No writes. No provider calls.
+ */
+export async function previewAdminAddMissingWebUiFromPackaged(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+}): Promise<WebUiMessagePackAddMissingPreview> {
+  await assertAdminActor(input.actorUserId);
+  const locale = await resolvePackLocale(input.locale);
+  const packaged = loadPackagedWebUiCatalog(locale);
+  const packagedCatalogExists = packaged != null;
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+
+  if (!packagedCatalogExists) {
+    const existingKeyCount = countWebUiStringLeaves(published?.messages ?? null);
+    return {
+      locale,
+      currentRevision: published?.revision ?? null,
+      existingKeyCount,
+      missingKeyCount: 0,
+      expectedFinalCount: existingKeyCount,
+      packagedCatalogExists: false,
+      packStatus: published?.status ?? null,
+    };
+  }
+
+  const merge = mergeMissingPackagedWebUiMessages({
+    existing: published?.messages ?? null,
+    packaged,
+  });
+
+  return {
+    locale,
+    currentRevision: published?.revision ?? null,
+    existingKeyCount: merge.existingKeyCount,
+    missingKeyCount: merge.missingKeyCount,
+    expectedFinalCount: merge.expectedFinalCount,
+    packagedCatalogExists: true,
+    packStatus: published?.status ?? null,
+  };
+}
+
+/**
+ * Admin apply: additive merge of missing packaged leaves into the published pack.
+ * Preserves every existing leaf. Uses revision CAS. No-op skips the write.
+ */
+export async function applyAdminAddMissingWebUiFromPackaged(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+}): Promise<WebUiMessagePackAddMissingResult> {
+  const admin = await assertAdminActor(input.actorUserId);
+  const locale = await resolvePackLocale(input.locale);
+  const body = (input.body ?? {}) as Record<string, unknown>;
+
+  if (!Object.prototype.hasOwnProperty.call(body, "expectedRevision")) {
+    throw new AdministrationValidationError(
+      "expectedRevision is required (number for update, null for create).",
+    );
+  }
+  const expectedRevision = parseExpectedRevision(body.expectedRevision);
+  const packaged = requirePackagedCatalog(locale);
+
+  // Re-read current published pack at apply time (not a GET-then-PUT concurrency mechanism;
+  // the write below is still atomic CAS / insertOne).
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+
+  if (published) {
+    if (expectedRevision === null) {
+      throw new WebUiMessagePackRevisionConflictError(
+        `WEB_UI message pack already exists for locale ${locale}.`,
+      );
+    }
+    if (published.revision !== expectedRevision) {
+      throw new WebUiMessagePackRevisionConflictError(
+        `WEB_UI message pack revision conflict for locale ${locale} (expected ${expectedRevision}).`,
+      );
+    }
+
+    const merge = mergeMissingPackagedWebUiMessages({
+      existing: published.messages,
+      packaged,
+    });
+
+    if (!merge.changed) {
+      const readiness = await assessWebUiCatalogReadinessForLocale({ locale: published.locale });
+      const validation = validateWebUiMessageTreeAgainstEnglish(published.messages);
+      return {
+        locale: published.locale,
+        pack: published,
+        addedKeyCount: 0,
+        existingKeyCount: merge.existingKeyCount,
+        missingKeyCount: 0,
+        expectedFinalCount: merge.expectedFinalCount,
+        changed: false,
+        validation,
+        readiness,
+      };
+    }
+
+    const validation = validateWebUiMessageTreeAgainstEnglish(merge.messages);
+    if (
+      validation.rejectedUnknownPaths.length > 0 ||
+      validation.rejectedNonStringPaths.length > 0 ||
+      validation.placeholderMismatchPaths.length > 0
+    ) {
+      throw new WebUiMessagePackValidationError(
+        "Merged WEB_UI catalog failed English foundation validation.",
+      );
+    }
+
+    const pack = await compareAndSetWebUiMessagePack({
+      locale: published.locale,
+      messages: merge.messages,
+      status: published.status,
+      sourceNote: published.sourceNote ?? null,
+      updatedByParticipantId: admin.participantId,
+      sourceFingerprintsByPath: published.sourceFingerprintsByPath ?? null,
+      expectedRevision,
+    });
+    const readiness = await assessWebUiCatalogReadinessForLocale({ locale: pack.locale });
+    return {
+      locale: pack.locale,
+      pack,
+      addedKeyCount: merge.missingKeyCount,
+      existingKeyCount: merge.existingKeyCount,
+      missingKeyCount: merge.missingKeyCount,
+      expectedFinalCount: merge.expectedFinalCount,
+      changed: true,
+      validation,
+      readiness,
+    };
+  }
+
+  // No published pack — create-only from packaged catalog.
+  if (expectedRevision !== null) {
+    throw new WebUiMessagePackRevisionConflictError(
+      `WEB_UI message pack revision conflict for locale ${locale} (expected ${expectedRevision}).`,
+    );
+  }
+
+  // Draft-only pack at same localeKey would conflict on insert (unique index) → 409.
+  const anyPack = await getWebUiMessagePackByLocale(locale);
+  if (anyPack) {
+    throw new WebUiMessagePackRevisionConflictError(
+      `WEB_UI message pack already exists for locale ${locale}.`,
+    );
+  }
+
+  const merge = mergeMissingPackagedWebUiMessages({
+    existing: null,
+    packaged,
+  });
+  const validation = validateWebUiMessageTreeAgainstEnglish(merge.messages);
+  if (
+    validation.rejectedUnknownPaths.length > 0 ||
+    validation.rejectedNonStringPaths.length > 0 ||
+    validation.placeholderMismatchPaths.length > 0
+  ) {
+    throw new WebUiMessagePackValidationError(
+      "Packaged WEB_UI catalog failed English foundation validation.",
+    );
+  }
+
+  const pack = await compareAndSetWebUiMessagePack({
+    locale,
+    messages: merge.messages,
+    status: "published",
+    sourceNote: "admin-add-missing-from-packaged",
+    updatedByParticipantId: admin.participantId,
+    expectedRevision: null,
+  });
+  const readiness = await assessWebUiCatalogReadinessForLocale({ locale: pack.locale });
+  return {
+    locale: pack.locale,
+    pack,
+    addedKeyCount: merge.missingKeyCount,
+    existingKeyCount: 0,
+    missingKeyCount: merge.missingKeyCount,
+    expectedFinalCount: merge.expectedFinalCount,
+    changed: true,
+    validation,
+    readiness,
+  };
 }
 
 export async function prepareAdminWebUiMessagePack(input: {

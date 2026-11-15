@@ -24,7 +24,10 @@ export {
   getAdminWebUiMessagePack,
   prepareAdminWebUiMessagePack,
   upsertAdminWebUiMessagePack,
+  previewAdminAddMissingWebUiFromPackaged,
+  applyAdminAddMissingWebUiFromPackaged,
 } from "./web-ui-message-pack.service.js";
+export { mergeMissingPackagedWebUiMessages } from "./merge-missing-packaged-web-ui-messages.js";
 export { default as publicWebUiMessagePackRouter } from "./public-web-ui-message-pack.routes.js";
 export { default as adminWebUiMessagePackRouter } from "./admin-web-ui-message-pack.routes.js";
 export { ADMIN_WEB_UI_MESSAGE_PACK_JSON_LIMIT } from "./admin-web-ui-message-pack.routes.js";

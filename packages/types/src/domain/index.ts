@@ -279,6 +279,8 @@ export type {
   WebUiMessagePackPreparationScope,
   WebUiMessagePackPublicPayload,
   WebUiMessagePackExpectedRevision,
+  WebUiMessagePackAddMissingPreview,
+  WebUiMessagePackAddMissingResult,
   WebUiMessagePackRecord,
   WebUiMessagePackStatus,
   WebUiMessagePackUpsertInput,
