@@ -1,0 +1,352 @@
+.regional-program-page {
+  display: grid;
+  gap: var(--hu-space-8, 2.5rem);
+  width: 100%;
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.regional-program-page__hero,
+.regional-program-page__final-cta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--hu-space-5);
+  align-items: center;
+  padding: var(--hu-space-6) var(--hu-space-5);
+  border-radius: var(--hu-radius-lg, 12px);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #0174b0 10%, transparent) 0%,
+    color-mix(in srgb, #df9815 8%, transparent) 100%
+  );
+  overflow: hidden;
+}
+
+.regional-program-page__hero-copy,
+.regional-program-page__final-cta-copy {
+  display: grid;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.regional-program-page__eyebrow {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hu-color-text-muted);
+}
+
+.regional-program-page__title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  line-height: 1.2;
+  color: var(--hu-color-text);
+}
+
+.regional-program-page__subtitle {
+  margin: 0;
+  font-size: var(--hu-font-size-lg);
+  color: var(--hu-color-text);
+  line-height: var(--hu-line-height, 1.55);
+  font-weight: 600;
+}
+
+.regional-program-page__description,
+.regional-program-page__body,
+.regional-program-page__card-body,
+.regional-program-page__step-body,
+.regional-program-page__legal,
+.regional-program-page__notice {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  line-height: var(--hu-line-height, 1.55);
+}
+
+.regional-program-page__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-top: var(--hu-space-2);
+}
+
+.regional-program-page__hero-actions .hu-button:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #0174b0);
+  outline-offset: 2px;
+}
+
+.regional-program-page__section {
+  display: grid;
+  gap: var(--hu-space-4);
+  min-width: 0;
+}
+
+.regional-program-page__heading {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  color: var(--hu-color-text);
+}
+
+.regional-program-page__card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--hu-space-4);
+}
+
+.regional-program-page__card {
+  display: grid;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-4);
+  border: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 18%, transparent);
+  border-radius: var(--hu-radius-md, 10px);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 4%, transparent);
+  min-width: 0;
+}
+
+.regional-program-page__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-3);
+}
+
+.regional-program-page__card-number,
+.regional-program-page__step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 55%, transparent);
+  color: var(--hu-color-primary, #0174b0);
+  font-weight: 700;
+  font-size: var(--hu-font-size-sm);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 8%, transparent);
+}
+
+.regional-program-page__card-title,
+.regional-program-page__step-title {
+  margin: 0;
+  font-size: var(--hu-font-size-md, 1rem);
+  color: var(--hu-color-text);
+}
+
+.regional-program-page__icon {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.regional-program-page__icon--sm {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.regional-program-page__section--split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--hu-space-5);
+  align-items: center;
+}
+
+.regional-program-page__section-copy,
+.regional-program-page__section-media {
+  min-width: 0;
+}
+
+.regional-program-page__inline-image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--hu-radius-md, 10px);
+  object-fit: cover;
+}
+
+.regional-program-page__tool-list,
+.regional-program-page__benefit-list,
+.regional-program-page__principle-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.regional-program-page__tool-item,
+.regional-program-page__benefit-item,
+.regional-program-page__principle-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  color: var(--hu-color-text);
+  line-height: 1.45;
+}
+
+.regional-program-page__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.regional-program-page__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.regional-program-page__step-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.regional-program-page__notice {
+  padding: var(--hu-space-3);
+  border-inline-start: 3px solid var(--hu-color-primary, #0174b0);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 6%, transparent);
+  border-radius: 0 var(--hu-radius-sm, 6px) var(--hu-radius-sm, 6px) 0;
+}
+
+.regional-program-page__legal {
+  max-width: 70ch;
+}
+
+.regional-program-page__principle-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .regional-program-page__hero {
+    background-image:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, #ffffff 88%, transparent) 0%,
+        color-mix(in srgb, #ffffff 68%, transparent) 40%,
+        color-mix(in srgb, #ffffff 20%, transparent) 62%,
+        transparent 78%
+      ),
+      url("/illustrations/support/humanity-union-teamwork-hands.webp");
+    background-size: auto, cover;
+    background-position: center, center right;
+    background-repeat: no-repeat;
+  }
+
+  [dir="rtl"] .regional-program-page__hero {
+    background-image:
+      linear-gradient(
+        270deg,
+        color-mix(in srgb, #ffffff 88%, transparent) 0%,
+        color-mix(in srgb, #ffffff 68%, transparent) 40%,
+        color-mix(in srgb, #ffffff 20%, transparent) 62%,
+        transparent 78%
+      ),
+      url("/illustrations/support/humanity-union-teamwork-hands-rtl.webp");
+    background-position: center, center left;
+  }
+
+  .regional-program-page__final-cta {
+    background-image:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, #ffffff 90%, transparent) 0%,
+        color-mix(in srgb, #ffffff 72%, transparent) 42%,
+        color-mix(in srgb, #ffffff 24%, transparent) 68%,
+        transparent 84%
+      ),
+      url("/illustrations/support/hikers-sunset-mountain-panorama.webp");
+    background-size: auto, cover;
+    background-position: center, center right;
+    background-repeat: no-repeat;
+  }
+
+  [dir="rtl"] .regional-program-page__final-cta {
+    background-image:
+      linear-gradient(
+        270deg,
+        color-mix(in srgb, #ffffff 90%, transparent) 0%,
+        color-mix(in srgb, #ffffff 72%, transparent) 42%,
+        color-mix(in srgb, #ffffff 24%, transparent) 68%,
+        transparent 84%
+      ),
+      url("/illustrations/support/hikers-sunset-mountain-panorama-rtl.webp");
+    background-position: center, center left;
+  }
+
+  .regional-program-page__hero-copy,
+  .regional-program-page__final-cta-copy {
+    width: 58%;
+    max-width: 58%;
+    justify-self: start;
+  }
+
+  .regional-program-page__card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .regional-program-page__tool-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .regional-program-page__principle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .regional-program-page__section--split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
+  .regional-program-page__section--split-reverse .regional-program-page__section-copy {
+    order: 2;
+  }
+
+  .regional-program-page__section--split-reverse .regional-program-page__section-media {
+    order: 1;
+  }
+
+  .regional-program-page__card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .regional-program-page__tool-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .regional-program-page__hero,
+  .regional-program-page__final-cta {
+    padding: var(--hu-space-5) var(--hu-space-4);
+    background-image: none;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, #0174b0 10%, transparent) 0%,
+      color-mix(in srgb, #df9815 8%, transparent) 100%
+    );
+  }
+
+  .regional-program-page__hero-copy,
+  .regional-program-page__final-cta-copy {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+[dir="rtl"] .regional-program-page__notice {
+  border-inline-start: 3px solid var(--hu-color-primary, #0174b0);
+  border-radius: var(--hu-radius-sm, 6px) 0 0 var(--hu-radius-sm, 6px);
+}

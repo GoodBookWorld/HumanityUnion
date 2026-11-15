@@ -11,6 +11,7 @@ export const STATIC_PUBLIC_SITEMAP_PATHS = [
   "/knowledge",
   "/media",
   "/volunteer",
+  "/regional-program",
   "/civic-archive",
   "/membership",
   "/contact",

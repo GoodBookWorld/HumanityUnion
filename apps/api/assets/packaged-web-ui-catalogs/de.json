@@ -5220,7 +5220,8 @@
     "sitemap": "Seitenübersicht",
     "support": "Unterstützung",
     "terms": "Bedingungen",
-    "workspace": "Arbeitsbereich"
+    "workspace": "Arbeitsbereich",
+    "siteMapRegionalProgram": "Regionales Entwicklungsprogramm"
   },
   "notifications": {
     "actions": {
@@ -7485,6 +7486,116 @@
     "home": {
       "description": "Bürgertechnologie-Plattform für weltweite Solidarität",
       "title": "{siteName}"
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "REGIONALES ENTWICKLUNGSPROGRAMM",
+    "title": "Bringen Sie Humanity Union in Ihre Gemeinschaft",
+    "subtitle": "Nachhaltiger Wandel beginnt bei Menschen, die bereit sind, zusammenzuarbeiten.",
+    "description": "Nehmen Sie am internationalen Programm teil, stellen Sie Humanity Union Menschen in Ihrem Land vor, bauen Sie eine lokale Gemeinschaft auf und helfen Sie, sinnvolle Ideen in reale, positive Ergebnisse zu verwandeln.",
+    "cta": {
+      "join": "Am Programm teilnehmen",
+      "volunteer": "Mehr über Freiwilligenarbeit erfahren"
+    },
+    "mission": {
+      "heading": "Eine bessere Welt wächst dort, wo Menschen zusammenarbeiten",
+      "body": "Humanity Union hilft Menschen weltweit, sich um gemeinsame Werte zu versammeln, Probleme offen zu besprechen, fundierte Lösungen zu finden und gemeinsame Handlungen zu organisieren — in ihren Gemeinschaften, Ländern und international."
+    },
+    "activities": {
+      "heading": "Was Sie in Ihrem Land tun können",
+      "items": {
+        "unite": {
+          "title": "Menschen zusammenbringen",
+          "body": "Stellen Sie Humanity Union Ihrer Gemeinschaft vor, laden Sie Gleichgesinnte ein und helfen Sie, eine Kultur der Zusammenarbeit aufzubauen."
+        },
+        "education": {
+          "title": "Soziale Bildung fördern",
+          "body": "Unterstützen Sie bürgerschaftliche Verantwortung, kritisches Denken und ein besseres Verständnis der Rechte der Menschen sowie der Rolle aktiver Bürgerschaft."
+        },
+        "initiatives": {
+          "title": "Bürgerinitiativen unterstützen",
+          "body": "Erkennen Sie wichtige Themen, schlagen Sie Lösungen vor, organisieren Sie Diskussionen und helfen Sie Initiativen, breitere Unterstützung zu gewinnen."
+        },
+        "partnerships": {
+          "title": "Partnerschaften aufbauen",
+          "body": "Entwickeln Sie die Zusammenarbeit mit Universitäten, Forschenden, gemeinnützigen Organisationen und lokalen Gemeinschaften."
+        }
+      }
+    },
+    "tools": {
+      "heading": "Eine Plattform, die Ihnen hilft zu handeln",
+      "body": "Humanity Union stellt praktische Werkzeuge für bürgerschaftliche Beteiligung und gemeinsame Arbeit bereit.",
+      "imageAlt": "Menschen, die in einem vielfältigen Humanity-Union-Teamtreffen zusammenarbeiten",
+      "items": {
+        "initiatives": "Initiativen",
+        "discussions": "Diskussionen & Analyse",
+        "proposals": "Vorschläge & Verbesserungen",
+        "petitions": "Petitionen",
+        "decisions": "Gemeinschaftliche Entscheidungen",
+        "tracking": "Umsetzungsverfolgung",
+        "media": "Blog / Medien",
+        "workspace": "Arbeitsbereich"
+      }
+    },
+    "benefits": {
+      "heading": "Was die Teilnahme Ihnen persönlich geben kann",
+      "items": {
+        "skills": "Organisations- und Führungsfähigkeiten entwickeln.",
+        "connections": "Neue berufliche und öffentliche Verbindungen weltweit aufbauen.",
+        "experience": "Praktische Erfahrung in bürgerschaftlichen und sozialen Projekten sammeln.",
+        "contribution": "Einen realen Beitrag zu positivem Wandel in Ihrer Gemeinschaft leisten.",
+        "pathway": "Einen möglichen Weg zu einer vereinbarten regionalen Koordinationsrolle erkunden."
+      }
+    },
+    "development": {
+      "heading": "Von individueller Teilnahme zu einem regionalen Team",
+      "intro": "Jede regionale Gemeinschaft beginnt mit der Initiative einzelner Menschen.",
+      "steps": {
+        "volunteer": {
+          "title": "Als Freiwillige oder Freiwilliger beginnen",
+          "body": "Lernen Sie die Plattform kennen, wählen Sie ein Tätigkeitsfeld und nehmen Sie an verfügbaren Aufgaben teil."
+        },
+        "initiative": {
+          "title": "Initiative zeigen",
+          "body": "Laden Sie Gleichgesinnte ein, unterstützen Sie nützliche Projekte, schlagen Sie Ideen vor und teilen Sie Ergebnisse."
+        },
+        "cooperation": {
+          "title": "Lokale Zusammenarbeit stärken",
+          "body": "Bringen Sie Teilnehmende zusammen, stärken Sie die Zusammenarbeit und bauen Sie schrittweise eine Gemeinschaft auf."
+        },
+        "team": {
+          "title": "Ein regionales Team bilden",
+          "body": "Bei fortlaufender Aktivität kann Humanity Union Society ein Team und eine regionale Koordination genehmigen."
+        },
+        "expand": {
+          "title": "Möglichkeiten erweitern",
+          "body": "Wenn die Aktivitäten wachsen, können bei Bedarf ein regionales Büro oder die Zusammenarbeit mit einer lokalen Partnerorganisation in Betracht gezogen werden."
+        }
+      }
+    },
+    "presence": {
+      "heading": "Die Perspektive einer regionalen Präsenz",
+      "body": "In Ländern, in denen eine stabile Gemeinschaft und sinnvolle Aktivität entstanden sind, können zusätzliche organisatorische Optionen in Betracht gezogen werden — etwa ein regionales Team, ein offizielles Büro oder eine Partnerschaft mit einer lokalen gemeinnützigen Organisation.",
+      "notice": "Es gibt keine automatische oder garantierte Einrichtung eines Büros. Solche Entscheidungen werden gesondert getroffen — auf Grundlage realer Ergebnisse, verfügbarer Ressourcen, der lokalen Gesetzgebung und der Zustimmung von Humanity Union Society.",
+      "imageAlt": "Humanity-Union-Flagge in einer Parkumgebung"
+    },
+    "principles": {
+      "heading": "Offen für alle. Getragen von Verantwortung.",
+      "items": {
+        "voluntary": "Freiwillige Teilnahme",
+        "openness": "Offenheit & Chancengleichheit",
+        "transparency": "Transparenz der Tätigkeit",
+        "respect": "Respekt vor lokalen Kulturen und Gesetzen",
+        "cooperation": "Internationale Zusammenarbeit",
+        "publicBenefit": "Gemeinwohl",
+        "results": "Überprüfbare Ergebnisse",
+        "name": "Verantwortungsvoller Umgang mit dem Namen Humanity Union"
+      },
+      "legal": "Humanity Union Society ist eine kanadische gemeinnützige Organisation, die 2025 als rechtliche Grundlage der Humanity-Union-Plattform gegründet wurde. Freiwilligenarbeit gewährt nicht automatisch offizielle Vertretung, Beschäftigung, Finanzierung oder organisatorische Befugnisse."
+    },
+    "finalCta": {
+      "heading": "Werden Sie Teil einer globalen Gemeinschaft für positiven Wandel",
+      "body": "Treten Sie dem Regionalen Entwicklungsprogramm bei und helfen Sie, Humanity Union in Ihrem Land zu entwickeln."
     }
   }
 }

@@ -15,7 +15,7 @@ export const PLATFORM_SUPPORT_LINK_SEED_URLS: Record<
 > = {
   donation: "https://buy.stripe.com/6oE03n4bc9Vm9A45kl",
   volunteer: null,
-  regional_program: "#",
+  regional_program: "/regional-program",
 };
 
 const EPOCH = "1970-01-01T00:00:00.000Z";

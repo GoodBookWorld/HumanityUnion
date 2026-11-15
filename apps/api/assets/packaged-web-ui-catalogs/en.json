@@ -57,7 +57,8 @@
     "openNavMenuAria": "Open navigation menu",
     "footerPlatformNavCol1Aria": "Platform navigation column one",
     "footerPlatformNavCol2Aria": "Platform navigation column two",
-    "footerLegalNavAria": "Legal and transparency navigation"
+    "footerLegalNavAria": "Legal and transparency navigation",
+    "siteMapRegionalProgram": "Regional Development Program"
   },
   "auth": {
     "logIn": "Log in",
@@ -7485,6 +7486,116 @@
       "declinedSuccess": "Commitment declined.",
       "declinedTransferSuccess": "Transfer declined. The current responsible Participant remains responsible.",
       "requestFailed": "Request failed."
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "REGIONAL DEVELOPMENT PROGRAM",
+    "title": "Bring Humanity Union to Your Community",
+    "subtitle": "Lasting change begins with people who are ready to work together.",
+    "description": "Join the international program, introduce Humanity Union to people in your country, build a local community, and help turn meaningful ideas into real, positive results.",
+    "cta": {
+      "join": "Join the Program",
+      "volunteer": "Learn More About Volunteering"
+    },
+    "mission": {
+      "heading": "A Better World Grows Where People Collaborate",
+      "body": "Humanity Union helps people around the world come together around shared values, openly discuss problems, find well-grounded solutions, and organize joint action — in their communities, countries, and internationally."
+    },
+    "activities": {
+      "heading": "What You Can Do in Your Country",
+      "items": {
+        "unite": {
+          "title": "Unite People",
+          "body": "Introduce Humanity Union to your community, invite like-minded people, and help build a culture of cooperation."
+        },
+        "education": {
+          "title": "Advance Social Education",
+          "body": "Support civic responsibility, critical thinking, and a better understanding of people’s rights and the role of active citizenship."
+        },
+        "initiatives": {
+          "title": "Support Civic Initiatives",
+          "body": "Identify important issues, propose solutions, organize discussions, and help initiatives gain broader support."
+        },
+        "partnerships": {
+          "title": "Build Partnerships",
+          "body": "Develop cooperation with universities, researchers, nonprofit organizations, and local communities."
+        }
+      }
+    },
+    "tools": {
+      "heading": "A Platform That Helps You Take Action",
+      "body": "Humanity Union provides practical tools for civic participation and collaborative work.",
+      "imageAlt": "People collaborating in a diverse Humanity Union team meeting",
+      "items": {
+        "initiatives": "Initiatives",
+        "discussions": "Discussions & Analysis",
+        "proposals": "Proposals & Improvements",
+        "petitions": "Petitions",
+        "decisions": "Collective Decisions",
+        "tracking": "Implementation Tracking",
+        "media": "Blog / Media",
+        "workspace": "Workspace"
+      }
+    },
+    "benefits": {
+      "heading": "What Participation Can Give You Personally",
+      "items": {
+        "skills": "Develop organizational and leadership skills.",
+        "connections": "Build new professional and public connections worldwide.",
+        "experience": "Gain practical experience in civic and social projects.",
+        "contribution": "Make a real contribution to positive change in your community.",
+        "pathway": "Explore a potential pathway to an agreed regional coordination role."
+      }
+    },
+    "development": {
+      "heading": "From Individual Participation to a Regional Team",
+      "intro": "Every regional community begins with the initiative of individual people.",
+      "steps": {
+        "volunteer": {
+          "title": "Start as a Volunteer",
+          "body": "Get to know the platform, choose an area of activity, and take part in available tasks."
+        },
+        "initiative": {
+          "title": "Show Initiative",
+          "body": "Invite like-minded people, support useful projects, propose ideas, and share results."
+        },
+        "cooperation": {
+          "title": "Grow Local Cooperation",
+          "body": "Bring participants together, strengthen collaboration, and gradually build a community."
+        },
+        "team": {
+          "title": "Create a Regional Team",
+          "body": "When there is ongoing activity, Humanity Union Society may approve a team and a regional coordinator."
+        },
+        "expand": {
+          "title": "Expand Opportunities",
+          "body": "As activities grow, a regional office or cooperation with a local partner organization may be considered when needed."
+        }
+      }
+    },
+    "presence": {
+      "heading": "The Perspective of a Regional Presence",
+      "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization.",
+      "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society.",
+      "imageAlt": "Humanity Union flag displayed in a park setting"
+    },
+    "principles": {
+      "heading": "Open to Everyone. Based on Responsibility.",
+      "items": {
+        "voluntary": "Voluntary Participation",
+        "openness": "Openness & Equal Opportunities",
+        "transparency": "Transparency in Activity",
+        "respect": "Respect for Local Cultures and Laws",
+        "cooperation": "International Cooperation",
+        "publicBenefit": "Public Benefit",
+        "results": "Verifiable Results",
+        "name": "Responsible Use of the Humanity Union Name"
+      },
+      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the Humanity Union platform. Volunteering does not automatically grant official representation, employment, funding, or organizational authority."
+    },
+    "finalCta": {
+      "heading": "Be Part of a Global Community for Positive Change",
+      "body": "Join the Regional Development Program and help develop Humanity Union in your country."
     }
   }
 }

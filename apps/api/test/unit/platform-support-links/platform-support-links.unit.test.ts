@@ -71,13 +71,13 @@ describe("Production Completion Pack 01 — platform support links (unit)", () =
     }
   });
 
-  it("seeds Regional Program with the '#' placeholder instead of the retired WordPress page", async () => {
-    assert.equal(PLATFORM_SUPPORT_LINK_SEED_URLS.regional_program, "#");
+  it("seeds Regional Program with /regional-program instead of the retired WordPress page", async () => {
+    assert.equal(PLATFORM_SUPPORT_LINK_SEED_URLS.regional_program, "/regional-program");
     assert.equal(PLATFORM_SUPPORT_LINK_SEED_URLS.donation, "https://buy.stripe.com/6oE03n4bc9Vm9A45kl");
 
     const publicList = await listPublicPlatformSupportLinks();
     const regional = publicList.links.find((row) => row.linkId === "regional_program");
-    assert.equal(regional?.url, "#");
+    assert.equal(regional?.url, "/regional-program");
     assert.doesNotMatch(JSON.stringify(publicList), /huws\.org\/regional-program/);
   });
 });

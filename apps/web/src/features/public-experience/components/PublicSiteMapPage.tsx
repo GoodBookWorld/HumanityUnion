@@ -60,6 +60,7 @@ export async function PublicSiteMapPage() {
         { href: "/knowledge", label: tNav("siteMapKnowledgeCenter") },
         { href: "/knowledge/media", label: tNav("siteMapKnowledgeMedia") },
         { href: "/volunteer", label: tNav("siteMapVolunteering") },
+        { href: "/regional-program", label: tNav("siteMapRegionalProgram") },
         { href: "/civic-activity", label: tNav("siteMapCivicActivity") },
       ],
     },

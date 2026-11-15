@@ -3,10 +3,10 @@
 export const SUPPORT_DONATE_URL = "https://buy.stripe.com/6oE03n4bc9Vm9A45kl";
 
 /**
- * Regional Program has no current destination; same-page placeholder until Admin
- * configures one. The retired WordPress `/regional-program/` page must not be linked.
+ * HU-owned Regional Development Program page.
+ * Replaces the retired WordPress /regional-program/ destination.
  */
-export const SUPPORT_REGIONAL_PROGRAM_URL = "#";
+export const SUPPORT_REGIONAL_PROGRAM_URL = "/regional-program";
 
 export const SUPPORT_ILLUSTRATIONS = {
   /** Production Completion Pack 01 — Support hero uses globe-hand illustration. */

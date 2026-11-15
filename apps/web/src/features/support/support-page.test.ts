@@ -64,11 +64,11 @@ describe("Support Page UX Pack 01", () => {
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });
 
-  it("Regional Program defaults to a same-page '#' placeholder, never the retired WordPress page", () => {
+  it("Regional Program defaults to HU-owned /regional-program instead of a same-page '#' placeholder, never the retired WordPress page", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     const constants = read("features/support/support.constants.ts");
-    assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "#");
-    assert.equal(SUPPORT_LINK_FALLBACKS.regional_program, "#");
+    assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "/regional-program");
+    assert.equal(SUPPORT_LINK_FALLBACKS.regional_program, "/regional-program");
     assert.doesNotMatch(constants, /huws\.org\/regional-program/);
     assert.match(content, /href=\{links\.regionalProgramUrl\}/);
   });
@@ -93,30 +93,30 @@ describe("Support Page UX Pack 01", () => {
         )) as typeof fetch;
     }
 
-    it("uses '#' even when the API returns the retired WordPress URL", async () => {
+    it("uses /regional-program even when the API returns the retired WordPress URL", async () => {
       stubSupportLinksResponse([
         { linkId: "donation", url: "https://example.org/donate" },
         { linkId: "volunteer", url: "/volunteer-override" },
         { linkId: "regional_program", url: "https://huws.org/regional-program/" },
       ]);
       const resolved = await fetchPublicSupportOperationalLinks();
-      assert.equal(resolved.regionalProgramUrl, "#");
+      assert.equal(resolved.regionalProgramUrl, "/regional-program");
       assert.equal(resolved.donationUrl, "https://example.org/donate");
       assert.equal(resolved.volunteerUrl, "/volunteer-override");
     });
 
-    it("keeps '#' and the other fallbacks when the API omits links or is unavailable", async () => {
+    it("keeps /regional-program and the other fallbacks when the API omits links or is unavailable", async () => {
       stubSupportLinksResponse([]);
       assert.deepEqual(await fetchPublicSupportOperationalLinks(), {
         donationUrl: SUPPORT_DONATE_URL,
         volunteerUrl: "/volunteer",
-        regionalProgramUrl: "#",
+        regionalProgramUrl: "/regional-program",
       });
 
       globalThis.fetch = (async () => {
         throw new TypeError("network down");
       }) as typeof fetch;
-      assert.equal((await fetchPublicSupportOperationalLinks()).regionalProgramUrl, "#");
+      assert.equal((await fetchPublicSupportOperationalLinks()).regionalProgramUrl, "/regional-program");
     });
   });
 

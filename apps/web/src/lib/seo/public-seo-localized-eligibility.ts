@@ -25,6 +25,7 @@ export type PublicSeoLocalizedPageFamily =
   | "knowledge_list"
   | "knowledge_article"
   | "volunteer"
+  | "regional_program"
   | "contact"
   | "membership"
   | "privacy"
@@ -83,6 +84,9 @@ export function classifyPublicSeoLocalizedPageFamily(
   if (path === "/volunteer") {
     return "volunteer";
   }
+  if (path === "/regional-program") {
+    return "regional_program";
+  }
   if (path === "/contact") {
     return "contact";
   }
@@ -104,6 +108,7 @@ const CHROME_FAMILIES: ReadonlySet<PublicSeoLocalizedPageFamily> = new Set([
   "blog_list",
   "knowledge_list",
   "volunteer",
+  "regional_program",
   "contact",
   "membership",
 ]);

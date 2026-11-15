@@ -47,6 +47,7 @@ describe("SEO-BING-06 — search page indexing", () => {
       "/knowledge",
       "/media",
       "/volunteer",
+      "/regional-program",
       "/civic-archive",
       "/membership",
       "/contact",
@@ -54,7 +55,7 @@ describe("SEO-BING-06 — search page indexing", () => {
       "/terms",
       "/support",
     ]);
-    assert.equal(STATIC_PUBLIC_SITEMAP_PATHS.length, 13);
+    assert.equal(STATIC_PUBLIC_SITEMAP_PATHS.length, 14);
     assert.equal(
       paths.some((entry) => entry.startsWith("/search") || entry.includes("?")),
       false,

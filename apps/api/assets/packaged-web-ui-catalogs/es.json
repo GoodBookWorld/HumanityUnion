@@ -5220,7 +5220,8 @@
     "sitemap": "Mapa del sitio",
     "support": "Soporte",
     "terms": "Términos",
-    "workspace": "Espacio de trabajo"
+    "workspace": "Espacio de trabajo",
+    "siteMapRegionalProgram": "Programa de Desarrollo Regional"
   },
   "notifications": {
     "actions": {
@@ -7485,6 +7486,116 @@
     "home": {
       "description": "Plataforma de tecnología cívica de Solidaridad Mundial",
       "title": "{siteName}"
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "PROGRAMA DE DESARROLLO REGIONAL",
+    "title": "Lleve Humanity Union a su comunidad",
+    "subtitle": "El cambio duradero comienza con personas dispuestas a trabajar juntas.",
+    "description": "Únase al programa internacional, presente Humanity Union a las personas de su país, construya una comunidad local y ayude a convertir ideas significativas en resultados reales y positivos.",
+    "cta": {
+      "join": "Unirse al programa",
+      "volunteer": "Más información sobre el voluntariado"
+    },
+    "mission": {
+      "heading": "Un mundo mejor crece donde las personas colaboran",
+      "body": "Humanity Union ayuda a las personas de todo el mundo a reunirse en torno a valores compartidos, discutir abiertamente los problemas, encontrar soluciones bien fundamentadas y organizar acciones conjuntas — en sus comunidades, países e internacionalmente."
+    },
+    "activities": {
+      "heading": "Qué puede hacer en su país",
+      "items": {
+        "unite": {
+          "title": "Unir a las personas",
+          "body": "Presente Humanity Union a su comunidad, invite a personas afines y ayude a construir una cultura de cooperación."
+        },
+        "education": {
+          "title": "Impulsar la educación social",
+          "body": "Apoye la responsabilidad cívica, el pensamiento crítico y una mejor comprensión de los derechos de las personas y del papel de la ciudadanía activa."
+        },
+        "initiatives": {
+          "title": "Apoyar iniciativas cívicas",
+          "body": "Identifique asuntos importantes, proponga soluciones, organice debates y ayude a que las iniciativas obtengan un apoyo más amplio."
+        },
+        "partnerships": {
+          "title": "Construir alianzas",
+          "body": "Desarrolle la cooperación con universidades, investigadores, organizaciones sin fines de lucro y comunidades locales."
+        }
+      }
+    },
+    "tools": {
+      "heading": "Una plataforma que le ayuda a actuar",
+      "body": "Humanity Union ofrece herramientas prácticas para la participación cívica y el trabajo colaborativo.",
+      "imageAlt": "Personas colaborando en una reunión diversa del equipo de Humanity Union",
+      "items": {
+        "initiatives": "Iniciativas",
+        "discussions": "Debates y análisis",
+        "proposals": "Propuestas y mejoras",
+        "petitions": "Peticiones",
+        "decisions": "Decisiones colectivas",
+        "tracking": "Seguimiento de la implementación",
+        "media": "Blog / Medios",
+        "workspace": "Espacio de trabajo"
+      }
+    },
+    "benefits": {
+      "heading": "Qué puede aportarle personalmente la participación",
+      "items": {
+        "skills": "Desarrollar habilidades de organización y liderazgo.",
+        "connections": "Construir nuevas conexiones profesionales y públicas en todo el mundo.",
+        "experience": "Adquirir experiencia práctica en proyectos cívicos y sociales.",
+        "contribution": "Realizar una contribución real al cambio positivo en su comunidad.",
+        "pathway": "Explorar una posible vía hacia un rol de coordinación regional acordado."
+      }
+    },
+    "development": {
+      "heading": "De la participación individual a un equipo regional",
+      "intro": "Toda comunidad regional comienza con la iniciativa de personas individuales.",
+      "steps": {
+        "volunteer": {
+          "title": "Empezar como voluntario o voluntaria",
+          "body": "Conozca la plataforma, elija un ámbito de actividad y participe en las tareas disponibles."
+        },
+        "initiative": {
+          "title": "Mostrar iniciativa",
+          "body": "Invite a personas afines, apoye proyectos útiles, proponga ideas y comparta resultados."
+        },
+        "cooperation": {
+          "title": "Fortalecer la cooperación local",
+          "body": "Reúna a los participantes, fortalezca la colaboración y construya gradualmente una comunidad."
+        },
+        "team": {
+          "title": "Crear un equipo regional",
+          "body": "Cuando haya actividad continua, Humanity Union Society puede aprobar un equipo y un coordinador o coordinadora regional."
+        },
+        "expand": {
+          "title": "Ampliar oportunidades",
+          "body": "A medida que crecen las actividades, puede considerarse una oficina regional o la cooperación con una organización local asociada cuando sea necesario."
+        }
+      }
+    },
+    "presence": {
+      "heading": "La perspectiva de una presencia regional",
+      "body": "En los países donde se ha establecido una comunidad estable y una actividad significativa, pueden considerarse opciones organizativas adicionales — como un equipo regional, una oficina oficial o una asociación con una organización local sin fines de lucro.",
+      "notice": "No existe una creación automática ni garantizada de una oficina. Tales decisiones se toman por separado, sobre la base de resultados reales, recursos disponibles, legislación local y el acuerdo con Humanity Union Society.",
+      "imageAlt": "Bandera de Humanity Union mostrada en un entorno de parque"
+    },
+    "principles": {
+      "heading": "Abierto a todas las personas. Basado en la responsabilidad.",
+      "items": {
+        "voluntary": "Participación voluntaria",
+        "openness": "Apertura e igualdad de oportunidades",
+        "transparency": "Transparencia en la actividad",
+        "respect": "Respeto a las culturas y leyes locales",
+        "cooperation": "Cooperación internacional",
+        "publicBenefit": "Beneficio público",
+        "results": "Resultados verificables",
+        "name": "Uso responsable del nombre Humanity Union"
+      },
+      "legal": "Humanity Union Society es una organización canadiense sin fines de lucro establecida en 2025 como base jurídica de la plataforma Humanity Union. El voluntariado no otorga automáticamente representación oficial, empleo, financiación ni autoridad organizativa."
+    },
+    "finalCta": {
+      "heading": "Forme parte de una comunidad global por el cambio positivo",
+      "body": "Únase al Programa de Desarrollo Regional y ayude a desarrollar Humanity Union en su país."
     }
   }
 }

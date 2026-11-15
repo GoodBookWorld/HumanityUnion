@@ -57,7 +57,8 @@
     "openNavMenuAria": "開啟導覽選單",
     "footerPlatformNavCol1Aria": "平台導覽第一欄",
     "footerPlatformNavCol2Aria": "平台導覽第二欄",
-    "footerLegalNavAria": "法律與透明度導覽"
+    "footerLegalNavAria": "法律與透明度導覽",
+    "siteMapRegionalProgram": "區域發展計畫"
   },
   "auth": {
     "logIn": "登入",
@@ -7485,6 +7486,116 @@
       "declinedSuccess": "已拒絕承諾。",
       "declinedTransferSuccess": "已拒絕轉移。目前負責參與者仍維持責任。",
       "requestFailed": "請求失敗。"
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "區域發展計畫",
+    "title": "把 Humanity Union 帶到您的社群",
+    "subtitle": "持久的改變，始於願意攜手合作的人。",
+    "description": "加入這項國際計畫，向您所在國家的人們介紹 Humanity Union，建立在地社群，並協助把有意義的想法轉化為真實、正面的成果。",
+    "cta": {
+      "join": "加入計畫",
+      "volunteer": "進一步了解志工參與"
+    },
+    "mission": {
+      "heading": "更好的世界，在人們協作之處成長",
+      "body": "Humanity Union 協助世界各地的人們圍繞共同價值凝聚起來，公開討論問題、尋找有根據的解方，並組織共同行動——在社群、國家，以及國際層面。"
+    },
+    "activities": {
+      "heading": "您可以在自己的國家做什麼",
+      "items": {
+        "unite": {
+          "title": "凝聚人群",
+          "body": "向您的社群介紹 Humanity Union，邀請志同道合的人，並協助建立合作文化。"
+        },
+        "education": {
+          "title": "推動社會教育",
+          "body": "支持公民責任、批判思考，以及對人們權利與積極公民角色的更好理解。"
+        },
+        "initiatives": {
+          "title": "支持公民倡議",
+          "body": "找出重要議題、提出解方、組織討論，並協助倡議獲得更廣泛的支持。"
+        },
+        "partnerships": {
+          "title": "建立夥伴關係",
+          "body": "與大學、研究人員、非營利組織及在地社群發展合作。"
+        }
+      }
+    },
+    "tools": {
+      "heading": "一個協助您採取行動的平台",
+      "body": "Humanity Union 提供實用工具，支持公民參與與協作工作。",
+      "imageAlt": "人們在多元的 Humanity Union 團隊會議中協作",
+      "items": {
+        "initiatives": "倡議",
+        "discussions": "討論與分析",
+        "proposals": "提案與改進",
+        "petitions": "請願",
+        "decisions": "集體決策",
+        "tracking": "執行追蹤",
+        "media": "部落格／媒體",
+        "workspace": "工作區"
+      }
+    },
+    "benefits": {
+      "heading": "參與能為您個人帶來什麼",
+      "items": {
+        "skills": "培養組織與領導能力。",
+        "connections": "在世界各地建立新的專業與公共連結。",
+        "experience": "在公民與社會專案中獲得實務經驗。",
+        "contribution": "為您的社群帶來真實的正面改變貢獻。",
+        "pathway": "探索通往經協議的區域協調角色之可能途徑。"
+      }
+    },
+    "development": {
+      "heading": "從個人參與到區域團隊",
+      "intro": "每一個區域社群，都始於個別人士的主動倡議。",
+      "steps": {
+        "volunteer": {
+          "title": "從志工開始",
+          "body": "認識平台、選擇活動領域，並參與現有任務。"
+        },
+        "initiative": {
+          "title": "展現主動性",
+          "body": "邀請志同道合的人、支持有益專案、提出想法，並分享成果。"
+        },
+        "cooperation": {
+          "title": "發展在地合作",
+          "body": "把參與者聚在一起，加強協作，並逐步建立社群。"
+        },
+        "team": {
+          "title": "成立區域團隊",
+          "body": "當活動持續進行時，Humanity Union Society 可能核准一個團隊與區域協調人。"
+        },
+        "expand": {
+          "title": "拓展機會",
+          "body": "隨著活動成長，必要時可能考慮設立區域辦事處，或與在地夥伴組織合作。"
+        }
+      }
+    },
+    "presence": {
+      "heading": "區域據點的展望",
+      "body": "在已建立穩定社群與有意義活動的國家，可進一步考慮其他組織選項——例如區域團隊、正式辦事處，或與在地非營利組織的夥伴關係。",
+      "notice": "辦事處不會自動或保證設立。此類決定會另行作出，依據實際成果、可用資源、當地法規，以及與 Humanity Union Society 的協議。",
+      "imageAlt": "公園環境中展示的 Humanity Union 旗幟"
+    },
+    "principles": {
+      "heading": "向所有人開放。以責任為基礎。",
+      "items": {
+        "voluntary": "自願參與",
+        "openness": "開放與平等機會",
+        "transparency": "活動透明",
+        "respect": "尊重在地文化與法律",
+        "cooperation": "國際合作",
+        "publicBenefit": "公共利益",
+        "results": "可驗證的成果",
+        "name": "負責任地使用 Humanity Union 名稱"
+      },
+      "legal": "Humanity Union Society 是於 2025 年成立的加拿大非營利組織，作為 Humanity Union 平台的法律基礎。志工參與不會自動賦予正式代表權、就業、資金或組織權力。"
+    },
+    "finalCta": {
+      "heading": "成為推動正向改變的全球社群一員",
+      "body": "加入區域發展計畫，協助在您的國家發展 Humanity Union。"
     }
   }
 }

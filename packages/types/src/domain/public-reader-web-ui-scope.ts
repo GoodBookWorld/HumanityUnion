@@ -62,6 +62,7 @@ export const PUBLIC_READER_WEB_UI_REQUIRED_PREFIXES = [
   "knowledgePublic.",
   "civicMediaPublic.",
   "volunteerPublic.",
+  "regionalProgramPublic.",
   "contactPublic.",
   "legalPublic.",
   "participantPublic.",
