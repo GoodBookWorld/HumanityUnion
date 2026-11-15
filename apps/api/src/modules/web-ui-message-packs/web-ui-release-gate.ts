@@ -90,7 +90,27 @@ function assessAgainstExplicitEnglishPaths(input: {
 export type WebUiReleaseGateSourceKind =
   | "live-public-api"
   | "local-catalog-injection"
-  | "local-packaged-diagnostic";
+  | "local-packaged-diagnostic"
+  /** Candidate packaged catalogs in the release tree — not published Mongo. */
+  | "candidate-packaged";
+
+/**
+ * Enabled Production WEB_UI locales gated for candidate packaged coverage.
+ * Used when --locales is omitted for --source candidate-packaged.
+ * Not derived from a live API call (avoids false PASS / coupling to deploy state).
+ */
+export const PRODUCTION_WEB_UI_CANDIDATE_LOCALES = [
+  "ar",
+  "de",
+  "en",
+  "es",
+  "fr",
+  "he",
+  "ka",
+  "pt",
+  "uk",
+  "zh-Hant",
+] as const;
 
 export type WebUiReleaseGateLocaleCatalogStatus =
   | "ok"
@@ -200,7 +220,9 @@ export function assessWebUiReleaseGateLocale(input: {
       detail:
         input.sourceKind === "local-packaged-diagnostic"
           ? "No packaged catalog file for locale (diagnostic only; packaged ≠ published)."
-          : "No published WEB_UI pack for locale.",
+          : input.sourceKind === "candidate-packaged"
+            ? "No packaged catalog file for locale in this candidate (candidate ≠ live published)."
+            : "No published WEB_UI pack for locale.",
     };
   }
 
@@ -477,6 +499,11 @@ export function formatWebUiReleaseGateReport(report: WebUiReleaseGateReport): st
   if (report.sourceKind === "local-packaged-diagnostic") {
     lines.push(
       "NOTE: local-packaged-diagnostic is NOT published Mongo authority. Do not treat PASS here as live release readiness.",
+    );
+  }
+  if (report.sourceKind === "candidate-packaged") {
+    lines.push(
+      "NOTE: candidate-packaged checks release-tree packaged catalogs only. PASS here is not live published readiness — still run --source live-public-api against the deploy target after Admin add-missing.",
     );
   }
   for (const locale of report.locales) {

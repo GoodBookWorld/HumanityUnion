@@ -11,6 +11,7 @@ import {
   formatWebUiReleaseGateReport,
   listEnabledLocalesFromPublicApi,
   loadPublishedWebUiPackFromPublicApi,
+  PRODUCTION_WEB_UI_CANDIDATE_LOCALES,
   runWebUiReleaseGate,
 } from "../../../src/modules/web-ui-message-packs/web-ui-release-gate.js";
 
@@ -169,5 +170,117 @@ describe("WEB_UI release gate", () => {
     const text = formatWebUiReleaseGateReport(report);
     assert.match(text, /local-packaged-diagnostic/);
     assert.match(text, /NOT published Mongo authority/);
+  });
+
+  it("candidate-packaged complete catalogs PASS (not live authority)", () => {
+    const report = runWebUiReleaseGate({
+      sourceKind: "candidate-packaged",
+      requiredLocales: ["en", "ka"],
+      loadCatalog: (locale) => {
+        if (locale === "en") {
+          return { status: "missing_published_pack" };
+        }
+        return { status: "ok", messages: completeLocale() };
+      },
+      loadEnglishFoundation: () => FIXTURE_EN,
+    });
+    assert.equal(report.pass, true);
+    assert.deepEqual(report.failedLocales, []);
+    const text = formatWebUiReleaseGateReport(report);
+    assert.match(text, /candidate-packaged/);
+    assert.match(text, /not live published readiness/i);
+  });
+
+  it("candidate-packaged missing key FAIL", () => {
+    const incomplete: WebUiMessageTree = {
+      common: { save: "შენახვა" },
+    };
+    const report = runWebUiReleaseGate({
+      sourceKind: "candidate-packaged",
+      requiredLocales: ["ka"],
+      loadCatalog: () => ({ status: "ok", messages: incomplete }),
+      loadEnglishFoundation: () => FIXTURE_EN,
+    });
+    assert.equal(report.pass, false);
+    assert.deepEqual(report.failedLocales, ["ka"]);
+    assert.ok((report.locales[0]?.full?.missingKeyCount ?? 0) > 0);
+  });
+
+  it("candidate-packaged missing locale FAIL", () => {
+    const report = runWebUiReleaseGate({
+      sourceKind: "candidate-packaged",
+      requiredLocales: ["de"],
+      loadCatalog: () => ({ status: "missing_published_pack" }),
+      loadEnglishFoundation: () => FIXTURE_EN,
+    });
+    assert.equal(report.pass, false);
+    assert.equal(report.locales[0]?.catalogStatus, "missing_published_pack");
+    assert.match(report.locales[0]?.detail ?? "", /candidate ≠ live published/);
+  });
+
+  it("candidate-packaged new English key FAIL when locale catalogs lag", () => {
+    const englishWithNewKey: WebUiMessageTree = {
+      ...FIXTURE_EN,
+      common: { save: "Save", cancel: "Cancel", brandNew: "Brand new" },
+    };
+    const report = runWebUiReleaseGate({
+      sourceKind: "candidate-packaged",
+      requiredLocales: ["ka"],
+      loadCatalog: () => ({ status: "ok", messages: completeLocale() }),
+      loadEnglishFoundation: () => englishWithNewKey,
+    });
+    assert.equal(report.pass, false);
+    assert.ok(report.locales[0]?.missingKeySamples.some((path) => path.includes("brandNew")));
+  });
+
+  it("live API unavailable does not produce false PASS", async () => {
+    const listed = await listEnabledLocalesFromPublicApi({
+      apiBaseUrl: "https://example.test",
+      fetchImpl: async () => {
+        throw new Error("ECONNREFUSED");
+      },
+    });
+    assert.equal(listed.ok, false);
+
+    const pack = await loadPublishedWebUiPackFromPublicApi({
+      apiBaseUrl: "https://example.test",
+      locale: "uk",
+      fetchImpl: async () => {
+        throw new Error("ECONNREFUSED");
+      },
+    });
+    assert.equal(pack.status, "source_unavailable");
+
+    const liveReport = runWebUiReleaseGate({
+      sourceKind: "live-public-api",
+      requiredLocales: ["uk"],
+      loadCatalog: () => ({ status: "source_unavailable", reason: "ECONNREFUSED" }),
+      loadEnglishFoundation: () => FIXTURE_EN,
+    });
+    assert.equal(liveReport.pass, false);
+
+    // Candidate check does not consult live API — incomplete packaged still fails closed.
+    const candidateReport = runWebUiReleaseGate({
+      sourceKind: "candidate-packaged",
+      requiredLocales: ["uk"],
+      loadCatalog: () => ({ status: "missing_published_pack" }),
+      loadEnglishFoundation: () => FIXTURE_EN,
+    });
+    assert.equal(candidateReport.pass, false);
+  });
+
+  it("PRODUCTION_WEB_UI_CANDIDATE_LOCALES lists the ten Production locales", () => {
+    assert.deepEqual([...PRODUCTION_WEB_UI_CANDIDATE_LOCALES].sort(), [
+      "ar",
+      "de",
+      "en",
+      "es",
+      "fr",
+      "he",
+      "ka",
+      "pt",
+      "uk",
+      "zh-Hant",
+    ]);
   });
 });

@@ -6,13 +6,24 @@
  *     --source live-public-api \
  *     --api-base https://api-staging.huws.org
  *
- * Local packaged diagnostic only (NOT published Mongo; never a live release PASS substitute):
+ * Candidate packaged coverage (release-tree assets; fails incomplete catalogs):
+ *   node --import tsx apps/api/scripts/check-web-ui-release-gate.ts \
+ *     --source candidate-packaged
+ *
+ *   Optional: --locales ar,de,es (defaults to Production enabled set).
+ *   Exit 0 = candidate packaged catalogs complete vs English foundation.
+ *   Exit 1 = missing locale/keys. Does NOT prove live published readiness.
+ *
+ * Local packaged diagnostic only (NOT a release exit PASS without opt-in):
  *   node --import tsx apps/api/scripts/check-web-ui-release-gate.ts \
  *     --source local-packaged-diagnostic \
  *     --locales uk,ar,es
  *
- * Exit 0 only for a true release PASS (live-public-api), or packaged diagnostic when
- * explicitly opted in with --allow-packaged-diagnostic-pass.
+ * Exit 0 only for:
+ *   - live-public-api when published packs PASS, or
+ *   - candidate-packaged when packaged catalogs PASS, or
+ *   - local-packaged-diagnostic when explicitly opted in with
+ *     --allow-packaged-diagnostic-pass.
  * Never publishes, translates, or calls Gemini.
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -25,6 +36,7 @@ import {
   formatWebUiReleaseGateReport,
   listEnabledLocalesFromPublicApi,
   loadPublishedWebUiPackFromPublicApi,
+  PRODUCTION_WEB_UI_CANDIDATE_LOCALES,
   runWebUiReleaseGate,
   WebUiReleaseGateError,
   type WebUiReleaseGateReport,
@@ -85,11 +97,43 @@ function finalizeReport(
   };
 }
 
+function assertPackagedAssetsPresent(): void {
+  if (!existsSync(packagedAssetsRoot())) {
+    throw new WebUiReleaseGateError(
+      `Packaged catalog directory missing: ${packagedAssetsRoot()}`,
+    );
+  }
+  readFileSync(path.join(packagedAssetsRoot(), "en.json"), "utf8");
+}
+
+function runPackagedCatalogGate(
+  sourceKind: "candidate-packaged" | "local-packaged-diagnostic",
+  requiredLocales: readonly string[],
+): WebUiReleaseGateReport {
+  assertPackagedAssetsPresent();
+  return runWebUiReleaseGate({
+    sourceKind,
+    requiredLocales,
+    loadCatalog: (locale) => {
+      const packaged = loadPackagedWebUiCatalog(locale);
+      if (!packaged) {
+        // English foundation still PASSes in the assessor without a pack file.
+        return { status: "missing_published_pack" };
+      }
+      return { status: "ok", messages: packaged, publishedRevision: null };
+    },
+  });
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   const sourceRaw = (readFlag(argv, "--source") ?? "").trim();
-  if (sourceRaw !== "live-public-api" && sourceRaw !== "local-packaged-diagnostic") {
+  if (
+    sourceRaw !== "live-public-api" &&
+    sourceRaw !== "local-packaged-diagnostic" &&
+    sourceRaw !== "candidate-packaged"
+  ) {
     throw new WebUiReleaseGateError(
-      "Required --source live-public-api | local-packaged-diagnostic",
+      "Required --source live-public-api | candidate-packaged | local-packaged-diagnostic",
     );
   }
   const sourceKind = sourceRaw as WebUiReleaseGateSourceKind;
@@ -144,36 +188,27 @@ async function main(argv: readonly string[]): Promise<number> {
     return report.pass ? 0 : 1;
   }
 
+  if (sourceKind === "candidate-packaged") {
+    const requiredLocales =
+      localesFlag.length > 0 ? localesFlag : [...PRODUCTION_WEB_UI_CANDIDATE_LOCALES];
+    const report = runPackagedCatalogGate(sourceKind, requiredLocales);
+    console.log(formatWebUiReleaseGateReport(report));
+    return report.pass ? 0 : 1;
+  }
+
   // local-packaged-diagnostic — explicit non-authority check
   if (localesFlag.length === 0) {
     throw new WebUiReleaseGateError(
       "--locales is required for local-packaged-diagnostic (never auto-assumes live enabled set).",
     );
   }
-  if (!existsSync(packagedAssetsRoot())) {
-    throw new WebUiReleaseGateError(
-      `Packaged catalog directory missing: ${packagedAssetsRoot()}`,
-    );
-  }
-  readFileSync(path.join(packagedAssetsRoot(), "en.json"), "utf8");
-
-  const report = runWebUiReleaseGate({
-    sourceKind,
-    requiredLocales: localesFlag,
-    loadCatalog: (locale) => {
-      const packaged = loadPackagedWebUiCatalog(locale);
-      if (!packaged) {
-        return { status: "missing_published_pack" };
-      }
-      return { status: "ok", messages: packaged, publishedRevision: null };
-    },
-  });
+  const report = runPackagedCatalogGate(sourceKind, localesFlag);
   console.log(formatWebUiReleaseGateReport(report));
   if (argv.includes("--allow-packaged-diagnostic-pass")) {
     return report.pass ? 0 : 1;
   }
   console.error(
-    "REFUSED as release exit: local-packaged-diagnostic is not published Mongo. Re-run with --source live-public-api --api-base <release-target>.",
+    "REFUSED as release exit: local-packaged-diagnostic is not published Mongo. Re-run with --source live-public-api --api-base <release-target>, or use --source candidate-packaged for release-tree packaged coverage.",
   );
   return 1;
 }

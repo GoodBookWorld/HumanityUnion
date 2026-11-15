@@ -44,6 +44,7 @@ export {
   formatWebUiReleaseGateReport,
   listEnabledLocalesFromPublicApi,
   loadPublishedWebUiPackFromPublicApi,
+  PRODUCTION_WEB_UI_CANDIDATE_LOCALES,
   runWebUiReleaseGate,
   WebUiReleaseGateError,
 } from "./web-ui-release-gate.js";
