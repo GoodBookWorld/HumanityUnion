@@ -1,8 +1,12 @@
+"use client";
+
 import type { PublicPetitionRecord } from "@hu/types";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
+import { resolveAbsoluteCivicShareUrl } from "../../civic-share/civic-share.urls";
 import { publicPetitionHref } from "../../initiative-petition-lifecycle/petition-viewer-selection";
 import {
   PETITION_PIPELINE_STAGES,
@@ -23,11 +27,42 @@ interface PetitionStatusProps {
 
 export function PetitionStatus({ petition, readingText }: PetitionStatusProps) {
   const t = useTranslations("initiativeExperience");
+  const tNews = useTranslations("publicNews");
   const locale = useLocale();
   const { policy, shareLink, status } = petition;
   const date = (value: string | null | undefined) =>
     formatPetitionDate(locale, value) ?? t(`${STATUS}.overview.notScheduled`);
   const supportSummaryKey = supportStatusSummaryKey(status);
+
+  const relativeSharePath = shareLink
+    ? publicPetitionHref(petition.subject.initiativeId, petition.petitionId)
+    : null;
+  const [absoluteShareUrl, setAbsoluteShareUrl] = useState(() =>
+    relativeSharePath ? resolveAbsoluteCivicShareUrl(relativeSharePath) : "",
+  );
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!relativeSharePath) {
+      setAbsoluteShareUrl("");
+      return;
+    }
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : undefined;
+    setAbsoluteShareUrl(resolveAbsoluteCivicShareUrl(relativeSharePath, origin));
+  }, [relativeSharePath]);
+
+  async function handleCopyShareLink() {
+    if (!absoluteShareUrl) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(absoluteShareUrl);
+      setCopyStatus(tNews("card.linkCopied"));
+    } catch {
+      setCopyStatus(tNews("card.copyUnavailable"));
+    }
+  }
 
   return (
     <div className="petition-status">
@@ -67,20 +102,45 @@ export function PetitionStatus({ petition, readingText }: PetitionStatusProps) {
         label={t(`${STATUS}.overview.closingDate`)}
         value={date(policy.endorsementPeriod.closesAt)}
       />
-      <ProfileField
-        label={t(`${STATUS}.overview.shareLink`)}
-        dir={shareLink ? "ltr" : undefined}
-        value={
-          shareLink
-            ? publicPetitionHref(petition.subject.initiativeId, petition.petitionId)
-            : status === "Published" ||
-                status === "Open" ||
-                status === "Closed" ||
-                status === "Archived"
+      {relativeSharePath && absoluteShareUrl ? (
+        <div className="profile-field petition-status__share-field">
+          <span className="profile-field__label">{t(`${STATUS}.overview.shareLink`)}</span>
+          <div className="profile-field__value petition-status__share-value" dir="ltr">
+            <a
+              className="petition-status__share-link"
+              href={absoluteShareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {absoluteShareUrl}
+            </a>
+            <button
+              type="button"
+              className="petition-status__share-copy"
+              onClick={() => void handleCopyShareLink()}
+            >
+              {t("author.archive.share.share")}
+            </button>
+            {copyStatus ? (
+              <span className="petition-status__share-copied" role="status">
+                {copyStatus}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <ProfileField
+          label={t(`${STATUS}.overview.shareLink`)}
+          value={
+            status === "Published" ||
+            status === "Open" ||
+            status === "Closed" ||
+            status === "Archived"
               ? t(`${STATUS}.overview.notAvailable`)
               : t(`${STATUS}.overview.availableAfterPublication`)
-        }
-      />
+          }
+        />
+      )}
     </div>
   );
 }

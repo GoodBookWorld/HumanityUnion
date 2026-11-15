@@ -15,12 +15,40 @@ export type InitiativeLifecycleSourceKind =
   | "external_reference"
   | "ai_generated_draft";
 
+/**
+ * Optional semantic presentation for lifecycle Sources Used items.
+ * Platform chrome is localized in WEB via stable codes; authored fields
+ * remain verbatim content (never WEB_UI / never inferred translation).
+ * English `label` / `summary` stay for backward-compatible API consumers.
+ */
+export type InitiativeLifecycleSourceSnapshotPresentation =
+  | {
+      readonly code: "petition.revision_reference";
+      readonly version: number | null;
+      readonly authoredSummary: string | null;
+    }
+  | {
+      readonly code: "petition.analysis_reference";
+      readonly authoredTitle: string | null;
+    }
+  | {
+      readonly code: "petition.proposal_references";
+      readonly acceptedCount: number;
+    }
+  | {
+      readonly code: "petition.consistency_checks";
+      readonly warningCount: number;
+      readonly totalCount: number;
+    };
+
 export interface InitiativeLifecycleSourceSnapshotItem {
   readonly sourceId: string;
   readonly kind: InitiativeLifecycleSourceKind;
   readonly label: string;
   readonly summary: string;
   readonly referenceUrl?: string;
+  /** When set, WEB may localize platform labels/templates from `code`. */
+  readonly presentation?: InitiativeLifecycleSourceSnapshotPresentation;
 }
 
 /**

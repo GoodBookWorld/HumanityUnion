@@ -138,7 +138,11 @@ describe("HU-LC-05C.4C.7E.6C — Petition-specific Status links", () => {
         [a, PETITION_A, PETITION_B],
         [b, PETITION_B, PETITION_A],
       ] as const) {
-        assert.ok(html.includes(`<span class="profile-field__value" dir="ltr">${expectedHref(own)}</span>`), `${locale} share link`);
+        assert.ok(
+          html.includes(`class="petition-status__share-link"`) &&
+            html.includes(`href="${expectedHref(own)}"`),
+          `${locale} share link`,
+        );
         assert.ok(html.includes(`href="${expectedHref(own)}"`), `${locale} Public Petition link`);
         assert.ok(!html.includes(`?petition=${other}`), `${locale} mentions the other Petition`);
         assert.ok(!html.includes(`${INITIATIVE_ID}#petition`), `${locale} Initiative-only link remains`);

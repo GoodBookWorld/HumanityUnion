@@ -24,6 +24,7 @@ import {
 } from "../api";
 import { formatCollaborationChannelTimestamp } from "../collaboration-channel-format";
 import { resolveCollaborationChannelSystemEventDisplay } from "../../public-initiative-experience/initiative-experience-i18n";
+import { useIccInitiativeDisplayTitle } from "../use-icc-initiative-display-title";
 
 import "./initiative-collaboration-channel.css";
 
@@ -149,6 +150,12 @@ function ChannelParticipantRow({ entry }: { entry: InitiativeActiveAllyEntry }) 
 
 interface InitiativeCollaborationChannelProps {
   initiativeId: string;
+  /**
+   * HU-LC-05C.4C.7F.7N.1 — page-owned Initiative presentation title (same
+   * effective value as PublicExperienceHero). When set, ICC does not open a
+   * separate CT resolve.
+   */
+  initiativeDisplayTitle?: string | null;
 }
 
 type LoadState = "loading" | "ready" | "error";
@@ -160,7 +167,10 @@ type LoadState = "loading" | "ready" | "error";
  * Participants (Part 4/11 — the same order on every breakpoint, matching
  * the mandated mobile stacking order).
  */
-export function InitiativeCollaborationChannel({ initiativeId }: InitiativeCollaborationChannelProps) {
+export function InitiativeCollaborationChannel({
+  initiativeId,
+  initiativeDisplayTitle = null,
+}: InitiativeCollaborationChannelProps) {
   const t = useTranslations("initiativeExperience");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -172,6 +182,11 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const displayTitle = useIccInitiativeDisplayTitle({
+    initiativeId,
+    canonicalTitle: summary?.initiativeTitle ?? "",
+    pagePresentationTitle: initiativeDisplayTitle,
+  });
 
   const messagesRef = useRef(messages);
   useEffect(() => {
@@ -365,8 +380,8 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
   return (
     <section className="icc-channel" aria-labelledby="icc-channel-title">
       <header className="icc-channel__header">
-        <h2 id="icc-channel-title" className="icc-channel__title">
-          {summary.initiativeTitle || t("collaboration.channel.fallbackTitle")}
+        <h2 id="icc-channel-title" className="icc-channel__title" dir="auto">
+          {displayTitle || t("collaboration.channel.fallbackTitle")}
         </h2>
         <p className="icc-channel__header-meta">
           <span>

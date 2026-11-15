@@ -42,6 +42,33 @@
   color: #666;
 }
 
+.petition-status__share-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+}
+
+.petition-status__share-link {
+  color: inherit;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.petition-status__share-copy {
+  border: 1px solid #df9815;
+  background: #fff;
+  color: #525252;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.petition-status__share-copied {
+  color: #525252;
+  font-size: 0.875rem;
+}
+
 .signature-section__button {
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;
