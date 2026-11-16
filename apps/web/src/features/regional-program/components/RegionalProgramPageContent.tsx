@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { Button } from "../../../design-system/components/Button";
 import {
   REGIONAL_PROGRAM_ACTIVITY_ICONS,
@@ -124,6 +125,8 @@ function BannerMedia({
 
 export function RegionalProgramPageContent() {
   const t = useTranslations("regionalProgramPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <div className="regional-program-page">
@@ -137,9 +140,9 @@ export function RegionalProgramPageContent() {
         />
         <div className="regional-program-page__banner-copy regional-program-page__hero-copy">
           <p className="regional-program-page__eyebrow">{t("eyebrow")}</p>
-          <h1 className="regional-program-page__title">{t("title")}</h1>
+          <h1 className="regional-program-page__title">{t("title", siteName)}</h1>
           <p className="regional-program-page__subtitle">{t("subtitle")}</p>
-          <p className="regional-program-page__description">{t("description")}</p>
+          <p className="regional-program-page__description">{t("description", siteName)}</p>
           <div className="regional-program-page__hero-actions">
             <JoinProgramButton label={t("cta.join")} />
             <Button href={REGIONAL_PROGRAM_VOLUNTEER_HREF} variant="secondary">
@@ -156,7 +159,7 @@ export function RegionalProgramPageContent() {
         <h2 id="regional-program-mission-heading" className="regional-program-page__heading">
           {t("mission.heading")}
         </h2>
-        <p className="regional-program-page__body">{t("mission.body")}</p>
+        <p className="regional-program-page__body">{t("mission.body", siteName)}</p>
       </section>
 
       <section
@@ -178,7 +181,7 @@ export function RegionalProgramPageContent() {
                 {t(`activities.items.${item.key}.title`)}
               </h3>
               <p className="regional-program-page__card-body">
-                {t(`activities.items.${item.key}.body`)}
+                {t(`activities.items.${item.key}.body`, siteName)}
               </p>
             </li>
           ))}
@@ -193,7 +196,7 @@ export function RegionalProgramPageContent() {
           <h2 id="regional-program-tools-heading" className="regional-program-page__heading">
             {t("tools.heading")}
           </h2>
-          <p className="regional-program-page__body">{t("tools.body")}</p>
+          <p className="regional-program-page__body">{t("tools.body", siteName)}</p>
           <ul className="regional-program-page__tool-card-grid">
             {TOOL_ITEMS.map((item) => (
               <li key={item.key} className="regional-program-page__tool-card">
@@ -212,7 +215,7 @@ export function RegionalProgramPageContent() {
         <div className="regional-program-page__section-media">
           <Image
             src={REGIONAL_PROGRAM_ASSETS.tools}
-            alt={t("tools.imageAlt")}
+            alt={t("tools.imageAlt", siteName)}
             width={960}
             height={640}
             className="regional-program-page__inline-image"
@@ -289,7 +292,7 @@ export function RegionalProgramPageContent() {
         <div className="regional-program-page__section-media">
           <Image
             src={REGIONAL_PROGRAM_ASSETS.presence}
-            alt={t("presence.imageAlt")}
+            alt={t("presence.imageAlt", siteName)}
             width={960}
             height={640}
             className="regional-program-page__inline-image"
@@ -312,11 +315,11 @@ export function RegionalProgramPageContent() {
                 className="regional-program-page__icon regional-program-page__icon--principle"
                 size={28}
               />
-              <span>{t(`principles.items.${key}`)}</span>
+              <span>{t(`principles.items.${key}`, siteName)}</span>
             </li>
           ))}
         </ul>
-        <p className="regional-program-page__legal">{t("principles.legal")}</p>
+        <p className="regional-program-page__legal">{t("principles.legal", siteName)}</p>
       </section>
 
       <section
@@ -334,7 +337,7 @@ export function RegionalProgramPageContent() {
           <h2 id="regional-program-final-cta-heading" className="regional-program-page__heading">
             {t("finalCta.heading")}
           </h2>
-          <p className="regional-program-page__body">{t("finalCta.body")}</p>
+          <p className="regional-program-page__body">{t("finalCta.body", siteName)}</p>
           <div className="regional-program-page__hero-actions">
             <JoinProgramButton label={t("cta.join")} />
             <Button href={REGIONAL_PROGRAM_VOLUNTEER_HREF} variant="secondary">

@@ -15,8 +15,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("regionalProgramPublic");
+  const siteName = { siteName: brand.siteName };
   return buildPublicPageMetadataForRequest({
-    title: t("title"),
+    title: t("title", siteName),
     description: t("subtitle"),
     canonicalPath: "/regional-program",
     localeFreeCanonicalPath: "/regional-program",

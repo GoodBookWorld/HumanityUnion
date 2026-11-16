@@ -7490,23 +7490,23 @@
   },
   "regionalProgramPublic": {
     "eyebrow": "區域發展計畫",
-    "title": "把 Humanity Union 帶到您的社群",
+    "title": "把 {siteName} 帶到您的社群",
     "subtitle": "持久的改變，始於願意攜手合作的人。",
-    "description": "加入這項國際計畫，向您所在國家的人們介紹 Humanity Union，建立在地社群，並協助把有意義的想法轉化為真實、正面的成果。",
+    "description": "加入這項國際計畫，向您所在國家的人們介紹 {siteName}，建立在地社群，並協助把有意義的想法轉化為真實、正面的成果。",
     "cta": {
       "join": "加入計畫",
       "volunteer": "進一步了解志工參與"
     },
     "mission": {
       "heading": "更好的世界，在人們協作之處成長",
-      "body": "Humanity Union 協助世界各地的人們圍繞共同價值凝聚起來，公開討論問題、尋找有根據的解方，並組織共同行動——在社群、國家，以及國際層面。"
+      "body": "{siteName} 協助世界各地的人們圍繞共同價值凝聚起來，公開討論問題、尋找有根據的解方，並組織共同行動——在社群、國家，以及國際層面。"
     },
     "activities": {
       "heading": "您可以在自己的國家做什麼",
       "items": {
         "unite": {
           "title": "凝聚人群",
-          "body": "向您的社群介紹 Humanity Union，邀請志同道合的人，並協助建立合作文化。"
+          "body": "向您的社群介紹 {siteName}，邀請志同道合的人，並協助建立合作文化。"
         },
         "education": {
           "title": "推動社會教育",
@@ -7524,8 +7524,8 @@
     },
     "tools": {
       "heading": "一個協助您採取行動的平台",
-      "body": "Humanity Union 提供實用工具，支持公民參與與協作工作。",
-      "imageAlt": "人們在多元的 Humanity Union 團隊會議中協作",
+      "body": "{siteName} 提供實用工具，支持公民參與與協作工作。",
+      "imageAlt": "人們在多元的 {siteName} 團隊會議中協作",
       "items": {
         "initiatives": "倡議",
         "discussions": "討論與分析",
@@ -7577,7 +7577,7 @@
       "heading": "區域據點的展望",
       "body": "在已建立穩定社群與有意義活動的國家，可進一步考慮其他組織選項——例如區域團隊、正式辦事處，或與在地非營利組織的夥伴關係。",
       "notice": "辦事處不會自動或保證設立。此類決定會另行作出，依據實際成果、可用資源、當地法規，以及與 Humanity Union Society 的協議。",
-      "imageAlt": "公園環境中展示的 Humanity Union 旗幟"
+      "imageAlt": "公園環境中展示的 {siteName} 旗幟"
     },
     "principles": {
       "heading": "向所有人開放。以責任為基礎。",
@@ -7589,13 +7589,13 @@
         "cooperation": "國際合作",
         "publicBenefit": "公共利益",
         "results": "可驗證的成果",
-        "name": "負責任地使用 Humanity Union 名稱"
+        "name": "負責任地使用 {siteName} 名稱"
       },
-      "legal": "Humanity Union Society 是於 2025 年成立的加拿大非營利組織，作為 Humanity Union 平台的法律基礎。志工參與不會自動賦予正式代表權、就業、資金或組織權力。"
+      "legal": "Humanity Union Society 是於 2025 年成立的加拿大非營利組織，作為 {siteName} 平台的法律基礎。志工參與不會自動賦予正式代表權、就業、資金或組織權力。"
     },
     "finalCta": {
       "heading": "成為推動正向改變的全球社群一員",
-      "body": "加入區域發展計畫，協助在您的國家發展 Humanity Union。"
+      "body": "加入區域發展計畫，協助在您的國家發展 {siteName}。"
     }
   }
 }

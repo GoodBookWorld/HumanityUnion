@@ -46,6 +46,15 @@ describe("Regional Development Program public page", () => {
   it("uses regionalProgramPublic i18n and required section headings", () => {
     const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
     assert.match(content, /useTranslations\("regionalProgramPublic"\)/);
+    assert.match(content, /useLocalizedBrand/);
+    assert.match(content, /t\("title",\s*siteName\)/);
+    assert.match(content, /t\("description",\s*siteName\)/);
+    assert.match(content, /t\("mission\.body",\s*siteName\)/);
+    assert.match(content, /t\("tools\.body",\s*siteName\)/);
+    assert.match(content, /t\("tools\.imageAlt",\s*siteName\)/);
+    assert.match(content, /t\("presence\.imageAlt",\s*siteName\)/);
+    assert.match(content, /t\("principles\.legal",\s*siteName\)/);
+    assert.match(content, /t\("finalCta\.body",\s*siteName\)/);
     assert.match(content, /regional-program-mission-heading/);
     assert.match(content, /regional-program-activities-heading/);
     assert.match(content, /regional-program-tools-heading/);
@@ -158,9 +167,11 @@ describe("Regional Development Program public page", () => {
     assert.doesNotMatch(primaryNav, /regional-program|Regional Program/);
   });
 
-  it("generateMetadata uses regionalProgramPublic title/subtitle", () => {
+  it("generateMetadata uses regionalProgramPublic title/subtitle with siteName", () => {
     const page = read("app/regional-program/page.tsx");
     assert.match(page, /getTranslations\(["']regionalProgramPublic["']\)/);
+    assert.match(page, /resolveBrandForMetadata/);
+    assert.match(page, /t\("title",\s*siteName\)/);
     assert.match(page, /canonicalPath:\s*"\/regional-program"/);
     assert.match(page, /localeFreeCanonicalPath:\s*"\/regional-program"/);
     assert.match(page, /buildPublicPageMetadataForRequest/);
@@ -168,15 +179,59 @@ describe("Regional Development Program public page", () => {
 });
 
 describe("Regional Program i18n foundation", () => {
-  it("regionalProgramPublic exists in English foundation catalog", () => {
+  it("regionalProgramPublic interpolates {siteName} and preserves Society legal name", () => {
     const messages = JSON.parse(
       readFileSync(path.join(webSrc, "features/i18n/messages/en.json"), "utf8"),
     ) as {
-      regionalProgramPublic: { title: string; subtitle: string };
+      regionalProgramPublic: {
+        title: string;
+        subtitle: string;
+        principles: { legal: string };
+        development: { steps: { team: { body: string } } };
+        presence: { notice: string };
+      };
       navigation: { siteMapRegionalProgram: string };
     };
-    assert.equal(messages.regionalProgramPublic.title, "Bring Humanity Union to Your Community");
+    assert.equal(messages.regionalProgramPublic.title, "Bring {siteName} to Your Community");
+    assert.match(messages.regionalProgramPublic.principles.legal, /\{siteName\}/);
+    assert.match(
+      messages.regionalProgramPublic.principles.legal,
+      /Humanity Union Society/,
+    );
+    assert.doesNotMatch(
+      messages.regionalProgramPublic.principles.legal.replaceAll(
+        "Humanity Union Society",
+        "",
+      ),
+      /Humanity Union/,
+    );
+    assert.match(
+      messages.regionalProgramPublic.development.steps.team.body,
+      /Humanity Union Society/,
+    );
+    assert.doesNotMatch(
+      messages.regionalProgramPublic.development.steps.team.body,
+      /\{siteName\}/,
+    );
+    assert.match(messages.regionalProgramPublic.presence.notice, /Humanity Union Society/);
     assert.equal(typeof messages.regionalProgramPublic.subtitle, "string");
     assert.equal(messages.navigation.siteMapRegionalProgram, "Regional Development Program");
+
+    const packagedUk = JSON.parse(
+      readFileSync(
+        path.join(webRoot, "../api/assets/packaged-web-ui-catalogs/uk.json"),
+        "utf8",
+      ),
+    ) as { regionalProgramPublic: { title: string } };
+    assert.equal(
+      packagedUk.regionalProgramPublic.title,
+      "Принесіть {siteName} у свою спільноту",
+    );
+    const displayed = packagedUk.regionalProgramPublic.title.replaceAll(
+      "{siteName}",
+      "Союз Людяності",
+    );
+    assert.match(displayed, /Союз Людяності/);
+    assert.doesNotMatch(displayed, /Humanity Union/);
   });
 });

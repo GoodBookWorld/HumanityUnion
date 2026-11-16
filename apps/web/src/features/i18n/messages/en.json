@@ -7490,23 +7490,23 @@
   },
   "regionalProgramPublic": {
     "eyebrow": "REGIONAL DEVELOPMENT PROGRAM",
-    "title": "Bring Humanity Union to Your Community",
+    "title": "Bring {siteName} to Your Community",
     "subtitle": "Lasting change begins with people who are ready to work together.",
-    "description": "Join the international program, introduce Humanity Union to people in your country, build a local community, and help turn meaningful ideas into real, positive results.",
+    "description": "Join the international program, introduce {siteName} to people in your country, build a local community, and help turn meaningful ideas into real, positive results.",
     "cta": {
       "join": "Join the Program",
       "volunteer": "Learn More About Volunteering"
     },
     "mission": {
       "heading": "A Better World Grows Where People Collaborate",
-      "body": "Humanity Union helps people around the world come together around shared values, openly discuss problems, find well-grounded solutions, and organize joint action — in their communities, countries, and internationally."
+      "body": "{siteName} helps people around the world come together around shared values, openly discuss problems, find well-grounded solutions, and organize joint action — in their communities, countries, and internationally."
     },
     "activities": {
       "heading": "What You Can Do in Your Country",
       "items": {
         "unite": {
           "title": "Unite People",
-          "body": "Introduce Humanity Union to your community, invite like-minded people, and help build a culture of cooperation."
+          "body": "Introduce {siteName} to your community, invite like-minded people, and help build a culture of cooperation."
         },
         "education": {
           "title": "Advance Social Education",
@@ -7524,8 +7524,8 @@
     },
     "tools": {
       "heading": "A Platform That Helps You Take Action",
-      "body": "Humanity Union provides practical tools for civic participation and collaborative work.",
-      "imageAlt": "People collaborating in a diverse Humanity Union team meeting",
+      "body": "{siteName} provides practical tools for civic participation and collaborative work.",
+      "imageAlt": "People collaborating in a diverse {siteName} team meeting",
       "items": {
         "initiatives": "Initiatives",
         "discussions": "Discussions & Analysis",
@@ -7577,7 +7577,7 @@
       "heading": "The Perspective of a Regional Presence",
       "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization.",
       "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society.",
-      "imageAlt": "Humanity Union flag displayed in a park setting"
+      "imageAlt": "{siteName} flag displayed in a park setting"
     },
     "principles": {
       "heading": "Open to Everyone. Based on Responsibility.",
@@ -7589,13 +7589,13 @@
         "cooperation": "International Cooperation",
         "publicBenefit": "Public Benefit",
         "results": "Verifiable Results",
-        "name": "Responsible Use of the Humanity Union Name"
+        "name": "Responsible Use of the {siteName} Name"
       },
-      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the Humanity Union platform. Volunteering does not automatically grant official representation, employment, funding, or organizational authority."
+      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the {siteName} platform. Volunteering does not automatically grant official representation, employment, funding, or organizational authority."
     },
     "finalCta": {
       "heading": "Be Part of a Global Community for Positive Change",
-      "body": "Join the Regional Development Program and help develop Humanity Union in your country."
+      "body": "Join the Regional Development Program and help develop {siteName} in your country."
     }
   }
 }

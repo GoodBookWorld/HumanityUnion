@@ -7490,23 +7490,23 @@
   },
   "regionalProgramPublic": {
     "eyebrow": "REGIONALES ENTWICKLUNGSPROGRAMM",
-    "title": "Bringen Sie Humanity Union in Ihre Gemeinschaft",
+    "title": "Bringen Sie {siteName} in Ihre Gemeinschaft",
     "subtitle": "Nachhaltiger Wandel beginnt bei Menschen, die bereit sind, zusammenzuarbeiten.",
-    "description": "Nehmen Sie am internationalen Programm teil, stellen Sie Humanity Union Menschen in Ihrem Land vor, bauen Sie eine lokale Gemeinschaft auf und helfen Sie, sinnvolle Ideen in reale, positive Ergebnisse zu verwandeln.",
+    "description": "Nehmen Sie am internationalen Programm teil, stellen Sie {siteName} Menschen in Ihrem Land vor, bauen Sie eine lokale Gemeinschaft auf und helfen Sie, sinnvolle Ideen in reale, positive Ergebnisse zu verwandeln.",
     "cta": {
       "join": "Am Programm teilnehmen",
       "volunteer": "Mehr über Freiwilligenarbeit erfahren"
     },
     "mission": {
       "heading": "Eine bessere Welt wächst dort, wo Menschen zusammenarbeiten",
-      "body": "Humanity Union hilft Menschen weltweit, sich um gemeinsame Werte zu versammeln, Probleme offen zu besprechen, fundierte Lösungen zu finden und gemeinsame Handlungen zu organisieren — in ihren Gemeinschaften, Ländern und international."
+      "body": "{siteName} hilft Menschen weltweit, sich um gemeinsame Werte zu versammeln, Probleme offen zu besprechen, fundierte Lösungen zu finden und gemeinsame Handlungen zu organisieren — in ihren Gemeinschaften, Ländern und international."
     },
     "activities": {
       "heading": "Was Sie in Ihrem Land tun können",
       "items": {
         "unite": {
           "title": "Menschen zusammenbringen",
-          "body": "Stellen Sie Humanity Union Ihrer Gemeinschaft vor, laden Sie Gleichgesinnte ein und helfen Sie, eine Kultur der Zusammenarbeit aufzubauen."
+          "body": "Stellen Sie {siteName} Ihrer Gemeinschaft vor, laden Sie Gleichgesinnte ein und helfen Sie, eine Kultur der Zusammenarbeit aufzubauen."
         },
         "education": {
           "title": "Soziale Bildung fördern",
@@ -7524,8 +7524,8 @@
     },
     "tools": {
       "heading": "Eine Plattform, die Ihnen hilft zu handeln",
-      "body": "Humanity Union stellt praktische Werkzeuge für bürgerschaftliche Beteiligung und gemeinsame Arbeit bereit.",
-      "imageAlt": "Menschen, die in einem vielfältigen Humanity-Union-Teamtreffen zusammenarbeiten",
+      "body": "{siteName} stellt praktische Werkzeuge für bürgerschaftliche Beteiligung und gemeinsame Arbeit bereit.",
+      "imageAlt": "Menschen, die in einem vielfältigen {siteName}-Teamtreffen zusammenarbeiten",
       "items": {
         "initiatives": "Initiativen",
         "discussions": "Diskussionen & Analyse",
@@ -7577,7 +7577,7 @@
       "heading": "Die Perspektive einer regionalen Präsenz",
       "body": "In Ländern, in denen eine stabile Gemeinschaft und sinnvolle Aktivität entstanden sind, können zusätzliche organisatorische Optionen in Betracht gezogen werden — etwa ein regionales Team, ein offizielles Büro oder eine Partnerschaft mit einer lokalen gemeinnützigen Organisation.",
       "notice": "Es gibt keine automatische oder garantierte Einrichtung eines Büros. Solche Entscheidungen werden gesondert getroffen — auf Grundlage realer Ergebnisse, verfügbarer Ressourcen, der lokalen Gesetzgebung und der Zustimmung von Humanity Union Society.",
-      "imageAlt": "Humanity-Union-Flagge in einer Parkumgebung"
+      "imageAlt": "{siteName}-Flagge in einer Parkumgebung"
     },
     "principles": {
       "heading": "Offen für alle. Getragen von Verantwortung.",
@@ -7589,13 +7589,13 @@
         "cooperation": "Internationale Zusammenarbeit",
         "publicBenefit": "Gemeinwohl",
         "results": "Überprüfbare Ergebnisse",
-        "name": "Verantwortungsvoller Umgang mit dem Namen Humanity Union"
+        "name": "Verantwortungsvoller Umgang mit dem Namen {siteName}"
       },
-      "legal": "Humanity Union Society ist eine kanadische gemeinnützige Organisation, die 2025 als rechtliche Grundlage der Humanity-Union-Plattform gegründet wurde. Freiwilligenarbeit gewährt nicht automatisch offizielle Vertretung, Beschäftigung, Finanzierung oder organisatorische Befugnisse."
+      "legal": "Humanity Union Society ist eine kanadische gemeinnützige Organisation, die 2025 als rechtliche Grundlage der {siteName}-Plattform gegründet wurde. Freiwilligenarbeit gewährt nicht automatisch offizielle Vertretung, Beschäftigung, Finanzierung oder organisatorische Befugnisse."
     },
     "finalCta": {
       "heading": "Werden Sie Teil einer globalen Gemeinschaft für positiven Wandel",
-      "body": "Treten Sie dem Regionalen Entwicklungsprogramm bei und helfen Sie, Humanity Union in Ihrem Land zu entwickeln."
+      "body": "Treten Sie dem Regionalen Entwicklungsprogramm bei und helfen Sie, {siteName} in Ihrem Land zu entwickeln."
     }
   }
 }

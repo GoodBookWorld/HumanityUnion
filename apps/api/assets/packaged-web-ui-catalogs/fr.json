@@ -7490,23 +7490,23 @@
   },
   "regionalProgramPublic": {
     "eyebrow": "PROGRAMME DE DÉVELOPPEMENT RÉGIONAL",
-    "title": "Apportez Humanity Union à votre communauté",
+    "title": "Apportez {siteName} à votre communauté",
     "subtitle": "Un changement durable commence avec des personnes prêtes à travailler ensemble.",
-    "description": "Rejoignez le programme international, présentez Humanity Union aux personnes de votre pays, construisez une communauté locale et aidez à transformer des idées significatives en résultats concrets et positifs.",
+    "description": "Rejoignez le programme international, présentez {siteName} aux personnes de votre pays, construisez une communauté locale et aidez à transformer des idées significatives en résultats concrets et positifs.",
     "cta": {
       "join": "Rejoindre le programme",
       "volunteer": "En savoir plus sur le bénévolat"
     },
     "mission": {
       "heading": "Un monde meilleur grandit là où les gens collaborent",
-      "body": "Humanity Union aide les personnes du monde entier à se rassembler autour de valeurs partagées, à discuter ouvertement des problèmes, à trouver des solutions bien fondées et à organiser une action commune — dans leurs communautés, leurs pays et à l’échelle internationale."
+      "body": "{siteName} aide les personnes du monde entier à se rassembler autour de valeurs partagées, à discuter ouvertement des problèmes, à trouver des solutions bien fondées et à organiser une action commune — dans leurs communautés, leurs pays et à l’échelle internationale."
     },
     "activities": {
       "heading": "Ce que vous pouvez faire dans votre pays",
       "items": {
         "unite": {
           "title": "Rassembler les personnes",
-          "body": "Présentez Humanity Union à votre communauté, invitez des personnes partageant les mêmes idées et aidez à bâtir une culture de coopération."
+          "body": "Présentez {siteName} à votre communauté, invitez des personnes partageant les mêmes idées et aidez à bâtir une culture de coopération."
         },
         "education": {
           "title": "Faire progresser l’éducation sociale",
@@ -7524,8 +7524,8 @@
     },
     "tools": {
       "heading": "Une plateforme qui vous aide à agir",
-      "body": "Humanity Union fournit des outils pratiques pour la participation civique et le travail collaboratif.",
-      "imageAlt": "Des personnes collaborant lors d’une réunion d’équipe diverse de Humanity Union",
+      "body": "{siteName} fournit des outils pratiques pour la participation civique et le travail collaboratif.",
+      "imageAlt": "Des personnes collaborant lors d’une réunion d’équipe diverse de {siteName}",
       "items": {
         "initiatives": "Initiatives",
         "discussions": "Discussions et analyse",
@@ -7577,7 +7577,7 @@
       "heading": "La perspective d’une présence régionale",
       "body": "Dans les pays où une communauté stable et une activité significative ont été établies, des options organisationnelles supplémentaires peuvent être envisagées — telles qu’une équipe régionale, un bureau officiel ou un partenariat avec une organisation locale à but non lucratif.",
       "notice": "Il n’existe aucune création automatique ou garantie d’un bureau. De telles décisions sont prises séparément, sur la base de résultats réels, des ressources disponibles, de la législation locale et de l’accord avec Humanity Union Society.",
-      "imageAlt": "Drapeau de Humanity Union exposé dans un parc"
+      "imageAlt": "Drapeau de {siteName} exposé dans un parc"
     },
     "principles": {
       "heading": "Ouvert à toutes et à tous. Fondé sur la responsabilité.",
@@ -7589,13 +7589,13 @@
         "cooperation": "Coopération internationale",
         "publicBenefit": "Intérêt public",
         "results": "Résultats vérifiables",
-        "name": "Usage responsable du nom Humanity Union"
+        "name": "Usage responsable du nom {siteName}"
       },
-      "legal": "Humanity Union Society est une organisation canadienne à but non lucratif établie en 2025 comme fondement juridique de la plateforme Humanity Union. Le bénévolat n’accorde pas automatiquement une représentation officielle, un emploi, un financement ou une autorité organisationnelle."
+      "legal": "Humanity Union Society est une organisation canadienne à but non lucratif établie en 2025 comme fondement juridique de la plateforme {siteName}. Le bénévolat n’accorde pas automatiquement une représentation officielle, un emploi, un financement ou une autorité organisationnelle."
     },
     "finalCta": {
       "heading": "Faites partie d’une communauté mondiale pour un changement positif",
-      "body": "Rejoignez le Programme de développement régional et aidez à développer Humanity Union dans votre pays."
+      "body": "Rejoignez le Programme de développement régional et aidez à développer {siteName} dans votre pays."
     }
   }
 }

@@ -7490,23 +7490,23 @@
   },
   "regionalProgramPublic": {
     "eyebrow": "PROGRAMA DE DESENVOLVIMENTO REGIONAL",
-    "title": "Leve a Humanity Union à sua comunidade",
+    "title": "Leve a {siteName} à sua comunidade",
     "subtitle": "A mudança duradoura começa com pessoas prontas para trabalhar juntas.",
-    "description": "Participe do programa internacional, apresente a Humanity Union às pessoas do seu país, construa uma comunidade local e ajude a transformar ideias significativas em resultados reais e positivos.",
+    "description": "Participe do programa internacional, apresente a {siteName} às pessoas do seu país, construa uma comunidade local e ajude a transformar ideias significativas em resultados reais e positivos.",
     "cta": {
       "join": "Participar do programa",
       "volunteer": "Saiba mais sobre o voluntariado"
     },
     "mission": {
       "heading": "Um mundo melhor cresce onde as pessoas colaboram",
-      "body": "A Humanity Union ajuda pessoas em todo o mundo a reunirem-se em torno de valores partilhados, a discutir abertamente os problemas, a encontrar soluções bem fundamentadas e a organizar ações conjuntas — nas suas comunidades, países e internacionalmente."
+      "body": "A {siteName} ajuda pessoas em todo o mundo a reunirem-se em torno de valores partilhados, a discutir abertamente os problemas, a encontrar soluções bem fundamentadas e a organizar ações conjuntas — nas suas comunidades, países e internacionalmente."
     },
     "activities": {
       "heading": "O que pode fazer no seu país",
       "items": {
         "unite": {
           "title": "Unir pessoas",
-          "body": "Apresente a Humanity Union à sua comunidade, convide pessoas com ideias semelhantes e ajude a construir uma cultura de cooperação."
+          "body": "Apresente a {siteName} à sua comunidade, convide pessoas com ideias semelhantes e ajude a construir uma cultura de cooperação."
         },
         "education": {
           "title": "Avançar a educação social",
@@ -7524,8 +7524,8 @@
     },
     "tools": {
       "heading": "Uma plataforma que o ajuda a agir",
-      "body": "A Humanity Union disponibiliza ferramentas práticas para a participação cívica e o trabalho colaborativo.",
-      "imageAlt": "Pessoas a colaborar numa reunião diversificada da equipa Humanity Union",
+      "body": "A {siteName} disponibiliza ferramentas práticas para a participação cívica e o trabalho colaborativo.",
+      "imageAlt": "Pessoas a colaborar numa reunião diversificada da equipa {siteName}",
       "items": {
         "initiatives": "Iniciativas",
         "discussions": "Discussões e análise",
@@ -7577,7 +7577,7 @@
       "heading": "A perspetiva de uma presença regional",
       "body": "Em países onde foi estabelecida uma comunidade estável e uma atividade significativa, podem ser consideradas opções organizacionais adicionais — como uma equipa regional, um escritório oficial ou uma parceria com uma organização local sem fins lucrativos.",
       "notice": "Não existe criação automática ou garantida de um escritório. Tais decisões são tomadas separadamente, com base em resultados reais, recursos disponíveis, legislação local e acordo com a Humanity Union Society.",
-      "imageAlt": "Bandeira da Humanity Union exibida num ambiente de parque"
+      "imageAlt": "Bandeira da {siteName} exibida num ambiente de parque"
     },
     "principles": {
       "heading": "Aberto a todos. Baseado na responsabilidade.",
@@ -7589,13 +7589,13 @@
         "cooperation": "Cooperação internacional",
         "publicBenefit": "Benefício público",
         "results": "Resultados verificáveis",
-        "name": "Uso responsável do nome Humanity Union"
+        "name": "Uso responsável do nome {siteName}"
       },
-      "legal": "A Humanity Union Society é uma organização canadiana sem fins lucrativos estabelecida em 2025 como base jurídica da plataforma Humanity Union. O voluntariado não concede automaticamente representação oficial, emprego, financiamento ou autoridade organizacional."
+      "legal": "A Humanity Union Society é uma organização canadiana sem fins lucrativos estabelecida em 2025 como base jurídica da plataforma {siteName}. O voluntariado não concede automaticamente representação oficial, emprego, financiamento ou autoridade organizacional."
     },
     "finalCta": {
       "heading": "Faça parte de uma comunidade global pela mudança positiva",
-      "body": "Junte-se ao Programa de Desenvolvimento Regional e ajude a desenvolver a Humanity Union no seu país."
+      "body": "Junte-se ao Programa de Desenvolvimento Regional e ajude a desenvolver a {siteName} no seu país."
     }
   }
 }
