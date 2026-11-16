@@ -115,21 +115,27 @@ describe("Volunteer public page", () => {
     );
   });
 
-  it("RTL hero uses head-volunteer-rtl.webp via dir=rtl without locale lists", () => {
+  it("RTL hero uses volunteer-rtl.webp via dir=rtl with identical image properties", () => {
     const css = read("features/volunteer/volunteer-page.css");
     const constants = read("features/volunteer/volunteer.constants.ts");
-    assert.equal(VOLUNTEER_ASSETS.heroRtl, "/icons/volunteer/head-volunteer-rtl.webp");
+    assert.equal(VOLUNTEER_ASSETS.heroRtl, "/icons/volunteer/volunteer-rtl.webp");
     assert.ok(
-      existsSync(path.join(webRoot, "public/icons/volunteer/head-volunteer-rtl.webp")),
+      existsSync(path.join(webRoot, "public/icons/volunteer/volunteer-rtl.webp")),
     );
     assert.match(css, /\[dir=["']rtl["']\]\s*\.volunteer-page__hero/);
-    assert.match(css, /\[dir=["']rtl["']\][\s\S]*head-volunteer-rtl\.webp/);
-    // Narrower RTL art crops vertically under cover — pin top so the head stays visible.
-    assert.match(
-      css,
-      /\[dir=["']rtl["']\]\s*\.volunteer-page__hero[\s\S]*background-position:\s*center,\s*left top/,
-    );
+    assert.match(css, /\[dir=["']rtl["']\][\s\S]*volunteer-rtl\.webp/);
+    assert.doesNotMatch(css, /head-volunteer-rtl\.webp/);
+    // Same sizing/positioning as LTR — no RTL-only position/size overrides.
     assert.match(css, /\.volunteer-page__hero[\s\S]*background-position:\s*center,\s*center right/);
+    assert.match(css, /@media \(min-width:\s*600px\)[\s\S]*background-size:\s*auto,\s*cover/);
+    assert.doesNotMatch(
+      css,
+      /\[dir=["']rtl["']\]\s*\.volunteer-page__hero[\s\S]*background-position:/,
+    );
+    assert.doesNotMatch(
+      css,
+      /\[dir=["']rtl["']\]\s*\.volunteer-page__hero[\s\S]*background-size:/,
+    );
     assert.doesNotMatch(css, /["']ar["']|["']he["']|locale\s*===\s*["']ar["']/);
     assert.doesNotMatch(constants, /["']ar["']|["']he["']/);
   });
