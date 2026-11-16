@@ -5,9 +5,12 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import {
+  REGIONAL_PROGRAM_ACTIVITY_ICONS,
   REGIONAL_PROGRAM_ASSETS,
-  REGIONAL_PROGRAM_ICONS,
+  REGIONAL_PROGRAM_BENEFIT_ICON,
   REGIONAL_PROGRAM_JOIN_MAILTO,
+  REGIONAL_PROGRAM_PRINCIPLE_ICON,
+  REGIONAL_PROGRAM_TOOL_ICONS,
   REGIONAL_PROGRAM_VOLUNTEER_HREF,
 } from "../regional-program.constants";
 import { RegionalProgramIcon } from "./RegionalProgramIcon";
@@ -15,21 +18,21 @@ import { RegionalProgramIcon } from "./RegionalProgramIcon";
 import "../regional-program-page.css";
 
 const ACTIVITY_ITEMS = [
-  { key: "unite", icon: REGIONAL_PROGRAM_ICONS.unite },
-  { key: "education", icon: REGIONAL_PROGRAM_ICONS.education },
-  { key: "initiatives", icon: REGIONAL_PROGRAM_ICONS.initiatives },
-  { key: "partnerships", icon: REGIONAL_PROGRAM_ICONS.partnerships },
+  { key: "unite", icon: REGIONAL_PROGRAM_ACTIVITY_ICONS.unite },
+  { key: "education", icon: REGIONAL_PROGRAM_ACTIVITY_ICONS.education },
+  { key: "initiatives", icon: REGIONAL_PROGRAM_ACTIVITY_ICONS.initiatives },
+  { key: "partnerships", icon: REGIONAL_PROGRAM_ACTIVITY_ICONS.partnerships },
 ] as const;
 
 const TOOL_ITEMS = [
-  { key: "initiatives", icon: REGIONAL_PROGRAM_ICONS.initiatives },
-  { key: "discussions", icon: REGIONAL_PROGRAM_ICONS.discussions },
-  { key: "proposals", icon: REGIONAL_PROGRAM_ICONS.proposals },
-  { key: "petitions", icon: REGIONAL_PROGRAM_ICONS.petitions },
-  { key: "decisions", icon: REGIONAL_PROGRAM_ICONS.decisions },
-  { key: "tracking", icon: REGIONAL_PROGRAM_ICONS.tracking },
-  { key: "media", icon: REGIONAL_PROGRAM_ICONS.media },
-  { key: "workspace", icon: REGIONAL_PROGRAM_ICONS.workspace },
+  { key: "initiatives", icon: REGIONAL_PROGRAM_TOOL_ICONS.initiatives },
+  { key: "proposals", icon: REGIONAL_PROGRAM_TOOL_ICONS.proposals },
+  { key: "decisions", icon: REGIONAL_PROGRAM_TOOL_ICONS.decisions },
+  { key: "media", icon: REGIONAL_PROGRAM_TOOL_ICONS.media },
+  { key: "discussions", icon: REGIONAL_PROGRAM_TOOL_ICONS.discussions },
+  { key: "petitions", icon: REGIONAL_PROGRAM_TOOL_ICONS.petitions },
+  { key: "tracking", icon: REGIONAL_PROGRAM_TOOL_ICONS.tracking },
+  { key: "workspace", icon: REGIONAL_PROGRAM_TOOL_ICONS.workspace },
 ] as const;
 
 const BENEFIT_ITEMS = [
@@ -76,13 +79,63 @@ function JoinProgramButton({
   );
 }
 
+/** Full-bleed LTR/RTL photograph layer behind banner copy. */
+function BannerMedia({
+  ltrSrc,
+  rtlSrc,
+  width,
+  height,
+  fit,
+}: {
+  readonly ltrSrc: string;
+  readonly rtlSrc: string;
+  readonly width: number;
+  readonly height: number;
+  /** Hero uses cover; final CTA may stretch to fill the container. */
+  readonly fit: "cover" | "fill";
+}) {
+  const fitClass =
+    fit === "fill"
+      ? "regional-program-page__banner-image--fill"
+      : "regional-program-page__banner-image--cover";
+
+  return (
+    <div className="regional-program-page__banner-media" aria-hidden="true">
+      <Image
+        src={ltrSrc}
+        alt=""
+        width={width}
+        height={height}
+        className={`regional-program-page__banner-image regional-program-page__banner-image--ltr ${fitClass}`}
+        sizes="100vw"
+        priority={fit === "cover"}
+      />
+      <Image
+        src={rtlSrc}
+        alt=""
+        width={width}
+        height={height}
+        className={`regional-program-page__banner-image regional-program-page__banner-image--rtl ${fitClass}`}
+        sizes="100vw"
+      />
+    </div>
+  );
+}
+
 export function RegionalProgramPageContent() {
   const t = useTranslations("regionalProgramPublic");
 
   return (
     <div className="regional-program-page">
       <header className="regional-program-page__hero">
-        <div className="regional-program-page__hero-copy">
+        <BannerMedia
+          ltrSrc={REGIONAL_PROGRAM_ASSETS.hero}
+          rtlSrc={REGIONAL_PROGRAM_ASSETS.heroRtl}
+          width={1888}
+          height={544}
+          fit="cover"
+        />
+        <div className="regional-program-page__banner-copy regional-program-page__hero-copy">
           <p className="regional-program-page__eyebrow">{t("eyebrow")}</p>
           <h1 className="regional-program-page__title">{t("title")}</h1>
           <p className="regional-program-page__subtitle">{t("subtitle")}</p>
@@ -114,18 +167,13 @@ export function RegionalProgramPageContent() {
           {t("activities.heading")}
         </h2>
         <ul className="regional-program-page__card-grid">
-          {ACTIVITY_ITEMS.map((item, index) => (
+          {ACTIVITY_ITEMS.map((item) => (
             <li key={item.key} className="regional-program-page__card">
-              <div className="regional-program-page__card-top">
-                <span className="regional-program-page__card-number" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <RegionalProgramIcon
-                  src={item.icon}
-                  className="regional-program-page__icon"
-                  size={32}
-                />
-              </div>
+              <RegionalProgramIcon
+                src={item.icon}
+                className="regional-program-page__icon regional-program-page__icon--activity"
+                size={42}
+              />
               <h3 className="regional-program-page__card-title">
                 {t(`activities.items.${item.key}.title`)}
               </h3>
@@ -146,15 +194,17 @@ export function RegionalProgramPageContent() {
             {t("tools.heading")}
           </h2>
           <p className="regional-program-page__body">{t("tools.body")}</p>
-          <ul className="regional-program-page__tool-list">
+          <ul className="regional-program-page__tool-card-grid">
             {TOOL_ITEMS.map((item) => (
-              <li key={item.key} className="regional-program-page__tool-item">
+              <li key={item.key} className="regional-program-page__tool-card">
                 <RegionalProgramIcon
                   src={item.icon}
-                  className="regional-program-page__icon regional-program-page__icon--sm"
-                  size={24}
+                  className="regional-program-page__icon regional-program-page__icon--tool"
+                  size={40}
                 />
-                <span>{t(`tools.items.${item.key}`)}</span>
+                <span className="regional-program-page__tool-card-title">
+                  {t(`tools.items.${item.key}`)}
+                </span>
               </li>
             ))}
           </ul>
@@ -177,13 +227,13 @@ export function RegionalProgramPageContent() {
         <h2 id="regional-program-benefits-heading" className="regional-program-page__heading">
           {t("benefits.heading")}
         </h2>
-        <ul className="regional-program-page__benefit-list">
+        <ul className="regional-program-page__benefit-strip">
           {BENEFIT_ITEMS.map((key) => (
             <li key={key} className="regional-program-page__benefit-item">
               <RegionalProgramIcon
-                src={REGIONAL_PROGRAM_ICONS.benefit}
-                className="regional-program-page__icon regional-program-page__icon--sm"
-                size={24}
+                src={REGIONAL_PROGRAM_BENEFIT_ICON}
+                className="regional-program-page__icon regional-program-page__icon--benefit"
+                size={36}
               />
               <span>{t(`benefits.items.${key}`)}</span>
             </li>
@@ -199,13 +249,18 @@ export function RegionalProgramPageContent() {
           {t("development.heading")}
         </h2>
         <p className="regional-program-page__body">{t("development.intro")}</p>
-        <ol className="regional-program-page__steps">
+        <ol className="regional-program-page__timeline">
           {DEVELOPMENT_STEPS.map((key, index) => (
-            <li key={key} className="regional-program-page__step">
-              <span className="regional-program-page__step-number" aria-hidden="true">
-                {index + 1}
-              </span>
-              <div className="regional-program-page__step-copy">
+            <li key={key} className="regional-program-page__timeline-step">
+              <div className="regional-program-page__timeline-marker">
+                <span className="regional-program-page__timeline-number" aria-hidden="true">
+                  {index + 1}
+                </span>
+                {index < DEVELOPMENT_STEPS.length - 1 ? (
+                  <span className="regional-program-page__timeline-connector" aria-hidden="true" />
+                ) : null}
+              </div>
+              <div className="regional-program-page__timeline-copy">
                 <h3 className="regional-program-page__step-title">
                   {t(`development.steps.${key}.title`)}
                 </h3>
@@ -253,9 +308,9 @@ export function RegionalProgramPageContent() {
           {PRINCIPLE_ITEMS.map((key) => (
             <li key={key} className="regional-program-page__principle-item">
               <RegionalProgramIcon
-                src={REGIONAL_PROGRAM_ICONS.principle}
-                className="regional-program-page__icon regional-program-page__icon--sm"
-                size={22}
+                src={REGIONAL_PROGRAM_PRINCIPLE_ICON}
+                className="regional-program-page__icon regional-program-page__icon--principle"
+                size={28}
               />
               <span>{t(`principles.items.${key}`)}</span>
             </li>
@@ -268,7 +323,14 @@ export function RegionalProgramPageContent() {
         className="regional-program-page__final-cta"
         aria-labelledby="regional-program-final-cta-heading"
       >
-        <div className="regional-program-page__final-cta-copy">
+        <BannerMedia
+          ltrSrc={REGIONAL_PROGRAM_ASSETS.cta}
+          rtlSrc={REGIONAL_PROGRAM_ASSETS.ctaRtl}
+          width={1024}
+          height={380}
+          fit="fill"
+        />
+        <div className="regional-program-page__banner-copy regional-program-page__final-cta-copy">
           <h2 id="regional-program-final-cta-heading" className="regional-program-page__heading">
             {t("finalCta.heading")}
           </h2>

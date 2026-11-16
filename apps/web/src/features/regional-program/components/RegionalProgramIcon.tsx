@@ -3,10 +3,11 @@ import Image from "next/image";
 type RegionalProgramIconProps = {
   readonly src: string;
   readonly className?: string;
+  /** Display box size in px. Aspect ratio is preserved via object-fit. */
   readonly size?: number;
 };
 
-/** Decorative brand-blue SVG icon (accessible name comes from adjacent text). */
+/** Decorative icon (accessible name comes from adjacent text). */
 export function RegionalProgramIcon({
   src,
   className,

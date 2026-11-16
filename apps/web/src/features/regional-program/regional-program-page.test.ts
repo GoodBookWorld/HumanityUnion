@@ -5,10 +5,13 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  REGIONAL_PROGRAM_ACTIVITY_ICONS,
   REGIONAL_PROGRAM_ASSETS,
-  REGIONAL_PROGRAM_ICONS,
+  REGIONAL_PROGRAM_BENEFIT_ICON,
   REGIONAL_PROGRAM_JOIN_MAILTO,
+  REGIONAL_PROGRAM_PRINCIPLE_ICON,
   REGIONAL_PROGRAM_ROUTE,
+  REGIONAL_PROGRAM_TOOL_ICONS,
   REGIONAL_PROGRAM_VOLUNTEER_HREF,
 } from "./regional-program.constants.js";
 import { SUPPORT_LINK_FALLBACKS, SUPPORT_REGIONAL_PROGRAM_URL } from "../support/support.constants.js";
@@ -21,6 +24,10 @@ const webRoot = path.resolve(webSrc, "..");
 
 function read(relativeFromWebSrc: string): string {
   return readFileSync(path.join(webSrc, relativeFromWebSrc), "utf8");
+}
+
+function publicPath(assetPath: string): string {
+  return path.join(webRoot, "public", assetPath.replace(/^\//, ""));
 }
 
 describe("Regional Development Program public page", () => {
@@ -61,30 +68,82 @@ describe("Regional Development Program public page", () => {
 
   it("required illustration assets exist under public/illustrations/support", () => {
     for (const assetPath of Object.values(REGIONAL_PROGRAM_ASSETS)) {
-      const absolute = path.join(webRoot, "public", assetPath.replace(/^\//, ""));
-      assert.ok(existsSync(absolute), `missing ${assetPath}`);
+      assert.ok(existsSync(publicPath(assetPath)), `missing ${assetPath}`);
       assert.match(assetPath, /^\/illustrations\/support\//);
       assert.match(assetPath, /\.webp$/);
     }
   });
 
-  it("icons are true-vector brand-blue SVGs without embedded rasters", () => {
-    for (const iconPath of Object.values(REGIONAL_PROGRAM_ICONS)) {
-      const absolute = path.join(webRoot, "public", iconPath.replace(/^\//, ""));
-      assert.ok(existsSync(absolute), `missing ${iconPath}`);
-      const svg = readFileSync(absolute, "utf8");
+  it("activity icons are true-vector brand-blue SVGs without embedded rasters", () => {
+    for (const iconPath of Object.values(REGIONAL_PROGRAM_ACTIVITY_ICONS)) {
+      assert.ok(existsSync(publicPath(iconPath)), `missing ${iconPath}`);
+      assert.match(iconPath, /\.svg$/);
+      const svg = readFileSync(publicPath(iconPath), "utf8");
       assert.doesNotMatch(svg, /data:image/);
       assert.match(svg, /#0174b0/i);
     }
   });
 
-  it("RTL hero and final CTA use dir=rtl CSS without locale hardcodes", () => {
+  it("tool, benefit, and principle icons resolve to existing public assets", () => {
+    for (const iconPath of Object.values(REGIONAL_PROGRAM_TOOL_ICONS)) {
+      assert.ok(existsSync(publicPath(iconPath)), `missing ${iconPath}`);
+    }
+    assert.ok(existsSync(publicPath(REGIONAL_PROGRAM_BENEFIT_ICON)));
+    assert.ok(existsSync(publicPath(REGIONAL_PROGRAM_PRINCIPLE_ICON)));
+    assert.equal(REGIONAL_PROGRAM_TOOL_ICONS.initiatives, "/icons/workspace/initiatives.svg");
+    assert.equal(REGIONAL_PROGRAM_TOOL_ICONS.media, "/icons/burger/blog.png");
+    assert.equal(REGIONAL_PROGRAM_BENEFIT_ICON, "/icons/workspace/proposals.png");
+    assert.equal(REGIONAL_PROGRAM_PRINCIPLE_ICON, "/icons/messenger/attention.png");
+  });
+
+  it("activity cards omit numeric badges and use 42px volunteer icons", () => {
+    const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
+    const constants = read("features/regional-program/regional-program.constants.ts");
+    assert.doesNotMatch(content, /card-number/);
+    assert.match(content, /size=\{42\}/);
+    assert.match(constants, /unite-people\.svg/);
+    assert.match(constants, /soc-education\.svg/);
+    assert.match(constants, /support-civic\.svg/);
+    assert.match(constants, /build-partner\.svg/);
+  });
+
+  it("banners use full-bleed LTR/RTL images without darkening overlays", () => {
+    const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
     const css = read("features/regional-program/regional-program-page.css");
-    assert.match(css, /\[dir=["']rtl["']\]\s*\.regional-program-page__hero/);
-    assert.match(css, /\[dir=["']rtl["']\]\s*\.regional-program-page__final-cta/);
-    assert.match(css, /humanity-union-teamwork-hands-rtl\.webp/);
-    assert.match(css, /hikers-sunset-mountain-panorama-rtl\.webp/);
+    assert.match(content, /banner-image--ltr/);
+    assert.match(content, /banner-image--rtl/);
+    assert.match(content, /fit="cover"/);
+    assert.match(content, /fit="fill"/);
+    assert.match(css, /\[dir=["']rtl["']\]\s*\.regional-program-page__banner-image--rtl/);
+    assert.match(css, /\[dir=["']rtl["']\]\s*\.regional-program-page__hero-copy/);
+    assert.match(css, /\[dir=["']rtl["']\]\s*\.regional-program-page__final-cta-copy/);
+    assert.match(css, /object-fit:\s*cover/);
+    assert.match(css, /object-fit:\s*fill/);
+    assert.match(css, /\.regional-program-page__hero-copy\s*\{[^}]*background:\s*transparent/s);
+    assert.match(css, /\.regional-program-page__final-cta-copy\s*\{[^}]*background:\s*transparent/s);
+    assert.doesNotMatch(
+      css,
+      /\.regional-program-page__(?:hero|final-cta|banner)-copy[^}]*linear-gradient\([^)]*#061828/,
+    );
     assert.doesNotMatch(css, /["']ar["']|["']he["']|locale\s*===\s*["']ar["']/);
+  });
+
+  it("platform tools render as an eight-card grid", () => {
+    const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
+    const css = read("features/regional-program/regional-program-page.css");
+    assert.match(content, /tool-card-grid/);
+    assert.match(content, /tool-card-title/);
+    assert.match(content, /size=\{40\}/);
+    assert.match(css, /\.regional-program-page__tool-card-grid/);
+    assert.match(css, /repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
+    assert.doesNotMatch(content, /tool-list/);
+  });
+
+  it("benefits use a strip and development uses a distinct timeline", () => {
+    const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
+    assert.match(content, /benefit-strip/);
+    assert.match(content, /timeline/);
+    assert.doesNotMatch(content, /benefit-list/);
   });
 
   it("SEO perimeter, sitemap, and Support CTA integrate safely", () => {

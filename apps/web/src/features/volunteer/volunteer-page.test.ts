@@ -115,15 +115,15 @@ describe("Volunteer public page", () => {
     );
   });
 
-  it("RTL hero uses volunteer-rtl.webp via dir=rtl without locale lists", () => {
+  it("RTL hero uses head-volunteer-rtl.webp via dir=rtl without locale lists", () => {
     const css = read("features/volunteer/volunteer-page.css");
     const constants = read("features/volunteer/volunteer.constants.ts");
-    assert.equal(VOLUNTEER_ASSETS.heroRtl, "/icons/volunteer/volunteer-rtl.webp");
+    assert.equal(VOLUNTEER_ASSETS.heroRtl, "/icons/volunteer/head-volunteer-rtl.webp");
     assert.ok(
-      existsSync(path.join(webRoot, "public/icons/volunteer/volunteer-rtl.webp")),
+      existsSync(path.join(webRoot, "public/icons/volunteer/head-volunteer-rtl.webp")),
     );
     assert.match(css, /\[dir=["']rtl["']\]\s*\.volunteer-page__hero/);
-    assert.match(css, /\[dir=["']rtl["']\][\s\S]*volunteer-rtl\.webp/);
+    assert.match(css, /\[dir=["']rtl["']\][\s\S]*head-volunteer-rtl\.webp/);
     assert.doesNotMatch(css, /["']ar["']|["']he["']|locale\s*===\s*["']ar["']/);
     assert.doesNotMatch(constants, /["']ar["']|["']he["']/);
   });

@@ -7,29 +7,97 @@
   box-sizing: border-box;
 }
 
+/* ——— Hero & final CTA: full-bleed image + overlay copy ——— */
+
 .regional-program-page__hero,
 .regional-program-page__final-cta {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--hu-space-5);
   align-items: center;
-  padding: var(--hu-space-6) var(--hu-space-5);
+  padding: 0;
   border-radius: var(--hu-radius-lg, 12px);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, #0174b0 10%, transparent) 0%,
-    color-mix(in srgb, #df9815 8%, transparent) 100%
-  );
   overflow: hidden;
+  background: #0b2a40;
+  min-width: 0;
+  min-height: 18rem;
 }
 
+.regional-program-page__banner-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.regional-program-page__banner-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-position: center;
+}
+
+.regional-program-page__banner-image--cover {
+  object-fit: cover;
+}
+
+.regional-program-page__banner-image--fill {
+  /* Explicitly allowed for the panoramic final CTA */
+  object-fit: fill;
+}
+
+.regional-program-page__banner-image--rtl {
+  display: none;
+}
+
+[dir="rtl"] .regional-program-page__banner-image--ltr {
+  display: none;
+}
+
+[dir="rtl"] .regional-program-page__banner-image--rtl {
+  display: block;
+}
+
+.regional-program-page__banner-copy,
 .regional-program-page__hero-copy,
 .regional-program-page__final-cta-copy {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: var(--hu-space-3);
   min-width: 0;
-  width: 100%;
+  width: min(100%, 34rem);
   max-width: 100%;
+  padding: var(--hu-space-6) var(--hu-space-5);
+  box-sizing: border-box;
+  color: #ffffff;
+}
+
+/* LTR: hero copy start (left); final CTA copy end (right). No darkening overlays. */
+.regional-program-page__hero-copy {
+  justify-self: start;
+  background: transparent;
+}
+
+.regional-program-page__final-cta-copy {
+  justify-self: end;
+  background: transparent;
+}
+
+[dir="rtl"] .regional-program-page__hero-copy {
+  justify-self: end;
+  background: transparent;
+}
+
+[dir="rtl"] .regional-program-page__final-cta-copy {
+  justify-self: start;
+  background: transparent;
 }
 
 .regional-program-page__eyebrow {
@@ -38,25 +106,30 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--hu-color-text-muted);
+  color: color-mix(in srgb, #ffffff 78%, transparent);
 }
 
 .regional-program-page__title {
   margin: 0;
   font-size: clamp(1.75rem, 3.5vw, 2.35rem);
   line-height: 1.2;
-  color: var(--hu-color-text);
+  color: #ffffff;
 }
 
 .regional-program-page__subtitle {
   margin: 0;
   font-size: var(--hu-font-size-lg);
-  color: var(--hu-color-text);
+  color: #ffffff;
   line-height: var(--hu-line-height, 1.55);
   font-weight: 600;
 }
 
-.regional-program-page__description,
+.regional-program-page__description {
+  margin: 0;
+  color: color-mix(in srgb, #ffffff 88%, transparent);
+  line-height: var(--hu-line-height, 1.55);
+}
+
 .regional-program-page__body,
 .regional-program-page__card-body,
 .regional-program-page__step-body,
@@ -67,6 +140,15 @@
   line-height: var(--hu-line-height, 1.55);
 }
 
+.regional-program-page__final-cta-copy .regional-program-page__heading,
+.regional-program-page__final-cta-copy .regional-program-page__body {
+  color: #ffffff;
+}
+
+.regional-program-page__final-cta-copy .regional-program-page__body {
+  color: color-mix(in srgb, #ffffff 88%, transparent);
+}
+
 .regional-program-page__hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -75,8 +157,19 @@
 }
 
 .regional-program-page__hero-actions .hu-button:focus-visible {
-  outline: 2px solid var(--hu-color-primary, #0174b0);
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
+}
+
+.regional-program-page__hero-actions .hu-button--secondary {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid color-mix(in srgb, #ffffff 75%, transparent);
+}
+
+.regional-program-page__hero-actions .hu-button--secondary:hover {
+  background: color-mix(in srgb, #ffffff 12%, transparent);
+  color: #ffffff;
 }
 
 .regional-program-page__section {
@@ -91,6 +184,8 @@
   color: var(--hu-color-text);
 }
 
+/* ——— Activity cards ——— */
+
 .regional-program-page__card-grid {
   list-style: none;
   margin: 0;
@@ -98,39 +193,20 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--hu-space-4);
+  align-items: stretch;
 }
 
 .regional-program-page__card {
   display: grid;
+  grid-template-rows: auto auto 1fr;
   gap: var(--hu-space-2);
   padding: var(--hu-space-4);
   border: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 18%, transparent);
   border-radius: var(--hu-radius-md, 10px);
   background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 4%, transparent);
   min-width: 0;
-}
-
-.regional-program-page__card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--hu-space-3);
-}
-
-.regional-program-page__card-number,
-.regional-program-page__step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  flex-shrink: 0;
-  border-radius: 999px;
-  border: 2px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 55%, transparent);
-  color: var(--hu-color-primary, #0174b0);
-  font-weight: 700;
-  font-size: var(--hu-font-size-sm);
-  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 8%, transparent);
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .regional-program-page__card-title,
@@ -141,15 +217,30 @@
 }
 
 .regional-program-page__icon {
-  width: 2rem;
-  height: 2rem;
   object-fit: contain;
+  object-position: center;
   flex-shrink: 0;
+  display: block;
 }
 
-.regional-program-page__icon--sm {
-  width: 1.5rem;
-  height: 1.5rem;
+.regional-program-page__icon--activity {
+  width: 42px;
+  height: 42px;
+}
+
+.regional-program-page__icon--tool {
+  width: 40px;
+  height: 40px;
+}
+
+.regional-program-page__icon--benefit {
+  width: 36px;
+  height: 36px;
+}
+
+.regional-program-page__icon--principle {
+  width: 28px;
+  height: 28px;
 }
 
 .regional-program-page__section--split {
@@ -171,18 +262,43 @@
   object-fit: cover;
 }
 
-.regional-program-page__tool-list,
-.regional-program-page__benefit-list,
-.regional-program-page__principle-grid {
+/* ——— Platform tools: eight equal cards ——— */
+
+.regional-program-page__tool-card-grid {
   list-style: none;
-  margin: 0;
+  margin: var(--hu-space-2) 0 0;
   padding: 0;
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--hu-space-3);
+  align-items: stretch;
 }
 
-.regional-program-page__tool-item,
-.regional-program-page__benefit-item,
+.regional-program-page__tool-card {
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  align-content: center;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  min-height: 6.5rem;
+  height: 100%;
+  padding: var(--hu-space-4) var(--hu-space-3);
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--hu-color-text);
+  line-height: 1.35;
+  border: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 18%, transparent);
+  border-radius: var(--hu-radius-md, 10px);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 4%, transparent);
+}
+
+.regional-program-page__tool-card-title {
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--hu-color-text);
+}
+
 .regional-program-page__principle-item {
   display: flex;
   align-items: flex-start;
@@ -192,25 +308,92 @@
   line-height: 1.45;
 }
 
-.regional-program-page__steps {
+/* ——— Personal benefits: horizontal strip ——— */
+
+.regional-program-page__benefit-strip {
+  list-style: none;
+  margin: 0;
+  padding: var(--hu-space-4) 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-radius: var(--hu-radius-md, 10px);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 14%, transparent);
+  overflow: hidden;
+}
+
+.regional-program-page__benefit-item {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  padding: var(--hu-space-4) var(--hu-space-3);
+  color: var(--hu-color-text);
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.regional-program-page__benefit-item + .regional-program-page__benefit-item {
+  border-block-start: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 16%, transparent);
+}
+
+/* ——— Development stages: timeline progression ——— */
+
+.regional-program-page__timeline {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--hu-space-4);
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 
-.regional-program-page__step {
-  display: flex;
-  align-items: flex-start;
+.regional-program-page__timeline-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: var(--hu-space-3);
   min-width: 0;
+  align-items: stretch;
 }
 
-.regional-program-page__step-copy {
+.regional-program-page__timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 2.25rem;
+}
+
+.regional-program-page__timeline-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid var(--hu-color-primary, #0174b0);
+  color: var(--hu-color-primary, #0174b0);
+  font-weight: 700;
+  font-size: var(--hu-font-size-sm);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 10%, transparent);
+  z-index: 1;
+}
+
+.regional-program-page__timeline-connector {
+  flex: 1 1 auto;
+  width: 2px;
+  min-height: 1.5rem;
+  margin-block: 0.25rem;
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 40%, transparent);
+}
+
+.regional-program-page__timeline-copy {
   display: grid;
   gap: 0.25rem;
   min-width: 0;
+  padding-bottom: var(--hu-space-4);
 }
 
 .regional-program-page__notice {
@@ -225,79 +408,42 @@
 }
 
 .regional-program-page__principle-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
   grid-template-columns: 1fr;
+  gap: var(--hu-space-3);
 }
 
 @media (min-width: 600px) {
-  .regional-program-page__hero {
-    background-image:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, #ffffff 88%, transparent) 0%,
-        color-mix(in srgb, #ffffff 68%, transparent) 40%,
-        color-mix(in srgb, #ffffff 20%, transparent) 62%,
-        transparent 78%
-      ),
-      url("/illustrations/support/humanity-union-teamwork-hands.webp");
-    background-size: auto, cover;
-    background-position: center, center right;
-    background-repeat: no-repeat;
-  }
-
-  [dir="rtl"] .regional-program-page__hero {
-    background-image:
-      linear-gradient(
-        270deg,
-        color-mix(in srgb, #ffffff 88%, transparent) 0%,
-        color-mix(in srgb, #ffffff 68%, transparent) 40%,
-        color-mix(in srgb, #ffffff 20%, transparent) 62%,
-        transparent 78%
-      ),
-      url("/illustrations/support/humanity-union-teamwork-hands-rtl.webp");
-    background-position: center, center left;
-  }
-
+  .regional-program-page__hero,
   .regional-program-page__final-cta {
-    background-image:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, #ffffff 90%, transparent) 0%,
-        color-mix(in srgb, #ffffff 72%, transparent) 42%,
-        color-mix(in srgb, #ffffff 24%, transparent) 68%,
-        transparent 84%
-      ),
-      url("/illustrations/support/hikers-sunset-mountain-panorama.webp");
-    background-size: auto, cover;
-    background-position: center, center right;
-    background-repeat: no-repeat;
-  }
-
-  [dir="rtl"] .regional-program-page__final-cta {
-    background-image:
-      linear-gradient(
-        270deg,
-        color-mix(in srgb, #ffffff 90%, transparent) 0%,
-        color-mix(in srgb, #ffffff 72%, transparent) 42%,
-        color-mix(in srgb, #ffffff 24%, transparent) 68%,
-        transparent 84%
-      ),
-      url("/illustrations/support/hikers-sunset-mountain-panorama-rtl.webp");
-    background-position: center, center left;
-  }
-
-  .regional-program-page__hero-copy,
-  .regional-program-page__final-cta-copy {
-    width: 58%;
-    max-width: 58%;
-    justify-self: start;
+    min-height: 20rem;
   }
 
   .regional-program-page__card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .regional-program-page__tool-list {
+  .regional-program-page__tool-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .regional-program-page__benefit-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .regional-program-page__benefit-item + .regional-program-page__benefit-item {
+    border-block-start: none;
+  }
+
+  .regional-program-page__benefit-item:nth-child(odd) {
+    border-inline-end: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 16%, transparent);
+  }
+
+  .regional-program-page__benefit-item:nth-child(n + 3) {
+    border-block-start: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 16%, transparent);
   }
 
   .regional-program-page__principle-grid {
@@ -306,6 +452,17 @@
 }
 
 @media (min-width: 900px) {
+  .regional-program-page__hero,
+  .regional-program-page__final-cta {
+    min-height: 22rem;
+  }
+
+  .regional-program-page__hero-copy,
+  .regional-program-page__final-cta-copy {
+    width: min(52%, 36rem);
+    padding: var(--hu-space-7, 3rem) var(--hu-space-6);
+  }
+
   .regional-program-page__section--split {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
@@ -322,27 +479,84 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .regional-program-page__tool-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .regional-program-page__tool-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .regional-program-page__benefit-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .regional-program-page__benefit-item {
+    padding: var(--hu-space-5) var(--hu-space-3);
+  }
+
+  .regional-program-page__benefit-item + .regional-program-page__benefit-item,
+  .regional-program-page__benefit-item:nth-child(n + 3),
+  .regional-program-page__benefit-item:nth-child(odd) {
+    border-block-start: none;
+    border-inline-end: none;
+  }
+
+  .regional-program-page__benefit-item:not(:last-child) {
+    border-inline-end: 1px solid color-mix(in srgb, var(--hu-color-primary, #0174b0) 18%, transparent);
+  }
+
+  .regional-program-page__timeline {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    align-items: start;
+  }
+
+  .regional-program-page__timeline-step {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    position: relative;
+  }
+
+  .regional-program-page__timeline-marker {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    position: relative;
+    margin-bottom: var(--hu-space-3);
+  }
+
+  .regional-program-page__timeline-connector {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: calc(50% + 1.25rem);
+    width: calc(100% - 2.5rem);
+    height: 2px;
+    min-height: 0;
+    margin: 0;
+    transform: translateY(-50%);
+    background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 40%, transparent);
+  }
+
+  .regional-program-page__timeline-copy {
+    padding-bottom: 0;
+    justify-items: center;
+  }
+
+  .regional-program-page__principle-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 599px) {
   .regional-program-page__hero,
   .regional-program-page__final-cta {
-    padding: var(--hu-space-5) var(--hu-space-4);
-    background-image: none;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, #0174b0 10%, transparent) 0%,
-      color-mix(in srgb, #df9815 8%, transparent) 100%
-    );
+    min-height: 16rem;
   }
 
+  .regional-program-page__banner-copy,
   .regional-program-page__hero-copy,
   .regional-program-page__final-cta-copy {
     width: 100%;
-    max-width: 100%;
+    padding: var(--hu-space-5) var(--hu-space-4);
+    background: transparent;
   }
 }
 
