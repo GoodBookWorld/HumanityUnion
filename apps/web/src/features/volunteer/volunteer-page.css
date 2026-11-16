@@ -334,7 +334,12 @@ a.volunteer-page__cta.hu-button {
     background-repeat: no-repeat;
   }
 
-  /* Registry-driven document direction — flip hero asset + wash for RTL only. */
+  /*
+   * Registry-driven document direction — flip hero asset + wash for RTL only.
+   * RTL art is narrower (1080×357 vs LTR 1500×357), so cover more often
+   * scales by width and crops vertically. Pin to left top so the standing
+   * person's head stays visible; light right area remains intentional.
+   */
   [dir="rtl"] .volunteer-page__hero {
     background-image:
       linear-gradient(
@@ -345,7 +350,7 @@ a.volunteer-page__cta.hu-button {
         transparent 72%
       ),
       url("/icons/volunteer/head-volunteer-rtl.webp");
-    background-position: center, center left;
+    background-position: center, left top;
   }
 
   .volunteer-page__hero-copy {

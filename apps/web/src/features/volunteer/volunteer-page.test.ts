@@ -124,6 +124,12 @@ describe("Volunteer public page", () => {
     );
     assert.match(css, /\[dir=["']rtl["']\]\s*\.volunteer-page__hero/);
     assert.match(css, /\[dir=["']rtl["']\][\s\S]*head-volunteer-rtl\.webp/);
+    // Narrower RTL art crops vertically under cover — pin top so the head stays visible.
+    assert.match(
+      css,
+      /\[dir=["']rtl["']\]\s*\.volunteer-page__hero[\s\S]*background-position:\s*center,\s*left top/,
+    );
+    assert.match(css, /\.volunteer-page__hero[\s\S]*background-position:\s*center,\s*center right/);
     assert.doesNotMatch(css, /["']ar["']|["']he["']|locale\s*===\s*["']ar["']/);
     assert.doesNotMatch(constants, /["']ar["']|["']he["']/);
   });
