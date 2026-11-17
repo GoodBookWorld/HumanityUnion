@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -8,8 +8,10 @@ import { getMe } from "../../features/auth/auth-api";
 import { buildAuthPathWithReturnTo } from "../../features/auth/lib/build-auth-return-path";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
+import { RrpApplicationModal } from "../../features/regional-program/components/RrpApplicationModal";
 import {
   hasRrpApplicationEntryIntent,
+  isRrpApplicationEntryEnabled,
   RRP_APPLICATION_ENTRY_HREF,
 } from "../../features/regional-program/rrp-application-entry";
 import { WorkspaceHomeAssistant } from "../../features/workspace-home/components/WorkspaceHomeAssistant";
@@ -33,26 +35,44 @@ import "./workspace-page.css";
  * collective decisions, etc.).
  */
 /**
- * HU-RRP-02A — accept `rrp=apply` on Workspace without opening a form yet.
- * Unverified sessions are sent to confirm-email with the same returnTo.
- * No modal, fake form, or success message in this phase.
+ * HU-RRP-02C — open the RRP application modal when the entry flag is ON,
+ * the participant is verified, and `/workspace?rrp=apply` is present.
  */
 function WorkspaceRrpApplicationEntryIntent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const clearIntentQuery = useCallback(() => {
+    router.replace("/workspace");
+  }, [router]);
+
+  const handleClose = useCallback(() => {
+    setModalOpen(false);
+    clearIntentQuery();
+  }, [clearIntentQuery]);
 
   useEffect(() => {
     if (!hasRrpApplicationEntryIntent(searchParams)) {
+      setModalOpen(false);
+      return;
+    }
+
+    if (!isRrpApplicationEntryEnabled()) {
       return;
     }
 
     let cancelled = false;
     void getMe()
       .then((user) => {
-        if (cancelled || user.emailVerificationStatus === "verified") {
+        if (cancelled) {
           return;
         }
-        router.replace(buildAuthPathWithReturnTo("/confirm-email", RRP_APPLICATION_ENTRY_HREF));
+        if (user.emailVerificationStatus !== "verified") {
+          router.replace(buildAuthPathWithReturnTo("/confirm-email", RRP_APPLICATION_ENTRY_HREF));
+          return;
+        }
+        setModalOpen(true);
       })
       .catch(() => {
         // Guest / session errors are handled by WorkspaceAuthGate.
@@ -63,7 +83,9 @@ function WorkspaceRrpApplicationEntryIntent() {
     };
   }, [router, searchParams]);
 
-  return null;
+  return (
+    <RrpApplicationModal isOpen={modalOpen} onClose={handleClose} />
+  );
 }
 
 function WorkspaceHomePageBody() {

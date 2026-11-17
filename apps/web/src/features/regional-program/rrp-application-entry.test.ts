@@ -104,8 +104,9 @@ describe("HU-RRP-02A regional program application entry", () => {
     assert.match(gate, /resolveSafeReturnTo\(destination/);
     assert.match(home, /hasRrpApplicationEntryIntent/);
     assert.match(home, /buildAuthPathWithReturnTo\("\/confirm-email"/);
-    assert.match(home, /emailVerificationStatus === "verified"/);
-    assert.doesNotMatch(home, /application submitted|ApplicationForm|rrp-modal/i);
+    assert.match(home, /emailVerificationStatus !== "verified"/);
+    assert.match(home, /RrpApplicationModal/);
+    assert.match(home, /isRrpApplicationEntryEnabled\(\)/);
   });
 
   it("enables only when the env value is exactly true", () => {

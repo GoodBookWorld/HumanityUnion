@@ -7642,5 +7642,106 @@
       "heading": "Be Part of a Global Community for Positive Change",
       "body": "Join the Regional Development Program and help develop {siteName} in your country."
     }
+  },
+  "rrpApplication": {
+    "title": "Regional Representative application",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative.",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading your applications…",
+    "hub": {
+      "activeHeading": "Active applications",
+      "noActive": "You have no active applications.",
+      "newHeading": "Start a new application",
+      "historyHeading": "Application history",
+      "resume": "Resume",
+      "view": "View status",
+      "startDraft": "Create draft",
+      "countryLabel": "Country {country}"
+    },
+    "form": {
+      "editingCountry": "Representation country: {country}",
+      "displayNameHint": "Your display name is “{name}”. Enter your legal names below — they are not filled automatically."
+    },
+    "fields": {
+      "legalFirstName": "Legal first name",
+      "legalLastName": "Legal last name",
+      "profession": "Profession",
+      "residenceCountry": "Country of residence",
+      "representCountry": "Country to represent",
+      "representCountryHelp": "This is never copied automatically from residence.",
+      "dateOfBirth": "Date of birth",
+      "dateOfBirthHelp": "Applicants must be at least 18 years old.",
+      "fundingModel": "Funding model",
+      "annualRequestedAmountCad": "Annual requested amount (CAD)",
+      "fundingNotCommitment": "A funding request is not an approved financial commitment.",
+      "teamMemberCount": "Team member count",
+      "relevantExperience": "Relevant experience",
+      "motivation": "Motivation"
+    },
+    "funding": {
+      "SELF": "Self-funded",
+      "PARTIAL": "Partial funding requested",
+      "FULL": "Full funding requested"
+    },
+    "consent": {
+      "label": "I consent to Humanity Union processing this application as described in the <privacy>Privacy Policy</privacy>.",
+      "versionNote": "Consent version: {version}"
+    },
+    "actions": {
+      "saveDraft": "Save draft",
+      "submit": "Submit application",
+      "withdraw": "Withdraw"
+    },
+    "busy": {
+      "saving": "Saving…",
+      "submitting": "Submitting…",
+      "withdrawing": "Withdrawing…",
+      "creating": "Creating…"
+    },
+    "messages": {
+      "draftSaved": "Draft saved.",
+      "submitted": "Your application was submitted.",
+      "withdrawn": "Application withdrawn.",
+      "notAppointment": "Submission is not a Representative appointment and grants no Representative privileges.",
+      "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
+      "moreInfoPossible": "An administrator may request more information before a decision.",
+      "messagesLater": "Follow-up replies will use Messages once administrator messaging for this program is available. No delivery confirmation is claimed yet."
+    },
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "information_requested": "More information requested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "validation": {
+      "representCountry": "Select a country to represent.",
+      "legalFirstName": "Legal first name is required.",
+      "legalLastName": "Legal last name is required.",
+      "profession": "Profession is required.",
+      "residenceCountry": "Residence country is required.",
+      "dateOfBirth": "Enter a valid date of birth. Applicants must be at least 18.",
+      "fundingModel": "Select a funding model.",
+      "annualAmount": "Enter a valid annual CAD amount for PARTIAL or FULL funding.",
+      "teamMemberCount": "Team member count must be a whole number of 0 or more.",
+      "relevantExperience": "Relevant experience is required.",
+      "motivation": "Motivation is required.",
+      "consent": "Consent is required to submit."
+    },
+    "errors": {
+      "conflict": "This application changed elsewhere or conflicts with another active application. Refresh and try again.",
+      "unavailable": "Applications are temporarily unavailable. Please try again shortly.",
+      "duplicateActive": "You already have an active application for that representation country."
+    },
+    "discard": {
+      "title": "Discard unsaved changes?",
+      "description": "You have unsaved edits on this application. Leaving now will discard those changes.",
+      "confirm": "Discard changes",
+      "cancel": "Keep editing"
+    },
+    "closeAria": "Close application dialog"
   }
 }
