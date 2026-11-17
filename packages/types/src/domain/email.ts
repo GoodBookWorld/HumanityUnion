@@ -2,6 +2,8 @@
 export type EmailTemplateId =
   | "registration_verification"
   | "registration_confirmation_code"
+  /** HU-NOTIF-02B — ownership proof for alternative notification email (not auth email change). */
+  | "notification_alternative_email_code"
   | "registration_welcome"
   | "login_two_step_code"
   /** Code that proves ownership before an Integrity Media author is linked to an existing account. */

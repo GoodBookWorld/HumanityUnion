@@ -311,6 +311,19 @@ export function validatePreferencesPatch(body: unknown): ValidatedPreferencesPat
       );
     }
 
+    for (const protectedField of [
+      "notificationEmailDestinationMode",
+      "notificationAlternativeEmail",
+      "notificationAlternativeEmailVerifiedAt",
+      "notificationAlternativeEmailPending",
+    ] as const) {
+      if (protectedField in communication) {
+        throw new PreferencesValidationError(
+          `${protectedField} can only be changed through notification email verification endpoints.`,
+        );
+      }
+    }
+
     if ("interestMatchNotificationsEnabled" in communication) {
       patch.communicationPreferences.interestMatchNotificationsEnabled = normalizeBoolean(
         communication.interestMatchNotificationsEnabled,

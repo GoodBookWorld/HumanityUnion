@@ -12,7 +12,9 @@ export type EmailConfirmationCodePurpose =
   | "login_email_two_step"
   | "login_two_step_enable"
   | "login_two_step_disable"
-  | "integrity_media_account_link";
+  | "integrity_media_account_link"
+  /** HU-NOTIF-02B — alternative notification email ownership (not auth email_change). */
+  | "notification_alternative_email";
 
 export type EmailConfirmationCodeStatus = "active" | "consumed" | "expired" | "revoked";
 

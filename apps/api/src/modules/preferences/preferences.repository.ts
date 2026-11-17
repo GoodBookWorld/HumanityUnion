@@ -218,6 +218,59 @@ export async function applyPreferencesPatchAtomically(
   return record;
 }
 
+/**
+ * HU-NOTIF-02B — CAS promote of a verified alternative email.
+ * Returns null when pending no longer matches expectedPendingEmail.
+ */
+export async function applyPreferencesPatchIfPendingAlternativeMatches(
+  memberId: string,
+  expectedPendingEmail: string,
+  patch: ValidatedPreferencesPatch,
+): Promise<MemberPreferences | null> {
+  const expected = expectedPendingEmail.trim().toLowerCase();
+  const setFields = buildPreferencesFieldSetFromPatch(patch);
+  setFields.updatedAt = new Date().toISOString();
+
+  if (!shouldUseMemoryAdapter()) {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberPreferencesDocument>(
+      MONGO_COLLECTIONS.memberPreferences,
+    );
+    const result = await collection.findOneAndUpdate(
+      {
+        memberId,
+        "communicationPreferences.notificationAlternativeEmailPending": expected,
+      },
+      { $set: setFields },
+      { returnDocument: "after" },
+    );
+    return result ? migrateLegacyPreferences(stripDocument(result)) : null;
+  }
+
+  const stored = memoryStore.get(memberId);
+  if (!stored) {
+    return null;
+  }
+
+  const currentPending =
+    stored.communicationPreferences.notificationAlternativeEmailPending?.trim().toLowerCase() ??
+    null;
+  if (currentPending !== expected) {
+    return null;
+  }
+
+  const next = structuredClone(migrateLegacyPreferences(stored)) as unknown as Record<
+    string,
+    unknown
+  >;
+  for (const [path, value] of Object.entries(setFields)) {
+    assignDottedPath(next, path, value);
+  }
+  const record = migrateLegacyPreferences(next as unknown as MemberPreferences);
+  memoryStore.set(memberId, structuredClone(record));
+  return record;
+}
+
 function readStoredParticipationPreferences(
   value: Partial<ParticipationPreferences> | undefined,
 ): ParticipationPreferences {

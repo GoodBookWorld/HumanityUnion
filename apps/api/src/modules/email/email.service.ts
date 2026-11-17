@@ -270,6 +270,24 @@ export async function sendRegistrationConfirmationCodeEmail(input: {
   });
 }
 
+/** HU-NOTIF-02B — ownership proof only; does not change AuthUser.email. */
+export async function sendNotificationAlternativeEmailCodeEmail(input: {
+  to: string;
+  displayName: string;
+  confirmationCode: string;
+  expiresMinutes: number;
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "notification_alternative_email_code",
+    templateInput: {
+      displayName: input.displayName,
+      confirmationCode: input.confirmationCode,
+      expiresMinutes: input.expiresMinutes,
+    },
+  });
+}
+
 export async function sendRegistrationWelcomeEmail(input: {
   to: string;
   displayName: string;
@@ -607,6 +625,7 @@ export const MailDeliveryService = {
   sendTransactionalEmailAndAwait,
   sendRegistrationVerificationEmail,
   sendRegistrationConfirmationCodeEmail,
+  sendNotificationAlternativeEmailCodeEmail,
   sendRegistrationWelcomeEmail,
   sendLoginTwoStepCodeEmail,
   sendPasswordResetEmail,

@@ -95,6 +95,13 @@
   color: var(--hu-color-danger, #b42318);
 }
 
+.email-notifications-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  min-width: 0;
+}
+
 .email-notifications-settings__footer {
   display: grid;
   gap: var(--hu-space-2);

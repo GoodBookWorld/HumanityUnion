@@ -10,6 +10,7 @@ export {
   sendTransactionalEmail,
   sendTransactionalEmailAndAwait,
   sendRegistrationVerificationEmail,
+  sendNotificationAlternativeEmailCodeEmail,
   sendPasswordResetEmail,
   sendEmailChangeVerificationEmail,
   sendSecurityAlertEmail,

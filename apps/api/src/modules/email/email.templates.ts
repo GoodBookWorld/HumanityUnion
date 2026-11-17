@@ -127,6 +127,12 @@ export interface RegistrationConfirmationCodeTemplateInput {
   expiresMinutes: number;
 }
 
+export interface NotificationAlternativeEmailCodeTemplateInput {
+  displayName: string;
+  confirmationCode: string;
+  expiresMinutes: number;
+}
+
 export interface RegistrationWelcomeTemplateInput {
   displayName: string;
   profileUrl: string;
@@ -221,6 +227,26 @@ export function renderRegistrationConfirmationCodeEmail(
     subject: "Confirm your Humanity Union email",
     html: wrapEmailLayout(htmlBody),
     text: `Welcome to Humanity Union.\n\nUse the following code to confirm your email address:\n\n${input.confirmationCode}\n\nThis code expires in ${input.expiresMinutes} minutes.\n\nDo not share this code with anyone. Humanity Union will never ask you to send this code by email or message.\n\nIf you did not create an account, you can ignore this email.`,
+  };
+}
+
+export function renderNotificationAlternativeEmailCodeEmail(
+  input: NotificationAlternativeEmailCodeTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Verify your notification email</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Use this code to verify an alternative email address for Notification Center copies. This does not change your Humanity Union login email.</p>
+    <p style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:0.25em;color:${PRIMARY_COLOR};">${input.confirmationCode}</p>
+    <p style="margin:0 0 16px;line-height:1.6;">This code expires in ${input.expiresMinutes} minutes.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Do not share this code with anyone. Humanity Union will never ask you to send this code by email or message.</p>
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">If you did not request this change, you can ignore this email.</p>
+  `;
+
+  return {
+    subject: "Verify your Humanity Union notification email",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nUse this code to verify an alternative email address for Notification Center copies. This does not change your Humanity Union login email.\n\n${input.confirmationCode}\n\nThis code expires in ${input.expiresMinutes} minutes.\n\nDo not share this code with anyone. Humanity Union will never ask you to send this code by email or message.\n\nIf you did not request this change, you can ignore this email.`,
   };
 }
 
@@ -749,6 +775,10 @@ export function renderEmailTemplate(
     case "registration_confirmation_code":
       return renderRegistrationConfirmationCodeEmail(
         input as unknown as RegistrationConfirmationCodeTemplateInput,
+      );
+    case "notification_alternative_email_code":
+      return renderNotificationAlternativeEmailCodeEmail(
+        input as unknown as NotificationAlternativeEmailCodeTemplateInput,
       );
     case "registration_welcome":
       return renderRegistrationWelcomeEmail(input as unknown as RegistrationWelcomeTemplateInput);

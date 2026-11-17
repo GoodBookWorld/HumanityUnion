@@ -60,6 +60,7 @@ export type { ParticipantStatistics, PublicParticipantStatistics } from "./parti
 export type {
   AccessibilityPreferences,
   CommunicationPreferences,
+  NotificationEmailDestinationMode,
   ContributionWillingness,
   ExperiencePreferences,
   MemberPreferences,

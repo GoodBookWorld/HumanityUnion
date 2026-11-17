@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * HU-NOTIF-02A.1 — Email Notifications settings on Notification Center.
- * Shares MemberPreferences with PreferencesWorkspace; does not activate email delivery.
+ * HU-NOTIF-02A/02B — Email Notifications settings on Notification Center.
+ * Shares MemberPreferences; alternative email verification does not change login email.
  */
 
 import type { MemberPreferences, NotificationFrequency } from "@hu/types";
@@ -10,9 +10,21 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { formatAuthFormError, isAuthenticationRequiredError } from "../../../lib/api-client";
+import {
+  ApiRequestError,
+  formatAuthFormError,
+  isAuthenticationRequiredError,
+} from "../../../lib/api-client";
 import { getMe } from "../../auth/auth-api";
 import { PreferenceOption } from "../../preferences/components/PreferenceOption";
+import {
+  confirmAlternativeNotificationEmail,
+  getNotificationEmailDestination,
+  removeAlternativeNotificationEmail,
+  requestAlternativeNotificationEmail,
+  useAccountNotificationEmail,
+  type NotificationEmailDestinationView,
+} from "../../preferences/notification-email-api";
 import {
   getMyPreferences,
   MEMBER_PREFERENCES_CHANGED_EVENT,
@@ -32,9 +44,17 @@ const PREFERENCES_NOTIFICATION_HREF = "/preferences#notification-preferences";
 
 type LoadState = "loading" | "ready" | "error" | "unauthenticated";
 type SaveState = "idle" | "saving" | "saved" | "error";
+type AltActionState = "idle" | "working" | "success" | "error";
 
 function resolveOptIn(preferences: MemberPreferences): boolean {
   return preferences.communicationPreferences.notificationEmailCopiesOptIn === true;
+}
+
+function secondsUntil(iso: string | null): number {
+  if (!iso) {
+    return 0;
+  }
+  return Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 1000));
 }
 
 export function EmailNotificationsSettingsWidget() {
@@ -42,6 +62,8 @@ export function EmailNotificationsSettingsWidget() {
   const tPrefs = useTranslations("preferences");
   const titleId = useId();
   const frequencyId = useId();
+  const altEmailId = useId();
+  const codeId = useId();
 
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -51,6 +73,14 @@ export function EmailNotificationsSettingsWidget() {
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
+  const [destination, setDestination] = useState<NotificationEmailDestinationView | null>(null);
+
+  const [altEmailInput, setAltEmailInput] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [altActionState, setAltActionState] = useState<AltActionState>("idle");
+  const [altActionError, setAltActionError] = useState<string | null>(null);
+  const [altActionSuccess, setAltActionSuccess] = useState<string | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const preferencesRef = useRef<MemberPreferences | null>(null);
   const saveChainRef = useRef<Promise<void>>(Promise.resolve());
@@ -61,15 +91,28 @@ export function EmailNotificationsSettingsWidget() {
     setPreferences(next);
   }, []);
 
+  const applyDestination = useCallback((next: NotificationEmailDestinationView) => {
+    setDestination(next);
+    setCooldownSeconds(secondsUntil(next.resendAvailableAt));
+    if (next.pendingAlternativeEmail) {
+      setAltEmailInput(next.pendingAlternativeEmail);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoadState("loading");
     setLoadError(null);
 
     try {
-      const [user, prefs] = await Promise.all([getMe(), getMyPreferences()]);
+      const [user, prefs, dest] = await Promise.all([
+        getMe(),
+        getMyPreferences(),
+        getNotificationEmailDestination(),
+      ]);
       setAccountEmail(typeof user.email === "string" && user.email.trim() ? user.email : null);
       setEmailVerified(user.emailVerificationStatus === "verified");
       applyPreferences(prefs);
+      applyDestination(dest);
       setLoadState("ready");
     } catch (error) {
       if (isAuthenticationRequiredError(error)) {
@@ -79,7 +122,7 @@ export function EmailNotificationsSettingsWidget() {
       setLoadError(formatAuthFormError(error));
       setLoadState("error");
     }
-  }, [applyPreferences]);
+  }, [applyDestination, applyPreferences]);
 
   useEffect(() => {
     void load();
@@ -87,9 +130,10 @@ export function EmailNotificationsSettingsWidget() {
 
   useEffect(() => {
     function onPreferencesChanged() {
-      void getMyPreferences()
-        .then((prefs) => {
+      void Promise.all([getMyPreferences(), getNotificationEmailDestination()])
+        .then(([prefs, dest]) => {
           applyPreferences(prefs);
+          applyDestination(dest);
         })
         .catch(() => {
           // Keep current widget state; next explicit load/save will recover.
@@ -100,7 +144,17 @@ export function EmailNotificationsSettingsWidget() {
     return () => {
       window.removeEventListener(MEMBER_PREFERENCES_CHANGED_EVENT, onPreferencesChanged);
     };
-  }, [applyPreferences]);
+  }, [applyDestination, applyPreferences]);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setCooldownSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldownSeconds]);
 
   function persistCommunicationPatch(
     patch: Partial<MemberPreferences["communicationPreferences"]>,
@@ -139,6 +193,39 @@ export function EmailNotificationsSettingsWidget() {
       });
   }
 
+  async function runAltAction(
+    action: () => Promise<{ preferences: MemberPreferences; destination: NotificationEmailDestinationView }>,
+    successKey: "requestSuccess" | "confirmSuccess" | "useAccountSuccess" | "removeSuccess",
+  ): Promise<void> {
+    setAltActionState("working");
+    setAltActionError(null);
+    setAltActionSuccess(null);
+    try {
+      const result = await action();
+      applyPreferences(result.preferences);
+      applyDestination(result.destination);
+      setAltActionState("success");
+      setAltActionSuccess(t(successKey));
+      if (successKey === "confirmSuccess") {
+        setCodeInput("");
+      }
+    } catch (error) {
+      setAltActionState("error");
+      if (error instanceof ApiRequestError && error.status === 429) {
+        setAltActionError(t("rateLimited"));
+      } else {
+        const message = formatAuthFormError(error);
+        if (/expired/i.test(message)) {
+          setAltActionError(t("codeExpired"));
+        } else if (/incorrect|invalid/i.test(message)) {
+          setAltActionError(t("codeInvalid"));
+        } else {
+          setAltActionError(message || t("altActionError"));
+        }
+      }
+    }
+  }
+
   if (loadState === "unauthenticated") {
     return null;
   }
@@ -147,7 +234,10 @@ export function EmailNotificationsSettingsWidget() {
   const frequency = preferences?.communicationPreferences.notificationFrequency ?? "daily_digest";
   const featureEmailEnabled =
     preferences?.communicationPreferences.emailNotificationsEnabled === true;
-  const controlsDisabled = saveState === "saving";
+  const controlsDisabled = saveState === "saving" || altActionState === "working";
+  const mode = destination?.destinationMode ?? "account";
+  const pending = destination?.pendingAlternativeEmail ?? null;
+  const verifiedAlt = destination?.alternativeEmail ?? null;
 
   return (
     <section
@@ -186,6 +276,17 @@ export function EmailNotificationsSettingsWidget() {
 
       {loadState === "ready" && preferences ? (
         <div className="email-notifications-settings__body">
+          <div className="email-notifications-settings__field">
+            <span className="email-notifications-settings__label">{t("currentDestination")}</span>
+            <p className="email-notifications-settings__value">
+              {mode === "alternative" && verifiedAlt
+                ? t("destinationAlternative", { email: verifiedAlt })
+                : accountEmail && emailVerified
+                  ? t("destinationAccount", { email: accountEmail })
+                  : t("destinationUnavailable")}
+            </p>
+          </div>
+
           <div className="email-notifications-settings__field">
             <span className="email-notifications-settings__label">{t("accountEmail")}</span>
             {emailVerified && accountEmail ? (
@@ -255,10 +356,119 @@ export function EmailNotificationsSettingsWidget() {
 
           <div className="email-notifications-settings__field email-notifications-settings__field--muted">
             <span className="email-notifications-settings__label">{t("alternativeEmail")}</span>
-            <p className="email-notifications-settings__help">{t("alternativeEmailUnavailable")}</p>
+            <p className="email-notifications-settings__help">{t("alternativeEmailHelp")}</p>
+
+            {verifiedAlt ? (
+              <p className="email-notifications-settings__value">
+                {t("verifiedAlternative", { email: verifiedAlt })}
+              </p>
+            ) : null}
+
+            {pending ? (
+              <p className="email-notifications-settings__warning" role="status">
+                {t("pendingAlternative", {
+                  email: destination?.pendingMaskedEmail ?? pending,
+                })}
+              </p>
+            ) : null}
+
+            <label className="email-notifications-settings__label" htmlFor={altEmailId}>
+              {t("alternativeEmailInput")}
+            </label>
+            <input
+              id={altEmailId}
+              type="email"
+              autoComplete="email"
+              className="email-notifications-settings__select"
+              value={altEmailInput}
+              disabled={controlsDisabled || !emailVerified}
+              onChange={(event) => setAltEmailInput(event.target.value)}
+            />
+            <div className="email-notifications-settings__actions">
+              <button
+                type="button"
+                className="email-notifications-settings__button"
+                disabled={controlsDisabled || !emailVerified || cooldownSeconds > 0 || !altEmailInput.trim()}
+                onClick={() =>
+                  void runAltAction(
+                    () => requestAlternativeNotificationEmail(altEmailInput.trim()),
+                    "requestSuccess",
+                  )
+                }
+              >
+                {cooldownSeconds > 0
+                  ? t("resendCooldown", { seconds: cooldownSeconds })
+                  : pending
+                    ? t("resendCode")
+                    : t("requestVerification")}
+              </button>
+            </div>
+
+            {pending ? (
+              <>
+                <label className="email-notifications-settings__label" htmlFor={codeId}>
+                  {t("verificationCode")}
+                </label>
+                <input
+                  id={codeId}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  className="email-notifications-settings__select"
+                  value={codeInput}
+                  disabled={controlsDisabled}
+                  onChange={(event) => setCodeInput(event.target.value)}
+                />
+                <div className="email-notifications-settings__actions">
+                  <button
+                    type="button"
+                    className="email-notifications-settings__button"
+                    disabled={controlsDisabled || codeInput.trim().length !== 6}
+                    onClick={() =>
+                      void runAltAction(
+                        () => confirmAlternativeNotificationEmail(codeInput.trim()),
+                        "confirmSuccess",
+                      )
+                    }
+                  >
+                    {t("confirmCode")}
+                  </button>
+                </div>
+              </>
+            ) : null}
+
+            <div className="email-notifications-settings__actions">
+              {mode === "alternative" ? (
+                <button
+                  type="button"
+                  className="email-notifications-settings__button"
+                  disabled={controlsDisabled}
+                  onClick={() =>
+                    void runAltAction(() => useAccountNotificationEmail(), "useAccountSuccess")
+                  }
+                >
+                  {t("useAccountEmail")}
+                </button>
+              ) : null}
+              {verifiedAlt || pending ? (
+                <button
+                  type="button"
+                  className="email-notifications-settings__button"
+                  disabled={controlsDisabled}
+                  onClick={() =>
+                    void runAltAction(
+                      () => removeAlternativeNotificationEmail(),
+                      "removeSuccess",
+                    )
+                  }
+                >
+                  {t("removeAlternative")}
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          {saveState === "saving" ? (
+          {saveState === "saving" || altActionState === "working" ? (
             <p className="email-notifications-settings__status" role="status">
               {t("saving")}
             </p>
@@ -268,9 +478,19 @@ export function EmailNotificationsSettingsWidget() {
               {t("saved")}
             </p>
           ) : null}
+          {altActionSuccess ? (
+            <p className="email-notifications-settings__status" role="status">
+              {altActionSuccess}
+            </p>
+          ) : null}
           {saveState === "error" ? (
             <p className="email-notifications-settings__error" role="alert">
               {saveError ?? t("saveError")}
+            </p>
+          ) : null}
+          {altActionState === "error" ? (
+            <p className="email-notifications-settings__error" role="alert">
+              {altActionError ?? t("altActionError")}
             </p>
           ) : null}
         </div>

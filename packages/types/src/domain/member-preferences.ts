@@ -4,6 +4,9 @@ import type { MemberProfileVisibility } from "./member-profile.js";
 export type NotificationFrequency =
   "immediate" | "daily_digest" | "weekly_digest" | "platform_only";
 
+/** Where future Notification Center email copies would be sent. */
+export type NotificationEmailDestinationMode = "account" | "alternative";
+
 export type ContributionWillingness =
   "analysis" | "proposals" | "implementation" | "evidence" | "translation" | "coordination";
 
@@ -64,6 +67,16 @@ export interface CommunicationPreferences {
    * Does not activate delivery until a later projector ships.
    */
   notificationEmailCopiesOptIn: boolean;
+  /**
+   * HU-NOTIF-02B — destination for future notification copies.
+   * `alternative` is valid only when notificationAlternativeEmail is verified.
+   */
+  notificationEmailDestinationMode: NotificationEmailDestinationMode;
+  /** Verified alternative notification email only — never login/auth email. */
+  notificationAlternativeEmail: string | null;
+  notificationAlternativeEmailVerifiedAt: string | null;
+  /** Pending address awaiting ownership proof; never used as delivery destination. */
+  notificationAlternativeEmailPending: string | null;
   interestMatchNotificationsEnabled: boolean;
   disabledNotificationCategories: string[];
 }
