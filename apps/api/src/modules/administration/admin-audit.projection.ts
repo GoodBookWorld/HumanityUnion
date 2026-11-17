@@ -19,6 +19,7 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "member_badge.fulfillment.delivered_marked",
   "member_badge.fulfillment.delivered_unmarked",
   "member_badge.fulfillment.label_emailed",
+  "rrp.application.review",
   "blog.publication_review.reconcile",
   "blog.publish",
   "blog.publish_after_safety_review",
@@ -157,6 +158,9 @@ export function deriveAdminAuditCategory(action: AdministrationAuditAction): Adm
     action.startsWith("country_affiliation.")
   ) {
     return "administration";
+  }
+  if (action.startsWith("rrp.")) {
+    return "membership";
   }
   return "other";
 }

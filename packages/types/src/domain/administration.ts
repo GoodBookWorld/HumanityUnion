@@ -112,6 +112,7 @@ export type AdministrationAuditAction =
   | "member_badge.fulfillment.delivered_marked"
   | "member_badge.fulfillment.delivered_unmarked"
   | "member_badge.fulfillment.label_emailed"
+  | "rrp.application.review"
   | "blog.publication_review.reconcile"
   | "blog.publish"
   | "blog.publish_after_safety_review"

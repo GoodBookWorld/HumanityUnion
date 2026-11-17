@@ -27,6 +27,8 @@ import {
   MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES,
 } from "../../modules/notifications/email-delivery/member-notification-email-delivery.index-readiness.js";
 import { MEMBER_NOTIFICATION_EMAIL_SEND_RATE_LIMIT_INDEXES } from "../../modules/notifications/email-delivery/send-rate-limit.js";
+import { RRP_ACTIVE_UNIQUE_INDEX_DESCRIPTION } from "../../modules/rrp-application/rrp-application.index-readiness.js";
+import { RRP_ACTIVE_UNIQUE_INDEX_NAME } from "../../modules/rrp-application/rrp-application.constants.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -527,6 +529,24 @@ const MODULE_INDEXES: ReadonlyArray<{
         partialFilterExpression: { stripeCheckoutSessionId: { $type: "string" } },
         name: "member_badge_application_checkout_session_unique",
       },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.rrpApplications,
+    indexes: [
+      {
+        key: { applicationId: 1 },
+        unique: true,
+        name: "rrp_application_id_unique",
+      },
+      {
+        ...RRP_ACTIVE_UNIQUE_INDEX_DESCRIPTION,
+        name: RRP_ACTIVE_UNIQUE_INDEX_NAME,
+      },
+      { key: { userId: 1, updatedAt: -1 }, name: "rrp_application_user_updated_at" },
+      { key: { status: 1, updatedAt: -1 }, name: "rrp_application_status_updated_at" },
+      { key: { representCountryCode: 1, status: 1 }, name: "rrp_application_country_status" },
+      { key: { fundingModel: 1, annualRequestedAmountCad: 1 }, name: "rrp_application_funding_amount" },
     ],
   },
   {

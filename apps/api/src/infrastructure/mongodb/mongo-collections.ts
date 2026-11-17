@@ -41,6 +41,8 @@ export const MONGO_COLLECTIONS = {
   membershipWebhookEvents: "membership_webhook_events",
   memberBadgeContributions: "member_badge_contributions",
   memberBadgeApplications: "member_badge_applications",
+  /** HU-RRP-02B — Regional Representative Program applications (private). */
+  rrpApplications: "rrp_applications",
   memberPreferences: "member_preferences",
   memberNotifications: "member_notifications",
   /** HU-NOTIF-02C.1 — durable email delivery intents for member_notifications. */

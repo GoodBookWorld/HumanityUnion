@@ -1835,6 +1835,24 @@ export {
   MEMBER_BADGE_APPLICATION_DELIVERY_LABEL,
   MEMBER_BADGE_APPLICATION_PRICE_LABEL,
 } from "./member-badge-application.js";
+export type {
+  AdminRrpApplicationDetail,
+  AdminRrpApplicationListItem,
+  AdminRrpApplicationReviewDecision,
+  RrpApplicationDecisionActorRole,
+  RrpApplicationDecisionHistoryEntry,
+  RrpApplicationDetail,
+  RrpApplicationRecord,
+  RrpApplicationStatus,
+  RrpFundingModel,
+} from "./rrp-application.js";
+export {
+  RRP_APPLICATION_ACTIVE_STATUSES,
+  RRP_APPLICATION_CONSENT_VERSION,
+  RRP_APPLICATION_STATUSES,
+  RRP_APPLICATION_TERMINAL_STATUSES,
+  RRP_FUNDING_MODELS,
+} from "./rrp-application.js";
 export type { CountryStatisticsCounts, CountryStatisticsPayload } from "./country-statistics.js";
 export type {
   CivicSearchDisplayResult,
