@@ -15,9 +15,9 @@ export const REGIONAL_PROGRAM_ASSETS = {
   tools: "/illustrations/support/humanity-union-diverse-team-meeting.webp",
   presence: "/illustrations/support/humanity-union-flag-park.webp",
   /** Final CTA photograph — identical in LTR and RTL. */
-  cta: "/illustrations/support/hikers-sunset-mountain-panorama.webp",
+  cta: "/illustrations/support/hikers-sunset-mountain.webp",
   /** Same asset as `cta` — kept for BannerMedia LTR/RTL layer slots. */
-  ctaRtl: "/illustrations/support/hikers-sunset-mountain-panorama.webp",
+  ctaRtl: "/illustrations/support/hikers-sunset-mountain.webp",
 } as const;
 
 /** Activity cards — true-vector brand-blue `#0174b0` SVGs at 42×42. */

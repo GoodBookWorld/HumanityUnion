@@ -91,7 +91,7 @@ describe("Regional Development Program public page", () => {
     assert.equal(REGIONAL_PROGRAM_ASSETS.heroRtl, REGIONAL_PROGRAM_ASSETS.hero);
     assert.equal(
       REGIONAL_PROGRAM_ASSETS.cta,
-      "/illustrations/support/hikers-sunset-mountain-panorama.webp",
+      "/illustrations/support/hikers-sunset-mountain.webp",
     );
     assert.equal(REGIONAL_PROGRAM_ASSETS.ctaRtl, REGIONAL_PROGRAM_ASSETS.cta);
     assert.doesNotMatch(REGIONAL_PROGRAM_ASSETS.hero, /-rtl\.webp$/);
