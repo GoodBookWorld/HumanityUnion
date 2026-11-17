@@ -3,7 +3,19 @@ export {
   listMemberNotificationEmailAllowlistedEventTypes,
 } from "./allowlist.js";
 export { executeMemberNotificationEmailDeliveryAdapter } from "./delivery-adapter.js";
+export {
+  resolveMemberNotificationDeepLink,
+  resolveMemberNotificationFallbackDeepLink,
+  resolveMemberNotificationPreferencesDeepLink,
+} from "./deep-link.js";
 export { evaluateMemberNotificationEmailDeliveryEligibility } from "./eligibility.js";
+export { resolveMemberNotificationEmailPresentationCategory } from "./presentation-categories.js";
+export {
+  MEMBER_NOTIFICATION_EMAIL_INSTALLED_LOCALES,
+  resolveMemberNotificationEmailCopy,
+  resolveMemberNotificationEmailLocale,
+} from "./presentation-i18n.js";
+export { resolveMemberNotificationEmailPresentation } from "./presentation.js";
 export {
   isMemberNotificationEmailDeliveryEnabled,
   isMemberNotificationEmailDeliveryWorkerPermitted,

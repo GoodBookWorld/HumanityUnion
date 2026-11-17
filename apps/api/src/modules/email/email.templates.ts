@@ -37,11 +37,17 @@ function wrapEmailLayout(
     kind?: EmailLayoutKind;
     unsubscribeUrl?: string;
     reasonLine?: string;
+    /** HU-NOTIF-02C.3 — BCP-47 lang for localized notification copies. */
+    lang?: string;
+    /** HU-NOTIF-02C.3 — document direction (rtl for ar/he). */
+    dir?: "ltr" | "rtl";
   },
 ): string {
   const config = resolveEmailConfig();
   const supportUrl = `${config.publicSiteUrl}/support`;
   const kind = options?.kind ?? "transactional";
+  const lang = options?.lang?.trim() || "en";
+  const dir = options?.dir === "rtl" ? "rtl" : "ltr";
 
   const footerBody =
     kind === "subscription"
@@ -52,16 +58,16 @@ function wrapEmailLayout(
                   ? `<p style="margin:0 0 8px;"><a href="${options.unsubscribeUrl}" style="color:${PRIMARY_COLOR};">Unsubscribe</a> from Blog publication emails.</p>`
                   : ""
               }
-              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};">Contact support</a></p>
+              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};" dir="ltr">Contact support</a></p>
               <p style="margin:0;">${EMAIL_FOOTER_COPYRIGHT}</p>`
       : `
               <p style="margin:0 0 8px;">Humanity Union — civic technology for collective decision-making.</p>
               <p style="margin:0 0 8px;">This is a transactional message related to your account. Marketing emails are not sent through this channel.</p>
-              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};">Contact support</a></p>
+              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};" dir="ltr">Contact support</a></p>
               <p style="margin:0;">${EMAIL_FOOTER_COPYRIGHT}</p>`;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}" dir="${dir}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -187,8 +193,9 @@ export interface MemberBadgeContributionConfirmedTemplateInput {
 }
 
 function primaryButton(label: string, href: string): string {
+  // Keep href LTR so mixed-direction (RTL body + URL) stays readable.
   return `<p style="margin:24px 0;">
-    <a class="hu-email-btn" href="${href}" style="display:inline-block;max-width:100%;box-sizing:border-box;background:${PRIMARY_COLOR};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;word-break:break-word;">${label}</a>
+    <a class="hu-email-btn" href="${href}" dir="ltr" style="display:inline-block;max-width:100%;box-sizing:border-box;background:${PRIMARY_COLOR};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;word-break:break-word;">${label}</a>
   </p>`;
 }
 
@@ -478,6 +485,56 @@ export interface BlogPublicationStatusTemplateInput {
 export interface WorkspaceMessageAlertTemplateInput {
   displayName: string;
   messagesUrl: string;
+}
+
+/** HU-NOTIF-02C.3 — privacy-safe localized member notification copy (no raw title/body). */
+export interface MemberNotificationCopyTemplateInput {
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  body: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  notificationUrl: string;
+  preferencesUrl: string;
+}
+
+function escapeEmailText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function renderMemberNotificationCopyEmail(
+  input: MemberNotificationCopyTemplateInput,
+): EmailTemplateContent {
+  const heading = escapeEmailText(input.heading);
+  const body = escapeEmailText(input.body);
+  const openLabel = escapeEmailText(input.openLabel);
+  const preferencesLabel = escapeEmailText(input.preferencesLabel);
+  const privacyNote = escapeEmailText(input.privacyNote);
+  const notificationUrl = escapeEmailText(input.notificationUrl);
+  const preferencesUrl = escapeEmailText(input.preferencesUrl);
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">${heading}</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">${body}</p>
+    ${primaryButton(openLabel, notificationUrl)}
+    <p style="margin:16px 0 0;line-height:1.6;font-size:13px;">
+      <a href="${preferencesUrl}" dir="ltr" style="color:${PRIMARY_COLOR};">${preferencesLabel}</a>
+    </p>
+    <p style="margin:16px 0 0;line-height:1.6;font-size:13px;color:#64748b;">${privacyNote}</p>
+  `;
+
+  return {
+    subject: input.subject,
+    html: wrapEmailLayout(htmlBody, { lang: input.locale, dir: input.dir }),
+    text: `${input.heading}\n\n${input.body}\n\n${input.openLabel}: ${input.notificationUrl}\n${input.preferencesLabel}: ${input.preferencesUrl}\n\n${input.privacyNote}`,
+  };
 }
 
 export function renderWorkspaceNotificationSummaryEmail(
@@ -818,6 +875,21 @@ export function renderEmailTemplate(
         displayName: String(input.displayName ?? "Participant"),
         unreadCount: Number(input.unreadCount ?? 0),
         notificationsUrl: String(input.notificationsUrl ?? ""),
+      });
+    case "member_notification_copy":
+      return renderMemberNotificationCopyEmail({
+        locale: String(input.locale ?? "en"),
+        dir: input.dir === "rtl" ? "rtl" : "ltr",
+        subject: String(input.subject ?? "Humanity Union notification"),
+        heading: String(input.heading ?? "Humanity Union"),
+        body: String(input.body ?? ""),
+        openLabel: String(input.openLabel ?? "Open notification"),
+        preferencesLabel: String(input.preferencesLabel ?? "Manage email preferences"),
+        privacyNote: String(
+          input.privacyNote ?? "This email does not include private notification details.",
+        ),
+        notificationUrl: String(input.notificationUrl ?? ""),
+        preferencesUrl: String(input.preferencesUrl ?? ""),
       });
     case "blog_author_application_status":
       return renderBlogAuthorApplicationStatusEmail({

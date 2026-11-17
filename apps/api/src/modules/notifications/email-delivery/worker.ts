@@ -34,6 +34,7 @@ import {
   claimNextMemberNotificationEmailDelivery,
   updateMemberNotificationEmailDelivery,
 } from "./member-notification-email-delivery.repository.js";
+import { resolveNotificationPersistenceAdapter } from "../persistence/resolve-notification-persistence.js";
 
 export interface MemberNotificationEmailWorkerTickResult {
   processed: number;
@@ -102,12 +103,18 @@ export async function processMemberNotificationEmailDeliveryClaim(
   }
 
   try {
+    const notification = await resolveNotificationPersistenceAdapter().findById(
+      record.notificationId,
+    );
+
     const adapterResult = await executeMemberNotificationEmailDeliveryAdapter({
       deliveryId: record.deliveryId,
       notificationId: record.notificationId,
       eventType: record.eventType,
       destinationHash: eligibility.destinationHash,
       mode,
+      recipientMemberId: record.recipientMemberId,
+      relatedUrl: notification?.relatedUrl ?? null,
     });
 
     if (adapterResult.outcome === "dry_run_validated") {
@@ -121,6 +128,17 @@ export async function processMemberNotificationEmailDeliveryClaim(
         destinationModeSnapshot: eligibility.destinationModeSnapshot,
       });
       return ok ? "dry_run_ok" : "stale_lease";
+    }
+
+    if (adapterResult.outcome === "template_failed") {
+      const ok = await finalizeClaimed(record, leaseOwner, {
+        status: "failed",
+        lastErrorCode: adapterResult.errorCode,
+        nextAttemptAt: null,
+        providerEmailId: null,
+        skipReason: null,
+      });
+      return ok ? "failed" : "stale_lease";
     }
 
     if (adapterResult.outcome === "live_not_ready") {

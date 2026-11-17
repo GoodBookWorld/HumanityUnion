@@ -16,6 +16,11 @@ export type EmailTemplateId =
   | "member_badge_application_label"
   /** Workspace notification digest / summary — never embeds private message bodies. */
   | "workspace_notification_summary"
+  /**
+   * HU-NOTIF-02C.3 — privacy-safe localized copy for a single allowlisted
+   * member_notification event. Never embeds raw notification title/body.
+   */
+  | "member_notification_copy"
   /** Blog Author Access Pack 04 status updates (approved / changes / declined). */
   | "blog_author_application_status"
   /** Editorial Review Pack 06 — publication review/publish status summary. */
