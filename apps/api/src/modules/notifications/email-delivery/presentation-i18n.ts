@@ -288,3 +288,176 @@ export function resolveMemberNotificationEmailCopy(input: {
       localizedCategory?.privacyNote ?? localizedShared?.privacyNote ?? EN_SHARED.privacyNote,
   };
 }
+
+/** HU-NOTIF-02C.4 — digest chrome (no event-private wording). */
+export interface MemberNotificationEmailDigestChrome {
+  subject: string;
+  heading: string;
+  summary: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  countLabel: (categoryHeading: string, count: number) => string;
+}
+
+interface DigestChromeStrings {
+  subject: string;
+  heading: string;
+  summary: string;
+}
+
+const EN_DIGEST_DAILY: DigestChromeStrings = {
+  subject: "Your daily Humanity Union notification summary",
+  heading: "Daily notification summary",
+  summary: "Here is a short summary of notification categories from the past day.",
+};
+
+const EN_DIGEST_WEEKLY: DigestChromeStrings = {
+  subject: "Your weekly Humanity Union notification summary",
+  heading: "Weekly notification summary",
+  summary: "Here is a short summary of notification categories from the past week.",
+};
+
+const DIGEST_CHROME_OVERRIDES: Partial<
+  Record<
+    MemberNotificationEmailLocale,
+    {
+      daily?: Partial<DigestChromeStrings>;
+      weekly?: Partial<DigestChromeStrings>;
+    }
+  >
+> = {
+  ar: {
+    daily: {
+      subject: "ملخص إشعارات Humanity Union اليومي",
+      heading: "ملخص الإشعارات اليومي",
+      summary: "هذا ملخص قصير لفئات الإشعارات خلال اليوم الماضي.",
+    },
+    weekly: {
+      subject: "ملخص إشعارات Humanity Union الأسبوعي",
+      heading: "ملخص الإشعارات الأسبوعي",
+      summary: "هذا ملخص قصير لفئات الإشعارات خلال الأسبوع الماضي.",
+    },
+  },
+  he: {
+    daily: {
+      subject: "סיכום ההתראות היומי מ-Humanity Union",
+      heading: "סיכום התראות יומי",
+      summary: "להלן סיכום קצר של קטגוריות התראות מהיום האחרון.",
+    },
+    weekly: {
+      subject: "סיכום ההתראות השבועי מ-Humanity Union",
+      heading: "סיכום התראות שבועי",
+      summary: "להלן סיכום קצר של קטגוריות התראות מהשבוע האחרון.",
+    },
+  },
+  de: {
+    daily: {
+      subject: "Ihre tägliche Humanity-Union-Benachrichtigungsübersicht",
+      heading: "Tägliche Benachrichtigungsübersicht",
+      summary: "Hier ist eine kurze Übersicht der Benachrichtigungskategorien vom letzten Tag.",
+    },
+    weekly: {
+      subject: "Ihre wöchentliche Humanity-Union-Benachrichtigungsübersicht",
+      heading: "Wöchentliche Benachrichtigungsübersicht",
+      summary: "Hier ist eine kurze Übersicht der Benachrichtigungskategorien der letzten Woche.",
+    },
+  },
+  es: {
+    daily: {
+      subject: "Tu resumen diario de notificaciones de Humanity Union",
+      heading: "Resumen diario de notificaciones",
+      summary: "Aquí tienes un resumen breve de categorías de notificación del día pasado.",
+    },
+    weekly: {
+      subject: "Tu resumen semanal de notificaciones de Humanity Union",
+      heading: "Resumen semanal de notificaciones",
+      summary: "Aquí tienes un resumen breve de categorías de notificación de la semana pasada.",
+    },
+  },
+  fr: {
+    daily: {
+      subject: "Votre résumé quotidien des notifications Humanity Union",
+      heading: "Résumé quotidien des notifications",
+      summary: "Voici un court résumé des catégories de notifications de la journée écoulée.",
+    },
+    weekly: {
+      subject: "Votre résumé hebdomadaire des notifications Humanity Union",
+      heading: "Résumé hebdomadaire des notifications",
+      summary: "Voici un court résumé des catégories de notifications de la semaine écoulée.",
+    },
+  },
+  uk: {
+    daily: {
+      subject: "Ваш щоденний підсумок сповіщень Humanity Union",
+      heading: "Щоденний підсумок сповіщень",
+      summary: "Короткий підсумок категорій сповіщень за минулий день.",
+    },
+    weekly: {
+      subject: "Ваш тижневий підсумок сповіщень Humanity Union",
+      heading: "Тижневий підсумок сповіщень",
+      summary: "Короткий підсумок категорій сповіщень за минулий тиждень.",
+    },
+  },
+  pt: {
+    daily: {
+      subject: "O seu resumo diário de notificações do Humanity Union",
+      heading: "Resumo diário de notificações",
+      summary: "Aqui está um breve resumo das categorias de notificação do dia passado.",
+    },
+    weekly: {
+      subject: "O seu resumo semanal de notificações do Humanity Union",
+      heading: "Resumo semanal de notificações",
+      summary: "Aqui está um breve resumo das categorias de notificação da semana passada.",
+    },
+  },
+  ka: {
+    daily: {
+      subject: "თქვენი ყოველდღიური Humanity Union შეტყობინებების შეჯამება",
+      heading: "ყოველდღიური შეტყობინებების შეჯამება",
+      summary: "აქ არის შეტყობინების კატეგორიების მოკლე შეჯამება გასული დღიდან.",
+    },
+    weekly: {
+      subject: "თქვენი ყოველკვირეული Humanity Union შეტყობინებების შეჯამება",
+      heading: "ყოველკვირეული შეტყობინებების შეჯამება",
+      summary: "აქ არის შეტყობინების კატეგორიების მოკლე შეჯამება გასული კვირიდან.",
+    },
+  },
+  "zh-Hant": {
+    daily: {
+      subject: "您的 Humanity Union 每日通知摘要",
+      heading: "每日通知摘要",
+      summary: "以下是過去一天通知類別的簡短摘要。",
+    },
+    weekly: {
+      subject: "您的 Humanity Union 每週通知摘要",
+      heading: "每週通知摘要",
+      summary: "以下是過去一週通知類別的簡短摘要。",
+    },
+  },
+};
+
+export function resolveMemberNotificationEmailDigestChrome(input: {
+  locale: string;
+  frequency: "daily" | "weekly";
+}): MemberNotificationEmailDigestChrome {
+  const { locale } = resolveMemberNotificationEmailLocale(input.locale);
+  const override = DIGEST_CHROME_OVERRIDES[locale as MemberNotificationEmailLocale];
+  const english = input.frequency === "daily" ? EN_DIGEST_DAILY : EN_DIGEST_WEEKLY;
+  const localized =
+    input.frequency === "daily" ? override?.daily : override?.weekly;
+  const shared = resolveMemberNotificationEmailCopy({
+    locale,
+    category: "civic_initiative_update",
+  });
+
+  return {
+    subject: localized?.subject ?? english.subject,
+    heading: localized?.heading ?? english.heading,
+    summary: localized?.summary ?? english.summary,
+    openLabel: shared.openLabel,
+    preferencesLabel: shared.preferencesLabel,
+    privacyNote: shared.privacyNote,
+    countLabel: (categoryHeading, count) => `${categoryHeading}: ${count}`,
+  };
+}

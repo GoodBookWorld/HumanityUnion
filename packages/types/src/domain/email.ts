@@ -21,6 +21,11 @@ export type EmailTemplateId =
    * member_notification event. Never embeds raw notification title/body.
    */
   | "member_notification_copy"
+  /**
+   * HU-NOTIF-02C.4 — privacy-safe localized daily/weekly digest.
+   * Category counts only — never raw notification bodies or private metadata.
+   */
+  | "member_notification_digest"
   /** Blog Author Access Pack 04 status updates (approved / changes / declined). */
   | "blog_author_application_status"
   /** Editorial Review Pack 06 — publication review/publish status summary. */

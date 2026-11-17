@@ -501,6 +501,21 @@ export interface MemberNotificationCopyTemplateInput {
   preferencesUrl: string;
 }
 
+/** HU-NOTIF-02C.4 — privacy-safe localized digest (category counts only). */
+export interface MemberNotificationDigestTemplateInput {
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  summary: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  categoryLines: string[];
+  notificationsUrl: string;
+  preferencesUrl: string;
+}
+
 function escapeEmailText(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -534,6 +549,46 @@ export function renderMemberNotificationCopyEmail(
     subject: input.subject,
     html: wrapEmailLayout(htmlBody, { lang: input.locale, dir: input.dir }),
     text: `${input.heading}\n\n${input.body}\n\n${input.openLabel}: ${input.notificationUrl}\n${input.preferencesLabel}: ${input.preferencesUrl}\n\n${input.privacyNote}`,
+  };
+}
+
+export function renderMemberNotificationDigestEmail(
+  input: MemberNotificationDigestTemplateInput,
+): EmailTemplateContent {
+  const heading = escapeEmailText(input.heading);
+  const summary = escapeEmailText(input.summary);
+  const openLabel = escapeEmailText(input.openLabel);
+  const preferencesLabel = escapeEmailText(input.preferencesLabel);
+  const privacyNote = escapeEmailText(input.privacyNote);
+  const notificationsUrl = escapeEmailText(input.notificationsUrl);
+  const preferencesUrl = escapeEmailText(input.preferencesUrl);
+  const lines = input.categoryLines
+    .slice(0, 7)
+    .map((line) => escapeEmailText(line))
+    .filter((line) => line.length > 0);
+
+  const listHtml = lines
+    .map(
+      (line) =>
+        `<li style="margin:0 0 8px;line-height:1.5;">${line}</li>`,
+    )
+    .join("");
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">${heading}</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">${summary}</p>
+    <ul style="margin:0 0 16px;padding-inline-start:20px;">${listHtml}</ul>
+    ${primaryButton(openLabel, notificationsUrl)}
+    <p style="margin:16px 0 0;line-height:1.6;font-size:13px;">
+      <a href="${preferencesUrl}" dir="ltr" style="color:${PRIMARY_COLOR};">${preferencesLabel}</a>
+    </p>
+    <p style="margin:16px 0 0;line-height:1.6;font-size:13px;color:#64748b;">${privacyNote}</p>
+  `;
+
+  return {
+    subject: input.subject,
+    html: wrapEmailLayout(htmlBody, { lang: input.locale, dir: input.dir }),
+    text: `${input.heading}\n\n${input.summary}\n\n${lines.join("\n")}\n\n${input.openLabel}: ${input.notificationsUrl}\n${input.preferencesLabel}: ${input.preferencesUrl}\n\n${input.privacyNote}`,
   };
 }
 
@@ -889,6 +944,24 @@ export function renderEmailTemplate(
           input.privacyNote ?? "This email does not include private notification details.",
         ),
         notificationUrl: String(input.notificationUrl ?? ""),
+        preferencesUrl: String(input.preferencesUrl ?? ""),
+      });
+    case "member_notification_digest":
+      return renderMemberNotificationDigestEmail({
+        locale: String(input.locale ?? "en"),
+        dir: input.dir === "rtl" ? "rtl" : "ltr",
+        subject: String(input.subject ?? "Humanity Union notification summary"),
+        heading: String(input.heading ?? "Notification summary"),
+        summary: String(input.summary ?? ""),
+        openLabel: String(input.openLabel ?? "Open notifications"),
+        preferencesLabel: String(input.preferencesLabel ?? "Manage email preferences"),
+        privacyNote: String(
+          input.privacyNote ?? "This email does not include private notification details.",
+        ),
+        categoryLines: Array.isArray(input.categoryLines)
+          ? input.categoryLines.map((line) => String(line))
+          : [],
+        notificationsUrl: String(input.notificationsUrl ?? ""),
         preferencesUrl: String(input.preferencesUrl ?? ""),
       });
     case "blog_author_application_status":

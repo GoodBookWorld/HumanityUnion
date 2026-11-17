@@ -47,6 +47,8 @@ export const MONGO_COLLECTIONS = {
   memberNotificationEmailDeliveries: "member_notification_email_deliveries",
   /** HU-NOTIF-02C.1 — bounded gaps when notification/ledger dual-write is non-atomic. */
   memberNotificationEmailDeliveryGaps: "member_notification_email_delivery_gaps",
+  /** HU-NOTIF-02C.4 — aggregate daily/weekly digest runs (stable digestId). */
+  memberNotificationEmailDigestRuns: "member_notification_email_digest_runs",
   /** Pack 22E.1 — Admin Notification Center inbox (per-Admin projection rows). */
   adminNotifications: "admin_notifications",
   /** Pack 22E.3 — operational incident state (separate from visible inbox rows). */

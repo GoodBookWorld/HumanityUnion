@@ -21,6 +21,10 @@ import { findPreferencesByMemberId } from "../../preferences/preferences.reposit
 import { buildDefaultMemberPreferences } from "../../preferences/preferences.defaults.js";
 import { isMemberNotificationEmailEventAllowlisted } from "./allowlist.js";
 import {
+  resolveMemberNotificationDigestBucketKey,
+  resolveMemberNotificationDigestPeriodEndsAt,
+} from "./digest-period.js";
+import {
   isMemberNotificationEmailDeliveryEnabled,
   resolveMemberNotificationEmailDeliveryActivationAt,
 } from "./feature-flag.js";
@@ -44,27 +48,6 @@ export type EnqueueMemberNotificationEmailDeliveryResult =
 
 function hashDestination(email: string): string {
   return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
-}
-
-function resolveDigestBucketKey(input: {
-  recipientUserId: string;
-  channel: MemberNotificationEmailDeliveryChannel;
-  createdAt: string;
-}): string | null {
-  const day = input.createdAt.slice(0, 10);
-  if (input.channel === "digest_daily") {
-    return `${input.recipientUserId}:daily:${day}`;
-  }
-  if (input.channel === "digest_weekly") {
-    const date = new Date(input.createdAt);
-    const utcDay = date.getUTCDay();
-    const mondayOffset = utcDay === 0 ? -6 : 1 - utcDay;
-    const monday = new Date(date);
-    monday.setUTCDate(date.getUTCDate() + mondayOffset);
-    const weekKey = monday.toISOString().slice(0, 10);
-    return `${input.recipientUserId}:weekly:${weekKey}`;
-  }
-  return null;
 }
 
 function resolveChannel(
@@ -141,7 +124,12 @@ function buildSkippedRecord(input: {
     nextAttemptAt: null,
     leaseOwner: null,
     leaseExpiresAt: null,
-    digestBucketKey: resolveDigestBucketKey({
+    digestBucketKey: resolveMemberNotificationDigestBucketKey({
+      recipientUserId: input.notification.recipientUserId,
+      channel: input.channel,
+      createdAt: input.notification.createdAt,
+    }),
+    digestPeriodEndsAt: resolveMemberNotificationDigestPeriodEndsAt({
       recipientUserId: input.notification.recipientUserId,
       channel: input.channel,
       createdAt: input.notification.createdAt,
@@ -177,7 +165,12 @@ function buildPendingRecord(input: {
     nextAttemptAt: now,
     leaseOwner: null,
     leaseExpiresAt: null,
-    digestBucketKey: resolveDigestBucketKey({
+    digestBucketKey: resolveMemberNotificationDigestBucketKey({
+      recipientUserId: input.notification.recipientUserId,
+      channel: input.channel,
+      createdAt: input.notification.createdAt,
+    }),
+    digestPeriodEndsAt: resolveMemberNotificationDigestPeriodEndsAt({
       recipientUserId: input.notification.recipientUserId,
       channel: input.channel,
       createdAt: input.notification.createdAt,

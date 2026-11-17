@@ -22,7 +22,10 @@ import {
   SEARCH_SYNC_STATE_INDEXES,
 } from "../../modules/seo-search-performance/search-performance.indexes.js";
 import { WEB_SYSTEM_HEALTH_EVENT_INDEXES } from "../../modules/system-health/web-system-health-event.js";
-import { MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES } from "../../modules/notifications/email-delivery/member-notification-email-delivery.index-readiness.js";
+import {
+  MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES,
+  MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES,
+} from "../../modules/notifications/email-delivery/member-notification-email-delivery.index-readiness.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -741,6 +744,11 @@ const MODULE_INDEXES: ReadonlyArray<{
         name: "member_notification_email_delivery_gaps_created",
       },
     ],
+  },
+  {
+    // HU-NOTIF-02C.4 — aggregate daily/weekly digest runs.
+    collectionName: MONGO_COLLECTIONS.memberNotificationEmailDigestRuns,
+    indexes: [...MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES],
   },
   {
     collectionName: MONGO_COLLECTIONS.adminNotifications,

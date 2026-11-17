@@ -3,6 +3,40 @@ export {
   listMemberNotificationEmailAllowlistedEventTypes,
 } from "./allowlist.js";
 export { executeMemberNotificationEmailDeliveryAdapter } from "./delivery-adapter.js";
+export { executeMemberNotificationEmailDigestAdapter } from "./digest-adapter.js";
+export {
+  evaluateMemberNotificationEmailDigestChildEligibility,
+  evaluateMemberNotificationEmailDigestRecipientEligibility,
+} from "./digest-eligibility.js";
+export {
+  isDigestPeriodClosed,
+  parseMemberNotificationDigestBucketKey,
+  resolveMemberNotificationDigestBucketKey,
+  resolveMemberNotificationDigestPeriodEndsAt,
+  resolveUtcWeekMondayKey,
+} from "./digest-period.js";
+export { resolveMemberNotificationEmailDigestPresentation } from "./digest-presentation.js";
+export {
+  claimNextMemberNotificationEmailDigestRun,
+  ensureMemberNotificationEmailDigestRun,
+  findMemberNotificationEmailDigestRunById,
+  listMemberNotificationEmailDigestRunsForTests,
+  reopenMemberNotificationEmailDigestRunForResiduals,
+  resetMemberNotificationEmailDigestRunStoreForTests,
+  setMemberNotificationEmailDigestRunForceMemoryForTests,
+  updateMemberNotificationEmailDigestRun,
+} from "./digest-run.repository.js";
+export {
+  isMemberNotificationEmailDigestSchedulerStartedForTests,
+  startMemberNotificationEmailDigestScheduler,
+  stopMemberNotificationEmailDigestScheduler,
+} from "./digest-scheduler.js";
+export {
+  discoverMemberNotificationEmailDigestRuns,
+  loadAllOpenMemberNotificationEmailDigestBucketDeliveries,
+  processMemberNotificationEmailDigestClaim,
+  runMemberNotificationEmailDigestWorkerTick,
+} from "./digest-worker.js";
 export {
   resolveMemberNotificationDeepLink,
   resolveMemberNotificationFallbackDeepLink,
@@ -13,6 +47,7 @@ export { resolveMemberNotificationEmailPresentationCategory } from "./presentati
 export {
   MEMBER_NOTIFICATION_EMAIL_INSTALLED_LOCALES,
   resolveMemberNotificationEmailCopy,
+  resolveMemberNotificationEmailDigestChrome,
   resolveMemberNotificationEmailLocale,
 } from "./presentation-i18n.js";
 export { resolveMemberNotificationEmailPresentation } from "./presentation.js";
@@ -32,6 +67,7 @@ export {
 } from "./member-notification-email-delivery.enqueue.js";
 export {
   MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES,
+  MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES,
   assertMemberNotificationEmailDeliveryIndexesReady,
   resetMemberNotificationEmailDeliveryIndexReadinessForTests,
   setMemberNotificationEmailDeliveryIndexesReadyForTests,
@@ -40,8 +76,10 @@ export {
   claimNextMemberNotificationEmailDelivery,
   findMemberNotificationEmailDeliveryByNotificationAndChannel,
   insertMemberNotificationEmailDelivery,
+  listDueMemberNotificationEmailDigestBuckets,
   listMemberNotificationEmailDeliveriesForTests,
   listMemberNotificationEmailDeliveryGaps,
+  listOpenMemberNotificationEmailDigestBucketDeliveriesPage,
   requeueDryRunOkMemberNotificationEmailDeliveries,
   resetMemberNotificationEmailDeliveryStoreForTests,
   setMemberNotificationEmailDeliveryForceMemoryForTests,

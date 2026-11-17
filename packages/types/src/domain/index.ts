@@ -1794,6 +1794,7 @@ export type {
   MemberNotificationEmailDeliveryRecord,
   MemberNotificationEmailDeliverySkipReason,
   MemberNotificationEmailDeliveryStatus,
+  MemberNotificationEmailDigestRunRecord,
 } from "./member-notification-email-delivery.js";
 export type {
   AdminNotification,

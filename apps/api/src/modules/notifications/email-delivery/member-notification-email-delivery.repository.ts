@@ -467,11 +467,186 @@ export async function updateMemberNotificationEmailDelivery(
 }
 
 /**
- * Safe reprocessing policy: dry_run_ok → pending only via explicit call.
- * Never auto-promoted when switching modes.
- * Does not bypass activation boundary (rows before activationAt are not requeued)
- * or eligibility (worker rechecks prefs/allowlist on next claim).
+ * HU-NOTIF-02C.4 — page of open digest child intents for one bucket.
+ * Callers must paginate until empty so completion never silently drops children.
  */
+export async function listOpenMemberNotificationEmailDigestBucketDeliveriesPage(input: {
+  digestBucketKey: string;
+  activationAt: string;
+  limit: number;
+  afterCreatedAt?: string | null;
+  afterDeliveryId?: string | null;
+}): Promise<MemberNotificationEmailDeliveryRecord[]> {
+  const openStatuses = new Set(["pending", "failed"]);
+
+  if (shouldUseMemory()) {
+    const afterCreatedAt = input.afterCreatedAt ?? null;
+    const afterDeliveryId = input.afterDeliveryId ?? null;
+    return memoryDeliveries
+      .filter((row) => {
+        if (row.digestBucketKey !== input.digestBucketKey) {
+          return false;
+        }
+        if (row.createdAt < input.activationAt) {
+          return false;
+        }
+        if (row.channel !== "digest_daily" && row.channel !== "digest_weekly") {
+          return false;
+        }
+        if (!openStatuses.has(row.status) || row.attemptCount >= row.maxAttempts) {
+          return false;
+        }
+        if (afterCreatedAt) {
+          if (row.createdAt < afterCreatedAt) {
+            return false;
+          }
+          if (
+            row.createdAt === afterCreatedAt &&
+            afterDeliveryId &&
+            row.deliveryId <= afterDeliveryId
+          ) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const created = a.createdAt.localeCompare(b.createdAt);
+        return created !== 0 ? created : a.deliveryId.localeCompare(b.deliveryId);
+      })
+      .slice(0, input.limit)
+      .map((row) => structuredClone(row));
+  }
+
+  await ensureMongoReady();
+  const collection = getMongoCollection<DeliveryDocument>(
+    MONGO_COLLECTIONS.memberNotificationEmailDeliveries,
+  );
+  const filter: Record<string, unknown> = {
+    digestBucketKey: input.digestBucketKey,
+    createdAt: { $gte: input.activationAt },
+    channel: { $in: ["digest_daily", "digest_weekly"] },
+    status: { $in: ["pending", "failed"] },
+    attemptCount: { $lt: MEMBER_NOTIFICATION_EMAIL_DELIVERY_MAX_ATTEMPTS },
+  };
+  if (input.afterCreatedAt) {
+    filter.$or = [
+      { createdAt: { $gt: input.afterCreatedAt } },
+      {
+        createdAt: input.afterCreatedAt,
+        deliveryId: { $gt: input.afterDeliveryId ?? "" },
+      },
+    ];
+  }
+  const documents = await collection
+    .find(filter as never)
+    .sort({ createdAt: 1, deliveryId: 1 })
+    .limit(input.limit)
+    .toArray();
+  return documents.map(stripDelivery);
+}
+
+export interface MemberNotificationEmailDigestBucketDiscoveryRow {
+  digestBucketKey: string;
+  channel: "digest_daily" | "digest_weekly";
+  recipientUserId: string;
+  recipientMemberId: string | null;
+  oldestCreatedAt: string;
+}
+
+/**
+ * HU-NOTIF-02C.4 — discover distinct CLOSED digest buckets with open children.
+ * Filters by digestPeriodEndsAt <= nowIso so open periods cannot starve the scan.
+ * Bounded by distinct bucket limit (not raw row count).
+ */
+export async function listDueMemberNotificationEmailDigestBuckets(input: {
+  activationAt: string;
+  nowIso: string;
+  limit: number;
+}): Promise<MemberNotificationEmailDigestBucketDiscoveryRow[]> {
+  if (shouldUseMemory()) {
+    const grouped = new Map<string, MemberNotificationEmailDigestBucketDiscoveryRow>();
+    for (const row of memoryDeliveries) {
+      if (row.createdAt < input.activationAt) {
+        continue;
+      }
+      if (row.channel !== "digest_daily" && row.channel !== "digest_weekly") {
+        continue;
+      }
+      if (row.status !== "pending" && row.status !== "failed") {
+        continue;
+      }
+      if (!row.digestBucketKey || row.attemptCount >= row.maxAttempts) {
+        continue;
+      }
+      const endsAt = row.digestPeriodEndsAt;
+      if (!endsAt || endsAt > input.nowIso) {
+        continue;
+      }
+      const existing = grouped.get(row.digestBucketKey);
+      if (!existing || row.createdAt < existing.oldestCreatedAt) {
+        grouped.set(row.digestBucketKey, {
+          digestBucketKey: row.digestBucketKey,
+          channel: row.channel,
+          recipientUserId: row.recipientUserId,
+          recipientMemberId: row.recipientMemberId,
+          oldestCreatedAt: row.createdAt,
+        });
+      }
+    }
+    return [...grouped.values()]
+      .sort((a, b) => a.oldestCreatedAt.localeCompare(b.oldestCreatedAt))
+      .slice(0, input.limit);
+  }
+
+  await ensureMongoReady();
+  const collection = getMongoCollection<DeliveryDocument>(
+    MONGO_COLLECTIONS.memberNotificationEmailDeliveries,
+  );
+  const rows = await collection
+    .aggregate<{
+      _id: string;
+      channel: "digest_daily" | "digest_weekly";
+      recipientUserId: string;
+      recipientMemberId: string | null;
+      oldestCreatedAt: string;
+    }>([
+      {
+        $match: {
+          createdAt: { $gte: input.activationAt },
+          channel: { $in: ["digest_daily", "digest_weekly"] },
+          status: { $in: ["pending", "failed"] },
+          digestBucketKey: { $exists: true, $ne: null },
+          digestPeriodEndsAt: { $exists: true, $ne: null, $lte: input.nowIso },
+          attemptCount: { $lt: MEMBER_NOTIFICATION_EMAIL_DELIVERY_MAX_ATTEMPTS },
+        },
+      },
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: "$digestBucketKey",
+          channel: { $first: "$channel" },
+          recipientUserId: { $first: "$recipientUserId" },
+          recipientMemberId: { $first: "$recipientMemberId" },
+          oldestCreatedAt: { $first: "$createdAt" },
+        },
+      },
+      { $sort: { oldestCreatedAt: 1 } },
+      { $limit: input.limit },
+    ])
+    .toArray();
+
+  return rows
+    .filter((row) => typeof row._id === "string" && row._id.length > 0)
+    .map((row) => ({
+      digestBucketKey: row._id,
+      channel: row.channel,
+      recipientUserId: row.recipientUserId,
+      recipientMemberId: row.recipientMemberId,
+      oldestCreatedAt: row.oldestCreatedAt,
+    }));
+}
+
 export async function requeueDryRunOkMemberNotificationEmailDeliveries(input: {
   limit: number;
   activationAt?: string | null;

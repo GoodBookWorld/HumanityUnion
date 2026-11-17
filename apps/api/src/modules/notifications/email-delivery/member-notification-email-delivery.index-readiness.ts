@@ -11,6 +11,8 @@ import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-databa
 import {
   MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEX_NAMES,
   MEMBER_NOTIFICATION_EMAIL_DELIVERY_REQUIRED_INDEX_NAMES,
+  MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEX_NAMES,
+  MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_REQUIRED_INDEX_NAMES,
 } from "./member-notification-email-delivery.constants.js";
 
 export const MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES: IndexDescription[] = [
@@ -31,6 +33,32 @@ export const MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES: IndexDescription[] = [
   {
     key: { recipientUserId: 1, createdAt: -1 },
     name: MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEX_NAMES.recipientCreated,
+  },
+  {
+    // HU-NOTIF-02C.4 — bounded digest bucket scans (channel + status + bucket).
+    key: { channel: 1, status: 1, digestBucketKey: 1, createdAt: 1 },
+    name: MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEX_NAMES.digestBucket,
+  },
+  {
+    // HU-NOTIF-02C.4 — closed-period discovery (avoids open-period scan starvation).
+    key: { channel: 1, status: 1, digestPeriodEndsAt: 1, digestBucketKey: 1 },
+    name: MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEX_NAMES.digestPeriodDue,
+  },
+];
+
+export const MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES: IndexDescription[] = [
+  {
+    key: { digestId: 1 },
+    unique: true,
+    name: MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEX_NAMES.digestIdUnique,
+  },
+  {
+    key: { status: 1, nextAttemptAt: 1, leaseExpiresAt: 1 },
+    name: MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEX_NAMES.workerDue,
+  },
+  {
+    key: { recipientUserId: 1, createdAt: -1 },
+    name: MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEX_NAMES.recipientCreated,
   },
 ];
 
@@ -98,6 +126,37 @@ export async function assertMemberNotificationEmailDeliveryIndexesReady(
 
   for (const requiredName of MEMBER_NOTIFICATION_EMAIL_DELIVERY_REQUIRED_INDEX_NAMES) {
     const found = indexes.find((entry) => entry.name === requiredName);
+    if (!found || found.unique !== true) {
+      return false;
+    }
+  }
+
+  const digestCollection = getMongoCollection(
+    MONGO_COLLECTIONS.memberNotificationEmailDigestRuns,
+  );
+  for (const index of MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES) {
+    try {
+      await digestCollection.createIndex(index.key, {
+        unique: index.unique,
+        name: index.name,
+      });
+    } catch (error) {
+      const mongoError = error as { code?: number };
+      if (mongoError.code !== 85 && mongoError.code !== 86) {
+        return false;
+      }
+    }
+  }
+
+  let digestIndexes: Array<{ name?: string; unique?: boolean }>;
+  try {
+    digestIndexes = await digestCollection.indexes();
+  } catch {
+    return false;
+  }
+
+  for (const requiredName of MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_REQUIRED_INDEX_NAMES) {
+    const found = digestIndexes.find((entry) => entry.name === requiredName);
     if (!found || found.unique !== true) {
       return false;
     }
