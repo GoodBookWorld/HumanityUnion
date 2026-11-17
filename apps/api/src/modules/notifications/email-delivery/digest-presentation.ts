@@ -31,6 +31,20 @@ export interface MemberNotificationEmailDigestCategoryCount {
   count: number;
 }
 
+export interface MemberNotificationEmailDigestPresentationMailFields {
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  summary: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  categoryLines: string[];
+  notificationsUrl: string;
+  preferencesUrl: string;
+}
+
 export interface MemberNotificationEmailDigestPresentationSuccess {
   ok: true;
   locale: string;
@@ -42,6 +56,7 @@ export interface MemberNotificationEmailDigestPresentationSuccess {
   html: string;
   text: string;
   templateId: "member_notification_digest";
+  mailFields: MemberNotificationEmailDigestPresentationMailFields;
 }
 
 export interface MemberNotificationEmailDigestPresentationFailure {
@@ -138,6 +153,20 @@ export async function resolveMemberNotificationEmailDigestPresentation(input: {
       preferencesUrl: preferencesLink.absoluteUrl,
     });
 
+    const mailFields: MemberNotificationEmailDigestPresentationMailFields = {
+      locale: localeResolution.locale,
+      dir,
+      subject: chrome.subject,
+      heading: chrome.heading,
+      summary: chrome.summary,
+      openLabel: chrome.openLabel,
+      preferencesLabel: chrome.preferencesLabel,
+      privacyNote: chrome.privacyNote,
+      categoryLines: lines,
+      notificationsUrl: notificationsLink.absoluteUrl,
+      preferencesUrl: preferencesLink.absoluteUrl,
+    };
+
     return {
       ok: true,
       locale: localeResolution.locale,
@@ -149,6 +178,7 @@ export async function resolveMemberNotificationEmailDigestPresentation(input: {
       html: rendered.html,
       text: rendered.text,
       templateId: "member_notification_digest",
+      mailFields,
     };
   } catch {
     return { ok: false, errorCode: "template_resolution_failed" };

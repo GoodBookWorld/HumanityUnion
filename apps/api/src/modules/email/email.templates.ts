@@ -877,7 +877,7 @@ export function renderParticipantRestoredEmail(
 
 export function renderEmailTemplate(
   template: EmailTemplateId,
-  input: Record<string, string | number | undefined>,
+  input: Record<string, string | number | string[] | undefined>,
 ): EmailTemplateContent {
   switch (template) {
     case "registration_verification":

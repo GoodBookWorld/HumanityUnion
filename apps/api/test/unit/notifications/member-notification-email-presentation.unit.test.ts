@@ -280,6 +280,7 @@ describe("HU-NOTIF-02C.3 member notification email presentation", () => {
       eventType: "initiative_published",
       destinationHash: "abc",
       mode: "dry_run",
+      recipientUserId: USER_ID,
       recipientMemberId: MEMBER_ID,
       relatedUrl: "/initiatives/init-1",
     });
@@ -298,6 +299,7 @@ describe("HU-NOTIF-02C.3 member notification email presentation", () => {
       eventType: "direct_message_received",
       destinationHash: "abc",
       mode: "dry_run",
+      recipientUserId: USER_ID,
       recipientMemberId: MEMBER_ID,
       relatedUrl: "/messages/1",
     });

@@ -22,6 +22,19 @@ export type MemberNotificationEmailPresentationErrorCode =
   | "private_event"
   | "template_resolution_failed";
 
+export interface MemberNotificationEmailPresentationMailFields {
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  body: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  notificationUrl: string;
+  preferencesUrl: string;
+}
+
 export interface MemberNotificationEmailPresentationSuccess {
   ok: true;
   locale: string;
@@ -31,10 +44,12 @@ export interface MemberNotificationEmailPresentationSuccess {
   deepLinkPath: string;
   deepLinkFallback: boolean;
   subject: string;
-  /** Rendered via MailDeliveryService template conventions — not sent in this phase. */
+  /** Rendered via MailDeliveryService template conventions. */
   html: string;
   text: string;
   templateId: "member_notification_copy";
+  /** Structured fields for MailDeliveryService live send (no HTML/PII extras). */
+  mailFields: MemberNotificationEmailPresentationMailFields;
 }
 
 export interface MemberNotificationEmailPresentationFailure {
@@ -117,6 +132,19 @@ export async function resolveMemberNotificationEmailPresentation(input: {
       return { ok: false, errorCode: "template_resolution_failed" };
     }
 
+    const mailFields: MemberNotificationEmailPresentationMailFields = {
+      locale: localeResolution.locale,
+      dir,
+      subject: copy.subject,
+      heading: copy.heading,
+      body: copy.body,
+      openLabel: copy.openLabel,
+      preferencesLabel: copy.preferencesLabel,
+      privacyNote: copy.privacyNote,
+      notificationUrl: notificationLink.absoluteUrl,
+      preferencesUrl: preferencesLink.absoluteUrl,
+    };
+
     return {
       ok: true,
       locale: localeResolution.locale,
@@ -129,6 +157,7 @@ export async function resolveMemberNotificationEmailPresentation(input: {
       html: rendered.html,
       text: rendered.text,
       templateId: "member_notification_copy",
+      mailFields,
     };
   } catch {
     return { ok: false, errorCode: "template_resolution_failed" };

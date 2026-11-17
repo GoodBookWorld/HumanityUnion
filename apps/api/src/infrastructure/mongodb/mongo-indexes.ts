@@ -26,6 +26,7 @@ import {
   MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES,
   MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES,
 } from "../../modules/notifications/email-delivery/member-notification-email-delivery.index-readiness.js";
+import { MEMBER_NOTIFICATION_EMAIL_SEND_RATE_LIMIT_INDEXES } from "../../modules/notifications/email-delivery/send-rate-limit.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -749,6 +750,11 @@ const MODULE_INDEXES: ReadonlyArray<{
     // HU-NOTIF-02C.4 — aggregate daily/weekly digest runs.
     collectionName: MONGO_COLLECTIONS.memberNotificationEmailDigestRuns,
     indexes: [...MEMBER_NOTIFICATION_EMAIL_DIGEST_RUN_INDEXES],
+  },
+  {
+    // HU-NOTIF-02C.5 — multi-instance live send rate limits (TTL required).
+    collectionName: MONGO_COLLECTIONS.memberNotificationEmailSendRateLimits,
+    indexes: [...MEMBER_NOTIFICATION_EMAIL_SEND_RATE_LIMIT_INDEXES],
   },
   {
     collectionName: MONGO_COLLECTIONS.adminNotifications,

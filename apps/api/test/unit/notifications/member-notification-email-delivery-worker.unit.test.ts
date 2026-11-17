@@ -156,7 +156,7 @@ describe("HU-NOTIF-02C.2 member notification email delivery worker", () => {
     assert.equal(rows[0]?.skipReason, "dry_run");
   });
 
-  it("live mode fails closed without SMTP and does not mark sent", async () => {
+  it("live mode fails closed without LIVE_APPROVED and does not mark sent", async () => {
     setMemberNotificationEmailDeliveryEnabledForTests(true);
     setMemberNotificationEmailDeliveryModeForTests("live");
     await insertMemberNotificationEmailDelivery(baseRecord({ deliveryId: "live-1" }));
@@ -168,7 +168,7 @@ describe("HU-NOTIF-02C.2 member notification email delivery worker", () => {
 
     const rows = await listMemberNotificationEmailDeliveriesForTests();
     assert.equal(rows[0]?.status, "cancelled");
-    assert.equal(rows[0]?.skipReason, "live_not_ready");
+    assert.equal(rows[0]?.skipReason, "live_not_approved");
     assert.notEqual(rows[0]?.status, "sent");
   });
 
@@ -423,13 +423,18 @@ describe("HU-NOTIF-02C.2 member notification email delivery worker", () => {
     assert.equal(hist, 0);
   });
 
-  it("adapter never invokes SMTP and live stays fail-closed", async () => {
+  it("adapter never invokes SMTP when live approval is off", async () => {
+    setMemberNotificationEmailDeliveryEnabledForTests(true);
+    setMemberNotificationEmailDeliveryModeForTests("live");
+
     const dry = await executeMemberNotificationEmailDeliveryAdapter({
       deliveryId: "a1",
       notificationId: "n1",
       eventType: "initiative_published",
       destinationHash: "abc123",
       mode: "dry_run",
+      recipientUserId: USER_ID,
+      recipientMemberId: PROFILE_ID,
     });
     assert.equal(dry.outcome, "dry_run_validated");
     if (dry.outcome === "dry_run_validated") {
@@ -442,8 +447,13 @@ describe("HU-NOTIF-02C.2 member notification email delivery worker", () => {
       eventType: "initiative_published",
       destinationHash: "abc123",
       mode: "live",
+      recipientUserId: USER_ID,
+      recipientMemberId: PROFILE_ID,
     });
-    assert.equal(live.outcome, "live_not_ready");
+    assert.equal(live.outcome, "live_gate_failed");
+    if (live.outcome === "live_gate_failed") {
+      assert.equal(live.errorCode, "live_not_approved");
+    }
     assert.equal(getMockEmailSendCount(), 0);
   });
 

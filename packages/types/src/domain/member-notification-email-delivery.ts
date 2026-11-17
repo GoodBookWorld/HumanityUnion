@@ -36,9 +36,19 @@ export type MemberNotificationEmailDeliverySkipReason =
   | "frequency_mismatch"
   | "account_inactive"
   | "live_not_ready"
+  /** HU-NOTIF-02C.5 — LIVE_APPROVED gate is off. */
+  | "live_not_approved"
+  /** HU-NOTIF-02C.5 — recipient not on controlled live allowlist. */
+  | "live_recipient_not_allowlisted"
+  /** HU-NOTIF-02C.5 — global or per-recipient send budget exhausted. */
+  | "rate_limited"
   | "activation_blocked"
   /** Digest period had no eligible intents after live recheck. */
-  | "empty_digest";
+  | "empty_digest"
+  | "provider_temporary"
+  | "provider_permanent"
+  | "provider_blocked"
+  | "provider_ambiguous";
 
 export type MemberNotificationEmailDeliveryMode = "off" | "dry_run" | "live";
 

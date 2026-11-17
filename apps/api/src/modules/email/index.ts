@@ -17,6 +17,8 @@ export {
   sendLoginNotificationEmail,
   sendWorkspaceNotificationSummaryEmail,
   sendWorkspaceMessageAlertEmail,
+  sendMemberNotificationCopyEmail,
+  sendMemberNotificationDigestEmail,
   sendBlogAuthorApplicationStatusEmail,
   sendBlogPublicationStatusEmail,
   sendParticipantSuspendedEmail,

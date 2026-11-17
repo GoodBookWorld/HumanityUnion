@@ -60,6 +60,34 @@ export {
   setMemberNotificationEmailDeliveryModeForTests,
 } from "./feature-flag.js";
 export {
+  isMemberNotificationEmailLiveApproved,
+  isMemberNotificationEmailLiveSmtpPermitted,
+  setMemberNotificationEmailLiveApprovedForTests,
+} from "./live-gates.js";
+export {
+  isMemberNotificationEmailLiveRecipientAllowlisted,
+  resolveMemberNotificationEmailLiveRecipientAllowlist,
+  setMemberNotificationEmailLiveRecipientAllowlistForTests,
+} from "./recipient-allowlist.js";
+export {
+  getMemberNotificationEmailMetricsForTests,
+  resetMemberNotificationEmailMetricsForTests,
+} from "./delivery-metrics.js";
+export {
+  MEMBER_NOTIFICATION_EMAIL_GLOBAL_HOURLY_LIMIT,
+  MEMBER_NOTIFICATION_EMAIL_PER_RECIPIENT_DAILY_LIMIT,
+  MEMBER_NOTIFICATION_EMAIL_SEND_RATE_LIMIT_INDEXES,
+  assertMemberNotificationEmailSendRateLimitIndexesReady,
+  consumeMemberNotificationEmailSendBudget,
+  resetMemberNotificationEmailSendRateLimitStoreForTests,
+  setMemberNotificationEmailSendRateLimitForceMemoryForTests,
+  setMemberNotificationEmailSendRateLimitIndexesReadyForTests,
+} from "./send-rate-limit.js";
+export {
+  assertMemberNotificationEmailLiveSendGates,
+  classifyProviderDeliveryResult,
+} from "./live-send.js";
+export {
   enqueueMemberNotificationEmailDelivery,
   enqueueMemberNotificationEmailDeliveryBestEffort,
   listRecoverableMemberNotificationEmailDeliveryGaps,

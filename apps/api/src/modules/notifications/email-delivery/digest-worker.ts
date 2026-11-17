@@ -61,11 +61,13 @@ export interface MemberNotificationEmailDigestWorkerTickResult {
   discovered: number;
   processed: number;
   dryRunOk: number;
+  sent: number;
   cancelled: number;
   failed: number;
   liveBlocked: number;
   empty: number;
   staleLease: number;
+  rateLimited: number;
 }
 
 function createLeaseOwner(): string {
@@ -220,11 +222,13 @@ export async function processMemberNotificationEmailDigestClaim(
   options: { activationAt: string },
 ): Promise<
   | "dry_run_ok"
+  | "sent"
   | "cancelled"
   | "failed"
   | "live_blocked"
   | "empty"
   | "stale_lease"
+  | "rate_limited"
 > {
   const mode = resolveMemberNotificationEmailDeliveryMode();
   const parsed = parseMemberNotificationDigestBucketKey(run.digestId);
@@ -259,8 +263,19 @@ export async function processMemberNotificationEmailDigestClaim(
     return ok ? "failed" : "stale_lease";
   }
 
-  // Reclaim after partial child close: no open children → finalize without adapter/resend.
+  // Reclaim after partial completion: no open children → finalize without adapter/resend.
   if (openChildrenOrOverflow.length === 0) {
+    if (run.providerEmailId) {
+      const ok = await finalizeDigestRun(run, leaseOwner, {
+        status: "sent",
+        skipReason: null,
+        nextAttemptAt: null,
+        lastErrorCode: null,
+        providerEmailId: run.providerEmailId,
+        includedDeliveryIds: run.includedDeliveryIds ?? [],
+      });
+      return ok ? "sent" : "stale_lease";
+    }
     const status = mode === "dry_run" ? "dry_run_ok" : "cancelled";
     const skipReason = mode === "dry_run" ? "dry_run" : "empty_digest";
     const ok = await finalizeDigestRun(run, leaseOwner, {
@@ -275,6 +290,28 @@ export async function processMemberNotificationEmailDigestClaim(
       return "stale_lease";
     }
     return mode === "dry_run" ? "dry_run_ok" : "empty";
+  }
+
+  // Provider already accepted on a prior attempt — close residuals without resend.
+  if (run.providerEmailId && mode === "live") {
+    await closeChildDeliveries(openChildrenOrOverflow, {
+      status: "sent",
+      skipReason: null,
+      providerEmailId: run.providerEmailId,
+      nextAttemptAt: null,
+      lastErrorCode: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+    });
+    const ok = await finalizeDigestRun(run, leaseOwner, {
+      status: "sent",
+      skipReason: null,
+      providerEmailId: run.providerEmailId,
+      nextAttemptAt: null,
+      lastErrorCode: null,
+      includedDeliveryIds: openChildrenOrOverflow.map((row) => row.deliveryId),
+    });
+    return ok ? "sent" : "stale_lease";
   }
 
   const recipient = await evaluateMemberNotificationEmailDigestRecipientEligibility(run);
@@ -350,8 +387,10 @@ export async function processMemberNotificationEmailDigestClaim(
       frequency: parsed.frequency,
       destinationHash: recipient.destinationHash,
       mode,
+      recipientUserId: run.recipientUserId,
       recipientMemberId: run.recipientMemberId,
       eligibleRecords: eligible,
+      createdAt: run.createdAt,
     });
 
     if (adapterResult.outcome === "dry_run_validated") {
@@ -382,6 +421,46 @@ export async function processMemberNotificationEmailDigestClaim(
       return ok ? "dry_run_ok" : "stale_lease";
     }
 
+    if (adapterResult.outcome === "sent") {
+      // Persist provider acceptance on the claimed run before closing children so a
+      // crashed finalize cannot trigger a duplicate provider send on reclaim.
+      const marked = await updateMemberNotificationEmailDigestRun(
+        run.digestId,
+        {
+          providerEmailId: adapterResult.providerEmailId,
+          destinationHash: adapterResult.destinationHash,
+          destinationModeSnapshot: recipient.destinationModeSnapshot,
+          includedDeliveryIds: eligible.map((row) => row.deliveryId),
+        },
+        { expectedLeaseOwner: leaseOwner, requireClaimedStatus: true },
+      );
+      if (!marked) {
+        return "stale_lease";
+      }
+      await closeChildDeliveries(eligible, {
+        status: "sent",
+        skipReason: null,
+        providerEmailId: adapterResult.providerEmailId,
+        nextAttemptAt: null,
+        lastErrorCode: null,
+        destinationHash: adapterResult.destinationHash,
+        destinationModeSnapshot: recipient.destinationModeSnapshot,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      });
+      const ok = await finalizeDigestRun(run, leaseOwner, {
+        status: "sent",
+        skipReason: null,
+        providerEmailId: adapterResult.providerEmailId,
+        nextAttemptAt: null,
+        lastErrorCode: null,
+        destinationHash: adapterResult.destinationHash,
+        destinationModeSnapshot: recipient.destinationModeSnapshot,
+        includedDeliveryIds: eligible.map((row) => row.deliveryId),
+      });
+      return ok ? "sent" : "stale_lease";
+    }
+
     if (adapterResult.outcome === "template_failed") {
       const terminal =
         adapterResult.errorCode === "empty_digest" ||
@@ -395,6 +474,66 @@ export async function processMemberNotificationEmailDigestClaim(
           : new Date(Date.now() + backoffMs).toISOString(),
         providerEmailId: null,
         skipReason: adapterResult.errorCode === "empty_digest" ? "empty_digest" : null,
+      });
+      return ok ? "failed" : "stale_lease";
+    }
+
+    if (adapterResult.outcome === "live_gate_failed") {
+      const retryable = !adapterResult.terminal;
+      const backoffMs = resolveMemberNotificationEmailDeliveryBackoffMs(run.attemptCount);
+      if (!retryable) {
+        await closeChildDeliveries(eligible, {
+          status: "cancelled",
+          skipReason: adapterResult.errorCode,
+          providerEmailId: null,
+          nextAttemptAt: null,
+          lastErrorCode: adapterResult.errorCode,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+        });
+      }
+      const ok = await finalizeDigestRun(run, leaseOwner, {
+        status: retryable ? "failed" : "cancelled",
+        skipReason: adapterResult.errorCode,
+        providerEmailId: null,
+        nextAttemptAt: retryable
+          ? new Date(Date.now() + backoffMs).toISOString()
+          : null,
+        lastErrorCode: adapterResult.errorCode,
+        destinationHash: recipient.destinationHash,
+        includedDeliveryIds: retryable
+          ? []
+          : eligible.map((row) => row.deliveryId),
+      });
+      if (!ok) {
+        return "stale_lease";
+      }
+      if (adapterResult.errorCode === "rate_limited") {
+        return "rate_limited";
+      }
+      return retryable ? "failed" : "live_blocked";
+    }
+
+    if (
+      adapterResult.outcome === "provider_deferred" ||
+      adapterResult.outcome === "provider_failed" ||
+      adapterResult.outcome === "provider_blocked" ||
+      adapterResult.outcome === "provider_ambiguous"
+    ) {
+      const terminal =
+        adapterResult.terminal || run.attemptCount >= run.maxAttempts;
+      const backoffMs = resolveMemberNotificationEmailDeliveryBackoffMs(run.attemptCount);
+      // Ambiguous acceptance: do not close children as sent; retry or terminal fail.
+      // Never claim exactly-once external SMTP delivery.
+      const ok = await finalizeDigestRun(run, leaseOwner, {
+        status: "failed",
+        skipReason: adapterResult.errorCode,
+        providerEmailId: adapterResult.providerEmailId,
+        nextAttemptAt: terminal
+          ? null
+          : new Date(Date.now() + backoffMs).toISOString(),
+        lastErrorCode: adapterResult.errorCode,
+        destinationHash: recipient.destinationHash,
       });
       return ok ? "failed" : "stale_lease";
     }
@@ -454,11 +593,13 @@ export async function runMemberNotificationEmailDigestWorkerTick(
     discovered: 0,
     processed: 0,
     dryRunOk: 0,
+    sent: 0,
     cancelled: 0,
     failed: 0,
     liveBlocked: 0,
     empty: 0,
     staleLease: 0,
+    rateLimited: 0,
   };
 
   if (!isMemberNotificationEmailDeliveryWorkerPermitted()) {
@@ -497,12 +638,16 @@ export async function runMemberNotificationEmailDigestWorkerTick(
     });
     if (outcome === "dry_run_ok") {
       result.dryRunOk += 1;
+    } else if (outcome === "sent") {
+      result.sent += 1;
     } else if (outcome === "cancelled") {
       result.cancelled += 1;
     } else if (outcome === "failed") {
       result.failed += 1;
     } else if (outcome === "live_blocked") {
       result.liveBlocked += 1;
+    } else if (outcome === "rate_limited") {
+      result.rateLimited += 1;
     } else if (outcome === "empty") {
       result.empty += 1;
     } else {

@@ -30,7 +30,7 @@ export {
 export interface SendTransactionalEmailInput {
   to: string;
   template: EmailTemplateId;
-  templateInput: Record<string, string | number | undefined>;
+  templateInput: Record<string, string | number | string[] | undefined>;
   /** Optional RFC 8058 List-Unsubscribe headers (welcome/digest only). */
   listHeaders?: EmailListUnsubscribeHeaders;
 }
@@ -432,6 +432,72 @@ export async function sendWorkspaceNotificationSummaryEmail(input: {
   });
 }
 
+/** HU-NOTIF-02C.5 — privacy-safe single notification copy via MailDeliveryService. */
+export async function sendMemberNotificationCopyEmail(input: {
+  to: string;
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  body: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  notificationUrl: string;
+  preferencesUrl: string;
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "member_notification_copy",
+    templateInput: {
+      locale: input.locale,
+      dir: input.dir,
+      subject: input.subject,
+      heading: input.heading,
+      body: input.body,
+      openLabel: input.openLabel,
+      preferencesLabel: input.preferencesLabel,
+      privacyNote: input.privacyNote,
+      notificationUrl: input.notificationUrl,
+      preferencesUrl: input.preferencesUrl,
+    },
+  });
+}
+
+/** HU-NOTIF-02C.5 — privacy-safe daily/weekly digest via MailDeliveryService. */
+export async function sendMemberNotificationDigestEmail(input: {
+  to: string;
+  locale: string;
+  dir: "ltr" | "rtl";
+  subject: string;
+  heading: string;
+  summary: string;
+  openLabel: string;
+  preferencesLabel: string;
+  privacyNote: string;
+  categoryLines: string[];
+  notificationsUrl: string;
+  preferencesUrl: string;
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "member_notification_digest",
+    templateInput: {
+      locale: input.locale,
+      dir: input.dir,
+      subject: input.subject,
+      heading: input.heading,
+      summary: input.summary,
+      openLabel: input.openLabel,
+      preferencesLabel: input.preferencesLabel,
+      privacyNote: input.privacyNote,
+      categoryLines: input.categoryLines,
+      notificationsUrl: input.notificationsUrl,
+      preferencesUrl: input.preferencesUrl,
+    },
+  });
+}
+
 /**
  * Private-content-safe DM/Collaboration alert.
  * Callers must never pass message bodies — template only accepts a messages URL.
@@ -634,6 +700,8 @@ export const MailDeliveryService = {
   sendLoginNotificationEmail,
   sendWorkspaceNotificationSummaryEmail,
   sendWorkspaceMessageAlertEmail,
+  sendMemberNotificationCopyEmail,
+  sendMemberNotificationDigestEmail,
   sendBlogAuthorApplicationStatusEmail,
   sendBlogPublicationStatusEmail,
   sendParticipantSuspendedEmail,

@@ -19,6 +19,10 @@ import { randomUUID } from "node:crypto";
 import type { MemberNotificationEmailDeliveryRecord } from "@hu/types";
 
 import { executeMemberNotificationEmailDeliveryAdapter } from "./delivery-adapter.js";
+import {
+  logMemberNotificationEmailDeliveryEvent,
+  recordMemberNotificationEmailMetric,
+} from "./delivery-metrics.js";
 import { evaluateMemberNotificationEmailDeliveryEligibility } from "./eligibility.js";
 import {
   isMemberNotificationEmailDeliveryWorkerPermitted,
@@ -39,11 +43,13 @@ import { resolveNotificationPersistenceAdapter } from "../persistence/resolve-no
 export interface MemberNotificationEmailWorkerTickResult {
   processed: number;
   dryRunOk: number;
+  sent: number;
   cancelled: number;
   failed: number;
   liveBlocked: number;
   skipped: number;
   staleLease: number;
+  rateLimited: number;
 }
 
 function createLeaseOwner(): string {
@@ -71,12 +77,22 @@ export async function processMemberNotificationEmailDeliveryClaim(
   record: MemberNotificationEmailDeliveryRecord,
   leaseOwner: string,
 ): Promise<
-  "dry_run_ok" | "cancelled" | "failed" | "live_blocked" | "skipped" | "stale_lease"
+  | "dry_run_ok"
+  | "sent"
+  | "cancelled"
+  | "failed"
+  | "live_blocked"
+  | "skipped"
+  | "stale_lease"
+  | "rate_limited"
 > {
   const mode = resolveMemberNotificationEmailDeliveryMode();
   const eligibility = await evaluateMemberNotificationEmailDeliveryEligibility(record);
 
   if (!eligibility.eligible) {
+    recordMemberNotificationEmailMetric(
+      eligibility.terminalStatus === "cancelled" ? "cancelled" : "skipped",
+    );
     const ok = await finalizeClaimed(record, leaseOwner, {
       status: eligibility.terminalStatus,
       skipReason: eligibility.skipReason,
@@ -113,11 +129,14 @@ export async function processMemberNotificationEmailDeliveryClaim(
       eventType: record.eventType,
       destinationHash: eligibility.destinationHash,
       mode,
+      recipientUserId: record.recipientUserId,
       recipientMemberId: record.recipientMemberId,
       relatedUrl: notification?.relatedUrl ?? null,
+      createdAt: record.createdAt,
     });
 
     if (adapterResult.outcome === "dry_run_validated") {
+      recordMemberNotificationEmailMetric("dry_run_ok");
       const ok = await finalizeClaimed(record, leaseOwner, {
         status: "dry_run_ok",
         skipReason: "dry_run",
@@ -130,6 +149,19 @@ export async function processMemberNotificationEmailDeliveryClaim(
       return ok ? "dry_run_ok" : "stale_lease";
     }
 
+    if (adapterResult.outcome === "sent") {
+      const ok = await finalizeClaimed(record, leaseOwner, {
+        status: "sent",
+        skipReason: null,
+        providerEmailId: adapterResult.providerEmailId,
+        nextAttemptAt: null,
+        lastErrorCode: null,
+        destinationHash: adapterResult.destinationHash,
+        destinationModeSnapshot: eligibility.destinationModeSnapshot,
+      });
+      return ok ? "sent" : "stale_lease";
+    }
+
     if (adapterResult.outcome === "template_failed") {
       const ok = await finalizeClaimed(record, leaseOwner, {
         status: "failed",
@@ -139,6 +171,64 @@ export async function processMemberNotificationEmailDeliveryClaim(
         skipReason: null,
       });
       return ok ? "failed" : "stale_lease";
+    }
+
+    if (adapterResult.outcome === "live_gate_failed") {
+      const retryable = !adapterResult.terminal;
+      const backoffMs = resolveMemberNotificationEmailDeliveryBackoffMs(record.attemptCount);
+      const ok = await finalizeClaimed(record, leaseOwner, {
+        status: retryable ? "failed" : "cancelled",
+        skipReason: adapterResult.errorCode,
+        providerEmailId: null,
+        nextAttemptAt: retryable
+          ? new Date(Date.now() + backoffMs).toISOString()
+          : null,
+        lastErrorCode: adapterResult.errorCode,
+        destinationHash: eligibility.destinationHash,
+      });
+      if (!ok) {
+        return "stale_lease";
+      }
+      if (
+        adapterResult.errorCode === "rate_limited" ||
+        adapterResult.errorCode === "index_not_ready"
+      ) {
+        return "rate_limited";
+      }
+      return retryable ? "failed" : "live_blocked";
+    }
+
+    if (
+      adapterResult.outcome === "provider_deferred" ||
+      adapterResult.outcome === "provider_failed" ||
+      adapterResult.outcome === "provider_blocked" ||
+      adapterResult.outcome === "provider_ambiguous"
+    ) {
+      const terminal =
+        adapterResult.terminal || record.attemptCount >= record.maxAttempts;
+      const backoffMs = resolveMemberNotificationEmailDeliveryBackoffMs(record.attemptCount);
+      const ok = await finalizeClaimed(record, leaseOwner, {
+        status: "failed",
+        skipReason: adapterResult.errorCode,
+        providerEmailId: adapterResult.providerEmailId,
+        nextAttemptAt: terminal
+          ? null
+          : new Date(Date.now() + backoffMs).toISOString(),
+        lastErrorCode: adapterResult.errorCode,
+        destinationHash: eligibility.destinationHash,
+      });
+      if (!ok) {
+        return "stale_lease";
+      }
+      if (!terminal) {
+        recordMemberNotificationEmailMetric("retried");
+        logMemberNotificationEmailDeliveryEvent({
+          channel: "immediate",
+          outcome: "retry_scheduled",
+          errorCode: adapterResult.errorCode,
+        });
+      }
+      return "failed";
     }
 
     if (adapterResult.outcome === "live_not_ready") {
@@ -184,11 +274,13 @@ export async function runMemberNotificationEmailDeliveryWorkerTick(
   const result: MemberNotificationEmailWorkerTickResult = {
     processed: 0,
     dryRunOk: 0,
+    sent: 0,
     cancelled: 0,
     failed: 0,
     liveBlocked: 0,
     skipped: 0,
     staleLease: 0,
+    rateLimited: 0,
   };
 
   if (!isMemberNotificationEmailDeliveryWorkerPermitted()) {
@@ -222,12 +314,16 @@ export async function runMemberNotificationEmailDeliveryWorkerTick(
     const outcome = await processMemberNotificationEmailDeliveryClaim(claimed, leaseOwner);
     if (outcome === "dry_run_ok") {
       result.dryRunOk += 1;
+    } else if (outcome === "sent") {
+      result.sent += 1;
     } else if (outcome === "cancelled") {
       result.cancelled += 1;
     } else if (outcome === "failed") {
       result.failed += 1;
     } else if (outcome === "live_blocked") {
       result.liveBlocked += 1;
+    } else if (outcome === "rate_limited") {
+      result.rateLimited += 1;
     } else if (outcome === "stale_lease") {
       result.staleLease += 1;
     } else {
