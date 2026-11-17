@@ -4,7 +4,11 @@ export const REGIONAL_PROGRAM_ROUTE = "/regional-program";
 
 export const REGIONAL_PROGRAM_VOLUNTEER_HREF = "/volunteer";
 
-/** Join CTA — mailbox only; no form or API. */
+/**
+ * Join CTA default — mailbox only.
+ * When `NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED=true`, Join uses the
+ * auth-aware `/workspace?rrp=apply` entry flow instead (HU-RRP-02A).
+ */
 export const REGIONAL_PROGRAM_JOIN_MAILTO = "mailto:info@huws.org";
 
 export const REGIONAL_PROGRAM_ASSETS = {

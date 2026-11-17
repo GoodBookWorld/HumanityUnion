@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { getMe } from "../../auth/auth-api";
+import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { Button } from "../../../design-system/components/Button";
 import {
@@ -14,6 +17,12 @@ import {
   REGIONAL_PROGRAM_TOOL_ICONS,
   REGIONAL_PROGRAM_VOLUNTEER_HREF,
 } from "../regional-program.constants";
+import {
+  buildRrpApplicationConfirmEmailHref,
+  buildRrpApplicationLoginHref,
+  isRrpApplicationEntryEnabled,
+  RRP_APPLICATION_ENTRY_HREF,
+} from "../rrp-application-entry";
 import { RegionalProgramIcon } from "./RegionalProgramIcon";
 
 import "../regional-program-page.css";
@@ -70,11 +79,68 @@ function JoinProgramButton({
   readonly label: string;
   readonly className?: string;
 }) {
+  const classNames = ["hu-button", "hu-button--primary", className].filter(Boolean).join(" ");
+
+  if (!isRrpApplicationEntryEnabled()) {
+    return (
+      <a href={REGIONAL_PROGRAM_JOIN_MAILTO} className={classNames}>
+        {label}
+      </a>
+    );
+  }
+
+  return <JoinProgramApplicationEntryLink label={label} className={classNames} />;
+}
+
+/**
+ * Flag-ON Join CTA: auth-aware navigation to `/workspace?rrp=apply`.
+ * Unverified sessions resume through confirm-email with the same returnTo.
+ */
+function JoinProgramApplicationEntryLink({
+  label,
+  className,
+}: {
+  readonly label: string;
+  readonly className: string;
+}) {
+  const authStatus = useClientAuthStatus();
+  const [href, setHref] = useState(buildRrpApplicationLoginHref);
+
+  useEffect(() => {
+    if (authStatus === "pending") {
+      return;
+    }
+
+    if (authStatus === "unauthenticated") {
+      setHref(buildRrpApplicationLoginHref());
+      return;
+    }
+
+    let cancelled = false;
+    void getMe()
+      .then((user) => {
+        if (cancelled) {
+          return;
+        }
+        if (user.emailVerificationStatus === "verified") {
+          setHref(RRP_APPLICATION_ENTRY_HREF);
+          return;
+        }
+        setHref(buildRrpApplicationConfirmEmailHref());
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHref(buildRrpApplicationLoginHref());
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authStatus]);
+
   return (
-    <a
-      href={REGIONAL_PROGRAM_JOIN_MAILTO}
-      className={["hu-button", "hu-button--primary", className].filter(Boolean).join(" ")}
-    >
+    <a href={href} className={className}>
       {label}
     </a>
   );

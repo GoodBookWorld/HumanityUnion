@@ -66,13 +66,15 @@ describe("Regional Development Program public page", () => {
     assert.doesNotMatch(content, /Bring Humanity Union to Your Community/);
   });
 
-  it("Join CTA uses mailto and Volunteer CTA uses /volunteer", () => {
+  it("Join CTA defaults to mailto and Volunteer CTA uses /volunteer", () => {
     const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
     assert.equal(REGIONAL_PROGRAM_JOIN_MAILTO, "mailto:info@huws.org");
     assert.equal(REGIONAL_PROGRAM_VOLUNTEER_HREF, "/volunteer");
     assert.match(content, /REGIONAL_PROGRAM_JOIN_MAILTO/);
     assert.match(content, /REGIONAL_PROGRAM_VOLUNTEER_HREF/);
-    assert.doesNotMatch(content, /fetch\(|apiRequest|useState\(/);
+    assert.match(content, /isRrpApplicationEntryEnabled\(\)/);
+    // Flag-ON path may use client auth; flag-OFF path must still reference mailto.
+    assert.match(content, /mailto:info@huws\.org|REGIONAL_PROGRAM_JOIN_MAILTO/);
   });
 
   it("required illustration assets exist under public/illustrations/support", () => {

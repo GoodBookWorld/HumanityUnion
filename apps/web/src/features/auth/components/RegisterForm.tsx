@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
@@ -15,13 +15,19 @@ import {
 } from "../../security/turnstile/TurnstileWidget";
 import { getPlatformConfig } from "../../closed-beta/platform-api";
 import { register } from "../auth-api";
+import { buildAuthPathWithReturnTo } from "../lib/build-auth-return-path";
+import { resolveSafeReturnTo } from "../lib/resolve-safe-return-to";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 
 import "./auth-form.css";
 
-export function RegisterForm() {
+function RegisterFormFields() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawReturnTo = searchParams.get("returnTo");
+  const hasReturnTo = Boolean(rawReturnTo);
+  const returnTo = resolveSafeReturnTo(rawReturnTo, "/workspace");
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -78,12 +84,15 @@ export function RegisterForm() {
       });
 
       if ("emailConfirmationRequired" in result && result.emailConfirmationRequired) {
-        router.push("/confirm-email");
+        router.push(
+          hasReturnTo ? buildAuthPathWithReturnTo("/confirm-email", returnTo) : "/confirm-email",
+        );
         router.refresh();
         return;
       }
 
-      router.push("/profile");
+      // Preserve Join Program intent when present; otherwise keep profile onboarding.
+      router.push(hasReturnTo ? returnTo : "/profile");
       router.refresh();
     } catch (submitError) {
       setError(formatAuthFormError(submitError));
@@ -94,6 +103,7 @@ export function RegisterForm() {
   }
 
   const canSubmit = !submitting && Boolean(turnstileToken) && Boolean(siteKey);
+  const loginHref = hasReturnTo ? buildAuthPathWithReturnTo("/login", returnTo) : "/login";
 
   return (
     <Card>
@@ -180,9 +190,22 @@ export function RegisterForm() {
           <Button type="submit" variant="primary" disabled={!canSubmit}>
             {submitting ? t("creatingAccount") : t("createAccount")}
           </Button>
-          <Button href="/login">{t("alreadyHaveAccount")}</Button>
+          <Button href={loginHref}>{t("alreadyHaveAccount")}</Button>
         </div>
       </form>
     </Card>
+  );
+}
+
+function RegisterFormFallback() {
+  const t = useTranslations("auth");
+  return <Card>{t("loadingLoginForm")}</Card>;
+}
+
+export function RegisterForm() {
+  return (
+    <Suspense fallback={<RegisterFormFallback />}>
+      <RegisterFormFields />
+    </Suspense>
   );
 }

@@ -14,6 +14,7 @@ import {
   type TurnstileWidgetHandle,
 } from "../../security/turnstile/TurnstileWidget";
 import { login } from "../auth-api";
+import { buildAuthPathWithReturnTo } from "../lib/build-auth-return-path";
 import { resolveSafeReturnTo } from "../lib/resolve-safe-return-to";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 
@@ -23,6 +24,7 @@ function LoginFormFields() {
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const rawReturnTo = searchParams.get("returnTo");
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"), "/workspace");
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [email, setEmail] = useState("");
@@ -59,13 +61,15 @@ function LoginFormFields() {
       const result = await login({ email, password, turnstileToken: tokenForRequest });
 
       if ("emailConfirmationRequired" in result && result.emailConfirmationRequired) {
-        router.push("/confirm-email");
+        router.push(
+          rawReturnTo ? buildAuthPathWithReturnTo("/confirm-email", returnTo) : "/confirm-email",
+        );
         router.refresh();
         return;
       }
 
       if ("twoStepRequired" in result && result.twoStepRequired) {
-        router.push(`/login/verify?returnTo=${encodeURIComponent(returnTo)}`);
+        router.push(buildAuthPathWithReturnTo("/login/verify", returnTo));
         router.refresh();
         return;
       }
@@ -81,6 +85,9 @@ function LoginFormFields() {
   }
 
   const canSubmit = !submitting && Boolean(turnstileToken) && Boolean(siteKey);
+  const registerHref = rawReturnTo
+    ? buildAuthPathWithReturnTo("/register", returnTo)
+    : "/register";
 
   return (
     <Card>
@@ -129,7 +136,7 @@ function LoginFormFields() {
           <Button type="submit" variant="primary" disabled={!canSubmit}>
             {submitting ? t("signingIn") : t("logIn")}
           </Button>
-          <Button href="/register">{t("createAccount")}</Button>
+          <Button href={registerHref}>{t("createAccount")}</Button>
           <Button href="/password-reset">{t("forgotPassword")}</Button>
         </div>
       </form>

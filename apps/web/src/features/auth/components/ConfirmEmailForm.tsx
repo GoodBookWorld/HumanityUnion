@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
@@ -15,17 +15,28 @@ import {
   clearPendingConfirmationContext,
   getPendingConfirmationMaskedEmail,
 } from "../auth-pending-confirmation-store";
+import { buildAuthPathWithReturnTo } from "../lib/build-auth-return-path";
+import { resolveSafeReturnTo } from "../lib/resolve-safe-return-to";
 import { AuthCodeVerificationFields } from "./AuthCodeVerificationFields";
 
 import "./auth-form.css";
 
-export function ConfirmEmailForm() {
+function ConfirmEmailFormFields() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawReturnTo = searchParams.get("returnTo");
+  const hasReturnTo = Boolean(rawReturnTo);
+  const returnTo = resolveSafeReturnTo(rawReturnTo, "/workspace");
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [resendAvailableAt, setResendAvailableAt] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const completedDestination = hasReturnTo ? returnTo : "/account?confirmed=1";
+  const cancelDestination = hasReturnTo
+    ? buildAuthPathWithReturnTo("/register", returnTo)
+    : "/register";
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -33,7 +44,7 @@ export function ConfirmEmailForm() {
 
       if (status.status === "confirmed") {
         clearPendingConfirmationContext();
-        router.replace("/account?confirmed=1");
+        router.replace(completedDestination);
         router.refresh();
         return;
       }
@@ -47,7 +58,7 @@ export function ConfirmEmailForm() {
     } finally {
       setLoadingStatus(false);
     }
-  }, [router]);
+  }, [completedDestination, router]);
 
   useEffect(() => {
     void refreshStatus();
@@ -56,7 +67,7 @@ export function ConfirmEmailForm() {
   async function handleSubmit(code: string) {
     await confirmEmailCode(code);
     clearPendingConfirmationContext();
-    router.push("/account?confirmed=1");
+    router.push(completedDestination);
     router.refresh();
   }
 
@@ -74,7 +85,7 @@ export function ConfirmEmailForm() {
   async function handleCancel() {
     await cancelEmailConfirmation();
     clearPendingConfirmationContext();
-    router.push("/register");
+    router.push(cancelDestination);
     router.refresh();
   }
 
@@ -103,5 +114,18 @@ export function ConfirmEmailForm() {
         showDevOutboxNote={process.env.NODE_ENV === "development"}
       />
     </Card>
+  );
+}
+
+function ConfirmEmailFormFallback() {
+  const t = useTranslations("auth");
+  return <Card>{t("loadingLoginForm")}</Card>;
+}
+
+export function ConfirmEmailForm() {
+  return (
+    <Suspense fallback={<ConfirmEmailFormFallback />}>
+      <ConfirmEmailFormFields />
+    </Suspense>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useEffect, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, type ReactNode } from "react";
 
 import { isBootstrapUiAllowed } from "../bootstrap-ui.config";
+import { resolveSafeReturnTo } from "../lib/resolve-safe-return-to";
 import { useClientAuthStatus } from "../use-client-auth-status";
 
 interface WorkspaceAuthGateProps {
@@ -13,11 +14,13 @@ interface WorkspaceAuthGateProps {
 
 /**
  * Authenticated-only Workspace gate. Guests are sent to Login with returnTo
- * so PWA launches at `/workspace` resume into Workspace after sign-in.
+ * so PWA launches at `/workspace` (and query intents such as `rrp=apply`)
+ * resume into Workspace after sign-in.
  */
-export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
+function WorkspaceAuthGateInner({ children }: WorkspaceAuthGateProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "/workspace";
+  const searchParams = useSearchParams();
   const authStatus = useClientAuthStatus();
   const t = useTranslations("workspace.authGate");
 
@@ -27,10 +30,12 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
     }
 
     if (authStatus === "unauthenticated" && !isBootstrapUiAllowed()) {
-      const returnTo = pathname.startsWith("/") ? pathname : "/workspace";
+      const search = searchParams.toString();
+      const destination = search ? `${pathname}?${search}` : pathname;
+      const returnTo = resolveSafeReturnTo(destination, "/workspace");
       router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
-  }, [authStatus, pathname, router]);
+  }, [authStatus, pathname, router, searchParams]);
 
   if (authStatus === "pending") {
     return (
@@ -49,4 +54,12 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
   }
 
   return children;
+}
+
+export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
+  return (
+    <Suspense fallback={null}>
+      <WorkspaceAuthGateInner>{children}</WorkspaceAuthGateInner>
+    </Suspense>
+  );
 }
