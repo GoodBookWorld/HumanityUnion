@@ -8,16 +8,16 @@ export const REGIONAL_PROGRAM_VOLUNTEER_HREF = "/volunteer";
 export const REGIONAL_PROGRAM_JOIN_MAILTO = "mailto:info@huws.org";
 
 export const REGIONAL_PROGRAM_ASSETS = {
-  /** LTR hero photograph — rendered as `<img>` (full composition). */
+  /** Hero photograph — identical in LTR and RTL (dir still flips layout/text). */
   hero: "/illustrations/support/humanity-union-teamwork-hands.webp",
-  /** RTL hero photograph — selected when document `dir === rtl`. */
-  heroRtl: "/illustrations/support/humanity-union-teamwork-hands-rtl.webp",
+  /** Same asset as `hero` — kept for BannerMedia LTR/RTL layer slots. */
+  heroRtl: "/illustrations/support/humanity-union-teamwork-hands.webp",
   tools: "/illustrations/support/humanity-union-diverse-team-meeting.webp",
   presence: "/illustrations/support/humanity-union-flag-park.webp",
-  /** LTR final CTA photograph. */
-  cta: "/illustrations/support/hikers-sunset-mountain.webp",
-  /** RTL final CTA photograph. */
-  ctaRtl: "/illustrations/support/hikers-sunset-mountain-rtl.webp",
+  /** Final CTA photograph — identical in LTR and RTL. */
+  cta: "/illustrations/support/hikers-sunset-mountain-panorama.webp",
+  /** Same asset as `cta` — kept for BannerMedia LTR/RTL layer slots. */
+  ctaRtl: "/illustrations/support/hikers-sunset-mountain-panorama.webp",
 } as const;
 
 /** Activity cards — true-vector brand-blue `#0174b0` SVGs at 42×42. */

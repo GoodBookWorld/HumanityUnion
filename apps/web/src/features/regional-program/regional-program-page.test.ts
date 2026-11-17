@@ -83,6 +83,24 @@ describe("Regional Development Program public page", () => {
     }
   });
 
+  it("hero and final CTA use identical LTR/RTL illustration URLs", () => {
+    assert.equal(
+      REGIONAL_PROGRAM_ASSETS.hero,
+      "/illustrations/support/humanity-union-teamwork-hands.webp",
+    );
+    assert.equal(REGIONAL_PROGRAM_ASSETS.heroRtl, REGIONAL_PROGRAM_ASSETS.hero);
+    assert.equal(
+      REGIONAL_PROGRAM_ASSETS.cta,
+      "/illustrations/support/hikers-sunset-mountain-panorama.webp",
+    );
+    assert.equal(REGIONAL_PROGRAM_ASSETS.ctaRtl, REGIONAL_PROGRAM_ASSETS.cta);
+    assert.doesNotMatch(REGIONAL_PROGRAM_ASSETS.hero, /-rtl\.webp$/);
+    assert.doesNotMatch(REGIONAL_PROGRAM_ASSETS.cta, /-rtl\.webp$/);
+    const content = read("features/regional-program/components/RegionalProgramPageContent.tsx");
+    assert.match(content, /rtlSrc=\{REGIONAL_PROGRAM_ASSETS\.heroRtl\}/);
+    assert.match(content, /rtlSrc=\{REGIONAL_PROGRAM_ASSETS\.ctaRtl\}/);
+  });
+
   it("activity icons are true-vector brand-blue SVGs without embedded rasters", () => {
     for (const iconPath of Object.values(REGIONAL_PROGRAM_ACTIVITY_ICONS)) {
       assert.ok(existsSync(publicPath(iconPath)), `missing ${iconPath}`);
