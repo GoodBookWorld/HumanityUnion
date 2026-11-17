@@ -6,6 +6,13 @@
 import { writeSync } from "node:fs";
 
 import {
+  defaultCgroupMemoryFileReader,
+  readCgroupMemoryBytes,
+  type CgroupMemoryFileReader,
+} from "./web-cgroup-memory";
+import { resetSeoEvidenceFetchGateForTests } from "../seo/seo-evidence-fetch-gate";
+import { resetSeoMetadataEligibilityGateForTests } from "../seo/seo-metadata-eligibility-gate";
+import {
   readWebWorkloadGauges,
   enterSeoEligibilityOperation,
   enterSeoMetadataOperation,
@@ -37,6 +44,7 @@ export interface WebMemorySamplerDependencies {
   readonly readUptimeSeconds: () => number;
   readonly readPid: () => number;
   readonly writeLine: (line: string) => void;
+  readonly readCgroupFile: CgroupMemoryFileReader;
 }
 
 interface SamplerState {
@@ -57,6 +65,7 @@ export interface WebMemorySamplerStartOptions {
   readonly readUptimeSeconds?: () => number;
   readonly readPid?: () => number;
   readonly writeLine?: (line: string) => void;
+  readonly readCgroupFile?: CgroupMemoryFileReader;
 }
 
 const MEMORY_SAMPLE_FIELDS = [
@@ -74,11 +83,19 @@ const MEMORY_SAMPLE_FIELDS = [
   "heapUsed",
   "heapTotal",
   "external",
+  "arrayBuffers",
+  "cgroupMemoryCurrentBytes",
+  "cgroupMemoryLimitBytes",
   "limitBytes",
   "pressure",
   "activeSitemapBuilds",
   "activeSeoMetadataOperations",
   "activeSeoEligibilityOperations",
+  "waitingSeoMetadataEligibilityOperations",
+  "activeSeoMetadataEligibilityPermits",
+  "peakWaitingSeoMetadataEligibilityOperations",
+  "activeSeoEvidenceFetches",
+  "waitingSeoEvidenceFetches",
 ] as const;
 
 export function shouldStartWebMemorySampler(runtime: string | undefined): boolean {
@@ -102,6 +119,7 @@ function defaultDependencies(): WebMemorySamplerDependencies {
     readUptimeSeconds: () => process.uptime(),
     readPid: () => process.pid,
     writeLine: writeMemorySampleStdout,
+    readCgroupFile: defaultCgroupMemoryFileReader,
   };
 }
 
@@ -135,6 +153,7 @@ function applyDependencies(options: WebMemorySamplerStartOptions | undefined): v
     readUptimeSeconds: options.readUptimeSeconds ?? current.readUptimeSeconds,
     readPid: options.readPid ?? current.readPid,
     writeLine: options.writeLine ?? current.writeLine,
+    readCgroupFile: options.readCgroupFile ?? current.readCgroupFile,
   };
 }
 
@@ -155,14 +174,20 @@ export function buildWebMemorySampleRecord(input: {
 }): Record<string, string | number | null> {
   const deps = samplerState().deps;
   const nowMs = input.nowMs ?? deps.nowMs();
+  const memory = deps.readMemory();
   const snapshot = readWebProcessMemorySnapshot(
     deps.readEnv(),
-    deps.readMemory(),
+    memory,
     nowMs,
     deps.readUptimeSeconds(),
     deps.readPid(),
   );
   const workload = readWebWorkloadGauges();
+  const cgroup = readCgroupMemoryBytes(deps.readCgroupFile);
+  const arrayBuffers =
+    Number.isFinite(memory.arrayBuffers) && memory.arrayBuffers >= 0
+      ? Math.floor(memory.arrayBuffers)
+      : 0;
   const record: Record<string, string | number | null> = {
     kind: "web_system_health",
     source: "web",
@@ -177,11 +202,20 @@ export function buildWebMemorySampleRecord(input: {
     heapUsed: snapshot.heapUsed,
     heapTotal: snapshot.heapTotal,
     external: snapshot.external,
+    arrayBuffers,
+    cgroupMemoryCurrentBytes: cgroup.currentBytes,
+    cgroupMemoryLimitBytes: cgroup.limitBytes,
     limitBytes: snapshot.limitBytes,
     pressure: snapshot.pressure,
     activeSitemapBuilds: workload.activeSitemapBuilds,
     activeSeoMetadataOperations: workload.activeSeoMetadataOperations,
     activeSeoEligibilityOperations: workload.activeSeoEligibilityOperations,
+    waitingSeoMetadataEligibilityOperations: workload.waitingSeoMetadataEligibilityOperations,
+    activeSeoMetadataEligibilityPermits: workload.activeSeoMetadataEligibilityPermits,
+    peakWaitingSeoMetadataEligibilityOperations:
+      workload.peakWaitingSeoMetadataEligibilityOperations,
+    activeSeoEvidenceFetches: workload.activeSeoEvidenceFetches,
+    waitingSeoEvidenceFetches: workload.waitingSeoEvidenceFetches,
   };
   if (input.boundary) {
     record.boundary = input.boundary;
@@ -306,6 +340,8 @@ export function resetWebMemorySamplerForTests(): void {
   current.stepAtMs = [];
   current.deps = defaultDependencies();
   resetSeoOperationGaugesForTests();
+  resetSeoMetadataEligibilityGateForTests();
+  resetSeoEvidenceFetchGateForTests();
 }
 
 export function webMemorySamplerStartedForTests(): boolean {
