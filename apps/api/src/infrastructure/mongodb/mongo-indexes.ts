@@ -22,6 +22,7 @@ import {
   SEARCH_SYNC_STATE_INDEXES,
 } from "../../modules/seo-search-performance/search-performance.indexes.js";
 import { WEB_SYSTEM_HEALTH_EVENT_INDEXES } from "../../modules/system-health/web-system-health-event.js";
+import { MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES } from "../../modules/notifications/email-delivery/member-notification-email-delivery.index-readiness.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -715,6 +716,30 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { recipientProfileId: 1, createdAt: -1 }, name: "member_notification_profile_created" },
       { key: { recipientUserId: 1, status: 1 }, name: "member_notification_recipient_status" },
       { key: { createdAt: -1 }, name: "member_notification_created" },
+    ],
+  },
+  {
+    // HU-NOTIF-02C.1 — durable member notification email delivery ledger.
+    collectionName: MONGO_COLLECTIONS.memberNotificationEmailDeliveries,
+    indexes: [...MEMBER_NOTIFICATION_EMAIL_DELIVERY_INDEXES],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.memberNotificationEmailDeliveryGaps,
+    indexes: [
+      {
+        key: { gapId: 1 },
+        unique: true,
+        name: "member_notification_email_delivery_gaps_gap_id_unique",
+      },
+      {
+        key: { notificationId: 1 },
+        unique: true,
+        name: "member_notification_email_delivery_gaps_notification_unique",
+      },
+      {
+        key: { createdAt: 1 },
+        name: "member_notification_email_delivery_gaps_created",
+      },
     ],
   },
   {

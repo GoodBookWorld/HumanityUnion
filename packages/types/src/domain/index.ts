@@ -1788,6 +1788,13 @@ export type {
   MemberNotificationView,
 } from "./member-notification.js";
 export type {
+  MemberNotificationEmailDeliveryChannel,
+  MemberNotificationEmailDeliveryGapRecord,
+  MemberNotificationEmailDeliveryRecord,
+  MemberNotificationEmailDeliverySkipReason,
+  MemberNotificationEmailDeliveryStatus,
+} from "./member-notification-email-delivery.js";
+export type {
   AdminNotification,
   AdminNotificationCountResponse,
   AdminNotificationListResponse,

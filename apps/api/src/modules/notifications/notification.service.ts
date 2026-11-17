@@ -6,6 +6,7 @@ import type {
   MemberNotificationView,
 } from "@hu/types";
 
+import { persistNotificationWithOptionalEmailIntent } from "./email-delivery/persist-notification-with-email-intent.js";
 import { resolveNotificationPersistenceAdapter } from "./persistence/resolve-notification-persistence.js";
 import {
   type CivicNotificationEventInput,
@@ -83,8 +84,15 @@ export async function createNotification(input: {
     createdAt: new Date().toISOString(),
   };
 
-  await persistence.insert(notification);
-  return notification;
+  // HU-NOTIF-02C.1 — optional durable email intent (flag OFF by default; no SMTP).
+  const persisted = await persistNotificationWithOptionalEmailIntent({
+    notification,
+    insertNotification: (row) => persistence.insert(row),
+    findNotificationById: (notificationId) => persistence.findById(notificationId),
+    persistenceMode: persistence.mode,
+    skipMongoIndexCheck: persistence.mode === "memory",
+  });
+  return persisted.notification;
 }
 
 /** Pack 14A — deterministic dedupe key for Admin review fan-out. */

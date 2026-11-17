@@ -43,6 +43,10 @@ export const MONGO_COLLECTIONS = {
   memberBadgeApplications: "member_badge_applications",
   memberPreferences: "member_preferences",
   memberNotifications: "member_notifications",
+  /** HU-NOTIF-02C.1 — durable email delivery intents for member_notifications. */
+  memberNotificationEmailDeliveries: "member_notification_email_deliveries",
+  /** HU-NOTIF-02C.1 — bounded gaps when notification/ledger dual-write is non-atomic. */
+  memberNotificationEmailDeliveryGaps: "member_notification_email_delivery_gaps",
   /** Pack 22E.1 — Admin Notification Center inbox (per-Admin projection rows). */
   adminNotifications: "admin_notifications",
   /** Pack 22E.3 — operational incident state (separate from visible inbox rows). */
