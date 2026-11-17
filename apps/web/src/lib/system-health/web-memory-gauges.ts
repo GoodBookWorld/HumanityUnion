@@ -2,7 +2,20 @@
  * Process-wide counters for the Web memory sampler.
  * Stored on globalThis so a duplicated server module still shares one set of integers.
  * Values are counts only. No paths, locales, or identifiers.
+ *
+ * SEO eligibility/evidence queue gauges are read from the live gate state so they
+ * cannot drift from the real queues.
  */
+
+import {
+  readActiveSeoEvidenceFetches,
+  readWaitingSeoEvidenceFetches,
+} from "../seo/seo-evidence-fetch-gate";
+import {
+  readActiveSeoMetadataEligibilityPermits,
+  readPeakWaitingSeoMetadataEligibilityOperations,
+  readWaitingSeoMetadataEligibilityOperations,
+} from "../seo/seo-metadata-eligibility-gate";
 
 const ACTIVE_SITEMAP_BUILDS_KEY = "__huActiveSitemapBuilds";
 const SEO_OPERATION_GAUGES_KEY = "__huSeoOperationGauges";
@@ -16,6 +29,11 @@ export interface WebWorkloadGauges {
   readonly activeSitemapBuilds: number;
   readonly activeSeoMetadataOperations: number;
   readonly activeSeoEligibilityOperations: number;
+  readonly waitingSeoMetadataEligibilityOperations: number;
+  readonly activeSeoMetadataEligibilityPermits: number;
+  readonly peakWaitingSeoMetadataEligibilityOperations: number;
+  readonly activeSeoEvidenceFetches: number;
+  readonly waitingSeoEvidenceFetches: number;
 }
 
 function seoGauges(): SeoOperationGauges {
@@ -72,6 +90,17 @@ export function readWebWorkloadGauges(): WebWorkloadGauges {
     activeSitemapBuilds: readActiveSitemapBuilds(),
     activeSeoMetadataOperations: nonNegativeCount(gauges.metadata),
     activeSeoEligibilityOperations: nonNegativeCount(gauges.eligibility),
+    waitingSeoMetadataEligibilityOperations: nonNegativeCount(
+      readWaitingSeoMetadataEligibilityOperations(),
+    ),
+    activeSeoMetadataEligibilityPermits: nonNegativeCount(
+      readActiveSeoMetadataEligibilityPermits(),
+    ),
+    peakWaitingSeoMetadataEligibilityOperations: nonNegativeCount(
+      readPeakWaitingSeoMetadataEligibilityOperations(),
+    ),
+    activeSeoEvidenceFetches: nonNegativeCount(readActiveSeoEvidenceFetches()),
+    waitingSeoEvidenceFetches: nonNegativeCount(readWaitingSeoEvidenceFetches()),
   };
 }
 

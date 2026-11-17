@@ -43,8 +43,8 @@ import {
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
-function memory(rss: number): NodeJS.MemoryUsage {
-  return { rss, heapUsed: 11, heapTotal: 22, external: 33, arrayBuffers: 0 };
+function memory(rss: number, arrayBuffers = 44): NodeJS.MemoryUsage {
+  return { rss, heapUsed: 11, heapTotal: 22, external: 33, arrayBuffers };
 }
 
 function install(input: {
@@ -52,13 +52,15 @@ function install(input: {
   readonly rss: () => number;
   readonly nowMs?: () => number;
   readonly writeLine?: (line: string) => void;
+  readonly readCgroupFile?: (path: string) => string | null;
+  readonly arrayBuffers?: number;
 }): void {
   resetWebMemorySamplerForTests();
   startWebMemorySampler({
     setIntervalFn: () => ({ unref() {} }),
     clearIntervalFn: () => undefined,
     nowMs: input.nowMs ?? (() => 0),
-    readMemory: () => memory(input.rss()),
+    readMemory: () => memory(input.rss(), input.arrayBuffers ?? 44),
     readEnv: () =>
       ({
         WEB_PROCESS_MEMORY_LIMIT_BYTES: String(512 * 1024 * 1024),
@@ -67,6 +69,7 @@ function install(input: {
     readUptimeSeconds: () => 90,
     readPid: () => 4242,
     writeLine: input.writeLine ?? ((line) => input.lines.push(line)),
+    readCgroupFile: input.readCgroupFile ?? (() => null),
   });
   stopWebMemorySamplerForTests();
 }
@@ -175,6 +178,11 @@ describe("HU-MEM-08 web memory sampler", () => {
       activeSitemapBuilds: 0,
       activeSeoMetadataOperations: 0,
       activeSeoEligibilityOperations: 0,
+      waitingSeoMetadataEligibilityOperations: 0,
+      activeSeoMetadataEligibilityPermits: 0,
+      peakWaitingSeoMetadataEligibilityOperations: 0,
+      activeSeoEvidenceFetches: 0,
+      waitingSeoEvidenceFetches: 0,
     });
     resetWebMemorySamplerForTests();
   });
@@ -247,12 +255,66 @@ describe("HU-MEM-08 web memory sampler", () => {
     assert.equal(record.heapUsed, 11);
     assert.equal(record.heapTotal, 22);
     assert.equal(record.external, 33);
+    assert.equal(record.arrayBuffers, 44);
+    assert.equal(record.cgroupMemoryCurrentBytes, null);
+    assert.equal(record.cgroupMemoryLimitBytes, null);
+    assert.equal(record.waitingSeoMetadataEligibilityOperations, 0);
+    assert.equal(record.activeSeoMetadataEligibilityPermits, 0);
+    assert.equal(record.peakWaitingSeoMetadataEligibilityOperations, 0);
+    assert.equal(record.activeSeoEvidenceFetches, 0);
+    assert.equal(record.waitingSeoEvidenceFetches, 0);
     assert.equal(record.uptimeSeconds, 90);
     assert.equal(record.pressure, "below");
     recordSitemapMemoryBoundary("start");
     const boundary = JSON.parse(lines.at(-1) ?? "{}") as { boundary?: string; reason?: string };
     assert.equal(boundary.reason, "sitemap_boundary");
     assert.equal(boundary.boundary, "start");
+    resetWebMemorySamplerForTests();
+  });
+
+  it("HU-MEM-12C. samples cgroup bytes when readable and survives missing files", () => {
+    const lines: string[] = [];
+    const files = new Map<string, string>([
+      ["/sys/fs/cgroup/memory.current", "314572800\n"],
+      ["/sys/fs/cgroup/memory.max", "536870912\n"],
+    ]);
+    install({
+      lines,
+      rss: () => 198 * 1024 * 1024,
+      nowMs: () => 1,
+      readCgroupFile: (path) => files.get(path) ?? null,
+    });
+    lines.length = 0;
+    const withCgroup = buildWebMemorySampleRecord({ reason: "interval", nowMs: 1 });
+    assert.equal(withCgroup.cgroupMemoryCurrentBytes, 314572800);
+    assert.equal(withCgroup.cgroupMemoryLimitBytes, 536870912);
+    assert.equal(withCgroup.arrayBuffers, 44);
+
+    install({
+      lines,
+      rss: () => 198 * 1024 * 1024,
+      nowMs: () => 2,
+      readCgroupFile: () => {
+        throw new Error("ENOENT");
+      },
+    });
+    assert.doesNotThrow(() => emitWebMemoryIntervalSample(2));
+    const missing = JSON.parse(lines.at(-1) ?? "{}") as {
+      cgroupMemoryCurrentBytes: number | null;
+      cgroupMemoryLimitBytes: number | null;
+    };
+    assert.equal(missing.cgroupMemoryCurrentBytes, null);
+    assert.equal(missing.cgroupMemoryLimitBytes, null);
+
+    install({
+      lines: [],
+      rss: () => 1,
+      nowMs: () => 3,
+      readCgroupFile: (path) => (path.endsWith("memory.max") ? "max\n" : "100\n"),
+    });
+    const unlimited = buildWebMemorySampleRecord({ reason: "interval", nowMs: 3 });
+    assert.equal(unlimited.cgroupMemoryCurrentBytes, 100);
+    assert.equal(unlimited.cgroupMemoryLimitBytes, null);
     resetWebMemorySamplerForTests();
   });
 

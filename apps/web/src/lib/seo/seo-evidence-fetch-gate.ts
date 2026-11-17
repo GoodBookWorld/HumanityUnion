@@ -120,12 +120,22 @@ export function runSeoEvidenceFetch<T>(key: string, work: () => Promise<T>): Pro
   return promise;
 }
 
-export function readActiveSeoEvidenceFetchesForTests(): number {
+/** Live active evidence-fetch permit count from the gate. */
+export function readActiveSeoEvidenceFetches(): number {
   return gateState().active;
 }
 
-export function readQueuedSeoEvidenceFetchesForTests(): number {
+/** Live waiting-queue length from the evidence gate. */
+export function readWaitingSeoEvidenceFetches(): number {
   return gateState().queue.length;
+}
+
+export function readActiveSeoEvidenceFetchesForTests(): number {
+  return readActiveSeoEvidenceFetches();
+}
+
+export function readQueuedSeoEvidenceFetchesForTests(): number {
+  return readWaitingSeoEvidenceFetches();
 }
 
 export function readInFlightSeoEvidenceKeysForTests(): readonly string[] {

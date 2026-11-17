@@ -14,8 +14,11 @@ import { buildPublicSeoLocalizedVariantPredicate } from "./public-seo-localized-
 import { SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT, resetSeoEvidenceFetchGateForTests } from "./seo-evidence-fetch-gate";
 import {
   acquireSeoMetadataEligibilityPermit,
+  readActiveSeoMetadataEligibilityPermits,
   readActiveSeoMetadataEligibilityPermitsForTests,
+  readPeakWaitingSeoMetadataEligibilityOperations,
   readQueuedSeoMetadataEligibilityPermitsForTests,
+  readWaitingSeoMetadataEligibilityOperations,
   releaseSeoMetadataEligibilityPermit,
   resetSeoMetadataEligibilityGateForTests,
   SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT,
@@ -120,6 +123,49 @@ describe("SEO metadata eligibility gate", { concurrency: false }, () => {
     const evidenceGate = readWeb("lib/seo/seo-evidence-fetch-gate.ts");
     assert.match(evidenceGate, /SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT = 8/);
     assert.doesNotMatch(evidenceGate, /seo-metadata-eligibility-gate/);
+  });
+
+  it("HU-MEM-12C. queue and permit gauges mirror gate state and clear after drain", async () => {
+    const finish: Array<() => void> = [];
+    const operations = Array.from({ length: 6 }, () =>
+      (async () => {
+        await acquireSeoMetadataEligibilityPermit();
+        try {
+          await new Promise<void>((resolve) => {
+            finish.push(resolve);
+          });
+        } finally {
+          releaseSeoMetadataEligibilityPermit();
+        }
+      })(),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(readActiveSeoMetadataEligibilityPermits(), 4);
+    assert.equal(readWaitingSeoMetadataEligibilityOperations(), 2);
+    assert.equal(readPeakWaitingSeoMetadataEligibilityOperations(), 2);
+    assert.ok(readActiveSeoMetadataEligibilityPermits() <= SEO_METADATA_ELIGIBILITY_CONCURRENCY_LIMIT);
+
+    const gauges = readWebWorkloadGauges();
+    assert.equal(gauges.activeSeoMetadataEligibilityPermits, 4);
+    assert.equal(gauges.waitingSeoMetadataEligibilityOperations, 2);
+    assert.equal(gauges.peakWaitingSeoMetadataEligibilityOperations, 2);
+
+    while (finish.length > 0) {
+      const next = finish.shift();
+      assert.ok(next);
+      next();
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    await Promise.all(operations);
+
+    assert.equal(readActiveSeoMetadataEligibilityPermits(), 0);
+    assert.equal(readWaitingSeoMetadataEligibilityOperations(), 0);
+    assert.equal(readPeakWaitingSeoMetadataEligibilityOperations(), 2);
+    assert.equal(readWebWorkloadGauges().activeSeoMetadataEligibilityPermits, 0);
+    assert.equal(readWebWorkloadGauges().waitingSeoMetadataEligibilityOperations, 0);
+    assert.equal(readQueuedSeoMetadataEligibilityPermitsForTests(), 0);
+    assert.equal(readActiveSeoMetadataEligibilityPermitsForTests(), 0);
   });
 
   it("G. sitemap predicate calls do not take the metadata permit", async () => {

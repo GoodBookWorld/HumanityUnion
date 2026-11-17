@@ -25,6 +25,8 @@ interface QueuedPermit {
 interface SeoMetadataEligibilityGateState {
   active: number;
   generation: number;
+  /** High-water mark of {@link queue}.length; never a separate queue. */
+  peakWaiting: number;
   readonly queue: QueuedPermit[];
 }
 
@@ -37,10 +39,18 @@ function gateState(): SeoMetadataEligibilityGateState {
   const created: SeoMetadataEligibilityGateState = {
     active: 0,
     generation: 0,
+    peakWaiting: 0,
     queue: [],
   };
   host[SEO_METADATA_ELIGIBILITY_GATE_KEY] = created;
   return created;
+}
+
+function noteQueueLength(state: SeoMetadataEligibilityGateState): void {
+  const waiting = state.queue.length;
+  if (waiting > state.peakWaiting) {
+    state.peakWaiting = waiting;
+  }
 }
 
 /**
@@ -65,6 +75,7 @@ export function acquireSeoMetadataEligibilityPermit(): Promise<void> {
         reject(error);
       },
     });
+    noteQueueLength(state);
   });
 }
 
@@ -84,18 +95,34 @@ export function releaseSeoMetadataEligibilityPermit(): void {
   }
 }
 
-export function readActiveSeoMetadataEligibilityPermitsForTests(): number {
+/** Live active permit count from the gate (never exceeds the concurrency limit). */
+export function readActiveSeoMetadataEligibilityPermits(): number {
   return gateState().active;
 }
 
-export function readQueuedSeoMetadataEligibilityPermitsForTests(): number {
+/** Live waiting-queue length from the gate. */
+export function readWaitingSeoMetadataEligibilityOperations(): number {
   return gateState().queue.length;
+}
+
+/** Process high-water mark of waiting-queue length. */
+export function readPeakWaitingSeoMetadataEligibilityOperations(): number {
+  return gateState().peakWaiting;
+}
+
+export function readActiveSeoMetadataEligibilityPermitsForTests(): number {
+  return readActiveSeoMetadataEligibilityPermits();
+}
+
+export function readQueuedSeoMetadataEligibilityPermitsForTests(): number {
+  return readWaitingSeoMetadataEligibilityOperations();
 }
 
 export function resetSeoMetadataEligibilityGateForTests(): void {
   const state = gateState();
   state.generation += 1;
   state.active = 0;
+  state.peakWaiting = 0;
   const abandoned = state.queue.splice(0);
   const error = new Error("SEO metadata eligibility gate was reset.");
   for (const waiter of abandoned) {
