@@ -79,6 +79,11 @@ async function start(): Promise<void> {
   );
   startSearchPerformanceScheduler();
 
+  const { startMemberNotificationEmailDeliveryScheduler } = await import(
+    "./modules/notifications/email-delivery/scheduler.js"
+  );
+  startMemberNotificationEmailDeliveryScheduler();
+
   const { startAuthorApplicationReconciliationOnce } = await import(
     "./modules/blog/blog-author-application-reconciliation.js"
   );

@@ -17,7 +17,9 @@ export type MemberNotificationEmailDeliveryStatus =
   | "sent"
   | "skipped"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  /** Dry-run validated; not a real send. Live must explicitly requeue — never auto-promoted. */
+  | "dry_run_ok";
 
 export type MemberNotificationEmailDeliverySkipReason =
   | "flag_off"
@@ -28,7 +30,13 @@ export type MemberNotificationEmailDeliverySkipReason =
   | "no_verified_destination"
   | "disabled_category"
   | "index_not_ready"
-  | "dry_run";
+  | "dry_run"
+  | "frequency_not_immediate"
+  | "account_inactive"
+  | "live_not_ready"
+  | "activation_blocked";
+
+export type MemberNotificationEmailDeliveryMode = "off" | "dry_run" | "live";
 
 export interface MemberNotificationEmailDeliveryRecord {
   deliveryId: string;

@@ -1790,6 +1790,7 @@ export type {
 export type {
   MemberNotificationEmailDeliveryChannel,
   MemberNotificationEmailDeliveryGapRecord,
+  MemberNotificationEmailDeliveryMode,
   MemberNotificationEmailDeliveryRecord,
   MemberNotificationEmailDeliverySkipReason,
   MemberNotificationEmailDeliveryStatus,
