@@ -7623,7 +7623,8 @@
     "errors": {
       "conflict": "This application changed elsewhere or conflicts with another active application. Refresh and try again.",
       "unavailable": "Applications are temporarily unavailable. Please try again shortly.",
-      "duplicateActive": "You already have an active application for that representation country."
+      "duplicateActive": "You already have an active application for that representation country.",
+      "notFound": "That application could not be found."
     },
     "discard": {
       "title": "Discard unsaved changes?",
@@ -7631,6 +7632,24 @@
       "confirm": "Discard changes",
       "cancel": "Keep editing"
     },
-    "closeAria": "Close application dialog"
+    "closeAria": "Close application dialog",
+    "workspaceWidget": {
+      "title": "My Regional Applications",
+      "invitation": "Start a Regional Representative application for a country you want to represent.",
+      "create": "Create application",
+      "newApplication": "New application",
+      "open": "Open",
+      "edit": "Edit",
+      "view": "View",
+      "loading": "Loading applications…",
+      "error": "Could not load your applications. Try again.",
+      "retry": "Retry",
+      "updated": "Updated {date}",
+      "activeHeading": "Active applications",
+      "historyHeading": "Application history",
+      "openAria": "Open application for {country}",
+      "editAria": "Edit application for {country}",
+      "viewAria": "View application for {country}"
+    }
   }
 }

@@ -46,6 +46,29 @@ export function isRrpApplicationEditableStatus(status: RrpApplicationStatus): bo
   return status === "draft" || status === "information_requested";
 }
 
+/**
+ * Compact widget / hub ordering: active applications first (newest updated),
+ * then terminal history (newest updated). Does not mutate the input array.
+ */
+export function partitionRrpApplicationsForDisplay(
+  applications: readonly RrpApplicationDetail[],
+): {
+  active: RrpApplicationDetail[];
+  history: RrpApplicationDetail[];
+} {
+  const byUpdatedDesc = (left: RrpApplicationDetail, right: RrpApplicationDetail) =>
+    Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
+  const active = applications
+    .filter((item) => isRrpApplicationActiveStatus(item.status))
+    .slice()
+    .sort(byUpdatedDesc);
+  const history = applications
+    .filter((item) => !isRrpApplicationActiveStatus(item.status))
+    .slice()
+    .sort(byUpdatedDesc);
+  return { active, history };
+}
+
 export function formStateFromRrpApplication(
   application: RrpApplicationDetail,
 ): RrpApplicationFormState {

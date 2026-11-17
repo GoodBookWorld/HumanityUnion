@@ -2,3 +2,14 @@
   font-size: var(--hu-font-size-sm);
   color: var(--hu-color-text-muted);
 }
+
+/* HU-RRP-02D.1 — stack Assistant + optional domain widgets in one rail */
+.workspace-home-assistant-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

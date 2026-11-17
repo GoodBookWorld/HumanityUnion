@@ -45,6 +45,12 @@ type PendingNavigation = "close" | "hub" | null;
 interface RrpApplicationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** When set, open this application after the list loads instead of the hub. */
+  initialApplicationId?: string | null;
+  /** Prefer the hub create section (used by empty-state “new application”). */
+  initialIntent?: "hub" | "create" | null;
+  /** Fired after save / submit / withdraw / create so external widgets can refresh. */
+  onApplicationsChanged?: () => void;
 }
 
 function formatRrpApiError(
@@ -62,12 +68,20 @@ function formatRrpApiError(
   return formatAuthFormError(error);
 }
 
-export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProps) {
+export function RrpApplicationModal({
+  isOpen,
+  onClose,
+  initialApplicationId = null,
+  initialIntent = null,
+  onApplicationsChanged,
+}: RrpApplicationModalProps) {
   const t = useTranslations("rrpApplication");
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const onApplicationsChangedRef = useRef(onApplicationsChanged);
+  onApplicationsChangedRef.current = onApplicationsChanged;
 
   const [view, setView] = useState<ModalView>("loading");
   const [applications, setApplications] = useState<RrpApplicationDetail[]>([]);
@@ -179,7 +193,42 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
           ...current,
           residenceCountryCode: residence || current.residenceCountryCode,
         }));
-        setView("hub");
+
+        const selected =
+          typeof initialApplicationId === "string" && initialApplicationId.trim().length > 0
+            ? listed.find((item) => item.applicationId === initialApplicationId)
+            : undefined;
+
+        if (selected) {
+          const nextForm = formStateFromRrpApplication(selected);
+          setActive(selected);
+          setForm(nextForm);
+          setBaselineForm(nextForm);
+          if (selected.status === "submitted" || selected.status === "under_review") {
+            setView("success");
+            setStatusMessage(t(`status.${selected.status}`));
+          } else if (
+            selected.status === "draft" ||
+            selected.status === "information_requested"
+          ) {
+            setView("form");
+          } else {
+            setView("success");
+            setStatusMessage(t(`status.${selected.status}`));
+          }
+        } else {
+          setView("hub");
+          if (initialIntent === "create") {
+            setStatusMessage(t("hub.newHeading"));
+          }
+          if (
+            typeof initialApplicationId === "string" &&
+            initialApplicationId.trim().length > 0 &&
+            !selected
+          ) {
+            setError(t("errors.notFound"));
+          }
+        }
       } catch (loadError) {
         if (cancelled) {
           return;
@@ -224,7 +273,7 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
         restore.focus();
       }
     };
-  }, [isOpen, t]);
+  }, [isOpen, initialApplicationId, initialIntent, t]);
 
   if (!isOpen) {
     return null;
@@ -277,6 +326,7 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
       });
       setApplications((current) => [created, ...current.filter((item) => item.applicationId !== created.applicationId)]);
       openApplication(created);
+      onApplicationsChangedRef.current?.();
     } catch (createError) {
       setError(formatRrpApiError(createError, t));
     } finally {
@@ -305,6 +355,7 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
       setForm(nextForm);
       setBaselineForm(nextForm);
       setStatusMessage(t("messages.draftSaved"));
+      onApplicationsChangedRef.current?.();
     } catch (saveError) {
       setError(formatRrpApiError(saveError, t));
     } finally {
@@ -344,6 +395,7 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
       setBaselineForm(formStateFromRrpApplication(submitted));
       setView("success");
       setStatusMessage(t("messages.submitted"));
+      onApplicationsChangedRef.current?.();
     } catch (submitError) {
       setError(formatRrpApiError(submitError, t));
     } finally {
@@ -370,6 +422,7 @@ export function RrpApplicationModal({ isOpen, onClose }: RrpApplicationModalProp
       setActive(null);
       setView("hub");
       setStatusMessage(t("messages.withdrawn"));
+      onApplicationsChangedRef.current?.();
     } catch (withdrawError) {
       setError(formatRrpApiError(withdrawError, t));
     } finally {

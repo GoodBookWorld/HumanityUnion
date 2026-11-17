@@ -1,0 +1,128 @@
+/* HU-RRP-02D.1 — persistent My Regional Applications rail widget */
+
+.rrp-application-workspace-widget {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-card);
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text);
+  padding: var(--hu-space-4) var(--hu-space-5);
+  box-shadow: var(--hu-shadow-card);
+  overflow-x: hidden;
+}
+
+.rrp-application-workspace-widget__title {
+  margin: 0 0 var(--hu-space-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-lg);
+  font-weight: var(--hu-font-weight-semibold);
+  line-height: var(--hu-line-height-tight);
+  letter-spacing: var(--hu-letter-spacing-tight);
+  color: var(--hu-color-text);
+}
+
+.rrp-application-workspace-widget__copy {
+  margin: 0 0 var(--hu-space-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+}
+
+.rrp-application-workspace-widget__section {
+  display: grid;
+  gap: var(--hu-space-3);
+  margin: 0 0 var(--hu-space-4);
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget__section:last-of-type {
+  margin-bottom: var(--hu-space-3);
+}
+
+.rrp-application-workspace-widget__section-title {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold);
+  color: var(--hu-color-text);
+}
+
+.rrp-application-workspace-widget__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget__item {
+  display: grid;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  padding-block: var(--hu-space-2);
+  border-block-start: 1px solid var(--hu-color-border);
+}
+
+.rrp-application-workspace-widget__item:first-child {
+  border-block-start: none;
+  padding-block-start: 0;
+}
+
+.rrp-application-workspace-widget__meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget__country {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold);
+  color: var(--hu-color-text);
+}
+
+.rrp-application-workspace-widget__status,
+.rrp-application-workspace-widget__updated {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.rrp-application-workspace-widget__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget__footer {
+  display: grid;
+  gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget .hu-button {
+  max-width: 100%;
+}
+
+[dir="rtl"] .rrp-application-workspace-widget {
+  text-align: start;
+}
+
+@media (max-width: 1024px) {
+  .rrp-application-workspace-widget {
+    position: static;
+  }
+}

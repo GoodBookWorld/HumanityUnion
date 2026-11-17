@@ -269,4 +269,13 @@ describe("HU-RRP-02C Workspace application modal", () => {
     const entry = read("features/regional-program/rrp-application-entry.ts");
     assert.match(entry, /=== "true"/);
   });
+
+  it("supports opening a selected applicationId and notifying external refresh", () => {
+    const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
+    assert.match(modal, /initialApplicationId\?:/);
+    assert.match(modal, /onApplicationsChanged\?:/);
+    assert.match(modal, /item\.applicationId === initialApplicationId/);
+    assert.match(modal, /errors\.notFound/);
+    assert.match(modal, /onApplicationsChangedRef\.current\?\.\(\)/);
+  });
 });
