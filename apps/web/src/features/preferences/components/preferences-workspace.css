@@ -125,6 +125,16 @@
   overflow-wrap: anywhere;
 }
 
+.preferences-workspace__inline-link {
+  color: var(--hu-color-primary, #0174b0);
+  text-decoration: underline;
+}
+
+.preferences-workspace__inline-link:focus-visible {
+  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline-offset: var(--hu-focus-offset, 2px);
+}
+
 .preferences-workspace__help,
 .preferences-workspace__helper {
   margin: 0;

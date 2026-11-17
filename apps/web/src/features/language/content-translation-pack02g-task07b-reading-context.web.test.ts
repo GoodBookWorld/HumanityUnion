@@ -60,6 +60,7 @@ function samplePreferences(input: {
       messageCategories: [],
       notificationFrequency: "platform_only",
       emailNotificationsEnabled: false,
+      notificationEmailCopiesOptIn: false,
       interestMatchNotificationsEnabled: false,
       disabledNotificationCategories: [],
     },

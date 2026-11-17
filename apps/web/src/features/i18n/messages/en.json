@@ -981,7 +981,10 @@
     },
     "notification": {
       "emailEnabled": "Receive email notifications",
-      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information."
+      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information.",
+      "copiesOptIn": "Prepare email copies of my notifications",
+      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
       "reducedMotion": "Reduced motion",
@@ -7116,6 +7119,22 @@
     "summary": "Your active hub for civic notifications, incoming messages, and personal reminders.",
     "signInPrompt": "Sign in to view your Notification Center.",
     "signIn": "Sign in",
+    "emailSettings": {
+      "title": "Email Notifications",
+      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "openWorkspacePreferences": "Open Notification Preferences in Workspace",
+      "loading": "Loading email notification settings…",
+      "loadError": "Unable to load email notification settings.",
+      "retry": "Retry",
+      "accountEmail": "Account email",
+      "accountEmailUnverified": "Confirm your account email before using email notification settings.",
+      "confirmEmailCta": "Confirm email",
+      "alternativeEmail": "Alternative notification email",
+      "alternativeEmailUnavailable": "Unavailable until alternative-email verification is implemented. Copies will use your verified account email only.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Unable to save email notification settings."
+    },
     "sections": {
       "notifications": "Notifications",
       "messages": "Messages",

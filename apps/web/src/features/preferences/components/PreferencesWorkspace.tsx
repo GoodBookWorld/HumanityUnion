@@ -23,7 +23,11 @@ import {
   listSelectablePublicLanguages,
   type SelectablePublicLanguage,
 } from "../../language/public-languages-api";
-import { getMyPreferences, updateMyPreferences } from "../preferences-api";
+import {
+  getMyPreferences,
+  MEMBER_PREFERENCES_CHANGED_EVENT,
+  updateMyPreferences,
+} from "../preferences-api";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 
@@ -135,6 +139,37 @@ export function PreferencesWorkspace() {
     };
     // Load once on mount; localized fallbacks use the active catalog at catch time.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot fetch
+  }, []);
+
+  /**
+   * HU-NOTIF-02A.1 — keep Notification Preferences aligned with Notification Center
+   * Email settings. External saves (same document) refresh communicationPreferences
+   * without wiping unrelated unsaved draft sections.
+   */
+  useEffect(() => {
+    function onPreferencesChanged() {
+      void getMyPreferences()
+        .then((loaded) => {
+          setPreferences((current) => {
+            if (!current) {
+              return loaded;
+            }
+            return {
+              ...current,
+              communicationPreferences: loaded.communicationPreferences,
+              updatedAt: loaded.updatedAt,
+            };
+          });
+        })
+        .catch(() => {
+          // Keep local draft; next Save or reload recovers.
+        });
+    }
+
+    window.addEventListener(MEMBER_PREFERENCES_CHANGED_EVENT, onPreferencesChanged);
+    return () => {
+      window.removeEventListener(MEMBER_PREFERENCES_CHANGED_EVENT, onPreferencesChanged);
+    };
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -559,7 +594,7 @@ export function PreferencesWorkspace() {
       <ProfileSection title={t("sections.notification")} id="notification-preferences">
         <PreferenceOption
           label={t("notification.emailEnabled")}
-          checked={preferences.communicationPreferences.emailNotificationsEnabled}
+          checked={preferences.communicationPreferences.emailNotificationsEnabled === true}
           onChange={(checked) =>
             setPreferences({
               ...preferences,
@@ -571,6 +606,25 @@ export function PreferencesWorkspace() {
           }
         />
         <p className="preferences-workspace__helper">{t("notification.emailHelp")}</p>
+        <PreferenceOption
+          label={t("notification.copiesOptIn")}
+          checked={preferences.communicationPreferences.notificationEmailCopiesOptIn === true}
+          onChange={(checked) =>
+            setPreferences({
+              ...preferences,
+              communicationPreferences: {
+                ...preferences.communicationPreferences,
+                notificationEmailCopiesOptIn: checked,
+              },
+            })
+          }
+        />
+        <p className="preferences-workspace__helper">{t("notification.copiesHelp")}</p>
+        <p className="preferences-workspace__helper">
+          <a className="preferences-workspace__inline-link" href="/notifications">
+            {t("notification.openNotificationCenter")}
+          </a>
+        </p>
       </ProfileSection>
 
       <ProfileSection title={t("sections.accessibility")} id="accessibility">

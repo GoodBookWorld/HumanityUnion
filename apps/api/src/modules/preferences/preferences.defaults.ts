@@ -42,6 +42,7 @@ export function buildDefaultMemberPreferences(input: {
       messageCategories: [],
       notificationFrequency: "daily_digest",
       emailNotificationsEnabled: true,
+      notificationEmailCopiesOptIn: false,
       interestMatchNotificationsEnabled: true,
       disabledNotificationCategories: [],
     },

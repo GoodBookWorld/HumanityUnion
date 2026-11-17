@@ -37,6 +37,7 @@ import {
 
 import { CommunicationCard } from "./CommunicationCard";
 import { CommunicationSummary } from "./CommunicationSummary";
+import { EmailNotificationsSettingsWidget } from "./EmailNotificationsSettingsWidget";
 import { NotificationCenterParticipantIdentity } from "./NotificationCenterParticipantIdentity";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { AuthorApplicationReviewModal } from "../../blog/components/AuthorApplicationReviewModal";
@@ -624,6 +625,8 @@ export function NotificationCenterPageContent() {
           <HumanityUnionAssistantWidget surfaceId="notifications" />
         </div>
       </header>
+
+      {authenticated ? <EmailNotificationsSettingsWidget /> : null}
 
       {!authenticated ? (
         <div className="notifications-page__login-prompt">

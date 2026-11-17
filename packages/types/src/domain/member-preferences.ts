@@ -53,7 +53,17 @@ export interface CommunicationPreferences {
   digestFrequency: string;
   messageCategories: string[];
   notificationFrequency: NotificationFrequency;
+  /**
+   * Historical feature-email preference (default true).
+   * Does not authorize universal Notification Center email copies.
+   */
   emailNotificationsEnabled: boolean;
+  /**
+   * Explicit opt-in for future universal notification email copies.
+   * Defaults to false; independent of emailNotificationsEnabled.
+   * Does not activate delivery until a later projector ships.
+   */
+  notificationEmailCopiesOptIn: boolean;
   interestMatchNotificationsEnabled: boolean;
   disabledNotificationCategories: string[];
 }

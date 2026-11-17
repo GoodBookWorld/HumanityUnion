@@ -980,7 +980,10 @@
     },
     "notification": {
       "emailEnabled": "استلام إشعارات البريد الإلكتروني",
-      "emailHelp": "عند التفعيل، ترسل Humanity Union إشعارات بريد إلكتروني بسيطة عندما يتطلب نشاط جديد انتباهك. مثال: «لديك 3 إشعارات جديدة في مساحة عملك.» لا تحتوي الرسائل أبدًا على محتوى محادثات خاصة أو معلومات سرية عن المبادرة."
+      "emailHelp": "عند التفعيل، ترسل Humanity Union إشعارات بريد إلكتروني بسيطة عندما يتطلب نشاط جديد انتباهك. مثال: «لديك 3 إشعارات جديدة في مساحة عملك.» لا تحتوي الرسائل أبدًا على محتوى محادثات خاصة أو معلومات سرية عن المبادرة.",
+      "copiesOptIn": "Prepare email copies of my notifications",
+      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
       "reducedMotion": "تقليل الحركة",
@@ -7485,6 +7488,22 @@
       "declinedSuccess": "تم رفض الالتزام.",
       "declinedTransferSuccess": "تم رفض النقل. يظل المشارك المسؤول الحالي مسؤولًا.",
       "requestFailed": "فشل الطلب."
+    },
+    "emailSettings": {
+      "title": "Email Notifications",
+      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "loading": "Loading email notification settings…",
+      "loadError": "Unable to load email notification settings.",
+      "retry": "Retry",
+      "accountEmail": "Account email",
+      "accountEmailUnverified": "Confirm your account email before using email notification settings.",
+      "confirmEmailCta": "Confirm email",
+      "alternativeEmail": "Alternative notification email",
+      "alternativeEmailUnavailable": "Unavailable until alternative-email verification is implemented. Copies will use your verified account email only.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Unable to save email notification settings.",
+      "openWorkspacePreferences": "Open Notification Preferences in Workspace"
     }
   }
 }

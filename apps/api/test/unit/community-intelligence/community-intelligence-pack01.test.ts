@@ -65,6 +65,7 @@ function preferences(
       messageCategories: [],
       notificationFrequency: "weekly_digest",
       emailNotificationsEnabled: true,
+      notificationEmailCopiesOptIn: false,
       interestMatchNotificationsEnabled: true,
       disabledNotificationCategories: [],
     },

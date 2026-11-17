@@ -1,0 +1,140 @@
+/* HU-NOTIF-02A — Email Notifications settings on Notification Center */
+
+.email-notifications-settings {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin-block-end: var(--hu-section-gap);
+  padding: var(--hu-space-4) var(--hu-space-5);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-card, var(--hu-radius-md));
+  background: var(--hu-color-surface, var(--hu-color-bg-muted));
+  overflow-x: hidden;
+}
+
+.email-notifications-settings__header {
+  display: grid;
+  gap: var(--hu-space-2);
+  margin-block-end: var(--hu-space-4);
+  min-width: 0;
+}
+
+.email-notifications-settings__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-lg);
+  font-weight: var(--hu-font-weight-semibold);
+  line-height: var(--hu-line-height-tight);
+  color: var(--hu-color-text);
+}
+
+.email-notifications-settings__lead,
+.email-notifications-settings__help,
+.email-notifications-settings__status,
+.email-notifications-settings__warning {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+}
+
+.email-notifications-settings__body {
+  display: grid;
+  gap: var(--hu-space-4);
+  min-width: 0;
+}
+
+.email-notifications-settings__field {
+  display: grid;
+  gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.email-notifications-settings__field--muted {
+  padding-block-start: var(--hu-space-2);
+  border-block-start: 1px solid var(--hu-color-border);
+}
+
+.email-notifications-settings__label {
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold);
+  color: var(--hu-color-text);
+}
+
+.email-notifications-settings__value {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text);
+}
+
+.email-notifications-settings__select {
+  width: 100%;
+  max-width: 24rem;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-block: var(--hu-space-2);
+  padding-inline: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface, #fff);
+  color: var(--hu-color-text);
+  font: inherit;
+}
+
+.email-notifications-settings__error {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-danger, #b42318);
+}
+
+.email-notifications-settings__footer {
+  display: grid;
+  gap: var(--hu-space-2);
+  justify-items: start;
+  min-width: 0;
+}
+
+.email-notifications-settings__button {
+  min-height: var(--hu-button-min-height, 2.5rem);
+  padding-block: var(--hu-button-padding-block, 0.5rem);
+  padding-inline: var(--hu-button-padding-inline, 1rem);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-button-radius, var(--hu-radius-md));
+  background: var(--hu-color-surface, #fff);
+  color: var(--hu-color-text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.email-notifications-settings__button:focus-visible {
+  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline-offset: var(--hu-focus-offset, 2px);
+}
+
+.email-notifications-settings__link {
+  color: var(--hu-color-primary, #0174b0);
+  text-decoration: underline;
+}
+
+.email-notifications-settings__link:focus-visible {
+  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline-offset: var(--hu-focus-offset, 2px);
+}
+
+[dir="rtl"] .email-notifications-settings {
+  text-align: start;
+}
+
+@media (max-width: 768px) {
+  .email-notifications-settings__select {
+    max-width: 100%;
+  }
+}

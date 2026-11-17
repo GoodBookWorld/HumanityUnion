@@ -304,6 +304,13 @@ export function validatePreferencesPatch(body: unknown): ValidatedPreferencesPat
       );
     }
 
+    if ("notificationEmailCopiesOptIn" in communication) {
+      patch.communicationPreferences.notificationEmailCopiesOptIn = normalizeBoolean(
+        communication.notificationEmailCopiesOptIn,
+        "notificationEmailCopiesOptIn",
+      );
+    }
+
     if ("interestMatchNotificationsEnabled" in communication) {
       patch.communicationPreferences.interestMatchNotificationsEnabled = normalizeBoolean(
         communication.interestMatchNotificationsEnabled,

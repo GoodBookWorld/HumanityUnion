@@ -980,7 +980,10 @@
     },
     "notification": {
       "emailEnabled": "Отримувати сповіщення електронною поштою",
-      "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу."
+      "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу.",
+      "copiesOptIn": "Prepare email copies of my notifications",
+      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
       "reducedMotion": "Зменшена анімація",
@@ -7485,6 +7488,22 @@
       "declinedSuccess": "Зобов’язання відхилено.",
       "declinedTransferSuccess": "Передачу відхилено. Поточний відповідальний Учасник залишається відповідальним.",
       "requestFailed": "Запит не вдався."
+    },
+    "emailSettings": {
+      "title": "Email Notifications",
+      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "loading": "Loading email notification settings…",
+      "loadError": "Unable to load email notification settings.",
+      "retry": "Retry",
+      "accountEmail": "Account email",
+      "accountEmailUnverified": "Confirm your account email before using email notification settings.",
+      "confirmEmailCta": "Confirm email",
+      "alternativeEmail": "Alternative notification email",
+      "alternativeEmailUnavailable": "Unavailable until alternative-email verification is implemented. Copies will use your verified account email only.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Unable to save email notification settings.",
+      "openWorkspacePreferences": "Open Notification Preferences in Workspace"
     }
   }
 }
