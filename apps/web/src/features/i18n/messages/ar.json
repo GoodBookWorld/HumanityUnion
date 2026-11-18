@@ -7491,7 +7491,11 @@
     },
     "emailSettings": {
       "title": "Email Notifications",
+      "collapsedSummary": "نسخ بريدية اختيارية وإعدادات التسليم",
       "preparationNotice": "نسخ بريدية اختيارية لنشاط محدد في مركز الإشعارات. يلزم الاشتراك الصريح. تُستخدم وجهة الإشعار الموثّقة ويتبع التكرار تفضيلاتك المحفوظة. يعتمد التسليم على توفّر المنصة وقد لا يشمل كل إشعار.",
+      "emailEnabledHelpShort": "تنبيهات النشاط حول عناصر جديدة بانتظارك. منفصلة عن نسخ عناصر مركز الإشعارات وعن رسائل الأمان.",
+      "copiesHelpShort": "نسخ اختيارية لعناصر محددة من مركز الإشعارات إلى وجهتك الموثّقة. لا يغيّر بريد تسجيل الدخول؛ حفظ التفضيلات لا يعني أن رسالة قد أُرسلت.",
+      "loginEmailHint": "يبقى بريد تسجيل الدخول {email} (دون تغيير).",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",

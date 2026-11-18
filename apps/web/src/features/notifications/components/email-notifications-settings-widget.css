@@ -1,22 +1,62 @@
-/* HU-NOTIF-02A — Email Notifications settings on Notification Center */
+/* HU-NOTIF-02A / 02C.10 — compact Email Notifications accordion on Notification Center */
 
 .email-notifications-settings {
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  margin-block-end: var(--hu-section-gap);
-  padding: var(--hu-space-4) var(--hu-space-5);
+  margin-block-end: var(--hu-space-4);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-card, var(--hu-radius-md));
   background: var(--hu-color-surface, var(--hu-color-bg-muted));
   overflow-x: hidden;
 }
 
-.email-notifications-settings__header {
+.email-notifications-settings__heading {
+  margin: 0;
+  font: inherit;
+}
+
+.email-notifications-settings__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-3);
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: var(--hu-space-3) var(--hu-space-4);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+}
+
+.email-notifications-settings__trigger:focus-visible {
+  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline-offset: var(--hu-focus-offset, 2px);
+}
+
+.email-notifications-settings__trigger-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.email-notifications-settings__mail-icon {
+  flex: 0 0 auto;
+  margin-block-start: 0.15rem;
+  color: var(--hu-color-primary, #0174b0);
+}
+
+.email-notifications-settings__trigger-text {
   display: grid;
-  gap: var(--hu-space-2);
-  margin-block-end: var(--hu-space-4);
+  gap: 0.15rem;
   min-width: 0;
 }
 
@@ -24,10 +64,44 @@
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: var(--hu-font-size-lg);
+  font-size: var(--hu-font-size-md, 1rem);
   font-weight: var(--hu-font-weight-semibold);
   line-height: var(--hu-line-height-tight);
   color: var(--hu-color-text);
+}
+
+.email-notifications-settings__subtitle {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+  font-weight: var(--hu-font-weight-regular, 400);
+}
+
+.email-notifications-settings__chevron {
+  flex: 0 0 auto;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-inline-end: 2px solid var(--hu-color-text-muted);
+  border-block-end: 2px solid var(--hu-color-text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.email-notifications-settings__trigger[aria-expanded="true"] .email-notifications-settings__chevron {
+  transform: rotate(-135deg);
+}
+
+.email-notifications-settings__panel {
+  min-width: 0;
+  padding: 0 var(--hu-space-4) var(--hu-space-4);
+  border-block-start: 1px solid var(--hu-color-border);
+}
+
+.email-notifications-settings__panel[hidden] {
+  display: none;
 }
 
 .email-notifications-settings__lead,
@@ -44,19 +118,21 @@
 
 .email-notifications-settings__body {
   display: grid;
-  gap: var(--hu-space-4);
+  gap: var(--hu-space-3);
   min-width: 0;
+  padding-block-start: var(--hu-space-3);
 }
 
 .email-notifications-settings__field {
   display: grid;
-  gap: var(--hu-space-2);
+  gap: var(--hu-space-1);
   min-width: 0;
 }
 
 .email-notifications-settings__field--muted {
-  padding-block-start: var(--hu-space-2);
+  padding-block-start: var(--hu-space-3);
   border-block-start: 1px solid var(--hu-color-border);
+  gap: var(--hu-space-2);
 }
 
 .email-notifications-settings__label {
@@ -107,6 +183,7 @@
   gap: var(--hu-space-2);
   justify-items: start;
   min-width: 0;
+  padding-block-start: var(--hu-space-3);
 }
 
 .email-notifications-settings__button {
@@ -140,8 +217,20 @@
   text-align: start;
 }
 
+[dir="rtl"] .email-notifications-settings__trigger {
+  text-align: start;
+}
+
 @media (max-width: 768px) {
   .email-notifications-settings__select {
     max-width: 100%;
+  }
+
+  .email-notifications-settings__trigger {
+    padding-inline: var(--hu-space-3);
+  }
+
+  .email-notifications-settings__panel {
+    padding-inline: var(--hu-space-3);
   }
 }

@@ -7491,7 +7491,11 @@
     },
     "emailSettings": {
       "title": "Email Notifications",
+      "collapsedSummary": "選擇性電子郵件副本與傳送設定",
       "preparationNotice": "可選擇接收選定通知中心活動的電子郵件副本。需明確選擇加入。訊息會使用您已驗證的通知收件地址，並依循您儲存的頻率設定。送達取決於平台可用性，且可能未涵蓋每一則通知。",
+      "emailEnabledHelpShort": "有關待處理新項目的活動提醒。與通知中心項目副本及安全郵件分開。",
+      "copiesHelpShort": "可選擇將選定的通知中心項目副本寄至您已驗證的收件地址。不會變更登入電子郵件；儲存偏好設定並不代表已寄出郵件。",
+      "loginEmailHint": "登入電子郵件仍為 {email}（未變更）。",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",

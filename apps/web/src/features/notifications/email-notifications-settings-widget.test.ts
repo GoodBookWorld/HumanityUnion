@@ -40,6 +40,7 @@ describe("HU-NOTIF-02A/02B Email Notifications settings widget", () => {
     assert.doesNotMatch(widget, /displayName.*email|email.*displayName/);
     assert.match(widget, /accountEmailUnverified/);
     assert.match(widget, /\/confirm-email/);
+    assert.match(widget, /destinationAccount|currentDestination/);
   });
 
   it("reuses preferences APIs and the explicit opt-in field defaulting OFF", () => {

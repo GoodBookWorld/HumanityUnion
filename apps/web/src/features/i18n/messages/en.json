@@ -7121,7 +7121,11 @@
     "signIn": "Sign in",
     "emailSettings": {
       "title": "Email Notifications",
+      "collapsedSummary": "Optional email copies and delivery settings",
       "preparationNotice": "Optional email copies of selected Notification Center activity. Explicit opt-in is required. Messages use your verified notification destination and follow your saved frequency. Delivery depends on platform availability and may not include every notification.",
+      "emailEnabledHelpShort": "Activity alerts about new items waiting for you. Separate from Notification Center item copies and from security emails.",
+      "copiesHelpShort": "Optional copies of selected Notification Center items to your verified destination. Does not change login email; saving prefs does not mean an email was sent.",
+      "loginEmailHint": "Login email remains {email} (unchanged).",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",
