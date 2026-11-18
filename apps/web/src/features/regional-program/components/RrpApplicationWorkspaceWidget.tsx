@@ -5,7 +5,10 @@
  * Reuses RrpApplicationModal; does not own a second application form.
  */
 
-import type { RrpApplicationDetail } from "@hu/types";
+import type {
+  RrpAdminConversationAvailability,
+  RrpApplicationDetail,
+} from "@hu/types";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useState } from "react";
 
@@ -23,6 +26,26 @@ import { RrpApplicationModal } from "./RrpApplicationModal";
 import "./rrp-application-workspace-widget.css";
 
 type ModalIntent = "hub" | "create" | null;
+
+type MessagesUnavailableKey =
+  | "pending"
+  | "failed"
+  | "none"
+  | "unavailable";
+
+function resolveMessagesUnavailableKey(
+  availability: RrpAdminConversationAvailability | null | undefined,
+): MessagesUnavailableKey {
+  if (
+    availability === "pending" ||
+    availability === "failed" ||
+    availability === "none" ||
+    availability === "unavailable"
+  ) {
+    return availability;
+  }
+  return "unavailable";
+}
 
 function formatUpdatedDate(value: string, locale: string): string {
   try {
@@ -109,6 +132,37 @@ export function RrpApplicationWorkspaceWidget() {
   const { active, history } = partitionRrpApplicationsForDisplay(applications);
   const isEmpty = !loading && !error && applications.length === 0;
 
+  function renderOpenMessagesAction(item: RrpApplicationDetail) {
+    const conversationId = item.adminConversationId?.trim() ?? "";
+    if (conversationId && item.adminConversationAvailability === "available") {
+      return (
+        <span data-rrp-open-messages="available">
+          <Button
+            href={`/workspace/messages/${encodeURIComponent(conversationId)}`}
+            variant="tertiary"
+            aria-label={t("workspaceWidget.openMessagesAria")}
+          >
+            {t("workspaceWidget.openMessages")}
+          </Button>
+        </span>
+      );
+    }
+
+    const unavailableKey = resolveMessagesUnavailableKey(
+      item.adminConversationAvailability,
+    );
+    return (
+      <p
+        className="rrp-application-workspace-widget__messages-unavailable"
+        role="status"
+        data-rrp-open-messages="unavailable"
+        data-rrp-open-messages-availability={unavailableKey}
+      >
+        {t(`workspaceWidget.messagesUnavailable.${unavailableKey}`)}
+      </p>
+    );
+  }
+
   function renderApplicationRow(item: RrpApplicationDetail) {
     const countryLabel = resolveCountryName(item.representCountryCode, item.representCountryCode);
     const editable = isRrpApplicationEditableStatus(item.status);
@@ -152,15 +206,9 @@ export function RrpApplicationWorkspaceWidget() {
           >
             {primaryLabel}
           </Button>
-          {item.status === "information_requested" ? (
-            <Button
-              href="/workspace/messages"
-              variant="tertiary"
-              aria-label={t("workspaceWidget.openMessagesAria")}
-            >
-              {t("workspaceWidget.openMessages")}
-            </Button>
-          ) : null}
+          {item.status === "information_requested"
+            ? renderOpenMessagesAction(item)
+            : null}
         </div>
       </li>
     );

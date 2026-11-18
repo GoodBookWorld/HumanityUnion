@@ -124,6 +124,33 @@ export interface RrpApplicationDetail {
    * application’s country (internal designation only — not legal authority).
    */
   readonly platformDesignationActive?: boolean;
+  /**
+   * Owner-safe deep-link into an existing admin DM for this application.
+   * Server-derived only; never client-constructed. Null when unavailable.
+   */
+  readonly adminConversationId?: string | null;
+  /**
+   * Why a conversation id is or is not available (owner-safe; no admin PII).
+   */
+  readonly adminConversationAvailability?: RrpAdminConversationAvailability;
+}
+
+/**
+ * Owner-facing availability of an existing RRP administrative DM.
+ * Does not imply permission to start a new conversation.
+ */
+export type RrpAdminConversationAvailability =
+  | "available"
+  | "pending"
+  | "failed"
+  | "none"
+  | "unavailable";
+
+/** Owner-only resolver result for Open Messages deep-link. */
+export interface RrpAdminConversationResolution {
+  readonly applicationId: string;
+  readonly conversationId: string | null;
+  readonly availability: RrpAdminConversationAvailability;
 }
 /** Admin list row — no date of birth. */
 export interface AdminRrpApplicationListItem {

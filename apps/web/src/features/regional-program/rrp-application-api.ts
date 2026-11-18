@@ -1,4 +1,7 @@
-import type { RrpApplicationDetail } from "@hu/types";
+import type {
+  RrpAdminConversationResolution,
+  RrpApplicationDetail,
+} from "@hu/types";
 import {
   RRP_APPLICATION_CONSENT_VERSION,
   type RrpFundingModel,
@@ -44,6 +47,15 @@ export async function getMyRrpApplication(
 ): Promise<RrpApplicationDetail> {
   return apiRequest<RrpApplicationDetail>(
     `/api/v1/rrp-applications/${encodeURIComponent(applicationId)}`,
+  );
+}
+
+/** Owner-only resolver for an existing RRP admin DM (server-derived conversationId). */
+export async function resolveMyRrpAdminConversation(
+  applicationId: string,
+): Promise<RrpAdminConversationResolution> {
+  return apiRequest<RrpAdminConversationResolution>(
+    `/api/v1/rrp-applications/${encodeURIComponent(applicationId)}/admin-conversation`,
   );
 }
 

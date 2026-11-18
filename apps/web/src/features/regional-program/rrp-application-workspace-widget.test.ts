@@ -85,14 +85,42 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.doesNotMatch(widget, /confirmAdminRrpAppointment|AdminRrpApplicationModal|Approve/);
   });
 
-  it("links information_requested rows to existing Workspace Messages", () => {
+  it("deep-links information_requested rows to the server-provided conversation id", () => {
     const widget = read(
       "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
     );
     assert.match(widget, /information_requested/);
-    assert.match(widget, /\/workspace\/messages/);
+    assert.match(widget, /adminConversationId/);
+    assert.match(widget, /adminConversationAvailability/);
+    assert.match(
+      widget,
+      /\/workspace\/messages\/\$\{encodeURIComponent\(conversationId\)\}/,
+    );
     assert.match(widget, /workspaceWidget\.openMessages/);
+    assert.match(widget, /workspaceWidget\.messagesUnavailable/);
+    assert.match(widget, /data-rrp-open-messages="unavailable"/);
+    assert.doesNotMatch(widget, /href="\/workspace\/messages"/);
+    assert.doesNotMatch(widget, /buildDirectConversationId|openOrCreate/);
     assert.doesNotMatch(widget, /DirectMessagingPanel|RrpChat/);
+  });
+
+  it("maps conversation availability per application without Ally selector redirect", () => {
+    const widget = read(
+      "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
+    );
+    const en = JSON.parse(read("features/i18n/messages/en.json")) as {
+      rrpApplication: {
+        workspaceWidget: {
+          messagesUnavailable: Record<string, string>;
+        };
+      };
+    };
+    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.pending);
+    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.failed);
+    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.none);
+    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.unavailable);
+    assert.match(widget, /resolveMessagesUnavailableKey/);
+    assert.doesNotMatch(widget, /active.?all(?:y|ies)|AllySelector|openOrCreate/i);
   });
 
   it("partitions active applications before history and sorts by updatedAt", () => {

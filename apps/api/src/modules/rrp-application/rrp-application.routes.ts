@@ -13,6 +13,7 @@ import {
   createRrpApplicationDraftForUser,
   getOwnRrpApplicationForUser,
   listOwnRrpApplicationsForUser,
+  resolveOwnRrpAdminConversationForUser,
   submitOwnRrpApplicationForUser,
   updateOwnRrpApplicationDraftForUser,
   withdrawOwnRrpApplicationForUser,
@@ -90,6 +91,28 @@ rrpApplicationRouter.get("/me", requireJwtAuthenticationMiddleware, async (req, 
     handleError(res, error);
   }
 });
+
+rrpApplicationRouter.get(
+  "/:applicationId/admin-conversation",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    const userId = resolveAuthUserId(req);
+    if (!userId) {
+      res.status(401).json(createFailureResponse("Authentication required."));
+      return;
+    }
+
+    try {
+      const payload = await resolveOwnRrpAdminConversationForUser({
+        userId,
+        applicationId: String(req.params.applicationId ?? ""),
+      });
+      res.json(createSuccessResponse(payload, "RRP admin conversation resolved."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
 
 rrpApplicationRouter.get(
   "/:applicationId",

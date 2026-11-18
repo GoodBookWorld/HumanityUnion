@@ -232,6 +232,45 @@ export async function findRrpMessageIntentByClientMessageId(
 }
 
 /**
+ * Owner-safe linkage helper — all intents for one application (any status/kind).
+ * Newest-first by updatedAt then createdAt for deterministic selection.
+ */
+export async function listRrpMessageIntentsByApplicationId(
+  applicationId: string,
+): Promise<RrpAppointmentMessageIntentRecord[]> {
+  const id = applicationId.trim();
+  if (!id) {
+    return [];
+  }
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return [...memoryStore.values()]
+      .filter((record) => record.applicationId === id)
+      .sort(compareRrpMessageIntentsNewestFirst);
+  }
+  if (!isMongoConfigured()) {
+    return [];
+  }
+  const documents = await getMongoCollection<IntentDocument>(
+    MONGO_COLLECTIONS.rrpAppointmentMessageIntents,
+  )
+    .find({ applicationId: id })
+    .toArray();
+  return documents.map(strip).sort(compareRrpMessageIntentsNewestFirst);
+}
+
+function compareRrpMessageIntentsNewestFirst(
+  left: RrpAppointmentMessageIntentRecord,
+  right: RrpAppointmentMessageIntentRecord,
+): number {
+  const byUpdated = right.updatedAt.localeCompare(left.updatedAt);
+  if (byUpdated !== 0) {
+    return byUpdated;
+  }
+  return right.createdAt.localeCompare(left.createdAt);
+}
+
+/**
  * Insert intent idempotently by clientMessageId (and appointmentId for approvals).
  */
 export async function insertRrpAppointmentMessageIntentIdempotent(

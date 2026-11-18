@@ -7764,7 +7764,13 @@
       "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement.",
       "messagesHint": "An administrator asked for more information. Reply in Messages after you update your application.",
       "openMessages": "Open Messages",
-      "openMessagesAria": "Open Workspace Messages"
+      "openMessagesAria": "Open Workspace Messages",
+      "messagesUnavailable": {
+        "pending": "Your administrator message is still being delivered. Try again shortly from this page.",
+        "failed": "The administrator message could not be delivered. Update your application here; messaging will be available once the conversation exists.",
+        "none": "No administrator conversation is available for this application yet.",
+        "unavailable": "The administrator conversation is not available right now. Update your application here, or try again later."
+      }
     },
     "admin": {
       "title": "Regional Representative application",

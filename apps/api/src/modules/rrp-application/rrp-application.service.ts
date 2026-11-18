@@ -2,12 +2,15 @@ import type {
   AdminRrpApplicationDetail,
   AdminRrpApplicationListItem,
   AdminRrpApplicationReviewResult,
+  RrpAdminConversationResolution,
   RrpApplicationDetail,
   RrpApplicationDecisionHistoryEntry,
   RrpApplicationRecord,
   RrpFundingModel,
   RrpApplicationStatus,
 } from "@hu/types";
+
+import { resolveOwnRrpAdminConversationForUser as resolveOwnRrpAdminConversation } from "./rrp-admin-conversation.resolution.js";
 
 import { recordAdministrationAuditBestEffort } from "../administration/audit.service.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
@@ -174,10 +177,49 @@ export async function listOwnRrpApplicationsForUser(
   } catch {
     activeBySource = new Set();
   }
-  return records.map((record) => ({
-    ...toRrpApplicationDetail(record),
-    platformDesignationActive: activeBySource.has(record.applicationId),
-  }));
+
+  // Soft-enrich Open Messages linkage only for information_requested rows.
+  // Soft-fail: list remains available if conversation resolution fails.
+  const conversationByApplicationId = new Map<
+    string,
+    Pick<RrpApplicationDetail, "adminConversationId" | "adminConversationAvailability">
+  >();
+  await Promise.all(
+    records
+      .filter((record) => record.status === "information_requested")
+      .map(async (record) => {
+        try {
+          const resolved = await resolveOwnRrpAdminConversation({
+            userId: actor.userId,
+            applicationId: record.applicationId,
+          });
+          conversationByApplicationId.set(record.applicationId, {
+            adminConversationId: resolved.conversationId,
+            adminConversationAvailability: resolved.availability,
+          });
+        } catch {
+          conversationByApplicationId.set(record.applicationId, {
+            adminConversationId: null,
+            adminConversationAvailability: "unavailable",
+          });
+        }
+      }),
+  );
+
+  return records.map((record) => {
+    const detail = toRrpApplicationDetail(record);
+    const conversation = conversationByApplicationId.get(record.applicationId);
+    return {
+      ...detail,
+      platformDesignationActive: activeBySource.has(record.applicationId),
+      ...(conversation
+        ? {
+            adminConversationId: conversation.adminConversationId,
+            adminConversationAvailability: conversation.adminConversationAvailability,
+          }
+        : {}),
+    };
+  });
 }
 
 export async function getOwnRrpApplicationForUser(input: {
@@ -194,7 +236,36 @@ export async function getOwnRrpApplicationForUser(input: {
     throw new RrpApplicationNotFoundError();
   }
 
-  return toRrpApplicationDetail(record);
+  const detail = toRrpApplicationDetail(record);
+  if (record.status !== "information_requested") {
+    return detail;
+  }
+
+  try {
+    const resolved = await resolveOwnRrpAdminConversation({
+      userId: input.userId,
+      applicationId: record.applicationId,
+    });
+    return {
+      ...detail,
+      adminConversationId: resolved.conversationId,
+      adminConversationAvailability: resolved.availability,
+    };
+  } catch {
+    return {
+      ...detail,
+      adminConversationId: null,
+      adminConversationAvailability: "unavailable",
+    };
+  }
+}
+
+/** Owner-only dedicated resolver for existing RRP admin DM deep-links. */
+export async function resolveOwnRrpAdminConversationForUser(input: {
+  userId: string;
+  applicationId: string;
+}): Promise<RrpAdminConversationResolution> {
+  return resolveOwnRrpAdminConversation(input);
 }
 
 export async function updateOwnRrpApplicationDraftForUser(input: {

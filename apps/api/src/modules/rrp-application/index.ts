@@ -11,11 +11,16 @@ export {
   getRrpApplicationDetailForAdminActor,
   listOwnRrpApplicationsForUser,
   listRrpApplicationsForAdminActor,
+  resolveOwnRrpAdminConversationForUser,
   reviewRrpApplicationForAdminActor,
   submitOwnRrpApplicationForUser,
   updateOwnRrpApplicationDraftForUser,
   withdrawOwnRrpApplicationForUser,
 } from "./rrp-application.service.js";
+export {
+  selectRrpAdminConversationIntent,
+  setRrpAdminConversationLookupForTests,
+} from "./rrp-admin-conversation.resolution.js";
 export {
   confirmRrpAppointmentForAdminActor,
   retryRrpAppointmentMessageIntentDelivery,

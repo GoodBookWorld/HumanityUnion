@@ -283,27 +283,26 @@ test.describe("HU-RRP-03J full isolated browser E2E", () => {
     await apiLogout(page.request);
     await apiLogin(page.request, participantEmail, participantPassword);
     await page.goto(`${baseUrl}/workspace`);
-    await expect(page.locator('[data-rrp-workspace-widget="true"]')).toBeVisible({
-      timeout: 30_000,
-    });
+    const widget = page.locator('[data-rrp-workspace-widget="true"]');
+    await expect(widget).toBeVisible({ timeout: 30_000 });
     await expect(
-      page
-        .locator('[data-rrp-workspace-widget="true"]')
-        .getByText(/More information requested/i)
-        .first(),
+      widget.getByText(/More information requested/i).first(),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Narrow reply path: established RRP admin conversation is reachable via
-    // Notifications unread DMs (membership + recipient≠nobody). Ally directory
-    // is not required for reply into an existing conversation.
-    await page.goto(`${baseUrl}/notifications`);
-    const openConversation = page.getByRole("link", {
-      name: /Open conversation with/i,
-    });
-    await expect(openConversation.first()).toBeVisible({ timeout: 60_000 });
-    await openConversation.first().click();
+    // HU-RRP-03K.2 — Open Messages deep-links into the existing admin DM.
+    // No Notifications detour; no Ally selector; no forced/DOM clicks.
+    const openMessages = widget.getByRole("link", { name: /Open Messages|Open Workspace Messages/i });
+    await expect(openMessages).toBeVisible({ timeout: 60_000 });
+    const openMessagesHref = await openMessages.getAttribute("href");
+    expect(openMessagesHref).toMatch(/\/workspace\/messages\/.+/);
+    expect(openMessagesHref).not.toBe("/workspace/messages");
+    await openMessages.click();
     await expect(page).toHaveURL(/workspace\/messages\//i, { timeout: 30_000 });
+    await expect(page).not.toHaveURL(/\/workspace\/messages\/?$/);
     await expect(page.locator("#direct-message-composer-input")).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByText(/clarify your regional coordination experience/i).first(),
+    ).toBeVisible({ timeout: 60_000 });
     await page.locator("#direct-message-composer-input").fill(
       "Participant reply with clarified regional coordination experience for Canada.",
     );
@@ -313,6 +312,16 @@ test.describe("HU-RRP-03J full isolated browser E2E", () => {
         .getByText(/Participant reply with clarified regional coordination experience/i)
         .first(),
     ).toBeVisible({ timeout: 30_000 });
+
+    // Admin receives the participant reply in the same conversation.
+    await apiLogout(page.request);
+    await apiLogin(page.request, adminEmail, adminPassword);
+    await page.goto(`${baseUrl}${openMessagesHref}`);
+    await expect(
+      page
+        .getByText(/Participant reply with clarified regional coordination experience/i)
+        .first(),
+    ).toBeVisible({ timeout: 60_000 });
   });
 
   test("D — Confirm appointment → Representative designation", async ({ page }) => {

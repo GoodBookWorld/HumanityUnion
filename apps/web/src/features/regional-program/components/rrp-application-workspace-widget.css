@@ -58,6 +58,18 @@
   text-align: start;
 }
 
+.rrp-application-workspace-widget__messages-unavailable {
+  margin: 0;
+  min-width: 0;
+  max-width: 16rem;
+  overflow-wrap: anywhere;
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+  text-align: start;
+}
+
 .rrp-application-workspace-widget__section {
   display: grid;
   gap: var(--hu-space-3);
