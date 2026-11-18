@@ -6,6 +6,7 @@
 import { claimNextRrpMessageIntent } from "./rrp-appointment-message-intent.repository.js";
 import { RRP_MESSAGE_INTENT_RECONCILE_LIMIT } from "./rrp-message-intent.constants.js";
 import { deliverRrpMessageIntentBestEffort } from "./rrp-message-intent.delivery.js";
+import { isRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 export interface RrpMessageIntentReconcileSummary {
   readonly scanned: number;
@@ -19,6 +20,11 @@ export async function reconcilePendingRrpMessageIntents(input?: {
   now?: Date;
   claimOwnerId?: string;
 }): Promise<RrpMessageIntentReconcileSummary> {
+  // HU-RRP-03L.2 — do not claim/lease intents while writes are OFF.
+  if (!isRrpApplicationWritesEnabled()) {
+    return { scanned: 0, delivered: 0, stillPending: 0, failed: 0 };
+  }
+
   const limit = input?.limit ?? RRP_MESSAGE_INTENT_RECONCILE_LIMIT;
   let scanned = 0;
   let delivered = 0;

@@ -75,6 +75,8 @@ function buildIsolatedEnv(uri: string, database: string): NodeJS.ProcessEnv {
     EMAIL_PROVIDER: "mock",
     TURNSTILE_SECRET_KEY: "rrp-03j-isolated-turnstile-secret",
     HU_VERIFICATION_MODE: "true",
+    // Isolated E2E only — Production keeps writes OFF until explicit launch.
+    RRP_APPLICATIONS_WRITES_ENABLED: "true",
   };
 }
 

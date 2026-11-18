@@ -44,7 +44,9 @@ export const RRP_FUNDING_MODELS: readonly RrpFundingModel[] = ["SELF", "PARTIAL"
 
 /**
  * Current consent document version accepted at submission.
- * Bumped to v2 with HU-RRP-03F.1 Privacy RRP disclosure (canonical privacy-2026-11-v1).
+ * Bumped to v2 for the RRP application disclosure (source prepared in HU-RRP-03F.1).
+ * HU-RRP-03L.2: Privacy Policy publication of that disclosure remains held back
+ * (`privacy-2026-03-v1`) until counsel approval; consent v2 is preserved for later launch.
  * Previously submitted applications retain their stored consentVersion / consentAcceptedAt;
  * there is no automatic re-consent migration of historical rows.
  */

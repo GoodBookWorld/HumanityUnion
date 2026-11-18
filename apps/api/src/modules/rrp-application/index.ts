@@ -22,6 +22,12 @@ export {
   setRrpAdminConversationLookupForTests,
 } from "./rrp-admin-conversation.resolution.js";
 export {
+  RRP_APPLICATIONS_WRITES_ENABLED_ENV,
+  assertRrpApplicationWritesEnabled,
+  isRrpApplicationWritesEnabled,
+  setRrpApplicationWritesEnabledForTests,
+} from "./rrp-application-writes.activation.js";
+export {
   confirmRrpAppointmentForAdminActor,
   retryRrpAppointmentMessageIntentDelivery,
 } from "./rrp-appointment.service.js";

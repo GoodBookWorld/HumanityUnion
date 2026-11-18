@@ -95,6 +95,9 @@ async function loadMods() {
     delivery: await import(
       "../../../src/modules/rrp-application/rrp-message-intent.delivery.js"
     ),
+    writes: await import(
+      "../../../src/modules/rrp-application/rrp-application-writes.activation.js"
+    ),
   };
 }
 
@@ -124,6 +127,7 @@ describe("HU-RRP-03H isolated MongoMemoryReplSet workflow", () => {
     await mods.indexes.ensureMongoIndexes();
 
     // Real Mongo path — not in-memory stores.
+    mods.writes.setRrpApplicationWritesEnabledForTests(true);
     mods.appRepo.setRrpApplicationForceMemoryForTests(false);
     mods.appointmentRepo.setRrpAppointmentForceMemoryForTests(false);
     mods.intentRepo.setRrpAppointmentMessageIntentForceMemoryForTests(false);
@@ -142,6 +146,7 @@ describe("HU-RRP-03H isolated MongoMemoryReplSet workflow", () => {
         await mods.connection.disconnectMongoClient();
       }
       await replSet?.stop({ doCleanup: true });
+      mods?.writes.setRrpApplicationWritesEnabledForTests(null);
       mods?.appRepo.setRrpApplicationForceMemoryForTests(false);
       mods?.appointmentRepo.setRrpAppointmentForceMemoryForTests(false);
       mods?.intentRepo.setRrpAppointmentMessageIntentForceMemoryForTests(false);
@@ -150,6 +155,7 @@ describe("HU-RRP-03H isolated MongoMemoryReplSet workflow", () => {
   });
 
   beforeEach(() => {
+    mods.writes.setRrpApplicationWritesEnabledForTests(true);
     applicant = makeUser(mods, {
       userId: "user-applicant-e2e",
       memberId: "participant-applicant-e2e",

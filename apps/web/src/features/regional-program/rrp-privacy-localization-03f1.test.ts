@@ -80,8 +80,8 @@ function leafStrings(
 }
 
 describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
-  it("bumps canonical Privacy source and RRP consent without destroying prior version ids", () => {
-    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-11-v1");
+  it("holds Privacy at privacy-2026-03-v1 while preserving RRP consent v2 for later launch", () => {
+    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-03-v1");
     assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.terms, "terms-2026-03-v1");
     assert.equal(RRP_APPLICATION_CONSENT_VERSION, "rrp-application-consent-v2");
     const legalSrc = readFileSync(
@@ -92,9 +92,11 @@ describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
       path.join(repoRoot, "packages/types/src/domain/rrp-application.ts"),
       "utf8",
     );
-    assert.match(legalSrc, /privacy-2026-11-v1/);
+    assert.match(legalSrc, /privacy-2026-03-v1/);
+    assert.doesNotMatch(legalSrc, /privacy-2026-11-v1/);
     assert.match(consentSrc, /rrp-application-consent-v2/);
     assert.match(consentSrc, /no automatic re-consent migration/i);
+    assert.match(consentSrc, /held back|holdback|deferred/i);
   });
 
   it("keeps Legal Localization fail-closed on canonical version mismatch", () => {
@@ -113,21 +115,13 @@ describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
     assert.match(publicResolver, /isStaleRelativeToCanonical/);
   });
 
-  it("documents RRP privacy fields and marks draft for legal review", () => {
+  it("keeps approved Privacy free of unpublished RRP disclosure (03L.2 holdback)", () => {
     const body = readFileSync(privacyPage, "utf8");
-    assert.match(body, /data-rrp-privacy-disclosure="draft-requires-legal-review"/);
-    assert.match(body, /Regional Representative Program applications/);
-    assert.match(body, /Draft for legal review/);
-    assert.match(body, /legal first and last name/i);
-    assert.match(body, /date of birth/i);
-    assert.match(body, /residence/i);
-    assert.match(body, /represent/i);
-    assert.match(body, /funding model/i);
-    assert.match(body, /decision history/i);
-    assert.match(body, /Messages capability/i);
-    assert.match(body, /Withdrawal ends the active application/i);
-    assert.match(body, /not yet fixed by an explicit product or legal/i);
-    assert.doesNotMatch(body, /\bguaranteed delivery\b/i);
+    assert.doesNotMatch(body, /data-rrp-privacy-disclosure/);
+    assert.doesNotMatch(body, /Draft for legal review/);
+    assert.doesNotMatch(body, /Regional Representative Program applications/);
+    assert.doesNotMatch(body, /Regional Representative Program application data/);
+    assert.match(body, /Member Badge Contribution and fulfillment privacy/);
   });
 
   it("clarifies platform designation limits near Join, intro, coordinator, and office wording", () => {

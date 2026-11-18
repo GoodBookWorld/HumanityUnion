@@ -11,6 +11,7 @@ import type {
 } from "@hu/types";
 
 import { resolveOwnRrpAdminConversationForUser as resolveOwnRrpAdminConversation } from "./rrp-admin-conversation.resolution.js";
+import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 import { recordAdministrationAuditBestEffort } from "../administration/audit.service.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
@@ -134,6 +135,7 @@ export async function createRrpApplicationDraftForUser(
   userId: string,
   body: unknown,
 ): Promise<RrpApplicationDetail> {
+  assertRrpApplicationWritesEnabled();
   const actor = await assertVerifiedActiveParticipant(userId);
   const fields = validateCreateDraftBody(body);
 
@@ -273,6 +275,7 @@ export async function updateOwnRrpApplicationDraftForUser(input: {
   applicationId: string;
   body: unknown;
 }): Promise<RrpApplicationDetail> {
+  assertRrpApplicationWritesEnabled();
   const actor = await assertVerifiedActiveParticipant(input.userId);
   const patch = validateUpdateDraftBody(input.body);
 
@@ -344,6 +347,8 @@ export async function submitOwnRrpApplicationForUser(input: {
   applicationId: string;
   body: unknown;
 }): Promise<RrpApplicationDetail> {
+  assertRrpApplicationWritesEnabled();
+
   const actor = await assertVerifiedActiveParticipant(input.userId);
   const submit = validateSubmitBody(input.body);
 
@@ -400,6 +405,7 @@ export async function withdrawOwnRrpApplicationForUser(input: {
   applicationId: string;
   body: unknown;
 }): Promise<RrpApplicationDetail> {
+  assertRrpApplicationWritesEnabled();
   const actor = await assertVerifiedActiveParticipant(input.userId);
   const record =
     input.body && typeof input.body === "object" && !Array.isArray(input.body)
@@ -553,6 +559,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   applicationId: string;
   body: unknown;
 }): Promise<AdminRrpApplicationReviewResult> {
+  assertRrpApplicationWritesEnabled();
   const admin = await assertAdminActor(input.actorUserId);
   const review = validateAdminReviewBody(input.body);
 

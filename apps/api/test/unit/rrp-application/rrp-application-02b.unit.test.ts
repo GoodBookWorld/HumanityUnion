@@ -43,6 +43,7 @@ import {
   resetRrpApplicationMemoryForTests,
   setRrpApplicationForceMemoryForTests,
 } from "../../../src/modules/rrp-application/rrp-application.repository.js";
+import { setRrpApplicationWritesEnabledForTests } from "../../../src/modules/rrp-application/rrp-application-writes.activation.js";
 import {
   createRrpApplicationDraftForUser,
   getOwnRrpApplicationForUser,
@@ -130,6 +131,7 @@ function completeDraftFields() {
 }
 
 beforeEach(() => {
+  setRrpApplicationWritesEnabledForTests(true);
   setRrpApplicationForceMemoryForTests(true);
   resetRrpApplicationMemoryForTests();
   resetRrpApplicationIndexReadinessForTests();
@@ -138,6 +140,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setFindAuthUserByIdForTests(null);
+  setRrpApplicationWritesEnabledForTests(null);
   resetRrpApplicationMemoryForTests();
   resetRrpApplicationIndexReadinessForTests();
   setRrpApplicationForceMemoryForTests(false);

@@ -30,6 +30,7 @@ import {
   resetRrpApplicationMemoryForTests,
   setRrpApplicationForceMemoryForTests,
 } from "../../../src/modules/rrp-application/rrp-application.repository.js";
+import { setRrpApplicationWritesEnabledForTests } from "../../../src/modules/rrp-application/rrp-application-writes.activation.js";
 import {
   createRrpApplicationDraftForUser,
   resolveOwnRrpAdminConversationForUser,
@@ -119,6 +120,7 @@ function readApi(relative: string): string {
 
 describe("HU-RRP-03K.2 owner-safe admin conversation resolution", () => {
   beforeEach(() => {
+    setRrpApplicationWritesEnabledForTests(true);
     setRrpApplicationForceMemoryForTests(true);
     setRrpAppointmentForceMemoryForTests(true);
     setRrpAppointmentMessageIntentForceMemoryForTests(true);
@@ -163,6 +165,7 @@ describe("HU-RRP-03K.2 owner-safe admin conversation resolution", () => {
   afterEach(() => {
     setFindAuthUserByIdForTests(null);
     setRrpAdminConversationLookupForTests(null);
+    setRrpApplicationWritesEnabledForTests(null);
     resetRrpApplicationMemoryForTests();
     resetRrpAppointmentMemoryForTests();
     resetRrpAppointmentMessageIntentMemoryForTests();

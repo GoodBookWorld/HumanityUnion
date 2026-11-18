@@ -31,8 +31,12 @@ export function isLegalLocalizationStatus(value: unknown): value is LegalLocaliz
  * Published locale copies must match to be served publicly.
  */
 export const CANONICAL_LEGAL_SOURCE_VERSIONS = {
-  /** Bumped HU-RRP-03F.1 — RRP application disclosure added to English Privacy source. */
-  privacy: "privacy-2026-11-v1",
+  /**
+   * HU-RRP-03L.2 holdback — keep approved Privacy live (`privacy-2026-03-v1`) so
+   * published localized legal rows stay eligible. RRP disclosure publication is
+   * deferred until counsel approval (do not bump here for flag-OFF release).
+   */
+  privacy: "privacy-2026-03-v1",
   terms: "terms-2026-03-v1",
 } as const satisfies Record<LegalDocumentType, string>;
 

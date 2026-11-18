@@ -15,6 +15,7 @@ import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connectio
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { assertRrpAppointmentActiveUniqueIndexReady } from "./rrp-appointment.index-readiness.js";
 import { RrpApplicationConflictError, RrpApplicationUnavailableError } from "./rrp-application.errors.js";
+import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 interface RrpAppointmentDocument extends RrpAppointmentRecord {
   _id?: string;
@@ -269,6 +270,7 @@ export async function revokeRrpAppointmentRecord(input: {
   revokedByAdminUserId: string;
   note?: string | null;
 }): Promise<RrpAppointmentRecord> {
+  assertRrpApplicationWritesEnabled();
   const current = await findRrpAppointmentById(input.appointmentId);
   if (!current) {
     throw new RrpApplicationConflictError("Appointment not found.");

@@ -14,6 +14,7 @@ import {
   markRrpMessageIntentDelivered,
   recordRrpMessageIntentDeliveryAttempt,
 } from "./rrp-appointment-message-intent.repository.js";
+import { isRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 function sanitizeExplanation(text: string): string {
   const trimmed = text.trim().replace(/\s+/g, " ");
@@ -69,6 +70,11 @@ export async function deliverRrpMessageIntentBestEffort(
   }
   if (intent.status === "failed") {
     return "Messages notification previously failed permanently. Use Messages to contact the participant if needed.";
+  }
+
+  // HU-RRP-03L.2 — with writes OFF, do not open/create DMs or mutate intent rows.
+  if (!isRrpApplicationWritesEnabled()) {
+    return "Regional Representative application writes are not enabled. Message intent delivery is paused.";
   }
 
   try {

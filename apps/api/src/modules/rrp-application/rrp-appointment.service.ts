@@ -51,6 +51,7 @@ import {
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
 import { parseExpectedRevision } from "./rrp-application.validation.js";
+import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 export { retryRrpAppointmentMessageIntentDelivery };
 
@@ -231,6 +232,7 @@ export async function confirmRrpAppointmentForAdminActor(input: {
   applicationId: string;
   body: unknown;
 }): Promise<RrpConfirmAppointmentResult> {
+  assertRrpApplicationWritesEnabled();
   const admin = await assertAdminActor(input.actorUserId);
   const { expectedRevision } = validateConfirmAppointmentBody(input.body);
 

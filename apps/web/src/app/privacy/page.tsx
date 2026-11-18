@@ -92,13 +92,6 @@ function EnglishPrivacyBody() {
             Contribution flow.
           </li>
           <li>
-            <strong>Regional Representative Program application data:</strong> when you apply,
-            legal name and identity fields, date of birth (for age eligibility), residence country,
-            representation country, professional background, experience and motivation text, funding
-            model and any CAD amount requested, consent version and acceptance timestamp, application
-            status, and administrator review or decision history. See the dedicated section below.
-          </li>
-          <li>
             <strong>Technical data:</strong> browser type, device information, IP address, request
             logs, and error diagnostics collected for security, reliability, and abuse prevention.
           </li>
@@ -119,10 +112,6 @@ function EnglishPrivacyBody() {
             send optional Notification Center email copies when you explicitly opt in (see below);
           </li>
           <li>process optional Member Badge Contributions and fulfill physical Badge requests;</li>
-          <li>
-            review and administer Regional Representative Program applications, including related
-            Direct Messaging notifications where applicable;
-          </li>
           <li>maintain platform integrity, moderation, and auditability;</li>
           <li>improve reliability, accessibility, and support response.</li>
         </ul>
@@ -181,49 +170,6 @@ function EnglishPrivacyBody() {
           private, are not shown on public profiles or in civic statistics, and are accessible to
           the requesting Member and future authorized fulfillment roles. Shipping and Badge request
           data are retained only as long as operational and accounting requirements require.
-        </p>
-      </section>
-
-      <section data-rrp-privacy-disclosure="draft-requires-legal-review">
-        <h2>Regional Representative Program applications</h2>
-        <p>
-          <strong>Draft for legal review.</strong> This section describes how the Regional
-          Representative Program (RRP) processes applicant information on the platform. It is not a
-          published counsel-approved legal text until legal review and any required Legal
-          Localization republication are complete.
-        </p>
-        <p>
-          When you submit an RRP application, Humanity Union processes the following application
-          fields for eligibility, review, and program administration: legal first and last name
-          (identity), date of birth (to confirm you meet the minimum age of 18), country of
-          residence, country you seek to represent, profession and professional background,
-          relevant experience, motivation, funding model, and any annual amount requested in CAD.
-          Funding requests are not approved financial commitments. Submission is not a
-          Representative appointment and does not grant legal authority, employment status, funding
-          entitlement, contract-signing authority, or administrator permissions. Any separate legal
-          appointment process, if used, is outside this platform disclosure.
-        </p>
-        <p>
-          Administrators with appropriate access may review applications, request more information,
-          record decisions, and maintain decision history tied to the application. Applicants may
-          view and manage their own applications. Date of birth and other sensitive application
-          fields are not shown on public profiles, public directories, or civic statistics.
-        </p>
-        <p>
-          Follow-up between applicants and administrators may use the platform&apos;s existing
-          Messages capability, subject to recipient privacy settings and account eligibility.
-          Message or notification delivery is not guaranteed for every event.
-        </p>
-        <p>
-          Withdrawal ends the active application process for that application; it is not the same
-          as deletion of stored records. Retention duration for RRP application records, decision
-          history, and related Messages metadata is not yet fixed by an explicit product or legal
-          policy decision and requires that decision before launch claims about specific retention
-          periods. Deletion or other privacy requests may be submitted through the contact channels
-          in this Policy and will be handled according to applicable law and platform procedures.
-          Application data may be processed in Canada and in other jurisdictions where our
-          infrastructure providers operate, subject to contractual and legal safeguards appropriate
-          to the service.
         </p>
       </section>
 

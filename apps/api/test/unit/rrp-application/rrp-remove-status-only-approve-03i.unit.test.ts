@@ -19,6 +19,7 @@ import {
   resetRrpApplicationMemoryForTests,
   setRrpApplicationForceMemoryForTests,
 } from "../../../src/modules/rrp-application/rrp-application.repository.js";
+import { setRrpApplicationWritesEnabledForTests } from "../../../src/modules/rrp-application/rrp-application-writes.activation.js";
 import {
   createRrpApplicationDraftForUser,
   reviewRrpApplicationForAdminActor,
@@ -65,6 +66,7 @@ function adultDob(): string {
 
 describe("HU-RRP-03I remove status-only approve", () => {
   beforeEach(() => {
+    setRrpApplicationWritesEnabledForTests(true);
     setRrpApplicationForceMemoryForTests(true);
     setRrpAppointmentForceMemoryForTests(true);
     setRrpAppointmentMessageIntentForceMemoryForTests(true);
@@ -92,6 +94,7 @@ describe("HU-RRP-03I remove status-only approve", () => {
 
   afterEach(() => {
     setFindAuthUserByIdForTests(null);
+    setRrpApplicationWritesEnabledForTests(null);
     resetRrpApplicationMemoryForTests();
     resetRrpAppointmentMemoryForTests();
     resetRrpAppointmentMessageIntentMemoryForTests();
