@@ -86,7 +86,13 @@ describe("HU-NOTIF-02A/02B Email Notifications settings widget", () => {
       "features/notifications/components/EmailNotificationsSettingsWidget.tsx",
     );
     const en = JSON.parse(read("features/i18n/messages/en.json"));
-    assert.match(en.notifications.emailSettings.preparationNotice, /not sending those copies yet/i);
+    assert.match(en.notifications.emailSettings.preparationNotice, /optional/i);
+    assert.match(en.notifications.emailSettings.preparationNotice, /explicit opt-in/i);
+    assert.doesNotMatch(
+      en.notifications.emailSettings.preparationNotice,
+      /not sending those copies yet/i,
+    );
+    assert.match(en.preferences.notification.copiesHelp, /Saving preferences does not mean/i);
     assert.doesNotMatch(widget, /sendTransactionalEmail|MailDeliveryService/);
     const service = readRepo(
       "apps/api/src/modules/preferences/notification-alternative-email.service.ts",

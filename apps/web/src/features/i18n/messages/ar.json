@@ -981,8 +981,8 @@
     "notification": {
       "emailEnabled": "استلام إشعارات البريد الإلكتروني",
       "emailHelp": "عند التفعيل، ترسل Humanity Union إشعارات بريد إلكتروني بسيطة عندما يتطلب نشاط جديد انتباهك. مثال: «لديك 3 إشعارات جديدة في مساحة عملك.» لا تحتوي الرسائل أبدًا على محتوى محادثات خاصة أو معلومات سرية عن المبادرة.",
-      "copiesOptIn": "Prepare email copies of my notifications",
-      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "copiesOptIn": "إرسال نسخ بريدية من إشعاراتي",
+      "copiesHelp": "اختياري. عند التفعيل، قد ترسل Humanity Union نسخًا بريدية لعناصر محددة من مركز الإشعارات إلى وجهة الإشعار الموثّقة (بريد الحساب أو بريد بديل موثّق على حدة). يتبع التكرار تفضيلاتك المحفوظة. يعتمد التسليم على توفّر المنصة ولا يُضمن لكل حدث. هذا لا يغيّر بريد تسجيل الدخول، ولا يوقف رسائل الأمان أو الحساب، ولا يزيل عناصر مركز الإشعارات داخل المنصة. حفظ التفضيلات لا يعني أن رسالة بريد قد أُرسلت.",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -7491,7 +7491,7 @@
     },
     "emailSettings": {
       "title": "Email Notifications",
-      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "preparationNotice": "نسخ بريدية اختيارية لنشاط محدد في مركز الإشعارات. يلزم الاشتراك الصريح. تُستخدم وجهة الإشعار الموثّقة ويتبع التكرار تفضيلاتك المحفوظة. يعتمد التسليم على توفّر المنصة وقد لا يشمل كل إشعار.",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",
@@ -7504,7 +7504,7 @@
       "accountEmailUnverified": "Confirm your account email before using email notification settings.",
       "confirmEmailCta": "Confirm email",
       "alternativeEmail": "Alternative notification email",
-      "alternativeEmailHelp": "Verify a different address for future Notification Center copies. This never changes your login email.",
+      "alternativeEmailHelp": "وثّق عنوانًا مختلفًا لنسخ بريد مركز الإشعارات. هذا لا يغيّر أبدًا بريد تسجيل الدخول.",
       "alternativeEmailInput": "Alternative email address",
       "verifiedAlternative": "Verified alternative: {email}",
       "pendingAlternative": "Verification pending for {email}",

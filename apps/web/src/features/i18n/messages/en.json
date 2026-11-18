@@ -982,8 +982,8 @@
     "notification": {
       "emailEnabled": "Receive email notifications",
       "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information.",
-      "copiesOptIn": "Prepare email copies of my notifications",
-      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "copiesOptIn": "Send email copies of my notifications",
+      "copiesHelp": "Optional. When enabled, Humanity Union may email copies of selected Notification Center items to your verified notification destination (account email or a separately verified alternative). Frequency follows your saved preferences. Delivery depends on platform availability and is not guaranteed for every event. This does not change your login email, does not stop security or account emails, and never removes in-app Notification Center items. Saving preferences does not mean an email was sent.",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -7121,7 +7121,7 @@
     "signIn": "Sign in",
     "emailSettings": {
       "title": "Email Notifications",
-      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "preparationNotice": "Optional email copies of selected Notification Center activity. Explicit opt-in is required. Messages use your verified notification destination and follow your saved frequency. Delivery depends on platform availability and may not include every notification.",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",
@@ -7134,7 +7134,7 @@
       "accountEmailUnverified": "Confirm your account email before using email notification settings.",
       "confirmEmailCta": "Confirm email",
       "alternativeEmail": "Alternative notification email",
-      "alternativeEmailHelp": "Verify a different address for future Notification Center copies. This never changes your login email.",
+      "alternativeEmailHelp": "Verify a different address for Notification Center email copies. This never changes your login email.",
       "alternativeEmailInput": "Alternative email address",
       "verifiedAlternative": "Verified alternative: {email}",
       "pendingAlternative": "Verification pending for {email}",

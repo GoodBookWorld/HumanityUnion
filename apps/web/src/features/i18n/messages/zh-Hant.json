@@ -981,8 +981,8 @@
     "notification": {
       "emailEnabled": "接收電子郵件通知",
       "emailHelp": "啟用後，當有新活動需要您注意時，Humanity Union 會傳送簡易電子郵件通知。例如：「您的工作區有 3 則新通知。」電子郵件絕不會包含私人對話內容或機密倡議資訊。",
-      "copiesOptIn": "Prepare email copies of my notifications",
-      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "copiesOptIn": "傳送我的通知電子郵件副本",
+      "copiesHelp": "選擇性功能。啟用後，Humanity Union 可能將選定的通知中心項目電子郵件副本寄至您已驗證的通知收件地址（帳號電子郵件，或另行驗證的替代電子郵件）。頻率依您儲存的偏好設定。送達取決於平台可用性，且不保證涵蓋每一事件。這不會變更登入電子郵件、不會停止安全或帳號相關郵件，也不會移除應用程式內的通知中心項目。儲存偏好設定並不代表已寄出郵件。",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -7491,7 +7491,7 @@
     },
     "emailSettings": {
       "title": "Email Notifications",
-      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "preparationNotice": "可選擇接收選定通知中心活動的電子郵件副本。需明確選擇加入。訊息會使用您已驗證的通知收件地址，並依循您儲存的頻率設定。送達取決於平台可用性，且可能未涵蓋每一則通知。",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",
@@ -7504,7 +7504,7 @@
       "accountEmailUnverified": "Confirm your account email before using email notification settings.",
       "confirmEmailCta": "Confirm email",
       "alternativeEmail": "Alternative notification email",
-      "alternativeEmailHelp": "Verify a different address for future Notification Center copies. This never changes your login email.",
+      "alternativeEmailHelp": "驗證另一個地址以接收通知中心電子郵件副本。這絕不會變更您的登入電子郵件。",
       "alternativeEmailInput": "Alternative email address",
       "verifiedAlternative": "Verified alternative: {email}",
       "pendingAlternative": "Verification pending for {email}",

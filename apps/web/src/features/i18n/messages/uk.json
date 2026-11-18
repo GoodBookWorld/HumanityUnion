@@ -981,8 +981,8 @@
     "notification": {
       "emailEnabled": "Отримувати сповіщення електронною поштою",
       "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу.",
-      "copiesOptIn": "Prepare email copies of my notifications",
-      "copiesHelp": "Explicit opt-in for a future Notification Center email-copy feature. This does not send those copies yet, does not change your login email, and never disables in-app Notification Center items.",
+      "copiesOptIn": "Надсилати електронні копії моїх сповіщень",
+      "copiesHelp": "За бажанням. Якщо увімкнено, Humanity Union може надсилати електронні копії вибраних елементів Центру сповіщень на вашу підтверджену адресу для сповіщень (електронна пошта облікового запису або окремо підтверджена альтернативна). Частота відповідає збереженим налаштуванням. Доставка залежить від доступності платформи й не гарантується для кожної події. Це не змінює електронну пошту для входу, не зупиняє листи безпеки чи облікового запису та ніколи не прибирає елементи Центру сповіщень у застосунку. Збереження налаштувань не означає, що лист уже надіслано.",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -7491,7 +7491,7 @@
     },
     "emailSettings": {
       "title": "Email Notifications",
-      "preparationNotice": "These settings prepare your account for upcoming email copies of Notification Center activity. Humanity Union is not sending those copies yet.",
+      "preparationNotice": "Необов’язкові електронні копії вибраної активності Центру сповіщень. Потрібна явна згода. Використовується ваша підтверджена адреса для сповіщень і збережена частота. Доставка залежить від доступності платформи й може не охоплювати кожне сповіщення.",
       "openWorkspacePreferences": "Open Notification Preferences in Workspace",
       "loading": "Loading email notification settings…",
       "loadError": "Unable to load email notification settings.",
@@ -7504,7 +7504,7 @@
       "accountEmailUnverified": "Confirm your account email before using email notification settings.",
       "confirmEmailCta": "Confirm email",
       "alternativeEmail": "Alternative notification email",
-      "alternativeEmailHelp": "Verify a different address for future Notification Center copies. This never changes your login email.",
+      "alternativeEmailHelp": "Підтвердіть іншу адресу для електронних копій Центру сповіщень. Це ніколи не змінює електронну пошту для входу.",
       "alternativeEmailInput": "Alternative email address",
       "verifiedAlternative": "Verified alternative: {email}",
       "pendingAlternative": "Verification pending for {email}",

@@ -105,11 +105,58 @@ function EnglishPrivacyBody() {
           <li>provide authentication, workspace access, and civic participation features;</li>
           <li>publish public civic records you choose to make public;</li>
           <li>
-            send transactional notifications such as verification, security, and civic events;
+            send transactional and security emails such as verification, sign-in protection, and
+            account recovery;
+          </li>
+          <li>
+            send optional Notification Center email copies when you explicitly opt in (see below);
           </li>
           <li>process optional Member Badge Contributions and fulfill physical Badge requests;</li>
           <li>maintain platform integrity, moderation, and auditability;</li>
           <li>improve reliability, accessibility, and support response.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Optional Notification Center email copies</h2>
+        <p>
+          Separately from security and account transactional email, you may choose to receive email
+          copies of selected Notification Center activity. This is optional and requires your
+          explicit opt-in in Notification Preferences or the Notification Center email settings.
+        </p>
+        <ul>
+          <li>
+            <strong>Opt-in only:</strong> email copies are not enabled by default. You can change
+            preferences or disable email copies at any time. Turning copies off does not stop
+            security, verification, password reset, or other account transactional email, and does
+            not remove in-app Notification Center items.
+          </li>
+          <li>
+            <strong>Destination:</strong> copies are sent to your verified account email or to a
+            separately verified alternative notification email that you confirm. An alternative
+            notification email does not replace your account login email.
+          </li>
+          <li>
+            <strong>Frequency:</strong> when copies are enabled, you may choose immediate, daily
+            digest, or weekly digest delivery according to your saved preferences. Platform-only
+            settings keep activity in the Notification Center without email copies.
+          </li>
+          <li>
+            <strong>Content limits:</strong> email copies use fixed category summaries for selected
+            allowlisted events. Private notification bodies, private messages, and confidential
+            collaboration content are not included in these email copies.
+          </li>
+          <li>
+            <strong>Operational metadata:</strong> to operate delivery we process delivery status
+            and related operational metadata (for example attempt timing, acceptance or failure
+            signals, and preference state at send time). Saving a preference does not by itself mean
+            an email was sent.
+          </li>
+          <li>
+            <strong>Email providers:</strong> messages are transmitted through our email delivery
+            infrastructure and providers as needed to attempt delivery. Delivery is not guaranteed
+            for every event and is not claimed to be exactly-once.
+          </li>
         </ul>
       </section>
 
