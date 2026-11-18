@@ -1,4 +1,8 @@
-import type { AdminParticipantDirectoryResponse, AdminParticipantPublicProfileResolve } from "@hu/types";
+import type {
+  AdminParticipantDirectoryResponse,
+  AdminParticipantPublicProfileResolve,
+  AdminRrpDirectoryClassification,
+} from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 
@@ -6,6 +10,8 @@ export interface ListAdminParticipantsQuery {
   search?: string;
   status?: "active" | "disabled";
   role?: "member" | "admin";
+  /** Derived RRP directory classification — independent of auth.role. */
+  rrpClassification?: AdminRrpDirectoryClassification;
   emailVerificationStatus?: "pending" | "verified";
   membershipStatus?: string;
   sort?: "createdAt" | "lastLoginAt" | "email";
@@ -27,6 +33,9 @@ export async function listAdminParticipants(
   }
   if (query.role) {
     params.set("role", query.role);
+  }
+  if (query.rrpClassification) {
+    params.set("rrpClassification", query.rrpClassification);
   }
   if (query.emailVerificationStatus) {
     params.set("emailVerificationStatus", query.emailVerificationStatus);

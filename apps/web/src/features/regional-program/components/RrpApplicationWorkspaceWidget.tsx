@@ -124,6 +124,14 @@ export function RrpApplicationWorkspaceWidget() {
           <p className="rrp-application-workspace-widget__status">
             {t(`status.${item.status}`)}
           </p>
+          {item.platformDesignationActive ? (
+            <p
+              className="rrp-application-workspace-widget__designation"
+              data-rrp-platform-designation="active"
+            >
+              {t("workspaceWidget.representativeDesignation")}
+            </p>
+          ) : null}
           <p className="rrp-application-workspace-widget__updated">
             {t("workspaceWidget.updated", {
               date: formatUpdatedDate(item.updatedAt, locale),

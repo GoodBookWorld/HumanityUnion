@@ -35,10 +35,17 @@ import {
   restoreAdminParticipant,
   suspendAdminParticipant,
 } from "../admin-participant-suspension-api";
+import {
+  canViewRrpApplication,
+  parseAdminParticipantRoleFilter,
+  resolveViewableRrpApplicationIds,
+  type AdminParticipantRoleFilterValue,
+} from "../admin-rrp-directory";
 import { useOpenDirectConversation } from "../../direct-messaging/use-open-direct-conversation";
 import { AdminMemberBadgeOrderModal } from "./AdminMemberBadgeOrderModal";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
+import { AdminRrpApplicationModal } from "./AdminRrpApplicationModal";
 import {
   PARTICIPANT_SELECTION_CAP,
   classifyRestoreTargets,
@@ -169,7 +176,7 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"" | "active" | "disabled">("");
-  const [role, setRole] = useState<"" | "member" | "admin">("");
+  const [roleFilter, setRoleFilter] = useState<AdminParticipantRoleFilterValue>("");
   const [membershipStatus, setMembershipStatus] = useState("");
   const [sort, setSort] = useState<"createdAt" | "lastLoginAt" | "email">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
@@ -188,6 +195,7 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   const batchRunnerRef = useRef(createSequentialParticipantMutationRunner());
   const previousFilterKey = useRef<string | null>(null);
   const [badgeOrderApplicationId, setBadgeOrderApplicationId] = useState<string | null>(null);
+  const [rrpApplicationModalOpen, setRrpApplicationModalOpen] = useState(false);
 
   const {
     isOpening: isOpeningMessage,
@@ -249,11 +257,14 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
     setError(null);
     setDenied(false);
 
+    const { role, rrpClassification } = parseAdminParticipantRoleFilter(roleFilter);
+
     try {
       const response = await listAdminParticipants({
         search: search || undefined,
         status: status || undefined,
-        role: role || undefined,
+        role,
+        rrpClassification,
         emailVerificationStatus: emailVerification || undefined,
         membershipStatus: membershipStatus || undefined,
         sort,
@@ -275,9 +286,9 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
     } finally {
       setTableLoading(false);
     }
-  }, [search, status, role, membershipStatus, emailVerification, sort, order, offset]);
+  }, [search, status, roleFilter, membershipStatus, emailVerification, sort, order, offset]);
 
-  const filterKey = `${search}|${status}|${role}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
+  const filterKey = `${search}|${status}|${roleFilter}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
 
   useEffect(() => {
     if (previousFilterKey.current === null) {
@@ -358,6 +369,8 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   const singleSelection = selectedRecords.length === 1 ? selectedRecords[0] : null;
   const canViewProfile = Boolean(singleSelection?.publicName?.trim());
   const canMessage = singleSelection?.status === "active";
+  const viewableRrpApplicationIds = resolveViewableRrpApplicationIds(singleSelection);
+  const canViewApplication = canViewRrpApplication(singleSelection);
   const pageMemberIds = isBadgeOrdersView ? [] : rows.map((row) => row.memberId);
   const pageSelection = pageCheckboxState(selectedIds, pageMemberIds);
   const selectionAtCap = selectedIds.length >= PARTICIPANT_SELECTION_CAP;
@@ -527,15 +540,21 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
             <label>
               Role
               <select
-                value={role}
+                value={roleFilter}
                 onChange={(event) => {
                   setOffset(0);
-                  setRole(event.target.value as "" | "member" | "admin");
+                  setRoleFilter(event.target.value as AdminParticipantRoleFilterValue);
                 }}
               >
                 <option value="">All</option>
                 <option value="member">Participant account</option>
                 <option value="admin">Administrator</option>
+                <option value="applicant_self_funded">Applicant-Self-funded</option>
+                <option value="applicant_partial_funding">Applicant-Partial funding</option>
+                <option value="applicant_full_funding">
+                  Applicant-Full funding requested
+                </option>
+                <option value="representative">Representative</option>
               </select>
             </label>
 
@@ -623,6 +642,24 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                     View profile
                   </Button>
                 )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!canViewApplication || batchRunning || !singleSelection}
+                  aria-label={
+                    singleSelection
+                      ? `View application for ${participantPrimaryName(singleSelection)}`
+                      : "View Application"
+                  }
+                  onClick={() => {
+                    if (!singleSelection || !canViewRrpApplication(singleSelection)) {
+                      return;
+                    }
+                    setRrpApplicationModalOpen(true);
+                  }}
+                >
+                  View Application
+                </Button>
                 <Button
                   type="button"
                   variant="secondary"
@@ -939,6 +976,18 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
           isOpen={badgeOrderApplicationId !== null}
           onClose={() => setBadgeOrderApplicationId(null)}
           onUpdated={() => {
+            void loadDirectory();
+          }}
+        />
+      ) : null}
+
+      {rrpApplicationModalOpen && singleSelection ? (
+        <AdminRrpApplicationModal
+          isOpen={rrpApplicationModalOpen}
+          participantId={singleSelection.memberId}
+          applicationIds={viewableRrpApplicationIds}
+          onClose={() => setRrpApplicationModalOpen(false)}
+          onDirectoryRefresh={() => {
             void loadDirectory();
           }}
         />

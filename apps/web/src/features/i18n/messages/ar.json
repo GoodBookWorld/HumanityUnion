@@ -7649,7 +7649,74 @@
       "historyHeading": "Application history",
       "openAria": "Open application for {country}",
       "editAria": "Edit application for {country}",
-      "viewAria": "View application for {country}"
+      "viewAria": "View application for {country}",
+      "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement."
+    },
+    "admin": {
+      "title": "Regional Representative application",
+      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
+      "close": "Close",
+      "closeAria": "Close application dialog",
+      "loading": "Loading application…",
+      "empty": "No application is available for this participant.",
+      "selectApplication": "Select application",
+      "statusUnknown": "Status unavailable",
+      "fields": {
+        "applicant": "Applicant identity",
+        "profession": "Professional background",
+        "residenceCountry": "Residence country",
+        "representCountry": "Representation country",
+        "fundingModel": "Funding model",
+        "requestedAmount": "Requested CAD amount",
+        "teamMemberCount": "Team member count",
+        "status": "Application status",
+        "submittedAt": "Submission date",
+        "consent": "Consent",
+        "consentAccepted": "Accepted ({version}) on {at}",
+        "experience": "Relevant experience",
+        "motivation": "Motivation",
+        "decisionHistory": "Decision history",
+        "noHistory": "No decisions recorded yet.",
+        "reviewNote": "Review note (required for request information and reject)"
+      },
+      "disclaimer": {
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, or administrator permissions."
+      },
+      "actions": {
+        "group": "Application review actions",
+        "markUnderReview": "Mark under review",
+        "requestInformation": "Request information",
+        "reject": "Reject",
+        "approve": "Approve"
+      },
+      "busy": {
+        "working": "Working…",
+        "approving": "Approving…"
+      },
+      "messages": {
+        "updateTitle": "Application update",
+        "deliveryWarningTitle": "Messages delivery",
+        "approved": "Application approved and Representative platform designation recorded.",
+        "markedUnderReview": "Application marked under review.",
+        "informationRequested": "More information requested.",
+        "rejected": "Application rejected."
+      },
+      "confirmApprove": {
+        "title": "Approve and designate Representative?",
+        "lineApprove": "This application will be approved.",
+        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
+        "lineNoLegal": "No legal representation authority is granted.",
+        "lineNoFunding": "No funding commitment is created.",
+        "lineNoAdmin": "No administrator rights are granted.",
+        "confirm": "Confirm approval",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "forbidden": "Administrator access is required to view Regional Representative applications.",
+        "accessRestricted": "Access restricted",
+        "unavailable": "Application unavailable",
+        "noteRequired": "A review note is required for this action."
+      }
     }
   }
 }

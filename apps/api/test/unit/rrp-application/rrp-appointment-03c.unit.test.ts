@@ -326,6 +326,18 @@ describe("HU-RRP-03C confirm-appointment foundation", () => {
     assert.equal(appointment, null);
   });
 
+  it("includes viewableApplicationIds from active appointments for directory View Application", async () => {
+    const submitted = await createSubmittedApplication({ fundingModel: "SELF" });
+    await confirmRrpAppointmentForAdminActor({
+      actorUserId: "user-admin-1",
+      applicationId: submitted.applicationId,
+      body: { expectedRevision: submitted.revision },
+    });
+    const appointment = await findActiveRrpAppointmentBySourceApplicationId(submitted.applicationId);
+    assert.ok(appointment);
+    assert.equal(appointment!.sourceApplicationId, submitted.applicationId);
+  });
+
   it("derives directory applicant and representative classification user ids", async () => {
     const submitted = await createSubmittedApplication({ fundingModel: "FULL" });
     const applicantIds = await findUserIdsForApplicantFundingClassification("FULL");

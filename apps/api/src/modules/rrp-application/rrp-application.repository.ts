@@ -19,6 +19,7 @@ interface RrpApplicationDocument extends RrpApplicationRecord {
 }
 
 export interface RrpApplicationAdminListFilter {
+  participantId?: string;
   representCountryCode?: string;
   fundingModel?: RrpFundingModel;
   status?: RrpApplicationStatus;
@@ -262,6 +263,9 @@ function matchesAdminFilter(
   record: RrpApplicationRecord,
   filter: RrpApplicationAdminListFilter,
 ): boolean {
+  if (filter.participantId && record.participantId !== filter.participantId) {
+    return false;
+  }
   if (filter.representCountryCode && record.representCountryCode !== filter.representCountryCode) {
     return false;
   }
@@ -308,6 +312,9 @@ export async function listRrpApplicationsForAdmin(
   );
 
   const query: Record<string, unknown> = {};
+  if (filter.participantId) {
+    query.participantId = filter.participantId;
+  }
   if (filter.representCountryCode) {
     query.representCountryCode = filter.representCountryCode;
   }

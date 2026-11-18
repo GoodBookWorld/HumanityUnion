@@ -114,8 +114,12 @@ export interface RrpApplicationDetail {
   readonly reviewedAt: string | null;
   readonly revision: number;
   readonly decisionHistory: readonly RrpApplicationDecisionHistoryEntry[];
+  /**
+   * True when an active platform Representative designation exists for this
+   * application’s country (internal designation only — not legal authority).
+   */
+  readonly platformDesignationActive?: boolean;
 }
-
 /** Admin list row — no date of birth. */
 export interface AdminRrpApplicationListItem {
   readonly applicationId: string;

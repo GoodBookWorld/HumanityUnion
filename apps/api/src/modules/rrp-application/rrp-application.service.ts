@@ -41,6 +41,7 @@ import {
   listRrpApplicationsForUser,
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
+import { listActiveRrpAppointmentsForParticipantIds } from "./rrp-appointment.repository.js";
 import {
   assertSubmissionFieldsComplete,
   clampAdminListLimit,
@@ -151,9 +152,26 @@ export async function createRrpApplicationDraftForUser(
 export async function listOwnRrpApplicationsForUser(
   userId: string,
 ): Promise<RrpApplicationDetail[]> {
-  await assertVerifiedActiveParticipant(userId);
+  const actor = await assertVerifiedActiveParticipant(userId);
   const records = await listRrpApplicationsForUser(userId);
-  return records.map(toRrpApplicationDetail);
+  // Soft-fail: application list remains available if appointment store is down.
+  let activeBySource = new Set<string>();
+  try {
+    const appointments = await listActiveRrpAppointmentsForParticipantIds([
+      actor.participantId,
+    ]);
+    activeBySource = new Set(
+      appointments
+        .filter((appointment) => appointment.status === "active")
+        .map((appointment) => appointment.sourceApplicationId),
+    );
+  } catch {
+    activeBySource = new Set();
+  }
+  return records.map((record) => ({
+    ...toRrpApplicationDetail(record),
+    platformDesignationActive: activeBySource.has(record.applicationId),
+  }));
 }
 
 export async function getOwnRrpApplicationForUser(input: {
@@ -383,6 +401,11 @@ export async function listRrpApplicationsForAdminActor(input: {
   const limit = clampAdminListLimit(input.query.limit);
   const offset = clampAdminListOffset(input.query.offset);
 
+  let participantId: string | undefined;
+  if (typeof input.query.participantId === "string" && input.query.participantId.trim()) {
+    participantId = input.query.participantId.trim();
+  }
+
   let representCountryCode: string | undefined;
   if (typeof input.query.representCountryCode === "string" && input.query.representCountryCode.trim()) {
     representCountryCode = validateRrpCountryCode(
@@ -408,6 +431,7 @@ export async function listRrpApplicationsForAdminActor(input: {
   }
 
   const result = await listRrpApplicationsForAdmin({
+    participantId,
     representCountryCode,
     fundingModel,
     status,

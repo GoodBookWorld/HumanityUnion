@@ -77,6 +77,11 @@ export interface AdminParticipantRrpSummary {
   readonly classifications: readonly AdminRrpDirectoryClassification[];
   readonly activeApplicationIds: readonly string[];
   readonly activeAppointmentIds: readonly string[];
+  /**
+   * Application ids an administrator may open from the directory
+   * (active applicant apps + source apps of active appointments).
+   */
+  readonly viewableApplicationIds: readonly string[];
   readonly representCountryCodes: readonly string[];
 }
 

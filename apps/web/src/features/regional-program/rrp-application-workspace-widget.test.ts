@@ -76,6 +76,15 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.doesNotMatch(assistant, /member-workspace__nav/);
   });
 
+  it("shows Representative platform designation from appointment data and hides Admin Approve", () => {
+    const widget = read(
+      "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
+    );
+    assert.match(widget, /platformDesignationActive/);
+    assert.match(widget, /workspaceWidget\.representativeDesignation/);
+    assert.doesNotMatch(widget, /confirmAdminRrpAppointment|AdminRrpApplicationModal|Approve/);
+  });
+
   it("partitions active applications before history and sorts by updatedAt", () => {
     const listed = [
       sampleApplication({

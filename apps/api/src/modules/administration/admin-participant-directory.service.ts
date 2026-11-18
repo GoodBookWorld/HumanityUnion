@@ -146,11 +146,13 @@ function buildRrpSummaryForParticipant(input: {
   }
 
   const activeAppointmentIds: string[] = [];
+  const viewableIds = new Set<string>(activeApplicationIds);
   for (const appointment of input.appointments) {
     if (appointment.status === "active") {
       classifications.add("representative");
       activeAppointmentIds.push(appointment.appointmentId);
       representCountryCodes.add(appointment.representCountryCode);
+      viewableIds.add(appointment.sourceApplicationId);
     }
   }
 
@@ -162,6 +164,7 @@ function buildRrpSummaryForParticipant(input: {
     classifications: [...classifications],
     activeApplicationIds,
     activeAppointmentIds,
+    viewableApplicationIds: [...viewableIds],
     representCountryCodes: [...representCountryCodes],
   };
 }
