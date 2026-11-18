@@ -496,7 +496,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
     next,
   });
 
-  // Approval must never grant Representative status or privileges.
+  // Status review only — Representative appointment requires confirm-appointment.
   recordAdministrationAuditBestEffort({
     actorParticipantId: admin.participantId,
     action: "rrp.application.review",

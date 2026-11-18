@@ -17,9 +17,25 @@ export {
   withdrawOwnRrpApplicationForUser,
 } from "./rrp-application.service.js";
 export {
+  confirmRrpAppointmentForAdminActor,
+  retryRrpAppointmentMessageIntentDelivery,
+} from "./rrp-appointment.service.js";
+export {
   resetRrpApplicationMemoryForTests,
   setRrpApplicationForceMemoryForTests,
 } from "./rrp-application.repository.js";
+export {
+  resetRrpAppointmentMemoryForTests,
+  setRrpAppointmentForceMemoryForTests,
+  findActiveRrpAppointmentBySourceApplicationId,
+  findActiveRrpAppointmentForParticipantCountry,
+  revokeRrpAppointmentRecord,
+} from "./rrp-appointment.repository.js";
+export {
+  resetRrpAppointmentMessageIntentMemoryForTests,
+  setRrpAppointmentMessageIntentForceMemoryForTests,
+  findRrpAppointmentMessageIntentByAppointmentId,
+} from "./rrp-appointment-message-intent.repository.js";
 export {
   assertRrpApplicationActiveUniqueIndexReady,
   resetRrpApplicationIndexReadinessForTests,

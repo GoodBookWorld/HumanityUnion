@@ -17,6 +17,7 @@ import {
   listRrpApplicationsForAdminActor,
   reviewRrpApplicationForAdminActor,
 } from "./rrp-application.service.js";
+import { confirmRrpAppointmentForAdminActor } from "./rrp-appointment.service.js";
 
 const adminRrpApplicationRouter = Router();
 
@@ -119,6 +120,36 @@ adminRrpApplicationRouter.post("/:applicationId/review", async (req, res) => {
       body: req.body,
     });
     res.json(createSuccessResponse(payload, "RRP application review updated."));
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+/**
+ * HU-RRP-03C — approve application and grant Representative platform designation
+ * in one confirmed operation. Administrator (active auth.role=admin) only.
+ * Designation is internal platform naming — not legal authority.
+ * Writes durable message intent; DM delivery is best-effort (intent stays pending on failure).
+ */
+adminRrpApplicationRouter.post("/:applicationId/confirm-appointment", async (req, res) => {
+  const actorUserId = resolveAuthUserId(req);
+  if (!actorUserId) {
+    res.status(401).json(createFailureResponse("Authentication required."));
+    return;
+  }
+
+  try {
+    const payload = await confirmRrpAppointmentForAdminActor({
+      actorUserId,
+      applicationId: String(req.params.applicationId ?? ""),
+      body: req.body,
+    });
+    res.json(
+      createSuccessResponse(
+        payload,
+        "RRP application approved and Representative platform designation recorded.",
+      ),
+    );
   } catch (error) {
     handleError(res, error);
   }

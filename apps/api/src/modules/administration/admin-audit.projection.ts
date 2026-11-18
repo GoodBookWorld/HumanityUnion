@@ -20,6 +20,8 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "member_badge.fulfillment.delivered_unmarked",
   "member_badge.fulfillment.label_emailed",
   "rrp.application.review",
+  "rrp.application.approve_and_appoint",
+  "rrp.appointment.revoke",
   "blog.publication_review.reconcile",
   "blog.publish",
   "blog.publish_after_safety_review",

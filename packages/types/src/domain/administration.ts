@@ -113,6 +113,8 @@ export type AdministrationAuditAction =
   | "member_badge.fulfillment.delivered_unmarked"
   | "member_badge.fulfillment.label_emailed"
   | "rrp.application.review"
+  | "rrp.application.approve_and_appoint"
+  | "rrp.appointment.revoke"
   | "blog.publication_review.reconcile"
   | "blog.publish"
   | "blog.publish_after_safety_review"
@@ -287,6 +289,11 @@ export interface AdminParticipantDirectoryItem {
   };
   /** Pack 24B — present when account is suspended (auth status disabled). */
   readonly suspension?: AdminParticipantSuspensionSummary;
+  /**
+   * HU-RRP-03C — derived Applicant/Representative classifications.
+   * Never includes DOB, funding amounts, or narrative fields.
+   */
+  readonly rrpSummary?: import("./rrp-appointment.js").AdminParticipantRrpSummary;
 }
 
 /** Pack 24B — three standard suspension reason codes. */

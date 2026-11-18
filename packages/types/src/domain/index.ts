@@ -1846,6 +1846,19 @@ export type {
   RrpApplicationStatus,
   RrpFundingModel,
 } from "./rrp-application.js";
+export type {
+  AdminParticipantRrpSummary,
+  AdminRrpDirectoryClassification,
+  RrpAppointmentAuditEntry,
+  RrpAppointmentDetail,
+  RrpAppointmentRecord,
+  RrpAppointmentStatus,
+  RrpConfirmAppointmentResult,
+} from "./rrp-appointment.js";
+export {
+  ADMIN_RRP_DIRECTORY_CLASSIFICATIONS,
+  RRP_APPOINTMENT_STATUSES,
+} from "./rrp-appointment.js";
 export {
   RRP_APPLICATION_ACTIVE_STATUSES,
   RRP_APPLICATION_CONSENT_VERSION,

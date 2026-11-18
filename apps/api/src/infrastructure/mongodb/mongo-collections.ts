@@ -43,6 +43,10 @@ export const MONGO_COLLECTIONS = {
   memberBadgeApplications: "member_badge_applications",
   /** HU-RRP-02B — Regional Representative Program applications (private). */
   rrpApplications: "rrp_applications",
+  /** HU-RRP-03C — country-scoped Representative appointments (private). */
+  rrpAppointments: "rrp_appointments",
+  /** HU-RRP-03C — durable post-approval Messages intents (idempotent). */
+  rrpAppointmentMessageIntents: "rrp_appointment_message_intents",
   memberPreferences: "member_preferences",
   memberNotifications: "member_notifications",
   /** HU-NOTIF-02C.1 — durable email delivery intents for member_notifications. */

@@ -117,6 +117,19 @@ adminParticipantDirectoryRouter.get(
           ? membershipStatusRaw
           : undefined;
 
+      const rrpClassificationRaw =
+        typeof req.query.rrpClassification === "string" ? req.query.rrpClassification.trim() : "";
+      const rrpClassification =
+        rrpClassificationRaw === "applicant_self_funded" ||
+        rrpClassificationRaw === "applicant_partial_funding" ||
+        rrpClassificationRaw === "applicant_full_funding" ||
+        rrpClassificationRaw === "representative"
+          ? rrpClassificationRaw
+          : undefined;
+      if (rrpClassificationRaw && !rrpClassification) {
+        throw new AdminParticipantDirectoryValidationError("Invalid rrpClassification filter.");
+      }
+
       const sortRaw = typeof req.query.sort === "string" ? req.query.sort : "createdAt";
       const sort =
         sortRaw === "createdAt" || sortRaw === "lastLoginAt" || sortRaw === "email"
@@ -135,6 +148,7 @@ adminParticipantDirectoryRouter.get(
         role,
         emailVerificationStatus,
         membershipStatus,
+        rrpClassification,
         sort,
         order,
         limit,

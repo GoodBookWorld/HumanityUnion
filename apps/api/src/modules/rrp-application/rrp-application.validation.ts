@@ -303,7 +303,7 @@ function parseTeamCount(record: Record<string, unknown>): number | null | undefi
   return value;
 }
 
-function parseExpectedRevision(record: Record<string, unknown>, required: boolean): number | undefined {
+export function parseExpectedRevision(record: Record<string, unknown>, required: boolean): number | undefined {
   if (!("expectedRevision" in record)) {
     if (required) {
       throw new RrpApplicationValidationError("expectedRevision is required.");

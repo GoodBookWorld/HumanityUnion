@@ -2,9 +2,14 @@ import type {
   AdminParticipantDirectoryItem,
   AdminParticipantDirectoryResponse,
   AdminParticipantPublicProfileResolve,
+  AdminParticipantRrpSummary,
+  AdminRrpDirectoryClassification,
   MembershipRecord,
   MembershipStatus,
+  RrpApplicationRecord,
+  RrpAppointmentRecord,
 } from "@hu/types";
+import { ADMIN_RRP_DIRECTORY_CLASSIFICATIONS } from "@hu/types";
 
 import {
   findAuthUserById,
@@ -38,6 +43,15 @@ import {
   AdministrationUnauthorizedError,
 } from "./administration.errors.js";
 import { findActiveSuspensionSummariesByParticipantIds } from "../participant-suspension/participant-suspension.service.js";
+import {
+  findUserIdsForApplicantFundingClassification,
+  listRrpApplicationsForParticipantIds,
+  RRP_APPLICANT_DIRECTORY_STATUSES,
+} from "../rrp-application/rrp-application.repository.js";
+import {
+  findUserIdsWithActiveRrpAppointments,
+  listActiveRrpAppointmentsForParticipantIds,
+} from "../rrp-application/rrp-appointment.repository.js";
 
 export class AdminParticipantDirectoryValidationError extends Error {
   constructor(message: string) {
@@ -92,10 +106,64 @@ export interface ListAdminParticipantsInput {
   emailVerificationStatus?: string;
   /** MembershipStatus or Pack 25D operational filter (application_submitted / member_badge_orders). */
   membershipStatus?: string | MembershipStatus;
+  /**
+   * HU-RRP-03C — derived Applicant/Representative classification.
+   * Independent of auth.role.
+   */
+  rrpClassification?: AdminRrpDirectoryClassification;
   sort?: AdminAuthUserListSort;
   order?: "asc" | "desc";
   limit?: number;
   offset?: number;
+}
+
+function isRrpDirectoryClassification(
+  value: string,
+): value is AdminRrpDirectoryClassification {
+  return (ADMIN_RRP_DIRECTORY_CLASSIFICATIONS as readonly string[]).includes(value);
+}
+
+function buildRrpSummaryForParticipant(input: {
+  applications: readonly RrpApplicationRecord[];
+  appointments: readonly RrpAppointmentRecord[];
+}): AdminParticipantRrpSummary | undefined {
+  const classifications = new Set<AdminRrpDirectoryClassification>();
+  const activeApplicationIds: string[] = [];
+  const representCountryCodes = new Set<string>();
+
+  for (const application of input.applications) {
+    if (RRP_APPLICANT_DIRECTORY_STATUSES.includes(application.status)) {
+      activeApplicationIds.push(application.applicationId);
+      representCountryCodes.add(application.representCountryCode);
+      if (application.fundingModel === "SELF") {
+        classifications.add("applicant_self_funded");
+      } else if (application.fundingModel === "PARTIAL") {
+        classifications.add("applicant_partial_funding");
+      } else if (application.fundingModel === "FULL") {
+        classifications.add("applicant_full_funding");
+      }
+    }
+  }
+
+  const activeAppointmentIds: string[] = [];
+  for (const appointment of input.appointments) {
+    if (appointment.status === "active") {
+      classifications.add("representative");
+      activeAppointmentIds.push(appointment.appointmentId);
+      representCountryCodes.add(appointment.representCountryCode);
+    }
+  }
+
+  if (classifications.size === 0 && activeApplicationIds.length === 0 && activeAppointmentIds.length === 0) {
+    return undefined;
+  }
+
+  return {
+    classifications: [...classifications],
+    activeApplicationIds,
+    activeAppointmentIds,
+    representCountryCodes: [...representCountryCodes],
+  };
 }
 
 async function assertAdminUser(userId: string): Promise<void> {
@@ -140,6 +208,7 @@ function toDirectoryItem(
   membership: MembershipRecord | undefined,
   suspension?: AdminParticipantDirectoryItem["suspension"],
   memberBadgeOrder?: AdminParticipantDirectoryItem["memberBadgeOrder"],
+  rrpSummary?: AdminParticipantRrpSummary,
 ): AdminParticipantDirectoryItem {
   const membershipPayload = membership ? toMembershipStatusPayload(membership) : undefined;
 
@@ -171,6 +240,7 @@ function toDirectoryItem(
       : {}),
     ...(memberBadgeOrder ? { memberBadgeOrder } : {}),
     ...(authUser.status === "disabled" && suspension ? { suspension } : {}),
+    ...(rrpSummary ? { rrpSummary } : {}),
   };
 }
 
@@ -240,6 +310,26 @@ export async function listAdminParticipants(
     );
   }
 
+  if (input.rrpClassification) {
+    if (!isRrpDirectoryClassification(input.rrpClassification)) {
+      throw new AdminParticipantDirectoryValidationError("Invalid rrpClassification filter.");
+    }
+    let rrpUserIds: string[];
+    if (input.rrpClassification === "representative") {
+      rrpUserIds = await findUserIdsWithActiveRrpAppointments();
+    } else if (input.rrpClassification === "applicant_self_funded") {
+      rrpUserIds = await findUserIdsForApplicantFundingClassification("SELF");
+    } else if (input.rrpClassification === "applicant_partial_funding") {
+      rrpUserIds = await findUserIdsForApplicantFundingClassification("PARTIAL");
+    } else {
+      rrpUserIds = await findUserIdsForApplicantFundingClassification("FULL");
+    }
+
+    userIdAllowlist = userIdAllowlist
+      ? userIdAllowlist.filter((userId) => rrpUserIds.includes(userId))
+      : rrpUserIds;
+  }
+
   const search = input.search?.trim();
   const searchAlsoUserIds = search
     ? await findIdentityIdsByUniqueNameSearch(search)
@@ -259,6 +349,7 @@ export async function listAdminParticipants(
   });
 
   const userIds = listed.items.map((item) => item.userId);
+  const participantIds = listed.items.map((item) => item.memberId);
   const disabledParticipantIds = listed.items
     .filter((item) => item.status === "disabled")
     .map((item) => item.memberId);
@@ -269,6 +360,8 @@ export async function listAdminParticipants(
     membershipsByUserId,
     suspensionsByParticipantId,
     memberBadgeOrdersByUserId,
+    rrpApplications,
+    rrpAppointments,
   ] = await Promise.all([
     findMembersByIdentityIds(userIds),
     findMemberProfilesByUserIds(userIds),
@@ -277,7 +370,22 @@ export async function listAdminParticipants(
     attachMemberBadgeOrders
       ? findLatestMemberBadgeApplicationByUserIds(userIds)
       : Promise.resolve(new Map()),
+    listRrpApplicationsForParticipantIds(participantIds),
+    listActiveRrpAppointmentsForParticipantIds(participantIds),
   ]);
+
+  const applicationsByParticipant = new Map<string, RrpApplicationRecord[]>();
+  for (const application of rrpApplications) {
+    const existing = applicationsByParticipant.get(application.participantId) ?? [];
+    existing.push(application);
+    applicationsByParticipant.set(application.participantId, existing);
+  }
+  const appointmentsByParticipant = new Map<string, RrpAppointmentRecord[]>();
+  for (const appointment of rrpAppointments) {
+    const existing = appointmentsByParticipant.get(appointment.participantId) ?? [];
+    existing.push(appointment);
+    appointmentsByParticipant.set(appointment.participantId, existing);
+  }
 
   const participants = listed.items.map((authUser) => {
     const profile = profilesByUserId.get(authUser.userId);
@@ -293,6 +401,10 @@ export async function listAdminParticipants(
           updatedAt: badgeApplication.updatedAt,
         }
       : undefined;
+    const rrpSummary = buildRrpSummaryForParticipant({
+      applications: applicationsByParticipant.get(authUser.memberId) ?? [],
+      appointments: appointmentsByParticipant.get(authUser.memberId) ?? [],
+    });
 
     return toDirectoryItem(
       authUser,
@@ -307,6 +419,7 @@ export async function listAdminParticipants(
       membershipsByUserId.get(authUser.userId),
       suspensionsByParticipantId.get(authUser.memberId),
       memberBadgeOrder,
+      rrpSummary,
     );
   });
 

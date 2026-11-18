@@ -29,6 +29,11 @@ import {
 import { MEMBER_NOTIFICATION_EMAIL_SEND_RATE_LIMIT_INDEXES } from "../../modules/notifications/email-delivery/send-rate-limit.js";
 import { RRP_ACTIVE_UNIQUE_INDEX_DESCRIPTION } from "../../modules/rrp-application/rrp-application.index-readiness.js";
 import { RRP_ACTIVE_UNIQUE_INDEX_NAME } from "../../modules/rrp-application/rrp-application.constants.js";
+import {
+  RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_DESCRIPTION,
+  RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_NAME,
+  RRP_APPOINTMENT_MESSAGE_INTENT_UNIQUE_INDEX_NAME,
+} from "../../modules/rrp-application/rrp-appointment.constants.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
@@ -547,6 +552,52 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { status: 1, updatedAt: -1 }, name: "rrp_application_status_updated_at" },
       { key: { representCountryCode: 1, status: 1 }, name: "rrp_application_country_status" },
       { key: { fundingModel: 1, annualRequestedAmountCad: 1 }, name: "rrp_application_funding_amount" },
+      { key: { participantId: 1, status: 1 }, name: "rrp_application_participant_status" },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.rrpAppointments,
+    indexes: [
+      {
+        key: { appointmentId: 1 },
+        unique: true,
+        name: "rrp_appointment_id_unique",
+      },
+      {
+        ...RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_DESCRIPTION,
+        name: RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_NAME,
+      },
+      {
+        key: { sourceApplicationId: 1 },
+        name: "rrp_appointment_source_application",
+      },
+      {
+        key: { representCountryCode: 1, status: 1 },
+        name: "rrp_appointment_country_status",
+      },
+      {
+        key: { participantId: 1, status: 1 },
+        name: "rrp_appointment_participant_status",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.rrpAppointmentMessageIntents,
+    indexes: [
+      {
+        key: { intentId: 1 },
+        unique: true,
+        name: "rrp_appointment_message_intent_id_unique",
+      },
+      {
+        key: { appointmentId: 1 },
+        unique: true,
+        name: RRP_APPOINTMENT_MESSAGE_INTENT_UNIQUE_INDEX_NAME,
+      },
+      {
+        key: { status: 1, updatedAt: 1 },
+        name: "rrp_appointment_message_intent_status_updated",
+      },
     ],
   },
   {

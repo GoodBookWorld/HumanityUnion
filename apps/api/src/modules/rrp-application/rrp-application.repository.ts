@@ -351,6 +351,7 @@ export async function listRrpApplicationsForAdmin(
 export async function replaceRrpApplicationIfRevision(input: {
   expectedRevision: number;
   next: RrpApplicationRecord;
+  session?: import("mongodb").ClientSession;
 }): Promise<RrpApplicationRecord | null> {
   await ensureWriteReady();
 
@@ -381,7 +382,10 @@ export async function replaceRrpApplicationIfRevision(input: {
         revision: input.expectedRevision,
       },
       { $set: { ...input.next } },
-      { returnDocument: "after" },
+      {
+        returnDocument: "after",
+        ...(input.session ? { session: input.session } : {}),
+      },
     );
     return result ? strip(result) : null;
   } catch (error) {
@@ -392,4 +396,58 @@ export async function replaceRrpApplicationIfRevision(input: {
     }
     throw error;
   }
+}
+
+/** Applicant pipeline statuses used for directory classification (submitted+, not draft). */
+export const RRP_APPLICANT_DIRECTORY_STATUSES: readonly RrpApplicationStatus[] = [
+  "submitted",
+  "under_review",
+  "information_requested",
+];
+
+export async function findUserIdsForApplicantFundingClassification(
+  fundingModel: RrpFundingModel,
+): Promise<string[]> {
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return [
+      ...new Set(
+        [...memoryStore.values()]
+          .filter(
+            (record) =>
+              record.fundingModel === fundingModel &&
+              RRP_APPLICANT_DIRECTORY_STATUSES.includes(record.status),
+          )
+          .map((record) => record.userId),
+      ),
+    ];
+  }
+
+  const values = await getMongoCollection<RrpApplicationDocument>(
+    MONGO_COLLECTIONS.rrpApplications,
+  ).distinct("userId", {
+    fundingModel,
+    status: { $in: [...RRP_APPLICANT_DIRECTORY_STATUSES] },
+  });
+  return values.filter((value): value is string => typeof value === "string");
+}
+
+export async function listRrpApplicationsForParticipantIds(
+  participantIds: readonly string[],
+): Promise<RrpApplicationRecord[]> {
+  if (participantIds.length === 0) {
+    return [];
+  }
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return [...memoryStore.values()].filter((record) =>
+      participantIds.includes(record.participantId),
+    );
+  }
+  const documents = await getMongoCollection<RrpApplicationDocument>(
+    MONGO_COLLECTIONS.rrpApplications,
+  )
+    .find({ participantId: { $in: [...participantIds] } })
+    .toArray();
+  return documents.map(strip);
 }

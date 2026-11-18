@@ -541,7 +541,7 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
     assert.equal(resubmitted.status, "submitted");
   });
 
-  it("approves without granting Representative role or privileges", async () => {
+  it("review approve is status-only and never escalates auth.role", async () => {
     const draft = await createRrpApplicationDraftForUser(
       "user-applicant-1",
       completeDraftFields(),
@@ -568,7 +568,10 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
     const serviceSource = readRepo(
       "apps/api/src/modules/rrp-application/rrp-application.service.ts",
     );
-    assert.match(serviceSource, /Approval must never grant Representative status or privileges/);
+    assert.match(
+      serviceSource,
+      /Status review only — Representative appointment requires confirm-appointment/,
+    );
     assert.doesNotMatch(serviceSource, /grantRole|role:\s*"representative"|ensureRepresentative/i);
     assert.doesNotMatch(
       readRepo("apps/api/src/modules/rrp-application/rrp-application.repository.ts"),

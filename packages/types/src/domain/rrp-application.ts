@@ -1,7 +1,8 @@
 /**
- * HU-RRP-02B — Regional Representative Program application aggregate.
- * Appointment of a Representative is a separate administrator action.
- * Approval of an application does not grant Representative status or privileges.
+ * HU-RRP-02B / 03C — Regional Representative Program application aggregate.
+ * Representative appointment is granted only via administrator
+ * confirm-appointment (approval + appointment as one operation).
+ * Never grants administrator privileges. Funding requests are not commitments.
  */
 
 export type RrpApplicationStatus =
