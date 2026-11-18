@@ -1,4 +1,12 @@
+.admin-rrp-application-modal__backdrop {
+  /* Inherits fixed overlay + grid centering from .hu-confirm-dialog__backdrop */
+  align-content: center;
+  justify-items: center;
+}
+
 .admin-rrp-application-modal {
+  position: relative;
+  z-index: 1;
   width: min(42rem, calc(100vw - 2rem));
   max-height: min(90vh, 52rem);
   overflow: auto;

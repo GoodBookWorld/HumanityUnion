@@ -18,10 +18,21 @@ export const RRP_APPLICATION_ENTRY_HREF = `/workspace?${RRP_APPLICATION_ENTRY_QU
  */
 export const RRP_APPLICATION_ENTRY_FLAG_ENV = "NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED";
 
+/**
+ * Returns true only when the public flag is exactly `"true"`.
+ *
+ * Next.js inlines `process.env.NEXT_PUBLIC_*` only for direct property access.
+ * Passing `process.env` as a default argument prevents client-bundle inlining,
+ * so flag-ON builds would still hide client UI (widget/modal). Optional `env`
+ * remains for unit tests.
+ */
 export function isRrpApplicationEntryEnabled(
-  env: Readonly<Record<string, string | undefined>> = process.env,
+  env?: Readonly<Record<string, string | undefined>>,
 ): boolean {
-  return env[RRP_APPLICATION_ENTRY_FLAG_ENV] === "true";
+  if (env) {
+    return env[RRP_APPLICATION_ENTRY_FLAG_ENV] === "true";
+  }
+  return process.env.NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED === "true";
 }
 
 /** True when the Workspace URL carries the reserved apply intent. */

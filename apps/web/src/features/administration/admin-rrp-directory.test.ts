@@ -134,6 +134,24 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.doesNotMatch(api, /Exclude<AdminRrpApplicationReviewDecision,\s*"approve">/);
   });
 
+  it("nests Admin RRP dialog inside backdrop so pointer events reach controls", () => {
+    const modal = read(
+      "features/administration/components/AdminRrpApplicationModal.tsx",
+    );
+    const css = read(
+      "features/administration/components/admin-rrp-application-modal.css",
+    );
+    assert.match(modal, /admin-rrp-application-modal__backdrop/);
+    assert.match(modal, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+    // Sibling-backdrop anti-pattern must not return.
+    assert.doesNotMatch(
+      modal,
+      /hu-confirm-dialog__backdrop"[^>]*>\s*\/>\s*<div[^>]*role="dialog"/,
+    );
+    assert.match(css, /\.admin-rrp-application-modal__backdrop/);
+    assert.match(css, /\.admin-rrp-application-modal\s*\{[^}]*position:\s*relative/s);
+  });
+
   it("keeps Admin modal out of participant Workspace widget", () => {
     const widget = read(
       "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",

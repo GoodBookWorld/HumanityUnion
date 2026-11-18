@@ -58,6 +58,18 @@ describe("Pack 10H1 — city list browseable selection", () => {
     assert.doesNotMatch(select, /requireSearch/);
   });
 
+  it("GeographySearchSelect portals a fixed panel to escape overflow modal clipping", () => {
+    const select = readWeb("design-system/components/GeographySearchSelect.tsx");
+    const css = readWeb("design-system/components/geography-search-select.css");
+    assert.match(select, /createPortal/);
+    assert.match(select, /panel--fixed/);
+    assert.match(select, /getBoundingClientRect/);
+    assert.match(select, /useLayoutEffect/);
+    assert.match(css, /\.geography-search-select__panel--fixed/);
+    assert.match(css, /position:\s*fixed/);
+    assert.match(css, /--hu-z-modal/);
+  });
+
   it("reselection clears filter query so the full list returns", () => {
     const select = readWeb("design-system/components/GeographySearchSelect.tsx");
     assert.match(select, /function choose\(slug: string\)/);

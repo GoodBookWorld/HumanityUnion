@@ -145,6 +145,18 @@
   min-width: 0;
 }
 
+/**
+ * Fixed overlay avoids clipping inside overflow:auto modal scroll regions
+ * (RRP application form). Coordinates come from the trigger rect.
+ */
+.geography-search-select__panel--fixed {
+  position: fixed;
+  right: auto;
+  z-index: calc(var(--hu-z-modal, 200) + 20);
+  max-width: min(100vw - 1rem, 28rem);
+  box-sizing: border-box;
+}
+
 .geography-search-select__list {
   overflow: auto;
   overscroll-behavior: contain;

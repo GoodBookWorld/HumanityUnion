@@ -82,6 +82,8 @@ export function RrpApplicationModal({
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const onApplicationsChangedRef = useRef(onApplicationsChanged);
   onApplicationsChangedRef.current = onApplicationsChanged;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const [view, setView] = useState<ModalView>("loading");
   const [applications, setApplications] = useState<RrpApplicationDetail[]>([]);
@@ -206,7 +208,7 @@ export function RrpApplicationModal({
           setBaselineForm(nextForm);
           if (selected.status === "submitted" || selected.status === "under_review") {
             setView("success");
-            setStatusMessage(t(`status.${selected.status}`));
+            setStatusMessage(tRef.current(`status.${selected.status}`));
           } else if (
             selected.status === "draft" ||
             selected.status === "information_requested"
@@ -214,26 +216,26 @@ export function RrpApplicationModal({
             setView("form");
           } else {
             setView("success");
-            setStatusMessage(t(`status.${selected.status}`));
+            setStatusMessage(tRef.current(`status.${selected.status}`));
           }
         } else {
           setView("hub");
           if (initialIntent === "create") {
-            setStatusMessage(t("hub.newHeading"));
+            setStatusMessage(tRef.current("hub.newHeading"));
           }
           if (
             typeof initialApplicationId === "string" &&
             initialApplicationId.trim().length > 0 &&
             !selected
           ) {
-            setError(t("errors.notFound"));
+            setError(tRef.current("errors.notFound"));
           }
         }
       } catch (loadError) {
         if (cancelled) {
           return;
         }
-        setError(formatRrpApiError(loadError, t));
+        setError(formatRrpApiError(loadError, tRef.current));
         setView("hub");
       }
     })();
@@ -273,7 +275,9 @@ export function RrpApplicationModal({
         restore.focus();
       }
     };
-  }, [isOpen, initialApplicationId, initialIntent, t]);
+    // Intentionally omit `t`: next-intl translator identity churn must not
+    // remount/reset hub country selection mid-interaction.
+  }, [isOpen, initialApplicationId, initialIntent]);
 
   if (!isOpen) {
     return null;

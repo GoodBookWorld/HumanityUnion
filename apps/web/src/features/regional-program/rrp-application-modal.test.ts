@@ -59,6 +59,13 @@ describe("HU-RRP-02C Workspace application modal", () => {
     assert.match(css, /overflow-x:\s*hidden/);
   });
 
+  it("does not reset hub country selection when translator identity changes", () => {
+    const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
+    assert.match(modal, /tRef\.current = t/);
+    assert.match(modal, /\[isOpen, initialApplicationId, initialIntent\]/);
+    assert.doesNotMatch(modal, /\[isOpen, initialApplicationId, initialIntent, t\]/);
+  });
+
   it("confirms before discarding unsaved edits and avoids duplicate create retries", () => {
     const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
     assert.match(modal, /ConfirmDialog/);

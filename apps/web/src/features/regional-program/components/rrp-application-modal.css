@@ -25,6 +25,12 @@
   padding: var(--hu-space-5, 1.25rem);
 }
 
+/* Geography panels use position:fixed; keep scroll usable while open. */
+.rrp-application-modal__field:has(.geography-search-select) {
+  position: relative;
+  z-index: 1;
+}
+
 .rrp-application-modal__header {
   align-items: flex-start;
   display: flex;

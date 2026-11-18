@@ -395,15 +395,25 @@ export function AdminRrpApplicationModal({
 
   return (
     <>
-      <div className="hu-confirm-dialog__backdrop" onClick={onClose} aria-hidden="true" />
+      {/*
+        Nest the dialog inside the backdrop (same pattern as ConfirmDialog /
+        RrpApplicationModal). A sibling backdrop with position:fixed + z-index
+        sits above an unpositioned dialog and intercepts pointer events.
+      */}
       <div
-        ref={dialogRef}
-        className="hu-confirm-dialog admin-rrp-application-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
+        className="hu-confirm-dialog__backdrop admin-rrp-application-modal__backdrop"
+        onClick={onClose}
+        role="presentation"
       >
+        <div
+          ref={dialogRef}
+          className="hu-confirm-dialog admin-rrp-application-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          onClick={(event) => event.stopPropagation()}
+        >
         <div className="admin-rrp-application-modal__header">
           <h2 id={titleId} className="hu-confirm-dialog__title">
             {t("title")}
@@ -610,6 +620,7 @@ export function AdminRrpApplicationModal({
             </div>
           </div>
         ) : null}
+        </div>
       </div>
 
       <ConfirmDialog

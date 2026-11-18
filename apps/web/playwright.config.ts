@@ -15,6 +15,7 @@ export default defineConfig({
     "**/region-500b2-real-region-web.playwright.e2e.ts",
     "**/region-500b3-seo-a11y.playwright.e2e.ts",
     "**/rrp-03h-browser.playwright.e2e.ts",
+    "**/rrp-03j-browser.playwright.e2e.ts",
   ],
   timeout: 60_000,
   retries: 0,
