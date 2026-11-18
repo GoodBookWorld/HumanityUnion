@@ -22,6 +22,7 @@ import {
   RRP_MESSAGE_INTENT_MAX_DELIVERY_ATTEMPTS,
   type RrpMessageIntentKind,
 } from "./rrp-message-intent.constants.js";
+import { assertRrpMessageIntentIndexesReady } from "./rrp-message-intent.index-readiness.js";
 
 export type RrpAppointmentMessageIntentStatus =
   | "pending"
@@ -80,6 +81,17 @@ async function ensureReady(): Promise<void> {
     return;
   }
   await connectMongoClient();
+}
+
+async function ensureWriteReady(): Promise<void> {
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return;
+  }
+  if (!isMongoConfigured()) {
+    return;
+  }
+  await assertRrpMessageIntentIndexesReady({ skipMongo: false });
 }
 
 function strip(document: IntentDocument): RrpAppointmentMessageIntentRecord {
@@ -226,7 +238,7 @@ export async function insertRrpAppointmentMessageIntentIdempotent(
   record: RrpAppointmentMessageIntentRecord,
   options: { session?: ClientSession } = {},
 ): Promise<{ record: RrpAppointmentMessageIntentRecord; created: boolean }> {
-  await ensureReady();
+  await ensureWriteReady();
   if (forceMemoryForTests) {
     for (const existing of memoryStore.values()) {
       if (existing.clientMessageId === record.clientMessageId) {
@@ -273,7 +285,7 @@ export async function insertRrpAppointmentMessageIntentIdempotent(
 }
 
 export async function markRrpMessageIntentDelivered(intentId: string): Promise<void> {
-  await ensureReady();
+  await ensureWriteReady();
   const now = new Date().toISOString();
   if (forceMemoryForTests) {
     const record = memoryStore.get(intentId);
@@ -330,7 +342,7 @@ export async function recordRrpMessageIntentDeliveryAttempt(
   intentId: string,
   lastError: string,
 ): Promise<RrpAppointmentMessageIntentRecord | null> {
-  await ensureReady();
+  await ensureWriteReady();
   const nowDate = new Date();
   const now = nowDate.toISOString();
 
@@ -470,7 +482,7 @@ export async function claimNextRrpMessageIntent(input?: {
   claimOwnerId?: string;
   leaseMs?: number;
 }): Promise<RrpAppointmentMessageIntentRecord | null> {
-  await ensureReady();
+  await ensureWriteReady();
   const nowDate = input?.now ?? new Date();
   const nowIso = nowDate.toISOString();
   const leaseMs = input?.leaseMs ?? RRP_MESSAGE_INTENT_CLAIM_LEASE_MS;

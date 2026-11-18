@@ -48,6 +48,17 @@ export {
   setRrpApplicationActiveUniqueIndexReadyForTests,
   RRP_ACTIVE_UNIQUE_INDEX_DESCRIPTION,
 } from "./rrp-application.index-readiness.js";
+export {
+  assertRrpAppointmentActiveUniqueIndexReady,
+  resetRrpAppointmentIndexReadinessForTests,
+  setRrpAppointmentActiveUniqueIndexReadyForTests,
+  RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX,
+} from "./rrp-appointment.index-readiness.js";
+export {
+  assertRrpMessageIntentIndexesReady,
+  resetRrpMessageIntentIndexReadinessForTests,
+  setRrpMessageIntentIndexesReadyForTests,
+} from "./rrp-message-intent.index-readiness.js";
 export { RRP_ACTIVE_UNIQUE_INDEX_NAME } from "./rrp-application.constants.js";
 export {
   computeExactAgeYears,

@@ -13,6 +13,7 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { assertRrpAppointmentActiveUniqueIndexReady } from "./rrp-appointment.index-readiness.js";
 import { RrpApplicationConflictError, RrpApplicationUnavailableError } from "./rrp-application.errors.js";
 
 interface RrpAppointmentDocument extends RrpAppointmentRecord {
@@ -24,6 +25,10 @@ const memoryStore = new Map<string, RrpAppointmentRecord>();
 
 export function setRrpAppointmentForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
+}
+
+export function isRrpAppointmentForceMemoryForTests(): boolean {
+  return forceMemoryForTests;
 }
 
 export function resetRrpAppointmentMemoryForTests(): void {
@@ -49,6 +54,16 @@ async function ensureReady(): Promise<void> {
     );
   }
   await connectMongoClient();
+}
+
+async function ensureWriteReady(): Promise<void> {
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return;
+  }
+  await assertRrpAppointmentActiveUniqueIndexReady({
+    skipMongo: false,
+  });
 }
 
 function strip(document: RrpAppointmentDocument): RrpAppointmentRecord {
@@ -205,7 +220,7 @@ export async function insertRrpAppointment(
   record: RrpAppointmentRecord,
   options: { session?: ClientSession } = {},
 ): Promise<RrpAppointmentRecord> {
-  await ensureReady();
+  await ensureWriteReady();
   if (forceMemoryForTests) {
     assertMemoryUniqueActive(record);
     if (memoryStore.has(record.appointmentId)) {
@@ -235,7 +250,7 @@ export async function replaceRrpAppointment(
   record: RrpAppointmentRecord,
   options: { session?: ClientSession } = {},
 ): Promise<void> {
-  await ensureReady();
+  await ensureWriteReady();
   if (forceMemoryForTests) {
     assertMemoryUniqueActive(record);
     memoryStore.set(record.appointmentId, record);

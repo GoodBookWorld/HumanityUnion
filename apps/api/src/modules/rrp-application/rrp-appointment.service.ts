@@ -33,7 +33,10 @@ import {
   findActiveRrpAppointmentForParticipantCountry,
   buildRrpAppointmentRecord,
   insertRrpAppointment,
+  isRrpAppointmentForceMemoryForTests,
 } from "./rrp-appointment.repository.js";
+import { assertRrpAppointmentActiveUniqueIndexReady } from "./rrp-appointment.index-readiness.js";
+import { assertRrpMessageIntentIndexesReady } from "./rrp-message-intent.index-readiness.js";
 import {
   buildRrpAppointmentMessageIntent,
   findRrpAppointmentMessageIntentByAppointmentId,
@@ -236,9 +239,16 @@ export async function confirmRrpAppointmentForAdminActor(input: {
     throw new RrpApplicationNotFoundError();
   }
 
-  // Force-memory / unit tests: sequential in-memory path (transaction not required).
+  // In-memory / unconfigured Mongo: sequential path (transaction not required).
+  // Isolated MongoMemoryReplSet E2E keeps forceMemory=false and uses real transactions.
   const useMemoryPath =
-    process.env.NODE_TEST_ENV === "true" || !isMongoConfigured();
+    isRrpAppointmentForceMemoryForTests() || !isMongoConfigured();
+
+  if (!useMemoryPath) {
+    // Ensure indexes before opening a transaction (createIndex is not safe mid-txn).
+    await assertRrpAppointmentActiveUniqueIndexReady();
+    await assertRrpMessageIntentIndexesReady();
+  }
 
   const committed = useMemoryPath
     ? await applyConfirmAppointmentInMemory({ admin, current, expectedRevision })
