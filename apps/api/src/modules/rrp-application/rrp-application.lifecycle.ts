@@ -1,10 +1,16 @@
 import type {
   AdminRrpApplicationReviewDecision,
+  AdminRrpConfirmAppointmentDecision,
   RrpApplicationStatus,
 } from "@hu/types";
 
 import { RRP_APPLICATION_ACTIVE_STATUSES } from "./rrp-application.constants.js";
 import { RrpApplicationConflictError, RrpApplicationValidationError } from "./rrp-application.errors.js";
+
+/** Review API decisions plus confirm-appointment internal approve transition. */
+export type RrpAdminTransitionDecision =
+  | AdminRrpApplicationReviewDecision
+  | AdminRrpConfirmAppointmentDecision;
 
 const ACTIVE = new Set<RrpApplicationStatus>(RRP_APPLICATION_ACTIVE_STATUSES);
 
@@ -33,15 +39,16 @@ const PARTICIPANT_SUBMITTABLE: ReadonlySet<RrpApplicationStatus> = new Set([
 ]);
 
 const ADMIN_TRANSITIONS: Readonly<
-  Record<AdminRrpApplicationReviewDecision, ReadonlySet<RrpApplicationStatus>>
+  Record<RrpAdminTransitionDecision, ReadonlySet<RrpApplicationStatus>>
 > = {
   mark_under_review: new Set(["submitted", "information_requested"]),
   request_information: new Set(["submitted", "under_review"]),
+  /** confirm-appointment only — not accepted by POST …/review. */
   approve: new Set(["submitted", "under_review"]),
   reject: new Set(["submitted", "under_review", "information_requested"]),
 };
 
-const ADMIN_TARGET: Readonly<Record<AdminRrpApplicationReviewDecision, RrpApplicationStatus>> = {
+const ADMIN_TARGET: Readonly<Record<RrpAdminTransitionDecision, RrpApplicationStatus>> = {
   mark_under_review: "under_review",
   request_information: "information_requested",
   approve: "approved",
@@ -73,14 +80,14 @@ export function assertParticipantMayWithdraw(status: RrpApplicationStatus): void
 }
 
 export function resolveAdminReviewTargetStatus(
-  decision: AdminRrpApplicationReviewDecision,
+  decision: RrpAdminTransitionDecision,
 ): RrpApplicationStatus {
   return ADMIN_TARGET[decision];
 }
 
 export function assertAdminMayTransition(input: {
   fromStatus: RrpApplicationStatus;
-  decision: AdminRrpApplicationReviewDecision;
+  decision: RrpAdminTransitionDecision;
 }): RrpApplicationStatus {
   const allowed = ADMIN_TRANSITIONS[input.decision];
   if (!allowed) {
@@ -98,10 +105,12 @@ export function assertAdminMayTransition(input: {
 
 /**
  * Idempotent terminal checks — caller returns existing record without re-auditing.
+ * `"approve"` here is only used by confirm-appointment idempotency helpers if needed;
+ * the review API no longer accepts approve.
  */
 export function isIdempotentAdminDecision(input: {
   status: RrpApplicationStatus;
-  decision: AdminRrpApplicationReviewDecision;
+  decision: RrpAdminTransitionDecision;
 }): boolean {
   if (input.decision === "approve" && input.status === "approved") {
     return true;

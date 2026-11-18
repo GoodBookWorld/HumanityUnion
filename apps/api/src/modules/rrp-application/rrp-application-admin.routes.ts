@@ -33,7 +33,7 @@ function createFailureResponse(message: string) {
 
 function resolveErrorStatus(error: unknown): number {
   if (error instanceof RrpApplicationValidationError) {
-    return 400;
+    return error.statusCode;
   }
   if (error instanceof RrpApplicationAccessDeniedError) {
     return 403;

@@ -56,6 +56,7 @@ import {
 } from "../../../src/modules/rrp-application/rrp-application.service.js";
 import {
   computeExactAgeYears,
+  RRP_REVIEW_APPROVE_REJECTED_MESSAGE,
   validateCreateDraftBody,
   validateDateOfBirth,
   validateFundingFields,
@@ -541,7 +542,7 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
     assert.equal(resubmitted.status, "submitted");
   });
 
-  it("review approve is status-only and never escalates auth.role", async () => {
+  it("review approve is rejected with 422 and never escalates auth.role", async () => {
     const draft = await createRrpApplicationDraftForUser(
       "user-applicant-1",
       completeDraftFields(),
@@ -555,15 +556,27 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
         consentVersion: RRP_APPLICATION_CONSENT_VERSION,
       },
     });
-    const approved = await reviewRrpApplicationForAdminActor({
-      actorUserId: "user-admin-1",
+    await assert.rejects(
+      () =>
+        reviewRrpApplicationForAdminActor({
+          actorUserId: "user-admin-1",
+          applicationId: draft.applicationId,
+          body: {
+            decision: "approve",
+            expectedRevision: submitted.revision,
+          },
+        }),
+      (error: unknown) =>
+        error instanceof RrpApplicationValidationError &&
+        error.statusCode === 422 &&
+        error.message === RRP_REVIEW_APPROVE_REJECTED_MESSAGE,
+    );
+
+    const still = await getOwnRrpApplicationForUser({
+      userId: "user-applicant-1",
       applicationId: draft.applicationId,
-      body: {
-        decision: "approve",
-        expectedRevision: submitted.revision,
-      },
     });
-    assert.equal(approved.application.status, "approved");
+    assert.equal(still.status, "submitted");
 
     const serviceSource = readRepo(
       "apps/api/src/modules/rrp-application/rrp-application.service.ts",
@@ -580,42 +593,6 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
 
     const applicant = users.get("user-applicant-1");
     assert.equal(applicant?.role, "member");
-  });
-
-  it("repeated approval is idempotent and does not append duplicate history", async () => {
-    const draft = await createRrpApplicationDraftForUser(
-      "user-applicant-1",
-      completeDraftFields(),
-    );
-    const submitted = await submitOwnRrpApplicationForUser({
-      userId: "user-applicant-1",
-      applicationId: draft.applicationId,
-      body: {
-        expectedRevision: 1,
-        consentAccepted: true,
-        consentVersion: RRP_APPLICATION_CONSENT_VERSION,
-      },
-    });
-    const approved = await reviewRrpApplicationForAdminActor({
-      actorUserId: "user-admin-1",
-      applicationId: draft.applicationId,
-      body: {
-        decision: "approve",
-        expectedRevision: submitted.revision,
-      },
-    });
-    const historyLength = approved.application.decisionHistory.length;
-    const again = await reviewRrpApplicationForAdminActor({
-      actorUserId: "user-admin-1",
-      applicationId: draft.applicationId,
-      body: {
-        decision: "approve",
-        expectedRevision: approved.application.revision,
-      },
-    });
-    assert.equal(again.application.status, "approved");
-    assert.equal(again.application.revision, approved.application.revision);
-    assert.equal(again.application.decisionHistory.length, historyLength);
   });
 });
 

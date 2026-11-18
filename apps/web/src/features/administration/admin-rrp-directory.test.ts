@@ -130,7 +130,8 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.match(modal, /requestingRef/);
     assert.match(modal, /messageWarning/);
     assert.doesNotMatch(api, /decision:\s*"approve"/);
-    assert.match(api, /Exclude<AdminRrpApplicationReviewDecision, "approve">/);
+    assert.match(api, /decision: AdminRrpApplicationReviewDecision/);
+    assert.doesNotMatch(api, /Exclude<AdminRrpApplicationReviewDecision,\s*"approve">/);
   });
 
   it("keeps Admin modal out of participant Workspace widget", () => {

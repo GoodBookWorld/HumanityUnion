@@ -1839,6 +1839,7 @@ export type {
   AdminRrpApplicationDetail,
   AdminRrpApplicationListItem,
   AdminRrpApplicationReviewDecision,
+  AdminRrpConfirmAppointmentDecision,
   AdminRrpApplicationReviewResult,
   RrpApplicationDecisionActorRole,
   RrpApplicationDecisionHistoryEntry,

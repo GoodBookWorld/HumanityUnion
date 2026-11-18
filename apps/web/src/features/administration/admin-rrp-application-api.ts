@@ -62,7 +62,7 @@ export async function getAdminRrpApplication(
 
 export async function reviewAdminRrpApplication(input: {
   applicationId: string;
-  decision: Exclude<AdminRrpApplicationReviewDecision, "approve">;
+  decision: AdminRrpApplicationReviewDecision;
   expectedRevision: number;
   note?: string;
 }): Promise<AdminRrpApplicationReviewResult> {

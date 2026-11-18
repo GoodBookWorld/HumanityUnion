@@ -314,14 +314,17 @@ describe("HU-RRP-03C confirm-appointment foundation", () => {
     assert.notEqual(a1!.appointmentId, a2!.appointmentId);
   });
 
-  it("keeps review approve status-only without creating an appointment", async () => {
+  it("rejects review approve so new approvals cannot skip appointment", async () => {
     const submitted = await createSubmittedApplication();
-    const reviewed = await reviewRrpApplicationForAdminActor({
-      actorUserId: "user-admin-1",
-      applicationId: submitted.applicationId,
-      body: { decision: "approve", expectedRevision: submitted.revision },
-    });
-    assert.equal(reviewed.application.status, "approved");
+    await assert.rejects(
+      () =>
+        reviewRrpApplicationForAdminActor({
+          actorUserId: "user-admin-1",
+          applicationId: submitted.applicationId,
+          body: { decision: "approve", expectedRevision: submitted.revision },
+        }),
+      /confirm-appointment/i,
+    );
     const appointment = await findActiveRrpAppointmentBySourceApplicationId(submitted.applicationId);
     assert.equal(appointment, null);
   });

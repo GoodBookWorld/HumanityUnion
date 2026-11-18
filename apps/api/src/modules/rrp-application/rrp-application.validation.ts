@@ -23,12 +23,15 @@ const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
 const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const FUNDING_SET = new Set<string>(RRP_FUNDING_MODELS);
 
-const ADMIN_DECISIONS = new Set<AdminRrpApplicationReviewDecision>([
+const ADMIN_REVIEW_DECISIONS = new Set<AdminRrpApplicationReviewDecision>([
   "mark_under_review",
   "request_information",
-  "approve",
   "reject",
 ]);
+
+/** Stable message when clients attempt legacy status-only approve on /review. */
+export const RRP_REVIEW_APPROVE_REJECTED_MESSAGE =
+  'decision "approve" is not supported on review. Use POST /api/v1/admin/rrp-applications/:applicationId/confirm-appointment to approve and create the Representative platform designation.' as const;
 
 function requireObject(body: unknown): Record<string, unknown> {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -606,9 +609,19 @@ export function validateAdminReviewBody(body: unknown): {
   const record = requireObject(body);
   const expectedRevision = parseExpectedRevision(record, true)!;
 
-  if (typeof record.decision !== "string" || !ADMIN_DECISIONS.has(record.decision as AdminRrpApplicationReviewDecision)) {
+  if (typeof record.decision !== "string") {
     throw new RrpApplicationValidationError(
-      "decision must be mark_under_review, request_information, approve, or reject.",
+      "decision must be mark_under_review, request_information, or reject.",
+    );
+  }
+
+  if (record.decision === "approve") {
+    throw new RrpApplicationValidationError(RRP_REVIEW_APPROVE_REJECTED_MESSAGE, 422);
+  }
+
+  if (!ADMIN_REVIEW_DECISIONS.has(record.decision as AdminRrpApplicationReviewDecision)) {
+    throw new RrpApplicationValidationError(
+      "decision must be mark_under_review, request_information, or reject.",
     );
   }
 

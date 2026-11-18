@@ -157,11 +157,20 @@ export interface AdminRrpApplicationDetail extends AdminRrpApplicationListItem {
   readonly decisionHistory: readonly RrpApplicationDecisionHistoryEntry[];
 }
 
+/**
+ * Admin review API decisions (POST …/review).
+ * Status-only `"approve"` was removed — approval requires confirm-appointment.
+ */
 export type AdminRrpApplicationReviewDecision =
   | "mark_under_review"
   | "request_information"
-  | "approve"
   | "reject";
+
+/**
+ * Internal confirm-appointment approval transition only.
+ * Not accepted by the review API.
+ */
+export type AdminRrpConfirmAppointmentDecision = "approve";
 
 /** Admin review result — optional Messages delivery warning for request_information. */
 export interface AdminRrpApplicationReviewResult {
