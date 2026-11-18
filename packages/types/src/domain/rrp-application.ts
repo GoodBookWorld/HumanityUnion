@@ -157,3 +157,10 @@ export type AdminRrpApplicationReviewDecision =
   | "request_information"
   | "approve"
   | "reject";
+
+/** Admin review result — optional Messages delivery warning for request_information. */
+export interface AdminRrpApplicationReviewResult {
+  readonly application: AdminRrpApplicationDetail;
+  readonly messageIntentRecorded?: boolean;
+  readonly messageWarning?: string;
+}

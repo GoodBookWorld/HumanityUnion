@@ -125,7 +125,9 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.match(modal, /confirmAdminRrpAppointment/);
     assert.match(modal, /ConfirmDialog/);
     assert.match(modal, /confirmApprove/);
+    assert.match(modal, /confirmRequestInfo/);
     assert.match(modal, /approvingRef/);
+    assert.match(modal, /requestingRef/);
     assert.match(modal, /messageWarning/);
     assert.doesNotMatch(api, /decision:\s*"approve"/);
     assert.match(api, /Exclude<AdminRrpApplicationReviewDecision, "approve">/);

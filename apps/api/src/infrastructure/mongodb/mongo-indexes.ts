@@ -33,6 +33,7 @@ import {
   RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_DESCRIPTION,
   RRP_APPOINTMENT_ACTIVE_UNIQUE_INDEX_NAME,
   RRP_APPOINTMENT_MESSAGE_INTENT_UNIQUE_INDEX_NAME,
+  RRP_MESSAGE_INTENT_CLIENT_MESSAGE_ID_UNIQUE_INDEX_NAME,
 } from "../../modules/rrp-application/rrp-appointment.constants.js";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
@@ -590,13 +591,23 @@ const MODULE_INDEXES: ReadonlyArray<{
         name: "rrp_appointment_message_intent_id_unique",
       },
       {
+        key: { clientMessageId: 1 },
+        unique: true,
+        name: RRP_MESSAGE_INTENT_CLIENT_MESSAGE_ID_UNIQUE_INDEX_NAME,
+      },
+      {
         key: { appointmentId: 1 },
         unique: true,
         name: RRP_APPOINTMENT_MESSAGE_INTENT_UNIQUE_INDEX_NAME,
+        partialFilterExpression: { appointmentId: { $type: "string" } },
       },
       {
         key: { status: 1, updatedAt: 1 },
         name: "rrp_appointment_message_intent_status_updated",
+      },
+      {
+        key: { status: 1, nextRetryAt: 1 },
+        name: "rrp_message_intent_status_next_retry",
       },
     ],
   },

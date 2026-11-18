@@ -74,6 +74,11 @@ async function start(): Promise<void> {
   );
   startIntegrityMediaAuthorMessageScheduler();
 
+  const { startRrpMessageIntentScheduler } = await import(
+    "./modules/rrp-application/rrp-message-intent.scheduler.js"
+  );
+  startRrpMessageIntentScheduler();
+
   const { startSearchPerformanceScheduler } = await import(
     "./modules/seo-search-performance/search-performance.scheduler.js"
   );

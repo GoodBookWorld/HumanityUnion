@@ -17,10 +17,6 @@ import { recordAdministrationAuditBestEffort } from "../administration/audit.ser
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
-import {
-  openOrCreateDirectConversation,
-  sendDirectMessage,
-} from "../direct-messaging/direct-messaging.service.js";
 import { assertAdminMayTransition } from "./rrp-application.lifecycle.js";
 import {
   RrpApplicationAccessDeniedError,
@@ -42,14 +38,18 @@ import {
   buildRrpAppointmentMessageIntent,
   findRrpAppointmentMessageIntentByAppointmentId,
   insertRrpAppointmentMessageIntentIdempotent,
-  markRrpAppointmentMessageIntentDelivered,
-  recordRrpAppointmentMessageIntentDeliveryAttempt,
 } from "./rrp-appointment-message-intent.repository.js";
+import {
+  deliverRrpMessageIntentBestEffort,
+  retryRrpAppointmentMessageIntentDelivery,
+} from "./rrp-message-intent.delivery.js";
 import {
   findRrpApplicationById,
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
 import { parseExpectedRevision } from "./rrp-application.validation.js";
+
+export { retryRrpAppointmentMessageIntentDelivery };
 
 function toAppointmentDetail(record: {
   appointmentId: string;
@@ -96,75 +96,6 @@ function validateConfirmAppointmentBody(body: unknown): { expectedRevision: numb
   return { expectedRevision };
 }
 
-function buildSafeApprovalMessageText(representCountryCode: string): string {
-  return [
-    "Your Regional Representative application has been approved.",
-    `You are designated as a Representative for ${representCountryCode} on the platform.`,
-    "This is an internal platform designation only — not legal authority, employment, or funding entitlement.",
-    "This decision does not grant administrator privileges.",
-    "Open Workspace → My Regional Applications to view status.",
-  ].join(" ");
-}
-
-async function deliverApprovalMessageBestEffort(input: {
-  intentAppointmentId: string;
-  adminParticipantId: string;
-  recipientParticipantId: string;
-  representCountryCode: string;
-  clientMessageId: string;
-}): Promise<string | undefined> {
-  try {
-    const conversation = await openOrCreateDirectConversation(input.adminParticipantId, {
-      participantId: input.recipientParticipantId,
-    });
-    await sendDirectMessage({
-      conversationId: conversation.conversationId,
-      senderParticipantId: input.adminParticipantId,
-      text: buildSafeApprovalMessageText(input.representCountryCode),
-      clientMessageId: input.clientMessageId,
-    });
-    await markRrpAppointmentMessageIntentDelivered(input.intentAppointmentId);
-    return undefined;
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to deliver approval message.";
-    // Keep intent pending so a later retry is possible; appointment stays valid.
-    await recordRrpAppointmentMessageIntentDeliveryAttempt(
-      input.intentAppointmentId,
-      message,
-    );
-    return "Platform designation succeeded, but the Messages notification could not be delivered. Intent remains pending for retry.";
-  }
-}
-
-/**
- * Manual retry of a still-pending appointment message intent.
- * Uses the same stable clientMessageId to prevent duplicate DMs.
- * Automatic worker retry is not implemented in this foundation.
- */
-export async function retryRrpAppointmentMessageIntentDelivery(
-  appointmentId: string,
-): Promise<{ delivered: boolean; warning?: string }> {
-  const intent = await findRrpAppointmentMessageIntentByAppointmentId(appointmentId);
-  if (!intent) {
-    return { delivered: false, warning: "No message intent found for this appointment." };
-  }
-  if (intent.status === "delivered") {
-    return { delivered: true };
-  }
-  const warning = await deliverApprovalMessageBestEffort({
-    intentAppointmentId: intent.appointmentId,
-    adminParticipantId: intent.adminParticipantId,
-    recipientParticipantId: intent.recipientParticipantId,
-    representCountryCode: intent.representCountryCode,
-    clientMessageId: intent.clientMessageId,
-  });
-  if (warning) {
-    return { delivered: false, warning };
-  }
-  return { delivered: true };
-}
-
 async function applyConfirmAppointmentInMemory(input: {
   admin: { userId: string; participantId: string };
   current: RrpApplicationRecord;
@@ -184,6 +115,7 @@ async function applyConfirmAppointmentInMemory(input: {
       buildRrpAppointmentMessageIntent({
         appointmentId: existingAppointment.appointmentId,
         applicationId: input.current.applicationId,
+        applicationRevision: input.current.revision,
         recipientParticipantId: input.current.participantId,
         adminParticipantId: input.admin.participantId,
         representCountryCode: input.current.representCountryCode,
@@ -263,6 +195,7 @@ async function applyConfirmAppointmentInMemory(input: {
   const intent = buildRrpAppointmentMessageIntent({
     appointmentId: appointment.appointmentId,
     applicationId: updated.applicationId,
+    applicationRevision: updated.revision,
     recipientParticipantId: updated.participantId,
     adminParticipantId: input.admin.participantId,
     representCountryCode: updated.representCountryCode,
@@ -321,6 +254,7 @@ export async function confirmRrpAppointmentForAdminActor(input: {
             intent = buildRrpAppointmentMessageIntent({
               appointmentId: existingAppointment.appointmentId,
               applicationId: current.applicationId,
+              applicationRevision: current.revision,
               recipientParticipantId: current.participantId,
               adminParticipantId: admin.participantId,
               representCountryCode: current.representCountryCode,
@@ -400,6 +334,7 @@ export async function confirmRrpAppointmentForAdminActor(input: {
         const intent = buildRrpAppointmentMessageIntent({
           appointmentId: appointment.appointmentId,
           applicationId: updated.applicationId,
+          applicationRevision: updated.revision,
           recipientParticipantId: updated.participantId,
           adminParticipantId: admin.participantId,
           representCountryCode: updated.representCountryCode,
@@ -423,13 +358,7 @@ export async function confirmRrpAppointmentForAdminActor(input: {
         };
       });
 
-  const messageWarning = await deliverApprovalMessageBestEffort({
-    intentAppointmentId: committed.appointment.appointmentId,
-    adminParticipantId: admin.participantId,
-    recipientParticipantId: committed.application.participantId,
-    representCountryCode: committed.appointment.representCountryCode,
-    clientMessageId: committed.intent.clientMessageId,
-  });
+  const messageWarning = await deliverRrpMessageIntentBestEffort(committed.intent);
 
   return {
     application: committed.application,

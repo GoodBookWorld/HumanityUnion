@@ -321,7 +321,7 @@ describe("HU-RRP-03C confirm-appointment foundation", () => {
       applicationId: submitted.applicationId,
       body: { decision: "approve", expectedRevision: submitted.revision },
     });
-    assert.equal(reviewed.status, "approved");
+    assert.equal(reviewed.application.status, "approved");
     const appointment = await findActiveRrpAppointmentBySourceApplicationId(submitted.applicationId);
     assert.equal(appointment, null);
   });

@@ -108,7 +108,9 @@ export function AdminRrpApplicationModal({
     null | "approve" | "mark_under_review" | "request_information" | "reject"
   >(null);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
+  const [confirmRequestInfoOpen, setConfirmRequestInfoOpen] = useState(false);
   const [reviewNote, setReviewNote] = useState("");
+  const requestingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -127,6 +129,11 @@ export function AdminRrpApplicationModal({
         if (confirmApproveOpen) {
           event.preventDefault();
           setConfirmApproveOpen(false);
+          return;
+        }
+        if (confirmRequestInfoOpen) {
+          event.preventDefault();
+          setConfirmRequestInfoOpen(false);
           return;
         }
         event.preventDefault();
@@ -150,7 +157,7 @@ export function AdminRrpApplicationModal({
         restore.focus();
       }
     };
-  }, [isOpen, onClose, confirmApproveOpen]);
+  }, [isOpen, onClose, confirmApproveOpen, confirmRequestInfoOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -163,8 +170,10 @@ export function AdminRrpApplicationModal({
       setMessageWarning(null);
       setBusy(null);
       setConfirmApproveOpen(false);
+      setConfirmRequestInfoOpen(false);
       setReviewNote("");
       approvingRef.current = false;
+      requestingRef.current = false;
       return;
     }
 
@@ -322,37 +331,60 @@ export function AdminRrpApplicationModal({
     if (!detail || busy) {
       return;
     }
+    if (decision === "request_information" && requestingRef.current) {
+      return;
+    }
     const needsNote = decision === "request_information" || decision === "reject";
     if (needsNote && !reviewNote.trim()) {
       setError(t("errors.noteRequired"));
       return;
+    }
+    if (decision === "request_information") {
+      requestingRef.current = true;
     }
     setBusy(decision);
     setActionMessage(null);
     setMessageWarning(null);
     setError(null);
     try {
-      const updated = await reviewAdminRrpApplication({
+      const result = await reviewAdminRrpApplication({
         applicationId: detail.applicationId,
         decision,
         expectedRevision: detail.revision,
         ...(needsNote ? { note: reviewNote.trim() } : {}),
       });
-      setDetail(updated);
+      setDetail(result.application);
       setReviewNote("");
+      setConfirmRequestInfoOpen(false);
       setActionMessage(
         decision === "mark_under_review"
           ? t("messages.markedUnderReview")
           : decision === "request_information"
-            ? t("messages.informationRequested")
+            ? result.messageIntentRecorded
+              ? t("messages.informationRequestedWithMessage")
+              : t("messages.informationRequested")
             : t("messages.rejected"),
       );
+      if (result.messageWarning) {
+        setMessageWarning(result.messageWarning);
+      }
       onDirectoryRefresh?.();
     } catch (actionError: unknown) {
       setError(formatAuthFormError(actionError));
+      setConfirmRequestInfoOpen(false);
     } finally {
+      requestingRef.current = false;
       setBusy(null);
     }
+  }
+
+  function openRequestInformationConfirm() {
+    if (!detail || !reviewNote.trim()) {
+      setError(t("errors.noteRequired"));
+      return;
+    }
+    setError(null);
+    setConfirmRequestInfoOpen(true);
   }
 
   const canApprove = detail ? isRrpApproveEligibleStatus(detail.status) : false;
@@ -555,7 +587,7 @@ export function AdminRrpApplicationModal({
                 type="button"
                 variant="secondary"
                 disabled={!canRequestInfo || isMutating}
-                onClick={() => void handleReview("request_information")}
+                onClick={openRequestInformationConfirm}
               >
                 {busy === "request_information" ? t("busy.working") : t("actions.requestInformation")}
               </Button>
@@ -604,6 +636,36 @@ export function AdminRrpApplicationModal({
         }}
         onConfirm={() => {
           void handleConfirmApprove();
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmRequestInfoOpen}
+        title={t("confirmRequestInfo.title")}
+        description={
+          <div className="admin-rrp-application-modal__confirm-copy">
+            <p>{t("confirmRequestInfo.lineStatus")}</p>
+            <p>{t("confirmRequestInfo.lineMessage")}</p>
+            <p>{t("confirmRequestInfo.lineReply")}</p>
+            <p className="hu-caption">{reviewNote.trim()}</p>
+          </div>
+        }
+        confirmLabel={
+          busy === "request_information"
+            ? t("busy.working")
+            : t("confirmRequestInfo.confirm")
+        }
+        cancelLabel={t("confirmRequestInfo.cancel")}
+        destructive={false}
+        isConfirming={busy === "request_information"}
+        onCancel={() => {
+          if (busy === "request_information") {
+            return;
+          }
+          setConfirmRequestInfoOpen(false);
+        }}
+        onConfirm={() => {
+          void handleReview("request_information");
         }}
       />
     </>

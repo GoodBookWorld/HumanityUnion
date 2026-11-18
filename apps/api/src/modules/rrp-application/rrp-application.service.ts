@@ -1,6 +1,7 @@
 import type {
   AdminRrpApplicationDetail,
   AdminRrpApplicationListItem,
+  AdminRrpApplicationReviewResult,
   RrpApplicationDetail,
   RrpApplicationDecisionHistoryEntry,
   RrpApplicationRecord,
@@ -42,6 +43,11 @@ import {
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
 import { listActiveRrpAppointmentsForParticipantIds } from "./rrp-appointment.repository.js";
+import {
+  buildRrpRequestInformationMessageIntent,
+  insertRrpAppointmentMessageIntentIdempotent,
+} from "./rrp-appointment-message-intent.repository.js";
+import { deliverRrpMessageIntentBestEffort } from "./rrp-message-intent.delivery.js";
 import {
   assertSubmissionFieldsComplete,
   clampAdminListLimit,
@@ -475,7 +481,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   actorUserId: string;
   applicationId: string;
   body: unknown;
-}): Promise<AdminRrpApplicationDetail> {
+}): Promise<AdminRrpApplicationReviewResult> {
   const admin = await assertAdminActor(input.actorUserId);
   const review = validateAdminReviewBody(input.body);
 
@@ -487,7 +493,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   assertRevisionMatch(current, review.expectedRevision);
 
   if (isIdempotentAdminDecision({ status: current.status, decision: review.decision })) {
-    return toAdminRrpApplicationDetail(current);
+    return { application: toAdminRrpApplicationDetail(current) };
   }
 
   const toStatus = assertAdminMayTransition({
@@ -520,7 +526,8 @@ export async function reviewRrpApplicationForAdminActor(input: {
     next,
   });
 
-  // Status review only — Representative appointment requires confirm-appointment.
+  // Status review only for non-appointment decisions — Representative designation
+  // requires confirm-appointment. request_information also records a durable DM intent.
   recordAdministrationAuditBestEffort({
     actorParticipantId: admin.participantId,
     action: "rrp.application.review",
@@ -531,5 +538,31 @@ export async function reviewRrpApplicationForAdminActor(input: {
     afterSummary: buildRrpApplicationAuditSummary(updated),
   });
 
-  return toAdminRrpApplicationDetail(updated);
+  if (review.decision !== "request_information") {
+    return { application: toAdminRrpApplicationDetail(updated) };
+  }
+
+  const explanation = (review.note ?? "").trim();
+  if (!explanation) {
+    throw new RrpApplicationValidationError(
+      "A nonempty explanation is required when requesting information.",
+    );
+  }
+
+  const intent = buildRrpRequestInformationMessageIntent({
+    applicationId: updated.applicationId,
+    applicationRevision: updated.revision,
+    recipientParticipantId: updated.participantId,
+    adminParticipantId: admin.participantId,
+    representCountryCode: updated.representCountryCode,
+    requestExplanation: explanation,
+  });
+  await insertRrpAppointmentMessageIntentIdempotent(intent);
+  const messageWarning = await deliverRrpMessageIntentBestEffort(intent);
+
+  return {
+    application: toAdminRrpApplicationDetail(updated),
+    messageIntentRecorded: true,
+    ...(messageWarning ? { messageWarning } : {}),
+  };
 }

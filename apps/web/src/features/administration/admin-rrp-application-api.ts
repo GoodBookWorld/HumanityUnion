@@ -2,6 +2,7 @@ import type {
   AdminRrpApplicationDetail,
   AdminRrpApplicationListItem,
   AdminRrpApplicationReviewDecision,
+  AdminRrpApplicationReviewResult,
   RrpConfirmAppointmentResult,
 } from "@hu/types";
 
@@ -64,8 +65,8 @@ export async function reviewAdminRrpApplication(input: {
   decision: Exclude<AdminRrpApplicationReviewDecision, "approve">;
   expectedRevision: number;
   note?: string;
-}): Promise<AdminRrpApplicationDetail> {
-  return apiRequest<AdminRrpApplicationDetail>(
+}): Promise<AdminRrpApplicationReviewResult> {
+  return apiRequest<AdminRrpApplicationReviewResult>(
     `/api/v1/admin/rrp-applications/${encodeURIComponent(input.applicationId)}/review`,
     {
       method: "POST",

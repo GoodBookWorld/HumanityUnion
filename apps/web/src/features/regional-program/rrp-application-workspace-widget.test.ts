@@ -85,6 +85,16 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.doesNotMatch(widget, /confirmAdminRrpAppointment|AdminRrpApplicationModal|Approve/);
   });
 
+  it("links information_requested rows to existing Workspace Messages", () => {
+    const widget = read(
+      "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
+    );
+    assert.match(widget, /information_requested/);
+    assert.match(widget, /\/workspace\/messages/);
+    assert.match(widget, /workspaceWidget\.openMessages/);
+    assert.doesNotMatch(widget, /DirectMessagingPanel|RrpChat/);
+  });
+
   it("partitions active applications before history and sorts by updatedAt", () => {
     const listed = [
       sampleApplication({

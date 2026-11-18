@@ -362,7 +362,7 @@ describe("HU-RRP-02B — uniqueness and concurrency", () => {
         note: "Not a fit at this time.",
       },
     });
-    assert.equal(rejected.status, "rejected");
+    assert.equal(rejected.application.status, "rejected");
 
     const second = await createRrpApplicationDraftForUser("user-applicant-1", {
       representCountryCode: "CA",
@@ -519,13 +519,13 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
         note: "Please clarify prior regional work.",
       },
     });
-    assert.equal(requested.status, "information_requested");
+    assert.equal(requested.application.status, "information_requested");
 
     const updated = await updateOwnRrpApplicationDraftForUser({
       userId: "user-applicant-1",
       applicationId: draft.applicationId,
       body: {
-        expectedRevision: requested.revision,
+        expectedRevision: requested.application.revision,
         relevantExperience: "Expanded regional experience details.",
       },
     });
@@ -563,14 +563,14 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
         expectedRevision: submitted.revision,
       },
     });
-    assert.equal(approved.status, "approved");
+    assert.equal(approved.application.status, "approved");
 
     const serviceSource = readRepo(
       "apps/api/src/modules/rrp-application/rrp-application.service.ts",
     );
     assert.match(
       serviceSource,
-      /Status review only — Representative appointment requires confirm-appointment/,
+      /Representative designation[\s\S]*requires confirm-appointment/,
     );
     assert.doesNotMatch(serviceSource, /grantRole|role:\s*"representative"|ensureRepresentative/i);
     assert.doesNotMatch(
@@ -604,18 +604,18 @@ describe("HU-RRP-02B — status transitions and approval policy", () => {
         expectedRevision: submitted.revision,
       },
     });
-    const historyLength = approved.decisionHistory.length;
+    const historyLength = approved.application.decisionHistory.length;
     const again = await reviewRrpApplicationForAdminActor({
       actorUserId: "user-admin-1",
       applicationId: draft.applicationId,
       body: {
         decision: "approve",
-        expectedRevision: approved.revision,
+        expectedRevision: approved.application.revision,
       },
     });
-    assert.equal(again.status, "approved");
-    assert.equal(again.revision, approved.revision);
-    assert.equal(again.decisionHistory.length, historyLength);
+    assert.equal(again.application.status, "approved");
+    assert.equal(again.application.revision, approved.application.revision);
+    assert.equal(again.application.decisionHistory.length, historyLength);
   });
 });
 

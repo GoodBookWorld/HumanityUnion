@@ -7760,7 +7760,10 @@
       "openAria": "Open application for {country}",
       "editAria": "Edit application for {country}",
       "viewAria": "View application for {country}",
-      "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement."
+      "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement.",
+      "messagesHint": "An administrator asked for more information. Reply in Messages after you update your application.",
+      "openMessages": "Open Messages",
+      "openMessagesAria": "Open Workspace Messages"
     },
     "admin": {
       "title": "Regional Representative application",
@@ -7809,7 +7812,16 @@
         "approved": "Application approved and Representative platform designation recorded.",
         "markedUnderReview": "Application marked under review.",
         "informationRequested": "More information requested.",
+        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
         "rejected": "Application rejected."
+      },
+      "confirmRequestInfo": {
+        "title": "Request more information?",
+        "lineStatus": "The application status will change to “More information requested”.",
+        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
+        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
+        "confirm": "Confirm request",
+        "cancel": "Cancel"
       },
       "confirmApprove": {
         "title": "Approve and designate Representative?",

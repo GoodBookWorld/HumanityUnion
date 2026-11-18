@@ -132,6 +132,11 @@ export function RrpApplicationWorkspaceWidget() {
               {t("workspaceWidget.representativeDesignation")}
             </p>
           ) : null}
+          {item.status === "information_requested" ? (
+            <p className="rrp-application-workspace-widget__messages-hint">
+              {t("workspaceWidget.messagesHint")}
+            </p>
+          ) : null}
           <p className="rrp-application-workspace-widget__updated">
             {t("workspaceWidget.updated", {
               date: formatUpdatedDate(item.updatedAt, locale),
@@ -147,6 +152,15 @@ export function RrpApplicationWorkspaceWidget() {
           >
             {primaryLabel}
           </Button>
+          {item.status === "information_requested" ? (
+            <Button
+              href="/workspace/messages"
+              variant="tertiary"
+              aria-label={t("workspaceWidget.openMessagesAria")}
+            >
+              {t("workspaceWidget.openMessages")}
+            </Button>
+          ) : null}
         </div>
       </li>
     );

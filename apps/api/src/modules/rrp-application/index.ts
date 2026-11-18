@@ -20,6 +20,12 @@ export {
   confirmRrpAppointmentForAdminActor,
   retryRrpAppointmentMessageIntentDelivery,
 } from "./rrp-appointment.service.js";
+export { startRrpMessageIntentScheduler } from "./rrp-message-intent.scheduler.js";
+export { reconcilePendingRrpMessageIntents } from "./rrp-message-intent.reconciliation.js";
+export {
+  retryRrpMessageIntentDeliveryById,
+  deliverRrpMessageIntentBestEffort,
+} from "./rrp-message-intent.delivery.js";
 export {
   resetRrpApplicationMemoryForTests,
   setRrpApplicationForceMemoryForTests,
