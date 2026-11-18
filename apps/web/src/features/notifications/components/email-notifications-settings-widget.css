@@ -1,12 +1,16 @@
-/* HU-NOTIF-02A / 02C.10 — compact Email Notifications accordion on Notification Center */
+/* HU-NOTIF-02A / 02C.10 / 02C.12B — compact Email Notifications accordion on Notification Center */
 
 .email-notifications-settings {
+  --ens-border: color-mix(in srgb, var(--hu-color-text, #1a1a1a) 28%, transparent);
+  --ens-border-strong: color-mix(in srgb, var(--hu-color-text, #1a1a1a) 42%, transparent);
+  --ens-focus: var(--hu-color-primary, #0174b0);
+
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
   margin-block-end: var(--hu-space-4);
-  border: 1px solid var(--hu-color-border);
+  border: 1px solid var(--ens-border);
   border-radius: var(--hu-radius-card, var(--hu-radius-md));
   background: var(--hu-color-surface, var(--hu-color-bg-muted));
   overflow-x: hidden;
@@ -36,7 +40,7 @@
 }
 
 .email-notifications-settings__trigger:focus-visible {
-  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline: 2px solid var(--ens-focus);
   outline-offset: var(--hu-focus-offset, 2px);
 }
 
@@ -97,7 +101,7 @@
 .email-notifications-settings__panel {
   min-width: 0;
   padding: 0 var(--hu-space-4) var(--hu-space-4);
-  border-block-start: 1px solid var(--hu-color-border);
+  border-block-start: 1px solid var(--ens-border);
 }
 
 .email-notifications-settings__panel[hidden] {
@@ -131,7 +135,7 @@
 
 .email-notifications-settings__field--muted {
   padding-block-start: var(--hu-space-3);
-  border-block-start: 1px solid var(--hu-color-border);
+  border-block-start: 1px solid var(--ens-border);
   gap: var(--hu-space-2);
 }
 
@@ -156,11 +160,24 @@
   box-sizing: border-box;
   padding-block: var(--hu-space-2);
   padding-inline: var(--hu-space-3);
-  border: 1px solid var(--hu-color-border);
+  border: 1px solid var(--ens-border-strong);
   border-radius: var(--hu-radius-md);
   background: var(--hu-color-surface, #fff);
   color: var(--hu-color-text);
   font: inherit;
+}
+
+.email-notifications-settings__select:focus-visible {
+  outline: 2px solid var(--ens-focus);
+  outline-offset: var(--hu-focus-offset, 2px);
+  border-color: var(--ens-focus);
+}
+
+.email-notifications-settings__select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--hu-color-bg-muted, #f5f5f5);
+  border-color: var(--ens-border);
 }
 
 .email-notifications-settings__error {
@@ -190,7 +207,7 @@
   min-height: var(--hu-button-min-height, 2.5rem);
   padding-block: var(--hu-button-padding-block, 0.5rem);
   padding-inline: var(--hu-button-padding-inline, 1rem);
-  border: 1px solid var(--hu-color-border);
+  border: 1px solid var(--ens-border-strong);
   border-radius: var(--hu-button-radius, var(--hu-radius-md));
   background: var(--hu-color-surface, #fff);
   color: var(--hu-color-text);
@@ -198,9 +215,31 @@
   font: inherit;
 }
 
+.email-notifications-settings__button--primary {
+  border-color: var(--hu-color-primary, #0174b0);
+  background: var(--hu-color-primary, #0174b0);
+  color: var(--hu-color-on-primary, #fff);
+}
+
+.email-notifications-settings__button--secondary {
+  border-color: var(--ens-border-strong);
+  background: var(--hu-color-surface, #fff);
+  color: var(--hu-color-text);
+}
+
 .email-notifications-settings__button:focus-visible {
-  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline: 2px solid var(--ens-focus);
   outline-offset: var(--hu-focus-offset, 2px);
+}
+
+.email-notifications-settings__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.email-notifications-settings__button--primary:disabled {
+  border-color: color-mix(in srgb, var(--hu-color-primary, #0174b0) 45%, transparent);
+  background: color-mix(in srgb, var(--hu-color-primary, #0174b0) 45%, transparent);
 }
 
 .email-notifications-settings__link {
@@ -209,7 +248,12 @@
 }
 
 .email-notifications-settings__link:focus-visible {
-  outline: var(--hu-focus-ring, 2px solid currentColor);
+  outline: 2px solid var(--ens-focus);
+  outline-offset: var(--hu-focus-offset, 2px);
+}
+
+.email-notifications-settings .preference-option__input:focus-visible {
+  outline: 2px solid var(--ens-focus);
   outline-offset: var(--hu-focus-offset, 2px);
 }
 
@@ -232,5 +276,14 @@
 
   .email-notifications-settings__panel {
     padding-inline: var(--hu-space-3);
+  }
+
+  .email-notifications-settings__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .email-notifications-settings__button {
+    width: 100%;
   }
 }

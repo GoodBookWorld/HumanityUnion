@@ -392,15 +392,55 @@ describe("HU-NOTIF-02B alternative notification email", () => {
   });
 
   it("blocks protected fields on general preferences PATCH", () => {
-    assert.throws(
-      () =>
-        validatePreferencesPatch({
-          communicationPreferences: {
-            notificationAlternativeEmail: "evil@example.com",
-          },
-        }),
-      /notification email verification endpoints/i,
+    for (const protectedField of [
+      "notificationEmailDestinationMode",
+      "notificationAlternativeEmail",
+      "notificationAlternativeEmailVerifiedAt",
+      "notificationAlternativeEmailPending",
+    ] as const) {
+      assert.throws(
+        () =>
+          validatePreferencesPatch({
+            communicationPreferences: {
+              [protectedField]:
+                protectedField === "notificationEmailDestinationMode" ? "alternative" : "evil@example.com",
+            },
+          }),
+        /notification email verification endpoints/i,
+      );
+    }
+  });
+
+  it("clears resendAvailableAt after successful alternative confirmation", async () => {
+    process.env.EMAIL_CONFIRMATION_RESEND_COOLDOWN_SECONDS = "60";
+
+    const requested = await requestAlternativeNotificationEmail({
+      userId: USER_ID,
+      memberId: MEMBER_ID,
+      email: "confirm-clear@example.com",
+      ipKey: "127.0.0.1",
+    });
+    assert.ok(requested.destination.pendingAlternativeEmail);
+    assert.ok(requested.destination.resendAvailableAt);
+
+    const code = getLastIssuedConfirmationCodeForTests(
+      USER_ID,
+      NOTIFICATION_ALTERNATIVE_EMAIL_PURPOSE,
     );
+    assert.ok(code);
+
+    const confirmed = await confirmAlternativeNotificationEmail({
+      userId: USER_ID,
+      memberId: MEMBER_ID,
+      code,
+    });
+    assert.equal(confirmed.destination.pendingAlternativeEmail, null);
+    assert.equal(confirmed.destination.resendAvailableAt, null);
+    assert.equal(confirmed.destination.attemptsRemaining, null);
+    assert.equal(confirmed.destination.alternativeEmail, "confirm-clear@example.com");
+
+    const auth = await findAuthUserById(USER_ID);
+    assert.equal(auth?.email, "owner@example.com");
   });
 
   it("keeps notificationEmailCopiesOptIn default OFF", () => {

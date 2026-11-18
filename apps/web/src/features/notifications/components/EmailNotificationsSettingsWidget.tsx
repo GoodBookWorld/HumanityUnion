@@ -25,6 +25,7 @@ import {
   useAccountNotificationEmail,
   type NotificationEmailDestinationView,
 } from "../../preferences/notification-email-api";
+import { buildOrdinaryCommunicationPreferencesUpdate } from "../../preferences/communication-preferences-patch";
 import {
   getMyPreferences,
   MEMBER_PREFERENCES_CHANGED_EVENT,
@@ -115,7 +116,10 @@ export function EmailNotificationsSettingsWidget() {
 
   const applyDestination = useCallback((next: NotificationEmailDestinationView) => {
     setDestination(next);
-    setCooldownSeconds(secondsUntil(next.resendAvailableAt));
+    // Countdown only applies while a pending verification exists.
+    setCooldownSeconds(
+      next.pendingAlternativeEmail ? secondsUntil(next.resendAvailableAt) : 0,
+    );
     if (next.pendingAlternativeEmail) {
       setAltEmailInput(next.pendingAlternativeEmail);
     }
@@ -194,11 +198,13 @@ export function EmailNotificationsSettingsWidget() {
 
         try {
           const updated = await updateMyPreferences({
-            communicationPreferences: {
-              ...baseline.communicationPreferences,
-              notificationEmailCopiesOptIn: resolveOptIn(baseline),
-              ...patch,
-            },
+            communicationPreferences: buildOrdinaryCommunicationPreferencesUpdate({
+              baseline: {
+                ...baseline.communicationPreferences,
+                notificationEmailCopiesOptIn: resolveOptIn(baseline),
+              },
+              patch,
+            }),
           });
           applyPreferences(updated);
           setSaveState("saved");
@@ -226,10 +232,16 @@ export function EmailNotificationsSettingsWidget() {
       const result = await action();
       applyPreferences(result.preferences);
       applyDestination(result.destination);
+      // Clear stale ordinary-save errors so success is not paired with a leftover alert.
+      setSaveError(null);
+      setSaveState((current) => (current === "error" ? "idle" : current));
       setAltActionState("success");
       setAltActionSuccess(t(successKey));
-      if (successKey === "confirmSuccess") {
+      if (successKey === "confirmSuccess" || successKey === "removeSuccess") {
         setCodeInput("");
+      }
+      if (!result.destination.pendingAlternativeEmail) {
+        setCooldownSeconds(0);
       }
     } catch (error) {
       setAltActionState("error");
@@ -432,7 +444,7 @@ export function EmailNotificationsSettingsWidget() {
               <div className="email-notifications-settings__actions">
                 <button
                   type="button"
-                  className="email-notifications-settings__button"
+                  className="email-notifications-settings__button email-notifications-settings__button--primary"
                   disabled={
                     controlsDisabled || !emailVerified || cooldownSeconds > 0 || !altEmailInput.trim()
                   }
@@ -469,7 +481,7 @@ export function EmailNotificationsSettingsWidget() {
                   <div className="email-notifications-settings__actions">
                     <button
                       type="button"
-                      className="email-notifications-settings__button"
+                      className="email-notifications-settings__button email-notifications-settings__button--primary"
                       disabled={controlsDisabled || codeInput.trim().length !== 6}
                       onClick={() =>
                         void runAltAction(
@@ -488,7 +500,7 @@ export function EmailNotificationsSettingsWidget() {
                 {mode === "alternative" ? (
                   <button
                     type="button"
-                    className="email-notifications-settings__button"
+                    className="email-notifications-settings__button email-notifications-settings__button--secondary"
                     disabled={controlsDisabled}
                     onClick={() =>
                       void runAltAction(() => useAccountNotificationEmail(), "useAccountSuccess")
@@ -500,7 +512,7 @@ export function EmailNotificationsSettingsWidget() {
                 {verifiedAlt || pending ? (
                   <button
                     type="button"
-                    className="email-notifications-settings__button"
+                    className="email-notifications-settings__button email-notifications-settings__button--secondary"
                     disabled={controlsDisabled}
                     onClick={() =>
                       void runAltAction(

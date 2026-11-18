@@ -82,6 +82,43 @@ describe("HU-NOTIF-02A/02B Email Notifications settings widget", () => {
     assert.match(widget, /getNotificationEmailDestination/);
   });
 
+  it("strips protected destination fields from ordinary preference PATCH payloads", () => {
+    const widget = read(
+      "features/notifications/components/EmailNotificationsSettingsWidget.tsx",
+    );
+    const prefs = read("features/preferences/components/PreferencesWorkspace.tsx");
+    const helper = read("features/preferences/communication-preferences-patch.ts");
+    assert.match(helper, /PROTECTED_NOTIFICATION_EMAIL_COMMUNICATION_KEYS/);
+    assert.match(helper, /notificationEmailDestinationMode/);
+    assert.match(helper, /notificationAlternativeEmailPending/);
+    assert.match(widget, /buildOrdinaryCommunicationPreferencesUpdate/);
+    assert.match(prefs, /buildOrdinaryCommunicationPreferencesPatch/);
+    assert.doesNotMatch(
+      widget,
+      /communicationPreferences:\s*\{\s*\.\.\.baseline\.communicationPreferences/,
+    );
+    assert.doesNotMatch(
+      prefs,
+      /communicationPreferences:\s*preferences\.communicationPreferences/,
+    );
+  });
+
+  it("clears saveError and stops resend countdown after verification success", () => {
+    const widget = read(
+      "features/notifications/components/EmailNotificationsSettingsWidget.tsx",
+    );
+    assert.match(widget, /setSaveError\(null\)/);
+    assert.match(widget, /setSaveState\(\(current\) => \(current === "error" \? "idle" : current\)\)/);
+    assert.match(
+      widget,
+      /pendingAlternativeEmail \? secondsUntil\(next\.resendAvailableAt\) : 0/,
+    );
+    assert.match(widget, /if \(!result\.destination\.pendingAlternativeEmail\)/);
+    assert.match(widget, /setCooldownSeconds\(0\)/);
+    assert.match(widget, /confirmSuccess/);
+    assert.doesNotMatch(widget, /requestEmailChange|confirmEmailChange/);
+  });
+
   it("does not claim universal delivery and uses MailDeliveryService only on API", () => {
     const widget = read(
       "features/notifications/components/EmailNotificationsSettingsWidget.tsx",

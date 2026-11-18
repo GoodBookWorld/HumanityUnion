@@ -120,6 +120,22 @@ describe("HU-NOTIF-02C.10 Email Notifications accordion", () => {
     assert.match(styles, /overflow-x:\s*hidden/);
   });
 
+  it("scopes stronger control borders and primary/secondary button hierarchy to Email Notifications", () => {
+    const source = widget();
+    const styles = css();
+    assert.match(styles, /\.email-notifications-settings\s*\{/);
+    assert.match(styles, /--ens-border-strong/);
+    assert.match(styles, /\.email-notifications-settings__select:focus-visible/);
+    assert.match(styles, /\.email-notifications-settings__select:disabled/);
+    assert.match(styles, /\.email-notifications-settings__button--primary/);
+    assert.match(styles, /\.email-notifications-settings__button--secondary/);
+    assert.match(styles, /\.email-notifications-settings__button:disabled/);
+    assert.match(source, /email-notifications-settings__button--primary/);
+    assert.match(source, /email-notifications-settings__button--secondary/);
+    assert.match(styles, /\[dir="rtl"\] \.email-notifications-settings/);
+    assert.match(styles, /@media \(max-width: 768px\)/);
+  });
+
   it("resolves new accordion strings for installed locales via EN fallback", async () => {
     const en = readMessages("en");
     for (const locale of ["en", "ar", "de", "he", "uk", "zh-Hant"] as const) {

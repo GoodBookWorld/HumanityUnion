@@ -23,6 +23,7 @@ import {
   listSelectablePublicLanguages,
   type SelectablePublicLanguage,
 } from "../../language/public-languages-api";
+import { buildOrdinaryCommunicationPreferencesPatch } from "../communication-preferences-patch";
 import {
   getMyPreferences,
   MEMBER_PREFERENCES_CHANGED_EVENT,
@@ -186,7 +187,9 @@ export function PreferencesWorkspace() {
         const updated = await updateMyPreferences({
           experiencePreferences: preferences.experiencePreferences,
           participationPreferences: preferences.participationPreferences,
-          communicationPreferences: preferences.communicationPreferences,
+          communicationPreferences: buildOrdinaryCommunicationPreferencesPatch(
+            preferences.communicationPreferences,
+          ),
           accessibilityPreferences: preferences.accessibilityPreferences,
           workspacePreferences: preferences.workspacePreferences,
           visibilityPreferences: preferences.visibilityPreferences,

@@ -146,9 +146,12 @@ export async function buildNotificationEmailDestinationView(input: {
     alternativeEmailVerifiedAt: communication.notificationAlternativeEmailVerifiedAt,
     pendingAlternativeEmail: pending,
     pendingMaskedEmail: pending ? maskEmailAddress(pending) : null,
-    resendAvailableAt: resolveResendAvailableAt(lastSentAt ?? activeCode?.lastSentAt),
+    // No pending verification → no resend countdown (stale lastSentAt must not linger).
+    resendAvailableAt: pending
+      ? resolveResendAvailableAt(lastSentAt ?? activeCode?.lastSentAt)
+      : null,
     attemptsRemaining:
-      activeCode && activeCode.status === "active"
+      pending && activeCode && activeCode.status === "active"
         ? Math.max(0, activeCode.maxAttempts - activeCode.attemptCount)
         : null,
   };
