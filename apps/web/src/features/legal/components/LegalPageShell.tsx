@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 
 import { ProtectedAuthoritativeText } from "../../language/components/ProtectedAuthoritativeText";
 import type { LegalDocumentId, LegalDocumentPresentation } from "../resolve-legal-document-presentation";
-import { EXPECTED_LEGAL_FALLBACK } from "../resolve-legal-document-presentation";
 
 import "../legal-page.css";
 
@@ -14,17 +13,19 @@ interface LegalPageShellProps {
 }
 
 /**
- * Legal chrome (nav, titles, counsel notes) stays browser-translatable.
+ * Legal chrome (nav, titles) stays browser-translatable.
  * Authoritative Legal document body — published localized or canonical English
  * fallback — is protected from browser machine translation.
+ *
+ * HU-PRIVACY-02B — counselNote and expectedFallbackNote are not rendered on
+ * public legal pages. Admin Legal Localization retains stale/version diagnostics.
  */
 export function LegalPageShell({
   presentation,
   activeDocument,
   children,
 }: LegalPageShellProps) {
-  const { chrome, body } = presentation;
-  const showFallbackNote = body.source === EXPECTED_LEGAL_FALLBACK;
+  const { chrome } = presentation;
 
   return (
     <article className="legal-page">
@@ -54,18 +55,6 @@ export function LegalPageShell({
           </Link>
         </nav>
         <h1>{chrome.title}</h1>
-        <p className="legal-page__counsel-note" role="note">
-          {chrome.counselNote}
-        </p>
-        {showFallbackNote ? (
-          <p
-            className="legal-page__fallback-note"
-            role="status"
-            data-legal-body-source={EXPECTED_LEGAL_FALLBACK}
-          >
-            {chrome.expectedFallbackNote}
-          </p>
-        ) : null}
       </header>
       <ProtectedAuthoritativeText as="div" className="legal-page__body">
         {children}

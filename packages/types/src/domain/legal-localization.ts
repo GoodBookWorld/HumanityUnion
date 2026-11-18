@@ -32,11 +32,11 @@ export function isLegalLocalizationStatus(value: unknown): value is LegalLocaliz
  */
 export const CANONICAL_LEGAL_SOURCE_VERSIONS = {
   /**
-   * HU-RRP-03L.2 holdback — keep approved Privacy live (`privacy-2026-03-v1`) so
-   * published localized legal rows stay eligible. RRP disclosure publication is
-   * deferred until counsel approval (do not bump here for flag-OFF release).
+   * HU-PRIVACY-02B — approved English Privacy Policy (Effective Date November 18, 2026).
+   * Published locale rows must match this version to be served; older published
+   * Privacy translations fall back to English until re-approved for this version.
    */
-  privacy: "privacy-2026-03-v1",
+  privacy: "privacy-2026-11-v1",
   terms: "terms-2026-03-v1",
 } as const satisfies Record<LegalDocumentType, string>;
 

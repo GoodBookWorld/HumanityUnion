@@ -81,12 +81,14 @@ describe("Pack 08I.4 — legal document localization fallback", () => {
     assert.match(shell, /legalPublic|presentation\.chrome|navAriaLabel/);
   });
 
-  it("LegalPageShell localizes chrome nav from presentation contract", () => {
+  it("LegalPageShell localizes chrome nav without public counsel/fallback notices", () => {
     const shell = readWeb("features/legal/components/LegalPageShell.tsx");
     assert.match(shell, /chrome\.privacyLabel/);
     assert.match(shell, /chrome\.termsLabel/);
-    assert.match(shell, /chrome\.counselNote/);
-    assert.match(shell, /data-legal-body-source=\{EXPECTED_LEGAL_FALLBACK\}/);
+    assert.doesNotMatch(shell, /chrome\.counselNote/);
+    assert.doesNotMatch(shell, /chrome\.expectedFallbackNote/);
+    assert.doesNotMatch(shell, /legal-page__counsel-note/);
+    assert.doesNotMatch(shell, /legal-page__fallback-note/);
     assert.match(shell, /ProtectedAuthoritativeText[\s\S]*legal-page__body/);
   });
 });

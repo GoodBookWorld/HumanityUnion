@@ -9,7 +9,6 @@ import {
 } from "../../features/legal/resolve-legal-document-presentation";
 import {
   CONTACT_EMAIL,
-  ORGANIZATION_ADDRESS,
   ORGANIZATION_NAME,
   ORGANIZATION_WEBSITE,
   mailtoContactLink,
@@ -36,205 +35,403 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-/** English canonical Privacy Policy body — authoritative source until counsel-approved localized copies exist. */
+/**
+ * HU-PRIVACY-02B — English canonical Privacy Policy body (approved 19-section
+ * document, Effective Date November 18, 2026). Authoritative until counsel-approved
+ * localized copies are published via Admin → Legal Localization for privacy-2026-11-v1.
+ */
 function EnglishPrivacyBody() {
   return (
     <>
-      <section>
-        <h2>Who we are</h2>
+      <header className="legal-page__doc-header">
+        <p className="legal-page__doc-org">
+          <strong>{ORGANIZATION_NAME}</strong>
+        </p>
+        <p className="legal-page__doc-effective">
+          <strong>Effective Date: November 18, 2026</strong>
+        </p>
+      </header>
+
+      <section aria-labelledby="privacy-section-1">
+        <h2 id="privacy-section-1">1. Who We Are</h2>
         <p>
-          This Privacy Policy describes how {ORGANIZATION_NAME} (&quot;Humanity Union,&quot;
-          &quot;we,&quot; &quot;us&quot;) collects, uses, and protects information when you use the
-          Humanity Union civic technology platform and related public website at{" "}
-          {ORGANIZATION_WEBSITE}.
+          {ORGANIZATION_NAME} (“Humanity Union,” “we,” “us,” or “our”) is a Canadian nonprofit organization supporting civic education, responsible public participation, collaboration, and the development of solutions to social challenges through the Humanity Union platform.
         </p>
         <p>
-          Registered address: {ORGANIZATION_ADDRESS}
-          <br />
-          Contact email: <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a>
+          This Privacy Policy explains how we collect, use, protect, retain, and disclose information when you visit or use our website and related services at {ORGANIZATION_WEBSITE}.
+        </p>
+        <p>
+          <strong>Registered address:</strong> 514 Vernon St., Nelson, BC V1L 5R4, Canada
+        </p>
+        <p>
+          <strong>Contact email:</strong> <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a>
         </p>
       </section>
 
-      <section>
-        <h2>Information we collect</h2>
-        <ul>
-          <li>
-            <strong>Account data:</strong> email address, display name, password hash, verification
-            status, and account lifecycle timestamps when you register or sign in.
-          </li>
-          <li>
-            <strong>Authentication and session data:</strong> access and refresh tokens, session
-            identifiers, login timestamps, and security-related audit events needed to protect your
-            account.
-          </li>
-          <li>
-            <strong>Member profile data:</strong> optional profile fields you choose to provide,
-            visibility preferences, and profile update history.
-          </li>
-          <li>
-            <strong>Participation area data:</strong> declared civic geography (country, region,
-            community), transition requests, and effective dates used for participation eligibility.
-          </li>
-          <li>
-            <strong>Civic activity data:</strong> initiatives, analyses, proposals, revisions,
-            collective decisions, votes, implementation records, notifications, and other civic
-            records you create or participate in through the platform.
-          </li>
-          <li>
-            <strong>Nominations and public submissions:</strong> civic nomination forms, support
-            statements, public poster content, and related moderation or publication status.
-          </li>
-          <li>
-            <strong>Membership and Badge fulfillment data:</strong> optional Membership application
-            details, private Member Badge request records, recipient name, delivery address,
-            shipping method, fulfillment status, and Stripe payment references when an active Member
-            requests the official physical Member Badge through the additional Membership
-            Contribution flow.
-          </li>
-          <li>
-            <strong>Technical data:</strong> browser type, device information, IP address, request
-            logs, and error diagnostics collected for security, reliability, and abuse prevention.
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>How we use information</h2>
-        <p>We use collected information to:</p>
-        <ul>
-          <li>provide authentication, workspace access, and civic participation features;</li>
-          <li>publish public civic records you choose to make public;</li>
-          <li>
-            send transactional and security emails such as verification, sign-in protection, and
-            account recovery;
-          </li>
-          <li>
-            send optional Notification Center email copies when you explicitly opt in (see below);
-          </li>
-          <li>process optional Member Badge Contributions and fulfill physical Badge requests;</li>
-          <li>maintain platform integrity, moderation, and auditability;</li>
-          <li>improve reliability, accessibility, and support response.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>Optional Notification Center email copies</h2>
+      <section aria-labelledby="privacy-section-2">
+        <h2 id="privacy-section-2">2. Our Privacy Principles</h2>
         <p>
-          Separately from security and account transactional email, you may choose to receive email
-          copies of selected Notification Center activity. This is optional and requires your
-          explicit opt-in in Notification Preferences or the Notification Center email settings.
+          Humanity Union is built on respect for human dignity, freedom of expression, voluntary participation, and individual privacy.
+        </p>
+        <p>
+          We follow these principles:
         </p>
         <ul>
-          <li>
-            <strong>Opt-in only:</strong> email copies are not enabled by default. You can change
-            preferences or disable email copies at any time. Turning copies off does not stop
-            security, verification, password reset, or other account transactional email, and does
-            not remove in-app Notification Center items.
-          </li>
-          <li>
-            <strong>Destination:</strong> copies are sent to your verified account email or to a
-            separately verified alternative notification email that you confirm. An alternative
-            notification email does not replace your account login email.
-          </li>
-          <li>
-            <strong>Frequency:</strong> when copies are enabled, you may choose immediate, daily
-            digest, or weekly digest delivery according to your saved preferences. Platform-only
-            settings keep activity in the Notification Center without email copies.
-          </li>
-          <li>
-            <strong>Content limits:</strong> email copies use fixed category summaries for selected
-            allowlisted events. Private notification bodies, private messages, and confidential
-            collaboration content are not included in these email copies.
-          </li>
-          <li>
-            <strong>Operational metadata:</strong> to operate delivery we process delivery status
-            and related operational metadata (for example attempt timing, acceptance or failure
-            signals, and preference state at send time). Saving a preference does not by itself mean
-            an email was sent.
-          </li>
-          <li>
-            <strong>Email providers:</strong> messages are transmitted through our email delivery
-            infrastructure and providers as needed to attempt delivery. Delivery is not guaranteed
-            for every event and is not claimed to be exactly-once.
-          </li>
+          <li><strong>Data minimization:</strong> We seek to collect only information reasonably necessary to provide, secure, and improve our services.</li>
+          <li><strong>Freedom of identity:</strong> Participants may use a display name or pseudonym and are not generally required to disclose or verify their legal identity to access core civic participation features.</li>
+          <li><strong>Voluntary disclosure:</strong> Additional personal and professional information is generally optional, except where particular services require specific information to function.</li>
+          <li><strong>Participant control:</strong> Users can manage available profile information, visibility settings, and communication preferences.</li>
+          <li><strong>Purpose limitation:</strong> Personal information is used for legitimate, identified platform purposes and is not collected for unrelated commercial profiling.</li>
+          <li><strong>Transparency:</strong> We explain how information is processed and how participants can exercise their privacy rights.</li>
         </ul>
-      </section>
-
-      <section>
-        <h2>Member Badge Contribution and fulfillment privacy</h2>
         <p>
-          When an active Member chooses to request the official physical Member Badge, Humanity
-          Union collects recipient and delivery address information, private contribution and
-          fulfillment records, and payment processing data through Stripe. These records are used
-          only for Badge fulfillment, support, and operational accounting needs. They remain
-          private, are not shown on public profiles or in civic statistics, and are accessible to
-          the requesting Member and future authorized fulfillment roles. Shipping and Badge request
-          data are retained only as long as operational and accounting requirements require.
+          Using a pseudonym does not make an account technically anonymous to Humanity Union. Account credentials, communications, and technical information may still constitute personal information.
         </p>
       </section>
 
-      <section>
-        <h2>Cookies and session storage</h2>
+      <section aria-labelledby="privacy-section-3">
+        <h2 id="privacy-section-3">3. Information We Collect</h2>
         <p>
-          The platform may use cookies, local storage, or similar browser technologies to maintain
-          sign-in sessions, remember preferences, and protect against abuse. You can control cookies
-          through your browser settings, but some features may not function without session storage.
+          Depending on how you use the platform, we may process the following categories of information.
+        </p>
+        <h3>3.1. Account and Authentication Information</h3>
+        <p>
+          Email address, chosen display name or pseudonym, password hash, account verification status, session identifiers, authentication tokens, login history, and security-related records.
+        </p>
+        <p>
+          Email verification confirms control of an email address; it does not verify a participant's legal identity.
+        </p>
+        <h3>3.2. Voluntary Profile Information</h3>
+        <p>
+          Information participants choose to provide, such as location, interests, experience, professional background, biography, photographs, or other profile details.
+        </p>
+        <p>
+          We do not generally verify the accuracy of voluntarily supplied identity or professional information.
+        </p>
+        <h3>3.3. Civic Participation Information</h3>
+        <p>
+          Information associated with initiatives, proposals, discussions, analyses, petitions, signatures, votes, nominations, collective decisions, implementation activities, publications, and other civic participation tools.
+        </p>
+        <p>
+          Some civic records are intended for public visibility and may remain part of the platform's civic archive, subject to applicable privacy rights and moderation rules.
+        </p>
+        <h3>3.4. Communications</h3>
+        <p>
+          Messages, support requests, notifications, communication preferences, and related operational information.
+        </p>
+        <p>
+          Private messages are not intended for public display. Access is restricted according to the platform's authorization rules, although authorized personnel may need access in limited circumstances involving security, abuse investigations, technical support, or legal obligations.
+        </p>
+        <h3>3.5. Voluntary Applications and Organizational Participation</h3>
+        <p>
+          Participants may voluntarily express interest in volunteering, collaboration, regional coordination, or the Regional Representative Program (RRP).
+        </p>
+        <p>
+          Such applications may include a chosen name or pseudonym, contact information, declared country or region, relevant experience, motivation, proposed activities, and optional information concerning resources or funding needs.
+        </p>
+        <p>
+          Submitting an application is an expression of interest. It does not, by itself, establish employment, legal representation, contractual authority, organizational appointment, or a commitment to provide funding.
+        </p>
+        <p>
+          Humanity Union does not treat information supplied in an application as independently verified unless a separate verification process is expressly communicated.
+        </p>
+        <p>
+          Application information may be reviewed by authorized administrators for communication, assessment, coordination, and organizational recordkeeping.
+        </p>
+        <p>
+          Participants may withdraw an application. Withdrawal does not necessarily result in immediate deletion of records already needed for legitimate administrative, security, dispute-resolution, or legal purposes.
+        </p>
+        <h3>3.6. Membership and Physical Member Badge Information</h3>
+        <p>
+          Where applicable, voluntary membership-related services or requests for physical Member Badges may involve recipient details, delivery addresses, fulfillment records, and payment references.
+        </p>
+        <p>
+          Payment processing may be performed by third-party payment providers, including Stripe. We do not require participants to use optional paid services to access ordinary civic participation features.
+        </p>
+        <h3>3.7. Technical and Usage Information</h3>
+        <p>
+          We may process IP addresses, browser and device information, access logs, error reports, security events, and limited usage analytics to maintain platform functionality, reliability, accessibility, and protection against abuse.
         </p>
       </section>
 
-      <section>
-        <h2>Third-party links and embedded content</h2>
+      <section aria-labelledby="privacy-section-4">
+        <h2 id="privacy-section-4">4. How We Use Information</h2>
         <p>
-          Public pages may link to external websites, media sources, or institutional resources.
-          Humanity Union is not responsible for the privacy practices of third-party sites. Review
-          their policies before providing personal information.
+          We use information to:
+        </p>
+        <ul>
+          <li>Provide account registration, authentication, and platform functionality.</li>
+          <li>Enable civic participation, collaboration, and publication of participant-submitted public content.</li>
+          <li>Support voluntary applications and organizational coordination.</li>
+          <li>Facilitate communications between participants and authorized administrators.</li>
+          <li>Deliver account-related, security, and requested notifications.</li>
+          <li>Process optional membership services and physical Badge fulfillment.</li>
+          <li>Prevent fraud, spam, unauthorized access, and misuse.</li>
+          <li>Maintain operational records, investigate incidents, and respond to legitimate requests.</li>
+          <li>Improve platform accessibility, performance, and reliability.</li>
+          <li>Comply with applicable legal obligations.</li>
+        </ul>
+        <p>
+          We do not sell personal information to advertisers or use participant information for third-party behavioral advertising.
         </p>
       </section>
 
-      <section>
-        <h2>Data retention</h2>
+      <section aria-labelledby="privacy-section-5">
+        <h2 id="privacy-section-5">5. Consent and Legal Grounds for Processing</h2>
         <p>
-          We retain account and civic records for as long as needed to operate the platform,
-          maintain public civic transparency, comply with legal obligations, resolve disputes, and
-          enforce our terms. Retention periods may differ for draft records, archived civic cycles,
-          and security logs.
+          We collect, use, and disclose personal information with consent where required, or where otherwise permitted or required by applicable law.
+        </p>
+        <p>
+          For individuals whose information is subject to the General Data Protection Regulation (GDPR), processing may rely, as appropriate, on consent, performance of a contract, legitimate interests, or compliance with legal obligations.
+        </p>
+        <p>
+          Where we rely on legitimate interests, these may include platform security, service reliability, moderation, and prevention of abuse, subject to applicable balancing requirements.
+        </p>
+        <p>
+          Participants may withdraw consent for optional processing where consent is the applicable legal basis. Withdrawal does not invalidate processing lawfully performed before withdrawal and may not require deletion of information retained on another lawful basis.
         </p>
       </section>
 
-      <section>
-        <h2>Your rights</h2>
+      <section aria-labelledby="privacy-section-6">
+        <h2 id="privacy-section-6">6. Public Participation and Visibility</h2>
         <p>
-          Depending on applicable law, you may request access, correction, export, restriction, or
-          deletion of personal information. Civic records that have entered public civic life may
-          remain visible where transparency, auditability, or legal obligations require retention.
-          Contact us to submit a privacy request.
+          Humanity Union provides tools for public civic engagement.
+        </p>
+        <p>
+          Participants should understand that information they deliberately publish in public initiatives, petitions, comments, blogs, or other public areas may be viewed, copied, or referenced by others.
+        </p>
+        <p>
+          Using a pseudonym can reduce public identification but cannot guarantee anonymity, particularly when published content contains identifying details.
+        </p>
+        <p>
+          Public civic records may be retained or anonymized where reasonably necessary to preserve the integrity and transparency of collective civic processes, subject to applicable law.
+        </p>
+        <p>
+          Participants should avoid including unnecessary sensitive personal information about themselves or others in public submissions.
         </p>
       </section>
 
-      <section>
-        <h2>Security</h2>
+      <section aria-labelledby="privacy-section-7">
+        <h2 id="privacy-section-7">7. Private Messages and Communications</h2>
         <p>
-          We use administrative, technical, and organizational safeguards designed to protect
-          personal information. No online service can guarantee absolute security. Report suspected
-          account compromise promptly to {CONTACT_EMAIL}.
+          Private Messages are designed for communication between authorized participants.
+        </p>
+        <p>
+          They are not public civic publications and are subject to the platform's access controls.
+        </p>
+        <p>
+          We do not use private message content for advertising.
+        </p>
+        <p>
+          Access to private communications may occur only where reasonably necessary for authorized operational purposes, protection of users, investigation of reported abuse, or compliance with applicable law.
         </p>
       </section>
 
-      <section>
-        <h2>Where data may be processed</h2>
+      <section aria-labelledby="privacy-section-8">
+        <h2 id="privacy-section-8">8. Notifications and Email Communications</h2>
         <p>
-          Information may be processed in Canada and in other jurisdictions where our infrastructure
-          providers operate, subject to contractual and legal safeguards appropriate to the service.
+          Humanity Union may send essential account and security communications, including verification, account recovery, and security alerts.
+        </p>
+        <p>
+          Optional email copies of Notification Center activity require the participant's applicable opt-in.
+        </p>
+        <p>
+          Participants may manage available notification categories, delivery frequency, and email preferences through their account settings.
+        </p>
+        <p>
+          Optional email notifications may be sent immediately or as periodic summaries, depending on supported preferences.
+        </p>
+        <p>
+          Private message bodies and confidential collaboration content are not included in optional Notification Center email summaries.
+        </p>
+        <p>
+          Email delivery may involve authorized service providers and associated delivery metadata.
         </p>
       </section>
 
-      <section>
-        <h2>Contact</h2>
+      <section aria-labelledby="privacy-section-9">
+        <h2 id="privacy-section-9">9. Cookies, Local Storage, and Analytics</h2>
         <p>
-          Privacy questions or requests:{" "}
-          <a href={mailtoContactLink("Privacy request")}>{CONTACT_EMAIL}</a>
-          <br />
-          Mailing address: {ORGANIZATION_ADDRESS}
+          Humanity Union uses cookies, local storage, and similar technologies for authentication, session management, security, interface preferences, and limited platform analytics.
+        </p>
+        <p>
+          We do not use third-party behavioral advertising or cross-site advertising tracking cookies.
+        </p>
+        <p>
+          Some essential technologies are necessary for account functionality. Disabling them may prevent certain features from operating correctly.
+        </p>
+        <p>
+          Where consent is required for non-essential technologies, we will seek it in accordance with applicable law.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-10">
+        <h2 id="privacy-section-10">10. Sharing and Disclosure</h2>
+        <p>
+          We do not sell or rent participants' personal information.
+        </p>
+        <p>
+          We may disclose limited information:
+        </p>
+        <ul>
+          <li>To service providers acting on our behalf for hosting, infrastructure, email delivery, payment processing, or technical operations.</li>
+          <li>To authorized administrators or personnel where necessary for platform administration, application review, support, or security.</li>
+          <li>When participants intentionally publish information through public platform features.</li>
+          <li>When required by applicable law, valid legal process, or lawful regulatory requests.</li>
+          <li>When reasonably necessary to protect the security, rights, and integrity of the platform and its participants, subject to applicable law.</li>
+        </ul>
+        <p>
+          Service providers are expected to handle information in accordance with applicable contractual and legal safeguards.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-11">
+        <h2 id="privacy-section-11">11. International Data Processing</h2>
+        <p>
+          Humanity Union is established in Canada.
+        </p>
+        <p>
+          Personal information may be processed or stored in Canada or other jurisdictions where our infrastructure and authorized service providers operate.
+        </p>
+        <p>
+          Information processed outside a participant's country may be subject to the laws of the relevant jurisdiction.
+        </p>
+        <p>
+          Where applicable law requires safeguards for international transfers, Humanity Union will use appropriate transfer mechanisms.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-12">
+        <h2 id="privacy-section-12">12. Data Retention</h2>
+        <p>
+          We retain personal information only for as long as reasonably necessary for the purposes for which it was collected, including service operation, account administration, security, civic record integrity, dispute resolution, and applicable legal obligations.
+        </p>
+        <p>
+          Retention periods may differ according to the type and purpose of information.
+        </p>
+        <p>
+          Draft content, submitted applications, account records, private communications, public civic publications, financial records, and security logs may be subject to different retention considerations.
+        </p>
+        <p>
+          Withdrawal of an application or termination of participation does not automatically erase all related records.
+        </p>
+        <p>
+          When information is no longer reasonably required, we seek to delete, anonymize, or otherwise dispose of it securely, subject to applicable legal and operational requirements.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-13">
+        <h2 id="privacy-section-13">13. Account Deletion and Privacy Requests</h2>
+        <p>
+          Participants may request deletion of their account or personal information by contacting <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a> or using available account controls.
+        </p>
+        <p>
+          We will assess and respond to such requests in accordance with applicable law.
+        </p>
+        <p>
+          Depending on the circumstances, some information may need to be retained, restricted, or anonymized rather than immediately deleted, including information necessary for legal compliance, security, dispute resolution, or the integrity of public civic records.
+        </p>
+        <p>
+          We may request reasonable information to confirm that the person making a privacy request is authorized to do so. Such verification is separate from ordinary platform participation and should be proportionate to the request.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-14">
+        <h2 id="privacy-section-14">14. Your Privacy Rights</h2>
+        <p>
+          Depending on your jurisdiction and applicable law, you may have rights to:
+        </p>
+        <ul>
+          <li>Request access to personal information held about you.</li>
+          <li>Request correction of inaccurate or incomplete information.</li>
+          <li>Withdraw consent where processing relies on consent.</li>
+          <li>Request deletion or anonymization of eligible personal information.</li>
+          <li>Object to or request restrictions on certain processing activities.</li>
+          <li>Request data portability where legally applicable.</li>
+          <li>Raise concerns with an appropriate privacy or data protection authority.</li>
+        </ul>
+        <p>
+          Requests may be submitted to <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a>.
+        </p>
+        <p>
+          We will respond in accordance with applicable legal requirements.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-15">
+        <h2 id="privacy-section-15">15. Security Safeguards</h2>
+        <p>
+          Humanity Union uses administrative, technical, and organizational safeguards designed to protect information against unauthorized access, disclosure, alteration, loss, or misuse.
+        </p>
+        <p>
+          These safeguards may include access controls, authentication protections, restricted administrative permissions, monitoring, and operational security measures.
+        </p>
+        <p>
+          No online system can guarantee absolute security.
+        </p>
+        <p>
+          Participants are encouraged to protect their account credentials and report suspected security incidents to <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a>.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-16">
+        <h2 id="privacy-section-16">16. Third-Party Websites and Services</h2>
+        <p>
+          The platform may contain links to external websites, media, organizations, or services.
+        </p>
+        <p>
+          These third parties may operate under their own privacy policies and practices. Humanity Union is not responsible for their independent processing activities.
+        </p>
+        <p>
+          Participants should review the relevant privacy information before providing personal details to external services.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-17">
+        <h2 id="privacy-section-17">17. Children's Privacy</h2>
+        <p>
+          Humanity Union does not knowingly seek to collect unnecessary personal information from children.
+        </p>
+        <p>
+          Participation by minors, where permitted, is subject to applicable legal requirements and platform eligibility rules.
+        </p>
+        <p>
+          Where legally required, appropriate consent or other safeguards must be obtained.
+        </p>
+        <p>
+          If we become aware of personal information collected in circumstances that do not comply with applicable requirements, we will take appropriate steps to address the situation.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-18">
+        <h2 id="privacy-section-18">18. Changes to This Privacy Policy</h2>
+        <p>
+          We may update this Privacy Policy to reflect changes in platform functionality, organizational practices, or applicable legal requirements.
+        </p>
+        <p>
+          Material changes will be communicated through appropriate platform notices or other legally required methods.
+        </p>
+        <p>
+          The effective date at the beginning of this document identifies the applicable published version.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-section-19">
+        <h2 id="privacy-section-19">19. Contact Us</h2>
+        <p>
+          For questions, privacy requests, account deletion inquiries, or concerns regarding the processing of personal information, contact:
+        </p>
+        <p>
+          <strong>{ORGANIZATION_NAME}</strong>
+        </p>
+        <p>
+          514 Vernon St., Nelson, BC V1L 5R4, Canada
+        </p>
+        <p>
+          <strong>Email:</strong> <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a>
+        </p>
+        <p>
+          <strong>Website:</strong> {ORGANIZATION_WEBSITE}
         </p>
       </section>
     </>

@@ -11,6 +11,15 @@
   margin-bottom: var(--hu-space-6);
 }
 
+.legal-page__doc-header {
+  margin-bottom: var(--hu-space-5);
+}
+
+.legal-page__doc-org,
+.legal-page__doc-effective {
+  margin: 0 0 var(--hu-space-2);
+}
+
 .legal-page__nav {
   display: flex;
   flex-wrap: wrap;

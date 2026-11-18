@@ -117,7 +117,9 @@ describe("Localization Simplification Step 05A — reading guidance + Legal prot
     assert.match(headerSlice, /chrome\.privacyLabel/);
     assert.match(headerSlice, /chrome\.termsLabel/);
     assert.match(headerSlice, /chrome\.title/);
-    assert.match(headerSlice, /chrome\.counselNote/);
+    // HU-PRIVACY-02B — counsel/fallback notices are not rendered on public legal pages.
+    assert.doesNotMatch(headerSlice, /chrome\.counselNote/);
+    assert.doesNotMatch(headerSlice, /chrome\.expectedFallbackNote/);
     assert.doesNotMatch(headerSlice, /ProtectedAuthoritativeText/);
     assert.doesNotMatch(headerSlice, /translate=["']no["']/);
     assert.doesNotMatch(shell, /<article[^>]*translate=/);
