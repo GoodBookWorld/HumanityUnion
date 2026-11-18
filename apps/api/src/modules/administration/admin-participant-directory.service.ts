@@ -45,6 +45,7 @@ import {
 import { findActiveSuspensionSummariesByParticipantIds } from "../participant-suspension/participant-suspension.service.js";
 import {
   findUserIdsForApplicantFundingClassification,
+  findUserIdsForApplicantUnspecifiedFundingClassification,
   listRrpApplicationsForParticipantIds,
   RRP_APPLICANT_DIRECTORY_STATUSES,
 } from "../rrp-application/rrp-application.repository.js";
@@ -141,6 +142,9 @@ function buildRrpSummaryForParticipant(input: {
         classifications.add("applicant_partial_funding");
       } else if (application.fundingModel === "FULL") {
         classifications.add("applicant_full_funding");
+      } else {
+        // HU-RRP-04B — funding optional; keep unspecified applicants discoverable.
+        classifications.add("applicant_funding_unspecified");
       }
     }
   }
@@ -324,8 +328,10 @@ export async function listAdminParticipants(
       rrpUserIds = await findUserIdsForApplicantFundingClassification("SELF");
     } else if (input.rrpClassification === "applicant_partial_funding") {
       rrpUserIds = await findUserIdsForApplicantFundingClassification("PARTIAL");
-    } else {
+    } else if (input.rrpClassification === "applicant_full_funding") {
       rrpUserIds = await findUserIdsForApplicantFundingClassification("FULL");
+    } else {
+      rrpUserIds = await findUserIdsForApplicantUnspecifiedFundingClassification();
     }
 
     userIdAllowlist = userIdAllowlist

@@ -132,7 +132,20 @@ test.describe("HU-RRP-03J full isolated browser E2E", () => {
       ),
       createDraft.click(),
     ]);
-    await expect(page.locator('input[name="legalFirstName"]')).toBeVisible({ timeout: 45_000 });
+    await expect(page.locator('textarea[name="motivation"]')).toBeVisible({ timeout: 45_000 });
+  }
+
+  /** HU-RRP-04B — country + motivation + consent only. */
+  async function fillMinimalApplicationForm(page: Page) {
+    const root = page.locator(".rrp-application-modal").filter({
+      has: page.locator('textarea[name="motivation"]'),
+    });
+    await expect(root).toBeVisible();
+    await fillControlled(
+      root.locator('textarea[name="motivation"]'),
+      "I want to help build trusted regional representation for participants.",
+    );
+    await root.locator(".rrp-application-modal__consent input[type='checkbox']").check();
   }
 
   async function fillAdultApplicationForm(
@@ -189,28 +202,22 @@ test.describe("HU-RRP-03J full isolated browser E2E", () => {
     }
   });
 
-  test("B — Participant draft, validation, underage, funding, consent v2, submit", async ({
+  test("B — Participant minimal draft + consent v2 submit without legal identity", async ({
     page,
   }) => {
     await apiLogin(page.request, participantEmail, participantPassword);
     await createDraftViaBrowser(page, "Canada", /^Canada$/i);
 
-    // Required-field / underage rejection path
-    await fillAdultApplicationForm(page, { underage: true });
+    // Missing motivation rejected
     await page.getByRole("button", { name: /Submit application/i }).click();
     await expect(page.locator(".rrp-application-modal__error")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.locator(".rrp-application-modal__error")).toContainText(/date of birth|18|age/i);
+    await expect(page.locator(".rrp-application-modal__error")).toContainText(
+      /motivation|proposed activity|consent/i,
+    );
 
-    // Adult path + consent v2
-    const adultDob = page.locator('input[name="dateOfBirth"]');
-    await adultDob.fill("1990-06-15");
-    await expect(adultDob).toHaveValue("1990-06-15");
-    const consent = page.locator(".rrp-application-modal__consent input[type='checkbox']");
-    if (!(await consent.isChecked())) {
-      await consent.check();
-    }
+    await fillMinimalApplicationForm(page);
     await page.getByRole("button", { name: /Submit application/i }).click();
     await expect(page.getByText(/application was submitted/i)).toBeVisible({ timeout: 60_000 });
   });

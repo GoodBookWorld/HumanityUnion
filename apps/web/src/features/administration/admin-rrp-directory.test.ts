@@ -52,6 +52,9 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.deepEqual(parseAdminParticipantRoleFilter("applicant_full_funding"), {
       rrpClassification: "applicant_full_funding",
     });
+    assert.deepEqual(parseAdminParticipantRoleFilter("applicant_funding_unspecified"), {
+      rrpClassification: "applicant_funding_unspecified",
+    });
     assert.deepEqual(parseAdminParticipantRoleFilter("representative"), {
       rrpClassification: "representative",
     });
@@ -105,6 +108,7 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.match(section, /applicant_self_funded/);
     assert.match(section, /applicant_partial_funding/);
     assert.match(section, /applicant_full_funding/);
+    assert.match(section, /applicant_funding_unspecified/);
     assert.match(section, /representative/);
     assert.match(section, /Participant account/);
     assert.match(section, /Administrator/);
@@ -113,6 +117,19 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     assert.match(section, /rrpClassification/);
     assert.match(section, /adminParticipantPublicProfilePath/);
     assert.doesNotMatch(section, /auth\.role\s*=/);
+  });
+
+  it("shows participant display name and unspecified funding safely", () => {
+    const modal = read(
+      "features/administration/components/AdminRrpApplicationModal.tsx",
+    );
+    assert.match(modal, /applicantDisplayName/);
+    assert.match(modal, /tFunding\("UNSPECIFIED"\)/);
+    assert.match(modal, /fields\.legalNamesOptional/);
+    const section = read(
+      "features/administration/components/AdminParticipantsSection.tsx",
+    );
+    assert.match(section, /participantPrimaryName\(singleSelection\)/);
   });
 
   it("uses confirm-appointment for Approve and never status-only review approve", () => {

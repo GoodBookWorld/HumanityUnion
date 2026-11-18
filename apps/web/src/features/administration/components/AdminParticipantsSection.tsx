@@ -554,6 +554,9 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                 <option value="applicant_full_funding">
                   Applicant-Full funding requested
                 </option>
+                <option value="applicant_funding_unspecified">
+                  Applicant-Funding not specified
+                </option>
                 <option value="representative">Representative</option>
               </select>
             </label>
@@ -985,6 +988,7 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
         <AdminRrpApplicationModal
           isOpen={rrpApplicationModalOpen}
           participantId={singleSelection.memberId}
+          applicantDisplayName={participantPrimaryName(singleSelection)}
           applicationIds={viewableRrpApplicationIds}
           onClose={() => setRrpApplicationModalOpen(false)}
           onDirectoryRefresh={() => {

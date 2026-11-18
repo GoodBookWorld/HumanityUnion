@@ -181,17 +181,8 @@ export function validateDateOfBirth(
     throw new RrpApplicationValidationError("Date of birth is outside the accepted range.");
   }
 
-  const age = computeExactAgeYears(
-    `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-    asOf,
-  );
-
-  if (age < 18) {
-    throw new RrpApplicationValidationError(
-      "Applicants must be at least 18 years old.",
-    );
-  }
-
+  // HU-RRP-04B — voluntary DOB only; calendar correctness + non-future.
+  // No age ≥ 18 gate on initial RRP expression-of-interest submission.
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
@@ -555,7 +546,13 @@ export function validateSubmitBody(body: unknown): RrpSubmitInput {
   return { expectedRevision, consentAccepted: true, consentVersion };
 }
 
-/** Full submission field requirements against a merged application snapshot. */
+/**
+ * HU-RRP-04B — minimal submission for a voluntary expression of interest.
+ * Required: representation country + motivation.
+ * Consent is validated separately via validateSubmitBody.
+ * Optional identity, DOB, residence, profession, experience, team, and funding
+ * may be null. When fundingModel is set, amount rules still apply.
+ */
 export function assertSubmissionFieldsComplete(
   record: {
     legalFirstName: string | null;
@@ -570,35 +567,37 @@ export function assertSubmissionFieldsComplete(
     relevantExperience: string | null;
     motivation: string | null;
   },
-  asOf: Date = new Date(),
+  _asOf: Date = new Date(),
 ): void {
-  requireNonEmptyString(record.legalFirstName, "Legal first name");
-  requireNonEmptyString(record.legalLastName, "Legal last name");
-  requireNonEmptyString(record.profession, "Profession");
-  requireNonEmptyString(record.residenceCountryCode, "Residence country");
-  validateRrpCountryCode(record.residenceCountryCode!, "Residence country");
   validateRrpCountryCode(record.representCountryCode, "Representation country");
-  requireNonEmptyString(record.dateOfBirth, "Date of birth");
-  validateDateOfBirth(record.dateOfBirth!, asOf);
+  requireNonEmptyString(record.motivation, "Motivation");
+
+  if (record.residenceCountryCode) {
+    validateRrpCountryCode(record.residenceCountryCode, "Residence country");
+  }
+
+  if (record.dateOfBirth) {
+    validateDateOfBirth(record.dateOfBirth, _asOf);
+  }
+
   validateFundingFields({
     fundingModel: record.fundingModel,
     annualRequestedAmountCad: record.annualRequestedAmountCad,
-    requireComplete: true,
+    // Funding is optional; when a model is chosen, enforce SELF/PARTIAL/FULL amount rules.
+    requireComplete: record.fundingModel !== null,
   });
-  if (record.teamMemberCount === null || record.teamMemberCount === undefined) {
-    throw new RrpApplicationValidationError("Team member count is required.");
+
+  if (record.teamMemberCount !== null && record.teamMemberCount !== undefined) {
+    if (
+      !Number.isInteger(record.teamMemberCount) ||
+      record.teamMemberCount < RRP_TEAM_MEMBER_COUNT_MIN ||
+      record.teamMemberCount > RRP_TEAM_MEMBER_COUNT_MAX
+    ) {
+      throw new RrpApplicationValidationError(
+        `Team member count must be between ${RRP_TEAM_MEMBER_COUNT_MIN} and ${RRP_TEAM_MEMBER_COUNT_MAX}.`,
+      );
+    }
   }
-  if (
-    !Number.isInteger(record.teamMemberCount) ||
-    record.teamMemberCount < RRP_TEAM_MEMBER_COUNT_MIN ||
-    record.teamMemberCount > RRP_TEAM_MEMBER_COUNT_MAX
-  ) {
-    throw new RrpApplicationValidationError(
-      `Team member count must be between ${RRP_TEAM_MEMBER_COUNT_MIN} and ${RRP_TEAM_MEMBER_COUNT_MAX}.`,
-    );
-  }
-  requireNonEmptyString(record.relevantExperience, "Relevant experience");
-  requireNonEmptyString(record.motivation, "Motivation");
 }
 
 export function validateAdminReviewBody(body: unknown): {

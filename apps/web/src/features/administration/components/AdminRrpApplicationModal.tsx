@@ -34,6 +34,8 @@ import "./admin-rrp-application-modal.css";
 interface AdminRrpApplicationModalProps {
   isOpen: boolean;
   participantId: string;
+  /** Participant display name / pseudonym — primary applicant identity (not legal name). */
+  applicantDisplayName?: string | null;
   applicationIds: readonly string[];
   onClose: () => void;
   onDirectoryRefresh?: () => void;
@@ -74,6 +76,7 @@ function formatMoneyCad(amount: number | null, locale: string): string {
 export function AdminRrpApplicationModal({
   isOpen,
   participantId,
+  applicantDisplayName,
   applicationIds,
   onClose,
   onDirectoryRefresh,
@@ -478,10 +481,16 @@ export function AdminRrpApplicationModal({
             <dl className="admin-rrp-application-modal__grid">
               <div>
                 <dt>{t("fields.applicant")}</dt>
-                <dd>
-                  {[detail.legalFirstName, detail.legalLastName].filter(Boolean).join(" ") || "—"}
-                </dd>
+                <dd>{applicantDisplayName?.trim() || "—"}</dd>
               </div>
+              {(detail.legalFirstName || detail.legalLastName) && (
+                <div>
+                  <dt>{t("fields.legalNamesOptional")}</dt>
+                  <dd>
+                    {[detail.legalFirstName, detail.legalLastName].filter(Boolean).join(" ")}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>{t("fields.profession")}</dt>
                 <dd>{detail.profession || "—"}</dd>
@@ -497,7 +506,9 @@ export function AdminRrpApplicationModal({
               <div>
                 <dt>{t("fields.fundingModel")}</dt>
                 <dd>
-                  {detail.fundingModel ? tFunding(detail.fundingModel) : "—"}
+                  {detail.fundingModel
+                    ? tFunding(detail.fundingModel)
+                    : tFunding("UNSPECIFIED")}
                 </dd>
               </div>
               <div>

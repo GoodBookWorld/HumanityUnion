@@ -7551,28 +7551,31 @@
     },
     "form": {
       "editingCountry": "Representation country: {country}",
-      "displayNameHint": "Your display name is “{name}”. Enter your legal names below — they are not filled automatically."
+      "displayNameHint": "Your display name “{name}” is the primary identity for this application. Legal names are optional and are not filled from your display name.",
+      "pseudonymHint": "You may use a display name or pseudonym. Legal identity is not required for this expression of interest.",
+      "optionalSectionHint": "The following fields are optional. You may leave them blank."
     },
     "fields": {
-      "legalFirstName": "Legal first name",
-      "legalLastName": "Legal last name",
-      "profession": "Profession",
-      "residenceCountry": "Country of residence",
-      "representCountry": "Country to represent",
-      "representCountryHelp": "This is never copied automatically from residence.",
-      "dateOfBirth": "Date of birth",
-      "dateOfBirthHelp": "Applicants must be at least 18 years old.",
-      "fundingModel": "Funding model",
+      "legalFirstName": "Legal first name (optional)",
+      "legalLastName": "Legal last name (optional)",
+      "profession": "Profession (optional)",
+      "residenceCountry": "Country of residence (optional)",
+      "representCountry": "Country of proposed activity",
+      "representCountryHelp": "Required. This is never copied automatically from residence.",
+      "dateOfBirth": "Date of birth (optional)",
+      "dateOfBirthHelp": "Optional. If provided, use a real calendar date. Age verification is not required for this application.",
+      "fundingModel": "Funding information (optional)",
       "annualRequestedAmountCad": "Annual requested amount (CAD)",
       "fundingNotCommitment": "A funding request is not an approved financial commitment.",
-      "teamMemberCount": "Team member count",
-      "relevantExperience": "Relevant experience",
-      "motivation": "Motivation"
+      "teamMemberCount": "Team member count (optional)",
+      "relevantExperience": "Relevant experience (optional)",
+      "motivation": "Motivation / proposed activity"
     },
     "funding": {
       "SELF": "Self-funded",
       "PARTIAL": "Partial funding requested",
-      "FULL": "Full funding requested"
+      "FULL": "Full funding requested",
+      "UNSPECIFIED": "Not specified"
     },
     "consent": {
       "label": "I consent to Humanity Union processing this application as described in the <privacy>Privacy Policy</privacy>.",
@@ -7608,17 +7611,17 @@
       "withdrawn": "Withdrawn"
     },
     "validation": {
-      "representCountry": "Select a country to represent.",
-      "legalFirstName": "Legal first name is required.",
-      "legalLastName": "Legal last name is required.",
-      "profession": "Profession is required.",
-      "residenceCountry": "Residence country is required.",
-      "dateOfBirth": "Enter a valid date of birth. Applicants must be at least 18.",
-      "fundingModel": "Select a funding model.",
-      "annualAmount": "Enter a valid annual CAD amount for PARTIAL or FULL funding.",
-      "teamMemberCount": "Team member count must be a whole number of 0 or more.",
-      "relevantExperience": "Relevant experience is required.",
-      "motivation": "Motivation is required.",
+      "representCountry": "Select a country of proposed activity.",
+      "legalFirstName": "Legal first name is optional.",
+      "legalLastName": "Legal last name is optional.",
+      "profession": "Profession is optional.",
+      "residenceCountry": "Residence country is optional.",
+      "dateOfBirth": "Enter a valid calendar date of birth, or leave blank.",
+      "fundingModel": "Funding information is optional.",
+      "annualAmount": "Enter a valid annual CAD amount for PARTIAL or FULL funding, or clear the funding selection.",
+      "teamMemberCount": "Team member count must be a whole number of 0 or more when provided.",
+      "relevantExperience": "Relevant experience is optional.",
+      "motivation": "Motivation / proposed activity is required.",
       "consent": "Consent is required to submit."
     },
     "errors": {
@@ -7666,7 +7669,7 @@
       "selectApplication": "Select application",
       "statusUnknown": "Status unavailable",
       "fields": {
-        "applicant": "Applicant identity",
+        "applicant": "Applicant display name",
         "profession": "Professional background",
         "residenceCountry": "Residence country",
         "representCountry": "Representation country",
@@ -7681,7 +7684,8 @@
         "motivation": "Motivation",
         "decisionHistory": "Decision history",
         "noHistory": "No decisions recorded yet.",
-        "reviewNote": "Review note (required for request information and reject)"
+        "reviewNote": "Review note (required for request information and reject)",
+        "legalNamesOptional": "Legal names (optional, private)"
       },
       "disclaimer": {
         "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."

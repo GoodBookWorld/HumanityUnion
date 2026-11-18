@@ -63,12 +63,14 @@ export type AdminRrpDirectoryClassification =
   | "applicant_self_funded"
   | "applicant_partial_funding"
   | "applicant_full_funding"
+  | "applicant_funding_unspecified"
   | "representative";
 
 export const ADMIN_RRP_DIRECTORY_CLASSIFICATIONS: readonly AdminRrpDirectoryClassification[] = [
   "applicant_self_funded",
   "applicant_partial_funding",
   "applicant_full_funding",
+  "applicant_funding_unspecified",
   "representative",
 ] as const;
 

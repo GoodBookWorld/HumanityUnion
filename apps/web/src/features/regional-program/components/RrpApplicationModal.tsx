@@ -573,52 +573,9 @@ export function RrpApplicationModal({
                 <p className="rrp-application-modal__hint">
                   {t("form.displayNameHint", { name: displayNameHint })}
                 </p>
-              ) : null}
-
-              <div className="rrp-application-modal__row">
-                <label className="rrp-application-modal__field">
-                  <span>{t("fields.legalFirstName")}</span>
-                  <input
-                    name="legalFirstName"
-                    autoComplete="given-name"
-                    required
-                    disabled={!editable || busy !== null}
-                    value={form.legalFirstName}
-                    onChange={(event) => updateField("legalFirstName", event.target.value)}
-                  />
-                </label>
-                <label className="rrp-application-modal__field">
-                  <span>{t("fields.legalLastName")}</span>
-                  <input
-                    name="legalLastName"
-                    autoComplete="family-name"
-                    required
-                    disabled={!editable || busy !== null}
-                    value={form.legalLastName}
-                    onChange={(event) => updateField("legalLastName", event.target.value)}
-                  />
-                </label>
-              </div>
-
-              <label className="rrp-application-modal__field">
-                <span>{t("fields.profession")}</span>
-                <input
-                  name="profession"
-                  required
-                  disabled={!editable || busy !== null}
-                  value={form.profession}
-                  onChange={(event) => updateField("profession", event.target.value)}
-                />
-              </label>
-
-              <CountrySelect
-                id="rrp-residence-country"
-                label={t("fields.residenceCountry")}
-                value={form.residenceCountryCode}
-                onChange={(code) => updateField("residenceCountryCode", code)}
-                required
-                disabled={!editable || busy !== null}
-              />
+              ) : (
+                <p className="rrp-application-modal__hint">{t("form.pseudonymHint")}</p>
+              )}
 
               <CountrySelect
                 id="rrp-represent-country"
@@ -631,11 +588,64 @@ export function RrpApplicationModal({
               />
 
               <label className="rrp-application-modal__field">
+                <span>{t("fields.motivation")}</span>
+                <textarea
+                  name="motivation"
+                  required
+                  disabled={!editable || busy !== null}
+                  value={form.motivation}
+                  onChange={(event) => updateField("motivation", event.target.value)}
+                />
+              </label>
+
+              <p className="rrp-application-modal__hint">{t("form.optionalSectionHint")}</p>
+
+              <div className="rrp-application-modal__row">
+                <label className="rrp-application-modal__field">
+                  <span>{t("fields.legalFirstName")}</span>
+                  <input
+                    name="legalFirstName"
+                    autoComplete="given-name"
+                    disabled={!editable || busy !== null}
+                    value={form.legalFirstName}
+                    onChange={(event) => updateField("legalFirstName", event.target.value)}
+                  />
+                </label>
+                <label className="rrp-application-modal__field">
+                  <span>{t("fields.legalLastName")}</span>
+                  <input
+                    name="legalLastName"
+                    autoComplete="family-name"
+                    disabled={!editable || busy !== null}
+                    value={form.legalLastName}
+                    onChange={(event) => updateField("legalLastName", event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <label className="rrp-application-modal__field">
+                <span>{t("fields.profession")}</span>
+                <input
+                  name="profession"
+                  disabled={!editable || busy !== null}
+                  value={form.profession}
+                  onChange={(event) => updateField("profession", event.target.value)}
+                />
+              </label>
+
+              <CountrySelect
+                id="rrp-residence-country"
+                label={t("fields.residenceCountry")}
+                value={form.residenceCountryCode}
+                onChange={(code) => updateField("residenceCountryCode", code)}
+                disabled={!editable || busy !== null}
+              />
+
+              <label className="rrp-application-modal__field">
                 <span>{t("fields.dateOfBirth")}</span>
                 <input
                   name="dateOfBirth"
                   type="date"
-                  required
                   autoComplete="bday"
                   disabled={!editable || busy !== null}
                   value={form.dateOfBirth}
@@ -646,6 +656,19 @@ export function RrpApplicationModal({
 
               <fieldset className="rrp-application-modal__radios" disabled={!editable || busy !== null}>
                 <legend className="rrp-application-modal__legend">{t("fields.fundingModel")}</legend>
+                <label className="rrp-application-modal__radio">
+                  <input
+                    type="radio"
+                    name="fundingModel"
+                    value=""
+                    checked={form.fundingModel === ""}
+                    onChange={() => {
+                      updateField("fundingModel", "" as RrpFundingModel | "");
+                      updateField("annualRequestedAmountCad", "");
+                    }}
+                  />
+                  <span>{t("funding.UNSPECIFIED")}</span>
+                </label>
                 {(["SELF", "PARTIAL", "FULL"] as const).map((model) => (
                   <label key={model} className="rrp-application-modal__radio">
                     <input
@@ -691,7 +714,6 @@ export function RrpApplicationModal({
                   type="number"
                   min={0}
                   step={1}
-                  required
                   disabled={!editable || busy !== null}
                   value={form.teamMemberCount}
                   onChange={(event) => updateField("teamMemberCount", event.target.value)}
@@ -702,21 +724,9 @@ export function RrpApplicationModal({
                 <span>{t("fields.relevantExperience")}</span>
                 <textarea
                   name="relevantExperience"
-                  required
                   disabled={!editable || busy !== null}
                   value={form.relevantExperience}
                   onChange={(event) => updateField("relevantExperience", event.target.value)}
-                />
-              </label>
-
-              <label className="rrp-application-modal__field">
-                <span>{t("fields.motivation")}</span>
-                <textarea
-                  name="motivation"
-                  required
-                  disabled={!editable || busy !== null}
-                  value={form.motivation}
-                  onChange={(event) => updateField("motivation", event.target.value)}
                 />
               </label>
 

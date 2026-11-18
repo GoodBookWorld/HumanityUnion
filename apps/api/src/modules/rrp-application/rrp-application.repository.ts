@@ -439,6 +439,34 @@ export async function findUserIdsForApplicantFundingClassification(
   return values.filter((value): value is string => typeof value === "string");
 }
 
+/** HU-RRP-04B — applicants in pipeline with fundingModel unset (null). */
+export async function findUserIdsForApplicantUnspecifiedFundingClassification(): Promise<
+  string[]
+> {
+  await ensureReady();
+  if (forceMemoryForTests) {
+    return [
+      ...new Set(
+        [...memoryStore.values()]
+          .filter(
+            (record) =>
+              record.fundingModel === null &&
+              RRP_APPLICANT_DIRECTORY_STATUSES.includes(record.status),
+          )
+          .map((record) => record.userId),
+      ),
+    ];
+  }
+
+  const values = await getMongoCollection<RrpApplicationDocument>(
+    MONGO_COLLECTIONS.rrpApplications,
+  ).distinct("userId", {
+    fundingModel: null,
+    status: { $in: [...RRP_APPLICANT_DIRECTORY_STATUSES] },
+  });
+  return values.filter((value): value is string => typeof value === "string");
+}
+
 export async function listRrpApplicationsForParticipantIds(
   participantIds: readonly string[],
 ): Promise<RrpApplicationRecord[]> {

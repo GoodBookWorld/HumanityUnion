@@ -84,12 +84,43 @@ describe("HU-RRP-02C Workspace application modal", () => {
     assert.equal(resolvePrefillResidenceCountryCode("NotACountry"), "");
   });
 
-  it("validates age with exact calendar-date rules", () => {
+  it("validates optional DOB calendar rules without an 18+ gate", () => {
     assert.equal(computeExactAgeYears("2008-11-17", AS_OF), 18);
     assert.equal(isValidAdultDateOfBirth("2008-11-17", AS_OF), true);
-    assert.equal(isValidAdultDateOfBirth("2008-11-18", AS_OF), false);
+    // Under-18 calendar dates are accepted when voluntarily provided.
+    assert.equal(isValidAdultDateOfBirth("2008-11-18", AS_OF), true);
     assert.equal(isValidAdultDateOfBirth("2099-01-01", AS_OF), false);
     assert.equal(isValidAdultDateOfBirth("2000-02-30", AS_OF), false);
+    assert.equal(
+      validateRrpApplicationFormForSubmit({
+        ...EMPTY_RRP_APPLICATION_FORM,
+        representCountryCode: "CA",
+        motivation: "Build regional collaboration",
+        consentAccepted: true,
+        dateOfBirth: "2015-01-01",
+      }),
+      null,
+    );
+  });
+
+  it("accepts a minimal submit without legal identity or funding", () => {
+    assert.equal(
+      validateRrpApplicationFormForSubmit({
+        ...EMPTY_RRP_APPLICATION_FORM,
+        representCountryCode: "CA",
+        motivation: "Coordinate regional civic work",
+        consentAccepted: true,
+      }),
+      null,
+    );
+    assert.equal(
+      validateRrpApplicationFormForSubmit({
+        ...EMPTY_RRP_APPLICATION_FORM,
+        representCountryCode: "CA",
+        consentAccepted: true,
+      }),
+      "motivation",
+    );
   });
 
   it("detects dirty form state against the saved baseline", () => {

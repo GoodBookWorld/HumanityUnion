@@ -152,9 +152,9 @@ describe("HU-RRP-02B — age and date validation", () => {
     assert.equal(validateDateOfBirth("2008-11-17", AS_OF), "2008-11-17");
   });
 
-  it("rejects an underage applicant one day before the 18th birthday", () => {
+  it("accepts an under-18 calendar DOB when voluntarily provided (no age gate)", () => {
     assert.equal(computeExactAgeYears("2008-11-18", AS_OF), 17);
-    assert.throws(() => validateDateOfBirth("2008-11-18", AS_OF), /at least 18/);
+    assert.equal(validateDateOfBirth("2008-11-18", AS_OF), "2008-11-18");
   });
 
   it("rejects future and impossible dates", () => {
@@ -237,7 +237,7 @@ describe("HU-RRP-02B — draft create / submit / withdraw", () => {
     assert.equal(submitted.decisionHistory.length, 1);
   });
 
-  it("rejects submission with missing mandatory fields", async () => {
+  it("rejects submission with missing motivation", async () => {
     const draft = await createRrpApplicationDraftForUser("user-applicant-1", {
       representCountryCode: "CA",
     });
@@ -256,14 +256,45 @@ describe("HU-RRP-02B — draft create / submit / withdraw", () => {
     );
   });
 
-  it("rejects underage date of birth on draft create", async () => {
+  it("accepts voluntary under-18 DOB on draft create (no age gate)", async () => {
+    const draft = await createRrpApplicationDraftForUser("user-applicant-1", {
+      representCountryCode: "CA",
+      dateOfBirth: "2015-01-01",
+      motivation: "Regional collaboration interest",
+    });
+    assert.equal(draft.dateOfBirth, "2015-01-01");
+  });
+
+  it("accepts minimal submit without legal identity, DOB, or funding", async () => {
+    const draft = await createRrpApplicationDraftForUser("user-applicant-1", {
+      representCountryCode: "CA",
+      motivation: "Coordinate regional civic participation",
+    });
+    assert.equal(draft.legalFirstName, null);
+    assert.equal(draft.fundingModel, null);
+    const submitted = await submitOwnRrpApplicationForUser({
+      userId: "user-applicant-1",
+      applicationId: draft.applicationId,
+      body: {
+        expectedRevision: draft.revision,
+        consentAccepted: true,
+        consentVersion: RRP_APPLICATION_CONSENT_VERSION,
+      },
+    });
+    assert.equal(submitted.status, "submitted");
+    assert.equal(submitted.legalFirstName, null);
+    assert.equal(submitted.dateOfBirth, null);
+    assert.equal(submitted.fundingModel, null);
+  });
+
+  it("rejects future date of birth on draft create", async () => {
     await assert.rejects(
       () =>
         createRrpApplicationDraftForUser("user-applicant-1", {
           representCountryCode: "CA",
-          dateOfBirth: "2015-01-01",
+          dateOfBirth: "2099-01-01",
         }),
-      /at least 18/,
+      /future/,
     );
   });
 

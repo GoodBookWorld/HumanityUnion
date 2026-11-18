@@ -285,24 +285,16 @@ describe("HU-RRP-03H isolated MongoMemoryReplSet workflow", () => {
     assert.equal(withdrawn.status, "withdrawn");
   });
 
-  it("rejects underage DOB and wrong consent version on submit", async () => {
-    await assert.rejects(
-      () =>
-        mods.appService.createRrpApplicationDraftForUser(applicant.userId, {
-          representCountryCode: "DE",
-          legalFirstName: "Young",
-          legalLastName: "Person",
-          profession: "Student",
-          residenceCountryCode: "DE",
-          dateOfBirth: new Date().toISOString().slice(0, 10),
-          fundingModel: "SELF",
-          annualRequestedAmountCad: null,
-          teamMemberCount: 0,
-          relevantExperience: "Experience.",
-          motivation: "Motivation.",
-        }),
-      /18|age|birth/i,
+  it("accepts voluntary young DOB and rejects wrong consent version on submit", async () => {
+    const youngDraft = await mods.appService.createRrpApplicationDraftForUser(
+      applicant.userId,
+      {
+        representCountryCode: "DE",
+        dateOfBirth: "2015-06-01",
+        motivation: "Motivation.",
+      },
     );
+    assert.equal(youngDraft.dateOfBirth, "2015-06-01");
 
     const adultDraft = await mods.appService.createRrpApplicationDraftForUser(
       applicant.userId,

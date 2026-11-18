@@ -30,7 +30,7 @@ export const EMPTY_RRP_APPLICATION_FORM: RrpApplicationFormState = {
   dateOfBirth: "",
   fundingModel: "",
   annualRequestedAmountCad: "",
-  teamMemberCount: "0",
+  teamMemberCount: "",
   relevantExperience: "",
   motivation: "",
   consentAccepted: false,
@@ -87,7 +87,7 @@ export function formStateFromRrpApplication(
         : String(application.annualRequestedAmountCad),
     teamMemberCount:
       application.teamMemberCount === null || application.teamMemberCount === undefined
-        ? "0"
+        ? ""
         : String(application.teamMemberCount),
     relevantExperience: application.relevantExperience ?? "",
     motivation: application.motivation ?? "",
@@ -148,21 +148,41 @@ export function computeExactAgeYears(dateOfBirth: string, asOf: Date = new Date(
   return age;
 }
 
-export function isValidAdultDateOfBirth(dateOfBirth: string, asOf: Date = new Date()): boolean {
-  const age = computeExactAgeYears(dateOfBirth, asOf);
+/**
+ * HU-RRP-04B — voluntary DOB: real calendar date, not in the future.
+ * No age ≥ 18 gate on initial RRP applications.
+ */
+export function isValidOptionalDateOfBirth(
+  dateOfBirth: string,
+  asOf: Date = new Date(),
+): boolean {
+  const trimmed = dateOfBirth.trim();
+  if (!trimmed) {
+    return true;
+  }
+  const age = computeExactAgeYears(trimmed, asOf);
   if (age === null) {
     return false;
   }
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth.trim());
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
   if (!match) {
     return false;
   }
-  const utc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const year = Number(match[1]);
+  if (year < 1900) {
+    return false;
+  }
+  const utc = Date.UTC(year, Number(match[2]) - 1, Number(match[3]));
   const today = Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate());
   if (utc > today) {
     return false;
   }
-  return age >= 18;
+  return true;
+}
+
+/** @deprecated HU-RRP-04B — use isValidOptionalDateOfBirth (no 18+ gate). */
+export function isValidAdultDateOfBirth(dateOfBirth: string, asOf: Date = new Date()): boolean {
+  return isValidOptionalDateOfBirth(dateOfBirth, asOf);
 }
 
 export function resolvePrefillResidenceCountryCode(raw: string | null | undefined): string {
@@ -230,12 +250,13 @@ export function validateRrpApplicationFormForSubmit(
   form: RrpApplicationFormState,
 ): RrpClientValidationIssue | null {
   if (!form.representCountryCode.trim()) return "representCountry";
-  if (!form.legalFirstName.trim()) return "legalFirstName";
-  if (!form.legalLastName.trim()) return "legalLastName";
-  if (!form.profession.trim()) return "profession";
-  if (!form.residenceCountryCode.trim()) return "residenceCountry";
-  if (!isValidAdultDateOfBirth(form.dateOfBirth)) return "dateOfBirth";
-  if (!form.fundingModel) return "fundingModel";
+  if (!form.motivation.trim()) return "motivation";
+  if (!form.consentAccepted) return "consent";
+
+  if (form.dateOfBirth.trim() && !isValidOptionalDateOfBirth(form.dateOfBirth)) {
+    return "dateOfBirth";
+  }
+
   if (form.fundingModel === "SELF" && form.annualRequestedAmountCad.trim() !== "") {
     return "annualAmount";
   }
@@ -243,10 +264,12 @@ export function validateRrpApplicationFormForSubmit(
     const amount = Number(form.annualRequestedAmountCad);
     if (!Number.isFinite(amount) || amount < 1) return "annualAmount";
   }
-  const team = Number.parseInt(form.teamMemberCount, 10);
-  if (!Number.isInteger(team) || team < 0) return "teamMemberCount";
-  if (!form.relevantExperience.trim()) return "relevantExperience";
-  if (!form.motivation.trim()) return "motivation";
-  if (!form.consentAccepted) return "consent";
+
+  const teamRaw = form.teamMemberCount.trim();
+  if (teamRaw !== "") {
+    const team = Number.parseInt(teamRaw, 10);
+    if (!Number.isInteger(team) || team < 0) return "teamMemberCount";
+  }
+
   return null;
 }

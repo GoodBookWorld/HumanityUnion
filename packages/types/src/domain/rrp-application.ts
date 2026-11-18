@@ -65,22 +65,27 @@ export interface RrpApplicationDecisionHistoryEntry {
 
 /**
  * Private Mongo-backed RRP application record.
+ * HU-RRP-04B — initial submission is a voluntary expression of interest.
+ * Legal names, DOB, funding, and most profile fields are optional.
  * DOB and other applicant PII must never appear in public projections, audit
- * titles, logs, or analytics events.
+ * titles, logs, or analytics events. Display/pseudonym identity lives on the
+ * participant profile — never auto-copied into legal name fields.
  */
 export interface RrpApplicationRecord {
   readonly applicationId: string;
   readonly participantId: string;
   readonly userId: string;
+  /** Optional; private to authorized review. Not required for submission. */
   readonly legalFirstName: string | null;
+  /** Optional; private to authorized review. Not required for submission. */
   readonly legalLastName: string | null;
   readonly profession: string | null;
   readonly residenceCountryCode: string | null;
   readonly representCountryCode: string;
-  /** Calendar date YYYY-MM-DD only — never logged or published. */
+  /** Optional calendar date YYYY-MM-DD only — never logged or published. No age gate. */
   readonly dateOfBirth: string | null;
   readonly fundingModel: RrpFundingModel | null;
-  /** Annual CAD request; required for PARTIAL/FULL, null for SELF. Not an approved commitment. */
+  /** Annual CAD request; required for PARTIAL/FULL when model set; null for SELF or unspecified. Not an approved commitment. */
   readonly annualRequestedAmountCad: number | null;
   readonly teamMemberCount: number | null;
   readonly relevantExperience: string | null;
