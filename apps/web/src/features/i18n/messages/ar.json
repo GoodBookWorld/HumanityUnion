@@ -57,7 +57,8 @@
     "openNavMenuAria": "فتح قائمة التنقل",
     "footerPlatformNavCol1Aria": "تنقل المنصة — العمود الأول",
     "footerPlatformNavCol2Aria": "تنقل المنصة — العمود الثاني",
-    "footerLegalNavAria": "تنقل الشؤون القانونية والشفافية"
+    "footerLegalNavAria": "تنقل الشؤون القانونية والشفافية",
+    "siteMapRegionalProgram": "برنامج التنمية الإقليمية"
   },
   "auth": {
     "logIn": "تسجيل الدخول",
@@ -7534,7 +7535,7 @@
   },
   "rrpApplication": {
     "title": "Regional Representative application",
-    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative.",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative and does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only; any separate legal appointment would be a distinct process.",
     "close": "Close",
     "back": "Back",
     "loading": "Loading your applications…",
@@ -7592,10 +7593,10 @@
       "draftSaved": "Draft saved.",
       "submitted": "Your application was submitted.",
       "withdrawn": "Application withdrawn.",
-      "notAppointment": "Submission is not a Representative appointment and grants no Representative privileges.",
+      "notAppointment": "Submission is not a Representative appointment and grants no legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions.",
       "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
       "moreInfoPossible": "An administrator may request more information before a decision.",
-      "messagesLater": "Follow-up replies will use Messages once administrator messaging for this program is available. No delivery confirmation is claimed yet."
+      "messagesLater": "Applicant and administrator follow-up uses the platform’s existing Messages, subject to recipient privacy settings and account eligibility. Delivery is not guaranteed for every message or notification."
     },
     "status": {
       "draft": "Draft",
@@ -7683,7 +7684,7 @@
         "reviewNote": "Review note (required for request information and reject)"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, or administrator permissions."
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
       },
       "actions": {
         "group": "Application review actions",
@@ -7729,6 +7730,116 @@
         "confirm": "Confirm request",
         "cancel": "Cancel"
       }
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "برنامج التنمية الإقليمية",
+    "title": "أحضر {siteName} إلى مجتمعك",
+    "subtitle": "يبدأ التغيير المستدام مع أشخاص مستعدين للعمل معًا.",
+    "description": "انضم إلى البرنامج الدولي، وقدّم {siteName} للناس في بلدك، وابنِ مجتمعًا محليًا، وساعد في تحويل الأفكار الهادفة إلى نتائج إيجابية حقيقية.",
+    "cta": {
+      "join": "الانضمام إلى البرنامج",
+      "volunteer": "اعرف المزيد عن التطوع"
+    },
+    "mission": {
+      "heading": "عالم أفضل ينمو حيث يتعاون الناس",
+      "body": "تساعد {siteName} الناس في أنحاء العالم على التلاقي حول قيم مشتركة، ومناقشة المشكلات بصراحة، وإيجاد حلول راسخة، وتنظيم العمل المشترك — في مجتمعاتهم وبلدانهم وعلى المستوى الدولي."
+    },
+    "activities": {
+      "heading": "ما يمكنك فعله في بلدك",
+      "items": {
+        "unite": {
+          "title": "توحيد الناس",
+          "body": "قدّم {siteName} لمجتمعك، وادعُ أشخاصًا متشابهين في التفكير، وساعد في بناء ثقافة التعاون."
+        },
+        "education": {
+          "title": "تعزيز التعليم الاجتماعي",
+          "body": "ادعم المسؤولية المدنية والتفكير النقدي وفهمًا أفضل لحقوق الناس ودور المواطنة الفاعلة."
+        },
+        "initiatives": {
+          "title": "دعم المبادرات المدنية",
+          "body": "حدّد القضايا المهمة، واقترح حلولًا، ونظّم نقاشات، وساعد المبادرات على كسب دعم أوسع."
+        },
+        "partnerships": {
+          "title": "بناء الشراكات",
+          "body": "طوّر التعاون مع الجامعات والباحثين والمنظمات غير الربحية والمجتمعات المحلية."
+        }
+      }
+    },
+    "tools": {
+      "heading": "منصة تساعدك على اتخاذ إجراء",
+      "body": "توفر {siteName} أدوات عملية للمشاركة المدنية والعمل التعاوني.",
+      "imageAlt": "أشخاص يتعاونون في اجتماع متنوع لفريق {siteName}",
+      "items": {
+        "initiatives": "المبادرات",
+        "discussions": "النقاشات والتحليل",
+        "proposals": "المقترحات والتحسينات",
+        "petitions": "العرائض",
+        "decisions": "القرارات الجماعية",
+        "tracking": "تتبع التنفيذ",
+        "media": "المدونة / الإعلام",
+        "workspace": "مساحة العمل"
+      }
+    },
+    "benefits": {
+      "heading": "ما يمكن أن تمنحه لك المشاركة شخصيًا",
+      "items": {
+        "skills": "تطوير مهارات التنظيم والقيادة.",
+        "connections": "بناء روابط مهنية وعامة جديدة حول العالم.",
+        "experience": "اكتساب خبرة عملية في المشاريع المدنية والاجتماعية.",
+        "contribution": "تقديم مساهمة حقيقية في التغيير الإيجابي في مجتمعك.",
+        "pathway": "استكشاف مسار محتمل نحو دور تنسيق إقليمي متفق عليه."
+      }
+    },
+    "development": {
+      "heading": "من المشاركة الفردية إلى فريق إقليمي",
+      "intro": "تبدأ كل جماعة إقليمية بمبادرة أشخاص أفراد.",
+      "steps": {
+        "volunteer": {
+          "title": "ابدأ كمتطوع",
+          "body": "تعرّف على المنصة، واختر مجال نشاط، وشارك في المهام المتاحة."
+        },
+        "initiative": {
+          "title": "أظهر المبادرة",
+          "body": "ادعُ أشخاصًا متشابهين في التفكير، وادعم المشاريع المفيدة، واقترح أفكارًا، وشارك النتائج."
+        },
+        "cooperation": {
+          "title": "نمِّ التعاون المحلي",
+          "body": "اجمع المشاركين، وعزّز التعاون، وابنِ مجتمعًا تدريجيًا."
+        },
+        "team": {
+          "title": "أنشئ فريقًا إقليميًا",
+          "body": "عند وجود نشاط مستمر، قد توافق Humanity Union Society على فريق ومنسق إقليمي."
+        },
+        "expand": {
+          "title": "وسّع الفرص",
+          "body": "مع نمو الأنشطة، قد يُنظر في مكتب إقليمي أو التعاون مع منظمة شريكة محلية عند الحاجة."
+        }
+      }
+    },
+    "presence": {
+      "heading": "أفق الحضور الإقليمي",
+      "body": "في البلدان التي تأسست فيها جماعة مستقرة ونشاط ذو معنى، قد تُنظر في خيارات تنظيمية إضافية — مثل فريق إقليمي أو مكتب رسمي أو شراكة مع منظمة محلية غير ربحية.",
+      "notice": "لا يوجد إنشاء تلقائي أو مضمون لمكتب. تُتخذ مثل هذه القرارات بشكل منفصل، استنادًا إلى نتائج حقيقية والموارد المتاحة والتشريعات المحلية والاتفاق مع Humanity Union Society.",
+      "imageAlt": "علم {siteName} معروض في بيئة حديقة"
+    },
+    "principles": {
+      "heading": "مفتوح للجميع. قائم على المسؤولية.",
+      "items": {
+        "voluntary": "مشاركة طوعية",
+        "openness": "الانفتاح وتكافؤ الفرص",
+        "transparency": "الشفافية في النشاط",
+        "respect": "احترام الثقافات والقوانين المحلية",
+        "cooperation": "التعاون الدولي",
+        "publicBenefit": "المنفعة العامة",
+        "results": "نتائج قابلة للتحقق",
+        "name": "الاستخدام المسؤول لاسم {siteName}"
+      },
+      "legal": "Humanity Union Society منظمة كندية غير ربحية أُسست عام 2025 بوصفها الأساس القانوني لمنصة {siteName}. لا يمنح التطوع تلقائيًا تمثيلًا رسميًا أو توظيفًا أو تمويلًا أو سلطة تنظيمية."
+    },
+    "finalCta": {
+      "heading": "كن جزءًا من مجتمع عالمي من أجل التغيير الإيجابي",
+      "body": "انضم إلى برنامج التنمية الإقليمية وساعد في تطوير {siteName} في بلدك."
     }
   }
 }

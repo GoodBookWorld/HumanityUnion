@@ -57,7 +57,8 @@
     "openNavMenuAria": "Відкрити меню навігації",
     "footerPlatformNavCol1Aria": "Навігація платформи, колонка 1",
     "footerPlatformNavCol2Aria": "Навігація платформи, колонка 2",
-    "footerLegalNavAria": "Навігація: правові відомості та прозорість"
+    "footerLegalNavAria": "Навігація: правові відомості та прозорість",
+    "siteMapRegionalProgram": "Регіональна програма розвитку"
   },
   "auth": {
     "logIn": "Увійти",
@@ -7534,7 +7535,7 @@
   },
   "rrpApplication": {
     "title": "Regional Representative application",
-    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative.",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative and does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only; any separate legal appointment would be a distinct process.",
     "close": "Close",
     "back": "Back",
     "loading": "Loading your applications…",
@@ -7592,10 +7593,10 @@
       "draftSaved": "Draft saved.",
       "submitted": "Your application was submitted.",
       "withdrawn": "Application withdrawn.",
-      "notAppointment": "Submission is not a Representative appointment and grants no Representative privileges.",
+      "notAppointment": "Submission is not a Representative appointment and grants no legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions.",
       "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
       "moreInfoPossible": "An administrator may request more information before a decision.",
-      "messagesLater": "Follow-up replies will use Messages once administrator messaging for this program is available. No delivery confirmation is claimed yet."
+      "messagesLater": "Applicant and administrator follow-up uses the platform’s existing Messages, subject to recipient privacy settings and account eligibility. Delivery is not guaranteed for every message or notification."
     },
     "status": {
       "draft": "Draft",
@@ -7683,7 +7684,7 @@
         "reviewNote": "Review note (required for request information and reject)"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, or administrator permissions."
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
       },
       "actions": {
         "group": "Application review actions",
@@ -7729,6 +7730,116 @@
         "confirm": "Confirm request",
         "cancel": "Cancel"
       }
+    }
+  },
+  "regionalProgramPublic": {
+    "eyebrow": "РЕГІОНАЛЬНА ПРОГРАМА РОЗВИТКУ",
+    "title": "Принесіть {siteName} у свою спільноту",
+    "subtitle": "Стійкі зміни починаються з людей, які готові працювати разом.",
+    "description": "Приєднуйтеся до міжнародної програми, знайомте людей у своїй країні з {siteName}, будуйте місцеву спільноту та допомагайте перетворювати змістовні ідеї на реальні позитивні результати.",
+    "cta": {
+      "join": "Долучитися до програми",
+      "volunteer": "Дізнатися більше про волонтерство"
+    },
+    "mission": {
+      "heading": "Кращий світ зростає там, де люди співпрацюють",
+      "body": "{siteName} допомагає людям у всьому світі об’єднуватися навколо спільних цінностей, відкрито обговорювати проблеми, знаходити обґрунтовані рішення та організовувати спільні дії — у своїх спільнотах, країнах і на міжнародному рівні."
+    },
+    "activities": {
+      "heading": "Що ви можете робити у своїй країні",
+      "items": {
+        "unite": {
+          "title": "Об’єднувати людей",
+          "body": "Познайомте свою спільноту з {siteName}, запрошуйте однодумців і допомагайте формувати культуру співпраці."
+        },
+        "education": {
+          "title": "Розвивати соціальну освіту",
+          "body": "Підтримуйте громадянську відповідальність, критичне мислення та краще розуміння прав людей і ролі активної громадянської позиції."
+        },
+        "initiatives": {
+          "title": "Підтримувати громадянські ініціативи",
+          "body": "Визначайте важливі проблеми, пропонуйте рішення, організовуйте обговорення та допомагайте ініціативам здобувати ширшу підтримку."
+        },
+        "partnerships": {
+          "title": "Будувати партнерства",
+          "body": "Розвивайте співпрацю з університетами, дослідниками, неприбутковими організаціями та місцевими спільнотами."
+        }
+      }
+    },
+    "tools": {
+      "heading": "Платформа, яка допомагає діяти",
+      "body": "{siteName} надає практичні інструменти для громадянської участі та спільної роботи.",
+      "imageAlt": "Люди співпрацюють на різноманітній зустрічі команди {siteName}",
+      "items": {
+        "initiatives": "Ініціативи",
+        "discussions": "Обговорення та аналіз",
+        "proposals": "Пропозиції та вдосконалення",
+        "petitions": "Петиції",
+        "decisions": "Колективні рішення",
+        "tracking": "Відстеження реалізації",
+        "media": "Блог / Медіа",
+        "workspace": "Робочий простір"
+      }
+    },
+    "benefits": {
+      "heading": "Що участь може дати вам особисто",
+      "items": {
+        "skills": "Розвинути організаційні та лідерські навички.",
+        "connections": "Побудувати нові професійні та публічні зв’язки у світі.",
+        "experience": "Отримати практичний досвід у громадянських і соціальних проєктах.",
+        "contribution": "Зробити реальний внесок у позитивні зміни у своїй спільноті.",
+        "pathway": "Дослідити можливий шлях до узгодженої ролі регіональної координації."
+      }
+    },
+    "development": {
+      "heading": "Від індивідуальної участі до регіональної команди",
+      "intro": "Кожна регіональна спільнота починається з ініціативи окремих людей.",
+      "steps": {
+        "volunteer": {
+          "title": "Почніть як волонтер",
+          "body": "Ознайомтеся з платформою, оберіть сферу діяльності та беріть участь у доступних завданнях."
+        },
+        "initiative": {
+          "title": "Виявляйте ініціативу",
+          "body": "Запрошуйте однодумців, підтримуйте корисні проєкти, пропонуйте ідеї та діліться результатами."
+        },
+        "cooperation": {
+          "title": "Розвивайте місцеву співпрацю",
+          "body": "Збирайте учасників, зміцнюйте співпрацю та поступово будуйте спільноту."
+        },
+        "team": {
+          "title": "Створіть регіональну команду",
+          "body": "Коли є постійна активність, Humanity Union Society може затвердити команду та регіонального координатора."
+        },
+        "expand": {
+          "title": "Розширюйте можливості",
+          "body": "У міру зростання активності може розглядатися регіональний офіс або співпраця з місцевою партнерською організацією, коли це потрібно."
+        }
+      }
+    },
+    "presence": {
+      "heading": "Перспектива регіональної присутності",
+      "body": "У країнах, де сформовано стабільну спільноту та змістовну активність, можуть розглядатися додаткові організаційні варіанти — наприклад, регіональна команда, офіційний офіс або партнерство з місцевою неприбутковою організацією.",
+      "notice": "Немає автоматичного чи гарантованого створення офісу. Такі рішення ухвалюються окремо на основі реальних результатів, доступних ресурсів, місцевого законодавства та згоди Humanity Union Society.",
+      "imageAlt": "Прапор {siteName} у парковому середовищі"
+    },
+    "principles": {
+      "heading": "Відкрито для всіх. На основі відповідальності.",
+      "items": {
+        "voluntary": "Добровільна участь",
+        "openness": "Відкритість і рівні можливості",
+        "transparency": "Прозорість діяльності",
+        "respect": "Повага до місцевих культур і законів",
+        "cooperation": "Міжнародна співпраця",
+        "publicBenefit": "Суспільна користь",
+        "results": "Перевірювані результати",
+        "name": "Відповідальне використання назви {siteName}"
+      },
+      "legal": "Humanity Union Society — канадська неприбуткова організація, заснована у 2025 році як правова основа платформи {siteName}. Волонтерство не надає автоматично офіційного представництва, працевлаштування, фінансування чи організаційних повноважень."
+    },
+    "finalCta": {
+      "heading": "Станьте частиною глобальної спільноти за позитивні зміни",
+      "body": "Приєднуйтеся до Регіональної програми розвитку та допомагайте розвивати {siteName} у своїй країні."
     }
   }
 }

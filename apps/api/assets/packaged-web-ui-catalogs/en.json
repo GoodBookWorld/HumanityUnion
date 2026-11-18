@@ -981,7 +981,10 @@
     },
     "notification": {
       "emailEnabled": "Receive email notifications",
-      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information."
+      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information.",
+      "copiesOptIn": "Send email copies of my notifications",
+      "copiesHelp": "Optional. When enabled, Humanity Union may email copies of selected Notification Center items to your verified notification destination (account email or a separately verified alternative). Frequency follows your saved preferences. Delivery depends on platform availability and is not guaranteed for every event. This does not change your login email, does not stop security or account emails, and never removes in-app Notification Center items. Saving preferences does not mean an email was sent.",
+      "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
       "reducedMotion": "Reduced motion",
@@ -7116,6 +7119,48 @@
     "summary": "Your active hub for civic notifications, incoming messages, and personal reminders.",
     "signInPrompt": "Sign in to view your Notification Center.",
     "signIn": "Sign in",
+    "emailSettings": {
+      "title": "Email Notifications",
+      "collapsedSummary": "Optional email copies and delivery settings",
+      "preparationNotice": "Optional email copies of selected Notification Center activity. Explicit opt-in is required. Messages use your verified notification destination and follow your saved frequency. Delivery depends on platform availability and may not include every notification.",
+      "emailEnabledHelpShort": "Activity alerts about new items waiting for you. Separate from Notification Center item copies and from security emails.",
+      "copiesHelpShort": "Optional copies of selected Notification Center items to your verified destination. Does not change login email; saving prefs does not mean an email was sent.",
+      "loginEmailHint": "Login email remains {email} (unchanged).",
+      "openWorkspacePreferences": "Open Notification Preferences in Workspace",
+      "loading": "Loading email notification settings…",
+      "loadError": "Unable to load email notification settings.",
+      "retry": "Retry",
+      "currentDestination": "Current notification destination",
+      "destinationAccount": "Account email ({email})",
+      "destinationAlternative": "Alternative email ({email})",
+      "destinationUnavailable": "No verified destination available yet.",
+      "accountEmail": "Account email",
+      "accountEmailUnverified": "Confirm your account email before using email notification settings.",
+      "confirmEmailCta": "Confirm email",
+      "alternativeEmail": "Alternative notification email",
+      "alternativeEmailHelp": "Verify a different address for Notification Center email copies. This never changes your login email.",
+      "alternativeEmailInput": "Alternative email address",
+      "verifiedAlternative": "Verified alternative: {email}",
+      "pendingAlternative": "Verification pending for {email}",
+      "requestVerification": "Send verification code",
+      "resendCode": "Resend verification code",
+      "resendCooldown": "Resend available in {seconds}s",
+      "verificationCode": "Verification code",
+      "confirmCode": "Confirm code",
+      "useAccountEmail": "Use account email",
+      "removeAlternative": "Remove alternative email",
+      "requestSuccess": "Verification code sent.",
+      "confirmSuccess": "Alternative notification email verified.",
+      "useAccountSuccess": "Account email selected.",
+      "removeSuccess": "Alternative notification email removed.",
+      "codeInvalid": "That verification code is incorrect.",
+      "codeExpired": "That verification code has expired. Request a new code.",
+      "rateLimited": "Too many verification requests. Please wait and try again.",
+      "altActionError": "Unable to update alternative notification email.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Unable to save email notification settings."
+    },
     "sections": {
       "notifications": "Notifications",
       "messages": "Messages",
@@ -7495,6 +7540,7 @@
     "description": "Join the international program, introduce {siteName} to people in your country, build a local community, and help turn meaningful ideas into real, positive results.",
     "cta": {
       "join": "Join the Program",
+      "joinDisclaimer": "Joining or applying does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only and is separate from any later legal appointment process.",
       "volunteer": "Learn More About Volunteering"
     },
     "mission": {
@@ -7565,18 +7611,18 @@
         },
         "team": {
           "title": "Create a Regional Team",
-          "body": "When there is ongoing activity, Humanity Union Society may approve a team and a regional coordinator."
+          "body": "When there is ongoing activity, Humanity Union Society may approve a team and a regional coordinator as an internal platform role. That approval is not a legal appointment, employment, or grant of organizational authority."
         },
         "expand": {
           "title": "Expand Opportunities",
-          "body": "As activities grow, a regional office or cooperation with a local partner organization may be considered when needed."
+          "body": "As activities grow, a regional office reference or cooperation with a local partner organization may be considered when needed. Platform references to a regional office do not create a legal entity, employment, funding entitlement, or signing authority by themselves."
         }
       }
     },
     "presence": {
       "heading": "The Perspective of a Regional Presence",
-      "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization.",
-      "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society.",
+      "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization. Platform discussion of these options is not itself a legal appointment or incorporation.",
+      "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society. Platform approval of a Representative designation does not create a regional office, employment, funding entitlement, contract-signing authority, or administrator permissions.",
       "imageAlt": "{siteName} flag displayed in a park setting"
     },
     "principles": {
@@ -7591,11 +7637,210 @@
         "results": "Verifiable Results",
         "name": "Responsible Use of the {siteName} Name"
       },
-      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the {siteName} platform. Volunteering does not automatically grant official representation, employment, funding, or organizational authority."
+      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the {siteName} platform. Volunteering or platform Representative designation does not automatically grant legal authority, employment, funding entitlement, contract-signing authority, administrator permissions, or official legal representation. A separate legal appointment process may be used later if required."
     },
     "finalCta": {
       "heading": "Be Part of a Global Community for Positive Change",
       "body": "Join the Regional Development Program and help develop {siteName} in your country."
     }
+  },
+  "rrpApplication": {
+    "title": "Regional Representative application",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative and does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only; any separate legal appointment would be a distinct process.",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading your applications…",
+    "hub": {
+      "activeHeading": "Active applications",
+      "noActive": "You have no active applications.",
+      "newHeading": "Start a new application",
+      "historyHeading": "Application history",
+      "resume": "Resume",
+      "view": "View status",
+      "startDraft": "Create draft",
+      "countryLabel": "Country {country}"
+    },
+    "form": {
+      "editingCountry": "Representation country: {country}",
+      "displayNameHint": "Your display name is “{name}”. Enter your legal names below — they are not filled automatically."
+    },
+    "fields": {
+      "legalFirstName": "Legal first name",
+      "legalLastName": "Legal last name",
+      "profession": "Profession",
+      "residenceCountry": "Country of residence",
+      "representCountry": "Country to represent",
+      "representCountryHelp": "This is never copied automatically from residence.",
+      "dateOfBirth": "Date of birth",
+      "dateOfBirthHelp": "Applicants must be at least 18 years old.",
+      "fundingModel": "Funding model",
+      "annualRequestedAmountCad": "Annual requested amount (CAD)",
+      "fundingNotCommitment": "A funding request is not an approved financial commitment.",
+      "teamMemberCount": "Team member count",
+      "relevantExperience": "Relevant experience",
+      "motivation": "Motivation"
+    },
+    "funding": {
+      "SELF": "Self-funded",
+      "PARTIAL": "Partial funding requested",
+      "FULL": "Full funding requested"
+    },
+    "consent": {
+      "label": "I consent to Humanity Union processing this application as described in the <privacy>Privacy Policy</privacy>.",
+      "versionNote": "Consent version: {version}"
+    },
+    "actions": {
+      "saveDraft": "Save draft",
+      "submit": "Submit application",
+      "withdraw": "Withdraw"
+    },
+    "busy": {
+      "saving": "Saving…",
+      "submitting": "Submitting…",
+      "withdrawing": "Withdrawing…",
+      "creating": "Creating…"
+    },
+    "messages": {
+      "draftSaved": "Draft saved.",
+      "submitted": "Your application was submitted.",
+      "withdrawn": "Application withdrawn.",
+      "notAppointment": "Submission is not a Representative appointment and grants no legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions.",
+      "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
+      "moreInfoPossible": "An administrator may request more information before a decision.",
+      "messagesLater": "Applicant and administrator follow-up uses the platform’s existing Messages, subject to recipient privacy settings and account eligibility. Delivery is not guaranteed for every message or notification."
+    },
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "information_requested": "More information requested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "validation": {
+      "representCountry": "Select a country to represent.",
+      "legalFirstName": "Legal first name is required.",
+      "legalLastName": "Legal last name is required.",
+      "profession": "Profession is required.",
+      "residenceCountry": "Residence country is required.",
+      "dateOfBirth": "Enter a valid date of birth. Applicants must be at least 18.",
+      "fundingModel": "Select a funding model.",
+      "annualAmount": "Enter a valid annual CAD amount for PARTIAL or FULL funding.",
+      "teamMemberCount": "Team member count must be a whole number of 0 or more.",
+      "relevantExperience": "Relevant experience is required.",
+      "motivation": "Motivation is required.",
+      "consent": "Consent is required to submit."
+    },
+    "errors": {
+      "conflict": "This application changed elsewhere or conflicts with another active application. Refresh and try again.",
+      "unavailable": "Applications are temporarily unavailable. Please try again shortly.",
+      "duplicateActive": "You already have an active application for that representation country.",
+      "notFound": "That application could not be found."
+    },
+    "discard": {
+      "title": "Discard unsaved changes?",
+      "description": "You have unsaved edits on this application. Leaving now will discard those changes.",
+      "confirm": "Discard changes",
+      "cancel": "Keep editing"
+    },
+    "workspaceWidget": {
+      "title": "My Regional Applications",
+      "invitation": "Start a Regional Representative application for a country you want to represent.",
+      "create": "Create application",
+      "newApplication": "New application",
+      "open": "Open",
+      "edit": "Edit",
+      "view": "View",
+      "loading": "Loading applications…",
+      "error": "Could not load your applications. Try again.",
+      "retry": "Retry",
+      "updated": "Updated {date}",
+      "activeHeading": "Active applications",
+      "historyHeading": "Application history",
+      "openAria": "Open application for {country}",
+      "editAria": "Edit application for {country}",
+      "viewAria": "View application for {country}",
+      "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement.",
+      "messagesHint": "An administrator asked for more information. Reply in Messages after you update your application.",
+      "openMessages": "Open Messages",
+      "openMessagesAria": "Open Workspace Messages"
+    },
+    "admin": {
+      "title": "Regional Representative application",
+      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
+      "close": "Close",
+      "closeAria": "Close application dialog",
+      "loading": "Loading application…",
+      "empty": "No application is available for this participant.",
+      "selectApplication": "Select application",
+      "statusUnknown": "Status unavailable",
+      "fields": {
+        "applicant": "Applicant identity",
+        "profession": "Professional background",
+        "residenceCountry": "Residence country",
+        "representCountry": "Representation country",
+        "fundingModel": "Funding model",
+        "requestedAmount": "Requested CAD amount",
+        "teamMemberCount": "Team member count",
+        "status": "Application status",
+        "submittedAt": "Submission date",
+        "consent": "Consent",
+        "consentAccepted": "Accepted ({version}) on {at}",
+        "experience": "Relevant experience",
+        "motivation": "Motivation",
+        "decisionHistory": "Decision history",
+        "noHistory": "No decisions recorded yet.",
+        "reviewNote": "Review note (required for request information and reject)"
+      },
+      "disclaimer": {
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
+      },
+      "actions": {
+        "group": "Application review actions",
+        "markUnderReview": "Mark under review",
+        "requestInformation": "Request information",
+        "reject": "Reject",
+        "approve": "Approve"
+      },
+      "busy": {
+        "working": "Working…",
+        "approving": "Approving…"
+      },
+      "messages": {
+        "updateTitle": "Application update",
+        "deliveryWarningTitle": "Messages delivery",
+        "approved": "Application approved and Representative platform designation recorded.",
+        "markedUnderReview": "Application marked under review.",
+        "informationRequested": "More information requested.",
+        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
+        "rejected": "Application rejected."
+      },
+      "confirmRequestInfo": {
+        "title": "Request more information?",
+        "lineStatus": "The application status will change to “More information requested”.",
+        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
+        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
+        "confirm": "Confirm request",
+        "cancel": "Cancel"
+      },
+      "confirmApprove": {
+        "title": "Approve and designate Representative?",
+        "lineApprove": "This application will be approved.",
+        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
+        "lineNoLegal": "No legal representation authority is granted.",
+        "lineNoFunding": "No funding commitment is created.",
+        "lineNoAdmin": "No administrator rights are granted.",
+        "confirm": "Confirm approval",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "forbidden": "Administrator access is required to view Regional Representative applications.",
+        "accessRestricted": "Access restricted",
+        "unavailable": "Application unavailable",
+        "noteRequired": "A review note is required for this action."
+      }
+    },
+    "closeAria": "Close application dialog"
   }
 }

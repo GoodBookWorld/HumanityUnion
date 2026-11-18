@@ -215,6 +215,7 @@ export function RegionalProgramPageContent() {
               {t("cta.volunteer")}
             </Button>
           </div>
+          <p className="regional-program-page__join-disclaimer">{t("cta.joinDisclaimer")}</p>
         </div>
       </header>
 
@@ -410,6 +411,7 @@ export function RegionalProgramPageContent() {
               {t("cta.volunteer")}
             </Button>
           </div>
+          <p className="regional-program-page__join-disclaimer">{t("cta.joinDisclaimer")}</p>
         </div>
       </section>
     </div>

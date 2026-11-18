@@ -172,6 +172,15 @@
   color: #ffffff;
 }
 
+.regional-program-page__join-disclaimer {
+  margin: var(--hu-space-3) 0 0;
+  max-width: 42rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  text-align: start;
+  color: color-mix(in srgb, #ffffff 82%, transparent);
+}
+
 .regional-program-page__section {
   display: grid;
   gap: var(--hu-space-4);

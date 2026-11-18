@@ -40,6 +40,8 @@ export const PARTICIPANT_WEB_UI_REQUIRED_PREFIXES = [
   "memberProfile.",
   "preferences.",
   "authoringPage.",
+  // HU-RRP-03F.1 — Regional Representative application / admin chrome (participant + review UI).
+  "rrpApplication.",
 ] as const;
 
 /**

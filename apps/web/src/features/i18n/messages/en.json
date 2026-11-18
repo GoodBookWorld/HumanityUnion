@@ -7540,6 +7540,7 @@
     "description": "Join the international program, introduce {siteName} to people in your country, build a local community, and help turn meaningful ideas into real, positive results.",
     "cta": {
       "join": "Join the Program",
+      "joinDisclaimer": "Joining or applying does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only and is separate from any later legal appointment process.",
       "volunteer": "Learn More About Volunteering"
     },
     "mission": {
@@ -7610,18 +7611,18 @@
         },
         "team": {
           "title": "Create a Regional Team",
-          "body": "When there is ongoing activity, Humanity Union Society may approve a team and a regional coordinator."
+          "body": "When there is ongoing activity, Humanity Union Society may approve a team and a regional coordinator as an internal platform role. That approval is not a legal appointment, employment, or grant of organizational authority."
         },
         "expand": {
           "title": "Expand Opportunities",
-          "body": "As activities grow, a regional office or cooperation with a local partner organization may be considered when needed."
+          "body": "As activities grow, a regional office reference or cooperation with a local partner organization may be considered when needed. Platform references to a regional office do not create a legal entity, employment, funding entitlement, or signing authority by themselves."
         }
       }
     },
     "presence": {
       "heading": "The Perspective of a Regional Presence",
-      "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization.",
-      "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society.",
+      "body": "In countries where a stable community and meaningful activity have been established, additional organizational options may be considered — such as a regional team, an official office, or a partnership with a local nonprofit organization. Platform discussion of these options is not itself a legal appointment or incorporation.",
+      "notice": "There is no automatic or guaranteed creation of an office. Such decisions are made separately, based on real results, available resources, local legislation, and agreement with Humanity Union Society. Platform approval of a Representative designation does not create a regional office, employment, funding entitlement, contract-signing authority, or administrator permissions.",
       "imageAlt": "{siteName} flag displayed in a park setting"
     },
     "principles": {
@@ -7636,7 +7637,7 @@
         "results": "Verifiable Results",
         "name": "Responsible Use of the {siteName} Name"
       },
-      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the {siteName} platform. Volunteering does not automatically grant official representation, employment, funding, or organizational authority."
+      "legal": "Humanity Union Society is a Canadian nonprofit established in 2025 as the legal foundation of the {siteName} platform. Volunteering or platform Representative designation does not automatically grant legal authority, employment, funding entitlement, contract-signing authority, administrator permissions, or official legal representation. A separate legal appointment process may be used later if required."
     },
     "finalCta": {
       "heading": "Be Part of a Global Community for Positive Change",
@@ -7645,7 +7646,7 @@
   },
   "rrpApplication": {
     "title": "Regional Representative application",
-    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative.",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative and does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only; any separate legal appointment would be a distinct process.",
     "close": "Close",
     "back": "Back",
     "loading": "Loading your applications…",
@@ -7703,10 +7704,10 @@
       "draftSaved": "Draft saved.",
       "submitted": "Your application was submitted.",
       "withdrawn": "Application withdrawn.",
-      "notAppointment": "Submission is not a Representative appointment and grants no Representative privileges.",
+      "notAppointment": "Submission is not a Representative appointment and grants no legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions.",
       "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
       "moreInfoPossible": "An administrator may request more information before a decision.",
-      "messagesLater": "Follow-up replies will use Messages once administrator messaging for this program is available. No delivery confirmation is claimed yet."
+      "messagesLater": "Applicant and administrator follow-up uses the platform’s existing Messages, subject to recipient privacy settings and account eligibility. Delivery is not guaranteed for every message or notification."
     },
     "status": {
       "draft": "Draft",
@@ -7793,7 +7794,7 @@
         "reviewNote": "Review note (required for request information and reject)"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, or administrator permissions."
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
       },
       "actions": {
         "group": "Application review actions",

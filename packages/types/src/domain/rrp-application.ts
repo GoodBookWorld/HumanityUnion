@@ -42,8 +42,13 @@ export type RrpFundingModel = "SELF" | "PARTIAL" | "FULL";
 
 export const RRP_FUNDING_MODELS: readonly RrpFundingModel[] = ["SELF", "PARTIAL", "FULL"] as const;
 
-/** Current consent document version accepted at submission. */
-export const RRP_APPLICATION_CONSENT_VERSION = "rrp-application-consent-v1" as const;
+/**
+ * Current consent document version accepted at submission.
+ * Bumped to v2 with HU-RRP-03F.1 Privacy RRP disclosure (canonical privacy-2026-11-v1).
+ * Previously submitted applications retain their stored consentVersion / consentAcceptedAt;
+ * there is no automatic re-consent migration of historical rows.
+ */
+export const RRP_APPLICATION_CONSENT_VERSION = "rrp-application-consent-v2" as const;
 
 export type RrpApplicationDecisionActorRole = "participant" | "admin";
 

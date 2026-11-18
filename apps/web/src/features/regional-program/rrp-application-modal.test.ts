@@ -218,7 +218,7 @@ describe("HU-RRP-02C Workspace application modal", () => {
     assert.match(modal, /href="\/privacy"/);
     assert.match(modal, /consentAccepted/);
     assert.match(modal, /RRP_APPLICATION_CONSENT_VERSION/);
-    assert.equal(RRP_APPLICATION_CONSENT_VERSION, "rrp-application-consent-v1");
+    assert.equal(RRP_APPLICATION_CONSENT_VERSION, "rrp-application-consent-v2");
     assert.equal(
       validateRrpApplicationFormForSubmit({
         ...EMPTY_RRP_APPLICATION_FORM,

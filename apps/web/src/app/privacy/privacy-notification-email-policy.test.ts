@@ -45,8 +45,28 @@ describe("HU-NOTIF-02C.7 Privacy Policy notification email section", () => {
     assert.match(body, /does not stop[\s\S]*password reset/i);
     assert.doesNotMatch(body, /encryption at rest/i);
     assert.doesNotMatch(body, /\bguaranteed delivery\b/i);
-    assert.doesNotMatch(body, /regional representative|RRP/i);
     assert.match(body, /not guaranteed\s+for every event/i);
     assert.match(body, /not claimed to be exactly-once/i);
+  });
+});
+
+describe("HU-RRP-03F.1 Privacy Policy RRP disclosure", () => {
+  it("includes a draft RRP disclosure marked for legal review", () => {
+    const body = readPrivacy();
+    assert.match(body, /Regional Representative Program applications/);
+    assert.match(body, /data-rrp-privacy-disclosure="draft-requires-legal-review"/);
+    assert.match(body, /Draft for legal review/);
+    assert.match(body, /legal first and last name/i);
+    assert.match(body, /date of birth/i);
+    assert.match(body, /country of\s+residence/i);
+    assert.match(body, /country you seek to represent/i);
+    assert.match(body, /funding model/i);
+    assert.match(body, /CAD/);
+    assert.match(body, /decision history/i);
+    assert.match(body, /Messages capability/i);
+    assert.match(body, /Withdrawal ends the active application/i);
+    assert.match(body, /not yet fixed by an explicit product or legal/i);
+    assert.match(body, /other jurisdictions/i);
+    assert.doesNotMatch(body, /\bguaranteed delivery\b/i);
   });
 });

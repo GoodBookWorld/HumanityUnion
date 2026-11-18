@@ -981,7 +981,10 @@
     },
     "notification": {
       "emailEnabled": "Отримувати сповіщення електронною поштою",
-      "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу."
+      "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу.",
+      "copiesOptIn": "Надсилати електронні копії моїх сповіщень",
+      "copiesHelp": "За бажанням. Якщо увімкнено, Humanity Union може надсилати електронні копії вибраних елементів Центру сповіщень на вашу підтверджену адресу для сповіщень (електронна пошта облікового запису або окремо підтверджена альтернативна). Частота відповідає збереженим налаштуванням. Доставка залежить від доступності платформи й не гарантується для кожної події. Це не змінює електронну пошту для входу, не зупиняє листи безпеки чи облікового запису та ніколи не прибирає елементи Центру сповіщень у застосунку. Збереження налаштувань не означає, що лист уже надіслано.",
+      "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
       "reducedMotion": "Зменшена анімація",
@@ -7486,6 +7489,247 @@
       "declinedSuccess": "Зобов’язання відхилено.",
       "declinedTransferSuccess": "Передачу відхилено. Поточний відповідальний Учасник залишається відповідальним.",
       "requestFailed": "Запит не вдався."
+    },
+    "emailSettings": {
+      "title": "Email Notifications",
+      "collapsedSummary": "Необов’язкові електронні копії та налаштування доставки",
+      "preparationNotice": "Необов’язкові електронні копії вибраної активності Центру сповіщень. Потрібна явна згода. Використовується ваша підтверджена адреса для сповіщень і збережена частота. Доставка залежить від доступності платформи й може не охоплювати кожне сповіщення.",
+      "emailEnabledHelpShort": "Сповіщення про нові елементи, що очікують на вас. Окремо від копій елементів Центру сповіщень і від листів безпеки.",
+      "copiesHelpShort": "Необов’язкові копії вибраних елементів Центру сповіщень на підтверджену адресу. Не змінює електронну пошту для входу; збереження налаштувань не означає, що лист надіслано.",
+      "loginEmailHint": "Електронна пошта для входу залишається {email} (без змін).",
+      "openWorkspacePreferences": "Open Notification Preferences in Workspace",
+      "loading": "Loading email notification settings…",
+      "loadError": "Unable to load email notification settings.",
+      "retry": "Retry",
+      "currentDestination": "Current notification destination",
+      "destinationAccount": "Account email ({email})",
+      "destinationAlternative": "Alternative email ({email})",
+      "destinationUnavailable": "No verified destination available yet.",
+      "accountEmail": "Account email",
+      "accountEmailUnverified": "Confirm your account email before using email notification settings.",
+      "confirmEmailCta": "Confirm email",
+      "alternativeEmail": "Alternative notification email",
+      "alternativeEmailHelp": "Підтвердіть іншу адресу для електронних копій Центру сповіщень. Це ніколи не змінює електронну пошту для входу.",
+      "alternativeEmailInput": "Alternative email address",
+      "verifiedAlternative": "Verified alternative: {email}",
+      "pendingAlternative": "Verification pending for {email}",
+      "requestVerification": "Send verification code",
+      "resendCode": "Resend verification code",
+      "resendCooldown": "Resend available in {seconds}s",
+      "verificationCode": "Verification code",
+      "confirmCode": "Confirm code",
+      "useAccountEmail": "Use account email",
+      "removeAlternative": "Remove alternative email",
+      "requestSuccess": "Verification code sent.",
+      "confirmSuccess": "Alternative notification email verified.",
+      "useAccountSuccess": "Account email selected.",
+      "removeSuccess": "Alternative notification email removed.",
+      "codeInvalid": "That verification code is incorrect.",
+      "codeExpired": "That verification code has expired. Request a new code.",
+      "rateLimited": "Too many verification requests. Please wait and try again.",
+      "altActionError": "Unable to update alternative notification email.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Unable to save email notification settings."
+    }
+  },
+  "rrpApplication": {
+    "title": "Regional Representative application",
+    "intro": "Apply to represent a country in the Regional Representative Program. Submitting an application does not appoint you as a Representative and does not grant legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions. Platform approval is an internal designation only; any separate legal appointment would be a distinct process.",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading your applications…",
+    "hub": {
+      "activeHeading": "Active applications",
+      "noActive": "You have no active applications.",
+      "newHeading": "Start a new application",
+      "historyHeading": "Application history",
+      "resume": "Resume",
+      "view": "View status",
+      "startDraft": "Create draft",
+      "countryLabel": "Country {country}"
+    },
+    "form": {
+      "editingCountry": "Representation country: {country}",
+      "displayNameHint": "Your display name is “{name}”. Enter your legal names below — they are not filled automatically."
+    },
+    "fields": {
+      "legalFirstName": "Legal first name",
+      "legalLastName": "Legal last name",
+      "profession": "Profession",
+      "residenceCountry": "Country of residence",
+      "representCountry": "Country to represent",
+      "representCountryHelp": "This is never copied automatically from residence.",
+      "dateOfBirth": "Date of birth",
+      "dateOfBirthHelp": "Applicants must be at least 18 years old.",
+      "fundingModel": "Funding model",
+      "annualRequestedAmountCad": "Annual requested amount (CAD)",
+      "fundingNotCommitment": "A funding request is not an approved financial commitment.",
+      "teamMemberCount": "Team member count",
+      "relevantExperience": "Relevant experience",
+      "motivation": "Motivation"
+    },
+    "funding": {
+      "SELF": "Self-funded",
+      "PARTIAL": "Partial funding requested",
+      "FULL": "Full funding requested"
+    },
+    "consent": {
+      "label": "I consent to Humanity Union processing this application as described in the <privacy>Privacy Policy</privacy>.",
+      "versionNote": "Consent version: {version}"
+    },
+    "actions": {
+      "saveDraft": "Save draft",
+      "submit": "Submit application",
+      "withdraw": "Withdraw"
+    },
+    "busy": {
+      "saving": "Saving…",
+      "submitting": "Submitting…",
+      "withdrawing": "Withdrawing…",
+      "creating": "Creating…"
+    },
+    "messages": {
+      "draftSaved": "Draft saved.",
+      "submitted": "Your application was submitted.",
+      "withdrawn": "Application withdrawn.",
+      "notAppointment": "Submission is not a Representative appointment and grants no legal authority, employment, funding entitlement, contract-signing authority, or administrator permissions.",
+      "fundingNotCommitment": "Any funding amount you requested is not an approved commitment.",
+      "moreInfoPossible": "An administrator may request more information before a decision.",
+      "messagesLater": "Applicant and administrator follow-up uses the platform’s existing Messages, subject to recipient privacy settings and account eligibility. Delivery is not guaranteed for every message or notification."
+    },
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "information_requested": "More information requested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "validation": {
+      "representCountry": "Select a country to represent.",
+      "legalFirstName": "Legal first name is required.",
+      "legalLastName": "Legal last name is required.",
+      "profession": "Profession is required.",
+      "residenceCountry": "Residence country is required.",
+      "dateOfBirth": "Enter a valid date of birth. Applicants must be at least 18.",
+      "fundingModel": "Select a funding model.",
+      "annualAmount": "Enter a valid annual CAD amount for PARTIAL or FULL funding.",
+      "teamMemberCount": "Team member count must be a whole number of 0 or more.",
+      "relevantExperience": "Relevant experience is required.",
+      "motivation": "Motivation is required.",
+      "consent": "Consent is required to submit."
+    },
+    "errors": {
+      "conflict": "This application changed elsewhere or conflicts with another active application. Refresh and try again.",
+      "unavailable": "Applications are temporarily unavailable. Please try again shortly.",
+      "duplicateActive": "You already have an active application for that representation country.",
+      "notFound": "That application could not be found."
+    },
+    "discard": {
+      "title": "Discard unsaved changes?",
+      "description": "You have unsaved edits on this application. Leaving now will discard those changes.",
+      "confirm": "Discard changes",
+      "cancel": "Keep editing"
+    },
+    "closeAria": "Close application dialog",
+    "workspaceWidget": {
+      "title": "My Regional Applications",
+      "invitation": "Start a Regional Representative application for a country you want to represent.",
+      "create": "Create application",
+      "newApplication": "New application",
+      "open": "Open",
+      "edit": "Edit",
+      "view": "View",
+      "loading": "Loading applications…",
+      "error": "Could not load your applications. Try again.",
+      "retry": "Retry",
+      "updated": "Updated {date}",
+      "activeHeading": "Active applications",
+      "historyHeading": "Application history",
+      "openAria": "Open application for {country}",
+      "editAria": "Edit application for {country}",
+      "viewAria": "View application for {country}",
+      "representativeDesignation": "Representative (platform designation) — not legal authority, employment, or funding entitlement.",
+      "messagesHint": "An administrator asked for more information. Reply in Messages after you update your application.",
+      "openMessages": "Open Messages",
+      "openMessagesAria": "Open Workspace Messages"
+    },
+    "admin": {
+      "title": "Regional Representative application",
+      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
+      "close": "Close",
+      "closeAria": "Close application dialog",
+      "loading": "Loading application…",
+      "empty": "No application is available for this participant.",
+      "selectApplication": "Select application",
+      "statusUnknown": "Status unavailable",
+      "fields": {
+        "applicant": "Applicant identity",
+        "profession": "Professional background",
+        "residenceCountry": "Residence country",
+        "representCountry": "Representation country",
+        "fundingModel": "Funding model",
+        "requestedAmount": "Requested CAD amount",
+        "teamMemberCount": "Team member count",
+        "status": "Application status",
+        "submittedAt": "Submission date",
+        "consent": "Consent",
+        "consentAccepted": "Accepted ({version}) on {at}",
+        "experience": "Relevant experience",
+        "motivation": "Motivation",
+        "decisionHistory": "Decision history",
+        "noHistory": "No decisions recorded yet.",
+        "reviewNote": "Review note (required for request information and reject)"
+      },
+      "disclaimer": {
+        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
+      },
+      "actions": {
+        "group": "Application review actions",
+        "markUnderReview": "Mark under review",
+        "requestInformation": "Request information",
+        "reject": "Reject",
+        "approve": "Approve"
+      },
+      "busy": {
+        "working": "Working…",
+        "approving": "Approving…"
+      },
+      "messages": {
+        "updateTitle": "Application update",
+        "deliveryWarningTitle": "Messages delivery",
+        "approved": "Application approved and Representative platform designation recorded.",
+        "markedUnderReview": "Application marked under review.",
+        "informationRequested": "More information requested.",
+        "rejected": "Application rejected.",
+        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant."
+      },
+      "confirmApprove": {
+        "title": "Approve and designate Representative?",
+        "lineApprove": "This application will be approved.",
+        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
+        "lineNoLegal": "No legal representation authority is granted.",
+        "lineNoFunding": "No funding commitment is created.",
+        "lineNoAdmin": "No administrator rights are granted.",
+        "confirm": "Confirm approval",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "forbidden": "Administrator access is required to view Regional Representative applications.",
+        "accessRestricted": "Access restricted",
+        "unavailable": "Application unavailable",
+        "noteRequired": "A review note is required for this action."
+      },
+      "confirmRequestInfo": {
+        "title": "Request more information?",
+        "lineStatus": "The application status will change to “More information requested”.",
+        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
+        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
+        "confirm": "Confirm request",
+        "cancel": "Cancel"
+      }
     }
   },
   "regionalProgramPublic": {
