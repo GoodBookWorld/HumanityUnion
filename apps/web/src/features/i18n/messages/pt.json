@@ -7597,5 +7597,20 @@
       "heading": "Faça parte de uma comunidade global pela mudança positiva",
       "body": "Junte-se ao Programa de Desenvolvimento Regional e ajude a desenvolver a {siteName} no seu país."
     }
+  },
+  "legalLocalizationAdmin": {
+    "bodyLabel": "Localized body",
+    "bodyHint": "Counsel-approved legal text only. Never machine-translated. Formatting is limited to headings, emphasis, lists, and safe links. English remains canonical until a matching published version exists for this locale.",
+    "editorLoading": "Loading editor…",
+    "placeholder": "Enter counsel-approved legal text…",
+    "previewTitle": "Preview",
+    "previewEmpty": "Nothing to preview yet.",
+    "previewShow": "Show preview",
+    "previewHide": "Hide preview",
+    "headings": {
+      "paragraph": "Paragraph",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3"
+    }
   }
 }

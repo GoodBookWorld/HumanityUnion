@@ -324,4 +324,80 @@ describe("Pack 08I.5 — Legal Localization", () => {
     const english = await getLegalLocalization("terms", "en");
     assert.equal(english, null);
   });
+
+  it("HU-LEGAL-EDITOR-01B — write path sanitizes XSS and keeps draft/publish separation", async () => {
+    const saved = await upsertAdminLegalLocalization({
+      actorUserId: "admin-1",
+      body: {
+        documentType: "privacy",
+        locale: "uk",
+        localizedBody:
+          '<p>Українська політика</p><script>alert(1)</script><p><a href="javascript:alert(1)">контакт</a></p>',
+        status: "draft",
+      },
+    });
+    assert.equal(saved.status, "draft");
+    assert.doesNotMatch(saved.localizedBody, /script|javascript:/i);
+    assert.match(saved.localizedBody, /Українська політика/);
+    assert.match(saved.localizedBody, /контакт/);
+
+    const draftPublic = await resolvePublishedLegalLocalization("privacy", "uk");
+    assert.equal(draftPublic.source, "expected_legal_fallback");
+    assert.equal(draftPublic.localizedBodyHtml, null);
+
+    await publishAdminLegalLocalization({
+      actorUserId: "admin-1",
+      documentType: "privacy",
+      locale: "uk",
+    });
+    const published = await resolvePublishedLegalLocalization("privacy", "uk");
+    assert.equal(published.source, "published_locale");
+    assert.ok(published.localizedBodyHtml);
+    assert.doesNotMatch(published.localizedBodyHtml!, /script|javascript:/i);
+    assert.match(published.localizedBodyHtml!, /Українська політика/);
+  });
+
+  it("HU-LEGAL-EDITOR-01B — public render sanitizes legacy HTML without rewriting Mongo", async () => {
+    const now = new Date().toISOString();
+    const legacyBody =
+      '<p>Збережений текст</p><img src="https://evil.example/x.png" alt="x" /><p onclick="x()">Далі</p>';
+    await upsertLegalLocalization({
+      legalId: "legal-privacy-uk-legacy",
+      documentType: "privacy",
+      locale: "uk",
+      canonicalSourceVersion: CANONICAL_LEGAL_SOURCE_VERSIONS.privacy,
+      localizedBody: legacyBody,
+      status: "published",
+      approvedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const resolved = await resolvePublishedLegalLocalization("privacy", "uk");
+    assert.equal(resolved.source, "published_locale");
+    assert.ok(resolved.localizedBodyHtml);
+    assert.doesNotMatch(resolved.localizedBodyHtml!, /<img|onclick/i);
+    assert.match(resolved.localizedBodyHtml!, /Збережений текст/);
+    assert.match(resolved.localizedBodyHtml!, /Далі/);
+
+    const stored = await getLegalLocalization("privacy", "uk");
+    assert.ok(stored);
+    assert.equal(stored.localizedBody, legacyBody);
+  });
+
+  it("rejects non-admin legal localization writes", async () => {
+    await assert.rejects(
+      () =>
+        upsertAdminLegalLocalization({
+          actorUserId: "member-1",
+          body: {
+            documentType: "privacy",
+            locale: "uk",
+            localizedBody: "<p>nope</p>",
+            status: "draft",
+          },
+        }),
+      AdministrationForbiddenError,
+    );
+  });
 });

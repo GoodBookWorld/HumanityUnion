@@ -15,10 +15,27 @@ import {
 
 import { resolveLanguageRegistryLocale } from "../language/language-registry/language-registry.repository.js";
 import { LegalLocalizationValidationError } from "./legal-localization.errors.js";
+import { sanitizeLegalHtmlDetailed } from "./legal-content-sanitize.js";
 import {
   ensureLegalLocalizationReady,
   getLegalLocalization,
 } from "./legal-localization.repository.js";
+
+/**
+ * Sanitize for public render only — never writes back to Mongo.
+ * If visible wording cannot be preserved safely, fall closed to English
+ * (null body) rather than serving altered legal text or unsafe HTML.
+ */
+function sanitizePublishedBodyForPublic(localizedBody: string): string | null {
+  const result = sanitizeLegalHtmlDetailed(localizedBody);
+  if (!result.html.trim()) {
+    return null;
+  }
+  if (!result.preservedVisibleText) {
+    return null;
+  }
+  return result.html;
+}
 
 function fallbackResult(input: {
   documentType: LegalDocumentType;
@@ -73,12 +90,21 @@ export async function resolvePublishedLegalLocalization(
   const record = await getLegalLocalization(documentType, canonicalLocale);
 
   if (isUsablePublishedLegal(record)) {
+    const safeHtml = sanitizePublishedBodyForPublic(record!.localizedBody);
+    if (!safeHtml) {
+      return fallbackResult({
+        documentType,
+        locale: record!.locale,
+        requestedLocale: requested,
+        isStaleRelativeToCanonical: false,
+      });
+    }
     return {
       documentType,
       locale: record!.locale,
       requestedLocale: requested,
       canonicalSourceVersion: record!.canonicalSourceVersion,
-      localizedBodyHtml: record!.localizedBody,
+      localizedBodyHtml: safeHtml,
       source: "published_locale",
       isStaleRelativeToCanonical: false,
     };

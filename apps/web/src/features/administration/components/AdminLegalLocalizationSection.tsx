@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import type {
   AuthUserPublic,
@@ -14,6 +15,8 @@ import { CANONICAL_LEGAL_SOURCE_VERSIONS } from "@hu/types";
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { sanitizeLegalHtml } from "../../../../../api/src/modules/legal-localization/legal-content-sanitize";
+import { LegalRichTextEditor } from "../../legal/components/LegalRichTextEditor";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
   fetchAdminLegalLocalizations,
@@ -23,6 +26,8 @@ import {
 import { fetchAdminLanguages } from "../admin-languages-api";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
+import "../../legal/legal-page.css";
+import "../../legal/components/legal-rich-text-editor.css";
 import "./admin-panel.css";
 import "./admin-initiatives.css";
 import "./admin-languages.css";
@@ -72,6 +77,8 @@ function recordKey(documentType: LegalDocumentType, locale: string): string {
 export function AdminLegalLocalizationSection({
   user: _user,
 }: AdminLegalLocalizationSectionProps) {
+  const t = useTranslations("legalLocalizationAdmin");
+  const bodyLabelId = useId();
   const [localizations, setLocalizations] = useState<LegalLocalizationAdminListItem[]>([]);
   const [languages, setLanguages] = useState<LanguageRegistryAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +87,7 @@ export function AdminLegalLocalizationSection({
   const [form, setForm] = useState<LegalFormState>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   const localizationByKey = useMemo(() => {
     const map = new Map<string, LegalLocalizationAdminListItem>();
@@ -95,6 +103,17 @@ export function AdminLegalLocalizationSection({
   const isStale =
     existing?.isStaleRelativeToCanonical === true ||
     (existing != null && existing.canonicalSourceVersion !== currentCanonicalVersion);
+  const textDirection = selectedLanguage?.textDirection === "rtl" ? "rtl" : "ltr";
+  const previewHtml = useMemo(() => {
+    if (!form.localizedBody.trim()) {
+      return "";
+    }
+    try {
+      return sanitizeLegalHtml(form.localizedBody);
+    } catch {
+      return "";
+    }
+  }, [form.localizedBody]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -221,7 +240,8 @@ export function AdminLegalLocalizationSection({
           Public surfaces serve a published locale body only when its{" "}
           <code>canonicalSourceVersion</code> matches the current English source version;
           otherwise they fall back to English (<code>expected_legal_fallback</code>). Alias
-          locales (e.g. zh-TW) canonicalize to Registry locale (zh-Hant).
+          locales (e.g. zh-TW) canonicalize to Registry locale (zh-Hant). Loading this editor
+          does not save or republish content.
         </p>
 
         {error ? <StatusBanner title="Legal Localization error" message={error} /> : null}
@@ -283,6 +303,8 @@ export function AdminLegalLocalizationSection({
                     : " · no record yet (will create on save)"}
                   {" · "}
                   current canonical version: <code>{currentCanonicalVersion}</code>
+                  {" · "}
+                  dir: <code>{textDirection}</code>
                 </p>
               ) : null}
             </div>
@@ -323,23 +345,24 @@ export function AdminLegalLocalizationSection({
                     ))}
                   </select>
                 </label>
-                <label className="admin-languages__form-span">
-                  <span>Localized body (HTML)</span>
-                  <textarea
-                    rows={16}
+                <div className="admin-languages__form-span">
+                  <span id={bodyLabelId}>{t("bodyLabel")}</span>
+                  <LegalRichTextEditor
+                    key={`${form.documentType}-${form.locale}-${textDirection}`}
                     value={form.localizedBody}
-                    onChange={(event) =>
+                    onChange={(html) =>
                       setForm((current) => ({
                         ...current,
-                        localizedBody: event.target.value,
+                        localizedBody: html,
                       }))
                     }
+                    labelledBy={bodyLabelId}
+                    contentLanguage={form.locale || "en"}
+                    textDirection={textDirection}
+                    disabled={saving || publishing}
                   />
-                  <span className="hu-caption">
-                    Paste counsel-approved HTML only. Do not use machine translation. English
-                    remains canonical until a matching published version exists for this locale.
-                  </span>
-                </label>
+                  <span className="hu-caption">{t("bodyHint")}</span>
+                </div>
               </div>
 
               <div className="admin-languages__form-actions">
@@ -354,7 +377,30 @@ export function AdminLegalLocalizationSection({
                 >
                   {publishing ? "Publishing…" : "Publish"}
                 </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setPreviewOpen((open) => !open)}
+                  disabled={saving || publishing}
+                >
+                  {previewOpen ? t("previewHide") : t("previewShow")}
+                </Button>
               </div>
+
+              {previewOpen ? (
+                <div className="legal-localization-preview" dir={textDirection} lang={form.locale}>
+                  <h3 className="legal-localization-preview__title">{t("previewTitle")}</h3>
+                  {previewHtml ? (
+                    <div
+                      className="legal-localization-preview__body legal-page__body"
+                      // Preview only — same allowlist sanitizer as public/API write path.
+                      dangerouslySetInnerHTML={{ __html: previewHtml }}
+                    />
+                  ) : (
+                    <p className="legal-localization-preview__empty">{t("previewEmpty")}</p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             <div className="admin-languages__table-wrap">

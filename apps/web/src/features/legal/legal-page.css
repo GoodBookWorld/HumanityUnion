@@ -71,25 +71,39 @@
   line-height: var(--hu-line-height);
 }
 
-.legal-page section h2 {
+/* English canonical React sections + localized HTML bodies (no section wrapper). */
+.legal-page section h2,
+.legal-page__body h2 {
   margin: 0 0 var(--hu-space-2);
   font-size: var(--hu-font-size-md);
 }
 
+.legal-page__body h3 {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+}
+
 .legal-page section p,
-.legal-page section ul {
+.legal-page section ul,
+.legal-page__body p,
+.legal-page__body ul,
+.legal-page__body ol {
   margin: 0 0 var(--hu-space-3);
 }
 
-.legal-page section ul {
-  padding-left: var(--hu-space-5);
+.legal-page section ul,
+.legal-page__body ul,
+.legal-page__body ol {
+  padding-inline-start: var(--hu-space-5);
 }
 
-.legal-page section li + li {
+.legal-page section li + li,
+.legal-page__body li + li {
   margin-top: var(--hu-space-1);
 }
 
-.legal-page a {
+.legal-page a,
+.legal-page__body a {
   color: var(--hu-color-primary);
 }
 

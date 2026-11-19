@@ -29,6 +29,7 @@ import {
   LegalLocalizationNotFoundError,
   LegalLocalizationValidationError,
 } from "./legal-localization.errors.js";
+import { sanitizeLegalHtmlDetailed } from "./legal-content-sanitize.js";
 import {
   ensureLegalLocalizationReady,
   getLegalLocalization,
@@ -87,6 +88,10 @@ function requireNonEmptyString(value: unknown, field: string): string {
 /** Preserve intentional HTML whitespace; trim ends only. */
 const LOCALIZED_BODY_MAX_LENGTH = 500_000;
 
+/**
+ * Validate length, then sanitize. Rejects writes that would drop visible legal wording.
+ * Does not touch existing Mongo rows until an admin explicitly saves.
+ */
 function requireLocalizedBody(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new LegalLocalizationValidationError("localizedBody is required.");
@@ -97,7 +102,19 @@ function requireLocalizedBody(value: unknown): string {
       `localizedBody must be at most ${LOCALIZED_BODY_MAX_LENGTH} characters.`,
     );
   }
-  return normalized;
+
+  const sanitized = sanitizeLegalHtmlDetailed(normalized);
+  if (!sanitized.html.trim()) {
+    throw new LegalLocalizationValidationError(
+      "localizedBody must contain safe legal HTML after sanitization.",
+    );
+  }
+  if (!sanitized.preservedVisibleText) {
+    throw new LegalLocalizationValidationError(
+      "localizedBody sanitization would change visible legal wording; adjust markup and retry.",
+    );
+  }
+  return sanitized.html;
 }
 
 function optionalLocalizedBody(value: unknown): string | undefined {
