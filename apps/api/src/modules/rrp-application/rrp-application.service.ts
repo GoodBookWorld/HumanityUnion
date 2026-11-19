@@ -3,6 +3,7 @@ import type {
   AdminRrpApplicationListItem,
   AdminRrpApplicationReviewResult,
   RrpAdminConversationResolution,
+  RrpAppointmentDetail,
   RrpApplicationDetail,
   RrpApplicationDecisionHistoryEntry,
   RrpApplicationRecord,
@@ -46,7 +47,10 @@ import {
   listRrpApplicationsForUser,
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
-import { listActiveRrpAppointmentsForParticipantIds } from "./rrp-appointment.repository.js";
+import {
+  findActiveRrpAppointmentBySourceApplicationId,
+  listActiveRrpAppointmentsForParticipantIds,
+} from "./rrp-appointment.repository.js";
 import {
   buildRrpRequestInformationMessageIntent,
   insertRrpAppointmentMessageIntentIdempotent,
@@ -540,6 +544,38 @@ export async function listRrpApplicationsForAdminActor(input: {
   };
 }
 
+async function resolveActiveAppointmentDetailForApplication(
+  applicationId: string,
+): Promise<RrpAppointmentDetail | null> {
+  try {
+    const appointment = await findActiveRrpAppointmentBySourceApplicationId(applicationId);
+    if (!appointment || appointment.status !== "active") {
+      return null;
+    }
+    return {
+      appointmentId: appointment.appointmentId,
+      participantId: appointment.participantId,
+      representCountryCode: appointment.representCountryCode,
+      sourceApplicationId: appointment.sourceApplicationId,
+      status: appointment.status,
+      appointedAt: appointment.appointedAt,
+      revision: appointment.revision,
+    };
+  } catch {
+    // Soft-fail: application detail remains available if appointment store is down.
+    return null;
+  }
+}
+
+async function toAdminDetailWithActiveAppointment(
+  record: RrpApplicationRecord,
+): Promise<AdminRrpApplicationDetail> {
+  const activeAppointment = await resolveActiveAppointmentDetailForApplication(
+    record.applicationId,
+  );
+  return toAdminRrpApplicationDetail(record, activeAppointment);
+}
+
 export async function getRrpApplicationDetailForAdminActor(input: {
   actorUserId: string;
   applicationId: string;
@@ -551,7 +587,7 @@ export async function getRrpApplicationDetailForAdminActor(input: {
     throw new RrpApplicationNotFoundError();
   }
 
-  return toAdminRrpApplicationDetail(record);
+  return toAdminDetailWithActiveAppointment(record);
 }
 
 export async function reviewRrpApplicationForAdminActor(input: {
@@ -571,7 +607,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   assertRevisionMatch(current, review.expectedRevision);
 
   if (isIdempotentAdminDecision({ status: current.status, decision: review.decision })) {
-    return { application: toAdminRrpApplicationDetail(current) };
+    return { application: await toAdminDetailWithActiveAppointment(current) };
   }
 
   const toStatus = assertAdminMayTransition({
@@ -617,7 +653,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   });
 
   if (review.decision !== "request_information") {
-    return { application: toAdminRrpApplicationDetail(updated) };
+    return { application: await toAdminDetailWithActiveAppointment(updated) };
   }
 
   const explanation = (review.note ?? "").trim();
@@ -639,7 +675,7 @@ export async function reviewRrpApplicationForAdminActor(input: {
   const messageWarning = await deliverRrpMessageIntentBestEffort(intent);
 
   return {
-    application: toAdminRrpApplicationDetail(updated),
+    application: await toAdminDetailWithActiveAppointment(updated),
     messageIntentRecorded: true,
     ...(messageWarning ? { messageWarning } : {}),
   };

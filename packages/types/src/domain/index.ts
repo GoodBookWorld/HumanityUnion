@@ -1858,6 +1858,7 @@ export type {
   RrpAppointmentRecord,
   RrpAppointmentStatus,
   RrpConfirmAppointmentResult,
+  RrpRevokeAppointmentResult,
 } from "./rrp-appointment.js";
 export {
   ADMIN_RRP_DIRECTORY_CLASSIFICATIONS,

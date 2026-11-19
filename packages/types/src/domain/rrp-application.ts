@@ -188,6 +188,11 @@ export interface AdminRrpApplicationDetail extends AdminRrpApplicationListItem {
   readonly consentVersion: string | null;
   readonly reviewerAdminUserId: string | null;
   readonly decisionHistory: readonly RrpApplicationDecisionHistoryEntry[];
+  /**
+   * Active Representative platform designation for this application, if any.
+   * Null when none or revoked. Derived from appointments — not auth.role.
+   */
+  readonly activeAppointment: import("./rrp-appointment.js").RrpAppointmentDetail | null;
 }
 
 /**

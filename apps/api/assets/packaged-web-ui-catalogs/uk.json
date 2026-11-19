@@ -7691,11 +7691,13 @@
         "markUnderReview": "Mark under review",
         "requestInformation": "Request information",
         "reject": "Reject",
-        "approve": "Approve"
+        "approve": "Approve",
+        "revoke": "Revoke appointment"
       },
       "busy": {
         "working": "Working…",
-        "approving": "Approving…"
+        "approving": "Approving…",
+        "revoking": "Revoking…"
       },
       "messages": {
         "updateTitle": "Application update",
@@ -7704,7 +7706,8 @@
         "markedUnderReview": "Application marked under review.",
         "informationRequested": "More information requested.",
         "rejected": "Application rejected.",
-        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant."
+        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
+        "revoked": "Representative platform designation revoked."
       },
       "confirmApprove": {
         "title": "Approve and designate Representative?",
@@ -7728,6 +7731,15 @@
         "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
         "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
         "confirm": "Confirm request",
+        "cancel": "Cancel"
+      },
+      "confirmRevoke": {
+        "title": "Revoke Representative appointment?",
+        "lineInactive": "This appointment will become inactive. The participant will no longer hold an active Representative platform designation for this country from this application.",
+        "lineOthersUnaffected": "Other representatives for the same country remain unaffected.",
+        "lineHistory": "Application history remains preserved. Application status is not changed by revocation.",
+        "lineNoLegal": "Revocation does not change legal representation, employment, or funding status. Platform designation is internal only.",
+        "confirm": "Revoke appointment",
         "cancel": "Cancel"
       }
     }

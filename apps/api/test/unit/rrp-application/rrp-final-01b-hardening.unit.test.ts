@@ -108,6 +108,7 @@ describe("HU-RRP-FINAL-01B hardening", () => {
     assert.match(admin, /rrpAdminWriteRateLimiter/);
     assert.match(admin, /\/:applicationId\/review[\s\S]*rrpAdminWriteRateLimiter/);
     assert.match(admin, /confirm-appointment[\s\S]*rrpAdminWriteRateLimiter/);
+    assert.match(admin, /revoke-appointment[\s\S]*rrpAdminWriteRateLimiter/);
     assert.doesNotMatch(admin, /adminRrpApplicationRouter\.get\("\/"[\s\S]{0,80}rrpAdminWriteRateLimiter/);
   });
 

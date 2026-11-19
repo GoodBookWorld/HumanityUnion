@@ -12,6 +12,7 @@ import type { AdminParticipantDirectoryItem } from "@hu/types";
 import {
   canViewRrpApplication,
   isRrpApproveEligibleStatus,
+  isRrpRevokeAppointmentEligible,
   parseAdminParticipantRoleFilter,
   resolveViewableRrpApplicationIds,
 } from "./admin-rrp-directory.js";
@@ -71,6 +72,21 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
             activeApplicationIds: ["app-1"],
             activeAppointmentIds: [],
             viewableApplicationIds: ["app-1"],
+            representCountryCodes: ["CA"],
+          },
+        }),
+      ),
+      true,
+    );
+    // Approved history after revoke: no active classification, still viewable.
+    assert.equal(
+      canViewRrpApplication(
+        row({
+          rrpSummary: {
+            classifications: [],
+            activeApplicationIds: [],
+            activeAppointmentIds: [],
+            viewableApplicationIds: ["app-approved-history"],
             representCountryCodes: ["CA"],
           },
         }),
@@ -204,6 +220,62 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
       "features/administration/components/AdminRrpApplicationModal.tsx",
     );
     assert.match(modal, /useTranslations\("rrpApplication\.admin"\)/);
+    const css = read(
+      "features/administration/components/admin-rrp-application-modal.css",
+    );
+    assert.match(css, /\[dir="rtl"\]/);
+  });
+
+  it("exposes revoke eligibility only for active appointments", () => {
+    assert.equal(isRrpRevokeAppointmentEligible(null), false);
+    assert.equal(isRrpRevokeAppointmentEligible(undefined), false);
+    assert.equal(isRrpRevokeAppointmentEligible({ status: "revoked" }), false);
+    assert.equal(isRrpRevokeAppointmentEligible({ status: "active" }), true);
+  });
+
+  it("wires revoke-appointment action, confirmation, and client API", () => {
+    const modal = read(
+      "features/administration/components/AdminRrpApplicationModal.tsx",
+    );
+    const api = read("features/administration/admin-rrp-application-api.ts");
+    assert.match(api, /revoke-appointment/);
+    assert.match(api, /revokeAdminRrpAppointment/);
+    assert.match(modal, /revokeAdminRrpAppointment/);
+    assert.match(modal, /confirmRevoke/);
+    assert.match(modal, /isRrpRevokeAppointmentEligible/);
+    assert.match(modal, /activeAppointment/);
+    assert.match(modal, /onDirectoryRefresh/);
+    assert.match(modal, /revokingRef/);
+  });
+
+  it("adds revoke localization keys with English source and RTL-capable locales", () => {
+    const en = JSON.parse(read("features/i18n/messages/en.json")) as {
+      rrpApplication: {
+        admin: {
+          actions: { revoke: string };
+          busy: { revoking: string };
+          messages: { revoked: string };
+          confirmRevoke: Record<string, string>;
+        };
+      };
+    };
+    assert.equal(typeof en.rrpApplication.admin.actions.revoke, "string");
+    assert.equal(typeof en.rrpApplication.admin.busy.revoking, "string");
+    assert.equal(typeof en.rrpApplication.admin.messages.revoked, "string");
+    assert.ok(en.rrpApplication.admin.confirmRevoke.title);
+    assert.ok(en.rrpApplication.admin.confirmRevoke.lineInactive);
+    assert.ok(en.rrpApplication.admin.confirmRevoke.lineOthersUnaffected);
+    assert.ok(en.rrpApplication.admin.confirmRevoke.lineHistory);
+    assert.ok(en.rrpApplication.admin.confirmRevoke.lineNoLegal);
+
+    const ar = JSON.parse(read("features/i18n/messages/ar.json")) as {
+      rrpApplication: { admin: { confirmRevoke: Record<string, string> } };
+    };
+    assert.ok(ar.rrpApplication.admin.confirmRevoke.title);
+
+    const he = JSON.parse(read("features/i18n/messages/he.json")) as Record<string, unknown>;
+    // Hebrew may rely on English fallback for RRP admin; locale file remains RTL-capable.
+    assert.equal(typeof he, "object");
     const css = read(
       "features/administration/components/admin-rrp-application-modal.css",
     );

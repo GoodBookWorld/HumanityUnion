@@ -81,7 +81,8 @@ export interface AdminParticipantRrpSummary {
   readonly activeAppointmentIds: readonly string[];
   /**
    * Application ids an administrator may open from the directory
-   * (active applicant apps + source apps of active appointments).
+   * (active applicant apps + approved application history +
+   * source apps of active appointments).
    */
   readonly viewableApplicationIds: readonly string[];
   readonly representCountryCodes: readonly string[];
@@ -95,4 +96,12 @@ export interface RrpConfirmAppointmentResult {
   readonly messageIntentRecorded: boolean;
   /** Present when best-effort DM delivery did not complete; appointment still stands. */
   readonly messageWarning?: string;
+}
+
+/** Result of admin revoke-appointment (platform designation only). */
+export interface RrpRevokeAppointmentResult {
+  readonly application: import("./rrp-application.js").AdminRrpApplicationDetail;
+  readonly appointment: RrpAppointmentDetail;
+  /** False when the appointment was already revoked (idempotent replay). */
+  readonly transitioned: boolean;
 }

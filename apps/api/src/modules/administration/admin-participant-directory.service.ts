@@ -124,17 +124,25 @@ function isRrpDirectoryClassification(
   return (ADMIN_RRP_DIRECTORY_CLASSIFICATIONS as readonly string[]).includes(value);
 }
 
-function buildRrpSummaryForParticipant(input: {
+/**
+ * Build directory RRP summary for one participant.
+ * Representative classification remains active-appointment-only.
+ * Approved applications stay viewable after appointment revocation (admin history).
+ */
+export function buildRrpSummaryForParticipant(input: {
   applications: readonly RrpApplicationRecord[];
   appointments: readonly RrpAppointmentRecord[];
 }): AdminParticipantRrpSummary | undefined {
   const classifications = new Set<AdminRrpDirectoryClassification>();
   const activeApplicationIds: string[] = [];
+  const activeAppointmentIds: string[] = [];
   const representCountryCodes = new Set<string>();
+  const viewableIds = new Set<string>();
 
   for (const application of input.applications) {
     if (RRP_APPLICANT_DIRECTORY_STATUSES.includes(application.status)) {
       activeApplicationIds.push(application.applicationId);
+      viewableIds.add(application.applicationId);
       representCountryCodes.add(application.representCountryCode);
       if (application.fundingModel === "SELF") {
         classifications.add("applicant_self_funded");
@@ -146,11 +154,17 @@ function buildRrpSummaryForParticipant(input: {
         // HU-RRP-04B — funding optional; keep unspecified applicants discoverable.
         classifications.add("applicant_funding_unspecified");
       }
+      continue;
+    }
+
+    // HU-RRP-FINAL-03C — keep approved application history openable after revoke.
+    // Do not classify as applicant/representative from approved status alone.
+    if (application.status === "approved") {
+      viewableIds.add(application.applicationId);
+      representCountryCodes.add(application.representCountryCode);
     }
   }
 
-  const activeAppointmentIds: string[] = [];
-  const viewableIds = new Set<string>(activeApplicationIds);
   for (const appointment of input.appointments) {
     if (appointment.status === "active") {
       classifications.add("representative");
@@ -160,7 +174,12 @@ function buildRrpSummaryForParticipant(input: {
     }
   }
 
-  if (classifications.size === 0 && activeApplicationIds.length === 0 && activeAppointmentIds.length === 0) {
+  if (
+    classifications.size === 0 &&
+    activeApplicationIds.length === 0 &&
+    activeAppointmentIds.length === 0 &&
+    viewableIds.size === 0
+  ) {
     return undefined;
   }
 

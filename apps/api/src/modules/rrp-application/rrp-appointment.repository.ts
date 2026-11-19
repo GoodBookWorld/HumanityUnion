@@ -14,7 +14,11 @@ import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js"
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { assertRrpAppointmentActiveUniqueIndexReady } from "./rrp-appointment.index-readiness.js";
-import { RrpApplicationConflictError, RrpApplicationUnavailableError } from "./rrp-application.errors.js";
+import {
+  RrpApplicationConflictError,
+  RrpApplicationNotFoundError,
+  RrpApplicationUnavailableError,
+} from "./rrp-application.errors.js";
 import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 interface RrpAppointmentDocument extends RrpAppointmentRecord {
@@ -180,6 +184,91 @@ export async function findActiveRrpAppointmentBySourceApplicationId(
   return document ? strip(document) : null;
 }
 
+/**
+ * Any appointment for a source application (active preferred, else latest by appointedAt).
+ * Used for revoke idempotency when the designation is already revoked.
+ */
+export async function findRrpAppointmentBySourceApplicationId(
+  sourceApplicationId: string,
+): Promise<RrpAppointmentRecord | null> {
+  const active = await findActiveRrpAppointmentBySourceApplicationId(sourceApplicationId);
+  if (active) {
+    return active;
+  }
+  await ensureReady();
+  if (forceMemoryForTests) {
+    let best: RrpAppointmentRecord | null = null;
+    for (const record of memoryStore.values()) {
+      if (record.sourceApplicationId !== sourceApplicationId) {
+        continue;
+      }
+      if (!best || record.appointedAt > best.appointedAt) {
+        best = record;
+      }
+    }
+    return best;
+  }
+  const documents = await getMongoCollection<RrpAppointmentDocument>(
+    MONGO_COLLECTIONS.rrpAppointments,
+  )
+    .find({ sourceApplicationId })
+    .sort({ appointedAt: -1 })
+    .limit(1)
+    .toArray();
+  const document = documents[0];
+  return document ? strip(document) : null;
+}
+
+/**
+ * Optimistic concurrency replace — matches appointmentId + expectedRevision (+ optional status).
+ * Returns null on mismatch (lost race / stale revision).
+ */
+export async function replaceRrpAppointmentIfRevision(input: {
+  expectedRevision: number;
+  next: RrpAppointmentRecord;
+  requireStatus?: RrpAppointmentStatus;
+  session?: ClientSession;
+}): Promise<RrpAppointmentRecord | null> {
+  await ensureWriteReady();
+
+  if (input.next.revision !== input.expectedRevision + 1) {
+    throw new RrpApplicationConflictError("Appointment revision increment is invalid.");
+  }
+
+  if (forceMemoryForTests) {
+    const current = memoryStore.get(input.next.appointmentId);
+    if (!current || current.revision !== input.expectedRevision) {
+      return null;
+    }
+    if (input.requireStatus && current.status !== input.requireStatus) {
+      return null;
+    }
+    assertMemoryUniqueActive(input.next);
+    memoryStore.set(input.next.appointmentId, input.next);
+    return input.next;
+  }
+
+  const filter: Record<string, unknown> = {
+    appointmentId: input.next.appointmentId,
+    revision: input.expectedRevision,
+  };
+  if (input.requireStatus) {
+    filter.status = input.requireStatus;
+  }
+
+  const result = await getMongoCollection<RrpAppointmentDocument>(
+    MONGO_COLLECTIONS.rrpAppointments,
+  ).findOneAndUpdate(
+    filter,
+    { $set: { ...input.next } },
+    {
+      returnDocument: "after",
+      ...(input.session ? { session: input.session } : undefined),
+    },
+  );
+  return result ? strip(result) : null;
+}
+
 export async function listActiveRrpAppointmentsForParticipantIds(
   participantIds: readonly string[],
 ): Promise<RrpAppointmentRecord[]> {
@@ -264,20 +353,29 @@ export async function replaceRrpAppointment(
   );
 }
 
-/** Internal revoke helper — no public UI in this pack. */
+/**
+ * Revoke an appointment by id with optimistic concurrency.
+ * Idempotent when already revoked. Does not authorize the actor — callers must.
+ */
 export async function revokeRrpAppointmentRecord(input: {
   appointmentId: string;
   revokedByAdminUserId: string;
   note?: string | null;
-}): Promise<RrpAppointmentRecord> {
+}): Promise<{ record: RrpAppointmentRecord; transitioned: boolean }> {
   assertRrpApplicationWritesEnabled();
   const current = await findRrpAppointmentById(input.appointmentId);
   if (!current) {
-    throw new RrpApplicationConflictError("Appointment not found.");
+    throw new RrpApplicationNotFoundError("Representative appointment not found.");
   }
   if (current.status === "revoked") {
-    return current;
+    return { record: current, transitioned: false };
   }
+  if (current.status !== "active") {
+    throw new RrpApplicationConflictError(
+      "Appointment cannot be revoked from the current status.",
+    );
+  }
+
   const now = new Date().toISOString();
   const next: RrpAppointmentRecord = {
     ...current,
@@ -295,6 +393,25 @@ export async function revokeRrpAppointmentRecord(input: {
       },
     ],
   };
-  await replaceRrpAppointment(next);
-  return next;
+
+  const updated = await replaceRrpAppointmentIfRevision({
+    expectedRevision: current.revision,
+    next,
+    requireStatus: "active",
+  });
+  if (updated) {
+    return { record: updated, transitioned: true };
+  }
+
+  // Lost race: another writer updated first — re-read for idempotent revoke.
+  const again = await findRrpAppointmentById(input.appointmentId);
+  if (!again) {
+    throw new RrpApplicationNotFoundError("Representative appointment not found.");
+  }
+  if (again.status === "revoked") {
+    return { record: again, transitioned: false };
+  }
+  throw new RrpApplicationConflictError(
+    "Appointment was updated by another request. Refresh and try again.",
+  );
 }

@@ -113,8 +113,8 @@ export function rrpParticipantWriteRateLimiter(
 }
 
 /**
- * Admin write limiter — review, confirm-appointment (and message-intent side effects).
- * Appointment revoke has no public HTTP route yet; repository helper is internal-only.
+ * Admin write limiter — review, confirm-appointment, revoke-appointment
+ * (and message-intent side effects on review/confirm).
  */
 export function rrpAdminWriteRateLimiter(
   req: Request,

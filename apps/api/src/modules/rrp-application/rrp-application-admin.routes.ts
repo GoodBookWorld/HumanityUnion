@@ -18,7 +18,10 @@ import {
   listRrpApplicationsForAdminActor,
   reviewRrpApplicationForAdminActor,
 } from "./rrp-application.service.js";
-import { confirmRrpAppointmentForAdminActor } from "./rrp-appointment.service.js";
+import {
+  confirmRrpAppointmentForAdminActor,
+  revokeRrpAppointmentForAdminActor,
+} from "./rrp-appointment.service.js";
 
 const adminRrpApplicationRouter = Router();
 
@@ -161,6 +164,40 @@ adminRrpApplicationRouter.post(
   } catch (error) {
     handleError(res, error);
   }
+  },
+);
+
+/**
+ * HU-RRP-FINAL-03B — revoke Representative platform designation for an application.
+ * Administrator (active auth.role=admin) only. Does not mutate auth.role or application status.
+ */
+adminRrpApplicationRouter.post(
+  "/:applicationId/revoke-appointment",
+  rrpAdminWriteRateLimiter,
+  async (req, res) => {
+    const actorUserId = resolveAuthUserId(req);
+    if (!actorUserId) {
+      res.status(401).json(createFailureResponse("Authentication required."));
+      return;
+    }
+
+    try {
+      const payload = await revokeRrpAppointmentForAdminActor({
+        actorUserId,
+        applicationId: String(req.params.applicationId ?? ""),
+        body: req.body,
+      });
+      res.json(
+        createSuccessResponse(
+          payload,
+          payload.transitioned
+            ? "Representative platform designation revoked."
+            : "Representative platform designation was already revoked.",
+        ),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
   },
 );
 

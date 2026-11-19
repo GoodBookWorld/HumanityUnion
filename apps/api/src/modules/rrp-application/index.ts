@@ -37,6 +37,7 @@ export {
 } from "./rrp-application-rate-limit.js";
 export {
   confirmRrpAppointmentForAdminActor,
+  revokeRrpAppointmentForAdminActor,
   retryRrpAppointmentMessageIntentDelivery,
 } from "./rrp-appointment.service.js";
 export { startRrpMessageIntentScheduler } from "./rrp-message-intent.scheduler.js";

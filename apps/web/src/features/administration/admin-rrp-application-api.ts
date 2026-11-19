@@ -4,6 +4,7 @@ import type {
   AdminRrpApplicationReviewDecision,
   AdminRrpApplicationReviewResult,
   RrpConfirmAppointmentResult,
+  RrpRevokeAppointmentResult,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
@@ -91,6 +92,23 @@ export async function confirmAdminRrpAppointment(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ expectedRevision: input.expectedRevision }),
+    },
+  );
+}
+
+/** Revoke Representative platform designation for an approved application. */
+export async function revokeAdminRrpAppointment(input: {
+  applicationId: string;
+  note?: string;
+}): Promise<RrpRevokeAppointmentResult> {
+  return apiRequest<RrpRevokeAppointmentResult>(
+    `/api/v1/admin/rrp-applications/${encodeURIComponent(input.applicationId)}/revoke-appointment`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(input.note !== undefined ? { note: input.note } : {}),
+      }),
     },
   );
 }

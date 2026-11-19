@@ -9,6 +9,7 @@ import type {
   AdminRrpApplicationDetail,
   RrpAppointmentDetail,
   RrpConfirmAppointmentResult,
+  RrpRevokeAppointmentResult,
   RrpApplicationDecisionHistoryEntry,
   RrpApplicationRecord,
 } from "@hu/types";
@@ -31,9 +32,11 @@ import {
 import {
   findActiveRrpAppointmentBySourceApplicationId,
   findActiveRrpAppointmentForParticipantCountry,
+  findRrpAppointmentBySourceApplicationId,
   buildRrpAppointmentRecord,
   insertRrpAppointment,
   isRrpAppointmentForceMemoryForTests,
+  revokeRrpAppointmentRecord,
 } from "./rrp-appointment.repository.js";
 import { assertRrpAppointmentActiveUniqueIndexReady } from "./rrp-appointment.index-readiness.js";
 import { assertRrpMessageIntentIndexesReady } from "./rrp-message-intent.index-readiness.js";
@@ -51,6 +54,7 @@ import {
   replaceRrpApplicationIfRevision,
 } from "./rrp-application.repository.js";
 import { parseExpectedRevision } from "./rrp-application.validation.js";
+import { RRP_REVIEW_NOTE_MAX_LENGTH } from "./rrp-application.constants.js";
 import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 export { retryRrpAppointmentMessageIntentDelivery };
@@ -128,7 +132,10 @@ async function applyConfirmAppointmentInMemory(input: {
       await insertRrpAppointmentMessageIntentIdempotent(intent);
     }
     return {
-      application: toAdminRrpApplicationDetail(input.current),
+      application: toAdminRrpApplicationDetail(
+        input.current,
+        toAppointmentDetail(existingAppointment),
+      ),
       appointment: toAppointmentDetail(existingAppointment),
       messageIntentRecorded: true,
       intent,
@@ -216,7 +223,7 @@ async function applyConfirmAppointmentInMemory(input: {
   });
 
   return {
-    application: toAdminRrpApplicationDetail(updated),
+    application: toAdminRrpApplicationDetail(updated, toAppointmentDetail(appointment)),
     appointment: toAppointmentDetail(appointment),
     messageIntentRecorded: true,
     intent,
@@ -274,7 +281,10 @@ export async function confirmRrpAppointmentForAdminActor(input: {
             await insertRrpAppointmentMessageIntentIdempotent(intent, { session });
           }
           return {
-            application: toAdminRrpApplicationDetail(current),
+            application: toAdminRrpApplicationDetail(
+              current,
+              toAppointmentDetail(existingAppointment),
+            ),
             appointment: toAppointmentDetail(existingAppointment),
             messageIntentRecorded: true,
             intent,
@@ -363,7 +373,7 @@ export async function confirmRrpAppointmentForAdminActor(input: {
         });
 
         return {
-          application: toAdminRrpApplicationDetail(updated),
+          application: toAdminRrpApplicationDetail(updated, toAppointmentDetail(appointment)),
           appointment: toAppointmentDetail(appointment),
           messageIntentRecorded: true,
           intent,
@@ -377,5 +387,109 @@ export async function confirmRrpAppointmentForAdminActor(input: {
     appointment: committed.appointment,
     messageIntentRecorded: committed.messageIntentRecorded,
     ...(messageWarning ? { messageWarning } : {}),
+  };
+}
+
+function validateRevokeAppointmentBody(body: unknown): { note: string | null } {
+  if (body === undefined || body === null) {
+    return { note: null };
+  }
+  if (typeof body !== "object" || Array.isArray(body)) {
+    throw new RrpApplicationValidationError("Request body must be an object.");
+  }
+  const record = body as Record<string, unknown>;
+  if (!("note" in record) || record.note === undefined || record.note === null) {
+    return { note: null };
+  }
+  if (typeof record.note !== "string") {
+    throw new RrpApplicationValidationError("note must be a string.");
+  }
+  const trimmed = record.note.trim();
+  if (trimmed.length > RRP_REVIEW_NOTE_MAX_LENGTH) {
+    throw new RrpApplicationValidationError(
+      `note must be at most ${RRP_REVIEW_NOTE_MAX_LENGTH} characters.`,
+    );
+  }
+  return { note: trimmed.length > 0 ? trimmed : null };
+}
+
+/**
+ * HU-RRP-FINAL-03B — revoke Representative platform designation for an application.
+ * Admin-only. Does not mutate auth.role, application status/history, or other appointments.
+ * Does not send a new Messages notification (deferred).
+ */
+export async function revokeRrpAppointmentForAdminActor(input: {
+  actorUserId: string;
+  applicationId: string;
+  body: unknown;
+}): Promise<RrpRevokeAppointmentResult> {
+  assertRrpApplicationWritesEnabled();
+  const admin = await assertAdminActor(input.actorUserId);
+  const { note } = validateRevokeAppointmentBody(input.body);
+
+  const application = await findRrpApplicationById(input.applicationId);
+  if (!application) {
+    throw new RrpApplicationNotFoundError();
+  }
+
+  let appointment = await findActiveRrpAppointmentBySourceApplicationId(application.applicationId);
+  if (!appointment) {
+    const anyAppointment = await findRrpAppointmentBySourceApplicationId(application.applicationId);
+    if (!anyAppointment) {
+      throw new RrpApplicationNotFoundError("Representative appointment not found.");
+    }
+    if (anyAppointment.status === "revoked") {
+      // Idempotent: already revoked — no duplicate administration audit.
+      if (
+        anyAppointment.sourceApplicationId !== application.applicationId ||
+        anyAppointment.participantId !== application.participantId ||
+        anyAppointment.representCountryCode !== application.representCountryCode
+      ) {
+        throw new RrpApplicationConflictError(
+          "Appointment does not match the selected application.",
+        );
+      }
+      return {
+        application: toAdminRrpApplicationDetail(application, null),
+        appointment: toAppointmentDetail(anyAppointment),
+        transitioned: false,
+      };
+    }
+    throw new RrpApplicationConflictError(
+      "Appointment cannot be revoked from the current status.",
+    );
+  }
+
+  if (
+    appointment.sourceApplicationId !== application.applicationId ||
+    appointment.participantId !== application.participantId ||
+    appointment.representCountryCode !== application.representCountryCode
+  ) {
+    throw new RrpApplicationConflictError(
+      "Appointment does not match the selected application.",
+    );
+  }
+
+  const { record, transitioned } = await revokeRrpAppointmentRecord({
+    appointmentId: appointment.appointmentId,
+    revokedByAdminUserId: admin.userId,
+    note,
+  });
+
+  if (transitioned) {
+    recordAdministrationAuditBestEffort({
+      actorParticipantId: admin.participantId,
+      action: "rrp.appointment.revoke",
+      targetType: "rrp_appointment",
+      targetId: record.appointmentId,
+      beforeSummary: `status=active;applicationId=${application.applicationId};country=${application.representCountryCode};appointmentId=${record.appointmentId}`,
+      afterSummary: `status=revoked;applicationId=${application.applicationId};country=${application.representCountryCode};appointmentId=${record.appointmentId};revision=${record.revision}`,
+    });
+  }
+
+  return {
+    application: toAdminRrpApplicationDetail(application, null),
+    appointment: toAppointmentDetail(record),
+    transitioned,
   };
 }

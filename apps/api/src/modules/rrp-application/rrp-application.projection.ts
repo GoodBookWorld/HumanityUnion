@@ -61,6 +61,7 @@ export function toAdminRrpApplicationListItem(
 /** Admin detail — DOB only on this authorized surface. */
 export function toAdminRrpApplicationDetail(
   record: RrpApplicationRecord,
+  activeAppointment: import("@hu/types").RrpAppointmentDetail | null = null,
 ): AdminRrpApplicationDetail {
   return {
     ...toAdminRrpApplicationListItem(record),
@@ -71,6 +72,7 @@ export function toAdminRrpApplicationDetail(
     consentVersion: record.consentVersion,
     reviewerAdminUserId: record.reviewerAdminUserId,
     decisionHistory: record.decisionHistory,
+    activeAppointment,
   };
 }
 

@@ -70,3 +70,10 @@ export function isRrpRejectEligible(status: string): boolean {
     status === "information_requested"
   );
 }
+
+/** Revoke only when an active platform designation exists for the application. */
+export function isRrpRevokeAppointmentEligible(
+  activeAppointment: { status: string } | null | undefined,
+): boolean {
+  return activeAppointment?.status === "active";
+}

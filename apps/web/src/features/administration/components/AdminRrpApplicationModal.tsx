@@ -20,12 +20,14 @@ import {
   getAdminRrpApplication,
   listAdminRrpApplications,
   reviewAdminRrpApplication,
+  revokeAdminRrpAppointment,
 } from "../admin-rrp-application-api";
 import {
   isRrpApproveEligibleStatus,
   isRrpMarkUnderReviewEligible,
   isRrpRejectEligible,
   isRrpRequestInformationEligible,
+  isRrpRevokeAppointmentEligible,
 } from "../admin-rrp-directory";
 
 import "../../../design-system/components/confirm-dialog.css";
@@ -108,12 +110,14 @@ export function AdminRrpApplicationModal({
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [messageWarning, setMessageWarning] = useState<string | null>(null);
   const [busy, setBusy] = useState<
-    null | "approve" | "mark_under_review" | "request_information" | "reject"
+    null | "approve" | "mark_under_review" | "request_information" | "reject" | "revoke"
   >(null);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
   const [confirmRequestInfoOpen, setConfirmRequestInfoOpen] = useState(false);
+  const [confirmRevokeOpen, setConfirmRevokeOpen] = useState(false);
   const [reviewNote, setReviewNote] = useState("");
   const requestingRef = useRef(false);
+  const revokingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -139,6 +143,11 @@ export function AdminRrpApplicationModal({
           setConfirmRequestInfoOpen(false);
           return;
         }
+        if (confirmRevokeOpen) {
+          event.preventDefault();
+          setConfirmRevokeOpen(false);
+          return;
+        }
         event.preventDefault();
         onClose();
         return;
@@ -160,7 +169,7 @@ export function AdminRrpApplicationModal({
         restore.focus();
       }
     };
-  }, [isOpen, onClose, confirmApproveOpen, confirmRequestInfoOpen]);
+  }, [isOpen, onClose, confirmApproveOpen, confirmRequestInfoOpen, confirmRevokeOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -174,9 +183,11 @@ export function AdminRrpApplicationModal({
       setBusy(null);
       setConfirmApproveOpen(false);
       setConfirmRequestInfoOpen(false);
+      setConfirmRevokeOpen(false);
       setReviewNote("");
       approvingRef.current = false;
       requestingRef.current = false;
+      revokingRef.current = false;
       return;
     }
 
@@ -390,10 +401,42 @@ export function AdminRrpApplicationModal({
     setConfirmRequestInfoOpen(true);
   }
 
+  async function handleConfirmRevoke() {
+    if (!detail || revokingRef.current || busy) {
+      return;
+    }
+    if (!isRrpRevokeAppointmentEligible(detail.activeAppointment)) {
+      return;
+    }
+    revokingRef.current = true;
+    setBusy("revoke");
+    setActionMessage(null);
+    setMessageWarning(null);
+    setError(null);
+    try {
+      const result = await revokeAdminRrpAppointment({
+        applicationId: detail.applicationId,
+        ...(reviewNote.trim() ? { note: reviewNote.trim() } : {}),
+      });
+      setDetail(result.application);
+      setConfirmRevokeOpen(false);
+      setReviewNote("");
+      setActionMessage(t("messages.revoked"));
+      onDirectoryRefresh?.();
+    } catch (actionError: unknown) {
+      setError(formatAuthFormError(actionError));
+      setConfirmRevokeOpen(false);
+    } finally {
+      revokingRef.current = false;
+      setBusy(null);
+    }
+  }
+
   const canApprove = detail ? isRrpApproveEligibleStatus(detail.status) : false;
   const canMarkUnderReview = detail ? isRrpMarkUnderReviewEligible(detail.status) : false;
   const canRequestInfo = detail ? isRrpRequestInformationEligible(detail.status) : false;
   const canReject = detail ? isRrpRejectEligible(detail.status) : false;
+  const canRevoke = detail ? isRrpRevokeAppointmentEligible(detail.activeAppointment) : false;
   const isMutating = busy !== null;
 
   return (
@@ -628,6 +671,14 @@ export function AdminRrpApplicationModal({
               >
                 {t("actions.approve")}
               </Button>
+              <Button
+                type="button"
+                variant="danger"
+                disabled={!canRevoke || isMutating}
+                onClick={() => setConfirmRevokeOpen(true)}
+              >
+                {busy === "revoke" ? t("busy.revoking") : t("actions.revoke")}
+              </Button>
             </div>
           </div>
         ) : null}
@@ -688,6 +739,32 @@ export function AdminRrpApplicationModal({
         }}
         onConfirm={() => {
           void handleReview("request_information");
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmRevokeOpen}
+        title={t("confirmRevoke.title")}
+        description={
+          <div className="admin-rrp-application-modal__confirm-copy">
+            <p>{t("confirmRevoke.lineInactive")}</p>
+            <p>{t("confirmRevoke.lineOthersUnaffected")}</p>
+            <p>{t("confirmRevoke.lineHistory")}</p>
+            <p>{t("confirmRevoke.lineNoLegal")}</p>
+          </div>
+        }
+        confirmLabel={busy === "revoke" ? t("busy.revoking") : t("confirmRevoke.confirm")}
+        cancelLabel={t("confirmRevoke.cancel")}
+        destructive
+        isConfirming={busy === "revoke"}
+        onCancel={() => {
+          if (busy === "revoke") {
+            return;
+          }
+          setConfirmRevokeOpen(false);
+        }}
+        onConfirm={() => {
+          void handleConfirmRevoke();
         }}
       />
     </>
