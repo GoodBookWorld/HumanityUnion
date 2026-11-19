@@ -1,5 +1,9 @@
 import { Router, type Response } from "express";
-import type { MembershipStatus } from "@hu/types";
+import {
+  ADMIN_RRP_DIRECTORY_CLASSIFICATIONS,
+  type AdminRrpDirectoryClassification,
+  type MembershipStatus,
+} from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import {
@@ -119,13 +123,11 @@ adminParticipantDirectoryRouter.get(
 
       const rrpClassificationRaw =
         typeof req.query.rrpClassification === "string" ? req.query.rrpClassification.trim() : "";
-      const rrpClassification =
-        rrpClassificationRaw === "applicant_self_funded" ||
-        rrpClassificationRaw === "applicant_partial_funding" ||
-        rrpClassificationRaw === "applicant_full_funding" ||
-        rrpClassificationRaw === "representative"
-          ? rrpClassificationRaw
-          : undefined;
+      const rrpClassification = (
+        ADMIN_RRP_DIRECTORY_CLASSIFICATIONS as readonly string[]
+      ).includes(rrpClassificationRaw)
+        ? (rrpClassificationRaw as AdminRrpDirectoryClassification)
+        : undefined;
       if (rrpClassificationRaw && !rrpClassification) {
         throw new AdminParticipantDirectoryValidationError("Invalid rrpClassification filter.");
       }

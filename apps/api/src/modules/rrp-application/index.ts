@@ -28,6 +28,14 @@ export {
   setRrpApplicationWritesEnabledForTests,
 } from "./rrp-application-writes.activation.js";
 export {
+  clearRrpApplicationRateLimitBucketsForTests,
+  rrpAdminWriteRateLimiter,
+  rrpParticipantWriteRateLimiter,
+  RRP_ADMIN_WRITE_RATE_LIMIT_FOR_TESTS,
+  RRP_PARTICIPANT_WRITE_RATE_LIMIT_FOR_TESTS,
+  setRrpApplicationRateLimitNowMsForTests,
+} from "./rrp-application-rate-limit.js";
+export {
   confirmRrpAppointmentForAdminActor,
   retryRrpAppointmentMessageIntentDelivery,
 } from "./rrp-appointment.service.js";

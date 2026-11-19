@@ -9,6 +9,7 @@ import {
   RrpApplicationUnavailableError,
   RrpApplicationValidationError,
 } from "./rrp-application.errors.js";
+import { rrpParticipantWriteRateLimiter } from "./rrp-application-rate-limit.js";
 import {
   createRrpApplicationDraftForUser,
   getOwnRrpApplicationForUser,
@@ -62,7 +63,11 @@ function resolveAuthUserId(req: Request): string | null {
   return req.auth?.id ?? null;
 }
 
-rrpApplicationRouter.post("/", requireJwtAuthenticationMiddleware, async (req, res) => {
+rrpApplicationRouter.post(
+  "/",
+  requireJwtAuthenticationMiddleware,
+  rrpParticipantWriteRateLimiter,
+  async (req, res) => {
   const userId = resolveAuthUserId(req);
   if (!userId) {
     res.status(401).json(createFailureResponse("Authentication required."));
@@ -75,7 +80,8 @@ rrpApplicationRouter.post("/", requireJwtAuthenticationMiddleware, async (req, r
   } catch (error) {
     handleError(res, error);
   }
-});
+  },
+);
 
 rrpApplicationRouter.get("/me", requireJwtAuthenticationMiddleware, async (req, res) => {
   const userId = resolveAuthUserId(req);
@@ -139,6 +145,7 @@ rrpApplicationRouter.get(
 rrpApplicationRouter.patch(
   "/:applicationId",
   requireJwtAuthenticationMiddleware,
+  rrpParticipantWriteRateLimiter,
   async (req, res) => {
     const userId = resolveAuthUserId(req);
     if (!userId) {
@@ -162,6 +169,7 @@ rrpApplicationRouter.patch(
 rrpApplicationRouter.post(
   "/:applicationId/submit",
   requireJwtAuthenticationMiddleware,
+  rrpParticipantWriteRateLimiter,
   async (req, res) => {
     const userId = resolveAuthUserId(req);
     if (!userId) {
@@ -185,6 +193,7 @@ rrpApplicationRouter.post(
 rrpApplicationRouter.post(
   "/:applicationId/withdraw",
   requireJwtAuthenticationMiddleware,
+  rrpParticipantWriteRateLimiter,
   async (req, res) => {
     const userId = resolveAuthUserId(req);
     if (!userId) {

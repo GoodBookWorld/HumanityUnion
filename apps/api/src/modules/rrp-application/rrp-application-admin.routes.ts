@@ -12,6 +12,7 @@ import {
   RrpApplicationUnavailableError,
   RrpApplicationValidationError,
 } from "./rrp-application.errors.js";
+import { rrpAdminWriteRateLimiter } from "./rrp-application-rate-limit.js";
 import {
   getRrpApplicationDetailForAdminActor,
   listRrpApplicationsForAdminActor,
@@ -106,7 +107,10 @@ adminRrpApplicationRouter.get("/:applicationId", async (req, res) => {
   }
 });
 
-adminRrpApplicationRouter.post("/:applicationId/review", async (req, res) => {
+adminRrpApplicationRouter.post(
+  "/:applicationId/review",
+  rrpAdminWriteRateLimiter,
+  async (req, res) => {
   const actorUserId = resolveAuthUserId(req);
   if (!actorUserId) {
     res.status(401).json(createFailureResponse("Authentication required."));
@@ -123,7 +127,8 @@ adminRrpApplicationRouter.post("/:applicationId/review", async (req, res) => {
   } catch (error) {
     handleError(res, error);
   }
-});
+  },
+);
 
 /**
  * HU-RRP-03C — approve application and grant Representative platform designation
@@ -131,7 +136,10 @@ adminRrpApplicationRouter.post("/:applicationId/review", async (req, res) => {
  * Designation is internal platform naming — not legal authority.
  * Writes durable message intent; DM delivery is best-effort (intent stays pending on failure).
  */
-adminRrpApplicationRouter.post("/:applicationId/confirm-appointment", async (req, res) => {
+adminRrpApplicationRouter.post(
+  "/:applicationId/confirm-appointment",
+  rrpAdminWriteRateLimiter,
+  async (req, res) => {
   const actorUserId = resolveAuthUserId(req);
   if (!actorUserId) {
     res.status(401).json(createFailureResponse("Authentication required."));
@@ -153,6 +161,7 @@ adminRrpApplicationRouter.post("/:applicationId/confirm-appointment", async (req
   } catch (error) {
     handleError(res, error);
   }
-});
+  },
+);
 
 export { adminRrpApplicationRouter };
