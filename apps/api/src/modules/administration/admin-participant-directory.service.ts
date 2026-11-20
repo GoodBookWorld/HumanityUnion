@@ -6,6 +6,8 @@ import type {
   AdminRrpDirectoryClassification,
   MembershipRecord,
   MembershipStatus,
+  RrpApplicationRecord,
+  RrpAppointmentRecord,
 } from "@hu/types";
 import { ADMIN_RRP_DIRECTORY_CLASSIFICATIONS } from "@hu/types";
 
