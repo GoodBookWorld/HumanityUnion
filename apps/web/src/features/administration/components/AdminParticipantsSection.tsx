@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   AdminParticipantDirectoryItem,
@@ -30,6 +31,11 @@ import {
   listAdminParticipants,
 } from "../admin-participant-directory-api";
 import {
+  clampDirectoryOffset,
+  readAdminParticipantsDirectoryState,
+  writeAdminParticipantsDirectoryState,
+} from "../admin-participants-directory-state";
+import {
   formatParticipantSuspensionReasonLabel,
   PARTICIPANT_SUSPENSION_REASON_OPTIONS,
   restoreAdminParticipant,
@@ -37,7 +43,10 @@ import {
 } from "../admin-participant-suspension-api";
 import {
   canViewRrpApplication,
+  isRrpApplicationStatus,
   parseAdminParticipantRoleFilter,
+  participantNeedsRrpAdminAttention,
+  resolveRrpDirectoryApplicationStatuses,
   resolveViewableRrpApplicationIds,
   type AdminParticipantRoleFilterValue,
 } from "../admin-rrp-directory";
@@ -161,26 +170,44 @@ function formatBadgeFulfillmentLabel(row: AdminParticipantDirectoryItem): string
 }
 
 export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps) {
+  const tStatus = useTranslations("rrpApplication.status");
+  const tDirectory = useTranslations("rrpApplication.admin.directory");
+
+  const restoredDirectoryState = useMemo(() => readAdminParticipantsDirectoryState(), []);
+
   const [counts, setCounts] = useState<PlatformStatisticsCounts | null>(null);
   const [meta, setMeta] = useState<PlatformStatisticsMeta | null>(null);
   const [membership, setMembership] = useState<MembershipStatisticsPayload | null>(null);
   const [rows, setRows] = useState<readonly AdminParticipantDirectoryItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState(() => restoredDirectoryState?.offset ?? 0);
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(true);
+  const [hasLoadedDirectory, setHasLoadedDirectory] = useState(false);
+  const hasLoadedDirectoryRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [deepLinkMessage, setDeepLinkMessage] = useState<string | null>(null);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"" | "active" | "disabled">("");
-  const [roleFilter, setRoleFilter] = useState<AdminParticipantRoleFilterValue>("");
-  const [membershipStatus, setMembershipStatus] = useState("");
-  const [sort, setSort] = useState<"createdAt" | "lastLoginAt" | "email">("createdAt");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [emailVerification, setEmailVerification] = useState<"" | "pending" | "verified">("");
+  const [searchInput, setSearchInput] = useState(() => restoredDirectoryState?.searchInput ?? "");
+  const [search, setSearch] = useState(() => restoredDirectoryState?.search ?? "");
+  const [status, setStatus] = useState<"" | "active" | "disabled">(
+    () => restoredDirectoryState?.status ?? "",
+  );
+  const [roleFilter, setRoleFilter] = useState<AdminParticipantRoleFilterValue>(
+    () => restoredDirectoryState?.roleFilter ?? "",
+  );
+  const [membershipStatus, setMembershipStatus] = useState(
+    () => restoredDirectoryState?.membershipStatus ?? "",
+  );
+  const [sort, setSort] = useState<"createdAt" | "lastLoginAt" | "email">(
+    () => restoredDirectoryState?.sort ?? "createdAt",
+  );
+  const [order, setOrder] = useState<"asc" | "desc">(() => restoredDirectoryState?.order ?? "desc");
+  const [emailVerification, setEmailVerification] = useState<"" | "pending" | "verified">(
+    () => restoredDirectoryState?.emailVerification ?? "",
+  );
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedById, setSelectedById] = useState<Map<string, AdminParticipantDirectoryItem>>(
@@ -194,8 +221,12 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   const [batchRunning, setBatchRunning] = useState(false);
   const batchRunnerRef = useRef(createSequentialParticipantMutationRunner());
   const previousFilterKey = useRef<string | null>(null);
+  const directoryRequestIdRef = useRef(0);
   const [badgeOrderApplicationId, setBadgeOrderApplicationId] = useState<string | null>(null);
   const [rrpApplicationModalOpen, setRrpApplicationModalOpen] = useState(false);
+  const [rrpDeepLinkApplicationId, setRrpDeepLinkApplicationId] = useState<string | null>(null);
+  const [deepLinkParticipantId, setDeepLinkParticipantId] = useState<string | null>(null);
+  const deepLinkHandledRef = useRef(false);
 
   const {
     isOpening: isOpeningMessage,
@@ -206,10 +237,40 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
 
   const isBadgeOrdersView = membershipStatus === "member_badge_orders";
 
+  const persistDirectoryState = useCallback(() => {
+    writeAdminParticipantsDirectoryState({
+      searchInput,
+      search,
+      status,
+      roleFilter,
+      membershipStatus,
+      sort,
+      order,
+      emailVerification,
+      offset,
+    });
+  }, [
+    searchInput,
+    search,
+    status,
+    roleFilter,
+    membershipStatus,
+    sort,
+    order,
+    emailVerification,
+    offset,
+  ]);
+
+  useEffect(() => {
+    persistDirectoryState();
+  }, [persistDirectoryState]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
     const badgeApplicationId = params.get("badgeApplicationId")?.trim();
+    const participantId = params.get("participantId")?.trim() || null;
+    const rrpApplicationId = params.get("rrpApplicationId")?.trim() || null;
 
     if (view === "member_badge_orders") {
       setMembershipStatus("member_badge_orders");
@@ -222,6 +283,12 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
         setMembershipStatus("member_badge_orders");
         setOffset(0);
       }
+    }
+
+    if (participantId) {
+      setDeepLinkParticipantId(participantId);
+      setRrpDeepLinkApplicationId(rrpApplicationId);
+      setOffset(0);
     }
   }, []);
 
@@ -253,11 +320,18 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   }, []);
 
   const loadDirectory = useCallback(async () => {
+    const requestId = ++directoryRequestIdRef.current;
     setTableLoading(true);
     setError(null);
     setDenied(false);
 
     const { role, rrpClassification } = parseAdminParticipantRoleFilter(roleFilter);
+    const clampedOffset = clampDirectoryOffset(offset, Number.POSITIVE_INFINITY, PAGE_SIZE);
+    const requestOffset = clampedOffset !== offset ? clampedOffset : offset;
+    if (requestOffset !== offset) {
+      setOffset(requestOffset);
+      return;
+    }
 
     try {
       const response = await listAdminParticipants({
@@ -265,18 +339,34 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
         status: status || undefined,
         role,
         rrpClassification,
+        participantId: deepLinkParticipantId || undefined,
         emailVerificationStatus: emailVerification || undefined,
         membershipStatus: membershipStatus || undefined,
         sort,
         order,
         limit: PAGE_SIZE,
-        offset,
+        offset: requestOffset,
       });
+      if (requestId !== directoryRequestIdRef.current) {
+        return;
+      }
+      const nextOffset = clampDirectoryOffset(requestOffset, response.total, PAGE_SIZE);
       setRows(response.participants);
       setTotal(response.total);
+      hasLoadedDirectoryRef.current = true;
+      setHasLoadedDirectory(true);
+      if (nextOffset !== requestOffset) {
+        setOffset(nextOffset);
+      }
     } catch (loadError: unknown) {
-      setRows([]);
-      setTotal(0);
+      if (requestId !== directoryRequestIdRef.current) {
+        return;
+      }
+      // Keep previous rows visible on refresh failure; clear only before first success.
+      if (!hasLoadedDirectoryRef.current) {
+        setRows([]);
+        setTotal(0);
+      }
       if (isForbiddenError(loadError)) {
         setDenied(true);
         setError("Participant directory requires an Administrator account.");
@@ -284,9 +374,21 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
         setError(formatAuthFormError(loadError));
       }
     } finally {
-      setTableLoading(false);
+      if (requestId === directoryRequestIdRef.current) {
+        setTableLoading(false);
+      }
     }
-  }, [search, status, roleFilter, membershipStatus, emailVerification, sort, order, offset]);
+  }, [
+    search,
+    status,
+    roleFilter,
+    membershipStatus,
+    emailVerification,
+    sort,
+    order,
+    offset,
+    deepLinkParticipantId,
+  ]);
 
   const filterKey = `${search}|${status}|${roleFilter}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
 
@@ -304,11 +406,65 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
     setSelectedIds([]);
     setSelectedById(new Map());
     setSelectionLimitReached(false);
+    setRrpApplicationModalOpen(false);
+    setRrpDeepLinkApplicationId(null);
+    setDeepLinkParticipantId(null);
   }, [filterKey]);
 
   useEffect(() => {
     void loadDirectory();
   }, [loadDirectory]);
+
+  useEffect(() => {
+    return () => {
+      directoryRequestIdRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedDirectory || deepLinkHandledRef.current || !deepLinkParticipantId) {
+      return;
+    }
+
+    deepLinkHandledRef.current = true;
+    const match = rows.find((row) => row.memberId === deepLinkParticipantId);
+    if (!match) {
+      setDeepLinkMessage(tDirectory("deepLinkParticipantUnavailable"));
+      setDeepLinkParticipantId(null);
+      return;
+    }
+
+    applySelection([match.memberId], false);
+    const viewableIds = resolveViewableRrpApplicationIds(match);
+    if (rrpDeepLinkApplicationId) {
+      if (!viewableIds.includes(rrpDeepLinkApplicationId)) {
+        setDeepLinkMessage(tDirectory("deepLinkUnavailable"));
+        setRrpDeepLinkApplicationId(null);
+        // Keep participant allowlist so the row remains visible after a failed app deep-link.
+        return;
+      }
+      setRrpApplicationModalOpen(true);
+      return;
+    }
+    if (canViewRrpApplication(match)) {
+      setRrpApplicationModalOpen(true);
+    }
+  }, [hasLoadedDirectory, deepLinkParticipantId, rrpDeepLinkApplicationId, rows, tDirectory]);
+
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+    const visible = new Set(rows.map((row) => row.memberId));
+    const stillVisible = selectedIds.filter((memberId) => visible.has(memberId));
+    if (stillVisible.length !== selectedIds.length) {
+      applySelection(stillVisible, false);
+      if (stillVisible.length === 0) {
+        setRrpApplicationModalOpen(false);
+        setRrpDeepLinkApplicationId(null);
+      }
+    }
+  }, [rows, selectedIds]);
 
   function applyFilters(event: React.FormEvent) {
     event.preventDefault();
@@ -610,6 +766,10 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
 
         {messageError ? <StatusBanner title="Messaging" message={messageError} /> : null}
 
+        {deepLinkMessage ? (
+          <StatusBanner title={tDirectory("deepLinkTitle")} message={deepLinkMessage} />
+        ) : null}
+
         {error ? (
           <StatusBanner
             title={denied ? "Access restricted" : "Directory unavailable"}
@@ -617,9 +777,18 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
           />
         ) : null}
 
-        {tableLoading ? <p className="hu-body">Loading directory…</p> : null}
+        {tableLoading && !hasLoadedDirectory ? (
+          <p className="hu-body" role="status">
+            Loading directory…
+          </p>
+        ) : null}
+        {tableLoading && hasLoadedDirectory ? (
+          <p className="hu-caption admin-participants-toolbar__count" role="status">
+            Refreshing directory…
+          </p>
+        ) : null}
 
-        {!tableLoading && !error ? (
+        {hasLoadedDirectory || (!tableLoading && !error) ? (
           <>
             {isBadgeOrdersView ? null : (
               <div className="admin-participants-toolbar" role="region" aria-label="Participant actions">
@@ -676,6 +845,7 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                     if (!singleSelection || singleSelection.status !== "active") {
                       return;
                     }
+                    persistDirectoryState();
                     setMessagingParticipantId(singleSelection.memberId);
                     openConversation({ participantId: singleSelection.memberId });
                   }}
@@ -780,6 +950,9 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                           Role
                         </th>
                         <th scope="col" className="admin-participants-table__categorical">
+                          {tDirectory("rrpStatusColumn")}
+                        </th>
+                        <th scope="col" className="admin-participants-table__categorical">
                           Member status
                         </th>
                         <th scope="col" className="admin-participants-table__date">
@@ -800,19 +973,31 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={isBadgeOrdersView ? 7 : 9}>
-                        No participants match these filters.
+                      <td colSpan={isBadgeOrdersView ? 7 : 10}>
+                        {error
+                          ? "Directory results are unavailable."
+                          : "No participants match these filters."}
                       </td>
                     </tr>
                   ) : (
                     rows.map((row) => {
                       const secondary = participantSecondaryName(row);
                       const badgeApplicationId = row.memberBadgeOrder?.applicationId;
+                      const rrpStatuses = resolveRrpDirectoryApplicationStatuses(row);
+                      const needsAttention = participantNeedsRrpAdminAttention(row);
 
                       const rowSelected = selectedIds.includes(row.memberId);
 
                       return (
-                        <tr key={row.userId}>
+                        <tr
+                          key={row.userId}
+                          className={
+                            needsAttention
+                              ? "admin-participants-table__row--rrp-attention"
+                              : undefined
+                          }
+                          data-rrp-needs-attention={needsAttention ? "true" : undefined}
+                        >
                           {isBadgeOrdersView ? null : (
                             <td className="admin-participants-table__select">
                               <input
@@ -923,6 +1108,29 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
                                 </span>
                               </td>
                               <td className="admin-participants-table__categorical">
+                                {rrpStatuses.length === 0 ? (
+                                  "—"
+                                ) : (
+                                  <ul className="admin-participants-table__rrp-statuses">
+                                    {rrpStatuses.map((item) => {
+                                      const label = isRrpApplicationStatus(item.status)
+                                        ? tStatus(item.status)
+                                        : tDirectory("statusUnavailable");
+                                      return (
+                                        <li key={item.applicationId}>
+                                          <WorkspaceStatusBadge status={label} />
+                                          {item.needsAdminAttention ? (
+                                            <span className="visually-hidden">
+                                              {tDirectory("needsAttentionAria")}
+                                            </span>
+                                          ) : null}
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </td>
+                              <td className="admin-participants-table__categorical">
                                 <WorkspaceStatusBadge status={formatMembershipLabel(row)} />
                               </td>
                               <td className="admin-participants-table__date">
@@ -990,7 +1198,13 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
           participantId={singleSelection.memberId}
           applicantDisplayName={participantPrimaryName(singleSelection)}
           applicationIds={viewableRrpApplicationIds}
-          onClose={() => setRrpApplicationModalOpen(false)}
+          initialApplicationId={rrpDeepLinkApplicationId}
+          onClose={() => {
+            setRrpApplicationModalOpen(false);
+            setRrpDeepLinkApplicationId(null);
+            // Release deep-link allowlist so the normal directory page returns.
+            setDeepLinkParticipantId(null);
+          }}
           onDirectoryRefresh={() => {
             void loadDirectory();
           }}

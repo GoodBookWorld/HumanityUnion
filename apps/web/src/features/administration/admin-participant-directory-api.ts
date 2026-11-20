@@ -12,6 +12,8 @@ export interface ListAdminParticipantsQuery {
   role?: "member" | "admin";
   /** Derived RRP directory classification — independent of auth.role. */
   rrpClassification?: AdminRrpDirectoryClassification;
+  /** HU-RRP-06B — Participant memberId deep-link allowlist. */
+  participantId?: string;
   emailVerificationStatus?: "pending" | "verified";
   membershipStatus?: string;
   sort?: "createdAt" | "lastLoginAt" | "email";
@@ -36,6 +38,9 @@ export async function listAdminParticipants(
   }
   if (query.rrpClassification) {
     params.set("rrpClassification", query.rrpClassification);
+  }
+  if (query.participantId?.trim()) {
+    params.set("participantId", query.participantId.trim());
   }
   if (query.emailVerificationStatus) {
     params.set("emailVerificationStatus", query.emailVerificationStatus);

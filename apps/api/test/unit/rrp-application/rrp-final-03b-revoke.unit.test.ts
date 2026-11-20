@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 import { RRP_APPLICATION_CONSENT_VERSION } from "@hu/types";
 
-import { buildRrpSummaryForParticipant } from "../../../src/modules/administration/admin-participant-directory.service.js";
+import { buildRrpSummaryForParticipant } from "../../../src/modules/administration/admin-rrp-directory-summary.js";
 import { listAdministrationAuditsForTarget } from "../../../src/modules/administration/audit.service.js";
 import { setAdministrationAuditForceMemoryForTests } from "../../../src/modules/administration/persistence/administration-audit.repository.js";
 import { setFindAuthUserByIdForTests } from "../../../src/modules/auth/auth-user.repository.js";

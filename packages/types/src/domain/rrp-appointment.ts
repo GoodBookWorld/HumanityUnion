@@ -74,6 +74,21 @@ export const ADMIN_RRP_DIRECTORY_CLASSIFICATIONS: readonly AdminRrpDirectoryClas
   "representative",
 ] as const;
 
+/**
+ * Per-application directory projection for status column + attention highlight.
+ * Safe — no DOB, funding amounts, or narratives.
+ */
+export interface AdminParticipantRrpApplicationDirectoryItem {
+  readonly applicationId: string;
+  readonly status: import("./rrp-application.js").RrpApplicationStatus;
+  readonly representCountryCode: string;
+  /**
+   * True when durable submit/review timestamps indicate renewed admin work
+   * is required. Opening the modal alone never clears this.
+   */
+  readonly needsAdminAttention: boolean;
+}
+
 /** Safe directory row summary — no DOB, funding amounts, or narratives. */
 export interface AdminParticipantRrpSummary {
   readonly classifications: readonly AdminRrpDirectoryClassification[];
@@ -86,6 +101,13 @@ export interface AdminParticipantRrpSummary {
    */
   readonly viewableApplicationIds: readonly string[];
   readonly representCountryCodes: readonly string[];
+  /**
+   * Viewable applications with canonical status + attention flags.
+   * Multiple applications are listed separately (never collapsed).
+   */
+  readonly applications: readonly AdminParticipantRrpApplicationDirectoryItem[];
+  /** True when any viewable application needs administrator attention. */
+  readonly needsAdminAttention: boolean;
 }
 
 /** Result of confirm-appointment (approval + appointment + message intent). */

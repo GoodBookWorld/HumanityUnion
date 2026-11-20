@@ -1,8 +1,10 @@
 import type {
   AdminParticipantDirectoryItem,
+  AdminParticipantRrpApplicationDirectoryItem,
   AdminRrpDirectoryClassification,
+  RrpApplicationStatus,
 } from "@hu/types";
-import { ADMIN_RRP_DIRECTORY_CLASSIFICATIONS } from "@hu/types";
+import { ADMIN_RRP_DIRECTORY_CLASSIFICATIONS, RRP_APPLICATION_STATUSES } from "@hu/types";
 
 /** Role dropdown values: auth.role filters + derived RRP classifications. */
 export type AdminParticipantRoleFilterValue =
@@ -49,6 +51,45 @@ export function canViewRrpApplication(
   row: AdminParticipantDirectoryItem | null | undefined,
 ): boolean {
   return resolveViewableRrpApplicationIds(row).length > 0;
+}
+
+/** HU-RRP-06B — participant-level attention from durable per-application flags. */
+export function participantNeedsRrpAdminAttention(
+  row: AdminParticipantDirectoryItem | null | undefined,
+): boolean {
+  if (!row?.rrpSummary) {
+    return false;
+  }
+  if (typeof row.rrpSummary.needsAdminAttention === "boolean") {
+    return row.rrpSummary.needsAdminAttention;
+  }
+  return (row.rrpSummary.applications ?? []).some((item) => item.needsAdminAttention);
+}
+
+/**
+ * HU-RRP-06B — status column values. Multiple applications stay distinct;
+ * never collapse mixed statuses into one participant label.
+ */
+export function resolveRrpDirectoryApplicationStatuses(
+  row: AdminParticipantDirectoryItem | null | undefined,
+): readonly AdminParticipantRrpApplicationDirectoryItem[] {
+  if (!row?.rrpSummary) {
+    return [];
+  }
+  if (row.rrpSummary.applications && row.rrpSummary.applications.length > 0) {
+    return row.rrpSummary.applications;
+  }
+  // Backward-compatible fallback when older payloads omit applications[].
+  return resolveViewableRrpApplicationIds(row).map((applicationId) => ({
+    applicationId,
+    status: "submitted" as RrpApplicationStatus,
+    representCountryCode: row.rrpSummary?.representCountryCodes[0] ?? "",
+    needsAdminAttention: false,
+  }));
+}
+
+export function isRrpApplicationStatus(value: string): value is RrpApplicationStatus {
+  return (RRP_APPLICATION_STATUSES as readonly string[]).includes(value);
 }
 
 export function isRrpApproveEligibleStatus(status: string): boolean {

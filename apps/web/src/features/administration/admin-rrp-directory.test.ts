@@ -73,6 +73,15 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
             activeAppointmentIds: [],
             viewableApplicationIds: ["app-1"],
             representCountryCodes: ["CA"],
+            applications: [
+              {
+                applicationId: "app-1",
+                status: "submitted",
+                representCountryCode: "CA",
+                needsAdminAttention: true,
+              },
+            ],
+            needsAdminAttention: true,
           },
         }),
       ),
@@ -88,6 +97,15 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
             activeAppointmentIds: [],
             viewableApplicationIds: ["app-approved-history"],
             representCountryCodes: ["CA"],
+            applications: [
+              {
+                applicationId: "app-approved-history",
+                status: "approved",
+                representCountryCode: "CA",
+                needsAdminAttention: false,
+              },
+            ],
+            needsAdminAttention: false,
           },
         }),
       ),
@@ -102,6 +120,15 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
             activeAppointmentIds: ["appt-1"],
             viewableApplicationIds: ["app-source"],
             representCountryCodes: ["CA"],
+            applications: [
+              {
+                applicationId: "app-source",
+                status: "approved",
+                representCountryCode: "CA",
+                needsAdminAttention: false,
+              },
+            ],
+            needsAdminAttention: false,
           },
         }),
       ),
@@ -206,7 +233,9 @@ describe("HU-RRP-03D Admin Participant directory RRP", () => {
     const section = read(
       "features/administration/components/AdminParticipantsSection.tsx",
     );
-    assert.doesNotMatch(section, /rrpApplicationId=/);
+    assert.doesNotMatch(section, /dateOfBirth/);
+    // HU-RRP-06B — deep-link may include rrpApplicationId; never DOB/PII fields.
+    assert.match(section, /rrpApplicationId/);
   });
 
   it("localizes admin RRP strings through rrpApplication.admin catalog", () => {

@@ -1851,6 +1851,7 @@ export type {
   RrpFundingModel,
 } from "./rrp-application.js";
 export type {
+  AdminParticipantRrpApplicationDirectoryItem,
   AdminParticipantRrpSummary,
   AdminRrpDirectoryClassification,
   RrpAppointmentAuditEntry,

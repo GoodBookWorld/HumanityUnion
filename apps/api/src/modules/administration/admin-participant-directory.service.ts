@@ -6,10 +6,19 @@ import type {
   AdminRrpDirectoryClassification,
   MembershipRecord,
   MembershipStatus,
-  RrpApplicationRecord,
-  RrpAppointmentRecord,
 } from "@hu/types";
 import { ADMIN_RRP_DIRECTORY_CLASSIFICATIONS } from "@hu/types";
+
+import {
+  buildRrpSummaryForParticipant,
+  deriveRrpApplicationNeedsAdminAttention,
+} from "./admin-rrp-directory-summary.js";
+
+export {
+  buildRrpSummaryForParticipant,
+  deriveRrpApplicationNeedsAdminAttention,
+  RRP_DIRECTORY_PIPELINE_STATUSES,
+} from "./admin-rrp-directory-summary.js";
 
 import {
   findAuthUserById,
@@ -112,6 +121,11 @@ export interface ListAdminParticipantsInput {
    * Independent of auth.role.
    */
   rrpClassification?: AdminRrpDirectoryClassification;
+  /**
+   * HU-RRP-06B — optional Participant memberId deep-link allowlist.
+   * Intersects with other allowlists; unknown ids yield an empty page.
+   */
+  participantId?: string;
   sort?: AdminAuthUserListSort;
   order?: "asc" | "desc";
   limit?: number;
@@ -122,74 +136,6 @@ function isRrpDirectoryClassification(
   value: string,
 ): value is AdminRrpDirectoryClassification {
   return (ADMIN_RRP_DIRECTORY_CLASSIFICATIONS as readonly string[]).includes(value);
-}
-
-/**
- * Build directory RRP summary for one participant.
- * Representative classification remains active-appointment-only.
- * Approved applications stay viewable after appointment revocation (admin history).
- */
-export function buildRrpSummaryForParticipant(input: {
-  applications: readonly RrpApplicationRecord[];
-  appointments: readonly RrpAppointmentRecord[];
-}): AdminParticipantRrpSummary | undefined {
-  const classifications = new Set<AdminRrpDirectoryClassification>();
-  const activeApplicationIds: string[] = [];
-  const activeAppointmentIds: string[] = [];
-  const representCountryCodes = new Set<string>();
-  const viewableIds = new Set<string>();
-
-  for (const application of input.applications) {
-    if (RRP_APPLICANT_DIRECTORY_STATUSES.includes(application.status)) {
-      activeApplicationIds.push(application.applicationId);
-      viewableIds.add(application.applicationId);
-      representCountryCodes.add(application.representCountryCode);
-      if (application.fundingModel === "SELF") {
-        classifications.add("applicant_self_funded");
-      } else if (application.fundingModel === "PARTIAL") {
-        classifications.add("applicant_partial_funding");
-      } else if (application.fundingModel === "FULL") {
-        classifications.add("applicant_full_funding");
-      } else {
-        // HU-RRP-04B — funding optional; keep unspecified applicants discoverable.
-        classifications.add("applicant_funding_unspecified");
-      }
-      continue;
-    }
-
-    // HU-RRP-FINAL-03C — keep approved application history openable after revoke.
-    // Do not classify as applicant/representative from approved status alone.
-    if (application.status === "approved") {
-      viewableIds.add(application.applicationId);
-      representCountryCodes.add(application.representCountryCode);
-    }
-  }
-
-  for (const appointment of input.appointments) {
-    if (appointment.status === "active") {
-      classifications.add("representative");
-      activeAppointmentIds.push(appointment.appointmentId);
-      representCountryCodes.add(appointment.representCountryCode);
-      viewableIds.add(appointment.sourceApplicationId);
-    }
-  }
-
-  if (
-    classifications.size === 0 &&
-    activeApplicationIds.length === 0 &&
-    activeAppointmentIds.length === 0 &&
-    viewableIds.size === 0
-  ) {
-    return undefined;
-  }
-
-  return {
-    classifications: [...classifications],
-    activeApplicationIds,
-    activeAppointmentIds,
-    viewableApplicationIds: [...viewableIds],
-    representCountryCodes: [...representCountryCodes],
-  };
 }
 
 async function assertAdminUser(userId: string): Promise<void> {
@@ -356,6 +302,15 @@ export async function listAdminParticipants(
     userIdAllowlist = userIdAllowlist
       ? userIdAllowlist.filter((userId) => rrpUserIds.includes(userId))
       : rrpUserIds;
+  }
+
+  const participantId = input.participantId?.trim();
+  if (participantId) {
+    const targeted = await findAuthUserByMemberId(participantId);
+    const targetedUserIds = targeted ? [targeted.userId] : [];
+    userIdAllowlist = userIdAllowlist
+      ? userIdAllowlist.filter((userId) => targetedUserIds.includes(userId))
+      : targetedUserIds;
   }
 
   const search = input.search?.trim();

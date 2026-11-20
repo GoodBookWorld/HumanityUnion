@@ -132,6 +132,10 @@ adminParticipantDirectoryRouter.get(
         throw new AdminParticipantDirectoryValidationError("Invalid rrpClassification filter.");
       }
 
+      const participantIdRaw =
+        typeof req.query.participantId === "string" ? req.query.participantId.trim() : "";
+      const participantId = participantIdRaw || undefined;
+
       const sortRaw = typeof req.query.sort === "string" ? req.query.sort : "createdAt";
       const sort =
         sortRaw === "createdAt" || sortRaw === "lastLoginAt" || sortRaw === "email"
@@ -151,6 +155,7 @@ adminParticipantDirectoryRouter.get(
         emailVerificationStatus,
         membershipStatus,
         rrpClassification,
+        participantId,
         sort,
         order,
         limit,

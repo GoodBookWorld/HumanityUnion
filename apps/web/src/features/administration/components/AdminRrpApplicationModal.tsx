@@ -39,6 +39,8 @@ interface AdminRrpApplicationModalProps {
   /** Participant display name / pseudonym — primary applicant identity (not legal name). */
   applicantDisplayName?: string | null;
   applicationIds: readonly string[];
+  /** HU-RRP-06B — prefer this viewable application when opening from a deep link. */
+  initialApplicationId?: string | null;
   onClose: () => void;
   onDirectoryRefresh?: () => void;
 }
@@ -80,6 +82,7 @@ export function AdminRrpApplicationModal({
   participantId,
   applicantDisplayName,
   applicationIds,
+  initialApplicationId = null,
   onClose,
   onDirectoryRefresh,
 }: AdminRrpApplicationModalProps) {
@@ -192,6 +195,11 @@ export function AdminRrpApplicationModal({
     }
 
     const uniqueIds = [...new Set(applicationIds.filter(Boolean))];
+    const preferredId =
+      initialApplicationId && uniqueIds.includes(initialApplicationId)
+        ? initialApplicationId
+        : null;
+
     if (uniqueIds.length === 1) {
       setSelectedApplicationId(uniqueIds[0]!);
       setSelectorItems([]);
@@ -240,7 +248,7 @@ export function AdminRrpApplicationModal({
           }
         }
         setSelectorItems(items);
-        setSelectedApplicationId(items[0]?.applicationId ?? uniqueIds[0] ?? null);
+        setSelectedApplicationId(preferredId ?? items[0]?.applicationId ?? uniqueIds[0] ?? null);
       })
       .catch((loadError: unknown) => {
         if (cancelled) {
@@ -253,7 +261,7 @@ export function AdminRrpApplicationModal({
             status: "",
           })),
         );
-        setSelectedApplicationId(uniqueIds[0] ?? null);
+        setSelectedApplicationId(preferredId ?? uniqueIds[0] ?? null);
         if (isForbiddenError(loadError)) {
           setDenied(true);
           setError(t("errors.forbidden"));
@@ -268,7 +276,7 @@ export function AdminRrpApplicationModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, applicationIds, participantId, t]);
+  }, [isOpen, applicationIds, participantId, initialApplicationId, t]);
 
   const loadDetail = useCallback(
     async (applicationId: string) => {

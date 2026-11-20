@@ -7612,5 +7612,17 @@
       "heading2": "Heading 2",
       "heading3": "Heading 3"
     }
+  },
+  "rrpApplication": {
+    "admin": {
+      "directory": {
+        "rrpStatusColumn": "RRP status",
+        "needsAttentionAria": "Requires administrator attention",
+        "statusUnavailable": "Status unavailable",
+        "deepLinkTitle": "Regional Representative application",
+        "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
+        "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+      }
+    }
   }
 }
