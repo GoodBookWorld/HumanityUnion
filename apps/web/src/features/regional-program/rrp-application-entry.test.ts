@@ -114,4 +114,13 @@ describe("HU-RRP-02A regional program application entry", () => {
     assert.match(entry, /NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED/);
     assert.match(entry, /env\[RRP_APPLICATION_ENTRY_FLAG_ENV\] === "true"/);
   });
+
+  it("Web Dockerfile bakes NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED at build time", () => {
+    const dockerfile = readFileSync(path.join(webSrc, "../Dockerfile"), "utf8");
+    assert.match(dockerfile, /ARG NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED=false/);
+    assert.match(
+      dockerfile,
+      /ENV NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED=\$NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED/,
+    );
+  });
 });
