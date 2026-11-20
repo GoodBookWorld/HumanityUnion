@@ -8,10 +8,12 @@ import {
   ADMIN_NOTIFICATIONS_BLOG_SUBSCRIBER_CONFIRMED_CONSUMER_ID,
   ADMIN_NOTIFICATIONS_INITIATIVE_PUBLISHED_CONSUMER_ID,
   ADMIN_NOTIFICATIONS_MEMBER_REGISTERED_CONSUMER_ID,
+  ADMIN_NOTIFICATIONS_RRP_APPLICATION_SUBMITTED_CONSUMER_ID,
   handleBlogPostPublishedAdminNotification,
   handleBlogSubscriptionConfirmedAdminNotification,
   handleInitiativePublishedAdminNotification,
   handleMemberRegisteredAdminNotification,
+  handleRrpApplicationSubmittedAdminNotification,
 } from "./admin-notification.consumers.js";
 
 let adminNotificationHandlersRegistered = false;
@@ -49,6 +51,12 @@ export function registerAdminNotificationHandlers(): void {
     handle: handleBlogPostPublishedAdminNotification,
   });
 
+  registerDomainEventHandler({
+    consumerId: ADMIN_NOTIFICATIONS_RRP_APPLICATION_SUBMITTED_CONSUMER_ID,
+    eventName: CATALOGUE_EVENTS.rrpApplicationSubmitted,
+    handle: handleRrpApplicationSubmittedAdminNotification,
+  });
+
   adminNotificationHandlersRegistered = true;
 }
 
@@ -57,10 +65,12 @@ export {
   ADMIN_NOTIFICATIONS_BLOG_SUBSCRIBER_CONFIRMED_CONSUMER_ID,
   ADMIN_NOTIFICATIONS_INITIATIVE_PUBLISHED_CONSUMER_ID,
   ADMIN_NOTIFICATIONS_MEMBER_REGISTERED_CONSUMER_ID,
+  ADMIN_NOTIFICATIONS_RRP_APPLICATION_SUBMITTED_CONSUMER_ID,
   handleBlogPostPublishedAdminNotification,
   handleBlogSubscriptionConfirmedAdminNotification,
   handleInitiativePublishedAdminNotification,
   handleMemberRegisteredAdminNotification,
+  handleRrpApplicationSubmittedAdminNotification,
 } from "./admin-notification.consumers.js";
 export {
   countAdminNotificationsForActor,

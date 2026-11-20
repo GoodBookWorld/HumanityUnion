@@ -4,6 +4,7 @@
 import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { CanonicalDomainEventEnvelope } from "../../infrastructure/events/domain-event.js";
+import { AdministrationValidationError } from "../administration/administration.errors.js";
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { projectAdminNotificationForAdmins } from "./admin-notification.service.js";
 import type { AdminNotificationProjectionDeps } from "./admin-notification.service.js";
@@ -16,6 +17,8 @@ export const ADMIN_NOTIFICATIONS_INITIATIVE_PUBLISHED_CONSUMER_ID =
   "admin.notifications.initiative-published.v1" as const;
 export const ADMIN_NOTIFICATIONS_BLOG_POST_PUBLISHED_CONSUMER_ID =
   "admin.notifications.blog-post-published.v1" as const;
+export const ADMIN_NOTIFICATIONS_RRP_APPLICATION_SUBMITTED_CONSUMER_ID =
+  "admin.notifications.rrp-application-submitted.v1" as const;
 
 function asRecord(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
@@ -153,6 +156,55 @@ export async function handleBlogPostPublishedAdminNotification(
       targetHref: `/blog/${encodeURIComponent(slug)}`,
       sourceEventId: envelope.eventId,
       createdAt: envelope.metadata.occurredAt,
+    },
+    deps,
+  );
+}
+
+/**
+ * HU-RRP-06C.3C / 06C.5 — project RRP submit/resubmit into Admin inbox.
+ * Failures (including invalid payload) propagate so the Outbox can retry.
+ * Do not swallow errors or silently acknowledge malformed events.
+ */
+export async function handleRrpApplicationSubmittedAdminNotification(
+  envelope: CanonicalDomainEventEnvelope,
+  deps: AdminNotificationProjectionDeps = {},
+): Promise<void> {
+  const payload = asRecord(envelope.payload);
+  const applicationId = asString(payload.applicationId);
+  const participantId = asString(payload.participantId);
+  const submittedAt = asString(payload.submittedAt);
+
+  if (!applicationId) {
+    throw new AdministrationValidationError(
+      "RrpApplicationSubmitted requires applicationId.",
+    );
+  }
+  if (!participantId) {
+    throw new AdministrationValidationError(
+      "RrpApplicationSubmitted requires participantId.",
+    );
+  }
+  if (!submittedAt) {
+    throw new AdministrationValidationError(
+      "RrpApplicationSubmitted requires submittedAt.",
+    );
+  }
+
+  const params = new URLSearchParams();
+  params.set("participantId", participantId);
+  params.set("rrpApplicationId", applicationId);
+  const targetHref = `/admin/participants?${params.toString()}`;
+
+  await projectAdminNotificationForAdmins(
+    {
+      type: "rrp_application_submitted",
+      title: "Regional Representative application submitted",
+      targetLabel: applicationId,
+      targetHref,
+      sourceEventId: envelope.eventId,
+      createdAt: envelope.metadata.occurredAt,
+      dedupeKey: `rrp_application_submitted:${applicationId}:${submittedAt}`,
     },
     deps,
   );

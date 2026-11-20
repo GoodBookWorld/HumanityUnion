@@ -7880,5 +7880,19 @@
       "heading2": "عنوان 2",
       "heading3": "عنوان 3"
     }
+  },
+  "adminNotifications": {
+    "types": {
+      "participant_registered": "New Participant",
+      "blog_subscriber_confirmed": "New Blog subscriber",
+      "initiative_published": "New Initiative",
+      "public_choice_published": "New Public Choice",
+      "blog_post_published": "New Blog publication",
+      "operational_alert": "Platform alert",
+      "participant_suspension_review_requested": "Suspension review request",
+      "member_badge_order_paid": "Member badge order paid",
+      "integrity_media_author_message": "Integrity Media author message",
+      "rrp_application_submitted": "تم تقديم طلب ممثل إقليمي"
+    }
   }
 }

@@ -17,6 +17,8 @@ export const ADMIN_NOTIFICATION_TYPES = [
   "member_badge_order_paid",
   /** IM–HU.07E.4G.9 — accepted Integrity Media author chat reply. */
   "integrity_media_author_message",
+  /** HU-RRP-06C — Regional Representative application submitted or resubmitted. */
+  "rrp_application_submitted",
 ] as const;
 
 export type AdminNotificationType = (typeof ADMIN_NOTIFICATION_TYPES)[number];

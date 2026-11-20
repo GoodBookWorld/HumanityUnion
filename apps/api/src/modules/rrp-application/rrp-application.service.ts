@@ -13,9 +13,13 @@ import type {
 
 import { resolveOwnRrpAdminConversationForUser as resolveOwnRrpAdminConversation } from "./rrp-admin-conversation.resolution.js";
 import { assertRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
+import { createRrpApplicationSubmittedEvent } from "./rrp-application-submitted.event.js";
 
 import { recordAdministrationAuditBestEffort } from "../administration/audit.service.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
+import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
+import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repository.js";
 import {
   assertAdminMayTransition,
   assertParticipantMaySubmit,
@@ -43,6 +47,7 @@ import {
   findRrpApplicationById,
   findRrpApplicationByIdForUser,
   insertRrpApplication,
+  isRrpApplicationForceMemoryForTests,
   listRrpApplicationsForAdmin,
   listRrpApplicationsForUser,
   replaceRrpApplicationIfRevision,
@@ -125,6 +130,7 @@ function assertRevisionMatch(record: RrpApplicationRecord, expectedRevision: num
 async function commitRevision(input: {
   expectedRevision: number;
   next: RrpApplicationRecord;
+  session?: import("mongodb").ClientSession;
 }): Promise<RrpApplicationRecord> {
   const updated = await replaceRrpApplicationIfRevision(input);
   if (!updated) {
@@ -133,6 +139,48 @@ async function commitRevision(input: {
     );
   }
   return updated;
+}
+
+/**
+ * HU-RRP-06C.3B — durable submit: application revision + Outbox event in one session.
+ * Memory-only tests keep revision commit without Outbox (no Mongo session).
+ * Production / Mongo never silently skips enqueue.
+ */
+async function commitSubmittedRevisionWithOutbox(input: {
+  expectedRevision: number;
+  next: RrpApplicationRecord;
+  actorUserId: string;
+}): Promise<RrpApplicationRecord> {
+  const submittedAt = input.next.submittedAt;
+  if (!submittedAt) {
+    throw new RrpApplicationValidationError("submittedAt is required for submission events.");
+  }
+
+  const event = createRrpApplicationSubmittedEvent({
+    applicationId: input.next.applicationId,
+    participantId: input.next.participantId,
+    submittedAt,
+    actorId: input.actorUserId,
+  });
+
+  // Mirror appointment confirm: in-memory / unconfigured Mongo uses sequential path.
+  const useMemoryPath = isRrpApplicationForceMemoryForTests() || !isMongoConfigured();
+  if (useMemoryPath) {
+    return commitRevision({
+      expectedRevision: input.expectedRevision,
+      next: input.next,
+    });
+  }
+
+  return runMongoTransaction(async (session) => {
+    const updated = await commitRevision({
+      expectedRevision: input.expectedRevision,
+      next: input.next,
+      session,
+    });
+    await enqueueDomainEvent(event, { session });
+    return updated;
+  });
 }
 
 export async function createRrpApplicationDraftForUser(
@@ -396,9 +444,10 @@ export async function submitOwnRrpApplicationForUser(input: {
     decisionHistory: appendHistory(current, historyEntry),
   };
 
-  const updated = await commitRevision({
+  const updated = await commitSubmittedRevisionWithOutbox({
     expectedRevision: submit.expectedRevision,
     next,
+    actorUserId: actor.userId,
   });
 
   return toRrpApplicationDetail(updated);

@@ -36,6 +36,11 @@ export function setRrpApplicationForceMemoryForTests(enabled: boolean): void {
   forceMemoryForTests = enabled;
 }
 
+/** True when RRP application persistence uses the in-memory test store. */
+export function isRrpApplicationForceMemoryForTests(): boolean {
+  return forceMemoryForTests;
+}
+
 export function resetRrpApplicationMemoryForTests(): void {
   memoryStore.clear();
 }

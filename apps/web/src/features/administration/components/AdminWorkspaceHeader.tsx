@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-import type { AdminNotification } from "@hu/types";
+import type { AdminNotification, AdminNotificationType } from "@hu/types";
 
 import {
   deleteAdminNotification,
@@ -31,6 +32,7 @@ interface AdminWorkspaceHeaderProps {
  * Scoped to Admin layout only via headerBar.
  */
 export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderProps) {
+  const tTypes = useTranslations("adminNotifications.types");
   const panelId = useId();
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(0);
@@ -179,7 +181,16 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
           {!listLoading && notifications && notifications.length > 0 ? (
             <ul className="admin-workspace-header__list">
               {notifications.map((notification) => {
-                const typeLabel = resolveAdminNotificationTypeLabel(notification);
+                const typeLabel = resolveAdminNotificationTypeLabel(
+                  notification,
+                  (type: AdminNotificationType) => {
+                    try {
+                      return tTypes(type);
+                    } catch {
+                      return undefined;
+                    }
+                  },
+                );
                 const dateLabel = formatAdminNotificationDate(notification.createdAt);
                 const href = resolveAdminNotificationHref(notification);
                 const content = (

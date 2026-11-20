@@ -6,6 +6,7 @@ import type { AdminNotification, AdminNotificationType } from "@hu/types";
 
 import { isIntegrityMediaAuthorReplyMessageId } from "./admin-integrity-media-authors-model";
 
+/** English fallback labels — UI prefers `adminNotifications.types` via next-intl. */
 const ADMIN_NOTIFICATION_TYPE_LABELS: Record<AdminNotificationType, string> = {
   participant_registered: "New Participant",
   blog_subscriber_confirmed: "New Blog subscriber",
@@ -16,17 +17,47 @@ const ADMIN_NOTIFICATION_TYPE_LABELS: Record<AdminNotificationType, string> = {
   participant_suspension_review_requested: "Suspension review request",
   member_badge_order_paid: "Member badge order paid",
   integrity_media_author_message: "Integrity Media author message",
+  rrp_application_submitted: "Regional Representative application submitted",
 };
 
 export function resolveAdminNotificationTypeLabel(
   notification: Pick<AdminNotification, "type" | "title">,
+  translateType?: (type: AdminNotificationType) => string | undefined,
 ): string {
+  if (translateType) {
+    const localized = translateType(notification.type)?.trim();
+    if (localized) {
+      return localized;
+    }
+  }
   const mapped = ADMIN_NOTIFICATION_TYPE_LABELS[notification.type];
   if (mapped) {
     return mapped;
   }
   const title = notification.title?.trim();
   return title && title.length > 0 ? title : "Notification";
+}
+
+/** Ensures RRP deep links keep opaque participant/application ids only. */
+export function isSafeAdminRrpNotificationHref(href: string | null | undefined): boolean {
+  if (!href?.trim()) {
+    return false;
+  }
+  try {
+    const url = new URL(href, "https://hu.local");
+    if (url.pathname !== "/admin/participants") {
+      return false;
+    }
+    const participantId = url.searchParams.get("participantId")?.trim() ?? "";
+    const rrpApplicationId = url.searchParams.get("rrpApplicationId")?.trim() ?? "";
+    if (!participantId || !rrpApplicationId) {
+      return false;
+    }
+    const lowered = href.toLowerCase();
+    return !/(dateofbirth|motivation|funding|annualrequested|dob|narrative)/i.test(lowered);
+  } catch {
+    return false;
+  }
 }
 
 /**

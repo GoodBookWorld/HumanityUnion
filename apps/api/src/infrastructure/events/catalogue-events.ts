@@ -61,6 +61,11 @@ export const CATALOGUE_EVENTS = {
   administrationAuditRecorded: "AdministrationAuditRecorded",
   /** Pack 02G Task 04 — durable content-translation warm work (not TranslationPublished/Corrected). */
   contentTranslationWarmRequested: "ContentTranslationWarmRequested",
+  /**
+   * HU-RRP-06C — Regional Representative application submitted or resubmitted
+   * (durable Outbox signal for Pack 22E Admin Notification projection).
+   */
+  rrpApplicationSubmitted: "RrpApplicationSubmitted",
 } as const;
 
 export type CatalogueEventName = (typeof CATALOGUE_EVENTS)[keyof typeof CATALOGUE_EVENTS];
