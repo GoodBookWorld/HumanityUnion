@@ -7599,6 +7599,137 @@
     }
   },
   "rrpApplication": {
+    "title": "Solicitud de representante regional",
+    "intro": "Solicite representar a un país en el Programa de Representación Regional. Enviar una solicitud no lo designa como representante y no otorga autoridad legal, empleo, derecho a financiación, facultad para firmar contratos ni permisos de administrador. La aprobación en la plataforma es solo una designación interna; cualquier nombramiento legal independiente sería un proceso distinto.",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "loading": "Cargando sus solicitudes…",
+    "hub": {
+      "activeHeading": "Solicitudes activas",
+      "noActive": "No tiene solicitudes activas.",
+      "newHeading": "Iniciar una nueva solicitud",
+      "historyHeading": "Historial de solicitudes",
+      "resume": "Continuar",
+      "view": "Ver estado",
+      "startDraft": "Crear borrador",
+      "countryLabel": "País {country}"
+    },
+    "form": {
+      "editingCountry": "País de representación: {country}",
+      "displayNameHint": "Su nombre visible «{name}» es la identidad principal de esta solicitud. Los nombres legales son opcionales y no se rellenan a partir del nombre visible.",
+      "pseudonymHint": "Puede usar un nombre visible o un seudónimo. No se exige una identidad legal para esta expresión de interés.",
+      "optionalSectionHint": "Los siguientes campos son opcionales. Puede dejarlos en blanco."
+    },
+    "fields": {
+      "legalFirstName": "Nombre legal (opcional)",
+      "legalLastName": "Apellido legal (opcional)",
+      "profession": "Profesión (opcional)",
+      "residenceCountry": "País de residencia (opcional)",
+      "representCountry": "País de la actividad propuesta",
+      "representCountryHelp": "Obligatorio. Nunca se copia automáticamente desde la residencia.",
+      "dateOfBirth": "Fecha de nacimiento (opcional)",
+      "dateOfBirthHelp": "Opcional. Si la indica, use una fecha de calendario real. Esta solicitud no exige verificación de edad.",
+      "fundingModel": "Información de financiación (opcional)",
+      "annualRequestedAmountCad": "Importe anual solicitado (CAD)",
+      "fundingNotCommitment": "Una solicitud de financiación no es un compromiso financiero aprobado.",
+      "teamMemberCount": "Número de integrantes del equipo (opcional)",
+      "relevantExperience": "Experiencia pertinente (opcional)",
+      "motivation": "Motivación / actividad propuesta"
+    },
+    "funding": {
+      "UNSPECIFIED": "Sin especificar",
+      "SELF": "Autofinanciada",
+      "PARTIAL": "Financiación parcial solicitada",
+      "FULL": "Financiación completa solicitada"
+    },
+    "consent": {
+      "label": "Consiento que Humanity Union trate esta solicitud como se describe en la <privacy>Política de Privacidad</privacy>.",
+      "versionNote": "Versión del consentimiento: {version}"
+    },
+    "actions": {
+      "saveDraft": "Guardar borrador",
+      "submit": "Enviar solicitud",
+      "withdraw": "Retirar"
+    },
+    "busy": {
+      "saving": "Guardando…",
+      "submitting": "Enviando…",
+      "withdrawing": "Retirando…",
+      "creating": "Creando…"
+    },
+    "messages": {
+      "draftSaved": "Borrador guardado.",
+      "submitted": "Su solicitud fue enviada.",
+      "withdrawn": "Solicitud retirada.",
+      "notAppointment": "El envío no es un nombramiento de representante y no otorga autoridad legal, empleo, derecho a financiación, facultad para firmar contratos ni permisos de administrador.",
+      "fundingNotCommitment": "Cualquier importe de financiación que haya solicitado no es un compromiso aprobado.",
+      "moreInfoPossible": "Una persona administradora puede solicitar más información antes de una decisión.",
+      "messagesLater": "El seguimiento entre quien solicita y la administración usa los Mensajes existentes de la plataforma, sujetos a la privacidad de quien recibe y a la elegibilidad de la cuenta. La entrega no está garantizada para cada mensaje o notificación."
+    },
+    "status": {
+      "draft": "Borrador",
+      "submitted": "Enviada",
+      "under_review": "En revisión",
+      "information_requested": "Se solicitó más información",
+      "approved": "Aprobada",
+      "rejected": "Rechazada",
+      "withdrawn": "Retirada"
+    },
+    "validation": {
+      "representCountry": "Seleccione un país de la actividad propuesta.",
+      "legalFirstName": "El nombre legal es opcional.",
+      "legalLastName": "El apellido legal es opcional.",
+      "profession": "La profesión es opcional.",
+      "residenceCountry": "El país de residencia es opcional.",
+      "dateOfBirth": "Introduzca una fecha de nacimiento de calendario válida o déjela en blanco.",
+      "fundingModel": "La información de financiación es opcional.",
+      "annualAmount": "Introduzca un importe anual válido en CAD para la financiación PARTIAL o FULL, o borre la selección de financiación.",
+      "teamMemberCount": "El número de integrantes del equipo debe ser un número entero de 0 o más cuando se indique.",
+      "relevantExperience": "La experiencia pertinente es opcional.",
+      "motivation": "La motivación / actividad propuesta es obligatoria.",
+      "consent": "Se requiere el consentimiento para enviar."
+    },
+    "errors": {
+      "conflict": "Esta solicitud cambió en otro lugar o entra en conflicto con otra solicitud activa. Actualice e inténtelo de nuevo.",
+      "unavailable": "Las solicitudes no están disponibles temporalmente. Inténtelo de nuevo en breve.",
+      "duplicateActive": "Ya tiene una solicitud activa para ese país de representación.",
+      "notFound": "No se pudo encontrar esa solicitud."
+    },
+    "discard": {
+      "title": "¿Descartar los cambios sin guardar?",
+      "description": "Esta solicitud tiene ediciones sin guardar. Si sale ahora, se descartarán esos cambios.",
+      "confirm": "Descartar cambios",
+      "cancel": "Seguir editando"
+    },
+    "workspaceWidget": {
+      "title": "Mis solicitudes regionales",
+      "invitation": "Inicie una solicitud de representante regional para un país que desee representar.",
+      "create": "Crear solicitud",
+      "newApplication": "Nueva solicitud",
+      "open": "Abrir",
+      "edit": "Editar",
+      "view": "Ver",
+      "loading": "Cargando solicitudes…",
+      "error": "No se pudieron cargar sus solicitudes. Inténtelo de nuevo.",
+      "retry": "Reintentar",
+      "updated": "Actualizada {date}",
+      "activeHeading": "Solicitudes activas",
+      "historyHeading": "Historial de solicitudes",
+      "openAria": "Abrir la solicitud de {country}",
+      "editAria": "Editar la solicitud de {country}",
+      "viewAria": "Ver la solicitud de {country}",
+      "representativeDesignation": "Representante (designación de la plataforma): no es autoridad legal, empleo ni derecho a financiación.",
+      "messagesHint": "Una persona administradora pidió más información. Responda en Mensajes después de actualizar su solicitud.",
+      "openMessages": "Abrir Mensajes",
+      "openMessagesAria": "Abrir Mensajes del espacio de trabajo",
+      "messagesUnavailable": {
+        "pending": "El mensaje de la administración todavía se está entregando. Inténtelo de nuevo en breve desde esta página.",
+        "failed": "No se pudo entregar el mensaje de la administración. Actualice su solicitud aquí; la mensajería estará disponible cuando exista la conversación.",
+        "none": "Todavía no hay una conversación con la administración para esta solicitud.",
+        "unavailable": "La conversación con la administración no está disponible ahora. Actualice su solicitud aquí o inténtelo más tarde."
+      }
+    },
+    "closeAria": "Cerrar el cuadro de la solicitud",
     "admin": {
       "messages": {
         "deliveryWarningTitle": "Entrega de mensajes",

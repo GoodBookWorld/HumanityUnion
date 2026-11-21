@@ -7599,6 +7599,137 @@
     }
   },
   "rrpApplication": {
+    "title": "Candidatura de representante regional",
+    "intro": "Candidate-se a representar um país no Programa de Representação Regional. Submeter uma candidatura não o nomeia representante e não concede autoridade jurídica, emprego, direito a financiamento, poder para assinar contratos nem permissões de administrador. A aprovação na plataforma é apenas uma designação interna; qualquer nomeação jurídica separada seria um processo distinto.",
+    "close": "Fechar",
+    "back": "Voltar",
+    "loading": "A carregar as suas candidaturas…",
+    "hub": {
+      "activeHeading": "Candidaturas ativas",
+      "noActive": "Não tem candidaturas ativas.",
+      "newHeading": "Iniciar uma nova candidatura",
+      "historyHeading": "Histórico de candidaturas",
+      "resume": "Retomar",
+      "view": "Ver estado",
+      "startDraft": "Criar rascunho",
+      "countryLabel": "País {country}"
+    },
+    "form": {
+      "editingCountry": "País de representação: {country}",
+      "displayNameHint": "O seu nome apresentado «{name}» é a identidade principal desta candidatura. Os nomes legais são opcionais e não são preenchidos a partir do nome apresentado.",
+      "pseudonymHint": "Pode usar um nome apresentado ou um pseudónimo. Não é exigida uma identidade legal para esta manifestação de interesse.",
+      "optionalSectionHint": "Os campos seguintes são opcionais. Pode deixá-los em branco."
+    },
+    "fields": {
+      "legalFirstName": "Nome próprio legal (opcional)",
+      "legalLastName": "Apelido legal (opcional)",
+      "profession": "Profissão (opcional)",
+      "residenceCountry": "País de residência (opcional)",
+      "representCountry": "País da atividade proposta",
+      "representCountryHelp": "Obrigatório. Nunca é copiado automaticamente a partir da residência.",
+      "dateOfBirth": "Data de nascimento (opcional)",
+      "dateOfBirthHelp": "Opcional. Se a indicar, use uma data de calendário real. Esta candidatura não exige verificação de idade.",
+      "fundingModel": "Informação de financiamento (opcional)",
+      "annualRequestedAmountCad": "Montante anual pedido (CAD)",
+      "fundingNotCommitment": "Um pedido de financiamento não é um compromisso financeiro aprovado.",
+      "teamMemberCount": "Número de membros da equipa (opcional)",
+      "relevantExperience": "Experiência relevante (opcional)",
+      "motivation": "Motivação / atividade proposta"
+    },
+    "funding": {
+      "UNSPECIFIED": "Não especificado",
+      "SELF": "Autofinanciado",
+      "PARTIAL": "Financiamento parcial pedido",
+      "FULL": "Financiamento integral pedido"
+    },
+    "consent": {
+      "label": "Consinto que a Humanity Union trate esta candidatura conforme descrito na <privacy>Política de Privacidade</privacy>.",
+      "versionNote": "Versão do consentimento: {version}"
+    },
+    "actions": {
+      "saveDraft": "Guardar rascunho",
+      "submit": "Submeter candidatura",
+      "withdraw": "Retirar"
+    },
+    "busy": {
+      "saving": "A guardar…",
+      "submitting": "A submeter…",
+      "withdrawing": "A retirar…",
+      "creating": "A criar…"
+    },
+    "messages": {
+      "draftSaved": "Rascunho guardado.",
+      "submitted": "A sua candidatura foi submetida.",
+      "withdrawn": "Candidatura retirada.",
+      "notAppointment": "A submissão não é uma nomeação de representante e não concede autoridade jurídica, emprego, direito a financiamento, poder para assinar contratos nem permissões de administrador.",
+      "fundingNotCommitment": "Qualquer montante de financiamento que tenha pedido não é um compromisso aprovado.",
+      "moreInfoPossible": "Uma pessoa administradora pode pedir mais informações antes de uma decisão.",
+      "messagesLater": "O seguimento entre quem se candidata e a administração usa as Mensagens existentes da plataforma, sujeitas às definições de privacidade de quem recebe e à elegibilidade da conta. A entrega não é garantida para cada mensagem ou notificação."
+    },
+    "status": {
+      "draft": "Rascunho",
+      "submitted": "Submetida",
+      "under_review": "Em análise",
+      "information_requested": "Foram pedidas mais informações",
+      "approved": "Aprovada",
+      "rejected": "Recusada",
+      "withdrawn": "Retirada"
+    },
+    "validation": {
+      "representCountry": "Selecione um país da atividade proposta.",
+      "legalFirstName": "O nome próprio legal é opcional.",
+      "legalLastName": "O apelido legal é opcional.",
+      "profession": "A profissão é opcional.",
+      "residenceCountry": "O país de residência é opcional.",
+      "dateOfBirth": "Introduza uma data de nascimento de calendário válida ou deixe em branco.",
+      "fundingModel": "A informação de financiamento é opcional.",
+      "annualAmount": "Introduza um montante anual válido em CAD para financiamento PARTIAL ou FULL, ou limpe a seleção de financiamento.",
+      "teamMemberCount": "O número de membros da equipa tem de ser um número inteiro igual ou superior a 0 quando for indicado.",
+      "relevantExperience": "A experiência relevante é opcional.",
+      "motivation": "A motivação / atividade proposta é obrigatória.",
+      "consent": "É necessário consentimento para submeter."
+    },
+    "errors": {
+      "conflict": "Esta candidatura foi alterada noutro local ou entra em conflito com outra candidatura ativa. Atualize e tente novamente.",
+      "unavailable": "As candidaturas estão temporariamente indisponíveis. Tente novamente dentro de momentos.",
+      "duplicateActive": "Já tem uma candidatura ativa para esse país de representação.",
+      "notFound": "Não foi possível encontrar essa candidatura."
+    },
+    "discard": {
+      "title": "Rejeitar as alterações não guardadas?",
+      "description": "Esta candidatura tem edições não guardadas. Se sair agora, essas alterações serão rejeitadas.",
+      "confirm": "Rejeitar alterações",
+      "cancel": "Continuar a editar"
+    },
+    "workspaceWidget": {
+      "title": "As minhas candidaturas regionais",
+      "invitation": "Inicie uma candidatura de representante regional para um país que pretenda representar.",
+      "create": "Criar candidatura",
+      "newApplication": "Nova candidatura",
+      "open": "Abrir",
+      "edit": "Editar",
+      "view": "Ver",
+      "loading": "A carregar candidaturas…",
+      "error": "Não foi possível carregar as suas candidaturas. Tente novamente.",
+      "retry": "Tentar novamente",
+      "updated": "Atualizada {date}",
+      "activeHeading": "Candidaturas ativas",
+      "historyHeading": "Histórico de candidaturas",
+      "openAria": "Abrir a candidatura de {country}",
+      "editAria": "Editar a candidatura de {country}",
+      "viewAria": "Ver a candidatura de {country}",
+      "representativeDesignation": "Representante (designação da plataforma) — não é autoridade jurídica, emprego nem direito a financiamento.",
+      "messagesHint": "Uma pessoa administradora pediu mais informações. Responda em Mensagens depois de atualizar a candidatura.",
+      "openMessages": "Abrir Mensagens",
+      "openMessagesAria": "Abrir as Mensagens do Espaço de Trabalho",
+      "messagesUnavailable": {
+        "pending": "A mensagem da administração ainda está a ser entregue. Tente novamente dentro de momentos nesta página.",
+        "failed": "Não foi possível entregar a mensagem da administração. Atualize a candidatura aqui; as mensagens ficarão disponíveis quando a conversa existir.",
+        "none": "Ainda não existe uma conversa com a administração para esta candidatura.",
+        "unavailable": "A conversa com a administração não está disponível neste momento. Atualize a candidatura aqui ou tente mais tarde."
+      }
+    },
+    "closeAria": "Fechar a caixa de diálogo da candidatura",
     "admin": {
       "messages": {
         "deliveryWarningTitle": "Entrega de mensagens",

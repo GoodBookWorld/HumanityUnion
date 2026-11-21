@@ -7614,6 +7614,137 @@
     }
   },
   "rrpApplication": {
+    "title": "Bewerbung als Regionalvertreter",
+    "intro": "Bewerben Sie sich, um ein Land im Programm der Regionalvertretung zu vertreten. Das Einreichen einer Bewerbung ernennt Sie nicht zur vertretenden Person und gewährt keine rechtliche Befugnis, keine Beschäftigung, keinen Finanzierungsanspruch, keine Vertragsunterzeichnungsbefugnis und keine Administratorrechte. Eine Genehmigung auf der Plattform ist nur eine interne Bezeichnung; eine gesonderte rechtliche Ernennung wäre ein eigener Vorgang.",
+    "close": "Schließen",
+    "back": "Zurück",
+    "loading": "Ihre Bewerbungen werden geladen…",
+    "hub": {
+      "activeHeading": "Aktive Bewerbungen",
+      "noActive": "Sie haben keine aktiven Bewerbungen.",
+      "newHeading": "Neue Bewerbung beginnen",
+      "historyHeading": "Bewerbungsverlauf",
+      "resume": "Fortsetzen",
+      "view": "Status anzeigen",
+      "startDraft": "Entwurf erstellen",
+      "countryLabel": "Land {country}"
+    },
+    "form": {
+      "editingCountry": "Vertretenes Land: {country}",
+      "displayNameHint": "Ihr Anzeigename „{name}“ ist die primäre Identität für diese Bewerbung. Rechtliche Namen sind optional und werden nicht aus dem Anzeigenamen übernommen.",
+      "pseudonymHint": "Sie können einen Anzeigenamen oder ein Pseudonym verwenden. Für diese Interessenbekundung ist keine rechtliche Identität erforderlich.",
+      "optionalSectionHint": "Die folgenden Felder sind optional. Sie können sie leer lassen."
+    },
+    "fields": {
+      "legalFirstName": "Rechtlicher Vorname (optional)",
+      "legalLastName": "Rechtlicher Nachname (optional)",
+      "profession": "Beruf (optional)",
+      "residenceCountry": "Wohnsitzland (optional)",
+      "representCountry": "Land der vorgeschlagenen Tätigkeit",
+      "representCountryHelp": "Erforderlich. Wird niemals automatisch vom Wohnsitzland übernommen.",
+      "dateOfBirth": "Geburtsdatum (optional)",
+      "dateOfBirthHelp": "Optional. Wenn Sie es angeben, verwenden Sie ein echtes Kalenderdatum. Eine Altersprüfung ist für diese Bewerbung nicht erforderlich.",
+      "fundingModel": "Angaben zur Finanzierung (optional)",
+      "annualRequestedAmountCad": "Jährlich beantragter Betrag (CAD)",
+      "fundingNotCommitment": "Ein Finanzierungsantrag ist keine genehmigte finanzielle Zusage.",
+      "teamMemberCount": "Anzahl der Teammitglieder (optional)",
+      "relevantExperience": "Einschlägige Erfahrung (optional)",
+      "motivation": "Motivation / vorgeschlagene Tätigkeit"
+    },
+    "funding": {
+      "UNSPECIFIED": "Nicht angegeben",
+      "SELF": "Eigenfinanziert",
+      "PARTIAL": "Teilfinanzierung beantragt",
+      "FULL": "Vollfinanzierung beantragt"
+    },
+    "consent": {
+      "label": "Ich willige ein, dass Humanity Union diese Bewerbung wie in der <privacy>Datenschutzrichtlinie</privacy> beschrieben verarbeitet.",
+      "versionNote": "Einwilligungsversion: {version}"
+    },
+    "actions": {
+      "saveDraft": "Entwurf speichern",
+      "submit": "Bewerbung einreichen",
+      "withdraw": "Zurückziehen"
+    },
+    "busy": {
+      "saving": "Wird gespeichert…",
+      "submitting": "Wird eingereicht…",
+      "withdrawing": "Wird zurückgezogen…",
+      "creating": "Wird erstellt…"
+    },
+    "messages": {
+      "draftSaved": "Entwurf gespeichert.",
+      "submitted": "Ihre Bewerbung wurde eingereicht.",
+      "withdrawn": "Bewerbung zurückgezogen.",
+      "notAppointment": "Die Einreichung ist keine Ernennung zur vertretenden Person und gewährt keine rechtliche Befugnis, keine Beschäftigung, keinen Finanzierungsanspruch, keine Vertragsunterzeichnungsbefugnis und keine Administratorrechte.",
+      "fundingNotCommitment": "Ein von Ihnen beantragter Finanzierungsbetrag ist keine genehmigte Zusage.",
+      "moreInfoPossible": "Eine administrierende Person kann vor einer Entscheidung weitere Informationen anfordern.",
+      "messagesLater": "Die weitere Kommunikation zwischen bewerbender und administrierender Person nutzt die vorhandenen Nachrichten der Plattform und unterliegt den Datenschutzeinstellungen der empfangenden Person sowie der Kontoberechtigung. Die Zustellung ist nicht für jede Nachricht oder Benachrichtigung garantiert."
+    },
+    "status": {
+      "draft": "Entwurf",
+      "submitted": "Eingereicht",
+      "under_review": "In Prüfung",
+      "information_requested": "Weitere Informationen angefordert",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
+      "withdrawn": "Zurückgezogen"
+    },
+    "validation": {
+      "representCountry": "Wählen Sie ein Land der vorgeschlagenen Tätigkeit.",
+      "legalFirstName": "Der rechtliche Vorname ist optional.",
+      "legalLastName": "Der rechtliche Nachname ist optional.",
+      "profession": "Der Beruf ist optional.",
+      "residenceCountry": "Das Wohnsitzland ist optional.",
+      "dateOfBirth": "Geben Sie ein gültiges kalendarisches Geburtsdatum ein oder lassen Sie das Feld leer.",
+      "fundingModel": "Angaben zur Finanzierung sind optional.",
+      "annualAmount": "Geben Sie einen gültigen jährlichen CAD-Betrag für die Finanzierung PARTIAL oder FULL ein oder heben Sie die Finanzierungsauswahl auf.",
+      "teamMemberCount": "Die Anzahl der Teammitglieder muss eine ganze Zahl von 0 oder mehr sein, wenn sie angegeben wird.",
+      "relevantExperience": "Einschlägige Erfahrung ist optional.",
+      "motivation": "Motivation / vorgeschlagene Tätigkeit ist erforderlich.",
+      "consent": "Zum Einreichen ist eine Einwilligung erforderlich."
+    },
+    "errors": {
+      "conflict": "Diese Bewerbung wurde an anderer Stelle geändert oder steht im Konflikt mit einer anderen aktiven Bewerbung. Aktualisieren Sie die Seite und versuchen Sie es erneut.",
+      "unavailable": "Bewerbungen sind vorübergehend nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
+      "duplicateActive": "Sie haben bereits eine aktive Bewerbung für dieses vertretene Land.",
+      "notFound": "Diese Bewerbung wurde nicht gefunden."
+    },
+    "discard": {
+      "title": "Nicht gespeicherte Änderungen verwerfen?",
+      "description": "Diese Bewerbung enthält nicht gespeicherte Bearbeitungen. Wenn Sie jetzt gehen, werden diese Änderungen verworfen.",
+      "confirm": "Änderungen verwerfen",
+      "cancel": "Weiter bearbeiten"
+    },
+    "workspaceWidget": {
+      "title": "Meine regionalen Bewerbungen",
+      "invitation": "Beginnen Sie eine Bewerbung als Regionalvertreter für ein Land, das Sie vertreten möchten.",
+      "create": "Bewerbung erstellen",
+      "newApplication": "Neue Bewerbung",
+      "open": "Öffnen",
+      "edit": "Bearbeiten",
+      "view": "Anzeigen",
+      "loading": "Bewerbungen werden geladen…",
+      "error": "Ihre Bewerbungen konnten nicht geladen werden. Versuchen Sie es erneut.",
+      "retry": "Erneut versuchen",
+      "updated": "Aktualisiert {date}",
+      "activeHeading": "Aktive Bewerbungen",
+      "historyHeading": "Bewerbungsverlauf",
+      "openAria": "Bewerbung für {country} öffnen",
+      "editAria": "Bewerbung für {country} bearbeiten",
+      "viewAria": "Bewerbung für {country} anzeigen",
+      "representativeDesignation": "Vertretende Person (Plattformbezeichnung) — keine rechtliche Befugnis, keine Beschäftigung und kein Finanzierungsanspruch.",
+      "messagesHint": "Eine administrierende Person hat weitere Informationen angefordert. Antworten Sie in Nachrichten, nachdem Sie Ihre Bewerbung aktualisiert haben.",
+      "openMessages": "Nachrichten öffnen",
+      "openMessagesAria": "Nachrichten des Arbeitsbereichs öffnen",
+      "messagesUnavailable": {
+        "pending": "Die Nachricht der administrierenden Person wird noch zugestellt. Versuchen Sie es in Kürze erneut auf dieser Seite.",
+        "failed": "Die Nachricht der administrierenden Person konnte nicht zugestellt werden. Aktualisieren Sie Ihre Bewerbung hier; Nachrichten sind verfügbar, sobald die Unterhaltung besteht.",
+        "none": "Für diese Bewerbung gibt es noch keine Unterhaltung mit der Administration.",
+        "unavailable": "Die Unterhaltung mit der Administration ist derzeit nicht verfügbar. Aktualisieren Sie Ihre Bewerbung hier oder versuchen Sie es später erneut."
+      }
+    },
+    "closeAria": "Bewerbungsdialog schließen",
     "admin": {
       "directory": {
         "rrpStatusColumn": "RRP status",

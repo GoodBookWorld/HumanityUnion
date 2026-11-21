@@ -7599,6 +7599,137 @@
     }
   },
   "rrpApplication": {
+    "title": "Candidature de représentant régional",
+    "intro": "Candidatez pour représenter un pays dans le programme de représentation régionale. Le dépôt d’une candidature ne vous nomme pas représentant et n’accorde aucune autorité juridique, aucun emploi, aucun droit à un financement, aucun pouvoir de signature de contrat et aucune autorisation d’administration. L’approbation sur la plateforme est uniquement une désignation interne ; toute nomination juridique distincte serait une procédure séparée.",
+    "close": "Fermer",
+    "back": "Retour",
+    "loading": "Chargement de vos candidatures…",
+    "hub": {
+      "activeHeading": "Candidatures actives",
+      "noActive": "Vous n’avez aucune candidature active.",
+      "newHeading": "Commencer une nouvelle candidature",
+      "historyHeading": "Historique des candidatures",
+      "resume": "Reprendre",
+      "view": "Voir le statut",
+      "startDraft": "Créer un brouillon",
+      "countryLabel": "Pays {country}"
+    },
+    "form": {
+      "editingCountry": "Pays de représentation : {country}",
+      "displayNameHint": "Votre nom affiché « {name} » est l’identité principale de cette candidature. Les noms légaux sont facultatifs et ne sont pas repris depuis le nom affiché.",
+      "pseudonymHint": "Vous pouvez utiliser un nom affiché ou un pseudonyme. Une identité légale n’est pas exigée pour cette manifestation d’intérêt.",
+      "optionalSectionHint": "Les champs suivants sont facultatifs. Vous pouvez les laisser vides."
+    },
+    "fields": {
+      "legalFirstName": "Prénom légal (facultatif)",
+      "legalLastName": "Nom de famille légal (facultatif)",
+      "profession": "Profession (facultatif)",
+      "residenceCountry": "Pays de résidence (facultatif)",
+      "representCountry": "Pays de l’activité proposée",
+      "representCountryHelp": "Obligatoire. Il n’est jamais copié automatiquement depuis le pays de résidence.",
+      "dateOfBirth": "Date de naissance (facultatif)",
+      "dateOfBirthHelp": "Facultatif. Si vous l’indiquez, utilisez une date calendaire réelle. Aucune vérification de l’âge n’est exigée pour cette candidature.",
+      "fundingModel": "Informations de financement (facultatif)",
+      "annualRequestedAmountCad": "Montant annuel demandé (CAD)",
+      "fundingNotCommitment": "Une demande de financement n’est pas un engagement financier approuvé.",
+      "teamMemberCount": "Nombre de membres de l’équipe (facultatif)",
+      "relevantExperience": "Expérience pertinente (facultatif)",
+      "motivation": "Motivation / activité proposée"
+    },
+    "funding": {
+      "UNSPECIFIED": "Non précisé",
+      "SELF": "Autofinancé",
+      "PARTIAL": "Financement partiel demandé",
+      "FULL": "Financement complet demandé"
+    },
+    "consent": {
+      "label": "Je consens à ce que Humanity Union traite cette candidature comme décrit dans la <privacy>Politique de confidentialité</privacy>.",
+      "versionNote": "Version du consentement : {version}"
+    },
+    "actions": {
+      "saveDraft": "Enregistrer le brouillon",
+      "submit": "Soumettre la candidature",
+      "withdraw": "Retirer"
+    },
+    "busy": {
+      "saving": "Enregistrement…",
+      "submitting": "Envoi…",
+      "withdrawing": "Retrait…",
+      "creating": "Création…"
+    },
+    "messages": {
+      "draftSaved": "Brouillon enregistré.",
+      "submitted": "Votre candidature a été soumise.",
+      "withdrawn": "Candidature retirée.",
+      "notAppointment": "La soumission n’est pas une nomination de représentant et n’accorde aucune autorité juridique, aucun emploi, aucun droit à un financement, aucun pouvoir de signature de contrat et aucune autorisation d’administration.",
+      "fundingNotCommitment": "Tout montant de financement que vous avez demandé n’est pas un engagement approuvé.",
+      "moreInfoPossible": "Une personne chargée de l’administration peut demander plus d’informations avant une décision.",
+      "messagesLater": "La suite des échanges entre la personne candidate et l’administration utilise les Messages existants de la plateforme, selon les paramètres de confidentialité du destinataire et l’admissibilité du compte. La remise n’est pas garantie pour chaque message ou notification."
+    },
+    "status": {
+      "draft": "Brouillon",
+      "submitted": "Soumise",
+      "under_review": "En cours d’examen",
+      "information_requested": "Informations supplémentaires demandées",
+      "approved": "Approuvée",
+      "rejected": "Refusée",
+      "withdrawn": "Retirée"
+    },
+    "validation": {
+      "representCountry": "Sélectionnez un pays de l’activité proposée.",
+      "legalFirstName": "Le prénom légal est facultatif.",
+      "legalLastName": "Le nom de famille légal est facultatif.",
+      "profession": "La profession est facultative.",
+      "residenceCountry": "Le pays de résidence est facultatif.",
+      "dateOfBirth": "Saisissez une date de naissance calendaire valide, ou laissez le champ vide.",
+      "fundingModel": "Les informations de financement sont facultatives.",
+      "annualAmount": "Saisissez un montant annuel valide en CAD pour un financement PARTIAL ou FULL, ou effacez la sélection de financement.",
+      "teamMemberCount": "Le nombre de membres de l’équipe doit être un nombre entier égal ou supérieur à 0 lorsqu’il est indiqué.",
+      "relevantExperience": "L’expérience pertinente est facultative.",
+      "motivation": "La motivation / activité proposée est obligatoire.",
+      "consent": "Le consentement est obligatoire pour soumettre."
+    },
+    "errors": {
+      "conflict": "Cette candidature a été modifiée ailleurs ou entre en conflit avec une autre candidature active. Actualisez la page et réessayez.",
+      "unavailable": "Les candidatures sont temporairement indisponibles. Veuillez réessayer sous peu.",
+      "duplicateActive": "Vous avez déjà une candidature active pour ce pays de représentation.",
+      "notFound": "Cette candidature est introuvable."
+    },
+    "discard": {
+      "title": "Abandonner les modifications non enregistrées ?",
+      "description": "Cette candidature contient des modifications non enregistrées. Si vous quittez maintenant, ces modifications seront abandonnées.",
+      "confirm": "Abandonner les modifications",
+      "cancel": "Continuer la modification"
+    },
+    "workspaceWidget": {
+      "title": "Mes candidatures régionales",
+      "invitation": "Commencez une candidature de représentant régional pour un pays que vous souhaitez représenter.",
+      "create": "Créer une candidature",
+      "newApplication": "Nouvelle candidature",
+      "open": "Ouvrir",
+      "edit": "Modifier",
+      "view": "Voir",
+      "loading": "Chargement des candidatures…",
+      "error": "Impossible de charger vos candidatures. Réessayez.",
+      "retry": "Réessayer",
+      "updated": "Mise à jour {date}",
+      "activeHeading": "Candidatures actives",
+      "historyHeading": "Historique des candidatures",
+      "openAria": "Ouvrir la candidature pour {country}",
+      "editAria": "Modifier la candidature pour {country}",
+      "viewAria": "Voir la candidature pour {country}",
+      "representativeDesignation": "Représentant (désignation de la plateforme) — ni autorité juridique, ni emploi, ni droit à un financement.",
+      "messagesHint": "Une personne chargée de l’administration a demandé plus d’informations. Répondez dans Messages après avoir mis à jour votre candidature.",
+      "openMessages": "Ouvrir Messages",
+      "openMessagesAria": "Ouvrir les Messages de l’Espace de Travail",
+      "messagesUnavailable": {
+        "pending": "Le message de l’administration est encore en cours de remise. Réessayez sous peu depuis cette page.",
+        "failed": "Le message de l’administration n’a pas pu être remis. Mettez à jour votre candidature ici ; la messagerie sera disponible lorsque la conversation existera.",
+        "none": "Aucune conversation avec l’administration n’est encore disponible pour cette candidature.",
+        "unavailable": "La conversation avec l’administration n’est pas disponible pour le moment. Mettez à jour votre candidature ici, ou réessayez plus tard."
+      }
+    },
+    "closeAria": "Fermer la boîte de dialogue de candidature",
     "admin": {
       "messages": {
         "deliveryWarningTitle": "Remise des messages",

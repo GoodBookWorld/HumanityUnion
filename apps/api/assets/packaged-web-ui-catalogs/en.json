@@ -7662,7 +7662,9 @@
     },
     "form": {
       "editingCountry": "Representation country: {country}",
-      "displayNameHint": "Your display name “{name}” is the primary identity for this application. Legal names are optional and are not filled from your display name."
+      "displayNameHint": "Your display name “{name}” is the primary identity for this application. Legal names are optional and are not filled from your display name.",
+      "pseudonymHint": "You may use a display name or pseudonym. Legal identity is not required for this expression of interest.",
+      "optionalSectionHint": "The following fields are optional. You may leave them blank."
     },
     "fields": {
       "legalFirstName": "Legal first name (optional)",
@@ -7681,6 +7683,7 @@
       "motivation": "Motivation / proposed activity"
     },
     "funding": {
+      "UNSPECIFIED": "Not specified",
       "SELF": "Self-funded",
       "PARTIAL": "Partial funding requested",
       "FULL": "Full funding requested"
@@ -7772,6 +7775,7 @@
         "unavailable": "The administrator conversation is not available right now. Update your application here, or try again later."
       }
     },
+    "closeAria": "Close application dialog",
     "admin": {
       "title": "Regional Representative application",
       "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
