@@ -246,30 +246,52 @@ export type RrpClientValidationIssue =
   | "motivation"
   | "consent";
 
-export function validateRrpApplicationFormForSubmit(
+/**
+ * Every submit issue, in the same order as {@link validateRrpApplicationFormForSubmit}.
+ * Rules stay here so the modal can mark each field without a second policy.
+ */
+export function listRrpApplicationSubmitIssues(
   form: RrpApplicationFormState,
-): RrpClientValidationIssue | null {
-  if (!form.representCountryCode.trim()) return "representCountry";
-  if (!form.motivation.trim()) return "motivation";
-  if (!form.consentAccepted) return "consent";
+): RrpClientValidationIssue[] {
+  const issues: RrpClientValidationIssue[] = [];
+
+  if (!form.representCountryCode.trim()) {
+    issues.push("representCountry");
+  }
+  if (!form.motivation.trim()) {
+    issues.push("motivation");
+  }
+  if (!form.consentAccepted) {
+    issues.push("consent");
+  }
 
   if (form.dateOfBirth.trim() && !isValidOptionalDateOfBirth(form.dateOfBirth)) {
-    return "dateOfBirth";
+    issues.push("dateOfBirth");
   }
 
   if (form.fundingModel === "SELF" && form.annualRequestedAmountCad.trim() !== "") {
-    return "annualAmount";
+    issues.push("annualAmount");
   }
   if (form.fundingModel === "PARTIAL" || form.fundingModel === "FULL") {
     const amount = Number(form.annualRequestedAmountCad);
-    if (!Number.isFinite(amount) || amount < 1) return "annualAmount";
+    if (!Number.isFinite(amount) || amount < 1) {
+      issues.push("annualAmount");
+    }
   }
 
   const teamRaw = form.teamMemberCount.trim();
   if (teamRaw !== "") {
     const team = Number.parseInt(teamRaw, 10);
-    if (!Number.isInteger(team) || team < 0) return "teamMemberCount";
+    if (!Number.isInteger(team) || team < 0) {
+      issues.push("teamMemberCount");
+    }
   }
 
-  return null;
+  return issues;
+}
+
+export function validateRrpApplicationFormForSubmit(
+  form: RrpApplicationFormState,
+): RrpClientValidationIssue | null {
+  return listRrpApplicationSubmitIssues(form)[0] ?? null;
 }

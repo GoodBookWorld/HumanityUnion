@@ -30,9 +30,11 @@ import {
   isRrpApplicationActiveStatus,
   isRrpApplicationEditableStatus,
   isRrpApplicationFormDirty,
+  listRrpApplicationSubmitIssues,
   resolvePrefillResidenceCountryCode,
   validateRrpApplicationFormForSubmit,
   type RrpApplicationFormState,
+  type RrpClientValidationIssue,
 } from "../rrp-application-form";
 
 import "../../../design-system/components/confirm-dialog.css";
@@ -51,6 +53,17 @@ interface RrpApplicationModalProps {
   initialIntent?: "hub" | "create" | null;
   /** Fired after save / submit / withdraw / create so external widgets can refresh. */
   onApplicationsChanged?: () => void;
+}
+
+function RrpFieldError({ id, message }: { id: string; message: string | null }) {
+  if (!message) {
+    return null;
+  }
+  return (
+    <span id={id} className="rrp-application-modal__field-error" role="alert">
+      {message}
+    </span>
+  );
 }
 
 function formatRrpApiError(
@@ -108,6 +121,8 @@ export function RrpApplicationModal({
     () => applications.filter((item) => !isRrpApplicationActiveStatus(item.status)),
     [applications],
   );
+
+  const submitIssues = useMemo(() => listRrpApplicationSubmitIssues(form), [form]);
 
   const formDirty =
     view === "form" &&
@@ -371,9 +386,7 @@ export function RrpApplicationModal({
     if (!active || !isRrpApplicationEditableStatus(active.status)) {
       return;
     }
-    const issue = validateRrpApplicationFormForSubmit(form);
-    if (issue) {
-      setError(t(`validation.${issue}`));
+    if (validateRrpApplicationFormForSubmit(form)) {
       return;
     }
 
@@ -435,6 +448,22 @@ export function RrpApplicationModal({
   }
 
   const editable = active ? isRrpApplicationEditableStatus(active.status) : true;
+  const showSubmitIssues = view === "form" && active !== null && editable;
+
+  function submitIssueMessage(issue: RrpClientValidationIssue): string | null {
+    if (!showSubmitIssues || !submitIssues.includes(issue)) {
+      return null;
+    }
+    return t(`validation.${issue}`);
+  }
+
+  const representCountryMessage = submitIssueMessage("representCountry");
+  const motivationMessage = submitIssueMessage("motivation");
+  const dateOfBirthMessage = submitIssueMessage("dateOfBirth");
+  const annualAmountMessage = submitIssueMessage("annualAmount");
+  const teamMemberCountMessage = submitIssueMessage("teamMemberCount");
+  const consentMessage = submitIssueMessage("consent");
+  const amountFieldVisible = form.fundingModel === "PARTIAL" || form.fundingModel === "FULL";
 
   return (
     <>
@@ -585,6 +614,7 @@ export function RrpApplicationModal({
                 required
                 disabled={!editable || busy !== null}
                 helperText={t("fields.representCountryHelp")}
+                error={representCountryMessage ?? undefined}
               />
 
               <label className="rrp-application-modal__field">
@@ -594,8 +624,11 @@ export function RrpApplicationModal({
                   required
                   disabled={!editable || busy !== null}
                   value={form.motivation}
+                  aria-invalid={motivationMessage ? true : undefined}
+                  aria-describedby={motivationMessage ? "rrp-motivation-error" : undefined}
                   onChange={(event) => updateField("motivation", event.target.value)}
                 />
+                <RrpFieldError id="rrp-motivation-error" message={motivationMessage} />
               </label>
 
               <p className="rrp-application-modal__hint">{t("form.optionalSectionHint")}</p>
@@ -649,12 +682,22 @@ export function RrpApplicationModal({
                   autoComplete="bday"
                   disabled={!editable || busy !== null}
                   value={form.dateOfBirth}
+                  aria-invalid={dateOfBirthMessage ? true : undefined}
+                  aria-describedby={dateOfBirthMessage ? "rrp-date-of-birth-error" : undefined}
                   onChange={(event) => updateField("dateOfBirth", event.target.value)}
                 />
                 <p className="rrp-application-modal__hint">{t("fields.dateOfBirthHelp")}</p>
+                <RrpFieldError id="rrp-date-of-birth-error" message={dateOfBirthMessage} />
               </label>
 
-              <fieldset className="rrp-application-modal__radios" disabled={!editable || busy !== null}>
+              <fieldset
+                className="rrp-application-modal__radios"
+                disabled={!editable || busy !== null}
+                aria-invalid={!amountFieldVisible && annualAmountMessage ? true : undefined}
+                aria-describedby={
+                  !amountFieldVisible && annualAmountMessage ? "rrp-annual-amount-error" : undefined
+                }
+              >
                 <legend className="rrp-application-modal__legend">{t("fields.fundingModel")}</legend>
                 <label className="rrp-application-modal__radio">
                   <input
@@ -687,8 +730,11 @@ export function RrpApplicationModal({
                   </label>
                 ))}
               </fieldset>
+              {!amountFieldVisible ? (
+                <RrpFieldError id="rrp-annual-amount-error" message={annualAmountMessage} />
+              ) : null}
 
-              {form.fundingModel === "PARTIAL" || form.fundingModel === "FULL" ? (
+              {amountFieldVisible ? (
                 <label className="rrp-application-modal__field">
                   <span>{t("fields.annualRequestedAmountCad")}</span>
                   <input
@@ -699,11 +745,14 @@ export function RrpApplicationModal({
                     required
                     disabled={!editable || busy !== null}
                     value={form.annualRequestedAmountCad}
+                    aria-invalid={annualAmountMessage ? true : undefined}
+                    aria-describedby={annualAmountMessage ? "rrp-annual-amount-error" : undefined}
                     onChange={(event) =>
                       updateField("annualRequestedAmountCad", event.target.value)
                     }
                   />
                   <p className="rrp-application-modal__hint">{t("fields.fundingNotCommitment")}</p>
+                  <RrpFieldError id="rrp-annual-amount-error" message={annualAmountMessage} />
                 </label>
               ) : null}
 
@@ -716,8 +765,13 @@ export function RrpApplicationModal({
                   step={1}
                   disabled={!editable || busy !== null}
                   value={form.teamMemberCount}
+                  aria-invalid={teamMemberCountMessage ? true : undefined}
+                  aria-describedby={
+                    teamMemberCountMessage ? "rrp-team-member-count-error" : undefined
+                  }
                   onChange={(event) => updateField("teamMemberCount", event.target.value)}
                 />
+                <RrpFieldError id="rrp-team-member-count-error" message={teamMemberCountMessage} />
               </label>
 
               <label className="rrp-application-modal__field">
@@ -735,6 +789,8 @@ export function RrpApplicationModal({
                   type="checkbox"
                   checked={form.consentAccepted}
                   disabled={!editable || busy !== null}
+                  aria-invalid={consentMessage ? true : undefined}
+                  aria-describedby={consentMessage ? "rrp-consent-error" : undefined}
                   onChange={(event) => updateField("consentAccepted", event.target.checked)}
                 />
                 <span>
@@ -747,6 +803,7 @@ export function RrpApplicationModal({
                   })}
                 </span>
               </label>
+              <RrpFieldError id="rrp-consent-error" message={consentMessage} />
               <p className="rrp-application-modal__hint">
                 {t("consent.versionNote", { version: RRP_APPLICATION_CONSENT_VERSION })}
               </p>
@@ -771,6 +828,13 @@ export function RrpApplicationModal({
         <footer className="rrp-application-modal__actions">
           {view === "form" && active && editable ? (
             <>
+              {submitIssues.length > 0 ? (
+                <ul id="rrp-submit-blocked" className="rrp-application-modal__submit-blocked">
+                  {submitIssues.map((issue) => (
+                    <li key={issue}>{t(`validation.${issue}`)}</li>
+                  ))}
+                </ul>
+              ) : null}
               <Button
                 type="button"
                 variant="secondary"
@@ -798,7 +862,7 @@ export function RrpApplicationModal({
               <Button
                 type="button"
                 variant="primary"
-                disabled={busy !== null}
+                disabled={busy !== null || submitIssues.length > 0}
                 onClick={() => void handleSubmit()}
               >
                 {busy === "submit" ? t("busy.submitting") : t("actions.submit")}

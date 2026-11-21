@@ -16,6 +16,7 @@ import {
   formStateFromRrpApplication,
   isRrpApplicationFormDirty,
   isValidAdultDateOfBirth,
+  listRrpApplicationSubmitIssues,
   resolvePrefillResidenceCountryCode,
   validateRrpApplicationFormForSubmit,
 } from "./rrp-application-form.js";
@@ -306,6 +307,83 @@ describe("HU-RRP-02C Workspace application modal", () => {
     assert.equal(isRrpApplicationEntryEnabled({}), false);
     const entry = read("features/regional-program/rrp-application-entry.ts");
     assert.match(entry, /=== "true"/);
+  });
+
+  it("marks every invalid submit field and drops the mark when that field is corrected", () => {
+    const invalid = {
+      ...EMPTY_RRP_APPLICATION_FORM,
+      representCountryCode: " ",
+      motivation: "  ",
+      consentAccepted: false,
+      dateOfBirth: "2099-01-01",
+      fundingModel: "FULL" as const,
+      annualRequestedAmountCad: "0",
+      teamMemberCount: "-1",
+    };
+    assert.deepEqual(listRrpApplicationSubmitIssues(invalid), [
+      "representCountry",
+      "motivation",
+      "consent",
+      "dateOfBirth",
+      "annualAmount",
+      "teamMemberCount",
+    ]);
+    assert.equal(validateRrpApplicationFormForSubmit(invalid), "representCountry");
+
+    const correctedCountry = { ...invalid, representCountryCode: "CA" };
+    assert.equal(listRrpApplicationSubmitIssues(correctedCountry).includes("representCountry"), false);
+
+    const corrected = {
+      ...correctedCountry,
+      motivation: "Coordinate regional civic work",
+      consentAccepted: true,
+      dateOfBirth: "",
+      fundingModel: "SELF" as const,
+      annualRequestedAmountCad: "",
+      teamMemberCount: "0",
+    };
+    assert.deepEqual(listRrpApplicationSubmitIssues(corrected), []);
+    assert.equal(validateRrpApplicationFormForSubmit(corrected), null);
+  });
+
+  it("highlights invalid fields in the modal and leaves save draft available", () => {
+    const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
+    const css = read("features/regional-program/components/rrp-application-modal.css");
+    assert.match(modal, /listRrpApplicationSubmitIssues/);
+    assert.match(modal, /validateRrpApplicationFormForSubmit\(form\)/);
+    assert.match(modal, /aria-invalid=\{motivationMessage \? true : undefined\}/);
+    assert.match(modal, /aria-invalid=\{consentMessage \? true : undefined\}/);
+    assert.match(modal, /aria-invalid=\{dateOfBirthMessage \? true : undefined\}/);
+    assert.match(modal, /aria-invalid=\{annualAmountMessage \? true : undefined\}/);
+    assert.match(modal, /aria-invalid=\{teamMemberCountMessage \? true : undefined\}/);
+    assert.match(modal, /rrp-application-modal__field-error/);
+    assert.match(modal, /t\(`validation\.\$\{issue\}`\)/);
+    assert.doesNotMatch(modal, /Motivation \/ proposed activity is required/);
+    assert.match(modal, /disabled=\{busy !== null \|\| submitIssues\.length > 0\}/);
+    assert.match(modal, /rrp-application-modal__submit-blocked/);
+    assert.match(modal, /submitIssues\.map\(\(issue\) =>/);
+    const submitLabel = modal.indexOf('t("actions.submit")');
+    const blockedAt = modal.lastIndexOf("rrp-application-modal__submit-blocked", submitLabel);
+    assert.ok(blockedAt >= 0 && blockedAt < submitLabel);
+
+    const saveLabel = modal.indexOf('t("actions.saveDraft")');
+    const saveRegion = modal.slice(Math.max(0, saveLabel - 280), saveLabel);
+    assert.match(saveRegion, /disabled=\{busy !== null\}/);
+    assert.doesNotMatch(saveRegion, /submitIssues/);
+
+    assert.match(css, /\[aria-invalid="true"\]/);
+    assert.match(css, /--hu-color-danger/);
+    assert.match(css, /text-align:\s*start/);
+    assert.match(css, /\[dir="rtl"\]/);
+
+    for (const locale of ["en", "ar", "uk", "zh-Hant", "de", "es", "fr", "he", "ka", "pt"] as const) {
+      const catalog = JSON.parse(read(`features/i18n/messages/${locale}.json`));
+      const message =
+        catalog.rrpApplication?.validation?.motivation ??
+        JSON.parse(read("features/i18n/messages/en.json")).rrpApplication.validation.motivation;
+      assert.equal(typeof message, "string");
+      assert.ok(message.length > 0);
+    }
   });
 
   it("supports opening a selected applicationId and notifying external refresh", () => {
