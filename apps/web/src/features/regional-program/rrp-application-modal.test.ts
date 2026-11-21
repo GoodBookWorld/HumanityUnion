@@ -242,6 +242,48 @@ describe("HU-RRP-02C Workspace application modal", () => {
     assert.match(modal, /errors\.unavailable/);
   });
 
+  it("shows one green success confirmation only after the submit API resolves", () => {
+    const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
+    const css = read("features/regional-program/components/rrp-application-modal.css");
+    const submitFn = modal.slice(
+      modal.indexOf("async function handleSubmit"),
+      modal.indexOf("async function handleWithdraw"),
+    );
+    const saveFn = modal.slice(
+      modal.indexOf("async function handleSaveDraft"),
+      modal.indexOf("async function handleSubmit"),
+    );
+    const awaitSubmit = submitFn.indexOf("await submitRrpApplication");
+    const confirmed = submitFn.indexOf("setSubmissionConfirmed(true)");
+    const successView = submitFn.indexOf('setView("success")');
+    assert.ok(awaitSubmit > 0);
+    assert.ok(confirmed > awaitSubmit);
+    assert.ok(successView > awaitSubmit);
+    assert.doesNotMatch(submitFn.slice(submitFn.indexOf("catch")), /setView\("success"\)|setSubmissionConfirmed\(true\)/);
+    assert.doesNotMatch(saveFn, /setView\("success"\)|setSubmissionConfirmed\(true\)/);
+    assert.equal((modal.match(/t\("messages\.submitted"\)/g) ?? []).length, 1);
+    assert.doesNotMatch(modal, /Your application was submitted/);
+    assert.match(modal, /submissionConfirmed \? "rrp-application-modal__success-banner"/);
+    assert.match(modal, /submissionConfirmed \? <RrpSubmissionSuccessIcon \/> : null/);
+    assert.match(modal, /role="status" aria-live="polite"/);
+    assert.match(modal, /aria-hidden="true"/);
+    assert.match(css, /rrp-application-modal__success-banner/);
+    assert.match(css, /--hu-color-success/);
+    assert.match(css, /padding-inline/);
+    assert.match(css, /overflow-wrap:\s*anywhere/);
+    assert.match(css, /\[dir="rtl"\] \.rrp-application-modal__success-banner/);
+
+    const english = JSON.parse(read("features/i18n/messages/en.json"));
+    assert.equal(english.rrpApplication.messages.submitted, "Your application was submitted.");
+    for (const locale of ["en", "ar", "uk", "zh-Hant", "de", "es", "fr", "he", "ka", "pt"] as const) {
+      const catalog = JSON.parse(read(`features/i18n/messages/${locale}.json`));
+      const message =
+        catalog.rrpApplication?.messages?.submitted ?? english.rrpApplication.messages.submitted;
+      assert.equal(typeof message, "string");
+      assert.ok(message.length > 0);
+    }
+  });
+
   it("shows post-submit messaging without claiming admin notification delivery", () => {
     const modal = read("features/regional-program/components/RrpApplicationModal.tsx");
     assert.match(modal, /messages\.notAppointment/);

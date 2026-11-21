@@ -202,6 +202,58 @@
 .rrp-application-modal__success {
   display: grid;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+.rrp-application-modal__success-banner {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--hu-color-success, #1a6b3a) 12%, var(--hu-color-surface, #fff));
+  border: 1px solid var(--hu-color-success, #1a6b3a);
+  border-radius: var(--hu-radius-md, 8px);
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  padding-block: 0.9rem;
+  padding-inline: 1rem;
+  text-align: start;
+}
+
+.rrp-application-modal__success-icon {
+  color: var(--hu-color-success, #1a6b3a);
+  display: block;
+  flex: 0 0 auto;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.rrp-application-modal__success-icon circle {
+  fill: color-mix(in srgb, currentColor 18%, transparent);
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.rrp-application-modal__success-icon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.rrp-application-modal__success-title {
+  color: var(--hu-color-success, #1a6b3a);
+  flex: 1 1 0;
+  font-size: var(--hu-font-size-md, 1.0625rem);
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+[dir="rtl"] .rrp-application-modal__success-banner,
+[dir="rtl"] .rrp-application-modal__success-title {
+  text-align: start;
 }
 
 .rrp-application-modal__actions {

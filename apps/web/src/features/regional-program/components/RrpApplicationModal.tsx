@@ -55,6 +55,20 @@ interface RrpApplicationModalProps {
   onApplicationsChanged?: () => void;
 }
 
+function RrpSubmissionSuccessIcon() {
+  return (
+    <svg
+      className="rrp-application-modal__success-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M7.5 12.5 10.5 15.5 16.5 9" />
+    </svg>
+  );
+}
+
 function RrpFieldError({ id, message }: { id: string; message: string | null }) {
   if (!message) {
     return null;
@@ -110,6 +124,7 @@ export function RrpApplicationModal({
   const [baselineForm, setBaselineForm] = useState<RrpApplicationFormState | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation>(null);
+  const [submissionConfirmed, setSubmissionConfirmed] = useState(false);
   const requestCloseRef = useRef<() => void>(() => undefined);
   const discardOpenRef = useRef(false);
 
@@ -137,6 +152,7 @@ export function RrpApplicationModal({
     setError(null);
     setDiscardOpen(false);
     setPendingNavigation(null);
+    setSubmissionConfirmed(false);
   }
 
   function requestClose() {
@@ -187,6 +203,7 @@ export function RrpApplicationModal({
     setNewRepresentCountry("");
     setDiscardOpen(false);
     setPendingNavigation(null);
+    setSubmissionConfirmed(false);
 
     previouslyFocusedRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -312,6 +329,7 @@ export function RrpApplicationModal({
     setBaselineForm(nextForm);
     setError(null);
     setStatusMessage(null);
+    setSubmissionConfirmed(false);
     setView(application.status === "submitted" || application.status === "under_review"
       ? "success"
       : "form");
@@ -393,6 +411,7 @@ export function RrpApplicationModal({
     setBusy("submit");
     setError(null);
     setStatusMessage(null);
+    setSubmissionConfirmed(false);
     try {
       const payload = buildRrpDraftPayload(form);
       const saved = await updateRrpApplicationDraft(active.applicationId, {
@@ -410,8 +429,8 @@ export function RrpApplicationModal({
         ),
       );
       setBaselineForm(formStateFromRrpApplication(submitted));
+      setSubmissionConfirmed(true);
       setView("success");
-      setStatusMessage(t("messages.submitted"));
       onApplicationsChangedRef.current?.();
     } catch (submitError) {
       setError(formatRrpApiError(submitError, t));
@@ -811,8 +830,21 @@ export function RrpApplicationModal({
           ) : null}
 
           {view === "success" && active ? (
-            <div className="rrp-application-modal__success" role="status">
-              <p>{t("messages.submitted")}</p>
+            <div className="rrp-application-modal__success" role="status" aria-live="polite">
+              <div
+                className={
+                  submissionConfirmed ? "rrp-application-modal__success-banner" : undefined
+                }
+              >
+                {submissionConfirmed ? <RrpSubmissionSuccessIcon /> : null}
+                <p
+                  className={
+                    submissionConfirmed ? "rrp-application-modal__success-title" : undefined
+                  }
+                >
+                  {t("messages.submitted")}
+                </p>
+              </div>
               <p className="rrp-application-modal__hint">{t("messages.notAppointment")}</p>
               <p className="rrp-application-modal__hint">{t("messages.fundingNotCommitment")}</p>
               <p className="rrp-application-modal__hint">{t("messages.moreInfoPossible")}</p>
