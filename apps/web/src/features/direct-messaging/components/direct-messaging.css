@@ -124,6 +124,19 @@
   white-space: nowrap;
 }
 
+.direct-messaging__rrp-link {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+  white-space: normal;
+}
+
+[dir="rtl"] .direct-messaging__rrp-link {
+  text-align: start;
+}
+
 .direct-messaging__conversation-status {
   color: var(--hu-text-muted);
   text-align: center;

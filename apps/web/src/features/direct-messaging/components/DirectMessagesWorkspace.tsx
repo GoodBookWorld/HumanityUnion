@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AuthUserPublic } from "@hu/types";
 
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
-import { isAuthenticationRequiredError } from "../../../lib/api-client";
+import { isAuthenticationRequiredError, isForbiddenError } from "../../../lib/api-client";
 import { getMe } from "../../auth/auth-api";
+import { listAdminParticipants } from "../../administration/admin-participant-directory-api";
 import { isAdminAccountRole } from "../../administration/is-admin-role";
+import { rrpHrefFromAdminDirectoryLookup } from "../admin-rrp-messages-link";
 import { InitiativeGroupChatWorkspace } from "../../initiative-group-chat/components/InitiativeGroupChatWorkspace";
 import { WorkspaceNavigation } from "../../initiatives/components/WorkspaceNavigation";
 import type { CollaborationTab } from "../../public-initiative-experience/components/InitiativeCollaborationWorkspace";
@@ -82,13 +84,64 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
    * fetch (already happening in `DirectConversationView`) instead of a
    * second conversation-list request (Part 16).
    */
-  const [activeParticipantId, setActiveParticipantId] = useState<string | undefined>(undefined);
+  const [resolvedParticipant, setResolvedParticipant] = useState<{
+    conversationId: string;
+    participantId: string;
+  } | null>(null);
+  const [rrpApplicationHref, setRrpApplicationHref] = useState<string | null>(null);
+  const activeParticipantId =
+    resolvedParticipant && resolvedParticipant.conversationId === activeConversationId
+      ? resolvedParticipant.participantId
+      : undefined;
+  const activeParticipantIdRef = useRef(activeParticipantId);
+  activeParticipantIdRef.current = activeParticipantId;
 
   useEffect(() => {
-    if (!activeConversationId) {
-      setActiveParticipantId(undefined);
+    if (mode !== "personal" || !isAdminViewer || !activeConversationId || !activeParticipantId) {
+      setRrpApplicationHref(null);
+      return;
     }
-  }, [activeConversationId]);
+
+    const requestedParticipantId = activeParticipantId;
+    let cancelled = false;
+    setRrpApplicationHref(null);
+
+    void (async () => {
+      try {
+        const response = await listAdminParticipants({
+          participantId: requestedParticipantId,
+          limit: 1,
+        });
+        if (cancelled) {
+          return;
+        }
+        setRrpApplicationHref(
+          rrpHrefFromAdminDirectoryLookup({
+            requestedParticipantId,
+            activeParticipantId: activeParticipantIdRef.current,
+            forbidden: false,
+            participants: response.participants,
+          }),
+        );
+      } catch (error: unknown) {
+        if (cancelled) {
+          return;
+        }
+        setRrpApplicationHref(
+          rrpHrefFromAdminDirectoryLookup({
+            requestedParticipantId,
+            activeParticipantId: activeParticipantIdRef.current,
+            forbidden: isForbiddenError(error),
+            participants: [],
+          }),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, isAdminViewer, activeConversationId, activeParticipantId]);
 
   const loadAllies = useCallback(async () => {
     try {
@@ -222,7 +275,13 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
               key={activeConversationId}
               conversationId={activeConversationId}
               onConversationChanged={() => void loadAllies()}
-              onParticipantResolved={(participant) => setActiveParticipantId(participant.participantId)}
+              rrpApplicationHref={rrpApplicationHref}
+              onParticipantResolved={(participant) => {
+                setResolvedParticipant({
+                  conversationId: activeConversationId,
+                  participantId: participant.participantId,
+                });
+              }}
             />
           ) : (
             <div className="direct-messaging-page__empty-state">

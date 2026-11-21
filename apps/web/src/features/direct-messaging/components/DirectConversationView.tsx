@@ -166,6 +166,11 @@ interface DirectConversationViewProps {
    * Participant as part of its own conversation detail fetch.
    */
   onParticipantResolved?: (participant: DirectConversationParticipantProjection) => void;
+  /**
+   * Admin-only, already validated directory deep link.
+   * Absent for non-admins and when the participant has no viewable application.
+   */
+  rrpApplicationHref?: string | null;
 }
 
 type ViewState =
@@ -182,6 +187,7 @@ export function DirectConversationView({
   conversationId,
   onConversationChanged,
   onParticipantResolved,
+  rrpApplicationHref = null,
 }: DirectConversationViewProps) {
   const t = useTranslations("workspace.messagesPage.conversation");
   const tMessaging = useTranslations("participantPublic.messaging");
@@ -497,6 +503,14 @@ export function DirectConversationView({
             className="hu-button hu-button--secondary direct-messaging__profile-button"
           >
             {t("viewProfile")}
+          </Link>
+        ) : null}
+        {rrpApplicationHref ? (
+          <Link
+            href={rrpApplicationHref}
+            className="hu-button hu-button--secondary direct-messaging__rrp-link"
+          >
+            {t("viewRrpApplication")}
           </Link>
         ) : null}
 
