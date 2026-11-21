@@ -32,6 +32,14 @@ import {
 import { createMemoryAdminNotificationPersistenceAdapter } from "../../../src/modules/admin-notifications/persistence/admin-notification-memory.persistence.js";
 import { createRrpApplicationSubmittedEvent } from "../../../src/modules/rrp-application/rrp-application-submitted.event.js";
 import { deriveRrpApplicationNeedsAdminAttention } from "../../../src/modules/administration/admin-rrp-directory-summary.js";
+import { setRrpApplicationActiveUniqueIndexReadyForTests } from "../../../src/modules/rrp-application/rrp-application.index-readiness.js";
+import {
+  buildRrpApplicationRecord,
+  insertRrpApplication,
+  resetRrpApplicationMemoryForTests,
+  setRrpApplicationForceMemoryForTests,
+} from "../../../src/modules/rrp-application/rrp-application.repository.js";
+import { RRP_SUBMISSION_NOTIFICATION_FALLBACK_LABEL } from "../../../src/modules/admin-notifications/rrp-submission-notification-label.js";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -97,8 +105,60 @@ describe("HU-RRP-06C.3C RRP Admin Notification consumer", () => {
       row.targetHref,
       "/admin/participants?participantId=participant-rrp-1&rrpApplicationId=app-rrp-1",
     );
+    assert.equal(row.targetLabel, RRP_SUBMISSION_NOTIFICATION_FALLBACK_LABEL);
+    assert.equal(row.dedupeKey, "rrp_application_submitted:app-rrp-1:2026-11-20T16:00:00.000Z");
+    assert.doesNotMatch(row.targetLabel ?? "", /app-rrp-1/);
     assert.doesNotMatch(row.targetHref ?? "", /dateOfBirth|motivation|funding|annualRequested/i);
     assert.doesNotMatch(JSON.stringify(row), /dateOfBirth|motivation|Lovelace/i);
+  });
+
+  it("labels a submission with the public country and never the application id or legal name", async () => {
+    setRrpApplicationForceMemoryForTests(true);
+    setRrpApplicationActiveUniqueIndexReadyForTests(true);
+    resetRrpApplicationMemoryForTests();
+    try {
+      const application = buildRrpApplicationRecord({
+        userId: "user-rrp-label",
+        participantId: "participant-rrp-label",
+        representCountryCode: "CA",
+        legalFirstName: "Ada",
+        legalLastName: "Lovelace",
+      });
+      await insertRrpApplication(application);
+      const event = createRrpApplicationSubmittedEvent({
+        applicationId: application.applicationId,
+        participantId: application.participantId,
+        submittedAt: "2026-11-20T17:00:00.000Z",
+      });
+      await handleRrpApplicationSubmittedAdminNotification(
+        {
+          eventId: event.eventId,
+          eventName: event.eventName,
+          aggregateType: event.aggregateType,
+          aggregateId: event.aggregateId,
+          payload: event.payload,
+          metadata: event.metadata,
+        },
+        { listActiveAdminUserIds: listAdmins, persistence },
+      );
+      const row = (await persistence.list({ recipientAdminUserId: ADMIN_A }))[0]!;
+      assert.equal(row.targetLabel, `${RRP_SUBMISSION_NOTIFICATION_FALLBACK_LABEL} — Canada`);
+      assert.equal(
+        row.targetHref,
+        `/admin/participants?participantId=${application.participantId}&rrpApplicationId=${application.applicationId}`,
+      );
+      assert.equal(
+        row.dedupeKey,
+        `rrp_application_submitted:${application.applicationId}:2026-11-20T17:00:00.000Z`,
+      );
+      assert.doesNotMatch(row.targetLabel ?? "", new RegExp(application.applicationId));
+      assert.doesNotMatch(row.targetLabel ?? "", /Ada|Lovelace/);
+      assert.doesNotMatch(JSON.stringify({ title: row.title, targetLabel: row.targetLabel }), /dateOfBirth|motivation|relevantExperience|annualRequested/);
+    } finally {
+      resetRrpApplicationMemoryForTests();
+      setRrpApplicationForceMemoryForTests(false);
+      setRrpApplicationActiveUniqueIndexReadyForTests(null);
+    }
   });
 
   it("does not duplicate inbox rows when the same event is processed twice", async () => {

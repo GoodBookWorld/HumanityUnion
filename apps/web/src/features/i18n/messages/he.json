@@ -7622,6 +7622,15 @@
         "deepLinkTitle": "Regional Representative application",
         "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
         "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+      },
+      "messages": {
+        "deliveryWarningTitle": "מסירת הודעות",
+        "deliveryPendingRetry": "ההחלטה נשמרה, אך לא ניתן היה למסור את ההודעה. ניסיון נוסף יתבצע אוטומטית.",
+        "deliveryFailedTerminal": "ההחלטה נשמרה, אך לא ניתן היה למסור את ההודעה. המסירה האוטומטית הסתיימה. אפשר ליצור קשר עם המשתתף דרך הודעות.",
+        "deliveryPreviouslyFailed": "ההחלטה נשמרה. הודעה זו לא נמסרה, והמסירה האוטומטית הסתיימה. אפשר ליצור קשר עם המשתתף דרך הודעות.",
+        "deliveryPaused": "ההחלטה נשמרה, אך ההודעה לא נשלחה כי מסירת ההודעות מושהית.",
+        "deliveryIntentMissing": "אין הודעה שממתינה למסירה עבור החלטה זו.",
+        "deliveryAppointmentMissing": "אין הודעה שממתינה למסירה עבור מינוי זה."
       }
     }
   },

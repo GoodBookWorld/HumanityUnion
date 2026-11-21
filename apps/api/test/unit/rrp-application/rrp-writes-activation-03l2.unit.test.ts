@@ -278,7 +278,7 @@ describe("HU-RRP-03L.2 RRP writes activation gate", () => {
 
     setRrpApplicationWritesEnabledForTests(false);
     const warning = await deliverRrpMessageIntentBestEffort(intent);
-    assert.match(String(warning), /writes are not enabled/i);
+    assert.equal(warning, "rrp_delivery_paused");
 
     const summary = await reconcilePendingRrpMessageIntents({ limit: 5 });
     assert.deepEqual(summary, {

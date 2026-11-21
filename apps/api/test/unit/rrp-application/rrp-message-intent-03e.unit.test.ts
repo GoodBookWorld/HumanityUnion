@@ -51,6 +51,8 @@ import {
 import {
   buildSafeApprovalMessageText,
   buildSafeRequestInformationMessageText,
+  deliverRrpMessageIntentBestEffort,
+  RRP_DELIVERY_WARNING,
   retryRrpMessageIntentDeliveryById,
 } from "../../../src/modules/rrp-application/rrp-message-intent.delivery.js";
 import { reconcilePendingRrpMessageIntents } from "../../../src/modules/rrp-application/rrp-message-intent.reconciliation.js";
@@ -240,7 +242,7 @@ describe("HU-RRP-03E message intents and retry", () => {
 
     assert.equal(result.application.status, "information_requested");
     assert.equal(result.messageIntentRecorded, true);
-    assert.ok(result.messageWarning);
+    assert.equal(result.messageWarning, RRP_DELIVERY_WARNING.pendingRetry);
 
     const clientMessageId = buildRrpRequestInformationClientMessageId({
       applicationId: submitted.applicationId,
@@ -263,25 +265,26 @@ describe("HU-RRP-03E message intents and retry", () => {
       body: { expectedRevision: submitted.revision },
     });
     assert.equal(result.application.status, "approved");
-    assert.ok(result.messageWarning);
+    assert.equal(result.messageWarning, RRP_DELIVERY_WARNING.pendingRetry);
     assert.equal(result.appointment.status, "active");
 
     const text = buildSafeApprovalMessageText("CA");
-    assert.match(text, /platform designation/i);
-    assert.match(text, /not legal authority/i);
-    assert.match(text, /no funding commitment/i);
-    assert.doesNotMatch(text, /dateOfBirth|Lovelace/i);
+    assert.match(text, /Canada/);
+    assert.match(text, /does not independently grant administrative or legal authority/i);
+    assert.match(text, /create a commitment to provide funding/i);
+    assert.match(text, /confidential/i);
+    assert.doesNotMatch(text, /dateOfBirth|Lovelace|legalFirstName/i);
   });
 
   it("request-information message body excludes DOB and funding amounts", () => {
     const text = buildSafeRequestInformationMessageText({
       representCountryCode: "CA",
-      applicationId: "app-1",
       requestExplanation: "Please clarify experience.",
     });
-    assert.match(text, /Application reference: app-1/);
+    assert.match(text, /More Information Is Needed/);
+    assert.match(text, /for Canada/);
     assert.match(text, /Please clarify experience/);
-    assert.doesNotMatch(text, /dateOfBirth|CAD|funding amount/i);
+    assert.doesNotMatch(text, /dateOfBirth|CAD|funding amount|app-1/i);
   });
 
   it("retries pending intents with stable clientMessageId and marks failed after max attempts", async () => {
@@ -317,7 +320,45 @@ describe("HU-RRP-03E message intents and retry", () => {
 
     const retry = await retryRrpMessageIntentDeliveryById(intent!.intentId);
     assert.equal(retry.delivered, false);
-    assert.match(retry.warning ?? "", /permanently/i);
+    assert.equal(retry.warning, RRP_DELIVERY_WARNING.previouslyFailed);
+    assert.equal(retry.status, "failed");
+    assert.doesNotMatch(retry.warning ?? "", /intentId|[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  });
+
+  it("reports a terminal delivery warning only when this attempt ends automatic retry", async () => {
+    const submitted = await createSubmittedApplication();
+    const result = await reviewRrpApplicationForAdminActor({
+      actorUserId: "user-admin-1",
+      applicationId: submitted.applicationId,
+      body: {
+        decision: "request_information",
+        expectedRevision: submitted.revision,
+        note: "Need clarification.",
+      },
+    });
+    const clientMessageId = buildRrpRequestInformationClientMessageId({
+      applicationId: submitted.applicationId,
+      applicationRevision: result.application.revision,
+    });
+    let intent = await findRrpMessageIntentByClientMessageId(clientMessageId);
+    assert.equal(result.messageWarning, RRP_DELIVERY_WARNING.pendingRetry);
+    const stillRetrying = await retryRrpMessageIntentDeliveryById(intent!.intentId);
+    assert.equal(stillRetrying.warning, RRP_DELIVERY_WARNING.pendingRetry);
+    assert.equal(stillRetrying.status, "pending");
+    intent = await findRrpMessageIntentByClientMessageId(clientMessageId);
+    while (intent && intent.status === "pending" && intent.deliveryAttempts < RRP_MESSAGE_INTENT_MAX_DELIVERY_ATTEMPTS - 1) {
+      await recordRrpMessageIntentDeliveryAttempt(intent.intentId, "temporary failure");
+      intent = await findRrpMessageIntentByClientMessageId(clientMessageId);
+    }
+    assert.equal(intent?.status, "pending");
+    assert.equal(intent?.deliveryAttempts, RRP_MESSAGE_INTENT_MAX_DELIVERY_ATTEMPTS - 1);
+    const retry = await retryRrpMessageIntentDeliveryById(intent!.intentId);
+    assert.equal(retry.delivered, false);
+    assert.equal(retry.warning, RRP_DELIVERY_WARNING.failedTerminal);
+    assert.equal(retry.status, "failed");
+    const finished = await findRrpMessageIntentByClientMessageId(clientMessageId);
+    assert.equal(finished?.status, "failed");
+    assert.equal(finished?.nextRetryAt, null);
   });
 
   it("reconcile scans only retryable pending intents", async () => {

@@ -8,6 +8,7 @@ import { AdministrationValidationError } from "../administration/administration.
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { projectAdminNotificationForAdmins } from "./admin-notification.service.js";
 import type { AdminNotificationProjectionDeps } from "./admin-notification.service.js";
+import { resolveRrpSubmissionNotificationLabel } from "./rrp-submission-notification-label.js";
 
 export const ADMIN_NOTIFICATIONS_MEMBER_REGISTERED_CONSUMER_ID =
   "admin.notifications.member-registered.v1" as const;
@@ -195,12 +196,16 @@ export async function handleRrpApplicationSubmittedAdminNotification(
   params.set("participantId", participantId);
   params.set("rrpApplicationId", applicationId);
   const targetHref = `/admin/participants?${params.toString()}`;
+  const targetLabel = await resolveRrpSubmissionNotificationLabel({
+    applicationId,
+    participantId,
+  });
 
   await projectAdminNotificationForAdmins(
     {
       type: "rrp_application_submitted",
       title: "Regional Representative application submitted",
-      targetLabel: applicationId,
+      targetLabel,
       targetHref,
       sourceEventId: envelope.eventId,
       createdAt: envelope.metadata.occurredAt,

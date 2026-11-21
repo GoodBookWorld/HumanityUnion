@@ -7823,6 +7823,12 @@
       "messages": {
         "updateTitle": "Application update",
         "deliveryWarningTitle": "Messages delivery",
+        "deliveryPendingRetry": "The decision was saved, but the message could not be delivered. Another attempt will be made automatically.",
+        "deliveryFailedTerminal": "The decision was saved, but the message could not be delivered. Automatic delivery has ended. You can contact the participant from Messages.",
+        "deliveryPreviouslyFailed": "The decision was saved. This message was not delivered, and automatic delivery has ended. You can contact the participant from Messages.",
+        "deliveryPaused": "The decision was saved, but the message was not sent because message delivery is paused.",
+        "deliveryIntentMissing": "There is no message waiting to be delivered for this decision.",
+        "deliveryAppointmentMissing": "There is no message waiting to be delivered for this appointment.",
         "approved": "Application approved and Representative platform designation recorded.",
         "markedUnderReview": "Application marked under review.",
         "informationRequested": "More information requested.",

@@ -15,6 +15,7 @@ import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
 import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
+import { rrpDeliveryWarningMessageKey } from "../rrp-delivery-warning";
 import {
   confirmAdminRrpAppointment,
   getAdminRrpApplication,
@@ -446,6 +447,12 @@ export function AdminRrpApplicationModal({
   const canReject = detail ? isRrpRejectEligible(detail.status) : false;
   const canRevoke = detail ? isRrpRevokeAppointmentEligible(detail.activeAppointment) : false;
   const isMutating = busy !== null;
+  const deliveryWarningKey = messageWarning ? rrpDeliveryWarningMessageKey(messageWarning) : null;
+  const deliveryWarningText = messageWarning
+    ? deliveryWarningKey
+      ? t(deliveryWarningKey)
+      : messageWarning
+    : null;
 
   return (
     <>
@@ -523,8 +530,8 @@ export function AdminRrpApplicationModal({
         ) : null}
 
         {actionMessage ? <StatusBanner title={t("messages.updateTitle")} message={actionMessage} /> : null}
-        {messageWarning ? (
-          <StatusBanner title={t("messages.deliveryWarningTitle")} message={messageWarning} />
+        {deliveryWarningText ? (
+          <StatusBanner title={t("messages.deliveryWarningTitle")} message={deliveryWarningText} />
         ) : null}
 
         {!loading && detail ? (

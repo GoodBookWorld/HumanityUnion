@@ -5,7 +5,10 @@
 
 import { claimNextRrpMessageIntent } from "./rrp-appointment-message-intent.repository.js";
 import { RRP_MESSAGE_INTENT_RECONCILE_LIMIT } from "./rrp-message-intent.constants.js";
-import { deliverRrpMessageIntentBestEffort } from "./rrp-message-intent.delivery.js";
+import {
+  deliverRrpMessageIntentBestEffort,
+  isTerminalRrpDeliveryWarning,
+} from "./rrp-message-intent.delivery.js";
 import { isRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
 export interface RrpMessageIntentReconcileSummary {
@@ -46,7 +49,7 @@ export async function reconcilePendingRrpMessageIntents(input?: {
       delivered += 1;
       continue;
     }
-    if (warning.includes("maximum retries") || warning.includes("permanently")) {
+    if (isTerminalRrpDeliveryWarning(warning)) {
       failed += 1;
     } else {
       stillPending += 1;

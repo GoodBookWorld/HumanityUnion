@@ -3,10 +3,14 @@
  * Never rolls back application/appointment decisions.
  */
 
+import { findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import {
   openOrCreateDirectConversation,
   sendDirectMessage,
 } from "../direct-messaging/direct-messaging.service.js";
+import { resolveLocaleWithEnglishFallback } from "../language/language-registry-runtime.js";
+import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
+import { findPreferencesByMemberId } from "../preferences/preferences.repository.js";
 import type { RrpAppointmentMessageIntentRecord } from "./rrp-appointment-message-intent.repository.js";
 import {
   findRrpAppointmentMessageIntentByAppointmentId,
@@ -14,48 +18,110 @@ import {
   markRrpMessageIntentDelivered,
   recordRrpMessageIntentDeliveryAttempt,
 } from "./rrp-appointment-message-intent.repository.js";
+import {
+  renderAppointmentWelcomeMessage,
+  selectWelcomeDisplayName,
+} from "./rrp-appointment-welcome-message.js";
+import { renderRequestInformationMessage } from "./rrp-request-information-message.js";
 import { isRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
-function sanitizeExplanation(text: string): string {
-  const trimmed = text.trim().replace(/\s+/g, " ");
-  // Bound length; do not attempt to parse application PII fields into the body.
-  return trimmed.slice(0, 1200);
+/** Stable codes. The admin dialog localizes these; logs keep the diagnostic error. */
+export const RRP_DELIVERY_WARNING = {
+  pendingRetry: "rrp_delivery_pending_retry",
+  failedTerminal: "rrp_delivery_failed_terminal",
+  previouslyFailed: "rrp_delivery_previously_failed",
+  paused: "rrp_delivery_paused",
+  intentMissing: "rrp_delivery_intent_missing",
+  appointmentMissing: "rrp_delivery_appointment_missing",
+} as const;
+
+export function isTerminalRrpDeliveryWarning(warning: string): boolean {
+  return (
+    warning === RRP_DELIVERY_WARNING.failedTerminal ||
+    warning === RRP_DELIVERY_WARNING.previouslyFailed ||
+    warning.includes("maximum retries") ||
+    warning.includes("permanently")
+  );
 }
 
-export function buildSafeApprovalMessageText(representCountryCode: string): string {
-  return [
-    "Your Regional Representative application has been approved.",
-    `You are designated as a Representative for ${representCountryCode} on the platform.`,
-    "This is an internal platform designation only — not legal authority, employment, or funding entitlement.",
-    "This decision does not grant administrator privileges and creates no funding commitment.",
-    "Open Workspace → My Regional Applications to view status. Reply in Workspace → Messages if needed.",
-  ].join(" ");
+export function buildSafeApprovalMessageText(
+  representCountryCode: string,
+  input?: { displayName?: string | null; locale?: string | null },
+): string {
+  return renderAppointmentWelcomeMessage({
+    displayName: input?.displayName,
+    countryCode: representCountryCode,
+    locale: input?.locale ?? "en",
+  });
+}
+
+/**
+ * Public display name and interface language, read when the message is sent.
+ * A missing profile or an unavailable store becomes a nameless English greeting.
+ * The rendered text is not written back onto the intent.
+ */
+export async function resolveAppointmentWelcomeContext(recipientParticipantId: string): Promise<{
+  displayName: string | null;
+  locale: string;
+}> {
+  let displayName: string | null = null;
+  try {
+    const authUser = await findAuthUserByMemberId(recipientParticipantId);
+    let profileDisplayName: string | null = null;
+    if (authUser?.userId) {
+      try {
+        const profile = await findMemberProfileByUserId(authUser.userId);
+        profileDisplayName = profile?.displayName ?? null;
+      } catch {
+        profileDisplayName = null;
+      }
+    }
+    displayName = selectWelcomeDisplayName({
+      profileDisplayName,
+      authDisplayName: authUser?.displayName ?? null,
+    });
+  } catch {
+    displayName = null;
+  }
+
+  try {
+    const preferences = await findPreferencesByMemberId(recipientParticipantId);
+    const locale = await resolveLocaleWithEnglishFallback(
+      preferences?.experiencePreferences.interfaceLanguage ?? null,
+    );
+    return { displayName, locale };
+  } catch {
+    return { displayName, locale: "en" };
+  }
 }
 
 export function buildSafeRequestInformationMessageText(input: {
   representCountryCode: string;
-  applicationId: string;
-  requestExplanation: string;
+  requestExplanation?: string | null;
+  locale?: string | null;
 }): string {
-  const explanation = sanitizeExplanation(input.requestExplanation);
-  return [
-    `An administrator has requested more information about your Regional Representative application for ${input.representCountryCode}.`,
-    `Application reference: ${input.applicationId}.`,
-    `What is needed: ${explanation}`,
-    "Update your application in Workspace → My Regional Applications, and reply in Workspace → Messages.",
-    "This message does not change your account role or grant legal authority.",
-  ].join(" ");
+  return renderRequestInformationMessage({
+    countryCode: input.representCountryCode,
+    requestExplanation: input.requestExplanation,
+    locale: input.locale,
+  });
 }
 
-function buildMessageText(intent: RrpAppointmentMessageIntentRecord): string {
+async function buildMessageText(intent: RrpAppointmentMessageIntentRecord): Promise<string> {
   if (intent.kind === "request_information") {
-    return buildSafeRequestInformationMessageText({
-      representCountryCode: intent.representCountryCode,
-      applicationId: intent.applicationId,
-      requestExplanation: intent.requestExplanation ?? "Please provide the requested information.",
+    const context = await resolveAppointmentWelcomeContext(intent.recipientParticipantId);
+    return renderRequestInformationMessage({
+      countryCode: intent.representCountryCode,
+      requestExplanation: intent.requestExplanation,
+      locale: context.locale,
     });
   }
-  return buildSafeApprovalMessageText(intent.representCountryCode);
+  const welcome = await resolveAppointmentWelcomeContext(intent.recipientParticipantId);
+  return renderAppointmentWelcomeMessage({
+    displayName: welcome.displayName,
+    countryCode: intent.representCountryCode,
+    locale: welcome.locale,
+  });
 }
 
 /**
@@ -69,12 +135,12 @@ export async function deliverRrpMessageIntentBestEffort(
     return undefined;
   }
   if (intent.status === "failed") {
-    return "Messages notification previously failed permanently. Use Messages to contact the participant if needed.";
+    return RRP_DELIVERY_WARNING.previouslyFailed;
   }
 
   // HU-RRP-03L.2 — with writes OFF, do not open/create DMs or mutate intent rows.
   if (!isRrpApplicationWritesEnabled()) {
-    return "Regional Representative application writes are not enabled. Message intent delivery is paused.";
+    return RRP_DELIVERY_WARNING.paused;
   }
 
   try {
@@ -84,7 +150,7 @@ export async function deliverRrpMessageIntentBestEffort(
     await sendDirectMessage({
       conversationId: conversation.conversationId,
       senderParticipantId: intent.adminParticipantId,
-      text: buildMessageText(intent),
+      text: await buildMessageText(intent),
       clientMessageId: intent.clientMessageId,
     });
     await markRrpMessageIntentDelivered(intent.intentId);
@@ -107,9 +173,9 @@ export async function deliverRrpMessageIntentBestEffort(
     );
     const updated = await recordRrpMessageIntentDeliveryAttempt(intent.intentId, message);
     if (updated?.status === "failed") {
-      return "Decision succeeded, but the Messages notification failed after maximum retries. Contact the participant from Messages if needed.";
+      return RRP_DELIVERY_WARNING.failedTerminal;
     }
-    return "Decision succeeded, but the Messages notification could not be delivered. Intent remains pending for automatic retry.";
+    return RRP_DELIVERY_WARNING.pendingRetry;
   }
 }
 
@@ -118,7 +184,7 @@ export async function retryRrpMessageIntentDeliveryById(
 ): Promise<{ delivered: boolean; warning?: string; status?: string }> {
   const intent = await findRrpMessageIntentById(intentId);
   if (!intent) {
-    return { delivered: false, warning: "No message intent found." };
+    return { delivered: false, warning: RRP_DELIVERY_WARNING.intentMissing };
   }
   if (intent.status === "delivered") {
     return { delivered: true, status: "delivered" };
@@ -127,13 +193,16 @@ export async function retryRrpMessageIntentDeliveryById(
     return {
       delivered: false,
       status: "failed",
-      warning:
-        "Messages notification previously failed permanently. Use Messages to contact the participant if needed.",
+      warning: RRP_DELIVERY_WARNING.previouslyFailed,
     };
   }
   const warning = await deliverRrpMessageIntentBestEffort(intent);
   if (warning) {
-    return { delivered: false, warning, status: "pending" };
+    return {
+      delivered: false,
+      warning,
+      status: isTerminalRrpDeliveryWarning(warning) ? "failed" : "pending",
+    };
   }
   return { delivered: true, status: "delivered" };
 }
@@ -144,7 +213,7 @@ export async function retryRrpAppointmentMessageIntentDelivery(
 ): Promise<{ delivered: boolean; warning?: string }> {
   const intent = await findRrpAppointmentMessageIntentByAppointmentId(appointmentId);
   if (!intent) {
-    return { delivered: false, warning: "No message intent found for this appointment." };
+    return { delivered: false, warning: RRP_DELIVERY_WARNING.appointmentMissing };
   }
   const result = await retryRrpMessageIntentDeliveryById(intent.intentId);
   return { delivered: result.delivered, warning: result.warning };

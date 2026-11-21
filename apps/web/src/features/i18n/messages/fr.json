@@ -7622,6 +7622,15 @@
         "deepLinkTitle": "Regional Representative application",
         "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
         "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+      },
+      "messages": {
+        "deliveryWarningTitle": "Remise des messages",
+        "deliveryPendingRetry": "La décision a été enregistrée, mais le message n’a pas pu être remis. Une nouvelle tentative aura lieu automatiquement.",
+        "deliveryFailedTerminal": "La décision a été enregistrée, mais le message n’a pas pu être remis. La remise automatique est terminée. Vous pouvez contacter le participant dans Messages.",
+        "deliveryPreviouslyFailed": "La décision a été enregistrée. Ce message n’a pas été remis et la remise automatique est terminée. Vous pouvez contacter le participant dans Messages.",
+        "deliveryPaused": "La décision a été enregistrée, mais le message n’a pas été envoyé parce que la remise des messages est suspendue.",
+        "deliveryIntentMissing": "Aucun message n’est en attente de remise pour cette décision.",
+        "deliveryAppointmentMissing": "Aucun message n’est en attente de remise pour cette nomination."
       }
     }
   },

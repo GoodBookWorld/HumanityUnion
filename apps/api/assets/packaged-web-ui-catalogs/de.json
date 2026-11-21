@@ -7597,5 +7597,18 @@
       "heading": "Werden Sie Teil einer globalen Gemeinschaft für positiven Wandel",
       "body": "Treten Sie dem Regionalen Entwicklungsprogramm bei und helfen Sie, {siteName} in Ihrem Land zu entwickeln."
     }
+  },
+  "rrpApplication": {
+    "admin": {
+      "messages": {
+        "deliveryWarningTitle": "Nachrichtenzustellung",
+        "deliveryPendingRetry": "Die Entscheidung wurde gespeichert, aber die Nachricht konnte nicht zugestellt werden. Ein weiterer Versuch erfolgt automatisch.",
+        "deliveryFailedTerminal": "Die Entscheidung wurde gespeichert, aber die Nachricht konnte nicht zugestellt werden. Die automatische Zustellung ist beendet. Sie können die teilnehmende Person über Nachrichten kontaktieren.",
+        "deliveryPreviouslyFailed": "Die Entscheidung wurde gespeichert. Diese Nachricht wurde nicht zugestellt, und die automatische Zustellung ist beendet. Sie können die teilnehmende Person über Nachrichten kontaktieren.",
+        "deliveryPaused": "Die Entscheidung wurde gespeichert, aber die Nachricht wurde nicht gesendet, weil die Zustellung pausiert ist.",
+        "deliveryIntentMissing": "Für diese Entscheidung wartet keine Nachricht auf die Zustellung.",
+        "deliveryAppointmentMissing": "Für diese Berufung wartet keine Nachricht auf die Zustellung."
+      }
+    }
   }
 }

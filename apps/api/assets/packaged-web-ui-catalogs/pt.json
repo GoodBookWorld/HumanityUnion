@@ -7597,5 +7597,18 @@
       "heading": "Faça parte de uma comunidade global pela mudança positiva",
       "body": "Junte-se ao Programa de Desenvolvimento Regional e ajude a desenvolver a {siteName} no seu país."
     }
+  },
+  "rrpApplication": {
+    "admin": {
+      "messages": {
+        "deliveryWarningTitle": "Entrega de mensagens",
+        "deliveryPendingRetry": "A decisão foi guardada, mas a mensagem não pôde ser entregue. Será feita outra tentativa automaticamente.",
+        "deliveryFailedTerminal": "A decisão foi guardada, mas a mensagem não pôde ser entregue. A entrega automática terminou. Pode contactar o participante em Mensagens.",
+        "deliveryPreviouslyFailed": "A decisão foi guardada. Esta mensagem não foi entregue e a entrega automática terminou. Pode contactar o participante em Mensagens.",
+        "deliveryPaused": "A decisão foi guardada, mas a mensagem não foi enviada porque a entrega de mensagens está em pausa.",
+        "deliveryIntentMissing": "Não há nenhuma mensagem à espera de entrega para esta decisão.",
+        "deliveryAppointmentMissing": "Não há nenhuma mensagem à espera de entrega para esta nomeação."
+      }
+    }
   }
 }

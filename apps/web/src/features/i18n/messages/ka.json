@@ -7622,6 +7622,15 @@
         "deepLinkTitle": "Regional Representative application",
         "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
         "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+      },
+      "messages": {
+        "deliveryWarningTitle": "შეტყობინების მიწოდება",
+        "deliveryPendingRetry": "გადაწყვეტილება შენახულია, მაგრამ შეტყობინების მიწოდება ვერ მოხერხდა. კიდევ ერთი მცდელობა შესრულდება ავტომატურად.",
+        "deliveryFailedTerminal": "გადაწყვეტილება შენახულია, მაგრამ შეტყობინების მიწოდება ვერ მოხერხდა. ავტომატური მიწოდება დასრულდა. მონაწილეს შეგიძლიათ დაუკავშირდეთ შეტყობინებებიდან.",
+        "deliveryPreviouslyFailed": "გადაწყვეტილება შენახულია. ეს შეტყობინება არ მიტანილა და ავტომატური მიწოდება დასრულდა. მონაწილეს შეგიძლიათ დაუკავშირდეთ შეტყობინებებიდან.",
+        "deliveryPaused": "გადაწყვეტილება შენახულია, მაგრამ შეტყობინება არ გაგზავნილა, რადგან მიწოდება შეჩერებულია.",
+        "deliveryIntentMissing": "ამ გადაწყვეტილებისთვის მიწოდების მომლოდინე შეტყობინება არ არის.",
+        "deliveryAppointmentMissing": "ამ დანიშვნისთვის მიწოდების მომლოდინე შეტყობინება არ არის."
       }
     }
   },
