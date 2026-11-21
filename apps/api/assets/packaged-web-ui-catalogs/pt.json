@@ -7731,14 +7731,105 @@
     },
     "closeAria": "Fechar a caixa de diálogo da candidatura",
     "admin": {
+      "title": "Candidatura de representante regional",
+      "intro": "Revisão administrativa de uma candidatura autorizada de representante regional. A aprovação concede apenas uma designação interna da plataforma.",
+      "close": "Fechar",
+      "closeAria": "Fechar a caixa de diálogo da candidatura",
+      "loading": "A carregar a candidatura…",
+      "empty": "Não há nenhuma candidatura disponível para este participante.",
+      "selectApplication": "Selecionar candidatura",
+      "statusUnknown": "Estado indisponível",
+      "fields": {
+        "applicant": "Nome apresentado de quem se candidata",
+        "legalNamesOptional": "Nomes legais (opcional, privado)",
+        "profession": "Percurso profissional",
+        "residenceCountry": "País de residência",
+        "representCountry": "País de representação",
+        "fundingModel": "Modelo de financiamento",
+        "requestedAmount": "Montante pedido em CAD",
+        "teamMemberCount": "Número de membros da equipa",
+        "status": "Estado da candidatura",
+        "submittedAt": "Data de submissão",
+        "consent": "Consentimento",
+        "consentAccepted": "Aceite ({version}) em {at}",
+        "experience": "Experiência relevante",
+        "motivation": "Motivação",
+        "decisionHistory": "Histórico de decisões",
+        "noHistory": "Ainda não há decisões registadas.",
+        "reviewNote": "Nota de revisão (obrigatória para pedir informações e recusar)"
+      },
+      "disclaimer": {
+        "platformOnly": "Representante é apenas uma designação interna da plataforma. Não confere autoridade jurídica, vínculo de emprego, direito a financiamento, poder para assinar contratos nem permissões de administrador. Quando necessário, pode continuar a ser usado um processo de nomeação jurídica separado."
+      },
+      "actions": {
+        "group": "Ações de revisão da candidatura",
+        "markUnderReview": "Marcar em análise",
+        "requestInformation": "Pedir informações",
+        "reject": "Recusar",
+        "approve": "Aprovar",
+        "revoke": "Revogar a nomeação"
+      },
+      "busy": {
+        "working": "A processar…",
+        "approving": "A aprovar…",
+        "revoking": "A revogar…"
+      },
       "messages": {
+        "updateTitle": "Atualização da candidatura",
         "deliveryWarningTitle": "Entrega de mensagens",
         "deliveryPendingRetry": "A decisão foi guardada, mas a mensagem não pôde ser entregue. Será feita outra tentativa automaticamente.",
         "deliveryFailedTerminal": "A decisão foi guardada, mas a mensagem não pôde ser entregue. A entrega automática terminou. Pode contactar o participante em Mensagens.",
         "deliveryPreviouslyFailed": "A decisão foi guardada. Esta mensagem não foi entregue e a entrega automática terminou. Pode contactar o participante em Mensagens.",
         "deliveryPaused": "A decisão foi guardada, mas a mensagem não foi enviada porque a entrega de mensagens está em pausa.",
         "deliveryIntentMissing": "Não há nenhuma mensagem à espera de entrega para esta decisão.",
-        "deliveryAppointmentMissing": "Não há nenhuma mensagem à espera de entrega para esta nomeação."
+        "deliveryAppointmentMissing": "Não há nenhuma mensagem à espera de entrega para esta nomeação.",
+        "approved": "Candidatura aprovada e designação de representante na plataforma registada.",
+        "markedUnderReview": "Candidatura marcada em análise.",
+        "informationRequested": "Foram pedidas mais informações.",
+        "informationRequestedWithMessage": "Foram pedidas mais informações. Foi registada uma notificação de Mensagens para quem se candidata.",
+        "rejected": "Candidatura recusada.",
+        "revoked": "Designação de representante na plataforma revogada."
+      },
+      "confirmRequestInfo": {
+        "title": "Pedir mais informações?",
+        "lineStatus": "O estado da candidatura passará a «Foram pedidas mais informações».",
+        "lineMessage": "Será enviada a quem se candidata uma notificação de Mensagens com a sua explicação.",
+        "lineReply": "Quem se candidata pode responder nas Mensagens existentes. A entrega não é garantida; aparece um aviso se o envio falhar.",
+        "confirm": "Confirmar pedido",
+        "cancel": "Cancelar"
+      },
+      "confirmApprove": {
+        "title": "Aprovar e designar representante?",
+        "lineApprove": "Esta candidatura será aprovada.",
+        "lineDesignation": "O participante receberá uma designação interna de representante na plataforma para o país selecionado.",
+        "lineNoLegal": "Não é concedida autoridade de representação jurídica.",
+        "lineNoFunding": "Não é criado qualquer compromisso de financiamento.",
+        "lineNoAdmin": "Não são concedidas permissões de administrador.",
+        "confirm": "Confirmar aprovação",
+        "cancel": "Cancelar"
+      },
+      "errors": {
+        "forbidden": "É necessário acesso de administrador para ver candidaturas de representante regional.",
+        "accessRestricted": "Acesso restrito",
+        "unavailable": "Candidatura indisponível",
+        "noteRequired": "É necessária uma nota de revisão para esta ação."
+      },
+      "confirmRevoke": {
+        "title": "Revogar a nomeação de representante?",
+        "lineInactive": "Esta nomeação ficará inativa. O participante deixará de ter, a partir desta candidatura, uma designação ativa de representante na plataforma para este país.",
+        "lineOthersUnaffected": "Os outros representantes do mesmo país permanecem inalterados.",
+        "lineHistory": "O histórico da candidatura mantém-se. A revogação não altera o estado da candidatura.",
+        "lineNoLegal": "A revogação não altera a representação jurídica, o emprego nem o estado do financiamento. A designação da plataforma é apenas interna.",
+        "confirm": "Revogar a nomeação",
+        "cancel": "Cancelar"
+      },
+      "directory": {
+        "rrpStatusColumn": "Estado RRP",
+        "needsAttentionAria": "Requer atenção da administração",
+        "statusUnavailable": "Estado indisponível",
+        "deepLinkTitle": "Candidatura de representante regional",
+        "deepLinkUnavailable": "Essa candidatura de representante regional não está disponível no diretório.",
+        "deepLinkParticipantUnavailable": "Não foi possível encontrar esse participante no diretório."
       }
     }
   }

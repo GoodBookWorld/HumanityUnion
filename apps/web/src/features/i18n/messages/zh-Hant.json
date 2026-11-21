@@ -7667,51 +7667,51 @@
     },
     "closeAria": "關閉申請對話框",
     "admin": {
-      "title": "Regional Representative application",
-      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
-      "close": "Close",
-      "closeAria": "Close application dialog",
-      "loading": "Loading application…",
-      "empty": "No application is available for this participant.",
-      "selectApplication": "Select application",
-      "statusUnknown": "Status unavailable",
+      "title": "區域代表申請",
+      "intro": "管理員審核已授權的區域代表申請。核准僅授予平台內部指派。",
+      "close": "關閉",
+      "closeAria": "關閉申請對話框",
+      "loading": "正在載入申請…",
+      "empty": "此參與者沒有可用的申請。",
+      "selectApplication": "選擇申請",
+      "statusUnknown": "狀態無法使用",
       "fields": {
-        "applicant": "Applicant display name",
-        "profession": "Professional background",
-        "residenceCountry": "Residence country",
-        "representCountry": "Representation country",
-        "fundingModel": "Funding model",
-        "requestedAmount": "Requested CAD amount",
-        "teamMemberCount": "Team member count",
-        "status": "Application status",
-        "submittedAt": "Submission date",
-        "consent": "Consent",
-        "consentAccepted": "Accepted ({version}) on {at}",
-        "experience": "Relevant experience",
-        "motivation": "Motivation",
-        "decisionHistory": "Decision history",
-        "noHistory": "No decisions recorded yet.",
-        "reviewNote": "Review note (required for request information and reject)",
-        "legalNamesOptional": "Legal names (optional, private)"
+        "applicant": "申請人顯示名稱",
+        "legalNamesOptional": "法定姓名（選填，不公開）",
+        "profession": "專業背景",
+        "residenceCountry": "居住國家",
+        "representCountry": "代表國家",
+        "fundingModel": "資助模式",
+        "requestedAmount": "申請的 CAD 金額",
+        "teamMemberCount": "團隊人數",
+        "status": "申請狀態",
+        "submittedAt": "提交日期",
+        "consent": "同意",
+        "consentAccepted": "已接受（{version}），時間為 {at}",
+        "experience": "相關經歷",
+        "motivation": "動機",
+        "decisionHistory": "決定紀錄",
+        "noHistory": "尚未記錄任何決定。",
+        "reviewNote": "審核備註（要求更多資訊與拒絕時必填）"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
+        "platformOnly": "代表僅為平台內部指派。此指派不授予法律權力、僱傭身分、資助資格、簽約權或管理員權限。必要時仍可另行進行法律任命程序。"
       },
       "actions": {
-        "group": "Application review actions",
-        "markUnderReview": "Mark under review",
-        "requestInformation": "Request information",
-        "reject": "Reject",
-        "approve": "Approve",
-        "revoke": "Revoke appointment"
+        "group": "申請審核動作",
+        "markUnderReview": "標示為審核中",
+        "requestInformation": "要求資訊",
+        "reject": "拒絕",
+        "approve": "核准",
+        "revoke": "撤銷任命"
       },
       "busy": {
-        "working": "Working…",
-        "approving": "Approving…",
-        "revoking": "Revoking…"
+        "working": "處理中…",
+        "approving": "正在核准…",
+        "revoking": "正在撤銷…"
       },
       "messages": {
-        "updateTitle": "Application update",
+        "updateTitle": "申請更新",
         "deliveryWarningTitle": "訊息送達",
         "deliveryPendingRetry": "決定已儲存，但訊息未能送出。系統會自動再試一次。",
         "deliveryFailedTerminal": "決定已儲存，但訊息未能送出。自動送達已結束。您可以透過「訊息」聯絡參與者。",
@@ -7719,53 +7719,53 @@
         "deliveryPaused": "決定已儲存，但因為訊息送達已暫停，所以訊息沒有送出。",
         "deliveryIntentMissing": "這項決定沒有待送出的訊息。",
         "deliveryAppointmentMissing": "這項任命沒有待送出的訊息。",
-        "approved": "Application approved and Representative platform designation recorded.",
-        "markedUnderReview": "Application marked under review.",
-        "informationRequested": "More information requested.",
-        "rejected": "Application rejected.",
-        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
-        "revoked": "Representative platform designation revoked."
-      },
-      "confirmApprove": {
-        "title": "Approve and designate Representative?",
-        "lineApprove": "This application will be approved.",
-        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
-        "lineNoLegal": "No legal representation authority is granted.",
-        "lineNoFunding": "No funding commitment is created.",
-        "lineNoAdmin": "No administrator rights are granted.",
-        "confirm": "Confirm approval",
-        "cancel": "Cancel"
-      },
-      "errors": {
-        "forbidden": "Administrator access is required to view Regional Representative applications.",
-        "accessRestricted": "Access restricted",
-        "unavailable": "Application unavailable",
-        "noteRequired": "A review note is required for this action."
+        "approved": "申請已核准，並已記錄代表的平台指派。",
+        "markedUnderReview": "申請已標示為審核中。",
+        "informationRequested": "已要求更多資訊。",
+        "informationRequestedWithMessage": "已要求更多資訊。已為申請人記錄一則「訊息」通知。",
+        "rejected": "申請已拒絕。",
+        "revoked": "已撤銷代表的平台指派。"
       },
       "confirmRequestInfo": {
-        "title": "Request more information?",
-        "lineStatus": "The application status will change to “More information requested”.",
-        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
-        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
-        "confirm": "Confirm request",
-        "cancel": "Cancel"
+        "title": "要求更多資訊？",
+        "lineStatus": "申請狀態將變更為「已要求更多資訊」。",
+        "lineMessage": "系統會透過「訊息」將您的說明傳送給申請人。",
+        "lineReply": "申請人可在現有的「訊息」中回覆。送達不保證成功；若傳送失敗，會顯示警告。",
+        "confirm": "確認要求",
+        "cancel": "取消"
+      },
+      "confirmApprove": {
+        "title": "核准並指派代表？",
+        "lineApprove": "此申請將被核准。",
+        "lineDesignation": "參與者將獲得所選國家的內部代表平台指派。",
+        "lineNoLegal": "不授予法律代表權力。",
+        "lineNoFunding": "不建立任何資助承諾。",
+        "lineNoAdmin": "不授予管理員權限。",
+        "confirm": "確認核准",
+        "cancel": "取消"
+      },
+      "errors": {
+        "forbidden": "查看區域代表申請需要管理員權限。",
+        "accessRestricted": "存取受限制",
+        "unavailable": "申請無法使用",
+        "noteRequired": "此動作必須填寫審核備註。"
       },
       "confirmRevoke": {
-        "title": "Revoke Representative appointment?",
-        "lineInactive": "This appointment will become inactive. The participant will no longer hold an active Representative platform designation for this country from this application.",
-        "lineOthersUnaffected": "Other representatives for the same country remain unaffected.",
-        "lineHistory": "Application history remains preserved. Application status is not changed by revocation.",
-        "lineNoLegal": "Revocation does not change legal representation, employment, or funding status. Platform designation is internal only.",
-        "confirm": "Revoke appointment",
-        "cancel": "Cancel"
+        "title": "撤銷代表任命？",
+        "lineInactive": "此任命將變為未啟用。參與者將不再持有此申請所授予、該國家的有效代表平台指派。",
+        "lineOthersUnaffected": "同一國家的其他代表不受影響。",
+        "lineHistory": "申請紀錄予以保留。撤銷不會變更申請狀態。",
+        "lineNoLegal": "撤銷不會變更法律代表、僱傭或資助狀態。平台指派僅屬內部。",
+        "confirm": "撤銷任命",
+        "cancel": "取消"
       },
       "directory": {
-        "rrpStatusColumn": "RRP status",
-        "needsAttentionAria": "Requires administrator attention",
-        "statusUnavailable": "Status unavailable",
-        "deepLinkTitle": "Regional Representative application",
-        "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
-        "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+        "rrpStatusColumn": "RRP 狀態",
+        "needsAttentionAria": "需要管理員留意",
+        "statusUnavailable": "狀態無法使用",
+        "deepLinkTitle": "區域代表申請",
+        "deepLinkUnavailable": "該區域代表申請無法在名錄中使用。",
+        "deepLinkParticipantUnavailable": "在名錄中找不到該參與者。"
       }
     }
   },

@@ -7731,14 +7731,105 @@
     },
     "closeAria": "Cerrar el cuadro de la solicitud",
     "admin": {
+      "title": "Solicitud de representante regional",
+      "intro": "Revisión por la administración de una solicitud autorizada de representante regional. La aprobación otorga solo una designación interna de la plataforma.",
+      "close": "Cerrar",
+      "closeAria": "Cerrar el cuadro de la solicitud",
+      "loading": "Cargando la solicitud…",
+      "empty": "No hay ninguna solicitud disponible para este participante.",
+      "selectApplication": "Seleccionar solicitud",
+      "statusUnknown": "Estado no disponible",
+      "fields": {
+        "applicant": "Nombre visible de quien solicita",
+        "legalNamesOptional": "Nombres legales (opcional, privado)",
+        "profession": "Trayectoria profesional",
+        "residenceCountry": "País de residencia",
+        "representCountry": "País de representación",
+        "fundingModel": "Modelo de financiación",
+        "requestedAmount": "Importe solicitado en CAD",
+        "teamMemberCount": "Número de integrantes del equipo",
+        "status": "Estado de la solicitud",
+        "submittedAt": "Fecha de envío",
+        "consent": "Consentimiento",
+        "consentAccepted": "Aceptado ({version}) el {at}",
+        "experience": "Experiencia pertinente",
+        "motivation": "Motivación",
+        "decisionHistory": "Historial de decisiones",
+        "noHistory": "Aún no hay decisiones registradas.",
+        "reviewNote": "Nota de revisión (obligatoria para solicitar información y rechazar)"
+      },
+      "disclaimer": {
+        "platformOnly": "Representante es solo una designación interna de la plataforma. No confiere autoridad legal, condición de empleo, derecho a financiación, facultad para firmar contratos ni permisos de administrador. Cuando sea necesario, puede seguir usándose un proceso de nombramiento legal independiente."
+      },
+      "actions": {
+        "group": "Acciones de revisión de la solicitud",
+        "markUnderReview": "Marcar en revisión",
+        "requestInformation": "Solicitar información",
+        "reject": "Rechazar",
+        "approve": "Aprobar",
+        "revoke": "Revocar el nombramiento"
+      },
+      "busy": {
+        "working": "Procesando…",
+        "approving": "Aprobando…",
+        "revoking": "Revocando…"
+      },
       "messages": {
+        "updateTitle": "Actualización de la solicitud",
         "deliveryWarningTitle": "Entrega de mensajes",
         "deliveryPendingRetry": "La decisión se guardó, pero el mensaje no se pudo entregar. Se hará otro intento automáticamente.",
         "deliveryFailedTerminal": "La decisión se guardó, pero el mensaje no se pudo entregar. La entrega automática ha terminado. Puede contactar al participante desde Mensajes.",
         "deliveryPreviouslyFailed": "La decisión se guardó. Este mensaje no se entregó y la entrega automática ha terminado. Puede contactar al participante desde Mensajes.",
         "deliveryPaused": "La decisión se guardó, pero el mensaje no se envió porque la entrega de mensajes está en pausa.",
         "deliveryIntentMissing": "No hay ningún mensaje pendiente de entrega para esta decisión.",
-        "deliveryAppointmentMissing": "No hay ningún mensaje pendiente de entrega para este nombramiento."
+        "deliveryAppointmentMissing": "No hay ningún mensaje pendiente de entrega para este nombramiento.",
+        "approved": "Solicitud aprobada y designación de representante en la plataforma registrada.",
+        "markedUnderReview": "Solicitud marcada en revisión.",
+        "informationRequested": "Se solicitó más información.",
+        "informationRequestedWithMessage": "Se solicitó más información. Se registró una notificación de Mensajes para quien solicita.",
+        "rejected": "Solicitud rechazada.",
+        "revoked": "Designación de representante en la plataforma revocada."
+      },
+      "confirmRequestInfo": {
+        "title": "¿Solicitar más información?",
+        "lineStatus": "El estado de la solicitud cambiará a «Se solicitó más información».",
+        "lineMessage": "Se enviará a quien solicita una notificación de Mensajes con su explicación.",
+        "lineReply": "Quien solicita puede responder en Mensajes. La entrega no está garantizada; aparece una advertencia si el envío falla.",
+        "confirm": "Confirmar solicitud",
+        "cancel": "Cancelar"
+      },
+      "confirmApprove": {
+        "title": "¿Aprobar y designar representante?",
+        "lineApprove": "Esta solicitud se aprobará.",
+        "lineDesignation": "El participante recibirá una designación interna de representante en la plataforma para el país seleccionado.",
+        "lineNoLegal": "No se otorga autoridad de representación legal.",
+        "lineNoFunding": "No se crea ningún compromiso de financiación.",
+        "lineNoAdmin": "No se otorgan derechos de administrador.",
+        "confirm": "Confirmar aprobación",
+        "cancel": "Cancelar"
+      },
+      "errors": {
+        "forbidden": "Se requiere acceso de administrador para ver las solicitudes de representante regional.",
+        "accessRestricted": "Acceso restringido",
+        "unavailable": "Solicitud no disponible",
+        "noteRequired": "Se requiere una nota de revisión para esta acción."
+      },
+      "confirmRevoke": {
+        "title": "¿Revocar el nombramiento de representante?",
+        "lineInactive": "Este nombramiento quedará inactivo. El participante ya no tendrá una designación activa de representante en la plataforma para este país a partir de esta solicitud.",
+        "lineOthersUnaffected": "Los demás representantes del mismo país no se ven afectados.",
+        "lineHistory": "El historial de la solicitud se conserva. La revocación no cambia el estado de la solicitud.",
+        "lineNoLegal": "La revocación no cambia la representación legal, el empleo ni el estado de la financiación. La designación de la plataforma es solo interna.",
+        "confirm": "Revocar el nombramiento",
+        "cancel": "Cancelar"
+      },
+      "directory": {
+        "rrpStatusColumn": "Estado de RRP",
+        "needsAttentionAria": "Requiere atención de la administración",
+        "statusUnavailable": "Estado no disponible",
+        "deepLinkTitle": "Solicitud de representante regional",
+        "deepLinkUnavailable": "Esa solicitud de representante regional no está disponible en el directorio.",
+        "deepLinkParticipantUnavailable": "No se pudo encontrar a ese participante en el directorio."
       }
     }
   }

@@ -7666,50 +7666,51 @@
     },
     "closeAria": "إغلاق مربع طلب التقديم",
     "admin": {
-      "title": "Regional Representative application",
-      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
-      "close": "Close",
-      "closeAria": "Close application dialog",
-      "loading": "Loading application…",
-      "empty": "No application is available for this participant.",
-      "selectApplication": "Select application",
-      "statusUnknown": "Status unavailable",
+      "title": "طلب الممثل الإقليمي",
+      "intro": "مراجعة المسؤول لطلب ممثل إقليمي مصرّح به. القبول يمنح تعيينًا داخليًا على المنصة فقط.",
+      "close": "إغلاق",
+      "closeAria": "إغلاق مربع طلب التقديم",
+      "loading": "جارٍ تحميل الطلب…",
+      "empty": "لا يتوفر طلب لهذا المشارك.",
+      "selectApplication": "اختيار الطلب",
+      "statusUnknown": "الحالة غير متاحة",
       "fields": {
-        "applicant": "Applicant display name",
-        "profession": "Professional background",
-        "residenceCountry": "Residence country",
-        "representCountry": "Representation country",
-        "fundingModel": "Funding model",
-        "requestedAmount": "Requested CAD amount",
-        "teamMemberCount": "Team member count",
-        "status": "Application status",
-        "submittedAt": "Submission date",
-        "consent": "Consent",
-        "consentAccepted": "Accepted ({version}) on {at}",
-        "experience": "Relevant experience",
-        "motivation": "Motivation",
-        "decisionHistory": "Decision history",
-        "noHistory": "No decisions recorded yet.",
-        "reviewNote": "Review note (required for request information and reject)"
+        "applicant": "اسم العرض لمقدم الطلب",
+        "legalNamesOptional": "الأسماء القانونية (اختياري، خاص)",
+        "profession": "الخلفية المهنية",
+        "residenceCountry": "دولة الإقامة",
+        "representCountry": "دولة التمثيل",
+        "fundingModel": "نموذج التمويل",
+        "requestedAmount": "المبلغ المطلوب بعملة CAD",
+        "teamMemberCount": "عدد أعضاء الفريق",
+        "status": "حالة الطلب",
+        "submittedAt": "تاريخ الإرسال",
+        "consent": "الموافقة",
+        "consentAccepted": "تم القبول ({version}) في {at}",
+        "experience": "الخبرة ذات الصلة",
+        "motivation": "الدافع",
+        "decisionHistory": "سجل القرارات",
+        "noHistory": "لم تُسجَّل قرارات بعد.",
+        "reviewNote": "ملاحظة المراجعة (مطلوبة لطلب المعلومات والرفض)"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
+        "platformOnly": "الممثل تعيين داخلي على المنصة فقط. لا يمنح سلطة قانونية ولا صفة توظيف ولا استحقاق تمويل ولا صلاحية توقيع العقود ولا أذونات المسؤول. قد يُستخدم إجراء تعيين قانوني منفصل عند الحاجة."
       },
       "actions": {
-        "group": "Application review actions",
-        "markUnderReview": "Mark under review",
-        "requestInformation": "Request information",
-        "reject": "Reject",
-        "approve": "Approve",
-        "revoke": "Revoke appointment"
+        "group": "إجراءات مراجعة الطلب",
+        "markUnderReview": "تعليم قيد المراجعة",
+        "requestInformation": "طلب معلومات",
+        "reject": "رفض",
+        "approve": "قبول",
+        "revoke": "سحب التعيين"
       },
       "busy": {
-        "working": "Working…",
-        "approving": "Approving…",
-        "revoking": "Revoking…"
+        "working": "جارٍ التنفيذ…",
+        "approving": "جارٍ القبول…",
+        "revoking": "جارٍ السحب…"
       },
       "messages": {
-        "updateTitle": "Application update",
+        "updateTitle": "تحديث الطلب",
         "deliveryWarningTitle": "تسليم الرسائل",
         "deliveryPendingRetry": "تم حفظ القرار، لكن تعذر تسليم الرسالة. ستُجرى محاولة أخرى تلقائيًا.",
         "deliveryFailedTerminal": "تم حفظ القرار، لكن تعذر تسليم الرسالة. انتهت محاولات التسليم التلقائي. يمكنكم التواصل مع المشارك عبر الرسائل.",
@@ -7717,45 +7718,53 @@
         "deliveryPaused": "تم حفظ القرار، لكن الرسالة لم تُرسل لأن تسليم الرسائل متوقف.",
         "deliveryIntentMissing": "لا توجد رسالة بانتظار التسليم لهذا القرار.",
         "deliveryAppointmentMissing": "لا توجد رسالة بانتظار التسليم لهذا التعيين.",
-        "approved": "Application approved and Representative platform designation recorded.",
-        "markedUnderReview": "Application marked under review.",
-        "informationRequested": "More information requested.",
-        "rejected": "Application rejected.",
-        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
-        "revoked": "Representative platform designation revoked."
-      },
-      "confirmApprove": {
-        "title": "Approve and designate Representative?",
-        "lineApprove": "This application will be approved.",
-        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
-        "lineNoLegal": "No legal representation authority is granted.",
-        "lineNoFunding": "No funding commitment is created.",
-        "lineNoAdmin": "No administrator rights are granted.",
-        "confirm": "Confirm approval",
-        "cancel": "Cancel"
-      },
-      "errors": {
-        "forbidden": "Administrator access is required to view Regional Representative applications.",
-        "accessRestricted": "Access restricted",
-        "unavailable": "Application unavailable",
-        "noteRequired": "A review note is required for this action."
+        "approved": "تم قبول الطلب وتسجيل تعيين الممثل على المنصة.",
+        "markedUnderReview": "تم تعليم الطلب قيد المراجعة.",
+        "informationRequested": "طُلبت معلومات إضافية.",
+        "informationRequestedWithMessage": "طُلبت معلومات إضافية. سُجِّل إشعار في الرسائل لمقدم الطلب.",
+        "rejected": "تم رفض الطلب.",
+        "revoked": "تم سحب تعيين الممثل على المنصة."
       },
       "confirmRequestInfo": {
-        "title": "Request more information?",
-        "lineStatus": "The application status will change to “More information requested”.",
-        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
-        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
-        "confirm": "Confirm request",
-        "cancel": "Cancel"
+        "title": "طلب مزيد من المعلومات؟",
+        "lineStatus": "ستتغير حالة الطلب إلى «طُلبت معلومات إضافية».",
+        "lineMessage": "سيُرسل إلى مقدم الطلب إشعار في الرسائل يتضمن شرحكم.",
+        "lineReply": "يمكن لمقدم الطلب الرد في الرسائل الحالية. التسليم غير مضمون؛ ويظهر تحذير إذا فشل الإرسال.",
+        "confirm": "تأكيد الطلب",
+        "cancel": "إلغاء"
+      },
+      "confirmApprove": {
+        "title": "القبول وتعيين ممثل؟",
+        "lineApprove": "سيتم قبول هذا الطلب.",
+        "lineDesignation": "سيحصل المشارك على تعيين ممثل داخلي على المنصة للدولة المحددة.",
+        "lineNoLegal": "لا تُمنح أي سلطة تمثيل قانونية.",
+        "lineNoFunding": "لا يُنشأ أي التزام تمويلي.",
+        "lineNoAdmin": "لا تُمنح أي صلاحيات مسؤول.",
+        "confirm": "تأكيد القبول",
+        "cancel": "إلغاء"
+      },
+      "errors": {
+        "forbidden": "يلزم وصول المسؤول لعرض طلبات الممثل الإقليمي.",
+        "accessRestricted": "الوصول مقيّد",
+        "unavailable": "الطلب غير متاح",
+        "noteRequired": "ملاحظة المراجعة مطلوبة لهذا الإجراء."
       },
       "confirmRevoke": {
-        "title": "Revoke Representative appointment?",
-        "lineInactive": "This appointment will become inactive. The participant will no longer hold an active Representative platform designation for this country from this application.",
-        "lineOthersUnaffected": "Other representatives for the same country remain unaffected.",
-        "lineHistory": "Application history remains preserved. Application status is not changed by revocation.",
-        "lineNoLegal": "Revocation does not change legal representation, employment, or funding status. Platform designation is internal only.",
-        "confirm": "Revoke appointment",
-        "cancel": "Cancel"
+        "title": "سحب تعيين الممثل؟",
+        "lineInactive": "سيصبح هذا التعيين غير نشط. لن يحتفظ المشارك بتعيين ممثل نشط على المنصة لهذه الدولة من هذا الطلب.",
+        "lineOthersUnaffected": "يظل الممثلون الآخرون للدولة نفسها دون تغيير.",
+        "lineHistory": "يُحفظ سجل الطلب. لا يغيّر السحب حالة الطلب.",
+        "lineNoLegal": "لا يغيّر السحب التمثيل القانوني أو التوظيف أو حالة التمويل. تعيين المنصة داخلي فقط.",
+        "confirm": "سحب التعيين",
+        "cancel": "إلغاء"
+      },
+      "directory": {
+        "rrpStatusColumn": "حالة RRP",
+        "needsAttentionAria": "يتطلب انتباه المسؤول",
+        "statusUnavailable": "الحالة غير متاحة",
+        "deepLinkTitle": "طلب الممثل الإقليمي",
+        "deepLinkUnavailable": "طلب الممثل الإقليمي هذا غير متاح في الدليل.",
+        "deepLinkParticipantUnavailable": "تعذر العثور على هذا المشارك في الدليل."
       }
     }
   },

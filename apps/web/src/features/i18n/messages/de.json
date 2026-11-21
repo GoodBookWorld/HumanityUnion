@@ -7746,22 +7746,105 @@
     },
     "closeAria": "Bewerbungsdialog schließen",
     "admin": {
-      "directory": {
-        "rrpStatusColumn": "RRP status",
-        "needsAttentionAria": "Requires administrator attention",
-        "statusUnavailable": "Status unavailable",
-        "deepLinkTitle": "Regional Representative application",
-        "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
-        "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+      "title": "Bewerbung als Regionalvertreter",
+      "intro": "Administrative Prüfung einer autorisierten Bewerbung als Regionalvertreter. Die Genehmigung gewährt nur eine interne Bezeichnung auf der Plattform.",
+      "close": "Schließen",
+      "closeAria": "Bewerbungsdialog schließen",
+      "loading": "Bewerbung wird geladen…",
+      "empty": "Für diese teilnehmende Person ist keine Bewerbung verfügbar.",
+      "selectApplication": "Bewerbung auswählen",
+      "statusUnknown": "Status nicht verfügbar",
+      "fields": {
+        "applicant": "Anzeigename der bewerbenden Person",
+        "legalNamesOptional": "Rechtliche Namen (optional, vertraulich)",
+        "profession": "Beruflicher Hintergrund",
+        "residenceCountry": "Wohnsitzland",
+        "representCountry": "Vertretenes Land",
+        "fundingModel": "Finanzierungsmodell",
+        "requestedAmount": "Beantragter Betrag in CAD",
+        "teamMemberCount": "Anzahl der Teammitglieder",
+        "status": "Bewerbungsstatus",
+        "submittedAt": "Einreichungsdatum",
+        "consent": "Einwilligung",
+        "consentAccepted": "Angenommen ({version}) am {at}",
+        "experience": "Einschlägige Erfahrung",
+        "motivation": "Bewerbungsmotivation",
+        "decisionHistory": "Entscheidungsverlauf",
+        "noHistory": "Noch keine Entscheidungen erfasst.",
+        "reviewNote": "Prüfvermerk (erforderlich für Informationsanfrage und Ablehnung)"
+      },
+      "disclaimer": {
+        "platformOnly": "Die vertretende Person ist nur eine interne Bezeichnung auf der Plattform. Sie verleiht keine rechtliche Befugnis, keinen Beschäftigungsstatus, keinen Finanzierungsanspruch, keine Vertragsunterzeichnungsbefugnis und keine Administratorrechte. Ein gesonderter rechtlicher Ernennungsvorgang kann bei Bedarf weiterhin verwendet werden."
+      },
+      "actions": {
+        "group": "Aktionen zur Bewerbungsprüfung",
+        "markUnderReview": "Als in Prüfung markieren",
+        "requestInformation": "Informationen anfordern",
+        "reject": "Ablehnen",
+        "approve": "Genehmigen",
+        "revoke": "Berufung widerrufen"
+      },
+      "busy": {
+        "working": "Wird bearbeitet…",
+        "approving": "Wird genehmigt…",
+        "revoking": "Wird widerrufen…"
       },
       "messages": {
+        "updateTitle": "Aktualisierung der Bewerbung",
         "deliveryWarningTitle": "Nachrichtenzustellung",
         "deliveryPendingRetry": "Die Entscheidung wurde gespeichert, aber die Nachricht konnte nicht zugestellt werden. Ein weiterer Versuch erfolgt automatisch.",
         "deliveryFailedTerminal": "Die Entscheidung wurde gespeichert, aber die Nachricht konnte nicht zugestellt werden. Die automatische Zustellung ist beendet. Sie können die teilnehmende Person über Nachrichten kontaktieren.",
         "deliveryPreviouslyFailed": "Die Entscheidung wurde gespeichert. Diese Nachricht wurde nicht zugestellt, und die automatische Zustellung ist beendet. Sie können die teilnehmende Person über Nachrichten kontaktieren.",
         "deliveryPaused": "Die Entscheidung wurde gespeichert, aber die Nachricht wurde nicht gesendet, weil die Zustellung pausiert ist.",
         "deliveryIntentMissing": "Für diese Entscheidung wartet keine Nachricht auf die Zustellung.",
-        "deliveryAppointmentMissing": "Für diese Berufung wartet keine Nachricht auf die Zustellung."
+        "deliveryAppointmentMissing": "Für diese Berufung wartet keine Nachricht auf die Zustellung.",
+        "approved": "Bewerbung genehmigt und Plattformbezeichnung als vertretende Person erfasst.",
+        "markedUnderReview": "Bewerbung als in Prüfung markiert.",
+        "informationRequested": "Weitere Informationen angefordert.",
+        "informationRequestedWithMessage": "Weitere Informationen angefordert. Eine Benachrichtigung in Nachrichten wurde für die bewerbende Person erfasst.",
+        "rejected": "Bewerbung abgelehnt.",
+        "revoked": "Plattformbezeichnung als vertretende Person widerrufen."
+      },
+      "confirmRequestInfo": {
+        "title": "Weitere Informationen anfordern?",
+        "lineStatus": "Der Bewerbungsstatus ändert sich in „Weitere Informationen angefordert“.",
+        "lineMessage": "Eine Benachrichtigung in Nachrichten wird mit Ihrer Erläuterung an die bewerbende Person gesendet.",
+        "lineReply": "Die bewerbende Person kann in den vorhandenen Nachrichten antworten. Die Zustellung ist nicht garantiert; wenn das Senden fehlschlägt, erscheint eine Warnung.",
+        "confirm": "Anfrage bestätigen",
+        "cancel": "Abbrechen"
+      },
+      "confirmApprove": {
+        "title": "Genehmigen und als vertretende Person bezeichnen?",
+        "lineApprove": "Diese Bewerbung wird genehmigt.",
+        "lineDesignation": "Die teilnehmende Person erhält eine interne Plattformbezeichnung als vertretende Person für das ausgewählte Land.",
+        "lineNoLegal": "Es wird keine rechtliche Vertretungsbefugnis gewährt.",
+        "lineNoFunding": "Es entsteht keine Finanzierungszusage.",
+        "lineNoAdmin": "Es werden keine Administratorrechte gewährt.",
+        "confirm": "Genehmigung bestätigen",
+        "cancel": "Abbrechen"
+      },
+      "errors": {
+        "forbidden": "Für die Anzeige von Bewerbungen als Regionalvertreter ist ein Administratorzugang erforderlich.",
+        "accessRestricted": "Zugriff eingeschränkt",
+        "unavailable": "Bewerbung nicht verfügbar",
+        "noteRequired": "Für diese Aktion ist ein Prüfvermerk erforderlich."
+      },
+      "confirmRevoke": {
+        "title": "Berufung als vertretende Person widerrufen?",
+        "lineInactive": "Diese Berufung wird inaktiv. Die teilnehmende Person hat aus dieser Bewerbung keine aktive Plattformbezeichnung als vertretende Person für dieses Land mehr.",
+        "lineOthersUnaffected": "Andere vertretende Personen für dasselbe Land bleiben unberührt.",
+        "lineHistory": "Der Bewerbungsverlauf bleibt erhalten. Der Widerruf ändert den Bewerbungsstatus nicht.",
+        "lineNoLegal": "Der Widerruf ändert weder die rechtliche Vertretung noch Beschäftigung oder Finanzierungsstatus. Die Plattformbezeichnung ist nur intern.",
+        "confirm": "Berufung widerrufen",
+        "cancel": "Abbrechen"
+      },
+      "directory": {
+        "rrpStatusColumn": "RRP-Status",
+        "needsAttentionAria": "Erfordert Aufmerksamkeit der Administration",
+        "statusUnavailable": "Status nicht verfügbar",
+        "deepLinkTitle": "Bewerbung als Regionalvertreter",
+        "deepLinkUnavailable": "Diese Bewerbung als Regionalvertreter ist im Verzeichnis nicht verfügbar.",
+        "deepLinkParticipantUnavailable": "Diese teilnehmende Person wurde im Verzeichnis nicht gefunden."
       }
     }
   },

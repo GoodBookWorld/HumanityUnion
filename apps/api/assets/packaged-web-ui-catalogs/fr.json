@@ -7731,14 +7731,105 @@
     },
     "closeAria": "Fermer la boîte de dialogue de candidature",
     "admin": {
+      "title": "Candidature de représentant régional",
+      "intro": "Examen par l’administration d’une candidature autorisée de représentant régional. L’approbation n’accorde qu’une désignation interne sur la plateforme.",
+      "close": "Fermer",
+      "closeAria": "Fermer la boîte de dialogue de candidature",
+      "loading": "Chargement de la candidature…",
+      "empty": "Aucune candidature n’est disponible pour ce participant.",
+      "selectApplication": "Sélectionner la candidature",
+      "statusUnknown": "Statut indisponible",
+      "fields": {
+        "applicant": "Nom affiché de la personne candidate",
+        "legalNamesOptional": "Noms légaux (facultatif, privé)",
+        "profession": "Parcours professionnel",
+        "residenceCountry": "Pays de résidence",
+        "representCountry": "Pays de représentation",
+        "fundingModel": "Modèle de financement",
+        "requestedAmount": "Montant demandé en CAD",
+        "teamMemberCount": "Nombre de membres de l’équipe",
+        "status": "Statut de la candidature",
+        "submittedAt": "Date de soumission",
+        "consent": "Consentement",
+        "consentAccepted": "Accepté ({version}) le {at}",
+        "experience": "Expérience pertinente",
+        "motivation": "Motivation de la candidature",
+        "decisionHistory": "Historique des décisions",
+        "noHistory": "Aucune décision n’est encore enregistrée.",
+        "reviewNote": "Note d’examen (obligatoire pour demander des informations et refuser)"
+      },
+      "disclaimer": {
+        "platformOnly": "Le représentant est uniquement une désignation interne de la plateforme. Elle ne confère aucune autorité juridique, aucun statut d’emploi, aucun droit à un financement, aucun pouvoir de signature de contrat et aucune autorisation d’administration. Une procédure de nomination juridique distincte peut toujours être utilisée si nécessaire."
+      },
+      "actions": {
+        "group": "Actions d’examen de la candidature",
+        "markUnderReview": "Marquer en cours d’examen",
+        "requestInformation": "Demander des informations",
+        "reject": "Refuser",
+        "approve": "Approuver",
+        "revoke": "Révoquer la nomination"
+      },
+      "busy": {
+        "working": "Traitement…",
+        "approving": "Approbation…",
+        "revoking": "Révocation…"
+      },
       "messages": {
+        "updateTitle": "Mise à jour de la candidature",
         "deliveryWarningTitle": "Remise des messages",
         "deliveryPendingRetry": "La décision a été enregistrée, mais le message n’a pas pu être remis. Une nouvelle tentative aura lieu automatiquement.",
         "deliveryFailedTerminal": "La décision a été enregistrée, mais le message n’a pas pu être remis. La remise automatique est terminée. Vous pouvez contacter le participant dans Messages.",
         "deliveryPreviouslyFailed": "La décision a été enregistrée. Ce message n’a pas été remis et la remise automatique est terminée. Vous pouvez contacter le participant dans Messages.",
         "deliveryPaused": "La décision a été enregistrée, mais le message n’a pas été envoyé parce que la remise des messages est suspendue.",
         "deliveryIntentMissing": "Aucun message n’est en attente de remise pour cette décision.",
-        "deliveryAppointmentMissing": "Aucun message n’est en attente de remise pour cette nomination."
+        "deliveryAppointmentMissing": "Aucun message n’est en attente de remise pour cette nomination.",
+        "approved": "Candidature approuvée et désignation de représentant sur la plateforme enregistrée.",
+        "markedUnderReview": "Candidature marquée en cours d’examen.",
+        "informationRequested": "Informations supplémentaires demandées.",
+        "informationRequestedWithMessage": "Informations supplémentaires demandées. Une notification Messages a été enregistrée pour la personne candidate.",
+        "rejected": "Candidature refusée.",
+        "revoked": "Désignation de représentant sur la plateforme révoquée."
+      },
+      "confirmRequestInfo": {
+        "title": "Demander plus d’informations ?",
+        "lineStatus": "Le statut de la candidature passera à « Informations supplémentaires demandées ».",
+        "lineMessage": "Une notification Messages sera envoyée à la personne candidate avec votre explication.",
+        "lineReply": "La personne candidate peut répondre dans Messages. La remise n’est pas garantie ; un avertissement apparaît si l’envoi échoue.",
+        "confirm": "Confirmer la demande",
+        "cancel": "Annuler"
+      },
+      "confirmApprove": {
+        "title": "Approuver et désigner un représentant ?",
+        "lineApprove": "Cette candidature sera approuvée.",
+        "lineDesignation": "Le participant recevra une désignation interne de représentant sur la plateforme pour le pays sélectionné.",
+        "lineNoLegal": "Aucune autorité de représentation juridique n’est accordée.",
+        "lineNoFunding": "Aucun engagement de financement n’est créé.",
+        "lineNoAdmin": "Aucun droit d’administration n’est accordé.",
+        "confirm": "Confirmer l’approbation",
+        "cancel": "Annuler"
+      },
+      "errors": {
+        "forbidden": "Un accès d’administration est requis pour consulter les candidatures de représentant régional.",
+        "accessRestricted": "Accès restreint",
+        "unavailable": "Candidature indisponible",
+        "noteRequired": "Une note d’examen est obligatoire pour cette action."
+      },
+      "confirmRevoke": {
+        "title": "Révoquer la nomination de représentant ?",
+        "lineInactive": "Cette nomination deviendra inactive. Le participant ne détiendra plus, au titre de cette candidature, de désignation active de représentant sur la plateforme pour ce pays.",
+        "lineOthersUnaffected": "Les autres représentants du même pays restent inchangés.",
+        "lineHistory": "L’historique de la candidature est conservé. La révocation ne change pas le statut de la candidature.",
+        "lineNoLegal": "La révocation ne change pas la représentation juridique, l’emploi ni le statut de financement. La désignation de la plateforme est uniquement interne.",
+        "confirm": "Révoquer la nomination",
+        "cancel": "Annuler"
+      },
+      "directory": {
+        "rrpStatusColumn": "Statut RRP",
+        "needsAttentionAria": "Nécessite l’attention de l’administration",
+        "statusUnavailable": "Statut indisponible",
+        "deepLinkTitle": "Candidature de représentant régional",
+        "deepLinkUnavailable": "Cette candidature de représentant régional n’est pas disponible dans l’annuaire.",
+        "deepLinkParticipantUnavailable": "Ce participant est introuvable dans l’annuaire."
       }
     }
   }

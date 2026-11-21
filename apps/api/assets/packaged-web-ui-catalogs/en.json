@@ -7787,6 +7787,7 @@
       "statusUnknown": "Status unavailable",
       "fields": {
         "applicant": "Applicant display name",
+        "legalNamesOptional": "Legal names (optional, private)",
         "profession": "Professional background",
         "residenceCountry": "Residence country",
         "representCountry": "Representation country",
@@ -7867,6 +7868,14 @@
         "lineNoLegal": "Revocation does not change legal representation, employment, or funding status. Platform designation is internal only.",
         "confirm": "Revoke appointment",
         "cancel": "Cancel"
+      },
+      "directory": {
+        "rrpStatusColumn": "RRP status",
+        "needsAttentionAria": "Requires administrator attention",
+        "statusUnavailable": "Status unavailable",
+        "deepLinkTitle": "Regional Representative application",
+        "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
+        "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
       }
     },
     "closeAria": "Close application dialog"

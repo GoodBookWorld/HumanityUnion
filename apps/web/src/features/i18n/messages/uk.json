@@ -7667,51 +7667,51 @@
     },
     "closeAria": "Закрити діалог заявки",
     "admin": {
-      "title": "Regional Representative application",
-      "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
-      "close": "Close",
-      "closeAria": "Close application dialog",
-      "loading": "Loading application…",
-      "empty": "No application is available for this participant.",
-      "selectApplication": "Select application",
-      "statusUnknown": "Status unavailable",
+      "title": "Заявка регіонального представника",
+      "intro": "Розгляд адміністратором авторизованої заявки регіонального представника. Схвалення надає лише внутрішнє призначення на платформі.",
+      "close": "Закрити",
+      "closeAria": "Закрити діалог заявки",
+      "loading": "Завантаження заявки…",
+      "empty": "Для цього учасника немає доступної заявки.",
+      "selectApplication": "Вибрати заявку",
+      "statusUnknown": "Статус недоступний",
       "fields": {
-        "applicant": "Applicant display name",
-        "profession": "Professional background",
-        "residenceCountry": "Residence country",
-        "representCountry": "Representation country",
-        "fundingModel": "Funding model",
-        "requestedAmount": "Requested CAD amount",
-        "teamMemberCount": "Team member count",
-        "status": "Application status",
-        "submittedAt": "Submission date",
-        "consent": "Consent",
-        "consentAccepted": "Accepted ({version}) on {at}",
-        "experience": "Relevant experience",
-        "motivation": "Motivation",
-        "decisionHistory": "Decision history",
-        "noHistory": "No decisions recorded yet.",
-        "reviewNote": "Review note (required for request information and reject)",
-        "legalNamesOptional": "Legal names (optional, private)"
+        "applicant": "Відображуване ім’я заявника",
+        "legalNamesOptional": "Юридичні імена (необов’язково, конфіденційно)",
+        "profession": "Професійне тло",
+        "residenceCountry": "Країна проживання",
+        "representCountry": "Країна представництва",
+        "fundingModel": "Модель фінансування",
+        "requestedAmount": "Запитувана сума в CAD",
+        "teamMemberCount": "Кількість учасників команди",
+        "status": "Статус заявки",
+        "submittedAt": "Дата подання",
+        "consent": "Згода",
+        "consentAccepted": "Прийнято ({version}) {at}",
+        "experience": "Відповідний досвід",
+        "motivation": "Мотивація",
+        "decisionHistory": "Історія рішень",
+        "noHistory": "Рішень ще не записано.",
+        "reviewNote": "Примітка до розгляду (обов’язкова для запиту інформації та відхилення)"
       },
       "disclaimer": {
-        "platformOnly": "Representative is an internal platform designation only. It does not confer legal authority, employment status, funding entitlement, contract-signing authority, or administrator permissions. A separate legal appointment process may still be used when required."
+        "platformOnly": "Представник — це лише внутрішнє призначення на платформі. Воно не надає юридичних повноважень, статусу працевлаштування, права на фінансування, права підписувати договори чи дозволів адміністратора. За потреби й надалі може застосовуватися окремий процес юридичного призначення."
       },
       "actions": {
-        "group": "Application review actions",
-        "markUnderReview": "Mark under review",
-        "requestInformation": "Request information",
-        "reject": "Reject",
-        "approve": "Approve",
-        "revoke": "Revoke appointment"
+        "group": "Дії розгляду заявки",
+        "markUnderReview": "Позначити як на розгляді",
+        "requestInformation": "Запитати інформацію",
+        "reject": "Відхилити",
+        "approve": "Схвалити",
+        "revoke": "Відкликати призначення"
       },
       "busy": {
-        "working": "Working…",
-        "approving": "Approving…",
-        "revoking": "Revoking…"
+        "working": "Виконання…",
+        "approving": "Схвалення…",
+        "revoking": "Відкликання…"
       },
       "messages": {
-        "updateTitle": "Application update",
+        "updateTitle": "Оновлення заявки",
         "deliveryWarningTitle": "Доставка повідомлень",
         "deliveryPendingRetry": "Рішення збережено, але повідомлення не вдалося доставити. Спробу доставки буде повторено автоматично.",
         "deliveryFailedTerminal": "Рішення збережено, але повідомлення не вдалося доставити. Автоматичні спроби завершено. Ви можете зв’язатися з учасником через Повідомлення.",
@@ -7719,53 +7719,53 @@
         "deliveryPaused": "Рішення збережено, але повідомлення не надіслано, оскільки доставку призупинено.",
         "deliveryIntentMissing": "Для цього рішення немає повідомлення, яке очікує на доставку.",
         "deliveryAppointmentMissing": "Для цього призначення немає повідомлення, яке очікує на доставку.",
-        "approved": "Application approved and Representative platform designation recorded.",
-        "markedUnderReview": "Application marked under review.",
-        "informationRequested": "More information requested.",
-        "rejected": "Application rejected.",
-        "informationRequestedWithMessage": "More information requested. A Messages notification was recorded for the applicant.",
-        "revoked": "Representative platform designation revoked."
-      },
-      "confirmApprove": {
-        "title": "Approve and designate Representative?",
-        "lineApprove": "This application will be approved.",
-        "lineDesignation": "The participant will receive an internal Representative platform designation for the selected country.",
-        "lineNoLegal": "No legal representation authority is granted.",
-        "lineNoFunding": "No funding commitment is created.",
-        "lineNoAdmin": "No administrator rights are granted.",
-        "confirm": "Confirm approval",
-        "cancel": "Cancel"
-      },
-      "errors": {
-        "forbidden": "Administrator access is required to view Regional Representative applications.",
-        "accessRestricted": "Access restricted",
-        "unavailable": "Application unavailable",
-        "noteRequired": "A review note is required for this action."
+        "approved": "Заявку схвалено, і призначення представника на платформі записано.",
+        "markedUnderReview": "Заявку позначено як таку, що на розгляді.",
+        "informationRequested": "Запитано додаткову інформацію.",
+        "informationRequestedWithMessage": "Запитано додаткову інформацію. Для заявника записано сповіщення в Повідомленнях.",
+        "rejected": "Заявку відхилено.",
+        "revoked": "Призначення представника на платформі відкликано."
       },
       "confirmRequestInfo": {
-        "title": "Request more information?",
-        "lineStatus": "The application status will change to “More information requested”.",
-        "lineMessage": "A Messages notification will be sent to the applicant with your explanation.",
-        "lineReply": "The applicant can reply in existing Messages. Delivery is best-effort; a warning appears if sending fails.",
-        "confirm": "Confirm request",
-        "cancel": "Cancel"
+        "title": "Запитати додаткову інформацію?",
+        "lineStatus": "Статус заявки зміниться на «Запитано додаткову інформацію».",
+        "lineMessage": "Заявнику буде надіслано сповіщення в Повідомленнях із вашим поясненням.",
+        "lineReply": "Заявник може відповісти в наявних Повідомленнях. Доставлення не гарантується; якщо надсилання не вдасться, з’явиться попередження.",
+        "confirm": "Підтвердити запит",
+        "cancel": "Скасувати"
+      },
+      "confirmApprove": {
+        "title": "Схвалити і призначити представника?",
+        "lineApprove": "Цю заявку буде схвалено.",
+        "lineDesignation": "Учасник отримає внутрішнє призначення представника на платформі для вибраної країни.",
+        "lineNoLegal": "Юридичні повноваження представництва не надаються.",
+        "lineNoFunding": "Фінансове зобов’язання не створюється.",
+        "lineNoAdmin": "Права адміністратора не надаються.",
+        "confirm": "Підтвердити схвалення",
+        "cancel": "Скасувати"
+      },
+      "errors": {
+        "forbidden": "Для перегляду заявок регіонального представника потрібен доступ адміністратора.",
+        "accessRestricted": "Доступ обмежено",
+        "unavailable": "Заявка недоступна",
+        "noteRequired": "Для цієї дії потрібна примітка до розгляду."
       },
       "confirmRevoke": {
-        "title": "Revoke Representative appointment?",
-        "lineInactive": "This appointment will become inactive. The participant will no longer hold an active Representative platform designation for this country from this application.",
-        "lineOthersUnaffected": "Other representatives for the same country remain unaffected.",
-        "lineHistory": "Application history remains preserved. Application status is not changed by revocation.",
-        "lineNoLegal": "Revocation does not change legal representation, employment, or funding status. Platform designation is internal only.",
-        "confirm": "Revoke appointment",
-        "cancel": "Cancel"
+        "title": "Відкликати призначення представника?",
+        "lineInactive": "Це призначення стане неактивним. Учасник більше не матиме активного призначення представника на платформі для цієї країни за цією заявкою.",
+        "lineOthersUnaffected": "Інші представники тієї самої країни залишаються без змін.",
+        "lineHistory": "Історія заявки зберігається. Відкликання не змінює статус заявки.",
+        "lineNoLegal": "Відкликання не змінює юридичне представництво, працевлаштування чи статус фінансування. Призначення на платформі є лише внутрішнім.",
+        "confirm": "Відкликати призначення",
+        "cancel": "Скасувати"
       },
       "directory": {
-        "rrpStatusColumn": "RRP status",
-        "needsAttentionAria": "Requires administrator attention",
-        "statusUnavailable": "Status unavailable",
-        "deepLinkTitle": "Regional Representative application",
-        "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
-        "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
+        "rrpStatusColumn": "Статус RRP",
+        "needsAttentionAria": "Потребує уваги адміністратора",
+        "statusUnavailable": "Статус недоступний",
+        "deepLinkTitle": "Заявка регіонального представника",
+        "deepLinkUnavailable": "Ця заявка регіонального представника недоступна в каталозі.",
+        "deepLinkParticipantUnavailable": "Цього учасника не знайдено в каталозі."
       }
     }
   },
