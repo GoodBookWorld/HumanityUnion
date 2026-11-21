@@ -221,17 +221,20 @@ export function RrpApplicationWorkspaceWidget() {
         aria-labelledby={titleId}
         data-rrp-workspace-widget="true"
       >
-        <h2 id={titleId} className="rrp-application-workspace-widget__title">
+        <div className="rrp-application-workspace-widget__header">
           <img
             src="/icons/workspace/regions.svg"
             alt=""
             aria-hidden="true"
-            width={32}
-            height={32}
-            style={{ display: "inline-block", verticalAlign: "middle", marginInlineEnd: 8 }}
+            width={40}
+            height={40}
+            className="rrp-application-workspace-widget__icon"
+            decoding="async"
           />
-          {t("workspaceWidget.title")}
-        </h2>
+          <h2 id={titleId} className="rrp-application-workspace-widget__title hu-widget-title">
+            {t("workspaceWidget.title")}
+          </h2>
+        </div>
 
         {loading ? (
           <p className="rrp-application-workspace-widget__copy" role="status">

@@ -43,6 +43,8 @@ import {
   suspendAdminParticipant,
 } from "../admin-participant-suspension-api";
 import {
+  directoryListFiltersForNotificationTarget,
+  isDirectoryBadgeDeepLink,
   readAdminDirectoryDeepLinkQuery,
   resolveDirectoryParticipantDeepLink,
 } from "../admin-participant-directory-deep-link";
@@ -274,14 +276,14 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
   }, [persistDirectoryState]);
 
   useEffect(() => {
-    if (
-      directoryQuery.view === "member_badge_orders" ||
-      directoryQuery.badgeApplicationId
-    ) {
+    const badgeRequested = isDirectoryBadgeDeepLink(directoryQuery);
+    if (badgeRequested) {
       setMembershipStatus((current) =>
         current === "member_badge_orders" ? current : "member_badge_orders",
       );
       setOffset((current) => (current === 0 ? current : 0));
+    } else if (directoryQuery.participantId) {
+      setMembershipStatus((current) => (current === "member_badge_orders" ? "" : current));
     }
 
     setBadgeOrderApplicationId((current) =>
@@ -293,6 +295,9 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     setRrpDeepLinkApplicationId((current) =>
       current === directoryQuery.rrpApplicationId ? current : directoryQuery.rrpApplicationId,
     );
+    if (!directoryQuery.rrpApplicationId) {
+      setRrpApplicationModalOpen(false);
+    }
     if (directoryQuery.participantId) {
       setOffset((current) => (current === 0 ? current : 0));
     }
@@ -343,16 +348,20 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
       setOffset(requestOffset);
       return;
     }
+    const listFilters = directoryListFiltersForNotificationTarget({
+      participantId: deepLinkParticipantId,
+      badgeViewRequested: isDirectoryBadgeDeepLink(directoryQuery),
+      search,
+      status,
+      role,
+      rrpClassification,
+      emailVerificationStatus: emailVerification,
+      membershipStatus,
+    });
 
     try {
       const response = await listAdminParticipants({
-        search: search || undefined,
-        status: status || undefined,
-        role,
-        rrpClassification,
-        participantId: deepLinkParticipantId || undefined,
-        emailVerificationStatus: emailVerification || undefined,
-        membershipStatus: membershipStatus || undefined,
+        ...listFilters,
         sort,
         order,
         limit: PAGE_SIZE,
@@ -400,6 +409,9 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     order,
     offset,
     deepLinkParticipantId,
+    directoryQuery.badgeApplicationId,
+    directoryQuery.participantId,
+    directoryQuery.view,
   ]);
 
   const filterKey = `${search}|${status}|${roleFilter}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
@@ -415,13 +427,26 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     }
 
     previousFilterKey.current = filterKey;
+    if (
+      directoryQuery.participantId ||
+      directoryQuery.rrpApplicationId ||
+      isDirectoryBadgeDeepLink(directoryQuery)
+    ) {
+      return;
+    }
     setSelectedIds([]);
     setSelectedById(new Map());
     setSelectionLimitReached(false);
     setRrpApplicationModalOpen(false);
     setRrpDeepLinkApplicationId(null);
     setDeepLinkParticipantId(null);
-  }, [filterKey]);
+  }, [
+    directoryQuery.badgeApplicationId,
+    directoryQuery.participantId,
+    directoryQuery.rrpApplicationId,
+    directoryQuery.view,
+    filterKey,
+  ]);
 
   useEffect(() => {
     void loadDirectory();

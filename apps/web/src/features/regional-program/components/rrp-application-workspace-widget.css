@@ -14,10 +14,27 @@
   overflow-x: hidden;
 }
 
-.rrp-application-workspace-widget__title {
-  margin: 0 0 var(--hu-space-3);
+.rrp-application-workspace-widget__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+  min-width: 0;
+}
+
+.rrp-application-workspace-widget__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.rrp-application-workspace-widget__header .rrp-application-workspace-widget__title {
+  margin: 0;
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
+  text-align: start;
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-lg);
   font-weight: var(--hu-font-weight-semibold);

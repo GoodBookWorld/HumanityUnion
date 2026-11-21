@@ -2,7 +2,10 @@
  * HU-RRP-09B — query-driven Participant directory navigation.
  * The directory applies the current search params whenever they change.
  * A repeated key does not open the same modal again.
+ * A participant id alone selects the row. An application modal opens only
+ * when the query also names an authorized rrpApplicationId.
  */
+import type { AdminRrpDirectoryClassification } from "@hu/types";
 
 export interface AdminDirectoryDeepLinkQuery {
   readonly participantId: string | null;
@@ -103,17 +106,56 @@ export function resolveDirectoryParticipantDeepLink(input: {
       applicationId: input.rrpApplicationId,
     };
   }
-  if (match.viewableApplicationIds.length > 0) {
-    return {
-      action: "open-application",
-      appliedKey: key,
-      memberId: match.memberId,
-      applicationId: null,
-    };
-  }
   return {
     action: "select-participant",
     appliedKey: key,
     memberId: match.memberId,
+  };
+}
+
+export function isDirectoryBadgeDeepLink(
+  query: Pick<AdminDirectoryDeepLinkQuery, "view" | "badgeApplicationId">,
+): boolean {
+  return query.view === "member_badge_orders" || Boolean(query.badgeApplicationId);
+}
+
+export interface DirectoryNotificationListFilters {
+  readonly search?: string;
+  readonly status?: "active" | "disabled";
+  readonly role?: "member" | "admin";
+  readonly rrpClassification?: AdminRrpDirectoryClassification;
+  readonly emailVerificationStatus?: "pending" | "verified";
+  readonly membershipStatus?: string;
+  readonly participantId?: string;
+}
+
+/**
+ * A participant notification names one row. Saved directory filters stay in
+ * the form, but they are not sent with that request. Badge-order navigation
+ * keeps its own view filter.
+ */
+export function directoryListFiltersForNotificationTarget(input: {
+  readonly participantId: string | null;
+  readonly badgeViewRequested: boolean;
+  readonly search?: string;
+  readonly status?: "" | "active" | "disabled";
+  readonly role?: "member" | "admin";
+  readonly rrpClassification?: AdminRrpDirectoryClassification;
+  readonly emailVerificationStatus?: "" | "pending" | "verified";
+  readonly membershipStatus?: string;
+}): DirectoryNotificationListFilters {
+  if (input.participantId && !input.badgeViewRequested) {
+    return { participantId: input.participantId };
+  }
+  return {
+    ...(input.search ? { search: input.search } : {}),
+    ...(input.status ? { status: input.status } : {}),
+    ...(input.role ? { role: input.role } : {}),
+    ...(input.rrpClassification ? { rrpClassification: input.rrpClassification } : {}),
+    ...(input.emailVerificationStatus
+      ? { emailVerificationStatus: input.emailVerificationStatus }
+      : {}),
+    ...(input.membershipStatus ? { membershipStatus: input.membershipStatus } : {}),
+    ...(input.participantId ? { participantId: input.participantId } : {}),
   };
 }

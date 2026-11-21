@@ -8,6 +8,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  directoryListFiltersForNotificationTarget,
   readAdminDirectoryDeepLinkQuery,
   resolveDirectoryParticipantDeepLink,
 } from "./admin-participant-directory-deep-link";
@@ -22,7 +23,7 @@ function read(relativeFromWebSrc: string): string {
 }
 
 describe("HU-RRP-09B admin notification navigation", () => {
-  it("renders the Regional Applications icon at 32 by 32", () => {
+  it("renders the Regional Applications header at the Assistant scale", () => {
     const widget = read(
       "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
     );
@@ -31,12 +32,35 @@ describe("HU-RRP-09B admin notification navigation", () => {
     );
     assert.match(widget, /src="\/icons\/workspace\/regions\.svg"/);
     assert.match(widget, /alt=""/);
-    assert.match(widget, /width=\{32\}/);
-    assert.match(widget, /height=\{32\}/);
-    assert.match(widget, /marginInlineEnd:\s*8/);
+    assert.match(widget, /width=\{40\}/);
+    assert.match(widget, /height=\{40\}/);
+    assert.match(widget, /rrp-application-workspace-widget__header/);
+    assert.match(widget, /rrp-application-workspace-widget__icon/);
+    assert.match(widget, /t\("workspaceWidget\.title"\)/);
+    assert.doesNotMatch(widget, /<br\s*\/?>/);
+    assert.doesNotMatch(widget, /width=\{32\}|width=\{24\}/);
+    assert.match(css, /display:\s*flex/);
+    assert.match(css, /align-items:\s*center/);
+    assert.match(css, /flex-shrink:\s*0/);
+    assert.match(css, /width:\s*2\.5rem/);
+    assert.match(css, /height:\s*2\.5rem/);
+    assert.match(css, /overflow-wrap:\s*anywhere/);
+    assert.match(css, /text-align:\s*start/);
     assert.match(css, /@media \(max-width: 1024px\)/);
     assert.match(css, /\[dir="rtl"\]/);
-    assert.doesNotMatch(widget, /width=\{24\}/);
+
+    const en = JSON.parse(read("features/i18n/messages/en.json")) as {
+      rrpApplication: { workspaceWidget: { title: string } };
+    };
+    assert.equal(en.rrpApplication.workspaceWidget.title, "My Regional Applications");
+    for (const locale of ["ar", "he", "de"] as const) {
+      const catalog = JSON.parse(read(`features/i18n/messages/${locale}.json`)) as {
+        rrpApplication: { workspaceWidget: { title: string } };
+      };
+      const title = catalog.rrpApplication.workspaceWidget.title;
+      assert.ok(title.trim().length > 12);
+      assert.notEqual(title, en.rrpApplication.workspaceWidget.title);
+    }
   });
 
   it("opens an RRP notification and a second application without repeating the first", () => {
@@ -146,10 +170,114 @@ describe("HU-RRP-09B admin notification navigation", () => {
       rrpApplicationId: null,
       acceptedParticipantFilter: "member-1",
       directoryReady: true,
-      rows: [{ memberId: "member-1", viewableApplicationIds: [] }],
+      rows: [{ memberId: "member-1", viewableApplicationIds: ["app-1", "app-2"] }],
       appliedKey: null,
     });
     assert.equal(selected.action, "select-participant");
+  });
+
+  it("selects a participant row without opening an associated application", () => {
+    for (const applicationIds of [[], ["app-1"], ["app-1", "app-2"]]) {
+      const result = resolveDirectoryParticipantDeepLink({
+        participantId: "member-1",
+        rrpApplicationId: null,
+        acceptedParticipantFilter: "member-1",
+        directoryReady: true,
+        rows: [{ memberId: "member-1", viewableApplicationIds: applicationIds }],
+        appliedKey: null,
+      });
+      assert.equal(result.action, "select-participant");
+    }
+  });
+
+  it("keeps a suspension review on the participant row", () => {
+    assert.equal(
+      resolveAdminNotificationHref({
+        type: "participant_suspension_review_requested",
+        targetHref: "/admin/participants?participantId=member-7",
+      }),
+      "/admin/participants?participantId=member-7",
+    );
+    const result = resolveDirectoryParticipantDeepLink({
+      participantId: "member-7",
+      rrpApplicationId: null,
+      acceptedParticipantFilter: "member-7",
+      directoryReady: true,
+      rows: [{ memberId: "member-7", viewableApplicationIds: ["app-7"] }],
+      appliedKey: null,
+    });
+    assert.equal(result.action, "select-participant");
+  });
+
+  it("closes the application when navigation moves from an RRP link to a participant link", () => {
+    const opened = resolveDirectoryParticipantDeepLink({
+      participantId: "participant-1",
+      rrpApplicationId: "app-1",
+      acceptedParticipantFilter: "participant-1",
+      directoryReady: true,
+      rows: [{ memberId: "participant-1", viewableApplicationIds: ["app-1"] }],
+      appliedKey: null,
+    });
+    assert.equal(opened.action, "open-application");
+    const participantOnly = resolveDirectoryParticipantDeepLink({
+      participantId: "participant-1",
+      rrpApplicationId: null,
+      acceptedParticipantFilter: "participant-1",
+      directoryReady: true,
+      rows: [{ memberId: "participant-1", viewableApplicationIds: ["app-1"] }],
+      appliedKey: opened.action === "open-application" ? opened.appliedKey : null,
+    });
+    assert.equal(participantOnly.action, "select-participant");
+  });
+
+  it("does not let saved directory filters hide a participant notification", () => {
+    const filters = directoryListFiltersForNotificationTarget({
+      participantId: "member-1",
+      badgeViewRequested: false,
+      search: "saved search",
+      status: "disabled",
+      role: "admin",
+      membershipStatus: "member_badge_orders",
+      emailVerificationStatus: "verified",
+    });
+    assert.deepEqual(filters, { participantId: "member-1" });
+
+    const browsing = directoryListFiltersForNotificationTarget({
+      participantId: null,
+      badgeViewRequested: false,
+      search: "saved search",
+      status: "active",
+      membershipStatus: "active_member",
+    });
+    assert.deepEqual(browsing, {
+      search: "saved search",
+      status: "active",
+      membershipStatus: "active_member",
+    });
+  });
+
+  it("closes an unrelated modal when the destination changes", () => {
+    const section = read("features/administration/components/AdminParticipantsSection.tsx");
+    assert.match(section, /if \(!directoryQuery\.rrpApplicationId\)/);
+    assert.match(section, /setRrpApplicationModalOpen\(false\)/);
+    assert.match(section, /directoryQuery\.badgeApplicationId/);
+    assert.match(section, /directoryListFiltersForNotificationTarget/);
+    assert.match(section, /isDirectoryBadgeDeepLink/);
+    const badge = readAdminDirectoryDeepLinkQuery(
+      new URLSearchParams("view=member_badge_orders&badgeApplicationId=badge-1"),
+    );
+    assert.equal(badge.participantId, null);
+    assert.equal(badge.rrpApplicationId, null);
+    assert.equal(badge.badgeApplicationId, "badge-1");
+    const ignored = resolveDirectoryParticipantDeepLink({
+      participantId: badge.participantId,
+      rrpApplicationId: badge.rrpApplicationId,
+      acceptedParticipantFilter: null,
+      directoryReady: true,
+      rows: [{ memberId: "member-1", viewableApplicationIds: ["app-1"] }],
+      appliedKey: null,
+    });
+    assert.equal(ignored.action, "ignore");
   });
 
   it("keeps suspension, badge-order, and path destinations on their existing targets", () => {
