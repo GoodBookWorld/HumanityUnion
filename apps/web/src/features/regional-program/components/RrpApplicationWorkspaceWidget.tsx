@@ -222,6 +222,14 @@ export function RrpApplicationWorkspaceWidget() {
         data-rrp-workspace-widget="true"
       >
         <h2 id={titleId} className="rrp-application-workspace-widget__title">
+          <img
+            src="/icons/workspace/regions.svg"
+            alt=""
+            aria-hidden="true"
+            width={24}
+            height={24}
+            style={{ display: "inline-block", verticalAlign: "middle", marginInlineEnd: 8 }}
+          />
           {t("workspaceWidget.title")}
         </h2>
 
