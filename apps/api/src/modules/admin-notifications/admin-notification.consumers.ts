@@ -37,6 +37,11 @@ export async function handleMemberRegisteredAdminNotification(
   const displayName = asString(payload.displayName);
   const uniqueName = asString(payload.uniqueName);
   const label = displayName ?? uniqueName ?? "Participant";
+  const memberId = asString(payload.memberId);
+  const targetHref =
+    memberId && /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(memberId)
+      ? `/admin/participants?${new URLSearchParams({ participantId: memberId }).toString()}`
+      : "/admin/participants";
 
   await projectAdminNotificationForAdmins(
     {
@@ -44,7 +49,7 @@ export async function handleMemberRegisteredAdminNotification(
       title: "New Participant",
       actorLabel: label,
       targetLabel: label,
-      targetHref: "/admin/participants",
+      targetHref,
       sourceEventId: envelope.eventId,
       createdAt: envelope.metadata.occurredAt,
     },

@@ -226,8 +226,8 @@ export function RrpApplicationWorkspaceWidget() {
             src="/icons/workspace/regions.svg"
             alt=""
             aria-hidden="true"
-            width={24}
-            height={24}
+            width={32}
+            height={32}
             style={{ display: "inline-block", verticalAlign: "middle", marginInlineEnd: 8 }}
           />
           {t("workspaceWidget.title")}

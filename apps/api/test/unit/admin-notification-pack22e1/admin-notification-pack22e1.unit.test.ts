@@ -222,7 +222,7 @@ describe("Pack 22E.1 — Admin notification inbox", () => {
     const row = (await persistence.list({ recipientAdminUserId: ADMIN_A }))[0]!;
     assert.equal(row.type, "participant_registered");
     assert.equal(row.title, "New Participant");
-    assert.equal(row.targetHref, "/admin/participants");
+    assert.equal(row.targetHref, "/admin/participants?participantId=member-1");
     assert.equal(row.sourceEventId, event.eventId);
   });
 

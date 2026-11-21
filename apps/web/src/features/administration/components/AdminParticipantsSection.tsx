@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type {
@@ -41,6 +42,10 @@ import {
   restoreAdminParticipant,
   suspendAdminParticipant,
 } from "../admin-participant-suspension-api";
+import {
+  readAdminDirectoryDeepLinkQuery,
+  resolveDirectoryParticipantDeepLink,
+} from "../admin-participant-directory-deep-link";
 import {
   canViewRrpApplication,
   isRrpApplicationStatus,
@@ -169,7 +174,7 @@ function formatBadgeFulfillmentLabel(row: AdminParticipantDirectoryItem): string
   return order.fulfillmentStatus.replace(/_/g, " ");
 }
 
-export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps) {
+function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) {
   const tStatus = useTranslations("rrpApplication.status");
   const tDirectory = useTranslations("rrpApplication.admin.directory");
 
@@ -226,7 +231,10 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   const [rrpApplicationModalOpen, setRrpApplicationModalOpen] = useState(false);
   const [rrpDeepLinkApplicationId, setRrpDeepLinkApplicationId] = useState<string | null>(null);
   const [deepLinkParticipantId, setDeepLinkParticipantId] = useState<string | null>(null);
-  const deepLinkHandledRef = useRef(false);
+  const [acceptedParticipantFilter, setAcceptedParticipantFilter] = useState<string | null>(null);
+  const appliedDeepLinkKeyRef = useRef<string | null>(null);
+  const searchParams = useSearchParams();
+  const directoryQuery = readAdminDirectoryDeepLinkQuery(searchParams);
 
   const {
     isOpening: isOpeningMessage,
@@ -266,31 +274,34 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   }, [persistDirectoryState]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const view = params.get("view");
-    const badgeApplicationId = params.get("badgeApplicationId")?.trim();
-    const participantId = params.get("participantId")?.trim() || null;
-    const rrpApplicationId = params.get("rrpApplicationId")?.trim() || null;
-
-    if (view === "member_badge_orders") {
-      setMembershipStatus("member_badge_orders");
-      setOffset(0);
+    if (
+      directoryQuery.view === "member_badge_orders" ||
+      directoryQuery.badgeApplicationId
+    ) {
+      setMembershipStatus((current) =>
+        current === "member_badge_orders" ? current : "member_badge_orders",
+      );
+      setOffset((current) => (current === 0 ? current : 0));
     }
 
-    if (badgeApplicationId) {
-      setBadgeOrderApplicationId(badgeApplicationId);
-      if (view !== "member_badge_orders") {
-        setMembershipStatus("member_badge_orders");
-        setOffset(0);
-      }
+    setBadgeOrderApplicationId((current) =>
+      current === directoryQuery.badgeApplicationId ? current : directoryQuery.badgeApplicationId,
+    );
+    setDeepLinkParticipantId((current) =>
+      current === directoryQuery.participantId ? current : directoryQuery.participantId,
+    );
+    setRrpDeepLinkApplicationId((current) =>
+      current === directoryQuery.rrpApplicationId ? current : directoryQuery.rrpApplicationId,
+    );
+    if (directoryQuery.participantId) {
+      setOffset((current) => (current === 0 ? current : 0));
     }
-
-    if (participantId) {
-      setDeepLinkParticipantId(participantId);
-      setRrpDeepLinkApplicationId(rrpApplicationId);
-      setOffset(0);
-    }
-  }, []);
+  }, [
+    directoryQuery.badgeApplicationId,
+    directoryQuery.participantId,
+    directoryQuery.rrpApplicationId,
+    directoryQuery.view,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -355,6 +366,7 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
       setTotal(response.total);
       hasLoadedDirectoryRef.current = true;
       setHasLoadedDirectory(true);
+      setAcceptedParticipantFilter(deepLinkParticipantId);
       if (nextOffset !== requestOffset) {
         setOffset(nextOffset);
       }
@@ -422,36 +434,56 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
   }, []);
 
   useEffect(() => {
-    if (!hasLoadedDirectory || deepLinkHandledRef.current || !deepLinkParticipantId) {
+    const result = resolveDirectoryParticipantDeepLink({
+      participantId: deepLinkParticipantId,
+      rrpApplicationId: rrpDeepLinkApplicationId,
+      acceptedParticipantFilter,
+      directoryReady: hasLoadedDirectory,
+      rows: rows.map((row) => ({
+        memberId: row.memberId,
+        viewableApplicationIds: resolveViewableRrpApplicationIds(row),
+      })),
+      appliedKey: appliedDeepLinkKeyRef.current,
+    });
+    if (result.action === "wait" || result.action === "ignore") {
       return;
     }
 
-    deepLinkHandledRef.current = true;
-    const match = rows.find((row) => row.memberId === deepLinkParticipantId);
-    if (!match) {
+    appliedDeepLinkKeyRef.current = result.appliedKey;
+    if (result.action === "participant-unavailable") {
       setDeepLinkMessage(tDirectory("deepLinkParticipantUnavailable"));
-      setDeepLinkParticipantId(null);
+      setRrpApplicationModalOpen(false);
       return;
     }
 
-    applySelection([match.memberId], false);
-    const viewableIds = resolveViewableRrpApplicationIds(match);
-    if (rrpDeepLinkApplicationId) {
-      if (!viewableIds.includes(rrpDeepLinkApplicationId)) {
-        setDeepLinkMessage(tDirectory("deepLinkUnavailable"));
-        setRrpDeepLinkApplicationId(null);
-        // Keep participant allowlist so the row remains visible after a failed app deep-link.
-        return;
-      }
+    setDeepLinkMessage(null);
+    applySelection([result.memberId], false);
+    if (result.action === "application-unavailable") {
+      setDeepLinkMessage(tDirectory("deepLinkUnavailable"));
+      setRrpApplicationModalOpen(false);
+      return;
+    }
+    if (result.action === "open-application") {
       setRrpApplicationModalOpen(true);
       return;
     }
-    if (canViewRrpApplication(match)) {
-      setRrpApplicationModalOpen(true);
-    }
-  }, [hasLoadedDirectory, deepLinkParticipantId, rrpDeepLinkApplicationId, rows, tDirectory]);
+    setRrpApplicationModalOpen(false);
+  }, [
+    acceptedParticipantFilter,
+    deepLinkParticipantId,
+    hasLoadedDirectory,
+    rrpDeepLinkApplicationId,
+    rows,
+    tDirectory,
+  ]);
 
   useEffect(() => {
+    if (
+      deepLinkParticipantId &&
+      rows.some((row) => row.memberId === deepLinkParticipantId)
+    ) {
+      return;
+    }
     if (selectedIds.length === 0) {
       return;
     }
@@ -459,12 +491,11 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
     const stillVisible = selectedIds.filter((memberId) => visible.has(memberId));
     if (stillVisible.length !== selectedIds.length) {
       applySelection(stillVisible, false);
-      if (stillVisible.length === 0) {
+      if (stillVisible.length === 0 && !deepLinkParticipantId) {
         setRrpApplicationModalOpen(false);
-        setRrpDeepLinkApplicationId(null);
       }
     }
-  }, [rows, selectedIds]);
+  }, [deepLinkParticipantId, rows, selectedIds]);
 
   function applyFilters(event: React.FormEvent) {
     event.preventDefault();
@@ -1327,5 +1358,13 @@ export function AdminParticipantsSection({ user }: AdminParticipantsSectionProps
         }}
       />
     </div>
+  );
+}
+
+export function AdminParticipantsSection(props: AdminParticipantsSectionProps) {
+  return (
+    <Suspense fallback={null}>
+      <AdminParticipantsSectionInner {...props} />
+    </Suspense>
   );
 }

@@ -145,8 +145,10 @@ describe("HU-RRP-06C.3D RRP admin notification WEB", () => {
 
   it("keeps 06B directory deep-link handling for participantId + rrpApplicationId", () => {
     const section = read("features/administration/components/AdminParticipantsSection.tsx");
-    assert.match(section, /params\.get\("participantId"\)/);
-    assert.match(section, /params\.get\("rrpApplicationId"\)/);
+    const deepLink = read("features/administration/admin-participant-directory-deep-link.ts");
+    assert.match(section, /useSearchParams\(/);
+    assert.match(deepLink, /params\.get\("participantId"\)/);
+    assert.match(deepLink, /params\.get\("rrpApplicationId"\)/);
     assert.match(section, /initialApplicationId=\{rrpDeepLinkApplicationId\}/);
   });
 

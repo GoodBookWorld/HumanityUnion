@@ -75,6 +75,10 @@ export function resolveAdminNotificationHref(
     return integrityMediaAuthorMessageNotificationHref(notification);
   }
 
+  if (notification.type === "participant_registered") {
+    return participantRegisteredNotificationHref(notification);
+  }
+
   const raw = notification.targetHref?.trim() || null;
 
   if (notification.type !== "member_badge_order_paid") {
@@ -91,6 +95,54 @@ export function resolveAdminNotificationHref(
     return `${url.pathname}${url.search}`;
   } catch {
     return "/admin/participants?view=member_badge_orders";
+  }
+}
+
+const PARTICIPANT_DIRECTORY_PATH = "/admin/participants";
+const MEMBER_REGISTERED_SOURCE_PREFIX = "member-registered:";
+/** Opaque directory ids. Rejects query, path, and whitespace injection. */
+const PARTICIPANT_DIRECTORY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+
+export function participantIdFromMemberRegisteredSourceEvent(
+  sourceEventId: string | null | undefined,
+): string | null {
+  const raw = sourceEventId?.trim() ?? "";
+  if (!raw.startsWith(MEMBER_REGISTERED_SOURCE_PREFIX)) {
+    return null;
+  }
+  const memberId = raw.slice(MEMBER_REGISTERED_SOURCE_PREFIX.length);
+  if (!PARTICIPANT_DIRECTORY_ID_PATTERN.test(memberId)) {
+    return null;
+  }
+  return memberId;
+}
+
+/**
+ * Legacy New Participant rows store only the directory path. Their event id
+ * already carries member-registered:{memberId}. A future row may include the
+ * id in targetHref; that value wins and is not rewritten.
+ */
+export function participantRegisteredNotificationHref(
+  notification: Pick<AdminNotification, "targetHref" | "sourceEventId">,
+): string {
+  const raw = notification.targetHref?.trim() || PARTICIPANT_DIRECTORY_PATH;
+  try {
+    const url = new URL(raw, "https://hu.local");
+    if (url.pathname !== PARTICIPANT_DIRECTORY_PATH) {
+      return raw;
+    }
+    const existing = url.searchParams.get("participantId")?.trim() ?? "";
+    if (PARTICIPANT_DIRECTORY_ID_PATTERN.test(existing)) {
+      return `${url.pathname}${url.search}`;
+    }
+    const memberId = participantIdFromMemberRegisteredSourceEvent(notification.sourceEventId);
+    if (!memberId) {
+      return `${url.pathname}${url.search}`;
+    }
+    url.searchParams.set("participantId", memberId);
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return PARTICIPANT_DIRECTORY_PATH;
   }
 }
 
