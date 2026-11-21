@@ -7032,6 +7032,7 @@
         "unavailableTitle": "Conversation indisponible",
         "video": "Vidéo",
         "viewProfile": "Afficher le profil public",
+        "viewRrpApplication": "Voir la candidature régionale",
         "voiceMessages": "Messages vocaux"
       },
       "group": {
@@ -7495,6 +7496,7 @@
     "description": "Rejoignez le programme international, présentez {siteName} aux personnes de votre pays, construisez une communauté locale et aidez à transformer des idées significatives en résultats concrets et positifs.",
     "cta": {
       "join": "Rejoindre le programme",
+      "joinDisclaimer": "Rejoindre le programme ou déposer une candidature n’accorde aucune autorité juridique, aucun emploi, aucun droit à un financement, aucun pouvoir de signature de contrat et aucune autorisation d’administration. L’approbation sur la plateforme est uniquement une désignation interne et reste distincte de toute procédure ultérieure de nomination juridique.",
       "volunteer": "En savoir plus sur le bénévolat"
     },
     "mission": {

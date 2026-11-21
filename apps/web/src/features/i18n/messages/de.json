@@ -7032,6 +7032,7 @@
         "unavailableTitle": "Konversation nicht verfügbar",
         "video": "Video",
         "viewProfile": "Öffentliches Profil anzeigen",
+        "viewRrpApplication": "Regionale Bewerbung anzeigen",
         "voiceMessages": "Sprachnachrichten"
       },
       "group": {
@@ -7495,6 +7496,7 @@
     "description": "Nehmen Sie am internationalen Programm teil, stellen Sie {siteName} Menschen in Ihrem Land vor, bauen Sie eine lokale Gemeinschaft auf und helfen Sie, sinnvolle Ideen in reale, positive Ergebnisse zu verwandeln.",
     "cta": {
       "join": "Am Programm teilnehmen",
+      "joinDisclaimer": "Der Beitritt oder die Bewerbung gewährt keine rechtliche Befugnis, keine Beschäftigung, keinen Finanzierungsanspruch, keine Vertragsunterzeichnungsbefugnis und keine Administratorrechte. Die Genehmigung auf der Plattform ist nur eine interne Bezeichnung und ist von einem späteren rechtlichen Ernennungsverfahren getrennt.",
       "volunteer": "Mehr über Freiwilligenarbeit erfahren"
     },
     "mission": {

@@ -7032,6 +7032,7 @@
         "unavailableTitle": "Conversa indisponível",
         "video": "Vídeo",
         "viewProfile": "Ver perfil público",
+        "viewRrpApplication": "Ver candidatura regional",
         "voiceMessages": "Mensagens de voz"
       },
       "group": {
@@ -7495,6 +7496,7 @@
     "description": "Participe do programa internacional, apresente a {siteName} às pessoas do seu país, construa uma comunidade local e ajude a transformar ideias significativas em resultados reais e positivos.",
     "cta": {
       "join": "Participar do programa",
+      "joinDisclaimer": "Aderir ou candidatar-se não concede autoridade jurídica, emprego, direito a financiamento, poder para assinar contratos nem permissões de administrador. A aprovação na plataforma é apenas uma designação interna e é distinta de qualquer processo posterior de nomeação jurídica.",
       "volunteer": "Saiba mais sobre o voluntariado"
     },
     "mission": {
@@ -7831,6 +7833,12 @@
         "deepLinkUnavailable": "Essa candidatura de representante regional não está disponível no diretório.",
         "deepLinkParticipantUnavailable": "Não foi possível encontrar esse participante no diretório."
       }
+    }
+  }
+,
+  "adminNotifications": {
+    "types": {
+      "rrp_application_submitted": "Candidatura de representante regional enviada"
     }
   }
 }

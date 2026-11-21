@@ -791,6 +791,7 @@
         "sending": "Sending…",
         "jumpLatest": "New message — Jump to latest",
         "viewProfile": "View public profile",
+        "viewRrpApplication": "View Regional Application",
         "call": "Call",
         "video": "Video",
         "share": "Share",
@@ -7879,5 +7880,11 @@
       }
     },
     "closeAria": "Close application dialog"
+  }
+,
+  "adminNotifications": {
+    "types": {
+      "rrp_application_submitted": "Regional Representative application submitted"
+    }
   }
 }

@@ -251,10 +251,10 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.equal(typeof en.rrpApplication.errors.notFound, "string");
     for (const locale of ["ar", "uk", "zh-Hant"] as const) {
       const catalog = JSON.parse(read(`features/i18n/messages/${locale}.json`));
-      assert.equal(
-        catalog.rrpApplication.workspaceWidget.title,
-        "My Regional Applications",
-      );
+      const title = catalog.rrpApplication.workspaceWidget.title;
+      assert.equal(typeof title, "string");
+      assert.ok(title.trim().length > 0);
+      assert.notEqual(title, en.rrpApplication.workspaceWidget.title);
       assert.equal(typeof catalog.rrpApplication.errors.notFound, "string");
     }
     assert.match(css, /\[dir="rtl"\]/);

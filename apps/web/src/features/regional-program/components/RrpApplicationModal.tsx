@@ -15,6 +15,7 @@ import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { ApiRequestError, formatAuthFormError } from "../../../lib/api-client";
 import { getMyMemberProfile } from "../../member-profile/member-profile-api";
+import { useCountryDisplayName } from "../../geography-display/GeographyDisplayProvider";
 import { CountrySelect } from "../../geography-integrity/CountrySelect";
 import {
   createRrpApplicationDraft,
@@ -103,6 +104,9 @@ export function RrpApplicationModal({
   onApplicationsChanged,
 }: RrpApplicationModalProps) {
   const t = useTranslations("rrpApplication");
+  const resolveCountryName = useCountryDisplayName();
+  const representCountryLabel = (countryCode: string) =>
+    resolveCountryName(countryCode, countryCode);
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -549,7 +553,7 @@ export function RrpApplicationModal({
                     {activeApplications.map((item) => (
                       <li key={item.applicationId} className="rrp-application-modal__list-item">
                         <p className="rrp-application-modal__list-meta">
-                          {t("hub.countryLabel", { country: item.representCountryCode })} ·{" "}
+                          {t("hub.countryLabel", { country: representCountryLabel(item.representCountryCode) })} ·{" "}
                           {t(`status.${item.status}`)}
                         </p>
                         <Button
@@ -593,7 +597,7 @@ export function RrpApplicationModal({
                     {historyApplications.map((item) => (
                       <li key={item.applicationId} className="rrp-application-modal__list-item">
                         <p className="rrp-application-modal__list-meta">
-                          {t("hub.countryLabel", { country: item.representCountryCode })} ·{" "}
+                          {t("hub.countryLabel", { country: representCountryLabel(item.representCountryCode) })} ·{" "}
                           {t(`status.${item.status}`)}
                         </p>
                       </li>
@@ -614,7 +618,7 @@ export function RrpApplicationModal({
               }}
             >
               <p className="rrp-application-modal__hint">
-                {t("form.editingCountry", { country: active.representCountryCode })} ·{" "}
+                {t("form.editingCountry", { country: representCountryLabel(active.representCountryCode) })} ·{" "}
                 {t(`status.${active.status}`)}
               </p>
               {displayNameHint ? (
@@ -850,7 +854,7 @@ export function RrpApplicationModal({
               <p className="rrp-application-modal__hint">{t("messages.moreInfoPossible")}</p>
               <p className="rrp-application-modal__hint">{t("messages.messagesLater")}</p>
               <p className="rrp-application-modal__list-meta">
-                {t("hub.countryLabel", { country: active.representCountryCode })} ·{" "}
+                {t("hub.countryLabel", { country: representCountryLabel(active.representCountryCode) })} ·{" "}
                 {t(`status.${active.status}`)}
               </p>
             </div>

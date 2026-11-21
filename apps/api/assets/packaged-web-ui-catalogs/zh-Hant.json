@@ -791,6 +791,7 @@
         "sending": "傳送中…",
         "jumpLatest": "新訊息 — 跳至最新",
         "viewProfile": "查看公開個人資料",
+        "viewRrpApplication": "查看區域代表申請",
         "call": "通話",
         "video": "視訊",
         "share": "分享",
@@ -7775,6 +7776,7 @@
     "description": "加入這項國際計畫，向您所在國家的人們介紹 {siteName}，建立在地社群，並協助把有意義的想法轉化為真實、正面的成果。",
     "cta": {
       "join": "加入計畫",
+      "joinDisclaimer": "加入或申請並不授予法律權力、僱傭、資助資格、簽約權或管理員權限。平台核准僅為內部指派，並與日後任何法律任命程序分開。",
       "volunteer": "進一步了解志工參與"
     },
     "mission": {
@@ -7876,6 +7878,12 @@
     "finalCta": {
       "heading": "成為推動正向改變的全球社群一員",
       "body": "加入區域發展計畫，協助在您的國家發展 {siteName}。"
+    }
+  }
+,
+  "adminNotifications": {
+    "types": {
+      "rrp_application_submitted": "已提交區域代表申請"
     }
   }
 }

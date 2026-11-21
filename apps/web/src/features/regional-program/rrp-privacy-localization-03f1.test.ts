@@ -242,19 +242,30 @@ describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
     }
 
     // Explicit matrix assertions used by the 03F.1 report.
+    const localizedRrpTitles = {
+      uk: "Заявка регіонального представника",
+      "zh-Hant": "區域代表申請",
+      ar: "طلب الممثل الإقليمي",
+      de: "Bewerbung als Regionalvertreter",
+      es: "Solicitud de representante regional",
+      fr: "Candidature de représentant régional",
+      he: "בקשת נציג אזורי",
+      ka: "რეგიონული წარმომადგენლის განაცხადი",
+      pt: "Candidatura de representante regional",
+    } as const;
+
     for (const locale of INSTALLED_LOCALES) {
       assert.ok(readiness[locale], `readiness row missing for ${locale}`);
     }
     assert.equal(readiness.en!.rrpApplicationPresent, true);
-    assert.equal(readiness.ar!.rrpApplicationEnglishCloneOverlay, true);
-    assert.equal(readiness.uk!.rrpApplicationEnglishCloneOverlay, true);
-    assert.equal(readiness["zh-Hant"]!.rrpApplicationEnglishCloneOverlay, true);
-    assert.equal(readiness.de!.rrpApplicationPresent, false);
-    assert.equal(readiness.es!.rrpApplicationPresent, false);
-    assert.equal(readiness.fr!.rrpApplicationPresent, false);
-    assert.equal(readiness.he!.rrpApplicationPresent, false);
-    assert.equal(readiness.ka!.rrpApplicationPresent, false);
-    assert.equal(readiness.pt!.rrpApplicationPresent, false);
+    assert.equal(enRrpTitle, "Regional Representative application");
+    for (const [locale, title] of Object.entries(localizedRrpTitles)) {
+      const catalogTitle = leafStrings(loadMessages(locale)).get("rrpApplication.title");
+      assert.equal(readiness[locale]!.rrpApplicationPresent, true, locale);
+      assert.equal(readiness[locale]!.rrpApplicationEnglishCloneOverlay, false, locale);
+      assert.equal(catalogTitle, title, locale);
+      assert.notEqual(catalogTitle, enRrpTitle, locale);
+    }
     for (const locale of INSTALLED_LOCALES) {
       if (locale === "en") continue;
       assert.equal(

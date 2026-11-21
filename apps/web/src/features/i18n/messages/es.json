@@ -7032,6 +7032,7 @@
         "unavailableTitle": "Conversación no disponible",
         "video": "Vídeo",
         "viewProfile": "Ver perfil público",
+        "viewRrpApplication": "Ver solicitud regional",
         "voiceMessages": "Mensajes de voz"
       },
       "group": {
@@ -7495,6 +7496,7 @@
     "description": "Únase al programa internacional, presente {siteName} a las personas de su país, construya una comunidad local y ayude a convertir ideas significativas en resultados reales y positivos.",
     "cta": {
       "join": "Unirse al programa",
+      "joinDisclaimer": "Unirse o solicitar no otorga autoridad legal, empleo, derecho a financiación, facultad para firmar contratos ni permisos de administrador. La aprobación en la plataforma es solo una designación interna y es independiente de cualquier proceso posterior de nombramiento legal.",
       "volunteer": "Más información sobre el voluntariado"
     },
     "mission": {
