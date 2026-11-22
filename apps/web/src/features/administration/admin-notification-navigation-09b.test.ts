@@ -9,7 +9,10 @@ import { fileURLToPath } from "node:url";
 
 import {
   directoryListFiltersForNotificationTarget,
+  directoryNotificationScrollBehavior,
+  directoryTargetLookupQuery,
   readAdminDirectoryDeepLinkQuery,
+  resolveDirectoryNotificationScroll,
   resolveDirectoryParticipantDeepLink,
 } from "./admin-participant-directory-deep-link";
 import {
@@ -230,8 +233,8 @@ describe("HU-RRP-09B admin notification navigation", () => {
     assert.equal(participantOnly.action, "select-participant");
   });
 
-  it("does not let saved directory filters hide a participant notification", () => {
-    const filters = directoryListFiltersForNotificationTarget({
+  it("keeps the directory table paginated while a notification target is separate", () => {
+    const filtered = directoryListFiltersForNotificationTarget({
       participantId: "member-1",
       badgeViewRequested: false,
       search: "saved search",
@@ -240,20 +243,92 @@ describe("HU-RRP-09B admin notification navigation", () => {
       membershipStatus: "member_badge_orders",
       emailVerificationStatus: "verified",
     });
-    assert.deepEqual(filters, { participantId: "member-1" });
+    assert.deepEqual(filtered, {
+      search: "saved search",
+      status: "disabled",
+      role: "admin",
+      membershipStatus: "member_badge_orders",
+      emailVerificationStatus: "verified",
+    });
+    assert.equal("participantId" in filtered, false);
 
-    const browsing = directoryListFiltersForNotificationTarget({
-      participantId: null,
-      badgeViewRequested: false,
-      search: "saved search",
-      status: "active",
-      membershipStatus: "active_member",
+    const reset = directoryListFiltersForNotificationTarget({
+      participantId: "member-1",
+      search: "",
+      status: "",
+      membershipStatus: "",
+      emailVerificationStatus: "",
     });
-    assert.deepEqual(browsing, {
-      search: "saved search",
-      status: "active",
-      membershipStatus: "active_member",
-    });
+    assert.deepEqual(reset, {});
+
+    const lookup = directoryTargetLookupQuery("member-1");
+    assert.deepEqual(lookup, { participantId: "member-1", limit: 1, offset: 0 });
+
+    const section = read("features/administration/components/AdminParticipantsSection.tsx");
+    const listStart = section.indexOf(
+      "const listFilters = directoryListFiltersForNotificationTarget",
+    );
+    const listEnd = section.indexOf("const response = await listAdminParticipants", listStart);
+    const tableCall = section.slice(listStart, listEnd);
+    assert.doesNotMatch(tableCall, /participantId/);
+    assert.match(section, /directoryTargetLookupQuery\(deepLinkParticipantId\)/);
+    assert.match(section, /setNotificationTarget\(match\)/);
+    assert.match(section, /requestId !== targetRequestIdRef\.current/);
+    assert.match(section, /requestId !== directoryRequestIdRef\.current/);
+    assert.match(section, /offset: requestOffset/);
+  });
+
+  it("scrolls to the row, the selection toolbar, or the unavailable notice", () => {
+    assert.deepEqual(
+      resolveDirectoryNotificationScroll({
+        action: "select-participant",
+        participantId: "member-1",
+        participantOnCurrentPage: true,
+      }),
+      { kind: "row", participantId: "member-1" },
+    );
+    assert.deepEqual(
+      resolveDirectoryNotificationScroll({
+        action: "select-participant",
+        participantId: "member-1",
+        participantOnCurrentPage: false,
+      }),
+      { kind: "selection" },
+    );
+    assert.equal(
+      resolveDirectoryNotificationScroll({
+        action: "open-application",
+        participantId: "member-1",
+        participantOnCurrentPage: true,
+      }).kind,
+      "modal",
+    );
+    assert.equal(
+      resolveDirectoryNotificationScroll({
+        action: "participant-unavailable",
+        participantId: "member-1",
+        participantOnCurrentPage: false,
+      }).kind,
+      "unavailable",
+    );
+    assert.equal(
+      resolveDirectoryNotificationScroll({
+        action: "wait",
+        participantId: "member-1",
+        participantOnCurrentPage: true,
+      }).kind,
+      "none",
+    );
+    assert.equal(directoryNotificationScrollBehavior(true), "auto");
+    assert.equal(directoryNotificationScrollBehavior(false), "smooth");
+
+    const section = read("features/administration/components/AdminParticipantsSection.tsx");
+    const css = read("features/administration/components/admin-participants-table.css");
+    assert.match(section, /data-directory-participant-id=\{row\.memberId\}/);
+    assert.match(section, /prefers-reduced-motion: reduce/);
+    assert.match(section, /scrollIntoView/);
+    assert.match(css, /scroll-margin-block-start:\s*var\(--humanity-header-offset\)/);
+    assert.doesNotMatch(css, /scroll-margin-left|margin-left:\s*var\(--humanity-header-offset\)/);
   });
 
   it("closes an unrelated modal when the destination changes", () => {

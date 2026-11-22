@@ -44,8 +44,11 @@ import {
 } from "../admin-participant-suspension-api";
 import {
   directoryListFiltersForNotificationTarget,
+  directoryNotificationScrollBehavior,
+  directoryTargetLookupQuery,
   isDirectoryBadgeDeepLink,
   readAdminDirectoryDeepLinkQuery,
+  resolveDirectoryNotificationScroll,
   resolveDirectoryParticipantDeepLink,
 } from "../admin-participant-directory-deep-link";
 import {
@@ -233,7 +236,21 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
   const [rrpApplicationModalOpen, setRrpApplicationModalOpen] = useState(false);
   const [rrpDeepLinkApplicationId, setRrpDeepLinkApplicationId] = useState<string | null>(null);
   const [deepLinkParticipantId, setDeepLinkParticipantId] = useState<string | null>(null);
-  const [acceptedParticipantFilter, setAcceptedParticipantFilter] = useState<string | null>(null);
+  const [notificationTarget, setNotificationTarget] = useState<AdminParticipantDirectoryItem | null>(
+    null,
+  );
+  const [notificationTargetReadyId, setNotificationTargetReadyId] = useState<string | null>(null);
+  const [pendingTargetScroll, setPendingTargetScroll] = useState<{
+    readonly key: string;
+    readonly action: "select-participant" | "open-application" | "application-unavailable" | "participant-unavailable";
+    readonly participantId: string | null;
+    readonly badgeModalRequested: boolean;
+  } | null>(null);
+  const targetRequestIdRef = useRef(0);
+  const previousNotificationTargetIdRef = useRef<string | null>(null);
+  const scrolledTargetKeyRef = useRef<string | null>(null);
+  const selectionToolbarRef = useRef<HTMLDivElement>(null);
+  const deepLinkStatusRef = useRef<HTMLDivElement>(null);
   const appliedDeepLinkKeyRef = useRef<string | null>(null);
   const searchParams = useSearchParams();
   const directoryQuery = readAdminDirectoryDeepLinkQuery(searchParams);
@@ -349,8 +366,6 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
       return;
     }
     const listFilters = directoryListFiltersForNotificationTarget({
-      participantId: deepLinkParticipantId,
-      badgeViewRequested: isDirectoryBadgeDeepLink(directoryQuery),
       search,
       status,
       role,
@@ -375,7 +390,6 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
       setTotal(response.total);
       hasLoadedDirectoryRef.current = true;
       setHasLoadedDirectory(true);
-      setAcceptedParticipantFilter(deepLinkParticipantId);
       if (nextOffset !== requestOffset) {
         setOffset(nextOffset);
       }
@@ -408,10 +422,6 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     sort,
     order,
     offset,
-    deepLinkParticipantId,
-    directoryQuery.badgeApplicationId,
-    directoryQuery.participantId,
-    directoryQuery.view,
   ]);
 
   const filterKey = `${search}|${status}|${roleFilter}|${membershipStatus}|${emailVerification}|${sort}|${order}`;
@@ -459,15 +469,64 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
   }, []);
 
   useEffect(() => {
+    if (previousNotificationTargetIdRef.current !== deepLinkParticipantId) {
+      appliedDeepLinkKeyRef.current = null;
+      scrolledTargetKeyRef.current = null;
+      if (previousNotificationTargetIdRef.current) {
+        setSelectedIds([]);
+        setSelectedById(new Map());
+        setPendingTargetScroll(null);
+      }
+      previousNotificationTargetIdRef.current = deepLinkParticipantId;
+    }
+
+    if (!deepLinkParticipantId) {
+      setNotificationTarget(null);
+      setNotificationTargetReadyId(null);
+      return;
+    }
+
+    const requestId = ++targetRequestIdRef.current;
+    setNotificationTarget(null);
+    setNotificationTargetReadyId(null);
+    let cancelled = false;
+    void listAdminParticipants(directoryTargetLookupQuery(deepLinkParticipantId))
+      .then((response) => {
+        if (cancelled || requestId !== targetRequestIdRef.current) {
+          return;
+        }
+        const match =
+          response.participants.find((row) => row.memberId === deepLinkParticipantId) ?? null;
+        setNotificationTarget(match);
+        setNotificationTargetReadyId(deepLinkParticipantId);
+      })
+      .catch(() => {
+        if (cancelled || requestId !== targetRequestIdRef.current) {
+          return;
+        }
+        setNotificationTarget(null);
+        setNotificationTargetReadyId(deepLinkParticipantId);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deepLinkParticipantId]);
+
+  useEffect(() => {
     const result = resolveDirectoryParticipantDeepLink({
       participantId: deepLinkParticipantId,
       rrpApplicationId: rrpDeepLinkApplicationId,
-      acceptedParticipantFilter,
-      directoryReady: hasLoadedDirectory,
-      rows: rows.map((row) => ({
-        memberId: row.memberId,
-        viewableApplicationIds: resolveViewableRrpApplicationIds(row),
-      })),
+      acceptedParticipantFilter: notificationTargetReadyId,
+      directoryReady: notificationTargetReadyId === deepLinkParticipantId,
+      rows: notificationTarget
+        ? [
+            {
+              memberId: notificationTarget.memberId,
+              viewableApplicationIds: resolveViewableRrpApplicationIds(notificationTarget),
+            },
+          ]
+        : [],
       appliedKey: appliedDeepLinkKeyRef.current,
     });
     if (result.action === "wait" || result.action === "ignore") {
@@ -475,38 +534,107 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     }
 
     appliedDeepLinkKeyRef.current = result.appliedKey;
+    const badgeModalRequested = isDirectoryBadgeDeepLink(directoryQuery);
     if (result.action === "participant-unavailable") {
       setDeepLinkMessage(tDirectory("deepLinkParticipantUnavailable"));
       setRrpApplicationModalOpen(false);
+      setPendingTargetScroll({
+        key: result.appliedKey,
+        action: result.action,
+        participantId: deepLinkParticipantId,
+        badgeModalRequested,
+      });
       return;
     }
 
     setDeepLinkMessage(null);
-    applySelection([result.memberId], false);
+    selectNotificationTarget(result.memberId);
     if (result.action === "application-unavailable") {
       setDeepLinkMessage(tDirectory("deepLinkUnavailable"));
       setRrpApplicationModalOpen(false);
-      return;
-    }
-    if (result.action === "open-application") {
+    } else if (result.action === "open-application") {
       setRrpApplicationModalOpen(true);
-      return;
+    } else {
+      setRrpApplicationModalOpen(false);
     }
-    setRrpApplicationModalOpen(false);
+    setPendingTargetScroll({
+      key: result.appliedKey,
+      action: result.action,
+      participantId: result.memberId,
+      badgeModalRequested,
+    });
   }, [
-    acceptedParticipantFilter,
     deepLinkParticipantId,
-    hasLoadedDirectory,
+    directoryQuery.badgeApplicationId,
+    directoryQuery.view,
+    notificationTarget,
+    notificationTargetReadyId,
     rrpDeepLinkApplicationId,
-    rows,
     tDirectory,
   ]);
 
   useEffect(() => {
-    if (
-      deepLinkParticipantId &&
-      rows.some((row) => row.memberId === deepLinkParticipantId)
-    ) {
+    if (!pendingTargetScroll || scrolledTargetKeyRef.current === pendingTargetScroll.key) {
+      return;
+    }
+    if (tableLoading && pendingTargetScroll.action === "select-participant") {
+      return;
+    }
+    const participantOnCurrentPage = pendingTargetScroll.participantId
+      ? rows.some((row) => row.memberId === pendingTargetScroll.participantId)
+      : false;
+    const scroll = resolveDirectoryNotificationScroll({
+      action: pendingTargetScroll.action,
+      participantId: pendingTargetScroll.participantId,
+      participantOnCurrentPage,
+      badgeModalRequested: pendingTargetScroll.badgeModalRequested,
+    });
+    if (scroll.kind === "none") {
+      return;
+    }
+    if (scroll.kind === "modal") {
+      const dialogReady = pendingTargetScroll.badgeModalRequested
+        ? Boolean(badgeOrderApplicationId)
+        : rrpApplicationModalOpen;
+      if (!dialogReady) {
+        return;
+      }
+      scrolledTargetKeyRef.current = pendingTargetScroll.key;
+      return;
+    }
+    const behavior = directoryNotificationScrollBehavior(
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+    if (scroll.kind === "unavailable") {
+      const node = deepLinkStatusRef.current;
+      if (!node) {
+        return;
+      }
+      node.scrollIntoView({ behavior, block: "start" });
+      scrolledTargetKeyRef.current = pendingTargetScroll.key;
+      return;
+    }
+    if (scroll.kind === "row") {
+      const node = document.querySelector(
+        `[data-directory-participant-id="${CSS.escape(scroll.participantId)}"]`,
+      );
+      if (!(node instanceof HTMLElement)) {
+        return;
+      }
+      node.scrollIntoView({ behavior, block: "center" });
+      scrolledTargetKeyRef.current = pendingTargetScroll.key;
+      return;
+    }
+    const toolbar = selectionToolbarRef.current;
+    if (!toolbar) {
+      return;
+    }
+    toolbar.scrollIntoView({ behavior, block: "start" });
+    scrolledTargetKeyRef.current = pendingTargetScroll.key;
+  }, [badgeOrderApplicationId, pendingTargetScroll, rows, rrpApplicationModalOpen, tableLoading]);
+
+  useEffect(() => {
+    if (deepLinkParticipantId && selectedIds.includes(deepLinkParticipantId)) {
       return;
     }
     if (selectedIds.length === 0) {
@@ -552,6 +680,21 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
         if (keep.has(row.memberId)) {
           next.set(row.memberId, row);
         }
+      }
+      return next;
+    });
+  }
+
+  function selectNotificationTarget(memberId: string) {
+    setSelectedIds([memberId]);
+    setSelectionLimitReached(false);
+    setSelectedById(() => {
+      const next = new Map<string, AdminParticipantDirectoryItem>();
+      const pageRow = rows.find((row) => row.memberId === memberId);
+      const resolved =
+        pageRow ?? (notificationTarget?.memberId === memberId ? notificationTarget : null);
+      if (resolved) {
+        next.set(memberId, resolved);
       }
       return next;
     });
@@ -823,7 +966,9 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
         {messageError ? <StatusBanner title="Messaging" message={messageError} /> : null}
 
         {deepLinkMessage ? (
-          <StatusBanner title={tDirectory("deepLinkTitle")} message={deepLinkMessage} />
+          <div ref={deepLinkStatusRef} className="admin-participants-deep-link-status">
+            <StatusBanner title={tDirectory("deepLinkTitle")} message={deepLinkMessage} />
+          </div>
         ) : null}
 
         {error ? (
@@ -847,7 +992,12 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
         {hasLoadedDirectory || (!tableLoading && !error) ? (
           <>
             {isBadgeOrdersView ? null : (
-              <div className="admin-participants-toolbar" role="region" aria-label="Participant actions">
+              <div
+                ref={selectionToolbarRef}
+                className="admin-participants-toolbar"
+                role="region"
+                aria-label="Participant actions"
+              >
                 <p className="hu-caption admin-participants-toolbar__count" role="status">
                   {selectedIds.length === 1
                     ? "1 participant selected"
@@ -1047,11 +1197,15 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
                       return (
                         <tr
                           key={row.userId}
-                          className={
-                            needsAttention
-                              ? "admin-participants-table__row--rrp-attention"
-                              : undefined
-                          }
+                          className={[
+                            needsAttention ? "admin-participants-table__row--rrp-attention" : "",
+                            row.memberId === deepLinkParticipantId
+                              ? "admin-participants-table__row--notification-target"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ") || undefined}
+                          data-directory-participant-id={row.memberId}
                           data-rrp-needs-attention={needsAttention ? "true" : undefined}
                         >
                           {isBadgeOrdersView ? null : (

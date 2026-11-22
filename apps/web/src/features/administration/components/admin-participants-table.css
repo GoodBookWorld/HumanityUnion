@@ -175,6 +175,25 @@
   background: rgba(1, 116, 176, 0.12);
 }
 
+.admin-participants-table__row--notification-target,
+.admin-participants-toolbar,
+.admin-participants-deep-link-status {
+  scroll-margin-block-start: var(--humanity-header-offset);
+}
+
+.admin-participants-table__row--notification-target {
+  outline: 2px solid var(--hu-color-primary);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-participants-table__row--notification-target,
+  .admin-participants-toolbar,
+  .admin-participants-deep-link-status {
+    scroll-behavior: auto;
+  }
+}
+
 .admin-participants-table__rrp-statuses {
   list-style: none;
   margin: 0;

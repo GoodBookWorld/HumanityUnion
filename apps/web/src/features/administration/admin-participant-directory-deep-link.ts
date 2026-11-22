@@ -130,13 +130,12 @@ export interface DirectoryNotificationListFilters {
 }
 
 /**
- * A participant notification names one row. Saved directory filters stay in
- * the form, but they are not sent with that request. Badge-order navigation
- * keeps its own view filter.
+ * Filters for the directory table. A notification participant id is never a
+ * table restriction; that account is resolved by a separate lookup.
  */
 export function directoryListFiltersForNotificationTarget(input: {
-  readonly participantId: string | null;
-  readonly badgeViewRequested: boolean;
+  readonly participantId?: string | null;
+  readonly badgeViewRequested?: boolean;
   readonly search?: string;
   readonly status?: "" | "active" | "disabled";
   readonly role?: "member" | "admin";
@@ -144,9 +143,8 @@ export function directoryListFiltersForNotificationTarget(input: {
   readonly emailVerificationStatus?: "" | "pending" | "verified";
   readonly membershipStatus?: string;
 }): DirectoryNotificationListFilters {
-  if (input.participantId && !input.badgeViewRequested) {
-    return { participantId: input.participantId };
-  }
+  void input.participantId;
+  void input.badgeViewRequested;
   return {
     ...(input.search ? { search: input.search } : {}),
     ...(input.status ? { status: input.status } : {}),
@@ -156,6 +154,56 @@ export function directoryListFiltersForNotificationTarget(input: {
       ? { emailVerificationStatus: input.emailVerificationStatus }
       : {}),
     ...(input.membershipStatus ? { membershipStatus: input.membershipStatus } : {}),
-    ...(input.participantId ? { participantId: input.participantId } : {}),
   };
+}
+
+/** Authorized one-id read. Must not be written into the directory table. */
+export function directoryTargetLookupQuery(participantId: string): {
+  readonly participantId: string;
+  readonly limit: 1;
+  readonly offset: 0;
+} {
+  return { participantId, limit: 1, offset: 0 };
+}
+
+export type DirectoryNotificationScroll =
+  | { readonly kind: "none" }
+  | { readonly kind: "modal" }
+  | { readonly kind: "unavailable" }
+  | { readonly kind: "row"; readonly participantId: string }
+  | { readonly kind: "selection" };
+
+/**
+ * Scroll only after the target action is known.
+ * An application or badge dialog focuses itself.
+ * A row on the current page is the scroll target; otherwise the selection toolbar.
+ */
+export function resolveDirectoryNotificationScroll(input: {
+  readonly action: DirectoryParticipantDeepLinkResult["action"];
+  readonly participantId: string | null;
+  readonly participantOnCurrentPage: boolean;
+  readonly badgeModalRequested?: boolean;
+}): DirectoryNotificationScroll {
+  if (input.action === "wait" || input.action === "ignore") {
+    return { kind: "none" };
+  }
+  if (input.badgeModalRequested || input.action === "open-application") {
+    return { kind: "modal" };
+  }
+  if (
+    input.action === "participant-unavailable" ||
+    input.action === "application-unavailable"
+  ) {
+    return { kind: "unavailable" };
+  }
+  if (input.participantOnCurrentPage && input.participantId) {
+    return { kind: "row", participantId: input.participantId };
+  }
+  return { kind: "selection" };
+}
+
+export function directoryNotificationScrollBehavior(
+  prefersReducedMotion: boolean,
+): "auto" | "smooth" {
+  return prefersReducedMotion ? "auto" : "smooth";
 }
