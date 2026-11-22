@@ -4,6 +4,7 @@ import { findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { findPreferencesByMemberId } from "../preferences/preferences.repository.js";
 import { createEmailAuditRecord, markEmailAuditFailed, markEmailAuditSent } from "./email.audit.js";
 import { resolveEmailConfig } from "./email.config.js";
+import { ACCOUNT_DELETION_SUPPORT_EMAIL } from "../account-deletion/account-deletion.state.js";
 import { enqueueEmailDelivery } from "./email.queue.js";
 import { resolveEmailProvider } from "./email.provider.js";
 import {
@@ -650,6 +651,86 @@ export async function sendParticipantSuspendedEmail(input: {
       displayName: input.displayName,
       reasonLabel: input.reasonLabel,
       reviewUrl,
+    },
+  });
+}
+
+export async function sendAccountDeletionCodeEmail(input: {
+  to: string;
+  displayName: string;
+  verificationCode: string;
+  expiresMinutes: number;
+  action?: "confirm" | "cancel";
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "account_deletion_code",
+    templateInput: {
+      displayName: input.displayName,
+      verificationCode: input.verificationCode,
+      expiresMinutes: input.expiresMinutes,
+      action: input.action ?? "confirm",
+    },
+  });
+}
+
+export async function sendAccountDeletionScheduledEmail(input: {
+  to: string;
+  displayName: string;
+  deadlineAt: string;
+}): Promise<EmailDeliveryResult> {
+  const config = resolveEmailConfig();
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "account_deletion_scheduled",
+    templateInput: {
+      displayName: input.displayName,
+      deadlineAt: input.deadlineAt,
+      cancelUrl: `${config.publicSiteUrl}/account/deletion/cancel`,
+    },
+  });
+}
+
+export async function sendAccountDeletionCancelledEmail(input: {
+  to: string;
+  displayName: string;
+}): Promise<EmailDeliveryResult> {
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "account_deletion_cancelled",
+    templateInput: { displayName: input.displayName },
+  });
+}
+
+export async function sendAccountDeletionFinalizedEmail(input: {
+  to: string;
+  displayName: string;
+}): Promise<EmailDeliveryResult> {
+  const config = resolveEmailConfig();
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "account_deletion_finalized",
+    templateInput: {
+      displayName: input.displayName,
+      registerUrl: `${config.publicSiteUrl}/register`,
+    },
+  });
+}
+
+export async function sendAccountDeletionReminderEmail(input: {
+  to: string;
+  displayName: string;
+  deadlineAt: string;
+}): Promise<EmailDeliveryResult> {
+  const config = resolveEmailConfig();
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "account_deletion_reminder",
+    templateInput: {
+      displayName: input.displayName,
+      deadlineAt: input.deadlineAt,
+      restoreUrl: `${config.publicSiteUrl}/account/deletion/cancel`,
+      supportEmail: ACCOUNT_DELETION_SUPPORT_EMAIL,
     },
   });
 }

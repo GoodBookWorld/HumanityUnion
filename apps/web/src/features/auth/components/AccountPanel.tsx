@@ -19,6 +19,7 @@ import {
 import { AdminMetricDetailsGrid } from "../../administration/components/AdminMetricDetailsGrid";
 
 import { AccountSecuritySection } from "./AccountSecuritySection";
+import { AccountDeletionSection } from "../../account-deletion/AccountDeletionSection";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 import "./account-panel.css";
 import "../../administration/components/admin-panel.css";
@@ -309,6 +310,8 @@ export function AccountPanel() {
           </Button>
         </div>
       </ProfileSection>
+
+      <AccountDeletionSection />
 
       <div className="account-panel__actions">
         <Button variant="primary" onClick={() => void handleLogout()}>

@@ -5,6 +5,10 @@ import helmet from "helmet";
 import { resolveCorsOriginOption } from "./config/web-origins.js";
 import { browserOriginGuardMiddleware } from "./modules/auth/auth-browser-origin.middleware.js";
 import authRouter from "./modules/auth/auth.routes.js";
+import {
+  accountDeletionCancellationRouter,
+  accountDeletionRouter,
+} from "./modules/account-deletion/account-deletion.routes.js";
 import integrityMediaAuthorDeletionRouter from "./modules/external-author-link/external-author-link.author-deletion.routes.js";
 import integrityMediaAuthorDisconnectRouter from "./modules/external-author-link/external-author-link.disconnect.routes.js";
 import integrityMediaAuthorReplyRouter from "./modules/integrity-media-author-messages/integrity-media-author-reply.routes.js";
@@ -352,6 +356,8 @@ app.use("/api/v1/admin/country-people", adminCountryAffiliationRouter);
 app.use("/api/v1/admin/analytics", adminTrafficAnalyticsRouter);
 app.use("/api/v1/public/analytics", publicTrafficAnalyticsRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth/account-deletion", accountDeletionCancellationRouter);
+app.use("/api/v1/account/deletion", accountDeletionRouter);
 app.use("/api/v1/integrity-media/link", externalAuthorLinkRouter);
 app.use("/api/v1/integrity-media/account", integrityMediaAccountSsoRouter);
 app.use("/api/v1/integrations/integrity-media", integrityMediaAuthorDisconnectRouter);

@@ -455,6 +455,53 @@ export async function revokeAllOtherSessions(): Promise<{ revokedCount: number }
   });
 }
 
+export interface AccountDeletionStatusPayload {
+  phase: "none" | "awaiting_confirmation" | "pending" | "cancelled" | "finalized";
+  requestId?: string;
+  deadlineAt?: string;
+  confirmationExpiresAt?: string;
+}
+
+export async function requestAccountDeletion(
+  currentPassword: string,
+): Promise<AccountDeletionStatusPayload> {
+  return apiRequest<AccountDeletionStatusPayload>("/api/v1/account/deletion/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ currentPassword }),
+  });
+}
+
+export async function confirmAccountDeletion(code: string): Promise<AccountDeletionStatusPayload> {
+  return apiRequest<AccountDeletionStatusPayload>("/api/v1/account/deletion/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function requestAccountDeletionRecovery(email: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/api/v1/auth/account-deletion/cancel/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function confirmAccountDeletionRecovery(input: {
+  email: string;
+  currentPassword: string;
+  code: string;
+}): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/api/v1/auth/account-deletion/cancel/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
 /** @deprecated Use confirmPasswordReset */
 export async function resetPassword(token: string, password: string): Promise<AuthUserPublic> {
   return confirmPasswordReset(token, password);

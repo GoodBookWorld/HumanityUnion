@@ -40,6 +40,16 @@ export class UserDisabledError extends Error {
   }
 }
 
+/** Correct password on an account whose deletion window is open. Not an invalid-credential result. */
+export class AccountDeletionPendingError extends Error {
+  readonly code = "ACCOUNT_DELETION_PENDING";
+
+  constructor(message = "This account is scheduled for deletion.") {
+    super(message);
+    this.name = "AccountDeletionPendingError";
+  }
+}
+
 export class AuthValidationError extends Error {
   constructor(message: string) {
     super(message);

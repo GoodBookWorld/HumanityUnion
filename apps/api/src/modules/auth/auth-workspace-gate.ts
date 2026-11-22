@@ -5,6 +5,7 @@ import {
   isMutatingHttpMethod,
   loadAuthUserForActiveGate,
 } from "./auth-active-account-gate.js";
+import { isAccountDeletionSignInBlocked } from "../account-deletion/account-deletion.state.js";
 import { requireJwtAuthenticationMiddleware } from "./auth.middleware.js";
 
 const WRITE_GATE_MESSAGE = "Please confirm your email before creating or changing civic records.";
@@ -37,6 +38,17 @@ export async function requireVerifiedEmailForMutationsMiddleware(
       meta: {},
       links: {},
       message: ACCOUNT_ACCESS_SUSPENDED_MESSAGE,
+    });
+    return;
+  }
+
+  if (isAccountDeletionSignInBlocked(user.accountDeletion)) {
+    res.status(403).json({
+      success: false,
+      data: null,
+      meta: { code: "ACCOUNT_DELETION_PENDING" },
+      links: {},
+      message: "This account is not available.",
     });
     return;
   }

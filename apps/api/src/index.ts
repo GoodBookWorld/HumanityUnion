@@ -94,6 +94,11 @@ async function start(): Promise<void> {
   );
   startMemberNotificationEmailDigestScheduler();
 
+  const { startAccountDeletionFinalizationScheduler } = await import(
+    "./modules/account-deletion/account-deletion.scheduler.js"
+  );
+  startAccountDeletionFinalizationScheduler();
+
   const { startAuthorApplicationReconciliationOnce } = await import(
     "./modules/blog/blog-author-application-reconciliation.js"
   );

@@ -14,7 +14,11 @@ export type EmailConfirmationCodePurpose =
   | "login_two_step_disable"
   | "integrity_media_account_link"
   /** HU-NOTIF-02B — alternative notification email ownership (not auth email_change). */
-  | "notification_alternative_email";
+  | "notification_alternative_email"
+  /** HU-ACCOUNT-DELETE-01B — code that starts the recovery window. */
+  | "account_deletion_confirm"
+  /** HU-ACCOUNT-DELETE-01B — code that cancels a pending deletion. */
+  | "account_deletion_cancel";
 
 export type EmailConfirmationCodeStatus = "active" | "consumed" | "expired" | "revoked";
 
@@ -92,7 +96,9 @@ function resolveCodePolicyForPurpose(purpose: EmailConfirmationCodePurpose): {
     purpose === "login_email_two_step" ||
     purpose === "login_two_step_enable" ||
     purpose === "login_two_step_disable" ||
-    purpose === "integrity_media_account_link"
+    purpose === "integrity_media_account_link" ||
+    purpose === "account_deletion_confirm" ||
+    purpose === "account_deletion_cancel"
   ) {
     const config = resolveLoginEmailTwoStepConfig();
     return {
@@ -118,7 +124,9 @@ function resolveResendPolicyForPurpose(purpose: EmailConfirmationCodePurpose): {
     purpose === "login_email_two_step" ||
     purpose === "login_two_step_enable" ||
     purpose === "login_two_step_disable" ||
-    purpose === "integrity_media_account_link"
+    purpose === "integrity_media_account_link" ||
+    purpose === "account_deletion_confirm" ||
+    purpose === "account_deletion_cancel"
   ) {
     const config = resolveLoginEmailTwoStepConfig();
     return {

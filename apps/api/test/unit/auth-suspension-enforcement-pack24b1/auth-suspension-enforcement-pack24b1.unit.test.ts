@@ -138,10 +138,10 @@ describe("Pack 24B.1 — residual JWT mutation enforcement (behavior)", () => {
     assert.doesNotMatch(JSON.stringify(res.body), /community_standards|reviewToken|adminNote/i);
   });
 
-  it("9 — safe reads are not blocked by the active-account mutation gate", async () => {
-    setAuthUserLookupOverrideForTests(async () => {
-      throw new Error("lookup must not run for GET");
-    });
+  it("9 — safe reads stay available for a disabled account that is not pending deletion", async () => {
+    setAuthUserLookupOverrideForTests(async () =>
+      makeUser({ userId: "user-disabled", status: "disabled", emailVerificationStatus: "verified" }),
+    );
 
     const req = {
       method: "GET",

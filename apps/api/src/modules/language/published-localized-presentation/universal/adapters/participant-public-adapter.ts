@@ -233,7 +233,7 @@ export const participantPublicPlpDomainAdapter: PlpDomainAdapter = {
     }
 
     const profile = await findMemberProfileByProfileId(input.entityId);
-    if (!profile || profile.status === "suspended") {
+    if (!profile || profile.status === "suspended" || profile.status === "closed") {
       return null;
     }
     if (!isProfileVisibilityEligible(profile.profileVisibility)) {

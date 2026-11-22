@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import type { MemberNotificationEmailDeliverySkipReason } from "@hu/types";
 
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
+import { isAccountDeletionSignInBlocked } from "../../account-deletion/account-deletion.state.js";
 import type { EmailDeliveryResult } from "../../email/email.service.js";
 import { resolveNotificationEmailDestination } from "../../preferences/notification-alternative-email.service.js";
 import { findPreferencesByMemberId } from "../../preferences/preferences.repository.js";
@@ -84,7 +85,7 @@ export async function assertMemberNotificationEmailLiveSendGates(input: {
   }
 
   const user = await findAuthUserById(input.recipientUserId);
-  if (!user || user.status !== "active") {
+  if (!user || user.status !== "active" || isAccountDeletionSignInBlocked(user.accountDeletion)) {
     return { ok: false, skipReason: "account_inactive", terminal: true };
   }
 

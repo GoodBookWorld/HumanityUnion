@@ -162,7 +162,7 @@ export function toPublicMemberProfile(
     membership?: MembershipRecord | null;
   },
 ): PublicMemberProfile | null {
-  if (profile.status === "suspended") {
+  if (profile.status === "suspended" || profile.status === "closed") {
     return null;
   }
 

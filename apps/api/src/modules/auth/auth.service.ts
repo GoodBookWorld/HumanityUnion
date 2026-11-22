@@ -27,6 +27,7 @@ import {
 import { getLastIssuedConfirmationCodeForTests } from "../email/email-confirmation-code.repository.js";
 import { issueAuthSession, type AuthSessionResult } from "./auth-session.issue.js";
 import {
+  AccountDeletionPendingError,
   DuplicateEmailError,
   InvalidCredentialsError,
   InvalidRefreshTokenError,
@@ -34,6 +35,7 @@ import {
   AuthValidationError,
   RegistrationUnavailableError,
 } from "./auth.errors.js";
+import { verifyPassword } from "./auth-password.js";
 import {
   findAuthSessionById,
   isAuthSessionActive,
@@ -50,7 +52,7 @@ import {
   updateAuthUserLastLogin,
 } from "./auth-user.repository.js";
 import type { AuthUserRecord } from "./auth-user.types.js";
-import { verifyPassword } from "./auth-password.js";
+import { isAccountDeletionSignInBlocked, isReservedDeletionEmail } from "../account-deletion/account-deletion.state.js";
 import {
   createAccessToken,
   createRefreshToken,
@@ -89,7 +91,7 @@ export function isEmailConfirmationRequiredResponse(
 }
 
 function validateRegistrationInput(email: string, password: string, displayName: string): void {
-  if (!email.trim() || !email.includes("@")) {
+  if (!email.trim() || !email.includes("@") || isReservedDeletionEmail(email)) {
     throw new AuthValidationError("A valid email address is required.");
   }
 
@@ -247,6 +249,10 @@ export async function loginAuthUser(input: {
     throw new InvalidCredentialsError();
   }
 
+  if (isAccountDeletionSignInBlocked(user.accountDeletion)) {
+    throw new AccountDeletionPendingError();
+  }
+
   if (user.emailVerificationStatus !== "verified") {
     const now = new Date().toISOString();
     await updateAuthUserLastLogin(user.userId, now);
@@ -317,7 +323,7 @@ export async function refreshAuthSession(refreshToken: string): Promise<AuthSess
 
   const user = await findAuthUserById(payload.sub);
 
-  if (!user || user.status === "disabled") {
+  if (!user || user.status === "disabled" || isAccountDeletionSignInBlocked(user.accountDeletion)) {
     throw new InvalidRefreshTokenError();
   }
 

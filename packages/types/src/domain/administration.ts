@@ -185,7 +185,11 @@ export type AdministrationAuditAction =
   | "beta.invite.revoke"
   | "participant.suspend"
   | "participant.restore"
-  | "participant.suspension_review.submit";
+  | "participant.suspension_review.submit"
+  | "account.deletion.requested"
+  | "account.deletion.confirmed"
+  | "account.deletion.cancelled"
+  | "account.deletion.finalized";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;

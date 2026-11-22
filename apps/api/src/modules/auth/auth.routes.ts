@@ -13,6 +13,7 @@ import {
   InvalidRefreshTokenError,
   RegistrationUnavailableError,
   UserDisabledError,
+  AccountDeletionPendingError,
 } from "./auth.errors.js";
 import {
   changePasswordForUser,
@@ -125,7 +126,7 @@ function resolveAuthErrorStatus(error: unknown): number {
     return 401;
   }
 
-  if (error instanceof UserDisabledError) {
+  if (error instanceof UserDisabledError || error instanceof AccountDeletionPendingError) {
     return 403;
   }
 
@@ -149,6 +150,15 @@ function handleAuthError(res: Response, error: unknown): void {
         code: error.code,
         retryAfterSeconds: error.retryAfterSeconds,
         limitType: error.limitType,
+      }),
+    );
+    return;
+  }
+
+  if (error instanceof AccountDeletionPendingError) {
+    res.status(403).json(
+      createFailureResponse(message, {
+        code: error.code,
       }),
     );
     return;

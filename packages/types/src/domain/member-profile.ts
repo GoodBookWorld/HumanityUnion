@@ -4,8 +4,11 @@ import type { PublicParticipantStatistics } from "./participant-statistics.js";
 /** Profile visibility for civic participant identity. */
 export type MemberProfileVisibility = "public" | "members_only" | "private";
 
-/** Participant profile lifecycle status. */
-export type MemberProfileStatus = "active" | "suspended";
+/**
+ * Participant profile lifecycle status.
+ * `closed` is voluntary account finalization. It is not administrator suspension.
+ */
+export type MemberProfileStatus = "active" | "suspended" | "closed";
 
 /** Mongo-backed civic participant profile (TASK-053). */
 export interface MemberProfile {

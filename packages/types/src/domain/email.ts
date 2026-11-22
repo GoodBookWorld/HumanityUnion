@@ -43,7 +43,17 @@ export type EmailTemplateId =
   /** Pack 24B — Participant account suspension notice with review CTA. */
   | "participant_suspended"
   /** Pack 24B — optional notice that participation was restored. */
-  | "participant_restored";
+  | "participant_restored"
+  /** HU-ACCOUNT-DELETE-01B — single-use code before the recovery window starts. */
+  | "account_deletion_code"
+  /** HU-ACCOUNT-DELETE-01B — window started. No secret token. */
+  | "account_deletion_scheduled"
+  /** HU-ACCOUNT-DELETE-01B — pending deletion was cancelled. */
+  | "account_deletion_cancelled"
+  /** HU-ACCOUNT-DELETE-01B — best-effort notice sent before the login email is released. */
+  | "account_deletion_finalized"
+  /** HU-ACCOUNT-DELETE-01C — one reminder in the last three days. Link only, no restore token. */
+  | "account_deletion_reminder";
 
 export type EmailDeliveryStatus = "queued" | "sent" | "failed" | "deferred" | "blocked";
 

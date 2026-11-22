@@ -17,10 +17,11 @@ import {
   revokeActiveEmailConfirmationCodesExcept,
 } from "../email/email-confirmation-code.repository.js";
 import { sendLoginTwoStepCodeEmail } from "../email/email.service.js";
-import { AuthValidationError, UserDisabledError } from "./auth.errors.js";
+import { AccountDeletionPendingError, AuthValidationError, UserDisabledError } from "./auth.errors.js";
 import { createPendingLoginTwoStepToken } from "./auth-pending-login-two-step.tokens.js";
 import { issueAuthSession } from "./auth-session.issue.js";
 import { findAuthUserById, updateAuthUserLastLogin } from "./auth-user.repository.js";
+import { isAccountDeletionSignInBlocked } from "../account-deletion/account-deletion.state.js";
 import { resolveEmailConfig } from "../email/email.config.js";
 import { sendLoginNotificationEmail } from "../email/email.service.js";
 
@@ -217,6 +218,10 @@ export async function confirmLoginTwoStepCode(input: {
     throw new UserDisabledError();
   }
 
+  if (isAccountDeletionSignInBlocked(user.accountDeletion)) {
+    throw new AccountDeletionPendingError();
+  }
+
   const activeCode = await findActiveEmailConfirmationCode({
     userId: user.userId,
     purpose: LOGIN_TWO_STEP_PURPOSE,
@@ -282,6 +287,10 @@ export async function resendLoginTwoStepCode(input: {
 
   if (user.status === "disabled") {
     throw new UserDisabledError();
+  }
+
+  if (isAccountDeletionSignInBlocked(user.accountDeletion)) {
+    throw new AccountDeletionPendingError();
   }
 
   const activeCode = await findActiveEmailConfirmationCode({

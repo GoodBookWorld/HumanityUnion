@@ -1,4 +1,5 @@
 import { AuthValidationError, InvalidCredentialsError, UserDisabledError } from "./auth.errors.js";
+import { isAccountDeletionSignInBlocked } from "../account-deletion/account-deletion.state.js";
 import { confirmMemberRegistration } from "../member/application/confirm-member-registration.service.js";
 import { toAuthUserPublic } from "./auth-user.projection.js";
 import {
@@ -118,7 +119,7 @@ export async function requestPasswordReset(
 
   const user = await findAuthUserByEmail(normalizedEmail);
 
-  if (!user || user.status === "disabled") {
+  if (!user || user.status === "disabled" || isAccountDeletionSignInBlocked(user.accountDeletion)) {
     return { requested: true, message: PASSWORD_RESET_GENERIC_MESSAGE };
   }
 
@@ -140,7 +141,7 @@ export async function requestPasswordResetForUserId(
     return { sent: false, reason: "not_found" };
   }
 
-  if (user.status === "disabled") {
+  if (user.status === "disabled" || isAccountDeletionSignInBlocked(user.accountDeletion)) {
     return { sent: false, reason: "disabled" };
   }
 
@@ -164,7 +165,7 @@ export async function validatePasswordResetToken(token: string): Promise<{ valid
 
   const user = await findAuthUserById(record.userId);
 
-  if (!user || user.status === "disabled") {
+  if (!user || user.status === "disabled" || isAccountDeletionSignInBlocked(user.accountDeletion)) {
     return { valid: false };
   }
 
@@ -197,6 +198,10 @@ export async function resetPasswordWithToken(token: string, password: string) {
 
   if (account.status === "disabled") {
     throw new UserDisabledError();
+  }
+
+  if (isAccountDeletionSignInBlocked(account.accountDeletion)) {
+    throw new InvalidCredentialsError("Invalid or expired reset token.");
   }
 
   const record = await consumeEmailVerificationToken({

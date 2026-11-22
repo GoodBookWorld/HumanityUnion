@@ -169,7 +169,7 @@ export type ParticipantPublicPlpMaterializeDeps = {
 };
 
 function isEligible(profile: MemberProfile): boolean {
-  if (profile.status === "suspended") {
+  if (profile.status === "suspended" || profile.status === "closed") {
     return false;
   }
   return profile.profileVisibility === "public" || profile.profileVisibility === "members_only";

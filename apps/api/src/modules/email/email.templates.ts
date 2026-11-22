@@ -875,6 +875,118 @@ export function renderParticipantRestoredEmail(
   };
 }
 
+export interface AccountDeletionCodeTemplateInput {
+  displayName: string;
+  verificationCode: string;
+  expiresMinutes: number;
+  action?: "confirm" | "cancel";
+}
+
+export function renderAccountDeletionCodeEmail(
+  input: AccountDeletionCodeTemplateInput,
+): EmailTemplateContent {
+  const cancelling = input.action === "cancel";
+  const title = cancelling ? "Cancel account deletion" : "Confirm account deletion";
+  const body = cancelling
+    ? "Use this code to cancel the scheduled deletion of your Humanity Union account. It does not restore any role or appointment."
+    : "Use this code to confirm that you want to schedule deletion of your Humanity Union account. The 30-day recovery window does not start until this code is accepted.";
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">${title}</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">${body}</p>
+    <p style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:0.2em;color:${PRIMARY_COLOR};">${input.verificationCode}</p>
+    <p style="margin:0;line-height:1.6;color:#64748b;">This code expires in ${input.expiresMinutes} minutes. If you did not request this, you can ignore this message.</p>
+  `;
+  return {
+    subject: cancelling
+      ? "Cancel deletion of your Humanity Union account"
+      : "Confirm deletion of your Humanity Union account",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\n${body}\n\nYour code is ${input.verificationCode}.\n\nIt expires in ${input.expiresMinutes} minutes.`,
+  };
+}
+
+export interface AccountDeletionScheduledTemplateInput {
+  displayName: string;
+  deadlineAt: string;
+  cancelUrl: string;
+}
+
+export function renderAccountDeletionScheduledEmail(
+  input: AccountDeletionScheduledTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Account deletion is scheduled</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Your Humanity Union account is scheduled for deletion at ${input.deadlineAt}. You cannot sign in during this period. You can cancel deletion before that time from the cancellation page. Cancellation requires your email, current password, and a new code.</p>
+    ${primaryButton("Cancel account deletion", input.cancelUrl)}
+    <p style="margin:16px 0 0;line-height:1.6;">If the account is still open after that time, contact Humanity Union using the address published in the Privacy Policy.</p>
+  `;
+  return {
+    subject: "Your Humanity Union account deletion is scheduled",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nYour account is scheduled for deletion at ${input.deadlineAt}.\n\nYou cannot sign in during this period. Cancel before that time:\n${input.cancelUrl}\n\nCancellation requires your email, current password, and a new code.\n\nIf the account is still open after that time, contact Humanity Union using the address published in the Privacy Policy.`,
+  };
+}
+
+export function renderAccountDeletionCancelledEmail(input: {
+  displayName: string;
+}): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Account deletion was cancelled</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0;line-height:1.6;">Deletion of your Humanity Union account has been cancelled. You can sign in again. No roles or appointments were added by this cancellation.</p>
+  `;
+  return {
+    subject: "Your Humanity Union account deletion was cancelled",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nDeletion of your Humanity Union account has been cancelled. You can sign in again. No roles or appointments were added by this cancellation.`,
+  };
+}
+
+export function renderAccountDeletionFinalizedEmail(input: {
+  displayName: string;
+  registerUrl: string;
+}): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Your Humanity Union account is closed</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">The recovery period has ended. Your previous Humanity Union account is closed and cannot be restored.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">You may register a new account with this email address. A new account is a new participant. It does not receive the previous civic identity, roles, appointments, editor permissions, or messages.</p>
+    ${primaryButton("Register a new account", input.registerUrl)}
+  `;
+  return {
+    subject: "Your Humanity Union account is closed",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nThe recovery period has ended. Your previous Humanity Union account is closed and cannot be restored.\n\nYou may register a new account with this email address. A new account is a new participant. It does not receive the previous civic identity, roles, appointments, editor permissions, or messages.\n\nRegister:\n${input.registerUrl}`,
+  };
+}
+
+export interface AccountDeletionReminderTemplateInput {
+  displayName: string;
+  deadlineAt: string;
+  restoreUrl: string;
+  supportEmail: string;
+}
+
+export function renderAccountDeletionReminderEmail(
+  input: AccountDeletionReminderTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Humanity Union account deletion reminder</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">This is a reminder from Humanity Union. Your account remains scheduled for deletion at ${input.deadlineAt}. Three days or less remain in the recovery period. This message does not restore the account.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">To keep the account, open the recovery page and confirm your email, current password, and a new code.</p>
+    ${primaryButton("Restore account", input.restoreUrl)}
+    <p style="margin:16px 0 0;line-height:1.6;">If you need help, contact ${input.supportEmail}.</p>
+  `;
+  return {
+    subject: "Reminder: your Humanity Union account deletion deadline",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nThis is a reminder from Humanity Union. Your account remains scheduled for deletion at ${input.deadlineAt}. Three days or less remain in the recovery period. This message does not restore the account.\n\nTo keep the account, open the recovery page and confirm your email, current password, and a new code:\n${input.restoreUrl}\n\nIf you need help, contact ${input.supportEmail}.`,
+  };
+}
+
 export function renderEmailTemplate(
   template: EmailTemplateId,
   input: Record<string, string | number | string[] | undefined>,
@@ -1024,6 +1136,35 @@ export function renderEmailTemplate(
       return renderParticipantRestoredEmail({
         displayName: String(input.displayName ?? "Participant"),
         accountUrl: String(input.accountUrl ?? ""),
+      });
+    case "account_deletion_code":
+      return renderAccountDeletionCodeEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        verificationCode: String(input.verificationCode ?? ""),
+        expiresMinutes: Number(input.expiresMinutes ?? 10),
+        action: input.action === "cancel" ? "cancel" : "confirm",
+      });
+    case "account_deletion_scheduled":
+      return renderAccountDeletionScheduledEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        deadlineAt: String(input.deadlineAt ?? ""),
+        cancelUrl: String(input.cancelUrl ?? ""),
+      });
+    case "account_deletion_cancelled":
+      return renderAccountDeletionCancelledEmail({
+        displayName: String(input.displayName ?? "Participant"),
+      });
+    case "account_deletion_finalized":
+      return renderAccountDeletionFinalizedEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        registerUrl: String(input.registerUrl ?? ""),
+      });
+    case "account_deletion_reminder":
+      return renderAccountDeletionReminderEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        deadlineAt: String(input.deadlineAt ?? ""),
+        restoreUrl: String(input.restoreUrl ?? ""),
+        supportEmail: String(input.supportEmail ?? ""),
       });
     default: {
       const unsupported: never = template;

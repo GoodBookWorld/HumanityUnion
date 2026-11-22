@@ -19,8 +19,10 @@ function normalizeEmail(email: string): string {
 }
 
 type AuthUserByIdLookup = (userId: string) => Promise<AuthUserRecord | null>;
+type AuthUserByEmailLookup = (email: string) => Promise<AuthUserRecord | null>;
 
 let findAuthUserByIdForTests: AuthUserByIdLookup | null = null;
+let findAuthUserByEmailForTests: AuthUserByEmailLookup | null = null;
 
 /** Unit tests only. Production always reads `auth_users`. */
 export function setFindAuthUserByIdForTests(lookup: AuthUserByIdLookup | null): void {
@@ -29,6 +31,15 @@ export function setFindAuthUserByIdForTests(lookup: AuthUserByIdLookup | null): 
   }
 
   findAuthUserByIdForTests = lookup;
+}
+
+/** Unit tests only. Production always reads `auth_users`. */
+export function setFindAuthUserByEmailForTests(lookup: AuthUserByEmailLookup | null): void {
+  if (lookup && process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Auth user test lookup is unavailable.");
+  }
+
+  findAuthUserByEmailForTests = lookup;
 }
 
 async function ensureAuthMongoReady(): Promise<void> {
@@ -40,6 +51,10 @@ async function ensureAuthMongoReady(): Promise<void> {
 }
 
 export async function findAuthUserByEmail(email: string): Promise<AuthUserRecord | null> {
+  if (findAuthUserByEmailForTests) {
+    return findAuthUserByEmailForTests(email);
+  }
+
   await ensureAuthMongoReady();
 
   const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);

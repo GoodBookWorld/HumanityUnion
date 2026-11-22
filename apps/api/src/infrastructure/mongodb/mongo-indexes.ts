@@ -419,6 +419,10 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { email: 1 }, unique: true, name: "auth_user_email_unique" },
       { key: { status: 1 }, name: "auth_user_status" },
       { key: { createdAt: -1 }, name: "auth_user_created_at" },
+      {
+        key: { "accountDeletion.phase": 1, "accountDeletion.deadlineAt": 1 },
+        name: "auth_user_account_deletion_deadline",
+      },
     ],
   },
   {

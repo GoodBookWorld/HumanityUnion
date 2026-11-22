@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { findAuthUserById } from "./auth-user.repository.js";
 import type { AuthUserRecord } from "./auth-user.types.js";
+import { isAccountDeletionConfirmPath, isAccountDeletionSignInBlocked } from "../account-deletion/account-deletion.state.js";
 
 /**
  * Pack 24B.1 — non-leaky mutation rejection when auth_users.status !== "active".
@@ -55,11 +56,25 @@ function sendAccountSuspended(res: Response): void {
   });
 }
 
+function sendAccountDeletionBlocked(res: Response, phase: "pending" | "finalized"): void {
+  res.status(403).json({
+    success: false,
+    data: null,
+    meta: {
+      code: phase === "pending" ? "ACCOUNT_DELETION_PENDING" : "ACCOUNT_DELETION_FINALIZED",
+    },
+    links: {},
+    message: "This account is not available.",
+  });
+}
+
 /**
  * Shared Pack 24B.1 rule:
  * authenticated mutation → load current auth user → require status === "active".
  *
- * Safe methods always pass. Bootstrap identity is skipped (dev fallback).
+ * Safe methods always pass for administrator suspension. Pending and finalized
+ * deletion block reads and writes, except session teardown and the idempotent
+ * deletion confirm route.
  * Canonical source: auth_users.status (not participant_suspensions).
  */
 export async function requireActiveAccountForMutationsMiddleware(
@@ -67,12 +82,7 @@ export async function requireActiveAccountForMutationsMiddleware(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  if (!isMutatingHttpMethod(req.method)) {
-    next();
-    return;
-  }
-
-  if (isAuthSessionTeardownPath(req)) {
+  if (isAuthSessionTeardownPath(req) || isAccountDeletionConfirmPath(req.path || "")) {
     next();
     return;
   }
@@ -82,10 +92,27 @@ export async function requireActiveAccountForMutationsMiddleware(
     return;
   }
 
+  if (!isMutatingHttpMethod(req.method)) {
+    const user = await loadAuthUserForActiveGate(req.auth.id);
+    const phase = user?.accountDeletion?.phase;
+    if (user && isAccountDeletionSignInBlocked(user.accountDeletion) && (phase === "pending" || phase === "finalized")) {
+      sendAccountDeletionBlocked(res, phase);
+      return;
+    }
+    next();
+    return;
+  }
+
   const user = await loadAuthUserForActiveGate(req.auth.id);
 
   if (!user || user.status !== "active") {
     sendAccountSuspended(res);
+    return;
+  }
+
+  const phase = user.accountDeletion?.phase;
+  if (isAccountDeletionSignInBlocked(user.accountDeletion) && (phase === "pending" || phase === "finalized")) {
+    sendAccountDeletionBlocked(res, phase);
     return;
   }
 

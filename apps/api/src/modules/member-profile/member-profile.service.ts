@@ -296,6 +296,10 @@ async function resolvePublicMemberProfileProjection(
     throw new MemberProfileNotFoundError();
   }
 
+  if (profile.status === "closed") {
+    throw new MemberProfileNotFoundError();
+  }
+
   const membership = await findMembershipByUserId(profile.userId);
   const viewerIsOwner = options.viewerUserId === profile.userId;
 

@@ -69,3 +69,13 @@ export function shouldShowBetaBanner(): boolean {
 export function resolveBetaInviteExpiresDays(): number {
   return Number.parseInt(process.env.BETA_INVITE_EXPIRES_DAYS ?? "14", 10);
 }
+
+/**
+ * Participant account deletion stays off until the Privacy Policy amendment
+ * is published and this server flag is set. A client cannot turn it on.
+ * Unset and any value other than true/1 stay disabled, including production.
+ */
+export function isAccountDeletionEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const value = env.ACCOUNT_DELETION_ENABLED?.trim();
+  return value === "true" || value === "1";
+}
