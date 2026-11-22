@@ -47,6 +47,25 @@ export function isRrpApplicationEditableStatus(status: RrpApplicationStatus): bo
 }
 
 /**
+ * Message is offered only for this application's active Representative appointment
+ * when the owner API already returned that application's conversation id.
+ */
+export function isRrpRepresentativeMessageVisible(
+  item: Pick<
+    RrpApplicationDetail,
+    "status" | "platformDesignationActive" | "adminConversationId" | "adminConversationAvailability"
+  >,
+): boolean {
+  const conversationId = item.adminConversationId?.trim() ?? "";
+  return (
+    item.status === "approved" &&
+    item.platformDesignationActive === true &&
+    item.adminConversationAvailability === "available" &&
+    conversationId.length > 0
+  );
+}
+
+/**
  * Compact widget / hub ordering: active applications first (newest updated),
  * then terminal history (newest updated). Does not mutate the input array.
  */

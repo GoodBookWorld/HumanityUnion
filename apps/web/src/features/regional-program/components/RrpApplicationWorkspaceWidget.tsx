@@ -5,10 +5,7 @@
  * Reuses RrpApplicationModal; does not own a second application form.
  */
 
-import type {
-  RrpAdminConversationAvailability,
-  RrpApplicationDetail,
-} from "@hu/types";
+import type { RrpApplicationDetail } from "@hu/types";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useState } from "react";
 
@@ -19,6 +16,7 @@ import { listMyRrpApplications } from "../rrp-application-api";
 import { isRrpApplicationEntryEnabled } from "../rrp-application-entry";
 import {
   isRrpApplicationEditableStatus,
+  isRrpRepresentativeMessageVisible,
   partitionRrpApplicationsForDisplay,
 } from "../rrp-application-form";
 import { RrpApplicationModal } from "./RrpApplicationModal";
@@ -26,26 +24,6 @@ import { RrpApplicationModal } from "./RrpApplicationModal";
 import "./rrp-application-workspace-widget.css";
 
 type ModalIntent = "hub" | "create" | null;
-
-type MessagesUnavailableKey =
-  | "pending"
-  | "failed"
-  | "none"
-  | "unavailable";
-
-function resolveMessagesUnavailableKey(
-  availability: RrpAdminConversationAvailability | null | undefined,
-): MessagesUnavailableKey {
-  if (
-    availability === "pending" ||
-    availability === "failed" ||
-    availability === "none" ||
-    availability === "unavailable"
-  ) {
-    return availability;
-  }
-  return "unavailable";
-}
 
 function formatUpdatedDate(value: string, locale: string): string {
   try {
@@ -64,6 +42,7 @@ export function RrpApplicationWorkspaceWidget() {
   const locale = useLocale();
   const resolveCountryName = useCountryDisplayName();
   const titleId = useId();
+  const historyHeadingId = useId();
   const [applications, setApplications] = useState<RrpApplicationDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,41 +109,41 @@ export function RrpApplicationWorkspaceWidget() {
   }
 
   const { active, history } = partitionRrpApplicationsForDisplay(applications);
+  const orderedApplications = [...active, ...history];
+  const historyScrollable = orderedApplications.length > 2;
   const isEmpty = !loading && !error && applications.length === 0;
 
   function renderOpenMessagesAction(item: RrpApplicationDetail) {
-    const conversationId = item.adminConversationId?.trim() ?? "";
-    if (conversationId && item.adminConversationAvailability === "available") {
-      return (
-        <span data-rrp-open-messages="available">
-          <Button
-            href={`/workspace/messages/${encodeURIComponent(conversationId)}`}
-            variant="tertiary"
-            aria-label={t("workspaceWidget.openMessagesAria")}
-          >
-            {t("workspaceWidget.openMessages")}
-          </Button>
-        </span>
-      );
+    if (!isRrpRepresentativeMessageVisible(item)) {
+      return null;
     }
-
-    const unavailableKey = resolveMessagesUnavailableKey(
-      item.adminConversationAvailability,
-    );
+    const conversationId = item.adminConversationId?.trim() ?? "";
     return (
-      <p
-        className="rrp-application-workspace-widget__messages-unavailable"
-        role="status"
-        data-rrp-open-messages="unavailable"
-        data-rrp-open-messages-availability={unavailableKey}
-      >
-        {t(`workspaceWidget.messagesUnavailable.${unavailableKey}`)}
-      </p>
+      <span data-rrp-open-messages="available">
+        <Button
+          href={`/workspace/messages/${encodeURIComponent(conversationId)}`}
+          variant="secondary"
+          className="rrp-application-workspace-widget__message-button"
+          aria-label={t("workspaceWidget.message")}
+        >
+          <img
+            src="/icons/workspace/message.svg"
+            alt=""
+            aria-hidden="true"
+            width={16}
+            height={16}
+            className="rrp-application-workspace-widget__message-icon"
+            decoding="async"
+          />
+          {t("workspaceWidget.message")}
+        </Button>
+      </span>
     );
   }
 
   function renderApplicationRow(item: RrpApplicationDetail) {
     const countryLabel = resolveCountryName(item.representCountryCode, item.representCountryCode);
+    const description = item.motivation?.trim() ?? "";
     const editable = isRrpApplicationEditableStatus(item.status);
     const primaryLabel = editable ? t("workspaceWidget.edit") : t("workspaceWidget.view");
     const primaryAria = editable
@@ -178,6 +157,9 @@ export function RrpApplicationWorkspaceWidget() {
           <p className="rrp-application-workspace-widget__status">
             {t(`status.${item.status}`)}
           </p>
+          {description ? (
+            <p className="rrp-application-workspace-widget__description">{description}</p>
+          ) : null}
           {item.platformDesignationActive ? (
             <p
               className="rrp-application-workspace-widget__designation"
@@ -206,9 +188,7 @@ export function RrpApplicationWorkspaceWidget() {
           >
             {primaryLabel}
           </Button>
-          {item.status === "information_requested"
-            ? renderOpenMessagesAction(item)
-            : null}
+          {renderOpenMessagesAction(item)}
         </div>
       </li>
     );
@@ -268,25 +248,24 @@ export function RrpApplicationWorkspaceWidget() {
           </div>
         ) : null}
 
-        {!loading && !error && active.length > 0 ? (
+        {!loading && !error && orderedApplications.length > 0 ? (
           <div className="rrp-application-workspace-widget__section">
-            <h3 className="rrp-application-workspace-widget__section-title">
-              {t("workspaceWidget.activeHeading")}
-            </h3>
-            <ul className="rrp-application-workspace-widget__list">
-              {active.map(renderApplicationRow)}
-            </ul>
-          </div>
-        ) : null}
-
-        {!loading && !error && history.length > 0 ? (
-          <div className="rrp-application-workspace-widget__section">
-            <h3 className="rrp-application-workspace-widget__section-title">
+            <h3
+              id={historyHeadingId}
+              className="rrp-application-workspace-widget__section-title"
+            >
               {t("workspaceWidget.historyHeading")}
             </h3>
-            <ul className="rrp-application-workspace-widget__list">
-              {history.map(renderApplicationRow)}
-            </ul>
+            <div
+              className="rrp-application-workspace-widget__history"
+              data-history-scroll={historyScrollable ? "true" : "false"}
+              tabIndex={historyScrollable ? 0 : undefined}
+              aria-labelledby={historyHeadingId}
+            >
+              <ul className="rrp-application-workspace-widget__list">
+                {orderedApplications.map(renderApplicationRow)}
+              </ul>
+            </div>
           </div>
         ) : null}
 
@@ -294,7 +273,7 @@ export function RrpApplicationWorkspaceWidget() {
           <div className="rrp-application-workspace-widget__footer">
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               onClick={() => openModal({ intent: "create" })}
             >
               {t("workspaceWidget.newApplication")}

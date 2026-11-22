@@ -22,6 +22,7 @@ import {
   renderAppointmentWelcomeMessage,
   selectWelcomeDisplayName,
 } from "./rrp-appointment-welcome-message.js";
+import { resolveRrpMessageBrandSiteName } from "./rrp-message-brand.js";
 import { renderRequestInformationMessage } from "./rrp-request-information-message.js";
 import { isRrpApplicationWritesEnabled } from "./rrp-application-writes.activation.js";
 
@@ -110,17 +111,21 @@ export function buildSafeRequestInformationMessageText(input: {
 async function buildMessageText(intent: RrpAppointmentMessageIntentRecord): Promise<string> {
   if (intent.kind === "request_information") {
     const context = await resolveAppointmentWelcomeContext(intent.recipientParticipantId);
+    const siteName = await resolveRrpMessageBrandSiteName(context.locale);
     return renderRequestInformationMessage({
       countryCode: intent.representCountryCode,
       requestExplanation: intent.requestExplanation,
       locale: context.locale,
+      siteName,
     });
   }
   const welcome = await resolveAppointmentWelcomeContext(intent.recipientParticipantId);
+  const siteName = await resolveRrpMessageBrandSiteName(welcome.locale);
   return renderAppointmentWelcomeMessage({
     displayName: welcome.displayName,
     countryCode: intent.representCountryCode,
     locale: welcome.locale,
+    siteName,
   });
 }
 

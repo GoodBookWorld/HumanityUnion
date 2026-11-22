@@ -7769,6 +7769,7 @@
       "messagesHint": "An administrator asked for more information. Reply in Messages after you update your application.",
       "openMessages": "Open Messages",
       "openMessagesAria": "Open Workspace Messages",
+      "message": "Message",
       "messagesUnavailable": {
         "pending": "Your administrator message is still being delivered. Try again shortly from this page.",
         "failed": "The administrator message could not be delivered. Update your application here; messaging will be available once the conversation exists.",

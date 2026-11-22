@@ -18,6 +18,18 @@ export function isRrpApplicationActiveStatus(status: RrpApplicationStatus): bool
   return ACTIVE.has(status);
 }
 
+/**
+ * Message link for one application. Confirm-appointment sets status to
+ * approved and records an active appointment for that application id.
+ * Another application's approval does not qualify this one.
+ */
+export function isRrpRepresentativeConversationLinkEligible(input: {
+  status: RrpApplicationStatus;
+  platformDesignationActive: boolean;
+}): boolean {
+  return input.status === "approved" && input.platformDesignationActive === true;
+}
+
 /** Statuses from which the applicant may withdraw. */
 const WITHDRAWABLE: ReadonlySet<RrpApplicationStatus> = new Set([
   "draft",

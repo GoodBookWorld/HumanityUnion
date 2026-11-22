@@ -12,6 +12,7 @@ import type { RrpApplicationDetail } from "@hu/types";
 import { isRrpApplicationEntryEnabled, RRP_APPLICATION_ENTRY_FLAG_ENV } from "./rrp-application-entry.js";
 import {
   isRrpApplicationEditableStatus,
+  isRrpRepresentativeMessageVisible,
   partitionRrpApplicationsForDisplay,
 } from "./rrp-application-form.js";
 
@@ -85,41 +86,95 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.doesNotMatch(widget, /confirmAdminRrpAppointment|AdminRrpApplicationModal|Approve/);
   });
 
-  it("deep-links information_requested rows to the server-provided conversation id", () => {
+  it("deep-links an approved Representative conversation and hides every other row", () => {
     const widget = read(
       "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
     );
+    const form = read("features/regional-program/rrp-application-form.ts");
+    assert.match(widget, /isRrpRepresentativeMessageVisible/);
     assert.match(widget, /information_requested/);
-    assert.match(widget, /adminConversationId/);
-    assert.match(widget, /adminConversationAvailability/);
+    assert.match(form, /status === "approved"/);
+    assert.match(form, /platformDesignationActive === true/);
+    assert.match(form, /adminConversationId/);
+    assert.match(form, /adminConversationAvailability === "available"/);
     assert.match(
       widget,
       /\/workspace\/messages\/\$\{encodeURIComponent\(conversationId\)\}/,
     );
-    assert.match(widget, /workspaceWidget\.openMessages/);
-    assert.match(widget, /workspaceWidget\.messagesUnavailable/);
-    assert.match(widget, /data-rrp-open-messages="unavailable"/);
+    assert.match(widget, /workspaceWidget\.message/);
+    assert.match(widget, /\/icons\/workspace\/message\.svg/);
     assert.doesNotMatch(widget, /href="\/workspace\/messages"/);
     assert.doesNotMatch(widget, /buildDirectConversationId|openOrCreate/);
     assert.doesNotMatch(widget, /DirectMessagingPanel|RrpChat/);
+
+    const visible = sampleApplication({
+      applicationId: "approved-app",
+      status: "approved",
+      representCountryCode: "CA",
+      updatedAt: "2026-03-01T00:00:00.000Z",
+      platformDesignationActive: true,
+      adminConversationId: "direct-conversation:admin::applicant",
+      adminConversationAvailability: "available",
+    });
+    assert.equal(isRrpRepresentativeMessageVisible(visible), true);
+
+    assert.equal(
+      isRrpRepresentativeMessageVisible({
+        ...visible,
+        adminConversationId: null,
+        adminConversationAvailability: "none",
+      }),
+      false,
+    );
+    for (const status of [
+      "under_review",
+      "information_requested",
+      "rejected",
+      "draft",
+      "withdrawn",
+      "submitted",
+    ] as const) {
+      assert.equal(
+        isRrpRepresentativeMessageVisible({ ...visible, status }),
+        false,
+        status,
+      );
+    }
+    assert.equal(
+      isRrpRepresentativeMessageVisible({
+        ...visible,
+        platformDesignationActive: false,
+      }),
+      false,
+    );
+
+    const other = sampleApplication({
+      applicationId: "other-app",
+      status: "submitted",
+      representCountryCode: "US",
+      updatedAt: "2026-03-02T00:00:00.000Z",
+      platformDesignationActive: false,
+      adminConversationId: "direct-conversation:should-not-open",
+      adminConversationAvailability: "available",
+    });
+    assert.equal(isRrpRepresentativeMessageVisible(visible), true);
+    assert.equal(isRrpRepresentativeMessageVisible(other), false);
   });
 
-  it("maps conversation availability per application without Ally selector redirect", () => {
+  it("does not route ineligible applications through the Ally directory", () => {
     const widget = read(
       "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
     );
     const en = JSON.parse(read("features/i18n/messages/en.json")) as {
       rrpApplication: {
         workspaceWidget: {
+          message: string;
           messagesUnavailable: Record<string, string>;
         };
       };
     };
+    assert.equal(en.rrpApplication.workspaceWidget.message, "Message");
     assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.pending);
-    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.failed);
-    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.none);
-    assert.ok(en.rrpApplication.workspaceWidget.messagesUnavailable.unavailable);
-    assert.match(widget, /resolveMessagesUnavailableKey/);
     assert.doesNotMatch(widget, /active.?all(?:y|ies)|AllySelector|openOrCreate/i);
   });
 
@@ -204,7 +259,8 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.match(widget, /workspaceWidget\.retry/);
     assert.match(widget, /workspaceWidget\.create/);
     assert.match(widget, /workspaceWidget\.newApplication/);
-    assert.doesNotMatch(widget, /dateOfBirth|legalFirstName|legalLastName|annualRequestedAmountCad|relevantExperience|motivation/);
+    assert.match(widget, /item\.motivation\?\.trim/);
+    assert.doesNotMatch(widget, /dateOfBirth|legalFirstName|legalLastName|annualRequestedAmountCad|relevantExperience/);
   });
 
   it("preserves the widget after modal close and does not auto-save", () => {
@@ -261,6 +317,40 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.match(css, /overflow-x:\s*hidden/);
     assert.match(css, /@media \(max-width: 1024px\)/);
     assert.match(css, /margin-inline|padding-block|border-block|text-align:\s*start/);
+  });
+
+  it("scrolls extra applications and keeps Message on the resolved conversation", () => {
+    const widget = read(
+      "features/regional-program/components/RrpApplicationWorkspaceWidget.tsx",
+    );
+    const css = read(
+      "features/regional-program/components/rrp-application-workspace-widget.css",
+    );
+    const en = JSON.parse(read("features/i18n/messages/en.json"));
+    assert.equal(en.rrpApplication.workspaceWidget.message, "Message");
+    assert.equal(en.rrpApplication.workspaceWidget.historyHeading, "Application history");
+    assert.equal(en.rrpApplication.workspaceWidget.newApplication, "New application");
+    assert.match(widget, /\[\.\.\.active, \.\.\.history\]/);
+    assert.match(widget, /orderedApplications\.length > 2/);
+    assert.match(widget, /data-history-scroll=\{historyScrollable \? "true" : "false"\}/);
+    assert.match(widget, /tabIndex=\{historyScrollable \? 0 : undefined\}/);
+    assert.match(widget, /rrp-application-workspace-widget__description/);
+    assert.match(widget, /variant="secondary"/);
+    assert.match(widget, /variant="primary"/);
+    const historyAt = widget.indexOf("rrp-application-workspace-widget__history");
+    const newApplicationAt = widget.indexOf("workspaceWidget.newApplication");
+    assert.ok(historyAt >= 0 && newApplicationAt > historyAt);
+    const newApplicationButton = widget.slice(newApplicationAt - 180, newApplicationAt);
+    assert.match(newApplicationButton, /variant="primary"/);
+    assert.match(css, /max-height:\s*28rem/);
+    assert.match(css, /overflow-y:\s*auto/);
+    assert.match(css, /overscroll-behavior:\s*contain/);
+    assert.match(css, /-webkit-line-clamp:\s*2/);
+    assert.match(css, /:focus-visible/);
+    assert.match(css, /\[dir="rtl"\]/);
+    assert.doesNotMatch(css, /margin-left|margin-right|padding-left|padding-right/);
+    assert.doesNotMatch(widget, /openOrCreateDirectConversation|buildDirectConversationId/);
+    assert.doesNotMatch(widget, /href="\/workspace\/messages"/);
   });
 
   it("does not enable the RRP entry flag in source and avoids a second form", () => {

@@ -8,6 +8,7 @@ import { resolveCountryDisplayName } from "@hu/geography";
 
 import { MAX_DIRECT_MESSAGE_LENGTH } from "../direct-messaging/direct-messaging.validators.js";
 import { appointmentWelcomeCopyLocale } from "./rrp-appointment-welcome-message.js";
+import { applyRrpBrandSiteName } from "./rrp-message-brand.js";
 
 const NOTE_MAX_LENGTH = 1200;
 const DISALLOWED_NOTE_CHARACTERS = /[<>\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -40,7 +41,7 @@ const REQUEST_INFORMATION_COPY: Record<
   uk: {
     heading: "Потрібна додаткова інформація",
     explanation:
-      "Адміністратор просить додаткову інформацію щодо вашої заявки на роль регіонального представника Humanity Union. Країна: {country}.",
+      "Адміністратор просить додаткову інформацію щодо вашої заявки на роль регіонального представника {siteName}. Країна: {country}.",
     neededLabel: "Що потрібно:",
     nextLabel: "Наступний крок:",
     nextBody:
@@ -51,7 +52,7 @@ const REQUEST_INFORMATION_COPY: Record<
   "zh-Hant": {
     heading: "需要補充資料",
     explanation:
-      "管理員請您就 Humanity Union 區域代表申請補充資料。您所代表的國家：{country}。",
+      "管理員請您就 {siteName} 區域代表申請補充資料。您所代表的國家：{country}。",
     neededLabel: "需要補充的內容：",
     nextLabel: "下一步：",
     nextBody: "請在工作區開啟「我的區域申請」，更新申請內容，並在這段對話中回覆。",
@@ -61,7 +62,7 @@ const REQUEST_INFORMATION_COPY: Record<
   ar: {
     heading: "نحتاج إلى معلومات إضافية",
     explanation:
-      "طلب أحد المشرفين معلومات إضافية حول طلبكم للتمثيل الإقليمي في Humanity Union. البلد: {country}.",
+      "طلب أحد المشرفين معلومات إضافية حول طلبكم للتمثيل الإقليمي في {siteName}. البلد: {country}.",
     neededLabel: "ما المطلوب:",
     nextLabel: "الخطوة التالية:",
     nextBody:
@@ -72,7 +73,7 @@ const REQUEST_INFORMATION_COPY: Record<
   de: {
     heading: "Weitere Informationen werden benötigt",
     explanation:
-      "Eine Administratorin oder ein Administrator hat zusätzliche Informationen zu Ihrer Bewerbung als regionale Vertretung von Humanity Union angefordert. Land: {country}.",
+      "Eine Administratorin oder ein Administrator hat zusätzliche Informationen zu Ihrer Bewerbung als regionale Vertretung von {siteName} angefordert. Land: {country}.",
     neededLabel: "Was benötigt wird:",
     nextLabel: "Nächster Schritt:",
     nextBody:
@@ -84,7 +85,7 @@ const REQUEST_INFORMATION_COPY: Record<
   es: {
     heading: "Se necesita más información",
     explanation:
-      "Un administrador ha solicitado información adicional sobre su solicitud de representante regional de Humanity Union. País: {country}.",
+      "Un administrador ha solicitado información adicional sobre su solicitud de representante regional de {siteName}. País: {country}.",
     neededLabel: "Qué se necesita:",
     nextLabel: "Siguiente paso:",
     nextBody:
@@ -95,7 +96,7 @@ const REQUEST_INFORMATION_COPY: Record<
   fr: {
     heading: "Des informations complémentaires sont nécessaires",
     explanation:
-      "Un administrateur a demandé des informations complémentaires au sujet de votre candidature à la représentation régionale de Humanity Union. Pays : {country}.",
+      "Un administrateur a demandé des informations complémentaires au sujet de votre candidature à la représentation régionale de {siteName}. Pays : {country}.",
     neededLabel: "Ce qui est nécessaire :",
     nextLabel: "Prochaine étape :",
     nextBody:
@@ -107,7 +108,7 @@ const REQUEST_INFORMATION_COPY: Record<
   he: {
     heading: "נדרש מידע נוסף",
     explanation:
-      "מנהל ביקש מידע נוסף לגבי הבקשה שלכם לייצוג אזורי ב-Humanity Union. המדינה: {country}.",
+      "מנהל ביקש מידע נוסף לגבי הבקשה שלכם לייצוג אזורי ב-{siteName}. המדינה: {country}.",
     neededLabel: "מה נדרש:",
     nextLabel: "הצעד הבא:",
     nextBody:
@@ -118,7 +119,7 @@ const REQUEST_INFORMATION_COPY: Record<
   ka: {
     heading: "საჭიროა დამატებითი ინფორმაცია",
     explanation:
-      "ადმინისტრატორმა დამატებითი ინფორმაცია მოითხოვა თქვენს Humanity Union-ის რეგიონული წარმომადგენლობის განაცხადზე. ქვეყანა: {country}.",
+      "ადმინისტრატორმა დამატებითი ინფორმაცია მოითხოვა თქვენს {siteName}-ის რეგიონული წარმომადგენლობის განაცხადზე. ქვეყანა: {country}.",
     neededLabel: "რა არის საჭირო:",
     nextLabel: "შემდეგი ნაბიჯი:",
     nextBody:
@@ -129,7 +130,7 @@ const REQUEST_INFORMATION_COPY: Record<
   pt: {
     heading: "São necessárias mais informações",
     explanation:
-      "Um administrador pediu informações adicionais sobre a sua candidatura a representante regional da Humanity Union. País: {country}.",
+      "Um administrador pediu informações adicionais sobre a sua candidatura a representante regional da {siteName}. País: {country}.",
     neededLabel: "O que é necessário:",
     nextLabel: "Próximo passo:",
     nextBody:
@@ -182,35 +183,45 @@ function composeRequestInformationMessage(input: {
   copy: RequestInformationCopy;
   country: string;
   note: string;
+  siteName?: string | null;
 }): string {
-  return [
-    input.copy.heading,
-    "",
-    fill(input.copy.explanation, "{country}", input.country),
-    "",
-    input.copy.neededLabel,
-    "",
-    input.note,
-    "",
-    input.copy.nextLabel,
-    "",
-    input.copy.nextBody,
-    "",
-    input.copy.disclaimer,
-  ].join("\n");
+  return applyRrpBrandSiteName(
+    [
+      input.copy.heading,
+      "",
+      fill(input.copy.explanation, "{country}", input.country),
+      "",
+      input.copy.neededLabel,
+      "",
+      input.note,
+      "",
+      input.copy.nextLabel,
+      "",
+      input.copy.nextBody,
+      "",
+      input.copy.disclaimer,
+    ].join("\n"),
+    input.siteName,
+  );
 }
 
 export function renderRequestInformationMessage(input: {
   countryCode: string;
   requestExplanation?: string | null;
   locale?: string | null;
+  siteName?: string | null;
 }): string {
   const locale = appointmentWelcomeCopyLocale(input.locale);
   const copy = REQUEST_INFORMATION_COPY[locale];
   const country = requestCountryName(input.countryCode, locale);
   const sanitized = sanitizeRequestInformationNote(input.requestExplanation);
   const note = sanitized || copy.noteFallback;
-  let text = composeRequestInformationMessage({ copy, country, note });
+  let text = composeRequestInformationMessage({
+    copy,
+    country,
+    note,
+    siteName: input.siteName,
+  });
   if ([...text].length <= MAX_DIRECT_MESSAGE_LENGTH) {
     return text;
   }
@@ -220,6 +231,7 @@ export function renderRequestInformationMessage(input: {
     copy,
     country,
     note: shortened || copy.noteFallback,
+    siteName: input.siteName,
   });
   return limitCodePoints(text, MAX_DIRECT_MESSAGE_LENGTH);
 }

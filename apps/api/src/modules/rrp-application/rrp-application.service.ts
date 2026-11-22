@@ -28,6 +28,7 @@ import {
   isIdempotentAdminDecision,
   isIdempotentSubmit,
   isIdempotentWithdraw,
+  isRrpRepresentativeConversationLinkEligible,
 } from "./rrp-application.lifecycle.js";
 import {
   RrpApplicationAccessDeniedError,
@@ -232,32 +233,38 @@ export async function listOwnRrpApplicationsForUser(
     activeBySource = new Set();
   }
 
-  // Soft-enrich Open Messages linkage only for information_requested rows.
+  // Attach an existing conversation only for this application's active Representative appointment.
   // Soft-fail: list remains available if conversation resolution fails.
   const conversationByApplicationId = new Map<
     string,
     Pick<RrpApplicationDetail, "adminConversationId" | "adminConversationAvailability">
   >();
   await Promise.all(
-    records
-      .filter((record) => record.status === "information_requested")
-      .map(async (record) => {
-        try {
-          const resolved = await resolveOwnRrpAdminConversation({
-            userId: actor.userId,
-            applicationId: record.applicationId,
-          });
-          conversationByApplicationId.set(record.applicationId, {
-            adminConversationId: resolved.conversationId,
-            adminConversationAvailability: resolved.availability,
-          });
-        } catch {
-          conversationByApplicationId.set(record.applicationId, {
-            adminConversationId: null,
-            adminConversationAvailability: "unavailable",
-          });
-        }
-      }),
+    records.map(async (record) => {
+      if (
+        !isRrpRepresentativeConversationLinkEligible({
+          status: record.status,
+          platformDesignationActive: activeBySource.has(record.applicationId),
+        })
+      ) {
+        return;
+      }
+      try {
+        const resolved = await resolveOwnRrpAdminConversation({
+          userId: actor.userId,
+          applicationId: record.applicationId,
+        });
+        conversationByApplicationId.set(record.applicationId, {
+          adminConversationId: resolved.conversationId,
+          adminConversationAvailability: resolved.availability,
+        });
+      } catch {
+        conversationByApplicationId.set(record.applicationId, {
+          adminConversationId: null,
+          adminConversationAvailability: "unavailable",
+        });
+      }
+    }),
   );
 
   return records.map((record) => {
@@ -291,7 +298,13 @@ export async function getOwnRrpApplicationForUser(input: {
   }
 
   const detail = toRrpApplicationDetail(record);
-  if (record.status !== "information_requested") {
+  const activeAppointment = await resolveActiveAppointmentDetailForApplication(record.applicationId);
+  if (
+    !isRrpRepresentativeConversationLinkEligible({
+      status: record.status,
+      platformDesignationActive: activeAppointment?.sourceApplicationId === record.applicationId,
+    })
+  ) {
     return detail;
   }
 
