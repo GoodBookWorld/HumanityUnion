@@ -7687,7 +7687,7 @@
         "status": "Статус заявки",
         "submittedAt": "Дата подання",
         "consent": "Згода",
-        "consentAccepted": "Прийнято ({version}) {at}",
+        "consentAccepted": "Прийнято {at}",
         "experience": "Відповідний досвід",
         "motivation": "Мотивація",
         "decisionHistory": "Історія рішень",

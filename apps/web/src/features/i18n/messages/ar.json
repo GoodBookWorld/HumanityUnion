@@ -7687,7 +7687,7 @@
         "status": "حالة الطلب",
         "submittedAt": "تاريخ الإرسال",
         "consent": "الموافقة",
-        "consentAccepted": "تم القبول ({version}) في {at}",
+        "consentAccepted": "تم القبول في {at}",
         "experience": "الخبرة ذات الصلة",
         "motivation": "الدافع",
         "decisionHistory": "سجل القرارات",

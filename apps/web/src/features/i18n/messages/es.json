@@ -7768,7 +7768,7 @@
         "status": "Estado de la solicitud",
         "submittedAt": "Fecha de envío",
         "consent": "Consentimiento",
-        "consentAccepted": "Aceptado ({version}) el {at}",
+        "consentAccepted": "Aceptado el {at}",
         "experience": "Experiencia pertinente",
         "motivation": "Motivación",
         "decisionHistory": "Historial de decisiones",

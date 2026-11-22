@@ -7,7 +7,7 @@
 
 import type { AdminRrpApplicationDetail } from "@hu/types";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
@@ -30,6 +30,7 @@ import {
   isRrpRequestInformationEligible,
   isRrpRevokeAppointmentEligible,
 } from "../admin-rrp-directory";
+import { shouldAcceptRrpDetailResponse } from "../admin-rrp-notification-open";
 
 import "../../../design-system/components/confirm-dialog.css";
 import "./admin-rrp-application-modal.css";
@@ -42,6 +43,8 @@ interface AdminRrpApplicationModalProps {
   applicationIds: readonly string[];
   /** HU-RRP-06B — prefer this viewable application when opening from a deep link. */
   initialApplicationId?: string | null;
+  /** Changes on each explicit notification click, including a repeated application id. */
+  openRequestId?: number;
   onClose: () => void;
   onDirectoryRefresh?: () => void;
 }
@@ -84,6 +87,7 @@ export function AdminRrpApplicationModal({
   applicantDisplayName,
   applicationIds,
   initialApplicationId = null,
+  openRequestId = 0,
   onClose,
   onDirectoryRefresh,
 }: AdminRrpApplicationModalProps) {
@@ -98,8 +102,9 @@ export function AdminRrpApplicationModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const approvingRef = useRef(false);
-
-  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const detailRequestRef = useRef(0);
+  const detailGenerationRef = useRef(0);
+  const selectedApplicationIdRef = useRef<string | null>(null);
   const [selectorItems, setSelectorItems] = useState<
     readonly {
       applicationId: string;
@@ -107,6 +112,8 @@ export function AdminRrpApplicationModal({
       status: string;
     }[]
   >([]);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  selectedApplicationIdRef.current = selectedApplicationId;
   const [detail, setDetail] = useState<AdminRrpApplicationDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -279,15 +286,39 @@ export function AdminRrpApplicationModal({
     };
   }, [isOpen, applicationIds, participantId, initialApplicationId, t]);
 
-  const loadDetail = useCallback(
-    async (applicationId: string) => {
-      setLoading(true);
-      setError(null);
-      setDenied(false);
-      try {
-        const next = await getAdminRrpApplication(applicationId);
+  useEffect(() => {
+    if (!isOpen || !selectedApplicationId) {
+      return;
+    }
+    const applicationId = selectedApplicationId;
+    const requestId = ++detailRequestRef.current;
+    const generation = ++detailGenerationRef.current;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setDenied(false);
+    setDetail(null);
+    void getAdminRrpApplication(applicationId)
+      .then((next) => {
+        if (
+          cancelled ||
+          !shouldAcceptRrpDetailResponse({
+            responseRequestId: requestId,
+            latestRequestId: detailRequestRef.current,
+            responseApplicationId: applicationId,
+            selectedApplicationId: selectedApplicationIdRef.current,
+            responseGeneration: generation,
+            latestGeneration: detailGenerationRef.current,
+          })
+        ) {
+          return;
+        }
         setDetail(next);
-      } catch (loadError: unknown) {
+      })
+      .catch((loadError: unknown) => {
+        if (cancelled || requestId !== detailRequestRef.current) {
+          return;
+        }
         setDetail(null);
         if (isForbiddenError(loadError)) {
           setDenied(true);
@@ -295,19 +326,16 @@ export function AdminRrpApplicationModal({
         } else {
           setError(formatAuthFormError(loadError));
         }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [t],
-  );
-
-  useEffect(() => {
-    if (!isOpen || !selectedApplicationId) {
-      return;
-    }
-    void loadDetail(selectedApplicationId);
-  }, [isOpen, selectedApplicationId, loadDetail]);
+      })
+      .finally(() => {
+        if (!cancelled && requestId === detailRequestRef.current) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, openRequestId, selectedApplicationId, t]);
 
   if (!isOpen) {
     return null;
@@ -333,6 +361,7 @@ export function AdminRrpApplicationModal({
         expectedRevision: detail.revision,
       });
       setDetail(result.application);
+      detailGenerationRef.current += 1;
       setConfirmApproveOpen(false);
       setActionMessage(t("messages.approved"));
       if (result.messageWarning) {
@@ -377,6 +406,7 @@ export function AdminRrpApplicationModal({
         ...(needsNote ? { note: reviewNote.trim() } : {}),
       });
       setDetail(result.application);
+      detailGenerationRef.current += 1;
       setReviewNote("");
       setConfirmRequestInfoOpen(false);
       setActionMessage(
@@ -428,6 +458,7 @@ export function AdminRrpApplicationModal({
         ...(reviewNote.trim() ? { note: reviewNote.trim() } : {}),
       });
       setDetail(result.application);
+      detailGenerationRef.current += 1;
       setConfirmRevokeOpen(false);
       setReviewNote("");
       setActionMessage(t("messages.revoked"));
@@ -594,7 +625,6 @@ export function AdminRrpApplicationModal({
                 <dd>
                   {detail.consentAcceptedAt
                     ? t("fields.consentAccepted", {
-                        version: detail.consentVersion ?? "—",
                         at: formatDateTime(detail.consentAcceptedAt, locale),
                       })
                     : "—"}

@@ -211,6 +211,6 @@ describe("HU-RRP-07G.4 admin interface localization", () => {
     assert.match(english.get("rrpApplication.admin.confirmRevoke.lineHistory") ?? "", /status is not changed/i);
     assert.match(english.get("rrpApplication.admin.fields.reviewNote") ?? "", /required/i);
     assert.equal(english.get("rrpApplication.admin.fields.fundingModel"), "Funding model");
-    assert.equal(tokens(english.get("rrpApplication.admin.fields.consentAccepted") ?? ""), "{version}|{at}");
+    assert.equal(tokens(english.get("rrpApplication.admin.fields.consentAccepted") ?? ""), "{at}");
   });
 });

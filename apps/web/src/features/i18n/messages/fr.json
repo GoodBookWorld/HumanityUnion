@@ -7768,7 +7768,7 @@
         "status": "Statut de la candidature",
         "submittedAt": "Date de soumission",
         "consent": "Consentement",
-        "consentAccepted": "Accepté ({version}) le {at}",
+        "consentAccepted": "Accepté le {at}",
         "experience": "Expérience pertinente",
         "motivation": "Motivation de la candidature",
         "decisionHistory": "Historique des décisions",

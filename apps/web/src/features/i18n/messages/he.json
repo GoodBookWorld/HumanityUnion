@@ -7768,7 +7768,7 @@
         "status": "סטטוס הבקשה",
         "submittedAt": "תאריך ההגשה",
         "consent": "הסכמה",
-        "consentAccepted": "התקבל ({version}) בתאריך {at}",
+        "consentAccepted": "התקבל בתאריך {at}",
         "experience": "ניסיון רלוונטי",
         "motivation": "מניע",
         "decisionHistory": "היסטוריית החלטות",

@@ -7753,7 +7753,7 @@
         "status": "Estado da candidatura",
         "submittedAt": "Data de submissão",
         "consent": "Consentimento",
-        "consentAccepted": "Aceite ({version}) em {at}",
+        "consentAccepted": "Aceite em {at}",
         "experience": "Experiência relevante",
         "motivation": "Motivação",
         "decisionHistory": "Histórico de decisões",

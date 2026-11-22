@@ -7768,7 +7768,7 @@
         "status": "განაცხადის სტატუსი",
         "submittedAt": "გაგზავნის თარიღი",
         "consent": "თანხმობა",
-        "consentAccepted": "მიღებულია ({version}) {at}",
+        "consentAccepted": "მიღებულია {at}",
         "experience": "შესაბამისი გამოცდილება",
         "motivation": "მოტივაცია",
         "decisionHistory": "გადაწყვეტილებების ისტორია",

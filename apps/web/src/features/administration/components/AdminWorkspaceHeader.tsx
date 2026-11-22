@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -16,6 +16,11 @@ import {
   resolveAdminNotificationHref,
   resolveAdminNotificationTypeLabel,
 } from "../admin-notification-labels";
+import {
+  createRrpNotificationOpenRequest,
+  publishRrpNotificationOpen,
+  readRrpApplicationNotificationTarget,
+} from "../admin-rrp-notification-open";
 
 import "./admin-workspace-header.css";
 
@@ -41,6 +46,8 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
   const [listError, setListError] = useState<string | null>(null);
   const [clearError, setClearError] = useState<string | null>(null);
   const [clearingId, setClearingId] = useState<string | null>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
   const refreshCount = useCallback(async () => {
     try {
@@ -55,17 +62,7 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
     void refreshCount();
   }, [refreshCount]);
 
-  useEffect(() => {
-    function onVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        void refreshCount();
-      }
-    }
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [refreshCount]);
-
-  async function loadList() {
+  const loadList = useCallback(async () => {
     setListLoading(true);
     setListError(null);
     setClearError(null);
@@ -80,7 +77,21 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
     } finally {
       setListLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      void refreshCount();
+      if (openRef.current) {
+        void loadList();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [loadList, refreshCount]);
 
   async function handleToggle() {
     const next = !open;
@@ -193,6 +204,12 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
                 );
                 const dateLabel = formatAdminNotificationDate(notification.createdAt);
                 const href = resolveAdminNotificationHref(notification);
+                const rrpTarget = href
+                  ? readRrpApplicationNotificationTarget({
+                      type: notification.type,
+                      targetHref: href,
+                    })
+                  : null;
                 const content = (
                   <>
                     {dateLabel ? (
@@ -223,7 +240,19 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
                     className="admin-workspace-header__row"
                   >
                     {href ? (
-                      <Link href={href} className="admin-workspace-header__row-link">
+                      <Link
+                        href={href}
+                        className="admin-workspace-header__row-link"
+                        onClick={
+                          rrpTarget
+                            ? () => {
+                                publishRrpNotificationOpen(
+                                  createRrpNotificationOpenRequest(rrpTarget),
+                                );
+                              }
+                            : undefined
+                        }
+                      >
                         {content}
                       </Link>
                     ) : (

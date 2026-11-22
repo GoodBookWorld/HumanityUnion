@@ -7687,7 +7687,7 @@
         "status": "申請狀態",
         "submittedAt": "提交日期",
         "consent": "同意",
-        "consentAccepted": "已接受（{version}），時間為 {at}",
+        "consentAccepted": "已接受，時間為 {at}",
         "experience": "相關經歷",
         "motivation": "動機",
         "decisionHistory": "決定紀錄",

@@ -21,7 +21,7 @@ interface WorkspaceHomeAssistantProps {
  */
 export function WorkspaceHomeAssistant(_props: WorkspaceHomeAssistantProps) {
   return (
-    <div className="workspace-home-assistant-rail">
+    <div className="workspace-home-assistant-rail" tabIndex={0}>
       <HumanityUnionAssistantWidget surfaceId="workspace" />
       {isRrpApplicationEntryEnabled() ? <RrpApplicationWorkspaceWidget /> : null}
     </div>

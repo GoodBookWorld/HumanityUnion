@@ -7753,7 +7753,7 @@
         "status": "Bewerbungsstatus",
         "submittedAt": "Einreichungsdatum",
         "consent": "Einwilligung",
-        "consentAccepted": "Angenommen ({version}) am {at}",
+        "consentAccepted": "Angenommen am {at}",
         "experience": "Einschlägige Erfahrung",
         "motivation": "Bewerbungsmotivation",
         "decisionHistory": "Entscheidungsverlauf",

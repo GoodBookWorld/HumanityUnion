@@ -7799,7 +7799,7 @@
         "status": "Application status",
         "submittedAt": "Submission date",
         "consent": "Consent",
-        "consentAccepted": "Accepted ({version}) on {at}",
+        "consentAccepted": "Accepted on {at}",
         "experience": "Relevant experience",
         "motivation": "Motivation",
         "decisionHistory": "Decision history",

@@ -13,3 +13,19 @@
   min-width: 0;
   box-sizing: border-box;
 }
+
+@media (min-width: 1025px) {
+  .workspace-home-assistant-rail {
+    position: sticky;
+    top: var(--hu-sticky-top);
+    max-height: calc(100dvh - var(--hu-sticky-top) - var(--hu-space-4));
+    overflow-y: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+
+  .workspace-home-assistant-rail:focus-visible {
+    outline: var(--hu-focus-ring);
+    outline-offset: var(--hu-focus-offset);
+  }
+}

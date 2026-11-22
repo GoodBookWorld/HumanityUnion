@@ -46,11 +46,18 @@ import {
   directoryListFiltersForNotificationTarget,
   directoryNotificationScrollBehavior,
   directoryTargetLookupQuery,
+  adminDirectoryParticipantDeepLinkKey,
   isDirectoryBadgeDeepLink,
   readAdminDirectoryDeepLinkQuery,
   resolveDirectoryNotificationScroll,
   resolveDirectoryParticipantDeepLink,
 } from "../admin-participant-directory-deep-link";
+import {
+  explicitRrpOpenChanges,
+  readRrpNotificationOpenEvent,
+  releaseDirectoryDeepLinkForLocationChange,
+  RRP_NOTIFICATION_OPEN_EVENT,
+} from "../admin-rrp-notification-open";
 import {
   canViewRrpApplication,
   isRrpApplicationStatus,
@@ -235,6 +242,7 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
   const [badgeOrderApplicationId, setBadgeOrderApplicationId] = useState<string | null>(null);
   const [rrpApplicationModalOpen, setRrpApplicationModalOpen] = useState(false);
   const [rrpDeepLinkApplicationId, setRrpDeepLinkApplicationId] = useState<string | null>(null);
+  const [rrpOpenRequestId, setRrpOpenRequestId] = useState(0);
   const [deepLinkParticipantId, setDeepLinkParticipantId] = useState<string | null>(null);
   const [notificationTarget, setNotificationTarget] = useState<AdminParticipantDirectoryItem | null>(
     null,
@@ -252,6 +260,11 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
   const selectionToolbarRef = useRef<HTMLDivElement>(null);
   const deepLinkStatusRef = useRef<HTMLDivElement>(null);
   const appliedDeepLinkKeyRef = useRef<string | null>(null);
+  const previousLocationKeyRef = useRef<string | null>(null);
+  const rowsRef = useRef(rows);
+  const notificationTargetRef = useRef(notificationTarget);
+  rowsRef.current = rows;
+  notificationTargetRef.current = notificationTarget;
   const searchParams = useSearchParams();
   const directoryQuery = readAdminDirectoryDeepLinkQuery(searchParams);
 
@@ -513,7 +526,65 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     };
   }, [deepLinkParticipantId]);
 
+  const directoryLocationKey = adminDirectoryParticipantDeepLinkKey(
+    directoryQuery.participantId,
+    directoryQuery.rrpApplicationId,
+  );
+
   useEffect(() => {
+    const released = releaseDirectoryDeepLinkForLocationChange({
+      previousLocationKey: previousLocationKeyRef.current,
+      locationKey: directoryLocationKey,
+      appliedKey: appliedDeepLinkKeyRef.current,
+    });
+    previousLocationKeyRef.current = released.locationKey;
+    appliedDeepLinkKeyRef.current = released.appliedKey;
+  }, [directoryLocationKey]);
+
+  useEffect(() => {
+    function onRrpNotificationOpen(event: Event) {
+      const request = readRrpNotificationOpenEvent(event);
+      if (!request) {
+        return;
+      }
+      const change = explicitRrpOpenChanges(request);
+      const pageRow = rowsRef.current.find((row) => row.memberId === change.participantId);
+      const knownTarget = notificationTargetRef.current;
+      const resolved =
+        pageRow ?? (knownTarget?.memberId === change.participantId ? knownTarget : null);
+      const canSelect = Boolean(
+        resolved &&
+          resolveViewableRrpApplicationIds(resolved).includes(change.applicationId),
+      );
+      appliedDeepLinkKeyRef.current = canSelect
+        ? adminDirectoryParticipantDeepLinkKey(change.participantId, change.applicationId)
+        : null;
+      setDeepLinkParticipantId(change.participantId);
+      setRrpDeepLinkApplicationId(change.applicationId);
+      setRrpOpenRequestId(change.openRequestId);
+      setRrpApplicationModalOpen(change.modalOpen);
+      if (!canSelect || !resolved) {
+        return;
+      }
+      setSelectedIds([change.participantId]);
+      setSelectionLimitReached(false);
+      setSelectedById(() => {
+        const next = new Map<string, AdminParticipantDirectoryItem>();
+        next.set(change.participantId, resolved);
+        return next;
+      });
+    }
+    window.addEventListener(RRP_NOTIFICATION_OPEN_EVENT, onRrpNotificationOpen);
+    return () => window.removeEventListener(RRP_NOTIFICATION_OPEN_EVENT, onRrpNotificationOpen);
+  }, []);
+
+  useEffect(() => {
+    if (
+      directoryQuery.participantId !== deepLinkParticipantId ||
+      directoryQuery.rrpApplicationId !== rrpDeepLinkApplicationId
+    ) {
+      return;
+    }
     const result = resolveDirectoryParticipantDeepLink({
       participantId: deepLinkParticipantId,
       rrpApplicationId: rrpDeepLinkApplicationId,
@@ -570,6 +641,8 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
     notificationTarget,
     notificationTargetReadyId,
     rrpDeepLinkApplicationId,
+    directoryQuery.participantId,
+    directoryQuery.rrpApplicationId,
     tDirectory,
   ]);
 
@@ -1409,6 +1482,7 @@ function AdminParticipantsSectionInner({ user }: AdminParticipantsSectionProps) 
           applicantDisplayName={participantPrimaryName(singleSelection)}
           applicationIds={viewableRrpApplicationIds}
           initialApplicationId={rrpDeepLinkApplicationId}
+          openRequestId={rrpOpenRequestId}
           onClose={() => {
             setRrpApplicationModalOpen(false);
             setRrpDeepLinkApplicationId(null);
