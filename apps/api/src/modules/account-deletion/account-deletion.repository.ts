@@ -31,6 +31,12 @@ function strip(document: AuthUserDocument): AuthUserRecord {
   return record;
 }
 
+/**
+ * Confirmed deletion finishes for both active and administrator-suspended accounts.
+ * The update never writes `status`, so finalization cannot clear a suspension.
+ */
+const DELETION_FINALIZATION_STATUSES = ["active", "disabled"] as const;
+
 export async function markAccountDeletionAwaiting(input: {
   userId: string;
   requestId: string;
@@ -151,7 +157,7 @@ export async function listAccountDeletionFinalizationCandidates(
     .find({
       $or: [
         {
-          status: "active",
+          status: { $in: DELETION_FINALIZATION_STATUSES },
           "accountDeletion.phase": "pending",
           "accountDeletion.deadlineAt": { $lte: nowIso },
         },
@@ -175,7 +181,7 @@ export async function claimAccountDeletionFinalNotice(input: {
   const result = await collection().findOneAndUpdate(
     {
       userId: input.userId,
-      status: "active",
+      status: { $in: DELETION_FINALIZATION_STATUSES },
       "accountDeletion.phase": "pending",
       "accountDeletion.deadlineAt": { $lte: input.nowIso },
       "accountDeletion.finalNoticeStatus": { $exists: false },
@@ -225,7 +231,7 @@ export async function skipStaleAccountDeletionFinalNotice(input: {
   const result = await collection().updateOne(
     {
       userId: input.userId,
-      status: "active",
+      status: { $in: DELETION_FINALIZATION_STATUSES },
       "accountDeletion.phase": "pending",
       "accountDeletion.finalNoticeStatus": "sending",
       updatedAt: { $lte: input.claimedBeforeIso },
@@ -251,7 +257,7 @@ export async function finalizeAccountDeletionRecord(input: {
   const result = await collection().findOneAndUpdate(
     {
       userId: input.userId,
-      status: "active",
+      status: { $in: DELETION_FINALIZATION_STATUSES },
       "accountDeletion.phase": "pending",
       "accountDeletion.deadlineAt": { $lte: input.nowIso },
       "accountDeletion.finalNoticeStatus": { $in: ["sent", "failed", "skipped"] },

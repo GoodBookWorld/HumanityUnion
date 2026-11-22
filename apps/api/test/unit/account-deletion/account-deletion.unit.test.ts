@@ -283,13 +283,15 @@ function createHarness(initial: AuthUserRecord) {
     },
     listCandidates: async (nowIso) => {
       const deletion = current.accountDeletion;
-      if (!deletion || current.status !== "active") {
+      if (!deletion) {
         return [];
       }
-      if (deletion.phase === "pending" && deletion.deadlineAt && deletion.deadlineAt <= nowIso) {
-        return [structuredClone(current)];
-      }
-      if (deletion.phase === "finalized" && !deletion.profileClosedAt) {
+      const due =
+        deletion.phase === "pending" &&
+        Boolean(deletion.deadlineAt) &&
+        deletion.deadlineAt <= nowIso &&
+        (current.status === "active" || current.status === "disabled");
+      if (due || (deletion.phase === "finalized" && !deletion.profileClosedAt)) {
         return [structuredClone(current)];
       }
       return [];
@@ -920,5 +922,104 @@ describe("account deletion lifecycle", { concurrency: false }, () => {
     assert.match(reminderText, /https:\/\/www\.huws\.org\/account\/deletion\/cancel/);
     assert.match(reminderText, /info@huws\.org/);
     assert.doesNotMatch(reminderText, /token=/);
+  });
+
+  it("finalizes a confirmed deletion after suspension without restoring access", async () => {
+    const suspendedFirst = createHarness(user({ status: "disabled" }));
+    await assert.rejects(
+      () =>
+        requestAccountDeletion(
+          { userId: "user-1", currentPassword: "correct" },
+          suspendedFirst.deps,
+        ),
+      (error: unknown) => error instanceof AccountDeletionRejectedError && error.code === "disabled",
+    );
+    assert.equal(suspendedFirst.user.accountDeletion, undefined);
+    assert.equal(suspendedFirst.sent.length, 0);
+
+    const harness = createHarness(user());
+    await requestAccountDeletion({ userId: "user-1", currentPassword: "correct" }, harness.deps);
+    const confirmed = await confirmAccountDeletion({ userId: "user-1", code: "111111" }, harness.deps);
+    const deadlineAt = confirmed.deadlineAt ?? "";
+    harness.user.status = "disabled";
+    harness.advance(ACCOUNT_DELETION_RECOVERY_WINDOW_MS - ACCOUNT_DELETION_REMINDER_LEAD_MS);
+    assert.equal((await runAccountDeletionFinalizationTick(harness.deps)).reminders, 0);
+    const cancelMessages = harness.sent.filter((item) => item.template === "code:cancel").length;
+    await requestAccountDeletionCancellation("member@example.com", harness.deps);
+    assert.equal(harness.sent.filter((item) => item.template === "code:cancel").length, cancelMessages);
+    await assert.rejects(
+      () =>
+        confirmAccountDeletionCancellation(
+          { email: "member@example.com", currentPassword: "correct", code: "222222" },
+          harness.deps,
+        ),
+      (error: unknown) => error instanceof AccountDeletionRejectedError && error.code === "invalid_code",
+    );
+    assert.equal(harness.user.accountDeletion?.phase, "pending");
+    assert.equal(harness.user.accountDeletion?.deadlineAt, deadlineAt);
+    assert.equal(harness.user.status, "disabled");
+
+    harness.failNextFinalMail();
+    harness.advance(Date.parse(deadlineAt) - Date.parse(harness.deps.now()));
+    const first = await runAccountDeletionFinalizationTick(harness.deps);
+    const second = await runAccountDeletionFinalizationTick(harness.deps);
+    assert.equal(first.finalized, 1);
+    assert.equal(first.reminders, 0);
+    assert.equal(second.finalized, 0);
+    assert.equal(harness.sent.filter((item) => item.template === "finalized").length, 1);
+    assert.equal(harness.user.accountDeletion?.phase, "finalized");
+    assert.equal(harness.user.accountDeletion?.deadlineAt, deadlineAt);
+    assert.equal(harness.user.status, "disabled");
+    assert.equal(harness.user.email, reservedDeletionEmail("user-1"));
+    assert.notEqual(harness.user.passwordHash, "hash");
+    assert.equal(harness.user.userId, "user-1");
+    assert.equal(harness.user.memberId, "member-1");
+    assert.equal(harness.user.displayName, "Civic Name");
+    assert.equal(harness.user.role, "member");
+
+    setAuthUserLookupOverrideForTests(async () => harness.user);
+    const req = {
+      method: "GET",
+      path: "/api/v1/direct-messages/conversations",
+      auth: { id: harness.user.userId, memberId: harness.user.memberId },
+    } as unknown as Request;
+    const res = mockRes();
+    let nextCalled = false;
+    await requireActiveAccountForMutationsMiddleware(req, res, () => {
+      nextCalled = true;
+    });
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 403);
+
+    const restored = createHarness(user());
+    await requestAccountDeletion({ userId: "user-1", currentPassword: "correct" }, restored.deps);
+    const restoredDeadline = (
+      await confirmAccountDeletion({ userId: "user-1", code: "111111" }, restored.deps)
+    ).deadlineAt;
+    restored.user.status = "disabled";
+    restored.advance(Date.parse(restoredDeadline ?? "") - Date.parse(restored.deps.now()));
+    await Promise.all([
+      runAccountDeletionFinalizationTick(restored.deps),
+      (async () => {
+        restored.user.status = "active";
+      })(),
+    ]);
+    assert.equal(restored.user.accountDeletion?.phase, "finalized");
+    assert.equal(restored.user.accountDeletion?.deadlineAt, restoredDeadline);
+    assert.equal(restored.user.email, reservedDeletionEmail("user-1"));
+    assert.notEqual(restored.user.passwordHash, "hash");
+    assert.equal(restored.user.userId, "user-1");
+    assert.equal(restored.user.memberId, "member-1");
+    restored.user.status = "active";
+    assert.equal(restored.user.accountDeletion?.phase, "finalized");
+    assert.equal(restored.user.email, reservedDeletionEmail("user-1"));
+
+    const repository = readSrc("modules/account-deletion/account-deletion.repository.ts");
+    const finalize = repository.slice(
+      repository.indexOf("export async function finalizeAccountDeletionRecord"),
+      repository.indexOf("export async function markAccountDeletionProfileClosed"),
+    );
+    const written = finalize.slice(finalize.indexOf("$set:"), finalize.indexOf("$unset:"));
+    assert.doesNotMatch(written, /\bstatus\b/);
   });
 });

@@ -563,8 +563,10 @@ async function closeFinalizedProfile(
 
 /**
  * Idempotent finalization. A late tick uses the stored deadline and does not
- * extend it. Mail failure does not stop the email release. Integrity Media
- * links, RRP records, editor grants, and civic documents are not modified.
+ * extend it. An administrator suspension does not keep a confirmed deletion
+ * pending and is not cleared by this tick. Mail failure does not stop the
+ * email release. Integrity Media links, RRP records, editor grants, and civic
+ * documents are not modified.
  */
 export async function runAccountDeletionFinalizationTick(
   deps: AccountDeletionDeps = productionDeps(),
