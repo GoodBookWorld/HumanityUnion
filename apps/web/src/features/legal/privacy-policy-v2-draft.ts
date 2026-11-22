@@ -1,23 +1,20 @@
 /**
- * HU-ACCOUNT-DELETE-01I — staged English Privacy Policy v2.
+ * HU-ACCOUNT-DELETE-01O — Privacy Policy v2 publication record.
  *
- * This module is not imported by the public Privacy page, the locale route,
- * or the legal resolver. Visitors keep privacy-2026-11-v1 until a later
- * authorized publication replaces the canonical English body and bumps
- * CANONICAL_LEGAL_SOURCE_VERSIONS.privacy.
+ * The canonical English page carries this wording. This module is not imported
+ * by the public Privacy page, the locale route, or the legal resolver.
+ * The material-change notice below is not registered with email, notifications,
+ * or a scheduler, and it has not been sent.
  *
  * Do not machine-translate this text. Do not send the material-change notice.
  */
 
-export const PUBLISHED_PRIVACY_POLICY_VERSION = "privacy-2026-11-v1" as const;
+export const PUBLISHED_PRIVACY_POLICY_VERSION = "privacy-2026-11-v2" as const;
 
 export const PRIVACY_POLICY_V2_VERSION = "privacy-2026-11-v2" as const;
 
-/**
- * No publication date is assigned. Null is not a date string and is not
- * rendered by the public Privacy page.
- */
-export const PRIVACY_POLICY_V2_EFFECTIVE_DATE: null = null;
+/** Calendar date shown as November 22, 2026 in the canonical page heading. */
+export const PRIVACY_POLICY_V2_EFFECTIVE_DATE = "2026-11-22" as const;
 
 export const PRIVACY_POLICY_V2_SECTION_13_TITLE =
   "13. Account Deletion and Privacy Requests";

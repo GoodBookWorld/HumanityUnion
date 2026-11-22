@@ -206,7 +206,7 @@ describe("HU-RRP-FINAL-01B hardening", () => {
     const typesRrp = readRepo("packages/types/src/domain/rrp-application.ts");
     assert.match(appointment, /participantId: 1, representCountryCode: 1/);
     assert.match(appointment, /status: "active"/);
-    assert.match(typesLegal, /privacy-2026-11-v1/);
+    assert.match(typesLegal, /privacy: "privacy-2026-11-v2"/);
     assert.match(typesLegal, /terms-2026-03-v1/);
     assert.match(typesRrp, /rrp-application-consent-v2/);
   });

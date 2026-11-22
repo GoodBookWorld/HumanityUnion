@@ -32,11 +32,11 @@ export function isLegalLocalizationStatus(value: unknown): value is LegalLocaliz
  */
 export const CANONICAL_LEGAL_SOURCE_VERSIONS = {
   /**
-   * HU-PRIVACY-02B — approved English Privacy Policy (Effective Date November 18, 2026).
-   * Published locale rows must match this version to be served; older published
-   * Privacy translations fall back to English until re-approved for this version.
+   * HU-ACCOUNT-DELETE-01Q.1 — approved English Privacy Policy (Effective Date November 22, 2026).
+   * Published locale rows must match this version to be served. privacy-2026-11-v1
+   * translations fall back to English until re-approved for privacy-2026-11-v2.
    */
-  privacy: "privacy-2026-11-v1",
+  privacy: "privacy-2026-11-v2",
   terms: "terms-2026-03-v1",
 } as const satisfies Record<LegalDocumentType, string>;
 

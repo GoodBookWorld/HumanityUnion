@@ -34,7 +34,7 @@ function readPrivacy(): string {
 describe("HU-PRIVACY-02B approved English Privacy Policy", () => {
   it("renders all 19 sections with exact effective date", () => {
     const body = readPrivacy();
-    assert.match(body, /Effective Date: November 18, 2026/);
+    assert.match(body, /Effective Date: November 22, 2026/);
     for (let n = 1; n <= 19; n += 1) {
       assert.match(body, new RegExp(`privacy-section-${n}`));
     }
@@ -65,7 +65,7 @@ describe("HU-PRIVACY-02B approved English Privacy Policy", () => {
   });
 
   it("keeps canonical Privacy and Terms versions and RRP consent invariants", () => {
-    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-11-v1");
+    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-11-v2");
     assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.terms, "terms-2026-03-v1");
     assert.equal(RRP_APPLICATION_CONSENT_VERSION, "rrp-application-consent-v2");
   });

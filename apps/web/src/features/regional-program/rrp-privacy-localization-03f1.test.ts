@@ -80,8 +80,8 @@ function leafStrings(
 }
 
 describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
-  it("publishes Privacy at privacy-2026-11-v1 while preserving RRP consent v2", () => {
-    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-11-v1");
+  it("publishes Privacy at privacy-2026-11-v2 while preserving RRP consent v2", () => {
+    assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.privacy, "privacy-2026-11-v2");
     assert.equal(CANONICAL_LEGAL_SOURCE_VERSIONS.terms, "terms-2026-03-v1");
     assert.equal(RRP_APPLICATION_CONSENT_VERSION, "rrp-application-consent-v2");
     const legalSrc = readFileSync(
@@ -92,7 +92,8 @@ describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
       path.join(repoRoot, "packages/types/src/domain/rrp-application.ts"),
       "utf8",
     );
-    assert.match(legalSrc, /privacy-2026-11-v1/);
+    assert.match(legalSrc, /privacy: "privacy-2026-11-v2"/);
+    assert.doesNotMatch(legalSrc, /privacy:\s*"privacy-2026-11-v1"/);
     assert.doesNotMatch(legalSrc, /privacy:\s*"privacy-2026-03-v1"/);
     assert.match(consentSrc, /rrp-application-consent-v2/);
     assert.match(consentSrc, /no automatic re-consent/i);
@@ -121,7 +122,7 @@ describe("HU-RRP-03F.1 Privacy / consent / localization readiness", () => {
     assert.match(body, /Regional Representative Program \(RRP\)/);
     assert.match(body, /chosen name or pseudonym/);
     assert.match(body, /expression of interest/i);
-    assert.match(body, /Effective Date: November 18, 2026/);
+    assert.match(body, /Effective Date: November 22, 2026/);
   });
 
   it("clarifies platform designation limits near Join, intro, coordinator, and office wording", () => {

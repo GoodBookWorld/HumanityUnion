@@ -20,29 +20,43 @@ function read(root: URL, path: string): string {
 }
 
 describe("staged privacy policy v2", () => {
-  it("keeps the published English policy and version on v1", () => {
+  it("publishes English policy v2 with the approved date and keeps deletion off", () => {
     const page = read(SRC, "app/privacy/page.tsx");
     const localePage = read(SRC, "app/[locale]/privacy/page.tsx");
     const versions = read(REPO, "packages/types/src/domain/legal-localization.ts");
     const platform = read(REPO, "apps/api/src/config/platform.config.ts");
-    assert.equal(PUBLISHED_PRIVACY_POLICY_VERSION, "privacy-2026-11-v1");
-    assert.match(versions, /privacy: "privacy-2026-11-v1"/);
-    assert.doesNotMatch(versions, /privacy-2026-11-v2/);
+    const webFlag = read(SRC, "features/account-deletion/account-deletion-availability.ts");
+    const resolver = read(REPO, "apps/api/src/modules/legal-localization/legal-localization.public.ts");
+    assert.equal(PUBLISHED_PRIVACY_POLICY_VERSION, "privacy-2026-11-v2");
+    assert.equal(PRIVACY_POLICY_V2_VERSION, "privacy-2026-11-v2");
+    assert.equal(PRIVACY_POLICY_V2_EFFECTIVE_DATE, "2026-11-22");
+    assert.match(versions, /privacy: "privacy-2026-11-v2"/);
+    assert.match(versions, /terms: "terms-2026-03-v1"/);
     assert.match(platform, /ACCOUNT_DELETION_ENABLED\?\.trim\(\)/);
     assert.doesNotMatch(platform, /ACCOUNT_DELETION_ENABLED\s*=\s*"true"/);
-    assert.match(page, /Effective Date: November 18, 2026/);
-    assert.match(
-      page,
-      /Participants may request deletion of their account or personal information by contacting/,
-    );
+    assert.match(webFlag, /NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED\?\.trim\(\)/);
+    assert.doesNotMatch(webFlag, /NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED\s*=\s*"true"/);
+    assert.match(page, /Effective Date: November 22, 2026/);
+    assert.doesNotMatch(page, /Effective Date: November 18, 2026/);
     assert.doesNotMatch(page, /privacy-policy-v2-draft/);
-    assert.doesNotMatch(page, /privacy-2026-11-v2/);
-    assert.doesNotMatch(page, /720 hours/);
+    assert.match(page, /720 hours from confirmation/);
+    assert.match(page, /Closing an account does not, by itself, remove public civic records/);
+    assert.match(page, /private messages remain available to the other participants/);
+    assert.match(page, /essential account communications/);
+    assert.match(page, /Account deletion follows section 13/);
+    assert.match(page, /Recovery becomes unavailable at the exact deadline/);
+    assert.match(page, /Closure is not instantaneous/);
+    assert.match(page, /does not lift the suspension/);
+    assert.match(page, /The rights in section 14/);
+    assert.doesNotMatch(page, /legal hold/i);
+    assert.match(page, /Material changes will be communicated through appropriate platform notices/);
+    assert.match(resolver, /canonicalSourceVersion === CANONICAL_LEGAL_SOURCE_VERSIONS\[record\.documentType\]/);
+    assert.match(resolver, /isStaleRelativeToCanonical/);
     assert.match(localePage, /from "\.\.\/\.\.\/privacy\/page"/);
-    assert.equal(PRIVACY_POLICY_V2_EFFECTIVE_DATE, null);
+    assert.equal(isAccountDeletionUiEnabled({ NODE_ENV: "test" }), false);
   });
 
-  it("holds the approved v2 text without publishing or translating it", () => {
+  it("keeps the approved notice unsent and the section 13 rules intact", () => {
     const section13 = PRIVACY_POLICY_V2_SECTION_13_PARAGRAPHS.join("\n");
     assert.equal(PRIVACY_POLICY_V2_VERSION, "privacy-2026-11-v2");
     assert.match(section13, /30 days/);

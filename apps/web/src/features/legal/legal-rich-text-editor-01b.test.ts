@@ -106,6 +106,6 @@ describe("HU-LEGAL-EDITOR-01B — Legal rich-text editor", () => {
   it("does not bump Terms canonical version or touch RRP / Video Chat modules", () => {
     const types = readRepo("packages/types/src/domain/legal-localization.ts");
     assert.match(types, /terms-2026-03-v1/);
-    assert.match(types, /privacy-2026-11-v1/);
+    assert.match(types, /privacy: "privacy-2026-11-v2"/);
   });
 });

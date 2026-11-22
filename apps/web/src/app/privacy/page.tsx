@@ -36,9 +36,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * HU-PRIVACY-02B — English canonical Privacy Policy body (approved 19-section
- * document, Effective Date November 18, 2026). Authoritative until counsel-approved
- * localized copies are published via Admin → Legal Localization for privacy-2026-11-v1.
+ * HU-ACCOUNT-DELETE-01O — English canonical Privacy Policy body (approved 19-section
+ * document, Effective Date November 22, 2026). Authoritative until counsel-approved
+ * localized copies are published via Admin → Legal Localization for privacy-2026-11-v2.
  */
 function EnglishPrivacyBody() {
   return (
@@ -48,7 +48,7 @@ function EnglishPrivacyBody() {
           <strong>{ORGANIZATION_NAME}</strong>
         </p>
         <p className="legal-page__doc-effective">
-          <strong>Effective Date: November 18, 2026</strong>
+          <strong>Effective Date: November 22, 2026</strong>
         </p>
       </header>
 
@@ -209,6 +209,9 @@ function EnglishPrivacyBody() {
         <p>
           Participants should avoid including unnecessary sensitive personal information about themselves or others in public submissions.
         </p>
+        <p>
+          Closing an account does not, by itself, remove public civic records. A request to anonymize a public author name is handled under section 13.
+        </p>
       </section>
 
       <section aria-labelledby="privacy-section-7">
@@ -224,6 +227,9 @@ function EnglishPrivacyBody() {
         </p>
         <p>
           Access to private communications may occur only where reasonably necessary for authorized operational purposes, protection of users, investigation of reported abuse, or compliance with applicable law.
+        </p>
+        <p>
+          If a participant closes an account, private messages remain available to the other participants in those conversations, as described in section 13.
         </p>
       </section>
 
@@ -246,6 +252,9 @@ function EnglishPrivacyBody() {
         </p>
         <p>
           Email delivery may involve authorized service providers and associated delivery metadata.
+        </p>
+        <p>
+          Messages about account deletion, the recovery reminder, and account closure are essential account communications. Humanity Union attempts to send them. Delivery is not guaranteed, and a delivery failure does not extend a recovery deadline.
         </p>
       </section>
 
@@ -318,21 +327,48 @@ function EnglishPrivacyBody() {
         <p>
           When information is no longer reasonably required, we seek to delete, anonymize, or otherwise dispose of it securely, subject to applicable legal and operational requirements.
         </p>
+        <p>
+          Account deletion follows section 13. It does not, by itself, erase records that this section allows Humanity Union to retain, and retention of those records does not keep the closed account open. Closing an account does not mean that every retained record disappears at the same moment.
+        </p>
       </section>
 
       <section aria-labelledby="privacy-section-13">
         <h2 id="privacy-section-13">13. Account Deletion and Privacy Requests</h2>
         <p>
-          Participants may request deletion of their account or personal information by contacting <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a> or using available account controls.
+          Participants may request deletion of their account or personal information by contacting <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a> or by using the account deletion control in Account Security when that control is available. Self-service deletion is not available for an administrator account, an account with an active regional appointment, or an account with an active editor permission. Those participants may still make the request by email.
         </p>
         <p>
-          We will assess and respond to such requests in accordance with applicable law.
+          A self-service request is confirmed with the current password and a code sent to the account email. This confirms control of the account email. It does not verify legal identity. For any privacy request, Humanity Union may ask for reasonable information to confirm that the requester is authorized. That check is separate from ordinary participation and proportionate to the request.
         </p>
         <p>
-          Depending on the circumstances, some information may need to be retained, restricted, or anonymized rather than immediately deleted, including information necessary for legal compliance, security, dispute resolution, or the integrity of public civic records.
+          After confirmation, a recovery period of 30 days begins. The period runs for 720 hours from confirmation. During that period the participant cannot sign in. When three days or less remain and the account is not suspended, Humanity Union attempts to send one reminder. The reminder states the exact deadline and includes a link to the recovery page. Opening the link does not restore the account. A suspended account does not receive that reminder while the suspension lasts. If the suspension ends before the deadline and the reminder has not already been sent, Humanity Union may still attempt to send it. Delivery of the reminder is not guaranteed.
         </p>
         <p>
-          We may request reasonable information to confirm that the person making a privacy request is authorized to do so. Such verification is separate from ordinary platform participation and should be proportionate to the request.
+          Before the deadline, a participant whose account is not suspended may cancel the deletion on the recovery page by confirming the account email, the current password, and a new code. Cancellation restores sign-in. It does not add roles, appointments, editor permissions, or other privileges. Self-service recovery is unavailable while the account is suspended. Recovery becomes unavailable at the exact deadline.
+        </p>
+        <p>
+          When the deadline passes, Humanity Union closes the account. Humanity Union attempts to send a closure notice to the account email before that address is released. Delivery of the notice is not guaranteed. A delivery failure does not extend the recovery deadline, and the closure still takes effect. Closing the account in Humanity Union's systems may take a short time after the deadline. Closure is not instantaneous. The closed account cannot be restored. Closure is not delayed by an administrative suspension.
+        </p>
+        <p>
+          The same email address may be used to register a new account. The new account is a new participant. It does not receive the previous account’s identity, display name, roles, appointments, editor permissions, messages, or other privileges.
+        </p>
+        <p>
+          Public civic records remain. The display name or pseudonym already associated with those records may remain so the records stay attributable. Account deletion does not rewrite civic documents. A participant may ask <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a> to anonymize or further restrict that name, or to request further restriction of other eligible personal information. Humanity Union will assess the request under this section and applicable law. Anonymization is not automatic.
+        </p>
+        <p>
+          Private messages remain available to the other people in those conversations. The closed account cannot sign in or open them, and they are not transferred to a new account.
+        </p>
+        <p>
+          At closure, Humanity Union disposes of credentials and profile details that are no longer required for the purposes below, including biography, photograph, organization, website, social links, and location. Disposal is secure and occurs when the information is no longer reasonably required. Closing the account does not mean that every item of personal information disappears at the same moment.
+        </p>
+        <p>
+          Some information may still be retained, restricted, or anonymized rather than deleted, including information necessary for legal compliance, security, financial records, dispute resolution, or the integrity of public civic records. Retention of those records does not keep the account open and does not postpone release of the email address.
+        </p>
+        <p>
+          An administrative suspension controls access. It does not cancel a confirmed deletion, extend the recovery deadline, or stop closure at that deadline. Closure does not lift the suspension. While an account is suspended, the participant cannot sign in or cancel the deletion on the recovery page. The participant may still contact <a href={mailtoContactLink()}>{CONTACT_EMAIL}</a> about the request.
+        </p>
+        <p>
+          Humanity Union will assess and respond to deletion and other privacy requests in accordance with applicable law. The rights in section 14, including access, correction, withdrawal of consent, deletion or anonymization of eligible information, objection, restriction, portability, and complaint to a privacy authority, are not reduced by this section.
         </p>
       </section>
 
