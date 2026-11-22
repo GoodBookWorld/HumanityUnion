@@ -255,6 +255,7 @@ describe("HU-RRP-POST-01B workspace right rail", () => {
       "features/regional-program/components/rrp-application-workspace-widget.css",
     );
     const tokens = read("design-system/tokens.css");
+    const desktop = css.slice(css.indexOf("@media (min-width: 1025px)"));
     assert.match(assistant, /tabIndex=\{0\}/);
     assert.match(css, /@media \(min-width: 1025px\)/);
     assert.match(css, /position:\s*sticky/);
@@ -262,17 +263,20 @@ describe("HU-RRP-POST-01B workspace right rail", () => {
     assert.match(css, /max-height:\s*calc\(100dvh - var\(--hu-sticky-top\) - var\(--hu-space-4\)\)/);
     assert.match(css, /overflow-y:\s*auto/);
     assert.match(css, /min-height:\s*0/);
-    assert.match(css, /overscroll-behavior:\s*contain/);
+    assert.match(desktop, /overscroll-behavior-y:\s*auto/);
+    assert.doesNotMatch(desktop, /overscroll-behavior:\s*contain/);
     assert.match(css, /:focus-visible/);
     assert.doesNotMatch(css, /margin-left|margin-right|left:|right:/);
     assert.match(tokens, /--hu-sticky-top:\s*var\(--humanity-header-offset\)/);
     assert.match(tokens, /--hu-header-height:\s*4\.5rem/);
     assert.doesNotMatch(assistantCss, /top:\s*5\.5rem/);
-    const desktop = css.slice(css.indexOf("@media (min-width: 1025px)"));
     assert.match(desktop, /overflow-y:\s*auto/);
     assert.doesNotMatch(css.slice(0, css.indexOf("@media (min-width: 1025px)")), /max-height/);
     assert.match(widgetCss, /data-history-scroll="true"/);
     assert.match(widgetCss, /overflow-y:\s*auto/);
+    assert.match(widgetCss, /max-height:\s*28rem/);
+    assert.match(widgetCss, /overscroll-behavior-y:\s*auto/);
+    assert.doesNotMatch(widgetCss, /overscroll-behavior:\s*contain/);
     assert.match(widgetCss, /\[dir="rtl"\]/);
   });
 });

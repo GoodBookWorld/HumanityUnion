@@ -344,7 +344,8 @@ describe("HU-RRP-02D.1 Regional Applications Workspace widget", () => {
     assert.match(newApplicationButton, /variant="primary"/);
     assert.match(css, /max-height:\s*28rem/);
     assert.match(css, /overflow-y:\s*auto/);
-    assert.match(css, /overscroll-behavior:\s*contain/);
+    assert.match(css, /overscroll-behavior-y:\s*auto/);
+    assert.doesNotMatch(css, /overscroll-behavior:\s*contain/);
     assert.match(css, /-webkit-line-clamp:\s*2/);
     assert.match(css, /:focus-visible/);
     assert.match(css, /\[dir="rtl"\]/);

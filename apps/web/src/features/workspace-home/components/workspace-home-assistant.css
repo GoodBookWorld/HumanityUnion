@@ -21,7 +21,7 @@
     max-height: calc(100dvh - var(--hu-sticky-top) - var(--hu-space-4));
     overflow-y: auto;
     min-height: 0;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
   }
 
   .workspace-home-assistant-rail:focus-visible {

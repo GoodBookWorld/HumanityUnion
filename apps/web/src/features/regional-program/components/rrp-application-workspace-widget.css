@@ -169,7 +169,7 @@
 .rrp-application-workspace-widget__history[data-history-scroll="true"] {
   max-height: 28rem;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
 }
 
 .rrp-application-workspace-widget__history:focus-visible {
