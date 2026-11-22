@@ -1,5 +1,6 @@
 import type { MemberNotification } from "@hu/types";
 
+import { isPrivacyPolicyNoticeRow } from "../privacy-policy-notice.constants.js";
 import type {
   NotificationListFilter,
   NotificationPersistenceAdapter,
@@ -9,6 +10,8 @@ export class MemoryNotificationPersistenceAdapter implements NotificationPersist
   readonly mode = "memory" as const;
 
   private notifications = new Map<string, MemberNotification>();
+  /** Synchronous claim so overlapping activations cannot both insert. */
+  private privacyNoticeClaims = new Set<string>();
 
   async insert(notification: MemberNotification): Promise<void> {
     this.notifications.set(notification.notificationId, structuredClone(notification));
@@ -112,8 +115,37 @@ export class MemoryNotificationPersistenceAdapter implements NotificationPersist
     return false;
   }
 
+  async insertPrivacyPolicyNoticeIfAbsent(
+    notification: MemberNotification,
+  ): Promise<"inserted" | "exists"> {
+    if (!isPrivacyPolicyNoticeRow(notification)) {
+      throw new Error("This insert is only for the Privacy Policy v2 notice.");
+    }
+
+    const key = `${notification.recipientUserId}\0${notification.relatedEntityId}`;
+    if (this.privacyNoticeClaims.has(key)) {
+      return "exists";
+    }
+
+    for (const existing of this.notifications.values()) {
+      if (
+        existing.recipientUserId === notification.recipientUserId &&
+        existing.eventType === notification.eventType &&
+        existing.relatedEntityId === notification.relatedEntityId
+      ) {
+        this.privacyNoticeClaims.add(key);
+        return "exists";
+      }
+    }
+
+    this.privacyNoticeClaims.add(key);
+    this.notifications.set(notification.notificationId, structuredClone(notification));
+    return "inserted";
+  }
+
   clearForTests(): void {
     this.notifications.clear();
+    this.privacyNoticeClaims.clear();
   }
 }
 

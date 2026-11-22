@@ -1,6 +1,11 @@
 import type { CivicNotificationEventType } from "@hu/types";
 import type { MemberNotificationPriority } from "@hu/types";
 
+import {
+  PRIVACY_POLICY_NOTICE_MESSAGE,
+  PRIVACY_POLICY_NOTICE_TITLE,
+} from "./privacy-policy-notice.constants.js";
+
 export interface NotificationTemplate {
   title: string;
   message: string;
@@ -378,6 +383,11 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     title: "Editor editing area updated",
     message: "Your Editor editing area was updated.",
     priority: "normal",
+  },
+  privacy_policy_updated: {
+    title: PRIVACY_POLICY_NOTICE_TITLE,
+    message: PRIVACY_POLICY_NOTICE_MESSAGE,
+    priority: "important",
   },
 };
 

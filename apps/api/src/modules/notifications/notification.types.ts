@@ -36,6 +36,13 @@ export interface NotificationPersistenceAdapter {
     relatedEntityType: MemberNotification["relatedEntityType"];
     relatedEntityId: string;
   }): Promise<boolean>;
+  /**
+   * HU-ACCOUNT-DELETE-01R — one Privacy Policy notice per recipient and version.
+   * A duplicate leaves the stored row, including read or archived status, unchanged.
+   */
+  insertPrivacyPolicyNoticeIfAbsent(
+    notification: MemberNotification,
+  ): Promise<"inserted" | "exists">;
   clearForTests?(): void;
 }
 

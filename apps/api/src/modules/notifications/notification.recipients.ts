@@ -146,6 +146,9 @@ export function resolveNotificationRecipientMemberIds(
     case "initiative_comment_reply":
       return [];
 
+    case "privacy_policy_updated":
+      return [];
+
     default:
       return [];
   }

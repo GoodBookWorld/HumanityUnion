@@ -77,6 +77,7 @@ export const KNOWN_NOTIFICATION_EVENT_TYPES = [
   "editor_access_deactivated",
   "editor_permissions_updated",
   "editor_editing_area_updated",
+  "privacy_policy_updated",
 ] as const;
 
 export type KnownNotificationEventType = (typeof KNOWN_NOTIFICATION_EVENT_TYPES)[number];

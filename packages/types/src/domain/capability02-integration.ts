@@ -274,7 +274,13 @@ export type CivicNotificationEventType =
   /** Pack 12E2 — Editor permissions updated. */
   | "editor_permissions_updated"
   /** Pack 12E2 — Editor geographic editing area updated. */
-  | "editor_editing_area_updated";
+  | "editor_editing_area_updated"
+  /**
+   * HU-ACCOUNT-DELETE-01R — official Privacy Policy update for the member
+   * Notification Center. Not a civic workflow, direct message, security
+   * event, admin alert, or blog subscriber message.
+   */
+  | "privacy_policy_updated";
 
 export interface CivicNotificationEventDefinition {
   eventType: CivicNotificationEventType;

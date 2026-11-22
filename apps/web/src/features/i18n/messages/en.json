@@ -7210,6 +7210,7 @@
       "reviewPublication": "Review publication",
       "viewAuthoring": "View Authoring",
       "openPublishing": "Open Publishing",
+      "readPrivacyPolicy": "Read Privacy Policy",
       "viewRelatedCivicRecord": "View related civic record",
       "openWorkspaceMessages": "Open Workspace Messages"
     },
@@ -7540,6 +7541,10 @@
       "editor_editing_area_updated": {
         "title": "Editor editing area updated",
         "message": "Your Editor editing area was updated."
+      },
+      "privacy_policy_updated": {
+        "title": "Privacy Policy Updated",
+        "message": "Humanity Union has updated its Privacy Policy, effective November 22, 2026. The update explains account deletion and recovery, the 30-day recovery period, and retention of civic records and private messages. Account deletion is not yet available."
       }
     },
     "proposalActions": {

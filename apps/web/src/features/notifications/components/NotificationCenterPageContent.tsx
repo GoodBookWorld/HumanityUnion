@@ -98,6 +98,9 @@ function dedupeChannelNotificationsByInitiative(
 }
 
 function relatedActionLabel(eventType: string, t: NotificationsTranslator): string {
+  if (eventType === "privacy_policy_updated") {
+    return t("actions.readPrivacyPolicy");
+  }
   if (
     eventType.startsWith("editor_access_") ||
     eventType.startsWith("editor_permissions_") ||

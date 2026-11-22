@@ -1,4 +1,6 @@
 import type { MemberNotification } from "@hu/types";
+
+import { isPrivacyPolicyNoticeRow } from "../privacy-policy-notice.constants.js";
 import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -156,6 +158,29 @@ export class MongoNotificationPersistenceAdapter implements NotificationPersiste
     );
     return Boolean(found);
   }
+
+  async insertPrivacyPolicyNoticeIfAbsent(
+    notification: MemberNotification,
+  ): Promise<"inserted" | "exists"> {
+    if (!isPrivacyPolicyNoticeRow(notification)) {
+      throw new Error("This insert is only for the Privacy Policy v2 notice.");
+    }
+
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberNotificationDocument>(
+      MONGO_COLLECTIONS.memberNotifications,
+    );
+
+    try {
+      await collection.insertOne(notification);
+      return "inserted";
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        return "exists";
+      }
+      throw error;
+    }
+  }
 }
 
 export function createMongoNotificationPersistenceAdapter(): MongoNotificationPersistenceAdapter {
@@ -177,4 +202,40 @@ export async function ensureNotificationMongoIndexes(): Promise<void> {
   await collection.createIndex({ recipientUserId: 1, status: 1 });
   await collection.createIndex({ priority: 1 });
   await collection.createIndex({ relatedEntityType: 1, relatedEntityId: 1 });
+}
+
+export const PRIVACY_POLICY_NOTICE_UNIQUE_INDEX = "member_notifications_privacy_policy_notice_once";
+
+/**
+ * Partial unique index for the Privacy Policy notice only.
+ * Civic notifications are outside the filter, so their existing duplicates stay valid.
+ * Called by the operator activation, not by API startup.
+ */
+export async function ensurePrivacyPolicyNoticeUniqueIndex(): Promise<void> {
+  if (!isMongoConfigured()) {
+    throw new Error("MongoDB is required before Privacy Policy notices can be stored.");
+  }
+
+  await ensureMongoReady();
+  const collection = getMongoCollection<MemberNotificationDocument>(
+    MONGO_COLLECTIONS.memberNotifications,
+  );
+
+  await collection.createIndex(
+    { recipientUserId: 1, eventType: 1, relatedEntityId: 1 },
+    {
+      name: PRIVACY_POLICY_NOTICE_UNIQUE_INDEX,
+      unique: true,
+      partialFilterExpression: { eventType: "privacy_policy_updated" },
+    },
+  );
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
 }
