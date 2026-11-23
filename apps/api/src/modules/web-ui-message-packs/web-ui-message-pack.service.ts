@@ -41,9 +41,12 @@ import {
 } from "./web-ui-message-pack.repository.js";
 import {
   collectStringPaths,
+  existingWebUiLeavesChanged,
+  listBlockingWebUiFoundationFailures,
   loadBundledEnglishWebUiMessagePack,
   selectEnglishWebUiMessages,
   validateWebUiMessageTreeAgainstEnglish,
+  webUiFoundationFailuresBlockPersist,
 } from "./web-ui-message-pack.validate.js";
 
 type AdminActor = {
@@ -319,10 +322,18 @@ export async function applyAdminAddMissingWebUiFromPackaged(input: {
     }
 
     const validation = validateWebUiMessageTreeAgainstEnglish(merge.messages);
+    if (existingWebUiLeavesChanged(published.messages, merge.messages)) {
+      throw new WebUiMessagePackValidationError(
+        "Existing published WEB_UI values cannot be changed by Add missing translations.",
+      );
+    }
     if (
-      validation.rejectedUnknownPaths.length > 0 ||
-      validation.rejectedNonStringPaths.length > 0 ||
-      validation.placeholderMismatchPaths.length > 0
+      webUiFoundationFailuresBlockPersist(
+        listBlockingWebUiFoundationFailures({
+          existing: published.messages,
+          next: merge.messages,
+        }),
+      )
     ) {
       throw new WebUiMessagePackValidationError(
         "Merged WEB_UI catalog failed English foundation validation.",
@@ -337,6 +348,7 @@ export async function applyAdminAddMissingWebUiFromPackaged(input: {
       updatedByParticipantId: admin.participantId,
       sourceFingerprintsByPath: published.sourceFingerprintsByPath ?? null,
       expectedRevision,
+      preserveExistingPublishedLeaves: true,
     });
     const readiness = await assessWebUiCatalogReadinessForLocale({ locale: pack.locale });
     return {
@@ -389,6 +401,7 @@ export async function applyAdminAddMissingWebUiFromPackaged(input: {
     sourceNote: "admin-add-missing-from-packaged",
     updatedByParticipantId: admin.participantId,
     expectedRevision: null,
+    preserveExistingPublishedLeaves: true,
   });
   const readiness = await assessWebUiCatalogReadinessForLocale({ locale: pack.locale });
   return {

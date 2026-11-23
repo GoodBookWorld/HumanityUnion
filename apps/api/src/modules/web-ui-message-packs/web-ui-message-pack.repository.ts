@@ -35,7 +35,12 @@ import {
   toWebUiMessagePackMongoDocument,
   type WebUiMessagePackMongoDocument,
 } from "./web-ui-message-pack.mongo-document.js";
-import { validateWebUiMessageTreeAgainstEnglish } from "./web-ui-message-pack.validate.js";
+import {
+  existingWebUiLeavesChanged,
+  listBlockingWebUiFoundationFailures,
+  validateWebUiMessageTreeAgainstEnglish,
+  webUiFoundationFailuresBlockPersist,
+} from "./web-ui-message-pack.validate.js";
 import {
   getCachedPublishedWebUiRuntime,
   invalidatePublishedWebUiRuntimeCache,
@@ -316,6 +321,12 @@ export type CompareAndSetWebUiMessagePackInput = {
   readonly sourceFingerprintsByPath?: WebUiMessagePackUpsertInput["sourceFingerprintsByPath"];
   /** number = update at revision; null = create only. */
   readonly expectedRevision: WebUiMessagePackExpectedRevision;
+  /**
+   * Add missing translations only. Keeps full-tree validation for every other
+   * caller. On update, existing string leaves must be unchanged and only new
+   * paths are checked against the English foundation.
+   */
+  readonly preserveExistingPublishedLeaves?: boolean;
 };
 
 /**
@@ -345,13 +356,34 @@ export async function compareAndSetWebUiMessagePack(
     );
   }
 
-  assertWebUiMessageTreeForUpsert(input.messages);
-
   const now = new Date().toISOString();
   const conflictMessage =
     input.expectedRevision === null
       ? `WEB_UI message pack already exists for locale ${locale}.`
       : `WEB_UI message pack revision conflict for locale ${locale} (expected ${input.expectedRevision}).`;
+
+  if (input.preserveExistingPublishedLeaves && input.expectedRevision !== null) {
+    const existing = await getWebUiMessagePackByLocale(locale);
+    if (!existing || existing.revision !== input.expectedRevision) {
+      throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+    }
+    if (existingWebUiLeavesChanged(existing.messages, input.messages)) {
+      throw new WebUiMessagePackValidationError(
+        "Existing published WEB_UI values cannot be changed by Add missing translations.",
+      );
+    }
+    const blocking = listBlockingWebUiFoundationFailures({
+      existing: existing.messages,
+      next: input.messages,
+    });
+    if (webUiFoundationFailuresBlockPersist(blocking)) {
+      throw new WebUiMessagePackValidationError(
+        "Merged WEB_UI catalog failed English foundation validation.",
+      );
+    }
+  } else {
+    assertWebUiMessageTreeForUpsert(input.messages);
+  }
 
   if (input.expectedRevision === null) {
     const record: WebUiMessagePackRecord = {

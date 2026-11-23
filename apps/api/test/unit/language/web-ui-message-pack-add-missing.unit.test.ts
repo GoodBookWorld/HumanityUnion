@@ -8,22 +8,29 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import type { WebUiMessageTree } from "@hu/types";
+import { normalizeLanguageRegistryLocaleKey, type WebUiMessageTree } from "@hu/types";
 
 import {
   createLanguageRegistryRecord,
   ensureLanguageRegistrySeeded,
+  listLanguageRegistry,
   resetLanguageRegistryStoreForTests,
+  resolveLanguageRegistryLocale,
   setLanguageRegistryForceMemoryForTests,
 } from "../../../src/modules/language/index.js";
 import { mergeMissingPackagedWebUiMessages } from "../../../src/modules/web-ui-message-packs/merge-missing-packaged-web-ui-messages.js";
+import { upsertWebUiMessagePackMemory } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.memory.store.js";
 import {
   loadPackagedWebUiCatalog,
   resetPackagedWebUiCatalogIndexForTests,
   setPackagedWebUiCatalogsDirForTests,
 } from "../../../src/modules/web-ui-message-packs/packaged-web-ui-catalog.js";
-import { WebUiMessagePackRevisionConflictError } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.errors.js";
 import {
+  WebUiMessagePackRevisionConflictError,
+  WebUiMessagePackValidationError,
+} from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.errors.js";
+import {
+  compareAndSetWebUiMessagePack,
   getPublishedWebUiMessagePackByLocale,
   getWebUiMessagePackByLocale,
   resetWebUiMessagePackStoreForTests,
@@ -35,6 +42,10 @@ import {
   previewAdminAddMissingWebUiFromPackaged,
   setWebUiMessagePackAdminAssertOverrideForTests,
 } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.service.js";
+import {
+  collectStringPaths,
+  resetEnglishWebUiPathCacheForTests,
+} from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const LOCALE = "zz-AddMiss";
@@ -94,6 +105,7 @@ describe("WEB_UI add missing from packaged catalog", () => {
     setWebUiMessagePackAdminAssertOverrideForTests(null);
     setPackagedWebUiCatalogsDirForTests(null);
     resetPackagedWebUiCatalogIndexForTests();
+    resetEnglishWebUiPathCacheForTests();
   });
 
   it("merge helper preserves existing values and adds only missing leaves", () => {
@@ -330,6 +342,339 @@ describe("WEB_UI add missing from packaged catalog", () => {
     assert.equal(auth.deleteAccountIntro, english.auth.deleteAccountIntro);
     assert.equal(merge.addedPaths.includes("auth.deleteAccountTitle"), false);
     assert.equal(merge.addedPaths.includes("auth.deleteAccountIntro"), true);
+  });
+
+  const DELETION_KEYS = [
+    "deleteAccountTitle",
+    "deleteAccountIntro",
+    "deleteAccountConsequences",
+    "deleteAccountButton",
+    "deleteAccountSendCode",
+    "deleteAccountCodeLabel",
+    "deleteAccountConfirm",
+    "deleteAccountCodeSent",
+    "deleteAccountScheduled",
+    "deleteAccountUnavailable",
+    "recoveryTitle",
+    "recoveryIntro",
+    "recoveryEmail",
+    "recoverySendCode",
+    "recoveryPassword",
+    "recoveryCode",
+    "recoverySubmit",
+    "recoverySent",
+    "recoverySuccess",
+    "recoverySignIn",
+    "recoveryFailed",
+    "deleteAccountPasswordIncorrect",
+    "deleteAccountCodeInvalid",
+    "deleteAccountMailFailed",
+    "deleteAccountAdminBlocked",
+    "deleteAccountSuspendedBlocked",
+    "deleteAccountRrpBlocked",
+    "deleteAccountEditorBlocked",
+    "deleteAccountConflict",
+    "deleteAccountGenericError",
+  ] as const;
+  const PUBLISHED_LOCALES = ["ar", "de", "es", "fr", "he", "ka", "pt", "uk", "zh-Hant"] as const;
+
+  function readLeaf(messages: WebUiMessageTree, dottedPath: string): string | undefined {
+    let cursor: unknown = messages;
+    for (const segment of dottedPath.split(".")) {
+      if (cursor == null || typeof cursor !== "object" || Array.isArray(cursor)) {
+        return undefined;
+      }
+      cursor = (cursor as Record<string, unknown>)[segment];
+    }
+    return typeof cursor === "string" ? cursor : undefined;
+  }
+
+  function seedHistoricalPublishedPack(
+    locale: string,
+    messages: WebUiMessageTree,
+    sourceNote = "approved",
+  ): void {
+    const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+    upsertWebUiMessagePackMemory(
+      {
+        packId: `web-ui-pack-${localeKey}`,
+        locale,
+        revision: 1,
+        status: "published",
+        messages,
+        createdAt: "2026-11-01T00:00:00.000Z",
+        updatedAt: "2026-11-01T00:00:00.000Z",
+        updatedByParticipantId: null,
+        sourceNote,
+        sourceFingerprintsByPath: null,
+      },
+      localeKey,
+    );
+  }
+
+  it("adds the deletion keys without changing a published placeholder mismatch", async () => {
+    const catalogs = path.resolve(here, "../../../assets/packaged-web-ui-catalogs");
+    setPackagedWebUiCatalogsDirForTests(catalogs);
+    resetPackagedWebUiCatalogIndexForTests();
+    resetEnglishWebUiPathCacheForTests();
+    const registry = await listLanguageRegistry();
+    for (const locale of PUBLISHED_LOCALES) {
+      if (registry.some((record) => record.locale === locale)) {
+        continue;
+      }
+      await createLanguageRegistryRecord({
+        locale,
+        englishName: locale,
+        nativeName: locale,
+        textDirection: locale === "he" ? "rtl" : "ltr",
+        fallbackLocale: "en",
+        enabled: true,
+        contentTranslationEnabled: false,
+        searchEnabled: false,
+        seoIndexingEnabled: false,
+        pwaPersistedReadingEnabled: false,
+        uiTranslationStatus: "none",
+      });
+    }
+
+    for (const locale of PUBLISHED_LOCALES) {
+      const packaged = loadPackagedWebUiCatalog(locale) as WebUiMessageTree & {
+        auth: Record<string, string>;
+        rrpApplication: { admin: { fields: { consentAccepted: string } } };
+      };
+      const existing = structuredClone(packaged);
+      for (const key of DELETION_KEYS) {
+        delete existing.auth[key];
+      }
+      const approvedConsent = `${existing.rrpApplication.admin.fields.consentAccepted} {version}`;
+      existing.rrpApplication.admin.fields.consentAccepted = approvedConsent;
+      const approvedLeaves = new Map(
+        collectStringPaths(existing).map((pathKey) => [pathKey, readLeaf(existing, pathKey)]),
+      );
+      seedHistoricalPublishedPack(locale, existing);
+
+      const result = await applyAdminAddMissingWebUiFromPackaged({
+        actorUserId: "admin-1",
+        locale,
+        body: { expectedRevision: 1 },
+      });
+      assert.equal(result.changed, true, locale);
+      assert.equal(result.addedKeyCount, DELETION_KEYS.length, locale);
+      assert.equal(result.pack.revision, 2, locale);
+
+      const stored = await getPublishedWebUiMessagePackByLocale(locale);
+      assert.equal(stored?.revision, 2, locale);
+      assert.equal(stored?.sourceNote, "approved", locale);
+      const storedAuth = (stored?.messages as { auth: Record<string, string> }).auth;
+      for (const key of DELETION_KEYS) {
+        assert.equal(storedAuth[key], packaged.auth[key], `${locale}.${key}`);
+      }
+      for (const [pathKey, value] of approvedLeaves) {
+        assert.equal(readLeaf(stored!.messages, pathKey), value, `${locale}.${pathKey}`);
+      }
+      assert.equal(
+        readLeaf(stored!.messages, "rrpApplication.admin.fields.consentAccepted"),
+        approvedConsent,
+        locale,
+      );
+      const direction = (await resolveLanguageRegistryLocale(locale))?.textDirection;
+      assert.equal(direction, locale === "ar" || locale === "he" ? "rtl" : "ltr", locale);
+    }
+  });
+
+  it("rejects a new placeholder mismatch and leaves the published pack unchanged", async () => {
+    const approvedConsent = "accepted {version} on {at}";
+    setPackagedWebUiCatalogsDirForTests(
+      writePackagedFixture({
+        common: { loading: "Завантаження" },
+        auth: { deleteAccountScheduled: "due {version}" },
+        rrpApplication: {
+          admin: { fields: { consentAccepted: "packaged consent {at}" } },
+        },
+      }),
+    );
+    resetPackagedWebUiCatalogIndexForTests();
+    seedHistoricalPublishedPack(LOCALE, {
+      rrpApplication: { admin: { fields: { consentAccepted: approvedConsent } } },
+    });
+
+    await assert.rejects(
+      () =>
+        applyAdminAddMissingWebUiFromPackaged({
+          actorUserId: "admin-1",
+          locale: LOCALE,
+          body: { expectedRevision: 1 },
+        }),
+      (error: unknown) =>
+        error instanceof WebUiMessagePackValidationError &&
+        error.message === "Merged WEB_UI catalog failed English foundation validation.",
+    );
+    const stored = await getPublishedWebUiMessagePackByLocale(LOCALE);
+    assert.equal(stored?.revision, 1);
+    assert.equal(stored?.sourceNote, "approved");
+    assert.equal(
+      readLeaf(stored!.messages, "rrpApplication.admin.fields.consentAccepted"),
+      approvedConsent,
+    );
+    assert.equal(readLeaf(stored!.messages, "common.loading"), undefined);
+    assert.equal(readLeaf(stored!.messages, "auth.deleteAccountScheduled"), undefined);
+  });
+
+  it("rejects an unknown new key without a partial write", async () => {
+    setPackagedWebUiCatalogsDirForTests(
+      writePackagedFixture({
+        common: { loading: "Завантаження" },
+        notARealCatalog: { invented: "no" },
+      }),
+    );
+    resetPackagedWebUiCatalogIndexForTests();
+    await upsertWebUiMessagePack({
+      locale: LOCALE,
+      status: "published",
+      messages: PARTIAL_EXISTING as never,
+    });
+    await assert.rejects(
+      () =>
+        applyAdminAddMissingWebUiFromPackaged({
+          actorUserId: "admin-1",
+          locale: LOCALE,
+          body: { expectedRevision: 1 },
+        }),
+      (error: unknown) => error instanceof WebUiMessagePackValidationError,
+    );
+    const stored = await getPublishedWebUiMessagePackByLocale(LOCALE);
+    assert.equal(stored?.revision, 1);
+    assert.equal(readLeaf(stored!.messages, "common.loading"), undefined);
+    assert.equal(readLeaf(stored!.messages, "common.save"), "ADMIN-SAVE");
+  });
+
+  it("rejects a malformed new value and an overwrite before revision changes", async () => {
+    seedHistoricalPublishedPack(LOCALE, {
+      common: { save: "ADMIN-SAVE" },
+      rrpApplication: {
+        admin: { fields: { consentAccepted: "accepted {version} on {at}" } },
+      },
+    });
+    await assert.rejects(
+      () =>
+        compareAndSetWebUiMessagePack({
+          locale: LOCALE,
+          expectedRevision: 1,
+          preserveExistingPublishedLeaves: true,
+          messages: {
+            common: { save: "ADMIN-SAVE", broken: 1 },
+            rrpApplication: {
+              admin: { fields: { consentAccepted: "accepted {version} on {at}" } },
+            },
+          } as never,
+        }),
+      (error: unknown) => error instanceof WebUiMessagePackValidationError,
+    );
+    await assert.rejects(
+      () =>
+        compareAndSetWebUiMessagePack({
+          locale: LOCALE,
+          expectedRevision: 1,
+          preserveExistingPublishedLeaves: true,
+          messages: {
+            common: { save: "REPLACED" },
+            rrpApplication: {
+              admin: { fields: { consentAccepted: "accepted {version} on {at}" } },
+            },
+          } as never,
+        }),
+      (error: unknown) =>
+        error instanceof WebUiMessagePackValidationError &&
+        /cannot be changed/.test(error.message),
+    );
+    const stored = await getPublishedWebUiMessagePackByLocale(LOCALE);
+    assert.equal(stored?.revision, 1);
+    assert.equal(readLeaf(stored!.messages, "common.save"), "ADMIN-SAVE");
+    assert.equal(
+      readLeaf(stored!.messages, "rrpApplication.admin.fields.consentAccepted"),
+      "accepted {version} on {at}",
+    );
+  });
+
+  it("keeps full-tree validation for ordinary catalog writes", async () => {
+    await assert.rejects(
+      () =>
+        upsertWebUiMessagePack({
+          locale: LOCALE,
+          status: "published",
+          messages: {
+            rrpApplication: {
+              admin: { fields: { consentAccepted: "accepted {version} on {at}" } },
+            },
+          } as never,
+        }),
+      (error: unknown) => error instanceof WebUiMessagePackValidationError,
+    );
+    assert.equal(await getWebUiMessagePackByLocale(LOCALE), null);
+    await upsertWebUiMessagePack({
+      locale: LOCALE,
+      status: "published",
+      messages: { common: { save: "Keep" } } as never,
+    });
+    await assert.rejects(
+      () =>
+        compareAndSetWebUiMessagePack({
+          locale: LOCALE,
+          expectedRevision: 1,
+          messages: {
+            common: { save: "Keep" },
+            rrpApplication: {
+              admin: { fields: { consentAccepted: "accepted {version} on {at}" } },
+            },
+          } as never,
+        }),
+      (error: unknown) => error instanceof WebUiMessagePackValidationError,
+    );
+    const stored = await getPublishedWebUiMessagePackByLocale(LOCALE);
+    assert.equal(stored?.revision, 1);
+    assert.equal(readLeaf(stored!.messages, "common.save"), "Keep");
+  });
+
+  it("still rejects a brand-new catalog that fails the English foundation", async () => {
+    setPackagedWebUiCatalogsDirForTests(
+      writePackagedFixture({
+        auth: { deleteAccountScheduled: "due {version}" },
+      }),
+    );
+    resetPackagedWebUiCatalogIndexForTests();
+    await assert.rejects(
+      () =>
+        applyAdminAddMissingWebUiFromPackaged({
+          actorUserId: "admin-1",
+          locale: LOCALE,
+          body: { expectedRevision: null },
+        }),
+      (error: unknown) =>
+        error instanceof WebUiMessagePackValidationError &&
+        error.message === "Packaged WEB_UI catalog failed English foundation validation.",
+    );
+    assert.equal(await getWebUiMessagePackByLocale(LOCALE), null);
+  });
+
+  it("keeps English as the fallback catalog and does not publish an English pack", async () => {
+    const loader = readFileSync(
+      path.resolve(here, "../../../../web/src/features/i18n/load-ui-messages.ts"),
+      "utf8",
+    );
+    assert.match(loader, /packSource: "english-only"/);
+    assert.match(loader, /deepMergeMessages\(englishPack\.messages, overlay\.messages\)/);
+    await assert.rejects(
+      () =>
+        applyAdminAddMissingWebUiFromPackaged({
+          actorUserId: "admin-1",
+          locale: "en",
+          body: { expectedRevision: null },
+        }),
+      (error: unknown) =>
+        error instanceof WebUiMessagePackValidationError &&
+        /canonical English catalog cannot be replaced/.test(error.message),
+    );
+    assert.equal(await getWebUiMessagePackByLocale("en"), null);
   });
 
   it("memory adapter parity: two sequential applies — second is no-op", async () => {

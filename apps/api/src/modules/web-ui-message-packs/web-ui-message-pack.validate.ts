@@ -413,4 +413,75 @@ export function validateWebUiMessageTreeAgainstEnglish(
   };
 }
 
+function readStringLeaf(messages: WebUiMessageTree, dottedPath: string): string | undefined {
+  let cursor: unknown = messages;
+  for (const segment of dottedPath.split(".")) {
+    if (cursor == null || typeof cursor !== "object" || Array.isArray(cursor)) {
+      return undefined;
+    }
+    cursor = (cursor as Record<string, unknown>)[segment];
+  }
+  return typeof cursor === "string" ? cursor : undefined;
+}
+
+function foundationEntryPath(entry: string): string {
+  const splitAt = entry.indexOf(" (");
+  return splitAt > 0 ? entry.slice(0, splitAt) : entry;
+}
+
+/**
+ * English-foundation failures that are not already stored on published string leaves.
+ * Add missing translations uses this so a previously published mismatch does not
+ * block new keys. A null existing tree validates every path.
+ */
+export function listBlockingWebUiFoundationFailures(input: {
+  readonly existing: WebUiMessageTree | null;
+  readonly next: WebUiMessageTree;
+}): Pick<
+  WebUiMessagePackValidationReport,
+  "rejectedUnknownPaths" | "rejectedNonStringPaths" | "placeholderMismatchPaths"
+> {
+  const report = validateWebUiMessageTreeAgainstEnglish(input.next);
+  if (input.existing == null) {
+    return {
+      rejectedUnknownPaths: report.rejectedUnknownPaths,
+      rejectedNonStringPaths: report.rejectedNonStringPaths,
+      placeholderMismatchPaths: report.placeholderMismatchPaths,
+    };
+  }
+  const existingPaths = new Set(collectStringPaths(input.existing as MessagePack));
+  const isNew = (entry: string): boolean => !existingPaths.has(foundationEntryPath(entry));
+  return {
+    rejectedUnknownPaths: report.rejectedUnknownPaths.filter(isNew),
+    rejectedNonStringPaths: report.rejectedNonStringPaths.filter(isNew),
+    placeholderMismatchPaths: report.placeholderMismatchPaths.filter(isNew),
+  };
+}
+
+export function webUiFoundationFailuresBlockPersist(
+  failures: Pick<
+    WebUiMessagePackValidationReport,
+    "rejectedUnknownPaths" | "rejectedNonStringPaths" | "placeholderMismatchPaths"
+  >,
+): boolean {
+  return (
+    failures.rejectedUnknownPaths.length > 0 ||
+    failures.rejectedNonStringPaths.length > 0 ||
+    failures.placeholderMismatchPaths.length > 0
+  );
+}
+
+/** True when any previously stored string leaf is missing or different in `next`. */
+export function existingWebUiLeavesChanged(
+  existing: WebUiMessageTree,
+  next: WebUiMessageTree,
+): boolean {
+  for (const pathKey of collectStringPaths(existing as MessagePack)) {
+    if (readStringLeaf(existing, pathKey) !== readStringLeaf(next, pathKey)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export { collectStringPaths };
