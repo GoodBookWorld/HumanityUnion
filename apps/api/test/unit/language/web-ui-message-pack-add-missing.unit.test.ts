@@ -18,6 +18,7 @@ import {
 } from "../../../src/modules/language/index.js";
 import { mergeMissingPackagedWebUiMessages } from "../../../src/modules/web-ui-message-packs/merge-missing-packaged-web-ui-messages.js";
 import {
+  loadPackagedWebUiCatalog,
   resetPackagedWebUiCatalogIndexForTests,
   setPackagedWebUiCatalogsDirForTests,
 } from "../../../src/modules/web-ui-message-packs/packaged-web-ui-catalog.js";
@@ -309,6 +310,26 @@ describe("WEB_UI add missing from packaged catalog", () => {
     assert.match(repo, /findOneAndUpdate\(/);
     assert.match(repo, /localeKey,\s*revision:\s*expectedRevision/);
     assert.match(repo, /insertOne\(/);
+  });
+
+  it("adds packaged account deletion keys and keeps an approved translation", () => {
+    const catalogs = path.resolve(here, "../../../assets/packaged-web-ui-catalogs");
+    setPackagedWebUiCatalogsDirForTests(catalogs);
+    resetPackagedWebUiCatalogIndexForTests();
+    assert.equal(loadPackagedWebUiCatalog("zz-future-language"), null);
+    const english = loadPackagedWebUiCatalog("en") as {
+      auth: Record<string, string>;
+    };
+    assert.match(english.auth.deleteAccountScheduled ?? "", /\{deadline\}/);
+    const merge = mergeMissingPackagedWebUiMessages({
+      existing: { auth: { deleteAccountTitle: "APPROVED TITLE" } },
+      packaged: english,
+    });
+    const auth = (merge.messages as { auth: Record<string, string> }).auth;
+    assert.equal(auth.deleteAccountTitle, "APPROVED TITLE");
+    assert.equal(auth.deleteAccountIntro, english.auth.deleteAccountIntro);
+    assert.equal(merge.addedPaths.includes("auth.deleteAccountTitle"), false);
+    assert.equal(merge.addedPaths.includes("auth.deleteAccountIntro"), true);
   });
 
   it("memory adapter parity: two sequential applies — second is no-op", async () => {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { isAccountDeletionUiEnabled } from "./account-deletion-availability";
@@ -122,5 +122,32 @@ describe("account deletion web", () => {
     const he = JSON.parse(read("features/i18n/messages/he.json")) as { auth: Record<string, string> };
     assert.match(ar.auth.deleteAccountTitle ?? "", /[\u0600-\u06FF]/);
     assert.match(he.auth.deleteAccountTitle ?? "", /[\u0590-\u05FF]/);
+  });
+
+  it("packages every deletion key for Add missing translations", () => {
+    const packagedDir = new URL("../../api/assets/packaged-web-ui-catalogs/", ROOT);
+    const names = readdirSync(packagedDir).filter((name) => name.endsWith(".json"));
+    for (const locale of LOCALES) {
+      assert.ok(names.includes(`${locale}.json`), locale);
+    }
+    for (const name of names) {
+      const packaged = JSON.parse(readFileSync(new URL(name, packagedDir), "utf8")) as {
+        auth: Record<string, string>;
+      };
+      const web = JSON.parse(read(`features/i18n/messages/${name}`)) as {
+        auth: Record<string, string>;
+      };
+      for (const key of KEYS) {
+        assert.equal(packaged.auth[key], web.auth[key], `${name}.${key}`);
+      }
+      assert.match(packaged.auth.deleteAccountScheduled ?? "", /\{deadline\}/);
+    }
+    const loader = read("../../api/src/modules/web-ui-message-packs/packaged-web-ui-catalog.ts");
+    assert.match(loader, /readdirSync\(dir\)/);
+    const messages = read("features/i18n/load-ui-messages.ts");
+    assert.match(messages, /deepMergeMessages\(englishPack\.messages, overlay\.messages\)/);
+    assert.match(messages, /packSource: "english-only"/);
+    const layout = read("app/layout.tsx");
+    assert.match(layout, /dir=\{documentLocale\.textDirection\}/);
   });
 });
