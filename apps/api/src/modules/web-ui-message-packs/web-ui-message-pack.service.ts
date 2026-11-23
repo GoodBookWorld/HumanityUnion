@@ -28,6 +28,12 @@ import {
 } from "./merge-missing-packaged-web-ui-messages.js";
 import { loadPackagedWebUiCatalog } from "./packaged-web-ui-catalog.js";
 import {
+  planSelectedPackagedWebUiUpdates,
+  type SelectedPackagedReplacement,
+  type WebUiSelectedUpdatePreview,
+  type WebUiSelectedUpdateResult,
+} from "./plan-selected-packaged-web-ui-updates.js";
+import {
   WebUiMessagePackNotFoundError,
   WebUiMessagePackRevisionConflictError,
   WebUiMessagePackValidationError,
@@ -413,6 +419,181 @@ export async function applyAdminAddMissingWebUiFromPackaged(input: {
     expectedFinalCount: merge.expectedFinalCount,
     changed: true,
     validation,
+    readiness,
+  };
+}
+
+interface SelectedUpdateBody {
+  readonly expectedRevision?: unknown;
+  readonly paths?: unknown;
+  readonly updates?: unknown;
+  readonly messages?: unknown;
+  readonly status?: unknown;
+}
+
+function assertSelectedUpdateBodyHasNoCatalog(body: SelectedUpdateBody): void {
+  if (Object.prototype.hasOwnProperty.call(body, "messages")) {
+    throw new AdministrationValidationError(
+      "Full catalog replacement is not accepted by Update selected translations.",
+    );
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    throw new AdministrationValidationError(
+      "Update selected translations cannot change published status.",
+    );
+  }
+}
+
+function parseSelectedPaths(raw: unknown): string[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new AdministrationValidationError("paths must list at least one selected key.");
+  }
+  const paths: string[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      throw new AdministrationValidationError("Each selected path must be a string.");
+    }
+    paths.push(entry.trim());
+  }
+  return paths;
+}
+
+function parseSelectedReplacements(raw: unknown): SelectedPackagedReplacement[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new AdministrationValidationError("updates must list at least one selected key.");
+  }
+  const updates: SelectedPackagedReplacement[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new AdministrationValidationError("Each selected update must be an object.");
+    }
+    const record = entry as Record<string, unknown>;
+    if (typeof record.path !== "string" || record.path.trim().length === 0) {
+      throw new AdministrationValidationError("Each selected update requires a path.");
+    }
+    if (typeof record.existingValue !== "string" || typeof record.proposedValue !== "string") {
+      throw new AdministrationValidationError(
+        "Each selected update requires string existingValue and proposedValue.",
+      );
+    }
+    updates.push({
+      path: record.path.trim(),
+      existingValue: record.existingValue,
+      proposedValue: record.proposedValue,
+    });
+  }
+  return updates;
+}
+
+function selectedUpdateFailureMessage(plan: {
+  readonly validationErrors: readonly string[];
+  readonly entries: readonly { readonly path: string; readonly errors: readonly string[] }[];
+}): string {
+  const details = [
+    ...plan.validationErrors,
+    ...plan.entries.flatMap((entry) => entry.errors.map((error) => `${entry.path}: ${error}`)),
+  ];
+  return details[0] ?? "Selected WEB_UI translations failed validation.";
+}
+
+/**
+ * Admin read-only preview of explicit packaged replacements.
+ * No writes. No provider calls. Unlisted catalog differences are ignored.
+ */
+export async function previewAdminUpdateSelectedWebUiFromPackaged(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+}): Promise<WebUiSelectedUpdatePreview> {
+  await assertAdminActor(input.actorUserId);
+  const locale = await resolvePackLocale(input.locale);
+  const body = (input.body ?? {}) as SelectedUpdateBody;
+  assertSelectedUpdateBodyHasNoCatalog(body);
+  const paths = parseSelectedPaths(body.paths);
+  const packaged = loadPackagedWebUiCatalog(locale);
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+  const plan = planSelectedPackagedWebUiUpdates({
+    paths,
+    published: published?.messages ?? null,
+    packaged,
+  });
+  return {
+    locale,
+    currentRevision: published?.revision ?? null,
+    packStatus: published?.status ?? null,
+    selectedKeyCount: paths.length,
+    entries: plan.entries,
+    validationErrors: plan.validationErrors,
+  };
+}
+
+/**
+ * Replace only the confirmed published leaves with packaged catalog values.
+ * One revision compare-and-set writes every selected key or none.
+ */
+export async function applyAdminUpdateSelectedWebUiFromPackaged(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+}): Promise<WebUiSelectedUpdateResult> {
+  const admin = await assertAdminActor(input.actorUserId);
+  const locale = await resolvePackLocale(input.locale);
+  const body = (input.body ?? {}) as SelectedUpdateBody;
+  assertSelectedUpdateBodyHasNoCatalog(body);
+  if (!Object.prototype.hasOwnProperty.call(body, "expectedRevision")) {
+    throw new AdministrationValidationError(
+      "expectedRevision is required (number for update, null for create).",
+    );
+  }
+  const expectedRevision = parseExpectedRevision(body.expectedRevision);
+  if (expectedRevision === null) {
+    throw new WebUiMessagePackValidationError(
+      "Selected translation updates require an existing published revision.",
+    );
+  }
+  const updates = parseSelectedReplacements(body.updates);
+  const packaged = loadPackagedWebUiCatalog(locale);
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+  if (!published) {
+    throw new WebUiMessagePackRevisionConflictError(
+      `WEB_UI message pack revision conflict for locale ${locale} (expected ${expectedRevision}).`,
+    );
+  }
+  if (published.revision !== expectedRevision) {
+    throw new WebUiMessagePackRevisionConflictError(
+      `WEB_UI message pack revision conflict for locale ${locale} (expected ${expectedRevision}).`,
+    );
+  }
+
+  const plan = planSelectedPackagedWebUiUpdates({
+    paths: updates.map((update) => update.path),
+    published: published.messages,
+    packaged,
+    replacements: updates,
+  });
+  if (
+    plan.validationErrors.length > 0 ||
+    plan.entries.some((entry) => entry.errors.length > 0) ||
+    plan.messages == null
+  ) {
+    throw new WebUiMessagePackValidationError(selectedUpdateFailureMessage(plan));
+  }
+
+  const pack = await compareAndSetWebUiMessagePack({
+    locale: published.locale,
+    messages: plan.messages,
+    status: published.status,
+    sourceNote: published.sourceNote ?? null,
+    updatedByParticipantId: admin.participantId,
+    expectedRevision,
+    allowedChangedPaths: updates.map((update) => update.path),
+  });
+  const readiness = await assessWebUiCatalogReadinessForLocale({ locale: pack.locale });
+  return {
+    locale: pack.locale,
+    pack,
+    updatedKeyCount: updates.length,
+    paths: updates.map((update) => update.path),
     readiness,
   };
 }

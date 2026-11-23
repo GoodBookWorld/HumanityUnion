@@ -484,4 +484,30 @@ export function existingWebUiLeavesChanged(
   return false;
 }
 
+/** String leaves whose stored text differs, including leaves added or removed. */
+export function changedWebUiLeafPaths(
+  existing: WebUiMessageTree,
+  next: WebUiMessageTree,
+): string[] {
+  const paths = new Set<string>([
+    ...collectStringPaths(existing as MessagePack),
+    ...collectStringPaths(next as MessagePack),
+  ]);
+  const changed: string[] = [];
+  for (const pathKey of paths) {
+    if (readStringLeaf(existing, pathKey) !== readStringLeaf(next, pathKey)) {
+      changed.push(pathKey);
+    }
+  }
+  changed.sort();
+  return changed;
+}
+
+export function readWebUiStringLeaf(
+  messages: WebUiMessageTree,
+  dottedPath: string,
+): string | undefined {
+  return readStringLeaf(messages, dottedPath);
+}
+
 export { collectStringPaths };

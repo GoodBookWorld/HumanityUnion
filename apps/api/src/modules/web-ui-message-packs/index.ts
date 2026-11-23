@@ -26,6 +26,8 @@ export {
   upsertAdminWebUiMessagePack,
   previewAdminAddMissingWebUiFromPackaged,
   applyAdminAddMissingWebUiFromPackaged,
+  previewAdminUpdateSelectedWebUiFromPackaged,
+  applyAdminUpdateSelectedWebUiFromPackaged,
 } from "./web-ui-message-pack.service.js";
 export { mergeMissingPackagedWebUiMessages } from "./merge-missing-packaged-web-ui-messages.js";
 export {

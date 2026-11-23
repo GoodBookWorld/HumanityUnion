@@ -82,8 +82,40 @@ export interface WebUiMessagePackAddMissingPreview {
 }
 
 /**
- * Admin apply result for additive packaged fill.
+ * One selected published leaf compared with its packaged replacement.
+ * Preview only. Nothing is written while this object is produced.
  */
+export interface WebUiMessagePackSelectedUpdateEntry {
+  readonly path: string;
+  readonly existingValue: string | null;
+  readonly proposedValue: string | null;
+  readonly errors: readonly string[];
+}
+
+/**
+ * Admin read-only preview for updating explicit published WEB_UI keys
+ * from the packaged catalog. Does not list or apply every catalog difference.
+ */
+export interface WebUiMessagePackSelectedUpdatePreview {
+  readonly locale: string;
+  readonly currentRevision: number | null;
+  readonly packStatus: WebUiMessagePackStatus | null;
+  readonly selectedKeyCount: number;
+  readonly entries: readonly WebUiMessagePackSelectedUpdateEntry[];
+  readonly validationErrors: readonly string[];
+}
+
+/**
+ * Admin apply result. Revision increments only when every selected key is written.
+ */
+export interface WebUiMessagePackSelectedUpdateResult {
+  readonly locale: string;
+  readonly pack: WebUiMessagePackRecord;
+  readonly updatedKeyCount: number;
+  readonly paths: readonly string[];
+  readonly readiness: LanguageWebUiReadinessSlice;
+}
+
 export interface WebUiMessagePackAddMissingResult {
   readonly locale: string;
   readonly pack: WebUiMessagePackRecord;

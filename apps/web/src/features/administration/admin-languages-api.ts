@@ -201,6 +201,108 @@ export async function applyAdminAddMissingWebUiFromPackaged(
   );
 }
 
+export interface WebUiSelectedUpdateEntry {
+  readonly path: string;
+  readonly existingValue: string | null;
+  readonly proposedValue: string | null;
+  readonly errors: readonly string[];
+}
+
+export interface WebUiSelectedUpdatePreview {
+  readonly locale: string;
+  readonly currentRevision: number | null;
+  readonly packStatus: "draft" | "published" | null;
+  readonly selectedKeyCount: number;
+  readonly entries: readonly WebUiSelectedUpdateEntry[];
+  readonly validationErrors: readonly string[];
+}
+
+export interface WebUiSelectedUpdateResult {
+  readonly locale: string;
+  readonly pack: WebUiMessagePackRecord;
+  readonly updatedKeyCount: number;
+  readonly paths: readonly string[];
+  readonly readiness: LanguageWebUiReadinessSlice;
+}
+
+export async function previewAdminUpdateSelectedWebUiFromPackaged(
+  locale: string,
+  input: { readonly paths: readonly string[] },
+): Promise<WebUiSelectedUpdatePreview> {
+  return apiRequest<WebUiSelectedUpdatePreview>(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}/update-selected-from-packaged/preview`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: input.paths }),
+    },
+  );
+}
+
+export async function applyAdminUpdateSelectedWebUiFromPackaged(
+  locale: string,
+  input: {
+    readonly expectedRevision: number;
+    readonly updates: readonly {
+      readonly path: string;
+      readonly existingValue: string;
+      readonly proposedValue: string;
+    }[];
+  },
+): Promise<WebUiSelectedUpdateResult> {
+  return apiRequest<WebUiSelectedUpdateResult>(
+    `${ADMIN_WEB_UI_PACKS_PATH}/${encodeURIComponent(locale)}/update-selected-from-packaged`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expectedRevision: input.expectedRevision,
+        updates: input.updates,
+      }),
+    },
+  );
+}
+
+export function formatSelectedWebUiUpdatePreviewMessage(
+  preview: WebUiSelectedUpdatePreview,
+): string {
+  const lines = [
+    `Update selected translations for ${preview.locale}.`,
+    `Current revision: ${preview.currentRevision ?? "none"}.`,
+    `Selected keys: ${preview.selectedKeyCount}.`,
+  ];
+  for (const entry of preview.entries) {
+    lines.push(entry.path);
+    lines.push(`Existing: ${entry.existingValue ?? "(missing)"}`);
+    lines.push(`Proposed: ${entry.proposedValue ?? "(missing)"}`);
+    if (entry.errors.length > 0) {
+      lines.push(`Errors: ${entry.errors.join(" ")}`);
+    }
+  }
+  if (preview.validationErrors.length > 0) {
+    lines.push(`Validation errors: ${preview.validationErrors.join(" ")}`);
+  }
+  return lines.join("\n");
+}
+
+export function selectedWebUiUpdatePreviewCanApply(
+  preview: WebUiSelectedUpdatePreview,
+): boolean {
+  return (
+    preview.currentRevision != null &&
+    preview.packStatus === "published" &&
+    preview.selectedKeyCount > 0 &&
+    preview.validationErrors.length === 0 &&
+    preview.entries.length === preview.selectedKeyCount &&
+    preview.entries.every(
+      (entry) =>
+        entry.errors.length === 0 &&
+        entry.existingValue != null &&
+        entry.proposedValue != null,
+    )
+  );
+}
+
 export function formatAddMissingWebUiPreviewMessage(
   preview: WebUiMessagePackAddMissingPreview,
 ): string {

@@ -18,10 +18,12 @@ import {
 } from "./web-ui-message-pack.errors.js";
 import {
   applyAdminAddMissingWebUiFromPackaged,
+  applyAdminUpdateSelectedWebUiFromPackaged,
   getAdminWebUiMessagePack,
   listAdminWebUiMessagePacks,
   prepareAdminWebUiMessagePack,
   previewAdminAddMissingWebUiFromPackaged,
+  previewAdminUpdateSelectedWebUiFromPackaged,
   upsertAdminWebUiMessagePack,
 } from "./web-ui-message-pack.service.js";
 
@@ -150,6 +152,46 @@ adminWebUiMessagePackRouter.post(
             ? "Missing WEB_UI translations added from packaged catalog."
             : "No missing WEB_UI translations to add.",
         ),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminWebUiMessagePackRouter.post(
+  "/:locale/update-selected-from-packaged/preview",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await previewAdminUpdateSelectedWebUiFromPackaged({
+        actorUserId: req.auth!.id,
+        locale: paramLocale(req.params.locale),
+        body: req.body,
+      });
+      res.json(
+        createSuccessResponse(result, "WEB_UI update-selected-from-packaged preview loaded."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminWebUiMessagePackRouter.post(
+  "/:locale/update-selected-from-packaged",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await applyAdminUpdateSelectedWebUiFromPackaged({
+        actorUserId: req.auth!.id,
+        locale: paramLocale(req.params.locale),
+        body: req.body,
+      });
+      res.json(
+        createSuccessResponse(result, "Selected WEB_UI translations updated from packaged catalog."),
       );
     } catch (error) {
       handleError(res, error);

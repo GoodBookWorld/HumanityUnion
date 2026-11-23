@@ -36,8 +36,10 @@ import {
   type WebUiMessagePackMongoDocument,
 } from "./web-ui-message-pack.mongo-document.js";
 import {
+  changedWebUiLeafPaths,
   existingWebUiLeavesChanged,
   listBlockingWebUiFoundationFailures,
+  readWebUiStringLeaf,
   validateWebUiMessageTreeAgainstEnglish,
   webUiFoundationFailuresBlockPersist,
 } from "./web-ui-message-pack.validate.js";
@@ -327,6 +329,12 @@ export type CompareAndSetWebUiMessagePackInput = {
    * paths are checked against the English foundation.
    */
   readonly preserveExistingPublishedLeaves?: boolean;
+  /**
+   * Update selected translations only. The stored tree may change solely at
+   * these existing string paths. Full-catalog validation stays in force for
+   * every caller that does not set this field.
+   */
+  readonly allowedChangedPaths?: readonly string[];
 };
 
 /**
@@ -362,6 +370,12 @@ export async function compareAndSetWebUiMessagePack(
       ? `WEB_UI message pack already exists for locale ${locale}.`
       : `WEB_UI message pack revision conflict for locale ${locale} (expected ${input.expectedRevision}).`;
 
+  if (input.preserveExistingPublishedLeaves && input.allowedChangedPaths) {
+    throw new WebUiMessagePackValidationError(
+      "Selected translation updates cannot use Add missing preservation.",
+    );
+  }
+
   if (input.preserveExistingPublishedLeaves && input.expectedRevision !== null) {
     const existing = await getWebUiMessagePackByLocale(locale);
     if (!existing || existing.revision !== input.expectedRevision) {
@@ -379,6 +393,40 @@ export async function compareAndSetWebUiMessagePack(
     if (webUiFoundationFailuresBlockPersist(blocking)) {
       throw new WebUiMessagePackValidationError(
         "Merged WEB_UI catalog failed English foundation validation.",
+      );
+    }
+  } else if (input.allowedChangedPaths) {
+    if (input.expectedRevision === null) {
+      throw new WebUiMessagePackValidationError(
+        "Selected translation updates require an existing published revision.",
+      );
+    }
+    const existing = await getWebUiMessagePackByLocale(locale);
+    if (!existing || existing.revision !== input.expectedRevision) {
+      throw new WebUiMessagePackRevisionConflictError(conflictMessage);
+    }
+    const allowed = new Set(input.allowedChangedPaths);
+    if (allowed.size === 0 || allowed.size !== input.allowedChangedPaths.length) {
+      throw new WebUiMessagePackValidationError(
+        "Selected translation paths must be explicit and unique.",
+      );
+    }
+    for (const pathKey of allowed) {
+      if (
+        readWebUiStringLeaf(existing.messages, pathKey) === undefined ||
+        readWebUiStringLeaf(input.messages, pathKey) === undefined
+      ) {
+        throw new WebUiMessagePackValidationError(
+          `Selected translation path is not an existing string: ${pathKey}`,
+        );
+      }
+    }
+    const unexpected = changedWebUiLeafPaths(existing.messages, input.messages).filter(
+      (pathKey) => !allowed.has(pathKey),
+    );
+    if (unexpected.length > 0) {
+      throw new WebUiMessagePackValidationError(
+        "Selected translation update cannot modify other keys.",
       );
     }
   } else {

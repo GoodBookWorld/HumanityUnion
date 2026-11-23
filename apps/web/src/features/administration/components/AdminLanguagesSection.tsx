@@ -20,16 +20,21 @@ import { ApiRequestError, formatAuthFormError } from "../../../lib/api-client";
 import {
   activateAdminLanguageLocalization,
   applyAdminAddMissingWebUiFromPackaged,
+  applyAdminUpdateSelectedWebUiFromPackaged,
   createAdminLanguage,
   fetchAdminLanguageActivationStatus,
   fetchAdminLanguageLocalizationReadiness,
   fetchAdminLanguages,
   fetchAdminWebUiMessagePackPreparation,
   formatAddMissingWebUiPreviewMessage,
+  formatSelectedWebUiUpdatePreviewMessage,
   formatWebUiPackRevisionConflictMessage,
   importAdminWebUiMessagePack,
   previewAdminAddMissingWebUiFromPackaged,
+  previewAdminUpdateSelectedWebUiFromPackaged,
   resolveAdminWebUiMessagePackExpectedRevision,
+  selectedWebUiUpdatePreviewCanApply,
+  type WebUiSelectedUpdatePreview,
   updateAdminLanguage,
   type AdminLanguageCreateInput,
   type AdminLanguagePatchInput,
@@ -176,6 +181,9 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [publishOnImport, setPublishOnImport] = useState(false);
+  const [selectedPathsText, setSelectedPathsText] = useState("");
+  const [selectedPreview, setSelectedPreview] =
+    useState<WebUiSelectedUpdatePreview | null>(null);
 
   async function loadPreparation(scope: "public" | "full"): Promise<WebUiMessagePackPreparation> {
     return fetchAdminWebUiMessagePackPreparation(locale, scope);
@@ -255,6 +263,68 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
     }
   }
 
+  function selectedPaths(): string[] {
+    return selectedPathsText
+      .split(/\r?\n/)
+      .map((path) => path.trim())
+      .filter((path) => path.length > 0);
+  }
+
+  async function previewSelectedTranslations(): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    setSelectedPreview(null);
+    try {
+      const preview = await previewAdminUpdateSelectedWebUiFromPackaged(locale, {
+        paths: selectedPaths(),
+      });
+      setSelectedPreview(preview);
+      setNote(formatSelectedWebUiUpdatePreviewMessage(preview));
+    } catch (error) {
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmSelectedTranslations(): Promise<void> {
+    if (!selectedPreview || !selectedWebUiUpdatePreviewCanApply(selectedPreview)) {
+      setNote("Preview the selected keys and resolve validation errors before updating.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `${formatSelectedWebUiUpdatePreviewMessage(selectedPreview)}\n\nUpdate ${selectedPreview.selectedKeyCount} selected key(s) now? Unlisted translations will not be changed.`,
+    );
+    if (!confirmed) {
+      setNote("Update selected translations cancelled.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await applyAdminUpdateSelectedWebUiFromPackaged(locale, {
+        expectedRevision: selectedPreview.currentRevision as number,
+        updates: selectedPreview.entries.map((entry) => ({
+          path: entry.path,
+          existingValue: entry.existingValue as string,
+          proposedValue: entry.proposedValue as string,
+        })),
+      });
+      setSelectedPreview(null);
+      const preparation = await loadPreparation("public");
+      setNote(
+        `Updated ${result.updatedKeyCount} selected key(s). Pack ${result.pack.status} revision ${result.pack.revision}. ${describePreparation(preparation)}`,
+      );
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        setNote(formatWebUiPackRevisionConflictMessage(error.message));
+        return;
+      }
+      setNote(formatAuthFormError(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addMissingFromPackaged(): Promise<void> {
     setBusy(true);
     setNote(null);
@@ -312,6 +382,34 @@ function WebUiPackWorkflow({ locale }: { readonly locale: string }) {
         onClick={() => void addMissingFromPackaged()}
       >
         Add missing translations
+      </Button>
+      <label>
+        Selected translation keys
+        <textarea
+          rows={4}
+          value={selectedPathsText}
+          disabled={busy}
+          onChange={(event) => {
+            setSelectedPathsText(event.target.value);
+            setSelectedPreview(null);
+          }}
+        />
+      </label>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy}
+        onClick={() => void previewSelectedTranslations()}
+      >
+        Preview selected translations
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy || !selectedPreview || !selectedWebUiUpdatePreviewCanApply(selectedPreview)}
+        onClick={() => void confirmSelectedTranslations()}
+      >
+        Update selected translations
       </Button>
       <Button type="button" variant="secondary" disabled={busy} onClick={() => void download("public")}>
         Download public catalog
