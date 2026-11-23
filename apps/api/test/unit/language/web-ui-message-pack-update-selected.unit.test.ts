@@ -465,6 +465,69 @@ describe("WEB_UI update selected translations", () => {
     );
   });
 
+  it("preview and apply accept an escaped French apostrophe and reject the quoted placeholder", async () => {
+    await seedPack({
+      auth: { loginSubtitle: "ancien {siteName}" },
+    });
+    const escaped = structuredClone(PACKAGED) as { auth: { loginSubtitle: string } };
+    escaped.auth.loginSubtitle = "Accès à l''{siteName}.";
+    setPackagedWebUiCatalogsDirForTests(writePackagedFixture(escaped as WebUiMessageTree));
+    resetPackagedWebUiCatalogIndexForTests();
+    const preview = await previewAdminUpdateSelectedWebUiFromPackaged({
+      actorUserId: "admin-1",
+      locale: LOCALE,
+      body: { paths: ["auth.loginSubtitle"] },
+    });
+    assert.deepEqual(preview.entries[0]?.errors, []);
+    assert.equal(preview.entries[0]?.proposedValue, "Accès à l''{siteName}.");
+    const applied = await applyAdminUpdateSelectedWebUiFromPackaged({
+      actorUserId: "admin-1",
+      locale: LOCALE,
+      body: {
+        expectedRevision: preview.currentRevision,
+        updates: [
+          {
+            path: "auth.loginSubtitle",
+            existingValue: "ancien {siteName}",
+            proposedValue: "Accès à l''{siteName}.",
+          },
+        ],
+      },
+    });
+    assert.equal(readLeaf(applied.pack.messages, "auth.loginSubtitle"), "Accès à l''{siteName}.");
+
+    const quoted = structuredClone(PACKAGED) as { auth: { loginSubtitle: string } };
+    quoted.auth.loginSubtitle = "Accès à l'{siteName}.";
+    setPackagedWebUiCatalogsDirForTests(writePackagedFixture(quoted as WebUiMessageTree));
+    resetPackagedWebUiCatalogIndexForTests();
+    const rejected = await previewAdminUpdateSelectedWebUiFromPackaged({
+      actorUserId: "admin-1",
+      locale: LOCALE,
+      body: { paths: ["auth.loginSubtitle"] },
+    });
+    assert.match(rejected.entries[0]?.errors.join(" ") ?? "", /missing \{siteName\}/);
+    await assert.rejects(
+      () =>
+        applyAdminUpdateSelectedWebUiFromPackaged({
+          actorUserId: "admin-1",
+          locale: LOCALE,
+          body: {
+            expectedRevision: rejected.currentRevision,
+            updates: [
+              {
+                path: "auth.loginSubtitle",
+                existingValue: "Accès à l''{siteName}.",
+                proposedValue: "Accès à l'{siteName}.",
+              },
+            ],
+          },
+        }),
+      (error: unknown) => error instanceof WebUiMessagePackValidationError,
+    );
+    const stored = await getPublishedWebUiMessagePackByLocale(LOCALE);
+    assert.equal(readLeaf(stored?.messages, "auth.loginSubtitle"), "Accès à l''{siteName}.");
+  });
+
   it("updates one packaged value for every published non-English language", async () => {
     setPackagedWebUiCatalogsDirForTests(null);
     resetPackagedWebUiCatalogIndexForTests();

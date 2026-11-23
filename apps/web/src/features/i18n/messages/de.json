@@ -3744,7 +3744,7 @@
         "abstain": "Enthaltung",
         "blocked": "Gesperrt",
         "candidateFallback": "Kandidat",
-        "disclaimerBody": "Dies sind Abstimmungsergebnisse der Community von {siteName}. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
+        "disclaimerBody": "Dies sind Abstimmungsergebnisse der Gemeinschaft von {siteName}. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
         "disclaimerTitle": "Ergebnisse der Gemeinschaftsabstimmung",
         "download": "Ergebnisse herunterladen",
         "electionStatus": "Wahlstatus: {status}",

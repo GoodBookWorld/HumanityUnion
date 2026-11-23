@@ -11,7 +11,10 @@ import {
   loadPublicWebUiEnglishCorpus,
   WebUiDraftBatchError,
 } from "../../../src/modules/web-ui-message-packs/web-ui-draft-builder.js";
-import { inspectMessageStructure } from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
+import {
+  describeStructureMismatch,
+  inspectMessageStructure,
+} from "../../../src/modules/web-ui-message-packs/web-ui-message-pack.validate.js";
 import {
   protectWebUiMessageForProvider,
   restoreWebUiMessageFromProvider,
@@ -158,6 +161,18 @@ describe("Step 15D.7.2 — ICU apostrophe + placeholder structure protection", (
       () => assertStructureMatches(english, "Click here if you can't open {siteName}."),
       WebUiDraftBatchError,
     );
+  });
+
+  it("French elision before {siteName} stays a placeholder only when the apostrophe is escaped", () => {
+    const quoted = "adhésion à l'{siteName}.";
+    const escaped = "adhésion à l''{siteName}.";
+    assert.deepEqual([...inspectMessageStructure(quoted).placeholders], []);
+    assert.deepEqual([...inspectMessageStructure(escaped).placeholders], ["siteName"]);
+    assert.equal(
+      describeStructureMismatch("Access your {siteName} workspace.", quoted),
+      "missing {siteName}",
+    );
+    assert.equal(describeStructureMismatch("Access your {siteName} workspace.", escaped), null);
   });
 
   it("apostrophe helper: contractions vs syntax quotes", () => {

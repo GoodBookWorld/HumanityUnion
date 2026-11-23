@@ -147,14 +147,16 @@ describe("platform name uses published siteName", () => {
     }
     assert.equal(
       get(ka, "membershipPublic.faq.items.what-is-member.question"),
-      "ვინ არის წევრი პლატფორმაზე «{siteName}»?",
+      "ვინ არის წევრი პლატფორმაზე {siteName}?",
     );
+    assert.doesNotMatch(JSON.stringify(ka), /«\{siteName\}»/);
     assert.equal(get(ka, "pwa.install.installCta"), "დააინსტალირეთ {siteName}");
 
     const french = load("fr");
-    assert.match(String(get(french, "auth.twoStepLoginHelp")), /à l'\{siteName\}/);
-    assert.match(String(get(french, "authoringPage.application.motivationLabel")), /de l'\{siteName\}/);
-    assert.doesNotMatch(String(get(french, "notifications.types.member_badge_delivered.message")), /de la \{siteName\}/);
+    assert.match(String(get(french, "auth.twoStepLoginHelp")), /à l''\{siteName\}/);
+    assert.match(String(get(french, "authoringPage.application.motivationLabel")), /de l''\{siteName\}/);
+    assert.match(String(get(french, "notifications.types.member_badge_delivered.message")), /Membre de l''\{siteName\}/);
+    assert.doesNotMatch(JSON.stringify(french), /[^']'\{siteName\}/);
 
     const spanish = load("es");
     assert.match(String(get(spanish, "auth.loginSubtitle")), /de la \{siteName\}/);
@@ -183,13 +185,40 @@ describe("platform name uses published siteName", () => {
     assert.match(String(get(german, "volunteerPublic.meaning.p4")), /<platform>Plattform \{siteName\}<\/platform>/);
 
     assert.match(String(get(load("ar"), "membershipPublic.faq.items.what-is-member.question")), /في \{siteName\}/);
+    const ukrainian = load("uk");
     assert.equal(
-      get(load("uk"), "membershipPublic.faq.items.what-is-member.question"),
-      "Хто такий член організації «{siteName}»?",
+      get(ukrainian, "membershipPublic.faq.items.what-is-member.question"),
+      "Хто такий Член платформи {siteName}?",
+    );
+    assert.equal(
+      get(ukrainian, "pwa.install.lead"),
+      "Візьміть Людяність із собою. Встановіть додаток для прямого доступу до вашого Робочого простору, Ініціатив, сповіщень та Помічника платформи {siteName}.",
+    );
+    assert.doesNotMatch(String(get(ukrainian, "pwa.install.lead")), /Humanity/);
+    for (const key of [
+      "notifications.types.member_badge_contribution_confirmed.message",
+      "notifications.types.member_badge_delivered.message",
+      "notifications.types.member_badge_shipped.message",
+    ]) {
+      assert.match(String(get(ukrainian, key)), /Члена платформи \{siteName\}/, key);
+      assert.doesNotMatch(String(get(ukrainian, key)), /Учасник/, key);
+    }
+    assert.match(String(get(ukrainian, "auth.registerSubtitle")), /Учасника платформи \{siteName\}/);
+    assert.match(
+      String(get(ukrainian, "rrpApplication.consent.label")),
+      /платформа \{siteName\} обробляла[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(
+      String(get(ukrainian, "initiativeExperience.manage.newsSource.disclaimer")),
+      /Платформа \{siteName\} не перевіряла/,
+    );
+    assert.match(
+      String(get(ukrainian, "authoringPage.becomeAuthor.thanks")),
+      /долучення до Блогу платформи \{siteName\}/,
     );
     assert.equal(
       get(load("zh-Hant"), "membershipPublic.faq.items.what-is-member.question"),
-      "什麼是{siteName}的會員？",
+      "什麼是{siteName}的成員？",
     );
     assert.match(String(get(load("pt"), "auth.loginSubtitle")), /da \{siteName\}/);
     assert.match(String(get(load("he"), "auth.loginSubtitle")), /ב\{siteName\}/);
