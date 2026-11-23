@@ -2,6 +2,8 @@
 
 import type { Initiative } from "@hu/types";
 import { useTranslations } from "next-intl";
+
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useMemo, useState } from "react";
 
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
@@ -19,6 +21,7 @@ type GateState = "loading" | "public" | "workspace" | "unavailable";
 
 export function InitiativesPageGate() {
   const t = useTranslations("workspace.initiativesPage");
+  const siteName = useBrandSiteName();
   const [state, setState] = useState<GateState>("loading");
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
 
@@ -67,7 +70,7 @@ export function InitiativesPageGate() {
     return (
       <MemberWorkspace
         title={t("title")}
-        subtitle={t("subtitle")}
+        subtitle={t("subtitle", { siteName })}
         navItems={navItems}
         sectionsLabel={t("sectionsNavLabel")}
         sectionsAriaLabel={t("sectionsNavAria")}
@@ -88,7 +91,7 @@ export function InitiativesPageGate() {
     return (
       <MemberWorkspace
         title={t("title")}
-        subtitle={t("subtitle")}
+        subtitle={t("subtitle", { siteName })}
         navItems={navItems}
         sectionsLabel={t("sectionsNavLabel")}
         sectionsAriaLabel={t("sectionsNavAria")}
@@ -110,7 +113,7 @@ export function InitiativesPageGate() {
   return (
     <MemberWorkspace
       title={t("title")}
-      subtitle={t("subtitle")}
+      subtitle={t("subtitle", { siteName })}
       navItems={navItems}
       sectionsLabel={t("sectionsNavLabel")}
       sectionsAriaLabel={t("sectionsNavAria")}

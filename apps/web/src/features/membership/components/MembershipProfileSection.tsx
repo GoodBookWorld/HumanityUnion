@@ -3,6 +3,8 @@
 import type { MembershipMePayload } from "@hu/types";
 import type { MemberProfile, MemberProfilePrivacySettings } from "@hu/types";
 import { useTranslations } from "next-intl";
+
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useState } from "react";
 
 import { ProfileField } from "../../../components/member/ProfileField";
@@ -33,6 +35,7 @@ import "./membership-success-page.css";
 export function MembershipProfileSection() {
   const t = useTranslations("membershipPublic");
   const tProfile = useTranslations("memberProfile");
+  const siteName = useBrandSiteName();
   const [payload, setPayload] = useState<MembershipMePayload | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [privacy, setPrivacy] = useState<MemberProfilePrivacySettings | null>(null);
@@ -184,7 +187,7 @@ export function MembershipProfileSection() {
         }
         previewMemberStatus={!isActiveMember}
       />
-      <p className="membership-profile-section__note">{tProfile("membershipNote")}</p>
+      <p className="membership-profile-section__note">{tProfile("membershipNote", { siteName })}</p>
       {isActiveMember ? (
         <Button href="/membership/success" variant="primary">
           {tProfile("viewMembershipSuccess")}

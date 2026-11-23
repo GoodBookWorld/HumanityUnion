@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { trapTabKey } from "../../../design-system/focus-trap";
@@ -104,6 +106,7 @@ export function RrpApplicationModal({
   onApplicationsChanged,
 }: RrpApplicationModalProps) {
   const t = useTranslations("rrpApplication");
+  const siteName = useBrandSiteName();
   const resolveCountryName = useCountryDisplayName();
   const representCountryLabel = (countryCode: string) =>
     resolveCountryName(countryCode, countryCode);
@@ -818,6 +821,7 @@ export function RrpApplicationModal({
                 />
                 <span>
                   {t.rich("consent.label", {
+                    siteName,
                     privacy: (chunks) => (
                       <Link href="/privacy" target="_blank" rel="noopener noreferrer">
                         {chunks}

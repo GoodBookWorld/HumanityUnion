@@ -116,7 +116,8 @@ describe("account deletion web", () => {
         assert.ok(value.length > 0);
       }
       assert.match(catalog.auth.deleteAccountScheduled ?? "", /\{deadline\}/);
-      assert.match(catalog.auth.deleteAccountIntro ?? "", /Humanity Union/);
+      assert.match(catalog.auth.deleteAccountIntro ?? "", /\{siteName\}/);
+      assert.doesNotMatch(catalog.auth.deleteAccountIntro ?? "", /Humanity Union/);
     }
     const ar = JSON.parse(read("features/i18n/messages/ar.json")) as { auth: Record<string, string> };
     const he = JSON.parse(read("features/i18n/messages/he.json")) as { auth: Record<string, string> };

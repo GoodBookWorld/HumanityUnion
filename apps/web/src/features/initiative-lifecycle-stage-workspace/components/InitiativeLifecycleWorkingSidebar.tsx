@@ -3,6 +3,8 @@
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   InitiativeAnalysisSourceSnapshot,
   InitiativeCollectiveDecisionIntelligenceSnapshot,
@@ -133,6 +135,12 @@ export interface InitiativeLifecycleWorkingSidebarProps {
 }
 
 
+function LocalizedAssistantTitle() {
+  const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
+  return t("author.sidebar.assistantTitle", { siteName });
+}
+
 function WorkingSidebarAssistantChrome({
   initiativeId,
   surfaceId,
@@ -151,11 +159,12 @@ function WorkingSidebarAssistantChrome({
   hint?: boolean;
 }) {
   const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
 
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId={surfaceId}
@@ -169,7 +178,7 @@ function WorkingSidebarAssistantChrome({
       ) : loading ? (
         <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : hint ? (
-        <p className="lsw-sidebar__placeholder">{t("author.sidebar.assistantGenericHint")}</p>
+        <p className="lsw-sidebar__placeholder">{t("author.sidebar.assistantGenericHint", { siteName })}</p>
       ) : (
         children
       )}
@@ -255,7 +264,7 @@ function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="analysis"
@@ -399,7 +408,7 @@ function ProposalAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="proposal"
@@ -562,7 +571,7 @@ function RevisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="revision"
@@ -707,7 +716,7 @@ function PetitionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="petition"
@@ -840,7 +849,7 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="decision_session"
@@ -967,7 +976,7 @@ function CollectiveDecisionAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="collective_decision"
@@ -1104,7 +1113,7 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="commitment"
@@ -1236,7 +1245,7 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="tracking"
@@ -1364,7 +1373,7 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="official_response"
@@ -1506,7 +1515,7 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="public_impact"
@@ -1654,7 +1663,7 @@ function CivicArchiveAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        {t("author.sidebar.assistantTitle")}
+        <LocalizedAssistantTitle />
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="archive"

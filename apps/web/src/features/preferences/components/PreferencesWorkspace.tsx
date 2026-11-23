@@ -232,7 +232,7 @@ export function PreferencesWorkspace() {
     return (
       <ApiUnavailableState
         title={t("unavailableTitle")}
-        explanation={t("unavailableExplanation")}
+        explanation={t("unavailableExplanation", { siteName })}
         retryHref="/preferences"
       />
     );
@@ -269,7 +269,7 @@ export function PreferencesWorkspace() {
       />
 
       <ProfileSection title={t("sections.language")} id="language">
-        <p className="preferences-workspace__help">{t("language.help")}</p>
+        <p className="preferences-workspace__help">{t("language.help", { siteName })}</p>
         <div className="preferences-workspace__language-fields">
           {(() => {
             const persistedReading =
@@ -362,7 +362,7 @@ export function PreferencesWorkspace() {
               placeholder={t("language.writingLanguagesPlaceholder")}
             />
             <p id="pref-writing-languages-help" className="preferences-workspace__help">
-              {t("language.writingLanguagesHelp")}
+              {t("language.writingLanguagesHelp", { siteName })}
             </p>
           </label>
         </div>
@@ -608,7 +608,7 @@ export function PreferencesWorkspace() {
             })
           }
         />
-        <p className="preferences-workspace__helper">{t("notification.emailHelp")}</p>
+        <p className="preferences-workspace__helper">{t("notification.emailHelp", { siteName })}</p>
         <PreferenceOption
           label={t("notification.copiesOptIn")}
           checked={preferences.communicationPreferences.notificationEmailCopiesOptIn === true}
@@ -622,7 +622,7 @@ export function PreferencesWorkspace() {
             })
           }
         />
-        <p className="preferences-workspace__helper">{t("notification.copiesHelp")}</p>
+        <p className="preferences-workspace__helper">{t("notification.copiesHelp", { siteName })}</p>
         <p className="preferences-workspace__helper">
           <a className="preferences-workspace__inline-link" href="/notifications">
             {t("notification.openNotificationCenter")}

@@ -42,7 +42,7 @@
     "betaInviteCode": "Code d'invitation bêta",
     "cancelReturnToLogin": "Annuler et retourner à la connexion",
     "checkYourEmail": "Vérifiez vos e-mails",
-    "chooseNewPasswordSubtitle": "Définissez un nouveau mot de passe pour votre compte Union pour l'humanité.",
+    "chooseNewPasswordSubtitle": "Définissez un nouveau mot de passe pour votre compte {siteName}.",
     "chooseNewPasswordTitle": "Choisissez un nouveau mot de passe",
     "codeSent": "Code envoyé",
     "completeLogin": "Terminer la connexion",
@@ -89,7 +89,7 @@
     "incorrectCode": "Le code est incorrect. Vérifiez le dernier e-mail et réessayez.",
     "invalidEmailChangeToken": "Jeton de modification d'e-mail invalide ou expiré.",
     "deleteAccountTitle": "Supprimer le compte",
-    "deleteAccountIntro": "Vous pouvez programmer la suppression de votre compte Humanity Union. La période de récupération de 30 jours commence seulement après la confirmation d'un code envoyé par courriel.",
+    "deleteAccountIntro": "Vous pouvez programmer la suppression de votre compte {siteName}. La période de récupération de 30 jours commence seulement après la confirmation d'un code envoyé par courriel.",
     "deleteAccountConsequences": "Les dossiers civiques publics restent en place. Les messages privés restent accessibles aux autres personnes de ces conversations. Vous ne pourrez plus vous connecter ni ouvrir ces messages. Après la date limite, ce courriel peut servir à un nouveau compte. Le nouveau compte ne reçoit pas les rôles, les nominations ni les messages de ce compte.",
     "deleteAccountButton": "Supprimer le compte",
     "deleteAccountSendCode": "Envoyer le code de confirmation",
@@ -125,7 +125,7 @@
     "loadingResetForm": "Chargement du formulaire de réinitialisation...",
     "loadingVerification": "Chargement de la vérification...",
     "logIn": "Se connecter",
-    "loginSubtitle": "Accédez à votre Espace de Travail Union pour l'humanité.",
+    "loginSubtitle": "Accédez à votre Espace de Travail {siteName}.",
     "loginTitle": "Connexion",
     "nMinutes": "{count} minutes",
     "nSeconds": "{count} secondes",
@@ -143,7 +143,7 @@
     "previousCodeInvalid": "Le code précédent n'est plus valide.",
     "previousCodeStillUsable": "Votre code valide précédent peut toujours être utilisé.",
     "previousCodeStillValid": "Le code précédent est toujours valide",
-    "registerSubtitle": "Créez votre compte de Participant Union pour l'humanité.",
+    "registerSubtitle": "Créez votre compte de Participant {siteName}.",
     "registerTitle": "Créer un compte",
     "registrationFailed": "Échec de l'inscription",
     "registrationNotice": "Avis d'inscription",
@@ -166,14 +166,14 @@
     "twoStepDisabledSuccess": "La connexion en deux étapes a été désactivée avec succès.",
     "twoStepEnabledSuccess": "La connexion en deux étapes a été activée avec succès.",
     "twoStepLoginByEmail": "Connexion en deux étapes par e-mail",
-    "twoStepLoginHelp": "La connexion en deux étapes ajoute un code par e-mail après votre mot de passe lorsque vous vous connectez. Elle confirme l'accès à votre compte de messagerie. Il ne s'agit pas d'une vérification d'identité ni de l'adhésion à l'Union pour l'humanité.",
+    "twoStepLoginHelp": "La connexion en deux étapes ajoute un code par e-mail après votre mot de passe lorsque vous vous connectez. Elle confirme l'accès à votre compte de messagerie. Il ne s'agit pas d'une vérification d'identité ni de l'adhésion à {siteName}.",
     "unableToRequestReset": "Impossible de demander la réinitialisation du mot de passe.",
     "unableToResetPassword": "Impossible de réinitialiser le mot de passe.",
     "verificationCode": "Code de vérification",
     "verificationCodeSent": "Code de vérification envoyé",
     "verificationFailed": "Échec de la vérification",
     "verificationTokenMissing": "Le jeton de vérification est manquant.",
-    "verifyEmailSubtitle": "Confirmez l'adresse e-mail de votre compte Union pour l'humanité.",
+    "verifyEmailSubtitle": "Confirmez l'adresse e-mail de votre compte {siteName}.",
     "verifyEmailTitle": "Vérifier l'e-mail",
     "verifyLoginSubtitle": "Terminez la connexion en deux étapes avec le code e-mail que nous avons envoyé à votre adresse confirmée.",
     "verifyLoginTitle": "Vérifier la connexion",
@@ -187,7 +187,7 @@
       "agreeStandards": "Je certifie que les publications doivent respecter les normes de sécurité et de publication de la plateforme.",
       "agreeStandardsError": "Vous devez accepter de respecter les normes de sécurité et de publication de la plateforme.",
       "motivationError": "Veuillez en dire un peu plus sur les raisons qui vous poussent à contribuer.",
-      "motivationLabel": "Pourquoi souhaitez-vous contribuer au blog de l'Union pour l'humanité ?",
+      "motivationLabel": "Pourquoi souhaitez-vous contribuer au blog de {siteName} ?",
       "preferredCategoriesError": "Sélectionnez au moins une catégorie préférée.",
       "preferredCategoriesHelp": "Sélectionnez-en une ou plusieurs. Il s'agit uniquement d'une indication d'intérêt.",
       "preferredCategoriesLegend": "Catégories de blog préférées",
@@ -203,10 +203,10 @@
       "updateTitle": "Mettre à jour votre candidature"
     },
     "becomeAuthor": {
-      "encouragement": "Union pour l'humanité encourage les publications qui vont au-delà de l'hostilité et de la division et examinent comment un problème affecte les personnes, les communautés et l'expérience humaine dans son ensemble. Les auteurs peuvent être en total désaccord. Étayez vos affirmations par des preuves lorsque cela est possible, distinguez les faits de l'opinion, évitez tout langage déshumanisant, expliquez les conséquences, reconnaissez l'incertitude et envisagez des alternatives constructives.",
+      "encouragement": "{siteName} encourage les publications qui vont au-delà de l'hostilité et de la division et examinent comment un problème affecte les personnes, les communautés et l'expérience humaine dans son ensemble. Les auteurs peuvent être en total désaccord. Étayez vos affirmations par des preuves lorsque cela est possible, distinguez les faits de l'opinion, évitez tout langage déshumanisant, expliquez les conséquences, reconnaissez l'incertitude et envisagez des alternatives constructives.",
       "purpose": "Le blog est un lieu de publications réfléchies qui peuvent aider les gens à comprendre les idées, les défis, l'expérience et les solutions possibles dans une perspective d'humanité, de responsabilité et de dialogue constructif.",
       "standards": "Les articles doivent viser à contribuer à la compréhension plutôt qu'à l'hostilité, à la manipulation, aux attaques personnelles ou au sensationnalisme. Il ne s'agit pas d'une exigence de conformité idéologique — le principe est la dignité humaine, les preuves, le raisonnement constructif, la responsabilité et le respect d'autrui.",
-      "thanks": "Merci de votre intérêt pour la contribution au blog de l'Union pour l'humanité.",
+      "thanks": "Merci de votre intérêt pour la contribution au blog de {siteName}.",
       "title": "Devenir auteur de blog"
     },
     "blockedWorkspaceNote": "Votre Espace de Travail de Participant reste disponible. Les outils de publication d'auteur sont suspendus jusqu'à ce qu'un administrateur rétablisse l'accès.",
@@ -434,7 +434,7 @@
       "decisionVotesLinked": "Le nombre de votes reflète les décisions liées à vos initiatives.",
       "decisionVotesLinkedPendingApi": "Le nombre de votes reflète les décisions liées à vos initiatives. Une API de votes globale pour les participants n'est pas encore connectée."
     },
-    "pageSubtitle": "Votre travail civique privé à travers tout le cycle de vie de l'Union pour l'humanité",
+    "pageSubtitle": "Votre travail civique privé à travers tout le cycle de vie de {siteName}",
     "sections": {
       "navAria": "Sections de l'espace de travail de l'Initiative",
       "navLabel": "Sections",
@@ -1070,7 +1070,7 @@
         "document": {
           "aria": "Archives civiques",
           "completeness": "Exhaustivité",
-          "disclaimer": "Ce document consigne la participation civique et l'activité des Initiative sur la plateforme de l'Union pour l'humanité. Il ne constitue pas un document gouvernemental officiel ou juridiquement contraignant, sauf s'il est reconnu indépendamment par l'institution compétente.",
+          "disclaimer": "Ce document consigne la participation civique et l'activité des Initiative sur la plateforme de {siteName}. Il ne constitue pas un document gouvernemental officiel ou juridiquement contraignant, sauf s'il est reconnu indépendamment par l'institution compétente.",
           "draftPreview": "Aperçu du brouillon",
           "emptySection": "Aucun contenu enregistré.",
           "lifecycleTimeline": "Chronologie du cycle de vie",
@@ -1630,7 +1630,7 @@
           "emptySummary": "Aucun résumé fourni.",
           "loadFailed": "Cette Pétition n'a pas pu être chargée.",
           "loading": "Chargement de la Pétition…",
-          "participationTransparencyNote": "Signer cette Pétition est une forme de participation civique au sein de l'Union pour l'humanité. Il ne s'agit pas d'une pétition juridiquement contraignante et elle ne crée pas, à elle seule, d'obligation légale ou gouvernementale.",
+          "participationTransparencyNote": "Signer cette Pétition est une forme de participation civique au sein de {siteName}. Il ne s'agit pas d'une pétition juridiquement contraignante et elle ne crée pas, à elle seule, d'obligation légale ou gouvernementale.",
           "previewSignatureDisabled": "Le widget de signature est désactivé lors de l'aperçu — la signature sera accessible aux visiteurs une fois que cette Pétition sera publiée et ouverte.",
           "publishedAt": "Publié le {date}",
           "shareAria": "Partager la pétition : {title}",
@@ -2762,9 +2762,9 @@
         },
         "aria": "Outils de travail de l'étape",
         "askAssistant": "Demander à l'Assistant",
-        "assistantGenericHint": "Posez une question sur cette étape ou sur Humanity Union. Les suggestions sont données à titre indicatif uniquement.",
+        "assistantGenericHint": "Posez une question sur cette étape ou sur {siteName}. Les suggestions sont données à titre indicatif uniquement.",
         "assistantLoadFailed": "Impossible de charger les données de l'Assistant.",
-        "assistantTitle": "Assistant Humanity Union",
+        "assistantTitle": "Assistant {siteName}",
         "completeness": {
           "draftInProgress": "Brouillon en cours.",
           "draftInProgressSaveHint": "Brouillon en cours — utilisez Enregistrer le brouillon dans l'espace de travail principal pour conserver vos modifications.",
@@ -2999,7 +2999,7 @@
         "superseded": "Remplacé"
       },
       "pageIntro": "Mémoire institutionnelle permanente des initiatives civiques achevées et de leurs résultats publics vérifiés. Chaque dossier d'archives documente l'ensemble du cycle de vie d'une initiative — et non des dossiers d'étapes isolés.",
-      "pageTitle": "Archives civiques publiques de l'Union pour l'humanité",
+      "pageTitle": "Archives civiques publiques de {siteName}",
       "resultsCount": "{count} résultats",
       "resultsCountOne": "{count} résultat",
       "resultsTitle": "Résultats des archives civiques",
@@ -3561,7 +3561,7 @@
         "republished": "Initiative republiée. Projection publique actualisée.",
         "saveFailed": "Échec de l'enregistrement : {detail}",
         "saveUnable": "Impossible d'enregistrer l'initiative.",
-        "serviceUnavailable": "Le service de l'Union pour l'humanité est temporairement indisponible.",
+        "serviceUnavailable": "Le service de {siteName} est temporairement indisponible.",
         "signInToCreate": "Connectez-vous pour créer une initiative.",
         "signInToDelete": "Connectez-vous pour supprimer ce brouillon.",
         "unknownError": "Erreur inconnue",
@@ -3569,7 +3569,7 @@
         "updated": "Initiative mise à jour."
       },
       "newsSource": {
-        "disclaimer": "Référence d'éditeur externe. L'Union pour l'humanité n'a pas vérifié cet article de manière indépendante.",
+        "disclaimer": "Référence d'éditeur externe. L'{siteName} n'a pas vérifié cet article de manière indépendante.",
         "remove": "Supprimer la source"
       },
       "overlap": {
@@ -3729,7 +3729,7 @@
         "backToInitiativePlain": "Retour à l'Initiative",
         "downloadFailed": "Échec du téléchargement.",
         "endOfVoting": "Fin du vote : {value}",
-        "eyebrow": "Vote de la communauté Union pour l'humanité",
+        "eyebrow": "Vote de la communauté {siteName}",
         "geography": "Géographie : {value}",
         "loadFailed": "Impossible de charger l'élection.",
         "loading": "Chargement de l'élection…",
@@ -3744,7 +3744,7 @@
         "abstain": "Abstention",
         "blocked": "Bloqué",
         "candidateFallback": "Candidat",
-        "disclaimerBody": "Ce sont des résultats de vote de la communauté de l'Union pour l'humanité. Il ne s'agit pas de résultats électoraux officiels, de sondages représentatifs sur le plan statistique ou de résultats certifiés par le gouvernement.",
+        "disclaimerBody": "Ce sont des résultats de vote de la communauté de {siteName}. Il ne s'agit pas de résultats électoraux officiels, de sondages représentatifs sur le plan statistique ou de résultats certifiés par le gouvernement.",
         "disclaimerTitle": "Résultats du vote communautaire",
         "download": "Télécharger les résultats",
         "electionStatus": "Statut de l'élection : {status}",
@@ -4657,7 +4657,7 @@
     "loading": "Chargement du profil…",
     "loadingMembership": "Chargement du statut d'adhésion...",
     "logIn": "Se connecter",
-    "membershipNote": "L'adhésion confirme le soutien volontaire à l'Union pour l'humanité. Elle ne modifie pas le pouvoir de vote et ne confère pas de vérification d'identité.",
+    "membershipNote": "L'adhésion confirme le soutien volontaire à {siteName}. Elle ne modifie pas le pouvoir de vote et ne confère pas de vérification d'identité.",
     "membershipUnavailable": "Le statut d'adhésion est indisponible.",
     "openMembership": "Ouvrir l'adhésion",
     "participationArea": {
@@ -4763,7 +4763,7 @@
       "save": "Enregistrer les compétences",
       "saveError": "Impossible d'enregistrer les compétences."
     },
-    "subtitle": "Votre profil de Participant de l'Union pour l'humanité",
+    "subtitle": "Votre profil de Participant de {siteName}",
     "summaries": {
       "editInterests": "Modifier les centres d'intérêt",
       "editLinks": "Modifier les liens professionnels",
@@ -5028,7 +5028,7 @@
         },
         "what-is-member": {
           "answer": "Un Membre est un Participant qui a complété la demande d'Adhésion et confirmé une Contribution à l'Adhésion unique. Les Membres restent des Participants égaux dans toutes les décisions civiques.",
-          "question": "Qu'est-ce qu'un Membre de l'Union pour l'humanité ?"
+          "question": "Qu'est-ce qu'un Membre de {siteName} ?"
         }
       },
       "regionLabel": "FAQ sur l'adhésion",
@@ -5572,7 +5572,7 @@
         "title": "Initiative publiée"
       },
       "member_badge_contribution_confirmed": {
-        "message": "Votre demande d'article officiel de Membre de la Union pour l'humanité a été confirmée.",
+        "message": "Votre demande d'article officiel de Membre de la {siteName} a été confirmée.",
         "title": "Demande d'article officiel de Membre confirmée"
       },
       "member_badge_contribution_refunded": {
@@ -5580,11 +5580,11 @@
         "title": "Contribution supplémentaire de Membre remboursée"
       },
       "member_badge_delivered": {
-        "message": "Votre demande d'article officiel de Membre de la Union pour l'humanité a été livrée.",
+        "message": "Votre demande d'article officiel de Membre de la {siteName} a été livrée.",
         "title": "Article officiel de Membre livré"
       },
       "member_badge_shipped": {
-        "message": "Votre demande d'article officiel de Membre de l'Union pour l'humanité a été expédiée.",
+        "message": "Votre demande d'article officiel de Membre de {siteName} a été expédiée.",
         "title": "Article officiel de Membre expédié"
       },
       "official_response_received": {
@@ -5737,7 +5737,7 @@
       "selectRegionFirst": "Sélectionnez au moins une région préférée pour choisir Villes / Communautés."
     },
     "language": {
-      "help": "Définissez votre langue préférée pour l'Union pour l'humanité. Les langues d'écriture sont distinctes et ne modifient pas la présentation du site.",
+      "help": "Définissez votre langue préférée pour {siteName}. Les langues d'écriture sont distinctes et ne modifient pas la présentation du site.",
       "interfaceLanguage": "Langue de l'Interface",
       "noReadingLanguage": "Aucune langue de lecture enregistrée",
       "preferredReadingHelp": "Sélectionnez votre langue de lecture préférée pour la plateforme. Pour une expérience optimale, associez-la à la langue de traduction de votre navigateur.",
@@ -5746,14 +5746,14 @@
       "savedUnavailable": "{code} (enregistrée — temporairement indisponible dans le catalogue)",
       "translationPreference": "Préférence de traduction",
       "writingLanguages": "Langues d'écriture",
-      "writingLanguagesHelp": "Ajoutez les langues que vous utilisez pour l'écriture et la collaboration. Ces préférences aident l'Union pour l'humanité à comprendre comment vous communiquez et ne contrôlent pas la langue de traduction de votre navigateur.",
+      "writingLanguagesHelp": "Ajoutez les langues que vous utilisez pour l'écriture et la collaboration. Ces préférences aident {siteName} à comprendre comment vous communiquez et ne contrôlent pas la langue de traduction de votre navigateur.",
       "writingLanguagesPlaceholder": "fr, en"
     },
     "loadError": "Impossible de charger les préférences.",
     "loading": "Chargement des préférences...",
     "notification": {
       "emailEnabled": "Recevoir des notifications par e-mail",
-      "emailHelp": "Lorsque cette option est activée, l'Union pour l'humanité enverra des notifications par e-mail simples lorsqu'une nouvelle activité requiert votre attention. Exemple : \"Vous avez 3 nouvelles notifications dans votre Espace de Travail.\" Les e-mails ne contiennent jamais de contenu de conversation privée ou d'informations confidentielles d'Initiative."
+      "emailHelp": "Lorsque cette option est activée, {siteName} enverra des notifications par e-mail simples lorsqu'une nouvelle activité requiert votre attention. Exemple : \"Vous avez 3 nouvelles notifications dans votre Espace de Travail.\" Les e-mails ne contiennent jamais de contenu de conversation privée ou d'informations confidentielles d'Initiative."
     },
     "notificationFrequencies": {
       "daily_digest": "Résumé quotidien",
@@ -5781,7 +5781,7 @@
       "visibility": "Visibilité"
     },
     "signInPrompt": "Connectez-vous pour gérer vos préférences.",
-    "subtitle": "Vos paramètres d'expérience et de participation au sein de l'Union pour l'humanité",
+    "subtitle": "Vos paramètres d'expérience et de participation au sein de {siteName}",
     "title": "Préférences",
     "translationPreferences": {
       "ask": "Proposer la traduction ; conserver l'original par défaut",
@@ -5789,7 +5789,7 @@
       "preferred": "Préférer la traduction lorsqu'elle est disponible"
     },
     "unavailable": "Les préférences sont indisponibles.",
-    "unavailableExplanation": "Nous n'avons pas pu nous connecter au service de l'Union pour l'humanité. Veuillez réessayer dans un instant.",
+    "unavailableExplanation": "Nous n'avons pas pu nous connecter au service de {siteName}. Veuillez réessayer dans un instant.",
     "unavailableTitle": "Préférences temporairement indisponibles",
     "visibility": {
       "interestsVisibility": "Qui peut voir mes intérêts",
@@ -6594,47 +6594,47 @@
     "goBack": "Retourner",
     "install": {
       "addToHomeScreen": "Ajouter à l'écran d'accueil",
-      "alreadyInstalled": "Union pour l'humanité est déjà installé sur cet appareil.",
-      "androidHintPrimary": "Si un bouton Installer Union pour l'humanité est disponible sur cette page, utilisez-le d'abord.",
+      "alreadyInstalled": "{siteName} est déjà installé sur cet appareil.",
+      "androidHintPrimary": "Si un bouton Installer {siteName} est disponible sur cette page, utilisez-le d'abord.",
       "androidHintSecondary": "Si Chrome n'affiche pas l'option d'installation : actualisez la page, assurez-vous que le site est ouvert dans Chrome et vérifiez que l'application n'est pas déjà installée.",
-      "androidStep1": "Ouvrez Union pour l'humanité dans Chrome.",
+      "androidStep1": "Ouvrez {siteName} dans Chrome.",
       "androidStep2": "Appuyez sur le menu du navigateur (⋮).",
       "androidStep3": "Choisissez Installer l'application ou Ajouter à l'écran d'accueil.",
       "androidStep4": "Confirmez l'installation.",
-      "androidStep5": "L'icône Union pour l'humanité apparaîtra sur votre écran d'accueil / lanceur d'applications.",
+      "androidStep5": "L'icône {siteName} apparaîtra sur votre écran d'accueil / lanceur d'applications.",
       "androidTitle": "Android — Chrome",
-      "appTitle": "Application Union pour l'humanité",
-      "automaticUnavailable": "L'installation automatique n'est pas disponible dans cette session de navigation. Suivez les étapes ci-dessous, ou réouvrez l'Union pour l'humanité dans une fenêtre de navigation normale (non privée) si l'installation n'apparaît pas.",
+      "appTitle": "Application {siteName}",
+      "automaticUnavailable": "L'installation automatique n'est pas disponible dans cette session de navigation. Suivez les étapes ci-dessous, ou réouvrez {siteName} dans une fenêtre de navigation normale (non privée) si l'installation n'apparaît pas.",
       "badgeNote": "Le comportement des notifications et des badges sur l'icône de l'application dépend de votre appareil, de votre système d'exploitation, de votre navigateur et de vos autorisations de notification.",
       "close": "Fermer",
       "closeGuideAria": "Fermer le guide d'installation",
-      "guideSubtitle": "Ajoutez l'Union pour l'humanité à votre écran d'accueil pour un accès plus rapide et une expérience semblable à une application.",
-      "guideTitle": "Installer l'application de l'Union pour l'humanité",
-      "installCta": "Installer Union pour l'humanité",
+      "guideSubtitle": "Ajoutez {siteName} à votre écran d'accueil pour un accès plus rapide et une expérience semblable à une application.",
+      "guideTitle": "Installer l'application de {siteName}",
+      "installCta": "Installer {siteName}",
       "installationGuide": "Guide d'installation",
       "installing": "Installation en cours…",
-      "iosA2hsStandaloneNote": "Après avoir ajouté l'icône, Union pour l'humanité s'ouvre depuis l'écran d'accueil comme une application installée.",
+      "iosA2hsStandaloneNote": "Après avoir ajouté l'icône, {siteName} s'ouvre depuis l'écran d'accueil comme une application installée.",
       "iosA2hsStep1": "Appuyez sur le bouton Partager de Safari.",
       "iosA2hsStep2": "Choisissez Sur l'écran d'accueil.",
       "iosA2hsStep3": "Confirmez en touchant Ajouter.",
       "iosA2hsTitle": "Ajouter à l'écran d'accueil",
       "iosHintNotifications": "Autorisez les notifications lorsque vous y êtes invité si vous souhaitez bénéficier des fonctionnalités prises en charge en matière de badges et de notifications.",
       "iosHintSafari": "L'ajout à l'écran d'accueil doit être effectué depuis Safari. Si cette page est ouverte dans le navigateur d'une autre application, ouvrez-la d'abord dans Safari.",
-      "iosStep1": "Ouvrez Union pour l'humanité dans Safari.",
+      "iosStep1": "Ouvrez {siteName} dans Safari.",
       "iosStep2": "Touchez le bouton Partager.",
       "iosStep3": "Faites défiler et choisissez Sur l'écran d'accueil.",
       "iosStep4": "Vérifiez le nom de l'application.",
       "iosStep5": "Appuyez sur Ajouter.",
-      "iosStep6": "Lancez Union pour l'humanité à partir de la nouvelle icône de l'écran d'accueil.",
+      "iosStep6": "Lancez {siteName} à partir de la nouvelle icône de l'écran d'accueil.",
       "iosTitle": "iPhone / iPad — Safari",
-      "lead": "Emportez Humanity partout avec vous. Installez l'application pour accéder directement à votre Espace de Travail, vos Initiatives, vos Notifications et votre Assistant Union pour l'humanité.",
+      "lead": "Emportez Humanity partout avec vous. Installez l'application pour accéder directement à votre Espace de Travail, vos Initiatives, vos Notifications et votre Assistant {siteName}.",
       "openWorkspace": "Ouvrir l'Espace de Travail"
     },
     "menuTitle": "Menu",
     "openMenu": "Ouvrir le menu",
     "playIntroSound": "Jouer le son d'introduction",
-    "searchLabel": "Rechercher dans l'Union pour l'humanité",
-    "searchPlaceholder": "Rechercher dans l'Union pour l'humanité",
+    "searchLabel": "Rechercher dans {siteName}",
+    "searchPlaceholder": "Rechercher dans {siteName}",
     "sound": "Son"
   },
   "search": {
@@ -6793,7 +6793,7 @@
       "heading": "Introduction",
       "honeyEarthAlt": "Illustration de la Terre avec un motif de nid d'abeille, suggérant un soin partagé pour notre maison commune",
       "number": "1",
-      "p1": "Le développement de la plateforme <platform>Union pour l'humanité</platform> est une contribution personnelle que chacun d'entre nous peut apporter à son propre avenir et à celui des générations futures.",
+      "p1": "Le développement de la plateforme <platform>{siteName}</platform> est une contribution personnelle que chacun d'entre nous peut apporter à son propre avenir et à celui des générations futures.",
       "p2": "Si nos ancêtres avaient eu accès aux outils technologiques dont nous disposons aujourd'hui — Internet, ordinateurs, smartphones et plateformes web éducatives et informationnelles —, nos sociétés auraient pu développer un niveau plus élevé de conscience et de responsabilité sociale bien plus tôt.",
       "p3": "Une meilleure culture sociale aide les personnes à prendre des décisions plus réfléchies et rationnelles. De telles décisions constituent le fondement de la justice sociale, du bien-être et de la sécurité.",
       "p4": "Nous sommes une génération unique. Nous avons vécu la transition d'un monde largement traditionnel vers une époque qui offre aux citoyens ordinaires de puissants outils technologiques de communication, d'éducation, de coopération et d'action collective.",
@@ -6809,7 +6809,7 @@
       "p1": "Un <emphasis>Bénévole</emphasis> n'est pas un titre. C'est un signe de responsabilité — que la société sous-estime souvent.",
       "p2": "Une grande partie de notre monde est soutenue et améliorée par des bénévoles, des passionnés et des personnes qui décident d'agir sans attendre que quelqu'un d'autre le fasse en premier. Mais l'enthousiasme seul ne mène pas toujours à des résultats positifs. L'éducation, les valeurs, l'éducation reçue et la compréhension influencent la question de savoir si notre énergie sert le progrès et le bien commun ou si elle est guidée par l'ambition personnelle, la cupidité, les préjugés ou la manipulation.",
       "p3": "Nous ne remarquons pas toujours le moment où nous commençons nous-mêmes à tolérer l'ignorance ou l'agression. Parfois, nous consacrons plus d'efforts à nous adapter à des circonstances nuisibles qu'à essayer de les changer. Ce faisant, nous pouvons involontairement rendre la vie plus difficile pour nous-mêmes et pour les autres.",
-      "p4": "La plateforme <platform>Union pour l'humanité</platform> est développée comme un outil sécurisé pour tout le monde — que vous viviez dans une société démocratique dotée d'institutions fonctionnelles ou sous un régime autoritaire et agressif où les personnes peuvent être intimidées, réduites au silence ou contraintes à des hiérarchies sociales rigides.",
+      "p4": "La plateforme <platform>{siteName}</platform> est développée comme un outil sécurisé pour tout le monde — que vous viviez dans une société démocratique dotée d'institutions fonctionnelles ou sous un régime autoritaire et agressif où les personnes peuvent être intimidées, réduites au silence ou contraintes à des hiérarchies sociales rigides.",
       "p5": "Notre tâche centrale est simple : <emphasis>s'unir autour de valeurs humaines universelles tout en respectant les cultures, traditions et identités nationales qui sont compatibles avec les droits et libertés fondamentaux de la personne.</emphasis>",
       "p6": "Vous n'avez pas besoin d'un poste, d'une profession ou d'un statut particulier pour participer.",
       "p7": "Venez sur la plateforme. Explorez et soutenez les Initiatives créées par d'autres personnes. Participez aux discussions, aux sondages et aux élections. Créez votre propre Initiative lorsque vous identifiez un problème qui mérite de l'attention. Aidez les autres à améliorer leurs idées. Chaque fois que vous le pouvez, prenez part à la transformation d'Initiatives utiles en actions concrètes.",
@@ -6823,7 +6823,7 @@
       "number": "3",
       "p1": "Vous n'avez pas besoin de changer le monde entier par vous-même.",
       "p2": "Apportez ce que vous pouvez : vos connaissances, votre expérience, votre temps, vos idées, vos questions, vos compétences professionnelles ou tout simplement votre volonté de soutenir une bonne Initiative.",
-      "p3": "Prenez les outils de la plateforme <platform>Union pour l'humanité</platform> et utilisez-les pour le bien.",
+      "p3": "Prenez les outils de la plateforme <platform>{siteName}</platform> et utilisez-les pour le bien.",
       "p4": "Soutenez une Initiative.",
       "p5": "Aidez une autre personne.",
       "p6": "Partagez des connaissances.",
@@ -6851,7 +6851,7 @@
     "account": "Compte",
     "accountActionFailed": "L'action sur le compte a échoué",
     "accountProfileSummary": "Résumé du profil du compte",
-    "accountSubtitle": "Votre compte d'authentification Union pour l'humanité",
+    "accountSubtitle": "Votre compte d'authentification {siteName}",
     "accountUpdate": "Mise à jour du compte",
     "authGate": {
       "checkingSession": "Vérification de votre session…",
@@ -6985,7 +6985,7 @@
       "sectionsNavAria": "Sections de l'Espace de Travail des initiatives",
       "sectionsNavLabel": "Sections",
       "startNew": "Démarrer une nouvelle Initiative",
-      "subtitle": "Initiatives de participation au sein de l'Union pour l'humanité",
+      "subtitle": "Initiatives de participation au sein de {siteName}",
       "title": "Initiatives",
       "unavailableExplanation": "Nous n'avons pas pu nous connecter au service des Initiatives. Veuillez réessayer prochainement.",
       "unavailableTitle": "Espace de Travail temporairement indisponible",
@@ -7278,12 +7278,12 @@
           "charHint": "{length} / {guide} recommandé · max {max}",
           "defaultsToExcerpt": "Par défaut, utilise l'extrait",
           "defaultsToTitle": "Par défaut, utilise le titre de la publication",
-          "distributionCopy": "Choisissez les canaux sociaux de l'Union pour l'humanité où cette publication peut être diffusée. Il ne s'agit pas d'un accès à vos comptes sociaux personnels.",
+          "distributionCopy": "Choisissez les canaux sociaux de {siteName} où cette publication peut être diffusée. Il ne s'agit pas d'un accès à vos comptes sociaux personnels.",
           "distributionHeading": "Distribution",
           "heading": "Optimisation de la publication",
-          "huShareHelper": "La sélection d'un canal permet à l'Union pour l'humanité de distribuer cette publication via le canal officiel configuré. Une URL de profil seule ne publie pas automatiquement — la livraison attend une véritable intégration de fournisseur. Les préférences ne contournent jamais la révision, la planification ou les blocages.",
-          "huShareLegend": "Distribution sociale de l'Union pour l'humanité",
-          "lede": "Les métadonnées de référencement (SEO) et sociales restent sur cette publication. Les autorisations de distribution sont mises en file d'attente via la boîte d'envoi de la plate-forme pour les canaux officiels de l'Union pour l'humanité — elles n'inventent jamais d'informations d'identification externes et ne prétendent jamais à un envoi réussi.",
+          "huShareHelper": "La sélection d'un canal permet à {siteName} de distribuer cette publication via le canal officiel configuré. Une URL de profil seule ne publie pas automatiquement — la livraison attend une véritable intégration de fournisseur. Les préférences ne contournent jamais la révision, la planification ou les blocages.",
+          "huShareLegend": "Distribution sociale de {siteName}",
+          "lede": "Les métadonnées de référencement (SEO) et sociales restent sur cette publication. Les autorisations de distribution sont mises en file d'attente via la boîte d'envoi de la plate-forme pour les canaux officiels de {siteName} — elles n'inventent jamais d'informations d'identification externes et ne prétendent jamais à un envoi réussi.",
           "metaDescription": "Méta-description",
           "noSocialImage": "Aucune image sociale pour le moment",
           "searchCopy": "Titre et description de recherche facultatifs. Laissez vide pour utiliser par défaut le titre de la publication et l'extrait de la page publique.",
@@ -7675,7 +7675,7 @@
       "FULL": "Financement complet demandé"
     },
     "consent": {
-      "label": "Je consens à ce que Humanity Union traite cette candidature comme décrit dans la <privacy>Politique de confidentialité</privacy>.",
+      "label": "Je consens à ce que {siteName} traite cette candidature comme décrit dans la <privacy>Politique de confidentialité</privacy>.",
       "versionNote": "Version du consentement : {version}"
     },
     "actions": {
@@ -7864,8 +7864,7 @@
         "deepLinkParticipantUnavailable": "Ce participant est introuvable dans l’annuaire."
       }
     }
-  }
-,
+  },
   "adminNotifications": {
     "types": {
       "rrp_application_submitted": "Candidature de représentant régional soumise"

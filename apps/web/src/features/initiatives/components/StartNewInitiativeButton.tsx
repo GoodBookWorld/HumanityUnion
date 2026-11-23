@@ -2,6 +2,8 @@
 
 import type { CommunityInitiativeRelationshipProjection, Initiative } from "@hu/types";
 import { useTranslations } from "next-intl";
+
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -59,6 +61,7 @@ function resolveInitialNewsSourceId(searchParams: ReturnType<typeof useSearchPar
 
 export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButtonProps) {
   const t = useTranslations("initiativeExperience.manage");
+  const siteName = useBrandSiteName();
   const searchParams = useSearchParams();
   const initialNewsSourceId = resolveInitialNewsSourceId(searchParams);
   const [creating, setCreating] = useState(false);
@@ -89,7 +92,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       return t("messages.signInToCreate");
     }
     if (isApiUnavailableError(error)) {
-      return t("messages.serviceUnavailable");
+      return t("messages.serviceUnavailable", { siteName });
     }
     if (error instanceof Error) {
       return error.message;

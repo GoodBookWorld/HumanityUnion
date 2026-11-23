@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../brand-localization/useLocalizedBrand";
+
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { Button } from "../../design-system/components/Button";
 import { PasswordInput } from "../../design-system/components/PasswordInput";
@@ -30,6 +32,7 @@ function deletionControlsEnabled(): boolean {
  */
 export function AccountDeletionSection() {
   const t = useTranslations("auth");
+  const siteName = useBrandSiteName();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -76,7 +79,7 @@ export function AccountDeletionSection() {
 
   return (
     <ProfileSection title={t("deleteAccountTitle")}>
-      <p>{t("deleteAccountIntro")}</p>
+      <p>{t("deleteAccountIntro", { siteName })}</p>
       <p>{t("deleteAccountConsequences")}</p>
       {deadline ? (
         <AuthFeedbackMessage variant="success" title={t("deleteAccountTitle")}>

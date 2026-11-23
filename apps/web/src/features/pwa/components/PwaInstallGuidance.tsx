@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { Button } from "../../../design-system";
 
@@ -42,6 +44,7 @@ export function PwaInstallGuidance({
   onClose,
 }: PwaInstallGuidanceProps) {
   const t = useTranslations("pwa");
+  const siteName = useBrandSiteName();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -105,7 +108,7 @@ export function PwaInstallGuidance({
     event.stopPropagation();
   }
 
-  const title = iosFocused ? t("install.iosA2hsTitle") : t("install.guideTitle");
+  const title = iosFocused ? t("install.iosA2hsTitle") : t("install.guideTitle", { siteName });
 
   return createPortal(
     <div className="hu-pwa-ios-help" role="presentation" onClick={handleOverlayClick}>
@@ -139,7 +142,7 @@ export function PwaInstallGuidance({
         <div className="hu-pwa-ios-help__body">
           {alreadyInstalled ? (
             <div className="hu-pwa-ios-help__installed" role="status">
-              <p>{t("install.alreadyInstalled")}</p>
+              <p>{t("install.alreadyInstalled", { siteName })}</p>
               <Button type="button" variant="primary" href="/workspace">
                 {t("install.openWorkspace")}
               </Button>
@@ -152,16 +155,16 @@ export function PwaInstallGuidance({
                 <li>{t("install.iosA2hsStep3")}</li>
               </ol>
               <p className="hu-pwa-install-status hu-pwa-ios-help__note" role="note">
-                {t("install.iosA2hsStandaloneNote")}
+                {t("install.iosA2hsStandaloneNote", { siteName })}
               </p>
             </>
           ) : (
             <>
-              <p className="hu-pwa-ios-help__subtitle">{t("install.guideSubtitle")}</p>
+              <p className="hu-pwa-ios-help__subtitle">{t("install.guideSubtitle", { siteName })}</p>
 
               {!automaticInstallAvailable ? (
                 <p className="hu-pwa-ios-help__hint hu-pwa-ios-help__hint--banner" role="note">
-                  {t("install.automaticUnavailable")}
+                  {t("install.automaticUnavailable", { siteName })}
                 </p>
               ) : null}
 
@@ -175,13 +178,13 @@ export function PwaInstallGuidance({
                   aria-labelledby={`${titleId}-android`}
                 >
                   <h3 id={`${titleId}-android`}>{t("install.androidTitle")}</h3>
-                  <p className="hu-pwa-ios-help__hint">{t("install.androidHintPrimary")}</p>
+                  <p className="hu-pwa-ios-help__hint">{t("install.androidHintPrimary", { siteName })}</p>
                   <ol>
-                    <li>{t("install.androidStep1")}</li>
+                    <li>{t("install.androidStep1", { siteName })}</li>
                     <li>{t("install.androidStep2")}</li>
                     <li>{t("install.androidStep3")}</li>
                     <li>{t("install.androidStep4")}</li>
-                    <li>{t("install.androidStep5")}</li>
+                    <li>{t("install.androidStep5", { siteName })}</li>
                   </ol>
                   <p className="hu-pwa-ios-help__hint">{t("install.androidHintSecondary")}</p>
                 </section>
@@ -196,12 +199,12 @@ export function PwaInstallGuidance({
                 >
                   <h3 id={`${titleId}-ios`}>{t("install.iosTitle")}</h3>
                   <ol>
-                    <li>{t("install.iosStep1")}</li>
+                    <li>{t("install.iosStep1", { siteName })}</li>
                     <li>{t("install.iosStep2")}</li>
                     <li>{t("install.iosStep3")}</li>
                     <li>{t("install.iosStep4")}</li>
                     <li>{t("install.iosStep5")}</li>
-                    <li>{t("install.iosStep6")}</li>
+                    <li>{t("install.iosStep6", { siteName })}</li>
                   </ol>
                   <p className="hu-pwa-ios-help__hint">{t("install.iosHintSafari")}</p>
                   <p className="hu-pwa-ios-help__hint">{t("install.iosHintNotifications")}</p>

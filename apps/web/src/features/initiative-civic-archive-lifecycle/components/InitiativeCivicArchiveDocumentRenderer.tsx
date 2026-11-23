@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type { InitiativeLifecycleArchiveDocument } from "@hu/types";
 
 import {
@@ -24,6 +26,7 @@ export function InitiativeCivicArchiveDocumentRenderer({
   readonly metaLabel?: string;
 }) {
   const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
   const locale = useControlledLifecyclePreferredTermsLocale();
 
   return (
@@ -100,7 +103,7 @@ export function InitiativeCivicArchiveDocumentRenderer({
         </p>
       </section>
 
-      <p className="ica-public__meta">{t("author.archive.document.disclaimer")}</p>
+      <p className="ica-public__meta">{t("author.archive.document.disclaimer", { siteName })}</p>
     </article>
   );
 }

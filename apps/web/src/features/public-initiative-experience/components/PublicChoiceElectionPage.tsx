@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   InitiativeDecisionSelectOneAggregates,
   InitiativeDecisionSupportOpposeAggregates,
@@ -168,6 +170,7 @@ function SupportOpposeResults({
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
   const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
   const locale = useLocale();
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
@@ -344,7 +347,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
           <Link href={initiativeHref}>{t("publicChoice.election.backToInitiative")}</Link>
         </p>
         <header className="pie-election-page__header">
-          <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow")}</p>
+          <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow", { siteName })}</p>
           <h1 className="pie-election-page__title">{electionName}</h1>
           <p role="status" className="pie-election-page__expired-message">
             {t("publicChoice.election.resultsExpiredTitle")}
@@ -364,7 +367,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
         <Link href={initiativeHref}>{t("publicChoice.election.backToInitiative")}</Link>
       </p>
 
-      <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow")}</p>
+      <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow", { siteName })}</p>
       <h1 className="pie-election-page__title">{electionName}</h1>
 
       <div className="pie-election-page__intro">
@@ -443,7 +446,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
 
       <section className="pie-election-page__disclaimer" role="note" aria-labelledby="pie-disclaimer-title">
         <h2 id="pie-disclaimer-title">{t("publicChoice.results.disclaimerTitle")}</h2>
-        <p>{t("publicChoice.results.disclaimerBody")}</p>
+        <p>{t("publicChoice.results.disclaimerBody", { siteName })}</p>
       </section>
     </article>
   );

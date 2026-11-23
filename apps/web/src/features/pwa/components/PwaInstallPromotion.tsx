@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system";
 import {
   getDeferredInstallPrompt,
@@ -22,6 +24,7 @@ import { PwaInstallGuidance, type PwaInstallGuidanceKind } from "./PwaInstallGui
  */
 export function PwaInstallPromotion() {
   const t = useTranslations("pwa");
+  const siteName = useBrandSiteName();
   const [uxState, setUxState] = useState<PwaInstallUxState>("browser_mode");
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const [guidanceKind, setGuidanceKind] = useState<PwaInstallGuidanceKind>("browser");
@@ -91,13 +94,13 @@ export function PwaInstallPromotion() {
 
   return (
     <div className="hu-pwa-install-column">
-      <h3>{t("install.appTitle")}</h3>
-      <p>{t("install.lead")}</p>
+      <h3>{t("install.appTitle", { siteName })}</h3>
+      <p>{t("install.lead", { siteName })}</p>
 
       {runningStandalone ? (
         <div className="hu-pwa-install-actions">
           <p className="hu-pwa-install-status" role="status">
-            {t("install.alreadyInstalled")}
+            {t("install.alreadyInstalled", { siteName })}
           </p>
           <Button type="button" variant="primary" href="/workspace">
             {t("install.openWorkspace")}
@@ -112,7 +115,7 @@ export function PwaInstallPromotion() {
               onClick={() => void handlePrimaryInstallCta()}
               disabled={busy}
             >
-              {busy ? t("install.installing") : t("install.installCta")}
+              {busy ? t("install.installing") : t("install.installCta", { siteName })}
             </Button>
           ) : null}
 

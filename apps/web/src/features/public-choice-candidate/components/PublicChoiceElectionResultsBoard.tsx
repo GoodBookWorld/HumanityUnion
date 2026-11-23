@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   InitiativeDecisionSelectOneAggregates,
   PublicChoiceCandidatePublicProjection,
@@ -93,6 +95,7 @@ export function PublicChoiceElectionResultsBoard({
   showDisclaimer = true,
 }: PublicChoiceElectionResultsBoardProps) {
   const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
   const byId = new Map(candidates.map((candidate) => [candidate.candidateId, candidate]));
   const rankedIds = new Set(aggregates.candidates.map((item) => item.candidateId));
   const unrankedCandidates = candidates.filter((candidate) => !rankedIds.has(candidate.candidateId));
@@ -279,7 +282,7 @@ export function PublicChoiceElectionResultsBoard({
           aria-labelledby="pie-results-disclaimer-title"
         >
           <h2 id="pie-results-disclaimer-title">{t("publicChoice.results.disclaimerTitle")}</h2>
-          <p>{t("publicChoice.results.disclaimerBody")}</p>
+          <p>{t("publicChoice.results.disclaimerBody", { siteName })}</p>
         </section>
       ) : null}
     </section>

@@ -42,7 +42,7 @@
     "betaInviteCode": "Código de convite para a versão beta",
     "cancelReturnToLogin": "Cancelar e retornar ao Login",
     "checkYourEmail": "Verifique seu e-mail",
-    "chooseNewPasswordSubtitle": "Defina uma nova senha para a sua conta na União Humana.",
+    "chooseNewPasswordSubtitle": "Defina uma nova senha para a sua conta na {siteName}.",
     "chooseNewPasswordTitle": "Escolher uma nova senha",
     "codeSent": "Código enviado",
     "completeLogin": "Concluir Login",
@@ -89,7 +89,7 @@
     "incorrectCode": "O código está incorreto. Verifique o e-mail mais recente e tente novamente.",
     "invalidEmailChangeToken": "Token de alteração de e-mail inválido ou expirado.",
     "deleteAccountTitle": "Eliminar conta",
-    "deleteAccountIntro": "Pode agendar a eliminação da sua conta Humanity Union. O período de recuperação de 30 dias começa apenas depois de confirmar um código enviado por correio eletrónico.",
+    "deleteAccountIntro": "Pode agendar a eliminação da sua conta {siteName}. O período de recuperação de 30 dias começa apenas depois de confirmar um código enviado por correio eletrónico.",
     "deleteAccountConsequences": "Os registos cívicos públicos permanecem. As mensagens privadas continuam disponíveis para as outras pessoas nessas conversas. Não poderá iniciar sessão nem abrir essas mensagens. Depois do prazo, este correio pode registar uma conta nova. A conta nova não recebe os papéis, as nomeações nem as mensagens desta conta.",
     "deleteAccountButton": "Eliminar conta",
     "deleteAccountSendCode": "Enviar código de confirmação",
@@ -125,7 +125,7 @@
     "loadingResetForm": "A carregar o formulário de reposição...",
     "loadingVerification": "A carregar a verificação...",
     "logIn": "Iniciar sessão",
-    "loginSubtitle": "Aceda ao seu espaço de trabalho da União Humana.",
+    "loginSubtitle": "Aceda ao seu espaço de trabalho da {siteName}.",
     "loginTitle": "Iniciar sessão",
     "nMinutes": "{count} minutos",
     "nSeconds": "{count} segundos",
@@ -143,7 +143,7 @@
     "previousCodeInvalid": "O código anterior já não é válido.",
     "previousCodeStillUsable": "O seu código válido anterior ainda pode ser utilizado.",
     "previousCodeStillValid": "Código anterior ainda válido",
-    "registerSubtitle": "Crie a sua conta de Participante da União Humana.",
+    "registerSubtitle": "Crie a sua conta de Participante da {siteName}.",
     "registerTitle": "Criar conta",
     "registrationFailed": "Falha no registo",
     "registrationNotice": "Aviso de registo",
@@ -166,14 +166,14 @@
     "twoStepDisabledSuccess": "Início de Sessão em Duas Etapas desativado com sucesso.",
     "twoStepEnabledSuccess": "Início de Sessão em Duas Etapas ativado com sucesso.",
     "twoStepLoginByEmail": "Início de Sessão em Duas Etapas por E-mail",
-    "twoStepLoginHelp": "O Início de Sessão em Duas Etapas adiciona um código de e-mail após a sua palavra-passe ao iniciar sessão. Confirma o acesso à sua conta de e-mail. Não se trata de verificação de identidade nem de afiliação à União Humana.",
+    "twoStepLoginHelp": "O Início de Sessão em Duas Etapas adiciona um código de e-mail após a sua palavra-passe ao iniciar sessão. Confirma o acesso à sua conta de e-mail. Não se trata de verificação de identidade nem de afiliação à {siteName}.",
     "unableToRequestReset": "Não foi possível solicitar a redefinição da palavra-passe.",
     "unableToResetPassword": "Não foi possível redefinir a palavra-passe.",
     "verificationCode": "Código de verificação",
     "verificationCodeSent": "Código de verificação enviado",
     "verificationFailed": "A verificação falhou",
     "verificationTokenMissing": "O token de verificação está em falta.",
-    "verifyEmailSubtitle": "Confirme o endereço de e-mail da sua conta da União Humana.",
+    "verifyEmailSubtitle": "Confirme o endereço de e-mail da sua conta da {siteName}.",
     "verifyEmailTitle": "Verificar e-mail",
     "verifyLoginSubtitle": "Conclua a verificação em duas etapas com o código de e-mail que enviamos para o seu endereço confirmado.",
     "verifyLoginTitle": "Verificar login",
@@ -187,7 +187,7 @@
       "agreeStandards": "Concordo que as publicações devem seguir as normas de segurança e publicação da plataforma.",
       "agreeStandardsError": "Você deve concordar em seguir as normas de segurança e publicação da plataforma.",
       "motivationError": "Compartilhe um pouco mais sobre o motivo pelo qual você gostaria de contribuir.",
-      "motivationLabel": "Por que você gostaria de contribuir para o Blog da União Humana?",
+      "motivationLabel": "Por que você gostaria de contribuir para o Blog da {siteName}?",
       "preferredCategoriesError": "Selecione pelo menos uma categoria preferida.",
       "preferredCategoriesHelp": "Selecione uma ou mais. Trata-se apenas de um sinal de interesse.",
       "preferredCategoriesLegend": "Categorias de blog preferidas",
@@ -203,10 +203,10 @@
       "updateTitle": "Atualizar a sua candidatura"
     },
     "becomeAuthor": {
-      "encouragement": "A União Humana incentiva publicações que vão além da hostilidade e da divisão e consideram como um problema afeta as pessoas, as comunidades e a experiência humana em geral. Os autores podem discordar veementemente. Apoiie as alegações com evidências sempre que possível, distinga factos de opiniões, evite linguagem desumanizadora, explique consequências, reconheça incertezas e considere alternativas construtivas.",
+      "encouragement": "A {siteName} incentiva publicações que vão além da hostilidade e da divisão e consideram como um problema afeta as pessoas, as comunidades e a experiência humana em geral. Os autores podem discordar veementemente. Apoiie as alegações com evidências sempre que possível, distinga factos de opiniões, evite linguagem desumanizadora, explique consequências, reconheça incertezas e considere alternativas construtivas.",
       "purpose": "O Blog é um espaço para publicações reflexivas que podem ajudar as pessoas a compreender ideias, desafios, experiências e possíveis soluções a partir de uma perspectiva de humanidade, responsabilidade e diálogo construtivo.",
       "standards": "Os artigos devem visar a contribuição para a compreensão, em vez de hostilidade, manipulação, ataques pessoais ou sensacionalismo. Isto não é um requisito de conformidade ideológica — o princípio é a dignidade humana, a evidência, o raciocínio construtivo, a responsabilidade e o respeito pelos outros.",
-      "thanks": "Obrigado pelo seu interesse em contribuir para o Blog da União Humana.",
+      "thanks": "Obrigado pelo seu interesse em contribuir para o Blog da {siteName}.",
       "title": "Tornar-se Autor do Blog"
     },
     "blockedWorkspaceNote": "O seu Espaço de Trabalho de Participante continua disponível. As ferramentas de publicação de autor estão suspensas até que um Administrador restaure o acesso.",
@@ -434,7 +434,7 @@
       "decisionVotesLinked": "A contagem de votos reflete as decisões vinculadas às suas iniciativas.",
       "decisionVotesLinkedPendingApi": "A contagem de votos reflete as decisões vinculadas às suas iniciativas. Uma API de votos para participantes ainda não está conectada."
     },
-    "pageSubtitle": "O seu trabalho cívico privado em todo o ciclo de vida da União Humana",
+    "pageSubtitle": "O seu trabalho cívico privado em todo o ciclo de vida da {siteName}",
     "sections": {
       "navAria": "Secções do espaço de trabalho da iniciativa",
       "navLabel": "Secções",
@@ -1070,7 +1070,7 @@
         "document": {
           "aria": "Arquivo Cívico",
           "completeness": "Completude",
-          "disclaimer": "Este documento registra a participação cívica e a atividade de Iniciativa na plataforma da União Humana. Não é um registro oficial governamental ou legalmente vinculativo, a menos que seja reconhecido de forma independente pela instituição relevante.",
+          "disclaimer": "Este documento registra a participação cívica e a atividade de Iniciativa na plataforma da {siteName}. Não é um registro oficial governamental ou legalmente vinculativo, a menos que seja reconhecido de forma independente pela instituição relevante.",
           "draftPreview": "Pré-visualização do rascunho",
           "emptySection": "Nenhum conteúdo registrado.",
           "lifecycleTimeline": "Linha do Tempo do Ciclo de Vida",
@@ -1630,7 +1630,7 @@
           "emptySummary": "Nenhum resumo fornecido.",
           "loadFailed": "Não foi possível carregar esta Petição.",
           "loading": "Carregando Petição…",
-          "participationTransparencyNote": "Assinar esta Petição é uma forma de participação cívica na União Humana. Não se trata de uma petição juridicamente vinculativa e não cria, por si só, qualquer obrigação legal ou governamental.",
+          "participationTransparencyNote": "Assinar esta Petição é uma forma de participação cívica na {siteName}. Não se trata de uma petição juridicamente vinculativa e não cria, por si só, qualquer obrigação legal ou governamental.",
           "previewSignatureDisabled": "O widget de assinatura está desativado durante a pré-visualização — a assinatura ficará disponível para os visitantes assim que esta Petição for publicada e aberta.",
           "publishedAt": "Publicado em {date}",
           "shareAria": "Compartilhar petição: {title}",
@@ -2762,9 +2762,9 @@
         },
         "aria": "Ferramentas de trabalho da etapa",
         "askAssistant": "Perguntar ao Assistant",
-        "assistantGenericHint": "Pergunte sobre esta etapa ou sobre a Humanity Union. As sugestões têm caráter meramente consultivo.",
+        "assistantGenericHint": "Pergunte sobre esta etapa ou sobre a {siteName}. As sugestões têm caráter meramente consultivo.",
         "assistantLoadFailed": "Não foi possível carregar os dados do Assistant.",
-        "assistantTitle": "Assistant da Humanity Union",
+        "assistantTitle": "Assistant da {siteName}",
         "completeness": {
           "draftInProgress": "Rascunho em andamento.",
           "draftInProgressSaveHint": "Rascunho em andamento — use Salvar Rascunho no Espaço de Trabalho principal para manter suas alterações.",
@@ -2999,7 +2999,7 @@
         "superseded": "Substituído"
       },
       "pageIntro": "Memória institucional permanente de iniciativas cívicas concluídas e seus resultados públicos verificados. Cada registro de arquivo documenta o ciclo de vida completo de uma iniciativa — e não registros de etapas isoladas.",
-      "pageTitle": "Arquivo Cívico Público da União Humana",
+      "pageTitle": "Arquivo Cívico Público da {siteName}",
       "resultsCount": "{count} resultados",
       "resultsCountOne": "{count} resultado",
       "resultsTitle": "Resultados do Arquivo Cívico",
@@ -3561,7 +3561,7 @@
         "republished": "Iniciativa republicada. Projeção pública atualizada.",
         "saveFailed": "Falha ao salvar: {detail}",
         "saveUnable": "Não foi possível salvar a iniciativa.",
-        "serviceUnavailable": "O serviço da União Humana está temporariamente indisponível.",
+        "serviceUnavailable": "O serviço da {siteName} está temporariamente indisponível.",
         "signInToCreate": "Faça login para criar uma iniciativa.",
         "signInToDelete": "Faça login para excluir este rascunho.",
         "unknownError": "Erro desconhecido",
@@ -3569,7 +3569,7 @@
         "updated": "Iniciativa atualizada."
       },
       "newsSource": {
-        "disclaimer": "Referência de editor externo. A União Humana não verificou este artigo de forma independente.",
+        "disclaimer": "Referência de editor externo. A {siteName} não verificou este artigo de forma independente.",
         "remove": "Remover fonte"
       },
       "overlap": {
@@ -3729,7 +3729,7 @@
         "backToInitiativePlain": "Voltar para a Iniciativa",
         "downloadFailed": "Falha no download.",
         "endOfVoting": "Fim da Votação: {value}",
-        "eyebrow": "Votação da comunidade da União Humana",
+        "eyebrow": "Votação da comunidade da {siteName}",
         "geography": "Geografia: {value}",
         "loadFailed": "Não foi possível carregar a eleição.",
         "loading": "Carregando eleição…",
@@ -3744,7 +3744,7 @@
         "abstain": "Abster-se",
         "blocked": "Bloqueado",
         "candidateFallback": "Candidato",
-        "disclaimerBody": "Estes são os resultados de votação da comunidade da União Humana. Eles não são resultados eleitorais oficiais, pesquisas estatisticamente representativas ou resultados certificados pelo governo.",
+        "disclaimerBody": "Estes são os resultados de votação da comunidade da {siteName}. Eles não são resultados eleitorais oficiais, pesquisas estatisticamente representativas ou resultados certificados pelo governo.",
         "disclaimerTitle": "Resultados da votação da comunidade",
         "download": "Baixar resultados",
         "electionStatus": "Status da eleição: {status}",
@@ -4657,7 +4657,7 @@
     "loading": "Carregando perfil…",
     "loadingMembership": "Carregando o status da Afiliação...",
     "logIn": "Entrar",
-    "membershipNote": "A Afiliação confirma o apoio voluntário à União Humana. Ela não altera o poder de voto nem concede verificação de identidade.",
+    "membershipNote": "A Afiliação confirma o apoio voluntário à {siteName}. Ela não altera o poder de voto nem concede verificação de identidade.",
     "membershipUnavailable": "O status da Afiliação está indisponível.",
     "openMembership": "Abrir Afiliação",
     "participationArea": {
@@ -4763,7 +4763,7 @@
       "save": "Salvar habilidades",
       "saveError": "Não foi possível guardar as competências."
     },
-    "subtitle": "O seu perfil de Participante da União Humana",
+    "subtitle": "O seu perfil de Participante da {siteName}",
     "summaries": {
       "editInterests": "Editar interesses",
       "editLinks": "Editar links profissionais",
@@ -5028,7 +5028,7 @@
         },
         "what-is-member": {
           "answer": "Um Membro é um Participante que concluiu o pedido de Afiliação e confirmou uma Contribuição de Afiliação única. Os Membros continuam a ser Participantes com igualdade de direitos em todas as decisões cívicas.",
-          "question": "O que é um Membro da União Humana?"
+          "question": "O que é um Membro da {siteName}?"
         }
       },
       "regionLabel": "FAQ de Afiliação",
@@ -5572,7 +5572,7 @@
         "title": "Iniciativa publicada"
       },
       "member_badge_contribution_confirmed": {
-        "message": "Sua solicitação de item oficial de Membro da União Humana foi confirmada.",
+        "message": "Sua solicitação de item oficial de Membro da {siteName} foi confirmada.",
         "title": "Solicitação de item oficial de Membro confirmada"
       },
       "member_badge_contribution_refunded": {
@@ -5580,11 +5580,11 @@
         "title": "Contribuição adicional de Membro reembolsada"
       },
       "member_badge_delivered": {
-        "message": "Sua solicitação de item oficial de Membro da União Humana foi entregue.",
+        "message": "Sua solicitação de item oficial de Membro da {siteName} foi entregue.",
         "title": "Item oficial de Membro entregue"
       },
       "member_badge_shipped": {
-        "message": "O seu pedido de item oficial de Membro da União Humana foi enviado.",
+        "message": "O seu pedido de item oficial de Membro da {siteName} foi enviado.",
         "title": "Item oficial de Membro enviado"
       },
       "official_response_received": {
@@ -5737,7 +5737,7 @@
       "selectRegionFirst": "Selecione pelo menos uma região preferida para escolher Cidades / Comunidades."
     },
     "language": {
-      "help": "Defina o seu idioma preferido para a União Humana. Os idiomas de escrita são separados e não alteram a forma como o site é apresentado.",
+      "help": "Defina o seu idioma preferido para a {siteName}. Os idiomas de escrita são separados e não alteram a forma como o site é apresentado.",
       "interfaceLanguage": "Idioma da Interface",
       "noReadingLanguage": "Nenhum idioma de leitura guardado",
       "preferredReadingHelp": "Selecione o idioma em que prefere ler a plataforma. Para a melhor experiência, corresponda-o ao idioma de tradução do seu navegador.",
@@ -5746,14 +5746,14 @@
       "savedUnavailable": "{code} (salvo — temporariamente indisponível no catálogo)",
       "translationPreference": "Preferência de Tradução",
       "writingLanguages": "Idiomas de Escrita",
-      "writingLanguagesHelp": "Adicione os idiomas que você usa para escrever e colaborar. Essas preferências ajudam a União Humana a entender como você se comunica e não controlam o idioma de tradução do seu navegador.",
+      "writingLanguagesHelp": "Adicione os idiomas que você usa para escrever e colaborar. Essas preferências ajudam a {siteName} a entender como você se comunica e não controlam o idioma de tradução do seu navegador.",
       "writingLanguagesPlaceholder": "pt, en"
     },
     "loadError": "Não foi possível carregar as preferências.",
     "loading": "A carregar preferências...",
     "notification": {
       "emailEnabled": "Receber notificações por e-mail",
-      "emailHelp": "Quando ativado, a União Humana enviará notificações simples por e-mail quando nova atividade exigir a sua atenção. Exemplo: \"Tem 3 novas notificações no seu Espaço de Trabalho.\" Os e-mails nunca contêm conteúdo de conversas privadas ou informações confidenciais de Iniciativa."
+      "emailHelp": "Quando ativado, a {siteName} enviará notificações simples por e-mail quando nova atividade exigir a sua atenção. Exemplo: \"Tem 3 novas notificações no seu Espaço de Trabalho.\" Os e-mails nunca contêm conteúdo de conversas privadas ou informações confidenciais de Iniciativa."
     },
     "notificationFrequencies": {
       "daily_digest": "Resumo diário",
@@ -5781,7 +5781,7 @@
       "visibility": "Visibilidade"
     },
     "signInPrompt": "Faça login para gerenciar suas preferências.",
-    "subtitle": "Suas configurações de experiência e participação na União Humana",
+    "subtitle": "Suas configurações de experiência e participação na {siteName}",
     "title": "Preferências",
     "translationPreferences": {
       "ask": "Oferecer tradução; manter o original por padrão",
@@ -5789,7 +5789,7 @@
       "preferred": "Preferir tradução quando disponível"
     },
     "unavailable": "As preferências estão indisponíveis.",
-    "unavailableExplanation": "Não foi possível conectar ao serviço da União Humana. Por favor, tente novamente em breve.",
+    "unavailableExplanation": "Não foi possível conectar ao serviço da {siteName}. Por favor, tente novamente em breve.",
     "unavailableTitle": "Preferências temporariamente indisponíveis",
     "visibility": {
       "interestsVisibility": "Quem pode ver os meus Interesses",
@@ -6594,47 +6594,47 @@
     "goBack": "Voltar",
     "install": {
       "addToHomeScreen": "Adicionar à Tela Inicial",
-      "alreadyInstalled": "A União Humana já está instalada neste dispositivo.",
-      "androidHintPrimary": "Se houver um botão de instalar a União Humana disponível nesta página, use-o primeiro.",
+      "alreadyInstalled": "A {siteName} já está instalada neste dispositivo.",
+      "androidHintPrimary": "Se houver um botão de instalar a {siteName} disponível nesta página, use-o primeiro.",
       "androidHintSecondary": "Se o Chrome não exibir a opção de instalação: atualize a página, certifique-se de que o site está aberto no Chrome e verifique se o aplicativo já não está instalado.",
-      "androidStep1": "Abra a União Humana no Chrome.",
+      "androidStep1": "Abra a {siteName} no Chrome.",
       "androidStep2": "Toque no menu do navegador (⋮).",
       "androidStep3": "Escolha Instalar aplicativo ou Adicionar à tela inicial.",
       "androidStep4": "Confirme a instalação.",
-      "androidStep5": "O ícone da União Humana aparecerá na sua tela inicial / iniciador de aplicativos.",
+      "androidStep5": "O ícone da {siteName} aparecerá na sua tela inicial / iniciador de aplicativos.",
       "androidTitle": "Android — Chrome",
-      "appTitle": "Aplicativo da União Humana",
-      "automaticUnavailable": "A instalação automática não está disponível nesta sessão do navegador. Use os passos abaixo ou reabra a União Humana em uma janela de navegador normal (não privada) se a instalação não aparecer.",
+      "appTitle": "Aplicativo da {siteName}",
+      "automaticUnavailable": "A instalação automática não está disponível nesta sessão do navegador. Use os passos abaixo ou reabra a {siteName} em uma janela de navegador normal (não privada) se a instalação não aparecer.",
       "badgeNote": "O comportamento de notificações e do emblema do ícone do aplicativo depende do seu dispositivo, sistema operacional, navegador e permissões de notificação.",
       "close": "Fechar",
       "closeGuideAria": "Fechar o guia de instalação",
-      "guideSubtitle": "Adicione a União Humana à sua Tela Inicial para um acesso mais rápido e uma experiência semelhante à de um aplicativo.",
-      "guideTitle": "Instalar Aplicativo União Humana",
-      "installCta": "Instalar a União Humana",
+      "guideSubtitle": "Adicione a {siteName} à sua Tela Inicial para um acesso mais rápido e uma experiência semelhante à de um aplicativo.",
+      "guideTitle": "Instalar Aplicativo {siteName}",
+      "installCta": "Instalar a {siteName}",
       "installationGuide": "Guia de instalação",
       "installing": "A instalar…",
-      "iosA2hsStandaloneNote": "Depois de adicionar o ícone, a União Humana abre-se a partir do ecrã inicial como uma aplicação instalada.",
+      "iosA2hsStandaloneNote": "Depois de adicionar o ícone, a {siteName} abre-se a partir do ecrã inicial como uma aplicação instalada.",
       "iosA2hsStep1": "Toque no botão Partilhar do Safari.",
       "iosA2hsStep2": "Escolha Adicionar ao Ecrã Inicial.",
       "iosA2hsStep3": "Confirme tocando em Adicionar.",
       "iosA2hsTitle": "Adicionar à Tela Inicial",
       "iosHintNotifications": "Permita notificações quando solicitado, caso queira recursos de emblemas e notificações suportados.",
       "iosHintSafari": "A adição à tela inicial deve ser feita a partir do Safari. Se esta página estiver aberta no navegador de outro aplicativo, abra-a no Safari primeiro.",
-      "iosStep1": "Abra a União Humana no Safari.",
+      "iosStep1": "Abra a {siteName} no Safari.",
       "iosStep2": "Toque no botão Compartilhar.",
       "iosStep3": "Role para baixo e selecione Adicionar à Tela de Início.",
       "iosStep4": "Verifique o nome do aplicativo.",
       "iosStep5": "Toque em Adicionar.",
-      "iosStep6": "Abra a União Humana a partir do novo ícone na Tela de Início.",
+      "iosStep6": "Abra a {siteName} a partir do novo ícone na Tela de Início.",
       "iosTitle": "iPhone / iPad — Safari",
-      "lead": "Leve a Humanidade com você. Instale o aplicativo para ter acesso direto ao seu Espaço de Trabalho, Iniciativas, Notificações e Assistente da União Humana.",
+      "lead": "Leve a Humanidade com você. Instale o aplicativo para ter acesso direto ao seu Espaço de Trabalho, Iniciativas, Notificações e Assistente da {siteName}.",
       "openWorkspace": "Abrir Espaço de Trabalho"
     },
     "menuTitle": "Menu",
     "openMenu": "Abrir menu",
     "playIntroSound": "Reproduzir som de introdução",
-    "searchLabel": "Pesquisar União Humana",
-    "searchPlaceholder": "Pesquisar União Humana",
+    "searchLabel": "Pesquisar {siteName}",
+    "searchPlaceholder": "Pesquisar {siteName}",
     "sound": "Som"
   },
   "search": {
@@ -6793,7 +6793,7 @@
       "heading": "Introdução",
       "honeyEarthAlt": "Ilustração da Terra com um padrão de colmeia, sugerindo cuidado compartilhado com nossa casa comum",
       "number": "1",
-      "p1": "O desenvolvimento da plataforma <platform>União Humana</platform> é uma contribuição pessoal que cada um de nós pode fazer para o nosso próprio futuro e para o futuro das próximas gerações.",
+      "p1": "O desenvolvimento da plataforma <platform>{siteName}</platform> é uma contribuição pessoal que cada um de nós pode fazer para o nosso próprio futuro e para o futuro das próximas gerações.",
       "p2": "Se nossos ancestrais tivessem acesso às ferramentas tecnológicas que temos hoje — a Internet, computadores, smartphones e plataformas web educacionais e informativas — nossas sociedades poderiam ter desenvolvido um nível mais alto de conscientização e responsabilidade social muito mais cedo.",
       "p3": "Uma maior alfabetização social ajuda as pessoas a tomarem decisões mais ponderadas e racionais. Tais decisões criam a base para a justiça social, o bem-estar e a segurança.",
       "p4": "Somos uma geração única. Vivenciamos a transição de um mundo amplamente tradicional para uma era que oferece às pessoas comuns ferramentas tecnológicas poderosas para comunicação, educação, cooperação e ação coletiva.",
@@ -6809,7 +6809,7 @@
       "p1": "Um <emphasis>Voluntário</emphasis> não é um título. É um sinal de responsabilidade — algo que a sociedade frequentemente subestima.",
       "p2": "Muito do nosso mundo é apoiado e melhorado por voluntários, entusiastas e pessoas que decidem agir sem esperar que outra pessoa aja primeiro. Mas o entusiasmo por si só nem sempre conduz a resultados positivos. A educação, os valores, a criação e a compreensão influenciam se a nossa energia serve o progresso e o bem comum ou se é impulsionada pela ambição pessoal, pela ganância, pelo preconceito ou pela manipulação.",
       "p3": "Nem sempre percebemos quando nós próprios começamos a tolerar a ignorância ou a agressão. Às vezes, gastamos mais esforço a adaptar-nos a circunstâncias nocivas do que a tentar mudá-las. Ao fazê-lo, podemos, sem intenção, tornar a vida mais difícil para nós e para os outros.",
-      "p4": "A plataforma <platform>União Humana</platform> está sendo desenvolvida como uma ferramenta segura para todos — quer você viva em uma sociedade democrática com instituições funcionais ou sob um regime autoritário e agressivo onde as pessoas possam ser intimidadas, silenciadas ou forçadas a hierarquias sociais rígidas.",
+      "p4": "A plataforma <platform>{siteName}</platform> está sendo desenvolvida como uma ferramenta segura para todos — quer você viva em uma sociedade democrática com instituições funcionais ou sob um regime autoritário e agressivo onde as pessoas possam ser intimidadas, silenciadas ou forçadas a hierarquias sociais rígidas.",
       "p5": "Nossa tarefa central é simples: <emphasis>unir-nos em torno de valores humanos universais, respeitando as culturas, tradições e identidades nacionais que sejam compatíveis com os direitos e liberdades fundamentais.</emphasis>",
       "p6": "Você não precisa de um cargo, profissão ou status especial para participar.",
       "p7": "Venha para a plataforma. Explore e apoie Iniciativas criadas por outras pessoas. Participe de discussões, enquetes e eleições. Crie sua própria Iniciativa quando vir um problema que mereça atenção. Ajude outras pessoas a aprimorar suas ideias. Sempre que puder, participe de transformar Iniciativas valiosas em ações reais.",
@@ -6823,7 +6823,7 @@
       "number": "3",
       "p1": "Não precisa de mudar o mundo inteiro sozinho.",
       "p2": "Traga o que puder: o seu conhecimento, experiência, tempo, ideias, perguntas, competências profissionais ou simplesmente a sua disposição para apoiar uma boa Iniciativa.",
-      "p3": "Use as ferramentas da plataforma <platform>União Humana</platform> e utilize-as para o bem.",
+      "p3": "Use as ferramentas da plataforma <platform>{siteName}</platform> e utilize-as para o bem.",
       "p4": "Apoie uma Iniciativa.",
       "p5": "Ajude outra pessoa.",
       "p6": "Compartilhe conhecimento.",
@@ -6851,7 +6851,7 @@
     "account": "Conta",
     "accountActionFailed": "Falha na ação da conta",
     "accountProfileSummary": "Resumo do perfil da conta",
-    "accountSubtitle": "A sua conta de autenticação da União Humana",
+    "accountSubtitle": "A sua conta de autenticação da {siteName}",
     "accountUpdate": "Atualização da conta",
     "authGate": {
       "checkingSession": "A verificar a sua sessão...",
@@ -6985,7 +6985,7 @@
       "sectionsNavAria": "Seções do Espaço de Trabalho de Iniciativa",
       "sectionsNavLabel": "Secções",
       "startNew": "Iniciar Nova Iniciativa",
-      "subtitle": "Iniciativas de participação na União Humana",
+      "subtitle": "Iniciativas de participação na {siteName}",
       "title": "Iniciativas",
       "unavailableExplanation": "Não foi possível ligar ao serviço de Iniciativas. Por favor, tente novamente em breve.",
       "unavailableTitle": "Espaço de Trabalho temporariamente indisponível",
@@ -7278,12 +7278,12 @@
           "charHint": "{length} / {guide} recomendado · máx {max}",
           "defaultsToExcerpt": "Usa o resumo como padrão",
           "defaultsToTitle": "Usa o título da publicação como padrão",
-          "distributionCopy": "Escolha os canais sociais da União Humana onde esta publicação pode ser distribuída. Isto não concede acesso às suas contas sociais pessoais.",
+          "distributionCopy": "Escolha os canais sociais da {siteName} onde esta publicação pode ser distribuída. Isto não concede acesso às suas contas sociais pessoais.",
           "distributionHeading": "Distribuição",
           "heading": "Otimização de Publicação",
-          "huShareHelper": "A seleção de um canal permite que a União Humana distribua esta publicação através do canal oficial configurado. Apenas um URL de perfil não faz postagem automática — a entrega aguarda uma integração real com o provedor. As preferências nunca ignoram a revisão, o agendamento ou os bloqueios.",
-          "huShareLegend": "Distribuição social da União Humana",
-          "lede": "Os metadados de SEO e sociais permanecem nesta publicação. As permissões de distribuição entram na fila da caixa de saída da plataforma para os canais oficiais da União Humana — elas nunca inventam credenciais externas nem alegam um envio bem-sucedido.",
+          "huShareHelper": "A seleção de um canal permite que a {siteName} distribua esta publicação através do canal oficial configurado. Apenas um URL de perfil não faz postagem automática — a entrega aguarda uma integração real com o provedor. As preferências nunca ignoram a revisão, o agendamento ou os bloqueios.",
+          "huShareLegend": "Distribuição social da {siteName}",
+          "lede": "Os metadados de SEO e sociais permanecem nesta publicação. As permissões de distribuição entram na fila da caixa de saída da plataforma para os canais oficiais da {siteName} — elas nunca inventam credenciais externas nem alegam um envio bem-sucedido.",
           "metaDescription": "Meta descrição",
           "noSocialImage": "Ainda sem imagem social",
           "searchCopy": "Título e descrição de pesquisa opcionais. Deixe em branco para usar o título da publicação e o trecho da página pública como padrão.",
@@ -7675,7 +7675,7 @@
       "FULL": "Financiamento integral pedido"
     },
     "consent": {
-      "label": "Consinto que a Humanity Union trate esta candidatura conforme descrito na <privacy>Política de Privacidade</privacy>.",
+      "label": "Consinto que a {siteName} trate esta candidatura conforme descrito na <privacy>Política de Privacidade</privacy>.",
       "versionNote": "Versão do consentimento: {version}"
     },
     "actions": {
@@ -7864,8 +7864,7 @@
         "deepLinkParticipantUnavailable": "Não foi possível encontrar esse participante no diretório."
       }
     }
-  }
-,
+  },
   "adminNotifications": {
     "types": {
       "rrp_application_submitted": "Candidatura de representante regional enviada"

@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("initiativeExperience.civicArchivePublic");
   return buildPublicPageMetadataForRequest({
-    title: t("pageTitle"),
+    title: t("pageTitle", { siteName: brand.siteName }),
     description: t("pageIntro"),
     canonicalPath: "/civic-archive",
     localeFreeCanonicalPath: "/civic-archive",

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type { PublicPetitionProjection } from "@hu/types";
 
 import { PublicTranslatedFields } from "../../language";
@@ -207,6 +209,7 @@ export function InitiativePetitionPublicResult({
   onScrollRequestHandled,
 }: InitiativePetitionPublicResultProps) {
   const t = useTranslations("initiativeExperience");
+  const siteName = useBrandSiteName();
   const [projection, setProjection] = useState<PublicPetitionProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const documentRef = useRef<HTMLDivElement>(null);
@@ -315,7 +318,7 @@ export function InitiativePetitionPublicResult({
           </div>
         </div>
         <p className="ipl-support__note">
-          {t("author.petition.public.participationTransparencyNote")}
+          {t("author.petition.public.participationTransparencyNote", { siteName })}
         </p>
 
         {isPreview ? (

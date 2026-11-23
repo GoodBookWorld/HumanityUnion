@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type { BlogAuthoringAccessState, BlogCategoryId } from "@hu/types";
 import { BLOG_CATEGORIES } from "@hu/types";
 
@@ -115,6 +117,7 @@ function StatusMessage({ state }: { state: BlogAuthoringAccessState }) {
 
 export function AuthoringPageContent() {
   const t = useTranslations("authoringPage");
+  const siteName = useBrandSiteName();
   const [state, setState] = useState<BlogAuthoringAccessState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -300,9 +303,9 @@ export function AuthoringPageContent() {
       {!isPublishingReady && !isBlockedAuthor ? (
         <Card className="authoring-page__card">
           <h2 className="hu-heading-2">{t("becomeAuthor.title")}</h2>
-          <p className="hu-body">{t("becomeAuthor.thanks")}</p>
+          <p className="hu-body">{t("becomeAuthor.thanks", { siteName })}</p>
           <p className="hu-body">{t("becomeAuthor.purpose")}</p>
-          <p className="hu-body">{t("becomeAuthor.encouragement")}</p>
+          <p className="hu-body">{t("becomeAuthor.encouragement", { siteName })}</p>
           <p className="hu-body">{t("becomeAuthor.standards")}</p>
         </Card>
       ) : null}
@@ -331,7 +334,7 @@ export function AuthoringPageContent() {
           </h2>
           <form className="authoring-page__form" onSubmit={handleSubmit} noValidate>
             <div className="authoring-page__field">
-              <label htmlFor="authoring-motivation">{t("application.motivationLabel")}</label>
+              <label htmlFor="authoring-motivation">{t("application.motivationLabel", { siteName })}</label>
               <textarea
                 id="authoring-motivation"
                 className="hu-form-control"

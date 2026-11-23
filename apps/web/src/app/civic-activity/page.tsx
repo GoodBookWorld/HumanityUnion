@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+
+import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { MyCivicActivitySection } from "../../features/civic-activity/components/MyCivicActivitySection";
@@ -8,6 +10,8 @@ import { WorkspaceNavigation } from "../../features/initiatives/components/Works
 import "./civic-activity-page.css";
 
 export default async function CivicActivityPage() {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("civicActivity");
   const tWorkspace = await getTranslations("workspace");
 
@@ -30,7 +34,7 @@ export default async function CivicActivityPage() {
     <main className="civic-activity-page humanity-workspace-page">
       <MemberWorkspace
         title={tWorkspace("myCivicActivity")}
-        subtitle={t("pageSubtitle")}
+        subtitle={t("pageSubtitle", { siteName: brand.siteName })}
         navItems={navItems}
         sectionsLabel={t("sections.navLabel")}
         sectionsAriaLabel={t("sections.navAria")}

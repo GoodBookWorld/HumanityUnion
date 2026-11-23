@@ -5,6 +5,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import {
@@ -51,6 +53,7 @@ const ACTION_ITEMS = [
 
 export function VolunteerPageContent() {
   const t = useTranslations("volunteerPublic");
+  const siteName = useBrandSiteName();
   const sidebarRef = useRef<HTMLElement | null>(null);
   const [sidebarHeightPx, setSidebarHeightPx] = useState<number | null>(null);
 
@@ -151,7 +154,7 @@ export function VolunteerPageContent() {
                 <RichMarks>
                   {(tags) => (
                     <>
-                      <p>{t.rich("intro.p1", tags)}</p>
+                      <p>{t.rich("intro.p1", { ...tags, siteName })}</p>
                       <p>{t("intro.p2")}</p>
                       <p>{t("intro.p3")}</p>
                       <p>{t("intro.p4")}</p>
@@ -188,7 +191,7 @@ export function VolunteerPageContent() {
                       <p>{t.rich("meaning.p1", tags)}</p>
                       <p>{t("meaning.p2")}</p>
                       <p>{t("meaning.p3")}</p>
-                      <p>{t.rich("meaning.p4", tags)}</p>
+                      <p>{t.rich("meaning.p4", { ...tags, siteName })}</p>
                       <p>{t.rich("meaning.p5", tags)}</p>
                       <p>{t("meaning.p6")}</p>
                       <p>{t("meaning.p7")}</p>
@@ -223,7 +226,7 @@ export function VolunteerPageContent() {
                     <>
                       <p>{t("takePart.p1")}</p>
                       <p>{t("takePart.p2")}</p>
-                      <p>{t.rich("takePart.p3", tags)}</p>
+                      <p>{t.rich("takePart.p3", { ...tags, siteName })}</p>
                       <p>{t("takePart.p4")}</p>
                       <p>{t("takePart.p5")}</p>
                       <p>{t("takePart.p6")}</p>

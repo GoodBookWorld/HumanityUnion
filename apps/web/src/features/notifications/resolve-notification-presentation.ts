@@ -93,6 +93,7 @@ export type NotificationsTranslator = {
 export function resolveNotificationPresentation(
   notification: { eventType: string; title: string; message: string },
   t: NotificationsTranslator,
+  siteName?: string,
 ): { title: string; message: string } {
   if (!KNOWN_EVENT_TYPE_SET.has(notification.eventType)) {
     return { title: notification.title, message: notification.message };
@@ -100,10 +101,11 @@ export function resolveNotificationPresentation(
 
   const titleKey = `types.${notification.eventType}.title`;
   const messageKey = `types.${notification.eventType}.message`;
+  const values = siteName ? { siteName } : undefined;
 
   return {
-    title: t.has(titleKey) ? t(titleKey) : notification.title,
-    message: t.has(messageKey) ? t(messageKey) : notification.message,
+    title: t.has(titleKey) ? t(titleKey, values) : notification.title,
+    message: t.has(messageKey) ? t(messageKey, values) : notification.message,
   };
 }
 

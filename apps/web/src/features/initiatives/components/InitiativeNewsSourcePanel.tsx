@@ -3,6 +3,8 @@
 import type { PublicNewsArticleItem } from "@hu/types";
 import { useLocale, useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system";
 import { formatNewsPublishedDate } from "../../public-news/api";
 import { NewsArticleImage } from "../../public-news/components/NewsArticleImage";
@@ -17,6 +19,7 @@ interface InitiativeNewsSourcePanelProps {
 export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsSourcePanelProps) {
   const tCommon = useTranslations("initiativeExperience.common");
   const tManage = useTranslations("initiativeExperience.manage");
+  const siteName = useBrandSiteName();
   const locale = useLocale();
 
   return (
@@ -24,7 +27,7 @@ export function InitiativeNewsSourcePanel({ article, onRemove }: InitiativeNewsS
       <div className="public-news-source-panel__header">
         <div>
           <h3 id="initiative-news-source-heading">{tCommon("sourceArticle")}</h3>
-          <p className="public-news-source-panel__meta">{tManage("newsSource.disclaimer")}</p>
+          <p className="public-news-source-panel__meta">{tManage("newsSource.disclaimer", { siteName })}</p>
         </div>
         <Button type="button" variant="secondary" onClick={onRemove}>
           {tManage("newsSource.remove")}

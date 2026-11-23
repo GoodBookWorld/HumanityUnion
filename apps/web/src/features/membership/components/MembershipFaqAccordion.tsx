@@ -1,10 +1,13 @@
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { SectionHeader } from "../../../design-system/components/SectionHeader";
 import { MEMBERSHIP_FAQ_IDS } from "../membership.constants";
 
 export function MembershipFaqAccordion() {
   const t = useTranslations("membershipPublic");
+  const siteName = useBrandSiteName();
 
   return (
     <section className="membership-section" aria-labelledby="membership-faq-title">
@@ -13,7 +16,7 @@ export function MembershipFaqAccordion() {
         {MEMBERSHIP_FAQ_IDS.map((id) => (
           <details key={id} className="membership-faq-accordion__item">
             <summary className="membership-faq-accordion__summary">
-              {t(`faq.items.${id}.question`)}
+              {t(`faq.items.${id}.question`, { siteName })}
             </summary>
             <div className="membership-faq-accordion__body">
               <p>{t(`faq.items.${id}.answer`)}</p>

@@ -42,7 +42,7 @@
     "betaInviteCode": "Beta-Einladungscode",
     "cancelReturnToLogin": "Abbrechen und zum Login zurückkehren",
     "checkYourEmail": "Überprüfen Sie Ihre E-Mails",
-    "chooseNewPasswordSubtitle": "Leggen Sie ein neues Passwort für Ihr Humanity Union-Konto fest.",
+    "chooseNewPasswordSubtitle": "Leggen Sie ein neues Passwort für Ihr {siteName}-Konto fest.",
     "chooseNewPasswordTitle": "Neues Passwort wählen",
     "codeSent": "Code gesendet",
     "completeLogin": "Anmeldung abschließen",
@@ -89,7 +89,7 @@
     "incorrectCode": "Der Code ist falsch. Überprüfen Sie die neueste E-Mail und versuchen Sie es erneut.",
     "invalidEmailChangeToken": "Ungültiges oder abgelaufenes Token für die E-Mail-Änderung.",
     "deleteAccountTitle": "Konto löschen",
-    "deleteAccountIntro": "Sie können die Löschung Ihres Humanity Union Kontos planen. Die 30-tägige Wiederherstellungsfrist beginnt erst, nachdem Sie einen E-Mail-Code bestätigen.",
+    "deleteAccountIntro": "Sie können die Löschung Ihres {siteName} Kontos planen. Die 30-tägige Wiederherstellungsfrist beginnt erst, nachdem Sie einen E-Mail-Code bestätigen.",
     "deleteAccountConsequences": "Öffentliche Bürgerunterlagen bleiben bestehen. Private Nachrichten bleiben für die anderen Personen in diesen Unterhaltungen verfügbar. Sie können sich nicht anmelden und diese Nachrichten nicht öffnen. Nach der Frist kann diese E-Mail-Adresse ein neues Konto registrieren. Das neue Konto erhält nicht die Rollen, Ernennungen oder Nachrichten dieses Kontos.",
     "deleteAccountButton": "Konto löschen",
     "deleteAccountSendCode": "Bestätigungscode senden",
@@ -125,7 +125,7 @@
     "loadingResetForm": "Zurücksetzungsformular wird geladen...",
     "loadingVerification": "Verifizierung wird geladen...",
     "logIn": "Anmelden",
-    "loginSubtitle": "Greifen Sie auf Ihren Humanity Union Arbeitsbereich zu.",
+    "loginSubtitle": "Greifen Sie auf Ihren {siteName} Arbeitsbereich zu.",
     "loginTitle": "Anmelden",
     "nMinutes": "{count} Minuten",
     "nSeconds": "{count} Sekunden",
@@ -143,7 +143,7 @@
     "previousCodeInvalid": "Der vorherige Code ist nicht mehr gültig.",
     "previousCodeStillUsable": "Dein vorheriger gültiger Code kann weiterhin verwendet werden.",
     "previousCodeStillValid": "Vorheriger Code ist noch gültig",
-    "registerSubtitle": "Erstelle dein Humanity Union Teilnehmer-Konto.",
+    "registerSubtitle": "Erstelle dein {siteName} Teilnehmer-Konto.",
     "registerTitle": "Konto erstellen",
     "registrationFailed": "Registrierung fehlgeschlagen",
     "registrationNotice": "Registrierungshinweis",
@@ -166,14 +166,14 @@
     "twoStepDisabledSuccess": "Die Zwei-Schritte-Anmeldung wurde erfolgreich deaktiviert.",
     "twoStepEnabledSuccess": "Die Zwei-Schritte-Anmeldung wurde erfolgreich aktiviert.",
     "twoStepLoginByEmail": "Zwei-Schritte-Anmeldung per E-Mail",
-    "twoStepLoginHelp": "Die Zwei-Schritte-Anmeldung fügt bei der Anmeldung nach Ihrem Passwort einen E-Mail-Code hinzu. Sie bestätigt den Zugriff auf Ihr E-Mail-Konto. Dies stellt keine Identitätsprüfung oder Humanity Union Mitgliedschaft dar.",
+    "twoStepLoginHelp": "Die Zwei-Schritte-Anmeldung fügt bei der Anmeldung nach Ihrem Passwort einen E-Mail-Code hinzu. Sie bestätigt den Zugriff auf Ihr E-Mail-Konto. Dies stellt keine Identitätsprüfung oder {siteName} Mitgliedschaft dar.",
     "unableToRequestReset": "Passwort-Zurücksetzung konnte nicht angefordert werden.",
     "unableToResetPassword": "Passwort konnte nicht zurückgesetzt werden.",
     "verificationCode": "Bestätigungscode",
     "verificationCodeSent": "Bestätigungscode gesendet",
     "verificationFailed": "Bestätigung fehlgeschlagen",
     "verificationTokenMissing": "Bestätigungstoken fehlt.",
-    "verifyEmailSubtitle": "Bestätigen Sie die E-Mail-Adresse Ihres Humanity Union-Kontos.",
+    "verifyEmailSubtitle": "Bestätigen Sie die E-Mail-Adresse Ihres {siteName}-Kontos.",
     "verifyEmailTitle": "E-Mail verifizieren",
     "verifyLoginSubtitle": "Schließen Sie die Zwei-Schritte-Anmeldung mit dem E-Mail-Code ab, den wir an Ihre bestätigte Adresse gesendet haben.",
     "verifyLoginTitle": "Anmeldung verifizieren",
@@ -187,7 +187,7 @@
       "agreeStandards": "Ich stimme zu, dass Publikationen den Sicherheits- und Veröffentlichungsstandards der Plattform entsprechen müssen.",
       "agreeStandardsError": "Sie müssen zustimmen, den Sicherheits- und Veröffentlichungsstandards der Plattform zu folgen.",
       "motivationError": "Bitte teilen Sie uns etwas mehr darüber mit, warum Sie beitragen möchten.",
-      "motivationLabel": "Warum möchten Sie zum Blog der Humanity Union beitragen?",
+      "motivationLabel": "Warum möchten Sie zum Blog der {siteName} beitragen?",
       "preferredCategoriesError": "Wählen Sie mindestens eine bevorzugte Kategorie aus.",
       "preferredCategoriesHelp": "Wählen Sie eine oder mehrere aus. Dies dient lediglich als Interessensignal.",
       "preferredCategoriesLegend": "Bevorzugte Blog-Kategorien",
@@ -203,10 +203,10 @@
       "updateTitle": "Ihre Bewerbung aktualisieren"
     },
     "becomeAuthor": {
-      "encouragement": "Humanity Union fördert Publikationen, die über Feindseligkeit und Spaltung hinausblicken und berücksichtigen, wie sich ein Problem auf Menschen, Gemeinschaften und die breitere menschliche Erfahrung auswirkt. Autoren können stark anderer Meinung sein. Untermauern Sie Behauptungen nach Möglichkeit mit Belegen, unterscheiden Sie Tatsachen von Meinungen, vermeiden Sie entmenschlichende Sprache, erklären Sie Konsequenzen, erkennen Sie Ungewissheiten an und erwägen Sie konstruktive Alternativen.",
+      "encouragement": "{siteName} fördert Publikationen, die über Feindseligkeit und Spaltung hinausblicken und berücksichtigen, wie sich ein Problem auf Menschen, Gemeinschaften und die breitere menschliche Erfahrung auswirkt. Autoren können stark anderer Meinung sein. Untermauern Sie Behauptungen nach Möglichkeit mit Belegen, unterscheiden Sie Tatsachen von Meinungen, vermeiden Sie entmenschlichende Sprache, erklären Sie Konsequenzen, erkennen Sie Ungewissheiten an und erwägen Sie konstruktive Alternativen.",
       "purpose": "Der Blog ist ein Ort für tiefgründige Publikationen, die Menschen dabei helfen sollen, Ideen, Herausforderungen, Erfahrungen und mögliche Lösungen aus einer Perspektive der Menschlichkeit, Verantwortung und des konstruktiven Dialogs zu verstehen.",
       "standards": "Artikel sollten darauf abzielen, zum Verständnis beizutragen, statt zu Feindseligkeit, Manipulation, persönlichen Angriffen oder Sensationsgier. Dies ist keine Anforderung an ideologische Konformität – das Prinzip lautet Menschenwürde, Evidenz, konstruktives Denken, Verantwortung und Respekt vor anderen.",
-      "thanks": "Vielen Dank für Ihr Interesse daran, zum Blog der Humanity Union beizutragen.",
+      "thanks": "Vielen Dank für Ihr Interesse daran, zum Blog der {siteName} beizutragen.",
       "title": "Blog-Autor werden"
     },
     "blockedWorkspaceNote": "Ihr Teilnehmer-Arbeitsbereich bleibt verfügbar. Die Werkzeuge für Autorenveröffentlichungen sind ausgesetzt, bis ein Administrator den Zugriff wiederherstellt.",
@@ -434,7 +434,7 @@
       "decisionVotesLinked": "Stimmenzahlen spiegeln Entscheidungen wider, die mit Ihren Initiativen verknüpft sind.",
       "decisionVotesLinkedPendingApi": "Stimmenzahlen spiegeln Entscheidungen wider, die mit Ihren Initiativen verknüpft sind. Eine teilnehmerweite Abstimmungs-API ist noch nicht verbunden."
     },
-    "pageSubtitle": "Ihre private bürgerschaftliche Arbeit im gesamten Lebenszyklus der Humanity Union",
+    "pageSubtitle": "Ihre private bürgerschaftliche Arbeit im gesamten Lebenszyklus der {siteName}",
     "sections": {
       "navAria": "Initiative-Arbeitsbereichsabschnitte",
       "navLabel": "Abschnitte",
@@ -1070,7 +1070,7 @@
         "document": {
           "aria": "Bürgerarchiv",
           "completeness": "Vollständigkeit",
-          "disclaimer": "Dieses Dokument dokumentiert die bürgerschaftliche Beteiligung und die Initiative-Aktivität auf der Humanity Union-Plattform. Es handelt sich hierbei um kein offizielles behördliches oder rechtlich bindendes Dokument, es sei denn, es wird von der zuständigen Institution unabhängig anerkannt.",
+          "disclaimer": "Dieses Dokument dokumentiert die bürgerschaftliche Beteiligung und die Initiative-Aktivität auf der {siteName}-Plattform. Es handelt sich hierbei um kein offizielles behördliches oder rechtlich bindendes Dokument, es sei denn, es wird von der zuständigen Institution unabhängig anerkannt.",
           "draftPreview": "Entwurfsvorschau",
           "emptySection": "Kein Inhalt aufgezeichnet.",
           "lifecycleTimeline": "Lebenszyklus-Zeitachse",
@@ -1630,7 +1630,7 @@
           "emptySummary": "Keine Zusammenfassung angegeben.",
           "loadFailed": "Diese Petition konnte nicht geladen werden.",
           "loading": "Lade Petition…",
-          "participationTransparencyNote": "Das Unterzeichnen dieser Petition ist eine Form der bürgerschaftlichen Teilnahme bei Humanity Union. Es handelt sich hierbei um keine rechtlich bindende Petition, wodurch weder rechtliche noch staatliche Verpflichtungen begründet werden.",
+          "participationTransparencyNote": "Das Unterzeichnen dieser Petition ist eine Form der bürgerschaftlichen Teilnahme bei {siteName}. Es handelt sich hierbei um keine rechtlich bindende Petition, wodurch weder rechtliche noch staatliche Verpflichtungen begründet werden.",
           "previewSignatureDisabled": "Das Unterschriften-Widget ist in der Vorschau deaktiviert – die Unterzeichnung ist für Besucher verfügbar, sobald diese Petition veröffentlicht und freigegeben ist.",
           "publishedAt": "Veröffentlicht am {date}",
           "shareAria": "Petition teilen: {title}",
@@ -2762,9 +2762,9 @@
         },
         "aria": "Arbeitswerkzeuge der Phase",
         "askAssistant": "Assistent fragen",
-        "assistantGenericHint": "Fragen Sie zu dieser Phase oder zu Humanity Union. Vorschläge dienen nur als Orientierung.",
+        "assistantGenericHint": "Fragen Sie zu dieser Phase oder zu {siteName}. Vorschläge dienen nur als Orientierung.",
         "assistantLoadFailed": "Assistenten-Daten konnten nicht geladen werden.",
-        "assistantTitle": "Humanity Union Assistent",
+        "assistantTitle": "{siteName} Assistent",
         "completeness": {
           "draftInProgress": "Entwurf in Bearbeitung.",
           "draftInProgressSaveHint": "Entwurf in Bearbeitung — verwenden Sie „Entwurf speichern“ im Haupt-Arbeitsbereich, um Ihre Änderungen beizubehalten.",
@@ -2999,7 +2999,7 @@
         "superseded": "Ersetzt"
       },
       "pageIntro": "Permanentes institutionelles Gedächtnis abgeschlossener bürgerschaftlicher Initiativen und ihrer verifizierten öffentlichen Ergebnisse. Jeder Archivdatensatz dokumentiert den gesamten Lebenszyklus einer Initiative – keine isolierten Phasenaufzeichnungen.",
-      "pageTitle": "Öffentliches Bürgerarchiv der Humanity Union",
+      "pageTitle": "Öffentliches Bürgerarchiv der {siteName}",
       "resultsCount": "{count} Ergebnisse",
       "resultsCountOne": "{count} Ergebnis",
       "resultsTitle": "Ergebnisse des Bürgerarchivs",
@@ -3561,7 +3561,7 @@
         "republished": "Initiative erneut veröffentlicht. Öffentliche Projektion aktualisiert.",
         "saveFailed": "Speichern fehlgeschlagen: {detail}",
         "saveUnable": "Initiative konnte nicht gespeichert werden.",
-        "serviceUnavailable": "Der Dienst von Humanity Union ist vorübergehend nicht verfügbar.",
+        "serviceUnavailable": "Der Dienst von {siteName} ist vorübergehend nicht verfügbar.",
         "signInToCreate": "Melden Sie sich an, um eine Initiative zu erstellen.",
         "signInToDelete": "Melden Sie sich an, um diesen Entwurf zu löschen.",
         "unknownError": "Unbekannter Fehler",
@@ -3569,7 +3569,7 @@
         "updated": "Initiative aktualisiert."
       },
       "newsSource": {
-        "disclaimer": "Verweis auf einen externen Herausgeber. Humanity Union hat diesen Artikel nicht unabhängig überprüft.",
+        "disclaimer": "Verweis auf einen externen Herausgeber. {siteName} hat diesen Artikel nicht unabhängig überprüft.",
         "remove": "Quelle entfernen"
       },
       "overlap": {
@@ -3729,7 +3729,7 @@
         "backToInitiativePlain": "Zurück zur Initiative",
         "downloadFailed": "Herunterladen fehlgeschlagen.",
         "endOfVoting": "Ende der Abstimmung: {value}",
-        "eyebrow": "Humanity Union-Community-Abstimmung",
+        "eyebrow": "{siteName}-Community-Abstimmung",
         "geography": "Geografie: {value}",
         "loadFailed": "Die Wahl konnte nicht geladen werden.",
         "loading": "Wahl wird geladen…",
@@ -3744,7 +3744,7 @@
         "abstain": "Enthaltung",
         "blocked": "Gesperrt",
         "candidateFallback": "Kandidat",
-        "disclaimerBody": "Dies sind Abstimmungsergebnisse der Humanity Union-Gemeinschaft. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
+        "disclaimerBody": "Dies sind Abstimmungsergebnisse der {siteName}-Gemeinschaft. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
         "disclaimerTitle": "Ergebnisse der Gemeinschaftsabstimmung",
         "download": "Ergebnisse herunterladen",
         "electionStatus": "Wahlstatus: {status}",
@@ -4657,7 +4657,7 @@
     "loading": "Profil wird geladen…",
     "loadingMembership": "Mitgliedschaftsstatus wird geladen...",
     "logIn": "Anmelden",
-    "membershipNote": "Die Mitgliedschaft bestätigt die freiwillige Unterstützung für Humanity Union. Sie ändert nicht das Stimmrecht und gewährt keine Identitätsprüfung.",
+    "membershipNote": "Die Mitgliedschaft bestätigt die freiwillige Unterstützung für {siteName}. Sie ändert nicht das Stimmrecht und gewährt keine Identitätsprüfung.",
     "membershipUnavailable": "Mitgliedschaftsstatus ist nicht verfügbar.",
     "openMembership": "Mitgliedschaft öffnen",
     "participationArea": {
@@ -4763,7 +4763,7 @@
       "save": "Fähigkeiten speichern",
       "saveError": "Fähigkeiten konnten nicht gespeichert werden."
     },
-    "subtitle": "Ihr Humanity Union Teilnehmer-Profil",
+    "subtitle": "Ihr {siteName} Teilnehmer-Profil",
     "summaries": {
       "editInterests": "Interessen bearbeiten",
       "editLinks": "Berufliche Links bearbeiten",
@@ -5028,7 +5028,7 @@
         },
         "what-is-member": {
           "answer": "Ein Mitglied ist ein Teilnehmer, der den Mitgliedschaftsantrag ausgefüllt und einen einmaligen Mitgliedschaftsbeitrag bestätigt hat. Mitglieder bleiben gleichberechtigte Teilnehmer bei allen bürgerschaftlichen Entscheidungen.",
-          "question": "Was ist ein Mitglied der Humanity Union?"
+          "question": "Was ist ein Mitglied der {siteName}?"
         }
       },
       "regionLabel": "Mitgliedschaft-FAQ",
@@ -5572,7 +5572,7 @@
         "title": "Initiative veröffentlicht"
       },
       "member_badge_contribution_confirmed": {
-        "message": "Deine offizielle Anfrage für einen Humanity Union Mitglied-Artikel wurde bestätigt.",
+        "message": "Deine offizielle Anfrage für einen {siteName} Mitglied-Artikel wurde bestätigt.",
         "title": "Offizielle Anfrage für Mitglied-Artikel bestätigt"
       },
       "member_badge_contribution_refunded": {
@@ -5580,11 +5580,11 @@
         "title": "Zusätzlicher Mitgliedsbeitrag erstattet"
       },
       "member_badge_delivered": {
-        "message": "Deine offizielle Anfrage für den Humanity Union Mitglied-Artikel wurde zugestellt.",
+        "message": "Deine offizielle Anfrage für den {siteName} Mitglied-Artikel wurde zugestellt.",
         "title": "Offizieller Mitglied-Artikel zugestellt"
       },
       "member_badge_shipped": {
-        "message": "Ihre offizielle Anfrage für den Humanity Union Mitglied-Artikel wurde verschickt.",
+        "message": "Ihre offizielle Anfrage für den {siteName} Mitglied-Artikel wurde verschickt.",
         "title": "Offizieller Mitglied-Artikel verschickt"
       },
       "official_response_received": {
@@ -5737,7 +5737,7 @@
       "selectRegionFirst": "Wählen Sie mindestens eine bevorzugte Region aus, um Städte / Gemeinden auszuwählen."
     },
     "language": {
-      "help": "Legen Sie Ihre bevorzugte Sprache für Humanity Union fest. Schreibsprachen sind separat und ändern nicht die Darstellung der Website.",
+      "help": "Legen Sie Ihre bevorzugte Sprache für {siteName} fest. Schreibsprachen sind separat und ändern nicht die Darstellung der Website.",
       "interfaceLanguage": "Benutzeroberflächensprache",
       "noReadingLanguage": "Keine Lesesprache gespeichert",
       "preferredReadingHelp": "Wählen Sie die Sprache aus, in der Sie die Plattform am liebsten lesen möchten. Für die beste Erfahrung stimmen Sie diese mit der Übersetzungssprache Ihres Browsers ab.",
@@ -5746,14 +5746,14 @@
       "savedUnavailable": "{code} (gespeichert – im Katalog vorübergehend nicht verfügbar)",
       "translationPreference": "Übersetzungseinstellung",
       "writingLanguages": "Schreibsprachen",
-      "writingLanguagesHelp": "Fügen Sie die Sprachen hinzu, die Sie zum Schreiben und für die Zusammenarbeit verwenden. Diese Einstellungen helfen Humanity Union zu verstehen, wie Sie kommunizieren, und steuern nicht die Übersetzungssprache Ihres Browsers.",
+      "writingLanguagesHelp": "Fügen Sie die Sprachen hinzu, die Sie zum Schreiben und für die Zusammenarbeit verwenden. Diese Einstellungen helfen {siteName} zu verstehen, wie Sie kommunizieren, und steuern nicht die Übersetzungssprache Ihres Browsers.",
       "writingLanguagesPlaceholder": "de, uk"
     },
     "loadError": "Einstellungen konnten nicht geladen werden.",
     "loading": "Einstellungen werden geladen...",
     "notification": {
       "emailEnabled": "E-Mail-Benachrichtigungen erhalten",
-      "emailHelp": "Wenn diese Option aktiviert ist, sendet Humanity Union einfache E-Mail-Benachrichtigungen, wenn neue Aktivitäten Ihre Aufmerksamkeit erfordern. Beispiel: „Sie haben 3 neue Benachrichtigungen in Ihrem Arbeitsbereich.“ E-Mails enthalten niemals private Unterhaltungsinhalte oder vertrauliche Initiativinformationen."
+      "emailHelp": "Wenn diese Option aktiviert ist, sendet {siteName} einfache E-Mail-Benachrichtigungen, wenn neue Aktivitäten Ihre Aufmerksamkeit erfordern. Beispiel: „Sie haben 3 neue Benachrichtigungen in Ihrem Arbeitsbereich.“ E-Mails enthalten niemals private Unterhaltungsinhalte oder vertrauliche Initiativinformationen."
     },
     "notificationFrequencies": {
       "daily_digest": "Tägliche Zusammenfassung",
@@ -5781,7 +5781,7 @@
       "visibility": "Sichtbarkeit"
     },
     "signInPrompt": "Melden Sie sich an, um Ihre Einstellungen zu verwalten.",
-    "subtitle": "Ihre Einstellungen für Erfahrung und Teilnahme bei Humanity Union",
+    "subtitle": "Ihre Einstellungen für Erfahrung und Teilnahme bei {siteName}",
     "title": "Einstellungen",
     "translationPreferences": {
       "ask": "Übersetzung anbieten; standardmäßig Original behalten",
@@ -5789,7 +5789,7 @@
       "preferred": "Übersetzung bevorzugen, wenn verfügbar"
     },
     "unavailable": "Einstellungen sind nicht verfügbar.",
-    "unavailableExplanation": "Wir konnten keine Verbindung zum Humanity Union-Dienst herstellen. Bitte versuchen Sie es in Kürze erneut.",
+    "unavailableExplanation": "Wir konnten keine Verbindung zum {siteName}-Dienst herstellen. Bitte versuchen Sie es in Kürze erneut.",
     "unavailableTitle": "Einstellungen vorübergehend nicht verfügbar",
     "visibility": {
       "interestsVisibility": "Wer kann meine Interessen sehen",
@@ -6594,47 +6594,47 @@
     "goBack": "Zurück",
     "install": {
       "addToHomeScreen": "Zum Startbildschirm hinzufügen",
-      "alreadyInstalled": "Humanity Union ist bereits auf diesem Gerät installiert.",
-      "androidHintPrimary": "Falls auf dieser Seite eine Schaltfläche zum Installieren von Humanity Union verfügbar ist, verwenden Sie diese bitte zuerst.",
+      "alreadyInstalled": "{siteName} ist bereits auf diesem Gerät installiert.",
+      "androidHintPrimary": "Falls auf dieser Seite eine Schaltfläche zum Installieren von {siteName} verfügbar ist, verwenden Sie diese bitte zuerst.",
       "androidHintSecondary": "Falls Chrome die Installationsoption nicht anzeigt: Aktualisieren Sie die Seite, stellen Sie sicher, dass die Website in Chrome geöffnet ist, und prüfen Sie, ob die App nicht bereits installiert ist.",
-      "androidStep1": "Öffnen Sie Humanity Union in Chrome.",
+      "androidStep1": "Öffnen Sie {siteName} in Chrome.",
       "androidStep2": "Tippen Sie auf das Browsermenü (⋮).",
       "androidStep3": "Wählen Sie App installieren oder Zum Startbildschirm hinzufügen.",
       "androidStep4": "Bestätigen Sie die Installation.",
-      "androidStep5": "Das Humanity Union-Symbol wird auf Ihrem Startbildschirm bzw. App-Launcher angezeigt.",
+      "androidStep5": "Das {siteName}-Symbol wird auf Ihrem Startbildschirm bzw. App-Launcher angezeigt.",
       "androidTitle": "Android – Chrome",
-      "appTitle": "Humanity Union App",
-      "automaticUnavailable": "Die automatische Installation ist in dieser Browsersitzung nicht verfügbar. Verwenden Sie die folgenden Schritte oder öffnen Sie Humanity Union in einem normalen (nicht privaten) Browserfenster neu, falls die Installation nicht angezeigt wird.",
+      "appTitle": "{siteName} App",
+      "automaticUnavailable": "Die automatische Installation ist in dieser Browsersitzung nicht verfügbar. Verwenden Sie die folgenden Schritte oder öffnen Sie {siteName} in einem normalen (nicht privaten) Browserfenster neu, falls die Installation nicht angezeigt wird.",
       "badgeNote": "Das Verhalten von Benachrichtigungen und App-Symbol-Badges hängt von Ihrem Gerät, Betriebssystem, Browser und den Benachrichtigungsberechtigungen ab.",
       "close": "Schließen",
       "closeGuideAria": "Installationsanleitung schließen",
-      "guideSubtitle": "Fügen Sie Humanity Union Ihrem Startbildschirm hinzu, um schnelleren Zugriff und ein App-ähnliches Erlebnis zu erhalten.",
-      "guideTitle": "Humanity Union App installieren",
-      "installCta": "Humanity Union installieren",
+      "guideSubtitle": "Fügen Sie {siteName} Ihrem Startbildschirm hinzu, um schnelleren Zugriff und ein App-ähnliches Erlebnis zu erhalten.",
+      "guideTitle": "{siteName} App installieren",
+      "installCta": "{siteName} installieren",
       "installationGuide": "Installationsanleitung",
       "installing": "Wird installiert…",
-      "iosA2hsStandaloneNote": "Nachdem Sie das Symbol hinzugefügt haben, öffnet sich Humanity Union als installierte App vom Startbildschirm aus.",
+      "iosA2hsStandaloneNote": "Nachdem Sie das Symbol hinzugefügt haben, öffnet sich {siteName} als installierte App vom Startbildschirm aus.",
       "iosA2hsStep1": "Tippen Sie auf die Safari-Teilen-Schaltfläche.",
       "iosA2hsStep2": "Wählen Sie „Zum Home-Bildschirm“.",
       "iosA2hsStep3": "Bestätigen Sie durch Tippen auf Hinzufügen.",
       "iosA2hsTitle": "Zum Startbildschirm hinzufügen",
       "iosHintNotifications": "Erlauben Sie Benachrichtigungen, wenn Sie dazu aufgefordert werden, falls Sie unterstützte Abzeichen- und Benachrichtigungsfunktionen nutzen möchten.",
       "iosHintSafari": "Das Hinzufügen zum Startbildschirm muss über Safari erfolgen. Wenn diese Seite im Browser einer anderen App geöffnet ist, öffnen Sie sie bitte zuerst in Safari.",
-      "iosStep1": "Öffnen Sie Humanity Union in Safari.",
+      "iosStep1": "Öffnen Sie {siteName} in Safari.",
       "iosStep2": "Tippen Sie auf die Teilen-Schaltfläche.",
       "iosStep3": "Scrolle nach unten und wähle Zum Home-Bildschirm.",
       "iosStep4": "Überprüfe den App-Namen.",
       "iosStep5": "Tippe auf Hinzufügen.",
-      "iosStep6": "Starte Humanity Union über das neue Home-Bildschirm-Symbol.",
+      "iosStep6": "Starte {siteName} über das neue Home-Bildschirm-Symbol.",
       "iosTitle": "iPhone / iPad – Safari",
-      "lead": "Nimm Humanity überallhin mit. Installiere die App für den direkten Zugriff auf deinen Arbeitsbereich, deine Initiativen, Benachrichtigungen und den Humanity Union Assistent.",
+      "lead": "Nimm Humanity überallhin mit. Installiere die App für den direkten Zugriff auf deinen Arbeitsbereich, deine Initiativen, Benachrichtigungen und den {siteName} Assistent.",
       "openWorkspace": "Arbeitsbereich öffnen"
     },
     "menuTitle": "Menü",
     "openMenu": "Menü öffnen",
     "playIntroSound": "Intro-Ton abspielen",
-    "searchLabel": "Humanity Union durchsuchen",
-    "searchPlaceholder": "Humanity Union durchsuchen",
+    "searchLabel": "{siteName} durchsuchen",
+    "searchPlaceholder": "{siteName} durchsuchen",
     "sound": "Ton"
   },
   "search": {
@@ -6793,7 +6793,7 @@
       "heading": "Einleitung",
       "honeyEarthAlt": "Illustration der Erde mit einem Wabenmuster, das die gemeinsame Fürsorge für unsere gemeinsame Heimat symbolisiert",
       "number": "1",
-      "p1": "Die Entwicklung der Plattform <platform>Humanity Union</platform> ist ein persönlicher Beitrag, den jede und jeder von uns zu unserer eigenen Zukunft und der Zukunft kommender Generationen leisten kann.",
+      "p1": "Die Entwicklung der Plattform <platform>{siteName}</platform> ist ein persönlicher Beitrag, den jede und jeder von uns zu unserer eigenen Zukunft und der Zukunft kommender Generationen leisten kann.",
       "p2": "Hätten unsere Vorfahren Zugang zu den technologischen Werkzeugen gehabt, die uns heute zur Verfügung stehen – dem Internet, Computern, Smartphones sowie Bildungs- und Informationswebplattformen –, hätten unsere Gesellschaften möglicherweise schon viel früher ein höheres Niveau an sozialem Bewusstsein und Verantwortung entwickelt.",
       "p3": "Grössere soziale Kompetenz hilft Menschen, durchdachtere und rationalere Entscheidungen zu treffen. Solche Entscheidungen bilden das Fundament für soziale Gerechtigkeit, Wohlbefinden und Sicherheit.",
       "p4": "Wir sind eine einzigartige Generation. Wir haben den Übergang von einer weitgehend traditionellen Welt in ein Zeitalter erlebt, das normalen Menschen mächtige technologische Werkzeuge für Kommunikation, Bildung, Zusammenarbeit und kollektives Handeln an die Hand gibt.",
@@ -6809,7 +6809,7 @@
       "p1": "Ein <emphasis>Freiwilliger</emphasis> ist kein Titel. Es ist ein Zeichen von Verantwortung – eines, das die Gesellschaft oft unterschätzt.",
       "p2": "Ein Großteil unserer Welt wird durch Freiwillige, Enthusiasten und Menschen unterstützt und verbessert, die beschließen zu handeln, ohne darauf zu warten, dass jemand anderes zuerst handelt. Aber Enthusiasmus allein führt nicht immer zu positiven Ergebnissen. Bildung, Werte, Erziehung und Verständnis beeinflussen, ob unsere Energie dem Fortschritt und dem Gemeinwohl dient oder von persönlichem Ehrgeiz, Gier, Vorurteilen oder Manipulation angetrieben wird.",
       "p3": "Wir bemerken nicht immer, wenn wir selbst anfangen, Ignoranz oder Aggression zu tolerieren. Manchmal wenden wir mehr Mühe darauf auf, uns an schädliche Umstände anzupassen, als sie zu verändern. Dabei machen wir es uns und anderen möglicherweise unabsichtlich schwerer.",
-      "p4": "Die <platform>Humanity Union-Plattform</platform> wird als sicheres Werkzeug für alle entwickelt – ganz gleich, ob Sie in einer demokratischen Gesellschaft mit funktionierenden Institutionen leben oder unter einem autoritären und aggressiven Regime, in dem Menschen eingeschüchtert, zum Schweigen gebracht oder in starre soziale Hierarchien gezwungen werden.",
+      "p4": "Die <platform>{siteName}-Plattform</platform> wird als sicheres Werkzeug für alle entwickelt – ganz gleich, ob Sie in einer demokratischen Gesellschaft mit funktionierenden Institutionen leben oder unter einem autoritären und aggressiven Regime, in dem Menschen eingeschüchtert, zum Schweigen gebracht oder in starre soziale Hierarchien gezwungen werden.",
       "p5": "Unsere zentrale Aufgabe ist einfach: <emphasis>uns um universelle menschliche Werte zu einen und dabei nationale Kulturen, Traditionen und Identitäten zu respektieren, die mit den fundamentalen Menschenrechten und -freiheiten vereinbar sind.</emphasis>",
       "p6": "Sie benötigen keine besondere Position, keinen Beruf und keinen Status, um teilzunehmen.",
       "p7": "Kommen Sie auf die Plattform. Erkunden und unterstützen Sie von anderen Personen erstellte Initiativen. Beteiligen Sie sich an Diskussionen, Umfragen und Wahlen. Erstellen Sie Ihre eigene Initiative, wenn Sie ein Problem erkennen, das Aufmerksamkeit verdient. Helfen Sie anderen, ihre Ideen zu verbessern. Beteiligen Sie sich, wann immer Sie können, daran, lohnenswerte Initiativen in echte Taten umzusetzen.",
@@ -6823,7 +6823,7 @@
       "number": "3",
       "p1": "Sie müssen nicht die ganze Welt alleine verändern.",
       "p2": "Bringen Sie ein, was Sie können: Ihr Wissen, Ihre Erfahrung, Ihre Zeit, Ihre Ideen, Fragen, beruflichen Fähigkeiten oder einfach Ihre Bereitschaft, eine gute Initiative zu unterstützen.",
-      "p3": "Nutze die Werkzeuge der <platform>Humanity Union-Plattform</platform> und setze sie für das Gute ein.",
+      "p3": "Nutze die Werkzeuge der <platform>{siteName}-Plattform</platform> und setze sie für das Gute ein.",
       "p4": "Unterstütze eine Initiative.",
       "p5": "Hilf einer anderen Person.",
       "p6": "Teile Wissen.",
@@ -6851,7 +6851,7 @@
     "account": "Konto",
     "accountActionFailed": "Kontoaktion fehlgeschlagen",
     "accountProfileSummary": "Kontoprofil-Zusammenfassung",
-    "accountSubtitle": "Ihr Authentifizierungskonto bei der Humanity Union",
+    "accountSubtitle": "Ihr Authentifizierungskonto bei der {siteName}",
     "accountUpdate": "Kontenaktualisierung",
     "authGate": {
       "checkingSession": "Sitzung wird überprüft...",
@@ -6985,7 +6985,7 @@
       "sectionsNavAria": "Initiative-Arbeitsbereichsabschnitte",
       "sectionsNavLabel": "Abschnitte",
       "startNew": "Neue Initiative starten",
-      "subtitle": "Beteiligungsinitiativen in Humanity Union",
+      "subtitle": "Beteiligungsinitiativen in {siteName}",
       "title": "Initiativen",
       "unavailableExplanation": "Wir konnten keine Verbindung zum Initiativen-Dienst herstellen. Bitte versuchen Sie es in Kürze erneut.",
       "unavailableTitle": "Arbeitsbereich vorübergehend nicht verfügbar",
@@ -7278,12 +7278,12 @@
           "charHint": "{length} / {guide} empfohlen · max {max}",
           "defaultsToExcerpt": "Standardmäßig Auszug",
           "defaultsToTitle": "Standardmäßig Publikationstitel",
-          "distributionCopy": "Wählen Sie die Social-Media-Kanäle von Humanity Union aus, auf denen diese Publikation verbreitet werden kann. Dies ist kein Zugriff auf Ihre persönlichen Social-Media-Konten.",
+          "distributionCopy": "Wählen Sie die Social-Media-Kanäle von {siteName} aus, auf denen diese Publikation verbreitet werden kann. Dies ist kein Zugriff auf Ihre persönlichen Social-Media-Konten.",
           "distributionHeading": "Verbreitung",
           "heading": "Publikationsoptimierung",
-          "huShareHelper": "Die Auswahl eines Kanals erlaubt es Humanity Union, diese Publikation über den offiziellen konfigurierten Kanal zu verbreiten. Eine Profil-URL allein postet nicht automatisch – die Zustellung wartet auf eine echte Anbieterintegration. Einstellungen umgehen niemals die Überprüfung, Planung oder Sperren.",
-          "huShareLegend": "Humanity Union Social-Distribution",
-          "lede": "SEO- und Social-Metadaten verbleiben bei dieser Publikation. Verbreitungsberechtigungen werden für offizielle Humanity Union-Kanäle über den Ausgangsordner der Plattform eingereiht – sie erfinden niemals externe Anmeldeinformationen oder behaupten einen erfolgreichen Versand.",
+          "huShareHelper": "Die Auswahl eines Kanals erlaubt es {siteName}, diese Publikation über den offiziellen konfigurierten Kanal zu verbreiten. Eine Profil-URL allein postet nicht automatisch – die Zustellung wartet auf eine echte Anbieterintegration. Einstellungen umgehen niemals die Überprüfung, Planung oder Sperren.",
+          "huShareLegend": "{siteName} Social-Distribution",
+          "lede": "SEO- und Social-Metadaten verbleiben bei dieser Publikation. Verbreitungsberechtigungen werden für offizielle {siteName}-Kanäle über den Ausgangsordner der Plattform eingereiht – sie erfinden niemals externe Anmeldeinformationen oder behaupten einen erfolgreichen Versand.",
           "metaDescription": "Meta-Beschreibung",
           "noSocialImage": "Noch kein Social-Bild",
           "searchCopy": "Optionale Suchtitel und -beschreibung. Leer lassen, um auf der öffentlichen Seite standardmäßig den Publikationstitel und den Auszug zu verwenden.",
@@ -7675,7 +7675,7 @@
       "FULL": "Vollfinanzierung beantragt"
     },
     "consent": {
-      "label": "Ich willige ein, dass Humanity Union diese Bewerbung wie in der <privacy>Datenschutzrichtlinie</privacy> beschrieben verarbeitet.",
+      "label": "Ich willige ein, dass {siteName} diese Bewerbung wie in der <privacy>Datenschutzrichtlinie</privacy> beschrieben verarbeitet.",
       "versionNote": "Einwilligungsversion: {version}"
     },
     "actions": {
@@ -7864,8 +7864,7 @@
         "deepLinkParticipantUnavailable": "Diese teilnehmende Person wurde im Verzeichnis nicht gefunden."
       }
     }
-  }
-,
+  },
   "adminNotifications": {
     "types": {
       "rrp_application_submitted": "Regionalvertreter-Bewerbung eingereicht"

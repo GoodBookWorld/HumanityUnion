@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DirectConversationSummary } from "@hu/types";
 
 import { isAuthenticationRequiredError } from "../../../lib/api-client";
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 import { HumanityUnionAssistantWidget } from "../../humanity-union-assistant";
 import { formatInitiativeDate } from "../../initiatives/initiative-lifecycle-labels";
 import { fetchMyDirectConversations } from "../../direct-messaging/api";
@@ -133,8 +134,9 @@ function NotificationRow({
 }) {
   const t = useTranslations("notifications");
   const locale = useLocale();
+  const siteName = useBrandSiteName();
   const [busy, setBusy] = useState(false);
-  const presentation = resolveNotificationPresentation(notification, t);
+  const presentation = resolveNotificationPresentation(notification, t, siteName);
 
   async function handleMarkRead() {
     setBusy(true);
@@ -275,7 +277,8 @@ function DirectMessageRow({ conversation }: { conversation: DirectConversationSu
 function ChannelMessageRow({ notification }: { notification: MemberNotificationView }) {
   const t = useTranslations("notifications");
   const locale = useLocale();
-  const presentation = resolveNotificationPresentation(notification, t);
+  const siteName = useBrandSiteName();
+  const presentation = resolveNotificationPresentation(notification, t, siteName);
 
   return (
     <CommunicationCard
@@ -358,6 +361,7 @@ function ArchiveRow({
 }) {
   const t = useTranslations("notifications");
   const locale = useLocale();
+  const siteName = useBrandSiteName();
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
@@ -384,7 +388,7 @@ function ArchiveRow({
 
   const presentation =
     item.kind === "notification"
-      ? resolveNotificationPresentation(item.record, t)
+      ? resolveNotificationPresentation(item.record, t, siteName)
       : { title: record.title, message: record.message };
 
   return (

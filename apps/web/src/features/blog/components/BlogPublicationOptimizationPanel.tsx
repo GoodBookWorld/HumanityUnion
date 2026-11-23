@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 import { useEffect, useId, useState } from "react";
 
 import type {
@@ -58,6 +60,7 @@ export function BlogPublicationOptimizationPanel({
   onChange,
 }: BlogPublicationOptimizationPanelProps) {
   const t = useTranslations("workspace.publishingPage");
+  const siteName = useBrandSiteName();
   const seoTitleId = useId();
   const seoDescriptionId = useId();
   const socialTitleId = useId();
@@ -148,7 +151,7 @@ export function BlogPublicationOptimizationPanel({
       <h2 className="hu-heading-3" id="blog-publication-optimization-heading">
         {t("editor.seo.heading")}
       </h2>
-      <p className="hu-caption blog-publication-optimization__lede">{t("editor.seo.lede")}</p>
+      <p className="hu-caption blog-publication-optimization__lede">{t("editor.seo.lede", { siteName })}</p>
 
       <div className="blog-publication-optimization__grid">
         <section
@@ -309,7 +312,7 @@ export function BlogPublicationOptimizationPanel({
             {t("editor.seo.distributionHeading")}
           </h3>
           <p className="hu-caption blog-publication-optimization__section-copy">
-            {t("editor.seo.distributionCopy")}
+            {t("editor.seo.distributionCopy", { siteName })}
           </p>
 
           <fieldset
@@ -318,10 +321,10 @@ export function BlogPublicationOptimizationPanel({
             aria-describedby={`${distributionLegendId}-help`}
           >
             <legend className="hu-label" id={distributionLegendId}>
-              {t("editor.seo.huShareLegend")}
+              {t("editor.seo.huShareLegend", { siteName })}
             </legend>
             <HelperText id={`${distributionLegendId}-help`}>
-              {t("editor.seo.huShareHelper")}
+              {t("editor.seo.huShareHelper", { siteName })}
             </HelperText>
             <ul className="blog-publication-optimization__account-list">
               {PLATFORM_SOCIAL_NETWORKS.map(({ networkId, label }) => {

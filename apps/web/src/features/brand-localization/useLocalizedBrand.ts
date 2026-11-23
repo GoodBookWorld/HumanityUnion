@@ -34,3 +34,8 @@ export function useLocalizedBrand(): ResolvedLocalizedBrand {
 
   return brand;
 }
+
+/** Published siteName for the current language, with the builtin English fallback. */
+export function useBrandSiteName(): string {
+  return useLocalizedBrand().siteName;
+}

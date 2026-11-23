@@ -72,10 +72,10 @@
     "required": "(required)",
     "signInFailed": "Sign in failed",
     "loginTitle": "Log in",
-    "loginSubtitle": "Access your Humanity Union workspace.",
+    "loginSubtitle": "Access your {siteName} workspace.",
     "loadingLoginForm": "Loading login form…",
     "registerTitle": "Create account",
-    "registerSubtitle": "Create your Humanity Union Participant account.",
+    "registerSubtitle": "Create your {siteName} Participant account.",
     "alreadyHaveAccount": "Already have an account?",
     "registrationNotice": "Registration notice",
     "registrationFailed": "Registration failed",
@@ -87,7 +87,7 @@
     "resetEmailSent": "If an account exists, a reset email has been sent.",
     "unableToRequestReset": "Unable to request password reset.",
     "chooseNewPasswordTitle": "Choose a new password",
-    "chooseNewPasswordSubtitle": "Set a new password for your Humanity Union account.",
+    "chooseNewPasswordSubtitle": "Set a new password for your {siteName} account.",
     "newPassword": "New password",
     "resetPassword": "Reset password",
     "passwordResetSuccess": "Your password has been reset. You can log in with your new password.",
@@ -143,7 +143,7 @@
     "developmentMode": "Development mode",
     "developmentOutboxNote": "Development email provider is active. Check the local email outbox in API server logs.",
     "verifyEmailTitle": "Verify email",
-    "verifyEmailSubtitle": "Confirm your Humanity Union account email address.",
+    "verifyEmailSubtitle": "Confirm your {siteName} account email address.",
     "verifyingEmail": "Verifying your email...",
     "emailVerified": "Your email address has been verified.",
     "verificationTokenMissing": "Verification token is missing.",
@@ -156,7 +156,7 @@
     "twoStepLoginByEmail": "Two-Step Login by Email",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "twoStepLoginHelp": "Two-Step Login adds an email code after your password when you sign in. It confirms access to your email account. It is not identity verification or Humanity Union membership.",
+    "twoStepLoginHelp": "Two-Step Login adds an email code after your password when you sign in. It confirms access to your email account. It is not identity verification or {siteName} membership.",
     "confirmEmailBeforeTwoStep": "Confirm your email before enabling Two-Step Login.",
     "verificationCode": "Verification code",
     "securityActionFailed": "Security action failed",
@@ -177,7 +177,7 @@
     "emailChangeTokenMissing": "Email change token is missing.",
     "invalidEmailChangeToken": "Invalid or expired email change token.",
     "deleteAccountTitle": "Delete account",
-    "deleteAccountIntro": "You can schedule deletion of your Humanity Union account. The 30-day recovery period starts only after you confirm an email code.",
+    "deleteAccountIntro": "You can schedule deletion of your {siteName} account. The 30-day recovery period starts only after you confirm an email code.",
     "deleteAccountConsequences": "Public civic records remain. Private messages remain available to the other people in those conversations. You will not be able to sign in or open those messages. After the deadline, this email can register a new account. The new account does not receive this account's roles, appointments, or messages.",
     "deleteAccountButton": "Delete account",
     "deleteAccountSendCode": "Send confirmation code",
@@ -232,7 +232,7 @@
     "notificationsUnreadAria": "Notifications, {count} unread",
     "noUnreadNotifications": "No unread notifications",
     "account": "Account",
-    "accountSubtitle": "Your Humanity Union authentication account",
+    "accountSubtitle": "Your {siteName} authentication account",
     "loadingAccount": "Loading account...",
     "unableToLoadAccount": "Unable to load account.",
     "signInToViewAccount": "Sign in to view your account.",
@@ -363,7 +363,7 @@
     "signInRequiredCopy": "<login>Log in</login> or <register>create an account</register> to use workspace features.",
     "initiativesPage": {
       "title": "Initiatives",
-      "subtitle": "Participation initiatives in Humanity Union",
+      "subtitle": "Participation initiatives in {siteName}",
       "loading": "Loading initiatives workspace…",
       "myInitiatives": "My Initiatives",
       "startNew": "Start New Initiative",
@@ -587,7 +587,7 @@
         },
         "seo": {
           "heading": "Publication Optimization",
-          "lede": "SEO and social metadata stay on this publication. Distribution permissions queue through the platform outbox for official Humanity Union channels — they never invent external credentials or claim a successful send.",
+          "lede": "SEO and social metadata stay on this publication. Distribution permissions queue through the platform outbox for official {siteName} channels — they never invent external credentials or claim a successful send.",
           "searchHeading": "Search Optimization",
           "searchCopy": "Optional search title and description. Leave blank to fall back to the publication title and excerpt on the public page.",
           "seoTitle": "SEO title",
@@ -608,9 +608,9 @@
           "socialPreviewAria": "Social share preview card",
           "noSocialImage": "No social image yet",
           "distributionHeading": "Distribution",
-          "distributionCopy": "Choose the Humanity Union social channels where this publication may be distributed. This is not access to your personal social accounts.",
-          "huShareLegend": "Humanity Union social distribution",
-          "huShareHelper": "Selecting a channel permits Humanity Union to distribute this publication through the official configured channel. A profile URL alone does not auto-post — delivery waits for a real provider integration. Preferences never bypass review, scheduling, or blocks.",
+          "distributionCopy": "Choose the {siteName} social channels where this publication may be distributed. This is not access to your personal social accounts.",
+          "huShareLegend": "{siteName} social distribution",
+          "huShareHelper": "Selecting a channel permits {siteName} to distribute this publication through the official configured channel. A profile URL alone does not auto-post — delivery waits for a real provider integration. Preferences never bypass review, scheduling, or blocks.",
           "channelLoading": "Loading…",
           "channelApiOnly": "External API not connected — permission only",
           "channelNotConfigured": "Official channel not configured"
@@ -865,7 +865,7 @@
     }
   },
   "civicActivity": {
-    "pageSubtitle": "Your private civic work across the Humanity Union lifecycle",
+    "pageSubtitle": "Your private civic work across the {siteName} lifecycle",
     "backToHome": "Back to Home",
     "intro": "Your private civic work dashboard. This shows your own contributions across the {siteName} lifecycle — not popularity, followers, or social ranking.",
     "statusLoaded": "Last loaded {date}. Counts reflect your authenticated workspace data only.",
@@ -943,10 +943,10 @@
   },
   "preferences": {
     "title": "Preferences",
-    "subtitle": "Your Humanity Union experience and participation settings",
+    "subtitle": "Your {siteName} experience and participation settings",
     "loading": "Loading preferences...",
     "unavailableTitle": "Preferences temporarily unavailable",
-    "unavailableExplanation": "We couldn't connect to the Humanity Union service. Please try again shortly.",
+    "unavailableExplanation": "We couldn't connect to the {siteName} service. Please try again shortly.",
     "signInPrompt": "Sign in to manage your preferences.",
     "unavailable": "Preferences are unavailable.",
     "loadError": "Unable to load preferences.",
@@ -964,12 +964,12 @@
       "visibility": "Visibility"
     },
     "language": {
-      "help": "Set your preferred language for Humanity Union. Writing Languages are separate and do not change how the site is presented.",
+      "help": "Set your preferred language for {siteName}. Writing Languages are separate and do not change how the site is presented.",
       "interfaceLanguage": "Interface Language",
       "preferredReadingLanguage": "Preferred Reading Language",
       "preferredReadingHelp": "Select the language for the platform interface. Content written by participants stays in its original language; your browser can translate it if needed.",
       "writingLanguages": "Writing Languages",
-      "writingLanguagesHelp": "Add the languages you use for writing and collaboration. These preferences help Humanity Union understand how you communicate and do not control your browser's translation language.",
+      "writingLanguagesHelp": "Add the languages you use for writing and collaboration. These preferences help {siteName} understand how you communicate and do not control your browser's translation language.",
       "writingLanguagesPlaceholder": "en, uk",
       "translationPreference": "Translation Preference",
       "savedUnavailable": "{code} (saved — temporarily unavailable in catalog)",
@@ -1012,9 +1012,9 @@
     },
     "notification": {
       "emailEnabled": "Receive email notifications",
-      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information.",
+      "emailHelp": "When enabled, {siteName} will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information.",
       "copiesOptIn": "Send email copies of my notifications",
-      "copiesHelp": "Optional. When enabled, Humanity Union may email copies of selected Notification Center items to your verified notification destination (account email or a separately verified alternative). Frequency follows your saved preferences. Delivery depends on platform availability and is not guaranteed for every event. This does not change your login email, does not stop security or account emails, and never removes in-app Notification Center items. Saving preferences does not mean an email was sent.",
+      "copiesHelp": "Optional. When enabled, {siteName} may email copies of selected Notification Center items to your verified notification destination (account email or a separately verified alternative). Frequency follows your saved preferences. Delivery depends on platform availability and is not guaranteed for every event. This does not change your login email, does not stop security or account emails, and never removes in-app Notification Center items. Saving preferences does not mean an email was sent.",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -1086,9 +1086,9 @@
     },
     "becomeAuthor": {
       "title": "Become a Blog Author",
-      "thanks": "Thank you for your interest in contributing to the Humanity Union Blog.",
+      "thanks": "Thank you for your interest in contributing to the {siteName} Blog.",
       "purpose": "The Blog is a place for thoughtful publications that can help people understand ideas, challenges, experience and possible solutions from a perspective of humanity, responsibility and constructive dialogue.",
-      "encouragement": "Humanity Union encourages publications that look beyond hostility and division and consider how an issue affects people, communities and the wider human experience. Authors may disagree strongly. Support claims with evidence where possible, distinguish fact from opinion, avoid dehumanizing language, explain consequences, acknowledge uncertainty, and consider constructive alternatives.",
+      "encouragement": "{siteName} encourages publications that look beyond hostility and division and consider how an issue affects people, communities and the wider human experience. Authors may disagree strongly. Support claims with evidence where possible, distinguish fact from opinion, avoid dehumanizing language, explain consequences, acknowledge uncertainty, and consider constructive alternatives.",
       "standards": "Articles should aim to contribute to understanding rather than hostility, manipulation, personal attacks or sensationalism. This is not a requirement of ideological conformity — the principle is human dignity, evidence, constructive reasoning, responsibility, and respect for others."
     },
     "categories": {
@@ -1101,7 +1101,7 @@
     "application": {
       "title": "Author application",
       "updateTitle": "Update your application",
-      "motivationLabel": "Why would you like to contribute to the Humanity Union Blog?",
+      "motivationLabel": "Why would you like to contribute to the {siteName} Blog?",
       "motivationError": "Please share a bit more about why you would like to contribute.",
       "topicsLabel": "What topics would you like to write about?",
       "topicsError": "Please describe the topics you would like to write about.",
@@ -1122,8 +1122,8 @@
     "appNavAria": "App",
     "create": "Create",
     "createInitiativeAria": "Create Initiative",
-    "searchLabel": "Search Humanity Union",
-    "searchPlaceholder": "Search Humanity Union",
+    "searchLabel": "Search {siteName}",
+    "searchPlaceholder": "Search {siteName}",
     "goBack": "Go back",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -1131,38 +1131,38 @@
     "playIntroSound": "Play intro sound",
     "sound": "Sound",
     "install": {
-      "appTitle": "Humanity Union App",
-      "lead": "Take Humanity with you. Install the app for direct access to your Workspace, Initiatives, Notifications and Humanity Union Assistant.",
-      "alreadyInstalled": "Humanity Union is already installed on this device.",
+      "appTitle": "{siteName} App",
+      "lead": "Take Humanity with you. Install the app for direct access to your Workspace, Initiatives, Notifications and {siteName} Assistant.",
+      "alreadyInstalled": "{siteName} is already installed on this device.",
       "openWorkspace": "Open Workspace",
       "installing": "Installing…",
-      "installCta": "Install Humanity Union",
+      "installCta": "Install {siteName}",
       "addToHomeScreen": "Add to Home Screen",
       "installationGuide": "Installation guide",
-      "guideTitle": "Install Humanity Union App",
+      "guideTitle": "Install {siteName} App",
       "closeGuideAria": "Close installation guide",
-      "guideSubtitle": "Add Humanity Union to your Home Screen for faster access and an app-like experience.",
-      "automaticUnavailable": "Automatic install is not available in this browser session. Use the steps below, or reopen Humanity Union in a normal (non-private) browser window if installation does not appear.",
+      "guideSubtitle": "Add {siteName} to your Home Screen for faster access and an app-like experience.",
+      "automaticUnavailable": "Automatic install is not available in this browser session. Use the steps below, or reopen {siteName} in a normal (non-private) browser window if installation does not appear.",
       "iosA2hsTitle": "Add to Home Screen",
       "iosA2hsStep1": "Tap the Safari Share button.",
       "iosA2hsStep2": "Choose Add to Home Screen.",
       "iosA2hsStep3": "Confirm by tapping Add.",
-      "iosA2hsStandaloneNote": "After you add the icon, Humanity Union opens from the Home Screen as an installed app.",
+      "iosA2hsStandaloneNote": "After you add the icon, {siteName} opens from the Home Screen as an installed app.",
       "androidTitle": "Android — Chrome",
-      "androidHintPrimary": "If an Install Humanity Union button is available on this page, use it first.",
-      "androidStep1": "Open Humanity Union in Chrome.",
+      "androidHintPrimary": "If an Install {siteName} button is available on this page, use it first.",
+      "androidStep1": "Open {siteName} in Chrome.",
       "androidStep2": "Tap the browser menu (⋮).",
       "androidStep3": "Choose Install app or Add to Home screen.",
       "androidStep4": "Confirm installation.",
-      "androidStep5": "The Humanity Union icon will appear on your Home Screen / app launcher.",
+      "androidStep5": "The {siteName} icon will appear on your Home Screen / app launcher.",
       "androidHintSecondary": "If Chrome does not show the install option: refresh the page, make sure the site is opened in Chrome, and check that the app is not already installed.",
       "iosTitle": "iPhone / iPad — Safari",
-      "iosStep1": "Open Humanity Union in Safari.",
+      "iosStep1": "Open {siteName} in Safari.",
       "iosStep2": "Tap the Share button.",
       "iosStep3": "Scroll and choose Add to Home Screen.",
       "iosStep4": "Review the app name.",
       "iosStep5": "Tap Add.",
-      "iosStep6": "Launch Humanity Union from the new Home Screen icon.",
+      "iosStep6": "Launch {siteName} from the new Home Screen icon.",
       "iosHintSafari": "Add to Home Screen must be done from Safari. If this page is open inside another app's browser, open it in Safari first.",
       "iosHintNotifications": "Allow notifications when prompted if you want supported badge and notification features.",
       "badgeNote": "Notification and app-icon badge behavior depends on your device, operating system, browser, and notification permissions.",
@@ -1525,7 +1525,7 @@
         "republishFailed": "Republish failed: {detail}",
         "deleteFailed": "Delete failed: {detail}",
         "closeElectionFailed": "Close election failed: {detail}",
-        "serviceUnavailable": "The Humanity Union service is temporarily unavailable.",
+        "serviceUnavailable": "The {siteName} service is temporarily unavailable.",
         "saveUnable": "Unable to save initiative.",
         "publicChoiceCountryRequired": "Country is required for Public Choice initiatives."
       },
@@ -1621,7 +1621,7 @@
         "createAccount": "Create Account"
       },
       "newsSource": {
-        "disclaimer": "External publisher reference. Humanity Union has not independently verified this article.",
+        "disclaimer": "External publisher reference. {siteName} has not independently verified this article.",
         "remove": "Remove source"
       },
       "overlap": {
@@ -2072,10 +2072,10 @@
         "openCivicArchive": "Open Civic Archive",
         "myProposedCommitments": "My Proposed Commitments",
         "myImplementationTracking": "My Implementation Tracking",
-        "assistantTitle": "Humanity Union Assistant",
+        "assistantTitle": "{siteName} Assistant",
         "askAssistant": "Ask Assistant",
         "assistantLoadFailed": "Could not load Assistant data.",
-        "assistantGenericHint": "Ask about this stage or Humanity Union. Suggestions are advisory only.",
+        "assistantGenericHint": "Ask about this stage or {siteName}. Suggestions are advisory only.",
         "insights": {
           "missingEvidence": "Missing Evidence",
           "repeatedArguments": "Repeated Arguments",
@@ -3040,7 +3040,7 @@
           "supportCountersAria": "Petition support counters",
           "shareAria": "Share petition: {title}",
           "previewSignatureDisabled": "The Signature widget is disabled while previewing — signing becomes available to visitors once this Petition is published and open.",
-          "participationTransparencyNote": "Signing this Petition is a form of civic participation on Humanity Union. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation.",
+          "participationTransparencyNote": "Signing this Petition is a form of civic participation on {siteName}. It is not a legally binding petition and does not, by itself, create any legal or governmental obligation.",
           "document": {
             "summary": "Summary",
             "request": "Request",
@@ -3873,7 +3873,7 @@
           "emptySection": "No content recorded.",
           "sources": "Sources: {list}",
           "participationStats": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}",
-          "disclaimer": "This document records civic participation and Initiative activity on the Humanity Union platform. It is not an official governmental or legally binding record unless independently recognized by the relevant institution."
+          "disclaimer": "This document records civic participation and Initiative activity on the {siteName} platform. It is not an official governmental or legally binding record unless independently recognized by the relevant institution."
         },
         "completeness": {
           "summary": "Summary",
@@ -4036,12 +4036,12 @@
         "participants": "Participants",
         "members": "Members",
         "disclaimerTitle": "Community voting results",
-        "disclaimerBody": "These are Humanity Union community voting results. They are not official election results, statistically representative polling, or government-certified results."
+        "disclaimerBody": "These are {siteName} community voting results. They are not official election results, statistically representative polling, or government-certified results."
       },
       "election": {
         "loading": "Loading election…",
         "loadFailed": "Election could not be loaded.",
-        "eyebrow": "Humanity Union community vote",
+        "eyebrow": "{siteName} community vote",
         "backToInitiative": "← Back to Initiative",
         "backToInitiativePlain": "Back to Initiative",
         "geography": "Geography: {value}",
@@ -4343,7 +4343,7 @@
       }
     },
     "civicArchivePublic": {
-      "pageTitle": "Humanity Union Public Civic Archive",
+      "pageTitle": "{siteName} Public Civic Archive",
       "pageIntro": "Permanent institutional memory of completed civic initiatives and their verified public outcomes. Each archive record documents one initiative lifecycle — not isolated stage records.",
       "filtersLoading": "Loading archive filters…",
       "resultsTitle": "Civic Archive Results",
@@ -5757,7 +5757,7 @@
       "regionLabel": "Membership FAQ",
       "items": {
         "what-is-member": {
-          "question": "What is a Member of the Humanity Union?",
+          "question": "What is a Member of the {siteName}?",
           "answer": "A Member is a Participant who has completed the Membership application and confirmed a one-time Membership Contribution. Members remain equal Participants in all civic decisions."
         },
         "voting-power": {
@@ -6904,7 +6904,7 @@
       "number": "1",
       "heading": "Introduction",
       "subheading": "A personal contribution to our shared future",
-      "p1": "The development of the <platform>Humanity Union platform</platform> is a personal contribution each of us can make to our own future and to the future of generations to come.",
+      "p1": "The development of the <platform>{siteName} platform</platform> is a personal contribution each of us can make to our own future and to the future of generations to come.",
       "p2": "If our ancestors had access to the technological tools we have today — the Internet, computers, smartphones, and educational and informational web platforms — our societies might have developed a higher level of social awareness and responsibility much earlier.",
       "p3": "Greater social literacy helps people make more thoughtful and rational decisions. Such decisions create the foundation for social justice, well-being, and security.",
       "p4": "We are a unique generation. We have lived through the transition from a largely traditional world into an age that gives ordinary people powerful technological tools for communication, education, cooperation, and collective action.",
@@ -6920,7 +6920,7 @@
       "p1": "A <emphasis>Volunteer</emphasis> is not a title. It is a sign of responsibility — one that society often underestimates.",
       "p2": "Much of our world is supported and improved by volunteers, enthusiasts, and people who decide to act without waiting for someone else to act first. But enthusiasm alone does not always lead to positive results. Education, values, upbringing, and understanding influence whether our energy serves progress and the common good or becomes driven by personal ambition, greed, prejudice, or manipulation.",
       "p3": "We do not always notice when we ourselves begin to tolerate ignorance or aggression. Sometimes we spend more effort adapting to harmful circumstances than trying to change them. In doing so, we may unintentionally make life more difficult for ourselves and for others.",
-      "p4": "The <platform>Humanity Union platform</platform> is being developed as a safe tool for everyone — whether you live in a democratic society with functioning institutions or under an authoritarian and aggressive regime where people may be intimidated, silenced, or forced into rigid social hierarchies.",
+      "p4": "The <platform>{siteName} platform</platform> is being developed as a safe tool for everyone — whether you live in a democratic society with functioning institutions or under an authoritarian and aggressive regime where people may be intimidated, silenced, or forced into rigid social hierarchies.",
       "p5": "Our central task is simple: <emphasis>to unite around universal human values while respecting national cultures, traditions, and identities that are consistent with fundamental human rights and freedoms.</emphasis>",
       "p6": "You do not need a special position, profession, or status to participate.",
       "p7": "Come to the platform. Explore and support Initiatives created by other people. Participate in discussions, polls, and elections. Create your own Initiative when you see a problem that deserves attention. Help others improve their ideas. Whenever you are able, take part in turning worthwhile Initiatives into real action.",
@@ -6955,7 +6955,7 @@
       "subheading": "Use the tools for good",
       "p1": "You do not have to change the whole world by yourself.",
       "p2": "Bring what you can: your knowledge, experience, time, ideas, questions, professional skills, or simply your willingness to support a good Initiative.",
-      "p3": "Take the tools of the <platform>Humanity Union platform</platform> and use them for good.",
+      "p3": "Take the tools of the <platform>{siteName} platform</platform> and use them for good.",
       "p4": "Support an Initiative.",
       "p5": "Help another person.",
       "p6": "Share knowledge.",
@@ -6967,7 +6967,7 @@
   },
   "memberProfile": {
     "title": "Profile",
-    "subtitle": "Your Humanity Union Participant profile",
+    "subtitle": "Your {siteName} Participant profile",
     "previewSubtitle": "Preview how your profile appears to other Participants",
     "sectionsAria": "Profile sections",
     "sections": {
@@ -7049,7 +7049,7 @@
       "x": "X",
       "save": "Save links"
     },
-    "membershipNote": "Membership confirms voluntary support for Humanity Union. It does not change voting power or grant identity verification.",
+    "membershipNote": "Membership confirms voluntary support for {siteName}. It does not change voting power or grant identity verification.",
     "openMembership": "Open Membership",
     "viewMembershipSuccess": "View Membership Success",
     "journeyProgress": "Journey progress",
@@ -7359,15 +7359,15 @@
       },
       "member_badge_contribution_confirmed": {
         "title": "Official Member item request confirmed",
-        "message": "Your official Humanity Union Member item request has been confirmed."
+        "message": "Your official {siteName} Member item request has been confirmed."
       },
       "member_badge_shipped": {
         "title": "Official Member item shipped",
-        "message": "Your official Humanity Union Member item request has shipped."
+        "message": "Your official {siteName} Member item request has shipped."
       },
       "member_badge_delivered": {
         "title": "Official Member item delivered",
-        "message": "Your official Humanity Union Member item request was delivered."
+        "message": "Your official {siteName} Member item request was delivered."
       },
       "member_badge_contribution_refunded": {
         "title": "Additional Member contribution refunded",
@@ -7720,7 +7720,7 @@
       "FULL": "Full funding requested"
     },
     "consent": {
-      "label": "I consent to Humanity Union processing this application as described in the <privacy>Privacy Policy</privacy>.",
+      "label": "I consent to {siteName} processing this application as described in the <privacy>Privacy Policy</privacy>.",
       "versionNote": "Consent version: {version}"
     },
     "actions": {
@@ -7909,10 +7909,8 @@
         "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
         "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
       }
-    },
-    "closeAria": "Close application dialog"
-  }
-,
+    }
+  },
   "adminNotifications": {
     "types": {
       "rrp_application_submitted": "Regional Representative application submitted"

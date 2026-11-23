@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
@@ -41,6 +43,7 @@ export function PwaAppHeader() {
   const authStatus = useClientAuthStatus();
   const tWorkspace = useTranslations("workspace");
   const tPwa = useTranslations("pwa");
+  const siteName = useBrandSiteName();
   const avatarButtonRef = useRef<HTMLButtonElement>(null);
   const [identity, setIdentity] = useState<WorkspaceMemberIdentity | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -123,14 +126,14 @@ export function PwaAppHeader() {
 
         <form className="hu-pwa-app-header__search" role="search" onSubmit={handleSearch}>
           <label className="hu-visually-hidden" htmlFor="hu-pwa-app-search">
-            {tPwa("searchLabel")}
+            {tPwa("searchLabel", { siteName })}
           </label>
           <input
             id="hu-pwa-app-search"
             className="hu-pwa-app-header__search-input"
             type="search"
             name="q"
-            placeholder={tPwa("searchPlaceholder")}
+            placeholder={tPwa("searchPlaceholder", { siteName })}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             autoComplete="off"

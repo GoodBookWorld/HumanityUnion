@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
+
 import type { AuthUserPublic } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
@@ -40,6 +42,7 @@ export function AccountSecuritySection({
   onError,
 }: AccountSecuritySectionProps) {
   const t = useTranslations("auth");
+  const siteName = useBrandSiteName();
   const tCommon = useTranslations("common");
   const [submitting, setSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<"enable" | "disable" | null>(null);
@@ -158,7 +161,7 @@ export function AccountSecuritySection({
         label={t("twoStepLoginByEmail")}
         value={twoStepEnabled ? t("enabled") : t("disabled")}
       />
-      <p className="account-panel__help">{t("twoStepLoginHelp")}</p>
+      <p className="account-panel__help">{t("twoStepLoginHelp", { siteName })}</p>
 
       {!emailConfirmed ? (
         <p className="account-panel__help">{t("confirmEmailBeforeTwoStep")}</p>

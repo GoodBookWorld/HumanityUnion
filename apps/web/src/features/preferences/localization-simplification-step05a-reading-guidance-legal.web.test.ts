@@ -61,7 +61,7 @@ describe("Localization Simplification Step 05A — reading guidance + Legal prot
     const workspace = readWeb("features/preferences/components/PreferencesWorkspace.tsx");
     const en = languageKeys("en").writingLanguagesHelp ?? "";
 
-    assert.match(workspace, /t\("language\.writingLanguagesHelp"\)/);
+    assert.match(workspace, /t\("language\.writingLanguagesHelp", \{ siteName \}\)/);
     assert.doesNotMatch(
       workspace,
       /Add the languages you use for writing and collaboration/,

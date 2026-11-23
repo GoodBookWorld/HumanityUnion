@@ -72,10 +72,10 @@
     "required": "（必填）",
     "signInFailed": "登入失敗",
     "loginTitle": "登入",
-    "loginSubtitle": "存取您的 Humanity Union 工作區。",
+    "loginSubtitle": "存取您的 {siteName} 工作區。",
     "loadingLoginForm": "正在載入登入表單…",
     "registerTitle": "建立帳戶",
-    "registerSubtitle": "建立您的 Humanity Union 參與者帳戶。",
+    "registerSubtitle": "建立您的 {siteName} 參與者帳戶。",
     "alreadyHaveAccount": "已經有帳戶？",
     "registrationNotice": "註冊通知",
     "registrationFailed": "註冊失敗",
@@ -87,7 +87,7 @@
     "resetEmailSent": "若帳戶存在，重設郵件已寄出。",
     "unableToRequestReset": "無法申請密碼重設。",
     "chooseNewPasswordTitle": "選擇新密碼",
-    "chooseNewPasswordSubtitle": "為您的 Humanity Union 帳戶設定新密碼。",
+    "chooseNewPasswordSubtitle": "為您的 {siteName} 帳戶設定新密碼。",
     "newPassword": "新密碼",
     "resetPassword": "重設密碼",
     "passwordResetSuccess": "密碼已重設。您可以使用新密碼登入。",
@@ -143,7 +143,7 @@
     "developmentMode": "開發模式",
     "developmentOutboxNote": "開發用電子郵件服務已啟用。請在 API 伺服器日誌中查看本機寄件匣。",
     "verifyEmailTitle": "驗證電子郵件",
-    "verifyEmailSubtitle": "確認您的 Humanity Union 帳戶電子郵件地址。",
+    "verifyEmailSubtitle": "確認您的 {siteName} 帳戶電子郵件地址。",
     "verifyingEmail": "正在驗證您的電子郵件…",
     "emailVerified": "您的電子郵件地址已驗證。",
     "verificationTokenMissing": "缺少驗證權杖。",
@@ -156,7 +156,7 @@
     "twoStepLoginByEmail": "電子郵件兩步驟登入",
     "enabled": "已啟用",
     "disabled": "已停用",
-    "twoStepLoginHelp": "兩步驟登入會在輸入密碼後要求電子郵件代碼。這確認您能存取該電子郵件帳戶，並非身分驗證或 Humanity Union 會籍。",
+    "twoStepLoginHelp": "兩步驟登入會在輸入密碼後要求電子郵件代碼。這確認您能存取該電子郵件帳戶，並非身分驗證或 {siteName} 會籍。",
     "confirmEmailBeforeTwoStep": "啟用兩步驟登入前請先確認電子郵件。",
     "verificationCode": "驗證碼",
     "securityActionFailed": "安全操作失敗",
@@ -177,7 +177,7 @@
     "emailChangeTokenMissing": "缺少電子郵件變更權杖。",
     "invalidEmailChangeToken": "電子郵件變更權杖無效或已過期。",
     "deleteAccountTitle": "刪除帳戶",
-    "deleteAccountIntro": "您可以安排刪除 Humanity Union 帳戶。30 天的恢復期只會在您確認電子郵件驗證碼之後開始。",
+    "deleteAccountIntro": "您可以安排刪除 {siteName} 帳戶。30 天的恢復期只會在您確認電子郵件驗證碼之後開始。",
     "deleteAccountConsequences": "公開的公民紀錄會保留。私人訊息仍可供那些對話中的其他人使用。您將無法登入或開啟那些訊息。期限之後，這個電子郵件地址可以註冊新帳戶。新帳戶不會取得這個帳戶的角色、任命或訊息。",
     "deleteAccountButton": "刪除帳戶",
     "deleteAccountSendCode": "傳送確認碼",
@@ -232,7 +232,7 @@
     "notificationsUnreadAria": "通知，{count} 則未讀",
     "noUnreadNotifications": "沒有未讀通知",
     "account": "帳戶",
-    "accountSubtitle": "您的 Humanity Union 驗證帳戶",
+    "accountSubtitle": "您的 {siteName} 驗證帳戶",
     "loadingAccount": "正在載入帳戶…",
     "unableToLoadAccount": "無法載入帳戶。",
     "signInToViewAccount": "請登入以檢視您的帳戶。",
@@ -363,7 +363,7 @@
     },
     "initiativesPage": {
       "title": "倡議",
-      "subtitle": "Humanity Union 的參與倡議",
+      "subtitle": "{siteName} 的參與倡議",
       "loading": "正在載入倡議工作區…",
       "myInitiatives": "我的倡議",
       "startNew": "開始新倡議",
@@ -587,7 +587,7 @@
         },
         "seo": {
           "heading": "出版優化",
-          "lede": "SEO 與社群中繼資料保留在此文章上。發送權限經平台佇列送往官方 Humanity Union 頻道 — 絕不會捏造外部憑證或宣稱發送成功。",
+          "lede": "SEO 與社群中繼資料保留在此文章上。發送權限經平台佇列送往官方 {siteName} 頻道 — 絕不會捏造外部憑證或宣稱發送成功。",
           "searchHeading": "搜尋優化",
           "searchCopy": "選填搜尋標題與描述。留空則公開頁使用文章標題與摘要。",
           "seoTitle": "SEO 標題",
@@ -608,9 +608,9 @@
           "socialPreviewAria": "社群分享預覽卡",
           "noSocialImage": "尚無社群圖片",
           "distributionHeading": "發送",
-          "distributionCopy": "選擇可發送此文章的 Humanity Union 社群頻道。這不是您個人社群帳號的存取權。",
-          "huShareLegend": "Humanity Union 社群發送",
-          "huShareHelper": "選擇頻道即允許 Humanity Union 透過官方設定頻道發送。僅有個人檔案網址不會自動張貼。偏好設定絕不會略過審核、排程或封鎖。",
+          "distributionCopy": "選擇可發送此文章的 {siteName} 社群頻道。這不是您個人社群帳號的存取權。",
+          "huShareLegend": "{siteName} 社群發送",
+          "huShareHelper": "選擇頻道即允許 {siteName} 透過官方設定頻道發送。僅有個人檔案網址不會自動張貼。偏好設定絕不會略過審核、排程或封鎖。",
           "channelLoading": "載入中…",
           "channelApiOnly": "外部 API 未連線 — 僅權限",
           "channelNotConfigured": "官方頻道未設定"
@@ -865,7 +865,7 @@
     }
   },
   "civicActivity": {
-    "pageSubtitle": "您在 Humanity Union 生命週期中的私人公民工作",
+    "pageSubtitle": "您在 {siteName} 生命週期中的私人公民工作",
     "backToHome": "返回首頁",
     "intro": "您的私人公民工作儀表板。這裡顯示您在 {siteName} 生命週期中的個人貢獻——不是人氣、追蹤者或社交排名。",
     "statusLoaded": "上次載入 {date}。計數僅反映您已驗證工作區的資料。",
@@ -943,10 +943,10 @@
   },
   "preferences": {
     "title": "偏好設定",
-    "subtitle": "您的 Humanity Union 體驗與參與設定",
+    "subtitle": "您的 {siteName} 體驗與參與設定",
     "loading": "正在載入偏好設定...",
     "unavailableTitle": "偏好設定暫時無法使用",
-    "unavailableExplanation": "無法連線至 Humanity Union 服務。請稍後再試。",
+    "unavailableExplanation": "無法連線至 {siteName} 服務。請稍後再試。",
     "signInPrompt": "請登入以管理您的偏好設定。",
     "unavailable": "偏好設定無法使用。",
     "loadError": "無法載入偏好設定。",
@@ -964,12 +964,12 @@
       "visibility": "可見性"
     },
     "language": {
-      "help": "設定您在 Humanity Union 的偏好語言。書寫語言為獨立設定，不會改變網站呈現方式。",
+      "help": "設定您在 {siteName} 的偏好語言。書寫語言為獨立設定，不會改變網站呈現方式。",
       "interfaceLanguage": "介面語言",
       "preferredReadingLanguage": "偏好閱讀語言",
       "preferredReadingHelp": "選擇平台介面的語言。參與者撰寫的內容會保留原始語言；如有需要，可使用瀏覽器翻譯。",
       "writingLanguages": "書寫語言",
-      "writingLanguagesHelp": "新增您用於書寫與協作的語言。這些偏好協助 Humanity Union 了解您的溝通方式，不會控制瀏覽器的翻譯語言。",
+      "writingLanguagesHelp": "新增您用於書寫與協作的語言。這些偏好協助 {siteName} 了解您的溝通方式，不會控制瀏覽器的翻譯語言。",
       "writingLanguagesPlaceholder": "en, uk",
       "translationPreference": "翻譯偏好",
       "savedUnavailable": "{code}（已儲存 — 暫時不在目錄中）",
@@ -1012,9 +1012,9 @@
     },
     "notification": {
       "emailEnabled": "接收電子郵件通知",
-      "emailHelp": "啟用後，當有新活動需要您注意時，Humanity Union 會傳送簡易電子郵件通知。例如：「您的工作區有 3 則新通知。」電子郵件絕不會包含私人對話內容或機密倡議資訊。",
+      "emailHelp": "啟用後，當有新活動需要您注意時，{siteName} 會傳送簡易電子郵件通知。例如：「您的工作區有 3 則新通知。」電子郵件絕不會包含私人對話內容或機密倡議資訊。",
       "copiesOptIn": "傳送我的通知電子郵件副本",
-      "copiesHelp": "選擇性功能。啟用後，Humanity Union 可能將選定的通知中心項目電子郵件副本寄至您已驗證的通知收件地址（帳號電子郵件，或另行驗證的替代電子郵件）。頻率依您儲存的偏好設定。送達取決於平台可用性，且不保證涵蓋每一事件。這不會變更登入電子郵件、不會停止安全或帳號相關郵件，也不會移除應用程式內的通知中心項目。儲存偏好設定並不代表已寄出郵件。",
+      "copiesHelp": "選擇性功能。啟用後，{siteName} 可能將選定的通知中心項目電子郵件副本寄至您已驗證的通知收件地址（帳號電子郵件，或另行驗證的替代電子郵件）。頻率依您儲存的偏好設定。送達取決於平台可用性，且不保證涵蓋每一事件。這不會變更登入電子郵件、不會停止安全或帳號相關郵件，也不會移除應用程式內的通知中心項目。儲存偏好設定並不代表已寄出郵件。",
       "openNotificationCenter": "Open Email Notifications in Notification Center"
     },
     "accessibility": {
@@ -1086,9 +1086,9 @@
     },
     "becomeAuthor": {
       "title": "成為部落格作者",
-      "thanks": "感謝您有意為 Humanity Union 部落格撰稿。",
+      "thanks": "感謝您有意為 {siteName} 部落格撰稿。",
       "purpose": "部落格是發表深思內容的空間，協助人們從人性、責任與建設性對話的角度理解想法、挑戰、經驗與可能解方。",
-      "encouragement": "Humanity Union 鼓勵超越敵意與對立的文章，並思考議題如何影響人、社群與更廣泛的人類經驗。作者可以強烈不同意。盡可能以證據支持主張、區分事實與意見、避免非人化語言、說明後果、承認不確定性，並思考建設性替代方案。",
+      "encouragement": "{siteName} 鼓勵超越敵意與對立的文章，並思考議題如何影響人、社群與更廣泛的人類經驗。作者可以強烈不同意。盡可能以證據支持主張、區分事實與意見、避免非人化語言、說明後果、承認不確定性，並思考建設性替代方案。",
       "standards": "文章應致力於增進理解，而非敵意、操控、人身攻擊或聳動炒作。這不是意識形態一致性的要求——原則是人性尊嚴、證據、建設性推理、責任與尊重他人。"
     },
     "categories": {
@@ -1101,7 +1101,7 @@
     "application": {
       "title": "作者申請",
       "updateTitle": "更新您的申請",
-      "motivationLabel": "您為什麼想為 Humanity Union 部落格撰稿？",
+      "motivationLabel": "您為什麼想為 {siteName} 部落格撰稿？",
       "motivationError": "請再多說明一些您想貢獻的原因。",
       "topicsLabel": "您想寫哪些主題？",
       "topicsError": "請描述您想撰寫的主題。",
@@ -1122,8 +1122,8 @@
     "appNavAria": "應用程式",
     "create": "建立",
     "createInitiativeAria": "建立倡議",
-    "searchLabel": "搜尋 Humanity Union",
-    "searchPlaceholder": "搜尋 Humanity Union",
+    "searchLabel": "搜尋 {siteName}",
+    "searchPlaceholder": "搜尋 {siteName}",
     "goBack": "返回",
     "openMenu": "開啟選單",
     "closeMenu": "關閉選單",
@@ -1131,38 +1131,38 @@
     "playIntroSound": "播放開場音效",
     "sound": "音效",
     "install": {
-      "appTitle": "Humanity Union 應用程式",
-      "lead": "隨身帶著 Humanity。安裝應用程式，即可直接存取工作區、倡議、通知與 Humanity Union 助理。",
-      "alreadyInstalled": "此裝置已安裝 Humanity Union。",
+      "appTitle": "{siteName} 應用程式",
+      "lead": "隨身帶著 Humanity。安裝應用程式，即可直接存取工作區、倡議、通知與 {siteName} 助理。",
+      "alreadyInstalled": "此裝置已安裝 {siteName}。",
       "openWorkspace": "開啟工作區",
       "installing": "安裝中…",
-      "installCta": "安裝 Humanity Union",
+      "installCta": "安裝 {siteName}",
       "addToHomeScreen": "加入主畫面",
       "installationGuide": "安裝指南",
-      "guideTitle": "安裝 Humanity Union 應用程式",
+      "guideTitle": "安裝 {siteName} 應用程式",
       "closeGuideAria": "關閉安裝指南",
-      "guideSubtitle": "將 Humanity Union 加入主畫面，以獲得更快存取與類似應用程式的體驗。",
-      "automaticUnavailable": "此瀏覽器工作階段無法使用自動安裝。請依照下方步驟操作，或在一般（非私密）瀏覽器視窗重新開啟 Humanity Union（若未出現安裝選項）。",
+      "guideSubtitle": "將 {siteName} 加入主畫面，以獲得更快存取與類似應用程式的體驗。",
+      "automaticUnavailable": "此瀏覽器工作階段無法使用自動安裝。請依照下方步驟操作，或在一般（非私密）瀏覽器視窗重新開啟 {siteName}（若未出現安裝選項）。",
       "iosA2hsTitle": "加入主畫面",
       "iosA2hsStep1": "點選 Safari 的分享按鈕。",
       "iosA2hsStep2": "選擇「Add to Home Screen」。",
       "iosA2hsStep3": "點選「Add」確認。",
-      "iosA2hsStandaloneNote": "加入圖示後，Humanity Union 會從主畫面以已安裝應用程式方式開啟。",
+      "iosA2hsStandaloneNote": "加入圖示後，{siteName} 會從主畫面以已安裝應用程式方式開啟。",
       "androidTitle": "Android — Chrome",
-      "androidHintPrimary": "若此頁面有「安裝 Humanity Union」按鈕，請先使用該按鈕。",
-      "androidStep1": "在 Chrome 開啟 Humanity Union。",
+      "androidHintPrimary": "若此頁面有「安裝 {siteName}」按鈕，請先使用該按鈕。",
+      "androidStep1": "在 Chrome 開啟 {siteName}。",
       "androidStep2": "點選瀏覽器選單（⋮）。",
       "androidStep3": "選擇「Install app」或「Add to Home screen」。",
       "androidStep4": "確認安裝。",
-      "androidStep5": "Humanity Union 圖示會出現在主畫面／應用程式啟動器。",
+      "androidStep5": "{siteName} 圖示會出現在主畫面／應用程式啟動器。",
       "androidHintSecondary": "若 Chrome 未顯示安裝選項：請重新整理頁面、確認以 Chrome 開啟網站，並檢查應用程式是否已安裝。",
       "iosTitle": "iPhone / iPad — Safari",
-      "iosStep1": "在 Safari 開啟 Humanity Union。",
+      "iosStep1": "在 Safari 開啟 {siteName}。",
       "iosStep2": "點選分享按鈕。",
       "iosStep3": "捲動並選擇「Add to Home Screen」。",
       "iosStep4": "確認應用程式名稱。",
       "iosStep5": "點選「Add」。",
-      "iosStep6": "從新的主畫面圖示啟動 Humanity Union。",
+      "iosStep6": "從新的主畫面圖示啟動 {siteName}。",
       "iosHintSafari": "「Add to Home Screen」必須在 Safari 完成。若此頁面開在其他應用程式的瀏覽器中，請先改以 Safari 開啟。",
       "iosHintNotifications": "若需要支援的標記與通知功能，請在系統提示時允許通知。",
       "badgeNote": "通知與應用程式圖示標記行為取決於您的裝置、作業系統、瀏覽器與通知權限。",
@@ -1525,7 +1525,7 @@
         "republishFailed": "重新發布失敗：{detail}",
         "deleteFailed": "刪除失敗：{detail}",
         "closeElectionFailed": "結束選舉失敗：{detail}",
-        "serviceUnavailable": "Humanity Union 服務暫時無法使用。",
+        "serviceUnavailable": "{siteName} 服務暫時無法使用。",
         "saveUnable": "無法儲存倡議。",
         "publicChoiceCountryRequired": "公共選擇倡議必須填寫國家。"
       },
@@ -1621,7 +1621,7 @@
         "createAccount": "建立帳戶"
       },
       "newsSource": {
-        "disclaimer": "外部出版者參考。Humanity Union 未獨立查證此文章。",
+        "disclaimer": "外部出版者參考。{siteName} 未獨立查證此文章。",
         "remove": "移除來源"
       },
       "overlap": {
@@ -2072,10 +2072,10 @@
         "openCivicArchive": "開啟公民典藏",
         "myProposedCommitments": "我提議的承諾",
         "myImplementationTracking": "我的執行追蹤",
-        "assistantTitle": "Humanity Union 助理",
+        "assistantTitle": "{siteName} 助理",
         "askAssistant": "詢問助理",
         "assistantLoadFailed": "無法載入助理資料。",
-        "assistantGenericHint": "詢問此階段或 Humanity Union。建議僅供參考。",
+        "assistantGenericHint": "詢問此階段或 {siteName}。建議僅供參考。",
         "insights": {
           "missingEvidence": "缺少證據",
           "repeatedArguments": "重複論點",
@@ -3040,7 +3040,7 @@
           "supportCountersAria": "請願支持計數",
           "shareAria": "分享請願：{title}",
           "previewSignatureDisabled": "預覽時簽署小工具已停用 — 此請願發布並開放後，訪客才能簽署。",
-          "participationTransparencyNote": "簽署此請願是 Humanity Union 上的公民參與形式。它不是具法律約束力的請願，本身也不會產生任何法律或政府義務。",
+          "participationTransparencyNote": "簽署此請願是 {siteName} 上的公民參與形式。它不是具法律約束力的請願，本身也不會產生任何法律或政府義務。",
           "document": {
             "summary": "摘要",
             "request": "請求",
@@ -3873,7 +3873,7 @@
           "emptySection": "未記錄內容。",
           "sources": "來源：{list}",
           "participationStats": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}",
-          "disclaimer": "本文件記錄 Humanity Union 平台上的公民參與與倡議活動。除非經相關機構獨立認可，否則它不是官方政府文件或具法律約束力的紀錄。"
+          "disclaimer": "本文件記錄 {siteName} 平台上的公民參與與倡議活動。除非經相關機構獨立認可，否則它不是官方政府文件或具法律約束力的紀錄。"
         },
         "completeness": {
           "summary": "摘要",
@@ -4036,12 +4036,12 @@
         "participants": "參與者",
         "members": "會員",
         "disclaimerTitle": "社群投票結果",
-        "disclaimerBody": "這些是 Humanity Union 社群投票結果。它們不是官方選舉結果、具統計代表性的民調，或經政府認證的結果。"
+        "disclaimerBody": "這些是 {siteName} 社群投票結果。它們不是官方選舉結果、具統計代表性的民調，或經政府認證的結果。"
       },
       "election": {
         "loading": "正在載入選舉…",
         "loadFailed": "無法載入選舉。",
-        "eyebrow": "Humanity Union 社群投票",
+        "eyebrow": "{siteName} 社群投票",
         "backToInitiative": "← 返回倡議",
         "backToInitiativePlain": "返回倡議",
         "geography": "地理範圍：{value}",
@@ -4343,7 +4343,7 @@
       }
     },
     "civicArchivePublic": {
-      "pageTitle": "Humanity Union 公共公民檔案",
+      "pageTitle": "{siteName} 公共公民檔案",
       "pageIntro": "已完成公民倡議及其經核實公開成果的永久機構記憶。每筆檔案紀錄記載一項倡議的完整生命週期——而非孤立階段紀錄。",
       "filtersLoading": "正在載入檔案篩選條件…",
       "resultsTitle": "公民檔案結果",
@@ -5757,7 +5757,7 @@
       "regionLabel": "會員常見問題",
       "items": {
         "what-is-member": {
-          "question": "什麼是會員？",
+          "question": "什麼是會員 {siteName}？",
           "answer": "會員是已完成會員申請並確認一次性會員貢獻的參與者。會員在所有公民決策中仍是平等的參與者。"
         },
         "voting-power": {
@@ -6904,7 +6904,7 @@
       "number": "1",
       "heading": "導言",
       "subheading": "對共同未來的個人貢獻",
-      "p1": "發展 <platform>Humanity Union 平台</platform>，是我們每個人都能為自己與後代未來做出的個人貢獻。",
+      "p1": "發展 <platform>{siteName} 平台</platform>，是我們每個人都能為自己與後代未來做出的個人貢獻。",
       "p2": "若我們的祖先擁有今天的科技工具——網際網路、電腦、智慧型手機，以及教育與資訊網路平台——我們的社會或許會更早培養出更高層次的社會意識與責任。",
       "p3": "更高的社會素養能幫助人們做出更審慎、更理性的決定。這類決定會成為社會正義、福祉與安全的基礎。",
       "p4": "我們是獨特的一代。我們經歷了從大致傳統的世界，走向讓普通人也能掌握強大科技工具的時代——用於溝通、教育、合作與集體行動。",
@@ -6920,7 +6920,7 @@
       "p1": "<emphasis>志工</emphasis> 不是頭銜。它是責任的標誌——社會往往低估它。",
       "p2": "我們世界的許多部分，是由志工、熱忱者，以及決定不等待他人先行動的人來支持與改善。但僅有熱忱並不總能帶來正面結果。教育、價值觀、教養與理解，會影響我們的能量究竟服務於進步與共同利益，還是被個人野心、貪婪、偏見或操弄所驅動。",
       "p3": "我們並非總能察覺自己何時開始容忍無知或侵略。有時我們花更多力氣去適應有害處境，而不是嘗試改變它。如此一來，我們可能無意間讓自己與他人的生活變得更困難。",
-      "p4": "<platform>Humanity Union 平台</platform> 正被發展成人人可用的安全工具——無論你生活在制度運作良好的民主社會，或處於威權與侵略體制之下，人們可能被恐嚇、噤聲，或被迫進入僵硬的社會階層。",
+      "p4": "<platform>{siteName} 平台</platform> 正被發展成人人可用的安全工具——無論你生活在制度運作良好的民主社會，或處於威權與侵略體制之下，人們可能被恐嚇、噤聲，或被迫進入僵硬的社會階層。",
       "p5": "我們的核心任務很單純：<emphasis>在尊重與基本人權與自由相符的民族文化、傳統與認同的同時，團結於普世人類價值。</emphasis>",
       "p6": "你不需要特殊職位、專業或身分才能參與。",
       "p7": "來到平台。探索並支持其他人創建的倡議。參與討論、投票與選舉。當你看到值得關注的問題時，創建自己的倡議。幫助他人改進想法。只要你能夠，就參與把有價值的倡議轉成實際行動。",
@@ -6955,7 +6955,7 @@
       "subheading": "把工具用於善",
       "p1": "你不必獨自改變整個世界。",
       "p2": "帶上你能貢獻的：知識、經驗、時間、想法、問題、專業技能，或只是願意支持一個好倡議的心。",
-      "p3": "拿起 <platform>Humanity Union 平台</platform> 的工具，把它們用於善。",
+      "p3": "拿起 <platform>{siteName} 平台</platform> 的工具，把它們用於善。",
       "p4": "支持一個倡議。",
       "p5": "幫助另一個人。",
       "p6": "分享知識。",
@@ -6967,7 +6967,7 @@
   },
   "memberProfile": {
     "title": "個人資料",
-    "subtitle": "您的 Humanity Union 參與者個人資料",
+    "subtitle": "您的 {siteName} 參與者個人資料",
     "previewSubtitle": "預覽其他參與者會如何看到您的個人資料",
     "sectionsAria": "個人資料區段",
     "sections": {
@@ -7049,7 +7049,7 @@
       "x": "X",
       "save": "儲存連結"
     },
-    "membershipNote": "會籍確認對 Humanity Union 的自願支持。不會改變投票權重，也不等於身分驗證。",
+    "membershipNote": "會籍確認對 {siteName} 的自願支持。不會改變投票權重，也不等於身分驗證。",
     "openMembership": "開啟會籍",
     "viewMembershipSuccess": "查看會籍成功頁面",
     "journeyProgress": "旅程進度",
@@ -7317,15 +7317,15 @@
       },
       "member_badge_contribution_confirmed": {
         "title": "正式會員物品申請已確認",
-        "message": "您的 Humanity Union 正式會員物品申請已確認。"
+        "message": "您的 {siteName} 正式會員物品申請已確認。"
       },
       "member_badge_shipped": {
         "title": "正式會員物品已寄出",
-        "message": "您的 Humanity Union 正式會員物品申請已寄出。"
+        "message": "您的 {siteName} 正式會員物品申請已寄出。"
       },
       "member_badge_delivered": {
         "title": "正式會員物品已送達",
-        "message": "您的 Humanity Union 正式會員物品申請已送達。"
+        "message": "您的 {siteName} 正式會員物品申請已送達。"
       },
       "member_badge_contribution_refunded": {
         "title": "額外會員貢獻已退款",
@@ -7609,7 +7609,7 @@
       "FULL": "申請全額資助"
     },
     "consent": {
-      "label": "我同意 Humanity Union 依<privacy>隱私權政策</privacy>所述處理此申請。",
+      "label": "我同意 {siteName} 依<privacy>隱私權政策</privacy>所述處理此申請。",
       "versionNote": "同意版本：{version}"
     },
     "actions": {
@@ -7909,8 +7909,7 @@
       "heading": "成為推動正向改變的全球社群一員",
       "body": "加入區域發展計畫，協助在您的國家發展 {siteName}。"
     }
-  }
-,
+  },
   "adminNotifications": {
     "types": {
       "rrp_application_submitted": "已提交區域代表申請"

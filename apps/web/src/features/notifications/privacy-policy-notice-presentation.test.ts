@@ -14,7 +14,7 @@ const NOTICE = {
   eventType: "privacy_policy_updated",
   title: "Privacy Policy Updated",
   message:
-    "Humanity Union has updated its Privacy Policy, effective November 22, 2026. The update explains account deletion and recovery, the 30-day recovery period, and retention of civic records and private messages. Account deletion is not yet available.",
+    "{siteName} has updated its Privacy Policy, effective November 22, 2026. The update explains account deletion and recovery, the 30-day recovery period, and retention of civic records and private messages. Account deletion is not yet available.",
 };
 
 function translator(messages: Record<string, string>): NotificationsTranslator {
