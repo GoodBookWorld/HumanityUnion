@@ -5757,7 +5757,7 @@
       "regionLabel": "會員常見問題",
       "items": {
         "what-is-member": {
-          "question": "什麼是會員 {siteName}？",
+          "question": "什麼是{siteName}的會員？",
           "answer": "會員是已完成會員申請並確認一次性會員貢獻的參與者。會員在所有公民決策中仍是平等的參與者。"
         },
         "voting-power": {

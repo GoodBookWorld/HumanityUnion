@@ -42,7 +42,7 @@
     "betaInviteCode": "Beta-Einladungscode",
     "cancelReturnToLogin": "Abbrechen und zum Login zurückkehren",
     "checkYourEmail": "Überprüfen Sie Ihre E-Mails",
-    "chooseNewPasswordSubtitle": "Leggen Sie ein neues Passwort für Ihr {siteName}-Konto fest.",
+    "chooseNewPasswordSubtitle": "Legen Sie ein neues Passwort für Ihr Konto bei {siteName} fest.",
     "chooseNewPasswordTitle": "Neues Passwort wählen",
     "codeSent": "Code gesendet",
     "completeLogin": "Anmeldung abschließen",
@@ -173,7 +173,7 @@
     "verificationCodeSent": "Bestätigungscode gesendet",
     "verificationFailed": "Bestätigung fehlgeschlagen",
     "verificationTokenMissing": "Bestätigungstoken fehlt.",
-    "verifyEmailSubtitle": "Bestätigen Sie die E-Mail-Adresse Ihres {siteName}-Kontos.",
+    "verifyEmailSubtitle": "Bestätigen Sie die E-Mail-Adresse Ihres Kontos bei {siteName}.",
     "verifyEmailTitle": "E-Mail verifizieren",
     "verifyLoginSubtitle": "Schließen Sie die Zwei-Schritte-Anmeldung mit dem E-Mail-Code ab, den wir an Ihre bestätigte Adresse gesendet haben.",
     "verifyLoginTitle": "Anmeldung verifizieren",
@@ -1070,7 +1070,7 @@
         "document": {
           "aria": "Bürgerarchiv",
           "completeness": "Vollständigkeit",
-          "disclaimer": "Dieses Dokument dokumentiert die bürgerschaftliche Beteiligung und die Initiative-Aktivität auf der {siteName}-Plattform. Es handelt sich hierbei um kein offizielles behördliches oder rechtlich bindendes Dokument, es sei denn, es wird von der zuständigen Institution unabhängig anerkannt.",
+          "disclaimer": "Dieses Dokument dokumentiert die bürgerschaftliche Beteiligung und die Initiative-Aktivität auf der Plattform {siteName}. Es handelt sich hierbei um kein offizielles behördliches oder rechtlich bindendes Dokument, es sei denn, es wird von der zuständigen Institution unabhängig anerkannt.",
           "draftPreview": "Entwurfsvorschau",
           "emptySection": "Kein Inhalt aufgezeichnet.",
           "lifecycleTimeline": "Lebenszyklus-Zeitachse",
@@ -3729,7 +3729,7 @@
         "backToInitiativePlain": "Zurück zur Initiative",
         "downloadFailed": "Herunterladen fehlgeschlagen.",
         "endOfVoting": "Ende der Abstimmung: {value}",
-        "eyebrow": "{siteName}-Community-Abstimmung",
+        "eyebrow": "Community-Abstimmung bei {siteName}",
         "geography": "Geografie: {value}",
         "loadFailed": "Die Wahl konnte nicht geladen werden.",
         "loading": "Wahl wird geladen…",
@@ -3744,7 +3744,7 @@
         "abstain": "Enthaltung",
         "blocked": "Gesperrt",
         "candidateFallback": "Kandidat",
-        "disclaimerBody": "Dies sind Abstimmungsergebnisse der {siteName}-Gemeinschaft. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
+        "disclaimerBody": "Dies sind Abstimmungsergebnisse der Community von {siteName}. Sie stellen keine offiziellen Wahlergebnisse, statistisch repräsentativen Umfragen oder behördlich zertifizierten Ergebnisse dar.",
         "disclaimerTitle": "Ergebnisse der Gemeinschaftsabstimmung",
         "download": "Ergebnisse herunterladen",
         "electionStatus": "Wahlstatus: {status}",
@@ -5572,7 +5572,7 @@
         "title": "Initiative veröffentlicht"
       },
       "member_badge_contribution_confirmed": {
-        "message": "Deine offizielle Anfrage für einen {siteName} Mitglied-Artikel wurde bestätigt.",
+        "message": "Deine offizielle Anfrage für einen Mitglied-Artikel von {siteName} wurde bestätigt.",
         "title": "Offizielle Anfrage für Mitglied-Artikel bestätigt"
       },
       "member_badge_contribution_refunded": {
@@ -5580,11 +5580,11 @@
         "title": "Zusätzlicher Mitgliedsbeitrag erstattet"
       },
       "member_badge_delivered": {
-        "message": "Deine offizielle Anfrage für den {siteName} Mitglied-Artikel wurde zugestellt.",
+        "message": "Deine offizielle Anfrage für den Mitglied-Artikel von {siteName} wurde zugestellt.",
         "title": "Offizieller Mitglied-Artikel zugestellt"
       },
       "member_badge_shipped": {
-        "message": "Ihre offizielle Anfrage für den {siteName} Mitglied-Artikel wurde verschickt.",
+        "message": "Ihre offizielle Anfrage für den Mitglied-Artikel von {siteName} wurde verschickt.",
         "title": "Offizieller Mitglied-Artikel verschickt"
       },
       "official_response_received": {
@@ -5789,7 +5789,7 @@
       "preferred": "Übersetzung bevorzugen, wenn verfügbar"
     },
     "unavailable": "Einstellungen sind nicht verfügbar.",
-    "unavailableExplanation": "Wir konnten keine Verbindung zum {siteName}-Dienst herstellen. Bitte versuchen Sie es in Kürze erneut.",
+    "unavailableExplanation": "Wir konnten keine Verbindung zum Dienst von {siteName} herstellen. Bitte versuchen Sie es in Kürze erneut.",
     "unavailableTitle": "Einstellungen vorübergehend nicht verfügbar",
     "visibility": {
       "interestsVisibility": "Wer kann meine Interessen sehen",
@@ -6601,7 +6601,7 @@
       "androidStep2": "Tippen Sie auf das Browsermenü (⋮).",
       "androidStep3": "Wählen Sie App installieren oder Zum Startbildschirm hinzufügen.",
       "androidStep4": "Bestätigen Sie die Installation.",
-      "androidStep5": "Das {siteName}-Symbol wird auf Ihrem Startbildschirm bzw. App-Launcher angezeigt.",
+      "androidStep5": "Das Symbol von {siteName} wird auf Ihrem Startbildschirm bzw. App-Launcher angezeigt.",
       "androidTitle": "Android – Chrome",
       "appTitle": "{siteName} App",
       "automaticUnavailable": "Die automatische Installation ist in dieser Browsersitzung nicht verfügbar. Verwenden Sie die folgenden Schritte oder öffnen Sie {siteName} in einem normalen (nicht privaten) Browserfenster neu, falls die Installation nicht angezeigt wird.",
@@ -6809,7 +6809,7 @@
       "p1": "Ein <emphasis>Freiwilliger</emphasis> ist kein Titel. Es ist ein Zeichen von Verantwortung – eines, das die Gesellschaft oft unterschätzt.",
       "p2": "Ein Großteil unserer Welt wird durch Freiwillige, Enthusiasten und Menschen unterstützt und verbessert, die beschließen zu handeln, ohne darauf zu warten, dass jemand anderes zuerst handelt. Aber Enthusiasmus allein führt nicht immer zu positiven Ergebnissen. Bildung, Werte, Erziehung und Verständnis beeinflussen, ob unsere Energie dem Fortschritt und dem Gemeinwohl dient oder von persönlichem Ehrgeiz, Gier, Vorurteilen oder Manipulation angetrieben wird.",
       "p3": "Wir bemerken nicht immer, wenn wir selbst anfangen, Ignoranz oder Aggression zu tolerieren. Manchmal wenden wir mehr Mühe darauf auf, uns an schädliche Umstände anzupassen, als sie zu verändern. Dabei machen wir es uns und anderen möglicherweise unabsichtlich schwerer.",
-      "p4": "Die <platform>{siteName}-Plattform</platform> wird als sicheres Werkzeug für alle entwickelt – ganz gleich, ob Sie in einer demokratischen Gesellschaft mit funktionierenden Institutionen leben oder unter einem autoritären und aggressiven Regime, in dem Menschen eingeschüchtert, zum Schweigen gebracht oder in starre soziale Hierarchien gezwungen werden.",
+      "p4": "Die <platform>Plattform {siteName}</platform> wird als sicheres Werkzeug für alle entwickelt – ganz gleich, ob Sie in einer demokratischen Gesellschaft mit funktionierenden Institutionen leben oder unter einem autoritären und aggressiven Regime, in dem Menschen eingeschüchtert, zum Schweigen gebracht oder in starre soziale Hierarchien gezwungen werden.",
       "p5": "Unsere zentrale Aufgabe ist einfach: <emphasis>uns um universelle menschliche Werte zu einen und dabei nationale Kulturen, Traditionen und Identitäten zu respektieren, die mit den fundamentalen Menschenrechten und -freiheiten vereinbar sind.</emphasis>",
       "p6": "Sie benötigen keine besondere Position, keinen Beruf und keinen Status, um teilzunehmen.",
       "p7": "Kommen Sie auf die Plattform. Erkunden und unterstützen Sie von anderen Personen erstellte Initiativen. Beteiligen Sie sich an Diskussionen, Umfragen und Wahlen. Erstellen Sie Ihre eigene Initiative, wenn Sie ein Problem erkennen, das Aufmerksamkeit verdient. Helfen Sie anderen, ihre Ideen zu verbessern. Beteiligen Sie sich, wann immer Sie können, daran, lohnenswerte Initiativen in echte Taten umzusetzen.",
@@ -6823,7 +6823,7 @@
       "number": "3",
       "p1": "Sie müssen nicht die ganze Welt alleine verändern.",
       "p2": "Bringen Sie ein, was Sie können: Ihr Wissen, Ihre Erfahrung, Ihre Zeit, Ihre Ideen, Fragen, beruflichen Fähigkeiten oder einfach Ihre Bereitschaft, eine gute Initiative zu unterstützen.",
-      "p3": "Nutze die Werkzeuge der <platform>{siteName}-Plattform</platform> und setze sie für das Gute ein.",
+      "p3": "Nutze die Werkzeuge der <platform>Plattform {siteName}</platform> und setze sie für das Gute ein.",
       "p4": "Unterstütze eine Initiative.",
       "p5": "Hilf einer anderen Person.",
       "p6": "Teile Wissen.",
@@ -7283,7 +7283,7 @@
           "heading": "Publikationsoptimierung",
           "huShareHelper": "Die Auswahl eines Kanals erlaubt es {siteName}, diese Publikation über den offiziellen konfigurierten Kanal zu verbreiten. Eine Profil-URL allein postet nicht automatisch – die Zustellung wartet auf eine echte Anbieterintegration. Einstellungen umgehen niemals die Überprüfung, Planung oder Sperren.",
           "huShareLegend": "{siteName} Social-Distribution",
-          "lede": "SEO- und Social-Metadaten verbleiben bei dieser Publikation. Verbreitungsberechtigungen werden für offizielle {siteName}-Kanäle über den Ausgangsordner der Plattform eingereiht – sie erfinden niemals externe Anmeldeinformationen oder behaupten einen erfolgreichen Versand.",
+          "lede": "SEO- und Social-Metadaten verbleiben bei dieser Publikation. Verbreitungsberechtigungen werden für offizielle Kanäle von {siteName} über den Ausgangsordner der Plattform eingereiht – sie erfinden niemals externe Anmeldeinformationen oder behaupten einen erfolgreichen Versand.",
           "metaDescription": "Meta-Beschreibung",
           "noSocialImage": "Noch kein Social-Bild",
           "searchCopy": "Optionale Suchtitel und -beschreibung. Leer lassen, um auf der öffentlichen Seite standardmäßig den Publikationstitel und den Auszug zu verwenden.",

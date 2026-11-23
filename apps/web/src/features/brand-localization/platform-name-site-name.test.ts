@@ -131,6 +131,88 @@ describe("platform name uses published siteName", () => {
     assert.match(service, /preserveExistingPublishedLeaves: true/);
   });
 
+  it("keeps the published nominative name grammatical", () => {
+    const ka = load("ka");
+    const georgian = [
+      "civicActivity.pageSubtitle",
+      "initiativeExperience.civicArchivePublic.pageTitle",
+      "membershipPublic.faq.items.what-is-member.question",
+      "initiativeExperience.manage.newsSource.disclaimer",
+      "workspace.initiativesPage.subtitle",
+      "pwa.install.installCta",
+      "preferences.language.help",
+    ];
+    for (const key of georgian) {
+      assert.doesNotMatch(String(get(ka, key)), /\{siteName\}[-\u10A0-\u10FF]/, key);
+    }
+    assert.equal(
+      get(ka, "membershipPublic.faq.items.what-is-member.question"),
+      "ვინ არის წევრი პლატფორმაზე «{siteName}»?",
+    );
+    assert.equal(get(ka, "pwa.install.installCta"), "დააინსტალირეთ {siteName}");
+
+    const french = load("fr");
+    assert.match(String(get(french, "auth.twoStepLoginHelp")), /à l'\{siteName\}/);
+    assert.match(String(get(french, "authoringPage.application.motivationLabel")), /de l'\{siteName\}/);
+    assert.doesNotMatch(String(get(french, "notifications.types.member_badge_delivered.message")), /de la \{siteName\}/);
+
+    const spanish = load("es");
+    assert.match(String(get(spanish, "auth.loginSubtitle")), /de la \{siteName\}/);
+    assert.doesNotMatch(JSON.stringify(spanish), /la la \{siteName\}/);
+    assert.equal(
+      get(spanish, "membershipPublic.faq.items.what-is-member.question"),
+      "¿Qué es un Miembro de la {siteName}?",
+    );
+
+    const german = load("de");
+    for (const key of [
+      "auth.chooseNewPasswordSubtitle",
+      "auth.verifyEmailSubtitle",
+      "initiativeExperience.author.archive.document.disclaimer",
+      "initiativeExperience.publicChoice.election.eyebrow",
+      "initiativeExperience.publicChoice.results.disclaimerBody",
+      "preferences.unavailableExplanation",
+      "pwa.install.androidStep5",
+      "workspace.publishingPage.editor.seo.lede",
+      "volunteerPublic.meaning.p4",
+      "volunteerPublic.takePart.p3",
+    ]) {
+      assert.doesNotMatch(String(get(german, key)), /\{siteName\}-/, key);
+    }
+    assert.match(String(get(german, "auth.chooseNewPasswordSubtitle")), /Konto bei \{siteName\}/);
+    assert.match(String(get(german, "volunteerPublic.meaning.p4")), /<platform>Plattform \{siteName\}<\/platform>/);
+
+    assert.match(String(get(load("ar"), "membershipPublic.faq.items.what-is-member.question")), /في \{siteName\}/);
+    assert.equal(
+      get(load("uk"), "membershipPublic.faq.items.what-is-member.question"),
+      "Хто такий член організації «{siteName}»?",
+    );
+    assert.equal(
+      get(load("zh-Hant"), "membershipPublic.faq.items.what-is-member.question"),
+      "什麼是{siteName}的會員？",
+    );
+    assert.match(String(get(load("pt"), "auth.loginSubtitle")), /da \{siteName\}/);
+    assert.match(String(get(load("he"), "auth.loginSubtitle")), /ב\{siteName\}/);
+
+    const corrected = {
+      ka: georgian,
+      fr: ["auth.twoStepLoginHelp", "authoringPage.application.motivationLabel"],
+      es: ["auth.loginSubtitle", "membershipPublic.faq.items.what-is-member.question"],
+      de: ["auth.chooseNewPasswordSubtitle", "volunteerPublic.meaning.p4"],
+      ar: ["membershipPublic.faq.items.what-is-member.question"],
+      uk: ["membershipPublic.faq.items.what-is-member.question"],
+      "zh-Hant": ["membershipPublic.faq.items.what-is-member.question"],
+    };
+    for (const [locale, keys] of Object.entries(corrected)) {
+      const packaged = JSON.parse(
+        read(`apps/api/assets/packaged-web-ui-catalogs/${locale}.json`),
+      ) as Record<string, unknown>;
+      for (const key of keys) {
+        assert.equal(get(packaged, key), get(load(locale), key), `${locale} ${key}`);
+      }
+    }
+  });
+
   it("packages the same corrected deletion intro as the WEB catalog", () => {
     for (const locale of LOCALES) {
       const web = get(load(locale), "auth.deleteAccountIntro");
