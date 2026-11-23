@@ -66,37 +66,62 @@ export function isPrivacyPolicyNoticeAuthorized(input: {
   );
 }
 
-export function isPrivacyPolicyNoticeEligible(
+export const PRIVACY_POLICY_NOTICE_EXCLUSION_REASONS = [
+  "missing_identity",
+  "unparseable_created_at",
+  "created_at_or_after_cutoff",
+  "finalized",
+  "ineligible_account",
+] as const;
+
+export type PrivacyPolicyNoticeExclusionReason =
+  (typeof PRIVACY_POLICY_NOTICE_EXCLUSION_REASONS)[number];
+
+/**
+ * Same decision order as recipient selection.
+ * Null means the account is eligible. A reason means it is excluded.
+ */
+export function classifyPrivacyPolicyNoticeExclusion(
   account: PrivacyPolicyNoticeAccount,
   createdBefore: string,
-): boolean {
+): PrivacyPolicyNoticeExclusionReason | null {
   if (!account.userId.trim() || !account.memberId.trim()) {
-    return false;
+    return "missing_identity";
   }
 
   const cutoff = Date.parse(createdBefore);
   const createdAt = Date.parse(account.createdAt);
   if (Number.isNaN(cutoff) || Number.isNaN(createdAt) || createdAt >= cutoff) {
-    return false;
+    if (Number.isNaN(createdAt)) {
+      return "unparseable_created_at";
+    }
+    return "created_at_or_after_cutoff";
   }
 
   if (account.deletionPhase === "finalized") {
-    return false;
+    return "finalized";
   }
 
   if (account.deletionPhase === "pending") {
-    return true;
+    return null;
   }
 
   if (account.status === "active" && (account.role === "member" || account.role === "admin")) {
-    return true;
+    return null;
   }
 
   if (account.status === "disabled" && account.suspensionActive) {
-    return true;
+    return null;
   }
 
-  return false;
+  return "ineligible_account";
+}
+
+export function isPrivacyPolicyNoticeEligible(
+  account: PrivacyPolicyNoticeAccount,
+  createdBefore: string,
+): boolean {
+  return classifyPrivacyPolicyNoticeExclusion(account, createdBefore) === null;
 }
 
 export async function verifyPublicPrivacyPolicyV2(
@@ -156,12 +181,14 @@ function clampBatchSize(value: number | undefined): number {
 
 export function parsePrivacyPolicyNoticeArgs(argv: readonly string[]): {
   ok: true;
+  dryRun: boolean;
   confirmation?: string;
   publishedBefore?: string;
   afterUserId?: string;
   batchSize?: number;
   maxBatches?: number;
 } | { ok: false; reason: string } {
+  let dryRun = false;
   let confirmation: string | undefined;
   let publishedBefore: string | undefined;
   let afterUserId: string | undefined;
@@ -170,8 +197,16 @@ export function parsePrivacyPolicyNoticeArgs(argv: readonly string[]): {
 
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
+    if (flag === undefined || !flag.startsWith("--")) {
+      return { ok: false, reason: "Privacy Policy notice activation arguments are incomplete." };
+    }
+    if (flag === "--dry-run") {
+      dryRun = true;
+      continue;
+    }
+
     const value = argv[index + 1];
-    if (flag === undefined || !flag.startsWith("--") || value === undefined || value.startsWith("--")) {
+    if (value === undefined || value.startsWith("--")) {
       return { ok: false, reason: "Privacy Policy notice activation arguments are incomplete." };
     }
     index += 1;
@@ -197,7 +232,7 @@ export function parsePrivacyPolicyNoticeArgs(argv: readonly string[]): {
     }
   }
 
-  return { ok: true, confirmation, publishedBefore, afterUserId, batchSize, maxBatches };
+  return { ok: true, dryRun, confirmation, publishedBefore, afterUserId, batchSize, maxBatches };
 }
 
 function buildNotice(account: PrivacyPolicyNoticeAccount, createdAt: string): MemberNotification {
@@ -376,4 +411,139 @@ export async function activatePrivacyPolicyNotice(input: {
     complete,
     failures: [],
   };
+}
+
+export interface PrivacyPolicyNoticeDryRunResult {
+  dryRun: true;
+  publicationVerified: boolean;
+  deniedReason: string | null;
+  cutoff: string | null;
+  eligible: number;
+  excluded: Record<PrivacyPolicyNoticeExclusionReason, number>;
+  expectedBatches: number;
+  batchSize: number;
+}
+
+function emptyExclusions(): Record<PrivacyPolicyNoticeExclusionReason, number> {
+  return {
+    missing_identity: 0,
+    unparseable_created_at: 0,
+    created_at_or_after_cutoff: 0,
+    finalized: 0,
+    ineligible_account: 0,
+  };
+}
+
+function dryRunResult(
+  overrides: Partial<PrivacyPolicyNoticeDryRunResult> = {},
+): PrivacyPolicyNoticeDryRunResult {
+  return {
+    dryRun: true,
+    publicationVerified: false,
+    deniedReason: null,
+    cutoff: null,
+    eligible: 0,
+    excluded: emptyExclusions(),
+    expectedBatches: 0,
+    batchSize: clampBatchSize(undefined),
+    ...overrides,
+  };
+}
+
+/**
+ * Count recipients without writing.
+ * The directory read path opens a client and uses find() only.
+ * This function does not create indexes, insert notices, or call activation.
+ */
+export async function previewPrivacyPolicyNotice(input: {
+  publishedBefore: string | undefined;
+  batchSize?: number;
+  now?: Date;
+  fetchImpl: typeof fetch;
+  directory: PrivacyPolicyNoticeDirectory;
+}): Promise<PrivacyPolicyNoticeDryRunResult> {
+  const batchSize = clampBatchSize(input.batchSize);
+  if (!input.publishedBefore || Number.isNaN(Date.parse(input.publishedBefore))) {
+    return dryRunResult({
+      deniedReason: "A publication cutoff timestamp is required.",
+      batchSize,
+    });
+  }
+
+  const now = input.now ?? new Date();
+  if (Date.parse(input.publishedBefore) > now.getTime()) {
+    return dryRunResult({
+      deniedReason: "The publication cutoff cannot be in the future.",
+      cutoff: input.publishedBefore,
+      batchSize,
+    });
+  }
+
+  const publication = await verifyPublicPrivacyPolicyV2(input.fetchImpl);
+  if (!publication.ok) {
+    return dryRunResult({
+      deniedReason: publication.reason,
+      cutoff: input.publishedBefore,
+      batchSize,
+    });
+  }
+
+  const excluded = emptyExclusions();
+  let eligible = 0;
+  let cursor: string | null = null;
+  let expectedBatches = 0;
+
+  for (;;) {
+    const page = await input.directory.listAccounts({
+      afterUserId: cursor,
+      limit: batchSize,
+      createdBefore: input.publishedBefore,
+    });
+    expectedBatches += 1;
+
+    if (page.accounts.length === 0) {
+      if (page.hasMore) {
+        return dryRunResult({
+          publicationVerified: true,
+          deniedReason: "Recipient paging did not advance. Nothing was sent.",
+          cutoff: input.publishedBefore,
+          batchSize,
+        });
+      }
+      break;
+    }
+
+    for (const account of page.accounts) {
+      const reason = classifyPrivacyPolicyNoticeExclusion(account, input.publishedBefore);
+      if (reason) {
+        excluded[reason] += 1;
+      } else {
+        eligible += 1;
+      }
+    }
+
+    const lastUserId = page.accounts[page.accounts.length - 1]?.userId ?? null;
+    if (!lastUserId || lastUserId === cursor) {
+      return dryRunResult({
+        publicationVerified: true,
+        deniedReason: "Recipient paging did not advance. Nothing was sent.",
+        cutoff: input.publishedBefore,
+        batchSize,
+      });
+    }
+    cursor = lastUserId;
+
+    if (!page.hasMore || page.accounts.length < batchSize) {
+      break;
+    }
+  }
+
+  return dryRunResult({
+    publicationVerified: true,
+    cutoff: input.publishedBefore,
+    eligible,
+    excluded,
+    expectedBatches,
+    batchSize,
+  });
 }

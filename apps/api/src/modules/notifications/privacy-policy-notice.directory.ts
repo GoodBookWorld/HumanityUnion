@@ -55,6 +55,10 @@ export function toPrivacyPolicyNoticeAccount(
 /**
  * One bounded page of auth accounts, ordered by stable userId.
  * Email and password fields are not requested or returned.
+ *
+ * This path is read-only. It opens the existing Mongo client and runs find().
+ * The suspension lookup used for disabled rows also only runs find().
+ * Index creation and document writes live in other functions and are not called here.
  */
 export async function listPrivacyPolicyNoticeAccountPage(input: {
   afterUserId: string | null;
