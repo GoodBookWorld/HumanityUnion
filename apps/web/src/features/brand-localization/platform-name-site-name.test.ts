@@ -165,6 +165,38 @@ describe("platform name uses published siteName", () => {
       get(spanish, "membershipPublic.faq.items.what-is-member.question"),
       "¿Qué es un Miembro de la {siteName}?",
     );
+    assert.equal(
+      get(spanish, "initiativeExperience.author.sidebar.assistantTitle"),
+      "Asistente de la {siteName}",
+    );
+    assert.doesNotMatch(JSON.stringify(spanish), /Assistant de \{siteName\}/);
+    assert.equal(
+      get(spanish, "pwa.install.alreadyInstalled"),
+      "La aplicación de la {siteName} ya está instalada en este dispositivo.",
+    );
+    assert.match(
+      String(get(spanish, "volunteerPublic.intro.p1")),
+      /plataforma de la <platform>\{siteName\}<\/platform>/,
+    );
+    assert.match(
+      String(get(spanish, "rrpApplication.consent.label")),
+      /que la \{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(String(get(spanish, "auth.registerSubtitle")), /Participante de la \{siteName\}/);
+    assert.match(String(get(spanish, "memberProfile.subtitle")), /Participante de la \{siteName\}/);
+    assert.match(String(get(spanish, "memberProfile.membershipNote")), /Membresía/);
+    assert.match(
+      String(get(spanish, "notifications.types.member_badge_shipped.message")),
+      /artículo de Miembro de la \{siteName\}/,
+    );
+    assert.doesNotMatch(
+      String(get(spanish, "notifications.types.member_badge_delivered.message")),
+      /Participante|membresía/,
+    );
+    assert.equal(
+      get(spanish, "workspace.publishingPage.editor.seo.huShareLegend"),
+      "Distribución en canales sociales de la {siteName}",
+    );
 
     const german = load("de");
     for (const key of [
@@ -247,7 +279,21 @@ describe("platform name uses published siteName", () => {
     const corrected = {
       ka: georgian,
       fr: ["auth.twoStepLoginHelp", "authoringPage.application.motivationLabel"],
-      es: ["auth.loginSubtitle", "membershipPublic.faq.items.what-is-member.question"],
+      es: [
+        "auth.loginSubtitle",
+        "auth.deleteAccountIntro",
+        "auth.registerSubtitle",
+        "membershipPublic.faq.items.what-is-member.question",
+        "initiativeExperience.author.sidebar.assistantTitle",
+        "pwa.install.alreadyInstalled",
+        "pwa.install.lead",
+        "volunteerPublic.intro.p1",
+        "rrpApplication.consent.label",
+        "notifications.types.member_badge_shipped.message",
+        "workspace.publishingPage.editor.seo.huShareLegend",
+        "preferences.subtitle",
+        "authoringPage.application.motivationLabel",
+      ],
       de: ["auth.chooseNewPasswordSubtitle", "volunteerPublic.meaning.p4"],
       ar: ["membershipPublic.faq.items.what-is-member.question"],
       uk: ["membershipPublic.faq.items.what-is-member.question"],

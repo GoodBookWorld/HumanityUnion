@@ -89,7 +89,7 @@
     "incorrectCode": "El código es incorrecto. Revisa el correo electrónico más reciente e inténtalo de nuevo.",
     "invalidEmailChangeToken": "Token de cambio de correo electrónico no válido o caducado.",
     "deleteAccountTitle": "Eliminar cuenta",
-    "deleteAccountIntro": "Puede programar la eliminación de su cuenta de {siteName}. El período de recuperación de 30 días comienza solo después de confirmar un código enviado por correo.",
+    "deleteAccountIntro": "Puede programar la eliminación de su cuenta de la {siteName}. El período de recuperación de 30 días comienza solo después de confirmar un código enviado por correo.",
     "deleteAccountConsequences": "Los registros cívicos públicos permanecen. Los mensajes privados siguen disponibles para las otras personas de esas conversaciones. No podrá iniciar sesión ni abrir esos mensajes. Después del plazo, este correo puede registrar una cuenta nueva. La cuenta nueva no recibe los roles, nombramientos ni mensajes de esta cuenta.",
     "deleteAccountButton": "Eliminar cuenta",
     "deleteAccountSendCode": "Enviar código de confirmación",
@@ -187,7 +187,7 @@
       "agreeStandards": "Acepto que las publicaciones deben cumplir con las normas de seguridad y publicación de la plataforma.",
       "agreeStandardsError": "Debe aceptar cumplir con las normas de seguridad y publicación de la plataforma.",
       "motivationError": "Comparta un poco más sobre por qué le gustaría contribuir.",
-      "motivationLabel": "¿Por qué te gustaría contribuir al blog de la {siteName}?",
+      "motivationLabel": "¿Por qué le gustaría contribuir al blog de la {siteName}?",
       "preferredCategoriesError": "Seleccione al menos una categoría preferida.",
       "preferredCategoriesHelp": "Seleccione una o más. Esto es solo una señal de interés.",
       "preferredCategoriesLegend": "Categorías de blog preferidas",
@@ -434,7 +434,7 @@
       "decisionVotesLinked": "Los recuentos de votos reflejan decisiones vinculadas a tus iniciativas.",
       "decisionVotesLinkedPendingApi": "Los recuentos de votos reflejan decisiones vinculadas a tus iniciativas. Aún no hay una API de votos general para participantes conectada."
     },
-    "pageSubtitle": "Tu trabajo cívico privado a lo largo del ciclo de vida de la {siteName}",
+    "pageSubtitle": "Su trabajo cívico privado a lo largo del ciclo de vida de la {siteName}",
     "sections": {
       "navAria": "Secciones del espacio de trabajo de la iniciativa",
       "navLabel": "Secciones",
@@ -1643,7 +1643,7 @@
           "emptySummary": "No se proporcionó ningún resumen.",
           "loadFailed": "Esta Petición no se pudo cargar.",
           "loading": "Cargando Petición…",
-          "participationTransparencyNote": "Firmar esta Petición es una forma de participación cívica en {siteName}. No es una petición jurídicamente vinculante y no crea, por sí sola, ninguna obligación legal o gubernamental.",
+          "participationTransparencyNote": "Firmar esta Petición es una forma de participación cívica en la {siteName}. No es una petición jurídicamente vinculante y no crea, por sí sola, ninguna obligación legal o gubernamental.",
           "previewSignatureDisabled": "El widget de firma está deshabilitado durante la vista previa; la firma estará disponible para los visitantes una vez que esta Petición sea publicada y abierta.",
           "publishedAt": "Publicado el {date}",
           "shareAria": "Compartir petición: {title}",
@@ -2762,9 +2762,9 @@
         },
         "aria": "Herramientas de trabajo de la fase",
         "askAssistant": "Preguntar al Assistant",
-        "assistantGenericHint": "Pregunte sobre esta fase o sobre {siteName}. Las sugerencias son solo de carácter orientativo.",
+        "assistantGenericHint": "Pregunte sobre esta fase o sobre la {siteName}. Las sugerencias son solo de carácter orientativo.",
         "assistantLoadFailed": "No se pudieron cargar los datos del Assistant.",
-        "assistantTitle": "Assistant de {siteName}",
+        "assistantTitle": "Asistente de la {siteName}",
         "completeness": {
           "draftInProgress": "Borrador en curso.",
           "draftInProgressSaveHint": "Borrador en curso — use Guardar borrador en el Workspace principal para conservar sus cambios.",
@@ -5584,7 +5584,7 @@
         "title": "Artículo oficial de Miembro entregado"
       },
       "member_badge_shipped": {
-        "message": "Su solicitud de artículo oficial de Miembro de la {siteName} ha sido enviada.",
+        "message": "Su solicitud oficial de artículo de Miembro de la {siteName} ha sido enviada.",
         "title": "Artículo oficial de Miembro enviado"
       },
       "official_response_received": {
@@ -5746,7 +5746,7 @@
       "savedUnavailable": "{code} (guardado — temporalmente no disponible en el catálogo)",
       "translationPreference": "Preferencia de traducción",
       "writingLanguages": "Idiomas de escritura",
-      "writingLanguagesHelp": "Agrega los idiomas que utilizas para escribir y colaborar. Estas preferencias ayudan a la {siteName} a comprender cómo te comunicas y no controlan el idioma de traducción de tu navegador.",
+      "writingLanguagesHelp": "Agregue los idiomas que utiliza para escribir y colaborar. Estas preferencias ayudan a la {siteName} a comprender cómo se comunica y no controlan el idioma de traducción de su navegador.",
       "writingLanguagesPlaceholder": "es, en"
     },
     "loadError": "No se pudieron cargar las preferencias.",
@@ -5781,7 +5781,7 @@
       "visibility": "Visibilidad"
     },
     "signInPrompt": "Inicia sesión para gestionar tus preferencias.",
-    "subtitle": "Su experiencia en la {siteName} y configuración de participación",
+    "subtitle": "Configuración de su experiencia y participación en la {siteName}",
     "title": "Preferencias",
     "translationPreferences": {
       "ask": "Ofrecer traducción; mantener el original por defecto",
@@ -6594,14 +6594,14 @@
     "goBack": "Volver",
     "install": {
       "addToHomeScreen": "Añadir a la pantalla de inicio",
-      "alreadyInstalled": "{siteName} ya está instalado en este dispositivo.",
-      "androidHintPrimary": "Si hay un botón de Instalar {siteName} disponible en esta página, úsalo primero.",
+      "alreadyInstalled": "La aplicación de la {siteName} ya está instalada en este dispositivo.",
+      "androidHintPrimary": "Si hay un botón para instalar la {siteName} en esta página, úsalo primero.",
       "androidHintSecondary": "Si Chrome no muestra la opción de instalación: actualice la página, asegúrese de que el sitio esté abierto en Chrome y compruebe que la aplicación no esté ya instalada.",
-      "androidStep1": "Abre {siteName} en Chrome.",
+      "androidStep1": "Abre la {siteName} en Chrome.",
       "androidStep2": "Toca el menú del navegador (⋮).",
       "androidStep3": "Elige Instalar aplicación o Añadir a la pantalla de inicio.",
       "androidStep4": "Confirma la instalación.",
-      "androidStep5": "El icono de la {siteName} aparecerá en su Pantalla de Inicio / lanzador de aplicaciones.",
+      "androidStep5": "El icono de la {siteName} aparecerá en tu pantalla de inicio o en el lanzador de aplicaciones.",
       "androidTitle": "Android — Chrome",
       "appTitle": "Aplicación de la {siteName}",
       "automaticUnavailable": "La instalación automática no está disponible en esta sesión del navegador. Utilice los siguientes pasos o vuelva a abrir la {siteName} en una ventana de navegador normal (no privada) si la instalación no aparece.",
@@ -6610,10 +6610,10 @@
       "closeGuideAria": "Cerrar guía de instalación",
       "guideSubtitle": "Agregue la {siteName} a su pantalla de inicio para un acceso más rápido y una experiencia similar a la de una aplicación.",
       "guideTitle": "Instalar la aplicación de la {siteName}",
-      "installCta": "Instalar {siteName}",
+      "installCta": "Instalar la {siteName}",
       "installationGuide": "Guía de instalación",
       "installing": "Instalando…",
-      "iosA2hsStandaloneNote": "Después de agregar el icono, {siteName} se abre desde la pantalla de inicio como una aplicación instalada.",
+      "iosA2hsStandaloneNote": "Después de agregar el icono, la {siteName} se abre desde la pantalla de inicio como una aplicación instalada.",
       "iosA2hsStep1": "Toca el botón Compartir de Safari.",
       "iosA2hsStep2": "Elige Agregar a Pantalla de inicio.",
       "iosA2hsStep3": "Confirma tocando Agregar.",
@@ -6625,16 +6625,16 @@
       "iosStep3": "Desplázate y selecciona Añadir a pantalla de inicio.",
       "iosStep4": "Revisa el nombre de la aplicación.",
       "iosStep5": "Toca Añadir.",
-      "iosStep6": "Inicia {siteName} desde el nuevo icono de la pantalla de inicio.",
+      "iosStep6": "Inicia la {siteName} desde el nuevo icono de la pantalla de inicio.",
       "iosTitle": "iPhone / iPad — Safari",
-      "lead": "Lleva la humanidad contigo. Instala la aplicación para acceder directamente a tu Espacio de Trabajo, Iniciativas, Notificaciones y Asistente de {siteName}.",
+      "lead": "Lleva la humanidad contigo. Instala la aplicación para acceder directamente a tu Espacio de Trabajo, Iniciativas, Notificaciones y Asistente de la {siteName}.",
       "openWorkspace": "Abrir Espacio de trabajo"
     },
     "menuTitle": "Menú",
     "openMenu": "Abrir menú",
     "playIntroSound": "Reproducir sonido de introducción",
-    "searchLabel": "Buscar en {siteName}",
-    "searchPlaceholder": "Buscar en {siteName}",
+    "searchLabel": "Buscar en la {siteName}",
+    "searchPlaceholder": "Buscar en la {siteName}",
     "sound": "Sonido"
   },
   "search": {
@@ -6793,7 +6793,7 @@
       "heading": "Introducción",
       "honeyEarthAlt": "Ilustración de la Tierra con un patrón de panal, que sugiere el cuidado compartido de nuestro hogar común",
       "number": "1",
-      "p1": "El desarrollo de la plataforma <platform>{siteName}</platform> es una contribución personal que cada uno de nosotros puede hacer a nuestro propio futuro y al futuro de las próximas generaciones.",
+      "p1": "El desarrollo de la plataforma de la <platform>{siteName}</platform> es una contribución personal que cada uno de nosotros puede hacer a nuestro propio futuro y al futuro de las próximas generaciones.",
       "p2": "Si nuestros antepasados hubieran tenido acceso a las herramientas tecnológicas con las que contamos hoy en día —internet, ordenadores, teléfonos inteligentes y plataformas web educativas e informativas—, nuestras sociedades habrían desarrollado un mayor nivel de conciencia y responsabilidad social mucho antes.",
       "p3": "Una mayor alfabetización social ayuda a las personas a tomar decisiones más reflexivas y racionales. Tales decisiones sientan las bases para la justicia social, el bienestar y la seguridad.",
       "p4": "Somos una generación única. Hemos vivido la transición desde un mundo mayoritariamente tradicional hacia una era que ofrece a la gente común herramientas tecnológicas potentes para la comunicación, la educación, la cooperación y la acción colectiva.",
@@ -7282,7 +7282,7 @@
           "distributionHeading": "Distribución",
           "heading": "Optimización de Publicaciones",
           "huShareHelper": "Seleccionar un canal permite que la {siteName} distribuya esta publicación a través del canal oficial configurado. Una URL de perfil por sí sola no se publica automáticamente; la entrega espera una integración real con un proveedor. Las preferencias nunca omiten la revisión, programación o bloqueos.",
-          "huShareLegend": "Distribución social de la {siteName}",
+          "huShareLegend": "Distribución en canales sociales de la {siteName}",
           "lede": "Los metadatos sociales y de SEO se mantienen en esta publicación. Los permisos de distribución se encolan a través de la bandeja de salida de la plataforma para los canales oficiales de la {siteName}; nunca inventan credenciales externas ni afirman un envío exitoso.",
           "metaDescription": "Meta descripción",
           "noSocialImage": "Aún no hay imagen social",
@@ -7675,7 +7675,7 @@
       "FULL": "Financiación completa solicitada"
     },
     "consent": {
-      "label": "Consiento que {siteName} trate esta solicitud como se describe en la <privacy>Política de Privacidad</privacy>.",
+      "label": "Consiento que la {siteName} trate esta solicitud como se describe en la <privacy>Política de Privacidad</privacy>.",
       "versionNote": "Versión del consentimiento: {version}"
     },
     "actions": {
