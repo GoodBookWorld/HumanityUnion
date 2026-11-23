@@ -7,7 +7,12 @@ import "../../../../features/auth/components/auth-form.css";
 
 export default async function AccountDeletionRecoveryPage() {
   const t = await getTranslations("auth");
-  const enabled = isAccountDeletionUiEnabled();
+  // Direct reads let the production build bake this page. The helper remains
+  // the runtime check used by tests and accepts the same true/1 values.
+  const enabled =
+    isAccountDeletionUiEnabled() ||
+    process.env.NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED === "true" ||
+    process.env.NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED === "1";
 
   return (
     <main className="auth-page">

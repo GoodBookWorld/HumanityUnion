@@ -80,6 +80,7 @@ describe("account deletion web", () => {
     const messages = read("features/account-deletion/account-deletion-messages.ts");
     const section = read("features/account-deletion/AccountDeletionSection.tsx");
     assert.match(page, /enabled \? <AccountDeletionRecoveryForm \/> : null/);
+    assert.match(page, /process\.env\.NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED === "true"/);
     assert.match(page, /deleteAccountUnavailable/);
     assert.match(form, /href="\/login"/);
     assert.doesNotMatch(form, /\/api\/v1\/auth\/login/);
@@ -89,6 +90,17 @@ describe("account deletion web", () => {
     assert.match(section, /accountDeletionErrorMessage/);
     assert.match(messages, /invalid_password/);
     assert.doesNotMatch(`${page}\n${form}`, /dir="/);
+  });
+
+  it("bakes the public deletion flag in the Web Dockerfile, default off", () => {
+    const dockerfile = read("../Dockerfile");
+    assert.match(dockerfile, /ARG NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED=false/);
+    assert.match(
+      dockerfile,
+      /ENV NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED=\$NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED/,
+    );
+    assert.doesNotMatch(dockerfile, /NEXT_PUBLIC_ACCOUNT_DELETION_ENABLED=true/);
+    assert.match(dockerfile, /ARG NEXT_PUBLIC_RRP_APPLICATION_ENTRY_ENABLED=false/);
   });
 
   it("localizes every installed catalog and keeps Arabic and Hebrew in RTL scripts", () => {
