@@ -183,6 +183,27 @@ describe("platform name uses published siteName", () => {
     }
     assert.match(String(get(german, "auth.chooseNewPasswordSubtitle")), /Konto bei \{siteName\}/);
     assert.match(String(get(german, "volunteerPublic.meaning.p4")), /<platform>Plattform \{siteName\}<\/platform>/);
+    assert.equal(get(german, "auth.loginSubtitle"), "Greifen Sie auf Ihren Arbeitsbereich bei {siteName} zu.");
+    assert.equal(
+      get(german, "auth.registerSubtitle"),
+      "Erstellen Sie Ihr Teilnehmerkonto bei {siteName}.",
+    );
+    assert.match(String(get(german, "auth.twoStepLoginHelp")), /Mitgliedschaft bei \{siteName\}/);
+    assert.equal(get(german, "membershipPublic.faq.items.what-is-member.question"), "Was ist ein Mitglied von {siteName}?");
+    assert.equal(get(german, "memberProfile.subtitle"), "Ihr Teilnehmerprofil bei {siteName}");
+    assert.match(
+      String(get(german, "notifications.types.member_badge_contribution_confirmed.message")),
+      /Mitgliedsartikel von \{siteName\}/,
+    );
+    assert.doesNotMatch(
+      String(get(german, "notifications.types.member_badge_delivered.message")),
+      /Teilnehmer|Mitgliedschaft/,
+    );
+    assert.equal(get(german, "pwa.install.lead"), "Nehmen Sie die Menschlichkeit mit. Installieren Sie die App für den direkten Zugriff auf Ihren Arbeitsbereich, Ihre Initiativen, Benachrichtigungen und den Assistenten von {siteName}.");
+    assert.doesNotMatch(String(get(german, "pwa.install.lead")), /Humanity/);
+    assert.equal(get(german, "workspace.publishingPage.editor.seo.huShareLegend"), "Social-Media-Verbreitung von {siteName}");
+    assert.match(String(get(german, "rrpApplication.consent.label")), /<privacy>[\s\S]*<\/privacy>/);
+    assert.doesNotMatch(JSON.stringify(german), /«\{siteName\}»/);
 
     assert.match(String(get(load("ar"), "membershipPublic.faq.items.what-is-member.question")), /في \{siteName\}/);
     const ukrainian = load("uk");
