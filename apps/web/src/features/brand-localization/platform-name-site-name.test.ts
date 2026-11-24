@@ -337,7 +337,92 @@ describe("platform name uses published siteName", () => {
       get(load("zh-Hant"), "membershipPublic.faq.items.what-is-member.question"),
       "什麼是{siteName}的成員？",
     );
-    assert.match(String(get(load("pt"), "auth.loginSubtitle")), /da \{siteName\}/);
+    const portuguese = load("pt");
+    assert.equal(
+      get(portuguese, "auth.loginSubtitle"),
+      "Aceda ao seu Espaço de Trabalho na plataforma {siteName}.",
+    );
+    assert.equal(
+      get(portuguese, "auth.deleteAccountIntro"),
+      "Pode agendar a eliminação da sua conta na plataforma {siteName}. O período de recuperação de 30 dias começa apenas depois de confirmar um código enviado por e-mail.",
+    );
+    assert.equal(
+      get(portuguese, "initiativeExperience.author.sidebar.assistantTitle"),
+      "Assistente da plataforma {siteName}",
+    );
+    assert.doesNotMatch(
+      String(get(portuguese, "initiativeExperience.author.sidebar.assistantTitle")),
+      /Assistant/,
+    );
+    assert.match(
+      String(get(portuguese, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /esta Petição/,
+    );
+    assert.match(
+      String(get(portuguese, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /juridicamente vinculativa/,
+    );
+    assert.doesNotMatch(
+      String(get(portuguese, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /Participante/,
+    );
+    assert.match(String(get(portuguese, "auth.registerSubtitle")), /Participante/);
+    assert.match(String(get(portuguese, "memberProfile.membershipNote")), /Afiliação/);
+    assert.match(
+      String(get(portuguese, "notifications.types.member_badge_contribution_confirmed.message")),
+      /pedido de item oficial de Membro/,
+    );
+    assert.match(
+      String(get(portuguese, "notifications.types.member_badge_delivered.message")),
+      /item oficial de Membro/,
+    );
+    assert.doesNotMatch(
+      String(get(portuguese, "notifications.types.member_badge_delivered.message")),
+      /\bpedido\b|solicitação|Participante/,
+    );
+    assert.match(
+      String(get(portuguese, "notifications.types.member_badge_shipped.message")),
+      /foi expedido/,
+    );
+    assert.doesNotMatch(
+      String(get(portuguese, "notifications.types.member_badge_shipped.message")),
+      /\bpedido\b|solicitação|Participante/,
+    );
+    assert.equal(get(portuguese, "pwa.searchLabel"), "Pesquisar na plataforma {siteName}");
+    assert.match(String(get(portuguese, "pwa.install.lead")), /Humanidade/);
+    assert.doesNotMatch(String(get(portuguese, "pwa.install.lead")), /Humanity|você/);
+    assert.doesNotMatch(
+      String(get(portuguese, "authoringPage.becomeAuthor.encouragement")),
+      /Apoiie/,
+    );
+    assert.match(
+      String(get(portuguese, "authoringPage.becomeAuthor.encouragement")),
+      /evidências/,
+    );
+    assert.match(
+      String(get(portuguese, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /não publica automaticamente/,
+    );
+    assert.match(
+      String(get(portuguese, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /nunca contornam/,
+    );
+    assert.equal(
+      get(portuguese, "workspace.publishingPage.editor.seo.huShareLegend"),
+      "Distribuição nas redes sociais da plataforma {siteName}",
+    );
+    assert.doesNotMatch(
+      String(get(portuguese, "volunteerPublic.takePart.p3")),
+      /utilize-as/,
+    );
+    assert.match(
+      String(get(portuguese, "rrpApplication.consent.label")),
+      /plataforma \{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(
+      String(get(portuguese, "volunteerPublic.intro.p1")),
+      /plataforma <platform>\{siteName\}<\/platform>/,
+    );
     const hebrew = load("he");
     assert.match(String(get(hebrew, "auth.loginSubtitle")), /ב\{siteName\}/);
     assert.equal(
@@ -410,6 +495,23 @@ describe("platform name uses published siteName", () => {
         "volunteerPublic.intro.p1",
       ],
       de: ["auth.chooseNewPasswordSubtitle", "volunteerPublic.meaning.p4"],
+      pt: [
+        "auth.loginSubtitle",
+        "auth.deleteAccountIntro",
+        "auth.registerSubtitle",
+        "initiativeExperience.author.sidebar.assistantTitle",
+        "initiativeExperience.author.petition.public.participationTransparencyNote",
+        "notifications.types.member_badge_contribution_confirmed.message",
+        "notifications.types.member_badge_delivered.message",
+        "notifications.types.member_badge_shipped.message",
+        "pwa.install.lead",
+        "pwa.searchLabel",
+        "workspace.publishingPage.editor.seo.huShareHelper",
+        "workspace.publishingPage.editor.seo.huShareLegend",
+        "volunteerPublic.takePart.p3",
+        "rrpApplication.consent.label",
+        "authoringPage.becomeAuthor.encouragement",
+      ],
       ar: ["membershipPublic.faq.items.what-is-member.question"],
       uk: ["membershipPublic.faq.items.what-is-member.question"],
       "zh-Hant": ["membershipPublic.faq.items.what-is-member.question"],
@@ -539,6 +641,55 @@ describe("platform name uses published siteName", () => {
     const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
     assert.equal(fallback, "შედით თქვენს სამუშაო სივრცეში პლატფორმაზე Humanity Union.");
     assert.doesNotMatch(fallback, /\{siteName\}/);
+  });
+
+  it("renders Portuguese platform grammar for the published brand and the English fallback", () => {
+    const portuguese = load("pt");
+    const t = createTranslator({
+      locale: "pt",
+      messages: portuguese as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "União da Humanidade";
+    const rich = (chunks: string) => chunks;
+    const login = t("auth.loginSubtitle", { siteName });
+    assert.equal(login, "Aceda ao seu Espaço de Trabalho na plataforma União da Humanidade.");
+    assert.doesNotMatch(login, /\{siteName\}|da União da/);
+    const petition = t(
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      { siteName },
+    );
+    assert.match(petition, /Assinar esta Petição/);
+    assert.match(petition, /petição juridicamente vinculativa/);
+    assert.match(petition, /obrigação legal ou governamental/);
+    assert.doesNotMatch(petition, /Participante|\{siteName\}/);
+    const shipped = t("notifications.types.member_badge_shipped.message", { siteName });
+    assert.equal(
+      shipped,
+      "O seu item oficial de Membro na plataforma União da Humanidade foi expedido.",
+    );
+    assert.doesNotMatch(shipped, /\bpedido\b|solicitação/);
+    const assistant = t("initiativeExperience.author.sidebar.assistantTitle", { siteName });
+    assert.equal(assistant, "Assistente da plataforma União da Humanidade");
+    assert.equal(t("pwa.searchLabel", { siteName }), "Pesquisar na plataforma União da Humanidade");
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /^Leve a Humanidade/);
+    assert.match(lead, /Assistente da plataforma União da Humanidade/);
+    assert.doesNotMatch(lead, /Humanity|\{siteName\}/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /União da Humanidade/);
+    assert.match(consent, /Política de Privacidade/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.match(platform, /plataforma União da Humanidade/);
+    assert.doesNotMatch(platform, /\{siteName\}|<platform>/);
+    const helper = t("workspace.publishingPage.editor.seo.huShareHelper", { siteName });
+    assert.match(helper, /não publica automaticamente/);
+    assert.match(helper, /integração real com o provedor/);
+    assert.match(helper, /nunca contornam/);
+    assert.doesNotMatch(helper, /\{siteName\}/);
+    const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(fallback, "Aceda ao seu Espaço de Trabalho na plataforma Humanity Union.");
+    assert.doesNotMatch(fallback, /\{siteName\}|da Humanity/);
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
