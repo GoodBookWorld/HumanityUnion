@@ -16,7 +16,6 @@ import {
 import { API_BASE_URL } from "../api-base-url";
 import { CIVIC_MEDIA_RECORD_ID } from "../../features/civic-media-center/civic-media-canonical-editorial";
 import { resolveLocalizedBrandForLocale } from "../../features/brand-localization/resolve-localized-brand";
-import { loadRemoteUiMessagePack } from "../../features/i18n/remote-ui-message-pack-source";
 import { resolveLocalizedLegalBody } from "../../features/legal/resolve-localized-legal-body";
 import {
   classifyPublicSeoLocalizedPageFamily,
@@ -129,18 +128,67 @@ function evidenceKey(parts: readonly string[]): string {
   return JSON.stringify(parts);
 }
 
+function webUiMessagesArePublished(messages: unknown): boolean {
+  return messages != null && typeof messages === "object" && Object.keys(messages).length > 0;
+}
+
+function webUiEvidenceCountIsPublished(count: unknown): boolean | null {
+  if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0) {
+    return null;
+  }
+  return count > 0;
+}
+
+/**
+ * One request. A compact evidence body uses topLevelKeyCount.
+ * A legacy full pack, from an API that ignores view, uses Object.keys.
+ * A body that carries both shapes is not evidence and is not a second fetch.
+ */
+function webUiPublishedFromEnvelope(envelope: {
+  readonly success?: boolean;
+  readonly data?: unknown;
+}): boolean {
+  if (!envelope.success || envelope.data == null || typeof envelope.data !== "object" || Array.isArray(envelope.data)) {
+    return false;
+  }
+  const data = envelope.data as Record<string, unknown>;
+  const hasMessages = Object.prototype.hasOwnProperty.call(data, "messages");
+  const hasCount = Object.prototype.hasOwnProperty.call(data, "topLevelKeyCount");
+  if (hasMessages && hasCount) {
+    return false;
+  }
+  if (hasMessages) {
+    return webUiMessagesArePublished(data.messages);
+  }
+  if (hasCount) {
+    return webUiEvidenceCountIsPublished(data.topLevelKeyCount) === true;
+  }
+  return false;
+}
+
 async function publishedWebUi(locale: string): Promise<boolean> {
   const tag = locale.trim();
   if (!tag || tag === "en") {
     return false;
   }
-  return runSeoEvidenceFetch(evidenceKey(["web-ui", tag, API_BASE_URL]), async () => {
+  return runSeoEvidenceFetch(evidenceKey(["web-ui", tag, API_BASE_URL, "evidence"]), async () => {
     try {
-      const pack = await loadRemoteUiMessagePack(tag);
-      if (!pack?.messages || typeof pack.messages !== "object") {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/web-ui-message-packs?locale=${encodeURIComponent(tag)}&view=evidence`,
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        },
+      );
+      if (!response.ok) {
         return false;
       }
-      return Object.keys(pack.messages).length > 0;
+      const envelope = (await response.json()) as {
+        success?: boolean;
+        data?: unknown;
+      };
+      return webUiPublishedFromEnvelope(envelope);
     } catch {
       return false;
     }

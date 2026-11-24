@@ -418,6 +418,9 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
     assert.ok(control.maxActive <= SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT);
     for (const call of control.calls) {
       assert.equal(call.signal ?? null, null);
+      if (call.kind === "web-ui") {
+        assert.equal(new URL(call.url).searchParams.get("view"), "evidence");
+      }
     }
     const keys = readInFlightSeoEvidenceKeysForTests().map((key) => JSON.parse(key) as string[]);
     assert.equal(keys.length, 3);
@@ -837,5 +840,184 @@ describe("bounded SEO evidence loading", { concurrency: false }, () => {
       assert.equal(recovered("/terms", locale), true);
     }
     assert.equal(readActiveSeoEvidenceFetchesForTests(), 0);
+  });
+});
+
+describe("HU-MEM-14C.1B WEB_UI evidence consumer", { concurrency: false }, () => {
+  const calls: string[] = [];
+
+  beforeEach(() => {
+    calls.length = 0;
+    resetSeoEvidenceFetchGateForTests();
+    resetSeoMetadataEligibilityGateForTests();
+    resetWebMemorySamplerForTests();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = ORIGINAL_FETCH;
+    resetSeoEvidenceFetchGateForTests();
+    resetSeoMetadataEligibilityGateForTests();
+    resetWebMemorySamplerForTests();
+  });
+
+  async function membershipEligible(
+    response: Response | (() => Promise<Response> | Response),
+  ): Promise<boolean> {
+    globalThis.fetch = async (input) => {
+      const url = requestUrl(input);
+      calls.push(url);
+      if (!url.includes("/api/v1/web-ui-message-packs")) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return typeof response === "function" ? response() : response;
+    };
+    const predicate = await buildPublicSeoLocalizedVariantPredicate({
+      localeFreePaths: ["/membership"],
+      locales: ["uk"],
+    });
+    return predicate("/membership", "uk");
+  }
+
+  it("treats compact evidence and a legacy full pack as the same predicate", async () => {
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", revision: 4, topLevelKeyCount: 1 },
+      })),
+      true,
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(new URL(calls[0] ?? "").searchParams.get("view"), "evidence");
+    calls.length = 0;
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", revision: 4, messages: { greeting: "Hello" }, source: "remote" },
+      })),
+      true,
+    );
+    assert.equal(calls.length, 1);
+
+    calls.length = 0;
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", revision: 5, topLevelKeyCount: 0 },
+      })),
+      false,
+    );
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", messages: {}, source: "remote" },
+      })),
+      false,
+    );
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", messages: { common: {} }, source: "remote" },
+      })),
+      true,
+    );
+    assert.equal(
+      await membershipEligible(jsonResponse({
+        success: true,
+        data: { locale: "uk", revision: 6, topLevelKeyCount: 1 },
+      })),
+      true,
+    );
+  });
+
+  it("rejects invalid, ambiguous, missing, and failed evidence without a second request", async () => {
+    const cases: Array<{ body?: unknown; status?: number; init?: "throw" | "bad-json" }> = [
+      { body: { success: true, data: { topLevelKeyCount: -1 } } },
+      { body: { success: true, data: { topLevelKeyCount: 1.5 } } },
+      { body: { success: true, data: { topLevelKeyCount: Number.NaN } } },
+      { body: { success: true, data: { topLevelKeyCount: "2" } } },
+      { body: { success: true, data: { messages: { a: "x" }, topLevelKeyCount: 1 } } },
+      { body: { success: false, data: { topLevelKeyCount: 4 } } },
+      { body: { success: true, data: null } },
+      { body: { success: true, data: [] } },
+      { body: { success: false, data: null }, status: 404 },
+      { body: { success: false, data: null }, status: 500 },
+      { body: { success: false, data: null }, status: 503 },
+      { init: "throw" },
+      { init: "bad-json" },
+    ];
+    for (const item of cases) {
+      calls.length = 0;
+      const eligible = await membershipEligible(() => {
+        if (item.init === "throw") {
+          throw new Error("network down");
+        }
+        if (item.init === "bad-json") {
+          return new Response("{", { status: 200, headers: { "content-type": "application/json" } });
+        }
+        return jsonResponse(item.body, item.status ?? 200);
+      });
+      assert.equal(eligible, false);
+      assert.equal(calls.length, 1);
+    }
+  });
+
+  it("does not fetch English and shares one in-flight evidence request", async () => {
+    globalThis.fetch = async () => {
+      calls.push("en");
+      return jsonResponse({ success: true, data: { topLevelKeyCount: 3 } });
+    };
+    const english = await buildPublicSeoLocalizedVariantPredicate({
+      localeFreePaths: ["/membership"],
+      locales: ["en"],
+    });
+    assert.equal(english("/membership", "en"), false);
+    assert.equal(calls.length, 0);
+
+    let release: () => void = () => undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    globalThis.fetch = async (input) => {
+      calls.push(requestUrl(input));
+      await hold;
+      return jsonResponse({ success: true, data: { locale: "uk", revision: 1, topLevelKeyCount: 2 } });
+    };
+    const pending = Promise.all([
+      buildPublicSeoLocalizedVariantPredicate({ localeFreePaths: ["/membership"], locales: ["uk"] }),
+      buildPublicSeoLocalizedVariantPredicate({ localeFreePaths: ["/membership"], locales: ["uk"] }),
+    ]);
+    await waitFor("shared evidence", () => calls.length === 1);
+    release();
+    const [first, second] = await pending;
+    assert.equal(first?.("/membership", "uk"), true);
+    assert.equal(second?.("/membership", "uk"), true);
+    assert.equal(calls.length, 1);
+    assert.equal(readActiveSeoEvidenceFetchesForTests(), 0);
+  });
+
+  it("keeps the evidence fetch cap at 8", async () => {
+    let release: () => void = () => undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    globalThis.fetch = async (input) => {
+      calls.push(requestUrl(input));
+      await hold;
+      return jsonResponse({ success: true, data: { topLevelKeyCount: 1 } });
+    };
+    const locales = Array.from({ length: SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT + 1 }, (_, index) => `loc-${index}`);
+    const pending = buildPublicSeoLocalizedVariantPredicate({
+      localeFreePaths: ["/membership"],
+      locales,
+    });
+    await waitFor("evidence cap", () => readActiveSeoEvidenceFetchesForTests() === SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT);
+    assert.equal(readQueuedSeoEvidenceFetchesForTests(), 1);
+    assert.equal(SEO_EVIDENCE_FETCH_CONCURRENCY_LIMIT, 8);
+    release();
+    const predicate = await pending;
+    for (const locale of locales) {
+      assert.equal(predicate("/membership", locale), true);
+    }
+    assert.equal(calls.length, locales.length);
   });
 });
