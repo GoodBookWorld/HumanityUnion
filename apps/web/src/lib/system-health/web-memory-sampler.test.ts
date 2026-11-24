@@ -22,6 +22,7 @@ import {
   resetSitemapBuildOverlapForTests,
 } from "./sitemap-build-diagnostic";
 import { readWebWorkloadGauges } from "./web-memory-gauges";
+import type { V8MemorySample } from "./web-process-memory";
 import {
   WEB_MEMORY_RSS_STEP_BYTES,
   WEB_MEMORY_SAMPLE_INTERVAL_MS,
@@ -53,6 +54,8 @@ function install(input: {
   readonly nowMs?: () => number;
   readonly writeLine?: (line: string) => void;
   readonly readCgroupFile?: (path: string) => string | null;
+  readonly readProcStatusFile?: (path: string) => string | null;
+  readonly readV8Memory?: () => V8MemorySample;
   readonly arrayBuffers?: number;
 }): void {
   resetWebMemorySamplerForTests();
@@ -70,6 +73,8 @@ function install(input: {
     readPid: () => 4242,
     writeLine: input.writeLine ?? ((line) => input.lines.push(line)),
     readCgroupFile: input.readCgroupFile ?? (() => null),
+    ...(input.readProcStatusFile ? { readProcStatusFile: input.readProcStatusFile } : {}),
+    ...(input.readV8Memory ? { readV8Memory: input.readV8Memory } : {}),
   });
   stopWebMemorySamplerForTests();
 }
@@ -410,6 +415,109 @@ describe("HU-MEM-08 web memory sampler", () => {
     const elapsedMs = performance.now() - started;
     assert.equal(lines.length, 1000);
     assert.ok(elapsedMs < 1000, `1000 samples took ${elapsedMs}ms`);
+    resetWebMemorySamplerForTests();
+  });
+
+  it("HU-MEM-14D.2 reads each diagnostic file once per emitted sample", () => {
+    const lines: string[] = [];
+    const paths: string[] = [];
+    install({
+      lines,
+      rss: () => 1024,
+      nowMs: () => 1,
+      readCgroupFile: (path) => {
+        paths.push(path);
+        if (path.endsWith("memory.current")) return "147939328\n";
+        if (path.endsWith("memory.max")) return "536870912\n";
+        if (path.endsWith("memory.peak")) return "274825216\n";
+        if (path.endsWith("memory.stat")) {
+          return "anon 82538496\nfile 51679232\nkernel 12763136\nsock 0\ninactive_file 1\nactive_file 2\n";
+        }
+        if (path.endsWith("memory.events")) return "max 0\noom 0\noom_kill 0\n";
+        return null;
+      },
+      readProcStatusFile: (path) => {
+        paths.push(path);
+        return "RssAnon:\t79332 kB\nRssFile:\t23676 kB\nRssShmem:\t0 kB\nThreads:\t11\n";
+      },
+      readV8Memory: () => ({
+        totalPhysicalSizeBytes: 10,
+        totalHeapSizeBytes: 20,
+        usedHeapSizeBytes: 5,
+        heapSizeLimitBytes: 30,
+        mallocedMemoryBytes: 0,
+        peakMallocedMemoryBytes: 7,
+        externalMemoryBytes: 8,
+        nativeContextCount: 1,
+        detachedContextCount: 0,
+        oldSpaceUsedBytes: 3,
+        oldSpaceAllocatedBytes: 4,
+        largeObjectSpaceUsedBytes: null,
+        largeObjectSpaceAllocatedBytes: null,
+        codeSpaceUsedBytes: 1,
+        codeSpaceAllocatedBytes: 2,
+      }),
+    });
+    paths.length = 0;
+    considerWebMemoryRssStep(1);
+    assert.equal(paths.length, 0);
+
+    lines.length = 0;
+    const record = buildWebMemorySampleRecord({ reason: "interval", nowMs: 1 });
+    assert.deepEqual(paths, [
+      "/sys/fs/cgroup/memory.stat",
+      "/sys/fs/cgroup/memory.events",
+      "/sys/fs/cgroup/memory.current",
+      "/sys/fs/cgroup/memory.max",
+      "/sys/fs/cgroup/memory.peak",
+      "/proc/self/status",
+    ]);
+    assert.equal(record.cgroupMemoryAnonBytes, 82538496);
+    assert.equal(record.cgroupMemoryFileBytes, 51679232);
+    assert.equal(record.cgroupMemoryKernelBytes, 12763136);
+    assert.equal(record.cgroupMemorySocketBytes, 0);
+    assert.equal(record.cgroupMemoryPeakBytes, 274825216);
+    assert.equal(record.cgroupMemoryOomEvents, 0);
+    assert.equal(record.processRssAnonBytes, 79332 * 1024);
+    assert.equal(record.processRssFileBytes, 23676 * 1024);
+    assert.equal(record.processRssShmemBytes, 0);
+    assert.equal(record.processThreadCount, 11);
+    assert.equal(record.v8UsedHeapSizeBytes, 5);
+    assert.equal(record.v8LargeObjectSpaceUsedBytes, null);
+    assert.equal(record.activeSeoMetadataDedupeKeys, 0);
+    assert.equal(WEB_MEMORY_SAMPLE_INTERVAL_MS, 30_000);
+    for (const value of Object.values(record)) {
+      assert.equal(value === null || typeof value === "number" || typeof value === "string", true);
+    }
+    resetWebMemorySamplerForTests();
+  });
+
+  it("HU-MEM-14D.2 keeps a sample when diagnostic readers fail", () => {
+    const lines: string[] = [];
+    install({
+      lines,
+      rss: () => 2048,
+      nowMs: () => 9,
+      readCgroupFile: () => {
+        throw new Error("EACCES cgroup");
+      },
+      readProcStatusFile: () => {
+        throw new Error("EACCES proc");
+      },
+      readV8Memory: () => {
+        throw new Error("v8 unavailable");
+      },
+    });
+    lines.length = 0;
+    assert.doesNotThrow(() => emitWebMemoryIntervalSample(9));
+    const record = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+    assert.equal(record.operation, "memory_sample");
+    assert.equal(record.cgroupMemoryCurrentBytes, null);
+    assert.equal(record.cgroupMemoryAnonBytes, null);
+    assert.equal(record.processThreadCount, null);
+    assert.equal(record.v8TotalHeapSizeBytes, null);
+    assert.equal(record.activeSeoEvidenceFetches, 0);
+    assert.equal(record.seoMetadataDedupeHits, 0);
     resetWebMemorySamplerForTests();
   });
 
