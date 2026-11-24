@@ -301,7 +301,84 @@ describe("platform name uses published siteName", () => {
     assert.match(String(get(german, "rrpApplication.consent.label")), /<privacy>[\s\S]*<\/privacy>/);
     assert.doesNotMatch(JSON.stringify(german), /«\{siteName\}»/);
 
-    assert.match(String(get(load("ar"), "membershipPublic.faq.items.what-is-member.question")), /في \{siteName\}/);
+    const arabic = load("ar");
+    assert.equal(
+      get(arabic, "membershipPublic.faq.items.what-is-member.question"),
+      "ما هو العضو في منصة {siteName}؟",
+    );
+    assert.equal(
+      get(arabic, "auth.registerSubtitle"),
+      "أنشئ حساب المشارك الخاص بك على منصة {siteName}.",
+    );
+    assert.match(String(get(arabic, "auth.registerSubtitle")), /المشارك/);
+    assert.doesNotMatch(String(get(arabic, "auth.registerSubtitle")), /الخاص بك\.$/);
+    assert.equal(
+      get(arabic, "initiativeExperience.author.petition.public.participationTransparencyNote"),
+      "يُعد التوقيع على هذه العريضة شكلاً من أشكال المشاركة المدنية على منصة {siteName}. وهي ليست عريضة ملزمة قانوناً، ولا تنشئ في حد ذاتها أي التزام قانوني أو حكومي.",
+    );
+    assert.doesNotMatch(
+      String(get(arabic, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /التماس/,
+    );
+    assert.match(String(get(arabic, "memberProfile.membershipNote")), /العضوية/);
+    assert.match(
+      String(get(arabic, "notifications.types.member_badge_contribution_confirmed.message")),
+      /طلبك للغرض الرسمي للعضو/,
+    );
+    assert.match(
+      String(get(arabic, "notifications.types.member_badge_delivered.message")),
+      /تم تسليم الغرض الرسمي للعضو/,
+    );
+    assert.doesNotMatch(
+      String(get(arabic, "notifications.types.member_badge_delivered.message")),
+      /طلب/,
+    );
+    assert.match(
+      String(get(arabic, "notifications.types.member_badge_shipped.message")),
+      /تم شحن الغرض الرسمي للعضو/,
+    );
+    assert.doesNotMatch(
+      String(get(arabic, "notifications.types.member_badge_shipped.message")),
+      /طلب|مشارك/,
+    );
+    assert.match(String(get(arabic, "preferences.notification.copiesHelp")), /اختياري/);
+    assert.match(String(get(arabic, "preferences.notification.copiesHelp")), /لا يُضمن لكل حدث/);
+    assert.match(String(get(arabic, "preferences.notification.copiesHelp")), /لا يغيّر بريد تسجيل الدخول/);
+    assert.match(String(get(arabic, "preferences.notification.copiesHelp")), /لا يعني أن رسالة بريد قد أُرسلت/);
+    assert.match(String(get(arabic, "pwa.install.lead")), /^اصطحب الإنسانية/);
+    assert.doesNotMatch(String(get(arabic, "pwa.install.lead")), /Humanity/);
+    assert.equal(get(arabic, "pwa.searchLabel"), "البحث في منصة {siteName}");
+    assert.match(
+      String(get(arabic, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /بتوزيع/,
+    );
+    assert.match(
+      String(get(arabic, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /لا يكفي رابط الملف الشخصي وحده/,
+    );
+    assert.doesNotMatch(
+      String(get(arabic, "pwa.install.iosA2hsStandaloneNote")),
+      /كطبيعة/,
+    );
+    assert.match(
+      String(get(arabic, "rrpApplication.consent.label")),
+      /منصة \{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(
+      String(get(arabic, "volunteerPublic.intro.p1")),
+      /منصة <platform>\{siteName\}<\/platform>/,
+    );
+    for (const key of [
+      "auth.loginSubtitle",
+      "auth.registerSubtitle",
+      "initiativeExperience.civicArchivePublic.pageTitle",
+      "memberProfile.membershipNote",
+      "workspace.publishingPage.editor.seo.huShareHelper",
+      "workspace.publishingPage.editor.seo.huShareLegend",
+    ]) {
+      assert.doesNotMatch(String(get(arabic, key)), /ل\{siteName\}/, key);
+      assert.doesNotMatch(String(get(arabic, key)), /[\u200E\u200F\u202A-\u202E\u2066-\u2069]/, key);
+    }
     const ukrainian = load("uk");
     assert.equal(
       get(ukrainian, "membershipPublic.faq.items.what-is-member.question"),
@@ -512,7 +589,22 @@ describe("platform name uses published siteName", () => {
         "rrpApplication.consent.label",
         "authoringPage.becomeAuthor.encouragement",
       ],
-      ar: ["membershipPublic.faq.items.what-is-member.question"],
+      ar: [
+        "auth.loginSubtitle",
+        "auth.registerSubtitle",
+        "auth.deleteAccountIntro",
+        "membershipPublic.faq.items.what-is-member.question",
+        "initiativeExperience.author.petition.public.participationTransparencyNote",
+        "notifications.types.member_badge_shipped.message",
+        "notifications.types.member_badge_delivered.message",
+        "preferences.notification.copiesHelp",
+        "pwa.install.lead",
+        "pwa.searchLabel",
+        "workspace.publishingPage.editor.seo.huShareHelper",
+        "workspace.publishingPage.editor.seo.huShareLegend",
+        "rrpApplication.consent.label",
+        "volunteerPublic.meaning.p4",
+      ],
       uk: ["membershipPublic.faq.items.what-is-member.question"],
       "zh-Hant": ["membershipPublic.faq.items.what-is-member.question"],
     };
@@ -690,6 +782,54 @@ describe("platform name uses published siteName", () => {
     const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
     assert.equal(fallback, "Aceda ao seu Espaço de Trabalho na plataforma Humanity Union.");
     assert.doesNotMatch(fallback, /\{siteName\}|da Humanity/);
+  });
+
+  it("renders Arabic platform grammar for the published brand and the English fallback", () => {
+    const arabic = load("ar");
+    const t = createTranslator({
+      locale: "ar",
+      messages: arabic as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "اتحاد الإنسانية";
+    const rich = (chunks: string) => chunks;
+    const login = t("auth.loginSubtitle", { siteName });
+    assert.equal(login, "ادخل إلى مساحة العمل الخاصة بك على منصة اتحاد الإنسانية.");
+    assert.doesNotMatch(login, /\{siteName\}/);
+    const petition = t(
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      { siteName },
+    );
+    assert.match(petition, /هذه العريضة/);
+    assert.match(petition, /عريضة ملزمة قانوناً/);
+    assert.match(petition, /التزام قانوني أو حكومي/);
+    assert.doesNotMatch(petition, /التماس|\{siteName\}/);
+    const shipped = t("notifications.types.member_badge_shipped.message", { siteName });
+    assert.equal(shipped, "تم شحن الغرض الرسمي للعضو على منصة اتحاد الإنسانية.");
+    assert.doesNotMatch(shipped, /طلب/);
+    const copies = t("preferences.notification.copiesHelp", { siteName });
+    assert.match(copies, /قد ترسل منصة اتحاد الإنسانية/);
+    assert.match(copies, /لا يُضمن لكل حدث/);
+    assert.match(copies, /حفظ التفضيلات لا يعني/);
+    assert.doesNotMatch(copies, /\{siteName\}/);
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /^اصطحب الإنسانية/);
+    assert.match(lead, /مساعد اتحاد الإنسانية/);
+    assert.doesNotMatch(lead, /Humanity|\{siteName\}/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /تعالج منصة اتحاد الإنسانية/);
+    assert.match(consent, /سياسة الخصوصية/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.match(platform, /منصة اتحاد الإنسانية/);
+    assert.doesNotMatch(platform, /\{siteName\}|<platform>/);
+    const helper = t("workspace.publishingPage.editor.seo.huShareHelper", { siteName });
+    assert.match(helper, /بتوزيع/);
+    assert.match(helper, /تكاملاً حقيقياً مع المزوّد/);
+    assert.doesNotMatch(helper, /\{siteName\}|ل\{siteName\}/);
+    assert.equal(t("pwa.searchLabel", { siteName }), "البحث في منصة اتحاد الإنسانية");
+    const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(fallback, "ادخل إلى مساحة العمل الخاصة بك على منصة Humanity Union.");
+    assert.doesNotMatch(fallback, /\{siteName\}|على Humanity|في Humanity|لHumanity/);
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
