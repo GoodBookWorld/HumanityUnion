@@ -142,6 +142,14 @@ describe("platform name uses published siteName", () => {
       "workspace.initiativesPage.subtitle",
       "pwa.install.installCta",
       "preferences.language.help",
+      "auth.loginSubtitle",
+      "auth.registerSubtitle",
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      "notifications.types.member_badge_shipped.message",
+      "notifications.types.member_badge_delivered.message",
+      "preferences.notification.emailHelp",
+      "workspace.publishingPage.editor.seo.huShareHelper",
+      "pwa.install.lead",
     ];
     for (const key of georgian) {
       assert.doesNotMatch(String(get(ka, key)), /\{siteName\}[-\u10A0-\u10FF]/, key);
@@ -152,6 +160,37 @@ describe("platform name uses published siteName", () => {
     );
     assert.doesNotMatch(JSON.stringify(ka), /«\{siteName\}»/);
     assert.equal(get(ka, "pwa.install.installCta"), "დააინსტალირეთ {siteName}");
+    assert.equal(
+      get(ka, "initiativeExperience.author.petition.public.participationTransparencyNote"),
+      "ამ პეტიციის ხელმოწერა წარმოადგენს სამოქალაქო მონაწილეობის ფორმას პლატფორმაზე {siteName}. ის არ არის იურიდიულად სავალდებულო პეტიცია და თავისთავად არ ქმნის რაიმე იურიდიულ თუ სამთავრობო ვალდებულებას.",
+    );
+    assert.doesNotMatch(
+      String(get(ka, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /მონაცილ/,
+    );
+    assert.match(String(get(ka, "auth.registerSubtitle")), /მონაწილის/);
+    assert.match(String(get(ka, "memberProfile.membershipNote")), /წევრობა/);
+    assert.match(
+      String(get(ka, "notifications.types.member_badge_contribution_confirmed.message")),
+      /მოთხოვნა წევრის ნივთზე/,
+    );
+    assert.doesNotMatch(
+      String(get(ka, "notifications.types.member_badge_shipped.message")),
+      /მოთხოვნა|მონაწილ/,
+    );
+    assert.match(String(get(ka, "notifications.types.member_badge_delivered.message")), /ნივთი/);
+    assert.match(String(get(ka, "preferences.notification.emailHelp")), /შინაარსს/);
+    assert.doesNotMatch(String(get(ka, "preferences.notification.emailHelp")), /შიგნიათს/);
+    assert.match(
+      String(get(ka, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /უვლის გვერდს/,
+    );
+    assert.doesNotMatch(
+      String(get(ka, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /გვლის გვერდს/,
+    );
+    assert.match(String(get(ka, "pwa.install.lead")), /კაცობრიობა/);
+    assert.doesNotMatch(String(get(ka, "pwa.install.lead")), /Humanity/);
 
     const french = load("fr");
     assert.match(String(get(french, "auth.twoStepLoginHelp")), /à l''\{siteName\}/);
@@ -465,6 +504,41 @@ describe("platform name uses published siteName", () => {
     ]) {
       assert.doesNotMatch(String(get(hebrew, key)), /[\u200E\u200F\u202A-\u202E\u2066-\u2069]/, key);
     }
+  });
+
+  it("renders Georgian platform case without attaching a suffix to the brand", () => {
+    const georgian = load("ka");
+    const t = createTranslator({
+      locale: "ka",
+      messages: georgian as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "კაცობრიობის კავშირი";
+    const rich = (chunks: string) => chunks;
+    const login = t("auth.loginSubtitle", { siteName });
+    assert.equal(login, "შედით თქვენს სამუშაო სივრცეში პლატფორმაზე კაცობრიობის კავშირი.");
+    assert.doesNotMatch(login, /\{siteName\}/);
+    const petition = t(
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      { siteName },
+    );
+    assert.match(petition, /ამ პეტიციის ხელმოწერა/);
+    assert.match(petition, /იურიდიულად სავალდებულო პეტიცია/);
+    assert.doesNotMatch(petition, /მონაცილ|\{siteName\}/);
+    const shipped = t("notifications.types.member_badge_shipped.message", { siteName });
+    assert.equal(shipped, "წევრის ოფიციალური ნივთი პლატფორმაზე კაცობრიობის კავშირი გაიგზავნა.");
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /^თან იქონიეთ კაცობრიობა/);
+    assert.match(lead, /კაცობრიობის კავშირი/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /კაცობრიობის კავშირი/);
+    assert.match(consent, /კონფიდენციალურობის პოლიტიკაში/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.match(platform, /კაცობრიობის კავშირი/);
+    assert.doesNotMatch(platform, /\{siteName\}/);
+    const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(fallback, "შედით თქვენს სამუშაო სივრცეში პლატფორმაზე Humanity Union.");
+    assert.doesNotMatch(fallback, /\{siteName\}/);
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
