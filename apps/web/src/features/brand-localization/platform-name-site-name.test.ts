@@ -382,7 +382,7 @@ describe("platform name uses published siteName", () => {
     const ukrainian = load("uk");
     assert.equal(
       get(ukrainian, "membershipPublic.faq.items.what-is-member.question"),
-      "Хто такий Член платформи {siteName}?",
+      "Хто такий Член Союзу на платформі {siteName}?",
     );
     assert.equal(
       get(ukrainian, "pwa.install.lead"),
@@ -1050,9 +1050,12 @@ describe("platform name uses published siteName", () => {
     });
     assert.match(englishDisclaimer, /на платформі Humanity Union/);
     assert.doesNotMatch(englishDisclaimer, /\{siteName\}/);
+    const faq = t("membershipPublic.faq.items.what-is-member.question", { siteName });
+    assert.equal(faq, "Хто такий Член Союзу на платформі Союз Людяності?");
+    assert.doesNotMatch(faq, /\{siteName\}|Член платформи|Учасник/);
     assert.equal(
-      t("membershipPublic.faq.items.what-is-member.question", { siteName }),
-      "Хто такий Член платформи Союз Людяності?",
+      t("membershipPublic.faq.items.what-is-member.question", { siteName: "Humanity Union" }),
+      "Хто такий Член Союзу на платформі Humanity Union?",
     );
   });
 
