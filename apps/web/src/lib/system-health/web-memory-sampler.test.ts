@@ -183,6 +183,12 @@ describe("HU-MEM-08 web memory sampler", () => {
       peakWaitingSeoMetadataEligibilityOperations: 0,
       activeSeoEvidenceFetches: 0,
       waitingSeoEvidenceFetches: 0,
+      activeSeoMetadataDedupeKeys: 0,
+      activeSeoMetadataDedupeFollowers: 0,
+      seoMetadataDedupeHits: 0,
+      seoMetadataDedupeBypasses: 0,
+      peakSeoMetadataDedupeKeys: 0,
+      peakSeoMetadataDedupeFollowers: 0,
     });
     resetWebMemorySamplerForTests();
   });
@@ -263,6 +269,12 @@ describe("HU-MEM-08 web memory sampler", () => {
     assert.equal(record.peakWaitingSeoMetadataEligibilityOperations, 0);
     assert.equal(record.activeSeoEvidenceFetches, 0);
     assert.equal(record.waitingSeoEvidenceFetches, 0);
+    assert.equal(record.activeSeoMetadataDedupeKeys, 0);
+    assert.equal(record.activeSeoMetadataDedupeFollowers, 0);
+    assert.equal(record.seoMetadataDedupeHits, 0);
+    assert.equal(record.seoMetadataDedupeBypasses, 0);
+    assert.equal(record.peakSeoMetadataDedupeKeys, 0);
+    assert.equal(record.peakSeoMetadataDedupeFollowers, 0);
     assert.equal(record.uptimeSeconds, 90);
     assert.equal(record.pressure, "below");
     recordSitemapMemoryBoundary("start");

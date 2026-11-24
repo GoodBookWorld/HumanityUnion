@@ -12,6 +12,7 @@ import {
 } from "./web-cgroup-memory";
 import { resetSeoEvidenceFetchGateForTests } from "../seo/seo-evidence-fetch-gate";
 import { resetSeoMetadataEligibilityGateForTests } from "../seo/seo-metadata-eligibility-gate";
+import { resetSeoMetadataInflightDedupeForTests } from "../seo/seo-metadata-inflight-dedupe";
 import {
   readWebWorkloadGauges,
   enterSeoEligibilityOperation,
@@ -96,6 +97,12 @@ const MEMORY_SAMPLE_FIELDS = [
   "peakWaitingSeoMetadataEligibilityOperations",
   "activeSeoEvidenceFetches",
   "waitingSeoEvidenceFetches",
+  "activeSeoMetadataDedupeKeys",
+  "activeSeoMetadataDedupeFollowers",
+  "seoMetadataDedupeHits",
+  "seoMetadataDedupeBypasses",
+  "peakSeoMetadataDedupeKeys",
+  "peakSeoMetadataDedupeFollowers",
 ] as const;
 
 export function shouldStartWebMemorySampler(runtime: string | undefined): boolean {
@@ -216,6 +223,12 @@ export function buildWebMemorySampleRecord(input: {
       workload.peakWaitingSeoMetadataEligibilityOperations,
     activeSeoEvidenceFetches: workload.activeSeoEvidenceFetches,
     waitingSeoEvidenceFetches: workload.waitingSeoEvidenceFetches,
+    activeSeoMetadataDedupeKeys: workload.activeSeoMetadataDedupeKeys,
+    activeSeoMetadataDedupeFollowers: workload.activeSeoMetadataDedupeFollowers,
+    seoMetadataDedupeHits: workload.seoMetadataDedupeHits,
+    seoMetadataDedupeBypasses: workload.seoMetadataDedupeBypasses,
+    peakSeoMetadataDedupeKeys: workload.peakSeoMetadataDedupeKeys,
+    peakSeoMetadataDedupeFollowers: workload.peakSeoMetadataDedupeFollowers,
   };
   if (input.boundary) {
     record.boundary = input.boundary;
@@ -342,6 +355,7 @@ export function resetWebMemorySamplerForTests(): void {
   resetSeoOperationGaugesForTests();
   resetSeoMetadataEligibilityGateForTests();
   resetSeoEvidenceFetchGateForTests();
+  resetSeoMetadataInflightDedupeForTests();
 }
 
 export function webMemorySamplerStartedForTests(): boolean {
