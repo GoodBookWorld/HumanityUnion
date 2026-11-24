@@ -51,6 +51,59 @@ export interface PlannedSelectedPackagedUpdate {
 
 const CONSENT_PATH = "rrpApplication.admin.fields.consentAccepted";
 const LEGAL_NAME = "Humanity Union Society";
+/**
+ * A letter, number, combining mark, connector, or joiner in any script.
+ * Punctuation and spaces remain boundaries, including around RTL text.
+ */
+const LEGAL_NAME_CONTINUATION = /[\p{L}\p{N}\p{M}_]/u;
+const ZERO_WIDTH_JOINER = "\u200D";
+
+interface LegalNameOccurrences {
+  readonly valid: number;
+  readonly invalid: number;
+}
+
+function continuesLegalName(char: string | undefined): boolean {
+  if (char == null) {
+    return false;
+  }
+  return char === "_" || char === ZERO_WIDTH_JOINER || LEGAL_NAME_CONTINUATION.test(char);
+}
+
+/**
+ * Exact occurrences of the official legal name.
+ * A copy glued to a letter or number in any script is invalid, not a second spelling.
+ */
+function inspectLegalNameOccurrences(value: string): LegalNameOccurrences {
+  let valid = 0;
+  let invalid = 0;
+  let from = 0;
+  while (from <= value.length) {
+    const index = value.indexOf(LEGAL_NAME, from);
+    if (index < 0) {
+      break;
+    }
+    const before = index === 0 ? undefined : value[index - 1];
+    const afterIndex = index + LEGAL_NAME.length;
+    const after = afterIndex >= value.length ? undefined : value[afterIndex];
+    if (continuesLegalName(before) || continuesLegalName(after)) {
+      invalid += 1;
+    } else {
+      valid += 1;
+    }
+    from = afterIndex;
+  }
+  return { valid, invalid };
+}
+
+function sameLegalNameRequirement(
+  canonicalEnglish: string,
+  proposedValue: string,
+): boolean {
+  const required = inspectLegalNameOccurrences(canonicalEnglish);
+  const proposed = inspectLegalNameOccurrences(proposedValue);
+  return proposed.valid === required.valid && proposed.invalid === required.invalid;
+}
 
 type MutableTree = { [key: string]: string | MutableTree };
 
@@ -78,10 +131,18 @@ function writeLeaf(tree: MutableTree, dottedPath: string, value: string): void {
   cursor[parts[parts.length - 1] ?? ""] = value;
 }
 
+/**
+ * Canonical English is the legal-name requirement.
+ * Existing and proposed counts are not compared with each other:
+ * an already-wrong published value stays rejected until the proposal
+ * restores the canonical occurrences, and a matching wrong pair is not accepted.
+ * Presence alone is not a mutation.
+ */
 export function selectedTranslationProtectionError(
   path: string,
   existingValue: string | null,
   proposedValue: string | null,
+  canonicalEnglish?: string | null,
 ): string | null {
   if (path === CONSENT_PATH) {
     return "RRP consent string cannot be changed.";
@@ -92,8 +153,17 @@ export function selectedTranslationProtectionError(
   if (/videoChat|video-chat|liveKit|live-kit/i.test(path)) {
     return "Video Chat text cannot be changed.";
   }
-  if (existingValue?.includes(LEGAL_NAME) || proposedValue?.includes(LEGAL_NAME)) {
-    return "Humanity Union Society cannot be changed.";
+  if (typeof canonicalEnglish === "string" && typeof proposedValue === "string") {
+    const proposedMatches = sameLegalNameRequirement(canonicalEnglish, proposedValue);
+    const existingConflicts =
+      typeof existingValue === "string" &&
+      !sameLegalNameRequirement(canonicalEnglish, existingValue);
+    if (!proposedMatches) {
+      return "Humanity Union Society cannot be changed.";
+    }
+    if (existingConflicts) {
+      return null;
+    }
   }
   return null;
 }
@@ -190,7 +260,12 @@ export function planSelectedPackagedWebUiUpdates(input: {
     }
 
     const confirmedProposed = replacement?.proposedValue ?? proposedValue;
-    const protection = selectedTranslationProtectionError(path, existingValue, confirmedProposed);
+    const protection = selectedTranslationProtectionError(
+      path,
+      existingValue,
+      confirmedProposed,
+      typeof englishValue === "string" ? englishValue : null,
+    );
     if (protection) {
       errors.push(protection);
     }

@@ -54,7 +54,8 @@ const PACKAGED: WebUiMessageTree = {
   },
   regionalProgramPublic: {
     principles: {
-      legal: "Humanity Union Society remains the legal entity of {siteName}.",
+      // Removes the official legal name, so selected update must still reject it.
+      legal: "A Canadian nonprofit remains the legal entity of {siteName}.",
     },
   },
   legalPublic: {
