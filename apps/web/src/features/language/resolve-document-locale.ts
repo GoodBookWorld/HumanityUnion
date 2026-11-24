@@ -283,6 +283,26 @@ export async function resolvePublicSeoLocaleDocumentForRequest(overrides?: {
  * Pure catalog precedence — resolved on the server before paint.
  * Pack 2.1A — SEO URL locale (pathname/header) overrides cookie / Accept-Language.
  */
+async function resolveDocumentHtmlLocaleUncached(overrides?: {
+  readonly urlLocaleSegment?: string | null;
+  readonly pathname?: string | null;
+  readonly huLangCookie?: string | null;
+  readonly acceptLanguageHeader?: string | null;
+  readonly catalog?: readonly RuntimeLocaleCatalogEntry[];
+  readonly authenticated?: boolean;
+  readonly participantInterfaceLanguage?: string | null;
+}): Promise<ResolvedRuntimeLocale> {
+  const document = await resolvePublicSeoLocaleDocumentForRequest(overrides);
+  return document.effectiveLocale;
+}
+
+/**
+ * No-argument calls are the current request's document locale.
+ * Root layout and next-intl both use that form. Override objects stay
+ * uncached because they are caller-specific.
+ */
+const resolveDocumentHtmlLocaleFromRequest = cache(() => resolveDocumentHtmlLocaleUncached());
+
 export async function resolveDocumentHtmlLocale(
   overrides?: {
     readonly urlLocaleSegment?: string | null;
@@ -294,8 +314,10 @@ export async function resolveDocumentHtmlLocale(
     readonly participantInterfaceLanguage?: string | null;
   },
 ): Promise<ResolvedRuntimeLocale> {
-  const document = await resolvePublicSeoLocaleDocumentForRequest(overrides);
-  return document.effectiveLocale;
+  if (overrides === undefined) {
+    return resolveDocumentHtmlLocaleFromRequest();
+  }
+  return resolveDocumentHtmlLocaleUncached(overrides);
 }
 
 export function englishDocumentLocaleFallback(): ResolvedRuntimeLocale {

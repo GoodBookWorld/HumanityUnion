@@ -16,6 +16,7 @@
  */
 
 import type { AbstractIntlMessages } from "next-intl";
+import { cache } from "react";
 
 import {
   loadFirstAvailableMessagePack,
@@ -106,7 +107,7 @@ export const defaultUiMessagePackSources: readonly UiMessagePackSource[] = [
  * Resolve UI messages for a Pack 02C-resolved locale tag.
  * English bundled catalog is always the merge base.
  */
-export async function loadUiMessagesForLocale(
+async function loadUiMessagesForLocaleUncached(
   locale: string,
   sources: readonly UiMessagePackSource[] = defaultUiMessagePackSources,
   options?: {
@@ -154,6 +155,42 @@ export async function loadUiMessagesForLocale(
     messages: deepMergeMessages(englishPack.messages, overlay.messages),
     packSource: overlay.source,
   };
+}
+
+/**
+ * Request-scoped memo of the default catalog.
+ * React's server `cache()` stores this only while Next holds a request
+ * dispatcher. Outside a request it calls through, so nothing is retained
+ * for a later request. Custom sources and fallback locales stay uncached.
+ */
+const loadDefaultUiMessagesForLocale = cache((locale: string) =>
+  loadUiMessagesForLocaleUncached(locale),
+);
+
+function usesDefaultCatalogInputs(
+  sources: readonly UiMessagePackSource[] | undefined,
+  options: { readonly fallbackLocale?: string | null } | undefined,
+): boolean {
+  const defaultSources = sources === undefined || sources === defaultUiMessagePackSources;
+  const fallback = options?.fallbackLocale?.trim() ?? "";
+  return defaultSources && fallback.length === 0;
+}
+
+export async function loadUiMessagesForLocale(
+  locale: string,
+  sources?: readonly UiMessagePackSource[],
+  options?: {
+    readonly fallbackLocale?: string | null;
+  },
+): Promise<{
+  readonly locale: string;
+  readonly messages: AbstractIntlMessages;
+  readonly packSource: UiMessagePack["source"] | "english-only";
+}> {
+  if (usesDefaultCatalogInputs(sources, options)) {
+    return loadDefaultUiMessagesForLocale(locale);
+  }
+  return loadUiMessagesForLocaleUncached(locale, sources, options);
 }
 
 /**
