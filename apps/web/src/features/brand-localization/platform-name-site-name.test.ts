@@ -394,9 +394,53 @@ describe("platform name uses published siteName", () => {
       "notifications.types.member_badge_delivered.message",
       "notifications.types.member_badge_shipped.message",
     ]) {
-      assert.match(String(get(ukrainian, key)), /Члена платформи \{siteName\}/, key);
-      assert.doesNotMatch(String(get(ukrainian, key)), /Учасник/, key);
+      assert.match(String(get(ukrainian, key)), /Члена Союзу на платформі \{siteName\}/, key);
+      assert.doesNotMatch(String(get(ukrainian, key)), /Учасник|Член платформи|значок|сертифікат|картк/, key);
     }
+    assert.match(
+      String(get(ukrainian, "notifications.types.member_badge_contribution_confirmed.message")),
+      /заявку на отримання/,
+    );
+    assert.doesNotMatch(
+      String(get(ukrainian, "notifications.types.member_badge_delivered.message")),
+      /заявк|запит/,
+    );
+    assert.doesNotMatch(
+      String(get(ukrainian, "notifications.types.member_badge_shipped.message")),
+      /заявк|запит/,
+    );
+    assert.match(
+      String(get(ukrainian, "initiativeExperience.author.archive.document.disclaimer")),
+      /діяльність у межах Ініціативи/,
+    );
+    assert.match(
+      String(get(ukrainian, "initiativeExperience.author.archive.document.disclaimer")),
+      /якщо його окремо не визнано відповідною установою/,
+    );
+    assert.doesNotMatch(
+      String(get(ukrainian, "initiativeExperience.author.archive.document.disclaimer")),
+      /активність Ініціатива/,
+    );
+    assert.match(
+      String(get(ukrainian, "preferences.notification.emailHelp")),
+      /Робочому просторі/,
+    );
+    assert.match(
+      String(get(ukrainian, "preferences.notification.emailHelp")),
+      /приватних розмов/,
+    );
+    assert.match(
+      String(get(ukrainian, "preferences.notification.emailHelp")),
+      /інформації про Ініціативи/,
+    );
+    assert.doesNotMatch(
+      String(get(ukrainian, "workspace.publishingPage.editor.seo.lede")),
+      /платформи платформи|вихідну скриньку/,
+    );
+    assert.match(
+      String(get(ukrainian, "workspace.publishingPage.editor.seo.lede")),
+      /черги вихідних повідомлень для офіційних каналів платформи \{siteName\}/,
+    );
     assert.match(String(get(ukrainian, "auth.registerSubtitle")), /Учасника платформи \{siteName\}/);
     assert.match(
       String(get(ukrainian, "rrpApplication.consent.label")),
@@ -648,7 +692,15 @@ describe("platform name uses published siteName", () => {
         "rrpApplication.consent.label",
         "volunteerPublic.meaning.p4",
       ],
-      uk: ["membershipPublic.faq.items.what-is-member.question"],
+      uk: [
+        "membershipPublic.faq.items.what-is-member.question",
+        "initiativeExperience.author.archive.document.disclaimer",
+        "preferences.notification.emailHelp",
+        "notifications.types.member_badge_contribution_confirmed.message",
+        "notifications.types.member_badge_delivered.message",
+        "notifications.types.member_badge_shipped.message",
+        "workspace.publishingPage.editor.seo.lede",
+      ],
       "zh-Hant": [
         "auth.loginSubtitle",
         "auth.registerSubtitle",
@@ -940,6 +992,67 @@ describe("platform name uses published siteName", () => {
     assert.equal(
       t("initiativeExperience.civicArchivePublic.pageTitle", { siteName: "Humanity Union" }),
       "Humanity Union 公共公民檔案",
+    );
+  });
+
+  it("renders Ukrainian platform grammar for the published brand and the English fallback", () => {
+    const ukrainian = load("uk");
+    const t = createTranslator({
+      locale: "uk",
+      messages: ukrainian as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "Союз Людяності";
+    const disclaimer = t("initiativeExperience.author.archive.document.disclaimer", { siteName });
+    assert.equal(
+      disclaimer,
+      "Цей документ фіксує громадянську участь і діяльність у межах Ініціативи на платформі Союз Людяності. Він не є офіційним державним або юридично обов'язковим записом, якщо його окремо не визнано відповідною установою.",
+    );
+    assert.doesNotMatch(disclaimer, /\{siteName\}|активність Ініціатива/);
+    const email = t("preferences.notification.emailHelp", { siteName });
+    assert.match(email, /платформа Союз Людяності/);
+    assert.match(email, /У вашому Робочому просторі є 3 нові сповіщення/);
+    assert.match(email, /приватних розмов/);
+    assert.match(email, /конфіденційної інформації про Ініціативи/);
+    assert.doesNotMatch(email, /\{siteName\}|Робочий простір|про Ініціатива(?!и)/);
+    const confirmed = t("notifications.types.member_badge_contribution_confirmed.message", { siteName });
+    assert.equal(
+      confirmed,
+      "Вашу заявку на отримання офіційного предмета Члена Союзу на платформі Союз Людяності підтверджено.",
+    );
+    const delivered = t("notifications.types.member_badge_delivered.message", { siteName });
+    assert.equal(
+      delivered,
+      "Ваш офіційний предмет Члена Союзу на платформі Союз Людяності доставлено.",
+    );
+    const shipped = t("notifications.types.member_badge_shipped.message", { siteName });
+    assert.equal(
+      shipped,
+      "Ваш офіційний предмет Члена Союзу на платформі Союз Людяності відправлено.",
+    );
+    for (const rendered of [confirmed, delivered, shipped]) {
+      assert.doesNotMatch(rendered, /\{siteName\}|Учасник|Член платформи/);
+    }
+    assert.doesNotMatch(delivered, /заявк|запит/);
+    assert.doesNotMatch(shipped, /заявк|запит/);
+    const lede = t("workspace.publishingPage.editor.seo.lede", { siteName });
+    assert.match(lede, /черги вихідних повідомлень для офіційних каналів платформи Союз Людяності/);
+    assert.match(lede, /не вигадує зовнішніх облікових даних/);
+    assert.match(lede, /не повідомляє про успішне надсилання/);
+    assert.doesNotMatch(lede, /\{siteName\}|платформи платформи/);
+    const fallback = t("notifications.types.member_badge_shipped.message", { siteName: "Humanity Union" });
+    assert.equal(
+      fallback,
+      "Ваш офіційний предмет Члена Союзу на платформі Humanity Union відправлено.",
+    );
+    assert.doesNotMatch(fallback, /\{siteName\}|Союз Людяності/);
+    const englishDisclaimer = t("initiativeExperience.author.archive.document.disclaimer", {
+      siteName: "Humanity Union",
+    });
+    assert.match(englishDisclaimer, /на платформі Humanity Union/);
+    assert.doesNotMatch(englishDisclaimer, /\{siteName\}/);
+    assert.equal(
+      t("membershipPublic.faq.items.what-is-member.question", { siteName }),
+      "Хто такий Член платформи Союз Людяності?",
     );
   });
 
