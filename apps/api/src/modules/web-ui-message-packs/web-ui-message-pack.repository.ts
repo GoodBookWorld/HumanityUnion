@@ -13,6 +13,8 @@ import {
   normalizeLanguageRegistryLocaleKey,
 } from "@hu/types";
 
+import type { Document } from "mongodb";
+
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
@@ -76,6 +78,9 @@ let publishedRuntimeStoreReads = 0;
 let publishedRuntimeStoreReaderOverride: ((
   localeKey: string,
 ) => Promise<PublishedWebUiRuntimePayload | null>) | null = null;
+let publishedRuntimeEvidenceReaderOverride: ((
+  locale: string,
+) => Promise<PublishedWebUiRuntimeEvidence | null>) | null = null;
 
 let forceMemoryForTests = false;
 
@@ -88,12 +93,19 @@ export function resetWebUiMessagePackStoreForTests(): void {
   resetPublishedWebUiRuntimeCacheForTests();
   publishedRuntimeStoreReads = 0;
   publishedRuntimeStoreReaderOverride = null;
+  publishedRuntimeEvidenceReaderOverride = null;
 }
 
 export function setPublishedWebUiRuntimeStoreReaderForTests(
   reader: ((localeKey: string) => Promise<PublishedWebUiRuntimePayload | null>) | null,
 ): void {
   publishedRuntimeStoreReaderOverride = reader;
+}
+
+export function setPublishedWebUiRuntimeEvidenceReaderForTests(
+  reader: ((locale: string) => Promise<PublishedWebUiRuntimeEvidence | null>) | null,
+): void {
+  publishedRuntimeEvidenceReaderOverride = reader;
 }
 
 export function getPublishedWebUiRuntimeStoreReadCountForTests(): number {
@@ -226,6 +238,221 @@ export async function getPublishedWebUiRuntimePayload(
   }
   rememberPublishedWebUiRuntime(localeKey, loaded);
   return loaded;
+}
+
+export type PublishedWebUiRuntimeEvidence = {
+  readonly locale: string;
+  readonly revision: number;
+  readonly topLevelKeyCount: number;
+};
+
+/**
+ * Key count WEB observes after the public route's JSON serialization.
+ * Plain catalogs use Object.keys. Values that JSON drops or rejects, and
+ * BSON helper objects with toJSON, use that same serialization.
+ */
+export function publishedWebUiMessagesTopLevelKeyCount(messages: unknown): number {
+  if (messages == null || typeof messages !== "object") {
+    return 0;
+  }
+  if (jsonObjectKeyCountMatchesSerialization(messages, new Set())) {
+    return Object.keys(messages).length;
+  }
+  try {
+    const parsed: unknown = JSON.parse(JSON.stringify(messages));
+    if (parsed == null || typeof parsed !== "object") {
+      return 0;
+    }
+    return Object.keys(parsed).length;
+  } catch {
+    return 0;
+  }
+}
+
+function jsonObjectKeyCountMatchesSerialization(value: unknown, seen: Set<object>): boolean {
+  if (
+    value === undefined ||
+    typeof value === "function" ||
+    typeof value === "symbol" ||
+    typeof value === "bigint"
+  ) {
+    return false;
+  }
+  if (value == null || typeof value !== "object") {
+    return true;
+  }
+  if (seen.has(value)) {
+    return false;
+  }
+  if (Array.isArray(value)) {
+    if (Object.keys(value).length !== value.length) {
+      return false;
+    }
+  } else {
+    const prototype = Object.getPrototypeOf(value) as object | null;
+    if (prototype !== Object.prototype && prototype !== null) {
+      return false;
+    }
+  }
+  seen.add(value);
+  const children = Array.isArray(value)
+    ? value
+    : Object.values(value as Record<string, unknown>);
+  for (const child of children) {
+    if (!jsonObjectKeyCountMatchesSerialization(child, seen)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Guard both operators. $cond may evaluate an unused branch, so each operator
+ * receives a value of the type it accepts even when messages is not that type.
+ */
+function publishedWebUiEvidenceCountExpression(): Document {
+  const messagesIsObject: Document = { $eq: [{ $type: "$messages" }, "object"] };
+  const messagesIsArray: Document = { $eq: [{ $type: "$messages" }, "array"] };
+  return {
+    $cond: [
+      messagesIsObject,
+      {
+        $size: {
+          $objectToArray: {
+            $cond: [messagesIsObject, "$messages", { __huEvidenceGuard: 0 }],
+          },
+        },
+      },
+      {
+        $cond: [
+          messagesIsArray,
+          { $size: { $cond: [messagesIsArray, "$messages", []] } },
+          0,
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * One indexed localeKey lookup, then the published-status filter.
+ * The projection returns the count only. messages stays in MongoDB.
+ */
+export function buildPublishedWebUiEvidencePipeline(localeKey: string): Document[] {
+  const messagesIsObject: Document = { $eq: [{ $type: "$messages" }, "object"] };
+  const messagesIsArray: Document = { $eq: [{ $type: "$messages" }, "array"] };
+  return [
+    { $match: { localeKey } },
+    { $match: { status: "published" } },
+    {
+      $project: {
+        _id: 0,
+        locale: 1,
+        revision: 1,
+        messagesType: { $type: "$messages" },
+        topLevelKeyCount: publishedWebUiEvidenceCountExpression(),
+        // Same snapshot as the count. Objects and arrays omit the value so the
+        // catalog does not cross to the API. Other BSON types keep it for the
+        // JSON key count. $$REMOVE drops the field from this one result.
+        fallbackMessages: {
+          $cond: [{ $or: [messagesIsObject, messagesIsArray] }, "$$REMOVE", "$messages"],
+        },
+      },
+    },
+    { $limit: 1 },
+  ];
+}
+
+function evidenceFromPublishedPayload(
+  payload: PublishedWebUiRuntimePayload,
+): PublishedWebUiRuntimeEvidence {
+  return {
+    locale: payload.locale,
+    revision: payload.revision,
+    topLevelKeyCount: publishedWebUiMessagesTopLevelKeyCount(payload.messages),
+  };
+}
+
+type PublishedWebUiEvidenceAggregateRow = {
+  locale: string;
+  revision: number;
+  messagesType?: string;
+  topLevelKeyCount: number;
+  fallbackMessages?: unknown;
+};
+
+function publishedEvidenceFromCount(
+  locale: string,
+  revision: number,
+  topLevelKeyCount: number,
+): PublishedWebUiRuntimeEvidence {
+  if (
+    !Number.isSafeInteger(revision) ||
+    !Number.isSafeInteger(topLevelKeyCount) ||
+    topLevelKeyCount < 0
+  ) {
+    throw new WebUiMessagePackPersistenceError(
+      "Published WEB_UI evidence response was incomplete.",
+    );
+  }
+  return { locale, revision, topLevelKeyCount };
+}
+
+async function readPublishedWebUiRuntimeEvidenceFromMongo(
+  localeKey: string,
+): Promise<PublishedWebUiRuntimeEvidence | null> {
+  await ensureMongoReady();
+  const rows = await collection()
+    .aggregate<PublishedWebUiEvidenceAggregateRow>(buildPublishedWebUiEvidencePipeline(localeKey))
+    .toArray();
+  const row = rows[0];
+  if (!row || typeof row.locale !== "string") {
+    return null;
+  }
+  // One aggregation document supplies locale, revision, and the count.
+  // Objects and arrays use the MongoDB count. Other BSON types use the value
+  // carried on that same document. A later write cannot change only one field.
+  if (row.messagesType === "object" || row.messagesType === "array") {
+    return publishedEvidenceFromCount(row.locale, row.revision, row.topLevelKeyCount);
+  }
+  return publishedEvidenceFromCount(
+    row.locale,
+    row.revision,
+    publishedWebUiMessagesTopLevelKeyCount(row.fallbackMessages),
+  );
+}
+
+/**
+ * Public SEO evidence read.
+ * A cache hit counts keys on the payload the full route would serve.
+ * A miss aggregates one published document and does not fill the full-payload cache.
+ */
+export async function getPublishedWebUiRuntimeEvidence(
+  locale: string,
+): Promise<PublishedWebUiRuntimeEvidence | null> {
+  if (publishedRuntimeEvidenceReaderOverride) {
+    return publishedRuntimeEvidenceReaderOverride(locale);
+  }
+  const localeKey = normalizeLanguageRegistryLocaleKey(locale);
+  if (!localeKey) {
+    return null;
+  }
+  const cached = getCachedPublishedWebUiRuntime(localeKey);
+  if (cached) {
+    return evidenceFromPublishedPayload(cached);
+  }
+  if (shouldUseMemoryAdapter()) {
+    const pack = getWebUiMessagePackByLocaleMemory(localeKey);
+    if (!pack || pack.status !== "published") {
+      return null;
+    }
+    return {
+      locale: pack.locale,
+      revision: pack.revision,
+      topLevelKeyCount: publishedWebUiMessagesTopLevelKeyCount(pack.messages),
+    };
+  }
+  return readPublishedWebUiRuntimeEvidenceFromMongo(localeKey);
 }
 
 function assertWebUiMessageTreeForUpsert(messages: WebUiMessageTree): void {
