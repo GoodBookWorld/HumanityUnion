@@ -21,7 +21,15 @@ import {
   leaveSeoMetadataOperation,
   resetSeoOperationGaugesForTests,
 } from "./web-memory-gauges";
-import { readWebProcessMemorySnapshot } from "./web-process-memory";
+import {
+  defaultProcStatusFileReader,
+  readProcStatusMemory,
+  readV8MemorySample,
+  readWebProcessMemorySnapshot,
+  type ProcStatusFileReader,
+  type ProcStatusMemory,
+  type V8MemorySample,
+} from "./web-process-memory";
 
 export const WEB_MEMORY_SAMPLE_INTERVAL_MS = 30_000;
 export const WEB_MEMORY_RSS_STEP_BYTES = 32 * 1024 * 1024;
@@ -46,6 +54,8 @@ export interface WebMemorySamplerDependencies {
   readonly readPid: () => number;
   readonly writeLine: (line: string) => void;
   readonly readCgroupFile: CgroupMemoryFileReader;
+  readonly readProcStatusFile: ProcStatusFileReader;
+  readonly readV8Memory: () => V8MemorySample;
 }
 
 interface SamplerState {
@@ -67,6 +77,8 @@ export interface WebMemorySamplerStartOptions {
   readonly readPid?: () => number;
   readonly writeLine?: (line: string) => void;
   readonly readCgroupFile?: CgroupMemoryFileReader;
+  readonly readProcStatusFile?: ProcStatusFileReader;
+  readonly readV8Memory?: () => V8MemorySample;
 }
 
 const MEMORY_SAMPLE_FIELDS = [
@@ -103,6 +115,35 @@ const MEMORY_SAMPLE_FIELDS = [
   "seoMetadataDedupeBypasses",
   "peakSeoMetadataDedupeKeys",
   "peakSeoMetadataDedupeFollowers",
+  "cgroupMemoryAnonBytes",
+  "cgroupMemoryFileBytes",
+  "cgroupMemoryKernelBytes",
+  "cgroupMemorySocketBytes",
+  "cgroupMemoryInactiveFileBytes",
+  "cgroupMemoryActiveFileBytes",
+  "cgroupMemoryPeakBytes",
+  "cgroupMemoryMaxEvents",
+  "cgroupMemoryOomEvents",
+  "cgroupMemoryOomKillEvents",
+  "processRssAnonBytes",
+  "processRssFileBytes",
+  "processRssShmemBytes",
+  "processThreadCount",
+  "v8TotalPhysicalSizeBytes",
+  "v8TotalHeapSizeBytes",
+  "v8UsedHeapSizeBytes",
+  "v8HeapSizeLimitBytes",
+  "v8MallocedMemoryBytes",
+  "v8PeakMallocedMemoryBytes",
+  "v8ExternalMemoryBytes",
+  "v8NativeContextCount",
+  "v8DetachedContextCount",
+  "v8OldSpaceUsedBytes",
+  "v8OldSpaceAllocatedBytes",
+  "v8LargeObjectSpaceUsedBytes",
+  "v8LargeObjectSpaceAllocatedBytes",
+  "v8CodeSpaceUsedBytes",
+  "v8CodeSpaceAllocatedBytes",
 ] as const;
 
 export function shouldStartWebMemorySampler(runtime: string | undefined): boolean {
@@ -127,6 +168,8 @@ function defaultDependencies(): WebMemorySamplerDependencies {
     readPid: () => process.pid,
     writeLine: writeMemorySampleStdout,
     readCgroupFile: defaultCgroupMemoryFileReader,
+    readProcStatusFile: defaultProcStatusFileReader,
+    readV8Memory: readV8MemorySample,
   };
 }
 
@@ -161,6 +204,8 @@ function applyDependencies(options: WebMemorySamplerStartOptions | undefined): v
     readPid: options.readPid ?? current.readPid,
     writeLine: options.writeLine ?? current.writeLine,
     readCgroupFile: options.readCgroupFile ?? current.readCgroupFile,
+    readProcStatusFile: options.readProcStatusFile ?? current.readProcStatusFile,
+    readV8Memory: options.readV8Memory ?? current.readV8Memory,
   };
 }
 
@@ -172,6 +217,70 @@ function pruneStepTimestamps(nowMs: number): number[] {
 
 function recordEmittedRss(rss: number): void {
   samplerState().lastEmittedRss = rss;
+}
+
+const NULL_PROC_STATUS: ProcStatusMemory = {
+  rssAnonBytes: null,
+  rssFileBytes: null,
+  rssShmemBytes: null,
+  threadCount: null,
+};
+
+const NULL_V8_MEMORY: V8MemorySample = {
+  totalPhysicalSizeBytes: null,
+  totalHeapSizeBytes: null,
+  usedHeapSizeBytes: null,
+  heapSizeLimitBytes: null,
+  mallocedMemoryBytes: null,
+  peakMallocedMemoryBytes: null,
+  externalMemoryBytes: null,
+  nativeContextCount: null,
+  detachedContextCount: null,
+  oldSpaceUsedBytes: null,
+  oldSpaceAllocatedBytes: null,
+  largeObjectSpaceUsedBytes: null,
+  largeObjectSpaceAllocatedBytes: null,
+  codeSpaceUsedBytes: null,
+  codeSpaceAllocatedBytes: null,
+};
+
+function readSampleDiagnostics(deps: WebMemorySamplerDependencies): {
+  cgroup: ReturnType<typeof readCgroupMemoryBytes>;
+  proc: ProcStatusMemory;
+  v8: V8MemorySample;
+} {
+  let cgroup: ReturnType<typeof readCgroupMemoryBytes>;
+  try {
+    cgroup = readCgroupMemoryBytes(deps.readCgroupFile);
+  } catch {
+    cgroup = {
+      currentBytes: null,
+      limitBytes: null,
+      anonBytes: null,
+      fileBytes: null,
+      kernelBytes: null,
+      socketBytes: null,
+      inactiveFileBytes: null,
+      activeFileBytes: null,
+      peakBytes: null,
+      maxEvents: null,
+      oomEvents: null,
+      oomKillEvents: null,
+    };
+  }
+  let proc = NULL_PROC_STATUS;
+  try {
+    proc = readProcStatusMemory(deps.readProcStatusFile);
+  } catch {
+    proc = NULL_PROC_STATUS;
+  }
+  let v8 = NULL_V8_MEMORY;
+  try {
+    v8 = deps.readV8Memory();
+  } catch {
+    v8 = NULL_V8_MEMORY;
+  }
+  return { cgroup, proc, v8 };
 }
 
 export function buildWebMemorySampleRecord(input: {
@@ -190,7 +299,7 @@ export function buildWebMemorySampleRecord(input: {
     deps.readPid(),
   );
   const workload = readWebWorkloadGauges();
-  const cgroup = readCgroupMemoryBytes(deps.readCgroupFile);
+  const diagnostics = readSampleDiagnostics(deps);
   const arrayBuffers =
     Number.isFinite(memory.arrayBuffers) && memory.arrayBuffers >= 0
       ? Math.floor(memory.arrayBuffers)
@@ -210,8 +319,8 @@ export function buildWebMemorySampleRecord(input: {
     heapTotal: snapshot.heapTotal,
     external: snapshot.external,
     arrayBuffers,
-    cgroupMemoryCurrentBytes: cgroup.currentBytes,
-    cgroupMemoryLimitBytes: cgroup.limitBytes,
+    cgroupMemoryCurrentBytes: diagnostics.cgroup.currentBytes,
+    cgroupMemoryLimitBytes: diagnostics.cgroup.limitBytes,
     limitBytes: snapshot.limitBytes,
     pressure: snapshot.pressure,
     activeSitemapBuilds: workload.activeSitemapBuilds,
@@ -229,6 +338,35 @@ export function buildWebMemorySampleRecord(input: {
     seoMetadataDedupeBypasses: workload.seoMetadataDedupeBypasses,
     peakSeoMetadataDedupeKeys: workload.peakSeoMetadataDedupeKeys,
     peakSeoMetadataDedupeFollowers: workload.peakSeoMetadataDedupeFollowers,
+    cgroupMemoryAnonBytes: diagnostics.cgroup.anonBytes,
+    cgroupMemoryFileBytes: diagnostics.cgroup.fileBytes,
+    cgroupMemoryKernelBytes: diagnostics.cgroup.kernelBytes,
+    cgroupMemorySocketBytes: diagnostics.cgroup.socketBytes,
+    cgroupMemoryInactiveFileBytes: diagnostics.cgroup.inactiveFileBytes,
+    cgroupMemoryActiveFileBytes: diagnostics.cgroup.activeFileBytes,
+    cgroupMemoryPeakBytes: diagnostics.cgroup.peakBytes,
+    cgroupMemoryMaxEvents: diagnostics.cgroup.maxEvents,
+    cgroupMemoryOomEvents: diagnostics.cgroup.oomEvents,
+    cgroupMemoryOomKillEvents: diagnostics.cgroup.oomKillEvents,
+    processRssAnonBytes: diagnostics.proc.rssAnonBytes,
+    processRssFileBytes: diagnostics.proc.rssFileBytes,
+    processRssShmemBytes: diagnostics.proc.rssShmemBytes,
+    processThreadCount: diagnostics.proc.threadCount,
+    v8TotalPhysicalSizeBytes: diagnostics.v8.totalPhysicalSizeBytes,
+    v8TotalHeapSizeBytes: diagnostics.v8.totalHeapSizeBytes,
+    v8UsedHeapSizeBytes: diagnostics.v8.usedHeapSizeBytes,
+    v8HeapSizeLimitBytes: diagnostics.v8.heapSizeLimitBytes,
+    v8MallocedMemoryBytes: diagnostics.v8.mallocedMemoryBytes,
+    v8PeakMallocedMemoryBytes: diagnostics.v8.peakMallocedMemoryBytes,
+    v8ExternalMemoryBytes: diagnostics.v8.externalMemoryBytes,
+    v8NativeContextCount: diagnostics.v8.nativeContextCount,
+    v8DetachedContextCount: diagnostics.v8.detachedContextCount,
+    v8OldSpaceUsedBytes: diagnostics.v8.oldSpaceUsedBytes,
+    v8OldSpaceAllocatedBytes: diagnostics.v8.oldSpaceAllocatedBytes,
+    v8LargeObjectSpaceUsedBytes: diagnostics.v8.largeObjectSpaceUsedBytes,
+    v8LargeObjectSpaceAllocatedBytes: diagnostics.v8.largeObjectSpaceAllocatedBytes,
+    v8CodeSpaceUsedBytes: diagnostics.v8.codeSpaceUsedBytes,
+    v8CodeSpaceAllocatedBytes: diagnostics.v8.codeSpaceAllocatedBytes,
   };
   if (input.boundary) {
     record.boundary = input.boundary;
