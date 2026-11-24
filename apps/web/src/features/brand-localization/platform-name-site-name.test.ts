@@ -299,7 +299,34 @@ describe("platform name uses published siteName", () => {
       "什麼是{siteName}的成員？",
     );
     assert.match(String(get(load("pt"), "auth.loginSubtitle")), /da \{siteName\}/);
-    assert.match(String(get(load("he"), "auth.loginSubtitle")), /ב\{siteName\}/);
+    const hebrew = load("he");
+    assert.match(String(get(hebrew, "auth.loginSubtitle")), /ב\{siteName\}/);
+    assert.equal(
+      get(hebrew, "initiativeExperience.author.petition.public.participationTransparencyNote"),
+      "חתימה על עצומה זו היא צורה של השתתפות אזרחית ב{siteName}. אין זו עצומה מחייבת מבחינה משפטית, והיא אינה יוצרת, כשלעצמה, כל חובה משפטית או ממשלתית.",
+    );
+    assert.doesNotMatch(
+      String(get(hebrew, "initiativeExperience.author.petition.public.participationTransparencyNote")),
+      /משתתף/,
+    );
+    assert.match(String(get(hebrew, "auth.registerSubtitle")), /מִשׁתַתֵף/);
+    assert.match(String(get(hebrew, "memberProfile.subtitle")), /המִשׁתַתֵף שלך ב\{siteName\}/);
+    assert.equal(get(hebrew, "membershipPublic.faq.items.what-is-member.question"), "מהו חָבֵר של {siteName}?");
+    assert.match(String(get(hebrew, "memberProfile.membershipNote")), /חֲבֵרוּת/);
+    assert.match(
+      String(get(hebrew, "notifications.types.member_badge_shipped.message")),
+      /פריט החָבֵר הרשמי של \{siteName\} יצא למשלוח/,
+    );
+    assert.doesNotMatch(
+      String(get(hebrew, "notifications.types.member_badge_delivered.message")),
+      /משתתף|חֲבֵרוּת/,
+    );
+    assert.match(String(get(hebrew, "pwa.install.lead")), /האנושות/);
+    assert.doesNotMatch(String(get(hebrew, "pwa.install.lead")), /Humanity/);
+    assert.match(
+      String(get(hebrew, "rrpApplication.consent.label")),
+      /\{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
 
     const corrected = {
       ka: georgian,
@@ -330,6 +357,18 @@ describe("platform name uses published siteName", () => {
         "workspace.publishingPage.editor.seo.huShareLegend",
         "preferences.subtitle",
         "authoringPage.application.motivationLabel",
+      ],
+      he: [
+        "auth.loginSubtitle",
+        "auth.twoStepLoginHelp",
+        "initiativeExperience.author.petition.public.participationTransparencyNote",
+        "memberProfile.subtitle",
+        "membershipPublic.faq.items.what-is-member.question",
+        "notifications.types.member_badge_shipped.message",
+        "pwa.install.lead",
+        "pwa.install.alreadyInstalled",
+        "rrpApplication.consent.label",
+        "volunteerPublic.intro.p1",
       ],
       de: ["auth.chooseNewPasswordSubtitle", "volunteerPublic.meaning.p4"],
       ar: ["membershipPublic.faq.items.what-is-member.question"],
@@ -385,6 +424,47 @@ describe("platform name uses published siteName", () => {
       t("notifications.types.member_badge_shipped.message", { siteName }),
       /Participant/,
     );
+  });
+
+  it("renders Hebrew brand prefixes without unresolved placeholders", () => {
+    const hebrew = load("he");
+    const t = createTranslator({
+      locale: "he",
+      messages: hebrew as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "איחוד האנושות";
+    const rich = (chunks: string) => chunks;
+    const login = t("auth.loginSubtitle", { siteName });
+    assert.equal(login, "גש אל סביבת העבודה שלך באיחוד האנושות.");
+    assert.doesNotMatch(login, /\{siteName\}|ב-|ב /);
+    const petition = t("initiativeExperience.author.petition.public.participationTransparencyNote", { siteName });
+    assert.match(petition, /עצומה זו/);
+    assert.doesNotMatch(petition, /משתתף|\{siteName\}/);
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /האנושות/);
+    assert.match(lead, /ולעוזר של איחוד האנושות/);
+    assert.doesNotMatch(lead, /Humanity|\{siteName\}/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /איחוד האנושות/);
+    assert.match(consent, /מדיניות הפרטיות/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.equal(
+      platform,
+      "פיתוח פלטפורמת איחוד האנושות הוא תרומה אישית שכל אחד מאיתנו יכול לתת לעתיד שלנו ולעתיד הדורות הבאים.",
+    );
+    const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(fallback, "גש אל סביבת העבודה שלך בHumanity Union.");
+    assert.doesNotMatch(fallback, /\{siteName\}/);
+    for (const key of [
+      "auth.loginSubtitle",
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      "pwa.install.lead",
+      "rrpApplication.consent.label",
+      "notifications.types.member_badge_shipped.message",
+    ]) {
+      assert.doesNotMatch(String(get(hebrew, key)), /[\u200E\u200F\u202A-\u202E\u2066-\u2069]/, key);
+    }
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
