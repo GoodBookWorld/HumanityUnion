@@ -410,9 +410,52 @@ describe("platform name uses published siteName", () => {
       String(get(ukrainian, "authoringPage.becomeAuthor.thanks")),
       /долучення до Блогу платформи \{siteName\}/,
     );
+    const traditionalChinese = load("zh-Hant");
     assert.equal(
-      get(load("zh-Hant"), "membershipPublic.faq.items.what-is-member.question"),
-      "什麼是{siteName}的成員？",
+      get(traditionalChinese, "membershipPublic.faq.items.what-is-member.question"),
+      "什麼是 {siteName} 的會員？",
+    );
+    assert.match(String(get(traditionalChinese, "auth.registerSubtitle")), /參與者/);
+    assert.match(String(get(traditionalChinese, "memberProfile.membershipNote")), /會員資格/);
+    assert.doesNotMatch(String(get(traditionalChinese, "memberProfile.subtitle")), /會員/);
+    assert.equal(
+      get(traditionalChinese, "initiativeExperience.author.petition.public.participationTransparencyNote"),
+      "在 {siteName} 上簽署此請願，是一種公民參與。此請願不具法律約束力，簽署本身也不會產生任何法律或政府義務。",
+    );
+    assert.doesNotMatch(
+      String(get(traditionalChinese, "notifications.types.member_badge_delivered.message")),
+      /申請|請求|參與者/,
+    );
+    assert.match(
+      String(get(traditionalChinese, "notifications.types.member_badge_shipped.message")),
+      /正式會員物品已寄出/,
+    );
+    assert.match(
+      String(get(traditionalChinese, "notifications.types.member_badge_contribution_confirmed.message")),
+      /正式會員物品申請已確認/,
+    );
+    assert.match(String(get(traditionalChinese, "preferences.notification.copiesHelp")), /不保證每一事件都會送達/);
+    assert.match(String(get(traditionalChinese, "preferences.notification.copiesHelp")), /並不代表已經寄出郵件/);
+    assert.match(String(get(traditionalChinese, "preferences.notification.emailHelp")), /私人對話內容/);
+    assert.doesNotMatch(String(get(traditionalChinese, "pwa.install.androidHintPrimary")), /頁麵/);
+    assert.match(String(get(traditionalChinese, "pwa.install.lead")), /^把人性帶在身邊/);
+    assert.doesNotMatch(String(get(traditionalChinese, "pwa.install.lead")), /Humanity|隨身攜帶人類/);
+    assert.equal(get(traditionalChinese, "pwa.searchLabel"), "在 {siteName} 平台內搜尋");
+    assert.match(
+      String(get(traditionalChinese, "workspace.publishingPage.editor.seo.huShareHelper")),
+      /並不會自動發布/,
+    );
+    assert.doesNotMatch(
+      String(get(traditionalChinese, "workspace.publishingPage.editor.seo.lede")),
+      /佇列排入/,
+    );
+    assert.match(
+      String(get(traditionalChinese, "rrpApplication.consent.label")),
+      /\{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(
+      String(get(traditionalChinese, "volunteerPublic.intro.p1")),
+      /<platform>\{siteName\}<\/platform> 平台/,
     );
     const portuguese = load("pt");
     assert.equal(
@@ -606,7 +649,23 @@ describe("platform name uses published siteName", () => {
         "volunteerPublic.meaning.p4",
       ],
       uk: ["membershipPublic.faq.items.what-is-member.question"],
-      "zh-Hant": ["membershipPublic.faq.items.what-is-member.question"],
+      "zh-Hant": [
+        "auth.loginSubtitle",
+        "auth.registerSubtitle",
+        "auth.deleteAccountIntro",
+        "membershipPublic.faq.items.what-is-member.question",
+        "initiativeExperience.author.petition.public.participationTransparencyNote",
+        "notifications.types.member_badge_contribution_confirmed.message",
+        "notifications.types.member_badge_delivered.message",
+        "notifications.types.member_badge_shipped.message",
+        "preferences.notification.copiesHelp",
+        "pwa.install.lead",
+        "pwa.install.androidHintPrimary",
+        "pwa.searchLabel",
+        "workspace.publishingPage.editor.seo.huShareHelper",
+        "workspace.publishingPage.editor.seo.lede",
+        "volunteerPublic.takePart.p3",
+      ],
     };
     for (const [locale, keys] of Object.entries(corrected)) {
       const packaged = JSON.parse(
@@ -830,6 +889,58 @@ describe("platform name uses published siteName", () => {
     const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
     assert.equal(fallback, "ادخل إلى مساحة العمل الخاصة بك على منصة Humanity Union.");
     assert.doesNotMatch(fallback, /\{siteName\}|على Humanity|في Humanity|لHumanity/);
+  });
+
+  it("renders Traditional Chinese platform grammar for the published brand and the English fallback", () => {
+    const traditionalChinese = load("zh-Hant");
+    const t = createTranslator({
+      locale: "zh-Hant",
+      messages: traditionalChinese as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "人類聯盟";
+    const rich = (chunks: string) => chunks;
+    const login = t("auth.loginSubtitle", { siteName });
+    assert.equal(login, "存取您的 人類聯盟 工作區。");
+    assert.doesNotMatch(login, /\{siteName\}/);
+    const petition = t(
+      "initiativeExperience.author.petition.public.participationTransparencyNote",
+      { siteName },
+    );
+    assert.match(petition, /簽署此請願/);
+    assert.match(petition, /不具法律約束力/);
+    assert.match(petition, /不會產生任何法律或政府義務/);
+    assert.doesNotMatch(petition, /\{siteName\}|參與者/);
+    const shipped = t("notifications.types.member_badge_shipped.message", { siteName });
+    assert.equal(shipped, "您的 人類聯盟 正式會員物品已寄出。");
+    assert.doesNotMatch(shipped, /申請|請求/);
+    const copies = t("preferences.notification.copiesHelp", { siteName });
+    assert.match(copies, /人類聯盟/);
+    assert.match(copies, /不保證每一事件都會送達/);
+    assert.match(copies, /並不代表已經寄出郵件/);
+    assert.doesNotMatch(copies, /\{siteName\}/);
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /^把人性帶在身邊/);
+    assert.match(lead, /人類聯盟 助理/);
+    assert.doesNotMatch(lead, /Humanity|\{siteName\}|隨身攜帶人類/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /人類聯盟/);
+    assert.match(consent, /隱私權政策/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.match(platform, /人類聯盟 平台/);
+    assert.doesNotMatch(platform, /\{siteName\}|<platform>/);
+    assert.equal(t("pwa.searchLabel", { siteName }), "在 人類聯盟 平台內搜尋");
+    const helper = t("workspace.publishingPage.editor.seo.huShareHelper", { siteName });
+    assert.match(helper, /並不會自動發布/);
+    assert.match(helper, /真實的服務整合/);
+    assert.doesNotMatch(helper, /\{siteName\}/);
+    const english = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(english, "存取您的 Humanity Union 工作區。");
+    assert.doesNotMatch(english, /\{siteName\}/);
+    assert.equal(
+      t("initiativeExperience.civicArchivePublic.pageTitle", { siteName: "Humanity Union" }),
+      "Humanity Union 公共公民檔案",
+    );
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
