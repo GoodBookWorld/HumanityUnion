@@ -19,7 +19,10 @@ import {
 
 import {
   listPublicSeoRoutingCatalogForRequest,
+  loadPublicSeoRoutingCatalogSnapshot,
+  readPublicSeoMetadataEquivalenceSignals,
   resolvePublicSeoLocaleDocumentForRequest,
+  type PublicSeoMetadataEquivalenceSignals,
 } from "../../features/language/resolve-document-locale";
 import {
   buildPublicPageMetadata,
@@ -35,6 +38,7 @@ import {
   acquireSeoMetadataEligibilityPermit,
   releaseSeoMetadataEligibilityPermit,
 } from "./seo-metadata-eligibility-gate";
+import { shareInFlightSeoMetadataResolution, seoMetadataEquivalenceKey } from "./seo-metadata-inflight-dedupe";
 import { withSeoMetadataOperation } from "../system-health/web-memory-sampler";
 import {
   normalizeCanonicalPath,
@@ -50,6 +54,13 @@ export type ResolvePublicSeoMetadataDocumentPathsInput = {
   /** Optional document overrides for deterministic tests. */
   readonly urlLocaleSegment?: string | null;
   readonly pathname?: string | null;
+  /**
+   * Signals already read in the caller's request context.
+   * When set, the shared resolution does not call `headers()` or `cookies()`.
+   */
+  readonly capturedSignals?: PublicSeoMetadataEquivalenceSignals;
+  /** Skip React `cache()` so a shared resolution does not use another request's store. */
+  readonly useUncachedCatalog?: boolean;
   /**
    * Page-specific localized eligibility. Production (no catalog override)
    * loads owner evidence. Tests that pass `catalog` keep route-level alternates
@@ -102,10 +113,35 @@ function listSeoIndexableLocales(
 /**
  * Derive self-canonical + hreflang paths for the current request.
  */
+function hasExplicitMetadataIdentity(input: ResolvePublicSeoMetadataDocumentPathsInput): boolean {
+  return (
+    Object.prototype.hasOwnProperty.call(input, "catalog") ||
+    Object.prototype.hasOwnProperty.call(input, "isLocalizedVariantEligible") ||
+    Object.prototype.hasOwnProperty.call(input, "urlLocaleSegment") ||
+    Object.prototype.hasOwnProperty.call(input, "pathname") ||
+    Object.prototype.hasOwnProperty.call(input, "capturedSignals")
+  );
+}
+
 export async function resolvePublicSeoMetadataDocumentPaths(
   input: ResolvePublicSeoMetadataDocumentPathsInput,
 ): Promise<ResolvedPublicSeoMetadataDocumentPaths> {
-  return withSeoMetadataOperation(() => resolvePublicSeoMetadataDocumentPathsUncounted(input));
+  return withSeoMetadataOperation(async () => {
+    if (hasExplicitMetadataIdentity(input)) {
+      return resolvePublicSeoMetadataDocumentPathsUncounted(input);
+    }
+    const signals = await readPublicSeoMetadataEquivalenceSignals();
+    const localeFreePath = normalizeCanonicalPath(input.localeFreeCanonicalPath);
+    return shareInFlightSeoMetadataResolution(
+      seoMetadataEquivalenceKey(localeFreePath, signals),
+      () =>
+        resolvePublicSeoMetadataDocumentPathsUncounted({
+          localeFreeCanonicalPath: localeFreePath,
+          capturedSignals: signals,
+          useUncachedCatalog: true,
+        }),
+    );
+  });
 }
 
 async function resolvePublicSeoMetadataDocumentPathsUncounted(
@@ -118,7 +154,9 @@ async function resolvePublicSeoMetadataDocumentPathsUncounted(
     const hasCatalogOverride = Object.prototype.hasOwnProperty.call(input, "catalog");
     const catalog = hasCatalogOverride
       ? (input.catalog ?? [])
-      : await listPublicSeoRoutingCatalogForRequest();
+      : input.useUncachedCatalog === true
+        ? await loadPublicSeoRoutingCatalogSnapshot()
+        : await listPublicSeoRoutingCatalogForRequest();
 
     // Explicit empty catalog → no invented alternates; locale-free canonical.
     if (hasCatalogOverride && catalog.length === 0) {
@@ -130,12 +168,21 @@ async function resolvePublicSeoMetadataDocumentPathsUncounted(
       };
     }
 
+    const captured = input.capturedSignals;
     const document = await resolvePublicSeoLocaleDocumentForRequest({
       catalog,
-      ...(Object.prototype.hasOwnProperty.call(input, "urlLocaleSegment")
+      ...(captured
+        ? {
+            pathname: captured.pathname,
+            urlLocaleSegment: captured.urlLocaleSegment,
+            huLangCookie: captured.huLangCookie,
+            acceptLanguageHeader: captured.acceptLanguage,
+          }
+        : {}),
+      ...(!captured && Object.prototype.hasOwnProperty.call(input, "urlLocaleSegment")
         ? { urlLocaleSegment: input.urlLocaleSegment }
         : {}),
-      ...(Object.prototype.hasOwnProperty.call(input, "pathname")
+      ...(!captured && Object.prototype.hasOwnProperty.call(input, "pathname")
         ? { pathname: input.pathname }
         : {}),
     });

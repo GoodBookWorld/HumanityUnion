@@ -16,6 +16,7 @@ import {
   readPeakWaitingSeoMetadataEligibilityOperations,
   readWaitingSeoMetadataEligibilityOperations,
 } from "../seo/seo-metadata-eligibility-gate";
+import { readSeoMetadataDedupeSnapshot } from "../seo/seo-metadata-inflight-dedupe";
 
 const ACTIVE_SITEMAP_BUILDS_KEY = "__huActiveSitemapBuilds";
 const SEO_OPERATION_GAUGES_KEY = "__huSeoOperationGauges";
@@ -34,6 +35,12 @@ export interface WebWorkloadGauges {
   readonly peakWaitingSeoMetadataEligibilityOperations: number;
   readonly activeSeoEvidenceFetches: number;
   readonly waitingSeoEvidenceFetches: number;
+  readonly activeSeoMetadataDedupeKeys: number;
+  readonly activeSeoMetadataDedupeFollowers: number;
+  readonly seoMetadataDedupeHits: number;
+  readonly seoMetadataDedupeBypasses: number;
+  readonly peakSeoMetadataDedupeKeys: number;
+  readonly peakSeoMetadataDedupeFollowers: number;
 }
 
 function seoGauges(): SeoOperationGauges {
@@ -101,6 +108,27 @@ export function readWebWorkloadGauges(): WebWorkloadGauges {
     ),
     activeSeoEvidenceFetches: nonNegativeCount(readActiveSeoEvidenceFetches()),
     waitingSeoEvidenceFetches: nonNegativeCount(readWaitingSeoEvidenceFetches()),
+    ...readSeoMetadataDedupeGauges(),
+  };
+}
+
+function readSeoMetadataDedupeGauges(): Pick<
+  WebWorkloadGauges,
+  | "activeSeoMetadataDedupeKeys"
+  | "activeSeoMetadataDedupeFollowers"
+  | "seoMetadataDedupeHits"
+  | "seoMetadataDedupeBypasses"
+  | "peakSeoMetadataDedupeKeys"
+  | "peakSeoMetadataDedupeFollowers"
+> {
+  const snapshot = readSeoMetadataDedupeSnapshot();
+  return {
+    activeSeoMetadataDedupeKeys: nonNegativeCount(snapshot.activeKeys),
+    activeSeoMetadataDedupeFollowers: nonNegativeCount(snapshot.activeFollowers),
+    seoMetadataDedupeHits: nonNegativeCount(snapshot.hits),
+    seoMetadataDedupeBypasses: nonNegativeCount(snapshot.bypasses),
+    peakSeoMetadataDedupeKeys: nonNegativeCount(snapshot.peakKeys),
+    peakSeoMetadataDedupeFollowers: nonNegativeCount(snapshot.peakFollowers),
   };
 }
 

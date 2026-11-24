@@ -114,6 +114,67 @@ export async function listPublicSeoRoutingCatalogForRequest(): Promise<
 }
 
 /**
+ * One Registry catalog fetch with no React request cache.
+ * Cross-request SEO dedupe uses this so a shared resolution does not borrow
+ * another request's `cache()` store.
+ */
+export async function loadPublicSeoRoutingCatalogSnapshot(): Promise<
+  readonly PublicSeoLocaleRoutingCatalogEntry[]
+> {
+  return fetchEnabledLocaleCatalogUncached();
+}
+
+export type PublicSeoMetadataEquivalenceSignals = {
+  readonly pathname: string | null;
+  readonly urlLocaleSegment: string | null;
+  readonly huLangCookie: string | null;
+  readonly acceptLanguage: string | null;
+};
+
+function blankToNull(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Read the request fields that the SEO document resolver consumes.
+ * Called in the caller's request context, before any shared promise starts.
+ * Authentication, draft mode, and the Host header are not part of this result.
+ */
+export async function readPublicSeoMetadataEquivalenceSignals(): Promise<PublicSeoMetadataEquivalenceSignals> {
+  let pathname: string | null = null;
+  let urlLocaleSegment: string | null = null;
+  let acceptLanguage: string | null = null;
+  let huLangCookie: string | null = null;
+
+  try {
+    const headerStore = await headers();
+    pathname = headerStore.get(HU_PATHNAME_HEADER);
+    urlLocaleSegment = headerStore.get(HU_URL_LOCALE_SEGMENT_HEADER);
+    acceptLanguage = headerStore.get("accept-language");
+  } catch {
+    // Outside a request context (tests / build).
+  }
+
+  try {
+    const cookieStore = await cookies();
+    huLangCookie = cookieStore.get(HU_LANG_COOKIE_NAME)?.value ?? null;
+  } catch {
+    // Outside a request context (tests / build).
+  }
+
+  return {
+    pathname: blankToNull(pathname),
+    urlLocaleSegment: blankToNull(urlLocaleSegment),
+    huLangCookie: blankToNull(huLangCookie),
+    acceptLanguage: blankToNull(acceptLanguage),
+  };
+}
+
+/**
  * Pack 2.1A — recover URL locale for root SSR without child `[locale]` params.
  * Pathname (via shared SEO parser) wins over the explicit segment header.
  */
