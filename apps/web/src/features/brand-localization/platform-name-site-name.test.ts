@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { createTranslator, type AbstractIntlMessages } from "next-intl";
 
 import { getBuiltinEnglishBrand } from "./resolve-localized-brand";
 
@@ -157,6 +158,30 @@ describe("platform name uses published siteName", () => {
     assert.match(String(get(french, "authoringPage.application.motivationLabel")), /de l''\{siteName\}/);
     assert.match(String(get(french, "notifications.types.member_badge_delivered.message")), /Membre de l''\{siteName\}/);
     assert.doesNotMatch(JSON.stringify(french), /[^']'\{siteName\}/);
+    assert.equal(get(french, "initiativeExperience.author.sidebar.assistantTitle"), "Assistant de l''{siteName}");
+    assert.equal(
+      get(french, "pwa.install.alreadyInstalled"),
+      "L'application de l''{siteName} est déjà installée sur cet appareil.",
+    );
+    assert.equal(
+      get(french, "pwa.install.lead"),
+      "Emportez l'humanité avec vous. Installez l'application pour accéder directement à votre Espace de Travail, à vos Initiatives, à vos Notifications et à l'Assistant de l''{siteName}.",
+    );
+    assert.match(String(get(french, "auth.registerSubtitle")), /Participant de l''\{siteName\}/);
+    assert.match(String(get(french, "memberProfile.subtitle")), /Participant de l''\{siteName\}/);
+    assert.match(String(get(french, "memberProfile.membershipNote")), /adhésion/);
+    assert.doesNotMatch(
+      String(get(french, "notifications.types.member_badge_shipped.message")),
+      /Participant|adhésion/,
+    );
+    assert.match(
+      String(get(french, "rrpApplication.consent.label")),
+      /l''\{siteName\}[\s\S]*<privacy>[\s\S]*<\/privacy>/,
+    );
+    assert.match(
+      String(get(french, "volunteerPublic.intro.p1")),
+      /<platform>plateforme de l''\{siteName\}<\/platform>/,
+    );
 
     const spanish = load("es");
     assert.match(String(get(spanish, "auth.loginSubtitle")), /de la \{siteName\}/);
@@ -278,7 +303,19 @@ describe("platform name uses published siteName", () => {
 
     const corrected = {
       ka: georgian,
-      fr: ["auth.twoStepLoginHelp", "authoringPage.application.motivationLabel"],
+      fr: [
+        "auth.twoStepLoginHelp",
+        "auth.loginSubtitle",
+        "auth.registerSubtitle",
+        "authoringPage.application.motivationLabel",
+        "initiativeExperience.author.sidebar.assistantTitle",
+        "pwa.install.alreadyInstalled",
+        "pwa.install.lead",
+        "rrpApplication.consent.label",
+        "volunteerPublic.intro.p1",
+        "notifications.types.member_badge_delivered.message",
+        "workspace.publishingPage.editor.seo.huShareLegend",
+      ],
       es: [
         "auth.loginSubtitle",
         "auth.deleteAccountIntro",
@@ -307,6 +344,47 @@ describe("platform name uses published siteName", () => {
         assert.equal(get(packaged, key), get(load(locale), key), `${locale} ${key}`);
       }
     }
+  });
+
+  it("renders French elision as one apostrophe and the interpolated brand", () => {
+    const french = load("fr");
+    const t = createTranslator({
+      locale: "fr",
+      messages: french as AbstractIntlMessages,
+    }) as unknown as (key: string, values?: Record<string, unknown>) => string;
+    const siteName = "Union de l'Humanité";
+    const rich = (chunks: string) => chunks;
+    for (const key of [
+      "auth.loginSubtitle",
+      "auth.registerSubtitle",
+      "initiativeExperience.author.sidebar.assistantTitle",
+      "pwa.install.alreadyInstalled",
+      "pwa.install.lead",
+      "membershipPublic.faq.items.what-is-member.question",
+    ]) {
+      const rendered = t(key, { siteName });
+      assert.equal(typeof rendered, "string", key);
+      assert.doesNotMatch(rendered, /\{siteName\}|''/, key);
+      assert.match(rendered, /l'Union de l'Humanité/, key);
+    }
+    const lead = t("pwa.install.lead", { siteName });
+    assert.match(lead, /l'humanité/);
+    assert.doesNotMatch(lead, /Humanity/);
+    const consent = t("rrpApplication.consent.label", { siteName, privacy: rich });
+    assert.match(consent, /l'Union de l'Humanité/);
+    assert.match(consent, /Politique de confidentialité/);
+    assert.doesNotMatch(consent, /\{siteName\}|<privacy>|''/);
+    const platform = t("volunteerPublic.intro.p1", { siteName, platform: rich });
+    assert.equal(platform, "Le développement de la plateforme de l'Union de l'Humanité est une contribution personnelle que chacun d'entre nous peut apporter à son propre avenir et à celui des générations futures.");
+    const fallback = t("auth.loginSubtitle", { siteName: "Humanity Union" });
+    assert.equal(fallback, "Accédez à votre Espace de Travail de l'Humanity Union.");
+    assert.doesNotMatch(fallback, /\{siteName\}|''/);
+    assert.match(t("auth.registerSubtitle", { siteName }), /Participant/);
+    assert.match(t("membershipPublic.faq.items.what-is-member.question", { siteName }), /Membre/);
+    assert.doesNotMatch(
+      t("notifications.types.member_badge_shipped.message", { siteName }),
+      /Participant/,
+    );
   });
 
   it("packages the same corrected deletion intro as the WEB catalog", () => {
