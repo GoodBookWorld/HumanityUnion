@@ -5254,6 +5254,48 @@
     "siteMapRegionalProgram": "Programme de développement régional"
   },
   "notifications": {
+    "emailSettings": {
+      "title": "Notifications par e-mail",
+      "collapsedSummary": "Copies facultatives par e-mail et paramètres de remise",
+      "preparationNotice": "Copies facultatives par e-mail de l’activité sélectionnée du Centre de notifications. Un consentement explicite est requis. Les messages utilisent votre destination de notification vérifiée et suivent la fréquence enregistrée. La remise dépend de la disponibilité de la plateforme et peut ne pas inclure chaque notification.",
+      "emailEnabledHelpShort": "Alertes d’activité sur les nouveaux éléments qui vous attendent. Distinctes des copies d’éléments du Centre de notifications et des e-mails de sécurité.",
+      "copiesHelpShort": "Copies facultatives d’éléments sélectionnés du Centre de notifications vers votre destination vérifiée. Ne change pas l’e-mail de connexion ; enregistrer les préférences ne signifie pas qu’un e-mail a été envoyé.",
+      "loginEmailHint": "L’e-mail de connexion reste {email} (inchangé).",
+      "openWorkspacePreferences": "Ouvrir les préférences de notification dans l’Espace de Travail",
+      "loading": "Chargement des paramètres de notification par e-mail…",
+      "loadError": "Impossible de charger les paramètres de notification par e-mail.",
+      "retry": "Réessayer",
+      "currentDestination": "Destination de notification actuelle",
+      "destinationAccount": "E-mail du compte ({email})",
+      "destinationAlternative": "E-mail alternatif ({email})",
+      "destinationUnavailable": "Aucune destination vérifiée n’est encore disponible.",
+      "accountEmail": "E-mail du compte",
+      "accountEmailUnverified": "Confirmez l’e-mail de votre compte avant d’utiliser les paramètres de notification par e-mail.",
+      "confirmEmailCta": "Confirmer l’e-mail",
+      "alternativeEmail": "E-mail alternatif pour les notifications",
+      "alternativeEmailHelp": "Vérifiez une autre adresse pour les copies par e-mail du Centre de notifications. Cela ne change jamais votre e-mail de connexion.",
+      "alternativeEmailInput": "Adresse e-mail alternative",
+      "verifiedAlternative": "Alternative vérifiée : {email}",
+      "pendingAlternative": "Vérification en attente pour {email}",
+      "requestVerification": "Envoyer le code de vérification",
+      "resendCode": "Renvoyer le code de vérification",
+      "resendCooldown": "Renvoi possible dans {seconds}s",
+      "verificationCode": "Code de vérification",
+      "confirmCode": "Confirmer le code",
+      "useAccountEmail": "Utiliser l’e-mail du compte",
+      "removeAlternative": "Retirer l’e-mail alternatif",
+      "requestSuccess": "Code de vérification envoyé.",
+      "confirmSuccess": "E-mail alternatif pour les notifications vérifié.",
+      "useAccountSuccess": "E-mail du compte sélectionné.",
+      "removeSuccess": "E-mail alternatif pour les notifications retiré.",
+      "codeInvalid": "Ce code de vérification est incorrect.",
+      "codeExpired": "Ce code de vérification a expiré. Demandez un nouveau code.",
+      "rateLimited": "Trop de demandes de vérification. Veuillez patienter et réessayer.",
+      "altActionError": "Impossible de mettre à jour l’e-mail alternatif pour les notifications.",
+      "saving": "Enregistrement…",
+      "saved": "Enregistré",
+      "saveError": "Impossible d’enregistrer les paramètres de notification par e-mail."
+    },
     "actions": {
       "archive": "Archiver",
       "cancel": "Annuler",
@@ -5753,7 +5795,10 @@
     "loading": "Chargement des préférences...",
     "notification": {
       "emailEnabled": "Recevoir des notifications par e-mail",
-      "emailHelp": "Lorsque cette option est activée, l''{siteName} enverra des notifications par e-mail simples lorsqu'une nouvelle activité requiert votre attention. Exemple : \"Vous avez 3 nouvelles notifications dans votre Espace de Travail.\" Les e-mails ne contiennent jamais de contenu de conversation privée ou d'informations confidentielles relatives à l'Initiative."
+      "emailHelp": "Lorsque cette option est activée, l''{siteName} enverra des notifications par e-mail simples lorsqu'une nouvelle activité requiert votre attention. Exemple : \"Vous avez 3 nouvelles notifications dans votre Espace de Travail.\" Les e-mails ne contiennent jamais de contenu de conversation privée ou d'informations confidentielles relatives à l'Initiative.",
+      "copiesOptIn": "Envoyer des copies par e-mail de mes notifications",
+      "copiesHelp": "Facultatif. Lorsque cette option est activée, l''{siteName} peut envoyer par e-mail des copies d’éléments sélectionnés du Centre de notifications vers votre destination de notification vérifiée (e-mail du compte ou une adresse alternative vérifiée séparément). La fréquence suit vos préférences enregistrées. La remise dépend de la disponibilité de la plateforme et n’est pas garantie pour chaque événement. Cela ne change pas votre e-mail de connexion, n’arrête pas les e-mails de sécurité ou de compte et ne retire jamais les éléments du Centre de notifications dans l’application. Enregistrer les préférences ne signifie pas qu’un e-mail a été envoyé.",
+      "openNotificationCenter": "Ouvrir les notifications par e-mail dans le Centre de notifications"
     },
     "notificationFrequencies": {
       "daily_digest": "Résumé quotidien",
@@ -7769,6 +7814,7 @@
       "messagesHint": "Une personne chargée de l’administration a demandé plus d’informations. Répondez dans Messages après avoir mis à jour votre candidature.",
       "openMessages": "Ouvrir Messages",
       "openMessagesAria": "Ouvrir les Messages de l’Espace de Travail",
+      "message": "Message",
       "messagesUnavailable": {
         "pending": "Le message de l’administration est encore en cours de remise. Réessayez sous peu depuis cette page.",
         "failed": "Le message de l’administration n’a pas pu être remis. Mettez à jour votre candidature ici ; la messagerie sera disponible lorsque la conversation existera.",

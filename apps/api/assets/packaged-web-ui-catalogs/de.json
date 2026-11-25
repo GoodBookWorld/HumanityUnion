@@ -5254,6 +5254,48 @@
     "siteMapRegionalProgram": "Regionales Entwicklungsprogramm"
   },
   "notifications": {
+    "emailSettings": {
+      "title": "E-Mail-Benachrichtigungen",
+      "collapsedSummary": "Optionale E-Mail-Kopien und Zustellungseinstellungen",
+      "preparationNotice": "Optionale E-Mail-Kopien ausgewählter Aktivitäten im Benachrichtigungszentrum. Eine ausdrückliche Einwilligung ist erforderlich. Nachrichten verwenden Ihr bestätigtes Benachrichtigungsziel und folgen Ihrer gespeicherten Häufigkeit. Die Zustellung hängt von der Verfügbarkeit der Plattform ab und umfasst möglicherweise nicht jede Benachrichtigung.",
+      "emailEnabledHelpShort": "Hinweise auf neue Einträge, die auf Sie warten. Getrennt von Kopien der Einträge des Benachrichtigungszentrums und von Sicherheits-E-Mails.",
+      "copiesHelpShort": "Optionale Kopien ausgewählter Einträge des Benachrichtigungszentrums an Ihr bestätigtes Ziel. Ändert die Anmelde-E-Mail nicht; das Speichern der Einstellungen bedeutet nicht, dass eine E-Mail gesendet wurde.",
+      "loginEmailHint": "Die Anmelde-E-Mail bleibt {email} (unverändert).",
+      "openWorkspacePreferences": "Benachrichtigungseinstellungen im Arbeitsbereich öffnen",
+      "loading": "E-Mail-Benachrichtigungseinstellungen werden geladen…",
+      "loadError": "Die E-Mail-Benachrichtigungseinstellungen konnten nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "currentDestination": "Aktuelles Benachrichtigungsziel",
+      "destinationAccount": "Konto-E-Mail ({email})",
+      "destinationAlternative": "Alternative E-Mail ({email})",
+      "destinationUnavailable": "Noch kein bestätigtes Ziel verfügbar.",
+      "accountEmail": "Konto-E-Mail",
+      "accountEmailUnverified": "Bestätigen Sie Ihre Konto-E-Mail, bevor Sie die Einstellungen für E-Mail-Benachrichtigungen verwenden.",
+      "confirmEmailCta": "E-Mail bestätigen",
+      "alternativeEmail": "Alternative Benachrichtigungs-E-Mail",
+      "alternativeEmailHelp": "Bestätigen Sie eine andere Adresse für E-Mail-Kopien des Benachrichtigungszentrums. Dadurch wird Ihre Anmelde-E-Mail nie geändert.",
+      "alternativeEmailInput": "Alternative E-Mail-Adresse",
+      "verifiedAlternative": "Bestätigte Alternative: {email}",
+      "pendingAlternative": "Bestätigung ausstehend für {email}",
+      "requestVerification": "Bestätigungscode senden",
+      "resendCode": "Bestätigungscode erneut senden",
+      "resendCooldown": "Erneutes Senden in {seconds}s möglich",
+      "verificationCode": "Bestätigungscode",
+      "confirmCode": "Code bestätigen",
+      "useAccountEmail": "Konto-E-Mail verwenden",
+      "removeAlternative": "Alternative E-Mail entfernen",
+      "requestSuccess": "Bestätigungscode gesendet.",
+      "confirmSuccess": "Alternative Benachrichtigungs-E-Mail bestätigt.",
+      "useAccountSuccess": "Konto-E-Mail ausgewählt.",
+      "removeSuccess": "Alternative Benachrichtigungs-E-Mail entfernt.",
+      "codeInvalid": "Dieser Bestätigungscode ist falsch.",
+      "codeExpired": "Dieser Bestätigungscode ist abgelaufen. Fordern Sie einen neuen Code an.",
+      "rateLimited": "Zu viele Bestätigungsanfragen. Bitte warten Sie und versuchen Sie es erneut.",
+      "altActionError": "Die alternative Benachrichtigungs-E-Mail konnte nicht aktualisiert werden.",
+      "saving": "Wird gespeichert…",
+      "saved": "Gespeichert",
+      "saveError": "Die E-Mail-Benachrichtigungseinstellungen konnten nicht gespeichert werden."
+    },
     "actions": {
       "archive": "Archivieren",
       "cancel": "Abbrechen",
@@ -5753,7 +5795,10 @@
     "loading": "Einstellungen werden geladen...",
     "notification": {
       "emailEnabled": "E-Mail-Benachrichtigungen erhalten",
-      "emailHelp": "Wenn diese Option aktiviert ist, sendet {siteName} einfache E-Mail-Benachrichtigungen, wenn neue Aktivitäten Ihre Aufmerksamkeit erfordern. Beispiel: „Sie haben 3 neue Benachrichtigungen in Ihrem Arbeitsbereich.“ E-Mails enthalten niemals private Unterhaltungsinhalte oder vertrauliche Initiativinformationen."
+      "emailHelp": "Wenn diese Option aktiviert ist, sendet {siteName} einfache E-Mail-Benachrichtigungen, wenn neue Aktivitäten Ihre Aufmerksamkeit erfordern. Beispiel: „Sie haben 3 neue Benachrichtigungen in Ihrem Arbeitsbereich.“ E-Mails enthalten niemals private Unterhaltungsinhalte oder vertrauliche Initiativinformationen.",
+      "copiesOptIn": "E-Mail-Kopien meiner Benachrichtigungen senden",
+      "copiesHelp": "Optional. Wenn diese Option aktiviert ist, kann {siteName} E-Mail-Kopien ausgewählter Einträge des Benachrichtigungszentrums an Ihr bestätigtes Benachrichtigungsziel senden (Konto-E-Mail oder eine getrennt bestätigte alternative Adresse). Die Häufigkeit folgt Ihren gespeicherten Einstellungen. Die Zustellung hängt von der Verfügbarkeit der Plattform ab und ist nicht für jedes Ereignis garantiert. Dadurch wird Ihre Anmelde-E-Mail nicht geändert, Sicherheits- oder Konto-E-Mails werden nicht angehalten, und Einträge des Benachrichtigungszentrums in der Anwendung werden nie entfernt. Das Speichern der Einstellungen bedeutet nicht, dass eine E-Mail gesendet wurde.",
+      "openNotificationCenter": "E-Mail-Benachrichtigungen im Benachrichtigungszentrum öffnen"
     },
     "notificationFrequencies": {
       "daily_digest": "Tägliche Zusammenfassung",
@@ -7754,6 +7799,7 @@
       "messagesHint": "Eine administrierende Person hat weitere Informationen angefordert. Antworten Sie in Nachrichten, nachdem Sie Ihre Bewerbung aktualisiert haben.",
       "openMessages": "Nachrichten öffnen",
       "openMessagesAria": "Nachrichten des Arbeitsbereichs öffnen",
+      "message": "Nachricht",
       "messagesUnavailable": {
         "pending": "Die Nachricht der administrierenden Person wird noch zugestellt. Versuchen Sie es in Kürze erneut auf dieser Seite.",
         "failed": "Die Nachricht der administrierenden Person konnte nicht zugestellt werden. Aktualisieren Sie Ihre Bewerbung hier; Nachrichten sind verfügbar, sobald die Unterhaltung besteht.",

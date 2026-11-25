@@ -5254,6 +5254,48 @@
     "siteMapRegionalProgram": "Programa de Desarrollo Regional"
   },
   "notifications": {
+    "emailSettings": {
+      "title": "Notificaciones por correo electrónico",
+      "collapsedSummary": "Copias opcionales por correo electrónico y ajustes de entrega",
+      "preparationNotice": "Copias opcionales por correo electrónico de la actividad seleccionada del Centro de notificaciones. Se requiere una aceptación explícita. Los mensajes usan su destino de notificación verificado y siguen la frecuencia guardada. La entrega depende de la disponibilidad de la plataforma y puede no incluir cada notificación.",
+      "emailEnabledHelpShort": "Avisos de actividad sobre elementos nuevos que le esperan. Separados de las copias de elementos del Centro de notificaciones y de los correos de seguridad.",
+      "copiesHelpShort": "Copias opcionales de elementos seleccionados del Centro de notificaciones a su destino verificado. No cambia el correo de inicio de sesión; guardar las preferencias no significa que se haya enviado un correo.",
+      "loginEmailHint": "El correo de inicio de sesión sigue siendo {email} (sin cambios).",
+      "openWorkspacePreferences": "Abrir las preferencias de notificación en el Espacio de Trabajo",
+      "loading": "Cargando los ajustes de notificaciones por correo electrónico…",
+      "loadError": "No se pudieron cargar los ajustes de notificaciones por correo electrónico.",
+      "retry": "Volver a intentar",
+      "currentDestination": "Destino de notificación actual",
+      "destinationAccount": "Correo de la cuenta ({email})",
+      "destinationAlternative": "Correo alternativo ({email})",
+      "destinationUnavailable": "Aún no hay un destino verificado disponible.",
+      "accountEmail": "Correo de la cuenta",
+      "accountEmailUnverified": "Confirme el correo de su cuenta antes de usar los ajustes de notificaciones por correo electrónico.",
+      "confirmEmailCta": "Confirmar correo",
+      "alternativeEmail": "Correo alternativo para notificaciones",
+      "alternativeEmailHelp": "Verifique una dirección diferente para las copias por correo electrónico del Centro de notificaciones. Esto nunca cambia su correo de inicio de sesión.",
+      "alternativeEmailInput": "Dirección de correo alternativa",
+      "verifiedAlternative": "Alternativa verificada: {email}",
+      "pendingAlternative": "Verificación pendiente para {email}",
+      "requestVerification": "Enviar código de verificación",
+      "resendCode": "Reenviar código de verificación",
+      "resendCooldown": "Reenvío disponible en {seconds}s",
+      "verificationCode": "Código de verificación",
+      "confirmCode": "Confirmar código",
+      "useAccountEmail": "Usar el correo de la cuenta",
+      "removeAlternative": "Quitar el correo alternativo",
+      "requestSuccess": "Código de verificación enviado.",
+      "confirmSuccess": "Correo alternativo para notificaciones verificado.",
+      "useAccountSuccess": "Correo de la cuenta seleccionado.",
+      "removeSuccess": "Correo alternativo para notificaciones quitado.",
+      "codeInvalid": "Ese código de verificación es incorrecto.",
+      "codeExpired": "Ese código de verificación ha caducado. Solicite un código nuevo.",
+      "rateLimited": "Demasiadas solicitudes de verificación. Espere e inténtelo de nuevo.",
+      "altActionError": "No se pudo actualizar el correo alternativo para notificaciones.",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "saveError": "No se pudieron guardar los ajustes de notificaciones por correo electrónico."
+    },
     "actions": {
       "archive": "Archivar",
       "cancel": "Cancelar",
@@ -5753,7 +5795,10 @@
     "loading": "Cargando preferencias...",
     "notification": {
       "emailEnabled": "Recibir notificaciones por correo electrónico",
-      "emailHelp": "Cuando está habilitado, la {siteName} enviará notificaciones simples por correo electrónico cuando una nueva actividad requiera su atención. Ejemplo: \"Tiene 3 notificaciones nuevas en su Espacio de Trabajo.\" Los correos electrónicos nunca contienen contenido de conversaciones privadas ni información confidencial de la Iniciativa."
+      "emailHelp": "Cuando está habilitado, la {siteName} enviará notificaciones simples por correo electrónico cuando una nueva actividad requiera su atención. Ejemplo: \"Tiene 3 notificaciones nuevas en su Espacio de Trabajo.\" Los correos electrónicos nunca contienen contenido de conversaciones privadas ni información confidencial de la Iniciativa.",
+      "copiesOptIn": "Enviar copias por correo electrónico de mis notificaciones",
+      "copiesHelp": "Opcional. Cuando está habilitado, {siteName} puede enviar por correo electrónico copias de elementos seleccionados del Centro de notificaciones a su destino de notificación verificado (correo de la cuenta o una alternativa verificada por separado). La frecuencia sigue sus preferencias guardadas. La entrega depende de la disponibilidad de la plataforma y no está garantizada para cada evento. Esto no cambia su correo de inicio de sesión, no detiene los correos de seguridad o de la cuenta y nunca elimina los elementos del Centro de notificaciones en la aplicación. Guardar las preferencias no significa que se haya enviado un correo.",
+      "openNotificationCenter": "Abrir las notificaciones por correo electrónico en el Centro de notificaciones"
     },
     "notificationFrequencies": {
       "daily_digest": "Resumen diario",
@@ -7754,6 +7799,7 @@
       "messagesHint": "Una persona administradora pidió más información. Responda en Mensajes después de actualizar su solicitud.",
       "openMessages": "Abrir Mensajes",
       "openMessagesAria": "Abrir Mensajes del espacio de trabajo",
+      "message": "Mensaje",
       "messagesUnavailable": {
         "pending": "El mensaje de la administración todavía se está entregando. Inténtelo de nuevo en breve desde esta página.",
         "failed": "No se pudo entregar el mensaje de la administración. Actualice su solicitud aquí; la mensajería estará disponible cuando exista la conversación.",

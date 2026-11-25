@@ -5254,6 +5254,48 @@
     "siteMapRegionalProgram": "Programa de Desenvolvimento Regional"
   },
   "notifications": {
+    "emailSettings": {
+      "title": "Notificações por e-mail",
+      "collapsedSummary": "Cópias opcionais por e-mail e definições de entrega",
+      "preparationNotice": "Cópias opcionais por e-mail da atividade selecionada do Centro de Notificações. É necessária uma adesão explícita. As mensagens usam o seu destino de notificação verificado e seguem a frequência guardada. A entrega depende da disponibilidade da plataforma e pode não incluir cada notificação.",
+      "emailEnabledHelpShort": "Alertas de atividade sobre novos itens que o aguardam. Separados das cópias de itens do Centro de Notificações e dos e-mails de segurança.",
+      "copiesHelpShort": "Cópias opcionais de itens selecionados do Centro de Notificações para o seu destino verificado. Não altera o e-mail de início de sessão; salvar as preferências não significa que um e-mail tenha sido enviado.",
+      "loginEmailHint": "O e-mail de início de sessão mantém-se {email} (inalterado).",
+      "openWorkspacePreferences": "Abrir as preferências de notificação no Espaço de Trabalho",
+      "loading": "A carregar as definições de notificações por e-mail…",
+      "loadError": "Não foi possível carregar as definições de notificações por e-mail.",
+      "retry": "Tentar novamente",
+      "currentDestination": "Destino de notificação atual",
+      "destinationAccount": "E-mail da conta ({email})",
+      "destinationAlternative": "E-mail alternativo ({email})",
+      "destinationUnavailable": "Ainda não há um destino verificado disponível.",
+      "accountEmail": "E-mail da conta",
+      "accountEmailUnverified": "Confirme o e-mail da sua conta antes de utilizar as definições de notificações por e-mail.",
+      "confirmEmailCta": "Confirmar e-mail",
+      "alternativeEmail": "E-mail alternativo para notificações",
+      "alternativeEmailHelp": "Verifique um endereço diferente para as cópias por e-mail do Centro de Notificações. Isto nunca altera o seu e-mail de início de sessão.",
+      "alternativeEmailInput": "Endereço de e-mail alternativo",
+      "verifiedAlternative": "Alternativa verificada: {email}",
+      "pendingAlternative": "Verificação pendente para {email}",
+      "requestVerification": "Enviar código de verificação",
+      "resendCode": "Reenviar código de verificação",
+      "resendCooldown": "Reenvio disponível em {seconds}s",
+      "verificationCode": "Código de verificação",
+      "confirmCode": "Confirmar código",
+      "useAccountEmail": "Utilizar o e-mail da conta",
+      "removeAlternative": "Remover o e-mail alternativo",
+      "requestSuccess": "Código de verificação enviado.",
+      "confirmSuccess": "E-mail alternativo para notificações verificado.",
+      "useAccountSuccess": "E-mail da conta selecionado.",
+      "removeSuccess": "E-mail alternativo para notificações removido.",
+      "codeInvalid": "Esse código de verificação está incorreto.",
+      "codeExpired": "Esse código de verificação expirou. Peça um código novo.",
+      "rateLimited": "Demasiados pedidos de verificação. Aguarde e tente novamente.",
+      "altActionError": "Não foi possível atualizar o e-mail alternativo para notificações.",
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "saveError": "Não foi possível salvar as definições de notificações por e-mail."
+    },
     "actions": {
       "archive": "Arquivar",
       "cancel": "Cancelar",
@@ -5753,7 +5795,10 @@
     "loading": "A carregar preferências...",
     "notification": {
       "emailEnabled": "Receber notificações por e-mail",
-      "emailHelp": "Quando ativado, a plataforma {siteName} enviará notificações simples por e-mail quando uma nova atividade exigir a sua atenção. Exemplo: \"Tem 3 novas notificações no seu Espaço de Trabalho.\" Os e-mails nunca contêm conteúdo de conversas privadas ou informações confidenciais de Iniciativa."
+      "emailHelp": "Quando ativado, a plataforma {siteName} enviará notificações simples por e-mail quando uma nova atividade exigir a sua atenção. Exemplo: \"Tem 3 novas notificações no seu Espaço de Trabalho.\" Os e-mails nunca contêm conteúdo de conversas privadas ou informações confidenciais de Iniciativa.",
+      "copiesOptIn": "Enviar cópias por e-mail das minhas notificações",
+      "copiesHelp": "Opcional. Quando ativado, a plataforma {siteName} pode enviar por e-mail cópias de itens selecionados do Centro de Notificações para o seu destino de notificação verificado (e-mail da conta ou uma alternativa verificada em separado). A frequência segue as preferências guardadas. A entrega depende da disponibilidade da plataforma e não é garantida para cada evento. Isto não altera o e-mail de início de sessão, não interrompe os e-mails de segurança ou da conta e nunca remove os itens do Centro de Notificações na aplicação. Salvar as preferências não significa que um e-mail tenha sido enviado.",
+      "openNotificationCenter": "Abrir as notificações por e-mail no Centro de Notificações"
     },
     "notificationFrequencies": {
       "daily_digest": "Resumo diário",
@@ -7754,6 +7799,7 @@
       "messagesHint": "Uma pessoa administradora pediu mais informações. Responda em Mensagens depois de atualizar a candidatura.",
       "openMessages": "Abrir Mensagens",
       "openMessagesAria": "Abrir as Mensagens do Espaço de Trabalho",
+      "message": "Mensagem",
       "messagesUnavailable": {
         "pending": "A mensagem da administração ainda está a ser entregue. Tente novamente dentro de momentos nesta página.",
         "failed": "Não foi possível entregar a mensagem da administração. Atualize a candidatura aqui; as mensagens ficarão disponíveis quando a conversa existir.",

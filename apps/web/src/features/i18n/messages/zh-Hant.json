@@ -7688,6 +7688,7 @@
       "messagesHint": "管理員要求更多資訊。更新申請後，請在「訊息」中回覆。",
       "openMessages": "開啟訊息",
       "openMessagesAria": "開啟工作區訊息",
+      "message": "訊息",
       "messagesUnavailable": {
         "pending": "管理員的訊息仍在送達中。請稍後在此頁再試。",
         "failed": "管理員的訊息未能送出。請在此更新申請；對話建立後即可使用訊息。",
