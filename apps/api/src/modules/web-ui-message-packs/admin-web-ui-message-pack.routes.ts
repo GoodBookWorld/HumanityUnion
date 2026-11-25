@@ -18,11 +18,13 @@ import {
 } from "./web-ui-message-pack.errors.js";
 import {
   applyAdminAddMissingWebUiFromPackaged,
+  applyAdminConsentAcceptedStatusMigration,
   applyAdminUpdateSelectedWebUiFromPackaged,
   getAdminWebUiMessagePack,
   listAdminWebUiMessagePacks,
   prepareAdminWebUiMessagePack,
   previewAdminAddMissingWebUiFromPackaged,
+  previewAdminConsentAcceptedStatusMigration,
   previewAdminUpdateSelectedWebUiFromPackaged,
   upsertAdminWebUiMessagePack,
 } from "./web-ui-message-pack.service.js";
@@ -192,6 +194,54 @@ adminWebUiMessagePackRouter.post(
       });
       res.json(
         createSuccessResponse(result, "Selected WEB_UI translations updated from packaged catalog."),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/**
+ * Temporary migration. Remove these routes with
+ * repair-admin-consent-accepted-status.ts after every affected published
+ * locale has been repaired.
+ */
+adminWebUiMessagePackRouter.post(
+  "/:locale/repair-admin-consent-accepted-status/preview",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await previewAdminConsentAcceptedStatusMigration({
+        actorUserId: req.auth!.id,
+        locale: paramLocale(req.params.locale),
+        body: req.body,
+      });
+      res.json(createSuccessResponse(result, "Consent status migration preview loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminWebUiMessagePackRouter.post(
+  "/:locale/repair-admin-consent-accepted-status",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await applyAdminConsentAcceptedStatusMigration({
+        actorUserId: req.auth!.id,
+        locale: paramLocale(req.params.locale),
+        body: req.body,
+      });
+      res.json(
+        createSuccessResponse(
+          result,
+          result.changed
+            ? "Consent status label migrated."
+            : "Consent status label already matches the approved sentence.",
+        ),
       );
     } catch (error) {
       handleError(res, error);

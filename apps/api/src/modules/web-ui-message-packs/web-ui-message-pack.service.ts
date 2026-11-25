@@ -34,6 +34,15 @@ import {
   type WebUiSelectedUpdateResult,
 } from "./plan-selected-packaged-web-ui-updates.js";
 import {
+  ADMIN_CONSENT_ACCEPTED_STATUS_PATH,
+  CONSENT_ACCEPTED_STATUS_MIGRATION_PATHS,
+  assessConsentAcceptedStatusMigrationReadiness,
+  decideConsentAcceptedStatusMigration,
+  replaceConsentAcceptedStatusLeaf,
+  type ConsentAcceptedStatusMigrationDecision,
+  type ConsentAcceptedStatusMigrationReadiness,
+} from "./repair-admin-consent-accepted-status.js";
+import {
   WebUiMessagePackNotFoundError,
   WebUiMessagePackRevisionConflictError,
   WebUiMessagePackValidationError,
@@ -46,10 +55,12 @@ import {
   requireWebUiMessagePackByLocale,
 } from "./web-ui-message-pack.repository.js";
 import {
+  changedWebUiLeafPaths,
   collectStringPaths,
   existingWebUiLeavesChanged,
   listBlockingWebUiFoundationFailures,
   loadBundledEnglishWebUiMessagePack,
+  readWebUiStringLeaf,
   selectEnglishWebUiMessages,
   validateWebUiMessageTreeAgainstEnglish,
   webUiFoundationFailuresBlockPersist,
@@ -633,5 +644,216 @@ export async function prepareAdminWebUiMessagePack(input: {
       dataReady: fullReadiness.dataReady,
     },
     messages: selected.messages,
+  };
+}
+
+const CONSENT_STATUS_MIGRATION_BODY_FIELDS = [
+  "confirm",
+  "expectedRevision",
+  "existingValue",
+] as const;
+
+export interface ConsentAcceptedStatusMigrationResult {
+  readonly locale: string;
+  readonly changed: boolean;
+  readonly changedPaths: readonly string[];
+  readonly revision: number;
+  readonly pack: WebUiMessagePackRecord;
+  readonly readiness: ConsentAcceptedStatusMigrationReadiness;
+}
+
+export interface ConsentAcceptedStatusMigrationPreview {
+  readonly locale: string;
+  readonly revision: number;
+  readonly path: typeof ADMIN_CONSENT_ACCEPTED_STATUS_PATH;
+  readonly action: ConsentAcceptedStatusMigrationDecision["action"];
+  readonly reason: string | null;
+  readonly publishedValue: string;
+  readonly proposedValue: string | null;
+  readonly readiness: ConsentAcceptedStatusMigrationReadiness;
+}
+
+/**
+ * Temporary. Remove with repair-admin-consent-accepted-status.ts after every
+ * affected published locale has been repaired.
+ */
+function parseConsentAcceptedStatusMigrationBody(
+  body: unknown,
+  mode: "preview" | "apply",
+): { readonly expectedRevision: number; readonly existingValue: string } {
+  if (body == null || typeof body !== "object" || Array.isArray(body)) {
+    throw new AdministrationValidationError("Request body must be an object.");
+  }
+  const record = body as Record<string, unknown>;
+  const allowed = new Set<string>(CONSENT_STATUS_MIGRATION_BODY_FIELDS);
+  for (const field of Object.keys(record)) {
+    if (!allowed.has(field)) {
+      throw new AdministrationValidationError(
+        `The consent status migration does not accept ${field}.`,
+      );
+    }
+  }
+  if (mode === "apply" && record.confirm !== true) {
+    throw new AdministrationValidationError(
+      "Explicit confirmation is required. Send confirm: true.",
+    );
+  }
+  if (
+    mode === "preview" &&
+    Object.prototype.hasOwnProperty.call(record, "confirm") &&
+    record.confirm !== true
+  ) {
+    throw new AdministrationValidationError("confirm must be true when supplied.");
+  }
+  if (!Object.prototype.hasOwnProperty.call(record, "expectedRevision")) {
+    throw new AdministrationValidationError("expectedRevision is required.");
+  }
+  const expectedRevision = parseExpectedRevision(record.expectedRevision);
+  if (expectedRevision === null) {
+    throw new AdministrationValidationError(
+      "expectedRevision must be the current published revision.",
+    );
+  }
+  if (typeof record.existingValue !== "string") {
+    throw new AdministrationValidationError("existingValue must be a string.");
+  }
+  return { expectedRevision, existingValue: record.existingValue };
+}
+
+async function prepareConsentAcceptedStatusMigration(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+  readonly mode: "preview" | "apply";
+}): Promise<{
+  readonly admin: AdminActor;
+  readonly published: WebUiMessagePackRecord;
+  readonly publishedValue: string;
+  readonly decision: ConsentAcceptedStatusMigrationDecision;
+}> {
+  const admin = await assertAdminActor(input.actorUserId);
+  const parsed = parseConsentAcceptedStatusMigrationBody(input.body, input.mode);
+  const locale = await resolvePackLocale(input.locale);
+  const published = await getPublishedWebUiMessagePackByLocale(locale);
+  if (!published || published.revision !== parsed.expectedRevision) {
+    throw new WebUiMessagePackRevisionConflictError(
+      `WEB_UI message pack revision conflict for locale ${locale} (expected ${parsed.expectedRevision}).`,
+    );
+  }
+  const publishedValue = readWebUiStringLeaf(
+    published.messages,
+    ADMIN_CONSENT_ACCEPTED_STATUS_PATH,
+  );
+  if (publishedValue === undefined) {
+    throw new WebUiMessagePackValidationError("Published consent status label is missing.");
+  }
+  if (publishedValue !== parsed.existingValue) {
+    throw new WebUiMessagePackValidationError(
+      "existingValue does not match the published consent status label.",
+    );
+  }
+  const packagedValue = readWebUiStringLeaf(
+    requirePackagedCatalog(locale),
+    ADMIN_CONSENT_ACCEPTED_STATUS_PATH,
+  );
+  if (packagedValue === undefined) {
+    throw new WebUiMessagePackValidationError("Packaged consent status label is missing.");
+  }
+  const englishValue = readWebUiStringLeaf(
+    loadBundledEnglishWebUiMessagePack() as WebUiMessageTree,
+    ADMIN_CONSENT_ACCEPTED_STATUS_PATH,
+  );
+  if (englishValue === undefined) {
+    throw new WebUiMessagePackValidationError(
+      "Canonical English consent status label is missing.",
+    );
+  }
+  return {
+    admin,
+    published,
+    publishedValue,
+    decision: decideConsentAcceptedStatusMigration({
+      englishValue,
+      publishedValue,
+      packagedValue,
+    }),
+  };
+}
+
+export async function previewAdminConsentAcceptedStatusMigration(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+}): Promise<ConsentAcceptedStatusMigrationPreview> {
+  const prepared = await prepareConsentAcceptedStatusMigration({ ...input, mode: "preview" });
+  const proposedValue =
+    prepared.decision.action === "repair" ? prepared.decision.proposedValue : null;
+  const readinessMessages =
+    proposedValue === null
+      ? prepared.published.messages
+      : replaceConsentAcceptedStatusLeaf(prepared.published.messages, proposedValue);
+  return {
+    locale: prepared.published.locale,
+    revision: prepared.published.revision,
+    path: ADMIN_CONSENT_ACCEPTED_STATUS_PATH,
+    action: prepared.decision.action,
+    reason: prepared.decision.action === "reject" ? prepared.decision.reason : null,
+    publishedValue: prepared.publishedValue,
+    proposedValue,
+    readiness: assessConsentAcceptedStatusMigrationReadiness(readinessMessages),
+  };
+}
+
+/**
+ * Publish the packaged admin consent-status label for one locale and revision.
+ * Temporary. Remove with repair-admin-consent-accepted-status.ts.
+ */
+export async function applyAdminConsentAcceptedStatusMigration(input: {
+  readonly actorUserId: string;
+  readonly locale: string;
+  readonly body: unknown;
+}): Promise<ConsentAcceptedStatusMigrationResult> {
+  const prepared = await prepareConsentAcceptedStatusMigration({ ...input, mode: "apply" });
+  if (prepared.decision.action === "reject") {
+    throw new WebUiMessagePackValidationError(prepared.decision.reason);
+  }
+  if (prepared.decision.action === "noop") {
+    return {
+      locale: prepared.published.locale,
+      changed: false,
+      changedPaths: [],
+      revision: prepared.published.revision,
+      pack: prepared.published,
+      readiness: assessConsentAcceptedStatusMigrationReadiness(prepared.published.messages),
+    };
+  }
+
+  const nextMessages = replaceConsentAcceptedStatusLeaf(
+    prepared.published.messages,
+    prepared.decision.proposedValue,
+  );
+  const changed = changedWebUiLeafPaths(prepared.published.messages, nextMessages);
+  if (changed.length !== 1 || changed[0] !== ADMIN_CONSENT_ACCEPTED_STATUS_PATH) {
+    throw new WebUiMessagePackValidationError(
+      "Consent status migration can change only the approved path.",
+    );
+  }
+
+  const pack = await compareAndSetWebUiMessagePack({
+    locale: prepared.published.locale,
+    messages: nextMessages,
+    status: prepared.published.status,
+    sourceNote: prepared.published.sourceNote,
+    updatedByParticipantId: prepared.admin.participantId,
+    expectedRevision: prepared.published.revision,
+    allowedChangedPaths: CONSENT_ACCEPTED_STATUS_MIGRATION_PATHS,
+  });
+  return {
+    locale: pack.locale,
+    changed: true,
+    changedPaths: CONSENT_ACCEPTED_STATUS_MIGRATION_PATHS,
+    revision: pack.revision,
+    pack,
+    readiness: assessConsentAcceptedStatusMigrationReadiness(pack.messages),
   };
 }
