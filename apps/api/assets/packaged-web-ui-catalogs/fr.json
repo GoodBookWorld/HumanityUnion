@@ -340,7 +340,7 @@
     "notFound": "Cette publication est introuvable.",
     "oneComment": "1 commentaire",
     "pageSubtitle": "Idées, réflexions et perspectives provenant de {siteName} auteurs.",
-    "pageTitle": "Blog",
+    "pageTitle": "Blogue",
     "pagination": {
       "ariaLabel": "Pagination du blog",
       "next": "Suivant ≫",
@@ -846,7 +846,7 @@
           "q3": "Qu'est-ce qui appartient à la contribution aux connaissances ?"
         },
         "blog": {
-          "featureLabel": "Blog",
+          "featureLabel": "Blogue",
           "greeting": "Bonjour {name}. Je peux vous aider avec {feature} ou répondre à des questions concernant {siteName}.",
           "q1": "Qu'est-ce que le blog {siteName} ?",
           "q2": "Comment puis-je devenir un auteur de blog ?",
@@ -4134,7 +4134,7 @@
       },
       "wpc": {
         "knowledgeTitle": "Responsabilité",
-        "name": "World Protection Corps (WPC)",
+        "name": "Corps de Protection Mondial (WPC)",
         "nonNominationNote": "Le World Protection Corps est un organisme opérationnel placé sous la direction du HPC — non ouvert aux candidatures civiques.",
         "purpose": "Organisme de coordination opérationnelle proposé pour les interventions de protection, le soutien humanitaire et la coordination de crise dans des mandats délimités.",
         "role": "Exécute des opérations de protection sous la direction du HPC et la supervision du conseil — conçu pour la coordination, et non pour une application unilatérale sur les pays."
@@ -4543,7 +4543,7 @@
     "articlesCountOne": "{count} article",
     "blogIntro": "Lisez les publications et réflexions de {siteName} auteurs.",
     "blogMeta": "Le blog est une surface de publication rédigée. La connaissance reste la bibliothèque éducative structurée — les deux domaines restent séparés.",
-    "blogTitle": "Blog",
+    "blogTitle": "Blogue",
     "categories": {
       "constitution": {
         "description": "Principes constitutionnels et de gouvernance qui façonnent la plateforme.",
@@ -5248,7 +5248,7 @@
     "siteMapPageTitle": "Plan du site",
     "siteMapVolunteering": "Bénévolat",
     "sitemap": "Plan du site",
-    "support": "Support",
+    "support": "Soutien",
     "terms": "Conditions",
     "workspace": "Espace de Travail",
     "siteMapRegionalProgram": "Programme de développement régional"

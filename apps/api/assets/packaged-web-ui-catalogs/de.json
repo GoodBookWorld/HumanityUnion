@@ -4013,7 +4013,7 @@
         "civic-archive": "Bürgerarchiv",
         "collaborative-analysis": "Kollaborative Analyse",
         "collective-decision": "Kollektive Entscheidung",
-        "humanity-council": "Humanity Council",
+        "humanity-council": "Rat der Menschheit",
         "implementation": "Umsetzung",
         "initiatives": "Initiativen",
         "participants": "Teilnehmer",
@@ -4055,7 +4055,7 @@
         },
         "hpc": {
           "subtitle": "Globales operatives Koordinationszentrum",
-          "title": "Humanity Protection Command Center"
+          "title": "Kommandozentrale für den Schutz der Menschheit"
         },
         "operational-command": {
           "label": "Operatives Kommando"
@@ -4066,7 +4066,7 @@
         },
         "wpc": {
           "description": "Operatives Koordinierungsgremium, das Weisungen vom HPC unter Aufsicht des Rates und im Rahmen der Charta entgegennimmt.",
-          "title": "World Protection Corps (WPC)"
+          "title": "Weltweites Schutzkorps (WPC)"
         }
       },
       "navigateTo": "Navigieren zu {title}",
@@ -4102,14 +4102,14 @@
       },
       "hpc": {
         "knowledgeTitle": "Transparenz",
-        "name": "Humanity Protection Command Center (HPC)",
+        "name": "Kommandozentrale für den Schutz der Menschheit (HPC)",
         "nonNominationNote": "Die Führungspfade des HPC erfordern vor einer öffentlichen Nominierung eine spezielle Sicherheits- und Rechtsprüfung.",
         "purpose": "Vorgeschlagenes Politik- und Befehlskoordinierungszentrum für Schutzstandards, Aufsicht und operative Steuerung.",
         "role": "Definiert Schutzrichtlinien, koordiniert die Aufsicht und steuert Operationen des World Protection Corps im Rahmen definierter Befugnisse."
       },
       "humanity-council": {
         "knowledgeTitle": "Verfassungsgrundsätze",
-        "name": "Humanity Council",
+        "name": "Rat der Menschheit",
         "purpose": "Vorgeschlagene oberste beratende Versammlung zur Integration von Kammerbeiträgen und Genehmigung wichtiger Governance-Ausrichtungen im Rahmen der Charta.",
         "role": "Zentrales Beratungsgremium, das bürgerschaftliche Entscheidungen mit institutionellem Handeln und langfristiger Plattform-Governance verknüpft."
       },
@@ -4134,7 +4134,7 @@
       },
       "wpc": {
         "knowledgeTitle": "Verantwortlichkeit",
-        "name": "World Protection Corps (WPC)",
+        "name": "Weltweites Schutzkorps (WPC)",
         "nonNominationNote": "Das World Protection Corps ist ein operatives Organ unter der Leitung des HPC – nicht offen für zivile Nominierungen.",
         "purpose": "Vorgeschlagenes operatives Koordinierungsgremium für Schutzmaßnahmen, humanitäre Unterstützung und Krisenkoordinierung im Rahmen begrenzter Mandate.",
         "role": "Führt Schutzoperationen unter der Leitung des HPC und der Aufsicht des Rates durch – konzipiert für die Koordinierung, nicht für ein einseitiges Durchgreifen gegenüber Ländern."

@@ -1508,7 +1508,7 @@
           "proposalsCount": "{count} הצעות מוזכרות",
           "publishedPetition": "עצומה שפורסמה",
           "publishedRevision": "גרסה מתוקנת שפורסמה",
-          "revisionSummary": "v{version} — {summary}"
+          "revisionSummary": "גרסה {version} — {summary}"
         }
       },
       "officialResponse": {
