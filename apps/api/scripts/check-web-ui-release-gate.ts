@@ -11,8 +11,11 @@
  *     --source candidate-packaged
  *
  *   Optional: --locales ar,de,es (defaults to Production enabled set).
- *   Exit 0 = candidate packaged catalogs complete vs English foundation.
- *   Exit 1 = missing locale/keys. Does NOT prove live published readiness.
+ *   Exit 0 = candidate packaged catalogs complete vs English foundation
+ *   and WEB/API leaf parity passes.
+ *   Exit 1 = missing locale/keys or a WEB/API catalog discrepancy.
+ *   Does NOT prove live published readiness. Published packs are not
+ *   required to match packaged wording.
  *
  * Local packaged diagnostic only (NOT a release exit PASS without opt-in):
  *   node --import tsx apps/api/scripts/check-web-ui-release-gate.ts \
@@ -42,6 +45,10 @@ import {
   type WebUiReleaseGateReport,
   type WebUiReleaseGateSourceKind,
 } from "../src/modules/web-ui-message-packs/web-ui-release-gate.js";
+import {
+  compareWebUiCatalogParity,
+  formatWebUiCatalogParityReport,
+} from "../src/modules/web-ui-message-packs/web-ui-catalog-parity.js";
 import {
   collectStringPaths,
   loadBundledEnglishWebUiMessagePack,
@@ -193,7 +200,12 @@ async function main(argv: readonly string[]): Promise<number> {
       localesFlag.length > 0 ? localesFlag : [...PRODUCTION_WEB_UI_CANDIDATE_LOCALES];
     const report = runPackagedCatalogGate(sourceKind, requiredLocales);
     console.log(formatWebUiReleaseGateReport(report));
-    return report.pass ? 0 : 1;
+    const parity = compareWebUiCatalogParity({
+      webMessagesDir: path.resolve(packagedAssetsRoot(), "../../../web/src/features/i18n/messages"),
+      packagedDir: packagedAssetsRoot(),
+    });
+    console.log(formatWebUiCatalogParityReport(parity));
+    return report.pass && parity.ok ? 0 : 1;
   }
 
   // local-packaged-diagnostic — explicit non-authority check

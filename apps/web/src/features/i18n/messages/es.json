@@ -5309,7 +5309,8 @@
       "reviewPublication": "Revisar publicación",
       "viewAuthoring": "Ver redacción",
       "viewEditorPanel": "Ver panel del editor",
-      "viewRelatedCivicRecord": "Ver registro cívico relacionado"
+      "viewRelatedCivicRecord": "Ver registro cívico relacionado",
+      "readPrivacyPolicy": "Leer la Política de Privacidad"
     },
     "clearArchiveDialog": {
       "confirm": "Borrar archivo",
@@ -5664,6 +5665,10 @@
       "tracking_updated": {
         "message": "El Seguimiento de la Implementación fue actualizado.",
         "title": "Seguimiento de la Implementación actualizado"
+      },
+      "privacy_policy_updated": {
+        "title": "Política de Privacidad actualizada",
+        "message": "{siteName} ha actualizado su Política de Privacidad, con vigencia el 22 de noviembre de 2026. La actualización explica la eliminación y recuperación de la cuenta, el período de recuperación de 30 días y la conservación de los registros cívicos y los mensajes privados. La eliminación de la cuenta aún no está disponible."
       }
     },
     "unread": {
@@ -7676,18 +7681,18 @@
     }
   },
   "legalLocalizationAdmin": {
-    "bodyLabel": "Localized body",
-    "bodyHint": "Counsel-approved legal text only. Never machine-translated. Formatting is limited to headings, emphasis, lists, and safe links. English remains canonical until a matching published version exists for this locale.",
-    "editorLoading": "Loading editor…",
-    "placeholder": "Enter counsel-approved legal text…",
-    "previewTitle": "Preview",
-    "previewEmpty": "Nothing to preview yet.",
-    "previewShow": "Show preview",
-    "previewHide": "Hide preview",
+    "bodyLabel": "Texto localizado",
+    "bodyHint": "Solo texto jurídico aprobado por el asesoramiento legal. Nunca traducido automáticamente. El formato se limita a títulos, énfasis, listas y enlaces seguros. El inglés sigue siendo la referencia hasta que exista una versión publicada equivalente para este idioma.",
+    "editorLoading": "Cargando el editor…",
+    "placeholder": "Introduzca el texto jurídico aprobado por el asesoramiento legal…",
+    "previewTitle": "Vista previa",
+    "previewEmpty": "Todavía no hay nada que previsualizar.",
+    "previewShow": "Mostrar vista previa",
+    "previewHide": "Ocultar vista previa",
     "headings": {
-      "paragraph": "Paragraph",
-      "heading2": "Heading 2",
-      "heading3": "Heading 3"
+      "paragraph": "Párrafo",
+      "heading2": "Encabezado 2",
+      "heading3": "Encabezado 3"
     }
   },
   "rrpApplication": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "Nuevo Participante",
+      "blog_subscriber_confirmed": "Nuevo suscriptor del Blog",
+      "initiative_published": "Nueva Iniciativa",
+      "public_choice_published": "Nueva Elección Pública",
+      "blog_post_published": "Nueva publicación del Blog",
+      "operational_alert": "Alerta de la plataforma",
+      "participant_suspension_review_requested": "Solicitud de revisión de suspensión",
+      "member_badge_order_paid": "Pedido de insignia de miembro pagado",
+      "integrity_media_author_message": "Mensaje de autor de Integrity Media",
       "rrp_application_submitted": "Solicitud de representante regional enviada"
     }
   }

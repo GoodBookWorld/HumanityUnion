@@ -75,11 +75,42 @@ describe("privacy policy notice presentation", () => {
     assert.match(layout, /dir=\{documentLocale\.textDirection\}/);
 
     for (const locale of ["ar", "he", "uk", "zh-Hant"]) {
-      const catalog = fs.readFileSync(
-        path.join(ROOT, `apps/web/src/features/i18n/messages/${locale}.json`),
-        "utf8",
+      const catalog = JSON.parse(
+        fs.readFileSync(path.join(ROOT, `apps/web/src/features/i18n/messages/${locale}.json`), "utf8"),
+      ) as {
+        notifications: {
+          actions: { readPrivacyPolicy: string };
+          types: { privacy_policy_updated: { title: string; message: string } };
+        };
+      };
+      const stored = {
+        eventType: "privacy_policy_updated",
+        title: "Privacy Policy Updated",
+        message:
+          "Humanity Union has updated its Privacy Policy, effective November 22, 2026. The update explains account deletion and recovery, the 30-day recovery period, and retention of civic records and private messages. Account deletion is not yet available.",
+      };
+      const before = { ...stored };
+      const notice = catalog.notifications.types.privacy_policy_updated;
+      const presentation = resolveNotificationPresentation(
+        stored,
+        translator({
+          "types.privacy_policy_updated.title": notice.title,
+          "types.privacy_policy_updated.message": notice.message,
+        }),
       );
-      assert.equal(catalog.includes("privacy_policy_updated"), false);
+      const actionLabel =
+        stored.eventType === "privacy_policy_updated"
+          ? translator({
+              "actions.readPrivacyPolicy": catalog.notifications.actions.readPrivacyPolicy,
+            })("actions.readPrivacyPolicy")
+          : translator({})("actions.viewRelatedCivicRecord");
+      assert.deepEqual(stored, before);
+      assert.equal(presentation.title, notice.title);
+      assert.equal(presentation.message, notice.message);
+      assert.notEqual(presentation.title, stored.title);
+      assert.equal(actionLabel, catalog.notifications.actions.readPrivacyPolicy);
+      assert.match(notice.message, /\{siteName\}/);
+      assert.doesNotMatch(notice.title + notice.message + actionLabel, /[\u202A-\u202E\u2066-\u2069]/);
     }
   });
 });

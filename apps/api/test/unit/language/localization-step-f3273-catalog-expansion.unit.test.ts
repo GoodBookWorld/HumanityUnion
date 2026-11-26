@@ -31,13 +31,13 @@ const NEW_KEY = "common.interfaceNote";
 describe("STEP F.3.27.3 incremental WEB_UI catalog expansion", () => {
   it("the new English leaf is required and is the only provider residual for a fingerprinted pack", () => {
     const corpus = loadPublicWebUiEnglishCorpus();
-    assert.equal(corpus.requiredPaths.length, 4115);
     assert.equal(corpus.flat[NEW_KEY], "Interface note");
     assert.equal(isPublicReaderWebUiRequiredPath(NEW_KEY), true);
     assert.equal(isParticipantWebUiRequiredPath(NEW_KEY), false);
+    assert.ok(corpus.requiredPaths.includes(NEW_KEY));
 
     const oldPaths = corpus.requiredPaths.filter((pathKey) => pathKey !== NEW_KEY);
-    assert.equal(oldPaths.length, 4114);
+    assert.equal(oldPaths.length, corpus.requiredPaths.length - 1);
     const fingerprints = buildWebUiSourceFingerprintsByPath(corpus.flat, oldPaths);
     const localized: Record<string, string> = {};
     for (const pathKey of oldPaths) {

@@ -5309,7 +5309,8 @@
       "reviewPublication": "Rever publicação",
       "viewAuthoring": "Ver Criação",
       "viewEditorPanel": "Ver Painel do Editor",
-      "viewRelatedCivicRecord": "Ver registro cívico relacionado"
+      "viewRelatedCivicRecord": "Ver registro cívico relacionado",
+      "readPrivacyPolicy": "Ler a Política de Privacidade"
     },
     "clearArchiveDialog": {
       "confirm": "Limpar arquivo",
@@ -5664,6 +5665,10 @@
       "tracking_updated": {
         "message": "O acompanhamento da implementação foi atualizado.",
         "title": "Acompanhamento da implementação atualizado"
+      },
+      "privacy_policy_updated": {
+        "title": "Política de Privacidade atualizada",
+        "message": "{siteName} atualizou a sua Política de Privacidade, em vigor a 22 de novembro de 2026. A atualização explica a eliminação e a recuperação da conta, o período de recuperação de 30 dias e a conservação dos registos cívicos e das mensagens privadas. A eliminação da conta ainda não está disponível."
       }
     },
     "unread": {
@@ -7676,18 +7681,18 @@
     }
   },
   "legalLocalizationAdmin": {
-    "bodyLabel": "Localized body",
-    "bodyHint": "Counsel-approved legal text only. Never machine-translated. Formatting is limited to headings, emphasis, lists, and safe links. English remains canonical until a matching published version exists for this locale.",
-    "editorLoading": "Loading editor…",
-    "placeholder": "Enter counsel-approved legal text…",
-    "previewTitle": "Preview",
-    "previewEmpty": "Nothing to preview yet.",
-    "previewShow": "Show preview",
-    "previewHide": "Hide preview",
+    "bodyLabel": "Texto localizado",
+    "bodyHint": "Apenas texto jurídico aprovado pela assessoria jurídica. Nunca traduzido automaticamente. A formatação limita-se a títulos, ênfase, listas e ligações seguras. O inglês permanece canónico até existir uma versão publicada correspondente para este idioma.",
+    "editorLoading": "A carregar o editor…",
+    "placeholder": "Introduza o texto jurídico aprovado pela assessoria jurídica…",
+    "previewTitle": "Pré-visualização",
+    "previewEmpty": "Ainda não há nada para pré-visualizar.",
+    "previewShow": "Mostrar pré-visualização",
+    "previewHide": "Ocultar pré-visualização",
     "headings": {
-      "paragraph": "Paragraph",
-      "heading2": "Heading 2",
-      "heading3": "Heading 3"
+      "paragraph": "Parágrafo",
+      "heading2": "Título 2",
+      "heading3": "Título 3"
     }
   },
   "rrpApplication": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "Novo Participante",
+      "blog_subscriber_confirmed": "Novo assinante do Blog",
+      "initiative_published": "Nova Iniciativa",
+      "public_choice_published": "Nova Escolha Pública",
+      "blog_post_published": "Nova publicação do Blog",
+      "operational_alert": "Alerta da plataforma",
+      "participant_suspension_review_requested": "Pedido de revisão de suspensão",
+      "member_badge_order_paid": "Encomenda do distintivo de Membro paga",
+      "integrity_media_author_message": "Mensagem de autor da Integrity Media",
       "rrp_application_submitted": "Candidatura de representante regional enviada"
     }
   }

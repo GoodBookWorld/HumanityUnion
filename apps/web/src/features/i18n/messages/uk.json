@@ -7169,7 +7169,8 @@
       "viewAuthoring": "Відкрити авторство",
       "openPublishing": "Відкрити публікації",
       "viewRelatedCivicRecord": "Переглянути пов’язаний громадянський запис",
-      "openWorkspaceMessages": "Відкрити повідомлення Workspace"
+      "openWorkspaceMessages": "Відкрити повідомлення Workspace",
+      "readPrivacyPolicy": "Прочитати політику конфіденційності"
     },
     "empty": {
       "notifications": "Немає активних сповіщень.",
@@ -7498,6 +7499,10 @@
       "editor_editing_area_updated": {
         "title": "Область редагування оновлено",
         "message": "Вашу область редагування оновлено."
+      },
+      "privacy_policy_updated": {
+        "title": "Політику конфіденційності оновлено",
+        "message": "{siteName} оновив Політику конфіденційності. Зміни набирають чинності 22 листопада 2026 року. Оновлення пояснює видалення облікового запису та його відновлення, 30-денний період відновлення, а також збереження громадянських записів і приватних повідомлень. Видалення облікового запису ще недоступне."
       }
     },
     "proposalActions": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "Новий учасник",
+      "blog_subscriber_confirmed": "Новий підписник блогу",
+      "initiative_published": "Нова ініціатива",
+      "public_choice_published": "Новий громадський вибір",
+      "blog_post_published": "Нова публікація в блозі",
+      "operational_alert": "Сповіщення платформи",
+      "participant_suspension_review_requested": "Запит на перевірку призупинення",
+      "member_badge_order_paid": "Оплачено замовлення значка члена",
+      "integrity_media_author_message": "Повідомлення автора Integrity Media",
       "rrp_application_submitted": "Подано заявку регіонального представника"
     }
   }

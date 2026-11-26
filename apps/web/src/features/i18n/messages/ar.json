@@ -7169,7 +7169,8 @@
       "viewAuthoring": "عرض التأليف",
       "openPublishing": "فتح النشر",
       "viewRelatedCivicRecord": "عرض السجل المدني ذي الصلة",
-      "openWorkspaceMessages": "فتح رسائل مساحة العمل"
+      "openWorkspaceMessages": "فتح رسائل مساحة العمل",
+      "readPrivacyPolicy": "اقرأ سياسة الخصوصية"
     },
     "empty": {
       "notifications": "لا توجد إشعارات نشطة.",
@@ -7498,6 +7499,10 @@
       "editor_editing_area_updated": {
         "title": "حُدّث مجال تحرير المحرر",
         "message": "حُدّث مجال تحريرك كمحرر."
+      },
+      "privacy_policy_updated": {
+        "title": "تم تحديث سياسة الخصوصية",
+        "message": "حدّث {siteName} سياسة الخصوصية الخاصة به، اعتبارًا من 22 نوفمبر 2026. يوضح التحديث حذف الحساب واسترداده، وفترة الاسترداد البالغة 30 يومًا، والاحتفاظ بالسجلات المدنية والرسائل الخاصة. حذف الحساب غير متاح بعد."
       }
     },
     "proposalActions": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "مشارك جديد",
+      "blog_subscriber_confirmed": "مشترك جديد في المدونة",
+      "initiative_published": "مبادرة جديدة",
+      "public_choice_published": "اختيار عام جديد",
+      "blog_post_published": "منشور جديد في المدونة",
+      "operational_alert": "تنبيه المنصة",
+      "participant_suspension_review_requested": "طلب مراجعة التعليق",
+      "member_badge_order_paid": "تم دفع طلب شارة العضو",
+      "integrity_media_author_message": "رسالة مؤلف Integrity Media",
       "rrp_application_submitted": "تم تقديم طلب ممثل إقليمي"
     }
   }

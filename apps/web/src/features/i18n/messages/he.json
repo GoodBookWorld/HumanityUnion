@@ -5309,7 +5309,8 @@
       "reviewPublication": "סקירת פרסום",
       "viewAuthoring": "הצג כתיבה",
       "viewEditorPanel": "הצג לוח עורך",
-      "viewRelatedCivicRecord": "הצג רישום אזרחי קשור"
+      "viewRelatedCivicRecord": "הצג רישום אזרחי קשור",
+      "readPrivacyPolicy": "קריאה של מדיניות הפרטיות"
     },
     "clearArchiveDialog": {
       "confirm": "נקה ארכיון",
@@ -5664,6 +5665,10 @@
       "tracking_updated": {
         "message": "המעקב אחר יישום עודכן.",
         "title": "המעקב אחר יישום עודכן"
+      },
+      "privacy_policy_updated": {
+        "title": "מדיניות הפרטיות עודכנה",
+        "message": "{siteName} עדכן את מדיניות הפרטיות שלו, בתוקף מ-22 בנובמבר 2026. העדכון מסביר את מחיקת החשבון ואת השחזור, את תקופת השחזור של 30 יום, ואת שמירת הרשומות האזרחיות וההודעות הפרטיות. מחיקת החשבון עדיין אינה זמינה."
       }
     },
     "unread": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "משתתף חדש",
+      "blog_subscriber_confirmed": "מנוי חדש לבלוג",
+      "initiative_published": "יזמה חדשה",
+      "public_choice_published": "בחירה ציבורית חדשה",
+      "blog_post_published": "פרסום חדש בבלוג",
+      "operational_alert": "התראת פלטפורמה",
+      "participant_suspension_review_requested": "בקשה לבדיקת השעיה",
+      "member_badge_order_paid": "הזמנת תג החבר שולמה",
+      "integrity_media_author_message": "הודעת מחבר Integrity Media",
       "rrp_application_submitted": "בקשת נציג אזורי הוגשה"
     }
   }

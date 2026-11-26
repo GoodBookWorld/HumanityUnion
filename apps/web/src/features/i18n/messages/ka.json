@@ -5309,7 +5309,8 @@
       "reviewPublication": "პუბლიკაციის განხილვა",
       "viewAuthoring": "ავტორობის ნახვა",
       "viewEditorPanel": "რედაქტორის პანელის ნახვა",
-      "viewRelatedCivicRecord": "დაკავშირებული სამოქალაქო ჩანაწერის ნახვა"
+      "viewRelatedCivicRecord": "დაკავშირებული სამოქალაქო ჩანაწერის ნახვა",
+      "readPrivacyPolicy": "კონფიდენციალურობის პოლიტიკის წაკითხვა"
     },
     "clearArchiveDialog": {
       "confirm": "არქივის გასუფთავება",
@@ -5664,6 +5665,10 @@
       "tracking_updated": {
         "message": "განხორციელების მონიტორინგი განახლდა.",
         "title": "განხორციელების მონიტორინგი განახლდა"
+      },
+      "privacy_policy_updated": {
+        "title": "კონფიდენციალურობის პოლიტიკა განახლდა",
+        "message": "{siteName}-მა განაახლა კონფიდენციალურობის პოლიტიკა. ის ძალაშია 2026 წლის 22 ნოემბრიდან. განახლება განმარტავს ანგარიშის წაშლასა და აღდგენას, 30-დღიან აღდგენის პერიოდს და სამოქალაქო ჩანაწერებისა და პირადი შეტყობინებების შენახვას. ანგარიშის წაშლა ჯერ არ არის ხელმისაწვდომი."
       }
     },
     "unread": {
@@ -7676,18 +7681,18 @@
     }
   },
   "legalLocalizationAdmin": {
-    "bodyLabel": "Localized body",
-    "bodyHint": "Counsel-approved legal text only. Never machine-translated. Formatting is limited to headings, emphasis, lists, and safe links. English remains canonical until a matching published version exists for this locale.",
-    "editorLoading": "Loading editor…",
-    "placeholder": "Enter counsel-approved legal text…",
-    "previewTitle": "Preview",
-    "previewEmpty": "Nothing to preview yet.",
-    "previewShow": "Show preview",
-    "previewHide": "Hide preview",
+    "bodyLabel": "ლოკალიზებული ტექსტი",
+    "bodyHint": "მხოლოდ იურიდიული კონსულტაციის მიერ დამტკიცებული სამართლებრივი ტექსტი. მანქანური თარგმანი დაუშვებელია. ფორმატირება შემოიფარგლება სათაურებით, გამოყოფით, სიებითა და უსაფრთხო ბმულებით. ინგლისური რჩება კანონიკურ წყაროდ, სანამ ამ ენისთვის არ იარსებებს შესაბამისი გამოქვეყნებული ვერსია.",
+    "editorLoading": "რედაქტორი იტვირთება…",
+    "placeholder": "შეიყვანეთ იურიდიული კონსულტაციის მიერ დამტკიცებული სამართლებრივი ტექსტი…",
+    "previewTitle": "გადახედვა",
+    "previewEmpty": "გადასახედი ჯერ არაფერია.",
+    "previewShow": "გადახედვის ჩვენება",
+    "previewHide": "გადახედვის დამალვა",
     "headings": {
-      "paragraph": "Paragraph",
-      "heading2": "Heading 2",
-      "heading3": "Heading 3"
+      "paragraph": "აბზაცი",
+      "heading2": "სათაური 2",
+      "heading3": "სათაური 3"
     }
   },
   "rrpApplication": {
@@ -7928,15 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
-      "participant_registered": "New Participant",
-      "blog_subscriber_confirmed": "New Blog subscriber",
-      "initiative_published": "New Initiative",
-      "public_choice_published": "New Public Choice",
-      "blog_post_published": "New Blog publication",
-      "operational_alert": "Platform alert",
-      "participant_suspension_review_requested": "Suspension review request",
-      "member_badge_order_paid": "Member badge order paid",
-      "integrity_media_author_message": "Integrity Media author message",
+      "participant_registered": "ახალი მონაწილე",
+      "blog_subscriber_confirmed": "ბლოგის ახალი გამომწერი",
+      "initiative_published": "ახალი ინიციატივა",
+      "public_choice_published": "ახალი საჯარო არჩევანი",
+      "blog_post_published": "ბლოგის ახალი პუბლიკაცია",
+      "operational_alert": "პლატფორმის გაფრთხილება",
+      "participant_suspension_review_requested": "შეჩერების განხილვის მოთხოვნა",
+      "member_badge_order_paid": "წევრის სამკერდე ნიშნის შეკვეთა გადახდილია",
+      "integrity_media_author_message": "Integrity Media-ის ავტორის შეტყობინება",
       "rrp_application_submitted": "რეგიონალური წარმომადგენლის განაცხადი გაგზავნილია"
     }
   }

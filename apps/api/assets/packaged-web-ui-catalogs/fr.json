@@ -5309,7 +5309,8 @@
       "reviewPublication": "Examiner la publication",
       "viewAuthoring": "Afficher la rédaction",
       "viewEditorPanel": "Afficher le panneau de l'éditeur",
-      "viewRelatedCivicRecord": "Afficher l'enregistrement civique associé"
+      "viewRelatedCivicRecord": "Afficher l'enregistrement civique associé",
+      "readPrivacyPolicy": "Lire la politique de confidentialité"
     },
     "clearArchiveDialog": {
       "confirm": "Effacer les archives",
@@ -5664,6 +5665,10 @@
       "tracking_updated": {
         "message": "Le suivi de la mise en œuvre a été mis à jour.",
         "title": "Suivi de la mise en œuvre mis à jour"
+      },
+      "privacy_policy_updated": {
+        "title": "Politique de confidentialité mise à jour",
+        "message": "{siteName} a mis à jour sa politique de confidentialité, en vigueur le 22 novembre 2026. La mise à jour explique la suppression et la récupération du compte, la période de récupération de 30 jours, ainsi que la conservation des dossiers civiques et des messages privés. La suppression du compte n'est pas encore disponible."
       }
     },
     "unread": {
@@ -7675,6 +7680,21 @@
       "body": "Rejoignez le Programme de développement régional et aidez à développer {siteName} dans votre pays."
     }
   },
+  "legalLocalizationAdmin": {
+    "bodyLabel": "Texte localisé",
+    "bodyHint": "Texte juridique approuvé par le conseil uniquement. Jamais traduit automatiquement. La mise en forme se limite aux titres, à l'emphase, aux listes et aux liens sûrs. L'anglais reste la référence jusqu'à ce qu'une version publiée correspondante existe pour cette langue.",
+    "editorLoading": "Chargement de l'éditeur…",
+    "placeholder": "Saisissez le texte juridique approuvé par le conseil…",
+    "previewTitle": "Aperçu",
+    "previewEmpty": "Rien à prévisualiser pour le moment.",
+    "previewShow": "Afficher l'aperçu",
+    "previewHide": "Masquer l'aperçu",
+    "headings": {
+      "paragraph": "Paragraphe",
+      "heading2": "Titre 2",
+      "heading3": "Titre 3"
+    }
+  },
   "rrpApplication": {
     "title": "Candidature de représentant régional",
     "intro": "Candidatez pour représenter un pays dans le programme de représentation régionale. Le dépôt d’une candidature ne vous nomme pas représentant et n’accorde aucune autorité juridique, aucun emploi, aucun droit à un financement, aucun pouvoir de signature de contrat et aucune autorisation d’administration. L’approbation sur la plateforme est uniquement une désignation interne ; toute nomination juridique distincte serait une procédure séparée.",
@@ -7913,6 +7933,15 @@
   },
   "adminNotifications": {
     "types": {
+      "participant_registered": "Nouveau Participant",
+      "blog_subscriber_confirmed": "Nouvel abonné au blogue",
+      "initiative_published": "Nouvelle Initiative",
+      "public_choice_published": "Nouveau Choix public",
+      "blog_post_published": "Nouvelle publication du blogue",
+      "operational_alert": "Alerte de la plateforme",
+      "participant_suspension_review_requested": "Demande d'examen d'une suspension",
+      "member_badge_order_paid": "Commande de badge de Membre payée",
+      "integrity_media_author_message": "Message d'auteur Integrity Media",
       "rrp_application_submitted": "Candidature de représentant régional soumise"
     }
   }

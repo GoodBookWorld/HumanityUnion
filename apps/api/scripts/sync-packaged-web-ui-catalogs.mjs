@@ -4,6 +4,15 @@
  *
  * Universal: copies every *.json present (no locale allowlist).
  * API runtime must never read apps/web/src directly.
+ *
+ * The copy is the catalog alignment. After it, run
+ * `pnpm --filter @hu/api exec tsx --test test/unit/language/web-ui-catalog-parity.unit.test.ts`
+ * or `pnpm --filter @hu/api check:web-ui-candidate-catalogs`.
+ * That check fails when a WEB key or value is missing from the packaged copy.
+ *
+ * The structure-repair process below rewrites WEB source leaves that fail
+ * English structure checks. It is not a key-alignment step and can change
+ * unrelated translations. Review its diff before keeping those rewrites.
  */
 import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";

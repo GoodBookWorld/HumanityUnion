@@ -7169,7 +7169,8 @@
       "viewAuthoring": "عرض التأليف",
       "openPublishing": "فتح النشر",
       "viewRelatedCivicRecord": "عرض السجل المدني ذي الصلة",
-      "openWorkspaceMessages": "فتح رسائل مساحة العمل"
+      "openWorkspaceMessages": "فتح رسائل مساحة العمل",
+      "readPrivacyPolicy": "اقرأ سياسة الخصوصية"
     },
     "empty": {
       "notifications": "لا توجد إشعارات نشطة.",
@@ -7498,6 +7499,10 @@
       "editor_editing_area_updated": {
         "title": "حُدّث مجال تحرير المحرر",
         "message": "حُدّث مجال تحريرك كمحرر."
+      },
+      "privacy_policy_updated": {
+        "title": "تم تحديث سياسة الخصوصية",
+        "message": "حدّث {siteName} سياسة الخصوصية الخاصة به، اعتبارًا من 22 نوفمبر 2026. يوضح التحديث حذف الحساب واسترداده، وفترة الاسترداد البالغة 30 يومًا، والاحتفاظ بالسجلات المدنية والرسائل الخاصة. حذف الحساب غير متاح بعد."
       }
     },
     "proposalActions": {
@@ -7911,8 +7916,32 @@
       "body": "انضم إلى برنامج التنمية الإقليمية وساعد في تطوير {siteName} في بلدك."
     }
   },
+  "legalLocalizationAdmin": {
+    "bodyLabel": "النص المترجم",
+    "bodyHint": "نص قانوني معتمد من المستشار فقط. بلا ترجمة آلية. التنسيق محدود بالعناوين والتأكيد والقوائم والروابط الآمنة. تبقى الإنجليزية المرجع حتى تتوفر نسخة منشورة مطابقة لهذه اللغة.",
+    "editorLoading": "جارٍ تحميل المحرر…",
+    "placeholder": "أدخل النص القانوني المعتمد من المستشار…",
+    "previewTitle": "معاينة",
+    "previewEmpty": "لا يوجد محتوى للمعاينة بعد.",
+    "previewShow": "إظهار المعاينة",
+    "previewHide": "إخفاء المعاينة",
+    "headings": {
+      "paragraph": "فقرة",
+      "heading2": "عنوان 2",
+      "heading3": "عنوان 3"
+    }
+  },
   "adminNotifications": {
     "types": {
+      "participant_registered": "مشارك جديد",
+      "blog_subscriber_confirmed": "مشترك جديد في المدونة",
+      "initiative_published": "مبادرة جديدة",
+      "public_choice_published": "اختيار عام جديد",
+      "blog_post_published": "منشور جديد في المدونة",
+      "operational_alert": "تنبيه المنصة",
+      "participant_suspension_review_requested": "طلب مراجعة التعليق",
+      "member_badge_order_paid": "تم دفع طلب شارة العضو",
+      "integrity_media_author_message": "رسالة مؤلف Integrity Media",
       "rrp_application_submitted": "تم تقديم طلب ممثل إقليمي"
     }
   }

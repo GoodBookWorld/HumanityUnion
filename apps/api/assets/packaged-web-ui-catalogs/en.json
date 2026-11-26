@@ -7210,6 +7210,7 @@
       "reviewPublication": "Review publication",
       "viewAuthoring": "View Authoring",
       "openPublishing": "Open Publishing",
+      "readPrivacyPolicy": "Read Privacy Policy",
       "viewRelatedCivicRecord": "View related civic record",
       "openWorkspaceMessages": "Open Workspace Messages"
     },
@@ -7540,6 +7541,10 @@
       "editor_editing_area_updated": {
         "title": "Editor editing area updated",
         "message": "Your Editor editing area was updated."
+      },
+      "privacy_policy_updated": {
+        "title": "Privacy Policy Updated",
+        "message": "{siteName} has updated its Privacy Policy, effective November 22, 2026. The update explains account deletion and recovery, the 30-day recovery period, and retention of civic records and private messages. Account deletion is not yet available."
       }
     },
     "proposalActions": {
@@ -7807,7 +7812,6 @@
         "unavailable": "The administrator conversation is not available right now. Update your application here, or try again later."
       }
     },
-    "closeAria": "Close application dialog",
     "admin": {
       "title": "Regional Representative application",
       "intro": "Administrator review of an authorized Regional Representative application. Approve grants an internal platform designation only.",
@@ -7909,10 +7913,35 @@
         "deepLinkUnavailable": "That Regional Representative application is not available in the directory.",
         "deepLinkParticipantUnavailable": "That participant could not be found in the directory."
       }
+    },
+    "closeAria": "Close application dialog"
+  },
+  "legalLocalizationAdmin": {
+    "bodyLabel": "Localized body",
+    "bodyHint": "Counsel-approved legal text only. Never machine-translated. Formatting is limited to headings, emphasis, lists, and safe links. English remains canonical until a matching published version exists for this locale.",
+    "editorLoading": "Loading editor…",
+    "placeholder": "Enter counsel-approved legal text…",
+    "previewTitle": "Preview",
+    "previewEmpty": "Nothing to preview yet.",
+    "previewShow": "Show preview",
+    "previewHide": "Hide preview",
+    "headings": {
+      "paragraph": "Paragraph",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3"
     }
   },
   "adminNotifications": {
     "types": {
+      "participant_registered": "New Participant",
+      "blog_subscriber_confirmed": "New Blog subscriber",
+      "initiative_published": "New Initiative",
+      "public_choice_published": "New Public Choice",
+      "blog_post_published": "New Blog publication",
+      "operational_alert": "Platform alert",
+      "participant_suspension_review_requested": "Suspension review request",
+      "member_badge_order_paid": "Member badge order paid",
+      "integrity_media_author_message": "Integrity Media author message",
       "rrp_application_submitted": "Regional Representative application submitted"
     }
   }

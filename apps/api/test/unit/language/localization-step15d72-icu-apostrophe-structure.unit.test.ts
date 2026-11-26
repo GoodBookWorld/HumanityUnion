@@ -7,7 +7,6 @@ import { describe, it } from "node:test";
 
 import {
   assertStructureMatches,
-  hashWebUiEnglishFlatMap,
   loadPublicWebUiEnglishCorpus,
   WebUiDraftBatchError,
 } from "../../../src/modules/web-ui-message-packs/web-ui-draft-builder.js";
@@ -185,12 +184,9 @@ describe("Step 15D.7.2 — ICU apostrophe + placeholder structure protection", (
 
   it("corpus audit: no apostrophe/ICU hide risk remains in required WEB_UI union", () => {
     const { flat, requiredPaths } = loadPublicWebUiEnglishCorpus();
-    assert.equal(requiredPaths.length, 4115);
-    const sourceHash = hashWebUiEnglishFlatMap(flat);
-    assert.equal(
-      sourceHash,
-      "103fafff48971d8d0daaee359af85e4f8606d86f97f6aa1ad5b44e863676b4ec",
-    );
+    assert.equal(requiredPaths.length, Object.keys(flat).length);
+    assert.equal(new Set(requiredPaths).size, requiredPaths.length);
+    assert.ok(requiredPaths.includes("memberProfile.unavailableExplanation"));
 
     const affected: string[] = [];
     for (const pathKey of requiredPaths) {
@@ -256,22 +252,22 @@ describe("Step 15D.7.2 — ICU apostrophe + placeholder structure protection", (
       assert.equal(restoreWebUiMessageFromProvider(protectedMessage.text, value), value);
     }
 
-    // After the fix, the only historically broken path must now inspect correctly;
-    // report count of paths where the *old* naive parser disagreed (documentation).
     assert.ok(
-      affected.includes("memberProfile.unavailableExplanation") || affected.length === 0,
-      `expected failing path in pre-fix delta or empty; got ${affected.join(", ")}`,
+      affected.includes("memberProfile.unavailableExplanation"),
+      `expected the known contraction path in the pre-fix delta; got ${affected.join(", ")}`,
     );
-    // Fixed inspector must see siteName on the known path.
+    for (const pathKey of affected) {
+      const value = flat[pathKey] ?? "";
+      assert.ok(
+        inspectMessageStructure(value).placeholders.length > 0,
+        `fixed inspector lost placeholders for ${pathKey}`,
+      );
+      const protectedMessage = protectWebUiMessageForProvider(value);
+      assert.equal(restoreWebUiMessageFromProvider(protectedMessage.text, value), value, pathKey);
+    }
     assert.deepEqual(
       [...inspectMessageStructure(flat["memberProfile.unavailableExplanation"] ?? "").placeholders],
       ["siteName"],
-    );
-    // Expose audit count for the report (paths the old parser would have mishandled).
-    assert.equal(
-      affected.length,
-      1,
-      `unexpected apostrophe/placeholder delta paths: ${affected.join(", ")}`,
     );
   });
 

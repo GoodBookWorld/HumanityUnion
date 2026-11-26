@@ -7169,7 +7169,8 @@
       "viewAuthoring": "查看寫作",
       "openPublishing": "開啟發表",
       "viewRelatedCivicRecord": "查看相關公民紀錄",
-      "openWorkspaceMessages": "開啟工作區訊息"
+      "openWorkspaceMessages": "開啟工作區訊息",
+      "readPrivacyPolicy": "閱讀隱私權政策"
     },
     "empty": {
       "notifications": "目前沒有進行中的通知。",
@@ -7498,6 +7499,10 @@
       "editor_editing_area_updated": {
         "title": "編輯範圍已更新",
         "message": "您的編輯範圍已更新。"
+      },
+      "privacy_policy_updated": {
+        "title": "隱私權政策已更新",
+        "message": "{siteName} 已更新其隱私權政策，自2026年11月22日起生效。本次更新說明帳戶刪除與恢復、30日恢復期，以及公民紀錄與私人訊息的保留。帳戶刪除目前尚未提供。"
       }
     },
     "proposalActions": {
@@ -7911,8 +7916,32 @@
       "body": "加入區域發展計畫，協助在您的國家發展 {siteName}。"
     }
   },
+  "legalLocalizationAdmin": {
+    "bodyLabel": "本地化正文",
+    "bodyHint": "僅限經法律顧問核准的法律文本。禁止機器翻譯。格式僅限標題、強調、清單與安全連結。在此語言尚無對應的已發布版本之前，英文仍為準據。",
+    "editorLoading": "正在載入編輯器…",
+    "placeholder": "輸入經法律顧問核准的法律文本…",
+    "previewTitle": "預覽",
+    "previewEmpty": "目前沒有可預覽的內容。",
+    "previewShow": "顯示預覽",
+    "previewHide": "隱藏預覽",
+    "headings": {
+      "paragraph": "段落",
+      "heading2": "標題 2",
+      "heading3": "標題 3"
+    }
+  },
   "adminNotifications": {
     "types": {
+      "participant_registered": "新參與者",
+      "blog_subscriber_confirmed": "新部落格訂閱者",
+      "initiative_published": "新倡議",
+      "public_choice_published": "新公共選擇",
+      "blog_post_published": "新部落格文章",
+      "operational_alert": "平台警示",
+      "participant_suspension_review_requested": "停權審查請求",
+      "member_badge_order_paid": "會員徽章訂單已付款",
+      "integrity_media_author_message": "Integrity Media 作者訊息",
       "rrp_application_submitted": "已提交區域代表申請"
     }
   }
