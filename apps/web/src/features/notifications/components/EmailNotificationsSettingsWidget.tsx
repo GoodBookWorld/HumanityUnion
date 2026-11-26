@@ -32,6 +32,7 @@ import {
   updateMyPreferences,
 } from "../../preferences/preferences-api";
 
+import { isolateLtrPlaceholder } from "./isolate-ltr-placeholder";
 import "./email-notifications-settings-widget.css";
 
 const NOTIFICATION_FREQUENCIES: readonly NotificationFrequency[] = [
@@ -58,6 +59,19 @@ function secondsUntil(iso: string | null): number {
   return Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 1000));
 }
 
+function EmailSentence({ template, email }: { template: string; email: string }) {
+  const parts = isolateLtrPlaceholder(template, "email", email);
+  return parts.map((part, index) =>
+    part.type === "ltr" ? (
+      <bdi dir="ltr" key={index}>
+        {part.text}
+      </bdi>
+    ) : (
+      <span key={index}>{part.text}</span>
+    ),
+  );
+}
+
 function MailIcon() {
   return (
     <svg
@@ -78,6 +92,24 @@ function MailIcon() {
 
 export function EmailNotificationsSettingsWidget() {
   const t = useTranslations("notifications.emailSettings");
+  const emailTemplate = (
+    key:
+      | "destinationAccount"
+      | "destinationAlternative"
+      | "loginEmailHint"
+      | "verifiedAlternative"
+      | "pendingAlternative",
+  ): string | null => {
+    const value = t.raw(key);
+    return typeof value === "string" && value.includes("{email}") ? value : null;
+  };
+  const emailSentence = (
+    key: Parameters<typeof emailTemplate>[0],
+    email: string,
+  ) => {
+    const template = emailTemplate(key);
+    return template ? <EmailSentence template={template} email={email} /> : t(key, { email });
+  };
   const tPrefs = useTranslations("preferences");
   const titleId = useId();
   const panelId = useId();
@@ -338,9 +370,9 @@ export function EmailNotificationsSettingsWidget() {
               <span className="email-notifications-settings__label">{t("currentDestination")}</span>
               <p className="email-notifications-settings__value">
                 {mode === "alternative" && verifiedAlt
-                  ? t("destinationAlternative", { email: verifiedAlt })
+                  ? emailSentence("destinationAlternative", verifiedAlt)
                   : accountEmail && emailVerified
-                    ? t("destinationAccount", { email: accountEmail })
+                    ? emailSentence("destinationAccount", accountEmail)
                     : t("destinationUnavailable")}
               </p>
               {!emailVerified ? (
@@ -353,7 +385,7 @@ export function EmailNotificationsSettingsWidget() {
               ) : null}
               {emailVerified && mode === "alternative" && accountEmail ? (
                 <p className="email-notifications-settings__help">
-                  {t("loginEmailHint", { email: accountEmail })}
+                  {emailSentence("loginEmailHint", accountEmail)}
                 </p>
               ) : null}
             </div>
@@ -417,15 +449,13 @@ export function EmailNotificationsSettingsWidget() {
 
               {verifiedAlt ? (
                 <p className="email-notifications-settings__value">
-                  {t("verifiedAlternative", { email: verifiedAlt })}
+                  {emailSentence("verifiedAlternative", verifiedAlt)}
                 </p>
               ) : null}
 
               {pending ? (
                 <p className="email-notifications-settings__warning" role="status">
-                  {t("pendingAlternative", {
-                    email: destination?.pendingMaskedEmail ?? pending,
-                  })}
+                  {emailSentence("pendingAlternative", destination?.pendingMaskedEmail ?? pending)}
                 </p>
               ) : null}
 
@@ -435,8 +465,9 @@ export function EmailNotificationsSettingsWidget() {
               <input
                 id={altEmailId}
                 type="email"
+                dir="ltr"
                 autoComplete="email"
-                className="email-notifications-settings__select"
+                className="email-notifications-settings__select email-notifications-settings__ltr-field"
                 value={altEmailInput}
                 disabled={controlsDisabled || !emailVerified}
                 onChange={(event) => setAltEmailInput(event.target.value)}
@@ -471,9 +502,10 @@ export function EmailNotificationsSettingsWidget() {
                   <input
                     id={codeId}
                     type="text"
+                    dir="ltr"
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    className="email-notifications-settings__select"
+                    className="email-notifications-settings__select email-notifications-settings__ltr-field"
                     value={codeInput}
                     disabled={controlsDisabled}
                     onChange={(event) => setCodeInput(event.target.value)}

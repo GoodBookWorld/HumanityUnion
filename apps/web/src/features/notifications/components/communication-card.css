@@ -27,7 +27,7 @@ a.communication-card:focus-visible {
 }
 
 .communication-card--unread {
-  border-left: 4px solid var(--hu-color-primary);
+  border-inline-start: 4px solid var(--hu-color-primary);
   background: color-mix(in srgb, var(--hu-color-primary) 4%, var(--hu-color-bg));
 }
 
@@ -134,12 +134,12 @@ a.communication-card:focus-visible {
   flex-wrap: wrap;
   gap: var(--hu-space-3);
   margin-top: var(--hu-space-2);
-  padding-left: calc(40px + var(--hu-space-3));
+  padding-inline-start: calc(40px + var(--hu-space-3));
 }
 
 @media (max-width: 480px) {
   .communication-card__actions {
-    padding-left: 0;
+    padding-inline-start: 0;
   }
 
   .communication-card__description,

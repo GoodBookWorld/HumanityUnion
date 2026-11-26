@@ -41,7 +41,8 @@
 
 .email-notifications-settings__trigger:focus-visible {
   outline: 2px solid var(--ens-focus);
-  outline-offset: var(--hu-focus-offset, 2px);
+  /* The card clips overflow, so this ring is drawn inside the trigger. */
+  outline-offset: calc(-1 * (2px + var(--hu-focus-offset, 2px)));
 }
 
 .email-notifications-settings__trigger-main {
@@ -88,8 +89,9 @@
   flex: 0 0 auto;
   width: 0.55rem;
   height: 0.55rem;
-  border-inline-end: 2px solid var(--hu-color-text-muted);
-  border-block-end: 2px solid var(--hu-color-text-muted);
+  /* Physical edges: this glyph must point down/up in both writing directions. */
+  border-right: 2px solid var(--hu-color-text-muted);
+  border-bottom: 2px solid var(--hu-color-text-muted);
   transform: rotate(45deg);
   transition: transform 0.15s ease;
 }
@@ -178,6 +180,12 @@
   cursor: not-allowed;
   background: var(--hu-color-bg-muted, #f5f5f5);
   border-color: var(--ens-border);
+}
+
+.email-notifications-settings__ltr-field {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
 }
 
 .email-notifications-settings__error {
