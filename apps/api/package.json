@@ -38,6 +38,7 @@
     "localization:check": "tsx src/scripts/check-localization-integrity.ts",
     "check:web-ui-candidate-catalogs": "tsx scripts/check-web-ui-release-gate.ts --source candidate-packaged",
     "check:web-ui-release-gate": "tsx scripts/check-web-ui-release-gate.ts",
+    "report:web-ui-linguistic-quality": "tsx scripts/report-web-ui-linguistic-quality.ts",
     "diagnose:public-localization": "tsx src/scripts/diagnose-public-localization-coverage.ts",
     "diagnose:ct-coverage-light": "tsx src/scripts/diagnose-staging-ct-coverage-light.ts",
     "diagnose:content-translation-chunk-plan": "tsx src/scripts/diagnose-content-translation-chunk-plan.ts",

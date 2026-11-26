@@ -50,7 +50,8 @@ export interface PlannedSelectedPackagedUpdate {
 }
 
 const CONSENT_PATH = "rrpApplication.admin.fields.consentAccepted";
-const LEGAL_NAME = "Humanity Union Society";
+export const WEB_UI_LEGAL_ENTITY_NAME = "Humanity Union Society";
+const LEGAL_NAME = WEB_UI_LEGAL_ENTITY_NAME;
 /**
  * A letter, number, combining mark, connector, or joiner in any script.
  * Punctuation and spaces remain boundaries, including around RTL text.
@@ -103,6 +104,14 @@ function sameLegalNameRequirement(
   const required = inspectLegalNameOccurrences(canonicalEnglish);
   const proposed = inspectLegalNameOccurrences(proposedValue);
   return proposed.valid === required.valid && proposed.invalid === required.invalid;
+}
+
+/** Exact legal-name occurrence check used by selected publication protection. */
+export function webUiLegalNameRequirementMatches(
+  canonicalEnglish: string,
+  value: string,
+): boolean {
+  return sameLegalNameRequirement(canonicalEnglish, value);
 }
 
 type MutableTree = { [key: string]: string | MutableTree };

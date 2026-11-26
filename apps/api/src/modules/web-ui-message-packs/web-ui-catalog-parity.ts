@@ -39,7 +39,7 @@ export interface WebUiCatalogParityReport {
   readonly discrepancies: readonly WebUiCatalogParityDiscrepancy[];
 }
 
-function leaves(tree: unknown): Map<string, string> {
+export function flattenWebUiCatalogLeaves(tree: unknown): Map<string, string> {
   const out = new Map<string, string>();
   const walk = (node: unknown, prefix: string): void => {
     if (typeof node === "string") {
@@ -97,7 +97,7 @@ export function compareWebUiCatalogParity(input: {
     });
     return { ok: false, discrepancies };
   }
-  const english = leaves(readTree(englishPath));
+  const english = flattenWebUiCatalogLeaves(readTree(englishPath));
   const locales = new Set([...webFiles.keys(), ...packagedFiles.keys()]);
 
   for (const locale of [...locales].sort()) {
@@ -121,8 +121,8 @@ export function compareWebUiCatalogParity(input: {
       });
       continue;
     }
-    const web = leaves(readTree(webPath));
-    const packaged = leaves(readTree(packagedPath));
+    const web = flattenWebUiCatalogLeaves(readTree(webPath));
+    const packaged = flattenWebUiCatalogLeaves(readTree(packagedPath));
     for (const key of english.keys()) {
       if (!web.has(key)) {
         push(discrepancies, {

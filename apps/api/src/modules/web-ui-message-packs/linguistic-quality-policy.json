@@ -1,0 +1,85 @@
+{
+  "id": "hu-web-ui-linguistic-quality-policy",
+  "exceptions": [
+    {
+      "id": "de-steward-product-term",
+      "locales": ["de"],
+      "paths": ["knowledgePublic.articles.steward-glossary.title"],
+      "value": "Steward",
+      "suppresses": ["english_identical_suspicious"],
+      "reason": "Approved product term. The published title remains Steward."
+    }
+  ],
+  "terminologyRules": [
+    {
+      "id": "member-designation",
+      "kind": "rejected-exact",
+      "locales": ["uk"],
+      "englishExact": "Member",
+      "rejectedExact": ["Член", "Член платформи"],
+      "acceptedIncludesAny": [
+        "Член Союзу",
+        "Члена Союзу",
+        "Членом Союзу",
+        "Члени Союзу",
+        "Членів Союзу"
+      ],
+      "classification": "CONFIRMED_DEFECT",
+      "evidence": "Standalone Член is not an approved Member designation. Approved forms are Член Союзу and its grammatical inflections."
+    },
+    {
+      "id": "participant-not-member",
+      "kind": "rejected-exact",
+      "locales": ["uk"],
+      "englishExact": "Participant",
+      "rejectedExact": ["Член", "Член платформи"],
+      "classification": "CONFIRMED_DEFECT",
+      "evidence": "Participant remains Учасник. Standalone Член does not replace Participant."
+    },
+    {
+      "id": "uk-membership-phrase",
+      "kind": "missing-accepted-phrase",
+      "locales": ["uk"],
+      "path": "membershipPublic.pageTitle",
+      "acceptedIncludesAny": ["Членство в Союзі"],
+      "classification": "REVIEW_CANDIDATE",
+      "evidence": "The approved membership phrase Членство в Союзі is absent. Neither the published nor the packaged title is selected as correct."
+    },
+    {
+      "id": "uk-journey-summary",
+      "kind": "catalog-difference",
+      "locales": ["uk"],
+      "path": "membershipPublic.labels.journeySummary",
+      "classification": "REVIEW_CANDIDATE",
+      "evidence": "The published and packaged journey summaries differ. Neither wording is selected as correct."
+    },
+    {
+      "id": "de-member-badge-titles",
+      "kind": "catalog-difference",
+      "locales": ["de"],
+      "pathPrefix": "notifications.types.member_badge_",
+      "pathSuffix": ".title",
+      "classification": "REVIEW_CANDIDATE",
+      "evidence": "This member-badge title differs between the published catalog and the packaged catalog. Neither wording is selected as correct."
+    },
+    {
+      "id": "english-institution-name",
+      "kind": "includes",
+      "publishedIncludesAny": [
+        "World Protection Corps",
+        "Humanity Protection Command Center",
+        "Humanity Council"
+      ],
+      "classification": "REVIEW_CANDIDATE",
+      "evidence": "The published text still contains an English institutional name."
+    },
+    {
+      "id": "es-pt-assistant-label",
+      "kind": "includes",
+      "locales": ["es", "pt"],
+      "publishedIncludes": "Assistant",
+      "classification": "REVIEW_CANDIDATE",
+      "evidence": "The published text still contains the English Assistant label."
+    }
+  ]
+}
