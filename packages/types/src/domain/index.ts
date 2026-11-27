@@ -1999,6 +1999,8 @@ export type {
   PublicBlogAuthorDirectoryItem,
   PublicBlogAuthorDirectoryLatestPublication,
   PublicBlogAuthorDirectoryResponse,
+  PublicAuthorPublicationCard,
+  PublicAuthorPublicationListResponse,
   PublicBlogPostDetail,
   PublicBlogPostListItem,
   PublicBlogPostListResponse,

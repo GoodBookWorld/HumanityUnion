@@ -5727,7 +5727,8 @@
       "participationStatistics": "Teilnahmestatistiken",
       "professionalInfoAria": "Berufliche Informationen",
       "recentInitiatives": "Letzte Initiativen",
-      "skills": "Fähigkeiten"
+      "skills": "Fähigkeiten",
+      "authorPublications": "Publikationen des Autors"
     },
     "statistics": {
       "alliesCount": "Verbündete",
@@ -5736,6 +5737,11 @@
       "initiativesCount": "Initiativen",
       "petitionsCount": "Petitionen",
       "proposalsCount": "Verbesserungsvorschläge"
+    },
+    "authorPublications": {
+      "loading": "Publikationen werden geladen…",
+      "loadError": "Die Publikationen konnten nicht geladen werden.",
+      "loadMore": "Weitere Publikationen laden"
     }
   },
   "preferences": {

@@ -6806,7 +6806,8 @@
       "organization": "Організація",
       "biography": "Біографія",
       "participationStatistics": "Статистика участі",
-      "recentInitiatives": "Останні ініціативи"
+      "recentInitiatives": "Останні ініціативи",
+      "authorPublications": "Публікації автора"
     },
     "ownerHidden": {
       "biography": "Біографію приховано у вашому публічному профілі.",
@@ -6851,6 +6852,11 @@
       "opening": "Відкриття…",
       "unreadFrom": "Непрочитані повідомлення від {name}",
       "openConversationAria": "Відкрити розмову з {name}"
+    },
+    "authorPublications": {
+      "loading": "Завантаження публікацій…",
+      "loadError": "Не вдалося завантажити публікації.",
+      "loadMore": "Завантажити ще публікації"
     }
   },
   "actuc": {

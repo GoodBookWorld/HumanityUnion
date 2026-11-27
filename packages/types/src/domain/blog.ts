@@ -388,6 +388,23 @@ export interface PublicBlogPostListItem {
   readonly commentCount: number;
 }
 
+/** Public profile widget card. No body, author grant, or private metadata. */
+export interface PublicAuthorPublicationCard {
+  readonly postId: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly coverImage: BlogCoverMedia | null;
+  readonly category?: BlogCategory;
+  readonly publishedAt: string;
+}
+
+export interface PublicAuthorPublicationListResponse {
+  readonly items: readonly PublicAuthorPublicationCard[];
+  readonly limit: number;
+  readonly offset: number;
+  readonly hasMore: boolean;
+}
+
 /** Post-scoped publication reaction — not an Author quality score. */
 export type BlogReactionKind = "helpful" | "not_helpful";
 

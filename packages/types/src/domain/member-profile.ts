@@ -165,6 +165,11 @@ export interface PublicMemberProfile {
   /** Profile UX Pack 02 Part 9 — omitted entirely when there are none. */
   recentPublicInitiatives?: MemberProfilePublicRecentInitiative[];
   /**
+   * True only when this profile subject has at least one publicly visible
+   * Blog publication. Omitted when there are none. Cards are not included.
+   */
+  hasPublicAuthorPublications?: boolean;
+  /**
    * Profile UX Pack 03 Part 7 — server-computed Message-button state.
    * `"available"` shows an active Message action; `"unavailable"` shows
    * neutral static text (authenticated viewer, but blocked by Privacy);

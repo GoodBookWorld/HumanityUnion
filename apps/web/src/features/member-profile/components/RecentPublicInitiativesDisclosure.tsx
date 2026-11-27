@@ -62,8 +62,8 @@ export function RecentPublicInitiativesDisclosure({
           src="/icons/workspace/publications.png"
           alt=""
           aria-hidden="true"
-          width={24}
-          height={24}
+          width={30}
+          height={30}
         />
         <span className="public-member-page__initiatives-toggle-label">
           {recentInitiativesLabel}

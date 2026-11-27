@@ -1,5 +1,6 @@
 import type {
   BlogCategory,
+  PublicAuthorPublicationListResponse,
   PublicBlogAuthorDirectoryResponse,
   PublicBlogPostDetail,
   PublicBlogPostListResponse,
@@ -71,6 +72,22 @@ export async function fetchPublicBlogPosts(
   return apiRequest<PublicBlogPostListResponse>(
     `/api/v1/public/blog?${params.toString()}`,
     options.signal ? { signal: options.signal } : undefined,
+  );
+}
+
+export async function fetchPublicAuthorPublications(input: {
+  publicName: string;
+  limit: number;
+  offset: number;
+  signal?: AbortSignal;
+}): Promise<PublicAuthorPublicationListResponse> {
+  const params = new URLSearchParams({
+    limit: String(input.limit),
+    offset: String(input.offset),
+  });
+  return apiRequest<PublicAuthorPublicationListResponse>(
+    `/api/v1/public/blog/by-public-name/${encodeURIComponent(input.publicName)}?${params.toString()}`,
+    input.signal ? { signal: input.signal } : undefined,
   );
 }
 

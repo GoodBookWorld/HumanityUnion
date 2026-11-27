@@ -511,6 +511,157 @@ export async function listPublishedBlogPosts(input: {
   };
 }
 
+/**
+ * Public author publications use the same visibility predicates as
+ * `listPublishedBlogPosts`, plus the profile subject's authorParticipantId.
+ *
+ * `blog_posts_author_updated_at` supports the author equality. Status,
+ * publishedAt, and the block flag stay residual predicates. The page is at
+ * most 20 documents and the existence check is one `findOne`, so a new
+ * compound index is not required for this bounded read.
+ */
+export interface PublicAuthorPublicationRecord {
+  postId: string;
+  slug: string;
+  title: string;
+  publishedAt: string;
+  categoryId: BlogPost["categoryId"];
+  coverMedia: BlogPost["coverMedia"];
+  externalCover?: BlogPost["externalCover"];
+}
+
+function isPubliclyVisibleAuthorPublication(
+  post: BlogPost,
+  authorParticipantId: string,
+  nowIso: string,
+): boolean {
+  return (
+    post.authorParticipantId === authorParticipantId &&
+    post.status === "published" &&
+    post.administrativelyBlocked !== true &&
+    typeof post.publishedAt === "string" &&
+    post.publishedAt <= nowIso
+  );
+}
+
+function publicAuthorPublicationMongoFilter(
+  authorParticipantId: string,
+  nowIso: string,
+): Record<string, unknown> {
+  return {
+    authorParticipantId,
+    status: "published" as BlogPostStatus,
+    administrativelyBlocked: { $ne: true },
+    publishedAt: { $lte: nowIso, $type: "string" },
+  };
+}
+
+function toPublicAuthorPublicationRecord(post: {
+  postId: string;
+  slug: string;
+  title: string;
+  publishedAt?: string;
+  categoryId: BlogPost["categoryId"];
+  coverMedia: BlogPost["coverMedia"];
+  externalCover?: BlogPost["externalCover"];
+}): PublicAuthorPublicationRecord | null {
+  if (typeof post.publishedAt !== "string" || !post.postId || !post.slug) {
+    return null;
+  }
+  return {
+    postId: post.postId,
+    slug: post.slug,
+    title: post.title,
+    publishedAt: post.publishedAt,
+    categoryId: post.categoryId,
+    coverMedia: post.coverMedia ?? null,
+    ...(post.externalCover ? { externalCover: post.externalCover } : {}),
+  };
+}
+
+export async function publicAuthorHasVisiblePublications(
+  authorParticipantId: string,
+): Promise<boolean> {
+  const authorId = authorParticipantId.trim();
+  if (!authorId) {
+    return false;
+  }
+  const nowIso = new Date().toISOString();
+  const memory = blogMemory();
+  if (memory) {
+    for (const post of memory.posts.values()) {
+      if (isPubliclyVisibleAuthorPublication(post, authorId, nowIso)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (!isMongoConfigured()) {
+    return false;
+  }
+
+  await ensureBlogMongoReady();
+  const doc = await postsCollection().findOne(publicAuthorPublicationMongoFilter(authorId, nowIso), {
+    projection: { _id: 1 },
+  });
+  return doc !== null;
+}
+
+export async function listPublicAuthorPublicationRecords(input: {
+  authorParticipantId: string;
+  limit: number;
+  offset: number;
+}): Promise<{ items: PublicAuthorPublicationRecord[]; hasMore: boolean }> {
+  const authorId = input.authorParticipantId.trim();
+  const nowIso = new Date().toISOString();
+  if (!authorId) {
+    return { items: [], hasMore: false };
+  }
+
+  const memory = blogMemory();
+  if (memory) {
+    const visible = [...memory.posts.values()]
+      .filter((post) => isPubliclyVisibleAuthorPublication(post, authorId, nowIso))
+      .sort((left, right) => {
+        const byDate = (right.publishedAt ?? "").localeCompare(left.publishedAt ?? "");
+        if (byDate !== 0) {
+          return byDate;
+        }
+        return left.postId.localeCompare(right.postId);
+      });
+    const page = visible.slice(input.offset, input.offset + input.limit + 1);
+    const items = page
+      .slice(0, input.limit)
+      .map((post) => toPublicAuthorPublicationRecord(post))
+      .filter((post): post is PublicAuthorPublicationRecord => post !== null);
+    return { items, hasMore: page.length > input.limit };
+  }
+
+  await ensureBlogMongoReady();
+  const docs = await postsCollection()
+    .find(publicAuthorPublicationMongoFilter(authorId, nowIso), {
+      projection: {
+        _id: 0,
+        postId: 1,
+        slug: 1,
+        title: 1,
+        publishedAt: 1,
+        categoryId: 1,
+        coverMedia: 1,
+        externalCover: 1,
+      },
+    })
+    .sort({ publishedAt: -1, postId: 1 })
+    .skip(input.offset)
+    .limit(input.limit + 1)
+    .toArray();
+  const items = docs
+    .slice(0, input.limit)
+    .map((doc) => toPublicAuthorPublicationRecord(doc))
+    .filter((post): post is PublicAuthorPublicationRecord => post !== null);
+  return { items, hasMore: docs.length > input.limit };
+}
+
 /** Pack 14D — single aggregation of eligible public posts by categoryId. */
 export async function aggregatePublishedBlogPostCountsByCategory(): Promise<
   ReadonlyArray<{ categoryId: BlogCategoryId; count: number }>

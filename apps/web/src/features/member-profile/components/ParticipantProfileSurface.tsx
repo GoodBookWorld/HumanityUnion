@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicMemberProfile, PublicMemberProfileHiddenSections } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { DirectMessageAction } from "../../direct-messaging/components/DirectMessageAction";
 import { MemberProfessionalLinksDisplay } from "./MemberProfessionalLinksSection";
+import { AuthorPublicationsDisclosure } from "./AuthorPublicationsDisclosure";
 import { RecentPublicInitiativesDisclosure } from "./RecentPublicInitiativesDisclosure";
 import {
   buildIdentityMetaLines,
@@ -131,8 +132,8 @@ function HeadingWithIcon({
         src={iconSrc}
         alt=""
         aria-hidden="true"
-        width={24}
-        height={24}
+        width={30}
+        height={30}
       />
       <span>{children}</span>
     </Tag>
@@ -193,6 +194,7 @@ export function ParticipantProfileSurface({
   footer,
 }: ParticipantProfileSurfaceProps) {
   const t = useTranslations("participantPublic");
+  const locale = useLocale();
   const isOwnerPreview = mode === "owner_preview";
   const displayName = resolveDisplayName(profile);
   const metaLines = buildIdentityMetaLines(profile);
@@ -447,6 +449,13 @@ export function ParticipantProfileSurface({
               />
             </div>
           )
+        ) : null}
+
+        {profile.hasPublicAuthorPublications ? (
+          <AuthorPublicationsDisclosure
+            key={`${profile.publicName}:${locale}`}
+            publicName={profile.publicName}
+          />
         ) : null}
       </article>
 

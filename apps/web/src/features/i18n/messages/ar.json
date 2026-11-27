@@ -6806,7 +6806,8 @@
       "organization": "المنظمة",
       "biography": "السيرة الذاتية",
       "participationStatistics": "إحصاءات المشاركة",
-      "recentInitiatives": "المبادرات الأخيرة"
+      "recentInitiatives": "المبادرات الأخيرة",
+      "authorPublications": "منشورات المؤلف"
     },
     "ownerHidden": {
       "biography": "السيرة الذاتية مخفية عن ملفك العام.",
@@ -6851,6 +6852,11 @@
       "opening": "جارٍ الفتح…",
       "unreadFrom": "رسائل غير مقروءة من {name}",
       "openConversationAria": "فتح محادثة مع {name}"
+    },
+    "authorPublications": {
+      "loading": "جارٍ تحميل المنشورات…",
+      "loadError": "تعذر تحميل المنشورات.",
+      "loadMore": "تحميل المزيد من المنشورات"
     }
   },
   "actuc": {

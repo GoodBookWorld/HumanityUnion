@@ -6,6 +6,11 @@ import type { BlogCategory } from "@hu/types";
  *
  * `category` uses the canonical category slug from the API (not categoryId).
  */
+/** Canonical public article path. Locale prefixing stays with the app router. */
+export function buildPublicBlogPostHref(slug: string): string {
+  return `/blog/${encodeURIComponent(slug)}`;
+}
+
 export function buildBlogIndexHref(input: {
   q?: string;
   categorySlug?: string;

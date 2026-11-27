@@ -6806,7 +6806,8 @@
       "organization": "組織",
       "biography": "簡介",
       "participationStatistics": "參與統計",
-      "recentInitiatives": "近期倡議"
+      "recentInitiatives": "近期倡議",
+      "authorPublications": "作者文章"
     },
     "ownerHidden": {
       "biography": "簡介已從您的公開個人資料中隱藏。",
@@ -6851,6 +6852,11 @@
       "opening": "開啟中…",
       "unreadFrom": "來自 {name} 的未讀訊息",
       "openConversationAria": "開啟與 {name} 的對話"
+    },
+    "authorPublications": {
+      "loading": "正在載入文章…",
+      "loadError": "無法載入文章。",
+      "loadMore": "載入更多文章"
     }
   },
   "actuc": {

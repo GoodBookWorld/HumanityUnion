@@ -8,6 +8,8 @@ import type {
 } from "@hu/types";
 
 import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repository.js";
+import { BlogPersistenceUnavailableError } from "../blog/blog.errors.js";
+import { publicAuthorHasVisiblePublications } from "../blog/persistence/blog.repository.js";
 import { isNewDirectConversationAllowed } from "../direct-messaging/direct-messaging-eligibility.js";
 import { listPublicInitiativesBySteward } from "../initiatives/initiative.store.js";
 import { findMembershipByUserId } from "../membership/membership.repository.js";
@@ -275,6 +277,23 @@ async function enrichPublicMemberProfileProjection(
     projection.messagingAvailability = "hidden";
   } else {
     projection.messagingAvailability = "unavailable";
+  }
+
+  // One existence read for the profile subject. Cards stay on the public
+  // publications endpoint so this response does not carry article bodies.
+  if (authUser.memberId.trim()) {
+    try {
+      const hasPublicAuthorPublications = await publicAuthorHasVisiblePublications(
+        authUser.memberId,
+      );
+      if (hasPublicAuthorPublications) {
+        projection.hasPublicAuthorPublications = true;
+      }
+    } catch (error) {
+      if (!(error instanceof BlogPersistenceUnavailableError)) {
+        throw error;
+      }
+    }
   }
 
   return applyParticipantPublicPlpToProjection({

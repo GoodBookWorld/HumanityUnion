@@ -5727,7 +5727,8 @@
       "participationStatistics": "მონაწილეობის სტატისტიკა",
       "professionalInfoAria": "პროფესიული ინფორმაცია",
       "recentInitiatives": "ბოლოდროინდელი ინიციატივები",
-      "skills": "უნარები"
+      "skills": "უნარები",
+      "authorPublications": "ავტორის პუბლიკაციები"
     },
     "statistics": {
       "alliesCount": "მოკავშირეები",
@@ -5736,6 +5737,11 @@
       "initiativesCount": "ინიციატივები",
       "petitionsCount": "მონაცილეები",
       "proposalsCount": "წინადადებები"
+    },
+    "authorPublications": {
+      "loading": "პუბლიკაციები იტვირთება…",
+      "loadError": "პუბლიკაციების ჩატვირთვა ვერ მოხერხდა.",
+      "loadMore": "მეტი პუბლიკაციის ჩატვირთვა"
     }
   },
   "preferences": {

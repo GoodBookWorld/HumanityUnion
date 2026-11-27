@@ -5727,7 +5727,8 @@
       "participationStatistics": "סטטיסטיקות השתתפות",
       "professionalInfoAria": "מידע מקצועי",
       "recentInitiatives": "יָזמָה אחרונות",
-      "skills": "כישורים"
+      "skills": "כישורים",
+      "authorPublications": "פרסומי המחבר"
     },
     "statistics": {
       "alliesCount": "בעלי ברית",
@@ -5736,6 +5737,11 @@
       "initiativesCount": "יזמות",
       "petitionsCount": "עצומות",
       "proposalsCount": "הצעות"
+    },
+    "authorPublications": {
+      "loading": "טוען פרסומים…",
+      "loadError": "לא ניתן היה לטעון את הפרסומים.",
+      "loadMore": "טעינת פרסומים נוספים"
     }
   },
   "preferences": {

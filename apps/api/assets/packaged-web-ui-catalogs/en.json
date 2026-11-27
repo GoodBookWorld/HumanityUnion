@@ -6806,7 +6806,8 @@
       "organization": "Organization",
       "biography": "Biography",
       "participationStatistics": "Participation Statistics",
-      "recentInitiatives": "Recent Initiatives"
+      "recentInitiatives": "Recent Initiatives",
+      "authorPublications": "Author Publications"
     },
     "ownerHidden": {
       "biography": "Biography is hidden from your public profile.",
@@ -6851,6 +6852,11 @@
       "opening": "Opening…",
       "unreadFrom": "Unread messages from {name}",
       "openConversationAria": "Open conversation with {name}"
+    },
+    "authorPublications": {
+      "loading": "Loading publications…",
+      "loadError": "Publications could not be loaded.",
+      "loadMore": "Load more publications"
     }
   },
   "actuc": {

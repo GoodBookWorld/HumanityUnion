@@ -7,6 +7,7 @@ import {
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { listPublicAuthorPublicationsByPublicName } from "./blog-public-author-publications.js";
 import {
   BlogAccessDeniedError,
   BlogConflictError,
@@ -16,6 +17,11 @@ import {
   BlogSafetyRejectedError,
   BlogValidationError,
 } from "./blog.errors.js";
+import {
+  MemberProfileAccessDeniedError,
+  MemberProfileNotFoundError,
+  MemberProfilePersistenceUnavailableError,
+} from "../member-profile/member-profile.errors.js";
 import {
   BlogCommentAccessDeniedError,
   BlogCommentConflictError,
@@ -219,6 +225,51 @@ publicBlogRouter.get("/authors", async (req, res) => {
     handleBlogError(res, error);
   }
 });
+
+function readPublicAuthorPageInteger(
+  raw: unknown,
+): number | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== "string" || !/^(0|[1-9]\d*)$/.test(value)) {
+    throw new BlogValidationError("Invalid publication page parameter.");
+  }
+  return Number(value);
+}
+
+/** Public profile widget. Registered before `/:slug`. */
+publicBlogRouter.get(
+  "/by-public-name/:publicName",
+  optionalAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await listPublicAuthorPublicationsByPublicName({
+        publicName: routeParam(req.params.publicName),
+        limit: readPublicAuthorPageInteger(req.query.limit),
+        offset: readPublicAuthorPageInteger(req.query.offset),
+        viewerIsAuthenticated: Boolean(req.auth?.memberId),
+        viewerUserId: req.auth?.id,
+      });
+      res.json(createSuccessResponse(data, "Public author publications loaded."));
+    } catch (error) {
+      if (error instanceof MemberProfileNotFoundError) {
+        res.status(404).json(failure(error.message));
+        return;
+      }
+      if (error instanceof MemberProfileAccessDeniedError) {
+        res.status(403).json(failure(error.message));
+        return;
+      }
+      if (error instanceof MemberProfilePersistenceUnavailableError) {
+        res.status(503).json(failure(error.message));
+        return;
+      }
+      handleBlogError(res, error);
+    }
+  },
+);
 
 publicBlogRouter.get("/", async (req, res) => {
   try {

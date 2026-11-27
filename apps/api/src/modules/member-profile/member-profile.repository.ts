@@ -135,6 +135,20 @@ export async function findMemberProfileByProfileId(
   return document ? stripDocument(document) : null;
 }
 
+type MemberProfileByPublicNameLookup = (publicName: string) => Promise<MemberProfile | null>;
+
+let findMemberProfileByPublicNameForTests: MemberProfileByPublicNameLookup | null = null;
+
+/** Unit tests only. Production always reads `member_profiles`. */
+export function setFindMemberProfileByPublicNameForTests(
+  lookup: MemberProfileByPublicNameLookup | null,
+): void {
+  if (lookup && process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Member profile test lookup is unavailable.");
+  }
+  findMemberProfileByPublicNameForTests = lookup;
+}
+
 /**
  * UX Evolution Pack 02.4 Part 6 — `publicName` is the human-readable
  * identifier used everywhere a public profile link is generated (see
@@ -146,6 +160,10 @@ export async function findMemberProfileByProfileId(
 export async function findMemberProfileByPublicName(
   publicName: string,
 ): Promise<MemberProfile | null> {
+  if (findMemberProfileByPublicNameForTests) {
+    return findMemberProfileByPublicNameForTests(publicName);
+  }
+
   await ensureMemberProfileMongoReady();
 
   const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);

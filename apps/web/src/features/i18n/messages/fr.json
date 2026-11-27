@@ -5727,7 +5727,8 @@
       "participationStatistics": "Statistiques de participation",
       "professionalInfoAria": "Informations professionnelles",
       "recentInitiatives": "Initiatives récentes",
-      "skills": "Compétences"
+      "skills": "Compétences",
+      "authorPublications": "Publications de l’auteur"
     },
     "statistics": {
       "alliesCount": "Alliés",
@@ -5736,6 +5737,11 @@
       "initiativesCount": "Initiatives",
       "petitionsCount": "Pétitions",
       "proposalsCount": "Propositions"
+    },
+    "authorPublications": {
+      "loading": "Chargement des publications…",
+      "loadError": "Les publications n’ont pas pu être chargées.",
+      "loadMore": "Charger d’autres publications"
     }
   },
   "preferences": {
