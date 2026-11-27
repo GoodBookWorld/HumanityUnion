@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -21,6 +21,7 @@ import { AdminMetricDetailsGrid } from "../../administration/components/AdminMet
 import { AccountSecuritySection } from "./AccountSecuritySection";
 import { AccountDeletionSection } from "../../account-deletion/AccountDeletionSection";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
+import { revealContextualFeedback } from "../reveal-contextual-feedback";
 import "./account-panel.css";
 import "../../administration/components/admin-panel.css";
 
@@ -35,6 +36,11 @@ export function AccountPanel() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<{
+    variant: "success" | "error";
+    text: string;
+  } | null>(null);
+  const emailFeedbackRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -71,6 +77,13 @@ export function AccountPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!emailFeedback) {
+      return;
+    }
+    revealContextualFeedback(emailFeedbackRef.current);
+  }, [emailFeedback]);
+
   async function handleLogout() {
     await logout();
     router.push("/login");
@@ -79,20 +92,23 @@ export function AccountPanel() {
 
   async function handleEmailChange(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
-    setMessage(null);
-    setActionError(null);
-    setPasswordSuccess(null);
+    setEmailFeedback(null);
 
     try {
       const updated = await requestEmailChange(newEmail);
       setUser(updated);
       setNewEmail("");
-      setMessage(t("checkNewEmailInbox"));
+      setEmailFeedback({ variant: "success", text: t("checkNewEmailInbox") });
     } catch (changeError) {
-      setActionError(
-        changeError instanceof Error ? changeError.message : t("unableToRequestEmailChange"),
-      );
+      setEmailFeedback({
+        variant: "error",
+        text:
+          changeError instanceof Error ? changeError.message : t("unableToRequestEmailChange"),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -241,6 +257,20 @@ export function AccountPanel() {
               {t("requestEmailChange")}
             </Button>
           </div>
+          {emailFeedback ? (
+            <div ref={emailFeedbackRef} className="account-panel__action-feedback">
+              <AuthFeedbackMessage
+                variant={emailFeedback.variant}
+                title={
+                  emailFeedback.variant === "success"
+                    ? t("accountUpdate")
+                    : t("accountActionFailed")
+                }
+              >
+                <p>{emailFeedback.text}</p>
+              </AuthFeedbackMessage>
+            </div>
+          ) : null}
         </form>
       </ProfileSection>
 

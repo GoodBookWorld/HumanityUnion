@@ -58,3 +58,9 @@
 .account-panel__pending-email {
   margin: 0.75rem 0 0;
 }
+
+.account-panel__action-feedback {
+  margin-block-start: var(--hu-space-2, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
