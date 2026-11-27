@@ -826,7 +826,7 @@
         "sourcesLabel": "Sources",
         "sourcesPrefix": "Sources : {sources}",
         "suggestedQuestions": "Questions suggérées",
-        "title": "{siteName}Assistant",
+        "title": "Assistant de la plateforme {siteName}",
         "useSuggestion": "Utiliser la suggestion dans l'éditeur de brouillon",
         "working": "En cours..."
       },

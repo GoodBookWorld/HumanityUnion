@@ -1094,7 +1094,7 @@
           "notAvailable": "Não disponível",
           "outstandingCounts": "{unresolvedTracking} rastreamento não resolvido · {unfinishedCommitments} compromisso(s) inacabado(s) · {missingEvidence} evidência ausente",
           "outstandingWork": "Trabalho Pendente",
-          "publicImpactOptional": "Public Impacto (opcional)",
+          "publicImpactOptional": "Impacto Público (opcional)",
           "stagesPublished": "Etapas Publicadas",
           "summary": "Resumo",
           "summaryParts": {
@@ -1102,8 +1102,8 @@
             "commitments_unfinished": "{count} Compromisso(s) de Implementação estão inacabados.",
             "public_impact_available": "Está disponível um Relatório de Impacto Público publicado.",
             "public_impact_available_optional": "Está disponível um Relatório de Impacto Público publicado (opcional na Escolha Pública).",
-            "public_impact_missing": "Nenhum Relatório de Public Impacto publicado ainda.",
-            "public_impact_not_required_public_choice": "O Public Impacto não é obrigatório em Public Choice — a conclusão da Decisão Coletiva é suficiente.",
+            "public_impact_missing": "Nenhum Relatório de Impacto Público publicado ainda.",
+            "public_impact_not_required_public_choice": "O Impacto Público não é obrigatório em Public Choice — a conclusão da Decisão Coletiva é suficiente.",
             "stages_published": "{count} Etapa(s) do ciclo de vida possuem registros publicados.",
             "tracking_resolved": "Nenhum Acompanhamento da Implementação pendente.",
             "tracking_unresolved": "{count} Registro(s) de Acompanhamento da Implementação continuam pendentes."
@@ -1187,7 +1187,7 @@
           "participationSummary": "Assinaturas {signatures} · Apoio {support} · Reações {reactions} · Aliados {allies}",
           "petition": "Petição",
           "proposals": "{count} Proposta(s)",
-          "publicImpactOptional": "Public Impacto (opcional)",
+          "publicImpactOptional": "Impacto Público (opcional)",
           "revision": "Revisão",
           "tracking": "Acompanhamento da Implementação",
           "upstreamPackages": "Pacotes a montante"
@@ -1793,7 +1793,7 @@
             },
             "pipeline": {
               "complete": "Concluído",
-              "impact": "Public Impacto",
+              "impact": "Impacto",
               "implementation": "Acompanhamento da Implementação",
               "implementationCommitment": "Compromisso de Implementação",
               "notYetActive": "Ainda não ativo"
@@ -2044,9 +2044,9 @@
           "evidenceReferences": "Referências de Evidências (uma por linha)",
           "title": "Título"
         },
-        "generateImpactDraft": "Gerar Rascunho de Public Impacto",
-        "loadFailed": "O workspace de Public Impacto não pôde ser carregado.",
-        "loading": "Carregando o workspace de Public Impacto…",
+        "generateImpactDraft": "Gerar Rascunho de Impacto Público",
+        "loadFailed": "O workspace de Impacto Público não pôde ser carregado.",
+        "loading": "Carregando o workspace de Impacto Público…",
         "messages": {
           "aiApplied": "Sugestão de IA aplicada localmente. Edite conforme necessário e clique em Salvar Rascunho. Nada foi publicado.",
           "generateFailed": "Falha na geração: {detail}",
@@ -2054,7 +2054,7 @@
           "saveFailed": "Falha ao salvar: {detail}",
           "unknownError": "Erro desconhecido"
         },
-        "noDraftExplanation": "Gere um Relatório de Public Impacto a partir de Iniciativa, Decisão Coletiva, Acompanhamento, Respostas Oficiais (incluindo Nenhuma resposta oficial recebida) e evidências vinculadas. O Assistant tem função meramente consultiva — não pode inventar resultados, publicar ou avançar o Ciclo de Vida. Nenhum impacto mensurável é uma conclusão válida e passível de publicação.",
+        "noDraftExplanation": "Gere um Relatório de Impacto Público a partir de Iniciativa, Decisão Coletiva, Acompanhamento, Respostas Oficiais (incluindo Nenhuma resposta oficial recebida) e evidências vinculadas. O Assistant tem função meramente consultiva — não pode inventar resultados, publicar ou avançar o Ciclo de Vida. Nenhum impacto mensurável é uma conclusão válida e passível de publicação.",
         "noSectionsYet": "Ainda não há seções no relatório. Gere um rascunho a partir das fontes disponíveis no Ciclo de Vida da Iniciativa.",
         "openCivicArchive": "Abrir Arquivo Cívico",
         "preview": {
@@ -2077,13 +2077,13 @@
           "outstanding_issues": "Questões pendentes"
         },
         "sourceSnapshot": {
-          "aria": "Fontes de Public Impacto",
+          "aria": "Fontes de Impacto Público",
           "commitmentsCount": "{count} concluído",
           "communityParticipation": "Participação da Comunidade",
           "completedCommitments": "Compromissos Concluídos",
           "consistencyChecks": "Verificações de Consistência",
           "consistencySummary": "{warnings} aviso(s) de {total}",
-          "empty": "As Fontes de Public Impacto estão vazias até que um Pacote de Resposta Oficial seja publicado.",
+          "empty": "As Fontes de Impacto Público estão vazias até que um Pacote de Resposta Oficial seja publicado.",
           "evidenceCount": "{count} referência(s) de evidência",
           "evidenceReferences": "Referências de Evidências",
           "implementationTracking": "Acompanhamento da Implementação",
@@ -2483,7 +2483,7 @@
             "clarityTitleEmpty": "{field} está vazio — os Relatórios de Impacto Público devem ser claramente rotulados.",
             "conclusionUnsupported": "“{label}” tem um texto descritivo, mas nenhuma referência a evidências — as conclusões sem suporte devem ser removidas ou citadas.",
             "evidenceNoneVisible": "Ainda não há referências de evidências visíveis no Acompanhamento (Tracking) ou nas Respostas Oficiais — mantenha a incerteza explícita; não fabrique evidências. Isso não bloqueia a Publicação.",
-            "evidencePackageRequired": "Publique um Pacote de Resposta Oficial antes de gerar o Impacto Público (Public Impacto).",
+            "evidencePackageRequired": "Publique um Pacote de Resposta Oficial antes de gerar o Impacto Público.",
             "evidenceSectionEmpty": "“{label}” está vazio — a publicação exige um corpo que não esteja vazio.",
             "institutionMissingName": "Uma ou mais Respostas Oficiais ainda não têm o nome de uma instituição ou organização.",
             "institutionMissingSummary": "Uma ou mais Respostas Oficiais ainda não têm um resumo de resultados.",
@@ -2722,7 +2722,7 @@
             "official-response-package-available": {
               "ok": "As Respostas Oficiais \"{title}\" estão disponíveis como fonte de Impacto Público.",
               "okNoResponse": "Respostas Oficiais \"{title}\" publicadas com o resultado: Nenhuma resposta oficial recebida.",
-              "warning": "Ainda não há nenhum Pacote de Resposta Oficial publicado — o Public Impacto ainda pode ser criado; trate as respostas ausentes como incerteza / evidência ausente."
+              "warning": "Ainda não há nenhum Pacote de Resposta Oficial publicado — o Impacto Público ainda pode ser criado; trate as respostas ausentes como incerteza / evidência ausente."
             },
             "tracking-package-available": {
               "ok": "O Acompanhamento da Implementação \"{title}\" está citado.",
@@ -2787,7 +2787,7 @@
             "collective_decision": "Publicado — os Implementation Commitments já estão desbloqueados.",
             "commitment": "Publicado — o Acompanhamento da Implementação já está desbloqueado.",
             "decision_session": "Publicado — a Decisão Coletiva já está desbloqueada.",
-            "official_response": "Publicado — o Public Impacto já está desbloqueado.",
+            "official_response": "Publicado — o Impacto Público já está desbloqueado.",
             "petition": "Publicado — a Petição desta Iniciativa foi publicada e aberta para assinaturas.",
             "proposal": "Publicado — crie um novo rascunho para preparar uma nova ronda de propostas.",
             "public_impact": "Publicado — O Arquivo Cívico está agora desbloqueado.",

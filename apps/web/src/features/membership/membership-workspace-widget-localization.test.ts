@@ -96,13 +96,13 @@ describe("MembershipWorkspaceWidget localization (Task 01)", () => {
     ];
     const completed = membershipJourneyCompletedCount(timeline);
 
-    assert.equal(t("pageTitle"), "Членство");
+    assert.equal(t("pageTitle"), "Членство в Союзі");
     assert.equal(t("status.currentStatus"), "Поточний статус");
     assert.equal(t("status.applicationStatus"), "Статус заявки");
     assert.equal(t("workspaceWidget.journey"), "Шлях");
     assert.equal(t("status.contribution"), "Внесок");
     assert.equal(t("status.participantCohort"), "Учасник");
-    assert.equal(t("status.memberCohort"), "Член");
+    assert.equal(t("status.memberCohort"), "Член Союзу");
     assert.equal(t(`labels.applicationStatus.${applicationKey}`), "Не розпочато");
     assert.equal(t(`labels.contributionStatus.${contributionKey}`), "Ще не завершено");
     assert.equal(t("workspaceWidget.continueCta"), "Продовжити членство");
